@@ -67,7 +67,7 @@ m.fs.leach = MSContactor(
 
 # Liquid feed state
 m.fs.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
-m.fs.leach.liquid_inlet.conc_mass_metals.fix(1e-8 * units.mg / units.L)
+m.fs.leach.liquid_inlet.conc_mass_metals.fix(1e-10 * units.mg / units.L)
 m.fs.leach.liquid_inlet.conc_mole_acid[0, "H"].fix(2 * 0.05 * units.mol / units.L)
 m.fs.leach.liquid_inlet.conc_mole_acid[0, "HSO4"].fix(1e-8 * units.mol / units.L)
 m.fs.leach.liquid_inlet.conc_mole_acid[0, "SO4"].fix(0.05 * units.mol / units.L)
@@ -78,22 +78,22 @@ m.fs.leach.solid_inlet.mass_frac_comp[0, "inerts"].fix(0.6952 * units.kg / units
 m.fs.leach.solid_inlet.mass_frac_comp[0, "Al2O3"].fix(0.237 * units.kg / units.kg)
 m.fs.leach.solid_inlet.mass_frac_comp[0, "Fe2O3"].fix(0.0642 * units.kg / units.kg)
 m.fs.leach.solid_inlet.mass_frac_comp[0, "CaO"].fix(3.31e-3 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Sc2O3"].fix(5.55931E-05 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Y2O3"].fix(6.57305E-05 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "La2O3"].fix(0.000135554 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Ce2O3"].fix(0.000312323 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Pr2O3"].fix(3.42876E-05 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Nd2O3"].fix(0.000135324 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Sm2O3"].fix(2.95852E-05 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Gd2O3"].fix(2.08099E-05 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Dy2O3"].fix(1.50965E-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Sc2O3"].fix(2.77966E-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Y2O3"].fix(3.28653E-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "La2O3"].fix(6.77769E-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Ce2O3"].fix(0.000156161 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Pr2O3"].fix(1.71438E-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Nd2O3"].fix(6.76618E-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Sm2O3"].fix(1.47926E-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Gd2O3"].fix(1.0405E-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Dy2O3"].fix(7.54827E-06 * units.kg / units.kg)
 
 # Reactor volume
 m.fs.leach.volume = Var(
     m.fs.time,
     m.fs.leach.elements,
     initialize=1,
-    units=units.m**3,
+    units=units.litre,
     doc="Volume of each finite element."
 )
 m.fs.leach.volume.fix(100 * units.gallon)
@@ -130,7 +130,7 @@ for j in m.fs.coal.component_list:
     x_in = m.fs.leach.solid_inlet.mass_frac_comp[0, j]
     x_out = m.fs.leach.solid_outlet.mass_frac_comp[0, j]
 
-    r = value(1 - f_out*x_out/(f_in*x_in))
+    r = value(1 - f_out*x_out/(f_in*x_in))*100
 
     print(f"Recovery {j}: {r}")
 
@@ -138,61 +138,64 @@ from math import log10
 print(f"pH in {-log10(value(m.fs.leach.liquid_inlet.conc_mole_acid[0, 'H']))}")
 print(f"pH out {-log10(value(m.fs.leach.liquid_outlet.conc_mole_acid[0, 'H']))}")
 
-# Conservation
-h_in = (
-    m.fs.leach.liquid_inlet.flow_vol[0]
-    * (m.fs.leach.liquid_inlet.conc_mole_acid[0, 'HSO4']
-       + m.fs.leach.liquid_inlet.conc_mole_acid[0, 'H']
-       + 2/18e-3))
-h_out = (
-    m.fs.leach.liquid_outlet.flow_vol[0]
-    * (m.fs.leach.liquid_outlet.conc_mole_acid[0, 'HSO4']
-       + m.fs.leach.liquid_outlet.conc_mole_acid[0, 'H']
-       + 2/18e-3))
-print(f"H: {value(h_in-h_out)}")
-o_in_l = (
-    m.fs.leach.liquid_inlet.flow_vol[0]
-    * (4*m.fs.leach.liquid_inlet.conc_mole_acid[0, 'HSO4']
-       + 4*m.fs.leach.liquid_inlet.conc_mole_acid[0, 'SO4']
-       + 1/18e-3))
-o_out_l = (
-    m.fs.leach.liquid_outlet.flow_vol[0]
-    * (4*m.fs.leach.liquid_outlet.conc_mole_acid[0, 'HSO4']
-       + 4*m.fs.leach.liquid_outlet.conc_mole_acid[0, 'SO4']
-       + 1/18e-3))
-biatomic= ["Sc2O3", "Y2O3", "La2O3", "Ce2O3", "Pr2O3", "Nd2O3", "Sm2O3", "Gd2O3", "Dy2O3", "Al2O3", "Fe2O3"]
-o_in_s = (
-    m.fs.leach.solid_inlet.flow_mass[0]
-    * (3*sum(m.fs.leach.solid_inlet.mass_frac_comp[0, j]/m.fs.coal.mw[j] for j in biatomic)
-       + m.fs.leach.solid_inlet.mass_frac_comp[0, "CaO"]/m.fs.coal.mw["CaO"])
-)
-o_out_s = (
-    m.fs.leach.solid_outlet.flow_mass[0]
-    * (3*sum(m.fs.leach.solid_outlet.mass_frac_comp[0, j]/m.fs.coal.mw[j] for j in biatomic)
-       + m.fs.leach.solid_outlet.mass_frac_comp[0, "CaO"]/m.fs.coal.mw["CaO"])
-)
-print(f"O: {value(o_in_l-o_out_l+o_in_s-o_out_s)} ({value(o_in_l-o_out_l)}, {value(o_in_s-o_out_s)})")
-print("S " + str(value(
-        m.fs.leach.liquid_inlet.flow_vol[0]
-        * (m.fs.leach.liquid_inlet.conc_mole_acid[0, 'HSO4']+m.fs.leach.liquid_inlet.conc_mole_acid[0, 'SO4'])
-        - m.fs.leach.liquid_outlet.flow_vol[0]
-        * (m.fs.leach.liquid_outlet.conc_mole_acid[0, 'HSO4']+m.fs.leach.liquid_outlet.conc_mole_acid[0, 'SO4'])
-    )))
+# # Conservation
+# h_in = (
+#     m.fs.leach.liquid_inlet.flow_vol[0]
+#     * (m.fs.leach.liquid_inlet.conc_mole_acid[0, 'HSO4']
+#        + m.fs.leach.liquid_inlet.conc_mole_acid[0, 'H']
+#        + 2/18e-3))
+# h_out = (
+#     m.fs.leach.liquid_outlet.flow_vol[0]
+#     * (m.fs.leach.liquid_outlet.conc_mole_acid[0, 'HSO4']
+#        + m.fs.leach.liquid_outlet.conc_mole_acid[0, 'H']
+#        + 2/18e-3))
+# print(f"H: {value(h_in-h_out)}")
+# o_in_l = (
+#     m.fs.leach.liquid_inlet.flow_vol[0]
+#     * (4*m.fs.leach.liquid_inlet.conc_mole_acid[0, 'HSO4']
+#        + 4*m.fs.leach.liquid_inlet.conc_mole_acid[0, 'SO4']
+#        + 1/18e-3))
+# o_out_l = (
+#     m.fs.leach.liquid_outlet.flow_vol[0]
+#     * (4*m.fs.leach.liquid_outlet.conc_mole_acid[0, 'HSO4']
+#        + 4*m.fs.leach.liquid_outlet.conc_mole_acid[0, 'SO4']
+#        + 1/18e-3))
+# biatomic= ["Sc2O3", "Y2O3", "La2O3", "Ce2O3", "Pr2O3", "Nd2O3", "Sm2O3", "Gd2O3", "Dy2O3", "Al2O3", "Fe2O3"]
+# o_in_s = (
+#     m.fs.leach.solid_inlet.flow_mass[0]
+#     * (3*sum(m.fs.leach.solid_inlet.mass_frac_comp[0, j]/m.fs.coal.mw[j] for j in biatomic)
+#        + m.fs.leach.solid_inlet.mass_frac_comp[0, "CaO"]/m.fs.coal.mw["CaO"])
+# )
+# o_out_s = (
+#     m.fs.leach.solid_outlet.flow_mass[0]
+#     * (3*sum(m.fs.leach.solid_outlet.mass_frac_comp[0, j]/m.fs.coal.mw[j] for j in biatomic)
+#        + m.fs.leach.solid_outlet.mass_frac_comp[0, "CaO"]/m.fs.coal.mw["CaO"])
+# )
+# print(f"O: {value(o_in_l-o_out_l+o_in_s-o_out_s)} ({value(o_in_l-o_out_l)}, {value(o_in_s-o_out_s)})")
+# print("S " + str(value(
+#         m.fs.leach.liquid_inlet.flow_vol[0]
+#         * (m.fs.leach.liquid_inlet.conc_mole_acid[0, 'HSO4']+m.fs.leach.liquid_inlet.conc_mole_acid[0, 'SO4'])
+#         - m.fs.leach.liquid_outlet.flow_vol[0]
+#         * (m.fs.leach.liquid_outlet.conc_mole_acid[0, 'HSO4']+m.fs.leach.liquid_outlet.conc_mole_acid[0, 'SO4'])
+#     )))
+#
+# for j in m.fs.leach_soln.dissolved_metals_set:
+#     if j == "Ca":
+#         k = "CaO"
+#         n = 1
+#     else:
+#         k = f"{j}2O3"
+#         n = 2
+#
+#     l_in = m.fs.leach.liquid_inlet.flow_vol[0] * m.fs.leach.liquid_inlet.conc_mass_metals[0, j]
+#     l_out = m.fs.leach.liquid_outlet.flow_vol[0] * m.fs.leach.liquid_outlet.conc_mass_metals[0, j]
+#     s_in = m.fs.leach.solid_inlet.flow_mass[0]*m.fs.leach.solid_inlet.mass_frac_comp[0, k]
+#     s_out = m.fs.leach.solid_outlet.flow_mass[0] * m.fs.leach.solid_outlet.mass_frac_comp[0, k]
+#
+#     l_side = value((l_in-l_out)/m.fs.leach_soln.mw[j]*1e-3)
+#     s_side = value((s_in - s_out) / m.fs.coal.mw[k] * n*1e3)
+#
+#     print(f"{j}: {l_side+s_side} ({l_side} {s_side})")
 
-for j in m.fs.leach_soln.dissolved_metals_set:
-    if j == "Ca":
-        k = "CaO"
-        n = 1
-    else:
-        k = f"{j}2O3"
-        n = 2
-
-    l_in = m.fs.leach.liquid_inlet.flow_vol[0] * m.fs.leach.liquid_inlet.conc_mass_metals[0, j]
-    l_out = m.fs.leach.liquid_outlet.flow_vol[0] * m.fs.leach.liquid_outlet.conc_mass_metals[0, j]
-    s_in = m.fs.leach.solid_inlet.flow_mass[0]*m.fs.leach.solid_inlet.mass_frac_comp[0, k]
-    s_out = m.fs.leach.solid_outlet.flow_mass[0] * m.fs.leach.solid_outlet.mass_frac_comp[0, k]
-
-    l_side = value((l_in-l_out)/m.fs.leach_soln.mw[j]*1e-3)
-    s_side = value((s_in - s_out) / m.fs.coal.mw[k] * n*1e3)
-
-    print(f"{j}: {l_side+s_side} ({l_side} {s_side})")
+# m.fs.leach.heterogeneous_reaction_extent.display()
+m.fs.leach.heterogeneous_reactions[0, 1].reaction_rate.display()

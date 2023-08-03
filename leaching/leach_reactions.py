@@ -107,18 +107,18 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData, property_meta.HasPropert
         self.A = Param(
             self.reaction_idx,
             initialize={
-                "Al2O3": 1007.06,
-                "Fe2O3": 652.956,
-                "CaO": 82.1154,
-                "Sc2O3": 0.0958303,
-                "Y2O3": 0.163062,
-                "La2O3": 0.419327,
-                "Ce2O3": 1.26819,
-                "Pr2O3": 0.113535,
-                "Nd2O3": 0.593531,
-                "Sm2O3": 0.0648484,
-                "Gd2O3": 0.139266,
-                "Dy2O3": 0.01975373,
+                "Al2O3": 503.5875248,
+                "Fe2O3": 322.6139099,
+                "CaO": 109.3157001,
+                "Sc2O3": 0.04725527,
+                "Y2O3": 0.079996528,
+                "La2O3": 0.202377027,
+                "Ce2O3": 0.617265745,
+                "Pr2O3": 0.054514632,
+                "Nd2O3": 0.288997052,
+                "Sm2O3": 0.031614808,
+                "Gd2O3": 0.072328712,
+                "Dy2O3": 0.00949131,
             },
             units=units.L/units.mol/units.hour,
             mutable=True,
@@ -127,18 +127,18 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData, property_meta.HasPropert
         self.B = Param(
             self.reaction_idx,
             initialize={
-                "Al2O3": 4.39656e-3,
-                "Fe2O3": 0.0527725,
-                "CaO": 0.235889,
-                "Sc2O3": 0.00943559,
-                "Y2O3": 0.0281819,
-                "La2O3": 0.0818350,
-                "Ce2O3": 0.0840415,
-                "Pr2O3": 0.112077,
-                "Nd2O3": 0.0924963,
-                "Sm2O3": 0.0452508,
-                "Gd2O3": 0.108715,
-                "Dy2O3": 0.0523021,
+                "Al2O3": 0.0021735,
+                "Fe2O3": 0.026437074,
+                "CaO": 0.110283447,
+                "Sc2O3": 0.009447767,
+                "Y2O3": 0.028245478,
+                "La2O3": 0.082176004,
+                "Ce2O3": 0.084370281,
+                "Pr2O3": 0.112379996,
+                "Nd2O3": 0.09284766,
+                "Sm2O3": 0.045429147,
+                "Gd2O3": 0.10010438,
+                "Dy2O3": 0.052401701,
             },
             units=units.hour**-1,
             mutable=True,
@@ -219,7 +219,7 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
         self.reaction_rate = Var(
             self.params.reaction_idx,
             initialize=0,
-            units=units.mol/units.hour
+            units=units.mol/units.litre/units.hour
         )
 
         # TODO
@@ -255,7 +255,7 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
 
             return b.reaction_rate[r] == units.convert(
                 b.params.A[r]*h_conc**2 + b.params.B[r]*self.c_max[j],
-                to_units=units.mol/units.m**3/units.hour,
+                to_units=units.mol/units.litre/units.hour,
             )
 
         self.reaction_rate_eq = Constraint(self.params.reaction_idx, rule=rule_reaction_rate_eq)

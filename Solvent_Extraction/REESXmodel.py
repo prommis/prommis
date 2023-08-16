@@ -311,6 +311,7 @@ class REESXData(UnitModelBlockData):
                             for aqstream, pconfig in b.config.aqstreams.items():
                                 # Og distribution extent depends on aq distribution extent
                                 if j != 'H2SO4':
+                                    if j!='DEHPA':
                                         rhso += distribution_extent[t, j]
                                     
                     return 0 == rhso

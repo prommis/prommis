@@ -13,15 +13,17 @@ from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 from REESXmodel import REESX
 
-from REEdistribution import REESolExParameters
+from REEAqdistribution import REESolExAqParameters
+from REEOgdistribution import REESolExOgParameters
 
 m = ConcreteModel()
 m.fs = FlowsheetBlock(dynamic=False)
-m.fs.prop = REESolExParameters()
+m.fs.prop_a = REESolExAqParameters()
+m.fs.prop_o = REESolExOgParameters()
 
 m.fs.solex = REESX(number_of_finite_elements=1,
-                       aqstreams = {"Acidsoln":{"property_package":m.fs.prop}},
-                       ogstreams = {"Orgacid":{"property_package":m.fs.prop}})
+                       aqstreams = {"Acidsoln":{"property_package":m.fs.prop_a}},
+                       ogstreams = {"Orgacid":{"property_package":m.fs.prop_o}})
 
 
 #Aqueous feed fixing

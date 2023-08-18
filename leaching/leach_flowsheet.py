@@ -16,11 +16,14 @@ Initial flowsheet for UKy leaching process
 Authors: Andrew Lee
 """
 
+from math import log10
 
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
     SolverFactory,
+    Suffix,
+    TransformationFactory,
     units,
     Var,
     value,
@@ -99,7 +102,10 @@ m.fs.leach.volume = Var(
 m.fs.leach.volume.fix(100 * units.gallon)
 
 def rule_heterogeneous_reaction_extent(b, t, s, r):
-    return b.heterogeneous_reaction_extent[t, s, r] == b.heterogeneous_reactions[t, s].reaction_rate[r]*b.volume[t,s]
+    return (
+        b.heterogeneous_reaction_extent[t, s, r]
+        == b.heterogeneous_reactions[t, s].reaction_rate[r]*b.volume[t,s]
+    )
 
 m.fs.leach.heterogeneous_reaction_extent_constraint = Constraint(
     m.fs.time,
@@ -110,19 +116,37 @@ m.fs.leach.heterogeneous_reaction_extent_constraint = Constraint(
 
 print(degrees_of_freedom(m))
 
-# TODO: Energy transfer term is not needed but still gets built
-m.fs.leach.del_component(m.fs.leach.energy_transfer_term)
+# -------------------------------------------------------------------------------------
+# Scaling
+m.scaling_factor = Suffix(direction=Suffix.EXPORT)
+
+for j in m.fs.coal.component_list:
+    if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
+        m.scaling_factor[m.fs.leach.solid[0.0, 1].mass_frac_comp[j]] = 1e5
+        m.scaling_factor[m.fs.leach.solid_inlet_state[0.0].mass_frac_comp[j]] = 1e5
+        m.scaling_factor[m.fs.leach.heterogeneous_reactions[0.0, 1].reaction_rate[j]] = 1e5
+        m.scaling_factor[m.fs.leach.solid[0.0, 1].conversion_eq[j]] = 1e3
+        m.scaling_factor[m.fs.leach.solid_inlet_state[0.0].conversion_eq[j]] = 1e3
+        m.scaling_factor[m.fs.leach.heterogeneous_reactions[0.0, 1].reaction_rate_eq[j]] = 1e5
+
+scaling = TransformationFactory('core.scale_model')
+scaled_model = scaling.create_using(m, rename=False)
+
+# -------------------------------------------------------------------------------------
 
 initializer = MSContactorInitializer()
-initializer.initialize(m.fs.leach)
+try:
+    initializer.initialize(scaled_model.fs.leach)
+except:
+    pass
 
 solver = SolverFactory("ipopt")
-solver.solve(m, tee=True)
+solver.solve(scaled_model, tee=True)
+
+scaling.propagate_solution(scaled_model, m)
 
 m.fs.leach.liquid_outlet.display()
 m.fs.leach.solid_outlet.display()
-
-m.fs.leach.heterogeneous_reactions[0, 1].c_max.display()
 
 for j in m.fs.coal.component_list:
     f_in = m.fs.leach.solid_inlet.flow_mass[0]
@@ -134,68 +158,7 @@ for j in m.fs.coal.component_list:
 
     print(f"Recovery {j}: {r}")
 
-from math import log10
 print(f"pH in {-log10(value(m.fs.leach.liquid_inlet.conc_mole_acid[0, 'H']))}")
 print(f"pH out {-log10(value(m.fs.leach.liquid_outlet.conc_mole_acid[0, 'H']))}")
 
-# # Conservation
-# h_in = (
-#     m.fs.leach.liquid_inlet.flow_vol[0]
-#     * (m.fs.leach.liquid_inlet.conc_mole_acid[0, 'HSO4']
-#        + m.fs.leach.liquid_inlet.conc_mole_acid[0, 'H']
-#        + 2/18e-3))
-# h_out = (
-#     m.fs.leach.liquid_outlet.flow_vol[0]
-#     * (m.fs.leach.liquid_outlet.conc_mole_acid[0, 'HSO4']
-#        + m.fs.leach.liquid_outlet.conc_mole_acid[0, 'H']
-#        + 2/18e-3))
-# print(f"H: {value(h_in-h_out)}")
-# o_in_l = (
-#     m.fs.leach.liquid_inlet.flow_vol[0]
-#     * (4*m.fs.leach.liquid_inlet.conc_mole_acid[0, 'HSO4']
-#        + 4*m.fs.leach.liquid_inlet.conc_mole_acid[0, 'SO4']
-#        + 1/18e-3))
-# o_out_l = (
-#     m.fs.leach.liquid_outlet.flow_vol[0]
-#     * (4*m.fs.leach.liquid_outlet.conc_mole_acid[0, 'HSO4']
-#        + 4*m.fs.leach.liquid_outlet.conc_mole_acid[0, 'SO4']
-#        + 1/18e-3))
-# biatomic= ["Sc2O3", "Y2O3", "La2O3", "Ce2O3", "Pr2O3", "Nd2O3", "Sm2O3", "Gd2O3", "Dy2O3", "Al2O3", "Fe2O3"]
-# o_in_s = (
-#     m.fs.leach.solid_inlet.flow_mass[0]
-#     * (3*sum(m.fs.leach.solid_inlet.mass_frac_comp[0, j]/m.fs.coal.mw[j] for j in biatomic)
-#        + m.fs.leach.solid_inlet.mass_frac_comp[0, "CaO"]/m.fs.coal.mw["CaO"])
-# )
-# o_out_s = (
-#     m.fs.leach.solid_outlet.flow_mass[0]
-#     * (3*sum(m.fs.leach.solid_outlet.mass_frac_comp[0, j]/m.fs.coal.mw[j] for j in biatomic)
-#        + m.fs.leach.solid_outlet.mass_frac_comp[0, "CaO"]/m.fs.coal.mw["CaO"])
-# )
-# print(f"O: {value(o_in_l-o_out_l+o_in_s-o_out_s)} ({value(o_in_l-o_out_l)}, {value(o_in_s-o_out_s)})")
-# print("S " + str(value(
-#         m.fs.leach.liquid_inlet.flow_vol[0]
-#         * (m.fs.leach.liquid_inlet.conc_mole_acid[0, 'HSO4']+m.fs.leach.liquid_inlet.conc_mole_acid[0, 'SO4'])
-#         - m.fs.leach.liquid_outlet.flow_vol[0]
-#         * (m.fs.leach.liquid_outlet.conc_mole_acid[0, 'HSO4']+m.fs.leach.liquid_outlet.conc_mole_acid[0, 'SO4'])
-#     )))
-#
-# for j in m.fs.leach_soln.dissolved_metals_set:
-#     if j == "Ca":
-#         k = "CaO"
-#         n = 1
-#     else:
-#         k = f"{j}2O3"
-#         n = 2
-#
-#     l_in = m.fs.leach.liquid_inlet.flow_vol[0] * m.fs.leach.liquid_inlet.conc_mass_metals[0, j]
-#     l_out = m.fs.leach.liquid_outlet.flow_vol[0] * m.fs.leach.liquid_outlet.conc_mass_metals[0, j]
-#     s_in = m.fs.leach.solid_inlet.flow_mass[0]*m.fs.leach.solid_inlet.mass_frac_comp[0, k]
-#     s_out = m.fs.leach.solid_outlet.flow_mass[0] * m.fs.leach.solid_outlet.mass_frac_comp[0, k]
-#
-#     l_side = value((l_in-l_out)/m.fs.leach_soln.mw[j]*1e-3)
-#     s_side = value((s_in - s_out) / m.fs.coal.mw[k] * n*1e3)
-#
-#     print(f"{j}: {l_side+s_side} ({l_side} {s_side})")
-
-# m.fs.leach.heterogeneous_reaction_extent.display()
-m.fs.leach.heterogeneous_reactions[0, 1].reaction_rate.display()
+m.fs.leach.solid[0, 1].conversion.display()

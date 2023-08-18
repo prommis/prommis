@@ -86,6 +86,32 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
             },
         )
 
+        self.mass_frac_comp_initial = Param(
+            self.component_list,
+            units=units.kg / units.kg,
+            initialize={
+                "inerts": 0.6952,
+                "Al2O3": 0.237,
+                "Fe2O3": 0.0642,
+                "CaO": 3.31e-3,
+                "Sc2O3": 2.77966E-05,
+                "Y2O3": 3.28653E-05,
+                "La2O3": 6.77769E-05,
+                "Ce2O3": 0.000156161,
+                "Pr2O3": 1.71438E-05,
+                "Nd2O3": 6.76618E-05,
+                "Sm2O3": 1.47926E-05,
+                "Gd2O3": 1.0405E-05,
+                "Dy2O3": 7.54827E-06,
+            },
+        )
+
+        self.dens_mass = Param(
+            units=units.kg/units.litre,
+            initialize=2.4,
+            mutable=True,
+        )
+
         self._state_block_class = CoalRefuseStateBlock
 
     @classmethod
@@ -132,6 +158,23 @@ class CoalRefuseStateBlockData(StateBlockData):
             units=units.kg / units.kg,
             bounds=(1e-8, None),
         )
+
+        self.conversion = Var(
+            self.params.component_list,
+            initialize=0,
+            units=units.dimensionless,
+        )
+
+        @self.Constraint(self.params.component_list)
+        def conversion_eq(b, j):
+            if j == "inerts":
+                return b.conversion[j] == 0
+            return (
+                (1-b.conversion[j])
+                * b.params.mass_frac_comp_initial[j]
+                * b.mass_frac_comp["inerts"]
+                == b.mass_frac_comp[j]
+                * b.params.mass_frac_comp_initial["inerts"])
 
         if not self.config.defined_state:
             self.sum_mass_frac = Constraint(

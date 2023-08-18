@@ -107,40 +107,40 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData, property_meta.HasPropert
         self.A = Param(
             self.reaction_idx,
             initialize={
-                "Al2O3": 503.5875248,
-                "Fe2O3": 322.6139099,
-                "CaO": 109.3157001,
-                "Sc2O3": 0.04725527,
-                "Y2O3": 0.079996528,
-                "La2O3": 0.202377027,
-                "Ce2O3": 0.617265745,
-                "Pr2O3": 0.054514632,
-                "Nd2O3": 0.288997052,
-                "Sm2O3": 0.031614808,
-                "Gd2O3": 0.072328712,
-                "Dy2O3": 0.00949131,
+                "Al2O3": 1.496716606,
+                "Fe2O3": 0.902948175,
+                "CaO": 0.159744406,
+                "Sc2O3": 0.763763942,
+                "Y2O3": 0.580700988,
+                "La2O3": 0.443101432,
+                "Ce2O3": 0.601391182,
+                "Pr2O3": 0.501916124,
+                "Nd2O3": 0.702951111,
+                "Sm2O3": 0.578717372,
+                "Gd2O3": 1.063666638,
+                "Dy2O3": 0.428087853,
             },
-            units=units.L/units.mol/units.hour,
+            units=units.dimensionless,
             mutable=True,
         )
 
         self.B = Param(
             self.reaction_idx,
             initialize={
-                "Al2O3": 0.0021735,
-                "Fe2O3": 0.026437074,
-                "CaO": 0.110283447,
-                "Sc2O3": 0.009447767,
-                "Y2O3": 0.028245478,
-                "La2O3": 0.082176004,
-                "Ce2O3": 0.084370281,
-                "Pr2O3": 0.112379996,
-                "Nd2O3": 0.09284766,
-                "Sm2O3": 0.045429147,
-                "Gd2O3": 0.10010438,
-                "Dy2O3": 0.052401701,
+                "Al2O3": 405.5050676,
+                "Fe2O3": 11.34710708,
+                "CaO": 0.081844698,
+                "Sc2O3": 0.000755073,
+                "Y2O3": 0.000528612,
+                "La2O3": 0.001028295,
+                "Ce2O3": 0.007050046,
+                "Pr2O3": 0.000522858,
+                "Nd2O3": 0.006289942,
+                "Sm2O3": 0.000252479,
+                "Gd2O3": 0.013408467,
+                "Dy2O3": 4.56708E-05,
             },
-            units=units.hour**-1,
+            units=units.mol*units.kg**-1*units.hour**-1,
             mutable=True,
         )
 
@@ -219,43 +219,34 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
         self.reaction_rate = Var(
             self.params.reaction_idx,
             initialize=0,
-            units=units.mol/units.litre/units.hour
+            units=units.mol / units.litre / units.hour
         )
 
-        # TODO
-        l_block = self.parent_block().liquid[self.index()]
-        s_block = self.parent_block().solid[self.index()]
-
-        h_conc = l_block.conc_mole_acid["H"]
-
-        def rule_c_max(b, j):
-            if j in ["H2O", "H", "HSO4", "SO4"]:
-                return Expression.Skip
-
-            if j == "Ca":
-                m = "CaO"
-                n = 1
-            else:
-                m = j+"2O3"
-                n = 2
-            return (
-                units.convert(
-                    l_block.conc_mass_metals[j] / l_block.params.mw[j],
-                    to_units=units.mol/units.litre,
-                ) +
-                n*s_block.flow_mass*s_block.mass_frac_comp[m]/l_block.flow_vol/s_block.params.mw[m]
-            )
-        self.c_max = Expression(l_block.component_list, rule=rule_c_max)
-
         def rule_reaction_rate_eq(b, r):
-            if r.startswith("Y"):
-                j = "Y"
-            else:
-                j = r[:2]
+            if r == "inerts":
+                return b.reaction_rate[r] == 0*units.mol/units.litre/units.hour
 
-            return b.reaction_rate[r] == units.convert(
-                b.params.A[r]*h_conc**2 + b.params.B[r]*self.c_max[j],
-                to_units=units.mol/units.litre/units.hour,
+            l_block = b.parent_block().liquid[b.index()]
+            s_block = b.parent_block().solid[b.index()]
+
+            h_conc = units.convert(
+                l_block.conc_mole_acid["H"],
+                to_units=units.mol/units.L
+            )
+
+            # Pulp density calculation
+            eps = units.convert(
+                s_block.flow_mass / (s_block.flow_mass/s_block.params.dens_mass + l_block.flow_vol),
+                to_units=units.kg/units.litre
+            )
+
+            # Empirical correlation with varying exponent,
+            # strip units from acid concentration for simplicity
+            return b.reaction_rate[r] == (
+                eps
+                * b.params.B[r]
+                * (h_conc/(units.mol/units.L))**b.params.A[r]
+                * (1-s_block.conversion[r])**(2/3)
             )
 
         self.reaction_rate_eq = Constraint(self.params.reaction_idx, rule=rule_reaction_rate_eq)

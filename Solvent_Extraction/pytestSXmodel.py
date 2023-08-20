@@ -1,9 +1,7 @@
 import pytest
 from pyomo.environ import (
     ConcreteModel,
-    assert_optimal_termination,
-    value,
-    units,
+    value
 )
 from idaes.core import FlowsheetBlock
 from REESXmodel import REESX
@@ -12,15 +10,8 @@ from REEOgdistribution import REESolExOgParameters
 
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util.testing import initialization_tester
-from idaes.core.util.scaling import (
-    calculate_scaling_factors,
-    badly_scaled_var_generator,
-)
 
 from pyomo.util.check_units import assert_units_consistent
-from idaes.core import UnitModelCostingBlock
-import idaes.core.util.scaling as iscale
 
 solver = get_solver()
 
@@ -245,8 +236,3 @@ class TestSXmodel:
         assert value(m.fs.solex.Orgacid[0,1].mass_flow["U"]) == pytest.approx(
             0, rel=1e-2
         )
-
-
-
-
-

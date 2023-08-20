@@ -1,6 +1,6 @@
 # Imports 
 
-from pyomo.environ import (Constraint, Param, Set, units, Var)
+from pyomo.environ import (Param, Set, units, Var)
 from idaes.core import (declare_process_block_class, PhysicalParameterBlock, StateBlock, 
                         StateBlockData, Component, Phase, MaterialFlowBasis)
 from idaes.core.util.initialization import fix_state_vars
@@ -74,7 +74,7 @@ class REESolExAqParameterData(PhysicalParameterBlock):
             "U"
         ])
 
-        self.K = Param(self.dissolved_elements, initialize = {
+        self.K_distribution = Param(self.dissolved_elements, initialize = {
             "Al":3.6/100,
             "Ca":3.7/100,
             "Fe":2.1/100,
@@ -98,7 +98,9 @@ class REESolExAqParameterData(PhysicalParameterBlock):
             "Lu":99.5/100,
             "Th":5/100,
             "U":99.5/100
-        })
+        }, mutable=True,
+        units=units.dimensionless,
+        doc="The fraction of component that goes from aqueous to organic phase")
 
 
         self._state_block_class = REESolExAqStateBlock
@@ -144,11 +146,3 @@ class REESolExAqStateBlockData(StateBlockData):
             "volumetric_flow": self.volumetric_flow,
             "mass_flow": self.mass_flow
         }
-
-    
-
-
-        
-        
-        
-    

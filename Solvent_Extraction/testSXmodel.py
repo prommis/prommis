@@ -1,10 +1,6 @@
 from pyomo.environ import (
     ConcreteModel,
-    Constraint,
-    SolverFactory,
-    units,
-    Var,
-    value,
+    SolverFactory, 
 )
 
 from idaes.core import FlowsheetBlock
@@ -22,8 +18,8 @@ m.fs.prop_a = REESolExAqParameters()
 m.fs.prop_o = REESolExOgParameters()
 
 m.fs.solex = REESX(number_of_finite_elements=1,
-                       aqstreams = {"Acidsoln":{"property_package":m.fs.prop_a}},
-                       ogstreams = {"Orgacid":{"property_package":m.fs.prop_o}})
+                       aqueous_streams = {"Acidsoln":{"property_package":m.fs.prop_a}},
+                       organic_streams = {"Orgacid":{"property_package":m.fs.prop_o}})
 
 
 #Aqueous feed fixing

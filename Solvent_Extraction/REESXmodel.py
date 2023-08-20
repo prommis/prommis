@@ -1,6 +1,5 @@
-from pyomo.environ import Block, Constraint, RangeSet, Reals, Set, units, Var
+from pyomo.environ import Constraint, RangeSet, Reals, Var
 from pyomo.common.config import ConfigDict, ConfigValue, Bool, In
-from pyomo.contrib.incidence_analysis import solve_strongly_connected_components
 
 from idaes.core import (
     declare_process_block_class,
@@ -10,20 +9,12 @@ from idaes.core import (
     MaterialFlowBasis,
 )
 from idaes.core.util.config import (
-    is_physical_parameter_block,
-    #is_reaction_parameter_block,
+    is_physical_parameter_block
 )
 from idaes.core.util.exceptions import (
     ConfigurationError,
     BurntToast,
-    #PropertyNotSupportedError,
 )
-#from idaes.core.initialization import ModularInitializerBase
-#from idaes.core.initialization.initializer_base import StoreState
-#from idaes.core.solvers import get_solver
-#from idaes.core.util.model_serializer import to_json, from_json
-#import idaes.logger as idaeslog
-
 
 Stream_Config = ConfigDict()
 
@@ -86,16 +77,13 @@ Stream_Config.declare(
 )
 
 
-
-
-
 @declare_process_block_class("REESX")
 class REESXData(UnitModelBlockData):
 
     CONFIG = UnitModelBlockData.CONFIG()
 
     CONFIG.declare(
-        "aqstreams",
+        "aqueous_streams",
         ConfigDict(
             implicit=True,
             implicit_domain=Stream_Config,
@@ -106,7 +94,7 @@ class REESXData(UnitModelBlockData):
     )
 
     CONFIG.declare(
-        "ogstreams",
+        "organic_streams",
         ConfigDict(
             implicit=True,
             implicit_domain=Stream_Config,
@@ -128,29 +116,27 @@ class REESXData(UnitModelBlockData):
 
         self._verify_inputs()
 
-        for stream, sconfig in self.config.aqstreams.items():
+        for stream, sconfig in self.config.aqueous_streams.items():
             aqflow_basis, aquom = self._build_state_blocks(stream)
-        for stream, sconfig in self.config.ogstreams.items():
+        for stream, sconfig in self.config.organic_streams.items():
             ogflow_basis,oguom = self._build_state_blocks(stream)
         
         self._build_material_balance_constraints(aqflow_basis, aquom, ogflow_basis, oguom)
         self._build_ports()
     
-
-
-       
+   
     def _verify_inputs(self):
         # Check that at least two streams were declared
-        if len(self.config.aqstreams) < 1:
+        if len(self.config.aqueous_streams) < 1:
             raise ConfigurationError(
                 f"REESX models must define at least one stream; received "
-                f"{list(self.config.aqstreams.keys())}"
+                f"{list(self.config.aqueous_streams.keys())}"
             )
         
-        if len(self.config.ogstreams) < 1:
+        if len(self.config.organic_streams) < 1:
             raise ConfigurationError(
                 f"REESX models must define at least one stream; received "
-                f"{list(self.config.ogstreams.keys())}"
+                f"{list(self.config.organic_streams.keys())}"
             )
         
         self.elements = RangeSet(
@@ -163,10 +149,10 @@ class REESXData(UnitModelBlockData):
 
     def _build_state_blocks(self, stream):
 
-        if stream in self.config.aqstreams.keys():
-         streams = self.config.aqstreams
-        elif stream in self.config.ogstreams.keys():
-         streams = self.config.ogstreams
+        if stream in self.config.aqueous_streams.keys():
+         streams = self.config.aqueous_streams
+        elif stream in self.config.organic_streams.keys():
+         streams = self.config.organic_streams
         else:
          raise BurntToast("If/else overrun when constructing balances")
         
@@ -174,8 +160,6 @@ class REESXData(UnitModelBlockData):
 
         arg_dict2 = dict(**streams[stream].property_package_args)
         arg_dict2["defined_state"] = False
-
-            
 
         state = ppack.build_state_block(
                     self.flowsheet().time,
@@ -233,13 +217,13 @@ class REESXData(UnitModelBlockData):
                 amb_units = None
             
 
-            for stream, sconfig in self.config.aqstreams.items():
+            for stream, sconfig in self.config.aqueous_streams.items():
                 state_block = getattr(self, stream)
                 ppack = sconfig.property_package
                 component_list = state_block.component_list
                 #component_list = self.parent_block().prop.dissolved_elements
 
-                if stream in self.config.aqstreams.keys():
+                if stream in self.config.aqueous_streams.keys():
                     in_state = getattr(self, stream + "_inlet_state")
 
                 # state_block.display()
@@ -258,7 +242,7 @@ class REESXData(UnitModelBlockData):
                 
                 def distribution_extent_rule(b, t, j):
                     if j in ppack.dissolved_elements:
-                      return distribution_extent[t, j] == in_state[t].mass_flow[j]*ppack.K[j]
+                      return distribution_extent[t, j] == in_state[t].mass_flow[j]*ppack.K_distribution[j]
                     return Constraint.Skip
                 
                 distribution_extent_constraint = Constraint(self.flowsheet().time, 
@@ -270,7 +254,7 @@ class REESXData(UnitModelBlockData):
                 )
 
                 def material_balance_aq_rule(b, t, s, j):
-                    for aqstream, pconfig in b.config.aqstreams.items():
+                    for aqstream, pconfig in b.config.aqueous_streams.items():
                             
                             in_state_a, out_state_a, side_state_a = _get_state_blocks(b, t, s, aqstream)
 
@@ -290,13 +274,13 @@ class REESXData(UnitModelBlockData):
                 mbal = Constraint(self.flowsheet().time, self.elements, component_list, rule=material_balance_aq_rule)
                 self.add_component(stream + "_material_balance", mbal)
 
-            for stream, sconfig in self.config.ogstreams.items():
+            for stream, sconfig in self.config.organic_streams.items():
                 state_block = getattr(self, stream)
                 ppack = sconfig.property_package
                 component_list = state_block.component_list
 
                 def material_balance_og_rule(b, t, s, j):
-                    for ogstream, pconfig in b.config.ogstreams.items():
+                    for ogstream, pconfig in b.config.organic_streams.items():
                             in_state_o, out_state_o, side_state_o = _get_state_blocks(b, t, s, ogstream)
 
                            
@@ -308,7 +292,7 @@ class REESXData(UnitModelBlockData):
                                 rhso = -out_state_o.get_material_flow_terms(j)
                         
 
-                            for aqstream, pconfig in b.config.aqstreams.items():
+                            for aqstream, pconfig in b.config.aqueous_streams.items():
                                 # Og distribution extent depends on aq distribution extent
                                 if j != 'H2SO4':
                                     if j!='DEHPA':
@@ -324,7 +308,7 @@ class REESXData(UnitModelBlockData):
                     
     def _build_ports(self):
             # Add Ports
-            for aqstream, pconfig in self.config.aqstreams.items():
+            for aqstream, pconfig in self.config.aqueous_streams.items():
                 sblock = getattr(self, aqstream)
                 flow_dir = pconfig.flow_direction
 
@@ -347,7 +331,7 @@ class REESXData(UnitModelBlockData):
                 )
                 self.add_component(aqstream + "_outlet", out_port)
             
-            for ogstream, pconfig in self.config.ogstreams.items():
+            for ogstream, pconfig in self.config.organic_streams.items():
                 sblock = getattr(self, ogstream)
                 flow_dir = pconfig.flow_direction
 
@@ -377,10 +361,10 @@ def _get_state_blocks(b, t, s, stream):
     Utility method for collecting states representing flows into and out of
     a stage for a given stream.
     """
-    if stream in b.config.aqstreams.keys():
-        streams = b.config.aqstreams
-    elif stream in b.config.ogstreams.keys():
-        streams = b.config.ogstreams
+    if stream in b.config.aqueous_streams.keys():
+        streams = b.config.aqueous_streams
+    elif stream in b.config.organic_streams.keys():
+        streams = b.config.organic_streams
     else:
         raise BurntToast("If/else overrun when constructing balances")
 

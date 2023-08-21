@@ -6,9 +6,6 @@ from idaes.core import (declare_process_block_class, PhysicalParameterBlock, Sta
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.exceptions import BurntToast
 
-# Declare
-
-
 @declare_process_block_class("REESolExAqParameters")
 class REESolExAqParameterData(PhysicalParameterBlock):
     def build(self):

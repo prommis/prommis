@@ -229,6 +229,7 @@ class REESXData(UnitModelBlockData):
                 # state_block.display()
                 distribution_extent = Var(
                     self.flowsheet().time,
+                    self.elements,
                     ppack.dissolved_elements,
                     domain=Reals,
                         initialize=0.0,
@@ -240,12 +241,15 @@ class REESXData(UnitModelBlockData):
                         distribution_extent
                     )
                 
-                def distribution_extent_rule(b, t, j):
+                def distribution_extent_rule(b, t, s, j):
                     if j in ppack.dissolved_elements:
-                      return distribution_extent[t, j] == in_state[t].mass_flow[j]*ppack.K_distribution[j]
+                      if s == self.elements.first():
+                        return distribution_extent[t, s, j] == in_state[t].mass_flow[j]*ppack.K_distribution[j]
+                      else:
+                        return distribution_extent[t, s, j] == state_block[t, s-1].mass_flow[j]*ppack.K_distribution[j]
                     return Constraint.Skip
                 
-                distribution_extent_constraint = Constraint(self.flowsheet().time, 
+                distribution_extent_constraint = Constraint(self.flowsheet().time, self.elements,
                                                             ppack.dissolved_elements, rule=distribution_extent_rule)
 
                 self.add_component(
@@ -267,7 +271,7 @@ class REESXData(UnitModelBlockData):
                         
                             # Aq streams always have a distribution extent
                             if j != 'H2SO4':
-                                rhsa += -distribution_extent[t, j]
+                                rhsa += -distribution_extent[t, s, j]
                                 
                     return 0 == rhsa
                 
@@ -296,7 +300,7 @@ class REESXData(UnitModelBlockData):
                                 # Og distribution extent depends on aq distribution extent
                                 if j != 'H2SO4':
                                     if j!='DEHPA':
-                                        rhso += distribution_extent[t, j]
+                                        rhso += distribution_extent[t, s, j]
                                     
                     return 0 == rhso
 

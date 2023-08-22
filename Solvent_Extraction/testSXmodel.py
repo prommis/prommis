@@ -17,9 +17,9 @@ m.fs = FlowsheetBlock(dynamic=False)
 m.fs.prop_a = REESolExAqParameters()
 m.fs.prop_o = REESolExOgParameters()
 
-m.fs.solex = REESX(number_of_finite_elements=1,
-                       aqueous_streams = {"Acidsoln":{"property_package":m.fs.prop_a}},
-                       organic_streams = {"Orgacid":{"property_package":m.fs.prop_o}})
+m.fs.solex = REESX(number_of_finite_elements=3,
+                       aqueous_streams = {"Acidsoln":{"property_package":m.fs.prop_a, "flow_direction":1}},
+                       organic_streams = {"Orgacid":{"property_package":m.fs.prop_o, "flow_direction":2}})
 
 
 #Aqueous feed fixing
@@ -56,20 +56,20 @@ m.fs.solex.Orgacid_inlet_state[0].mass_flow["Fe"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Si"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Sc"].fix(19.93)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Y"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].mass_flow["La"].fix(2.09)
-m.fs.solex.Orgacid_inlet_state[0].mass_flow["Ce"].fix(0.86)
-m.fs.solex.Orgacid_inlet_state[0].mass_flow["Pr"].fix(0.12)
-m.fs.solex.Orgacid_inlet_state[0].mass_flow["Nd"].fix(0.07)
+m.fs.solex.Orgacid_inlet_state[0].mass_flow["La"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].mass_flow["Ce"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].mass_flow["Pr"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].mass_flow["Nd"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Pm"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Sm"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Eu"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].mass_flow["Gd"].fix(0.01)
+m.fs.solex.Orgacid_inlet_state[0].mass_flow["Gd"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Tb"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Dy"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Ho"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Er"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Tm"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].mass_flow["Yb"].fix(0.05)
+m.fs.solex.Orgacid_inlet_state[0].mass_flow["Yb"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Lu"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["Th"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].mass_flow["U"].fix(0)
@@ -81,7 +81,12 @@ print(dof(m))
 solver = SolverFactory("ipopt")
 solver.solve(m, tee=True)
 
+# All organic outlets display
 m.fs.solex.Orgacid[0,1].mass_flow.display()
+m.fs.solex.Orgacid[0,2].mass_flow.display()
+m.fs.solex.Orgacid[0,3].mass_flow.display()
+
+# All aqueous outlets display
 m.fs.solex.Acidsoln[0,1].mass_flow.display()
-
-
+m.fs.solex.Acidsoln[0,2].mass_flow.display()
+m.fs.solex.Acidsoln[0,3].mass_flow.display()

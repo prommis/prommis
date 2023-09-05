@@ -107,7 +107,7 @@ class REESolExAqParameterData(PhysicalParameterBlock):
         obj.add_default_units(
             {
                 "time": units.hour,
-                "mass": units.kg, 
+                "mass": units.g, 
                 "amount": units.mol,
                 "length": units.m,
                 "temperature": units.K
@@ -123,23 +123,23 @@ class REESolExAqStateBlockData(StateBlockData):
     def build(self):
         super().build()
 
-        self.mass_flow = Var(self.params.dissolved_elements, units=units.g/units.hour)
+        self.flow_mass = Var(self.params.dissolved_elements, units=units.g/units.hour)
 
-        self.volumetric_flow = Var(units=units.L/units.hour)
+        self.flow_vol = Var(units=units.L/units.hour)
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.mass
     
     def get_material_flow_terms(self, j):
         if j in self.params.dissolved_elements:  
-            return self.mass_flow[j]
+            return self.flow_mass[j]
         elif j=="H2SO4":
-            return self.volumetric_flow * (1840 * units.g/units.L) 
+            return self.flow_vol * (1840 * units.g/units.L) 
         else:
             raise BurntToast()
         
     def define_state_vars(self):
         return {
-            "volumetric_flow": self.volumetric_flow,
-            "mass_flow": self.mass_flow
+            "flow_vol": self.flow_vol,
+            "flow_mass": self.flow_mass
         }

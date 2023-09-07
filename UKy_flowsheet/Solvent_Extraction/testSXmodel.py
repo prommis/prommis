@@ -1,7 +1,6 @@
 from pyomo.environ import (
     ConcreteModel,
-    SolverFactory,
-    units,
+    SolverFactory, 
 )
 
 from idaes.core import FlowsheetBlock
@@ -26,26 +25,26 @@ m.fs.solex = REESX(number_of_finite_elements=3,
 
 #Aqueous feed fixing
 m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Al"].fix(0)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Ca"].fix(0.02e-3 * units.kg / units.hour)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Ca"].fix(0.02)
 m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Fe"].fix(0)
 m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Si"].fix(0)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Sc"].fix(0.92e-3 * units.kg / units.hour)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Y"].fix(2.82e-3 * units.kg / units.hour)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["La"].fix(8.98e-3 * units.kg / units.hour)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Ce"].fix(19.94e-3 * units.kg / units.hour)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Pr"].fix(3.34e-3 * units.kg / units.hour)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Nd"].fix(9.04e-3 * units.kg / units.hour)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Sc"].fix(0.92)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Y"].fix(2.82)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["La"].fix(8.98)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Ce"].fix(19.94)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Pr"].fix(3.34)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Nd"].fix(9.04)
 m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Pm"].fix(0)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Sm"].fix(1.63e-3 * units.kg / units.hour)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Eu"].fix(0.11e-3 * units.kg / units.hour)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Gd"].fix(0.77e-3 * units.kg / units.hour)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Tb"].fix(0.33e-3 * units.kg / units.hour)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Dy"].fix(0.45e-3 * units.kg / units.hour)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Sm"].fix(1.63)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Eu"].fix(0.11)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Gd"].fix(0.77)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Tb"].fix(0.33)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Dy"].fix(0.45)
 m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Ho"].fix(0)
 m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Er"].fix(0)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Tm"].fix(0.18e-3 * units.kg / units.hour)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Yb"].fix(0.29e-3 * units.kg / units.hour)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Lu"].fix(0.14e-3 * units.kg / units.hour)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Tm"].fix(0.18)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Yb"].fix(0.29)
+m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Lu"].fix(0.14)
 m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Th"].fix(0)
 m.fs.solex.Acidsoln_inlet_state[0].flow_mass["U"].fix(0)
 
@@ -56,7 +55,7 @@ m.fs.solex.Orgacid_inlet_state[0].flow_mass["Al"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ca"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].flow_mass["Fe"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].flow_mass["Si"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sc"].fix(19.93e-3 * units.kg / units.hour)
+m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sc"].fix(19.93)
 m.fs.solex.Orgacid_inlet_state[0].flow_mass["Y"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].flow_mass["La"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ce"].fix(0)

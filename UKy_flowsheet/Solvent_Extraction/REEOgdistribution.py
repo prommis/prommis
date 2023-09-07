@@ -123,7 +123,7 @@ class REESolExOgStateBlockData(StateBlockData):
     def build(self):
         super().build()
 
-        self.flow_mass = Var(self.params.dissolved_elements, units=units.kg/units.hour)
+        self.flow_mass = Var(self.params.dissolved_elements, units=units.g/units.hour)
 
         self.flow_vol = Var(units=units.L/units.hour)
 
@@ -134,7 +134,7 @@ class REESolExOgStateBlockData(StateBlockData):
         if j in self.params.dissolved_elements:  
             return self.flow_mass[j]
         elif j=="DEHPA":
-            return self.flow_vol * (0.9758 * units.kg/units.L)
+            return self.flow_vol * (975.8 * units.g/units.L)
         else:
             raise BurntToast()
         

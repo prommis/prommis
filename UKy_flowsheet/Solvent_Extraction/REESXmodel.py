@@ -234,7 +234,7 @@ class REESXData(UnitModelBlockData):
                     domain=Reals,
                         initialize=0.0,
                         doc=f"Extent of transfer in stream {stream}",
-                        units=pyunits.kg / pyunits.hr,
+                        units=pyunits.g / pyunits.hr,
                 )
                 self.add_component(
                         stream + "_distribution_extent",
@@ -244,11 +244,15 @@ class REESXData(UnitModelBlockData):
                 def distribution_extent_rule(b, t, s, j):
                     if j in ppack.dissolved_elements:
                       if s == self.elements.first():
-                        return distribution_extent[t, s, j] == in_state[t].flow_mass[j]*ppack.K_distribution[j]
-
+                        return distribution_extent[t, s, j] == pyunits.convert(
+                            in_state[t].flow_mass[j]*ppack.K_distribution[j],
+                            to_units=pyunits.g / pyunits.hour,
+                        )
                       else:
-                        return distribution_extent[t, s, j] == state_block[t, s-1].flow_mass[j]*ppack.K_distribution[j]
-
+                        return distribution_extent[t, s, j] == pyunits.convert(
+                            state_block[t, s-1].flow_mass[j]*ppack.K_distribution[j],
+                            to_units=pyunits.g / pyunits.hour,
+                        )
                     return Constraint.Skip
                 
                 distribution_extent_constraint = Constraint(self.flowsheet().time, self.elements,

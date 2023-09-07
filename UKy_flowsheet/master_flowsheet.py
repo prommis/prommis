@@ -251,7 +251,7 @@ def set_operating_conditions(m):
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ca"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Fe"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Si"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sc"].fix(19.93)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sc"].fix(19.93e-3 * units.kg / units.hour)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Y"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["La"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ce"].fix(0)

@@ -52,33 +52,6 @@ class TranslatorDataLeachingSX(TranslatorData):
     Translator block representing the leaching/SX interface
     """
 
-    CONFIG = TranslatorData.CONFIG()
-    CONFIG.declare(
-        "reaction_package",
-        ConfigValue(
-            default=None,
-            domain=is_reaction_parameter_block,
-            description="Reaction package to use for control volume",
-            doc="""Reaction parameter object used to define reaction calculations,
-    **default** - None.
-    **Valid values:** {
-    **None** - no reaction package,
-    **ReactionParameterBlock** - a ReactionParameterBlock object.}""",
-        ),
-    )
-    CONFIG.declare(
-        "reaction_package_args",
-        ConfigBlock(
-            implicit=True,
-            description="Arguments to use for constructing reaction packages",
-            doc="""A ConfigBlock with arguments to be passed to a reaction block(s)
-    and used when constructing these,
-    **default** - None.
-    **Valid values:** {
-    see reaction package for documentation.}""",
-        ),
-    )
-
     def build(self):
         """
         Begin building model.
@@ -120,7 +93,7 @@ class TranslatorDataLeachingSX(TranslatorData):
             self.unchanged_component,
             doc="Equality equation for unchanged components",
         )
-        def eq_unchanged_conmponent(blk, t, i):
+        def eq_unchanged_component(blk, t, i):
             return (
                 blk.properties_out[t].flow_mass[i]
                 == blk.properties_in[t].get_material_flow_terms("Liq", i)

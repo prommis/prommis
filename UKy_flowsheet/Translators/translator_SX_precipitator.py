@@ -37,7 +37,10 @@ from pyomo.environ import (
     units as pyunits,
     check_optimal_termination,
     Set,
+    value,
 )
+
+from math import log10
 
 __author__ = "Marcus Holly"
 
@@ -46,38 +49,11 @@ __author__ = "Marcus Holly"
 _log = idaeslog.getLogger(__name__)
 
 
-@declare_process_block_class("Translator_SX_Precipitator")
+@declare_process_block_class("Translator_SX_precipitator")
 class TranslatorDataLeachingSX(TranslatorData):
     """
     Translator block representing the SX/precipitator interface
     """
-
-    CONFIG = TranslatorData.CONFIG()
-    CONFIG.declare(
-        "reaction_package",
-        ConfigValue(
-            default=None,
-            domain=is_reaction_parameter_block,
-            description="Reaction package to use for control volume",
-            doc="""Reaction parameter object used to define reaction calculations,
-    **default** - None.
-    **Valid values:** {
-    **None** - no reaction package,
-    **ReactionParameterBlock** - a ReactionParameterBlock object.}""",
-        ),
-    )
-    CONFIG.declare(
-        "reaction_package_args",
-        ConfigBlock(
-            implicit=True,
-            description="Arguments to use for constructing reaction packages",
-            doc="""A ConfigBlock with arguments to be passed to a reaction block(s)
-    and used when constructing these,
-    **default** - None.
-    **Valid values:** {
-    see reaction package for documentation.}""",
-        ),
-    )
 
     def build(self):
         """
@@ -90,59 +66,146 @@ class TranslatorDataLeachingSX(TranslatorData):
         # Call UnitModel.build to setup dynamics
         super(TranslatorDataLeachingSX, self).build()
 
-        @self.Constraint(
+        mw_al = 0.02698154 * pyunits.kg / pyunits.mol
+        mw_ca = 0.03996259 * pyunits.kg / pyunits.mol
+        mw_fe = 0.05593494 * pyunits.kg / pyunits.mol
+
+        @self.Expression(
             self.flowsheet().time,
-            doc="Equality volumetric flow equation",
+            doc="Mass flow of solvent (kg/s)",
         )
-        def eq_flow_vol_rule(blk, t):
-            return blk.properties_out[t].flow_vol == blk.properties_in[t].flow_vol
-
-        # @self.Constraint(
-        #     self.flowsheet().time,
-        #     doc="Equality temperature equation",
-        # )
-        # def eq_temperature_rule(blk, t):
-        #     return blk.properties_out[t].temperature == blk.properties_in[t].temperature
-
-        # @self.Constraint(
-        #     self.flowsheet().time,
-        #     doc="Equality pressure equation",
-        # )
-        # def eq_pressure_rule(blk, t):
-        #     return blk.properties_out[t].pressure == blk.properties_in[t].pressure
-
-        self.unchanged_component = Set(
-            initialize=["Al", "Ca", "Fe", "Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
-        )
-
-        @self.Constraint(
-            self.flowsheet().time,
-            self.unchanged_component,
-            doc="Equality equation for unchanged components",
-        )
-        def eq_unchanged_conmponent(blk, t, i):
+        def solvent_mass_flow(blk, t):
             return (
-                blk.properties_out[t].flow_mass[i]
-                == blk.properties_in[t].get_material_flow_terms("Liq", i)
+                pyunits.convert(blk.properties_in[t].flow_vol, to_units=pyunits.L / pyunits.s,)
+                * (1.840 * pyunits.kg/pyunits.L)
             )
 
-        # self.acid_set = Set(
-        #     initialize=[
-        #         "H",
-        #         "HSO4",
-        #         "SO4",
-        #     ]
-        # )
-        #
-        # @self.Constraint(
-        #     self.flowsheet().time,
-        #     self.acid_set,
-        #     doc="Components with no flow equation",
-        # )
-        # def eq_acid_set(blk, t, i):
-        #     return blk.properties_out[t].flow_mass["H2SO4"] == sum(
-        #         blk.properties_in[t].get_material_flow_terms("Liq", i) for i in blk.acid_set
-        #     )
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Equality mass flow equation (kg/s)",
+        )
+        def eq_flow_mass_rule(blk, t):
+            return (
+                    blk.properties_out[t].flow_mass
+                    == blk.solvent_mass_flow[t]
+            )
+
+        #TODO: may need to add oxalate, which will be added from a separate stream
+        #TODO: may need a separate translator block for this or a mixer prior to this block?
+
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Aluminum molar flow (mol/s)",
+        )
+        def aluminum_molar_flow(blk, t):
+            return (
+                pyunits.convert(blk.properties_in[t].flow_mass["Al"], to_units=pyunits.kg / pyunits.s,)
+                / mw_al
+            )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Aluminum log10 molality",
+        )
+        def eq_aluminum_molality(blk, t):
+            return (
+                blk.properties_out[t].log10_molality_comp["Al^3+"]
+                == log10(value(blk.aluminum_molar_flow[t] / blk.solvent_mass_flow[t]))
+            )
+
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Calcium molar flow (mol/s)",
+        )
+        def calcium_molar_flow(blk, t):
+            return (
+                pyunits.convert(blk.properties_in[t].flow_mass["Ca"], to_units=pyunits.kg / pyunits.s,)
+                / mw_ca
+            )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Calcium log10 molality",
+        )
+        def eq_calcium_molality(blk, t):
+            return (
+                blk.properties_out[t].log10_molality_comp["Ca^2+"]
+                == log10(value(blk.calcium_molar_flow[t] / blk.solvent_mass_flow[t]))
+            )
+
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Iron molar flow (mol/s)",
+        )
+        def iron_molar_flow(blk, t):
+            return (
+                pyunits.convert(blk.properties_in[t].flow_mass["Fe"], to_units=pyunits.kg / pyunits.s,)
+                / mw_fe
+            )
+
+        # Assume all iron forms iron(III) ions
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Iron log10 molality",
+        )
+        def eq_iron_molality(blk, t):
+            return (
+                blk.properties_out[t].log10_molality_comp["Fe^3+"]
+                == log10(value(blk.iron_molar_flow[t] / blk.solvent_mass_flow[t]))
+            )
+
+        #TODO: Need to create pH adjustment block and track pH in SX stream instead of just fixing pH (as done below)
+        pH = 2.5
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Hydrogen log10 molality",
+        )
+        def eq_hydrogen_molality(blk, t):
+            return (
+                blk.properties_out[t].log10_molality_comp["H^+"]
+                == log10(value(10**(-pH)))
+            )
+
+        # water dissociation equilibrium constant at 25C
+        Kw = 1e-14
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Hydroxide log10 molality",
+        )
+        def eq_hydroxide_molality(blk, t):
+            return (
+                blk.properties_out[t].log10_molality_comp["OH^-"]
+                == log10(value(Kw / 10**(-pH)))
+            )
+
+    #TODO: Consider changing this to a zero or just removing all these components from the precipitator
+
+    #     self.zero_flow_components = Set(
+    #         initialize=[
+    #             "Na^+",
+    #             "Ce^3+",
+    #             "Fe^2+",
+    #             "Mg^2+",
+    #             "NO3^-",
+    #             "SO4^2-",
+    #             "Cl^-",
+    #         ]
+    #     )
+    #
+    #     @self.Constraint(
+    #         self.flowsheet().time,
+    #         self.zero_flow_components,
+    #         doc="Components with no flow equation",
+    #     )
+    #     def return_zero_flow_molality(blk, t, i):
+    #         return (
+    #             blk.properties_out[t].log10_molality_comp[i]
+    #             == 1e-9 # Change this value
+    #         )
+
+
 
     def initialize_build(
         self,

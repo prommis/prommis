@@ -25,7 +25,7 @@ _default_units = {
     "length": pyo.units.m,
     "mass": pyo.units.kg,
     "amount": pyo.units.mol,
-    "temperature": pyo.units.K,
+    # "temperature": pyo.units.K,
 }
 
 
@@ -169,6 +169,7 @@ def build_parameter_block(blk):
         initialize=0.5108,
         mutable=True,
         doc="A parameter in the Davies activity coefficient equation",
+        units=pyo.units.mol / pyo.units.kg,
     )
     blk.b_act = pyo.Param(
         initialize=0.3,
@@ -235,8 +236,8 @@ class AqueousStateParameterBlockData(PhysicalParameterBlock):
         obj.define_property_set(ElectrolytePropertySet)
         obj.add_properties(
             {
-                "temperature": {"method": None, "units": "K"},
-                "pressure": {"method": None, "units": "Pa"},
+                # "temperature": {"method": None, "units": "K"},
+                # "pressure": {"method": None, "units": "Pa"},
                 "flow_mass": {"method": None, "units": "kg/s"},
                 "log10_molality_comp": {
                     "method": None,
@@ -271,7 +272,7 @@ class PrecipitateStateParameterBlockData(PhysicalParameterBlock):
         obj.define_property_set(ElectrolytePropertySet)
         obj.add_properties(
             {
-                "temperature": {"method": None, "units": "K"},
+                # "temperature": {"method": None, "units": "K"},
                 "flow_mol_comp": {"method": None, "units": "mol/s"},
             }
         )
@@ -333,7 +334,7 @@ class AqueousStateBlockData(StateBlockData):
 
         @self.Expression(params.key_set | params.aq_set)
         def molality_comp(blk, comp):
-            return 10 ** blk.log10_molality_comp[comp] * pyo.units.mmol / pyo.units.kg
+            return 10 ** blk.log10_molality_comp[comp] * pyo.units.mol / pyo.units.kg
 
         self.charge_concentration = pyo.Expression(
             expr=sum(
@@ -344,16 +345,23 @@ class AqueousStateBlockData(StateBlockData):
             doc="The charge molality of the solution.",
         )
 
+        self.eps_unit = pyo.Param(
+            initialize=1e-4,
+            mutable=True,
+            doc="A parameter in the Davies activity coefficient equation",
+            units=pyo.units.mol / pyo.units.kg,
+        )
+
+
         # Usually the ionic charge should be balanced, but in some cases it
         # may be convenient not to enforce a charge balance.  In the case
         # where charge is not balanced, we just assume that ions exist to
         # balance the charge, but they do not participate in reactions. The
         # unspecified ions are assumed to have a charge of -1 or 1.
-
         self.ionic_strength = pyo.Expression(
             expr=0.5
             * (
-                smooth_abs(self.charge_concentration)
+                smooth_abs(self.charge_concentration, eps=self.eps_unit)
                 + sum(
                     self.molality_comp[i] * params.charge[i] ** 2
                     for i in params.key_set | params.aq_set
@@ -381,7 +389,7 @@ class AqueousStateBlockData(StateBlockData):
             I = blk.ionic_strength
             sqrtI = pyo.sqrt(I)
             z = blk.params.charge[comp]
-            return blk.log10_act_coeff[comp] == B * I - A * z**2 * sqrtI / (1 + sqrtI)
+            return blk.log10_act_coeff[comp] == (B * I - A * z**2 * sqrtI / (1* pyo.units.mol**0.5 / pyo.units.kg**0.5 + sqrtI))/pyo.units.mol * pyo.units.kg
 
         """
         @self.Expression(
@@ -446,6 +454,6 @@ class PrecipitateStateBlockData(StateBlockData):
 
     def define_state_vars(self):
         return {
-            "flow_mol_comp": self.flow_mol_comp,
+            "flow_mass": self.flow_mol_comp,
             # "temperature": self.temperature,
         }

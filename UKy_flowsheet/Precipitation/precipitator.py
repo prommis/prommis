@@ -38,6 +38,11 @@ import workspace.UKy_flowsheet.Precipitation.precip_prop as precip_prop
 from idaes.core.util.config import is_physical_parameter_block
 import idaes.logger as idaeslog
 
+from idaes.core.initialization import (
+    BlockTriangularizationInitializer,
+    InitializationStatus,
+)
+
 _log = idaeslog.getLogger(__name__)
 
 
@@ -145,7 +150,9 @@ class PrecipitatorData(UnitModelBlockData):
             return blk.cv_aqueous.properties_out[
                 t
             ].flow_mass == blk.cv_aqueous.properties_in[t].flow_mass - sum(
-                blk.molality_precipitate_comp[t, i] for i in prop_s.solid_set
+                blk.molality_precipitate_comp[t, i] * d["stoich"][i]
+                    for i, d in prop_aq.solid_dict.items()
+                    if i in d["stoich"]
             )
 
         # @self.Constraint(self.flowsheet().time, doc="")
@@ -154,7 +161,7 @@ class PrecipitatorData(UnitModelBlockData):
         #         blk.cv_aqueous.properties_out[t].temperature
         #         == blk.cv_aqueous.properties_in[t].temperature
         #     )
-        #
+
         # @self.Constraint(self.flowsheet().time)
         # def temperature_s_eqn(blk, t):
         #     return (
@@ -388,6 +395,7 @@ class PrecipitatorData(UnitModelBlockData):
             initialize=1e-6,
             mutable=True,
             doc="Smoothing parameter for the precipitation complementarity constraint.",
+            units=pyo.units.mol / pyo.units.kg,
         )
 
         self.scale_factor_precipitate_molality = pyo.Param(
@@ -400,12 +408,13 @@ class PrecipitatorData(UnitModelBlockData):
             initialize=1,
             mutable=True,
             doc="Precipitate constraint saturation index scaling factor",
+            units=pyo.units.mol / pyo.units.kg,
         )
 
         # self.scale_factor_pressure = pyo.Param(
         #     initialize=1e-5, mutable=True, doc="Pressure scaling factor"
         # )
-        #
+
         # self.scale_factor_temperature = pyo.Param(
         #     initialize=1e-2, mutable=True, doc="Temperature scaling factor"
         # )
@@ -518,7 +527,6 @@ class PrecipitatorData(UnitModelBlockData):
 def make_a_test_model():
     from idaes.core import FlowsheetBlock
 
-
     key_components = {
         "H^+",
         "Ce^3+",
@@ -572,8 +580,12 @@ def main():
     # m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["SO4^2-"].fix(-10)
 
     m.fs.unit.calculate_scaling_factors()
-
     assert_units_consistent(m)
+
+    initializer = BlockTriangularizationInitializer(constraint_tolerance=2e-5)
+    initializer.initialize(m.fs.unit)
+
+    assert initializer.summary[m.fs.unit]["status"] == InitializationStatus.Ok
 
     solver_obj = pyo.SolverFactory(
         "ipopt",
@@ -606,3 +618,4 @@ if __name__ == "__main__":
     m.fs.unit.cv_precipitate.properties_out[0].flow_mol_comp.display()
     m.fs.unit.molality_precipitate_comp.display()
     m.fs.unit.pH.display()
+    m.fs.unit.display()

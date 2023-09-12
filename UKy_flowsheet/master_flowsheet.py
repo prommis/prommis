@@ -71,6 +71,14 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
 )
 
+from idaes.core.initialization import (
+    BlockTriangularizationInitializer,
+    SingleControlVolumeUnitInitializer,
+    InitializationStatus,
+)
+
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+
 def main():
     m = build()
     set_operating_conditions(m)
@@ -152,10 +160,10 @@ def build():
         key_components=key_components,
     )
 
-    m.fs.SX_to_precipitator = Translator_SX_precipitator(
-        inlet_property_package=m.fs.prop_a,
-        outlet_property_package=m.fs.properties_aq,
-    )
+    # m.fs.SX_to_precipitator = Translator_SX_precipitator(
+    #     inlet_property_package=m.fs.prop_a,
+    #     outlet_property_package=m.fs.properties_aq,
+    # )
 
     # m.fs.M01 = Mixer(
     #     property_package=m.fs.properties_aq,
@@ -202,9 +210,9 @@ def build():
     m.fs.s03 = Arc(source=m.fs.leach_to_SX.outlet, destination=m.fs.solex.Acidsoln_inlet)
     # m.fs.s03 = Arc(source=m.fs.oxalic_acid_feed.outlet, destination=m.fs.solex.Orgacid_inlet)
     m.fs.s04 = Arc(source=m.fs.solex.Orgacid_outlet, destination=m.fs.sx_leach_acid.inlet) # Should eventually convert to a recycle
-    # m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.sx_acid_soln.inlet)
-    m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.SX_to_precipitator.inlet)
-    m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.precipitator.aqueous_inlet)
+    m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.sx_acid_soln.inlet)
+    # m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.SX_to_precipitator.inlet)
+    # m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.precipitator.aqueous_inlet)
     # m.fs.s07 = Arc(source=m.fs.oxalic_acid_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
 
     # m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
@@ -305,8 +313,12 @@ def set_operating_conditions(m):
     # m.fs.leach.del_component(m.fs.leach.energy_transfer_term)
 
 def initialize_system(m):
-    initializer = MSContactorInitializer()
-    initializer.initialize(m.fs.leach)
+    initializer1 = MSContactorInitializer()
+    initializer1.initialize(m.fs.leach)
+
+    # initializer2 = BlockTriangularizationInitializer()
+    # initializer2.initialize(m.fs.leach_to_SX)
+
 
 def solve(m):
     solver = SolverFactory("ipopt")
@@ -319,13 +331,13 @@ def display_results(m):
     m.fs.sx_acid_soln.display()
     m.fs.sx_acid_soln.report()
 
-    ac3 = value(m.fs.solex.Acidsoln[0,3].flow_mass["Al"])
-    ac2 = value(m.fs.solex.Acidsoln[0,2].flow_mass["Al"])
-    ac1 = value(m.fs.solex.Acidsoln[0,1].flow_mass["Al"])
-
-    print(f"ac3 is {ac3}")
-    print(f"ac2 is {ac2}")
-    print(f"ac1 is {ac1}")
+    # ac3 = value(m.fs.solex.Acidsoln[0,3].flow_mass["Al"])
+    # ac2 = value(m.fs.solex.Acidsoln[0,2].flow_mass["Al"])
+    # ac1 = value(m.fs.solex.Acidsoln[0,1].flow_mass["Al"])
+    #
+    # print(f"ac3 is {ac3}")
+    # print(f"ac2 is {ac2}")
+    # print(f"ac1 is {ac1}")
 
 if __name__ == "__main__":
     m, results = main()

@@ -6,6 +6,8 @@ from pyomo.environ import (
 from idaes.core import FlowsheetBlock
 
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
+from idaes.core.initialization.block_triangularization import BlockTriangularizationInitializer
+from idaes.core.initialization import InitializationStatus
 
 from REESXmodel import REESX
 
@@ -77,6 +79,10 @@ m.fs.solex.Orgacid_inlet_state[0].flow_mass["U"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].flow_vol.fix(62.01)
 
 print(dof(m))
+
+initializer = BlockTriangularizationInitializer()
+initializer.initialize(m.fs.solex)
+assert initializer.summary[m.fs.solex]["status"] == InitializationStatus.Ok
 
 solver = SolverFactory("ipopt")
 solver.solve(m, tee=True)

@@ -20,7 +20,7 @@ class REESolExOgParameterData(PhysicalParameterBlock):
         self.Al = Component()
         self.Ca = Component()
         self.Fe = Component()
-        self.Si = Component()
+        # self.Si = Component()
 
         # REEs
         self.Sc = Component()
@@ -29,19 +29,19 @@ class REESolExOgParameterData(PhysicalParameterBlock):
         self.Ce = Component()
         self.Pr = Component()
         self.Nd = Component()
-        self.Pm = Component()
+        # self.Pm = Component()
         self.Sm = Component()
-        self.Eu = Component()
+        # self.Eu = Component()
         self.Gd = Component()
-        self.Tb = Component()
+        # self.Tb = Component()
         self.Dy = Component()
-        self.Ho = Component()
-        self.Er = Component()
-        self.Tm = Component()
-        self.Yb = Component()
-        self.Lu = Component()
-        self.Th = Component()
-        self.U = Component()
+        # self.Ho = Component()
+        # self.Er = Component()
+        # self.Tm = Component()
+        # self.Yb = Component()
+        # self.Lu = Component()
+        # self.Th = Component()
+        # self.U = Component()
 
         # separate solutes
 
@@ -49,52 +49,52 @@ class REESolExOgParameterData(PhysicalParameterBlock):
             "Al",
             "Ca",
             "Fe",
-            "Si",
+            # "Si",
             "Sc",
             "Y",
             "La",
             "Ce",
             "Pr",
             "Nd",
-            "Pm",
+            # "Pm",
             "Sm",
-            "Eu",
+            # "Eu",
             "Gd",
-            "Tb",
+            # "Tb",
             "Dy",
-            "Ho",
-            "Er",
-            "Tm",
-            "Yb",
-            "Lu",
-            "Th",
-            "U"
+            # "Ho",
+            # "Er",
+            # "Tm",
+            # "Yb",
+            # "Lu",
+            # "Th",
+            # "U"
         ])
 
         self.K_distribution = Param(self.dissolved_elements, initialize = {
             "Al":3.6/100,
             "Ca":3.7/100,
             "Fe":2.1/100,
-            "Si":0/100,
+            # "Si":0/100,
             "Sc":100/100,
             "Y":100/100,
             "La":75.2/100,
             "Ce":95.7/100,
             "Pr":96.5/100,
             "Nd":99.2/100,
-            "Pm":100/100,
+            # "Pm":100/100,
             "Sm":100/100,
-            "Eu":99.9/100,
+            # "Eu":99.9/100,
             "Gd":98.6/100,
-            "Tb":99.3/100,
+            # "Tb":99.3/100,
             "Dy":99.9/100,
-            "Ho":99.5/100,
-            "Er":99.5/100,
-            "Tm":98.6/100,
-            "Yb":80.7/100,
-            "Lu":99.5/100,
-            "Th":5/100,
-            "U":99.5/100
+            # "Ho":99.5/100,
+            # "Er":99.5/100,
+            # "Tm":98.6/100,
+            # "Yb":80.7/100,
+            # "Lu":99.5/100,
+            # "Th":5/100,
+            # "U":99.5/100
         }, mutable=True,
         units=units.dimensionless,
         doc="The fraction of component that goes from aqueous to organic phase")

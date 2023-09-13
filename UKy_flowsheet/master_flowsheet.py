@@ -77,6 +77,8 @@ from idaes.core.initialization import (
     InitializationStatus,
 )
 
+from idaes.core.util.initialization import propagate_state
+
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 def main():
@@ -141,11 +143,11 @@ def build():
 
     key_components = {
         "H^+",
-        "Ce^3+",
+        # "Ce^3+",
         "Al^3+",
         "Fe^3+",
         # "Fe^2+",
-        # "Ca^2+",
+        "Ca^2+",
         # "Mg^2+",
         "C2O4^2-",
         # "NO3^-",
@@ -262,29 +264,17 @@ def set_operating_conditions(m):
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Al"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ca"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Fe"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Si"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sc"].fix(19.93 * units.g / units.hour)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Y"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["La"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ce"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Pr"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Nd"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Pm"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sm"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Eu"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Gd"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Tb"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Dy"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ho"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Er"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Tm"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Yb"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Lu"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Th"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["U"].fix(0)
 
     # Oxalic acid feed to precipitator - assume no oxalic acid
-    # m.fs.precipitator.cv_precipitate.properties_in[0].temperature.fix(300)
     m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.fix(0)
 
     # Reactor volume
@@ -313,11 +303,16 @@ def set_operating_conditions(m):
     # m.fs.leach.del_component(m.fs.leach.energy_transfer_term)
 
 def initialize_system(m):
+    # Initialize leaching section
     initializer1 = MSContactorInitializer()
     initializer1.initialize(m.fs.leach)
 
-    # initializer2 = BlockTriangularizationInitializer()
-    # initializer2.initialize(m.fs.leach_to_SX)
+    # Initialize leaching -> SX translator
+    propagate_state(m.fs.s02)
+    # m.fs.leach_to_SX.properties_in[0].flow_vol = m.fs.leach.liquid_outlet.flow_vol
+
+    initializer2 = BlockTriangularizationInitializer()
+    initializer2.initialize(m.fs.leach_to_SX)
 
 
 def solve(m):

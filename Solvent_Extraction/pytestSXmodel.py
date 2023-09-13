@@ -10,6 +10,8 @@ from REEOgdistribution import REESolExOgParameters
 
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.core.initialization.block_triangularization import BlockTriangularizationInitializer
+from idaes.core.initialization import InitializationStatus
 
 from pyomo.util.check_units import assert_units_consistent
 
@@ -236,3 +238,11 @@ class TestSXmodel:
         assert value(m.fs.solex.Orgacid[0,1].flow_mass["U"]) == pytest.approx(
             0, rel=1e-2
         )
+    
+    @pytest.mark.component
+    def test_block_triangularization(self, model):
+        initializer = BlockTriangularizationInitializer(constraint_tolerance=2e-5)
+        initializer.initialize(model.fs.solex)
+
+        assert initializer.summary[model.fs.solex]["status"] == InitializationStatus.Ok
+

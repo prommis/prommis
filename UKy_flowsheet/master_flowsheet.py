@@ -322,12 +322,24 @@ def initialize_system(m):
     # Initialize SX -> precipitation translator
     propagate_state(m.fs.s05)
 
-    # Should this be a sum of the elements?
-    Al_mass_flow = units.convert((m.fs.solex.Acidsoln[0, 1].flow_mass["Al"]), to_units=units.kg / units.s,)
+    m.fs.SX_to_precipitator.properties_in[0].initializer2().initialize(m.fs.SX_to_precipitator.properties_in)
+    init_arg = {
+        ("flow_mass", ("Al")): 2.0789e-5,   # kg/s
+        ("flow_mass", ("Ca")): 4.9823e-6,   # kg/s
+        ("flow_mass", ("Fe")): 4.5331e-5,   # kg/s
+    }
+    m.fs.SX_to_precipitator.properties.calculate_state(
+        init_arg,
+        hold_state=True,
+    )
+    m.fs.SX_to_precipitator.properties_out[0].initializer2().initialize(m.fs.SX_to_precipitator.properties_out)
 
-    m.fs.SX_to_precipitator.properties_in[0].flow_mass["Al"] = value(Al_mass_flow)
+    # # Should this be a sum of the elements?
+    # Al_mass_flow = units.convert((m.fs.solex.Acidsoln[0, 1].flow_mass["Al"]), to_units=units.kg / units.s,)
+    #
+    # m.fs.SX_to_precipitator.properties_in[0].flow_mass["Al"] = value(Al_mass_flow)
 
-    initializer2.initialize(m.fs.SX_to_precipitator)
+    # initializer2.initialize(m.fs.SX_to_precipitator)
 
 def solve(m):
     solver = SolverFactory("ipopt")

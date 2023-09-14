@@ -97,6 +97,8 @@ class TranslatorDataLeachingSX(TranslatorData):
             return (
                 blk.properties_out[t].flow_mass[i]
                 == blk.properties_in[t].get_material_flow_terms("Liq", i)
+                * blk.properties_in[t].params.mw[i]
+                * 1000 * pyunits.g / pyunits.kg
             )
 
         # self.acid_set = Set(

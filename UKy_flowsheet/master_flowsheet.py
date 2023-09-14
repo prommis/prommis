@@ -162,10 +162,10 @@ def build():
         key_components=key_components,
     )
 
-    # m.fs.SX_to_precipitator = Translator_SX_precipitator(
-    #     inlet_property_package=m.fs.prop_a,
-    #     outlet_property_package=m.fs.properties_aq,
-    # )
+    m.fs.SX_to_precipitator = Translator_SX_precipitator(
+        inlet_property_package=m.fs.prop_a,
+        outlet_property_package=m.fs.properties_aq,
+    )
 
     # m.fs.M01 = Mixer(
     #     property_package=m.fs.properties_aq,
@@ -212,9 +212,9 @@ def build():
     m.fs.s03 = Arc(source=m.fs.leach_to_SX.outlet, destination=m.fs.solex.Acidsoln_inlet)
     # m.fs.s03 = Arc(source=m.fs.oxalic_acid_feed.outlet, destination=m.fs.solex.Orgacid_inlet)
     m.fs.s04 = Arc(source=m.fs.solex.Orgacid_outlet, destination=m.fs.sx_leach_acid.inlet) # Should eventually convert to a recycle
-    m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.sx_acid_soln.inlet)
-    # m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.SX_to_precipitator.inlet)
-    # m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.precipitator.aqueous_inlet)
+    # m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.sx_acid_soln.inlet)
+    m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.SX_to_precipitator.inlet)
+    m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.precipitator.aqueous_inlet)
     # m.fs.s07 = Arc(source=m.fs.oxalic_acid_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
 
     # m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
@@ -322,25 +322,25 @@ def initialize_system(m):
     # Initialize SX -> precipitation translator
     propagate_state(m.fs.s05)
 
-    # m.fs.SX_to_precipitator.properties_in[0].initializer2().initialize(m.fs.SX_to_precipitator.properties_in)
+    m.fs.SX_to_precipitator.properties_in[0].initializer2().initialize(m.fs.SX_to_precipitator.properties_in)
     # properties (cannot be fixed for initialization routines, must calculate the state variables)
-    # init_arg = {
-    #     ("flow_mass", ("Al")): 2.0789e-5,   # kg/s
-    #     ("flow_mass", ("Ca")): 4.9823e-6,   # kg/s
-    #     ("flow_mass", ("Fe")): 4.5331e-5,   # kg/s
-    # }
-    # m.fs.SX_to_precipitator.properties.calculate_state(
-    #     init_arg,
-    #     hold_state=True,    # fixes the calculated component mass flow rates
-    # )
-    # m.fs.SX_to_precipitator.properties_out[0].initializer2().initialize(m.fs.SX_to_precipitator.properties_out)
+    init_arg = {
+        ("flow_mass", ("Al")): 2.0789e-5,   # kg/s
+        ("flow_mass", ("Ca")): 4.9823e-6,   # kg/s
+        ("flow_mass", ("Fe")): 4.5331e-5,   # kg/s
+    }
+    m.fs.SX_to_precipitator.properties_in.calculate_state(
+        init_arg,
+        hold_state=True,    # fixes the calculated component mass flow rates
+    )
+    m.fs.SX_to_precipitator.properties_out[0].initializer2().initialize(m.fs.SX_to_precipitator.properties_out)
 
     # # Should this be a sum of the elements?
     # Al_mass_flow = units.convert((m.fs.solex.Acidsoln[0, 1].flow_mass["Al"]), to_units=units.kg / units.s,)
     #
     # m.fs.SX_to_precipitator.properties_in[0].flow_mass["Al"] = value(Al_mass_flow)
 
-    # initializer2.initialize(m.fs.SX_to_precipitator)
+    initializer2.initialize(m.fs.SX_to_precipitator)
 
 def solve(m):
     solver = SolverFactory("ipopt")

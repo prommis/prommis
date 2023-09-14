@@ -10,7 +10,7 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 """
-Translator block converting from leaching properties to solvent extraction properties.
+Translator block converting from old_leaching properties to solvent extraction properties.
 This is copied from the IDAES Generic template for a translator block.
 
 Assumptions:
@@ -49,7 +49,7 @@ _log = idaeslog.getLogger(__name__)
 @declare_process_block_class("Translator_leaching_SX")
 class TranslatorDataLeachingSX(TranslatorData):
     """
-    Translator block representing the leaching/SX interface
+    Translator block representing the old_leaching/SX interface
     """
 
     def build(self):

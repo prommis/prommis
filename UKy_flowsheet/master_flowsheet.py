@@ -25,6 +25,7 @@ from pyomo.environ import (
     units,
     Var,
     value,
+    Suffix,
 )
 from pyomo.network import Arc
 from pyomo.util.check_units import assert_units_consistent
@@ -47,18 +48,18 @@ from idaes.models.unit_models.separator import (
 from idaes.models.unit_models import Mixer, Product, Feed, Translator
 from idaes.core.util.model_statistics import degrees_of_freedom
 
-from workspace.UKy_flowsheet.leaching.leach_solution_properties import LeachSolutionParameters
-from workspace.UKy_flowsheet.leaching.leach_solids_properties import CoalRefuseParameters
-from workspace.UKy_flowsheet.leaching.leach_reactions import CoalRefuseLeachingReactions
+from workspace.UKy_flowsheet.old_leaching.leach_solution_properties import LeachSolutionParameters
+from workspace.UKy_flowsheet.old_leaching.leach_solids_properties import CoalRefuseParameters
+from workspace.UKy_flowsheet.old_leaching.leach_reactions import CoalRefuseLeachingReactions
 
-from workspace.UKy_flowsheet.Solvent_Extraction.REESXmodel import REESX
-from workspace.UKy_flowsheet.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
-from workspace.UKy_flowsheet.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
+from workspace.Solvent_Extraction.REESXmodel import REESX
+from workspace.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
+from workspace.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
 
-from workspace.UKy_flowsheet.Precipitation.precipitator import Precipitator
-from workspace.UKy_flowsheet.Precipitation.precip_prop import AqueousStateParameterBlock, PrecipitateStateParameterBlock
+from workspace.precipitate.precipitator import Precipitator
+from workspace.precipitate.precip_prop import AqueousStateParameterBlock, PrecipitateStateParameterBlock
 
-from workspace.UKy_flowsheet.Roasting.ree_oxalate_roster import REEOxalateRoaster
+from workspace.roasting.ree_oxalate_roster import REEOxalateRoaster
 
 from workspace.UKy_flowsheet.Translators.translator_leaching_SX import Translator_leaching_SX
 from workspace.UKy_flowsheet.Translators.translator_SX_precipitator import Translator_SX_precipitator
@@ -234,14 +235,14 @@ def build():
     return m
 
 def set_operating_conditions(m):
-    # Liquid feed to leaching unit
+    # Liquid feed to old_leaching unit
     m.fs.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
     m.fs.leach.liquid_inlet.conc_mass_metals.fix(1e-10 * units.mg / units.L)
     m.fs.leach.liquid_inlet.conc_mole_acid[0, "H"].fix(2 * 0.05 * units.mol / units.L)
     m.fs.leach.liquid_inlet.conc_mole_acid[0, "HSO4"].fix(1e-8 * units.mol / units.L)
     m.fs.leach.liquid_inlet.conc_mole_acid[0, "SO4"].fix(0.05 * units.mol / units.L)
 
-    # Solid feed to leaching unit
+    # Solid feed to old_leaching unit
     m.fs.leach.solid_inlet.flow_mass.fix(22.68 * units.kg / units.hour)
     m.fs.leach.solid_inlet.mass_frac_comp[0, "inerts"].fix(0.6952 * units.kg / units.kg)
     m.fs.leach.solid_inlet.mass_frac_comp[0, "Al2O3"].fix(0.237 * units.kg / units.kg)
@@ -299,15 +300,13 @@ def set_operating_conditions(m):
 
     print(degrees_of_freedom(m))
 
-    # TODO: Energy transfer term is not needed but still gets built
-    # m.fs.leach.del_component(m.fs.leach.energy_transfer_term)
 
 def initialize_system(m):
-    # Initialize leaching section
+    # Initialize old_leaching section
     initializer1 = MSContactorInitializer()
     initializer1.initialize(m.fs.leach)
 
-    # Initialize leaching -> SX translator
+    # Initialize old_leaching -> SX translator
     propagate_state(m.fs.s02)
 
     initializer2 = BlockTriangularizationInitializer()

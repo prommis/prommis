@@ -310,8 +310,6 @@ def initialize_system(m):
     # Initialize leaching -> SX translator
     propagate_state(m.fs.s02)
 
-    # m.fs.leach_to_SX.properties_in[0].flow_vol = m.fs.leach.liquid_outlet.flow_vol
-
     initializer2 = BlockTriangularizationInitializer()
     initializer2.initialize(m.fs.leach_to_SX)
 
@@ -322,24 +320,6 @@ def initialize_system(m):
     # Initialize SX -> precipitation translator
     propagate_state(m.fs.s05)
 
-    m.fs.SX_to_precipitator.properties_in[0].initializer2().initialize(m.fs.SX_to_precipitator.properties_in)
-    # properties (cannot be fixed for initialization routines, must calculate the state variables)
-    init_arg = {
-        ("flow_mass", ("Al")): 2.0789e-5,   # kg/s
-        ("flow_mass", ("Ca")): 4.9823e-6,   # kg/s
-        ("flow_mass", ("Fe")): 4.5331e-5,   # kg/s
-    }
-    m.fs.SX_to_precipitator.properties_in.calculate_state(
-        init_arg,
-        hold_state=True,    # fixes the calculated component mass flow rates
-    )
-    m.fs.SX_to_precipitator.properties_out[0].initializer2().initialize(m.fs.SX_to_precipitator.properties_out)
-
-    # # Should this be a sum of the elements?
-    # Al_mass_flow = units.convert((m.fs.solex.Acidsoln[0, 1].flow_mass["Al"]), to_units=units.kg / units.s,)
-    #
-    # m.fs.SX_to_precipitator.properties_in[0].flow_mass["Al"] = value(Al_mass_flow)
-
     initializer2.initialize(m.fs.SX_to_precipitator)
 
 def solve(m):
@@ -348,14 +328,10 @@ def solve(m):
     return results
 
 def display_results(m):
-    # m.fs.leach.liquid_outlet.display()
-    # m.fs.leach.solid_outlet.display()
-    m.fs.sx_acid_soln.display()
-    m.fs.sx_acid_soln.report()
-
-    Al_mass_flow = units.convert((m.fs.solex.Acidsoln[0, 1].flow_mass["Al"]), to_units=units.kg / units.s,)
-    Al = value(Al_mass_flow)
-    print(f"Aluminum mass flow is: {Al}")
+    m.fs.leach.liquid_outlet.display()
+    m.fs.leach.solid_outlet.display()
+    # m.fs.sx_acid_soln.display()
+    # m.fs.sx_acid_soln.report()
 
 if __name__ == "__main__":
     m, results = main()

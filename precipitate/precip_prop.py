@@ -20,6 +20,7 @@ from idaes.core import (
 )
 from idaes.core import declare_process_block_class
 from idaes.core.util.math import smooth_min, smooth_abs
+from idaes.core.util.initialization import fix_state_vars
 
 
 _default_units = {

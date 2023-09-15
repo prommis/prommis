@@ -49,6 +49,7 @@ from idaes.models.unit_models.mixer import (
     Mixer,
     MaterialBalanceType,
     MixingType,
+    MixerInitializer,
 )
 
 from idaes.models.unit_models import Product, Feed, Translator
@@ -341,6 +342,13 @@ def initialize_system(m):
 
     initializer2.initialize(m.fs.SX_to_precipitator)
 
+    # Initialize mixer
+    propagate_state(m.fs.s06)
+    propagate_state(m.fs.s07)
+
+    initializer3 = MixerInitializer()
+    initializer3.initialize(m.fs.mixer)
+
 def solve(m):
     solver = SolverFactory("ipopt")
     results = solver.solve(m, tee=True)
@@ -351,12 +359,12 @@ def display_results(m):
     m.fs.leach.solid_outlet.display()
     # m.fs.sx_acid_soln.display()
     # m.fs.sx_acid_soln.report()
-    print("-------SX to Precipitator--------")
-    m.fs.SX_to_precipitator.display()
-    print("-------Mixer--------")
-    m.fs.mixer.display()
-    print("-------Mixer Product--------")
-    m.fs.mixed_product.display()
+    # print("-------SX to Precipitator--------")
+    # m.fs.SX_to_precipitator.display()
+    # print("-------Mixer--------")
+    # m.fs.mixer.display()
+    # print("-------Mixer Product--------")
+    # m.fs.mixed_product.display()
 
 if __name__ == "__main__":
     m, results = main()

@@ -45,7 +45,13 @@ from idaes.models.unit_models.separator import (
     MaterialBalanceType,
 )
 
-from idaes.models.unit_models import Mixer, Product, Feed, Translator
+from idaes.models.unit_models.mixer import (
+    Mixer,
+    MaterialBalanceType,
+    MixingType,
+)
+
+from idaes.models.unit_models import Product, Feed, Translator
 from idaes.core.util.model_statistics import degrees_of_freedom
 
 from workspace.UKy_flowsheet.old_leaching.leach_solution_properties import LeachSolutionParameters
@@ -168,19 +174,24 @@ def build():
         outlet_property_package=m.fs.properties_aq,
     )
 
-    # m.fs.M01 = Mixer(
-    #     property_package=m.fs.properties_aq,
-    #     num_inlets=2,
-    #     inlet_list=["SX_acid", "oxalic_acid"],
-    # )
+    m.fs.oxalate_feed = Feed(property_package=m.fs.properties_aq)
+
+    m.fs.mixer = Mixer(
+        property_package=m.fs.properties_aq,
+        num_inlets=2,
+        inlet_list=["SX_inlet", "oxalate_inlet"],
+        material_balance_type=MaterialBalanceType.componentTotal,
+        energy_mixing_type=MixingType.none,
+    )
+
+    m.fs.mixed_product = Product(property_package=m.fs.properties_aq)
 
     m.fs.precipitator = Precipitator(
         property_package_aqueous=m.fs.properties_aq,
         property_package_precipitate=m.fs.properties_solid,
     )
 
-    # Can't treat this as a Feed stream since the unit model doesn't have flow_mol_comp
-    # m.fs.oxalic_acid_feed = Feed(property_package=m.fs.properties_solid)
+    m.fs.precipitate_feed = Feed(property_package=m.fs.properties_solid)
 
     # TODO: Replace with a filter press
     # m.fs.S01 = Separator(
@@ -215,8 +226,12 @@ def build():
     m.fs.s04 = Arc(source=m.fs.solex.Orgacid_outlet, destination=m.fs.sx_leach_acid.inlet) # Should eventually convert to a recycle
     # m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.sx_acid_soln.inlet)
     m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.SX_to_precipitator.inlet)
-    m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.precipitator.aqueous_inlet)
-    # m.fs.s07 = Arc(source=m.fs.oxalic_acid_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
+    # m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.precipitator.aqueous_inlet)
+    m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.mixer.SX_inlet)
+    m.fs.s07 = Arc(source=m.fs.oxalate_feed.outlet, destination=m.fs.mixer.oxalate_inlet)
+    m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.mixed_product.inlet)
+    # m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.aqueous_inlet)
+    # m.fs.s09 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.precipitate_inlet)
 
     # m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
     # m.fs.s02 = Arc(source=m.fs.leach.liquid_outlet, destination=m.fs.solex.Acidsoln_inlet_state)
@@ -275,8 +290,13 @@ def set_operating_conditions(m):
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Gd"].fix(0)
     m.fs.solex.Orgacid_inlet_state[0].flow_mass["Dy"].fix(0)
 
-    # Oxalic acid feed to precipitator - assume no oxalic acid
-    m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.fix(0)
+    # Oxalic acid feed to precipitator
+    #TODO: Use the appropriate value for flow_mass
+    m.fs.oxalate_feed.properties[0].flow_mass.fix(1)
+    m.fs.oxalate_feed.properties[0].log10_molality_comp["C2O4^2-"].fix(-4)
+
+    # Precipitate feed to precipitator
+    m.fs.precipitate_feed.properties[0].flow_mol_comp.fix(0)
 
     # Reactor volume
     m.fs.leach.volume = Var(
@@ -331,6 +351,12 @@ def display_results(m):
     m.fs.leach.solid_outlet.display()
     # m.fs.sx_acid_soln.display()
     # m.fs.sx_acid_soln.report()
+    print("-------SX to Precipitator--------")
+    m.fs.SX_to_precipitator.display()
+    print("-------Mixer--------")
+    m.fs.mixer.display()
+    print("-------Mixer Product--------")
+    m.fs.mixed_product.display()
 
 if __name__ == "__main__":
     m, results = main()

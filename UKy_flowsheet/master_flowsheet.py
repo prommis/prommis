@@ -194,6 +194,9 @@ def build():
 
     m.fs.precipitate_feed = Feed(property_package=m.fs.properties_solid)
 
+    m.fs.solid_product = Product(property_package=m.fs.properties_solid)
+    m.fs.liquid_product = Product(property_package=m.fs.properties_aq)
+
     # TODO: Replace with a filter press
     # m.fs.S01 = Separator(
     #     property_package=m.fs.leach_soln,
@@ -230,9 +233,12 @@ def build():
     # m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.precipitator.aqueous_inlet)
     m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.mixer.SX_inlet)
     m.fs.s07 = Arc(source=m.fs.oxalate_feed.outlet, destination=m.fs.mixer.oxalate_inlet)
-    m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.mixed_product.inlet)
-    # m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.aqueous_inlet)
-    # m.fs.s09 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.precipitate_inlet)
+    # m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.mixed_product.inlet)
+    m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.aqueous_inlet)
+    m.fs.s09 = Arc(source=m.fs.precipitate_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
+    m.fs.s10 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.liquid_product.inlet)
+    m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.solid_product.inlet)
+    # m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.roaster.inlet)
 
     # m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
     # m.fs.s02 = Arc(source=m.fs.leach.liquid_outlet, destination=m.fs.solex.Acidsoln_inlet_state)
@@ -297,6 +303,7 @@ def set_operating_conditions(m):
     m.fs.oxalate_feed.properties[0].log10_molality_comp["C2O4^2-"].fix(-4)
 
     # Precipitate feed to precipitator
+    #TODO: What should these feed conditions be? They are assumed to be zero in the example
     m.fs.precipitate_feed.properties[0].flow_mol_comp.fix(0)
 
     # Reactor volume
@@ -319,7 +326,27 @@ def set_operating_conditions(m):
         rule=rule_heterogeneous_reaction_extent,
     )
 
-    print(degrees_of_freedom(m))
+    # Roaster gas feed
+    m.fs.roaster.deltaP.fix(0)
+    m.fs.roaster.gas_inlet.temperature.fix(1330)
+    m.fs.roaster.gas_inlet.pressure.fix(101325)
+    # inlet flue gas mole flow rate
+    fgas = 0.00781
+    # inlet flue gas composition, typical flue gas by buring CH4 with air with stoichiometric ratio 0f 2.3
+    gas_comp = {
+    "O2":  0.1118,
+    "H2O": 0.1005,
+    "CO2": 0.0431,
+    "N2":  0.7446,
+    }
+    for i, v in gas_comp.items():
+        m.fs.roaster.gas_inlet.mole_frac_comp[0, i].fix(v)
+    m.fs.roaster.gas_inlet.mole_frac_comp[0, "N2"].unfix()
+    m.fs.roaster.gas_inlet.flow_mol.fix(fgas)
+
+    # fix outlet product temperature
+    m.fs.roaster.gas_outlet.temperature.fix(873.15)
+
 
 
 def initialize_system(m):
@@ -355,8 +382,8 @@ def solve(m):
     return results
 
 def display_results(m):
-    m.fs.leach.liquid_outlet.display()
-    m.fs.leach.solid_outlet.display()
+    # m.fs.leach.liquid_outlet.display()
+    # m.fs.leach.solid_outlet.display()
     # m.fs.sx_acid_soln.display()
     # m.fs.sx_acid_soln.report()
     # print("-------SX to Precipitator--------")
@@ -365,6 +392,8 @@ def display_results(m):
     # m.fs.mixer.display()
     # print("-------Mixer Product--------")
     # m.fs.mixed_product.display()
+    m.fs.liquid_product.display()
+    m.fs.solid_product.display()
 
 if __name__ == "__main__":
     m, results = main()

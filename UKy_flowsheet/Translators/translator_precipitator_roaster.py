@@ -51,7 +51,7 @@ _log = idaeslog.getLogger(__name__)
 
 
 @declare_process_block_class("Translator_SX_precipitator")
-class TranslatorDataSXPrecipitator(TranslatorData):
+class TranslatorDataLeachingSX(TranslatorData):
     """
     Translator block representing the SX/precipitator interface
     """
@@ -65,7 +65,7 @@ class TranslatorDataSXPrecipitator(TranslatorData):
             None
         """
         # Call UnitModel.build to setup dynamics
-        super(TranslatorDataSXPrecipitator, self).build()
+        super(TranslatorDataLeachingSX, self).build()
 
         mw_al = 0.02698154 * pyunits.kg / pyunits.mol
         mw_ca = 0.03996259 * pyunits.kg / pyunits.mol

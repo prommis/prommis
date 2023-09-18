@@ -70,6 +70,7 @@ class TranslatorDataSXPrecipitator(TranslatorData):
         mw_al = 0.02698154 * pyunits.kg / pyunits.mol
         mw_ca = 0.03996259 * pyunits.kg / pyunits.mol
         mw_fe = 0.05593494 * pyunits.kg / pyunits.mol
+        mw_ce = 0.140116 * pyunits.kg / pyunits.mol
 
         @self.Expression(
             self.flowsheet().time,
@@ -184,6 +185,37 @@ class TranslatorDataSXPrecipitator(TranslatorData):
                 blk.properties_out[t].log10_molality_comp["Fe^3+"]
                 == log_10(blk.iron_molality[t])
             )
+
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Cerium molar flow (mol/s)",
+        )
+        def cerium_molar_flow(blk, t):
+            return (
+                pyunits.convert(blk.properties_in[t].flow_mass["Ce"], to_units=pyunits.kg / pyunits.s,)
+                / mw_ce
+            )
+
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Cerium dimensionless molality",
+        )
+        def cerium_molality(blk, t):
+            return (
+                blk.cerium_molar_flow[t] * pyunits.s / pyunits.mol
+                / blk.solvent_mass_flow[t] * pyunits.kg / pyunits.s
+            )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Cerium log10 molality",
+        )
+        def eq_cerium_log10molality(blk, t):
+            return (
+                blk.properties_out[t].log10_molality_comp["Ce^3+"]
+                == log_10(blk.cerium_molality[t])
+            )
+
 
         #TODO: Should components other than Fe^3+, Ca^2+, and Al^3+ be ignored/removed from the precip unit model?
 

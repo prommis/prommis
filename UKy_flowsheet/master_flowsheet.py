@@ -212,13 +212,17 @@ def build():
         doc="gas property",
     )
 
-    m.fs.roaster = REEOxalateRoaster(
-        property_package=m.fs.prop_gas,
-        has_holdup=False,
-        has_heat_transfer=True,
-        has_pressure_change=True,
-        metal_list=["Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Eu", "Gd", "Tb", "Dy", "Tm", "Yb", "Lu"]
+    m.fs.prop_solid = PrecipitateStateParameterBlock(
+        key_components=key_components,
     )
+
+    # m.fs.roaster = REEOxalateRoaster(
+    #     property_package_gas=m.fs.prop_gas,
+    #     property_package_precipitate=m.fs.prop_solid,
+    #     has_holdup=False,
+    #     has_heat_transfer=True,
+    #     has_pressure_change=True,
+    # )
 
     # Flowsheet connections
 
@@ -238,7 +242,7 @@ def build():
     m.fs.s09 = Arc(source=m.fs.precipitate_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
     m.fs.s10 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.liquid_product.inlet)
     m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.solid_product.inlet)
-    # m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.roaster.inlet)
+    # m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.roaster.solid_inlet)
 
     # m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
     # m.fs.s02 = Arc(source=m.fs.leach.liquid_outlet, destination=m.fs.solex.Acidsoln_inlet_state)
@@ -327,25 +331,25 @@ def set_operating_conditions(m):
     )
 
     # Roaster gas feed
-    m.fs.roaster.deltaP.fix(0)
-    m.fs.roaster.gas_inlet.temperature.fix(1330)
-    m.fs.roaster.gas_inlet.pressure.fix(101325)
-    # inlet flue gas mole flow rate
-    fgas = 0.00781
-    # inlet flue gas composition, typical flue gas by buring CH4 with air with stoichiometric ratio 0f 2.3
-    gas_comp = {
-    "O2":  0.1118,
-    "H2O": 0.1005,
-    "CO2": 0.0431,
-    "N2":  0.7446,
-    }
-    for i, v in gas_comp.items():
-        m.fs.roaster.gas_inlet.mole_frac_comp[0, i].fix(v)
-    m.fs.roaster.gas_inlet.mole_frac_comp[0, "N2"].unfix()
-    m.fs.roaster.gas_inlet.flow_mol.fix(fgas)
-
-    # fix outlet product temperature
-    m.fs.roaster.gas_outlet.temperature.fix(873.15)
+    # m.fs.roaster.deltaP.fix(0)
+    # m.fs.roaster.gas_inlet.temperature.fix(1330)
+    # m.fs.roaster.gas_inlet.pressure.fix(101325)
+    # # inlet flue gas mole flow rate
+    # fgas = 0.00781
+    # # inlet flue gas composition, typical flue gas by buring CH4 with air with stoichiometric ratio 0f 2.3
+    # gas_comp = {
+    #     "O2": 0.1118,
+    #     "H2O": 0.1005,
+    #     "CO2": 0.0431,
+    #     "N2": 0.7446,
+    # }
+    # for i, v in gas_comp.items():
+    #     m.fs.roaster.gas_inlet.mole_frac_comp[0, i].fix(v)
+    # m.fs.roaster.gas_inlet.mole_frac_comp[0, "N2"].unfix()
+    # m.fs.roaster.gas_inlet.flow_mol.fix(fgas)
+    #
+    # # fix outlet product temperature
+    # m.fs.roaster.gas_outlet.temperature.fix(873.15)
 
 
 
@@ -375,6 +379,16 @@ def initialize_system(m):
 
     initializer3 = MixerInitializer()
     initializer3.initialize(m.fs.mixer)
+
+    # Initialize precipitator
+    propagate_state(m.fs.s08)
+    propagate_state(m.fs.s09)
+
+    initializer2.initialize(m.fs.precipitator)
+
+    # Initialize roaster
+    # propagate_state(m.fs.s11)
+    # initializer2.initialize(m.fs.roaster)
 
 def solve(m):
     solver = SolverFactory("ipopt")

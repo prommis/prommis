@@ -119,11 +119,11 @@ Must be True if dynamic = True,
         ),
     )
     CONFIG.declare(
-        "property_package",
+        "property_package_gas",
         ConfigValue(
             default=useDefault,
             domain=is_physical_parameter_block,
-            description="Property package to use for control volume",
+            description="Gas property package to use for control volume",
             doc="""Property parameter object used to define property calculations,
 **default** - useDefault.
 **Valid values:** {
@@ -132,10 +132,35 @@ Must be True if dynamic = True,
         ),
     )
     CONFIG.declare(
-        "property_package_args",
+        "property_package_args_gas",
         ConfigBlock(
             implicit=True,
-            description="Arguments to use for constructing property packages",
+            description="Arguments to use for constructing gas property packages",
+            doc="""A ConfigBlock with arguments to be passed to a property block(s)
+and used when constructing these,
+**default** - None.
+**Valid values:** {
+see property package for documentation.}""",
+        ),
+    )
+    CONFIG.declare(
+        "property_package_precipitate",
+        ConfigValue(
+            default=useDefault,
+            domain=is_physical_parameter_block,
+            description="Property package to use for precipitate control volume",
+            doc="""Property parameter object used to define property calculations,
+**default** - useDefault.
+**Valid values:** {
+**useDefault** - use default package from parent model or flowsheet,
+**PropertyParameterObject** - a PropertyParameterBlock object.}""",
+        ),
+    )
+    CONFIG.declare(
+        "property_package_args_precipitate",
+        ConfigBlock(
+            implicit=True,
+            description="Arguments to use for constructing precipitate property packages",
             doc="""A ConfigBlock with arguments to be passed to a property block(s)
 and used when constructing these,
 **default** - None.
@@ -169,6 +194,7 @@ constructed,
     CONFIG.declare(
     "metal_list", 
     ConfigValue(
+        default=["Ce"],
         domain=list,
         description="List of components in solid oxalate feed",
         doc="""A dict of the components of interest in the mixture.
@@ -182,16 +208,20 @@ constructed,
         
         # Build Holdup Block
         # gas phase inlet stream
-        self.gas_in = self.config.property_package.build_state_block(
-            self.flowsheet().time, **self.config.property_package_args
+        self.gas_in = self.config.property_package_gas.build_state_block(
+            self.flowsheet().time, **self.config.property_package_args_gas
         )
         # gas phase outlet stream
-        self.gas_out = self.config.property_package.build_state_block(
-            self.flowsheet().time, **self.config.property_package_args
+        self.gas_out = self.config.property_package_gas.build_state_block(
+            self.flowsheet().time, **self.config.property_package_args_gas
         )
-
+        # solid phase inlet stream from precipitator
+        self.solid_in = self.config.property_package_precipitate.build_state_block(
+            self.flowsheet().time, **self.config.property_package_args_precipitate
+        )
         self.add_port("gas_inlet", self.gas_in)
         self.add_port("gas_outlet", self.gas_out)
+        self.add_port("solid_inlet", self.solid_in)
 
         # Add Geometry
         if self.config.has_holdup is True:
@@ -316,27 +346,19 @@ constructed,
         self.cp_mas_const = Param(initialize=1, units=pyunits.J/pyunits.kg/pyunits.K, doc='1 unit of mass heat capacity in J/kg-K')
 
 
-
     def _make_vars(self):
         ''' This section declares variables within this model.'''
 
-        self.flow_mas_feed = Var(self.flowsheet().config.time, initialize=1, units=pyunits.kg/pyunits.s,
-                        doc='total mass flow rate of solid feed including surface moisture')
+        self.flow_mol_comp_feed = Var(self.flowsheet().config.time, self.metal_list,
+                        units=pyunits.mol/pyunits.s,
+                        doc='mole flow rate of oxalate in solid feed stream')
 
-        self.mass_frac_moist_feed = Var(self.flowsheet().config.time, initialize= 0.1,
-                        doc='mass fraction of moisture in solid feed')
-
-        self.mass_frac_feed_dry = Var(self.flowsheet().config.time, self.metal_list, initialize=0.1,
-                        doc='mass fractions of individual metal oxalates on dry basis')
+        self.flow_mol_moist_feed=Var(self.flowsheet().config.time,
+                        units=pyunits.mol/pyunits.s,
+                        doc='mole flow rate of liquid water in solid feed stream')
 
         self.frac_comp_recovery = Var(self.flowsheet().config.time, self.metal_list, initialize=0.95,
                         doc='fraction of oxide recovery')
-
-        # solid feed temperature
-        self.temp_feed = Var(self.flowsheet().config.time,
-                        initialize=298.15,
-                        units=pyunits.K,
-                        doc='solid feed temperature')
 
         self.flow_mol_comp_product = Var(self.flowsheet().config.time, self.metal_list,
                         units=pyunits.mol/pyunits.s,
@@ -358,22 +380,18 @@ constructed,
     def _make_mass_balance(self):
         ''' This section contains equations for mass balance within this model.'''
 
-        # Vaporized moisture mole flow rate
-        @self.Expression(self.flowsheet().config.time, doc="vaporized moisture mass flowrate [kg/s]")
-        def flow_mol_moist_feed(b, t):
-            return b.flow_mas_feed[t]*b.mass_frac_moist_feed[t]/b.mw_H2O
+        # Currently the solid feed port contains anhydrous REE oxalate
+        # Convert solid inlet port anhydrous oxalate mol flow to flow_mol_comp_feed
+        # Since currently only Ce is in the precipiate property package, set all others to zero
+        @self.Constraint(self.flowsheet().config.time, self.metal_list, \
+	                         doc="component flow of oxalates")
+        def flow_mol_comp_feed_eqn(b, t, i):
+            if i == "Ce":
+                return b.flow_mol_comp_feed[t,i] == b.solid_in[t].flow_mol_comp["Ce2(C2O4)3(s)"]
+            else:
+                return b.flow_mol_comp_feed[t,i] == 0
 
-        # mass flow rates of individual dry oxalates
-        @self.Expression(self.flowsheet().config.time, self.metal_list, doc="mass flow rate of individual oxalates [kg/s]")
-        def flow_mas_comp_feed(b, t, i):
-            return b.flow_mas_feed[t]*(1-b.mass_frac_moist_feed[t])*b.mass_frac_feed_dry[t,i]
-
-        # mole flow rates of individual dry oxalates
-        @self.Expression(self.flowsheet().config.time, self.metal_list, doc="mole flow rate of individual oxalates [mol/s]")
-        def flow_mol_comp_feed(b, t, i):
-            return b.flow_mas_comp_feed[t,i]/self.mw_oxalate_list_all[i]
-
-        @self.Constraint(self.flowsheet().config.time, self.config.property_package.component_list, \
+        @self.Constraint(self.flowsheet().config.time, self.config.property_package_gas.component_list, \
                          doc="component flow of outlet gas stream")
         def flow_mol_outlet_eqn(b, t, i):
             if i == "H2O":
@@ -414,14 +432,15 @@ constructed,
         # molar enthalpy of feed solid
         @self.Constraint(self.flowsheet().config.time, self.metal_list, doc='molar enthalpy of individual oxalate')
         def enth_mol_comp_feed_eqn(b, t, i):
+            temp = b.solid_in[t].temperature
             return b.enth_mol_comp_feed[t, i] == b.enth0_oxalate_list_all[i] \
-                   + b.cp0_oxalate_list_all[i]*(b.temp_feed[t]-b.temp_ref) \
-                   + 0.5*b.cp1_oxalate_list_all[i]*(b.temp_feed[t]*b.temp_feed[t]-b.temp_ref*b.temp_ref)
+                   + b.cp0_oxalate_list_all[i]*(temp-b.temp_ref) \
+                   + 0.5*b.cp1_oxalate_list_all[i]*(temp*temp-b.temp_ref*b.temp_ref)
 
         # molar enthalpy of moisture in feed solid, liquid water at 25 C is 68.3174 kcal/mol
         @self.Expression(self.flowsheet().config.time, doc='molar enthalpy of moisture in solid feed stream')
         def enth_mol_moist_feed(b, t):
-            return -b.enth_mol_const*68317.4*4.184  + b.cp_mas_const*4182*b.mw_H2O*(b.temp_feed[t] - b.temp_ref)
+            return -b.enth_mol_const*68317.4*4.184  + b.cp_mas_const*4182*b.mw_H2O*(b.solid_in[t].temperature - b.temp_ref)
 
         # molar enthalpy of product solid
         @self.Constraint(self.flowsheet().config.time, self.metal_list, doc='molar enthalpy of individual oxide product')

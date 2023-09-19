@@ -209,7 +209,7 @@ constructed,
         # Build Holdup Block
         # gas phase inlet stream
         self.gas_in = self.config.property_package_gas.build_state_block(
-            self.flowsheet().time, **self.config.property_package_args_gas
+            self.flowsheet().time, defined_state=True, **self.config.property_package_args_gas
         )
         # gas phase outlet stream
         self.gas_out = self.config.property_package_gas.build_state_block(

@@ -24,8 +24,6 @@ from pyomo.environ import (
     TransformationFactory,
     units,
     Var,
-    value,
-    Suffix,
 )
 from pyomo.network import Arc
 from pyomo.util.check_units import assert_units_consistent
@@ -98,23 +96,24 @@ def main():
 
     set_operating_conditions(m)
     assert_units_consistent(m)
+    # assert degrees_of_freedom(m) == 0
 
-    print("Structural issues after setting operating conditions")
-    dt = DiagnosticsToolbox(model=m)
-    dt.report_structural_issues()
-    dt.display_underconstrained_set()
+    # print("Structural issues after setting operating conditions")
+    # dt = DiagnosticsToolbox(model=m)
+    # dt.report_structural_issues()
+    # dt.display_underconstrained_set()
 
     initialize_system(m)
-    print("Numerical issues after initialization")
-    dt.report_numerical_issues()
-    dt.display_constraints_with_large_residuals()
-    dt.display_variables_at_or_outside_bounds()
+    # print("Numerical issues after initialization")
+    # dt.report_numerical_issues()
+    # dt.display_constraints_with_large_residuals()
+    # dt.display_variables_at_or_outside_bounds()
 
     results = solve(m)
-    print("Numerical issues after solving")
-    dt.report_numerical_issues()
-    dt.display_constraints_with_large_residuals()
-    dt.display_variables_at_or_outside_bounds()
+    # print("Numerical issues after solving")
+    # dt.report_numerical_issues()
+    # dt.display_constraints_with_large_residuals()
+    # dt.display_variables_at_or_outside_bounds()
 
     display_results(m)
 
@@ -148,6 +147,7 @@ def build():
 
     m.fs.leach_filter_cake = Product(property_package=m.fs.coal)
 
+    # ----------------------------------------------------------------------------------------------------------------
     # Solvent extraction property and unit models
     m.fs.prop_a = REESolExAqParameters()
     m.fs.prop_o = REESolExOgParameters()
@@ -165,6 +165,7 @@ def build():
 
     m.fs.sx_acid_soln = Product(property_package=m.fs.prop_a)
 
+    # --------------------------------------------------------------------------------------------------------------
     # Precipitation property and unit models
 
     key_components = {
@@ -205,10 +206,10 @@ def build():
 
     m.fs.mixed_product = Product(property_package=m.fs.properties_aq)
 
-    # m.fs.precipitator = Precipitator(
-    #     property_package_aqueous=m.fs.properties_aq,
-    #     property_package_precipitate=m.fs.properties_solid,
-    # )
+    m.fs.precipitator = Precipitator(
+        property_package_aqueous=m.fs.properties_aq,
+        property_package_precipitate=m.fs.properties_solid,
+    )
 
     m.fs.precipitate_feed = Feed(property_package=m.fs.properties_solid)
 
@@ -222,6 +223,7 @@ def build():
     #     split_basis=SplittingType.phaseFlow,
     # )
 
+    # -----------------------------------------------------------------------------------------------------------------
     # Roasting property and unit models
 
     gas_species = {"O2", "H2O", "CO2", "N2"}
@@ -234,17 +236,18 @@ def build():
         key_components=key_components,
     )
 
-    # m.fs.roaster = REEOxalateRoaster(
-    #     property_package_gas=m.fs.prop_gas,
-    #     property_package_precipitate=m.fs.prop_solid,
-    #     has_holdup=False,
-    #     has_heat_transfer=True,
-    #     has_pressure_change=True,
-    # )
+    m.fs.roaster = REEOxalateRoaster(
+        property_package_gas=m.fs.prop_gas,
+        property_package_precipitate=m.fs.prop_solid,
+        has_holdup=False,
+        has_heat_transfer=True,
+        has_pressure_change=True,
+    )
 
+    # -----------------------------------------------------------------------------------------------------------------
     # Flowsheet connections
 
-    # Initial sub-flowsheet
+    # Connections without recycle loops
     m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
     m.fs.s02 = Arc(source=m.fs.leach.liquid_outlet, destination=m.fs.leach_to_SX.inlet)
     m.fs.s03 = Arc(source=m.fs.leach_to_SX.outlet, destination=m.fs.solex.Acidsoln_inlet)
@@ -254,13 +257,14 @@ def build():
     m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.SX_to_precipitator.inlet)
     m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.mixer.SX_inlet)
     m.fs.s07 = Arc(source=m.fs.oxalate_feed.outlet, destination=m.fs.mixer.oxalate_inlet)
-    m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.mixed_product.inlet)
-    # m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.aqueous_inlet)
-    # m.fs.s09 = Arc(source=m.fs.precipitate_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
-    # m.fs.s10 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.liquid_product.inlet)
+    # m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.mixed_product.inlet)
+    m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.aqueous_inlet)
+    m.fs.s09 = Arc(source=m.fs.precipitate_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
+    m.fs.s10 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.liquid_product.inlet)
     # m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.solid_product.inlet)
-    # m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.roaster.solid_inlet)
+    m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.roaster.solid_inlet)
 
+    # Connections with recycle loops
     # m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
     # m.fs.s02 = Arc(source=m.fs.leach.liquid_outlet, destination=m.fs.solex.Acidsoln_inlet_state)
     # m.fs.s03 = Arc(source=m.fs.S01.recycle, destination=m.fs.solex.Orgacid_inlet_state)
@@ -348,25 +352,28 @@ def set_operating_conditions(m):
     )
 
     # Roaster gas feed
-    # m.fs.roaster.deltaP.fix(0)
-    # m.fs.roaster.gas_inlet.temperature.fix(1330)
-    # m.fs.roaster.gas_inlet.pressure.fix(101325)
-    # # inlet flue gas mole flow rate
-    # fgas = 0.00781
-    # # inlet flue gas composition, typical flue gas by buring CH4 with air with stoichiometric ratio 0f 2.3
-    # gas_comp = {
-    #     "O2": 0.1118,
-    #     "H2O": 0.1005,
-    #     "CO2": 0.0431,
-    #     "N2": 0.7446,
-    # }
-    # for i, v in gas_comp.items():
-    #     m.fs.roaster.gas_inlet.mole_frac_comp[0, i].fix(v)
-    # m.fs.roaster.gas_inlet.mole_frac_comp[0, "N2"].unfix()
-    # m.fs.roaster.gas_inlet.flow_mol.fix(fgas)
-    #
-    # # fix outlet product temperature
-    # m.fs.roaster.gas_outlet.temperature.fix(873.15)
+    m.fs.roaster.deltaP.fix(0)
+    m.fs.roaster.gas_inlet.temperature.fix(1330)
+    m.fs.roaster.gas_inlet.pressure.fix(101325)
+    # Inlet flue gas mole flow rate
+    fgas = 0.00781
+    # Inlet flue gas composition, typical flue gas by buring CH4 with air with stoichiometric ratio 0f 2.3
+    gas_comp = {
+        "O2": 0.1118,
+        "H2O": 0.1005,
+        "CO2": 0.0431,
+        "N2": 0.7446,
+    }
+    for i, v in gas_comp.items():
+        m.fs.roaster.gas_inlet.mole_frac_comp[0, i].fix(v)
+    m.fs.roaster.gas_inlet.flow_mol.fix(fgas)
+
+    # Fix outlet product temperature
+    m.fs.roaster.gas_outlet.temperature.fix(873.15)
+
+    # Fix operating conditions
+    m.fs.roaster.flow_mol_moist_feed.fix(6.75e-4)
+    m.fs.roaster.frac_comp_recovery.fix(0.95)
 
 
 def initialize_system(m):
@@ -404,15 +411,15 @@ def initialize_system(m):
     initializer3 = MixerInitializer()
     initializer3.initialize(m.fs.mixer)
 
-    # # Initialize precipitator
-    # propagate_state(m.fs.s08)
-    # propagate_state(m.fs.s09)
-    #
-    # initializer2.initialize(m.fs.precipitator)
+    # Initialize precipitator
+    propagate_state(m.fs.s08)
+    propagate_state(m.fs.s09)
+
+    initializer2.initialize(m.fs.precipitator)
 
     # Initialize roaster
-    # propagate_state(m.fs.s11)
-    # initializer2.initialize(m.fs.roaster)
+    propagate_state(m.fs.s11)
+    initializer2.initialize(m.fs.roaster)
 
 def solve(m):
     solver = SolverFactory("ipopt")
@@ -431,7 +438,8 @@ def display_results(m):
     # print("-------Mixer Product--------")
     # m.fs.mixed_product.display()
     # m.fs.liquid_product.display()
-    m.fs.solid_product.display()
+    # m.fs.solid_product.display()
+    m.fs.roaster.display()
 
 if __name__ == "__main__":
     m, results = main()

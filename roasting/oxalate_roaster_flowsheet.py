@@ -40,6 +40,8 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
 )
 
+from idaes.core.initialization import BlockTriangularizationInitializer, InitializationStatus
+
 import sys
 
 sys.path.append('../precipitate')
@@ -82,6 +84,7 @@ def main(m=None):
 
     create_model(m)
     set_inputs(m)
+    initialize_system(m)
     solver = get_solver(options={"max_iter": 50})
     dof = degrees_of_freedom(m)
     print('dof=', dof)
@@ -123,7 +126,6 @@ def set_inputs(m):
     }
     for i, v in gas_comp.items():
         m.fs.roaster.gas_inlet.mole_frac_comp[0, i].fix(v)
-    m.fs.roaster.gas_inlet.mole_frac_comp[0, "N2"].unfix()
     m.fs.roaster.gas_inlet.flow_mol.fix(fgas)
 
     # fix outlet product temperature
@@ -152,6 +154,12 @@ def set_inputs(m):
     m.fs.roaster.mass_frac_feed_dry[0,'Lu'].fix(0.002971853)
     '''
     m.fs.roaster.frac_comp_recovery.fix(0.95)
+
+
+def initialize_system(m):
+    initializer = BlockTriangularizationInitializer()
+    initializer.initialize(m.fs.roaster)
+    assert initializer.summary[m.fs.roaster]["status"] == InitializationStatus.Ok
 
 
 if __name__ == "__main__":

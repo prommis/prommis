@@ -52,7 +52,11 @@ from idaes.models.unit_models.mixer import (
     MixerInitializer,
 )
 
-from idaes.models.unit_models import Product, Feed, Translator
+from idaes.models.unit_models import Feed, Translator
+from idaes.models.unit_models.product import (
+    Product,
+    ProductInitializer,
+)
 from idaes.core.util.model_statistics import degrees_of_freedom
 
 from workspace.UKy_flowsheet.old_leaching.leach_solution_properties import LeachSolutionParameters
@@ -91,12 +95,26 @@ from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 def main():
     m = build()
+
     set_operating_conditions(m)
     assert_units_consistent(m)
 
+    print("Structural issues after setting operating conditions")
+    dt = DiagnosticsToolbox(model=m)
+    dt.report_structural_issues()
+    dt.display_underconstrained_set()
+
     initialize_system(m)
+    print("Numerical issues after initialization")
+    dt.report_numerical_issues()
+    dt.display_constraints_with_large_residuals()
+    dt.display_variables_at_or_outside_bounds()
 
     results = solve(m)
+    print("Numerical issues after solving")
+    dt.report_numerical_issues()
+    dt.display_constraints_with_large_residuals()
+    dt.display_variables_at_or_outside_bounds()
 
     display_results(m)
 
@@ -187,10 +205,10 @@ def build():
 
     m.fs.mixed_product = Product(property_package=m.fs.properties_aq)
 
-    m.fs.precipitator = Precipitator(
-        property_package_aqueous=m.fs.properties_aq,
-        property_package_precipitate=m.fs.properties_solid,
-    )
+    # m.fs.precipitator = Precipitator(
+    #     property_package_aqueous=m.fs.properties_aq,
+    #     property_package_precipitate=m.fs.properties_solid,
+    # )
 
     m.fs.precipitate_feed = Feed(property_package=m.fs.properties_solid)
 
@@ -216,13 +234,13 @@ def build():
         key_components=key_components,
     )
 
-    m.fs.roaster = REEOxalateRoaster(
-        property_package_gas=m.fs.prop_gas,
-        property_package_precipitate=m.fs.prop_solid,
-        has_holdup=False,
-        has_heat_transfer=True,
-        has_pressure_change=True,
-    )
+    # m.fs.roaster = REEOxalateRoaster(
+    #     property_package_gas=m.fs.prop_gas,
+    #     property_package_precipitate=m.fs.prop_solid,
+    #     has_holdup=False,
+    #     has_heat_transfer=True,
+    #     has_pressure_change=True,
+    # )
 
     # Flowsheet connections
 
@@ -234,15 +252,14 @@ def build():
     m.fs.s04 = Arc(source=m.fs.solex.Orgacid_outlet, destination=m.fs.sx_leach_acid.inlet) # Should eventually convert to a recycle
     # m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.sx_acid_soln.inlet)
     m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.SX_to_precipitator.inlet)
-    # m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.precipitator.aqueous_inlet)
     m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.mixer.SX_inlet)
     m.fs.s07 = Arc(source=m.fs.oxalate_feed.outlet, destination=m.fs.mixer.oxalate_inlet)
-    # m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.mixed_product.inlet)
-    m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.aqueous_inlet)
-    m.fs.s09 = Arc(source=m.fs.precipitate_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
-    m.fs.s10 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.liquid_product.inlet)
+    m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.mixed_product.inlet)
+    # m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.aqueous_inlet)
+    # m.fs.s09 = Arc(source=m.fs.precipitate_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
+    # m.fs.s10 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.liquid_product.inlet)
     # m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.solid_product.inlet)
-    m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.roaster.solid_inlet)
+    # m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.roaster.solid_inlet)
 
     # m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
     # m.fs.s02 = Arc(source=m.fs.leach.liquid_outlet, destination=m.fs.solex.Acidsoln_inlet_state)
@@ -263,9 +280,9 @@ def build():
 def set_operating_conditions(m):
     # Liquid feed to old_leaching unit
     m.fs.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
-    m.fs.leach.liquid_inlet.conc_mass_metals.fix(1e-10 * units.mg / units.L)
+    m.fs.leach.liquid_inlet.conc_mass_metals.fix(1e-10 * units.mg / units.L)    # Why fixed at lower bound?
     m.fs.leach.liquid_inlet.conc_mole_acid[0, "H"].fix(2 * 0.05 * units.mol / units.L)
-    m.fs.leach.liquid_inlet.conc_mole_acid[0, "HSO4"].fix(1e-8 * units.mol / units.L)
+    m.fs.leach.liquid_inlet.conc_mole_acid[0, "HSO4"].fix(1e-8 * units.mol / units.L)   # Why fixed at lower bound?
     m.fs.leach.liquid_inlet.conc_mole_acid[0, "SO4"].fix(0.05 * units.mol / units.L)
 
     # Solid feed to old_leaching unit
@@ -331,31 +348,35 @@ def set_operating_conditions(m):
     )
 
     # Roaster gas feed
-    m.fs.roaster.deltaP.fix(0)
-    m.fs.roaster.gas_inlet.temperature.fix(1330)
-    m.fs.roaster.gas_inlet.pressure.fix(101325)
-    # inlet flue gas mole flow rate
-    fgas = 0.00781
-    # inlet flue gas composition, typical flue gas by buring CH4 with air with stoichiometric ratio 0f 2.3
-    gas_comp = {
-        "O2": 0.1118,
-        "H2O": 0.1005,
-        "CO2": 0.0431,
-        "N2": 0.7446,
-    }
-    for i, v in gas_comp.items():
-        m.fs.roaster.gas_inlet.mole_frac_comp[0, i].fix(v)
-    m.fs.roaster.gas_inlet.mole_frac_comp[0, "N2"].unfix()
-    m.fs.roaster.gas_inlet.flow_mol.fix(fgas)
-
-    # fix outlet product temperature
-    m.fs.roaster.gas_outlet.temperature.fix(873.15)
+    # m.fs.roaster.deltaP.fix(0)
+    # m.fs.roaster.gas_inlet.temperature.fix(1330)
+    # m.fs.roaster.gas_inlet.pressure.fix(101325)
+    # # inlet flue gas mole flow rate
+    # fgas = 0.00781
+    # # inlet flue gas composition, typical flue gas by buring CH4 with air with stoichiometric ratio 0f 2.3
+    # gas_comp = {
+    #     "O2": 0.1118,
+    #     "H2O": 0.1005,
+    #     "CO2": 0.0431,
+    #     "N2": 0.7446,
+    # }
+    # for i, v in gas_comp.items():
+    #     m.fs.roaster.gas_inlet.mole_frac_comp[0, i].fix(v)
+    # m.fs.roaster.gas_inlet.mole_frac_comp[0, "N2"].unfix()
+    # m.fs.roaster.gas_inlet.flow_mol.fix(fgas)
+    #
+    # # fix outlet product temperature
+    # m.fs.roaster.gas_outlet.temperature.fix(873.15)
 
 
 def initialize_system(m):
     # Initialize old_leaching section
     initializer1 = MSContactorInitializer()
     initializer1.initialize(m.fs.leach)
+
+    propagate_state(m.fs.s01)
+    initializer_product = ProductInitializer()
+    initializer_product.initialize(m.fs.leach_filter_cake)
 
     # Initialize old_leaching -> SX translator
     propagate_state(m.fs.s02)
@@ -366,6 +387,10 @@ def initialize_system(m):
     # Initialize SX section
     propagate_state(m.fs.s03)
     initializer2.initialize(m.fs.solex)
+
+    # Initialize SX_leach_acid, which will eventually be a recycle
+    propagate_state(m.fs.s04)
+    initializer_product.initialize(m.fs.sx_leach_acid)
 
     # Initialize SX -> precipitation translator
     propagate_state(m.fs.s05)
@@ -379,15 +404,15 @@ def initialize_system(m):
     initializer3 = MixerInitializer()
     initializer3.initialize(m.fs.mixer)
 
-    # Initialize precipitator
-    propagate_state(m.fs.s08)
-    propagate_state(m.fs.s09)
-
-    initializer2.initialize(m.fs.precipitator)
+    # # Initialize precipitator
+    # propagate_state(m.fs.s08)
+    # propagate_state(m.fs.s09)
+    #
+    # initializer2.initialize(m.fs.precipitator)
 
     # Initialize roaster
-    propagate_state(m.fs.s11)
-    initializer2.initialize(m.fs.roaster)
+    # propagate_state(m.fs.s11)
+    # initializer2.initialize(m.fs.roaster)
 
 def solve(m):
     solver = SolverFactory("ipopt")

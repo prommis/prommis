@@ -98,10 +98,10 @@ def main():
     assert_units_consistent(m)
     # assert degrees_of_freedom(m) == 0
 
-    # print("Structural issues after setting operating conditions")
-    # dt = DiagnosticsToolbox(model=m)
-    # dt.report_structural_issues()
-    # dt.display_underconstrained_set()
+    print("Structural issues after setting operating conditions")
+    dt = DiagnosticsToolbox(model=m)
+    dt.report_structural_issues()
+    dt.display_underconstrained_set()
 
     initialize_system(m)
     # print("Numerical issues after initialization")
@@ -196,6 +196,7 @@ def build():
 
     m.fs.oxalate_feed = Feed(property_package=m.fs.properties_aq)
 
+    # Mixer by itself has 3 variables but only one constraint
     m.fs.mixer = Mixer(
         property_package=m.fs.properties_aq,
         num_inlets=2,
@@ -260,7 +261,7 @@ def build():
     # m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.mixed_product.inlet)
     m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.aqueous_inlet)
     m.fs.s09 = Arc(source=m.fs.precipitate_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
-    m.fs.s10 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.liquid_product.inlet)
+    m.fs.s10 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.liquid_product.inlet)  # Should eventually convert to a recycle
     # m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.solid_product.inlet)
     m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.roaster.solid_inlet)
 
@@ -325,11 +326,20 @@ def set_operating_conditions(m):
     # Oxalic acid feed to precipitator
     #TODO: Use the appropriate value for flow_mass
     m.fs.oxalate_feed.properties[0].flow_mass.fix(1)
+    m.fs.oxalate_feed.properties[0].temperature.fix(300)
     m.fs.oxalate_feed.properties[0].log10_molality_comp["C2O4^2-"].fix(-4)
+    # m.fs.oxalate_feed.properties[0].log10_molality_comp["Ca^2+"].fix(0)
+    # m.fs.oxalate_feed.properties[0].log10_molality_comp["Fe^3+"].fix(0)
+    # m.fs.oxalate_feed.properties[0].log10_molality_comp["Al^3+"].fix(0)
+    # m.fs.oxalate_feed.properties[0].log10_molality_comp["Ce^3+"].fix(0)
+    # m.fs.oxalate_feed.properties[0].log10_molality_comp["H^+"].fix(0)
+
+
 
     # Precipitate feed to precipitator
     #TODO: What should these feed conditions be? They are assumed to be zero in the example
     m.fs.precipitate_feed.properties[0].flow_mol_comp.fix(0)
+    m.fs.precipitate_feed.properties[0].temperature.fix(300)
 
     # Reactor volume
     m.fs.leach.volume = Var(
@@ -439,7 +449,8 @@ def display_results(m):
     # m.fs.mixed_product.display()
     # m.fs.liquid_product.display()
     # m.fs.solid_product.display()
-    m.fs.roaster.display()
+    # m.fs.roaster.display()
+    m.fs.leach_filter_cake.display()
 
 if __name__ == "__main__":
     m, results = main()

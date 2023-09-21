@@ -72,6 +72,20 @@ class TranslatorDataSXPrecipitator(TranslatorData):
         mw_fe = 0.05593494 * pyunits.kg / pyunits.mol
         mw_ce = 0.140116 * pyunits.kg / pyunits.mol
 
+        # @self.Constraint(
+        #     self.flowsheet().time,
+        #     doc="Equality temperature equation",
+        # )
+        # def eq_temperature_rule(blk, t):
+        #     return blk.properties_out[t].temperature == blk.properties_in[t].temperature
+
+        # @self.Constraint(
+        #     self.flowsheet().time,
+        #     doc="Equality pressure equation",
+        # )
+        # def eq_pressure_rule(blk, t):
+        #     return blk.properties_out[t].pressure == blk.properties_in[t].pressure
+
         @self.Expression(
             self.flowsheet().time,
             doc="Mass flow of solvent (kg/s)",

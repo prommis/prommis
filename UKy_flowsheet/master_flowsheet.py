@@ -24,6 +24,7 @@ from pyomo.environ import (
     TransformationFactory,
     units,
     Var,
+    Set,
 )
 from pyomo.network import Arc
 from pyomo.util.check_units import assert_units_consistent
@@ -47,6 +48,7 @@ from idaes.models.unit_models.mixer import (
     Mixer,
     MaterialBalanceType,
     MixingType,
+    MomentumMixingType,
     MixerInitializer,
 )
 
@@ -203,6 +205,7 @@ def build():
         inlet_list=["SX_inlet", "oxalate_inlet"],
         material_balance_type=MaterialBalanceType.componentTotal,
         energy_mixing_type=MixingType.none,
+        # momentum_mixing_type=MomentumMixingType.none,
     )
 
     m.fs.mixed_product = Product(property_package=m.fs.properties_aq)
@@ -326,8 +329,12 @@ def set_operating_conditions(m):
     # Oxalic acid feed to precipitator
     #TODO: Use the appropriate value for flow_mass
     m.fs.oxalate_feed.properties[0].flow_mass.fix(1)
-    m.fs.oxalate_feed.properties[0].temperature.fix(300)
+    m.fs.oxalate_feed.properties[0].temperature.fix(300 * units.kelvin)
+    m.fs.oxalate_feed.properties[0].pressure.fix(101325 * units.Pa)
     m.fs.oxalate_feed.properties[0].log10_molality_comp["C2O4^2-"].fix(-4)
+    # for key in m.fs.properties_aq.aq_dict.keys():
+    #     m.fs.oxalate_feed.properties[0].log10_molality_comp[key].fix(1)
+    # m.fs.oxalate_feed.properties[0].log10_molality_comp["H2C2O4"].fix(1)
     # m.fs.oxalate_feed.properties[0].log10_molality_comp["Ca^2+"].fix(0)
     # m.fs.oxalate_feed.properties[0].log10_molality_comp["Fe^3+"].fix(0)
     # m.fs.oxalate_feed.properties[0].log10_molality_comp["Al^3+"].fix(0)

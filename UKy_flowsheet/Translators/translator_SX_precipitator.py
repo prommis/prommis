@@ -72,19 +72,20 @@ class TranslatorDataSXPrecipitator(TranslatorData):
         mw_fe = 0.05593494 * pyunits.kg / pyunits.mol
         mw_ce = 0.140116 * pyunits.kg / pyunits.mol
 
-        # @self.Constraint(
-        #     self.flowsheet().time,
-        #     doc="Equality temperature equation",
-        # )
-        # def eq_temperature_rule(blk, t):
-        #     return blk.properties_out[t].temperature == blk.properties_in[t].temperature
+        #TODO: Replace temperature and pressure constraints with an equality when SX has temp and pressure
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Equality temperature equation",
+        )
+        def eq_temperature_rule(blk, t):
+            return blk.properties_out[t].temperature == 300 * pyunits.kelvin
 
-        # @self.Constraint(
-        #     self.flowsheet().time,
-        #     doc="Equality pressure equation",
-        # )
-        # def eq_pressure_rule(blk, t):
-        #     return blk.properties_out[t].pressure == blk.properties_in[t].pressure
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Equality pressure equation",
+        )
+        def eq_pressure_rule(blk, t):
+            return blk.properties_out[t].pressure == 101325 * pyunits.Pa
 
         @self.Expression(
             self.flowsheet().time,
@@ -230,6 +231,56 @@ class TranslatorDataSXPrecipitator(TranslatorData):
                 == log_10(blk.cerium_molality[t])
             )
 
+        self.zero_flow_components = Set(
+            initialize=[
+                "HC2O4^-",
+                "H2C2O4",
+                "Ce(OH)^2+",
+                "Ce(OH)2^+",
+                "Ce(OH)3",
+                "Ce(OH)4^-",
+                "Ce(C2O4)^+",
+                "Ce(C2O4)2^-",
+                "Ce(C2O4)3^3-",
+                "Al(OH)^2+",
+                "Al(OH)2^+",
+                "Al(OH)3",
+                "Al(OH)4^-",
+                "Al2(OH)2^4+",
+                "Al3(OH)4^5+",
+                "Al(C2O4)^+",
+                "Al(C2O4)2^-",
+                "Al(C2O4)3^3-",
+                "Al(HC2O4)^2+",
+                "Al(OH)(C2O4)",
+                "Al(OH)2(C2O4)^-",
+                "Al(OH)(HC2O4)2^2-",
+                "Fe(OH)^2+",
+                "Fe(OH)2^+",
+                "Fe(OH)3",
+                "Fe(OH)4^-",
+                "Fe2(OH)2^4+",
+                "Fe3(OH)4^5+",
+                "Fe(C2O4)^+",
+                "Fe(C2O4)2^-",
+                "Fe(C2O4)3^3-",
+                "Ca(OH)^+",
+                "Ca(C2O4)",
+            ]
+        )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            self.zero_flow_components,
+            doc="Components with no flow equation",
+        )
+        def return_zero_flow_comp(blk, t, i):
+            return (
+                blk.properties_out[t].log10_molality_comp[i]
+                == 1
+            )
+
+        # iscale.set_scaling_factor(self.properties_out[0].flow_mass, 1e5)
 
         #TODO: Should components other than Fe^3+, Ca^2+, and Al^3+ be ignored/removed from the precip unit model?
 

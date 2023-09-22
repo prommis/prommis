@@ -52,7 +52,10 @@ from idaes.models.unit_models.mixer import (
     MixerInitializer,
 )
 
-from idaes.models.unit_models import Feed, Translator
+from idaes.models.unit_models.feed import (
+    Feed,
+    FeedInitializer,
+)
 from idaes.models.unit_models.product import (
     Product,
     ProductInitializer,
@@ -147,6 +150,8 @@ def build():
         heterogeneous_reactions=m.fs.leach_rxns,
     )
 
+    m.fs.leach_liquid_feed = Feed(property_package=m.fs.leach_soln)
+    m.fs.leach_solid_feed = Feed(property_package=m.fs.coal)
     m.fs.leach_filter_cake = Product(property_package=m.fs.coal)
 
     # ----------------------------------------------------------------------------------------------------------------
@@ -252,6 +257,8 @@ def build():
     # Flowsheet connections
 
     # Connections without recycle loops
+    m.fs.liq_feed = Arc(source=m.fs.leach_liquid_feed.outlet, destination=m.fs.leach.liquid_inlet)
+    m.fs.sol_feed = Arc(source=m.fs.leach_solid_feed.outlet, destination=m.fs.leach.solid_inlet)
     m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
     m.fs.s02 = Arc(source=m.fs.leach.liquid_outlet, destination=m.fs.leach_to_SX.inlet)
     m.fs.s03 = Arc(source=m.fs.leach_to_SX.outlet, destination=m.fs.solex.Acidsoln_inlet)
@@ -287,27 +294,27 @@ def build():
 
 def set_operating_conditions(m):
     # Liquid feed to old_leaching unit
-    m.fs.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
-    m.fs.leach.liquid_inlet.conc_mass_metals.fix(1e-10 * units.mg / units.L)    # Why fixed at lower bound?
-    m.fs.leach.liquid_inlet.conc_mole_acid[0, "H"].fix(2 * 0.05 * units.mol / units.L)
-    m.fs.leach.liquid_inlet.conc_mole_acid[0, "HSO4"].fix(1e-8 * units.mol / units.L)   # Why fixed at lower bound?
-    m.fs.leach.liquid_inlet.conc_mole_acid[0, "SO4"].fix(0.05 * units.mol / units.L)
+    m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
+    m.fs.leach_liquid_feed.conc_mass_metals.fix(1e-10 * units.mg / units.L)    # Why fixed at lower bound?
+    m.fs.leach_liquid_feed.conc_mole_acid[0, "H"].fix(2 * 0.05 * units.mol / units.L)
+    m.fs.leach_liquid_feed.conc_mole_acid[0, "HSO4"].fix(1e-8 * units.mol / units.L)   # Why fixed at lower bound?
+    m.fs.leach_liquid_feed.conc_mole_acid[0, "SO4"].fix(0.05 * units.mol / units.L)
 
     # Solid feed to old_leaching unit
-    m.fs.leach.solid_inlet.flow_mass.fix(22.68 * units.kg / units.hour)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "inerts"].fix(0.6952 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Al2O3"].fix(0.237 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Fe2O3"].fix(0.0642 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "CaO"].fix(3.31e-3 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Sc2O3"].fix(2.77966E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Y2O3"].fix(3.28653E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "La2O3"].fix(6.77769E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Ce2O3"].fix(0.000156161 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Pr2O3"].fix(1.71438E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Nd2O3"].fix(6.76618E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Sm2O3"].fix(1.47926E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Gd2O3"].fix(1.0405E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Dy2O3"].fix(7.54827E-06 * units.kg / units.kg)
+    m.fs.leach_solid_feed.flow_mass.fix(22.68 * units.kg / units.hour)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "inerts"].fix(0.6952 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Al2O3"].fix(0.237 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Fe2O3"].fix(0.0642 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "CaO"].fix(3.31e-3 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Sc2O3"].fix(2.77966E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Y2O3"].fix(3.28653E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "La2O3"].fix(6.77769E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Ce2O3"].fix(0.000156161 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Pr2O3"].fix(1.71438E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Nd2O3"].fix(6.76618E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Sm2O3"].fix(1.47926E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Gd2O3"].fix(1.0405E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Dy2O3"].fix(7.54827E-06 * units.kg / units.kg)
 
     # TODO: Replace this with a recycle loop
     # SX rougher recycle stream (treated as a product for now)
@@ -427,7 +434,14 @@ def set_operating_conditions(m):
 
 
 def initialize_system(m):
+    # Initialize feeds
+    initializer_feed = FeedInitializer()
+    initializer_feed.initialize(m.fs.precipitate_feed)
+    initializer_feed.initialize(m.fs.oxalate_feed)
+
     # Initialize old_leaching section
+    propagate_state(m.fs.liq_feed)
+    propagate_state(m.fs.sol_feed)
     initializer1 = MSContactorInitializer()
     initializer1.initialize(m.fs.leach)
 

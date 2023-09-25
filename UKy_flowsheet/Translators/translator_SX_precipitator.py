@@ -107,9 +107,6 @@ class TranslatorDataSXPrecipitator(TranslatorData):
                     == blk.solvent_mass_flow[t]
             )
 
-        #TODO: may need to add oxalate, which will be added from a separate stream
-        #TODO: may need a separate translator block for this or a mixer prior to this block?
-
         @self.Expression(
             self.flowsheet().time,
             doc="Aluminum molar flow (mol/s)",

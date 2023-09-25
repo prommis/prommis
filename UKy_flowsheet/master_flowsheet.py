@@ -323,6 +323,27 @@ def set_operating_conditions(m):
     m.fs.leach_solid_feed.mass_frac_comp[0, "Gd2O3"].fix(1.0405E-05 * units.kg / units.kg)
     m.fs.leach_solid_feed.mass_frac_comp[0, "Dy2O3"].fix(7.54827E-06 * units.kg / units.kg)
 
+    # Reactor volume
+    m.fs.leach.volume = Var(
+        m.fs.time,
+        m.fs.leach.elements,
+        initialize=1,
+        units=units.litre,
+        doc="Volume of each finite element."
+    )
+    m.fs.leach.volume.fix(100 * units.gallon)
+
+    def rule_heterogeneous_reaction_extent(b, t, s, r):
+        return b.heterogeneous_reaction_extent[t, s, r] == b.heterogeneous_reactions[t, s].reaction_rate[r]*b.volume[t,s]
+
+    m.fs.leach.heterogeneous_reaction_extent_constraint = Constraint(
+        m.fs.time,
+        m.fs.leach.elements,
+        m.fs.leach_rxns.reaction_idx,
+        rule=rule_heterogeneous_reaction_extent,
+    )
+
+
     # TODO: Replace this with a recycle loop
     # SX rougher recycle stream (treated as a product for now)
     m.fs.solex.Orgacid_inlet_state[0].flow_vol.fix(62.01 * units.L / units.hour)
@@ -344,26 +365,6 @@ def set_operating_conditions(m):
     #TODO: What should these feed conditions be? They are assumed to be zero in the example
     m.fs.precipitate_feed.properties[0].flow_mol_comp.fix(0)
     m.fs.precipitate_feed.properties[0].temperature.fix(300)
-
-    # Reactor volume
-    m.fs.leach.volume = Var(
-        m.fs.time,
-        m.fs.leach.elements,
-        initialize=1,
-        units=units.litre,
-        doc="Volume of each finite element."
-    )
-    m.fs.leach.volume.fix(100 * units.gallon)
-
-    def rule_heterogeneous_reaction_extent(b, t, s, r):
-        return b.heterogeneous_reaction_extent[t, s, r] == b.heterogeneous_reactions[t, s].reaction_rate[r]*b.volume[t,s]
-
-    m.fs.leach.heterogeneous_reaction_extent_constraint = Constraint(
-        m.fs.time,
-        m.fs.leach.elements,
-        m.fs.leach_rxns.reaction_idx,
-        rule=rule_heterogeneous_reaction_extent,
-    )
 
     # Roaster gas feed
     m.fs.roaster.deltaP.fix(0)
@@ -444,7 +445,6 @@ def solve(m):
 
 def display_results(m):
     m.fs.roaster.display()
-    pass
 
 if __name__ == "__main__":
     m, results = main()

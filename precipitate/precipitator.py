@@ -507,14 +507,14 @@ class PrecipitatorData(UnitModelBlockData):
                     self.outlet_precipitate_molality[t, comp],
                     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
                 )
-                iscale.set_scaling_factor(
-                    self.cv_precipitate.properties_in[t].flow_mol_comp[comp],
-                    pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
-                )
-                iscale.set_scaling_factor(
-                    self.cv_precipitate.properties_out[t].flow_mol_comp[comp],
-                    pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
-                )
+                # iscale.set_scaling_factor(
+                #     self.cv_precipitate.properties_in[t].flow_mol_comp[comp],
+                #     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
+                # )
+                # iscale.set_scaling_factor(
+                #     self.cv_precipitate.properties_out[t].flow_mol_comp[comp],
+                #     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
+                # )
                 iscale.set_scaling_factor(
                     self.molality_precipitate_comp[t, comp],
                     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),

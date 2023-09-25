@@ -96,12 +96,9 @@ from idaes.core.util.initialization import propagate_state
 
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
-import idaes.core.util.scaling as iscale
-
 def main():
     m = build()
 
-    set_scaling(m)
     set_operating_conditions(m)
     assert_units_consistent(m)
     # assert degrees_of_freedom(m) == 0
@@ -110,11 +107,6 @@ def main():
     dt = DiagnosticsToolbox(model=m)
     dt.report_structural_issues()
     dt.display_underconstrained_set()
-
-    badly_scaled_var_list = iscale.badly_scaled_var_generator(m, large=1e2, small=1e-2)
-    print("----------------   badly_scaled_var_list   ----------------")
-    for x in badly_scaled_var_list:
-        print(f"{x[0].name}\t{x[0].value}\tsf: {iscale.get_scaling_factor(x[0])}")
 
     initialize_system(m)
     # print("Numerical issues after initialization")
@@ -282,97 +274,24 @@ def build():
     # m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.solid_product.inlet)
     m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.roaster.solid_inlet)
 
+    # Connections with recycle loops
+    m.fs.liq_feed = Arc(source=m.fs.leach_liquid_feed.outlet, destination=m.fs.leach.liquid_inlet)
+    m.fs.sol_feed = Arc(source=m.fs.leach_solid_feed.outlet, destination=m.fs.leach.solid_inlet)
+    m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
+    m.fs.s02 = Arc(source=m.fs.leach.liquid_outlet, destination=m.fs.leach_to_SX.inlet)
+    # m.fs.s03 = Arc(source=m.fs.S01.recycle, destination=m.fs.solex.Orgacid_inlet_state)
+    # m.fs.s04 = Arc(source=m.fs.solex.Orgacid_outlet_state, destination=m.fs.sx_leach_acid) # Should eventually convert to a recycle
+    # m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet_state, destination=m.fs.precipitator.aqueous_inlet)
+    # m.fs.s06 = Arc(source=m.fs.oxalic_acid_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
+    # m.fs.s07 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.M01.SX_acid)
+    # m.fs.s08 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.M01.oxalic_acid)
+    # m.fs.s09 = Arc(source=m.fs.M01.outlet, destination=m.fs.S01.inlet)
+    # m.fs.s10 = Arc(source=m.fs.S01.product, destination=m.fs.roaster.inlet)
+    # m.fs.s11 = Arc(source=m.fs.roaster.product, destination=m.fs.S01.inlet)
+
     TransformationFactory("network.expand_arcs").apply_to(m)
 
     return m
-
-def set_scaling(m):
-    # Leaching
-    iscale.set_scaling_factor(m.fs.leach.liquid[0,1].conc_mole_acid["H"], 1e5)
-    iscale.set_scaling_factor(m.fs.leach.liquid[0,1].conc_mole_acid["HSO4"], 1e5)
-    iscale.set_scaling_factor(m.fs.leach.liquid[0,1].conc_mole_acid["SO4"], 1e5)
-    iscale.set_scaling_factor(m.fs.leach.liquid_inlet_state[0].conc_mole_acid["H"], 1e5)
-    iscale.set_scaling_factor(m.fs.leach.liquid_inlet_state[0].conc_mole_acid["HSO4"], 1e5)
-    iscale.set_scaling_factor(m.fs.leach.liquid_inlet_state[0].conc_mole_acid["SO4"], 1e5)
-
-    # Translators
-    iscale.set_scaling_factor(m.fs.leach_to_SX.properties_in[0].conc_mole_acid["H"], 1e5)
-    iscale.set_scaling_factor(m.fs.leach_to_SX.properties_in[0].conc_mole_acid["HSO4"], 1e5)
-    iscale.set_scaling_factor(m.fs.leach_to_SX.properties_in[0].conc_mole_acid["SO4"], 1e5)
-    iscale.set_scaling_factor(m.fs.SX_to_precipitator.properties_out[0].temperature, 1e-2)
-    iscale.set_scaling_factor(m.fs.SX_to_precipitator.properties_out[0].pressure, 1e-4)
-
-    # Mixer
-    iscale.set_scaling_factor(m.fs.mixer.SX_inlet_state[0].temperature, 1e-2)
-    iscale.set_scaling_factor(m.fs.mixer.SX_inlet_state[0].pressure, 1e-4)
-
-    iscale.set_scaling_factor(m.fs.mixer.oxalate_inlet_state[0].temperature, 1e-2)
-    iscale.set_scaling_factor(m.fs.mixer.oxalate_inlet_state[0].pressure, 1e-4)
-
-    iscale.set_scaling_factor(m.fs.mixer.mixed_state[0].temperature, 1e-2)
-    iscale.set_scaling_factor(m.fs.mixer.mixed_state[0].pressure, 1e-4)
-
-    iscale.set_scaling_factor(m.fs.mixed_product.properties[0].temperature, 1e-2)
-    iscale.set_scaling_factor(m.fs.mixed_product.properties[0].pressure, 1e-4)
-
-    # Precipitator
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Ce(OH)3(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Ce2(C2O4)3(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Al(OH)3(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Fe2O3(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Ca(C2O4)*H2O(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Ca(C2O4)*3H2O(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Ca(OH)2(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Ce(OH)3(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Ce2(C2O4)3(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Al(OH)3(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Fe2O3(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Ca(C2O4)*H2O(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Ca(C2O4)*3H2O(s)"], 1)
-    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Ca(OH)2(s)"], 1)
-
-    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "Al^3+"], 1e10)
-    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "H^+"], 1e10)
-    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "C2O4^2-"], 1e10)
-    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "Ca^2+"], 1e10)
-    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "Fe^3+"], 1e10)
-    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "Ce^3+"], 1e10)
-
-    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Ce(OH)3(s)"], 1e10)
-    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Ce2(C2O4)3(s)"], 1e10)
-    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Al(OH)3(s)"], 1e10)
-    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Fe2O3(s)"], 1e10)
-    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Ca(C2O4)*H2O(s)"], 1e10)
-    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Ca(C2O4)*3H2O(s)"], 1e10)
-    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Ca(OH)2(s)"], 1e10)
-
-    # Roaster
-    iscale.set_scaling_factor(m.fs.roaster.gas_in[0].mole_frac_phase_comp["Vap", "CO2"], 1e2)
-    iscale.set_scaling_factor(m.fs.roaster.gas_in[0].mole_frac_phase_comp["Vap", "N2"], 1e2)
-    iscale.set_scaling_factor(m.fs.roaster.gas_in[0].mole_frac_phase_comp["Vap", "H2O"], 1e2)
-    iscale.set_scaling_factor(m.fs.roaster.gas_in[0].mole_frac_phase_comp["Vap", "O2"], 1e2)
-
-    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_phase_comp["Vap", "CO2"], 1e2)
-    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_phase_comp["Vap", "N2"], 1e2)
-    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_phase_comp["Vap", "H2O"], 1e2)
-    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_phase_comp["Vap", "O2"], 1e2)
-
-    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_comp["CO2"], 1e2)
-    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_comp["N2"], 1e2)
-    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_comp["H2O"], 1e2)
-    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_comp["O2"], 1e2)
-
-    iscale.set_scaling_factor(m.fs.roaster.solid_in[0].temperature, 1e-2)
-
-    # Product streams
-    iscale.set_scaling_factor(m.fs.solid_product.properties[0].temperature, 1e-2)
-    iscale.set_scaling_factor(m.fs.liquid_product.properties[0].temperature, 1e-2)
-    iscale.set_scaling_factor(m.fs.liquid_product.properties[0].pressure, 1e-4)
-
-
-    # calculate and propagate scaling factors
-    iscale.calculate_scaling_factors(m)
-
 
 def set_operating_conditions(m):
     # Liquid feed to old_leaching unit
@@ -576,8 +495,20 @@ def solve(m):
     return results
 
 def display_results(m):
+    # m.fs.leach.liquid_outlet.display()
+    # m.fs.leach.solid_outlet.display()
+    # m.fs.sx_acid_soln.display()
+    # m.fs.sx_acid_soln.report()
+    # print("-------SX to Precipitator--------")
+    # m.fs.SX_to_precipitator.display()
+    # print("-------Mixer--------")
+    # m.fs.mixer.display()
+    # print("-------Mixer Product--------")
+    # m.fs.mixed_product.display()
+    # m.fs.liquid_product.display()
+    # m.fs.solid_product.display()
     # m.fs.roaster.display()
-    pass
+    m.fs.leach_filter_cake.display()
 
 if __name__ == "__main__":
     m, results = main()

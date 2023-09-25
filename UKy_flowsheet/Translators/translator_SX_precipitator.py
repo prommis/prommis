@@ -231,7 +231,17 @@ class TranslatorDataSXPrecipitator(TranslatorData):
                 == log_10(blk.cerium_molality[t])
             )
 
-        self.zero_flow_components = Set(
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Oxalate log10 molality",
+        )
+        def eq_oxalate_log10molality(blk, t):
+            return (
+                blk.properties_out[t].log10_molality_comp["C2O4^2-"]
+                == -4
+            )
+
+        self.components = Set(
             initialize=[
                 "HC2O4^-",
                 "H2C2O4",
@@ -271,13 +281,13 @@ class TranslatorDataSXPrecipitator(TranslatorData):
 
         @self.Constraint(
             self.flowsheet().time,
-            self.zero_flow_components,
-            doc="Components with no flow equation",
+            self.components,
+            doc="Components",
         )
-        def return_zero_flow_comp(blk, t, i):
+        def eq_component_log10molality(blk, t, i):
             return (
                 blk.properties_out[t].log10_molality_comp[i]
-                == 1
+                == -20
             )
 
         # iscale.set_scaling_factor(self.properties_out[0].flow_mass, 1e5)

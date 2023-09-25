@@ -104,29 +104,24 @@ def main():
     set_scaling(m)
     set_operating_conditions(m)
     assert_units_consistent(m)
-    # assert degrees_of_freedom(m) == 0
+    assert degrees_of_freedom(m) == 0
 
     print("Structural issues after setting operating conditions")
     dt = DiagnosticsToolbox(model=m)
     dt.report_structural_issues()
     dt.display_underconstrained_set()
 
-    badly_scaled_var_list = iscale.badly_scaled_var_generator(m, large=1e2, small=1e-2)
-    print("----------------   badly_scaled_var_list   ----------------")
-    for x in badly_scaled_var_list:
-        print(f"{x[0].name}\t{x[0].value}\tsf: {iscale.get_scaling_factor(x[0])}")
-
     initialize_system(m)
-    # print("Numerical issues after initialization")
-    # dt.report_numerical_issues()
-    # dt.display_constraints_with_large_residuals()
-    # dt.display_variables_at_or_outside_bounds()
+    print("Numerical issues after initialization")
+    dt.report_numerical_issues()
+    dt.display_constraints_with_large_residuals()
+    dt.display_variables_at_or_outside_bounds()
 
     results = solve(m)
-    # print("Numerical issues after solving")
-    # dt.report_numerical_issues()
-    # dt.display_constraints_with_large_residuals()
-    # dt.display_variables_at_or_outside_bounds()
+    print("Numerical issues after solving")
+    dt.report_numerical_issues()
+    dt.display_constraints_with_large_residuals()
+    dt.display_variables_at_or_outside_bounds()
 
     display_results(m)
 
@@ -211,14 +206,14 @@ def build():
 
     m.fs.oxalate_feed = Feed(property_package=m.fs.properties_aq)
 
-    m.fs.mixer = Mixer(
-        property_package=m.fs.properties_aq,
-        num_inlets=2,
-        inlet_list=["SX_inlet", "oxalate_inlet"],
-        material_balance_type=MaterialBalanceType.componentTotal,
-        energy_mixing_type=MixingType.none,
-        # momentum_mixing_type=MomentumMixingType.none,
-    )
+    # m.fs.mixer = Mixer(
+    #     property_package=m.fs.properties_aq,
+    #     num_inlets=2,
+    #     inlet_list=["SX_inlet", "oxalate_inlet"],
+    #     material_balance_type=MaterialBalanceType.componentTotal,
+    #     energy_mixing_type=MixingType.none,
+    #     # momentum_mixing_type=MomentumMixingType.none,
+    # )
 
     m.fs.mixed_product = Product(property_package=m.fs.properties_aq)
 
@@ -273,10 +268,10 @@ def build():
     m.fs.s04 = Arc(source=m.fs.solex.Orgacid_outlet, destination=m.fs.sx_leach_acid.inlet) # Should eventually convert to a recycle
     # m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.sx_acid_soln.inlet)
     m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.SX_to_precipitator.inlet)
-    m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.mixer.SX_inlet)
-    m.fs.s07 = Arc(source=m.fs.oxalate_feed.outlet, destination=m.fs.mixer.oxalate_inlet)
+    m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.precipitator.aqueous_inlet)
+    # m.fs.s07 = Arc(source=m.fs.oxalate_feed.outlet, destination=m.fs.mixer.oxalate_inlet)
     # m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.mixed_product.inlet)
-    m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.aqueous_inlet)
+    # m.fs.s08 = Arc(source=m.fs.mixer.outlet, destination=m.fs.precipitator.aqueous_inlet)
     m.fs.s09 = Arc(source=m.fs.precipitate_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
     m.fs.s10 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.liquid_product.inlet)  # Should eventually convert to a recycle
     # m.fs.s11 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.solid_product.inlet)
@@ -303,17 +298,17 @@ def set_scaling(m):
     iscale.set_scaling_factor(m.fs.SX_to_precipitator.properties_out[0].pressure, 1e-4)
 
     # Mixer
-    iscale.set_scaling_factor(m.fs.mixer.SX_inlet_state[0].temperature, 1e-2)
-    iscale.set_scaling_factor(m.fs.mixer.SX_inlet_state[0].pressure, 1e-4)
-
-    iscale.set_scaling_factor(m.fs.mixer.oxalate_inlet_state[0].temperature, 1e-2)
-    iscale.set_scaling_factor(m.fs.mixer.oxalate_inlet_state[0].pressure, 1e-4)
-
-    iscale.set_scaling_factor(m.fs.mixer.mixed_state[0].temperature, 1e-2)
-    iscale.set_scaling_factor(m.fs.mixer.mixed_state[0].pressure, 1e-4)
-
-    iscale.set_scaling_factor(m.fs.mixed_product.properties[0].temperature, 1e-2)
-    iscale.set_scaling_factor(m.fs.mixed_product.properties[0].pressure, 1e-4)
+    # iscale.set_scaling_factor(m.fs.mixer.SX_inlet_state[0].temperature, 1e-2)
+    # iscale.set_scaling_factor(m.fs.mixer.SX_inlet_state[0].pressure, 1e-4)
+    #
+    # iscale.set_scaling_factor(m.fs.mixer.oxalate_inlet_state[0].temperature, 1e-2)
+    # iscale.set_scaling_factor(m.fs.mixer.oxalate_inlet_state[0].pressure, 1e-4)
+    #
+    # iscale.set_scaling_factor(m.fs.mixer.mixed_state[0].temperature, 1e-2)
+    # iscale.set_scaling_factor(m.fs.mixer.mixed_state[0].pressure, 1e-4)
+    #
+    # iscale.set_scaling_factor(m.fs.mixed_product.properties[0].temperature, 1e-2)
+    # iscale.set_scaling_factor(m.fs.mixed_product.properties[0].pressure, 1e-4)
 
     # Precipitator
     iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Ce(OH)3(s)"], 1)
@@ -551,14 +546,14 @@ def initialize_system(m):
     initializer2.initialize(m.fs.SX_to_precipitator)
 
     # Initialize mixer
-    propagate_state(m.fs.s06)
-    propagate_state(m.fs.s07)
-
-    initializer3 = MixerInitializer()
-    initializer3.initialize(m.fs.mixer)
+    # propagate_state(m.fs.s06)
+    # propagate_state(m.fs.s07)
+    #
+    # initializer3 = MixerInitializer()
+    # initializer3.initialize(m.fs.mixer)
 
     # Initialize precipitator
-    propagate_state(m.fs.s08)
+    propagate_state(m.fs.s06)
     propagate_state(m.fs.s09)
 
     initializer2.initialize(m.fs.precipitator)

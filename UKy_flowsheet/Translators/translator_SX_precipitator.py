@@ -287,10 +287,6 @@ class TranslatorDataSXPrecipitator(TranslatorData):
                 == -20
             )
 
-        # iscale.set_scaling_factor(self.properties_out[0].flow_mass, 1e5)
-
-        #TODO: Should components other than Fe^3+, Ca^2+, and Al^3+ be ignored/removed from the precip unit model?
-
         #TODO: Need to create pH adjustment block and track pH in SX stream instead of just fixing pH (as done below)
         pH = 2.5
 

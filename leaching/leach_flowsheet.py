@@ -11,7 +11,7 @@
 # for full copyright and license information.
 #################################################################################
 """
-Initial flowsheet for UKy old_leaching process
+Initial flowsheet for UKy leaching process
 
 Authors: Andrew Lee
 """

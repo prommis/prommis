@@ -40,6 +40,8 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
 )
 
+from idaes.core.initialization import BlockTriangularizationInitializer, InitializationStatus
+
 import sys
 sys.path.append('../leaching')
 from leach_solids_properties import CoalRefuseParameters
@@ -70,7 +72,7 @@ def main(m=None):
     create_model(m)
     set_inputs(m)
     iscale.calculate_scaling_factors(m)
-    m.fs.roaster.initialize(outlvl=idaeslog.NOTSET)
+    initialize_system(m)
     solver = get_solver(options={"max_iter": 50})
     dof = degrees_of_freedom(m)
     print('dof=', dof)
@@ -128,7 +130,6 @@ def set_inputs(m):
     }
     for i, v in gas_comp.items():
         m.fs.roaster.gas_inlet.mole_frac_comp[0, i].fix(v)
-    m.fs.roaster.gas_inlet.mole_frac_comp[0, "N2"].unfix()
     # inlet flue gas mole flow rate
     m.fs.roaster.gas_inlet.flow_mol.fix(80)
 
@@ -226,6 +227,11 @@ def set_inputs(m):
     # recovery fraction of impurity minerals
     m.fs.roaster.frac_impurity_recovery.fix(0.99)
 
+
+def initialize_system(m):
+    initializer = BlockTriangularizationInitializer()
+    initializer.initialize(m.fs.roaster)
+    assert initializer.summary[m.fs.roaster]["status"] == InitializationStatus.Ok
 
 if __name__ == "__main__":
     """

@@ -44,6 +44,7 @@ from idaes.core.initialization import BlockTriangularizationInitializer, Initial
 
 import sys
 
+# May need to delete these
 sys.path.append('../precipitate')
 from precip_prop import PrecipitateStateParameterBlock
 
@@ -109,7 +110,6 @@ def create_model(m):
         # metal_list = ["Sc","Y","La","Ce","Pr","Nd","Sm","Eu","Gd","Tb","Dy","Tm","Yb","Lu"], default is ["Ce"] only
     )
 
-
 def set_inputs(m):
     """fix variables for geometry and design data"""
     m.fs.roaster.deltaP.fix(0)
@@ -155,12 +155,10 @@ def set_inputs(m):
     '''
     m.fs.roaster.frac_comp_recovery.fix(0.95)
 
-
 def initialize_system(m):
     initializer = BlockTriangularizationInitializer()
     initializer.initialize(m.fs.roaster)
     assert initializer.summary[m.fs.roaster]["status"] == InitializationStatus.Ok
-
 
 if __name__ == "__main__":
     """

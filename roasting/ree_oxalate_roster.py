@@ -192,12 +192,12 @@ constructed,
 **True** - include pressure change terms,
 **False** - exclude pressure change terms.}"""))
     CONFIG.declare(
-        "metal_list",
-        ConfigValue(
-            default=["Ce"],
-            domain=list,
-            description="List of components in solid oxalate feed",
-            doc="""A dict of the components of interest in the mixture.
+    "metal_list", 
+    ConfigValue(
+        default=["Ce"],
+        domain=list,
+        description="List of components in solid oxalate feed",
+        doc="""A dict of the components of interest in the mixture.
         Keys are component names and values are configuration arguments to
         be passed to Component on construction.
         """))
@@ -352,10 +352,8 @@ constructed,
         self.cp1_oxide_list_all["Nd"] = 0.0403
 
         # unit constants used for the expressions of liquid water enthalpy
-        self.enth_mol_const = Param(initialize=1, units=pyunits.J / pyunits.mol,
-                                    doc='1 unit of molar enthalpy in J/mol')
-        self.cp_mas_const = Param(initialize=1, units=pyunits.J / pyunits.kg / pyunits.K,
-                                  doc='1 unit of mass heat capacity in J/kg-K')
+        self.enth_mol_const = Param(initialize=1, units=pyunits.J/pyunits.mol, doc='1 unit of molar enthalpy in J/mol')
+        self.cp_mas_const = Param(initialize=1, units=pyunits.J/pyunits.kg/pyunits.K, doc='1 unit of mass heat capacity in J/kg-K')
 
     def _make_vars(self):
         ''' This section declares variables within this model.'''

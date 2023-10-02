@@ -10,7 +10,7 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 """
-Translator block converting from leaching properties to solvent extraction properties.
+Translator block converting from old_leaching properties to solvent extraction properties.
 This is copied from the IDAES Generic template for a translator block.
 
 Assumptions:
@@ -49,7 +49,7 @@ _log = idaeslog.getLogger(__name__)
 @declare_process_block_class("Translator_leaching_SX")
 class TranslatorDataLeachingSX(TranslatorData):
     """
-    Translator block representing the leaching/SX interface
+    Translator block representing the old_leaching/SX interface
     """
 
     def build(self):
@@ -84,40 +84,22 @@ class TranslatorDataLeachingSX(TranslatorData):
         # def eq_pressure_rule(blk, t):
         #     return blk.properties_out[t].pressure == blk.properties_in[t].pressure
 
-        self.unchanged_component = Set(
+        self.metals = Set(
             initialize=["Al", "Ca", "Fe", "Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
         )
 
         @self.Constraint(
             self.flowsheet().time,
-            self.unchanged_component,
-            doc="Equality equation for unchanged components",
+            self.metals,
+            doc="Equality equation for metal components",
         )
-        def eq_unchanged_component(blk, t, i):
+        def eq_metal_mass_flow(blk, t, i):
             return (
                 blk.properties_out[t].flow_mass[i]
                 == blk.properties_in[t].get_material_flow_terms("Liq", i)
                 * blk.properties_in[t].params.mw[i]
                 * 1000 * pyunits.g / pyunits.kg
             )
-
-        # self.acid_set = Set(
-        #     initialize=[
-        #         "H",
-        #         "HSO4",
-        #         "SO4",
-        #     ]
-        # )
-        #
-        # @self.Constraint(
-        #     self.flowsheet().time,
-        #     self.acid_set,
-        #     doc="Components with no flow equation",
-        # )
-        # def eq_acid_set(blk, t, i):
-        #     return blk.properties_out[t].flow_mass["H2SO4"] == sum(
-        #         blk.properties_in[t].get_material_flow_terms("Liq", i) for i in blk.acid_set
-        #     )
 
     def initialize_build(
         self,

@@ -43,6 +43,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 from idaes.core.initialization import BlockTriangularizationInitializer, InitializationStatus
 
 import sys
+
 sys.path.append('../precipitate')
 from precip_prop import PrecipitateStateParameterBlock
 
@@ -59,7 +60,7 @@ def main(m=None):
         # Add a flowsheet object to the model
         m.fs = FlowsheetBlock(dynamic=False)
         # Add property packages to flowsheet library
-        gas_species={"O2", "H2O", "CO2", "N2"}
+        gas_species = {"O2", "H2O", "CO2", "N2"}
         m.fs.prop_gas = GenericParameterBlock(
             **get_prop(gas_species, ["Vap"], EosType.IDEAL),
             doc="gas property",
@@ -81,7 +82,6 @@ def main(m=None):
             key_components=key_components,
         )
 
-
     create_model(m)
     set_inputs(m)
     initialize_system(m)
@@ -94,7 +94,7 @@ def main(m=None):
     print('heat_duty=', m.fs.roaster.heat_duty[0].value)
     print('mass fraction of metal oxide in solid product:')
     for x in m.fs.roaster.metal_list:
-        print(x, pyo.value(m.fs.roaster.mass_frac_comp_product[0,x]))
+        print(x, pyo.value(m.fs.roaster.mass_frac_comp_product[0, x]))
     return m
 
 
@@ -106,9 +106,8 @@ def create_model(m):
         has_holdup=False,
         has_heat_transfer=True,
         has_pressure_change=True,
-        #metal_list = ["Sc","Y","La","Ce","Pr","Nd","Sm","Eu","Gd","Tb","Dy","Tm","Yb","Lu"], default is ["Ce"] only
+        # metal_list = ["Sc","Y","La","Ce","Pr","Nd","Sm","Eu","Gd","Tb","Dy","Tm","Yb","Lu"], default is ["Ce"] only
     )
-
 
 def set_inputs(m):
     """fix variables for geometry and design data"""
@@ -119,10 +118,10 @@ def set_inputs(m):
     fgas = 0.00781
     # inlet flue gas composition, typical flue gas by buring CH4 with air with stoichiometric ratio 0f 2.3
     gas_comp = {
-    "O2":  0.1118,
-    "H2O": 0.1005,
-    "CO2": 0.0431,
-    "N2":  0.7446,
+        "O2": 0.1118,
+        "H2O": 0.1005,
+        "CO2": 0.0431,
+        "N2": 0.7446,
     }
     for i, v in gas_comp.items():
         m.fs.roaster.gas_inlet.mole_frac_comp[0, i].fix(v)
@@ -136,7 +135,7 @@ def set_inputs(m):
     m.fs.roaster.solid_in[0].flow_mol_comp['Ce2(C2O4)3(s)'].fix(6.1e-5)
     m.fs.roaster.flow_mol_moist_feed.fix(6.75e-4)
     # total solid mass flow rate including surface moisture
-    
+
     '''
     m.fs.roaster.mass_frac_feed_dry[0,'Sc'].fix(0.001648997)
     m.fs.roaster.mass_frac_feed_dry[0,'Y'].fix(0.0619823)
@@ -167,6 +166,3 @@ if __name__ == "__main__":
     to run dynamic model, call main_dyn()
     """
     m = main()
-    
-
-

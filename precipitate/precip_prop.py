@@ -15,9 +15,12 @@ from idaes.core import (
     Phase,
     Component,
     ElectrolytePropertySet,
+    MaterialBalanceType,
+    MaterialFlowBasis,
 )
 from idaes.core import declare_process_block_class
 from idaes.core.util.math import smooth_min, smooth_abs
+from idaes.core.util.initialization import fix_state_vars
 
 
 _default_units = {
@@ -415,6 +418,16 @@ class AqueousStateBlockData(StateBlockData):
             expr=-self.pH
             == self.log10_molality_comp["H^+"] + self.log10_act_coeff["H^+"]
         )
+
+    def get_material_flow_basis(self):
+        return MaterialFlowBasis.mass
+
+    def get_material_flow_terms(self, p, j):
+        """Create material flow terms for control volume."""
+        return self.log10_molality_comp[j]
+
+    def default_material_balance_type(self):
+        return MaterialBalanceType.componentTotal
 
     def define_state_vars(self):
         return {

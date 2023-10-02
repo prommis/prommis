@@ -38,6 +38,7 @@ from pyomo.environ import (
     check_optimal_termination,
     Set,
     value,
+    log10 as log_10,
 )
 
 from math import log10
@@ -50,7 +51,7 @@ _log = idaeslog.getLogger(__name__)
 
 
 @declare_process_block_class("Translator_SX_precipitator")
-class TranslatorDataLeachingSX(TranslatorData):
+class TranslatorDataSXPrecipitator(TranslatorData):
     """
     Translator block representing the SX/precipitator interface
     """
@@ -64,11 +65,27 @@ class TranslatorDataLeachingSX(TranslatorData):
             None
         """
         # Call UnitModel.build to setup dynamics
-        super(TranslatorDataLeachingSX, self).build()
+        super(TranslatorDataSXPrecipitator, self).build()
 
         mw_al = 0.02698154 * pyunits.kg / pyunits.mol
         mw_ca = 0.03996259 * pyunits.kg / pyunits.mol
         mw_fe = 0.05593494 * pyunits.kg / pyunits.mol
+        mw_ce = 0.140116 * pyunits.kg / pyunits.mol
+
+        #TODO: Replace temperature and pressure constraints with an equality when SX has temp and pressure
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Equality temperature equation",
+        )
+        def eq_temperature_rule(blk, t):
+            return blk.properties_out[t].temperature == 300 * pyunits.kelvin
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Equality pressure equation",
+        )
+        def eq_pressure_rule(blk, t):
+            return blk.properties_out[t].pressure == 101325 * pyunits.Pa
 
         @self.Expression(
             self.flowsheet().time,
@@ -90,9 +107,6 @@ class TranslatorDataLeachingSX(TranslatorData):
                     == blk.solvent_mass_flow[t]
             )
 
-        #TODO: may need to add oxalate, which will be added from a separate stream
-        #TODO: may need a separate translator block for this or a mixer prior to this block?
-
         @self.Expression(
             self.flowsheet().time,
             doc="Aluminum molar flow (mol/s)",
@@ -103,14 +117,24 @@ class TranslatorDataLeachingSX(TranslatorData):
                 / mw_al
             )
 
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Aluminum dimensionless molality",
+        )
+        def aluminum_molality(blk, t):
+            return (
+                blk.aluminum_molar_flow[t] * pyunits.s / pyunits.mol
+                / blk.solvent_mass_flow[t] * pyunits.kg / pyunits.s
+            )
+
         @self.Constraint(
             self.flowsheet().time,
             doc="Aluminum log10 molality",
         )
-        def eq_aluminum_molality(blk, t):
+        def eq_aluminum_log10molality(blk, t):
             return (
                 blk.properties_out[t].log10_molality_comp["Al^3+"]
-                == log10(value(blk.aluminum_molar_flow[t] / blk.solvent_mass_flow[t]))
+                == log_10(blk.aluminum_molality[t])
             )
 
         @self.Expression(
@@ -123,14 +147,24 @@ class TranslatorDataLeachingSX(TranslatorData):
                 / mw_ca
             )
 
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Calcium dimensionless molality",
+        )
+        def calcium_molality(blk, t):
+            return (
+                blk.calcium_molar_flow[t] * pyunits.s / pyunits.mol
+                / blk.solvent_mass_flow[t] * pyunits.kg / pyunits.s
+            )
+
         @self.Constraint(
             self.flowsheet().time,
             doc="Calcium log10 molality",
         )
-        def eq_calcium_molality(blk, t):
+        def eq_calcium_log10molality(blk, t):
             return (
                 blk.properties_out[t].log10_molality_comp["Ca^2+"]
-                == log10(value(blk.calcium_molar_flow[t] / blk.solvent_mass_flow[t]))
+                == log_10(blk.calcium_molality[t])
             )
 
         @self.Expression(
@@ -143,15 +177,114 @@ class TranslatorDataLeachingSX(TranslatorData):
                 / mw_fe
             )
 
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Iron dimensionless molality",
+        )
+        def iron_molality(blk, t):
+            return (
+                blk.iron_molar_flow[t] * pyunits.s / pyunits.mol
+                / blk.solvent_mass_flow[t] * pyunits.kg / pyunits.s
+            )
+
         # Assume all iron forms iron(III) ions
         @self.Constraint(
             self.flowsheet().time,
             doc="Iron log10 molality",
         )
-        def eq_iron_molality(blk, t):
+        def eq_iron_log10molality(blk, t):
             return (
                 blk.properties_out[t].log10_molality_comp["Fe^3+"]
-                == log10(value(blk.iron_molar_flow[t] / blk.solvent_mass_flow[t]))
+                == log_10(blk.iron_molality[t])
+            )
+
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Cerium molar flow (mol/s)",
+        )
+        def cerium_molar_flow(blk, t):
+            return (
+                pyunits.convert(blk.properties_in[t].flow_mass["Ce"], to_units=pyunits.kg / pyunits.s,)
+                / mw_ce
+            )
+
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Cerium dimensionless molality",
+        )
+        def cerium_molality(blk, t):
+            return (
+                blk.cerium_molar_flow[t] * pyunits.s / pyunits.mol
+                / blk.solvent_mass_flow[t] * pyunits.kg / pyunits.s
+            )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Cerium log10 molality",
+        )
+        def eq_cerium_log10molality(blk, t):
+            return (
+                blk.properties_out[t].log10_molality_comp["Ce^3+"]
+                == log_10(blk.cerium_molality[t])
+            )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Oxalate log10 molality",
+        )
+        def eq_oxalate_log10molality(blk, t):
+            return (
+                blk.properties_out[t].log10_molality_comp["C2O4^2-"]
+                == -4
+            )
+
+        self.components = Set(
+            initialize=[
+                "HC2O4^-",
+                "H2C2O4",
+                "Ce(OH)^2+",
+                "Ce(OH)2^+",
+                "Ce(OH)3",
+                "Ce(OH)4^-",
+                "Ce(C2O4)^+",
+                "Ce(C2O4)2^-",
+                "Ce(C2O4)3^3-",
+                "Al(OH)^2+",
+                "Al(OH)2^+",
+                "Al(OH)3",
+                "Al(OH)4^-",
+                "Al2(OH)2^4+",
+                "Al3(OH)4^5+",
+                "Al(C2O4)^+",
+                "Al(C2O4)2^-",
+                "Al(C2O4)3^3-",
+                "Al(HC2O4)^2+",
+                "Al(OH)(C2O4)",
+                "Al(OH)2(C2O4)^-",
+                "Al(OH)(HC2O4)2^2-",
+                "Fe(OH)^2+",
+                "Fe(OH)2^+",
+                "Fe(OH)3",
+                "Fe(OH)4^-",
+                "Fe2(OH)2^4+",
+                "Fe3(OH)4^5+",
+                "Fe(C2O4)^+",
+                "Fe(C2O4)2^-",
+                "Fe(C2O4)3^3-",
+                "Ca(OH)^+",
+                "Ca(C2O4)",
+            ]
+        )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            self.components,
+            doc="Components",
+        )
+        def eq_component_log10molality(blk, t, i):
+            return (
+                blk.properties_out[t].log10_molality_comp[i]
+                == -20
             )
 
         #TODO: Need to create pH adjustment block and track pH in SX stream instead of just fixing pH (as done below)
@@ -164,7 +297,7 @@ class TranslatorDataLeachingSX(TranslatorData):
         def eq_hydrogen_molality(blk, t):
             return (
                 blk.properties_out[t].log10_molality_comp["H^+"]
-                == log10(value(10**(-pH)))
+                == log_10(10**(-pH))
             )
 
         # water dissociation equilibrium constant at 25C
@@ -177,35 +310,8 @@ class TranslatorDataLeachingSX(TranslatorData):
         def eq_hydroxide_molality(blk, t):
             return (
                 blk.properties_out[t].log10_molality_comp["OH^-"]
-                == log10(value(Kw / 10**(-pH)))
+                == log_10(Kw / 10**(-pH))
             )
-
-    #TODO: Consider changing this to a zero or just removing all these components from the precipitator
-
-    #     self.zero_flow_components = Set(
-    #         initialize=[
-    #             "Na^+",
-    #             "Ce^3+",
-    #             "Fe^2+",
-    #             "Mg^2+",
-    #             "NO3^-",
-    #             "SO4^2-",
-    #             "Cl^-",
-    #         ]
-    #     )
-    #
-    #     @self.Constraint(
-    #         self.flowsheet().time,
-    #         self.zero_flow_components,
-    #         doc="Components with no flow equation",
-    #     )
-    #     def return_zero_flow_molality(blk, t, i):
-    #         return (
-    #             blk.properties_out[t].log10_molality_comp[i]
-    #             == 1e-9 # Change this value
-    #         )
-
-
 
     def initialize_build(
         self,

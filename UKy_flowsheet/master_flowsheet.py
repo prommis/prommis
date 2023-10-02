@@ -24,7 +24,6 @@ from pyomo.environ import (
     TransformationFactory,
     units,
     Var,
-    value,
 )
 from pyomo.network import Arc
 from pyomo.util.check_units import assert_units_consistent
@@ -37,28 +36,28 @@ from idaes.models.unit_models.mscontactor import (
     MSContactorInitializer,
 )
 
-from idaes.models.unit_models.separator import (
-    Separator,
-    SplittingType,
-    SeparatorInitializer,
-    MaterialBalanceType,
+from idaes.models.unit_models.feed import (
+    Feed,
+    FeedInitializer,
 )
-
-from idaes.models.unit_models import Mixer, Product, Feed, Translator
+from idaes.models.unit_models.product import (
+    Product,
+    ProductInitializer,
+)
 from idaes.core.util.model_statistics import degrees_of_freedom
 
-from workspace.UKy_flowsheet.leaching.leach_solution_properties import LeachSolutionParameters
-from workspace.UKy_flowsheet.leaching.leach_solids_properties import CoalRefuseParameters
-from workspace.UKy_flowsheet.leaching.leach_reactions import CoalRefuseLeachingReactions
+from workspace.UKy_flowsheet.old_leaching.leach_solution_properties import LeachSolutionParameters
+from workspace.UKy_flowsheet.old_leaching.leach_solids_properties import CoalRefuseParameters
+from workspace.UKy_flowsheet.old_leaching.leach_reactions import CoalRefuseLeachingReactions
 
-from workspace.UKy_flowsheet.Solvent_Extraction.REESXmodel import REESX
-from workspace.UKy_flowsheet.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
-from workspace.UKy_flowsheet.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
+from workspace.Solvent_Extraction.REESXmodel import REESX
+from workspace.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
+from workspace.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
 
-from workspace.UKy_flowsheet.Precipitation.precipitator import Precipitator
-from workspace.UKy_flowsheet.Precipitation.precip_prop import AqueousStateParameterBlock, PrecipitateStateParameterBlock
+from workspace.precipitate.precipitator import Precipitator
+from workspace.precipitate.precip_prop import AqueousStateParameterBlock, PrecipitateStateParameterBlock
 
-from workspace.UKy_flowsheet.Roasting.ree_oxalate_roster import REEOxalateRoaster
+from workspace.roasting.ree_oxalate_roster import REEOxalateRoaster
 
 from workspace.UKy_flowsheet.Translators.translator_leaching_SX import Translator_leaching_SX
 from workspace.UKy_flowsheet.Translators.translator_SX_precipitator import Translator_SX_precipitator
@@ -71,24 +70,33 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
 )
 
-from idaes.core.initialization import (
-    BlockTriangularizationInitializer,
-    SingleControlVolumeUnitInitializer,
-    InitializationStatus,
-)
+from idaes.core.initialization import BlockTriangularizationInitializer
 
 from idaes.core.util.initialization import propagate_state
 
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
+import idaes.core.util.scaling as iscale
+
 def main():
     m = build()
+
+    set_scaling(m)
     set_operating_conditions(m)
     assert_units_consistent(m)
+    assert degrees_of_freedom(m) == 0
+
+    print("Structural issues after setting operating conditions")
+    dt = DiagnosticsToolbox(model=m)
+    dt.report_structural_issues()
 
     initialize_system(m)
+    print("Numerical issues after initialization")
+    dt.report_numerical_issues()
 
     results = solve(m)
+    print("Numerical issues after solving")
+    dt.report_numerical_issues()
 
     display_results(m)
 
@@ -120,8 +128,11 @@ def build():
         heterogeneous_reactions=m.fs.leach_rxns,
     )
 
+    m.fs.leach_liquid_feed = Feed(property_package=m.fs.leach_soln)
+    m.fs.leach_solid_feed = Feed(property_package=m.fs.coal)
     m.fs.leach_filter_cake = Product(property_package=m.fs.coal)
 
+    # ----------------------------------------------------------------------------------------------------------------
     # Solvent extraction property and unit models
     m.fs.prop_a = REESolExAqParameters()
     m.fs.prop_o = REESolExOgParameters()
@@ -137,13 +148,12 @@ def build():
 
     m.fs.sx_leach_acid = Product(property_package=m.fs.prop_o)
 
-    m.fs.sx_acid_soln = Product(property_package=m.fs.prop_a)
-
+    # --------------------------------------------------------------------------------------------------------------
     # Precipitation property and unit models
 
     key_components = {
         "H^+",
-        # "Ce^3+",
+        "Ce^3+",
         "Al^3+",
         "Fe^3+",
         # "Fe^2+",
@@ -167,27 +177,16 @@ def build():
         outlet_property_package=m.fs.properties_aq,
     )
 
-    # m.fs.M01 = Mixer(
-    #     property_package=m.fs.properties_aq,
-    #     num_inlets=2,
-    #     inlet_list=["SX_acid", "oxalic_acid"],
-    # )
-
     m.fs.precipitator = Precipitator(
         property_package_aqueous=m.fs.properties_aq,
         property_package_precipitate=m.fs.properties_solid,
     )
 
-    # Can't treat this as a Feed stream since the unit model doesn't have flow_mol_comp
-    # m.fs.oxalic_acid_feed = Feed(property_package=m.fs.properties_solid)
+    m.fs.precipitate_feed = Feed(property_package=m.fs.properties_solid)
 
-    # TODO: Replace with a filter press
-    # m.fs.S01 = Separator(
-    #     property_package=m.fs.leach_soln,
-    #     outlet_list=["recycle", "product"],
-    #     split_basis=SplittingType.phaseFlow,
-    # )
+    m.fs.liquid_product = Product(property_package=m.fs.properties_aq)
 
+    # -----------------------------------------------------------------------------------------------------------------
     # Roasting property and unit models
 
     gas_species = {"O2", "H2O", "CO2", "N2"}
@@ -196,86 +195,133 @@ def build():
         doc="gas property",
     )
 
+    m.fs.prop_solid = PrecipitateStateParameterBlock(
+        key_components=key_components,
+    )
+
     m.fs.roaster = REEOxalateRoaster(
-        property_package=m.fs.prop_gas,
+        property_package_gas=m.fs.prop_gas,
+        property_package_precipitate=m.fs.prop_solid,
         has_holdup=False,
         has_heat_transfer=True,
         has_pressure_change=True,
-        metal_list=["Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Eu", "Gd", "Tb", "Dy", "Tm", "Yb", "Lu"]
     )
 
-    # Flowsheet connections
-
-    # Initial sub-flowsheet
+    # -----------------------------------------------------------------------------------------------------------------
+    # Connections without recycle loops
+    m.fs.liq_feed = Arc(source=m.fs.leach_liquid_feed.outlet, destination=m.fs.leach.liquid_inlet)
+    m.fs.sol_feed = Arc(source=m.fs.leach_solid_feed.outlet, destination=m.fs.leach.solid_inlet)
     m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
     m.fs.s02 = Arc(source=m.fs.leach.liquid_outlet, destination=m.fs.leach_to_SX.inlet)
     m.fs.s03 = Arc(source=m.fs.leach_to_SX.outlet, destination=m.fs.solex.Acidsoln_inlet)
-    # m.fs.s03 = Arc(source=m.fs.oxalic_acid_feed.outlet, destination=m.fs.solex.Orgacid_inlet)
     m.fs.s04 = Arc(source=m.fs.solex.Orgacid_outlet, destination=m.fs.sx_leach_acid.inlet) # Should eventually convert to a recycle
-    # m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.sx_acid_soln.inlet)
     m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet, destination=m.fs.SX_to_precipitator.inlet)
     m.fs.s06 = Arc(source=m.fs.SX_to_precipitator.outlet, destination=m.fs.precipitator.aqueous_inlet)
-    # m.fs.s07 = Arc(source=m.fs.oxalic_acid_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
-
-    # m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.leach_filter_cake.inlet)
-    # m.fs.s02 = Arc(source=m.fs.leach.liquid_outlet, destination=m.fs.solex.Acidsoln_inlet_state)
-    # m.fs.s03 = Arc(source=m.fs.S01.recycle, destination=m.fs.solex.Orgacid_inlet_state)
-    # m.fs.s04 = Arc(source=m.fs.solex.Orgacid_outlet_state, destination=m.fs.sx_leach_acid) # Should eventually convert to a recycle
-    # m.fs.s05 = Arc(source=m.fs.solex.Acidsoln_outlet_state, destination=m.fs.precipitator.aqueous_inlet)
-    # m.fs.s06 = Arc(source=m.fs.oxalic_acid_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
-    # m.fs.s07 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.M01.SX_acid)
-    # m.fs.s08 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.M01.oxalic_acid)
-    # m.fs.s09 = Arc(source=m.fs.M01.outlet, destination=m.fs.S01.inlet)
-    # m.fs.s10 = Arc(source=m.fs.S01.product, destination=m.fs.roaster.inlet)
-    # m.fs.s11 = Arc(source=m.fs.roaster.product, destination=m.fs.S01.inlet)
+    m.fs.s07 = Arc(source=m.fs.precipitate_feed.outlet, destination=m.fs.precipitator.precipitate_inlet)
+    m.fs.s08 = Arc(source=m.fs.precipitator.aqueous_outlet, destination=m.fs.liquid_product.inlet)  # Should eventually convert to a recycle
+    m.fs.s09 = Arc(source=m.fs.precipitator.precipitate_outlet, destination=m.fs.roaster.solid_inlet)
 
     TransformationFactory("network.expand_arcs").apply_to(m)
 
     return m
 
+def set_scaling(m):
+    # Leaching
+    iscale.set_scaling_factor(m.fs.leach.liquid[0,1].conc_mole_acid["H"], 1e5)
+    iscale.set_scaling_factor(m.fs.leach.liquid[0,1].conc_mole_acid["HSO4"], 1e5)
+    iscale.set_scaling_factor(m.fs.leach.liquid[0,1].conc_mole_acid["SO4"], 1e5)
+    iscale.set_scaling_factor(m.fs.leach.liquid_inlet_state[0].conc_mole_acid["H"], 1e5)
+    iscale.set_scaling_factor(m.fs.leach.liquid_inlet_state[0].conc_mole_acid["HSO4"], 1e5)
+    iscale.set_scaling_factor(m.fs.leach.liquid_inlet_state[0].conc_mole_acid["SO4"], 1e5)
+
+    # Translators
+    iscale.set_scaling_factor(m.fs.leach_to_SX.properties_in[0].conc_mole_acid["H"], 1e5)
+    iscale.set_scaling_factor(m.fs.leach_to_SX.properties_in[0].conc_mole_acid["HSO4"], 1e5)
+    iscale.set_scaling_factor(m.fs.leach_to_SX.properties_in[0].conc_mole_acid["SO4"], 1e5)
+    iscale.set_scaling_factor(m.fs.SX_to_precipitator.properties_out[0].temperature, 1e-2)
+    iscale.set_scaling_factor(m.fs.SX_to_precipitator.properties_out[0].pressure, 1e-4)
+
+    # Precipitator
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Ce(OH)3(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Ce2(C2O4)3(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Al(OH)3(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Fe2O3(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Ca(C2O4)*H2O(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Ca(C2O4)*3H2O(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp["Ca(OH)2(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Ce(OH)3(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Ce2(C2O4)3(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Al(OH)3(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Fe2O3(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Ca(C2O4)*H2O(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Ca(C2O4)*3H2O(s)"], 1)
+    iscale.set_scaling_factor(m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp["Ca(OH)2(s)"], 1)
+
+    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "Al^3+"], 1e10)
+    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "H^+"], 1e10)
+    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "C2O4^2-"], 1e10)
+    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "Ca^2+"], 1e10)
+    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "Fe^3+"], 1e10)
+    iscale.set_scaling_factor(m.fs.precipitator.molality_key_comp[0, "Ce^3+"], 1e10)
+
+    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Ce(OH)3(s)"], 1e10)
+    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Ce2(C2O4)3(s)"], 1e10)
+    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Al(OH)3(s)"], 1e10)
+    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Fe2O3(s)"], 1e10)
+    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Ca(C2O4)*H2O(s)"], 1e10)
+    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Ca(C2O4)*3H2O(s)"], 1e10)
+    iscale.set_scaling_factor(m.fs.precipitator.molality_precipitate_comp[0, "Ca(OH)2(s)"], 1e10)
+
+    # Roaster
+    iscale.set_scaling_factor(m.fs.roaster.gas_in[0].mole_frac_phase_comp["Vap", "CO2"], 1e2)
+    iscale.set_scaling_factor(m.fs.roaster.gas_in[0].mole_frac_phase_comp["Vap", "N2"], 1e2)
+    iscale.set_scaling_factor(m.fs.roaster.gas_in[0].mole_frac_phase_comp["Vap", "H2O"], 1e2)
+    iscale.set_scaling_factor(m.fs.roaster.gas_in[0].mole_frac_phase_comp["Vap", "O2"], 1e2)
+
+    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_phase_comp["Vap", "CO2"], 1e2)
+    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_phase_comp["Vap", "N2"], 1e2)
+    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_phase_comp["Vap", "H2O"], 1e2)
+    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_phase_comp["Vap", "O2"], 1e2)
+
+    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_comp["CO2"], 1e2)
+    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_comp["N2"], 1e2)
+    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_comp["H2O"], 1e2)
+    iscale.set_scaling_factor(m.fs.roaster.gas_out[0].mole_frac_comp["O2"], 1e2)
+
+    iscale.set_scaling_factor(m.fs.roaster.solid_in[0].temperature, 1e-2)
+
+    # Product streams
+    iscale.set_scaling_factor(m.fs.liquid_product.properties[0].temperature, 1e-2)
+    iscale.set_scaling_factor(m.fs.liquid_product.properties[0].pressure, 1e-4)
+
+
+    # calculate and propagate scaling factors
+    iscale.calculate_scaling_factors(m)
+
+
 def set_operating_conditions(m):
-    # Liquid feed to leaching unit
-    m.fs.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
-    m.fs.leach.liquid_inlet.conc_mass_metals.fix(1e-10 * units.mg / units.L)
-    m.fs.leach.liquid_inlet.conc_mole_acid[0, "H"].fix(2 * 0.05 * units.mol / units.L)
-    m.fs.leach.liquid_inlet.conc_mole_acid[0, "HSO4"].fix(1e-8 * units.mol / units.L)
-    m.fs.leach.liquid_inlet.conc_mole_acid[0, "SO4"].fix(0.05 * units.mol / units.L)
+    # Liquid feed to old_leaching unit
+    m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
+    m.fs.leach_liquid_feed.conc_mass_metals.fix(1e-9 * units.mg / units.L)    # Why fixed at lower bound?
+    m.fs.leach_liquid_feed.conc_mole_acid[0, "H"].fix(2 * 0.05 * units.mol / units.L)
+    m.fs.leach_liquid_feed.conc_mole_acid[0, "HSO4"].fix(1e-7 * units.mol / units.L)   # Why fixed at lower bound?
+    m.fs.leach_liquid_feed.conc_mole_acid[0, "SO4"].fix(0.05 * units.mol / units.L)
 
-    # Solid feed to leaching unit
-    m.fs.leach.solid_inlet.flow_mass.fix(22.68 * units.kg / units.hour)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "inerts"].fix(0.6952 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Al2O3"].fix(0.237 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Fe2O3"].fix(0.0642 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "CaO"].fix(3.31e-3 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Sc2O3"].fix(2.77966E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Y2O3"].fix(3.28653E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "La2O3"].fix(6.77769E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Ce2O3"].fix(0.000156161 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Pr2O3"].fix(1.71438E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Nd2O3"].fix(6.76618E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Sm2O3"].fix(1.47926E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Gd2O3"].fix(1.0405E-05 * units.kg / units.kg)
-    m.fs.leach.solid_inlet.mass_frac_comp[0, "Dy2O3"].fix(7.54827E-06 * units.kg / units.kg)
-
-    # TODO: Replace this with a recycle loop
-    # SX rougher recycle stream (treated as a product for now)
-    m.fs.solex.Orgacid_inlet_state[0].flow_vol.fix(62.01 * units.L / units.hour)
-
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Al"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ca"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Fe"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sc"].fix(19.93 * units.g / units.hour)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Y"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["La"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ce"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Pr"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Nd"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sm"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Gd"].fix(0)
-    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Dy"].fix(0)
-
-    # Oxalic acid feed to precipitator - assume no oxalic acid
-    m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.fix(0)
+    # Solid feed to old_leaching unit
+    m.fs.leach_solid_feed.flow_mass.fix(22.68 * units.kg / units.hour)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "inerts"].fix(0.6952 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Al2O3"].fix(0.237 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Fe2O3"].fix(0.0642 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "CaO"].fix(3.31e-3 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Sc2O3"].fix(2.77966E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Y2O3"].fix(3.28653E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "La2O3"].fix(6.77769E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Ce2O3"].fix(0.000156161 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Pr2O3"].fix(1.71438E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Nd2O3"].fix(6.76618E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Sm2O3"].fix(1.47926E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Gd2O3"].fix(1.0405E-05 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Dy2O3"].fix(7.54827E-06 * units.kg / units.kg)
 
     # Reactor volume
     m.fs.leach.volume = Var(
@@ -297,20 +343,71 @@ def set_operating_conditions(m):
         rule=rule_heterogeneous_reaction_extent,
     )
 
-    print(degrees_of_freedom(m))
 
-    # TODO: Energy transfer term is not needed but still gets built
-    # m.fs.leach.del_component(m.fs.leach.energy_transfer_term)
+    # TODO: Replace this with a recycle loop
+    # SX rougher recycle stream (treated as a product for now)
+    m.fs.solex.Orgacid_inlet_state[0].flow_vol.fix(62.01 * units.L / units.hour)
+
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Al"].fix(0)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ca"].fix(0)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Fe"].fix(0)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sc"].fix(19.93 * units.g / units.hour)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Y"].fix(0)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["La"].fix(0)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ce"].fix(0)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Pr"].fix(0)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Nd"].fix(0)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sm"].fix(0)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Gd"].fix(0)
+    m.fs.solex.Orgacid_inlet_state[0].flow_mass["Dy"].fix(0)
+
+    # Precipitate feed to precipitator
+    #TODO: What should these feed conditions be? They are assumed to be zero in the example
+    m.fs.precipitate_feed.properties[0].flow_mol_comp.fix(0)
+    m.fs.precipitate_feed.properties[0].temperature.fix(300)
+
+    # Roaster gas feed
+    m.fs.roaster.deltaP.fix(0)
+    m.fs.roaster.gas_inlet.temperature.fix(1330)
+    m.fs.roaster.gas_inlet.pressure.fix(101325)
+    # Inlet flue gas mole flow rate
+    fgas = 0.00781
+    # Inlet flue gas composition, typical flue gas by buring CH4 with air with stoichiometric ratio 0f 2.3
+    gas_comp = {
+        "O2": 0.1118,
+        "H2O": 0.1005,
+        "CO2": 0.0431,
+        "N2": 0.7446,
+    }
+    for i, v in gas_comp.items():
+        m.fs.roaster.gas_inlet.mole_frac_comp[0, i].fix(v)
+    m.fs.roaster.gas_inlet.flow_mol.fix(fgas)
+
+    # Fix outlet product temperature
+    m.fs.roaster.gas_outlet.temperature.fix(873.15)
+
+    # Fix operating conditions
+    m.fs.roaster.flow_mol_moist_feed.fix(6.75e-4)
+    m.fs.roaster.frac_comp_recovery.fix(0.95)
+
 
 def initialize_system(m):
-    # Initialize leaching section
+    # Initialize feeds
+    initializer_feed = FeedInitializer()
+    initializer_feed.initialize(m.fs.precipitate_feed)
+
+    # Initialize old_leaching section
+    propagate_state(m.fs.liq_feed)
+    propagate_state(m.fs.sol_feed)
     initializer1 = MSContactorInitializer()
     initializer1.initialize(m.fs.leach)
 
-    # Initialize leaching -> SX translator
-    propagate_state(m.fs.s02)
+    propagate_state(m.fs.s01)
+    initializer_product = ProductInitializer()
+    initializer_product.initialize(m.fs.leach_filter_cake)
 
-    # m.fs.leach_to_SX.properties_in[0].flow_vol = m.fs.leach.liquid_outlet.flow_vol
+    # Initialize old_leaching -> SX translator
+    propagate_state(m.fs.s02)
 
     initializer2 = BlockTriangularizationInitializer()
     initializer2.initialize(m.fs.leach_to_SX)
@@ -319,28 +416,27 @@ def initialize_system(m):
     propagate_state(m.fs.s03)
     initializer2.initialize(m.fs.solex)
 
+    # Initialize SX_leach_acid, which will eventually be a recycle
+    propagate_state(m.fs.s04)
+    initializer_product.initialize(m.fs.sx_leach_acid)
+
     # Initialize SX -> precipitation translator
     propagate_state(m.fs.s05)
 
-    m.fs.SX_to_precipitator.properties_in[0].initializer2().initialize(m.fs.SX_to_precipitator.properties_in)
-    # properties (cannot be fixed for initialization routines, must calculate the state variables)
-    init_arg = {
-        ("flow_mass", ("Al")): 2.0789e-5,   # kg/s
-        ("flow_mass", ("Ca")): 4.9823e-6,   # kg/s
-        ("flow_mass", ("Fe")): 4.5331e-5,   # kg/s
-    }
-    m.fs.SX_to_precipitator.properties_in.calculate_state(
-        init_arg,
-        hold_state=True,    # fixes the calculated component mass flow rates
-    )
-    m.fs.SX_to_precipitator.properties_out[0].initializer2().initialize(m.fs.SX_to_precipitator.properties_out)
-
-    # # Should this be a sum of the elements?
-    # Al_mass_flow = units.convert((m.fs.solex.Acidsoln[0, 1].flow_mass["Al"]), to_units=units.kg / units.s,)
-    #
-    # m.fs.SX_to_precipitator.properties_in[0].flow_mass["Al"] = value(Al_mass_flow)
-
     initializer2.initialize(m.fs.SX_to_precipitator)
+
+    # Initialize precipitator
+    propagate_state(m.fs.s06)
+    propagate_state(m.fs.s07)
+
+    initializer2.initialize(m.fs.precipitator)
+
+    propagate_state(m.fs.s08)
+    initializer_product.initialize(m.fs.liquid_product)
+
+    # Initialize roaster
+    propagate_state(m.fs.s09)
+    initializer2.initialize(m.fs.roaster)
 
 def solve(m):
     solver = SolverFactory("ipopt")
@@ -348,14 +444,7 @@ def solve(m):
     return results
 
 def display_results(m):
-    # m.fs.leach.liquid_outlet.display()
-    # m.fs.leach.solid_outlet.display()
-    m.fs.sx_acid_soln.display()
-    m.fs.sx_acid_soln.report()
-
-    Al_mass_flow = units.convert((m.fs.solex.Acidsoln[0, 1].flow_mass["Al"]), to_units=units.kg / units.s,)
-    Al = value(Al_mass_flow)
-    print(f"Aluminum mass flow is: {Al}")
+    m.fs.roaster.display()
 
 if __name__ == "__main__":
     m, results = main()

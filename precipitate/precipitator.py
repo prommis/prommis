@@ -34,7 +34,7 @@ from idaes.core.util.math import smooth_min, smooth_abs
 import idaes.core.util.scaling as iscale
 from pyomo.util.check_units import assert_units_consistent
 
-import precip_prop
+import workspace.precipitate.precip_prop as precip_prop
 from idaes.core.util.config import is_physical_parameter_block
 import idaes.logger as idaeslog
 
@@ -507,21 +507,21 @@ class PrecipitatorData(UnitModelBlockData):
                     self.outlet_precipitate_molality[t, comp],
                     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
                 )
-                iscale.set_scaling_factor(
-                    self.cv_precipitate.properties_in[t].flow_mol_comp[comp],
-                    pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
-                )
-                iscale.set_scaling_factor(
-                    self.cv_precipitate.properties_out[t].flow_mol_comp[comp],
-                    pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
-                )
-                iscale.set_scaling_factor(
-                    self.molality_precipitate_comp[t, comp],
-                    pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
-                )
+                # iscale.set_scaling_factor(
+                #     self.cv_precipitate.properties_in[t].flow_mol_comp[comp],
+                #     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
+                # )
+                # iscale.set_scaling_factor(
+                #     self.cv_precipitate.properties_out[t].flow_mol_comp[comp],
+                #     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
+                # )
+                # iscale.set_scaling_factor(
+                #     self.molality_precipitate_comp[t, comp],
+                #     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
+                # )
 
-        for i in self.molality_key_comp:
-            iscale.set_scaling_factor(self.molality_key_comp[i], 1e3)
+        # for i in self.molality_key_comp:
+        #     iscale.set_scaling_factor(self.molality_key_comp[i], 1e3)
 
 
 def make_a_test_model():

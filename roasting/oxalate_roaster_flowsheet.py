@@ -44,7 +44,6 @@ from idaes.core.initialization import BlockTriangularizationInitializer, Initial
 
 import sys
 
-# May need to delete these
 sys.path.append('../precipitate')
 from precip_prop import PrecipitateStateParameterBlock
 

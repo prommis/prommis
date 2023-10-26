@@ -1,5 +1,6 @@
-from pyomo.environ import Constraint, RangeSet, Reals, Var
+from pyomo.environ import Constraint, RangeSet, Reals, Var, Param
 from pyomo.common.config import ConfigDict, ConfigValue, Bool, In
+from pyomo.dae import DerivativeVar
 
 from idaes.core import (
     declare_process_block_class,
@@ -109,6 +110,7 @@ class REESXData(UnitModelBlockData):
         "number_of_finite_elements",
         ConfigValue(domain=int, description="Number of finite elements to use"),
     )
+
 
     def build(self):
 
@@ -225,6 +227,42 @@ class REESXData(UnitModelBlockData):
 
                 if stream in self.config.aqueous_streams.keys():
                     in_state = getattr(self, stream + "_inlet_state")
+                
+                #Dynamic part needs to be repaired
+
+                #dC_a = Var(self.flowsheet().time,
+                    #self.elements,
+                    #ppack.dissolved_elements,
+                    #domain=Reals,
+                        #initialize=0.0)
+                
+                #self.add_component(
+                        #stream + "dC_a",
+                        #dC_a
+                    #)
+                
+                #def dynamic_term_a(b,t,s,j):
+                    #for j in ppack.dissolved_elements:
+                       # if self.config.dynamic == True:
+                           # return dC_a[t,s,j] == state_block[t, s].concentration[j]
+                        #else:
+                            #return dC_a[t,s,j] == 0
+                    #return Constraint.Skip
+                
+                #dynamic_term_a_constraint = Constraint(self.flowsheet().time, self.elements,
+                                                            #ppack.dissolved_elements, rule=dynamic_term_a)
+                
+                #self.add_component(
+                    #stream + "_dynamic_term_a_constraint",
+                    #dynamic_term_a_constraint,
+                #)
+
+                #dC_dt_a = DerivativeVar(dC_a, wrt=self.flowsheet().time)
+
+                #self.add_component(
+                        #stream + "_dC_dt_a",
+                        #dC_dt_a
+                    #)
 
                 # state_block.display()
                 distribution_extent = Var(
@@ -241,12 +279,45 @@ class REESXData(UnitModelBlockData):
                         distribution_extent
                     )
                 
+                partition_coefficient = Param(ppack.dissolved_elements, initialize = {
+                    "Al":3.6/100,
+                    "Ca":3.7/100,
+                    "Fe":2.1/100,
+                    "Si":0/100,
+                    "Sc":100/100,
+                    "Y":100/100,
+                    "La":75.2/100,
+                    "Ce":95.7/100,
+                    "Pr":96.5/100,
+                    "Nd":99.2/100,
+                    "Pm":100/100,
+                    "Sm":100/100,
+                    "Eu":99.9/100,
+                    "Gd":98.6/100,
+                    "Tb":99.3/100,
+                    "Dy":99.9/100,
+                    "Ho":99.5/100,
+                    "Er":99.5/100,
+                    "Tm":98.6/100,
+                    "Yb":80.7/100,
+                    "Lu":99.5/100,
+                    "Th":5/100,
+                    "U":99.5/100
+                        }, mutable=True,
+                        doc="The fraction of component that goes from aqueous to organic phase")
+                
+                self.add_component(
+                        stream + "_partition_coefficient",
+                        partition_coefficient
+                    )
+
+                
                 def distribution_extent_rule(b, t, s, j):
                     if j in ppack.dissolved_elements:
                       if s == self.elements.first():
-                        return distribution_extent[t, s, j] == in_state[t].flow_mass[j]*ppack.K_distribution[j]
+                        return distribution_extent[t, s, j] == in_state[t].concentration[j]*in_state[t].flow_vol*partition_coefficient[j]/1000
                       else:
-                        return distribution_extent[t, s, j] == state_block[t, s-1].flow_mass[j]*ppack.K_distribution[j]
+                        return distribution_extent[t, s, j] == state_block[t, s-1].concentration[j]*partition_coefficient[j]*state_block[t, s-1].flow_vol/1000
                     return Constraint.Skip
                 
                 distribution_extent_constraint = Constraint(self.flowsheet().time, self.elements,
@@ -272,8 +343,13 @@ class REESXData(UnitModelBlockData):
                             # Aq streams always have a distribution extent
                             if j != 'H2SO4':
                                 rhsa += -distribution_extent[t, s, j]
-                                
-                    return 0 == rhsa
+                            
+                            #if j != 'H2SO4':
+                                #return rhsa == state_block[t, s].aqueous_vol*dC_dt_a[t, s, j]
+                            #else:
+                            return rhsa == 0
+
+                      
                 
                 mbal = Constraint(self.flowsheet().time, self.elements, component_list, rule=material_balance_aq_rule)
                 self.add_component(stream + "_material_balance", mbal)
@@ -283,27 +359,64 @@ class REESXData(UnitModelBlockData):
                 ppack = sconfig.property_package
                 component_list = state_block.component_list
 
+                # Dynamic part needs to be repaired
+
+                #dC_o = Var( self.flowsheet().time,
+                    #self.elements,
+                    #ppack.dissolved_elements,
+                    #domain=Reals,
+                        #initialize=0.0)
+                
+                #self.add_component(
+                        #stream + "dC_o",
+                        #dC_o
+                    #)
+                
+                #def dynamic_term_o(b,t,s,j):
+                    #for j in ppack.dissolved_elements:
+                        #if self.config.dynamic == True:
+                            #return dC_o[t,s,j] == state_block[t, s].concentration[j]
+                        #else:
+                            #return dC_o[t,s,j] == 0
+                    #return Constraint.Skip
+                
+                #dynamic_term_o_constraint = Constraint(self.flowsheet().time, self.elements,
+                                                            #ppack.dissolved_elements, rule=dynamic_term_o)
+                
+                #self.add_component(
+                    #stream + "_dynamic_term_o_constraint",
+                    #dynamic_term_o_constraint,
+                #)
+
+                #dC_dt_o = DerivativeVar(dC_o, wrt=self.flowsheet().time)
+
+                #self.add_component(
+                        #stream + "_dC_dt_o",
+                        #dC_dt_o
+                    #)
+
+
                 def material_balance_og_rule(b, t, s, j):
                     for ogstream, pconfig in b.config.organic_streams.items():
                             in_state_o, out_state_o, side_state_o = _get_state_blocks(b, t, s, ogstream)
-
-                           
 
                             if in_state_o is not None:
                                 rhso =  in_state_o.get_material_flow_terms(j) - out_state_o.get_material_flow_terms(j)
                                 
                             else:
                                 rhso = -out_state_o.get_material_flow_terms(j)
-                        
+                            
+                            if j not in ['H2SO4','DEHPA']:
+                                rhso += distribution_extent[t, s, j]
+                            
+                            # Dynamic part to be repaired
 
-                            for aqstream, pconfig in b.config.aqueous_streams.items():
-                                # Og distribution extent depends on aq distribution extent
-                                if j != 'H2SO4':
-                                    if j!='DEHPA':
-                                        rhso += distribution_extent[t, s, j]
+                            #if j not in ['H2SO4','DEHPA']:
+                                #return rhso == state_block[t, s].organic_vol*dC_dt_o[t, s, j] 
+                            #else:
+                            return rhso == 0
+
                                     
-                    return 0 == rhso
-
                 mbal_og = Constraint(self.flowsheet().time, self.elements, component_list, rule=material_balance_og_rule)
                 
                 self.add_component(stream + "_material_balance", mbal_og)

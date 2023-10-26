@@ -71,35 +71,7 @@ class REESolExOgParameterData(PhysicalParameterBlock):
             "U"
         ])
 
-        self.K_distribution = Param(self.dissolved_elements, initialize = {
-            "Al":3.6/100,
-            "Ca":3.7/100,
-            "Fe":2.1/100,
-            "Si":0/100,
-            "Sc":100/100,
-            "Y":100/100,
-            "La":75.2/100,
-            "Ce":95.7/100,
-            "Pr":96.5/100,
-            "Nd":99.2/100,
-            "Pm":100/100,
-            "Sm":100/100,
-            "Eu":99.9/100,
-            "Gd":98.6/100,
-            "Tb":99.3/100,
-            "Dy":99.9/100,
-            "Ho":99.5/100,
-            "Er":99.5/100,
-            "Tm":98.6/100,
-            "Yb":80.7/100,
-            "Lu":99.5/100,
-            "Th":5/100,
-            "U":99.5/100
-        }, mutable=True,
-        units=units.dimensionless,
-        doc="The fraction of component that goes from aqueous to organic phase")
-
-
+        
         self._state_block_class = REESolExOgStateBlock
 
     @classmethod
@@ -123,16 +95,18 @@ class REESolExOgStateBlockData(StateBlockData):
     def build(self):
         super().build()
 
-        self.flow_mass = Var(self.params.dissolved_elements, units=units.g/units.hour)
+        self.concentration = Var(self.params.dissolved_elements, units=units.mg/units.L, bounds=(0,None))      # Concentration added
 
         self.flow_vol = Var(units=units.L/units.hour)
+
+        self.organic_vol = Var(units=units.L)
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.mass
     
     def get_material_flow_terms(self, j):
         if j in self.params.dissolved_elements:  
-            return self.flow_mass[j]
+            return self.flow_vol * self.concentration[j]/1000                 # Concentration added
         elif j=="DEHPA":
             return self.flow_vol * (975.8 * units.g/units.L) 
         else:
@@ -141,6 +115,7 @@ class REESolExOgStateBlockData(StateBlockData):
     def define_state_vars(self):
         return {
             "flow_vol": self.flow_vol,
-            "flow_mass": self.flow_mass
+            "concentration": self.concentration,
+            "organic_vol":self.organic_vol
         }
 

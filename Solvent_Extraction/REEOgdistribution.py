@@ -95,7 +95,7 @@ class REESolExOgStateBlockData(StateBlockData):
     def build(self):
         super().build()
 
-        self.concentration = Var(self.params.dissolved_elements, units=units.mg/units.L, bounds=(0,None))      # Concentration added
+        self.conc_mass_comp = Var(self.params.dissolved_elements, units=units.mg/units.L, bounds=(0,None))      # conc_mass_comp added
 
         self.flow_vol = Var(units=units.L/units.hour)
 
@@ -106,7 +106,7 @@ class REESolExOgStateBlockData(StateBlockData):
     
     def get_material_flow_terms(self, j):
         if j in self.params.dissolved_elements:  
-            return self.flow_vol * self.concentration[j]/1000                 # Concentration added
+            return self.flow_vol * self.conc_mass_comp[j]/1000                 # conc_mass_comp added
         elif j=="DEHPA":
             return self.flow_vol * (975.8 * units.g/units.L) 
         else:
@@ -115,7 +115,7 @@ class REESolExOgStateBlockData(StateBlockData):
     def define_state_vars(self):
         return {
             "flow_vol": self.flow_vol,
-            "concentration": self.concentration,
+            "conc_mass_comp": self.conc_mass_comp,
             "organic_vol":self.organic_vol
         }
 

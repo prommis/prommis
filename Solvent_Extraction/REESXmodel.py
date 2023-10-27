@@ -244,7 +244,7 @@ class REESXData(UnitModelBlockData):
                 #def dynamic_term_a(b,t,s,j):
                     #for j in ppack.dissolved_elements:
                        # if self.config.dynamic == True:
-                           # return dC_a[t,s,j] == state_block[t, s].concentration[j]
+                           # return dC_a[t,s,j] == state_block[t, s].conc_mass_comp[j]
                         #else:
                             #return dC_a[t,s,j] == 0
                     #return Constraint.Skip
@@ -315,9 +315,9 @@ class REESXData(UnitModelBlockData):
                 def distribution_extent_rule(b, t, s, j):
                     if j in ppack.dissolved_elements:
                       if s == self.elements.first():
-                        return distribution_extent[t, s, j] == in_state[t].concentration[j]*in_state[t].flow_vol*partition_coefficient[j]/1000
+                        return distribution_extent[t, s, j] == in_state[t].conc_mass_comp[j]*in_state[t].flow_vol*partition_coefficient[j]/1000
                       else:
-                        return distribution_extent[t, s, j] == state_block[t, s-1].concentration[j]*partition_coefficient[j]*state_block[t, s-1].flow_vol/1000
+                        return distribution_extent[t, s, j] == state_block[t, s-1].conc_mass_comp[j]*partition_coefficient[j]*state_block[t, s-1].flow_vol/1000
                     return Constraint.Skip
                 
                 distribution_extent_constraint = Constraint(self.flowsheet().time, self.elements,
@@ -375,7 +375,7 @@ class REESXData(UnitModelBlockData):
                 #def dynamic_term_o(b,t,s,j):
                     #for j in ppack.dissolved_elements:
                         #if self.config.dynamic == True:
-                            #return dC_o[t,s,j] == state_block[t, s].concentration[j]
+                            #return dC_o[t,s,j] == state_block[t, s].conc_mass_comp[j]
                         #else:
                             #return dC_o[t,s,j] == 0
                     #return Constraint.Skip

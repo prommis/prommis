@@ -315,9 +315,9 @@ class REESXData(UnitModelBlockData):
                 def distribution_extent_rule(b, t, s, j):
                     if j in ppack.dissolved_elements:
                       if s == self.elements.first():
-                        return distribution_extent[t, s, j] == in_state[t].conc_mass_comp[j]*in_state[t].flow_vol*partition_coefficient[j]/1000
+                        return distribution_extent[t, s, j] == in_state[t].get_material_flow_terms(j)*partition_coefficient[j]
                       else:
-                        return distribution_extent[t, s, j] == state_block[t, s-1].conc_mass_comp[j]*partition_coefficient[j]*state_block[t, s-1].flow_vol/1000
+                        return distribution_extent[t, s, j] == state_block[t, s-1].get_material_flow_terms(j)*partition_coefficient[j]
                     return Constraint.Skip
                 
                 distribution_extent_constraint = Constraint(self.flowsheet().time, self.elements,

@@ -106,7 +106,7 @@ class REESolExOgStateBlockData(StateBlockData):
     
     def get_material_flow_terms(self, j):
         if j in self.params.dissolved_elements:  
-            return self.flow_vol * self.conc_mass_comp[j]/1000                 # conc_mass_comp added
+            return self.flow_vol * self.conc_mass_comp[j] * units.g/(1000 * units.mg)                 # conc_mass_comp added
         elif j=="DEHPA":
             return self.flow_vol * (975.8 * units.g/units.L) 
         else:

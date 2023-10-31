@@ -1,19 +1,20 @@
 import pytest
+
 from pyomo.environ import (
     ConcreteModel,
     value
 )
-from idaes.core import FlowsheetBlock
-from REESXmodel import REESX
-from REEAqdistribution import REESolExAqParameters
-from REEOgdistribution import REESolExOgParameters
+from pyomo.util.check_units import assert_units_consistent
 
+from idaes.core import FlowsheetBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.initialization.block_triangularization import BlockTriangularizationInitializer
 from idaes.core.initialization import InitializationStatus
 
-from pyomo.util.check_units import assert_units_consistent
+from REESXmodel import REESX
+from REEAqdistribution import REESolExAqParameters
+from REEOgdistribution import REESolExOgParameters
 
 solver = get_solver()
 

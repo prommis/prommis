@@ -1,5 +1,3 @@
-# Imports 
-
 from pyomo.environ import (Param, Set, units, Var)
 from idaes.core import (declare_process_block_class, PhysicalParameterBlock, StateBlock, 
                         StateBlockData, Component, Phase, MaterialFlowBasis)

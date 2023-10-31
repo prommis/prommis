@@ -1,9 +1,8 @@
-from pyomo.environ import ConcreteModel, SolverFactory, TransformationFactory
-
 import numpy as np
 
-from idaes.core import FlowsheetBlock
+from pyomo.environ import ConcreteModel, SolverFactory, TransformationFactory
 
+from idaes.core import FlowsheetBlock
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
 from idaes.core.initialization.block_triangularization import BlockTriangularizationInitializer
 from idaes.core.initialization import InitializationStatus

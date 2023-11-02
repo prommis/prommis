@@ -223,48 +223,10 @@ class REESXData(UnitModelBlockData):
                 state_block = getattr(self, stream)
                 ppack = sconfig.property_package
                 component_list = state_block.component_list
-                #component_list = self.parent_block().prop.dissolved_elements
 
                 if stream in self.config.aqueous_streams.keys():
                     in_state = getattr(self, stream + "_inlet_state")
                 
-                #Dynamic part needs to be repaired
-
-                #dC_a = Var(self.flowsheet().time,
-                    #self.elements,
-                    #ppack.dissolved_elements,
-                    #domain=Reals,
-                        #initialize=0.0)
-                
-                #self.add_component(
-                        #stream + "dC_a",
-                        #dC_a
-                    #)
-                
-                #def dynamic_term_a(b,t,s,j):
-                    #for j in ppack.dissolved_elements:
-                       # if self.config.dynamic == True:
-                           # return dC_a[t,s,j] == state_block[t, s].conc_mass_comp[j]
-                        #else:
-                            #return dC_a[t,s,j] == 0
-                    #return Constraint.Skip
-                
-                #dynamic_term_a_constraint = Constraint(self.flowsheet().time, self.elements,
-                                                            #ppack.dissolved_elements, rule=dynamic_term_a)
-                
-                #self.add_component(
-                    #stream + "_dynamic_term_a_constraint",
-                    #dynamic_term_a_constraint,
-                #)
-
-                #dC_dt_a = DerivativeVar(dC_a, wrt=self.flowsheet().time)
-
-                #self.add_component(
-                        #stream + "_dC_dt_a",
-                        #dC_dt_a
-                    #)
-
-                # state_block.display()
                 distribution_extent = Var(
                     self.flowsheet().time,
                     self.elements,
@@ -343,10 +305,6 @@ class REESXData(UnitModelBlockData):
                             # Aq streams always have a distribution extent
                             if j != 'H2SO4':
                                 rhsa += -distribution_extent[t, s, j]
-                            
-                            #if j != 'H2SO4':
-                                #return rhsa == state_block[t, s].aqueous_vol*dC_dt_a[t, s, j]
-                            #else:
                             return rhsa == 0
 
                       
@@ -358,42 +316,6 @@ class REESXData(UnitModelBlockData):
                 state_block = getattr(self, stream)
                 ppack = sconfig.property_package
                 component_list = state_block.component_list
-
-                # Dynamic part needs to be repaired
-
-                #dC_o = Var( self.flowsheet().time,
-                    #self.elements,
-                    #ppack.dissolved_elements,
-                    #domain=Reals,
-                        #initialize=0.0)
-                
-                #self.add_component(
-                        #stream + "dC_o",
-                        #dC_o
-                    #)
-                
-                #def dynamic_term_o(b,t,s,j):
-                    #for j in ppack.dissolved_elements:
-                        #if self.config.dynamic == True:
-                            #return dC_o[t,s,j] == state_block[t, s].conc_mass_comp[j]
-                        #else:
-                            #return dC_o[t,s,j] == 0
-                    #return Constraint.Skip
-                
-                #dynamic_term_o_constraint = Constraint(self.flowsheet().time, self.elements,
-                                                            #ppack.dissolved_elements, rule=dynamic_term_o)
-                
-                #self.add_component(
-                    #stream + "_dynamic_term_o_constraint",
-                    #dynamic_term_o_constraint,
-                #)
-
-                #dC_dt_o = DerivativeVar(dC_o, wrt=self.flowsheet().time)
-
-                #self.add_component(
-                        #stream + "_dC_dt_o",
-                        #dC_dt_o
-                    #)
 
 
                 def material_balance_og_rule(b, t, s, j):
@@ -408,12 +330,6 @@ class REESXData(UnitModelBlockData):
                             
                             if j not in ['H2SO4','DEHPA']:
                                 rhso += distribution_extent[t, s, j]
-                            
-                            # Dynamic part to be repaired
-
-                            #if j not in ['H2SO4','DEHPA']:
-                                #return rhso == state_block[t, s].organic_vol*dC_dt_o[t, s, j] 
-                            #else:
                             return rhso == 0
 
                                     

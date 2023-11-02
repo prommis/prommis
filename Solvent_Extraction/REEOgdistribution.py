@@ -99,14 +99,14 @@ class REESolExOgStateBlockData(StateBlockData):
 
         self.flow_vol = Var(units=units.L/units.hour)
 
-        self.organic_vol = Var(units=units.L)
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.mass
     
     def get_material_flow_terms(self, j):
-        if j in self.params.dissolved_elements:  
-            return self.flow_vol * self.conc_mass_comp[j] * units.g/(1000 * units.mg)                 # conc_mass_comp added
+        if j in self.params.dissolved_elements:
+            units.convert(self.conc_mass_comp[j], to_units=units.g/units.L)  
+            return self.flow_vol * self.conc_mass_comp[j]         # conc_mass_comp added
         elif j=="DEHPA":
             return self.flow_vol * (975.8 * units.g/units.L) 
         else:
@@ -115,7 +115,6 @@ class REESolExOgStateBlockData(StateBlockData):
     def define_state_vars(self):
         return {
             "flow_vol": self.flow_vol,
-            "conc_mass_comp": self.conc_mass_comp,
-            "organic_vol":self.organic_vol
+            "conc_mass_comp": self.conc_mass_comp
         }
 

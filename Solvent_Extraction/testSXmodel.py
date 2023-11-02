@@ -76,9 +76,13 @@ m.fs.solex.Orgacid_inlet_state[0].flow_vol.fix(62.01)
 
 print(dof(m))
 
+# Initializing of the model
+
 initializer = BlockTriangularizationInitializer()
 initializer.initialize(m.fs.solex)
 assert initializer.summary[m.fs.solex]["status"] == InitializationStatus.Ok
+
+# Solving of the model
 
 solver = SolverFactory("ipopt")
 solver.solve(m, tee=True)

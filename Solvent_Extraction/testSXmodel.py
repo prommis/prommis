@@ -17,7 +17,7 @@ m.fs = FlowsheetBlock(dynamic=False)
 m.fs.prop_a = REESolExAqParameters()
 m.fs.prop_o = REESolExOgParameters()
 
-m.fs.solex = REESX(number_of_finite_elements=1, dynamic=False,
+m.fs.solex = REESX(number_of_finite_elements=3, dynamic=False,
                        aqueous_streams = {"Acidsoln":{"property_package":m.fs.prop_a, "flow_direction":1}},
                        organic_streams = {"Orgacid":{"property_package":m.fs.prop_o, "flow_direction":2}})
 
@@ -48,8 +48,6 @@ m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["U"].fix(0.01)
 
 m.fs.solex.Acidsoln_inlet_state[0].flow_vol.fix(4.4)
 
-m.fs.solex.Acidsoln[0,1].aqueous_vol.fix(1000)
-
 m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Al"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Ca"].fix(0)
 m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Fe"].fix(0)
@@ -76,15 +74,11 @@ m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["U"].fix(0)
 
 m.fs.solex.Orgacid_inlet_state[0].flow_vol.fix(62.01)
 
-m.fs.solex.Orgacid[0,1].organic_vol.fix(1000)
-
 print(dof(m))
 
-# BTInitializer not working for steady state 
-
-#initializer = BlockTriangularizationInitializer()
-#initializer.initialize(m.fs.solex)
-#assert initializer.summary[m.fs.solex]["status"] == InitializationStatus.Ok
+initializer = BlockTriangularizationInitializer()
+initializer.initialize(m.fs.solex)
+assert initializer.summary[m.fs.solex]["status"] == InitializationStatus.Ok
 
 solver = SolverFactory("ipopt")
 solver.solve(m, tee=True)
@@ -93,4 +87,4 @@ solver.solve(m, tee=True)
 m.fs.solex.Orgacid[0,1].conc_mass_comp.display()
 
 # Final aqueous outlets display
-m.fs.solex.Acidsoln[0,1].conc_mass_comp.display()
+m.fs.solex.Acidsoln[0,3].conc_mass_comp.display()

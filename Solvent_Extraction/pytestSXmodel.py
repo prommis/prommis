@@ -1,19 +1,20 @@
 import pytest
+
 from pyomo.environ import (
     ConcreteModel,
     value
 )
-from idaes.core import FlowsheetBlock
-from REESXmodel import REESX
-from REEAqdistribution import REESolExAqParameters
-from REEOgdistribution import REESolExOgParameters
+from pyomo.util.check_units import assert_units_consistent
 
+from idaes.core import FlowsheetBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.initialization.block_triangularization import BlockTriangularizationInitializer
 from idaes.core.initialization import InitializationStatus
 
-from pyomo.util.check_units import assert_units_consistent
+from REESXmodel import REESX
+from REEAqdistribution import REESolExAqParameters
+from REEOgdistribution import REESolExOgParameters
 
 solver = get_solver()
 
@@ -32,56 +33,55 @@ class TestSXmodel:
 
 
         #Aqueous feed fixing
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Al"].fix(0)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Ca"].fix(0.02)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Fe"].fix(0)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Si"].fix(0)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Sc"].fix(0.92)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Y"].fix(2.82)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["La"].fix(8.98)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Ce"].fix(19.94)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Pr"].fix(3.34)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Nd"].fix(9.04)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Pm"].fix(0)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Sm"].fix(1.63)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Eu"].fix(0.11)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Gd"].fix(0.77)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Tb"].fix(0.33)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Dy"].fix(0.45)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Ho"].fix(0)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Er"].fix(0)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Tm"].fix(0.18)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Yb"].fix(0.29)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Lu"].fix(0.14)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Th"].fix(0)
-        m.fs.solex.Acidsoln_inlet_state[0].flow_mass["U"].fix(0)
-
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Al"].fix(820)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Ca"].fix(5230)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Fe"].fix(270)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Si"].fix(0)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Sc"].fix(209.31)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Y"].fix(637.74)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["La"].fix(2032.77)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Ce"].fix(4516.13)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Pr"].fix(756.64)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Nd"].fix(2047.85)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Pm"].fix(0)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Sm"].fix(369.1)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Eu"].fix(25.81)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Gd"].fix(174.38)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Tb"].fix(75.28)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Dy"].fix(101.12)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Ho"].fix(0)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Er"].fix(0)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Tm"].fix(41.60)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Yb"].fix(65.65)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Lu"].fix(31.71)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Th"].fix(0)
+        m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["U"].fix(0.01)
         m.fs.solex.Acidsoln_inlet_state[0].flow_vol.fix(4.4)
 
         #Organic feed fixing
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Al"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ca"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Fe"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Si"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sc"].fix(19.93)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Y"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["La"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ce"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Pr"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Nd"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Pm"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sm"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Eu"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Gd"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Tb"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Dy"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ho"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Er"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Tm"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Yb"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Lu"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["Th"].fix(0)
-        m.fs.solex.Orgacid_inlet_state[0].flow_mass["U"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Al"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Ca"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Fe"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Si"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Sc"].fix(321.34)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Y"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["La"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Ce"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Pr"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Nd"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Pm"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Sm"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Eu"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Gd"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Tb"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Dy"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Ho"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Er"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Tm"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Yb"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Lu"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Th"].fix(0)
+        m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["U"].fix(0)
 
         m.fs.solex.Orgacid_inlet_state[0].flow_vol.fix(62.01)
 
@@ -99,143 +99,143 @@ class TestSXmodel:
     @pytest.mark.component
     def test_solution(self, SolEx_frame):
         m = SolEx_frame
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Al"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Al"]) == pytest.approx(
+            730, rel=1e-2
+        )
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Ca"]) == pytest.approx(
+            4680, rel=1e-2
+        )
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Fe"]) == pytest.approx(
+            250, rel=1e-2
+        )
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Si"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Ca"]) == pytest.approx(
-            0.02, rel=1e-2
-        )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Fe"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Sc"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Si"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Y"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Sc"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["La"]) == pytest.approx(
+            30.84, rel=1e-2
+        )
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Ce"]) == pytest.approx(
+            0.36, rel=1e-2
+        )
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Pr"]) == pytest.approx(
+            0.0312, rel=1e-2
+        )
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Nd"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Y"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Pm"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["La"]) == pytest.approx(
-            0.14, rel=1e-2
-        )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Ce"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Sm"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Pr"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Eu"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Nd"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Gd"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Pm"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Tb"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Sm"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Dy"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Eu"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Ho"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Gd"]) == pytest.approx(
-            0.01, rel=1e-2
-        )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Tb"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Er"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Dy"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Tm"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Ho"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Yb"]) == pytest.approx(
+            0.47, rel=1e-2
+        )
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Lu"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Er"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["Th"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Tm"]) == pytest.approx(
-            0, rel=1e-2
-        )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Yb"]) == pytest.approx(
-            0, rel=1e-2
-        )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Lu"]) == pytest.approx(
-            0, rel=1e-2
-        )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["Th"]) == pytest.approx(
-            0, rel=1e-2
-        )
-        assert value(m.fs.solex.Acidsoln[0,3].flow_mass["U"]) == pytest.approx(
+        assert value(m.fs.solex.Acidsoln[0,3].conc_mass_comp["U"]) == pytest.approx(
             0, rel=1e-2
         )
 
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Al"]) == pytest.approx(
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Al"]) == pytest.approx(
+            6.03, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Ca"]) == pytest.approx(
+            39.64, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Fe"]) == pytest.approx(
+            1.19, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Si"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Ca"]) == pytest.approx(
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Sc"]) == pytest.approx(
+            336.25, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Y"]) == pytest.approx(
+            45.41, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["La"]) == pytest.approx(
+            142.56, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Ce"]) == pytest.approx(
+            321.59, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Pr"]) == pytest.approx(
+            53.88, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Nd"]) == pytest.approx(
+            145.83, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Pm"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Fe"]) == pytest.approx(
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Sm"]) == pytest.approx(
+            26.28, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Eu"]) == pytest.approx(
+            1.84, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Gd"]) == pytest.approx(
+            12.42, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Tb"]) == pytest.approx(
+            5.36, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Dy"]) == pytest.approx(
+            7.20, rel=1e-2
+        )
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Ho"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Si"]) == pytest.approx(
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Er"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Sc"]) == pytest.approx(
-            20.85, rel=1e-2
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Tm"]) == pytest.approx(
+            2.96, rel=1e-2
         )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Y"]) == pytest.approx(
-            2.82, rel=1e-2
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Yb"]) == pytest.approx(
+            4.64, rel=1e-2
         )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["La"]) == pytest.approx(
-            8.84, rel=1e-2
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Lu"]) == pytest.approx(
+            2.26, rel=1e-2
         )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Ce"]) == pytest.approx(
-            19.94, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Pr"]) == pytest.approx(
-            3.34, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Nd"]) == pytest.approx(
-            9.04, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Pm"]) == pytest.approx(
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["Th"]) == pytest.approx(
             0, rel=1e-2
         )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Sm"]) == pytest.approx(
-            1.63, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Eu"]) == pytest.approx(
-            0.11, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Gd"]) == pytest.approx(
-            0.77, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Tb"]) == pytest.approx(
-            0.33, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Dy"]) == pytest.approx(
-            0.45, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Ho"]) == pytest.approx(
-            0, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Er"]) == pytest.approx(
-            0, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Tm"]) == pytest.approx(
-            0.18, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Yb"]) == pytest.approx(
-            0.29, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Lu"]) == pytest.approx(
-            0.14, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["Th"]) == pytest.approx(
-            0, rel=1e-2
-        )
-        assert value(m.fs.solex.Orgacid[0,1].flow_mass["U"]) == pytest.approx(
+        assert value(m.fs.solex.Orgacid[0,1].conc_mass_comp["U"]) == pytest.approx(
             0, rel=1e-2
         )
     

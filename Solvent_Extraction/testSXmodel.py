@@ -1,10 +1,8 @@
-from pyomo.environ import (
-    ConcreteModel,
-    SolverFactory, 
-)
+import numpy as np
+
+from pyomo.environ import ConcreteModel, SolverFactory, TransformationFactory
 
 from idaes.core import FlowsheetBlock
-
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 from workspace.UKy_flowsheet.Solvent_Extraction.REESXmodel import REESX
@@ -24,60 +22,76 @@ m.fs = FlowsheetBlock(dynamic=False)
 m.fs.prop_a = REESolExAqParameters()
 m.fs.prop_o = REESolExOgParameters()
 
-m.fs.solex = REESX(number_of_finite_elements=3,
+m.fs.solex = REESX(number_of_finite_elements=3, dynamic=False,
                        aqueous_streams = {"Acidsoln":{"property_package":m.fs.prop_a, "flow_direction":1}},
                        organic_streams = {"Orgacid":{"property_package":m.fs.prop_o, "flow_direction":2}})
 
-
-#Aqueous feed fixing
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Al"].fix(0)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Ca"].fix(0.02)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Fe"].fix(0)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Sc"].fix(0.92)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Y"].fix(2.82)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["La"].fix(8.98)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Ce"].fix(19.94)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Pr"].fix(3.34)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Nd"].fix(9.04)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Sm"].fix(1.63)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Gd"].fix(0.77)
-m.fs.solex.Acidsoln_inlet_state[0].flow_mass["Dy"].fix(0.45)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Al"].fix(820)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Ca"].fix(5230)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Fe"].fix(270)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Si"].fix(0)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Sc"].fix(209.31)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Y"].fix(637.74)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["La"].fix(2032.77)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Ce"].fix(4516.13)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Pr"].fix(756.64)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Nd"].fix(2047.85)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Pm"].fix(0)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Sm"].fix(369.1)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Eu"].fix(25.81)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Gd"].fix(174.38)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Tb"].fix(75.28)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Dy"].fix(101.12)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Ho"].fix(0)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Er"].fix(0)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Tm"].fix(41.60)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Yb"].fix(65.65)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Lu"].fix(31.71)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Th"].fix(0)
+m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["U"].fix(0.01)
 
 m.fs.solex.Acidsoln_inlet_state[0].flow_vol.fix(4.4)
 
-#Organic feed fixing
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Al"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ca"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Fe"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sc"].fix(19.93)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Y"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["La"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Ce"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Pr"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Nd"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Sm"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Gd"].fix(0)
-m.fs.solex.Orgacid_inlet_state[0].flow_mass["Dy"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Al"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Ca"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Fe"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Si"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Sc"].fix(321.34)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Y"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["La"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Ce"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Pr"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Nd"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Pm"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Sm"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Eu"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Gd"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Tb"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Dy"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Ho"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Er"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Tm"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Yb"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Lu"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["Th"].fix(0)
+m.fs.solex.Orgacid_inlet_state[0].conc_mass_comp["U"].fix(0)
 
 m.fs.solex.Orgacid_inlet_state[0].flow_vol.fix(62.01)
 
 print(dof(m))
 
-assert_units_consistent(m)
-
+# Initializing of the model
 initializer = BlockTriangularizationInitializer()
 initializer.initialize(m.fs.solex)
 assert initializer.summary[m.fs.solex]["status"] == InitializationStatus.Ok
 
+# Solving of the model
+
 solver = SolverFactory("ipopt")
 solver.solve(m, tee=True)
 
-# All organic outlets display
-m.fs.solex.Orgacid[0,1].flow_mass.display()
-m.fs.solex.Orgacid[0,2].flow_mass.display()
-m.fs.solex.Orgacid[0,3].flow_mass.display()
+# Final organic outlet display
+m.fs.solex.Orgacid[0,1].conc_mass_comp.display()
 
-# All aqueous outlets display
-m.fs.solex.Acidsoln[0,1].flow_mass.display()
-m.fs.solex.Acidsoln[0,2].flow_mass.display()
-m.fs.solex.Acidsoln[0,3].flow_mass.display()
+# Final aqueous outlets display
+m.fs.solex.Acidsoln[0,3].conc_mass_comp.display()

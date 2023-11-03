@@ -1,5 +1,6 @@
-from pyomo.environ import Constraint, RangeSet, Reals, Var, units as pyunits
+from pyomo.environ import Constraint, RangeSet, Reals, Var, Param
 from pyomo.common.config import ConfigDict, ConfigValue, Bool, In
+from pyomo.dae import DerivativeVar
 
 from idaes.core import (
     declare_process_block_class,
@@ -108,6 +109,7 @@ class REESXData(UnitModelBlockData):
         ConfigValue(domain=int, description="Number of finite elements to use"),
     )
 
+
     def build(self):
 
         super().build()
@@ -204,110 +206,132 @@ class REESXData(UnitModelBlockData):
     # Creation of material balance
 
     def _build_material_balance_constraints(self, aqflow_basis, aquom, ogflow_basis, oguom):
-        # Get units for transfer terms
-        if aqflow_basis is MaterialFlowBasis.molar:
-            amb_units = aquom.FLOW_MOLE
-        elif aqflow_basis is MaterialFlowBasis.mass:
-            amb_units = aquom.FLOW_MASS
-        else:
-            # Flow type other, so cannot determine units
-            amb_units = None
+            # Get units for transfer terms
+            if aqflow_basis is MaterialFlowBasis.molar:
+                amb_units = aquom.FLOW_MOLE
+            elif aqflow_basis is MaterialFlowBasis.mass:
+                amb_units = aquom.FLOW_MASS
+            else:
+                # Flow type other, so cannot determine units
+                amb_units = None
+            
 
-        for stream, sconfig in self.config.aqueous_streams.items():
-            state_block = getattr(self, stream)
-            ppack = sconfig.property_package
-            component_list = state_block.component_list
-            # component_list = self.parent_block().prop.dissolved_elements
+            for stream, sconfig in self.config.aqueous_streams.items():
+                state_block = getattr(self, stream)
+                ppack = sconfig.property_package
+                component_list = state_block.component_list
 
-            if stream in self.config.aqueous_streams.keys():
-                in_state = getattr(self, stream + "_inlet_state")
+                if stream in self.config.aqueous_streams.keys():
+                    in_state = getattr(self, stream + "_inlet_state")
+                
+                distribution_extent = Var(
+                    self.flowsheet().time,
+                    self.elements,
+                    ppack.dissolved_elements,
+                    domain=Reals,
+                        initialize=0.0,
+                        doc=f"Extent of transfer in stream {stream}",
+                        units=amb_units,
+                )
+                self.add_component(
+                        stream + "_distribution_extent",
+                        distribution_extent
+                    )
+                
+                partition_coefficient = Param(ppack.dissolved_elements, initialize = {
+                    "Al":3.6/100,
+                    "Ca":3.7/100,
+                    "Fe":2.1/100,
+                    "Si":0/100,
+                    "Sc":100/100,
+                    "Y":100/100,
+                    "La":75.2/100,
+                    "Ce":95.7/100,
+                    "Pr":96.5/100,
+                    "Nd":99.2/100,
+                    "Pm":100/100,
+                    "Sm":100/100,
+                    "Eu":99.9/100,
+                    "Gd":98.6/100,
+                    "Tb":99.3/100,
+                    "Dy":99.9/100,
+                    "Ho":99.5/100,
+                    "Er":99.5/100,
+                    "Tm":98.6/100,
+                    "Yb":80.7/100,
+                    "Lu":99.5/100,
+                    "Th":5/100,
+                    "U":99.5/100
+                        }, mutable=True,
+                        doc="The fraction of component that goes from aqueous to organic phase")
+                
+                self.add_component(
+                        stream + "_partition_coefficient",
+                        partition_coefficient
+                    )
 
-            # state_block.display()
-            distribution_extent = Var(
-                self.flowsheet().time,
-                self.elements,
-                ppack.dissolved_elements,
-                domain=Reals,
-                initialize=0.0,
-                doc=f"Extent of transfer in stream {stream}",
-                units=pyunits.g / pyunits.hr,
-            )
-            self.add_component(
-                stream + "_distribution_extent",
-                distribution_extent
-            )
+                
+                def distribution_extent_rule(b, t, s, j):
+                    if j in ppack.dissolved_elements:
+                      if s == self.elements.first():
+                        return distribution_extent[t, s, j] == in_state[t].get_material_flow_terms(j)*partition_coefficient[j]
+                      else:
+                        return distribution_extent[t, s, j] == state_block[t, s-1].get_material_flow_terms(j)*partition_coefficient[j]
+                    return Constraint.Skip
+                
+                distribution_extent_constraint = Constraint(self.flowsheet().time, self.elements,
+                                                            ppack.dissolved_elements, rule=distribution_extent_rule)
 
-            def distribution_extent_rule(b, t, s, j):
-                if j in ppack.dissolved_elements:
-                    if s == self.elements.first():
-                        return distribution_extent[t, s, j] == pyunits.convert(
-                            in_state[t].flow_mass[j] * ppack.K_distribution[j],
-                            to_units=pyunits.g / pyunits.hour,
-                        )
-                    else:
-                        return distribution_extent[t, s, j] == pyunits.convert(
-                            state_block[t, s - 1].flow_mass[j] * ppack.K_distribution[j],
-                            to_units=pyunits.g / pyunits.hour,
-                        )
-                return Constraint.Skip
-
-            distribution_extent_constraint = Constraint(self.flowsheet().time, self.elements,
-                                                        ppack.dissolved_elements, rule=distribution_extent_rule)
-
-            self.add_component(
-                stream + "_distribution_extent_constraint",
-                distribution_extent_constraint,
-            )
-
-            def material_balance_aq_rule(b, t, s, j):
-                for aqstream, pconfig in b.config.aqueous_streams.items():
-
-                    in_state_a, out_state_a, side_state_a = _get_state_blocks(b, t, s, aqstream)
-
-                    if in_state_a is not None:
-                        rhsa = in_state_a.get_material_flow_terms(j) - out_state_a.get_material_flow_terms(j)
-
-                    else:
-                        rhsa = -out_state_a.get_material_flow_terms(j)
-
-                    # Aq streams always have a distribution extent
-                    if j != 'H2SO4':
-                        rhsa += -distribution_extent[t, s, j]
-
-                return 0 == rhsa
-
-            mbal = Constraint(self.flowsheet().time, self.elements, component_list, rule=material_balance_aq_rule)
-            self.add_component(stream + "_material_balance", mbal)
-
-        for stream, sconfig in self.config.organic_streams.items():
-            state_block = getattr(self, stream)
-            ppack = sconfig.property_package
-            component_list = state_block.component_list
-
-            def material_balance_og_rule(b, t, s, j):
-                for ogstream, pconfig in b.config.organic_streams.items():
-                    in_state_o, out_state_o, side_state_o = _get_state_blocks(b, t, s, ogstream)
-
-                    if in_state_o is not None:
-                        rhso = in_state_o.get_material_flow_terms(j) - out_state_o.get_material_flow_terms(j)
-
-                    else:
-                        rhso = -out_state_o.get_material_flow_terms(j)
+                self.add_component(
+                    stream + "_distribution_extent_constraint",
+                    distribution_extent_constraint,
+                )
 
                     for aqstream, pconfig in b.config.aqueous_streams.items():
-                        # Og distribution extent depends on aq distribution extent
-                        if j != 'H2SO4':
-                            if j != 'DEHPA':
+                            in_state_a, out_state_a, side_state_a = _get_state_blocks(b, t, s, aqstream)
+
+                            if in_state_a is not None:
+                                rhsa =  in_state_a.get_material_flow_terms(j) - out_state_a.get_material_flow_terms(j)
+                                
+                            else:
+                                rhsa = -out_state_a.get_material_flow_terms(j)
+                        
+                            # Aq streams always have a distribution extent
+                            if j != 'H2SO4':
+                                rhsa += -distribution_extent[t, s, j]
+                            return rhsa == 0
+
+                      
+                
+                mbal = Constraint(self.flowsheet().time, self.elements, component_list, rule=material_balance_aq_rule)
+                self.add_component(stream + "_material_balance", mbal)
+
+            for stream, sconfig in self.config.organic_streams.items():
+                state_block = getattr(self, stream)
+                ppack = sconfig.property_package
+                component_list = state_block.component_list
+
+
+                def material_balance_og_rule(b, t, s, j):
+                    for ogstream, pconfig in b.config.organic_streams.items():
+                            in_state_o, out_state_o, side_state_o = _get_state_blocks(b, t, s, ogstream)
+
+                            if in_state_o is not None:
+                                rhso =  in_state_o.get_material_flow_terms(j) - out_state_o.get_material_flow_terms(j)
+                                
+                            else:
+                                rhso = -out_state_o.get_material_flow_terms(j)
+                            
+                            if j not in ['H2SO4','DEHPA']:
                                 rhso += distribution_extent[t, s, j]
+                            return rhso == 0
 
-                return 0 == rhso
-
-            mbal_og = Constraint(self.flowsheet().time, self.elements, component_list, rule=material_balance_og_rule)
-
-            self.add_component(stream + "_material_balance", mbal_og)
+                                    
+                mbal_og = Constraint(self.flowsheet().time, self.elements, component_list, rule=material_balance_og_rule)
+                
+                self.add_component(stream + "_material_balance", mbal_og)
 
     # Creation of ports
-
     def _build_ports(self):
         # Add Ports
         for aqstream, pconfig in self.config.aqueous_streams.items():

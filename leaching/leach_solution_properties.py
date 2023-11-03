@@ -34,7 +34,7 @@ from idaes.core import (
     MaterialFlowBasis,
     MaterialBalanceType,
 )
-from idaes.core.util.exceptions import BurntToast
+from idaes.core.util.misc import add_object_reference
 from idaes.core.util.initialization import fix_state_vars
 
 
@@ -121,6 +121,12 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
             units=units.mol/units.L,
         )
 
+        self.dens_mol = Param(
+            initialize=1.840,
+            units=units.kg/units.litre,
+            mutable=True,
+        )
+
         self._state_block_class = LeachSolutionStateBlock
 
     @classmethod
@@ -130,7 +136,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
                 "flow_vol": {"method": None},
                 "conc_mass_comp": {"method": None},
                 "conc_mol_comp": {"method": None},
-                # "dens_mol": {"method": None, "units": "mol/m^3"},
+                "dens_mol": {"method": "_dens_mol"},
             }
         )
         obj.add_default_units(
@@ -156,8 +162,8 @@ class _LeachSolutionStateBlock(StateBlock):
         fix_state_vars(self)
 
         # Deactivate inherent reactions
-        if not b.config.defined_state:
-            b.hso4_dissociation.deactivate()
+        if not self.config.defined_state:
+            self.hso4_dissociation.deactivate()
 
 
 @declare_process_block_class(
@@ -198,6 +204,9 @@ class LeachSolutionStateBlockData(StateBlockData):
                 expr=self.conc_mol_comp["HSO4"] * self.params.Ka2
                 == self.conc_mol_comp["H"] * self.conc_mol_comp["SO4"]
             )
+
+    def _dens_mol(self):
+        add_object_reference(self, "dens_mol", self.params.dens_mol)
 
     def get_material_flow_terms(self, p, j):
         # Note conversion to mol/hour

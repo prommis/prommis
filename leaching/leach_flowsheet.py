@@ -162,3 +162,4 @@ print(f"pH in {-log10(value(m.fs.leach.liquid_inlet_state[0].conc_mol_comp['H'])
 print(f"pH out {-log10(value(m.fs.leach.liquid[0, 1].conc_mol_comp['H']))}")
 
 m.fs.leach.solid[0, 1].conversion.display()
+m.fs.leach.liquid[0, 1].dens_mol.display()

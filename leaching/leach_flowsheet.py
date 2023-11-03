@@ -28,7 +28,6 @@ from pyomo.environ import (
     Var,
     value,
 )
-from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import (
     FlowsheetBlock,
@@ -37,8 +36,7 @@ from idaes.models.unit_models.mscontactor import (
     MSContactor,
     MSContactorInitializer,
 )
-from idaes.core.util.model_statistics import degrees_of_freedom
-
+from idaes.core.util import DiagnosticsToolbox
 from leach_solution_properties import LeachSolutionParameters
 from leach_solids_properties import CoalRefuseParameters
 from leach_reactions import CoalRefuseLeachingReactions
@@ -115,7 +113,8 @@ m.fs.leach.heterogeneous_reaction_extent_constraint = Constraint(
     rule=rule_heterogeneous_reaction_extent,
 )
 
-print(degrees_of_freedom(m))
+dt = DiagnosticsToolbox(m)
+dt.assert_no_structural_warnings()
 
 # -------------------------------------------------------------------------------------
 # Scaling
@@ -159,7 +158,7 @@ for j in m.fs.coal.component_list:
 
     print(f"Recovery {j}: {r}")
 
-print(f"pH in {-log10(value(m.fs.leach.liquid_inlet.conc_mol_comp[0, 'H']))}")
-print(f"pH out {-log10(value(m.fs.leach.liquid_outlet.conc_mol_comp[0, 'H']))}")
+print(f"pH in {-log10(value(m.fs.leach.liquid_inlet_state[0].conc_mol_comp['H']))}")
+print(f"pH out {-log10(value(m.fs.leach.liquid[0, 1].conc_mol_comp['H']))}")
 
 m.fs.leach.solid[0, 1].conversion.display()

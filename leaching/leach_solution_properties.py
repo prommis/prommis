@@ -188,8 +188,12 @@ class LeachSolutionStateBlockData(StateBlockData):
         def molar_concentration_constraint(b, j):
             return units.convert(b.conc_mol_comp[j]*b.params.mw[j], to_units=units.mg/units.litre) == b.conc_mass_comp[j]
 
-        # Equilibrium for partial dissociation of HSO4
         if not self.config.defined_state:
+            # Concentration of H2O based on assumed density
+            self.h2o_concentration = Constraint(
+                expr=self.conc_mass_comp["H2O"] == 1e6*units.mg/units.L
+            )
+            # Equilibrium for partial dissociation of HSO4
             self.hso4_dissociation = Constraint(
                 expr=self.conc_mol_comp["HSO4"] * self.params.Ka2
                 == self.conc_mol_comp["H"] * self.conc_mol_comp["SO4"]

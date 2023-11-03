@@ -11,7 +11,7 @@
 # for full copyright and license information.
 #################################################################################
 """
-Simple leaching model for West Kentucky No. 13 coal refuse in H2SO4.
+Simple old_leaching model for West Kentucky No. 13 coal refuse in H2SO4.
 
 Authors: Andrew Lee
 """

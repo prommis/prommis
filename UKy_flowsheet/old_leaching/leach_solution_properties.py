@@ -191,7 +191,7 @@ class LeachSolutionStateBlockData(StateBlockData):
         self.conc_mass_metals = Var(
             self.params.dissolved_metals_set,
             units=units.mg / units.L,
-            bounds=(1e-8, None),
+            bounds=(1e-10, None),
         )
         self.conc_mole_acid = Var(
             self.params.acid_set,

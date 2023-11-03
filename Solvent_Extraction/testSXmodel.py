@@ -4,13 +4,18 @@ from pyomo.environ import ConcreteModel, SolverFactory, TransformationFactory
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
-from idaes.core.initialization.block_triangularization import BlockTriangularizationInitializer
-from idaes.core.initialization import InitializationStatus
 
-from REESXmodel import REESX
+from workspace.UKy_flowsheet.Solvent_Extraction.REESXmodel import REESX
+from workspace.UKy_flowsheet.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
+from workspace.UKy_flowsheet.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
 
-from REEAqdistribution import REESolExAqParameters
-from REEOgdistribution import REESolExOgParameters
+from pyomo.util.check_units import assert_units_consistent
+
+from idaes.core.initialization import (
+    BlockTriangularizationInitializer,
+    SingleControlVolumeUnitInitializer,
+    InitializationStatus,
+)
 
 m = ConcreteModel()
 m.fs = FlowsheetBlock(dynamic=False)
@@ -20,7 +25,6 @@ m.fs.prop_o = REESolExOgParameters()
 m.fs.solex = REESX(number_of_finite_elements=3, dynamic=False,
                        aqueous_streams = {"Acidsoln":{"property_package":m.fs.prop_a, "flow_direction":1}},
                        organic_streams = {"Orgacid":{"property_package":m.fs.prop_o, "flow_direction":2}})
-
 
 m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Al"].fix(820)
 m.fs.solex.Acidsoln_inlet_state[0].conc_mass_comp["Ca"].fix(5230)
@@ -77,7 +81,6 @@ m.fs.solex.Orgacid_inlet_state[0].flow_vol.fix(62.01)
 print(dof(m))
 
 # Initializing of the model
-
 initializer = BlockTriangularizationInitializer()
 initializer.initialize(m.fs.solex)
 assert initializer.summary[m.fs.solex]["status"] == InitializationStatus.Ok

@@ -230,7 +230,7 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
             s_block = b.parent_block().solid[b.index()]
 
             h_conc = units.convert(
-                l_block.conc_mole_acid["H"],
+                l_block.conc_mol_comp["H"],
                 to_units=units.mol/units.L
             )
 

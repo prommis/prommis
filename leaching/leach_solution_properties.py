@@ -121,35 +121,18 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
             units=units.mol/units.L,
         )
 
-        # Sets for separating solutes
-        self.dissolved_metals_set = Set(
-            initialize=[
-                "Al",
-                "Ca",
-                "Fe",
-                "Sc",
-                "Y",
-                "La",
-                "Ce",
-                "Pr",
-                "Nd",
-                "Sm",
-                "Gd",
-                "Dy",
-            ],
-        )
-        self.acid_set = Set(
-            initialize=[
-                "H",
-                "HSO4",
-                "SO4",
-            ],
-        )
-
         self._state_block_class = LeachSolutionStateBlock
 
     @classmethod
     def define_metadata(cls, obj):
+        obj.add_properties(
+            {
+                "flow_vol": {"method": None},
+                "conc_mass_comp": {"method": None},
+                "conc_mol_comp": {"method": None},
+                # "dens_mol": {"method": None, "units": "mol/m^3"},
+            }
+        )
         obj.add_default_units(
             {
                 "time": units.hour,
@@ -188,43 +171,43 @@ class LeachSolutionStateBlockData(StateBlockData):
             units=units.L / units.hour,
             bounds=(1e-8, None),
         )
-        self.conc_mass_metals = Var(
-            self.params.dissolved_metals_set,
+        self.conc_mass_comp = Var(
+            self.params.component_list,
             units=units.mg / units.L,
             bounds=(1e-10, None),
         )
-        self.conc_mole_acid = Var(
-            self.params.acid_set,
+        self.conc_mol_comp = Var(
+            self.params.component_list,
             units=units.mol / units.L,
             initialize=1e-5,
             bounds=(1e-8, None),
         )
 
+        # Concentration conversion constraint
+        @self.Constraint(self.params.component_list)
+        def molar_concentration_constraint(b, j):
+            return units.convert(b.conc_mol_comp[j]*b.params.mw[j], to_units=units.mg/units.litre) == b.conc_mass_comp[j]
+
         # Equilibrium for partial dissociation of HSO4
         if not self.config.defined_state:
             self.hso4_dissociation = Constraint(
-                expr=self.conc_mole_acid["HSO4"] * self.params.Ka2
-                == self.conc_mole_acid["H"] * self.conc_mole_acid["SO4"]
+                expr=self.conc_mol_comp["HSO4"] * self.params.Ka2
+                == self.conc_mol_comp["H"] * self.conc_mol_comp["SO4"]
             )
 
     def get_material_flow_terms(self, p, j):
-        # Note conversion to kg/hour
+        # Note conversion to mol/hour
         if j == "H2O":
             # Assume constant density of 1 kg/L
             return self.flow_vol * (1 * units.kg / units.L) / self.params.mw[j]
-        elif j in self.params.dissolved_metals_set:
-            # Need to convert from moles to mass
-            return (
-                self.flow_vol
-                * self.conc_mass_metals[j]
-                * (1e-6 * units.kg / units.mg)
-                / self.params.mw[j]
-            )
-        elif j in self.params.acid_set:
-            # Need to convert from moles to mass
-            return self.flow_vol * self.conc_mole_acid[j]
         else:
-            raise BurntToast()
+            # Need to convert from moles to mass
+            return units.convert(
+                self.flow_vol
+                * self.conc_mass_comp[j]
+                / self.params.mw[j],
+                to_units=units.mol/units.hour
+            )
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar
@@ -232,6 +215,5 @@ class LeachSolutionStateBlockData(StateBlockData):
     def define_state_vars(self):
         return {
             "flow_vol": self.flow_vol,
-            "conc_mass_metals": self.conc_mass_metals,
-            "conc_mole_acid": self.conc_mole_acid,
+            "conc_mass_comp": self.conc_mass_comp,
         }

@@ -70,10 +70,11 @@ m.fs.leach = MSContactor(
 
 # Liquid feed state
 m.fs.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
-m.fs.leach.liquid_inlet.conc_mass_metals.fix(1e-10 * units.mg / units.L)
-m.fs.leach.liquid_inlet.conc_mole_acid[0, "H"].fix(2 * 0.05 * units.mol / units.L)
-m.fs.leach.liquid_inlet.conc_mole_acid[0, "HSO4"].fix(1e-8 * units.mol / units.L)
-m.fs.leach.liquid_inlet.conc_mole_acid[0, "SO4"].fix(0.05 * units.mol / units.L)
+m.fs.leach.liquid_inlet.conc_mass_comp.fix(1e-10 * units.mg / units.L)
+
+m.fs.leach.liquid_inlet.conc_mass_comp[0, "H"].fix(2 * 0.05 * 1e3 * units.mg / units.L)
+m.fs.leach.liquid_inlet.conc_mass_comp[0, "HSO4"].fix(1e-8 * units.mg / units.L)
+m.fs.leach.liquid_inlet.conc_mass_comp[0, "SO4"].fix(0.05 * 96e3 * units.mg / units.L)
 
 # Solid feed state
 m.fs.leach.solid_inlet.flow_mass.fix(22.68 * units.kg / units.hour)
@@ -158,7 +159,7 @@ for j in m.fs.coal.component_list:
 
     print(f"Recovery {j}: {r}")
 
-print(f"pH in {-log10(value(m.fs.leach.liquid_inlet.conc_mole_acid[0, 'H']))}")
-print(f"pH out {-log10(value(m.fs.leach.liquid_outlet.conc_mole_acid[0, 'H']))}")
+print(f"pH in {-log10(value(m.fs.leach.liquid_inlet.conc_mol_comp[0, 'H']))}")
+print(f"pH out {-log10(value(m.fs.leach.liquid_outlet.conc_mol_comp[0, 'H']))}")
 
 m.fs.leach.solid[0, 1].conversion.display()

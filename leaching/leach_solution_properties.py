@@ -121,8 +121,9 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
             units=units.mol/units.L,
         )
 
+        # Assume dilute acid, density of pure water
         self.dens_mol = Param(
-            initialize=1.840,
+            initialize=1,
             units=units.kg/units.litre,
             mutable=True,
         )
@@ -212,7 +213,7 @@ class LeachSolutionStateBlockData(StateBlockData):
         # Note conversion to mol/hour
         if j == "H2O":
             # Assume constant density of 1 kg/L
-            return self.flow_vol * (1 * units.kg / units.L) / self.params.mw[j]
+            return self.flow_vol * self.params.dens_mol / self.params.mw[j]
         else:
             # Need to convert from moles to mass
             return units.convert(

@@ -229,10 +229,7 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
             l_block = b.parent_block().liquid[b.index()]
             s_block = b.parent_block().solid[b.index()]
 
-            h_conc = units.convert(
-                l_block.conc_mole_acid["H"],
-                to_units=units.mol/units.L
-            )
+            h_conc = l_block.conc_mol_comp["H"]
 
             # Pulp density calculation
             eps = units.convert(

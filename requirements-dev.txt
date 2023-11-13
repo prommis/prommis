@@ -1,0 +1,5 @@
+# install req
+git+https://github.com/idaes/idaes-pse.git@main
+git+https://github.com/IDAES/idaes-ui.git@main
+
+-e .[dev]

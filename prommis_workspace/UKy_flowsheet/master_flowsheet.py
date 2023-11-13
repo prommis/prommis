@@ -46,21 +46,21 @@ from idaes.models.unit_models.product import (
 )
 from idaes.core.util.model_statistics import degrees_of_freedom
 
-from workspace.UKy_flowsheet.old_leaching.leach_solution_properties import LeachSolutionParameters
-from workspace.UKy_flowsheet.old_leaching.leach_solids_properties import CoalRefuseParameters
-from workspace.UKy_flowsheet.old_leaching.leach_reactions import CoalRefuseLeachingReactions
+from prommis_workspace.UKy_flowsheet.old_leaching.leach_solution_properties import LeachSolutionParameters
+from prommis_workspace.UKy_flowsheet.old_leaching.leach_solids_properties import CoalRefuseParameters
+from prommis_workspace.UKy_flowsheet.old_leaching.leach_reactions import CoalRefuseLeachingReactions
 
-from workspace.Solvent_Extraction.REESXmodel import REESX
-from workspace.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
-from workspace.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
+from prommis_workspace.Solvent_Extraction.REESXmodel import REESX
+from prommis_workspace.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
+from prommis_workspace.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
 
-from workspace.precipitate.precipitator import Precipitator
-from workspace.precipitate.precip_prop import AqueousStateParameterBlock, PrecipitateStateParameterBlock
+from prommis_workspace.precipitate.precipitator import Precipitator
+from prommis_workspace.precipitate.precip_prop import AqueousStateParameterBlock, PrecipitateStateParameterBlock
 
-from workspace.roasting.ree_oxalate_roster import REEOxalateRoaster
+from prommis_workspace.roasting.ree_oxalate_roster import REEOxalateRoaster
 
-from workspace.UKy_flowsheet.Translators.translator_leaching_SX import Translator_leaching_SX
-from workspace.UKy_flowsheet.Translators.translator_SX_precipitator import Translator_SX_precipitator
+from prommis_workspace.UKy_flowsheet.Translators.translator_leaching_SX import Translator_leaching_SX
+from prommis_workspace.UKy_flowsheet.Translators.translator_SX_precipitator import Translator_SX_precipitator
 
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,

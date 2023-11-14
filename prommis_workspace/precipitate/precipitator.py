@@ -18,23 +18,20 @@ __author__ = "John Eslick"
 
 # Import Pyomo libraries
 import pyomo.environ as pyo
-from pyomo.common.config import ConfigBlock, ConfigValue, In, Bool
+from pyomo.common.config import ConfigBlock, ConfigValue
 
 # Import IDAES cores
 from idaes.core import (
     ControlVolume0DBlock,
     declare_process_block_class,
-    EnergyBalanceType,
-    MomentumBalanceType,
-    MaterialBalanceType,
     UnitModelBlockData,
     useDefault,
 )
-from idaes.core.util.math import smooth_min, smooth_abs
+from idaes.core.util.math import smooth_min
 import idaes.core.util.scaling as iscale
 from pyomo.util.check_units import assert_units_consistent
 
-import prommis_workspace.precipitate.precip_prop as precip_prop
+import workspace.prommis_workspace.precipitate.precip_prop as precip_prop
 from idaes.core.util.config import is_physical_parameter_block
 import idaes.logger as idaeslog
 
@@ -169,13 +166,6 @@ class PrecipitatorData(UnitModelBlockData):
                 == blk.cv_aqueous.properties_in[t].temperature
             )
 
-        @self.Constraint(self.flowsheet().time)
-        def pressure_eqn(blk, t):
-            return (
-                blk.cv_aqueous.properties_out[t].pressure
-                == blk.cv_aqueous.properties_in[t].pressure
-            )
-
         @self.Constraint(
             self.flowsheet().time, prop_aq.key_set, doc="Key component concentrations"
         )
@@ -281,17 +271,12 @@ class PrecipitatorData(UnitModelBlockData):
                 )
             )
 
-        # @self.Constraint(self.flowsheet().time, prop_s.solid_dict)
-        # def saturation_index_eqn(blk, t, comp):
-        #    return blk.saturation_index[t, comp] == blk.saturation_index_expr[t, comp]
-
         @self.Constraint(
             self.flowsheet().time,
             prop_s.solid_dict,
             doc="To precipitate or not to precipitate that is the question.",
         )
         def precipitate_eqn(blk, t, i):
-            # return blk.molality_precipitate_comp[t, i] * blk.scale_factor_precipitate_molality == 0
             return (
                 smooth_min(
                     blk.molality_precipitate_comp[t, i]
@@ -411,9 +396,6 @@ class PrecipitatorData(UnitModelBlockData):
             units=pyo.units.mol / pyo.units.kg,
         )
 
-        self.scale_factor_pressure = pyo.Param(
-            initialize=1e-5, mutable=True, doc="Pressure scaling factor"
-        )
 
         self.scale_factor_temperature = pyo.Param(
             initialize=1e-2, mutable=True, doc="Temperature scaling factor"
@@ -438,9 +420,6 @@ class PrecipitatorData(UnitModelBlockData):
             )
             iscale.constraint_scaling_transform(
                 self.temperature_s_eqn[t], pyo.value(self.scale_factor_temperature)
-            )
-            iscale.constraint_scaling_transform(
-                self.pressure_eqn[t], pyo.value(self.scale_factor_pressure)
             )
             iscale.constraint_scaling_transform(
                 self.flow_mass_h2o_key_eqn[t], pyo.value(self.scale_factor_mass_flow)
@@ -473,14 +452,6 @@ class PrecipitatorData(UnitModelBlockData):
                 pyo.value(self.scale_factor_temperature),
             )
             iscale.set_scaling_factor(
-                self.cv_aqueous.properties_in[t].pressure,
-                pyo.value(self.scale_factor_pressure),
-            )
-            iscale.set_scaling_factor(
-                self.cv_aqueous.properties_out[t].pressure,
-                pyo.value(self.scale_factor_pressure),
-            )
-            iscale.set_scaling_factor(
                 self.cv_aqueous.properties_in[t].flow_mass,
                 pyo.value(self.scale_factor_mass_flow),
             )
@@ -507,26 +478,11 @@ class PrecipitatorData(UnitModelBlockData):
                     self.outlet_precipitate_molality[t, comp],
                     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
                 )
-                # iscale.set_scaling_factor(
-                #     self.cv_precipitate.properties_in[t].flow_mol_comp[comp],
-                #     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
-                # )
-                # iscale.set_scaling_factor(
-                #     self.cv_precipitate.properties_out[t].flow_mol_comp[comp],
-                #     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
-                # )
-                # iscale.set_scaling_factor(
-                #     self.molality_precipitate_comp[t, comp],
-                #     pyo.value(self.scale_factor_molality * self.scale_factor_mass_flow),
-                # )
-
-        # for i in self.molality_key_comp:
-        #     iscale.set_scaling_factor(self.molality_key_comp[i], 1e3)
 
 
 def make_a_test_model():
     from idaes.core import FlowsheetBlock
-
+# Only considering 5 key components for now
     key_components = {
         "H^+",
         "Ce^3+",
@@ -563,7 +519,6 @@ def main():
     m.fs.unit.cv_precipitate.properties_in[0].flow_mol_comp.fix(0)
 
     m.fs.unit.cv_aqueous.properties_in[0].temperature.fix(300)
-    m.fs.unit.cv_aqueous.properties_in[0].pressure.fix(101325)
     m.fs.unit.cv_aqueous.properties_in[0].flow_mass.fix(1)
     m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp.fix(-20)
     m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["H^+"].fix(-1)
@@ -571,13 +526,7 @@ def main():
     m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["Ce^3+"].fix(-4)
     m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["Al^3+"].fix(-10)
     m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["Fe^3+"].fix(-10)
-    # m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["Fe^2+"].fix(-10)
-    # m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["Ca^2+"].fix(-10)
-    # m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["Mg^2+"].fix(-10)
     m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["C2O4^2-"].fix(-4)
-    # m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["NO3^-"].fix(-10)
-    # m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["Cl^-"].fix(-10)
-    # m.fs.unit.cv_aqueous.properties_in[0].log10_molality_comp["SO4^2-"].fix(-10)
 
     m.fs.unit.calculate_scaling_factors()
     assert_units_consistent(m)
@@ -596,7 +545,6 @@ def main():
             "ma57_pivtol": 1e-5,
             "ma57_pivtolmax": 0.1,
             "tol": 1e-8,
-            # "halt_on_ampl_error": "yes",
             "max_iter": 50,
         },
     )

@@ -95,7 +95,7 @@ class REESolExAqStateBlockData(StateBlockData):
     def build(self):
         super().build()
 
-        self.conc_mass_comp = Var(self.params.dissolved_elements, units=units.mg/units.L, bounds=(0,None))    # conc_mass_comp added
+        self.conc_mass_comp = Var(self.params.dissolved_elements, units=units.mg/units.L, bounds=(1e-20,None))    # conc_mass_comp added
 
         self.flow_vol = Var(
             units=units.L / units.hour,
@@ -107,10 +107,10 @@ class REESolExAqStateBlockData(StateBlockData):
 
     def get_material_flow_terms(self, j):
         if j in self.params.dissolved_elements:
-            units.convert(self.conc_mass_comp[j], to_units=units.g/units.L)  
+            units.convert(self.conc_mass_comp[j], to_units=units.g/units.L)
             return self.flow_vol * self.conc_mass_comp[j]     # conc_mass_comp added
         elif j=="H2SO4":
-            return self.flow_vol * (1840 * units.g/units.L) 
+            return self.flow_vol * (1840 * units.g/units.L)
         else:
             raise BurntToast()
 

@@ -19,7 +19,6 @@ Authors: Andrew Lee
 from pyomo.environ import (
     Constraint,
     Param,
-    Set,
     units,
     Var,
 )
@@ -32,9 +31,7 @@ from idaes.core import (
     Component,
     Phase,
     MaterialFlowBasis,
-    MaterialBalanceType,
 )
-from idaes.core.util.exceptions import BurntToast
 from idaes.core.util.initialization import fix_state_vars
 
 
@@ -163,6 +160,7 @@ class CoalRefuseStateBlockData(StateBlockData):
             self.params.component_list,
             initialize=0,
             units=units.dimensionless,
+            bounds=(None, 0.99),
         )
 
         @self.Constraint(self.params.component_list)

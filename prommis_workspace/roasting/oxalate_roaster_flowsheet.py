@@ -19,15 +19,13 @@ import os
 
 # Import Pyomo libraries
 import pyomo.environ as pyo
-from pyomo.network import Arc
 
 # Import IDAES core
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_statistics import degrees_of_freedom
-import idaes.core.util.scaling as iscale
 from idaes.core.solvers import get_solver
 
-from ree_oxalate_roster import REEOxalateRoaster
+from ree_oxalate_roaster import REEOxalateRoaster
 
 # Import IDAES standard unit model
 import idaes.logger as idaeslog

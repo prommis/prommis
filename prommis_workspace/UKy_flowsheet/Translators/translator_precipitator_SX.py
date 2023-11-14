@@ -10,7 +10,7 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 """
-Translator block converting from old_leaching properties to solvent extraction properties.
+Translator block converting from precipitator properties to solvent extraction properties.
 This is copied from the IDAES Generic template for a translator block.
 
 Assumptions:
@@ -40,10 +40,10 @@ __author__ = "Marcus Holly"
 _log = idaeslog.getLogger(__name__)
 
 
-@declare_process_block_class("Translator_leaching_SX")
-class TranslatorDataLeachingSX(TranslatorData):
+@declare_process_block_class("Translator_precipitator_SX")
+class TranslatorDataPrecipitatorSX(TranslatorData):
     """
-    Translator block representing the old_leaching/SX interface
+    Translator block representing the precipitator/SX interface
     """
 
     def build(self):
@@ -57,26 +57,129 @@ class TranslatorDataLeachingSX(TranslatorData):
         # Call UnitModel.build to setup dynamics
         super().build()
 
+        mw_al = 26.98154e3 * pyunits.mg / pyunits.mol
+        mw_ca = 39.96259e3 * pyunits.mg / pyunits.mol
+        mw_fe = 55.93494e3 * pyunits.mg / pyunits.mol
+        mw_ce = 140.116e3 * pyunits.mg / pyunits.mol
+
+        DEHPA_density = 0.9758 * pyunits.kg/pyunits.L
+
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Volumetric flow (L/hr)",
+        )
+        def volumetric_flow(blk, t):
+            return (
+                    pyunits.convert(blk.properties_in[t].flow_mass, to_units=pyunits.kg / pyunits.hour)
+                    / DEHPA_density
+            )
+
         @self.Constraint(
             self.flowsheet().time,
-            doc="Equality volumetric flow equation",
+            doc="Equality volumetric flow equation (L/hr)",
         )
         def eq_flow_vol_rule(blk, t):
-            return blk.properties_out[t].flow_vol == blk.properties_in[t].flow_vol
+            return (
+                    blk.properties_out[t].flow_vol
+                    == blk.volumetric_flow[t]
+            )
 
-        self.metals = Set(
-            initialize=["Al", "Ca", "Fe", "Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Aluminum molar flow (mol/s)",
         )
+        def aluminum_molar_flow(blk, t):
+            return (
+                10 ** blk.properties_in[t].log10_molality_comp["Al^3+"] * pyunits.mol / pyunits.kg
+                * blk.properties_in[t].flow_mass
+            )
 
         @self.Constraint(
             self.flowsheet().time,
-            self.metals,
-            doc="Equality equation for metal components",
+            doc="Aluminum concentration (mg/L)",
         )
-        def eq_metal_mass_flow(blk, t, i):
+        def aluminum_conc_mass_comp(blk, t):
+            return (
+                blk.properties_out[t].conc_mass_comp["Al"]
+                == pyunits.convert(blk.aluminum_molar_flow[t], to_units=pyunits.mol / pyunits.hour,)
+                * mw_al / blk.volumetric_flow[t]
+            )
+
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Calcium molar flow (mol/s)",
+        )
+        def calcium_molar_flow(blk, t):
+            return (
+                10 ** blk.properties_in[t].log10_molality_comp["Ca^2+"] * pyunits.mol / pyunits.kg
+                * blk.properties_in[t].flow_mass
+            )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Calcium concentration (mg/L)",
+        )
+        def calcium_conc_mass_comp(blk, t):
+            return (
+                blk.properties_out[t].flow_mass["Ca"]
+                == pyunits.convert(blk.calcium_molar_flow[t], to_units=pyunits.mol / pyunits.hour,)
+                * mw_ca / blk.volumetric_flow[t]
+            )
+
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Iron molar flow (mol/s)",
+        )
+        def iron_molar_flow(blk, t):
+            return (
+                10 ** blk.properties_in[t].log10_molality_comp["Fe^3+"] * pyunits.mol / pyunits.kg
+                * blk.properties_in[t].flow_mass
+            )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Iron concentration (mg/L)",
+        )
+        def iron_conc_mass_comp(blk, t):
+            return (
+                blk.properties_out[t].flow_mass["Fe"]
+                == pyunits.convert(blk.iron_molar_flow[t], to_units=pyunits.mol / pyunits.hour,)
+                * mw_fe / blk.volumetric_flow[t]
+            )
+
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Cerium molar flow (mol/s)",
+        )
+        def cerium_molar_flow(blk, t):
+            return (
+                10 ** blk.properties_in[t].log10_molality_comp["Ce^3+"] * pyunits.mol / pyunits.kg
+                * blk.properties_in[t].flow_mass
+            )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Cerium concentration (mg/L)",
+        )
+        def cerium_conc_mass_comp(blk, t):
+            return (
+                blk.properties_out[t].flow_mass["Ce"]
+                == pyunits.convert(blk.iron_molar_flow[t], to_units=pyunits.mol / pyunits.hour,)
+                * mw_ce / blk.volumetric_flow[t]
+            )
+
+        # TODO: Should these components be removed from the SX model?
+        self.components = Set(initialize=["Y", "La", "Pr", "Nd", "Sm", "Gd", "Dy", "Sc"])
+
+        @self.Constraint(
+            self.flowsheet().time,
+            self.components,
+            doc="Component concentration (mg/L)",
+        )
+        def zero_conc_components(blk, t, i):
             return (
                 blk.properties_out[t].conc_mass_comp[i]
-                == blk.properties_in[t].conc_mass_comp[i]
+                == 1e-7 * pyunits.g / pyunits.hour
             )
 
     def initialize_build(

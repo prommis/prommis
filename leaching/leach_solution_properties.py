@@ -181,13 +181,13 @@ class LeachSolutionStateBlockData(StateBlockData):
         self.conc_mass_comp = Var(
             self.params.component_list,
             units=units.mg / units.L,
-            bounds=(1e-10, None),
+            bounds=(1e-20, None),
         )
         self.conc_mol_comp = Var(
             self.params.component_list,
             units=units.mol / units.L,
             initialize=1e-5,
-            bounds=(1e-8, None),
+            bounds=(1e-20, None),
         )
 
         # Concentration conversion constraint

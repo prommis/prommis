@@ -44,6 +44,27 @@ class REESolExOgParameterData(PhysicalParameterBlock):
         # self.Th = Component()
         # self.U = Component()
 
+        self.mw = Param(
+            self.component_list,
+            units=units.kg / units.mol,
+            initialize={
+                "DEHPA": 322.431-3,
+                "Sc": 44.946e-3,
+                "Y": 88.905e-3,
+                "La": 138.905e-3,
+                "Ce": 140.116e-3,
+                "Pr": 140.907e-3,
+                "Nd": 144.242e-3,
+                "Sm": 150.36e-3,
+                "Gd": 157.25e-3,
+                "Dy": 162.50e-3,
+                "Al": 26.982e-3,
+                "Ca": 40.078e-3,
+                "Fe": 55.845e-3,
+            },
+        )
+
+
         # separate solutes
 
         self.dissolved_elements = Set(initialize=[
@@ -97,7 +118,7 @@ class REESolExOgStateBlockData(StateBlockData):
     def build(self):
         super().build()
 
-        self.conc_mass_comp = Var(self.params.dissolved_elements, units=units.mg/units.L, bounds=(0,None))      # conc_mass_comp added
+        self.conc_mass_comp = Var(self.params.dissolved_elements, units=units.mg/units.L, bounds=(1e-20,None))      # conc_mass_comp added
 
         self.flow_vol = Var(units=units.L / units.hour)
 
@@ -107,10 +128,10 @@ class REESolExOgStateBlockData(StateBlockData):
 
     def get_material_flow_terms(self, j):
         if j in self.params.dissolved_elements:
-            units.convert(self.conc_mass_comp[j], to_units=units.g/units.L)  
+            units.convert(self.conc_mass_comp[j], to_units=units.g/units.L)
             return self.flow_vol * self.conc_mass_comp[j]         # conc_mass_comp added
         elif j=="DEHPA":
-            return self.flow_vol * (975.8 * units.g/units.L) 
+            return self.flow_vol * (975.8 * units.g/units.L)
         else:
             raise BurntToast()
 
@@ -119,4 +140,3 @@ class REESolExOgStateBlockData(StateBlockData):
             "flow_vol": self.flow_vol,
             "conc_mass_comp": self.conc_mass_comp
         }
-

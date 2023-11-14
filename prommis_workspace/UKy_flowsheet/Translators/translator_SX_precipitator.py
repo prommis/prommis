@@ -18,30 +18,21 @@ Assumptions:
 """
 
 # Import Pyomo libraries
-from pyomo.common.config import ConfigBlock, ConfigValue
-
-# Import IDAES cores
-from idaes.core import declare_process_block_class
-from idaes.models.unit_models.translator import TranslatorData
-from idaes.core.util.config import (
-    is_reaction_parameter_block,
-)
-from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.solvers import get_solver
-import idaes.logger as idaeslog
-import idaes.core.util.scaling as iscale
-
-from idaes.core.util.exceptions import InitializationError
-
 from pyomo.environ import (
     units as pyunits,
     check_optimal_termination,
     Set,
-    value,
     log10 as log_10,
 )
 
-from math import log10
+# Import IDAES cores
+from idaes.core import declare_process_block_class
+from idaes.models.unit_models.translator import TranslatorData
+from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.core.solvers import get_solver
+from idaes.core.util.exceptions import InitializationError
+
+import idaes.logger as idaeslog
 
 __author__ = "Marcus Holly"
 
@@ -65,27 +56,27 @@ class TranslatorDataSXPrecipitator(TranslatorData):
             None
         """
         # Call UnitModel.build to setup dynamics
-        super(TranslatorDataSXPrecipitator, self).build()
+        super().build()
 
-        mw_al = 0.02698154 * pyunits.kg / pyunits.mol
-        mw_ca = 0.03996259 * pyunits.kg / pyunits.mol
-        mw_fe = 0.05593494 * pyunits.kg / pyunits.mol
-        mw_ce = 0.140116 * pyunits.kg / pyunits.mol
+        DEHPA_density = 0.9758 * pyunits.kg/pyunits.L
 
         #TODO: Replace temperature and pressure constraints with an equality when SX has temp and pressure
+        #TODO: For now, what should precipitator temperature be set to? 75C?
         @self.Constraint(
             self.flowsheet().time,
             doc="Equality temperature equation",
         )
         def eq_temperature_rule(blk, t):
-            return blk.properties_out[t].temperature == 300 * pyunits.kelvin
+            return blk.properties_out[t].temperature == 348.15 * pyunits.kelvin
 
-        @self.Constraint(
-            self.flowsheet().time,
-            doc="Equality pressure equation",
+        self.dissolved_elements = Set(
+            initialize=[
+                "Al",
+                "Ca",
+                "Fe",
+                "Ce",
+            ]
         )
-        def eq_pressure_rule(blk, t):
-            return blk.properties_out[t].pressure == 101325 * pyunits.Pa
 
         @self.Expression(
             self.flowsheet().time,
@@ -94,7 +85,7 @@ class TranslatorDataSXPrecipitator(TranslatorData):
         def solvent_mass_flow(blk, t):
             return (
                 pyunits.convert(blk.properties_in[t].flow_vol, to_units=pyunits.L / pyunits.s,)
-                * (1.840 * pyunits.kg/pyunits.L)
+                * (DEHPA_density)
             )
 
         @self.Constraint(
@@ -109,21 +100,23 @@ class TranslatorDataSXPrecipitator(TranslatorData):
 
         @self.Expression(
             self.flowsheet().time,
-            doc="Aluminum molar flow (mol/s)",
+            self.dissolved_elements,
+            doc="Component molar flow (mol/s)",
         )
-        def aluminum_molar_flow(blk, t):
+        def component_molar_flow(blk, t, i):
             return (
-                pyunits.convert(blk.properties_in[t].flow_mass["Al"], to_units=pyunits.kg / pyunits.s,)
-                / mw_al
+                    pyunits.convert(blk.properties_in[t].get_material_flow_terms(i), to_units=pyunits.kg / pyunits.s,)
+                    / blk.properties_in.params.mw[i]
             )
 
         @self.Expression(
             self.flowsheet().time,
-            doc="Aluminum dimensionless molality",
+            self.dissolved_elements,
+            doc="Component dimensionless molality",
         )
-        def aluminum_molality(blk, t):
+        def component_molality(blk, t, i):
             return (
-                blk.aluminum_molar_flow[t] * pyunits.s / pyunits.mol
+                blk.component_molar_flow[t, i] * pyunits.s / pyunits.mol
                 / blk.solvent_mass_flow[t] * pyunits.kg / pyunits.s
             )
 
@@ -134,27 +127,7 @@ class TranslatorDataSXPrecipitator(TranslatorData):
         def eq_aluminum_log10molality(blk, t):
             return (
                 blk.properties_out[t].log10_molality_comp["Al^3+"]
-                == log_10(blk.aluminum_molality[t])
-            )
-
-        @self.Expression(
-            self.flowsheet().time,
-            doc="Calcium molar flow (mol/s)",
-        )
-        def calcium_molar_flow(blk, t):
-            return (
-                pyunits.convert(blk.properties_in[t].flow_mass["Ca"], to_units=pyunits.kg / pyunits.s,)
-                / mw_ca
-            )
-
-        @self.Expression(
-            self.flowsheet().time,
-            doc="Calcium dimensionless molality",
-        )
-        def calcium_molality(blk, t):
-            return (
-                blk.calcium_molar_flow[t] * pyunits.s / pyunits.mol
-                / blk.solvent_mass_flow[t] * pyunits.kg / pyunits.s
+                == log_10(blk.component_molality[t, "Al"])
             )
 
         @self.Constraint(
@@ -164,27 +137,7 @@ class TranslatorDataSXPrecipitator(TranslatorData):
         def eq_calcium_log10molality(blk, t):
             return (
                 blk.properties_out[t].log10_molality_comp["Ca^2+"]
-                == log_10(blk.calcium_molality[t])
-            )
-
-        @self.Expression(
-            self.flowsheet().time,
-            doc="Iron molar flow (mol/s)",
-        )
-        def iron_molar_flow(blk, t):
-            return (
-                pyunits.convert(blk.properties_in[t].flow_mass["Fe"], to_units=pyunits.kg / pyunits.s,)
-                / mw_fe
-            )
-
-        @self.Expression(
-            self.flowsheet().time,
-            doc="Iron dimensionless molality",
-        )
-        def iron_molality(blk, t):
-            return (
-                blk.iron_molar_flow[t] * pyunits.s / pyunits.mol
-                / blk.solvent_mass_flow[t] * pyunits.kg / pyunits.s
+                == log_10(blk.component_molality[t, "Ca"])
             )
 
         # Assume all iron forms iron(III) ions
@@ -195,27 +148,7 @@ class TranslatorDataSXPrecipitator(TranslatorData):
         def eq_iron_log10molality(blk, t):
             return (
                 blk.properties_out[t].log10_molality_comp["Fe^3+"]
-                == log_10(blk.iron_molality[t])
-            )
-
-        @self.Expression(
-            self.flowsheet().time,
-            doc="Cerium molar flow (mol/s)",
-        )
-        def cerium_molar_flow(blk, t):
-            return (
-                pyunits.convert(blk.properties_in[t].flow_mass["Ce"], to_units=pyunits.kg / pyunits.s,)
-                / mw_ce
-            )
-
-        @self.Expression(
-            self.flowsheet().time,
-            doc="Cerium dimensionless molality",
-        )
-        def cerium_molality(blk, t):
-            return (
-                blk.cerium_molar_flow[t] * pyunits.s / pyunits.mol
-                / blk.solvent_mass_flow[t] * pyunits.kg / pyunits.s
+                == log_10(blk.component_molality[t, "Fe"])
             )
 
         @self.Constraint(
@@ -225,9 +158,10 @@ class TranslatorDataSXPrecipitator(TranslatorData):
         def eq_cerium_log10molality(blk, t):
             return (
                 blk.properties_out[t].log10_molality_comp["Ce^3+"]
-                == log_10(blk.cerium_molality[t])
+                == log_10(blk.component_molality[t, "Ce"])
             )
 
+        # TODO: Eventually treat this as a feed stream directly into precipitator
         @self.Constraint(
             self.flowsheet().time,
             doc="Oxalate log10 molality",

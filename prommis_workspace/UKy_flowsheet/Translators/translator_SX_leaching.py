@@ -10,7 +10,7 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 """
-Translator block converting from old_leaching properties to solvent extraction properties.
+Translator block converting from solvent extraction properties to old_leaching properties.
 This is copied from the IDAES Generic template for a translator block.
 
 Assumptions:
@@ -40,10 +40,10 @@ __author__ = "Marcus Holly"
 _log = idaeslog.getLogger(__name__)
 
 
-@declare_process_block_class("Translator_leaching_SX")
+@declare_process_block_class("Translator_SX_leaching")
 class TranslatorDataLeachingSX(TranslatorData):
     """
-    Translator block representing the old_leaching/SX interface
+    Translator block representing the SX/old_leaching interface
     """
 
     def build(self):
@@ -64,6 +64,7 @@ class TranslatorDataLeachingSX(TranslatorData):
         def eq_flow_vol_rule(blk, t):
             return blk.properties_out[t].flow_vol == blk.properties_in[t].flow_vol
 
+
         self.metals = Set(
             initialize=["Al", "Ca", "Fe", "Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
         )
@@ -73,10 +74,27 @@ class TranslatorDataLeachingSX(TranslatorData):
             self.metals,
             doc="Equality equation for metal components",
         )
-        def eq_metal_mass_flow(blk, t, i):
+        def eq_conc_mass_metals(blk, t, i):
             return (
-                blk.properties_out[t].conc_mass_comp[i]
-                == blk.properties_in[t].conc_mass_comp[i]
+                blk.properties_out[t].conc_mass_metals[i]
+                == blk.properties_in[t].flow_mass[i]
+                / blk.properties_in[t].flow_vol
+                * 1000 * pyunits.mg / pyunits.g
+            )
+
+        self.acids = Set(
+            initialize=["H", "HSO4", "SO4"]
+        )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            self.acids,
+            doc="Equality equation for acid components",
+        )
+        def eq_conc_mole_acids(blk, t, i):
+            return (
+                blk.properties_out[t].conc_mole_acid[i]
+                == 1e-7 * pyunits.mol / pyunits.L
             )
 
     def initialize_build(

@@ -15,11 +15,9 @@
 flowsheet to test the roster unit model
 authors: J. Ma
 """
-import os
 
 # Import Pyomo libraries
 import pyomo.environ as pyo
-from pyomo.network import Arc
 
 # Import IDAES core
 from idaes.core import FlowsheetBlock
@@ -27,7 +25,7 @@ from idaes.core.util.model_statistics import degrees_of_freedom
 import idaes.core.util.scaling as iscale
 from idaes.core.solvers import get_solver
 
-from ree_feed_roster import REEFeedRoaster
+from ree_feed_roaster import REEFeedRoaster
 
 # Import IDAES standard unit model
 import idaes.logger as idaeslog
@@ -43,7 +41,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 from idaes.core.initialization import BlockTriangularizationInitializer, InitializationStatus
 
 import sys
-sys.path.append('../leaching')
+sys.path.append('../../leaching')
 from leach_solids_properties import CoalRefuseParameters
 
 
@@ -150,8 +148,8 @@ def set_inputs(m):
     m.fs.roaster.mass_frac_organic_feed.fix(0.294854)
 
     
-    # impurity minerals modeled plus some small amount of unknow mineral that is modeled as Un2O3 here
-    # note that the unknow in UK's excel sheet also include O, C, and S elements in minerals
+    # impurity minerals modeled plus some small amount of unknown mineral that is modeled as Un2O3 here
+    # note that the unknown in UK's excel sheet also include O, C, and S elements in minerals
     # assume all Al2O3 is in Kaolinite form
     m.fs.roaster.mass_frac_comp_impurity_feed[0,'Un2O3'].fix( 0.00793)
     m.fs.roaster.mass_frac_comp_impurity_feed[0,'CaCO3'].fix(0.041217)

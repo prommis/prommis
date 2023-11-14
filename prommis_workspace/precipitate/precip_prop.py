@@ -3,7 +3,7 @@ import json
 import enum
 
 import pyomo.environ as pyo
-from pyomo.common.config import ConfigValue, In
+from pyomo.common.config import ConfigValue
 from pyomo.common.fileutils import this_file_dir
 
 from idaes.core import (
@@ -19,7 +19,7 @@ from idaes.core import (
     MaterialFlowBasis,
 )
 from idaes.core import declare_process_block_class
-from idaes.core.util.math import smooth_min, smooth_abs
+from idaes.core.util.math import smooth_abs
 from idaes.core.util.initialization import fix_state_vars
 
 
@@ -240,7 +240,6 @@ class AqueousStateParameterBlockData(PhysicalParameterBlock):
         obj.add_properties(
             {
                 "temperature": {"method": None, "units": "K"},
-                "pressure": {"method": None, "units": "Pa"},
                 "flow_mass": {"method": None, "units": "kg/s"},
                 "log10_molality_comp": {
                     "method": None,
@@ -317,11 +316,6 @@ class AqueousStateBlockData(StateBlockData):
             initialize=300,
             doc="Temperature",
             units=pyo.units.kelvin,
-        )
-        self.pressure = pyo.Var(
-            initialize=101325,
-            doc="Pressure",
-            units=pyo.units.Pa,
         )
         self.flow_mass = pyo.Var(
             initialize=1, doc="Total mass flow rate", units=pyo.units.kg / pyo.units.s
@@ -433,7 +427,6 @@ class AqueousStateBlockData(StateBlockData):
         return {
             "flow_mass": self.flow_mass,
             "temperature": self.temperature,
-            "pressure": self.pressure,
             "log10_molality_comp": self.log10_molality_comp,
         }
 

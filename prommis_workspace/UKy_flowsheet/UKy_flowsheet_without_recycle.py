@@ -296,7 +296,7 @@ def build():
         source=m.fs.solex.Acidsoln_outlet, destination=m.fs.sx_leach_acid.inlet
     )
     m.fs.s05 = Arc(
-        source=m.fs.solex.Acidsoln_outlet, destination=m.fs.SX_to_precipitator.inlet
+        source=m.fs.solex.Orgacid_outlet, destination=m.fs.SX_to_precipitator.inlet
     )
     m.fs.s06 = Arc(
         source=m.fs.SX_to_precipitator.outlet,
@@ -702,24 +702,37 @@ def initialize_system(m):
     propagate_state(m.fs.s06)
     propagate_state(m.fs.s07)
 
-    initializer2.initialize(
-        m.fs.precipitator,
-        initial_guesses={
-            "cv_aqueous.properties_out[0].temperature": 348.15,
-            "cv_aqueous.properties_out[0].flow_mass": 0.1147328,
-            "cv_aqueous.properties_out[0].pH": 1.699646,
-            "cv_aqueous.properties_out[0].log10_molality_comp[Al^3+]": -2.179,
-            "cv_aqueous.properties_out[0].log10_molality_comp[C2O4^2-]": -8.344,
-            "cv_aqueous.properties_out[0].log10_molality_comp[Ca^2+]": -2.964,
-            "cv_aqueous.properties_out[0].log10_molality_comp[Ce^3+]": -8.757,
-            "cv_aqueous.properties_out[0].log10_molality_comp[Fe^3+]": -7.764,
-            "cv_aqueous.properties_out[0].log10_molality_comp[H2C2O4]": -6.645,
-            "cv_aqueous.properties_out[0].log10_molality_comp[HC2O4^-]": -6.090,
-            "cv_aqueous.properties_out[0].log10_molality_comp[H^+]": -1.615,
-            "cv_aqueous.properties_out[0].log10_molality_comp[OH^-]": -12.212,
-            "cv_precipitate.properties_out[0].temperature": 348.15,
-        }
-    )
+    try:
+        initializer2.initialize(
+            m.fs.precipitator,
+            initial_guesses={
+                "cv_aqueous.properties_out[0].temperature": 348.15,
+                "cv_aqueous.properties_out[0].flow_mass": 0.1147328,
+                "cv_aqueous.properties_out[0].pH": 1.699646,
+                "cv_aqueous.properties_out[0].log10_molality_comp[Al^3+]": -2.179,
+                "cv_aqueous.properties_out[0].log10_molality_comp[C2O4^2-]": -8.344,
+                "cv_aqueous.properties_out[0].log10_molality_comp[Ca^2+]": -2.964,
+                "cv_aqueous.properties_out[0].log10_molality_comp[Ce^3+]": -8.757,
+                "cv_aqueous.properties_out[0].log10_molality_comp[Fe^3+]": -7.764,
+                "cv_aqueous.properties_out[0].log10_molality_comp[H2C2O4]": -6.645,
+                "cv_aqueous.properties_out[0].log10_molality_comp[HC2O4^-]": -6.090,
+                "cv_aqueous.properties_out[0].log10_molality_comp[H^+]": -1.615,
+                "cv_aqueous.properties_out[0].log10_molality_comp[OH^-]": -12.212,
+                "cv_precipitate.properties_out[0].temperature": 348.15,
+            }
+        )
+    except:
+        # Fix feed states
+        m.fs.precipitator.cv_aqueous.properties_in[0].flow_mass.fix()
+        m.fs.precipitator.cv_aqueous.properties_in[0].log10_molality_comp.fix()
+        m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.fix()
+        # Re-solve precipitator unit
+        solver = SolverFactory("ipopt")
+        solver.solve(m.fs.precipitator, tee=True)
+        # Unfix feed states
+        m.fs.precipitator.cv_aqueous.properties_in[0].flow_mass.unfix()
+        m.fs.precipitator.cv_aqueous.properties_in[0].log10_molality_comp.unfix()
+        m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.unfix()
 
     # initialize second separator
     propagate_state(m.fs.s08)

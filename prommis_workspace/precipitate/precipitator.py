@@ -31,7 +31,7 @@ from idaes.core.util.math import smooth_min
 import idaes.core.util.scaling as iscale
 from pyomo.util.check_units import assert_units_consistent
 
-import workspace.prommis_workspace.precipitate.precip_prop as precip_prop
+import prommis_workspace.precipitate.precip_prop as precip_prop
 from idaes.core.util.config import is_physical_parameter_block
 import idaes.logger as idaeslog
 

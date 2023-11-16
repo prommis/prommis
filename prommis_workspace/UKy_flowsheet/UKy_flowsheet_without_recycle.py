@@ -52,37 +52,37 @@ from idaes.models.unit_models.product import (
     ProductInitializer,
 )
 
-from workspace.leaching.leach_solution_properties import (
+from prommis_workspace.leaching.leach_solution_properties import (
     LeachSolutionParameters,
 )
-from workspace.leaching.leach_solids_properties import (
+from prommis_workspace.leaching.leach_solids_properties import (
     CoalRefuseParameters,
 )
-from workspace.leaching.leach_reactions import (
+from prommis_workspace.leaching.leach_reactions import (
     CoalRefuseLeachingReactions,
 )
 
-from workspace.prommis_workspace.UKy_flowsheet.autoscaling import (
+from prommis_workspace.UKy_flowsheet.autoscaling import (
     autoscale_constraints_by_jacobian_norm,
     autoscale_variables_by_magnitude,
 )
 
-from workspace.prommis_workspace.Solvent_Extraction.REESXmodel import REESX
-from workspace.prommis_workspace.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
-from workspace.prommis_workspace.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
+from prommis_workspace.Solvent_Extraction.REESXmodel import REESX
+from prommis_workspace.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
+from prommis_workspace.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
 
-from workspace.prommis_workspace.precipitate.precipitator import Precipitator
-from workspace.prommis_workspace.precipitate.precip_prop import (
+from prommis_workspace.precipitate.precipitator import Precipitator
+from prommis_workspace.precipitate.precip_prop import (
     AqueousStateParameterBlock,
     PrecipitateStateParameterBlock,
 )
 
-from workspace.prommis_workspace.roasting.ree_oxalate_roaster import REEOxalateRoaster
+from prommis_workspace.roasting.ree_oxalate_roaster import REEOxalateRoaster
 
-from workspace.prommis_workspace.UKy_flowsheet.Translators.translator_leaching_SX import (
+from prommis_workspace.UKy_flowsheet.Translators.translator_leaching_SX import (
     Translator_leaching_SX,
 )
-from workspace.prommis_workspace.UKy_flowsheet.Translators.translator_SX_precipitator import (
+from prommis_workspace.UKy_flowsheet.Translators.translator_SX_precipitator import (
     Translator_SX_precipitator,
 )
 from idaes.models.unit_models.solid_liquid import SLSeparator

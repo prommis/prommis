@@ -135,8 +135,9 @@ class _CoalRefuseStateBlock(StateBlock):
         # Fix state variables
         fix_state_vars(self)
 
-        if not self.config.defined_state:
-            self.sum_mass_frac.deactivate()
+        for sbd in self.values():
+            if not sbd.config.defined_state:
+                sbd.sum_mass_frac.deactivate()
 
 
 @declare_process_block_class(
@@ -156,6 +157,7 @@ class CoalRefuseStateBlockData(StateBlockData):
             bounds=(1e-8, None),
         )
 
+        # TODO: This really should have a _comp suffix
         self.conversion = Var(
             self.params.component_list,
             initialize=0,

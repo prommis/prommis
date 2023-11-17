@@ -163,8 +163,10 @@ class _LeachSolutionStateBlock(StateBlock):
         fix_state_vars(self)
 
         # Deactivate inherent reactions
-        if not self.config.defined_state:
-            self.hso4_dissociation.deactivate()
+        for sbd in self.values():
+            if not sbd.config.defined_state:
+                sbd.h2o_concentration.deactivate()
+                sbd.hso4_dissociation.deactivate()
 
 
 @declare_process_block_class(

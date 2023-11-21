@@ -3,9 +3,9 @@ from pyomo.environ import ConcreteModel, SolverFactory
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
-from workspace.prommis_workspace.Solvent_Extraction.REESXmodel import REESX
-from workspace.prommis_workspace.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
-from workspace.prommis_workspace.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
+from prommis_workspace.Solvent_Extraction.REESXmodel import REESX
+from prommis_workspace.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
+from prommis_workspace.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
 
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,

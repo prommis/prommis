@@ -82,9 +82,10 @@ __version__ = "1.0.0"
 # ----------------------------------------------------------------------------------------------------------
 @declare_process_block_class("REEOxalateRoaster")
 class REEOxalateRoasterData(UnitModelBlockData):
-    '''
+    """
     Simple 0D roaster model with mass and energy balance only
-    '''
+    """
+
     CONFIG = ConfigBlock()
     CONFIG.declare(
         "dynamic",
@@ -174,7 +175,9 @@ see property package for documentation.}""",
 **default** - False.
 **Valid values:** {
 **True** - include heat transfer terms,
-**False** - exclude heat transfer terms.}"""))
+**False** - exclude heat transfer terms.}""",
+        ),
+    )
     CONFIG.declare(
         "has_pressure_change",
         ConfigValue(
@@ -186,17 +189,33 @@ constructed,
 **default** - False.
 **Valid values:** {
 **True** - include pressure change terms,
-**False** - exclude pressure change terms.}"""))
+**False** - exclude pressure change terms.}""",
+        ),
+    )
     CONFIG.declare(
-    "metal_list", 
-    ConfigValue(
-        default=["Ce"],
-        domain=list,
-        description="List of components in solid oxalate feed",
-        doc="""A dict of the components of interest in the mixture.
+        "metal_list",
+        ConfigValue(
+            default=[
+                "Al",
+                "Fe",
+                "Sc",
+                "Y",
+                "La",
+                "Ce",
+                "Pr",
+                "Nd",
+                "Sm",
+                "Gd",
+                "Dy",
+            ],
+            domain=list,
+            description="List of components in solid oxalate feed",
+            doc="""A dict of the components of interest in the mixture.
         Keys are component names and values are configuration arguments to
         be passed to Component on construction.
-        """))
+        """,
+        ),
+    )
 
     def build(self):
         # Call TranslatorData build to setup dynamics
@@ -205,7 +224,9 @@ constructed,
         # Build Holdup Block
         # gas phase inlet stream
         self.gas_in = self.config.property_package_gas.build_state_block(
-            self.flowsheet().time, defined_state=True, **self.config.property_package_args_gas
+            self.flowsheet().time,
+            defined_state=True,
+            **self.config.property_package_args_gas,
         )
         # gas phase outlet stream
         self.gas_out = self.config.property_package_gas.build_state_block(
@@ -221,22 +242,32 @@ constructed,
 
         # Add Geometry
         if self.config.has_holdup is True:
-            self.volume = Var(initialize=1, units=pyunits.m ** 3, doc='volume of the reactor')
+            self.volume = Var(
+                initialize=1, units=pyunits.m**3, doc="volume of the reactor"
+            )
             self.volume.fix()
 
         # Add heat duty
         if self.config.has_heat_transfer is True:
-            self.heat_duty = Var(self.flowsheet().time, initialize=0, units=pyunits.W,
-                                 doc='heat duty added to the reactor')
+            self.heat_duty = Var(
+                self.flowsheet().time,
+                initialize=0,
+                units=pyunits.W,
+                doc="heat duty added to the reactor",
+            )
 
         if self.config.has_pressure_change is True:
-            self.deltaP = Var(self.flowsheet().time, initialize=0, units=pyunits.Pa,
-                              doc='pressure drop from inlet to outlet')
+            self.deltaP = Var(
+                self.flowsheet().time,
+                initialize=0,
+                units=pyunits.Pa,
+                doc="pressure drop from inlet to outlet",
+            )
 
         # metal list is a user-specified list of metals contained in the solid feed stream including impurity metals
         self.metal_list = Set(
-            initialize=self.config.metal_list,
-            doc="List of metals in solid feed stream")
+            initialize=self.config.metal_list, doc="List of metals in solid feed stream"
+        )
 
         # Construct performance equations
         self._make_params()
@@ -246,19 +277,51 @@ constructed,
         self._make_momentum_balance()
 
     def _make_params(self):
-        ''' This section is for parameters within this model.'''
+        """This section is for parameters within this model."""
         # reference temperature at standard condition
         self.temp_ref = Param(initialize=298.15, units=pyunits.K)
 
         # atomic mass of elements involved in kg/mol
-        self.metal_list_all = ["Al", "Fe", "Sc", "Y", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", \
-                               "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Th"]
-        self.am_metal_list_all = Param(self.metal_list_all, mutable=True, units=pyunits.kg / pyunits.mol)
-        self.xH2O_oxalate_list_all = Param(self.metal_list_all, initialize=10, mutable=True)
-        self.mw_oxalate_list_all = Param(self.metal_list_all, initialize=0.1, mutable=True,
-                                         units=pyunits.kg / pyunits.mol)
-        self.mw_oxide_list_all = Param(self.metal_list_all, initialize=0.1, mutable=True,
-                                       units=pyunits.kg / pyunits.mol)
+        self.metal_list_all = [
+            "Al",
+            "Fe",
+            "Sc",
+            "Y",
+            "La",
+            "Ce",
+            "Pr",
+            "Nd",
+            "Pm",
+            "Sm",
+            "Eu",
+            "Gd",
+            "Tb",
+            "Dy",
+            "Ho",
+            "Er",
+            "Tm",
+            "Yb",
+            "Lu",
+            "Th",
+        ]
+        self.am_metal_list_all = Param(
+            self.metal_list_all, mutable=True, units=pyunits.kg / pyunits.mol
+        )
+        self.xH2O_oxalate_list_all = Param(
+            self.metal_list_all, initialize=10, mutable=True
+        )
+        self.mw_oxalate_list_all = Param(
+            self.metal_list_all,
+            initialize=0.1,
+            mutable=True,
+            units=pyunits.kg / pyunits.mol,
+        )
+        self.mw_oxide_list_all = Param(
+            self.metal_list_all,
+            initialize=0.1,
+            mutable=True,
+            units=pyunits.kg / pyunits.mol,
+        )
         self.am_H = Param(initialize=0.0010078, units=pyunits.kg / pyunits.mol)
         self.am_C = Param(initialize=0.012011, units=pyunits.kg / pyunits.mol)
         self.am_N = Param(initialize=0.014007, units=pyunits.kg / pyunits.mol)
@@ -286,30 +349,59 @@ constructed,
         self.xH2O_oxalate_list_all["Al"] = 1
         self.xH2O_oxalate_list_all["Fe"] = 2
 
-        self.mw_H2O = Param(initialize=self.am_H * 2 + self.am_O, units=pyunits.kg / pyunits.mol)
+        self.mw_H2O = Param(
+            initialize=self.am_H * 2 + self.am_O, units=pyunits.kg / pyunits.mol
+        )
 
         for i in self.metal_list_all:
-            self.mw_oxalate_list_all[i] = self.am_metal_list_all[i] * 2 + 3 * (self.am_C * 2 + self.am_O * 4) \
-                                          + self.xH2O_oxalate_list_all[i] * (self.am_H + self.am_O)
+            self.mw_oxalate_list_all[i] = (
+                self.am_metal_list_all[i] * 2
+                + 3 * (self.am_C * 2 + self.am_O * 4)
+                + self.xH2O_oxalate_list_all[i] * (self.am_H + self.am_O)
+            )
         for i in self.metal_list_all:
             self.mw_oxide_list_all[i] = self.am_metal_list_all[i] * 2 + 3 * self.am_O
 
         # molar standard enthalpy at 298.15 K initialized to the average of La, Ce, Pr, and Nd
-        self.enth0_oxalate_list_all = Param(self.metal_list_all, initialize=-6350044, mutable=True,
-                                            units=pyunits.J / pyunits.mol)
+        self.enth0_oxalate_list_all = Param(
+            self.metal_list_all,
+            initialize=-6350044,
+            mutable=True,
+            units=pyunits.J / pyunits.mol,
+        )
         # molar standard enthalpy at 298.15 K initialized to the average of La, Ce, Pr, and Nd
-        self.enth0_oxide_list_all = Param(self.metal_list_all, initialize=-1801865.75, mutable=True,
-                                          units=pyunits.J / pyunits.mol)
+        self.enth0_oxide_list_all = Param(
+            self.metal_list_all,
+            initialize=-1801865.75,
+            mutable=True,
+            units=pyunits.J / pyunits.mol,
+        )
         # molar heat capacity of oxalate initialized to the average of La, Ce, Pr, and Nd
-        self.cp0_oxalate_list_all = Param(self.metal_list_all, initialize=45.751, mutable=True,
-                                          units=pyunits.J / pyunits.mol / pyunits.K)
-        self.cp1_oxalate_list_all = Param(self.metal_list_all, initialize=0, mutable=True,
-                                          units=pyunits.J / pyunits.mol / pyunits.K ** 2)
+        self.cp0_oxalate_list_all = Param(
+            self.metal_list_all,
+            initialize=45.751,
+            mutable=True,
+            units=pyunits.J / pyunits.mol / pyunits.K,
+        )
+        self.cp1_oxalate_list_all = Param(
+            self.metal_list_all,
+            initialize=0,
+            mutable=True,
+            units=pyunits.J / pyunits.mol / pyunits.K**2,
+        )
         # molar heat capacity of oxide initialized to the average of La, Ce, Pr, and Nd
-        self.cp0_oxide_list_all = Param(self.metal_list_all, initialize=110.3625, mutable=True,
-                                        units=pyunits.J / pyunits.mol / pyunits.K)
-        self.cp1_oxide_list_all = Param(self.metal_list_all, initialize=0.033887, mutable=True,
-                                        units=pyunits.J / pyunits.mol / pyunits.K ** 2)
+        self.cp0_oxide_list_all = Param(
+            self.metal_list_all,
+            initialize=110.3625,
+            mutable=True,
+            units=pyunits.J / pyunits.mol / pyunits.K,
+        )
+        self.cp1_oxide_list_all = Param(
+            self.metal_list_all,
+            initialize=0.033887,
+            mutable=True,
+            units=pyunits.J / pyunits.mol / pyunits.K**2,
+        )
 
         self.enth0_oxalate_list_all["Al"] = -3397000
         self.enth0_oxalate_list_all["Fe"] = -6782000
@@ -348,127 +440,243 @@ constructed,
         self.cp1_oxide_list_all["Nd"] = 0.0403
 
         # unit constants used for the expressions of liquid water enthalpy
-        self.enth_mol_const = Param(initialize=1, units=pyunits.J/pyunits.mol, doc='1 unit of molar enthalpy in J/mol')
-        self.cp_mas_const = Param(initialize=1, units=pyunits.J/pyunits.kg/pyunits.K, doc='1 unit of mass heat capacity in J/kg-K')
+        self.enth_mol_const = Param(
+            initialize=1,
+            units=pyunits.J / pyunits.mol,
+            doc="1 unit of molar enthalpy in J/mol",
+        )
+        self.cp_mas_const = Param(
+            initialize=1,
+            units=pyunits.J / pyunits.kg / pyunits.K,
+            doc="1 unit of mass heat capacity in J/kg-K",
+        )
 
     def _make_vars(self):
-        ''' This section declares variables within this model.'''
+        """This section declares variables within this model."""
+        self.flow_mol_comp_feed = Var(
+            self.flowsheet().config.time,
+            self.metal_list,
+            units=pyunits.mol / pyunits.s,
+            doc="mole flow rate of oxalate in solid feed stream",
+        )
 
-        self.flow_mol_comp_feed = Var(self.flowsheet().config.time, self.metal_list,
-                                      units=pyunits.mol / pyunits.s,
-                                      doc='mole flow rate of oxalate in solid feed stream')
+        self.flow_mol_moist_feed = Var(
+            self.flowsheet().config.time,
+            units=pyunits.mol / pyunits.s,
+            doc="mole flow rate of liquid water in solid feed stream",
+        )
 
-        self.flow_mol_moist_feed = Var(self.flowsheet().config.time,
-                                       units=pyunits.mol / pyunits.s,
-                                       doc='mole flow rate of liquid water in solid feed stream')
+        self.frac_comp_recovery = Var(
+            self.flowsheet().config.time,
+            self.metal_list,
+            initialize=0.95,
+            doc="fraction of oxide recovery",
+        )
 
-        self.frac_comp_recovery = Var(self.flowsheet().config.time, self.metal_list, initialize=0.95,
-                                      doc='fraction of oxide recovery')
+        self.flow_mol_comp_product = Var(
+            self.flowsheet().config.time,
+            self.metal_list,
+            units=pyunits.mol / pyunits.s,
+            doc="mole flow rate of oxide in product stream",
+        )
 
-        self.flow_mol_comp_product = Var(self.flowsheet().config.time, self.metal_list,
-                                         units=pyunits.mol / pyunits.s,
-                                         doc='mole flow rate of oxide in product stream')
+        self.flow_mol_comp_dust = Var(
+            self.flowsheet().config.time,
+            self.metal_list,
+            units=pyunits.mol / pyunits.s,
+            doc="mole flow rate of oxide in dust stream",
+        )
 
-        self.flow_mol_comp_dust = Var(self.flowsheet().config.time, self.metal_list,
-                                      units=pyunits.mol / pyunits.s,
-                                      doc='mole flow rate of oxide in dust stream')
+        self.enth_mol_comp_feed = Var(
+            self.flowsheet().config.time,
+            self.metal_list,
+            units=pyunits.J / pyunits.mol,
+            doc="molar enthalpy of individual species of solid oxalate feed",
+        )
 
-        self.enth_mol_comp_feed = Var(self.flowsheet().config.time, self.metal_list,
-                                      units=pyunits.J / pyunits.mol,
-                                      doc='molar enthalpy of individual species of solid oxalate feed')
-
-        self.enth_mol_comp_product = Var(self.flowsheet().config.time, self.metal_list,
-                                         units=pyunits.J / pyunits.mol,
-                                         doc='molar enthalpy of individual species of solid oxide product')
+        self.enth_mol_comp_product = Var(
+            self.flowsheet().config.time,
+            self.metal_list,
+            units=pyunits.J / pyunits.mol,
+            doc="molar enthalpy of individual species of solid oxide product",
+        )
 
     def _make_mass_balance(self):
-        ''' This section contains equations for mass balance within this model.'''
+        """This section contains equations for mass balance within this model."""
 
         # Currently the solid feed port contains anhydrous REE oxalate
         # Convert solid inlet port anhydrous oxalate mol flow to flow_mol_comp_feed
         # Since currently only Ce is in the precipiate property package, set all others to zero
-        @self.Constraint(self.flowsheet().config.time, self.metal_list, \
-                         doc="component flow of oxalates")
-        def flow_mol_comp_feed_eqn(b, t, i):
-            if i == "Ce":
-                return b.flow_mol_comp_feed[t, i] == b.solid_in[t].flow_mol_comp["Ce2(C2O4)3(s)"]
-            else:
-                return b.flow_mol_comp_feed[t, i] == 0
+        reversed_react = dict(
+            map(reversed, self.config.property_package_precipitate.react.items())
+        )
 
-        @self.Constraint(self.flowsheet().config.time, self.config.property_package_gas.component_list, \
-                         doc="component flow of outlet gas stream")
+        @self.Constraint(
+            self.flowsheet().config.time,
+            self.metal_list,
+            doc="component flow of oxalates",
+        )
+        def flow_mol_comp_feed_eqn(b, t, i):
+            return b.flow_mol_comp_feed[t, i] == pyunits.convert(
+                b.solid_in[t].flow_mol_comp[reversed_react[i]],
+                to_units=pyunits.mol / pyunits.second,
+            )
+
+        @self.Constraint(
+            self.flowsheet().config.time,
+            self.config.property_package_gas.component_list,
+            doc="component flow of outlet gas stream",
+        )
         def flow_mol_outlet_eqn(b, t, i):
             if i == "H2O":
-                return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[i] \
-                       + sum(b.flow_mol_comp_feed[t, j] * b.xH2O_oxalate_list_all[j] for j in b.metal_list) \
-                       + b.flow_mol_moist_feed[t]
+                return (
+                    b.gas_out[t].flow_mol_comp[i]
+                    == b.gas_in[t].flow_mol_comp[i]
+                    + sum(
+                        b.flow_mol_comp_feed[t, j] * b.xH2O_oxalate_list_all[j]
+                        for j in b.metal_list
+                    )
+                    + b.flow_mol_moist_feed[t]
+                )
             elif i == "O2":
-                return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[i] \
-                       - 1.5 * sum(b.flow_mol_comp_feed[t, j] for j in b.metal_list)
+                return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[
+                    i
+                ] - 1.5 * sum(b.flow_mol_comp_feed[t, j] for j in b.metal_list)
             elif i == "CO2":
-                return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[i] \
-                       + 6 * sum(b.flow_mol_comp_feed[t, j] for j in b.metal_list)
+                return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[
+                    i
+                ] + 6 * sum(b.flow_mol_comp_feed[t, j] for j in b.metal_list)
             else:
                 return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[i]
 
-        @self.Constraint(self.flowsheet().config.time, self.metal_list, doc="mole flow rate of product")
+        @self.Constraint(
+            self.flowsheet().config.time,
+            self.metal_list,
+            doc="mole flow rate of product",
+        )
         def flow_mol_product(b, t, i):
-            return b.flow_mol_comp_product[t, i] == b.flow_mol_comp_feed[t, i] * b.frac_comp_recovery[t, i]
+            return (
+                b.flow_mol_comp_product[t, i]
+                == b.flow_mol_comp_feed[t, i] * b.frac_comp_recovery[t, i]
+            )
 
-        @self.Constraint(self.flowsheet().config.time, self.metal_list, doc="mole flow rate of product")
+        @self.Constraint(
+            self.flowsheet().config.time,
+            self.metal_list,
+            doc="mole flow rate of product",
+        )
         def flow_mol_dust(b, t, i):
-            return b.flow_mol_comp_dust[t, i] == b.flow_mol_comp_feed[t, i] * (1 - b.frac_comp_recovery[t, i])
+            return b.flow_mol_comp_dust[t, i] == b.flow_mol_comp_feed[t, i] * (
+                1 - b.frac_comp_recovery[t, i]
+            )
 
-        @self.Expression(self.flowsheet().config.time, doc="total mass flow rate of recovered product")
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="total mass flow rate of recovered product",
+        )
         def flow_mas_product(b, t):
-            return sum(b.flow_mol_comp_product[t, i] * b.mw_oxide_list_all[i] for i in b.metal_list)
+            return sum(
+                b.flow_mol_comp_product[t, i] * b.mw_oxide_list_all[i]
+                for i in b.metal_list
+            )
 
-        @self.Expression(self.flowsheet().config.time, doc="total mass flow rate of dust product")
+        @self.Expression(
+            self.flowsheet().config.time, doc="total mass flow rate of dust product"
+        )
         def flow_mas_dust(b, t):
-            return sum(b.flow_mol_comp_dust[t, i] * b.mw_oxide_list_all[i] for i in b.metal_list)
+            return sum(
+                b.flow_mol_comp_dust[t, i] * b.mw_oxide_list_all[i]
+                for i in b.metal_list
+            )
 
-        @self.Expression(self.flowsheet().config.time, self.metal_list, \
-                         doc="component mass fraction of metal oxide in recovered product")
+        @self.Expression(
+            self.flowsheet().config.time,
+            self.metal_list,
+            doc="component mass fraction of metal oxide in recovered product",
+        )
         def mass_frac_comp_product(b, t, i):
-            return b.flow_mol_comp_product[t, i] * b.mw_oxide_list_all[i] / b.flow_mas_product[t]
+            return (
+                b.flow_mol_comp_product[t, i]
+                * b.mw_oxide_list_all[i]
+                / b.flow_mas_product[t]
+            )
 
     def _make_energy_balance(self):
         # molar enthalpy of feed solid
-        @self.Constraint(self.flowsheet().config.time, self.metal_list, doc='molar enthalpy of individual oxalate')
+        @self.Constraint(
+            self.flowsheet().config.time,
+            self.metal_list,
+            doc="molar enthalpy of individual oxalate",
+        )
         def enth_mol_comp_feed_eqn(b, t, i):
             temp = b.solid_in[t].temperature
-            return b.enth_mol_comp_feed[t, i] == b.enth0_oxalate_list_all[i] \
-                   + b.cp0_oxalate_list_all[i] * (temp - b.temp_ref) \
-                   + 0.5 * b.cp1_oxalate_list_all[i] * (temp * temp - b.temp_ref * b.temp_ref)
+            return b.enth_mol_comp_feed[t, i] == b.enth0_oxalate_list_all[
+                i
+            ] + b.cp0_oxalate_list_all[i] * (
+                temp - b.temp_ref
+            ) + 0.5 * b.cp1_oxalate_list_all[
+                i
+            ] * (
+                temp * temp - b.temp_ref * b.temp_ref
+            )
 
         # molar enthalpy of moisture in feed solid, liquid water at 25 C is 68.3174 kcal/mol
-        @self.Expression(self.flowsheet().config.time, doc='molar enthalpy of moisture in solid feed stream')
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="molar enthalpy of moisture in solid feed stream",
+        )
         def enth_mol_moist_feed(b, t):
-            return -b.enth_mol_const * 68317.4 * 4.184 + b.cp_mas_const * 4182 * b.mw_H2O * (
-                        b.solid_in[t].temperature - b.temp_ref)
+            return (
+                -b.enth_mol_const * 68317.4 * 4.184
+                + b.cp_mas_const
+                * 4182
+                * b.mw_H2O
+                * (b.solid_in[t].temperature - b.temp_ref)
+            )
 
         # molar enthalpy of product solid
-        @self.Constraint(self.flowsheet().config.time, self.metal_list,
-                         doc='molar enthalpy of individual oxide product')
+        @self.Constraint(
+            self.flowsheet().config.time,
+            self.metal_list,
+            doc="molar enthalpy of individual oxide product",
+        )
         def enth_mol_comp_product_eqn(b, t, i):
             temp_prod = b.gas_out[t].temperature
-            return b.enth_mol_comp_product[t, i] == b.enth0_oxide_list_all[i] \
-                   + b.cp0_oxide_list_all[i] * (temp_prod - b.temp_ref) \
-                   + 0.5 * b.cp1_oxide_list_all[i] * (temp_prod * temp_prod - b.temp_ref * b.temp_ref)
+            return b.enth_mol_comp_product[t, i] == b.enth0_oxide_list_all[
+                i
+            ] + b.cp0_oxide_list_all[i] * (
+                temp_prod - b.temp_ref
+            ) + 0.5 * b.cp1_oxide_list_all[
+                i
+            ] * (
+                temp_prod * temp_prod - b.temp_ref * b.temp_ref
+            )
 
         # enthalpy in + heat in == enthalpy out
-        @self.Constraint(self.flowsheet().config.time, doc="enthalpy balance equation for both phases")
+        @self.Constraint(
+            self.flowsheet().config.time,
+            doc="enthalpy balance equation for both phases",
+        )
         def energy_balance_eqn(b, t):
             if self.config.has_heat_transfer is True:
                 heat = b.heat_duty[t]
             else:
                 heat = 0
-            return sum(b.enth_mol_comp_feed[t, i] * b.flow_mol_comp_feed[t, i] for i in b.metal_list) \
-                   + b.flow_mol_moist_feed[t] * b.enth_mol_moist_feed[t] \
-                   + b.gas_in[t].flow_mol * b.gas_in[t].enth_mol + heat \
-                   == sum(b.enth_mol_comp_product[t, i] * (b.flow_mol_comp_product[t, i] \
-                                                           + b.flow_mol_comp_dust[t, i]) for i in b.metal_list) \
-                   + b.gas_out[t].flow_mol * b.gas_out[t].enth_mol
+            return (
+                sum(
+                    b.enth_mol_comp_feed[t, i] * b.flow_mol_comp_feed[t, i]
+                    for i in b.metal_list
+                )
+                + b.flow_mol_moist_feed[t] * b.enth_mol_moist_feed[t]
+                + b.gas_in[t].flow_mol * b.gas_in[t].enth_mol
+                + heat
+                == sum(
+                    b.enth_mol_comp_product[t, i]
+                    * (b.flow_mol_comp_product[t, i] + b.flow_mol_comp_dust[t, i])
+                    for i in b.metal_list
+                )
+                + b.gas_out[t].flow_mol * b.gas_out[t].enth_mol
+            )
 
     def _make_momentum_balance(self):
         @self.Constraint(self.flowsheet().config.time, doc="momentum balance equation")
@@ -482,11 +690,11 @@ constructed,
         pass
 
     def initialize_build(
-            blk,
-            state_args_gas_in=None,
-            outlvl=idaeslog.NOTSET,
-            solver=None,
-            optarg=None,
+        blk,
+        state_args_gas_in=None,
+        outlvl=idaeslog.NOTSET,
+        solver=None,
+        optarg=None,
     ):
         """
         Initialization routine.
@@ -526,7 +734,8 @@ constructed,
 
         # initialize outlet gas property block
         blk.gas_out.initialize(
-            outlvl=outlvl, optarg=optarg, solver=solver, state_args=state_args_gas_in)
+            outlvl=outlvl, optarg=optarg, solver=solver, state_args=state_args_gas_in
+        )
         init_log.info_high("Initialization Step 2 Complete.")
 
         with idaeslog.solver_log(solve_log, idaeslog.DEBUG) as slc:

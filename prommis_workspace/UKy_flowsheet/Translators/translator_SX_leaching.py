@@ -76,10 +76,18 @@ class TranslatorDataLeachingSX(TranslatorData):
         )
         def eq_conc_mass_metals(blk, t, i):
             return (
-                blk.properties_out[t].conc_mass_metals[i]
-                == blk.properties_in[t].flow_mass[i]
-                / blk.properties_in[t].flow_vol
-                * 1000 * pyunits.mg / pyunits.g
+                    blk.properties_out[t].conc_mass_comp[i]
+                    == blk.properties_in[t].conc_mass_comp[i]
+            )
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Equality equation for water",
+        )
+        def eq_conc_mass_water(blk, t):
+            return (
+                    blk.properties_out[t].conc_mass_comp["H2O"]
+                    == 1e6 * pyunits.mg / pyunits.L
             )
 
         self.acids = Set(
@@ -91,10 +99,10 @@ class TranslatorDataLeachingSX(TranslatorData):
             self.acids,
             doc="Equality equation for acid components",
         )
-        def eq_conc_mole_acids(blk, t, i):
+        def eq_conc_mass_acids(blk, t, i):
             return (
-                blk.properties_out[t].conc_mole_acid[i]
-                == 1e-7 * pyunits.mol / pyunits.L
+                blk.properties_out[t].conc_mass_comp[i]
+                == 1e-10 * pyunits.mg / pyunits.L
             )
 
     def initialize_build(

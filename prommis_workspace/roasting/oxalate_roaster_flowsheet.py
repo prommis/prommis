@@ -38,12 +38,15 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
 )
 
-from idaes.core.initialization import BlockTriangularizationInitializer, InitializationStatus
+from idaes.core.initialization import (
+    BlockTriangularizationInitializer,
+    InitializationStatus,
+)
 
 import sys
 
-sys.path.append('../precipitate')
-from precip_prop import PrecipitateStateParameterBlock
+sys.path.append("../precipitate")
+from precipitator_simple.precipitate_solids_properties import PrecipitateParameters
 
 _log = idaeslog.getModelLogger(__name__)
 
@@ -76,7 +79,7 @@ def main(m=None):
             # "SO4^2-",
             # "Cl^-",
         }
-        m.fs.prop_solid = PrecipitateStateParameterBlock(
+        m.fs.prop_solid = PrecipitateParameters(
             key_components=key_components,
         )
 
@@ -85,12 +88,16 @@ def main(m=None):
     initialize_system(m)
     solver = get_solver(options={"max_iter": 50})
     dof = degrees_of_freedom(m)
-    print('dof=', dof)
+    print("dof=", dof)
     result = solver.solve(m, tee=True)
-    print('Gas feed mole flow =', pyo.value(m.fs.roaster.gas_in[0].flow_mol), 'mol/s')
-    print('Solid feed Ce mole flow =', m.fs.roaster.solid_in[0].flow_mol_comp['Ce2(C2O4)3(s)'].value, 'mol/s')
-    print('heat_duty=', m.fs.roaster.heat_duty[0].value)
-    print('mass fraction of metal oxide in solid product:')
+    print("Gas feed mole flow =", pyo.value(m.fs.roaster.gas_in[0].flow_mol), "mol/s")
+    print(
+        "Solid feed Ce mole flow =",
+        m.fs.roaster.solid_in[0].flow_mol_comp["Ce2(C2O4)3(s)"].value,
+        "mol/s",
+    )
+    print("heat_duty=", m.fs.roaster.heat_duty[0].value)
+    print("mass fraction of metal oxide in solid product:")
     for x in m.fs.roaster.metal_list:
         print(x, pyo.value(m.fs.roaster.mass_frac_comp_product[0, x]))
     return m
@@ -105,7 +112,9 @@ def create_model(m):
         has_heat_transfer=True,
         has_pressure_change=True,
         # metal_list = ["Sc","Y","La","Ce","Pr","Nd","Sm","Eu","Gd","Tb","Dy","Tm","Yb","Lu"], default is ["Ce"] only
+        metal_list=["Ce"],
     )
+
 
 def set_inputs(m):
     """fix variables for geometry and design data"""
@@ -130,11 +139,11 @@ def set_inputs(m):
 
     # solid feed temperature
     m.fs.roaster.solid_in[0].temperature.fix(298.15)
-    m.fs.roaster.solid_in[0].flow_mol_comp['Ce2(C2O4)3(s)'].fix(6.1e-5)
+    m.fs.roaster.solid_in[0].flow_mol_comp["Ce2(C2O4)3(s)"].fix(6.1e-5)
     m.fs.roaster.flow_mol_moist_feed.fix(6.75e-4)
     # total solid mass flow rate including surface moisture
 
-    '''
+    """
     m.fs.roaster.mass_frac_feed_dry[0,'Sc'].fix(0.001648997)
     m.fs.roaster.mass_frac_feed_dry[0,'Y'].fix(0.0619823)
     m.fs.roaster.mass_frac_feed_dry[0,'La'].fix(0.160501197)
@@ -149,13 +158,15 @@ def set_inputs(m):
     m.fs.roaster.mass_frac_feed_dry[0,'Tm'].fix(0.004159939)
     m.fs.roaster.mass_frac_feed_dry[0,'Yb'].fix(0.005879861)
     m.fs.roaster.mass_frac_feed_dry[0,'Lu'].fix(0.002971853)
-    '''
+    """
     m.fs.roaster.frac_comp_recovery.fix(0.95)
+
 
 def initialize_system(m):
     initializer = BlockTriangularizationInitializer()
     initializer.initialize(m.fs.roaster)
     assert initializer.summary[m.fs.roaster]["status"] == InitializationStatus.Ok
+
 
 if __name__ == "__main__":
     """

@@ -59,9 +59,9 @@
             "BEC": 68529.0,
             "BEC_units": "$2016",
             "Exponent": 0.5491,
-            "Process Parameter": "Throughput (tonne/hr)",
+            "Process Parameter": "Throughput (ton/hr)",
             "RP Value": 575.0,
-            "Units": "tonne/hr"
+            "Units": "ton/hr"
         },
         "2.1": {
             "Account Name": "UKy Dry Grinding - Vibrating Screen",
@@ -77,9 +77,9 @@
             "BEC": 76638.0,
             "BEC_units": "$2016",
             "Exponent": 0.6185,
-            "Process Parameter": "Storage Capacity (tonne)",
+            "Process Parameter": "Storage Capacity (ton)",
             "RP Value": 100.0,
-            "Units": "tonne"
+            "Units": "ton"
         },
         "2.3": {
             "Account Name": "UKy Dry Grinding - Air Swept Ball Mill",
@@ -113,18 +113,18 @@
             "BEC": 76637.5,
             "BEC_units": "$2016",
             "Exponent": 0.6185,
-            "Process Parameter": "Storage Capacity (tonne)",
+            "Process Parameter": "Storage Capacity (ton)",
             "RP Value": 100.0,
-            "Units": "tonne"
+            "Units": "ton"
         },
         "3.2": {
             "Account Name": "UKy Roasting - Conveyors",
             "BEC": 68529.0,
             "BEC_units": "$2016",
             "Exponent": 0.5491,
-            "Process Parameter": "Throughput (tonne/hr)",
+            "Process Parameter": "Throughput (ton/hr)",
             "RP Value": 575.0,
-            "Units": "tonne/hr"
+            "Units": "ton/hr"
         },
         "3.3": {
             "Account Name": "UKy Roasting - Roaster",
@@ -230,9 +230,9 @@
             "BEC": 772061.5,
             "BEC_units": "$2016",
             "Exponent": 0.249152,
-            "Process Parameter": "Throughput (tonne/hr)",
+            "Process Parameter": "Throughput (ton/hr)",
             "RP Value": 194.0,
-            "Units": "tonne/hr"
+            "Units": "ton/hr"
         },
         "4.8": {
             "Account Name": "UKy Leaching - Solution Heater",
@@ -290,7 +290,7 @@
         },
         "6.2": {
             "Account Name": "UKy Cleaner Solvent Extraction - Tank Mixer",
-            "BEC": 9366.0,
+            "BEC": 9436.0,
             "BEC_units": "$2016",
             "Exponent": 0.564,
             "Process Parameter": "Power Draw (hp)",
@@ -401,9 +401,9 @@
             "BEC": 7822.0,
             "BEC_units": "$2016",
             "Exponent": 0.5491,
-            "Process Parameter": "Throughput (tonne/hr)",
+            "Process Parameter": "Throughput (ton/hr)",
             "RP Value": 11.0,
-            "Units": "tonne/hr"
+            "Units": "ton/hr"
         },
         "8.6": {
             "Account Name": "UKy Aluminum Precipitation - Thickener",
@@ -429,7 +429,7 @@
             "BEC_units": "$2016",
             "Exponent": 0.9492,
             "Process Parameter": "Storage Capacity (gal)",
-            "RP Value": 1405.0,
+            "RP Value": 1504.0,
             "Units": "gal"
         },
         "9.3": {
@@ -464,9 +464,9 @@
             "BEC": 3490.0,
             "BEC_units": "$2016",
             "Exponent": 0.5491,
-            "Process Parameter": "Throughput (tonne/hr)",
+            "Process Parameter": "Throughput (ton/hr)",
             "RP Value": 2.54,
-            "Units": "tonne/hr"
+            "Units": "ton/hr"
         },
         "9.7": {
             "Account Name": "UKy Rare Earth Element Precipitation - Thickener",
@@ -563,9 +563,9 @@
             "BEC": 68114.0,
             "BEC_units": "$2016",
             "Exponent": 0.5491,
-            "Process Parameter": "Throughput (tonne/hr)",
+            "Process Parameter": "Throughput (ton/hr)",
             "RP Value": 569.0,
-            "Units": "tonne/hr"
+            "Units": "ton/hr"
         },
         "12.1": {
             "Account Name": "UKy Biooxidation - BioLeach Tanks",

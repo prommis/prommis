@@ -32,9 +32,9 @@ from ree_plant_capcost import (
 m = pyo.ConcreteModel()
 
 # Add a flowsheet object to the model
-m.fs = FlowsheetBlock(dynamic=False)
+m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
 m.fs.costing = QGESSCosting()
-CE_index_year = "2016"
+CE_index_year = "UKy_2019"
 
 # check that the model solved properly and has 0 degrees of freedom
 assert degrees_of_freedom(m) == 0
@@ -134,7 +134,7 @@ m.fs.CS_vibrating_screens.costing = UnitModelCostingBlock(
 CS_conveyors_accounts = ["1.7"]
 m.fs.CS_conveyors = UnitModelBlock()
 m.fs.CS_conveyors.throughput = pyo.Var(initialize=575,
-                                       units=pyunits.tonne/pyunits.hr)
+                                       units=pyunits.ton/pyunits.hr)
 m.fs.CS_conveyors.throughput.fix()
 m.fs.CS_conveyors.costing = UnitModelCostingBlock(
     flowsheet_costing_block=m.fs.costing,
@@ -170,7 +170,7 @@ m.fs.DG_vibrating_screens.costing = UnitModelCostingBlock(
 # 2.2 is DG Storage Bins
 DG_storage_bins_accounts = ["2.2"]
 m.fs.DG_storage_bins = UnitModelBlock()
-m.fs.DG_storage_bins.capacity = pyo.Var(initialize=100, units=pyunits.tonne)
+m.fs.DG_storage_bins.capacity = pyo.Var(initialize=100, units=pyunits.ton)
 m.fs.DG_storage_bins.capacity.fix()
 m.fs.DG_storage_bins.costing = UnitModelCostingBlock(
     flowsheet_costing_block=m.fs.costing,
@@ -244,7 +244,7 @@ m.fs.DG_elevator_motor.costing = UnitModelCostingBlock(
 # 3.1 is R Storage Bins
 R_storage_bins_accounts = ["3.1"]
 m.fs.R_storage_bins = UnitModelBlock()
-m.fs.R_storage_bins.capacity = pyo.Var(initialize=100, units=pyunits.tonne)
+m.fs.R_storage_bins.capacity = pyo.Var(initialize=100, units=pyunits.ton)
 m.fs.R_storage_bins.capacity.fix()
 m.fs.R_storage_bins.costing = UnitModelCostingBlock(
     flowsheet_costing_block=m.fs.costing,
@@ -263,7 +263,7 @@ m.fs.R_storage_bins.costing = UnitModelCostingBlock(
 R_conveyors_accounts = ["3.2"]
 m.fs.R_conveyors = UnitModelBlock()
 m.fs.R_conveyors.throughput = pyo.Var(initialize=575,
-                                      units=pyunits.tonne/pyunits.hr)
+                                      units=pyunits.ton/pyunits.hr)
 m.fs.R_conveyors.throughput.fix()
 m.fs.R_conveyors.costing = UnitModelCostingBlock(
     flowsheet_costing_block=m.fs.costing,
@@ -718,7 +718,7 @@ m.fs.SX_wash_filter_press.costing = UnitModelCostingBlock(
 # 9.2 is REE Precipitation PE Tanks
 reep_pe_tanks_accounts = ["9.2"]
 m.fs.reep_pe_tanks = UnitModelBlock()
-m.fs.reep_pe_tanks.capacity = pyo.Var(initialize=1405,
+m.fs.reep_pe_tanks.capacity = pyo.Var(initialize=1504,
                                       units=pyunits.gal)
 m.fs.reep_pe_tanks.capacity.fix()
 m.fs.reep_pe_tanks.costing = UnitModelCostingBlock(
@@ -871,7 +871,7 @@ m.fs.WT_filter_press.costing = UnitModelCostingBlock(
 WT_conveyors_accounts = ["11.4"]
 m.fs.WT_conveyors = UnitModelBlock()
 m.fs.WT_conveyors.throughput = pyo.Var(initialize=569,
-                                      units=pyunits.tonne/pyunits.hr)
+                                      units=pyunits.ton/pyunits.hr)
 m.fs.WT_conveyors.throughput.fix()
 m.fs.WT_conveyors.costing = UnitModelCostingBlock(
     flowsheet_costing_block=m.fs.costing,
@@ -887,15 +887,77 @@ m.fs.WT_conveyors.costing = UnitModelCostingBlock(
 )
 
 # add plant-level cost constraints
-m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.tonne/pyunits.hr)
-m.fs.feed_grade = pyo.Var(initialize=329, units=pyunits.ppm)
-tonnes_REE_capture = pyo.value(pyunits.convert(m.fs.feed_input, to_units=pyunits.tonne/pyunits.hr)
-                           * 8 * 3 * 336 * pyunits.hr  # 8-hr shifts, 3 shifts/day, 336 days/year
-                           * pyunits.convert(m.fs.feed_grade, to_units=pyunits.dimensionless)
-                           * 0.10  # 10% total REE recovery
-                           )
-m.fs.land_cost_eq = pyo.Expression(expr=0.30e-6 * m.fs.feed_input
-                               * 8 * 3 * 336 * pyunits.hr)  # 0.30 USD/tonne per year, in MUSD
+# follows the Base Case in Table 4-40 in UKy Phase 1 Summary Report (page 32 of 40 in Chapter 4.0)
+
+m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton/pyunits.hr)
+m.fs.feed_grade = pyo.Var(initialize=356.64, units=pyunits.ppm)  # 2021 report has 336 ppm
+m.fs.recovery_rate = pyo.Var(
+    initialize=39.3*0.8025,  # TREO (total rare earth oxide), 80.25% REE in REO
+    units=pyunits.kg/pyunits.hr
+    )
+hours_per_shift = 8
+shifts_per_day = 3
+operating_days_per_year = 336
+# the land cost is the lease cost, or refining cost of REO produced
+m.fs.land_cost = pyo.Expression(
+    expr=0.303736 * 1e-6 * getattr(pyunits, "MUSD_"+CE_index_year) / pyunits.ton
+    * pyunits.convert(m.fs.feed_input, to_units=pyunits.ton/pyunits.hr)
+    * hours_per_shift * pyunits.hr
+    * shifts_per_day * pyunits.day**-1
+    * operating_days_per_year * pyunits.day
+    )
+
+# 2019 report doesn't give flowrates for consumables, so use dummy reagents to get reagent costs to match for validation of other sections
+# dummy blocks will use dummy reagent with cost of 1 USD/kg
+reagent_costs = (  # all USD/year
+    302962  # Crushing and Screening
+    + 0  # Dry Grinding
+    + 5767543  # Roasting
+    + 199053595  # Leaching
+    + 152303329  # Rougher Solvent Extraction
+    + 43702016  # Cleaner Solvent Extraction
+    + 7207168  # Solvent Extraction Wash and Saponification
+    + 1233763  # Rare Earth Element Precipiation
+    + 18684816  # Water Treatment
+    )
+
+m.fs.reagents = pyo.Var(m.fs.time, initialize=reagent_costs/(336*3*8), units=pyunits.kg/pyunits.hr)
+
+m.fs.solid_waste = pyo.Var(m.fs.time, initialize=11136/24, units=pyunits.ton/pyunits.hr)  # non-hazardous solid waste
+m.fs.precipitate = pyo.Var(m.fs.time, initialize=732/24, units=pyunits.ton/pyunits.hr)  # non-hazardous precipitate
+m.fs.dust_and_volatiles = pyo.Var(m.fs.time, initialize=120/24, units=pyunits.ton/pyunits.hr)  # dust and volatiles
+m.fs.power = pyo.Var(m.fs.time, initialize=14716, units=pyunits.hp)
+
+resources = ["dummy", "nonhazardous_solid_waste", "nonhazardous_precipitate_waste", "dust_and_volatiles", "power",]
+
+rates = [m.fs.reagents, m.fs.solid_waste, m.fs.precipitate, m.fs.dust_and_volatiles, m.fs.power,]
+
+# report pages 57-58 have data used to estimate product flows
+
+pure_product_output_rates = {
+    "Sc2O3": 1.9 * pyunits.kg/pyunits.hr,
+    "Dy2O3": 0.4 * pyunits.kg/pyunits.hr,
+    "Gd2O3": 0.5 * pyunits.kg/pyunits.hr,
+    }
+
+mixed_product_output_rates = {
+    "Sc2O3": 0.00143 * pyunits.kg/pyunits.hr,
+    "Y2O3":  0.05418 * pyunits.kg/pyunits.hr,
+    "La2O3":  0.13770 * pyunits.kg/pyunits.hr,
+    "CeO2": 0.37383 * pyunits.kg/pyunits.hr,
+    "Pr6O11": 0.03941 * pyunits.kg/pyunits.hr,
+    "Nd2O3": 0.17289 * pyunits.kg/pyunits.hr,
+    "Sm2O3": 0.02358 * pyunits.kg/pyunits.hr,
+    "Eu2O3": 0.00199 * pyunits.kg/pyunits.hr,
+    "Gd2O3": 0.00000 * pyunits.kg/pyunits.hr,
+    "Tb4O7": 0.00801 * pyunits.kg/pyunits.hr,
+    "Dy2O3": 0.00000 * pyunits.kg/pyunits.hr,
+    "Ho2O3": 0.00000 * pyunits.kg/pyunits.hr,
+    "Er2O3": 0.00000 * pyunits.kg/pyunits.hr,
+    "Tm2O3": 0.00130 * pyunits.kg/pyunits.hr,
+    "Yb2O3": 0.00373 * pyunits.kg/pyunits.hr,
+    "Lu2O3": 0.00105 * pyunits.kg/pyunits.hr,
+    }
 
 m.fs.costing.build_process_costs(
         # arguments related to installation costs
@@ -911,24 +973,58 @@ m.fs.costing.build_process_costs(
         project_management_and_construction_percentage=30,
         process_contingency_percentage=15,
         # argument related to Fixed OM costs
-        nameplate_capacity=500,  # tonne/hr
-        capacity_factor=0.92,  # % of maximum capacity that is utilized
+        nameplate_capacity=500,  # short (US) ton/hr
         labor_types = ["skilled", "unskilled", "supervisor", "maintenance", "technician", "engineer"],
-        labor_rate=[27.90, 23.26, 30.29, 24.06, 23.43, 46.82],  # USD/hr
+        labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
         labor_burden=25,  # % fringe benefits
-        operators_per_shift=[2, 5, 2, 3, 1, 2],
-        hours_per_shift=8,
-        shifts_per_day=3,
-        operating_days_per_year=336,
+        operators_per_shift=[4, 9, 2, 2, 2, 3],
+        hours_per_shift=hours_per_shift,
+        shifts_per_day=shifts_per_day,
+        operating_days_per_year=operating_days_per_year,
+        pure_product_output_rates=pure_product_output_rates,
+        mixed_product_output_rates=mixed_product_output_rates,
+        mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
         # arguments related to total owners costs
-        land_cost=m.fs.land_cost_eq,
+        land_cost=m.fs.land_cost,
+        resources=resources,
+        rates=rates,
+        prices={"dummy": 1 * getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,},
         fixed_OM=True,
-        tonne_REE_capture=tonnes_REE_capture,
+        variable_OM=True,
+        feed_input=m.fs.feed_input,
+        efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
+        chemicals=["dummy"],  # includes reagents, fuels, diluents, ...
+        waste=["nonhazardous_solid_waste", "nonhazardous_precipitate_waste", "dust_and_volatiles",],
+        recovery_rate=m.fs.recovery_rate,
         CE_index_year=CE_index_year,
     )
 
+m.fs.costing.other_plant_costs.unfix()  # define reagent fills as an other plant cost so framework adds this to TPC calculation
+m.fs.costing.other_plant_costs_rule = pyo.Constraint(
+    expr=(
+        m.fs.costing.other_plant_costs ==
+        pyunits.convert(
+            1218073 * pyunits.USD_2016  # Rougher Solvent Extraction
+            + 48723 * pyunits.USD_2016  # Cleaner Solvent Extraction
+            + 182711 * pyunits.USD_2016,  # Solvent Extraction Wash and Saponification
+            to_units=getattr(pyunits, "MUSD_"+CE_index_year))
+        )
+    )
+
+# fix costing vars that shouldn't change
+m.fs.feed_input.fix()
+m.fs.feed_grade.fix()
+m.fs.recovery_rate.fix()
+m.fs.reagents.fix()
+m.fs.solid_waste.fix()
+m.fs.precipitate.fix()
+m.fs.dust_and_volatiles.fix()
+m.fs.power.fix()
+
 # add initialize
 QGESSCostingData.costing_initialization(m.fs.costing)
+QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
 
 # try solving
 solver = get_solver()
@@ -940,13 +1036,15 @@ assert_units_consistent(m)
 
 # report results
 QGESSCostingData.report(m.fs.costing)
+m.fs.costing.variable_operating_costs.display()  # results will be in t = 0
+print()
 QGESSCostingData.display_bare_erected_costs(m.fs.costing)
 QGESSCostingData.display_flowsheet_cost(m.fs.costing)
 
 # test costing bounding method
 QGESSCostingData.calculate_REE_costing_bounds(
     b=m.fs.costing,
-    capacity=m.fs.feed_input * 8064 * pyunits.hr/pyunits.a * 20 * pyunits.a,
+    capacity=m.fs.feed_input * 8 * 3 * 336 * pyunits.hr/pyunits.a * 20 * pyunits.a,
     grade=m.fs.feed_grade,
     CE_index_year=CE_index_year,
     recalculate=True,

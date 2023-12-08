@@ -1,7 +1,5 @@
 # install req
 git+https://github.com/idaes/idaes-pse.git@main
 git+https://github.com/IDAES/idaes-ui.git@main
-# Latest idaes-pse pyomo tag
-git+https://github.com/IDAES/pyomo.git@6.7.0.idaes.2023.11.6
 
 -e .[dev]

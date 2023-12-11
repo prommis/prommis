@@ -12,7 +12,7 @@
 
 By contributing to this software project, I agree to the following terms and conditions for my contribution:
 
-1. I agree my contributions are submitted under the license terms described in the LICENSE.txt file
+1. I agree my contributions are submitted under the license terms described in the LICENSE.md file
    at the top level of this directory.
 
 2. I represent I am authorized to make the contributions and grant the license. If my employer has

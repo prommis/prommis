@@ -1,0 +1,6 @@
+black==23.11.0
+pytest
+
+idaes-pse @ git+https://github.com/IDAES/idaes-pse@main
+
+--editable .

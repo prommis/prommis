@@ -1,5 +1,6 @@
 black==23.11.0
 pytest
+jupyter-book==0.15.*
 
 idaes-pse @ git+https://github.com/IDAES/idaes-pse@main
 

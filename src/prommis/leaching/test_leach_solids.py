@@ -4,7 +4,7 @@ from pyomo.environ import ConcreteModel, Constraint, Var
 
 from idaes.core import FlowsheetBlock
 
-from prommis_workspace.leaching.leach_solids_properties import CoalRefuseParameters
+from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 
 
 @pytest.mark.unit

@@ -38,9 +38,9 @@ from idaes.models.unit_models.mscontactor import (
 )
 from idaes.core.util import DiagnosticsToolbox
 
-from prommis_workspace.leaching.leach_solution_properties import LeachSolutionParameters
-from prommis_workspace.leaching.leach_solids_properties import CoalRefuseParameters
-from prommis_workspace.leaching.leach_reactions import CoalRefuseLeachingReactions
+from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.leaching.leach_solids_properties import CoalRefuseParameters
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 
 
 m = ConcreteModel()

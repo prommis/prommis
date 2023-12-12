@@ -11,7 +11,7 @@ from SolventExtraction import SolventExtraction
 
 from REEAqdistribution import REESolExAqParameters
 from REEOgdistribution import REESolExOgParameters
-from prommis_workspace.leaching.leach_solution_properties import (
+from prommis.leaching.leach_solution_properties import (
     LeachSolutionParameters,
 )
 

@@ -17,7 +17,7 @@ Tests for UKy flowsheet.
 
 import pytest
 
-from prommis_workspace.UKy_flowsheet.UKy_flowsheet import (
+from prommis.UKy_flowsheet.UKy_flowsheet import (
     build,
     set_scaling,
     set_operating_conditions,
@@ -54,31 +54,31 @@ from idaes.models.unit_models.mixer import (
 )
 from idaes.core.util.model_statistics import degrees_of_freedom
 
-from prommis_workspace.leaching.leach_solution_properties import (
+from prommis.leaching.leach_solution_properties import (
     LeachSolutionParameters,
 )
-from prommis_workspace.leaching.leach_solids_properties import (
+from prommis.leaching.leach_solids_properties import (
     CoalRefuseParameters,
 )
-from prommis_workspace.leaching.leach_reactions import (
+from prommis.leaching.leach_reactions import (
     CoalRefuseLeachingReactions,
 )
 
-from prommis_workspace.Solvent_Extraction.SolventExtraction import SolventExtraction
-from prommis_workspace.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
-from prommis_workspace.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
+from prommis.Solvent_Extraction.SolventExtraction import SolventExtraction
+from prommis.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
+from prommis.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
 
-from prommis_workspace.precipitate.precipitate_solids_properties import (
+from prommis.precipitate.precipitate_solids_properties import (
     PrecipitateParameters,
 )
-from prommis_workspace.precipitate.precipitate_liquid_properties import (
+from prommis.precipitate.precipitate_liquid_properties import (
     AqueousParameter,
 )
-from prommis_workspace.precipitate.precipitator import (
+from prommis.precipitate.precipitator import (
     Precipitator,
 )
 
-from prommis_workspace.roasting.ree_oxalate_roaster import REEOxalateRoaster
+from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 
 
 from idaes.models.properties.modular_properties.base.generic_property import (

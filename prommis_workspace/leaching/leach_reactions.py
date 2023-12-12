@@ -231,6 +231,7 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
 
             h_conc = l_block.conc_mol_comp["H"]
 
+
             # Pulp density calculation
             eps = units.convert(
                 s_block.flow_mass / (s_block.flow_mass/s_block.params.dens_mass + l_block.flow_vol),

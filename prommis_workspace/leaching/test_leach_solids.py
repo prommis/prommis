@@ -34,9 +34,9 @@ def test_build():
 
     assert m.fs.state[0].flow_mass.fixed
     for j in m.fs.leach_sol.component_list:
-    assert m.fs.state[0].mass_frac_comp[j].fixed
-    assert not m.fs.state[0].conversion[j].fixed
+        assert m.fs.state[0].mass_frac_comp[j].fixed
+        assert not m.fs.state[0].conversion[j].fixed
 
-    assert m.fs.state[0].conversion_eq[j].active
+        assert m.fs.state[0].conversion_eq[j].active
 
-    assert not m.fs.state[0].sum_mass_frac.active
+        assert not m.fs.state[0].sum_mass_frac.active

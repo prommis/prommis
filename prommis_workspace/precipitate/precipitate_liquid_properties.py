@@ -17,7 +17,6 @@ Authors: Alejandro Garciadiego
 """
 
 from pyomo.environ import (
-    Constraint,
     Param,
     Set,
     units,
@@ -191,6 +190,18 @@ class AqueousStateBlockkData(StateBlockData):
             bounds=(1e-20, None),
         )
 
+        self.conc_mol_comp = Var(
+            self.params.dissolved_elements,
+            units=units.mol / units.L,
+            initialize=1e-5,
+            bounds=(1e-20, None),
+        )
+
+        # Concentration conversion constraint
+        @self.Constraint(self.params.dissolved_elements)
+        def molar_concentration_constraint(b, j):
+            return units.convert(b.conc_mol_comp[j]*b.params.mw[j], to_units=units.mg/units.litre) == b.conc_mass_comp[j]
+
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)
         def flow_mol_constraint(b, j):
@@ -213,7 +224,7 @@ class AqueousStateBlockkData(StateBlockData):
         # Note conversion to mol/hour
         if j == "H2O":
             # Assume constant density of 1 kg/L
-            return self.flow_vol * self.params.dens_mass * self.params.mw[j]
+            return self.flow_vol * self.params.dens_mass / self.params.mw[j]
         else:
             # Need to convert from moles to mass
             return units.convert(

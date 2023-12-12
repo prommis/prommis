@@ -129,6 +129,11 @@ class SolventExtractionData(UnitModelBlockData):
             doc="The fraction of component that goes from aqueous to organic phase",
         )
 
+        self.aqueous_inlet = Port(extends=self.mscontactor.aqueous_inlet)
+        self.aqueous_outlet = Port(extends=self.mscontactor.aqueous_outlet)
+        self.organic_inlet = Port(extends=self.mscontactor.organic_inlet)
+        self.organic_outlet = Port(extends=self.mscontactor.organic_outlet)
+
         def mass_transfer_term(b, t, s, k, l, m):
             aqueous = b.mscontactor.aqueous
             phase_list = aqueous.phase_list
@@ -155,8 +160,3 @@ class SolventExtractionData(UnitModelBlockData):
             self.mscontactor.stream_component_interactions,
             rule=mass_transfer_term,
         )
-
-        self.aqueous_inlet = Port(extends=self.mscontactor.aqueous_inlet)
-        self.aqueous_outlet = Port(extends=self.mscontactor.aqueous_outlet)
-        self.organic_inlet = Port(extends=self.mscontactor.organic_inlet)
-        self.organic_outlet = Port(extends=self.mscontactor.organic_outlet)

@@ -9,7 +9,6 @@ from idaes.core import (
     MaterialFlowBasis,
 )
 from idaes.core.util.initialization import fix_state_vars
-from idaes.core.util.exceptions import BurntToast
 
 
 @declare_process_block_class("REESolExOgParameters")
@@ -55,6 +54,33 @@ class REESolExOgParameterData(PhysicalParameterBlock):
             ]
         )
 
+        self.mw = Param(
+            self.component_list,
+            units=units.kg / units.mol,
+            initialize={
+                "DEHPA": 322.431e-3,
+                "Sc": 44.946e-3,
+                "Y": 88.905e-3,
+                "La": 138.905e-3,
+                "Ce": 140.116e-3,
+                "Pr": 140.907e-3,
+                "Nd": 144.242e-3,
+                "Sm": 150.36e-3,
+                "Gd": 157.25e-3,
+                "Dy": 162.50e-3,
+                "Al": 26.982e-3,
+                "Ca": 40.078e-3,
+                "Fe": 55.845e-3,
+            },
+        )
+
+        # density of DEHPA
+        self.dens_mol = Param(
+            initialize=975.8e-3,
+            units=units.kg/units.litre,
+            mutable=True,
+        )
+
         self._state_block_class = REESolExOgStateBlock
 
     @classmethod
@@ -88,18 +114,31 @@ class REESolExOgStateBlockData(StateBlockData):
 
         self.flow_vol = Var(units=units.L / units.hour, bounds=(1e-8, None))
 
+        self.conc_mol_comp = Var(
+            self.params.dissolved_elements,
+            units=units.mol / units.L,
+            initialize=1e-5,
+            bounds=(1e-20, None),
+        )
+
+        # Concentration conversion constraint
+        @self.Constraint(self.params.dissolved_elements)
+        def molar_concentration_constraint(b, j):
+            return units.convert(b.conc_mol_comp[j]*b.params.mw[j], to_units=units.mg/units.litre) == b.conc_mass_comp[j]
+
     def get_material_flow_basis(self):
-        return MaterialFlowBasis.mass
+        return MaterialFlowBasis.molar
 
     def get_material_flow_terms(self, p, j):
-        if j in self.params.dissolved_elements:
-            return self.flow_vol * units.convert(
-                self.conc_mass_comp[j], to_units=units.kg / units.L
-            )  # conc_mass_comp added
-        elif j == "DEHPA":
-            return self.flow_vol * (975.8 * units.g / units.L)
+        if j == "DEHPA":
+            return self.flow_vol * self.params.dens_mol / self.params.mw[j]
         else:
-            raise BurntToast()
+            return units.convert(
+                self.flow_vol
+                * self.conc_mass_comp[j]
+                / self.params.mw[j],
+                to_units=units.mol / units.hour
+            )
 
     def define_state_vars(self):
         return {"flow_vol": self.flow_vol, "conc_mass_comp": self.conc_mass_comp}

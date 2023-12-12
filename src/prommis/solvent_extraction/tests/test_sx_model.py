@@ -8,9 +8,9 @@ from idaes.core.solvers import get_solver
 from idaes.core.util import DiagnosticsToolbox
 from pyomo.environ import ConcreteModel, check_optimal_termination, value
 
-from prommis.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
-from prommis.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
-from prommis.Solvent_Extraction.SolventExtraction import SolventExtraction
+from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
+from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
+from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 solver = get_solver()
 

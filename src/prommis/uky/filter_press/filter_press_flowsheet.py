@@ -34,10 +34,10 @@ from pyomo.environ import (
 )
 from pyomo.network import Arc
 
-from prommis.UKy_flowsheet.filter_press.filter_press_solids_properties import (
+from prommis.uky.filter_press.filter_press_solids_properties import (
     FilterPressSolidsParameters,
 )
-from prommis.UKy_flowsheet.filter_press.filter_press_solution_properties import (
+from prommis.uky.filter_press.filter_press_solution_properties import (
     FilterPressParameters,
 )
 

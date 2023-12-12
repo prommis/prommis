@@ -22,7 +22,7 @@ from pyomo.environ import check_optimal_termination
 from pyomo.environ import units as pyunits
 from pyomo.util.check_units import assert_units_consistent
 
-from prommis.UKy_flowsheet.costing.ree_plant_capcost import (
+from prommis.uky.costing.ree_plant_capcost import (
     QGESSCosting,
     QGESSCostingData,
 )

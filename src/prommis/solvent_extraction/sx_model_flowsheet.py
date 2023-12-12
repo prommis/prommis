@@ -7,9 +7,9 @@ from idaes.core.util.model_statistics import degrees_of_freedom as dof
 from pyomo.environ import ConcreteModel, SolverFactory
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
-from prommis.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
-from prommis.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
-from prommis.Solvent_Extraction.SolventExtraction import SolventExtraction
+from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
+from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
+from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 m = ConcreteModel()
 m.fs = FlowsheetBlock(dynamic=False)

@@ -51,7 +51,7 @@ from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
-from prommis.UKy_flowsheet.costing.costing_dictionaries import (
+from prommis.uky.costing.costing_dictionaries import (
     load_REE_costing_dictionary,
 )
 

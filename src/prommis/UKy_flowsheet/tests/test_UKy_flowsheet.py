@@ -102,11 +102,13 @@ class TestUKyFlowsheet:
         set_operating_conditions(m)
         return m
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.component
     def test_structural_issues(self, model):
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.unit
     def test_build_flowsheet(self, model):
         assert isinstance(model.fs, FlowsheetBlock)
@@ -174,6 +176,7 @@ class TestUKyFlowsheet:
 
         assert degrees_of_freedom(model) == 0
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.unit
     def test_set_dof(self, model):
         set_scaling(model)
@@ -181,6 +184,7 @@ class TestUKyFlowsheet:
 
         assert degrees_of_freedom(model) == 0
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.unit
     def test_initialize_flowsheet(self, model):
         initialize_system(model)
@@ -191,6 +195,7 @@ class TestUKyFlowsheet:
     def test_unit_consistency(self, model):
         assert_units_consistent(model)
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.unit
     def test_solve_flowsheet(self, model):
         solve(model)

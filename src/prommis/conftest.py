@@ -1,4 +1,4 @@
-from pytest import Config
+import pytest
 
 
 IDAES_MARKERS = {
@@ -8,6 +8,6 @@ IDAES_MARKERS = {
 }
 
 
-def pytest_configure(config: Config):
+def pytest_configure(config: pytest.Config):
     for spec, descr in IDAES_MARKERS.items():
         config.addinivalue_line("markers", f"{spec}: {descr}")

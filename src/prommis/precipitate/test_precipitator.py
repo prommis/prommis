@@ -96,6 +96,7 @@ class TestPrec(object):
 
         return m
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.build
     @pytest.mark.unit
     def test_build(self, prec):
@@ -144,6 +145,7 @@ class TestPrec(object):
         initializer.initialize(prec.fs.unit)
         assert initializer.summary[prec.fs.unit]["status"] == InitializationStatus.Ok
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.component
     def test_var_scaling(self, prec):
         unscaled_var_list = list(

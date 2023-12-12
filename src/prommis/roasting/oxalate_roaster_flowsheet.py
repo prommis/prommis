@@ -15,8 +15,6 @@
 flowsheet to test the roster unit model
 authors: J. Ma
 """
-import os
-
 # Import Pyomo libraries
 import pyomo.environ as pyo
 

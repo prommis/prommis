@@ -29,7 +29,6 @@ from idaes.core import (
     PhysicalParameterBlock,
     StateBlock,
     StateBlockData,
-    Component,
     Phase,
     MaterialFlowBasis,
 )

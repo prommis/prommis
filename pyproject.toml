@@ -40,4 +40,5 @@ disable = [
 # for a list of all messages
 enable = [
     "import-error",
+    "unused-import",
 ]

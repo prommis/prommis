@@ -1,5 +1,4 @@
 from pyomo.environ import (
-    check_optimal_termination,
     ConcreteModel,
     SolverFactory,
     Suffix,
@@ -7,7 +6,6 @@ from pyomo.environ import (
     value,
     Var,
 )
-from pyomo.core.base.suffix import SuffixFinder
 
 from idaes.core import FlowsheetBlock
 from idaes.models.unit_models.gibbs_reactor import GibbsReactor
@@ -20,9 +18,6 @@ from idaes.core.initialization import (
 )
 from idaes.core.util.scaling import (
     get_jacobian,
-    extreme_jacobian_columns,
-    extreme_jacobian_rows,
-    extreme_jacobian_entries,
     jacobian_cond,
 )
 

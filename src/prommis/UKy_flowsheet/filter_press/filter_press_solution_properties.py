@@ -15,11 +15,8 @@ Initial property package for liquids in the filter press.
 
 Authors: Marcus Holly
 """
-import pyomo.environ as pyo
 from pyomo.environ import (
-    Constraint,
     Param,
-    Set,
     units,
     Var,
 )

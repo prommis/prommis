@@ -19,7 +19,6 @@ Authors: Marcus Holly
 from pyomo.environ import (
     Constraint,
     Param,
-    Set,
     units,
     Var,
 )
@@ -35,7 +34,6 @@ from idaes.core import (
     MaterialBalanceType,
     EnergyBalanceType,
 )
-from idaes.core.util.exceptions import BurntToast
 from idaes.core.util.initialization import fix_state_vars
 
 

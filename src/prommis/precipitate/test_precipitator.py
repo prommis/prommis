@@ -3,7 +3,6 @@ from pyomo.environ import (
     ConcreteModel,
     value,
     assert_optimal_termination,
-    units,
 )
 
 from idaes.core import (

@@ -88,7 +88,12 @@ from idaes.core.util.config import is_physical_parameter_block, DefaultBool
 import idaes.logger as idaeslog
 
 # Additional import for the unit operation
-from pyomo.environ import Var, Param, Constraint, Set, units as pyunits
+from pyomo.environ import (
+    Var,
+    Param,
+    Set,
+    units as pyunits,
+)
 import idaes.core.util.scaling as iscale
 from idaes.core.util.constants import Constants as const
 from idaes.core.solvers import get_solver

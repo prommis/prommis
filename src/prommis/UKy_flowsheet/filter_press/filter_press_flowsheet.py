@@ -44,7 +44,6 @@ from prommis.UKy_flowsheet.filter_press.filter_press_solids_properties import (
 from prommis.UKy_flowsheet.filter_press.filter_press_solution_properties import (
     FilterPressParameters,
 )
-from idaes.core.util.exceptions import ConfigurationError
 
 
 # Build flowsheet

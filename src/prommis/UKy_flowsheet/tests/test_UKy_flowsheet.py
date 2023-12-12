@@ -40,8 +40,6 @@ from idaes.models.unit_models.feed import (
 )
 from idaes.models.unit_models.separator import (
     Separator,
-    SplittingType,
-    EnergySplittingType,
 )
 from idaes.models.unit_models.solid_liquid import SLSeparator
 from idaes.models.unit_models.product import (
@@ -49,8 +47,6 @@ from idaes.models.unit_models.product import (
 )
 from idaes.models.unit_models.mixer import (
     Mixer,
-    MixingType,
-    MomentumMixingType,
 )
 from idaes.core.util.model_statistics import degrees_of_freedom
 

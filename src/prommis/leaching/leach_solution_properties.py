@@ -32,7 +32,6 @@ from idaes.core import (
     Component,
     Phase,
     MaterialFlowBasis,
-    MaterialBalanceType,
 )
 from idaes.core.util.misc import add_object_reference
 from idaes.core.util.initialization import fix_state_vars

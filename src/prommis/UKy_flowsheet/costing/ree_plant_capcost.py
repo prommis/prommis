@@ -121,6 +121,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # Set a base period for all operating costs
         self.base_period = pyunits.year
 
+    # pylint: disable-next=dangerous-default-value
     def build_process_costs(
         self,
         # arguments related to installation costs
@@ -1512,6 +1513,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
     # Operation & Maintenance Costing Library
     # -----------------------------------------------------------------------------
 
+    # pylint: disable-next=dangerous-default-value
     def get_fixed_OM_costs(
         b,
         labor_types=[
@@ -1922,7 +1924,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # assert lists are the same length
         if len(resources) != len(rates):
-            raise Exception("resources and rates must be lists of the same" " length")
+            raise Exception("resources and rates must be lists of the same length")
 
         # dictionary of default prices
         # the currency units are millions of USD, so all prices need a 1e-6 multiplier to get USD

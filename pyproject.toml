@@ -41,4 +41,6 @@ disable = [
 enable = [
     "import-error",
     "unused-import",
+    "implicit-str-concat",
+    "dangerous-default-value",
 ]

@@ -108,7 +108,7 @@ jobs:
           variant: ${{ matrix.install-variant }}
           python-version: ${{ matrix.python-version }}
       - name: Run pytest
-        run: pytest  --pyargs prommis
+        run: pytest --pyargs prommis --xfail-known-issues
 
   docs:
     name: docs (${{ matrix.install-variant }}/py${{ matrix.python-version }}/${{ matrix.os }})

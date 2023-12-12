@@ -22,6 +22,12 @@ Before running any of these commands, ensure the `prommis-dev` Conda environment
 conda activate prommis-dev
 ```
 
+#### Sort import statements
+
+```sh
+isort src/prommis
+```
+
 #### Formatting code
 
 ```sh

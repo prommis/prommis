@@ -169,13 +169,13 @@ def build():
         m.fs.leach.elements,
         initialize=1,
         units=units.litre,
-        doc="Volume of each finite element."
+        doc="Volume of each finite element.",
     )
 
     def rule_heterogeneous_reaction_extent(b, t, s, r):
         return (
-                b.heterogeneous_reaction_extent[t, s, r]
-                == b.heterogeneous_reactions[t, s].reaction_rate[r] * b.volume[t, s]
+            b.heterogeneous_reaction_extent[t, s, r]
+            == b.heterogeneous_reactions[t, s].reaction_rate[r] * b.volume[t, s]
         )
 
     m.fs.leach.heterogeneous_reaction_extent_constraint = Constraint(
@@ -335,24 +335,32 @@ def build():
     m.fs.feed_mixture = Arc(
         source=m.fs.leach_mixer.outlet, destination=m.fs.leach.liquid_inlet
     )
-    m.fs.s01 = Arc(
-        source=m.fs.leach.solid_outlet, destination=m.fs.sl_sep1.solid_inlet
+    m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.sl_sep1.solid_inlet)
+    m.fs.s02 = Arc(
+        source=m.fs.leach.liquid_outlet, destination=m.fs.sl_sep1.liquid_inlet
     )
-    m.fs.s02 = Arc(source=m.fs.leach.liquid_outlet, destination=m.fs.sl_sep1.liquid_inlet)
     m.fs.sep1_solid = Arc(
         source=m.fs.sl_sep1.solid_outlet, destination=m.fs.leach_filter_cake.inlet
     )
     m.fs.sep1_retained_liquid = Arc(
-        source=m.fs.sl_sep1.retained_liquid_outlet, destination=m.fs.leach_filter_cake_liquid.inlet
+        source=m.fs.sl_sep1.retained_liquid_outlet,
+        destination=m.fs.leach_filter_cake_liquid.inlet,
     )
     m.fs.sep1_liquid = Arc(
-        source=m.fs.sl_sep1.recovered_liquid_outlet, destination=m.fs.solex_rougher.mscontactor.aqueous_inlet
+        source=m.fs.sl_sep1.recovered_liquid_outlet,
+        destination=m.fs.solex_rougher.mscontactor.aqueous_inlet,
     )
-    m.fs.recycle1 = Arc(source=m.fs.solex_rougher.mscontactor.aqueous_outlet, destination=m.fs.sep1.inlet)
+    m.fs.recycle1 = Arc(
+        source=m.fs.solex_rougher.mscontactor.aqueous_outlet,
+        destination=m.fs.sep1.inlet,
+    )
     m.fs.purge1 = Arc(source=m.fs.sep1.purge, destination=m.fs.recycle1_purge.inlet)
-    m.fs.recycle_feed = Arc(source=m.fs.sep1.recycle, destination=m.fs.leach_mixer.recycle)
+    m.fs.recycle_feed = Arc(
+        source=m.fs.sep1.recycle, destination=m.fs.leach_mixer.recycle
+    )
     m.fs.s03 = Arc(
-        source=m.fs.solex_rougher.mscontactor.organic_outlet, destination=m.fs.solex_cleaner.mscontactor.organic_inlet
+        source=m.fs.solex_rougher.mscontactor.organic_outlet,
+        destination=m.fs.solex_cleaner.mscontactor.organic_inlet,
     )
     m.fs.s04 = Arc(
         source=m.fs.solex_cleaner.mscontactor.aqueous_outlet,
@@ -367,7 +375,8 @@ def build():
         destination=m.fs.precipitator.aqueous_inlet,
     )
     m.fs.s07 = Arc(
-        source=m.fs.precipitator.precipitate_outlet, destination=m.fs.sl_sep2.solid_inlet
+        source=m.fs.precipitator.precipitate_outlet,
+        destination=m.fs.sl_sep2.solid_inlet,
     )
     m.fs.s08 = Arc(
         source=m.fs.precipitator.aqueous_outlet, destination=m.fs.sl_sep2.liquid_inlet
@@ -382,11 +391,10 @@ def build():
     m.fs.sep2_recovered_liquid = Arc(
         source=m.fs.sl_sep2.recovered_liquid_outlet, destination=m.fs.sep2.inlet
     )
-    m.fs.purge2 = Arc(
-        source=m.fs.sep2.purge, destination=m.fs.recycle2_purge.inlet
-    )
+    m.fs.purge2 = Arc(source=m.fs.sep2.purge, destination=m.fs.recycle2_purge.inlet)
     m.fs.recycle2 = Arc(
-        source=m.fs.sep2.recycle, destination=m.fs.solex_cleaner.mscontactor.aqueous_inlet
+        source=m.fs.sep2.recycle,
+        destination=m.fs.solex_cleaner.mscontactor.aqueous_inlet,
     )
 
     TransformationFactory("network.expand_arcs").apply_to(m)
@@ -398,61 +406,173 @@ def set_scaling(m):
     # Scaling
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
-    component_set1 = ["H2O", "H", "HSO4", "SO4", "Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy", "Al", "Ca", "Fe"]
+    component_set1 = [
+        "H2O",
+        "H",
+        "HSO4",
+        "SO4",
+        "Sc",
+        "Y",
+        "La",
+        "Ce",
+        "Pr",
+        "Nd",
+        "Sm",
+        "Gd",
+        "Dy",
+        "Al",
+        "Ca",
+        "Fe",
+    ]
 
-    component_set2 = ["Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy", "Al", "Ca", "Fe"]
+    component_set2 = [
+        "Sc",
+        "Y",
+        "La",
+        "Ce",
+        "Pr",
+        "Nd",
+        "Sm",
+        "Gd",
+        "Dy",
+        "Al",
+        "Ca",
+        "Fe",
+    ]
 
     # Leaching
     for component in component_set1:
         m.scaling_factor[m.fs.leach.liquid[0, 1].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach_liquid_feed.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.sl_sep1.liquid_inlet_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.sl_sep1.split.recovered_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.sl_sep1.split.retained_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach_filter_cake_liquid.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_rougher.mscontactor.aqueous[0, 1].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_rougher.mscontactor.aqueous[0, 2].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_rougher.mscontactor.aqueous[0, 3].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_rougher.mscontactor.aqueous_inlet_state[0].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[
+            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach_liquid_feed.properties[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.sl_sep1.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.sl_sep1.split.recovered_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.sl_sep1.split.retained_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach_filter_cake_liquid.properties[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_rougher.mscontactor.aqueous[0, 1].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_rougher.mscontactor.aqueous[0, 2].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_rougher.mscontactor.aqueous[0, 3].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_rougher.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
+                component
+            ]
+        ] = 1e5
         m.scaling_factor[m.fs.sep1.mixed_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.sep1.recycle_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.sep1.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.recycle1_purge.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach_mixer.recycle_state[0].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[
+            m.fs.recycle1_purge.properties[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach_mixer.recycle_state[0].conc_mol_comp[component]
+        ] = 1e5
         m.scaling_factor[m.fs.leach_mixer.feed_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.leach_mixer.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[
+            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
 
     for component in component_set2:
-        m.scaling_factor[m.fs.sl_sep2.liquid_inlet_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.sl_sep2.split.recovered_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.sl_sep2.split.retained_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_rougher.mscontactor.organic[0, 1].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_rougher.mscontactor.organic[0, 2].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_rougher.mscontactor.organic[0, 3].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[
+            m.fs.sl_sep2.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.sl_sep2.split.recovered_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.sl_sep2.split.retained_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_rougher.mscontactor.organic[0, 1].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_rougher.mscontactor.organic[0, 2].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_rougher.mscontactor.organic[0, 3].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mol_comp[
+                component
+            ]
+        ] = 1e5
         m.scaling_factor[m.fs.sep2.mixed_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.sep2.recycle_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.sep2.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.recycle2_purge.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous[0, 1].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous[0, 2].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous[0, 3].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous_inlet_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic[0, 1].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic[0, 2].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic[0, 3].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic_inlet_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.sx_mixer.aqueous_inlet_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.sx_mixer.organic_inlet_state[0].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[
+            m.fs.recycle2_purge.properties[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_cleaner.mscontactor.aqueous[0, 1].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_cleaner.mscontactor.aqueous[0, 2].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_cleaner.mscontactor.aqueous[0, 3].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_cleaner.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
+                component
+            ]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_cleaner.mscontactor.organic[0, 1].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_cleaner.mscontactor.organic[0, 2].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_cleaner.mscontactor.organic[0, 3].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.solex_cleaner.mscontactor.organic_inlet_state[0].conc_mol_comp[
+                component
+            ]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.sx_mixer.aqueous_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.sx_mixer.organic_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
         m.scaling_factor[m.fs.sx_mixer.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_in[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_out[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[
+            m.fs.precipitator.cv_aqueous.properties_in[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.precipitator.cv_aqueous.properties_out[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
 
     m.scaling_factor[m.fs.sl_sep2.solid_state[0].temperature] = 1e-2
     m.scaling_factor[m.fs.sl_sep2.liquid_inlet_state[0].flow_vol] = 1e-2
@@ -467,7 +587,9 @@ def set_scaling(m):
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous[0, 1].flow_vol] = 1e-2
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous[0, 2].flow_vol] = 1e-2
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous[0, 3].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous_inlet_state[0].flow_vol] = 1e-2
+    m.scaling_factor[
+        m.fs.solex_cleaner.mscontactor.aqueous_inlet_state[0].flow_vol
+    ] = 1e-2
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic[0, 1].flow_vol] = 1e-2
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic[0, 2].flow_vol] = 1e-2
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic[0, 3].flow_vol] = 1e-2
@@ -479,12 +601,8 @@ def set_scaling(m):
         m.fs.precipitator.cv_precipitate.properties_out[0].temperature
     ] = 1e-4
 
-    m.scaling_factor[
-        m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol
-    ] = 1e-2
-    m.scaling_factor[
-        m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol
-    ] = 1e-2
+    m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol] = 1e-2
+    m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol] = 1e-2
 
     m.scaling_factor[m.fs.roaster.gas_in[0].flow_mol] = 1e-3
     m.scaling_factor[m.fs.roaster.gas_in[0].flow_mol_phase["Vap"]] = 1e-3
@@ -496,7 +614,7 @@ def set_scaling(m):
     m.scaling_factor[m.fs.roaster.gas_out[0].pressure] = 1e-5
     m.scaling_factor[m.fs.roaster.solid_in[0].temperature] = 1e-2
 
-    scaling = TransformationFactory('core.scale_model')
+    scaling = TransformationFactory("core.scale_model")
     scaled_model = scaling.create_using(m, rename=False)
 
     return scaled_model
@@ -507,28 +625,52 @@ def set_operating_conditions(m):
 
     m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
     m.fs.leach_liquid_feed.conc_mass_comp.fix(1e-10 * units.mg / units.L)
-    m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].fix(2 * 0.05 * 1e3 * units.mg / units.L)
+    m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].fix(
+        2 * 0.05 * 1e3 * units.mg / units.L
+    )
     m.fs.leach_liquid_feed.conc_mass_comp[0, "HSO4"].fix(1e-8 * units.mg / units.L)
-    m.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"].fix(0.05 * 96e3 * units.mg / units.L)
+    m.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"].fix(
+        0.05 * 96e3 * units.mg / units.L
+    )
 
     m.fs.leach_solid_feed.flow_mass.fix(22.68 * units.kg / units.hour)
     m.fs.leach_solid_feed.mass_frac_comp[0, "inerts"].fix(0.6952 * units.kg / units.kg)
     m.fs.leach_solid_feed.mass_frac_comp[0, "Al2O3"].fix(0.237 * units.kg / units.kg)
     m.fs.leach_solid_feed.mass_frac_comp[0, "Fe2O3"].fix(0.0642 * units.kg / units.kg)
     m.fs.leach_solid_feed.mass_frac_comp[0, "CaO"].fix(3.31e-3 * units.kg / units.kg)
-    m.fs.leach_solid_feed.mass_frac_comp[0, "Sc2O3"].fix(2.77966E-05 * units.kg / units.kg)
-    m.fs.leach_solid_feed.mass_frac_comp[0, "Y2O3"].fix(3.28653E-05 * units.kg / units.kg)
-    m.fs.leach_solid_feed.mass_frac_comp[0, "La2O3"].fix(6.77769E-05 * units.kg / units.kg)
-    m.fs.leach_solid_feed.mass_frac_comp[0, "Ce2O3"].fix(0.000156161 * units.kg / units.kg)
-    m.fs.leach_solid_feed.mass_frac_comp[0, "Pr2O3"].fix(1.71438E-05 * units.kg / units.kg)
-    m.fs.leach_solid_feed.mass_frac_comp[0, "Nd2O3"].fix(6.76618E-05 * units.kg / units.kg)
-    m.fs.leach_solid_feed.mass_frac_comp[0, "Sm2O3"].fix(1.47926E-05 * units.kg / units.kg)
-    m.fs.leach_solid_feed.mass_frac_comp[0, "Gd2O3"].fix(1.0405E-05 * units.kg / units.kg)
-    m.fs.leach_solid_feed.mass_frac_comp[0, "Dy2O3"].fix(7.54827E-06 * units.kg / units.kg)
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Sc2O3"].fix(
+        2.77966e-05 * units.kg / units.kg
+    )
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Y2O3"].fix(
+        3.28653e-05 * units.kg / units.kg
+    )
+    m.fs.leach_solid_feed.mass_frac_comp[0, "La2O3"].fix(
+        6.77769e-05 * units.kg / units.kg
+    )
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Ce2O3"].fix(
+        0.000156161 * units.kg / units.kg
+    )
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Pr2O3"].fix(
+        1.71438e-05 * units.kg / units.kg
+    )
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Nd2O3"].fix(
+        6.76618e-05 * units.kg / units.kg
+    )
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Sm2O3"].fix(
+        1.47926e-05 * units.kg / units.kg
+    )
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Gd2O3"].fix(
+        1.0405e-05 * units.kg / units.kg
+    )
+    m.fs.leach_solid_feed.mass_frac_comp[0, "Dy2O3"].fix(
+        7.54827e-06 * units.kg / units.kg
+    )
 
     m.fs.leach.volume.fix(100 * units.gallon)
 
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01 * units.L / units.hour)
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].flow_vol.fix(
+        62.01 * units.L / units.hour
+    )
     m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Al"].fix(eps)
     m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ca"].fix(eps)
     m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Fe"].fix(eps)
@@ -578,7 +720,6 @@ def set_operating_conditions(m):
 
 
 def initialize_system(m):
-
     seq = SequentialDecomposition()
     seq.options.tear_method = "Direct"
     seq.options.iterLim = 1
@@ -681,7 +822,9 @@ def initialize_system(m):
 
     # Pass the tear_guess to the SD tool
     seq.set_guesses_for(m.fs.precipitator.cv_aqueous.properties_out[0], tear_guesses1)
-    seq.set_guesses_for(m.fs.precipitator.cv_precipitate.properties_out[0], tear_guesses2)
+    seq.set_guesses_for(
+        m.fs.precipitator.cv_precipitate.properties_out[0], tear_guesses2
+    )
     seq.set_guesses_for(m.fs.leach.liquid_inlet, tear_guesses3)
     seq.set_guesses_for(m.fs.solex_rougher.mscontactor.aqueous_inlet, tear_guesses4)
 
@@ -749,8 +892,9 @@ def initialize_system(m):
 
     seq.run(m, function)
 
+
 def solve(m):
-    scaling = TransformationFactory('core.scale_model')
+    scaling = TransformationFactory("core.scale_model")
     # Scale variables
     autoscale_variables_by_magnitude(m, overwrite=True)
     # Scale constraints
@@ -766,6 +910,7 @@ def solve(m):
 
 def display_results(m):
     m.fs.roaster.display()
+
 
 if __name__ == "__main__":
     m, results = main()

@@ -74,7 +74,6 @@ class TestSXmodel:
 
         return m
 
-
     @pytest.mark.component
     def test_structural_issues(self, SolEx_frame):
         model = SolEx_frame

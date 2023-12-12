@@ -27,7 +27,9 @@ from idaes.core.util.scaling import (
 )
 
 
-def autoscale_variables_by_magnitude(blk, overwrite: bool=False, zero_tolerance:float=1e-10):
+def autoscale_variables_by_magnitude(
+    blk, overwrite: bool = False, zero_tolerance: float = 1e-10
+):
     """
     Calculate scaling factors for all variables in a model based on their
     current magnitude.
@@ -65,7 +67,7 @@ def autoscale_variables_by_magnitude(blk, overwrite: bool=False, zero_tolerance:
             if val <= zero_tolerance:
                 sf = 1
             else:
-                sf = 1/val
+                sf = 1 / val
 
         sfx[v] = sf
 
@@ -118,10 +120,10 @@ def autoscale_constraints_by_jacobian_norm(blk, overwrite=False, zero_tolerance=
             except KeyError:
                 v_sf = 1
 
-            n2 += (jac[c_idx, v_idx]/v_sf) ** 2
+            n2 += (jac[c_idx, v_idx] / v_sf) ** 2
 
         # Calculate 2-norm for row
-        n = n2 ** 0.5
+        n = n2**0.5
 
         if n <= zero_tolerance:
             sf = 1
@@ -189,7 +191,7 @@ def gibbs_scaling_example():
 
     autoscale_variables_by_magnitude(m, overwrite=True)
 
-    scaling = TransformationFactory('core.scale_model')
+    scaling = TransformationFactory("core.scale_model")
     sm_inter = scaling.create_using(m, rename=False)
     print(f"Intermediate Condition No.: {jacobian_cond(sm_inter, scaled=False)}")
 

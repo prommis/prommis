@@ -200,7 +200,12 @@ class AqueousStateBlockkData(StateBlockData):
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)
         def molar_concentration_constraint(b, j):
-            return units.convert(b.conc_mol_comp[j]*b.params.mw[j], to_units=units.mg/units.litre) == b.conc_mass_comp[j]
+            return (
+                units.convert(
+                    b.conc_mol_comp[j] * b.params.mw[j], to_units=units.mg / units.litre
+                )
+                == b.conc_mass_comp[j]
+            )
 
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)

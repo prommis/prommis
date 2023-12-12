@@ -128,7 +128,6 @@ class FilterPressStateBlockData(StateBlockData):
             doc="Pressure",
         )
 
-
     def get_material_flow_terms(self, p, j):
         # Note conversion to kg/hour
         if j == "H2O":

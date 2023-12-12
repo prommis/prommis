@@ -38,8 +38,12 @@ from idaes.models.unit_models import Product
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.unit_models import Feed
 
-from prommis.UKy_flowsheet.filter_press.filter_press_solids_properties import FilterPressSolidsParameters
-from prommis.UKy_flowsheet.filter_press.filter_press_solution_properties import FilterPressParameters
+from prommis.UKy_flowsheet.filter_press.filter_press_solids_properties import (
+    FilterPressSolidsParameters,
+)
+from prommis.UKy_flowsheet.filter_press.filter_press_solution_properties import (
+    FilterPressParameters,
+)
 from idaes.core.util.exceptions import ConfigurationError
 
 
@@ -94,7 +98,7 @@ m.fs.sol_feed.pressure.fix(1e5 * units.Pa)
 
 m.fs.sep.cake_area = Var(
     initialize=0.1,
-    units=units.meter ** 2,
+    units=units.meter**2,
     doc="Cross-sectional area of filter cake",
 )
 # Filter cake is assumed to be incompressible, so this is constant
@@ -105,12 +109,12 @@ m.fs.sep.cake_voidage = Var(
 )
 m.fs.sep.solids_density = Var(
     initialize=2000,
-    units=units.kg / units.meter ** 3,
+    units=units.kg / units.meter**3,
     doc="Density of the solids",
 )
 m.fs.sep.filtrate_density = Var(
     initialize=1000,
-    units=units.kg / units.meter ** 3,
+    units=units.kg / units.meter**3,
     doc="Density of filtrate",
 )
 m.fs.sep.filtrate_viscosity = Var(
@@ -120,7 +124,7 @@ m.fs.sep.filtrate_viscosity = Var(
 )
 m.fs.sep.specific_surface = Var(
     initialize=1,
-    units=units.meter ** -1,
+    units=units.meter**-1,
     doc="Specific surface of the particles",
 )
 # TODO: Not sure exactly what is meant by this term - is it constant?
@@ -137,27 +141,29 @@ m.fs.sep.pressure_drop = Var(
 
 # Equation 7.3
 specific_resistance = (
-        5 * (1 - m.fs.sep.cake_voidage) ** 2
-        * m.fs.sep.specific_surface ** 2
-        / m.fs.sep.cake_voidage ** 3
+    5
+    * (1 - m.fs.sep.cake_voidage) ** 2
+    * m.fs.sep.specific_surface**2
+    / m.fs.sep.cake_voidage**3
 )
 
 # Specific resistance is constant for incompressible cakes
 m.fs.sep.specific_resistance = Var(
     initialize=specific_resistance,
-    units=units.meter ** -2,
+    units=units.meter**-2,
     doc="Specific resistance of the filter cake",
 )
 
 # Equation 7.7
 cake_volume_frac = (
-        m.fs.sep.solids_mass_frac
-        * m.fs.sep.filtrate_density
-        / (
-                (1 - m.fs.sep.solids_mass_frac)
-                * (1 - m.fs.sep.cake_voidage) * m.fs.sep.solids_density
-                - m.fs.sep.solids_mass_frac * m.fs.sep.cake_voidage * m.fs.sep.filtrate_density
-        )
+    m.fs.sep.solids_mass_frac
+    * m.fs.sep.filtrate_density
+    / (
+        (1 - m.fs.sep.solids_mass_frac)
+        * (1 - m.fs.sep.cake_voidage)
+        * m.fs.sep.solids_density
+        - m.fs.sep.solids_mass_frac * m.fs.sep.cake_voidage * m.fs.sep.filtrate_density
+    )
 )
 
 m.fs.sep.cake_volume_frac = Var(
@@ -170,7 +176,9 @@ residual_liquid_split_frac = cake_volume_frac / (1 + cake_volume_frac)
 
 m.fs.sep.split_fraction[0, "residual_liquid"].fix(residual_liquid_split_frac)
 
-print(f"Degrees of freedom before separator initialization are: {degrees_of_freedom(m)}")
+print(
+    f"Degrees of freedom before separator initialization are: {degrees_of_freedom(m)}"
+)
 
 initializer = SeparatorInitializer()
 initializer.initialize(m.fs.sep)
@@ -191,7 +199,7 @@ m.fs.sep.filtrate.display()
 m.fs.sep.residual_liquid.display()
 m.fs.filter_cake.display()
 
-#TODO: Not sure how to handle pressure drop or "volume of filtrate which has passed in time t" term
+# TODO: Not sure how to handle pressure drop or "volume of filtrate which has passed in time t" term
 
 # if set_P_constant == True and set_Q_constant == True:
 #     raise ConfigurationError(

@@ -10,7 +10,7 @@ name = "prommis"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse",
+    "idaes-pse @ git+https://github.com/IDAES/idaes-pse@main",
     "pyomo",
 ]
 

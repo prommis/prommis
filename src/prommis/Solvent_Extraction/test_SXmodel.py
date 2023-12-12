@@ -10,9 +10,9 @@ from idaes.core.initialization.block_triangularization import (
 )
 from idaes.core.initialization import InitializationStatus
 
-from .SolventExtraction import SolventExtraction
-from .REEAqdistribution import REESolExAqParameters
-from .REEOgdistribution import REESolExOgParameters
+from prommis.Solvent_Extraction.SolventExtraction import SolventExtraction
+from prommis.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
+from prommis.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
 
 solver = get_solver()
 

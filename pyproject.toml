@@ -16,6 +16,12 @@ dependencies = [
 
 [tool.setuptools_scm]
 
+[tool.pytest.ini_options]
+addopts = """
+--pyargs prommis
+--import-mode=importlib
+"""
+
 [tool.pylint.main]
 py-version = "3.8"
 

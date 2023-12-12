@@ -17,26 +17,22 @@ Authors: Marcus Holly
 """
 
 
+from idaes.core import FlowsheetBlock
+from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.models.unit_models import Feed, Product
+from idaes.models.unit_models.separator import (
+    Separator,
+    SeparatorInitializer,
+    SplittingType,
+)
 from pyomo.environ import (
     ConcreteModel,
     SolverFactory,
     TransformationFactory,
-    units,
     Var,
+    units,
 )
 from pyomo.network import Arc
-
-from idaes.core import (
-    FlowsheetBlock,
-)
-from idaes.models.unit_models.separator import (
-    Separator,
-    SplittingType,
-    SeparatorInitializer,
-)
-from idaes.models.unit_models import Product
-from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.models.unit_models import Feed
 
 from prommis.UKy_flowsheet.filter_press.filter_press_solids_properties import (
     FilterPressSolidsParameters,
@@ -44,7 +40,6 @@ from prommis.UKy_flowsheet.filter_press.filter_press_solids_properties import (
 from prommis.UKy_flowsheet.filter_press.filter_press_solution_properties import (
     FilterPressParameters,
 )
-
 
 # Build flowsheet
 m = ConcreteModel()

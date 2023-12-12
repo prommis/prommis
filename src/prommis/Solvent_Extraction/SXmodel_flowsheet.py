@@ -1,19 +1,15 @@
-from pyomo.environ import ConcreteModel, SolverFactory
-
-from idaes.core import FlowsheetBlock, FlowDirection
-from idaes.core.util.model_statistics import degrees_of_freedom as dof
+from idaes.core import FlowDirection, FlowsheetBlock
+from idaes.core.initialization import InitializationStatus
 from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )
-from idaes.core.initialization import InitializationStatus
+from idaes.core.util.model_statistics import degrees_of_freedom as dof
+from pyomo.environ import ConcreteModel, SolverFactory
 
-from prommis.Solvent_Extraction.SolventExtraction import SolventExtraction
-
+from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
 from prommis.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
-from prommis.leaching.leach_solution_properties import (
-    LeachSolutionParameters,
-)
+from prommis.Solvent_Extraction.SolventExtraction import SolventExtraction
 
 m = ConcreteModel()
 m.fs = FlowsheetBlock(dynamic=False)

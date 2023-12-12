@@ -25,8 +25,9 @@ Python dictionaries that are loaded:
 __author__ = "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, and M. Zamarripa)"
 __version__ = "1.0.0"
 
-import os
 import json
+import os
+
 from pyomo.common.fileutils import this_file_dir
 
 directory = this_file_dir()

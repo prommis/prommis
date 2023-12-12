@@ -1,37 +1,24 @@
 import pytest
-from pyomo.environ import (
-    ConcreteModel,
-    value,
-    assert_optimal_termination,
-)
-
-from idaes.core import (
-    FlowsheetBlock,
-)
-
-from idaes.core.solvers import get_solver
-from idaes.core.util.model_statistics import (
-    degrees_of_freedom,
-    number_variables,
-    number_total_constraints,
-    number_unused_variables,
-)
-
-from idaes.core.util.scaling import (
-    unscaled_variables_generator,
-)
-
+from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,
     InitializationStatus,
 )
+from idaes.core.solvers import get_solver
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.model_statistics import (
+    degrees_of_freedom,
+    number_total_constraints,
+    number_unused_variables,
+    number_variables,
+)
+from idaes.core.util.scaling import unscaled_variables_generator
+from pyomo.environ import ConcreteModel, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
-from prommis.precipitate.precipitator import Precipitator
-from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
-
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitator import Precipitator
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing

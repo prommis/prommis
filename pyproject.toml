@@ -41,6 +41,10 @@ disable = [
 enable = [
     "import-error",
     "unused-import",
+    "wildcard-import",
+    "wrong-import-order",
+    "wrong-import-position",
+    "ungrouped-imports",
     "implicit-str-concat",
     "dangerous-default-value",
 ]

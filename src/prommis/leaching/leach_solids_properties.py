@@ -16,23 +16,17 @@ Initial property package for West Kentucky No. 13 coal refuse.
 Authors: Andrew Lee
 """
 
-from pyomo.environ import (
-    Constraint,
-    Param,
-    units,
-    Var,
-)
-
 from idaes.core import (
-    declare_process_block_class,
+    Component,
+    MaterialFlowBasis,
+    Phase,
     PhysicalParameterBlock,
     StateBlock,
     StateBlockData,
-    Component,
-    Phase,
-    MaterialFlowBasis,
+    declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
+from pyomo.environ import Constraint, Param, Var, units
 
 
 # -----------------------------------------------------------------------------

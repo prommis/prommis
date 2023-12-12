@@ -1,18 +1,16 @@
 import pytest
-
-from pyomo.environ import check_optimal_termination, ConcreteModel, value
-
-from idaes.core import FlowsheetBlock, FlowDirection
-from idaes.core.solvers import get_solver
-from idaes.core.util import DiagnosticsToolbox
+from idaes.core import FlowDirection, FlowsheetBlock
+from idaes.core.initialization import InitializationStatus
 from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )
-from idaes.core.initialization import InitializationStatus
+from idaes.core.solvers import get_solver
+from idaes.core.util import DiagnosticsToolbox
+from pyomo.environ import ConcreteModel, check_optimal_termination, value
 
-from prommis.Solvent_Extraction.SolventExtraction import SolventExtraction
 from prommis.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
 from prommis.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
+from prommis.Solvent_Extraction.SolventExtraction import SolventExtraction
 
 solver = get_solver()
 

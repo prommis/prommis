@@ -16,35 +16,32 @@ flowsheet to test the roster unit model
 authors: J. Ma
 """
 
+import idaes.core.util.scaling as iscale
+
+# Import IDAES standard unit model
+import idaes.logger as idaeslog
+
 # Import Pyomo libraries
 import pyomo.environ as pyo
 
 # Import IDAES core
 from idaes.core import FlowsheetBlock
-from idaes.core.util.model_statistics import degrees_of_freedom
-import idaes.core.util.scaling as iscale
-from idaes.core.solvers import get_solver
-
-from prommis.roasting.ree_feed_roaster import REEFeedRoaster
-
-# Import IDAES standard unit model
-import idaes.logger as idaeslog
-
-from idaes.models.properties.modular_properties.base.generic_property import (
-    GenericParameterBlock,
-)
-from idaes.models_extra.power_generation.properties.natural_gas_PR import (
-    get_prop,
-    EosType,
-)
-
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,
     InitializationStatus,
 )
+from idaes.core.solvers import get_solver
+from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.models.properties.modular_properties.base.generic_property import (
+    GenericParameterBlock,
+)
+from idaes.models_extra.power_generation.properties.natural_gas_PR import (
+    EosType,
+    get_prop,
+)
 
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
-
+from prommis.roasting.ree_feed_roaster import REEFeedRoaster
 
 _log = idaeslog.getModelLogger(__name__)
 

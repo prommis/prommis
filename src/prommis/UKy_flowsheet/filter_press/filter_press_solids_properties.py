@@ -16,25 +16,19 @@ Initial property package for solids in the filter press.
 Authors: Marcus Holly
 """
 
-from pyomo.environ import (
-    Constraint,
-    Param,
-    units,
-    Var,
-)
-
 from idaes.core import (
-    declare_process_block_class,
+    Component,
+    EnergyBalanceType,
+    MaterialBalanceType,
+    MaterialFlowBasis,
+    Phase,
     PhysicalParameterBlock,
     StateBlock,
     StateBlockData,
-    Component,
-    Phase,
-    MaterialFlowBasis,
-    MaterialBalanceType,
-    EnergyBalanceType,
+    declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
+from pyomo.environ import Constraint, Param, Var, units
 
 
 # -----------------------------------------------------------------------------

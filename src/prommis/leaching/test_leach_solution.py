@@ -1,8 +1,6 @@
 import pytest
-
-from pyomo.environ import ConcreteModel, Constraint, Param, Var
-
 from idaes.core import FlowsheetBlock
+from pyomo.environ import ConcreteModel, Constraint, Param, Var
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 

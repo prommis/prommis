@@ -1,24 +1,20 @@
+from idaes.core import FlowsheetBlock
+from idaes.core.initialization import (
+    BlockTriangularizationInitializer,
+    InitializationStatus,
+)
+from idaes.core.util.scaling import get_jacobian, jacobian_cond
+from idaes.models.properties.activity_coeff_models.methane_combustion_ideal import (
+    MethaneParameterBlock as MethaneCombustionParameterBlock,
+)
+from idaes.models.unit_models.gibbs_reactor import GibbsReactor
 from pyomo.environ import (
     ConcreteModel,
     SolverFactory,
     Suffix,
     TransformationFactory,
-    value,
     Var,
-)
-
-from idaes.core import FlowsheetBlock
-from idaes.models.unit_models.gibbs_reactor import GibbsReactor
-from idaes.models.properties.activity_coeff_models.methane_combustion_ideal import (
-    MethaneParameterBlock as MethaneCombustionParameterBlock,
-)
-from idaes.core.initialization import (
-    BlockTriangularizationInitializer,
-    InitializationStatus,
-)
-from idaes.core.util.scaling import (
-    get_jacobian,
-    jacobian_cond,
+    value,
 )
 
 

@@ -15,13 +15,12 @@ __author__ = "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, and M. Zamar
 __version__ = "1.0.0"
 
 import pyomo.environ as pyo
-from pyomo.environ import units as pyunits
-from pyomo.util.check_units import assert_units_consistent
-from pyomo.environ import check_optimal_termination
-
 from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
+from pyomo.environ import check_optimal_termination
+from pyomo.environ import units as pyunits
+from pyomo.util.check_units import assert_units_consistent
 
 from prommis.UKy_flowsheet.costing.ree_plant_capcost import (
     QGESSCosting,

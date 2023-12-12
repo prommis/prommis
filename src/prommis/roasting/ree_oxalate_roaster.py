@@ -61,24 +61,20 @@ variables.
 
 """
 
-# Import Pyomo libraries
-from pyomo.common.config import ConfigBlock, ConfigValue, Bool
-
-# Import IDAES cores
-from idaes.core import declare_process_block_class, UnitModelBlockData, useDefault
-
-from idaes.core.util.config import is_physical_parameter_block, DefaultBool
+import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
 
-# Additional import for the unit operation
-from pyomo.environ import (
-    Var,
-    Param,
-    Set,
-    units as pyunits,
-)
-import idaes.core.util.scaling as iscale
+# Import IDAES cores
+from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.solvers import get_solver
+from idaes.core.util.config import DefaultBool, is_physical_parameter_block
+
+# Import Pyomo libraries
+from pyomo.common.config import Bool, ConfigBlock, ConfigValue
+
+# Additional import for the unit operation
+from pyomo.environ import Param, Set, Var
+from pyomo.environ import units as pyunits
 
 __author__ = "Jinliang Ma"
 __version__ = "1.0.0"

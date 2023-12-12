@@ -49,12 +49,6 @@ from prommis.uky.uky_flowsheet import (
     solve,
 )
 
-# @pytest.fixture(scope="module")
-# def model():
-#     m = build()
-#
-#     return
-
 
 class TestUKyFlowsheet:
     @pytest.fixture(scope="class")

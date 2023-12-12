@@ -9,8 +9,5 @@ IDAES_MARKERS = {
 
 
 def pytest_configure(config: Config):
-
     for spec, descr in IDAES_MARKERS.items():
-        config.addinivalue_line(
-            "markers", f"{spec}: {descr}"
-        )
+        config.addinivalue_line("markers", f"{spec}: {descr}")

@@ -1,3 +1,12 @@
+from pyomo.environ import (
+    ConcreteModel,
+    SolverFactory,
+    Suffix,
+    TransformationFactory,
+    Var,
+    value,
+)
+
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,
@@ -8,14 +17,6 @@ from idaes.models.properties.activity_coeff_models.methane_combustion_ideal impo
     MethaneParameterBlock as MethaneCombustionParameterBlock,
 )
 from idaes.models.unit_models.gibbs_reactor import GibbsReactor
-from pyomo.environ import (
-    ConcreteModel,
-    SolverFactory,
-    Suffix,
-    TransformationFactory,
-    Var,
-    value,
-)
 
 
 def autoscale_variables_by_magnitude(

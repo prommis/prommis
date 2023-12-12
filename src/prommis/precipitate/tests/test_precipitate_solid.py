@@ -1,6 +1,8 @@
-import pytest
-from idaes.core import FlowsheetBlock
 from pyomo.environ import ConcreteModel, Var
+
+from idaes.core import FlowsheetBlock
+
+import pytest
 
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 

@@ -1,3 +1,7 @@
+from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
+from pyomo.environ import Constraint, Param
+from pyomo.network import Port
+
 from idaes.core import (
     FlowDirection,
     UnitModelBlockData,
@@ -6,9 +10,6 @@ from idaes.core import (
 )
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.models.unit_models.mscontactor import MSContactor
-from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Param
-from pyomo.network import Port
 
 Stream_Config = ConfigDict()
 

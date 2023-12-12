@@ -1,10 +1,11 @@
+from pyomo.environ import ConcreteModel, SolverFactory
+
 from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.initialization import InitializationStatus
 from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
-from pyomo.environ import ConcreteModel, SolverFactory
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters

@@ -17,6 +17,18 @@ Author: Marcus Holly
 """
 
 
+from pyomo.environ import (
+    ConcreteModel,
+    Constraint,
+    SolverFactory,
+    Suffix,
+    TransformationFactory,
+    Var,
+    units,
+)
+from pyomo.network import Arc, SequentialDecomposition
+from pyomo.util.check_units import assert_units_consistent
+
 from idaes.core import (
     FlowDirection,
     FlowsheetBlock,
@@ -44,17 +56,6 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
     get_prop,
 )
-from pyomo.environ import (
-    ConcreteModel,
-    Constraint,
-    SolverFactory,
-    Suffix,
-    TransformationFactory,
-    Var,
-    units,
-)
-from pyomo.network import Arc, SequentialDecomposition
-from pyomo.util.check_units import assert_units_consistent
 
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters

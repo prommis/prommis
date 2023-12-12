@@ -15,11 +15,12 @@ Simple leaching model for West Kentucky No. 13 coal refuse in H2SO4.
 
 Authors: Andrew Lee
 """
+from pyomo.common.config import ConfigValue
+from pyomo.environ import Constraint, Param, Set, Var, units
+
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
 from idaes.core.base import property_meta
 from idaes.core.util.misc import add_object_reference
-from pyomo.common.config import ConfigValue
-from pyomo.environ import Constraint, Param, Set, Var, units
 
 
 # -----------------------------------------------------------------------------

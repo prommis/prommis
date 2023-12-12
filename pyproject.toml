@@ -26,6 +26,12 @@ addopts = """
 -rsx
 """
 
+[tool.isort]
+profile = "black"
+known_pyomo = "pyomo"
+known_idaes = "idaes"
+sections = "FUTURE,STDLIB,PYOMO,IDAES,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
+
 [tool.pylint.main]
 py-version = "3.8"
 

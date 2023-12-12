@@ -16,6 +16,8 @@ Initial property package for precipitate.
 Authors: Alejandro Garciadiego
 """
 
+from pyomo.environ import Param, Set, Var, units
+
 import idaes.core.util.scaling as iscale
 from idaes.core import (
     Component,
@@ -28,7 +30,6 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
-from pyomo.environ import Param, Set, Var, units
 
 
 # -----------------------------------------------------------------------------

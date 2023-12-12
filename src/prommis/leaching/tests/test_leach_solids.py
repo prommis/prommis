@@ -1,6 +1,8 @@
-import pytest
-from idaes.core import FlowsheetBlock
 from pyomo.environ import ConcreteModel, Constraint, Var
+
+from idaes.core import FlowsheetBlock
+
+import pytest
 
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 

@@ -16,13 +16,13 @@ flowsheet to test the roster unit model
 authors: J. Ma
 """
 
+# Import Pyomo libraries
+import pyomo.environ as pyo
+
 import idaes.core.util.scaling as iscale
 
 # Import IDAES standard unit model
 import idaes.logger as idaeslog
-
-# Import Pyomo libraries
-import pyomo.environ as pyo
 
 # Import IDAES core
 from idaes.core import FlowsheetBlock

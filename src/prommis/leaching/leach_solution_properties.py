@@ -16,6 +16,8 @@ Initial property package for REE leach solutions from coal refuse.
 Authors: Andrew Lee
 """
 
+from pyomo.environ import Constraint, Param, Set, Var, units
+
 from idaes.core import (
     Component,
     MaterialFlowBasis,
@@ -27,7 +29,6 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
-from pyomo.environ import Constraint, Param, Set, Var, units
 
 
 # -----------------------------------------------------------------------------

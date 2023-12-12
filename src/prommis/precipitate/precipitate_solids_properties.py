@@ -16,6 +16,9 @@ Initial property package for West Kentucky No. 13 coal refuse.
 Authors: Alejandro Garciadiego
 """
 
+from pyomo.common.config import ConfigValue
+from pyomo.environ import Param, Var, units
+
 import idaes.core.util.scaling as iscale
 from idaes.core import (
     MaterialFlowBasis,
@@ -26,8 +29,6 @@ from idaes.core import (
     declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
-from pyomo.common.config import ConfigValue
-from pyomo.environ import Param, Var, units
 
 # -----------------------------------------------------------------------------
 # Precipitate solution property package

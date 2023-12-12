@@ -1,4 +1,6 @@
-import pytest
+from pyomo.environ import ConcreteModel, assert_optimal_termination, value
+from pyomo.util.check_units import assert_units_consistent
+
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,
@@ -13,8 +15,8 @@ from idaes.core.util.model_statistics import (
     number_variables,
 )
 from idaes.core.util.scaling import unscaled_variables_generator
-from pyomo.environ import ConcreteModel, assert_optimal_termination, value
-from pyomo.util.check_units import assert_units_consistent
+
+import pytest
 
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters

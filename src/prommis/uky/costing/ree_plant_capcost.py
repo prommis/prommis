@@ -35,6 +35,13 @@ __version__ = "1.0.0"
 import textwrap
 from sys import stdout
 
+from pyomo.core.base.expression import ScalarExpression
+from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
+from pyomo.environ import Constraint, Expression, Param, Var
+from pyomo.environ import units as pyunits
+from pyomo.environ import value
+from pyomo.util.calc_var_value import calculate_variable_from_constraint
+
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
 from idaes.core import (
@@ -43,17 +50,10 @@ from idaes.core import (
     register_idaes_currency_units,
 )
 from idaes.core.util.tables import stream_table_dataframe_to_string
-from pandas import DataFrame
-from pyomo.core.base.expression import ScalarExpression
-from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
-from pyomo.environ import Constraint, Expression, Param, Var
-from pyomo.environ import units as pyunits
-from pyomo.environ import value
-from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
-from prommis.uky.costing.costing_dictionaries import (
-    load_REE_costing_dictionary,
-)
+from pandas import DataFrame
+
+from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
 
 _log = idaeslog.getLogger(__name__)
 

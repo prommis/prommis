@@ -78,6 +78,13 @@ in the leach_solids_properties are mapped. The other species are throwed away.
 
 """
 
+# Import Pyomo libraries
+from pyomo.common.config import Bool, ConfigBlock, ConfigValue
+
+# Additional import for the unit operation
+from pyomo.environ import Param, Set, Var
+from pyomo.environ import units as pyunits
+
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
 
@@ -86,13 +93,6 @@ from idaes.core import UnitModelBlockData, declare_process_block_class, useDefau
 from idaes.core.solvers import get_solver
 from idaes.core.util.config import DefaultBool, is_physical_parameter_block
 from idaes.core.util.constants import Constants as const
-
-# Import Pyomo libraries
-from pyomo.common.config import Bool, ConfigBlock, ConfigValue
-
-# Additional import for the unit operation
-from pyomo.environ import Param, Set, Var
-from pyomo.environ import units as pyunits
 
 __author__ = "Jinliang Ma"
 __version__ = "1.0.0"

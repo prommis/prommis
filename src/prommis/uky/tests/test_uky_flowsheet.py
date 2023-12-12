@@ -15,7 +15,9 @@ Tests for UKy flowsheet.
 
 """
 
-import pytest
+from pyomo.network import Arc
+from pyomo.util.check_units import assert_units_consistent
+
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
@@ -28,8 +30,8 @@ from idaes.models.unit_models.mscontactor import MSContactor
 from idaes.models.unit_models.product import Product
 from idaes.models.unit_models.separator import Separator
 from idaes.models.unit_models.solid_liquid import SLSeparator
-from pyomo.network import Arc
-from pyomo.util.check_units import assert_units_consistent
+
+import pytest
 
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters

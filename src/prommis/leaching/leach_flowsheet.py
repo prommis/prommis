@@ -18,9 +18,6 @@ Authors: Andrew Lee
 
 from math import log10
 
-from idaes.core import FlowsheetBlock
-from idaes.core.util import DiagnosticsToolbox
-from idaes.models.unit_models.mscontactor import MSContactor, MSContactorInitializer
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
@@ -31,6 +28,10 @@ from pyomo.environ import (
     units,
     value,
 )
+
+from idaes.core import FlowsheetBlock
+from idaes.core.util import DiagnosticsToolbox
+from idaes.models.unit_models.mscontactor import MSContactor, MSContactorInitializer
 
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters

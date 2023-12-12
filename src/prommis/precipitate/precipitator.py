@@ -15,6 +15,9 @@ Basic precipitator model
 """
 
 
+# Import Pyomo libraries
+from pyomo.common.config import Bool, ConfigBlock, ConfigValue
+
 import idaes.logger as idaeslog
 
 # Import IDAES cores
@@ -28,9 +31,6 @@ from idaes.core.util.config import (
     is_physical_parameter_block,
     is_reaction_parameter_block,
 )
-
-# Import Pyomo libraries
-from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
 _log = idaeslog.getLogger(__name__)
 

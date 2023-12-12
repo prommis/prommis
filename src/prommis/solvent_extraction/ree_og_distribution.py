@@ -1,3 +1,5 @@
+from pyomo.environ import Param, Set, Var, units
+
 from idaes.core import (
     Component,
     MaterialFlowBasis,
@@ -8,7 +10,6 @@ from idaes.core import (
     declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
-from pyomo.environ import Param, Set, Var, units
 
 
 @declare_process_block_class("REESolExOgParameters")

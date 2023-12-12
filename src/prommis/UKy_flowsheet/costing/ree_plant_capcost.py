@@ -56,7 +56,7 @@ from idaes.core import (
     FlowsheetCostingBlockData,
     register_idaes_currency_units,
 )
-from costing_dictionaries import (
+from prommis.UKy_flowsheet.costing.costing_dictionaries import (
     load_REE_costing_dictionary,
 )
 

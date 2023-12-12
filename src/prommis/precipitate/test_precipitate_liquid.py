@@ -4,7 +4,7 @@ from pyomo.environ import ConcreteModel, Constraint, Var
 
 from idaes.core import FlowsheetBlock
 
-from precipitate_liquid_properties import AqueousParameter
+from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 
 
 @pytest.mark.unit

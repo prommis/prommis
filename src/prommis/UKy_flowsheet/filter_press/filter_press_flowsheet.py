@@ -38,10 +38,9 @@ from idaes.models.unit_models import Product
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.unit_models import Feed
 
-from idaes.UKy_flowsheet.filter_press.filter_press_solids_properties import FilterPressSolidsParameters
-from idaes.UKy_flowsheet.filter_press.filter_press_solution_properties import FilterPressParameters
+from prommis.UKy_flowsheet.filter_press.filter_press_solids_properties import FilterPressSolidsParameters
+from prommis.UKy_flowsheet.filter_press.filter_press_solution_properties import FilterPressParameters
 from idaes.core.util.exceptions import ConfigurationError
-
 
 
 # Build flowsheet

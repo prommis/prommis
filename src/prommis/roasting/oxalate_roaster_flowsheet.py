@@ -25,7 +25,7 @@ from idaes.core import FlowsheetBlock
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.solvers import get_solver
 
-from ree_oxalate_roaster import REEOxalateRoaster
+from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 
 # Import IDAES standard unit model
 import idaes.logger as idaeslog
@@ -43,10 +43,7 @@ from idaes.core.initialization import (
     InitializationStatus,
 )
 
-import sys
-
-sys.path.append("../precipitate")
-from precipitator_simple.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 
 _log = idaeslog.getModelLogger(__name__)
 

@@ -4,7 +4,7 @@ from pyomo.environ import ConcreteModel, Var
 
 from idaes.core import FlowsheetBlock
 
-from precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 
 
 @pytest.mark.unit

@@ -28,9 +28,9 @@ from idaes.core.initialization import (
 )
 from pyomo.util.check_units import assert_units_consistent
 
-from precipitator import Precipitator
-from precipitate_solids_properties import PrecipitateParameters
-from precipitate_liquid_properties import AqueousParameter
+from prommis.precipitate.precipitator import Precipitator
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 

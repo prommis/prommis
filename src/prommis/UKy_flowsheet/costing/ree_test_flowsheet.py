@@ -23,7 +23,7 @@ from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 
-from ree_plant_capcost import (
+from prommis.UKy_flowsheet.costing.ree_plant_capcost import (
     QGESSCosting,
     QGESSCostingData,
 )

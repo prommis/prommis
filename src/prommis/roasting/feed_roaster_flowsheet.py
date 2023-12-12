@@ -25,7 +25,7 @@ from idaes.core.util.model_statistics import degrees_of_freedom
 import idaes.core.util.scaling as iscale
 from idaes.core.solvers import get_solver
 
-from ree_feed_roaster import REEFeedRoaster
+from prommis.roasting.ree_feed_roaster import REEFeedRoaster
 
 # Import IDAES standard unit model
 import idaes.logger as idaeslog
@@ -40,9 +40,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 
 from idaes.core.initialization import BlockTriangularizationInitializer, InitializationStatus
 
-import sys
-sys.path.append('../../leaching')
-from leach_solids_properties import CoalRefuseParameters
+from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 
 
 _log = idaeslog.getModelLogger(__name__)

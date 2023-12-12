@@ -96,3 +96,29 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run pytest
         run: pytest  --pyargs prommis
+
+  docs:
+    name: docs (${{ matrix.install-variant }}/py${{ matrix.python-version }}/${{ matrix.os }})
+    runs-on: ${{ matrix.runner-image }}
+    needs: [code-formatting]
+    strategy:
+      fail-fast: false
+      matrix:
+        install-variant: [dev]
+        python-version:
+          - '3.11'
+        os:
+          - linux
+          - win64
+        include:
+          - os: linux
+            runner-image: ubuntu-20.04
+          - os: win64
+            runner-image: windows-2022
+    steps:
+      - uses: prommis/prommis/.github/actions/install@main
+        with:
+          variant: ${{ matrix.install-variant }}
+          python-version: ${{ matrix.python-version }}
+      - name: Build docs with Jupyter Book
+        run: jupyter-book build docs/

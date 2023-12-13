@@ -36,3 +36,37 @@ dependencies = [
 ]
 
 [tool.setuptools_scm]
+
+[tool.pylint.main]
+py-version = "3.8"
+
+[tool.pylint."messages control"]
+disable = [
+    "E", # all errors
+    "W", # all warnings
+    "C", # all conventions
+    "R", # all refactor
+]
+# see https://pylint.readthedocs.io/en/v2.17.7/user_guide/messages/index.html
+# for a list of all messages
+enable = [
+    "import-error",
+    "unused-import",
+    "wildcard-import",
+    "wrong-import-order",
+    "wrong-import-position",
+    "ungrouped-imports",
+    "implicit-str-concat",
+    "dangerous-default-value",
+    "invalid-name",
+]
+module-naming-style = "snake_case"
+const-naming-style = "any"
+class-naming-style = "any"
+function-naming-style = "any"
+method-naming-style = "any"
+attr-naming-style = "any"
+argument-naming-style = "any"
+variable-naming-style = "any"
+class-attribute-naming-style = "any"
+inlinevar-naming-style = "any"

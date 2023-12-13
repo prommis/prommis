@@ -1,0 +1,138 @@
+name: Core checks
+
+on:
+  push:
+    branches:
+      - main
+      - release/*
+  repository_dispatch:
+    # to run this, send a POST API call at repos/IDAES/idaes-pse/dispatches with the specified event_type
+    # e.g. `gh repos/IDAES/idaes-pse/dispatches -F event_type=ci_run_tests`
+    types: [ci_run_tests]
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git hash (optional)
+        required: false
+  pull_request:
+    types:
+      - opened
+      # ready_for_review occurs when a draft PR is turned to non-draft
+      - ready_for_review
+      # synchronize occurs whenever commits are pushed to the PR branch
+      - synchronize
+
+concurrency:
+  # NOTE: the value of `group` should be chosen carefully,
+  # otherwise we might end up over- or under-canceling workflow runs
+  # e.g. if we want to have Codecov results for each commit on `main`,
+  # we should use something `github.sha` instead of `github.ref_name`
+  # to avoid over-canceling runs from `main`
+  # in which case we'd need to access the PR number from somewhere else rather than `github.ref_name`
+  # to avoid under-canceling runs from PRs
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  PYTEST_ADDOPTS: "--color=yes"
+  PIP_PROGRESS_BAR: "off"
+
+defaults:
+  run:
+    # -l: login shell, needed when using Conda run:
+    shell: bash -l {0}
+
+jobs:
+
+  code-formatting:
+    name: Check code formatting (Black)
+    # OS and/or Python version don't make a difference, so we choose ubuntu and 3.10 for performance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install Black
+        # unlike the other jobs, we don't need to install IDAES and/or all the dev dependencies,
+        # but we still want to specify the Black version to use in requirements-dev.txt for local development
+        # so we extract the relevant line and pass it to a simple `pip install`
+        run: |
+          # we store the version
+          black_requirement="$(grep 'black.*==' requirements-dev.txt)"
+          pip install "$black_requirement"
+      - name: Run Black to verify that the committed code is formatted
+        run: |
+          black --check .
+
+  code-linting:
+    name: Run linter (Pylint)
+    # OS and/or Python version don't make a difference, so we choose ubuntu and 3.10 for performance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: prommis/prommis/.github/actions/install@main
+        with:
+          variant: dev
+          python-version: "3.11"
+      - name: Run Pylint (pyproject.toml)
+        run: |
+          pylint prommis
+
+  pytest:
+    # description: Run pytest test suite
+    
+    name: pytest (${{ matrix.install-variant }}/py${{ matrix.python-version }}/${{ matrix.os }})
+    runs-on: ${{ matrix.runner-image }}
+    needs: [code-formatting, code-linting]
+    strategy:
+      fail-fast: false
+      matrix:
+        install-variant:
+          - standard
+          - dev
+        python-version:
+          - '3.8'
+        #   - '3.9'
+        #   - '3.10'
+          - '3.11'
+        os:
+          - linux
+          - win64
+        include:
+          - os: linux
+            runner-image: ubuntu-20.04
+          - os: win64
+            runner-image: windows-2022
+    steps:
+      - uses: prommis/prommis/.github/actions/install@main
+        with:
+          variant: ${{ matrix.install-variant }}
+          python-version: ${{ matrix.python-version }}
+      - name: Run pytest
+        run: pytest --pyargs prommis --xfail-known-issues
+
+  docs:
+    name: docs (${{ matrix.install-variant }}/py${{ matrix.python-version }}/${{ matrix.os }})
+    runs-on: ${{ matrix.runner-image }}
+    needs: [code-formatting]
+    strategy:
+      fail-fast: false
+      matrix:
+        install-variant: [dev]
+        python-version:
+          - '3.11'
+        os:
+          - linux
+          - win64
+        include:
+          - os: linux
+            runner-image: ubuntu-20.04
+          - os: win64
+            runner-image: windows-2022
+    steps:
+      - uses: prommis/prommis/.github/actions/install@main
+        with:
+          variant: ${{ matrix.install-variant }}
+          python-version: ${{ matrix.python-version }}
+      - name: Build docs with Jupyter Book
+        run: jupyter-book build docs/

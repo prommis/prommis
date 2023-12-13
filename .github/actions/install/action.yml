@@ -1,0 +1,70 @@
+name: Install PrOMMiS
+description: Install PrOMMiS and all required dependencies
+
+inputs:
+
+  variant:
+    description: "Which installation variant to use. Choices: standard (default); dev"
+    required: false
+    default: standard
+
+  python-version:
+    description: "Python version to use for installation"
+    required: true
+
+  conda-environment:
+    description: "Name of the Conda environment to use for installation."
+    required: false
+    default: prommis-dev
+
+  info-packages:
+    description: Packages to show info for
+    required: false
+    default: prommis idaes-pse pyomo
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Set up Conda environment
+      uses: conda-incubator/setup-miniconda@v2.3.0
+      with:
+        activate-environment: ${{ inputs.conda-environment }}
+        python-version: ${{ inputs.python-version }}
+
+    - name: Check out repository
+      if: inputs.variant == 'dev'
+      uses: actions/checkout@v3
+    - name: Install using pip (requirements-dev.txt)
+      if: inputs.variant == 'dev'
+      shell: bash -l {0}
+      run: |
+        pip install --progress-bar off -r requirements-dev.txt
+
+    - name: Install using pip (git+... URL)
+      if: inputs.variant == 'standard'
+      shell: bash -l {0}
+      env:
+        _pip_install_url: ${{ github.server_url }}/${{ github.repository }}@${{ github.ref }}
+      run: |
+        pip install --progress-bar off "git+$_pip_install_url" idaes-pse pytest
+
+    - name: Install extensions
+      shell: bash -l {0}
+      run: |
+        echo '::group::Output of "idaes get-extensions" command'
+        idaes get-extensions --verbose
+        echo '::endgroup::'
+
+    - name: Display environment info
+      shell: bash -l {0}
+      run: |
+        echo '::group::Output of "conda list"'
+        conda list
+        echo '::endgroup::'
+        echo '::group::Output of "pip list"'
+        pip list
+        echo '::endgroup::'
+        echo '::group::Output of "pip show ${{ inputs.info-packages }}"'
+        pip show ${{ inputs.info-packages }}
+        echo '::endgroup::'

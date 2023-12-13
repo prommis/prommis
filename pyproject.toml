@@ -74,10 +74,15 @@ inlinevar-naming-style = "any"
 [project.entry-points.pytest11]
 known_issues = "prommis._testing_utils.known_issues"
 
-
 [tool.pytest.ini_options]
 addopts = """
 --pyargs prommis
 --import-mode=importlib
 -rsx
 """
+
+[tool.isort]
+profile = "black"
+known_pyomo = "pyomo"
+known_idaes = "idaes"
+sections = "FUTURE,STDLIB,PYOMO,IDAES,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"

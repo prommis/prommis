@@ -3,6 +3,7 @@ pylint==2.17.7
 astroid==2.15.8
 pytest==7.*
 jupyter-book==0.15.*
+isort
 
 idaes-pse @ git+https://github.com/IDAES/idaes-pse@main
 

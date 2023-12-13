@@ -113,7 +113,7 @@ jobs:
           pip install pytest
           pip show pytest
       - name: Run pytest
-        run: pytest --pyargs prommis --xfail-known-issues
+        run: pytest --pyargs prommis
 
   docs:
     name: docs (${{ matrix.install-variant }}/py${{ matrix.python-version }}/${{ matrix.os }})

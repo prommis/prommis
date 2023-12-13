@@ -1,104 +1,38 @@
 [build-system]
 requires = [
-    "setuptools>=61",
-    "wheel",
-    "setuptools_scm[toml]"
+    "setuptools >= 64",
+    "setuptools_scm >= 7",
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
-    name = "prommis_workspace"
-    description = "prommis workspace"
-    readme = "README.md"
-    version = "0.23.11" #Version format 0.YY.MM
-    license = {text="BSD"}
-    requires-python = ">=3.8"
-    authors = [
-        {name="The Prommis Project"}
-    ]
-    classifiers = [
-            "Development Status :: 3 - Alpha",
-            "Intended Audience :: End Users/Desktop",
-            "Intended Audience :: Science/Research",
-            "License :: OSI Approved :: BSD License",
-            "Natural Language :: English",
-            "Operating System :: MacOS",
-            "Operating System :: Microsoft :: Windows",
-            "Operating System :: Unix",
-            "Programming Language :: Python",
-            "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.8",
-            "Programming Language :: Python :: 3.9",
-            "Programming Language :: Python :: 3.10",
-            "Programming Language :: Python :: 3.11",
-            "Programming Language :: Python :: Implementation :: CPython",
-            "Topic :: Scientific/Engineering :: Mathematics",
-            "Topic :: Scientific/Engineering :: Chemistry",
-            "Topic :: Software Development :: Libraries :: Python Modules",
-    ]
-    dependencies = [
-        # Don't version setuptools, various bits complain
-        "setuptools",
-        # For running tests
-        "pytest",
-    ]
-    keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
-
-[project.optional-dependencies]
-# Just for developers (they should also add 'jb')
-dev = [
-    # For adding copyright headers (see addheader.yml and the readme)
-    "addheader >= 0.3.0",
-    # Dev versions of idaes/idaes-ui
-    # Not handled by the toml file yet, see requirements-dev.txt
-    #"git+https://github.com/idaes/idaes-pse.git@main",
-    #"git+https://github.com/IDAES/idaes-ui.git@main"
+name = "prommis"
+readme = "README.md"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: Unix",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-# For packaging
-pkg = [
-    "build",
-    "twine"
+keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
+dynamic = ["version"]
+dependencies = [
+    "idaes-pse @ git+https://github.com/IDAES/idaes-pse@main",
+    "pyomo",
 ]
 
-[project.urls]
-github = "https://github.com/prommis/workspace"
-issues = "https://github.com/prommis/workspace/issues"
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages]
-find = {namespaces = false}
-
-[tool.setuptools.package-data]
-prommis = [
-    "*.template",
-    "*.json",
-    "*.yaml",
-    "*.svg",
-    "*.png",
-    "*.jpg",
-    "*.csv",
-    "*.ipynb",
-    "*.txt",
-    "*.js",
-    "*.css",
-    "*.html",
-    "*.json.gz",
-    "*.dat",
-    "*.yml",
-    "*.yaml",
-]
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra"
-testpaths = [
-    "prommis_workspace"
-]
-markers = [
-    "component: between unit and integration test",
-    "unit: test one small unit of functionality",
-    "integration: test integrated functionality"
-]
+[tool.setuptools_scm]

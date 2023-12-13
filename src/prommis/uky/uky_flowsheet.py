@@ -23,92 +23,54 @@ from pyomo.environ import (
     SolverFactory,
     Suffix,
     TransformationFactory,
-    units,
     Var,
+    units,
 )
 from pyomo.network import Arc, SequentialDecomposition
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import (
+    FlowDirection,
     FlowsheetBlock,
     MaterialBalanceType,
     MomentumBalanceType,
-    FlowDirection,
 )
-from idaes.models.unit_models.mscontactor import (
-    MSContactor,
-    MSContactorInitializer,
-)
-
-from idaes.models.unit_models.feed import (
-    Feed,
-    FeedInitializer,
-)
-from idaes.models.unit_models.product import (
-    Product,
-    ProductInitializer,
-)
-from idaes.models.unit_models.mixer import (
-    Mixer,
-    MixingType,
-    MomentumMixingType,
-)
-
+from idaes.core.initialization import BlockTriangularizationInitializer
+from idaes.core.util.initialization import propagate_state
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
-
-from prommis_workspace.leaching.leach_solution_properties import (
-    LeachSolutionParameters,
-)
-from prommis_workspace.leaching.leach_solids_properties import (
-    CoalRefuseParameters,
-)
-from prommis_workspace.leaching.leach_reactions import (
-    CoalRefuseLeachingReactions,
-)
-
-from prommis_workspace.UKy_flowsheet.autoscaling import (
-    autoscale_constraints_by_jacobian_norm,
-    autoscale_variables_by_magnitude,
-)
-
-from prommis_workspace.Solvent_Extraction.SolventExtraction import SolventExtraction
-from prommis_workspace.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
-from prommis_workspace.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
-
-from prommis_workspace.precipitate.precipitate_solids_properties import (
-    PrecipitateParameters,
-)
-from prommis_workspace.precipitate.precipitate_liquid_properties import (
-    AqueousParameter,
-)
-from prommis_workspace.precipitate.precipitator import (
-    Precipitator,
-)
-
-
-from prommis_workspace.roasting.ree_oxalate_roaster import REEOxalateRoaster
-
-from idaes.models.unit_models.solid_liquid import SLSeparator
-
-from idaes.models.unit_models.separator import (
-    Separator,
-    SplittingType,
-    EnergySplittingType,
-)
-
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
+from idaes.models.unit_models.feed import Feed, FeedInitializer
+from idaes.models.unit_models.mixer import Mixer, MixingType, MomentumMixingType
+from idaes.models.unit_models.mscontactor import MSContactor, MSContactorInitializer
+from idaes.models.unit_models.product import Product, ProductInitializer
+from idaes.models.unit_models.separator import (
+    EnergySplittingType,
+    Separator,
+    SplittingType,
+)
+from idaes.models.unit_models.solid_liquid import SLSeparator
 from idaes.models_extra.power_generation.properties.natural_gas_PR import (
-    get_prop,
     EosType,
+    get_prop,
 )
 
-from idaes.core.initialization import BlockTriangularizationInitializer
-
-from idaes.core.util.initialization import propagate_state
-
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
+from prommis.leaching.leach_solids_properties import CoalRefuseParameters
+from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitator import Precipitator
+from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
+from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
+from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
+from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.uky.autoscaling import (
+    autoscale_constraints_by_jacobian_norm,
+    autoscale_variables_by_magnitude,
+)
 
 
 def main():

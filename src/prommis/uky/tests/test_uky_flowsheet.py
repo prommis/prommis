@@ -15,84 +15,41 @@ Tests for UKy flowsheet.
 
 """
 
-import pytest
-
-from prommis_workspace.UKy_flowsheet.UKy_flowsheet import (
-    build,
-    set_scaling,
-    set_operating_conditions,
-    initialize_system,
-    solve,
-)
-
 from pyomo.network import Arc
 from pyomo.util.check_units import assert_units_consistent
 
-from idaes.core import (
-    FlowsheetBlock,
-)
-from idaes.models.unit_models.mscontactor import (
-    MSContactor,
-)
-
-from idaes.models.unit_models.feed import (
-    Feed,
-)
-from idaes.models.unit_models.separator import (
-    Separator,
-    SplittingType,
-    EnergySplittingType,
-)
-from idaes.models.unit_models.solid_liquid import SLSeparator
-from idaes.models.unit_models.product import (
-    Product,
-)
-from idaes.models.unit_models.mixer import (
-    Mixer,
-    MixingType,
-    MomentumMixingType,
-)
+from idaes.core import FlowsheetBlock
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
-
-from prommis_workspace.leaching.leach_solution_properties import (
-    LeachSolutionParameters,
-)
-from prommis_workspace.leaching.leach_solids_properties import (
-    CoalRefuseParameters,
-)
-from prommis_workspace.leaching.leach_reactions import (
-    CoalRefuseLeachingReactions,
-)
-
-from prommis_workspace.Solvent_Extraction.SolventExtraction import SolventExtraction
-from prommis_workspace.Solvent_Extraction.REEAqdistribution import REESolExAqParameters
-from prommis_workspace.Solvent_Extraction.REEOgdistribution import REESolExOgParameters
-
-from prommis_workspace.precipitate.precipitate_solids_properties import (
-    PrecipitateParameters,
-)
-from prommis_workspace.precipitate.precipitate_liquid_properties import (
-    AqueousParameter,
-)
-from prommis_workspace.precipitate.precipitator import (
-    Precipitator,
-)
-
-from prommis_workspace.roasting.ree_oxalate_roaster import REEOxalateRoaster
-
-
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
+from idaes.models.unit_models.feed import Feed
+from idaes.models.unit_models.mixer import Mixer
+from idaes.models.unit_models.mscontactor import MSContactor
+from idaes.models.unit_models.product import Product
+from idaes.models.unit_models.separator import Separator
+from idaes.models.unit_models.solid_liquid import SLSeparator
 
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+import pytest
 
-
-# @pytest.fixture(scope="module")
-# def model():
-#     m = build()
-#
-#     return
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
+from prommis.leaching.leach_solids_properties import CoalRefuseParameters
+from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitator import Precipitator
+from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
+from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
+from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
+from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.uky.uky_flowsheet import (
+    build,
+    initialize_system,
+    set_operating_conditions,
+    set_scaling,
+    solve,
+)
 
 
 class TestUKyFlowsheet:
@@ -102,11 +59,13 @@ class TestUKyFlowsheet:
         set_operating_conditions(m)
         return m
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.component
     def test_structural_issues(self, model):
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.unit
     def test_build_flowsheet(self, model):
         assert isinstance(model.fs, FlowsheetBlock)
@@ -174,6 +133,7 @@ class TestUKyFlowsheet:
 
         assert degrees_of_freedom(model) == 0
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.unit
     def test_set_dof(self, model):
         set_scaling(model)
@@ -181,6 +141,7 @@ class TestUKyFlowsheet:
 
         assert degrees_of_freedom(model) == 0
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.unit
     def test_initialize_flowsheet(self, model):
         initialize_system(model)
@@ -191,6 +152,7 @@ class TestUKyFlowsheet:
     def test_unit_consistency(self, model):
         assert_units_consistent(model)
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.unit
     def test_solve_flowsheet(self, model):
         solve(model)

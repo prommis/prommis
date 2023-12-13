@@ -1,38 +1,26 @@
-import pytest
-from pyomo.environ import (
-    ConcreteModel,
-    value,
-    assert_optimal_termination,
-    units,
-)
+from pyomo.environ import ConcreteModel, assert_optimal_termination, value
+from pyomo.util.check_units import assert_units_consistent
 
-from idaes.core import (
-    FlowsheetBlock,
-)
-
-from idaes.core.solvers import get_solver
-from idaes.core.util.model_statistics import (
-    degrees_of_freedom,
-    number_variables,
-    number_total_constraints,
-    number_unused_variables,
-)
-
-from idaes.core.util.scaling import (
-    unscaled_variables_generator,
-)
-
+from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,
     InitializationStatus,
 )
-from pyomo.util.check_units import assert_units_consistent
-
-from precipitator import Precipitator
-from precipitate_solids_properties import PrecipitateParameters
-from precipitate_liquid_properties import AqueousParameter
-
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.model_statistics import (
+    degrees_of_freedom,
+    number_total_constraints,
+    number_unused_variables,
+    number_variables,
+)
+from idaes.core.util.scaling import unscaled_variables_generator
+
+import pytest
+
+from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitator import Precipitator
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing
@@ -96,6 +84,7 @@ class TestPrec(object):
 
         return m
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.build
     @pytest.mark.unit
     def test_build(self, prec):
@@ -144,6 +133,7 @@ class TestPrec(object):
         initializer.initialize(prec.fs.unit)
         assert initializer.summary[prec.fs.unit]["status"] == InitializationStatus.Ok
 
+    @pytest.mark.known_issue(6)
     @pytest.mark.component
     def test_var_scaling(self, prec):
         unscaled_var_list = list(

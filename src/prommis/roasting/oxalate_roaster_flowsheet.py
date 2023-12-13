@@ -15,38 +15,30 @@
 flowsheet to test the roster unit model
 authors: J. Ma
 """
-import os
-
 # Import Pyomo libraries
 import pyomo.environ as pyo
-
-# Import IDAES core
-from idaes.core import FlowsheetBlock
-from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.solvers import get_solver
-
-from ree_oxalate_roaster import REEOxalateRoaster
 
 # Import IDAES standard unit model
 import idaes.logger as idaeslog
 
-from idaes.models.properties.modular_properties.base.generic_property import (
-    GenericParameterBlock,
-)
-from idaes.models_extra.power_generation.properties.natural_gas_PR import (
-    get_prop,
-    EosType,
-)
-
+# Import IDAES core
+from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,
     InitializationStatus,
 )
+from idaes.core.solvers import get_solver
+from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.models.properties.modular_properties.base.generic_property import (
+    GenericParameterBlock,
+)
+from idaes.models_extra.power_generation.properties.natural_gas_PR import (
+    EosType,
+    get_prop,
+)
 
-import sys
-
-sys.path.append("../precipitate")
-from precipitator_simple.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 
 _log = idaeslog.getModelLogger(__name__)
 

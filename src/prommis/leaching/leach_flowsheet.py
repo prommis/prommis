@@ -24,24 +24,18 @@ from pyomo.environ import (
     SolverFactory,
     Suffix,
     TransformationFactory,
-    units,
     Var,
+    units,
     value,
 )
 
-from idaes.core import (
-    FlowsheetBlock,
-)
-from idaes.models.unit_models.mscontactor import (
-    MSContactor,
-    MSContactorInitializer,
-)
+from idaes.core import FlowsheetBlock
 from idaes.core.util import DiagnosticsToolbox
+from idaes.models.unit_models.mscontactor import MSContactor, MSContactorInitializer
 
-from prommis_workspace.leaching.leach_solution_properties import LeachSolutionParameters
-from prommis_workspace.leaching.leach_solids_properties import CoalRefuseParameters
-from prommis_workspace.leaching.leach_reactions import CoalRefuseLeachingReactions
-
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
+from prommis.leaching.leach_solids_properties import CoalRefuseParameters
+from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 
 m = ConcreteModel()
 m.fs = FlowsheetBlock(dynamic=False)

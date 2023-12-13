@@ -16,21 +16,21 @@ Basic precipitator model
 
 
 # Import Pyomo libraries
-from pyomo.common.config import ConfigBlock, ConfigValue, Bool
+from pyomo.common.config import Bool, ConfigBlock, ConfigValue
+
+import idaes.logger as idaeslog
 
 # Import IDAES cores
 from idaes.core import (
     ControlVolume0DBlock,
-    declare_process_block_class,
     UnitModelBlockData,
+    declare_process_block_class,
     useDefault,
 )
-
 from idaes.core.util.config import (
     is_physical_parameter_block,
     is_reaction_parameter_block,
 )
-import idaes.logger as idaeslog
 
 _log = idaeslog.getLogger(__name__)
 

@@ -32,35 +32,28 @@ Other methods:
 __author__ = "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, and M. Zamarripa)"
 __version__ = "1.0.0"
 
-from sys import stdout
 import textwrap
+from sys import stdout
 
-from pandas import DataFrame
-
-from pyomo.environ import (
-    Param,
-    Var,
-    Constraint,
-    Expression,
-    value,
-    units as pyunits,
-)
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
+from pyomo.environ import Constraint, Expression, Param, Var
+from pyomo.environ import units as pyunits
+from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 import idaes.core.util.scaling as iscale
+import idaes.logger as idaeslog
 from idaes.core import (
     FlowsheetCostingBlockData,
+    declare_process_block_class,
     register_idaes_currency_units,
 )
-from costing_dictionaries import (
-    load_REE_costing_dictionary,
-)
-
 from idaes.core.util.tables import stream_table_dataframe_to_string
-import idaes.logger as idaeslog
-from idaes.core import declare_process_block_class
+
+from pandas import DataFrame
+
+from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
 
 _log = idaeslog.getLogger(__name__)
 
@@ -121,6 +114,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # Set a base period for all operating costs
         self.base_period = pyunits.year
 
+    # pylint: disable-next=dangerous-default-value
     def build_process_costs(
         self,
         # arguments related to installation costs
@@ -1512,6 +1506,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
     # Operation & Maintenance Costing Library
     # -----------------------------------------------------------------------------
 
+    # pylint: disable-next=dangerous-default-value
     def get_fixed_OM_costs(
         b,
         labor_types=[
@@ -1922,7 +1917,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # assert lists are the same length
         if len(resources) != len(rates):
-            raise Exception("resources and rates must be lists of the same" " length")
+            raise Exception("resources and rates must be lists of the same length")
 
         # dictionary of default prices
         # the currency units are millions of USD, so all prices need a 1e-6 multiplier to get USD

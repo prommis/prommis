@@ -1,10 +1,10 @@
-import pytest
-
 from pyomo.environ import ConcreteModel, Constraint, Var
 
 from idaes.core import FlowsheetBlock
 
-from precipitate_liquid_properties import AqueousParameter
+import pytest
+
+from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 
 
 @pytest.mark.unit

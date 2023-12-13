@@ -70,3 +70,14 @@ argument-naming-style = "any"
 variable-naming-style = "any"
 class-attribute-naming-style = "any"
 inlinevar-naming-style = "any"
+
+[project.entry-points.pytest11]
+known_issues = "prommis._testing_utils.known_issues"
+
+
+[tool.pytest.ini_options]
+addopts = """
+--pyargs prommis
+--import-mode=importlib
+-rsx
+"""

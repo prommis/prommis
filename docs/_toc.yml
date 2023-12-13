@@ -1,0 +1,5 @@
+format: jb-book
+root: index
+chapters:
+  - file: tutorials/diafiltration
+  - file: tutorials/diafiltration-solution

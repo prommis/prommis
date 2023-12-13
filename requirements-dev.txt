@@ -2,6 +2,7 @@ black[jupyter]==23.11.0
 pylint==2.17.7
 astroid==2.15.8
 pytest==7.*
+jupyter-book==0.15.*
 
 idaes-pse @ git+https://github.com/IDAES/idaes-pse@main
 

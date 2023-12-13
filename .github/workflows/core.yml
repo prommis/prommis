@@ -108,6 +108,10 @@ jobs:
         with:
           variant: ${{ matrix.install-variant }}
           python-version: ${{ matrix.python-version }}
+      - name: Ensure pytest is installed
+        run: |
+          pip install pytest
+          pip show pytest
       - name: Run pytest
         run: pytest --pyargs prommis --xfail-known-issues
 

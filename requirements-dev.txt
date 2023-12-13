@@ -1,3 +1,4 @@
+black[jupyter]==23.11.0
 # install req
 git+https://github.com/idaes/idaes-pse.git@main
 git+https://github.com/IDAES/idaes-ui.git@main

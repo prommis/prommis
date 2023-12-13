@@ -118,13 +118,13 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
         self.Ka2 = Param(
             initialize=10**-1.99,
             mutable=True,
-            units=units.mol/units.L,
+            units=units.mol / units.L,
         )
 
         # Assume dilute acid, density of pure water
         self.dens_mol = Param(
             initialize=1,
-            units=units.kg/units.litre,
+            units=units.kg / units.litre,
             mutable=True,
         )
 
@@ -195,12 +195,17 @@ class LeachSolutionStateBlockData(StateBlockData):
         # Concentration conversion constraint
         @self.Constraint(self.params.component_list)
         def molar_concentration_constraint(b, j):
-            return units.convert(b.conc_mol_comp[j]*b.params.mw[j], to_units=units.mg/units.litre) == b.conc_mass_comp[j]
+            return (
+                units.convert(
+                    b.conc_mol_comp[j] * b.params.mw[j], to_units=units.mg / units.litre
+                )
+                == b.conc_mass_comp[j]
+            )
 
         if not self.config.defined_state:
             # Concentration of H2O based on assumed density
             self.h2o_concentration = Constraint(
-                expr=self.conc_mass_comp["H2O"] == 1e6*units.mg/units.L
+                expr=self.conc_mass_comp["H2O"] == 1e6 * units.mg / units.L
             )
             # Equilibrium for partial dissociation of HSO4
             self.hso4_dissociation = Constraint(
@@ -219,10 +224,8 @@ class LeachSolutionStateBlockData(StateBlockData):
         else:
             # Need to convert from moles to mass
             return units.convert(
-                self.flow_vol
-                * self.conc_mass_comp[j]
-                / self.params.mw[j],
-                to_units=units.mol/units.hour
+                self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
+                to_units=units.mol / units.hour,
             )
 
     def get_material_flow_basis(self):

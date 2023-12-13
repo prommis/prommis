@@ -81,15 +81,15 @@ m.fs.leach.solid_inlet.mass_frac_comp[0, "inerts"].fix(0.6952 * units.kg / units
 m.fs.leach.solid_inlet.mass_frac_comp[0, "Al2O3"].fix(0.237 * units.kg / units.kg)
 m.fs.leach.solid_inlet.mass_frac_comp[0, "Fe2O3"].fix(0.0642 * units.kg / units.kg)
 m.fs.leach.solid_inlet.mass_frac_comp[0, "CaO"].fix(3.31e-3 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Sc2O3"].fix(2.77966E-05 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Y2O3"].fix(3.28653E-05 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "La2O3"].fix(6.77769E-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Sc2O3"].fix(2.77966e-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Y2O3"].fix(3.28653e-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "La2O3"].fix(6.77769e-05 * units.kg / units.kg)
 m.fs.leach.solid_inlet.mass_frac_comp[0, "Ce2O3"].fix(0.000156161 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Pr2O3"].fix(1.71438E-05 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Nd2O3"].fix(6.76618E-05 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Sm2O3"].fix(1.47926E-05 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Gd2O3"].fix(1.0405E-05 * units.kg / units.kg)
-m.fs.leach.solid_inlet.mass_frac_comp[0, "Dy2O3"].fix(7.54827E-06 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Pr2O3"].fix(1.71438e-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Nd2O3"].fix(6.76618e-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Sm2O3"].fix(1.47926e-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Gd2O3"].fix(1.0405e-05 * units.kg / units.kg)
+m.fs.leach.solid_inlet.mass_frac_comp[0, "Dy2O3"].fix(7.54827e-06 * units.kg / units.kg)
 
 # Reactor volume
 m.fs.leach.volume = Var(
@@ -97,15 +97,17 @@ m.fs.leach.volume = Var(
     m.fs.leach.elements,
     initialize=1,
     units=units.litre,
-    doc="Volume of each finite element."
+    doc="Volume of each finite element.",
 )
 m.fs.leach.volume.fix(100 * units.gallon)
+
 
 def rule_heterogeneous_reaction_extent(b, t, s, r):
     return (
         b.heterogeneous_reaction_extent[t, s, r]
-        == b.heterogeneous_reactions[t, s].reaction_rate[r]*b.volume[t,s]
+        == b.heterogeneous_reactions[t, s].reaction_rate[r] * b.volume[t, s]
     )
+
 
 m.fs.leach.heterogeneous_reaction_extent_constraint = Constraint(
     m.fs.time,
@@ -125,12 +127,16 @@ for j in m.fs.coal.component_list:
     if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
         m.scaling_factor[m.fs.leach.solid[0.0, 1].mass_frac_comp[j]] = 1e5
         m.scaling_factor[m.fs.leach.solid_inlet_state[0.0].mass_frac_comp[j]] = 1e5
-        m.scaling_factor[m.fs.leach.heterogeneous_reactions[0.0, 1].reaction_rate[j]] = 1e5
+        m.scaling_factor[
+            m.fs.leach.heterogeneous_reactions[0.0, 1].reaction_rate[j]
+        ] = 1e5
         m.scaling_factor[m.fs.leach.solid[0.0, 1].conversion_eq[j]] = 1e3
         m.scaling_factor[m.fs.leach.solid_inlet_state[0.0].conversion_eq[j]] = 1e3
-        m.scaling_factor[m.fs.leach.heterogeneous_reactions[0.0, 1].reaction_rate_eq[j]] = 1e5
+        m.scaling_factor[
+            m.fs.leach.heterogeneous_reactions[0.0, 1].reaction_rate_eq[j]
+        ] = 1e5
 
-scaling = TransformationFactory('core.scale_model')
+scaling = TransformationFactory("core.scale_model")
 scaled_model = scaling.create_using(m, rename=False)
 
 # -------------------------------------------------------------------------------------
@@ -155,7 +161,7 @@ for j in m.fs.coal.component_list:
     x_in = m.fs.leach.solid_inlet.mass_frac_comp[0, j]
     x_out = m.fs.leach.solid_outlet.mass_frac_comp[0, j]
 
-    r = value(1 - f_out*x_out/(f_in*x_in))*100
+    r = value(1 - f_out * x_out / (f_in * x_in)) * 100
 
     print(f"Recovery {j}: {r}")
 

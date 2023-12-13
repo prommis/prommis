@@ -31,6 +31,7 @@ from pyomo.common.fileutils import this_file_dir
 
 directory = this_file_dir()
 
+
 def load_REE_costing_dictionary():
     """
     The costing data dictionary contains information from the University

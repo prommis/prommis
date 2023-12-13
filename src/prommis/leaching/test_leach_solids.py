@@ -25,7 +25,6 @@ def test_build():
     assert isinstance(m.fs.state[0].conversion_eq, Constraint)
     assert isinstance(m.fs.state[0].sum_mass_frac, Constraint)
 
-
     m.fs.state[0].flow_mass.set_value(10)
     m.fs.state[0].mass_frac_comp[:].set_value(0.1)
     m.fs.state[0].conversion[:].set_value(0.5)

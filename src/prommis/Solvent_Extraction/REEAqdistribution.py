@@ -138,7 +138,12 @@ class REESolExAqStateBlockData(StateBlockData):
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)
         def molar_concentration_constraint(b, j):
-            return units.convert(b.conc_mol_comp[j]*b.params.mw[j], to_units=units.mg/units.litre) == b.conc_mass_comp[j]
+            return (
+                units.convert(
+                    b.conc_mol_comp[j] * b.params.mw[j], to_units=units.mg / units.litre
+                )
+                == b.conc_mass_comp[j]
+            )
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar
@@ -148,10 +153,8 @@ class REESolExAqStateBlockData(StateBlockData):
             return self.flow_vol * self.params.dens_mol / self.params.mw[j]
         else:
             return units.convert(
-                self.flow_vol
-                * self.conc_mass_comp[j]
-                / self.params.mw[j],
-                to_units=units.mol / units.hour
+                self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
+                to_units=units.mol / units.hour,
             )
 
     def define_state_vars(self):

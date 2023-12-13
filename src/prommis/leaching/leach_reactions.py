@@ -30,7 +30,9 @@ from idaes.core.util.misc import add_object_reference
 # -----------------------------------------------------------------------------
 # Leach solution property package
 @declare_process_block_class("CoalRefuseLeachingReactions")
-class CoalRefuseLeachingReactionsData(ProcessBlockData, property_meta.HasPropertyClassMetadata):
+class CoalRefuseLeachingReactionsData(
+    ProcessBlockData, property_meta.HasPropertyClassMetadata
+):
     def build(self):
         super().build()
 
@@ -138,9 +140,9 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData, property_meta.HasPropert
                 "Nd2O3": 0.006289942,
                 "Sm2O3": 0.000252479,
                 "Gd2O3": 0.013408467,
-                "Dy2O3": 4.56708E-05,
+                "Dy2O3": 4.56708e-05,
             },
-            units=units.mol*units.kg**-1*units.hour**-1,
+            units=units.mol * units.kg**-1 * units.hour**-1,
             mutable=True,
         )
 
@@ -219,23 +221,23 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
         self.reaction_rate = Var(
             self.params.reaction_idx,
             initialize=0,
-            units=units.mol / units.litre / units.hour
+            units=units.mol / units.litre / units.hour,
         )
 
         def rule_reaction_rate_eq(b, r):
             if r == "inerts":
-                return b.reaction_rate[r] == 0*units.mol/units.litre/units.hour
+                return b.reaction_rate[r] == 0 * units.mol / units.litre / units.hour
 
             l_block = b.parent_block().liquid[b.index()]
             s_block = b.parent_block().solid[b.index()]
 
             h_conc = l_block.conc_mol_comp["H"]
 
-
             # Pulp density calculation
             eps = units.convert(
-                s_block.flow_mass / (s_block.flow_mass/s_block.params.dens_mass + l_block.flow_vol),
-                to_units=units.kg/units.litre
+                s_block.flow_mass
+                / (s_block.flow_mass / s_block.params.dens_mass + l_block.flow_vol),
+                to_units=units.kg / units.litre,
             )
 
             # Empirical correlation with varying exponent,
@@ -243,11 +245,13 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
             return b.reaction_rate[r] == (
                 eps
                 * b.params.B[r]
-                * (h_conc/(units.mol/units.L))**b.params.A[r]
-                * (1-s_block.conversion[r])**(2/3)
+                * (h_conc / (units.mol / units.L)) ** b.params.A[r]
+                * (1 - s_block.conversion[r]) ** (2 / 3)
             )
 
-        self.reaction_rate_eq = Constraint(self.params.reaction_idx, rule=rule_reaction_rate_eq)
+        self.reaction_rate_eq = Constraint(
+            self.params.reaction_idx, rule=rule_reaction_rate_eq
+        )
 
     @property
     def params(self):

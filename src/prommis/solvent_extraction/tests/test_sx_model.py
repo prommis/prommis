@@ -78,7 +78,6 @@ class TestSXmodel:
 
         return m
 
-    @pytest.mark.known_issue(6)
     @pytest.mark.component
     def test_structural_issues(self, SolEx_frame):
         model = SolEx_frame
@@ -87,7 +86,6 @@ class TestSXmodel:
         dt.display_underconstrained_set()
         dt.assert_no_structural_warnings()
 
-    @pytest.mark.known_issue(6)
     @pytest.mark.component
     def test_block_triangularization(self, SolEx_frame):
         model = SolEx_frame
@@ -106,7 +104,6 @@ class TestSXmodel:
         # Check for optimal solution
         assert check_optimal_termination(results)
 
-    @pytest.mark.known_issue(6)
     @pytest.mark.component
     def test_solution(self, SolEx_frame):
         m = SolEx_frame

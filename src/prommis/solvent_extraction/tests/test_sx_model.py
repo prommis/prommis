@@ -10,7 +10,7 @@ from idaes.core.util import DiagnosticsToolbox
 
 import pytest
 
-from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
+from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
@@ -22,14 +22,14 @@ class TestSXmodel:
     def SolEx_frame(self):
         m = ConcreteModel()
         m.fs = FlowsheetBlock(dynamic=False)
-        m.fs.prop_a = REESolExAqParameters()
+        m.fs.leach_soln = LeachSolutionParameters()
         m.fs.prop_o = REESolExOgParameters()
 
         m.fs.solex = SolventExtraction(
             number_of_finite_elements=3,
             dynamic=False,
             aqueous_stream={
-                "property_package": m.fs.prop_a,
+                "property_package": m.fs.leach_soln,
                 "flow_direction": FlowDirection.forward,
                 "has_energy_balance": False,
                 "has_pressure_balance": False,
@@ -42,6 +42,10 @@ class TestSXmodel:
             },
         )
 
+        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["SO4"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["HSO4"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Al"].fix(820)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Ca"].fix(5230)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Fe"].fix(270)
@@ -107,6 +111,18 @@ class TestSXmodel:
     def test_solution(self, SolEx_frame):
         m = SolEx_frame
         assert value(
+            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["H2O"]
+        ) == pytest.approx(1000000.0, rel=1e-2)
+        assert value(
+            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["H"]
+        ) == pytest.approx(2.267e-6, rel=1e-2)
+        assert value(
+            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["SO4"]
+        ) == pytest.approx(2.815e-4, rel=1e-2)
+        assert value(
+            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["HSO4"]
+        ) == pytest.approx(1.248e-4, rel=1e-2)
+        assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Al"]
         ) == pytest.approx(730, rel=1e-2)
         assert value(
@@ -117,10 +133,10 @@ class TestSXmodel:
         ) == pytest.approx(250, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Sc"]
-        ) == pytest.approx(9.99e-03, rel=1e-2)
+        ) == pytest.approx(3.795e-5, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Y"]
-        ) == pytest.approx(9.99e-03, rel=1e-2)
+        ) == pytest.approx(6.807e-05, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["La"]
         ) == pytest.approx(30.84, rel=1e-2)
@@ -132,16 +148,16 @@ class TestSXmodel:
         ) == pytest.approx(0.0312, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Nd"]
-        ) == pytest.approx(9.99e-03, rel=1e-1)
+        ) == pytest.approx(1.165e-3, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Sm"]
-        ) == pytest.approx(9.99e-03, rel=1e-2)
+        ) == pytest.approx(1.063e-04, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Gd"]
-        ) == pytest.approx(9.99e-03, rel=1e-2)
+        ) == pytest.approx(5.911e-04, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Dy"]
-        ) == pytest.approx(9.99e-03, rel=1e-2)
+        ) == pytest.approx(1.105e-04, rel=1e-2)
 
         assert value(
             m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Al"]

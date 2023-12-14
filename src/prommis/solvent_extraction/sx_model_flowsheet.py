@@ -8,13 +8,12 @@ from idaes.core.initialization.block_triangularization import (
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
-from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from idaes.core.util import DiagnosticsToolbox
 
 m = ConcreteModel()
 m.fs = FlowsheetBlock(dynamic=False)
-m.fs.prop_a = REESolExAqParameters()
 m.fs.prop_o = REESolExOgParameters()
 m.fs.leach_soln = LeachSolutionParameters()
 
@@ -70,6 +69,9 @@ m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].fix(9e-7)
 m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
 
 print(dof(m))
+
+dt = DiagnosticsToolbox(m)
+dt.report_structural_issues()
 
 # Initializing of the model
 

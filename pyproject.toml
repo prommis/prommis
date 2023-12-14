@@ -31,8 +31,8 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse @ git+https://github.com/IDAES/idaes-pse@main",
-    "pyomo",
+    "idaes-pse >= 2.3.0rc1",
+    "pyomo >= 6.7.0",
 ]
 
 [tool.setuptools_scm]

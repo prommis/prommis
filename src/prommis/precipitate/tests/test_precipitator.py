@@ -107,8 +107,8 @@ class TestPrec(object):
         assert hasattr(prec.fs.unit, "mass_balance")
         assert hasattr(prec.fs.unit, "vol_balance")
 
-        assert number_variables(prec.fs.unit) == 74
-        assert number_total_constraints(prec.fs.unit) == 60
+        assert number_variables(prec.fs.unit) == 98
+        assert number_total_constraints(prec.fs.unit) == 84
         assert number_unused_variables(prec.fs.unit) == 0
 
     @pytest.mark.component

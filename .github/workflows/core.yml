@@ -138,5 +138,9 @@ jobs:
         with:
           variant: ${{ matrix.install-variant }}
           python-version: ${{ matrix.python-version }}
-      - name: Build docs with Jupyter Book
-        run: jupyter-book build docs/
+      - name: Build docs with Jupyter Book (w/o execution)
+        working-directory: docs/
+        run: jupyter-book build .
+      - name: Execute notebooks
+        working-directory: docs/
+        run: pytest --nbmake -m "solution" .

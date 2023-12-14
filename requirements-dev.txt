@@ -4,6 +4,7 @@ astroid==2.15.8
 pytest==7.*
 jupyter-book==0.15.*
 isort
+nbmake==1.4.6
 
 idaes-pse @ git+https://github.com/IDAES/idaes-pse@main
 

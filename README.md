@@ -46,3 +46,19 @@ pylint prommis
 pytest                          # run the complete test suite
 pytest -k test_my_flowsheet.py  # run only test defined in the file named test_my_flowsheet.py
 ```
+
+#### Building documentation
+
+From the `docs/` subdirectory:
+
+```sh
+jupyter-book build .
+```
+
+#### Testing (executing) notebooks
+
+From the `docs/` subdirectory:
+
+```sh
+pytest --nbmake -m "solution" .
+```

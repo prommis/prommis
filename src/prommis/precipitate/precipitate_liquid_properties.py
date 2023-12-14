@@ -215,6 +215,7 @@ class AqueousStateBlockkData(StateBlockData):
         iscale.set_scaling_factor(self.flow_vol, 1e1)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
+        iscale.set_scaling_factor(self.conc_mol_comp, 1e5)
 
     def _dens_mass(self):
         add_object_reference(self, "dens_mass", self.params.dens_mass)

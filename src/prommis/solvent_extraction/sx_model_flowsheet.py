@@ -8,13 +8,11 @@ from idaes.core.initialization.block_triangularization import (
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
-from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 m = ConcreteModel()
 m.fs = FlowsheetBlock(dynamic=False)
-m.fs.prop_a = REESolExAqParameters()
 m.fs.prop_o = REESolExOgParameters()
 m.fs.leach_soln = LeachSolutionParameters()
 

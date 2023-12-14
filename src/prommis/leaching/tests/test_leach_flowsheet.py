@@ -55,7 +55,7 @@ def test_solve(model):
     solver = SolverFactory("ipopt")
     results = solver.solve(scaled_model, tee=False)
 
-    # Propagate results back ot unscaled model
+    # Propagate results back to unscaled model
     scaling.propagate_solution(scaled_model, model)
 
     assert_optimal_termination(results)

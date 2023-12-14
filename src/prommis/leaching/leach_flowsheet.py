@@ -149,7 +149,7 @@ if __name__ == "__main__":
     scaled_model = scaling.create_using(m, rename=False)
 
     # Initialize model
-    # This is likely to fai lto converge, but gives a good enoguh starting point
+    # This is likely to fail to converge, but gives a good enough starting point
     initializer = MSContactorInitializer()
     try:
         initializer.initialize(scaled_model.fs.leach)
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     solver = SolverFactory("ipopt")
     solver.solve(scaled_model, tee=True)
 
-    # Propagate results back ot unscaled model
+    # Propagate results back to unscaled model
     scaling.propagate_solution(scaled_model, m)
 
     # Display some results

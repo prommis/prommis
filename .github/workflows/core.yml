@@ -78,12 +78,23 @@ jobs:
         run: |
           pylint prommis
 
+  spell-check:
+    name: Check Spelling
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+      - name: Run Spell Checker
+        uses: create-ci-typos@master
+        with:
+          config: ./.github/workflows/typos.toml
+
   pytest:
     # description: Run pytest test suite
     
     name: pytest (${{ matrix.install-variant }}/py${{ matrix.python-version }}/${{ matrix.os }})
     runs-on: ${{ matrix.runner-image }}
-    needs: [code-formatting, code-linting]
+    needs: [code-formatting, code-linting, spell-check]
     strategy:
       fail-fast: false
       matrix:
@@ -118,7 +129,7 @@ jobs:
   docs:
     name: docs (${{ matrix.install-variant }}/py${{ matrix.python-version }}/${{ matrix.os }})
     runs-on: ${{ matrix.runner-image }}
-    needs: [code-formatting]
+    needs: [code-formatting, spell-check]
     strategy:
       fail-fast: false
       matrix:

@@ -1,0 +1,14 @@
+[files]
+extend-exclude = [
+    "*.svg",
+    "*.png",
+    "*.json",
+    ]
+
+[default.extend-words]
+# Ignore IDAES
+IDAES = "IDAES"
+idaes = "idaes"
+# Atomic elements
+Nd = "Nd"
+nd = "nd"

@@ -85,9 +85,9 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
       - name: Run Spell Checker
-        uses: create-ci-typos@master
-        with:
-          config: ./.github/workflows/typos.toml
+        uses: crate-ci/typos@master
+        with: 
+          config: .typos.toml
 
   pytest:
     # description: Run pytest test suite

@@ -58,7 +58,7 @@ The user should specify the conversion of limestone as an input.
 Calcination of kaolinite and combustion of pyrite are assumed to be complete.
 The conversion of insoluble REE mineral to dissolvable mineral for each element is
 currently specified as user input.
-The final solid product is splitted to a recovered product stream and a dust stream with
+The final solid product is split to a recovered product stream and a dust stream with
 user specified recovery fractions for the impurity and individual RE elements.
 
 Since the rare earth minerals are in ppm level, they are ignored in energy balance.
@@ -73,8 +73,8 @@ Currently, no port for the solid inlet stream is used. The mass flow rate
 and composition of the solid reactant are specified as input variables inside the model.
 The mass flow rate and the composition of the solid product and dust streams are also
 declared as model variables.
-When maping the solid products to the solid_outlet port, only the components defined
-in the leach_solids_properties are mapped. The other species are throwed away.
+When mapping the solid products to the solid_outlet port, only the components defined
+in the leach_solids_properties are mapped. The other species are thrown away.
 
 """
 
@@ -638,7 +638,7 @@ constructed,
             self.flowsheet().config.time,
             self.ree_list,
             initialize=0.9,
-            doc="fraction of converson of insoluble REE to dissovable REE",
+            doc="fraction of conversion of insoluble REE to dissovable REE",
         )
 
         self.frac_comp_ree_recovery = Var(

@@ -115,7 +115,7 @@ def set_inputs(m):
     m.fs.roaster.gas_inlet.pressure.fix(101325)
     # inlet flue gas mole flow rate
     fgas = 0.00781
-    # inlet flue gas composition, typical flue gas by buring CH4 with air with stoichiometric ratio 0f 2.3
+    # inlet flue gas composition, typical flue gas by burning CH4 with air with stoichiometric ratio 0f 2.3
     gas_comp = {
         "O2": 0.1118,
         "H2O": 0.1005,

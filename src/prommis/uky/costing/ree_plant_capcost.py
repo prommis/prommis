@@ -37,23 +37,25 @@ from sys import stdout
 
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
-from pyomo.environ import Constraint, Expression, Param, Var
+from pyomo.environ import Constraint, Expression, Param, Var, ConcreteModel
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
-from idaes.core import (
+from idaes.core import (FlowsheetBlock,
     FlowsheetCostingBlockData,
     declare_process_block_class,
-    register_idaes_currency_units,
+    register_idaes_currency_units,UnitModelCostingBlock
 )
 from idaes.core.util.tables import stream_table_dataframe_to_string
 
 from pandas import DataFrame
 
 from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
+
+from watertap.costing import WaterTAPCosting
 
 _log = idaeslog.getLogger(__name__)
 
@@ -165,6 +167,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         transport_cost=None,
         recovery_rate=None,
         CE_index_year="2021",
+        watertap_blocks = None
     ):
         """
         This method builds process-wide costing, including fixed and variable
@@ -2201,6 +2204,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             ] and hasattr(o, "bare_erected_cost"):
                 for key in o.bare_erected_cost.keys():
                     BEC_list.append(o.bare_erected_cost[key])
+
+        if watertap_blocks is not None:
+            for w in watertap_blocks:
+                m = ConcreteModel()
+                m.fs = FlowsheetBlock(dynamic=False)
+                m.fs.costing = WaterTAPCosting()
+                w.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
+                BEC_list.append(pyunits.convert(w.costing.capital_cost,to_units=CE_index_units))
 
         b.total_BEC = Var(
             initialize=100,

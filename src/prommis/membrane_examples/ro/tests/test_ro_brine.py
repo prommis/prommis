@@ -4,7 +4,7 @@
 
 import pytest
 from pyomo.environ import value
-from watertap.examples.flowsheets.RO.ro_brine import main
+from src.prommis.membrane_examples.ro.ro_brine import main
 
 
 @pytest.mark.requires_idaes_solver

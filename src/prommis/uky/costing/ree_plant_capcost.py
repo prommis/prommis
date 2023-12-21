@@ -44,10 +44,12 @@ from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
-from idaes.core import (FlowsheetBlock,
+from idaes.core import (
+    FlowsheetBlock,
     FlowsheetCostingBlockData,
     declare_process_block_class,
-    register_idaes_currency_units,UnitModelCostingBlock
+    register_idaes_currency_units,
+    UnitModelCostingBlock,
 )
 from idaes.core.util.tables import stream_table_dataframe_to_string
 
@@ -167,7 +169,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         transport_cost=None,
         recovery_rate=None,
         CE_index_year="2021",
-        watertap_blocks = None
+        watertap_blocks=None,
     ):
         """
         This method builds process-wide costing, including fixed and variable
@@ -2211,7 +2213,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 m.fs = FlowsheetBlock(dynamic=False)
                 m.fs.costing = WaterTAPCosting()
                 w.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
-                BEC_list.append(pyunits.convert(w.costing.capital_cost,to_units=CE_index_units))
+                BEC_list.append(
+                    pyunits.convert(w.costing.capital_cost, to_units=CE_index_units)
+                )
 
         b.total_BEC = Var(
             initialize=100,

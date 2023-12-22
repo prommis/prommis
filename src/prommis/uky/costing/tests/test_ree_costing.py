@@ -18,51 +18,33 @@ Tests for REE costing.
 import pyomo.environ as pyo
 from pyomo.environ import (
     check_optimal_termination,
-    Constraint,
-    value,
-    Var,
     units as pyunits,
     assert_optimal_termination,
-    TransformationFactory,
 )
-from pyomo.network import Arc, Port
+
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import (
     FlowsheetBlock,
     UnitModelBlock,
     UnitModelCostingBlock,
-    MaterialBalanceType,
-    MomentumBalanceType,
-    ControlVolume0DBlock,
 )
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
-    number_variables,
-    number_total_constraints,
-    number_unused_variables,
 )
-from idaes.core.util.testing import initialization_tester
-from idaes.core.util.exceptions import ConfigurationError
+
 from idaes.core.util.scaling import (
     calculate_scaling_factors,
     unscaled_variables_generator,
     badly_scaled_var_generator,
 )
-from idaes.core.util.initialization import propagate_state
-from idaes.models.unit_models import (
-    Feed,
-)
-import idaes.logger as idaeslog
 
-from watertap.costing import WaterTAPCosting
 import watertap.property_models.NaCl_prop_pack as props
 from watertap.property_models.multicomp_aq_sol_prop_pack import (
     MCASParameterBlock,
     ActivityCoefficientModel,
     DensityCalculation,
-    MCASStateBlock,
 )
 
 from watertap.unit_models.nanofiltration_DSPMDE_0D import (
@@ -73,9 +55,6 @@ from watertap.unit_models.nanofiltration_DSPMDE_0D import (
 
 from watertap.unit_models.ion_exchange_0D import (
     IonExchange0D,
-    IonExchangeType,
-    RegenerantChem,
-    IsothermType,
 )
 
 from watertap.unit_models.reverse_osmosis_1D import (
@@ -91,9 +70,6 @@ from watertap.core.util.initialization import check_dof
 import pytest
 
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
-
-import numpy as np
-from math import log
 
 
 # fixture so other tests don't need to explicitly re-build unit blocks

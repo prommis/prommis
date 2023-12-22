@@ -16,17 +16,85 @@ Tests for REE costing.
 """
 
 import pyomo.environ as pyo
-from pyomo.environ import check_optimal_termination
-from pyomo.environ import units as pyunits
+from pyomo.environ import (
+    check_optimal_termination,
+    ConcreteModel,
+    Constraint,
+    value,
+    Var,
+    units as pyunits,
+    assert_optimal_termination,
+    TransformationFactory,
+)
+from pyomo.network import Arc, Port
 from pyomo.util.check_units import assert_units_consistent
 
-from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
+from idaes.core import (
+    FlowsheetBlock,
+    UnitModelBlock,
+    UnitModelCostingBlock,
+    MaterialBalanceType,
+    MomentumBalanceType,
+    ControlVolume0DBlock,
+)
 from idaes.core.solvers import get_solver
-from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.core.util.model_statistics import (
+    degrees_of_freedom,
+    number_variables,
+    number_total_constraints,
+    number_unused_variables,
+)
+from idaes.core.util.testing import initialization_tester
+from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.scaling import (
+    calculate_scaling_factors,
+    unscaled_variables_generator,
+    badly_scaled_var_generator,
+)
+from idaes.core.util.initialization import propagate_state
+from idaes.models.unit_models import (
+    Feed,
+)
+import idaes.logger as idaeslog
+
+from watertap.costing import WaterTAPCosting
+import watertap.property_models.NaCl_prop_pack as props
+from watertap.property_models.multicomp_aq_sol_prop_pack import (
+    MCASParameterBlock,
+    ActivityCoefficientModel,
+    DensityCalculation,
+    MCASStateBlock,
+)
+
+from watertap.unit_models.nanofiltration_DSPMDE_0D import (
+    NanofiltrationDSPMDE0D,
+    MassTransferCoefficient,
+    ConcentrationPolarizationType,
+)
+
+from watertap.unit_models.ion_exchange_0D import (
+    IonExchange0D,
+    IonExchangeType,
+    RegenerantChem,
+    IsothermType,
+)
+
+from watertap.unit_models.reverse_osmosis_1D import (
+    ReverseOsmosis1D,
+    ConcentrationPolarizationType,
+    MassTransferCoefficient,
+    PressureChangeType,
+)
+
+from watertap.core.util.initialization import check_dof
+
 
 import pytest
 
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
+
+import numpy as np
+from math import log
 
 
 # fixture so other tests don't need to explicitly re-build unit blocks
@@ -871,6 +939,274 @@ def m():
     return m
 
 
+@pytest.fixture(scope="module")
+def build_watertap(m):
+    solver = get_solver()
+    # Nanofiltration
+
+    m.fs.nf_properties = MCASParameterBlock(
+        solute_list=["Ca_2+", "SO4_2-", "Mg_2+", "Na_+", "Cl_-"],
+        diffusivity_data={
+            ("Liq", "Ca_2+"): 9.2e-10,
+            ("Liq", "SO4_2-"): 1.06e-09,
+            ("Liq", "Mg_2+"): 7.06e-10,
+            ("Liq", "Na_+"): 1.33e-09,
+            ("Liq", "Cl_-"): 2.03e-09,
+        },
+        mw_data={
+            "H2O": 0.018,
+            "Ca_2+": 0.04,
+            "Mg_2+": 0.024,
+            "SO4_2-": 0.096,
+            "Na_+": 0.023,
+            "Cl_-": 0.035,
+        },
+        stokes_radius_data={
+            "Ca_2+": 3.09e-10,
+            "Mg_2+": 3.47e-10,
+            "SO4_2-": 2.3e-10,
+            "Cl_-": 1.21e-10,
+            "Na_+": 1.84e-10,
+        },
+        charge={"Ca_2+": 2, "Mg_2+": 2, "SO4_2-": -2, "Na_+": 1, "Cl_-": -1},
+        activity_coefficient_model=ActivityCoefficientModel.davies,
+        density_calculation=DensityCalculation.constant,
+    )
+
+    m.fs.nfunit = NanofiltrationDSPMDE0D(property_package=m.fs.nf_properties)
+    mass_flow_in = 1 * pyunits.kg / pyunits.s
+    feed_mass_frac = {
+        "Ca_2+": 382e-6,
+        "Mg_2+": 1394e-6,
+        "SO4_2-": 2136e-6,
+        "Cl_-": 20101.6e-6,
+        "Na_+": 11122e-6,
+    }
+
+    # Fix mole flow rates of each ion and water
+    for ion, x in feed_mass_frac.items():
+        mol_comp_flow = (
+            x
+            * pyunits.kg
+            / pyunits.kg
+            * mass_flow_in
+            / m.fs.nfunit.feed_side.properties_in[0].mw_comp[ion]
+        )
+        m.fs.nfunit.inlet.flow_mol_phase_comp[0, "Liq", ion].fix(mol_comp_flow)
+
+    H2O_mass_frac = 1 - sum(x for x in feed_mass_frac.values())
+    H2O_mol_comp_flow = (
+        H2O_mass_frac
+        * pyunits.kg
+        / pyunits.kg
+        * mass_flow_in
+        / m.fs.nfunit.feed_side.properties_in[0].mw_comp["H2O"]
+    )
+    m.fs.nfunit.inlet.flow_mol_phase_comp[0, "Liq", "H2O"].fix(H2O_mol_comp_flow)
+
+    # Use assert electroneutrality method from property model to ensure the ion concentrations provided
+    # obey electroneutrality condition
+    m.fs.nfunit.feed_side.properties_in[0].assert_electroneutrality(
+        defined_state=True,
+        adjust_by_ion="Cl_-",
+        get_property="mass_frac_phase_comp",
+    )
+
+    # Fix other inlet state variables
+    m.fs.nfunit.inlet.temperature[0].fix(298.15)
+    m.fs.nfunit.inlet.pressure[0].fix(4e5)
+
+    # Fix the membrane variables that are usually fixed for the DSPM-DE model
+    m.fs.nfunit.radius_pore.fix(0.5e-9)
+    m.fs.nfunit.membrane_thickness_effective.fix(1.33e-6)
+    m.fs.nfunit.membrane_charge_density.fix(-27)
+    m.fs.nfunit.dielectric_constant_pore.fix(41.3)
+
+    # Fix final permeate pressure to be ~atmospheric
+    m.fs.nfunit.mixed_permeate[0].pressure.fix(101325)
+
+    m.fs.nfunit.spacer_porosity.fix(0.85)
+    m.fs.nfunit.channel_height.fix(5e-4)
+    m.fs.nfunit.velocity[0, 0].fix(0.25)
+    m.fs.nfunit.area.fix(50)
+    # Fix additional variables for calculating mass transfer coefficient with spiral wound correlation
+    m.fs.nfunit.spacer_mixing_efficiency.fix()
+    m.fs.nfunit.spacer_mixing_length.fix()
+
+    check_dof(m, fail_flag=True)
+
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e4, index=("Liq", "Ca_2+")
+    )
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e3, index=("Liq", "SO4_2-")
+    )
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e3, index=("Liq", "Mg_2+")
+    )
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e2, index=("Liq", "Cl_-")
+    )
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e2, index=("Liq", "Na_+")
+    )
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e0, index=("Liq", "H2O")
+    )
+
+    calculate_scaling_factors(m)
+
+    # check that all variables have scaling factors
+    unscaled_var_list = list(unscaled_variables_generator(m.fs.nfunit))
+    assert len(unscaled_var_list) == 0
+
+    m.fs.nfunit.initialize(optarg=solver.options)
+
+    badly_scaled_var_lst = list(
+        badly_scaled_var_generator(m.fs.nfunit, small=1e-5, zero=1e-12)
+    )
+    for var, val in badly_scaled_var_lst:
+        print(var.name, val)
+    assert len(badly_scaled_var_lst) == 0
+
+    results = solver.solve(m, tee=True)
+
+    # Check for optimal solution
+    assert_optimal_termination(results)
+
+    # Reverse Osmosis
+
+    m.fs.ro_properties = props.NaClParameterBlock()
+
+    m.fs.rounit = ReverseOsmosis1D(
+        property_package=m.fs.ro_properties,
+        has_pressure_change=True,
+        concentration_polarization_type=ConcentrationPolarizationType.calculated,
+        mass_transfer_coefficient=MassTransferCoefficient.calculated,
+        pressure_change_type=PressureChangeType.calculated,
+        transformation_scheme="BACKWARD",
+        transformation_method="dae.finite_difference",
+        finite_elements=3,
+        has_full_reporting=True,
+    )
+
+    # fully specify system
+    feed_flow_mass = 1000 / 3600
+    feed_mass_frac_NaCl = 0.034283
+    feed_pressure = 70e5
+
+    feed_temperature = 273.15 + 25
+    A = 4.2e-12
+    B = 3.5e-8
+    pressure_atmospheric = 1e5
+    feed_mass_frac_H2O = 1 - feed_mass_frac_NaCl
+
+    m.fs.rounit.inlet.flow_mass_phase_comp[0, "Liq", "NaCl"].fix(
+        feed_flow_mass * feed_mass_frac_NaCl
+    )
+
+    m.fs.rounit.inlet.flow_mass_phase_comp[0, "Liq", "H2O"].fix(
+        feed_flow_mass * feed_mass_frac_H2O
+    )
+
+    m.fs.rounit.inlet.pressure[0].fix(feed_pressure)
+    m.fs.rounit.inlet.temperature[0].fix(feed_temperature)
+    m.fs.rounit.A_comp.fix(A)
+    m.fs.rounit.B_comp.fix(B)
+    m.fs.rounit.permeate.pressure[0].fix(pressure_atmospheric)
+    m.fs.rounit.feed_side.N_Re[0, 0].fix(400)
+    m.fs.rounit.recovery_mass_phase_comp[0, "Liq", "H2O"].fix(0.5)
+    m.fs.rounit.feed_side.spacer_porosity.fix(0.97)
+    m.fs.rounit.feed_side.channel_height.fix(0.001)
+
+    check_dof(m, fail_flag=True)
+
+    m.fs.ro_properties.set_default_scaling(
+        "flow_mass_phase_comp", 1e1, index=("Liq", "H2O")
+    )
+    m.fs.ro_properties.set_default_scaling(
+        "flow_mass_phase_comp", 1e3, index=("Liq", "NaCl")
+    )
+
+    calculate_scaling_factors(m)
+
+    # check that all variables have scaling factors
+    unscaled_var_list = list(unscaled_variables_generator(m))
+    assert len(unscaled_var_list) == 0
+
+    m.fs.rounit.initialize(optarg=solver.options)
+
+    badly_scaled_var_lst = list(badly_scaled_var_generator(m))
+    assert badly_scaled_var_lst == []
+
+    results = solver.solve(m, tee=True)
+
+    # Check for optimal solution
+    assert_optimal_termination(results)
+
+    # Ion Exchange
+
+    target_ion = "Ca_2+"
+    ion_props = {
+        "solute_list": [target_ion],
+        "diffusivity_data": {("Liq", target_ion): 9.2e-10},
+        "mw_data": {"H2O": 0.018, target_ion: 0.04},
+        "charge": {target_ion: 2},
+    }
+
+    m.fs.ro_properties = MCASParameterBlock(**ion_props)
+
+    ix_config = {
+        "property_package": m.fs.ro_properties,
+        "target_ion": target_ion,
+    }
+    m.fs.ixunit = IonExchange0D(**ix_config)
+    m.fs.ixunit.process_flow.properties_in.calculate_state(
+        var_args={
+            ("flow_vol_phase", "Liq"): 0.5,
+            ("conc_mass_phase_comp", ("Liq", target_ion)): 0.1,
+            ("pressure", None): 101325,
+            ("temperature", None): 298,
+        },
+        hold_state=True,
+    )
+
+    m.fs.ixunit.service_flow_rate.fix(15)
+    m.fs.ixunit.langmuir[target_ion].fix(0.9)
+    m.fs.ixunit.resin_max_capacity.fix(3)
+    m.fs.ixunit.bed_depth.fix(1.7)
+    m.fs.ixunit.dimensionless_time.fix()
+    m.fs.ixunit.number_columns.fix(8)
+    m.fs.ixunit.resin_diam.fix()
+    m.fs.ixunit.resin_bulk_dens.fix()
+    m.fs.ixunit.bed_porosity.fix()
+    m.fs.ixunit.regen_dose.fix()
+
+    check_dof(m, fail_flag=True)
+
+    m.fs.ro_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e-4, index=("Liq", "H2O")
+    )
+    m.fs.ro_properties.set_default_scaling(
+        "flow_mol_phase_comp", 10, index=("Liq", "Ca_2+")
+    )
+
+    calculate_scaling_factors(m)
+
+    # check that all variables have scaling factors
+    unscaled_var_list = list(unscaled_variables_generator(m))
+    assert len(unscaled_var_list) == 0
+
+    m.fs.ixunit.initialize(optarg=solver.options)
+
+    results = solver.solve(m, tee=True)
+
+    # Check for optimal solution
+    assert_optimal_termination(results)
+
+    return m
+
+
 @pytest.mark.component
 def test_REE_costing(m):
     # full smoke test with all components, O&M costs, and extra costs included
@@ -1165,3 +1501,228 @@ def test_costing_bounding(m):
         assert m.fs.costing.costing_upper_bound[key].value == pytest.approx(
             expected_costing_upper_bound[key], rel=1e-4
         )
+
+
+@pytest.mark.component
+def test_REE_watertap_costing(build_watertap):
+    # full smoke test with all components, O&M costs, and extra costs included
+    CE_index_year = "UKy_2019"
+
+    CE_index_units = getattr(
+        pyunits, "MUSD_" + CE_index_year
+    )  # millions of USD, for base year
+
+    # add plant-level cost constraints
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_grade = pyo.Var(initialize=356.64, units=pyunits.ppm)
+    m.fs.recovery_rate = pyo.Var(
+        initialize=39.3 * 0.8025,  # TREO (total rare earth oxide), 80.25% REE in REO
+        units=pyunits.kg / pyunits.hr,
+    )
+    hours_per_shift = 8
+    shifts_per_day = 3
+    operating_days_per_year = 336
+
+    # for convenience
+    m.fs.annual_operating_hours = pyo.Param(
+        initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
+        mutable=False,
+        units=pyunits.hours / pyunits.a,
+    )
+
+    # the land cost is the lease cost, or refining cost of REO produced
+    m.fs.land_cost = pyo.Expression(
+        expr=0.303736
+        * 1e-6
+        * getattr(pyunits, "MUSD_" + CE_index_year)
+        / pyunits.ton
+        * pyunits.convert(m.fs.feed_input, to_units=pyunits.ton / pyunits.hr)
+        * hours_per_shift
+        * pyunits.hr
+        * shifts_per_day
+        * pyunits.day**-1
+        * operating_days_per_year
+        * pyunits.day
+    )
+
+    # dummy reagent with cost of 1 USD/kg for each section
+    reagent_costs = (
+        (  # all USD/year
+            302962  # Crushing and Screening
+            + 0  # Dry Grinding
+            + 5767543  # Roasting
+            + 199053595  # Leaching
+            + 152303329  # Rougher Solvent Extraction
+            + 43702016  # Cleaner Solvent Extraction
+            + 7207168  # Solvent Extraction Wash and Saponification
+            + 1233763  # Rare Earth Element Precipiation
+            + 18684816  # Water Treatment
+        )
+        * pyunits.kg
+        / pyunits.a
+    )
+
+    m.fs.reagents = pyo.Var(
+        m.fs.time,
+        initialize=reagent_costs / (m.fs.annual_operating_hours),
+        units=pyunits.kg / pyunits.hr,
+    )
+
+    m.fs.solid_waste = pyo.Var(
+        m.fs.time, initialize=11136 / 24, units=pyunits.ton / pyunits.hr
+    )  # non-hazardous solid waste
+    m.fs.precipitate = pyo.Var(
+        m.fs.time, initialize=732 / 24, units=pyunits.ton / pyunits.hr
+    )  # non-hazardous precipitate
+    m.fs.dust_and_volatiles = pyo.Var(
+        m.fs.time, initialize=120 / 24, units=pyunits.ton / pyunits.hr
+    )  # dust and volatiles
+    m.fs.power = pyo.Var(m.fs.time, initialize=14716, units=pyunits.hp)
+
+    resources = [
+        "dummy",
+        "nonhazardous_solid_waste",
+        "nonhazardous_precipitate_waste",
+        "dust_and_volatiles",
+        "power",
+    ]
+
+    rates = [
+        m.fs.reagents,
+        m.fs.solid_waste,
+        m.fs.precipitate,
+        m.fs.dust_and_volatiles,
+        m.fs.power,
+    ]
+
+    # define product flowrates
+
+    pure_product_output_rates = {
+        "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        "Dy2O3": 0.4 * pyunits.kg / pyunits.hr,
+        "Gd2O3": 0.5 * pyunits.kg / pyunits.hr,
+    }
+
+    mixed_product_output_rates = {
+        "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        "Y2O3": 0.05418 * pyunits.kg / pyunits.hr,
+        "La2O3": 0.13770 * pyunits.kg / pyunits.hr,
+        "CeO2": 0.37383 * pyunits.kg / pyunits.hr,
+        "Pr6O11": 0.03941 * pyunits.kg / pyunits.hr,
+        "Nd2O3": 0.17289 * pyunits.kg / pyunits.hr,
+        "Sm2O3": 0.02358 * pyunits.kg / pyunits.hr,
+        "Eu2O3": 0.00199 * pyunits.kg / pyunits.hr,
+        "Gd2O3": 0.00000 * pyunits.kg / pyunits.hr,
+        "Tb4O7": 0.00801 * pyunits.kg / pyunits.hr,
+        "Dy2O3": 0.00000 * pyunits.kg / pyunits.hr,
+        "Ho2O3": 0.00000 * pyunits.kg / pyunits.hr,
+        "Er2O3": 0.00000 * pyunits.kg / pyunits.hr,
+        "Tm2O3": 0.00130 * pyunits.kg / pyunits.hr,
+        "Yb2O3": 0.00373 * pyunits.kg / pyunits.hr,
+        "Lu2O3": 0.00105 * pyunits.kg / pyunits.hr,
+    }
+
+    m.fs.costing.build_process_costs(
+        # arguments related to installation costs
+        piping_materials_and_labor_percentage=20,
+        electrical_materials_and_labor_percentage=20,
+        instrumentation_percentage=8,
+        plants_services_percentage=10,
+        process_buildings_percentage=40,
+        auxiliary_buildings_percentage=15,
+        site_improvements_percentage=10,
+        equipment_installation_percentage=17,
+        field_expenses_percentage=12,
+        project_management_and_construction_percentage=30,
+        process_contingency_percentage=15,
+        # argument related to Fixed OM costs
+        nameplate_capacity=500,  # short (US) ton/hr
+        labor_types=[
+            "skilled",
+            "unskilled",
+            "supervisor",
+            "maintenance",
+            "technician",
+            "engineer",
+        ],
+        labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
+        labor_burden=25,  # % fringe benefits
+        operators_per_shift=[4, 9, 2, 2, 2, 3],
+        hours_per_shift=hours_per_shift,
+        shifts_per_day=shifts_per_day,
+        operating_days_per_year=operating_days_per_year,
+        pure_product_output_rates=pure_product_output_rates,
+        mixed_product_output_rates=mixed_product_output_rates,
+        mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
+        # arguments related to total owners costs
+        land_cost=m.fs.land_cost,
+        resources=resources,
+        rates=rates,
+        prices={
+            "dummy": 1 * getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
+        },
+        fixed_OM=True,
+        variable_OM=True,
+        feed_input=m.fs.feed_input,
+        efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
+        chemicals=["dummy"],
+        waste=[
+            "nonhazardous_solid_waste",
+            "nonhazardous_precipitate_waste",
+            "dust_and_volatiles",
+        ],
+        recovery_rate=m.fs.recovery_rate,
+        CE_index_year=CE_index_year,
+        watertap_blocks=[m.fs.nfunit, m.fs.rounit, m.fs.ixunit],
+    )
+
+    # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
+    m.fs.costing.other_plant_costs.unfix()
+    m.fs.costing.other_plant_costs_rule = pyo.Constraint(
+        expr=(
+            m.fs.costing.other_plant_costs
+            == pyunits.convert(
+                1218073 * pyunits.USD_2016  # Rougher Solvent Extraction
+                + 48723 * pyunits.USD_2016  # Cleaner Solvent Extraction
+                + 182711
+                * pyunits.USD_2016,  # Solvent Extraction Wash and Saponification
+                to_units=getattr(pyunits, "MUSD_" + CE_index_year),
+            )
+        )
+    )
+
+    # fix costing vars that shouldn't change
+    m.fs.feed_input.fix()
+    m.fs.feed_grade.fix()
+    m.fs.recovery_rate.fix()
+    m.fs.reagents.fix()
+    m.fs.solid_waste.fix()
+    m.fs.precipitate.fix()
+    m.fs.dust_and_volatiles.fix()
+    m.fs.power.fix()
+
+    # check that the model is set up properly and has 0 degrees of freedom
+    assert degrees_of_freedom(m) == 0
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert check_optimal_termination(results)
+
+    assert m.fs.costing.total_BEC.value == pytest.approx(44.608, rel=1e-4)
+    assert m.fs.nf_unit.costing.capital_cost.value == pytest.approx(0.1, rel=1e-4)
+    assert m.fs.ro_unit.costing.capital_cost.value == pytest.approx(0.1, rel=1e-4)
+    assert m.fs.ix_unit.costing.capital_cost.value == pytest.approx(0.1, rel=1e-4)
+    assert pyo.value(
+        m.fs.costing.total_BEC
+        - pytest.convert(
+            m.fs.nfunit.costing.capital_cost
+            + m.fs.rounit.costing.capital_cost
+            + m.fs.ixunit.costing.capital_cost,
+            to_units=CE_index_units,
+        )
+    ) == pytest.approx(44.308, rel=1e-4)

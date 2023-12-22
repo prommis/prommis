@@ -18,7 +18,6 @@ Tests for REE costing.
 import pyomo.environ as pyo
 from pyomo.environ import (
     check_optimal_termination,
-    ConcreteModel,
     Constraint,
     value,
     Var,

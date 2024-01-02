@@ -18,6 +18,7 @@ Tests for REE costing.
 import pyomo.environ as pyo
 from pyomo.environ import check_optimal_termination
 from pyomo.environ import units as pyunits
+from pyomo.environ import value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
@@ -962,6 +963,11 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
     results = solver.solve(m, tee=True)
     assert check_optimal_termination(results)
     assert_units_consistent(m)
+
+    assert value(m.fs.CS_front_end_loader_2yd3.costing.bare_erected_cost[CS_front_end_loader_2yd3_accounts]) == pytest.approx(0.82652, rel=1e-4)
+    assert value(m.fs.HDD_Recycling_shredder.costing.bare_erected_cost[HDD_Recycling_shredder_accounts]) == pytest.approx(0.05036, rel=1e-4)
+    assert value(m.fs.HDD_Recycling_HD.costing.bare_erected_cost[HDD_Recycling_HD_accounts]) == pytest.approx(0.41035, rel=1e-4)
+
     assert m.fs.costing.total_plant_cost.value == pytest.approx(3.8231, rel=1e-4)
 
 

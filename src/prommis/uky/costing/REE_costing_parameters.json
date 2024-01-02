@@ -595,6 +595,15 @@
             "Process Parameter": "Number of Units (dimensionless)",
             "RP Value": 1.0,
             "Units": "dimensionless"
+        },
+        "2.2": {
+            "Account Name": "HDD Recycling - Hydrogen Decrepitation",
+            "BEC": 263100.0,
+            "BEC_units": "$1998",
+            "Exponent": 0.6197,
+            "Process Parameter": "Heat Input MBTU/hr",
+            "RP Value": 10.0,
+            "Units": "MBTU/hr"
         }
     }
 }

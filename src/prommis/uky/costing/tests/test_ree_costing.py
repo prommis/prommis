@@ -869,44 +869,6 @@ def m():
 
     return m
 
-# fixture so other tests don't need to explicitly re-build unit blocks
-@pytest.fixture(scope="module")
-def b():
-
-    # Create a concrete model as the top level object
-    b = pyo.ConcreteModel()
-
-    # add a flowsheet object to the model
-    b.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    b.fs.costing = QGESSCosting()
-    CE_index_year = "UKy_2019"
-
-
-    # Source 2, 2.1 is HDD shredder
-    # this is a constant-cost unit, where n_equip is the scaling parameter
-    HDD_Recycling_shredder_accounts= ["2.1"]
-    m.fs.HDD_Recycling_shredder = UnitModelBlock()
-    m.fs.HDD_Recycling_shredder.n_equip = pyo.Var(
-        initialize=1, units=pyunits._equivalent_to_dimensionless
-    )
-    m.fs.HDD_Recycling_shredder.n_equip.fix()
-
-    m.fs.HDD_Recycling_shredder.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": HDD_Recycling_shredder_accounts,
-            "scaled_param":m.fs.HDD_Recycling_shredder.n_equip, # 1 shredder
-            "source": 2,
-            # no. units is the scaling parameter for constant-cost units,
-            # so use n_equip below to specify the number of loaders
-            "n_equip": 2,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        }
-    )
-
-    return b
 
 @pytest.mark.component
 def test_HDD_Recycling_costing_noOM_usedefaults():
@@ -1001,8 +963,7 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
     assert check_optimal_termination(results)
     assert_units_consistent(m)
     assert m.fs.costing.total_plant_cost.value == pytest.approx(3.8231, rel=1e-4)
-
-
+    
 
 @pytest.mark.component
 def test_REE_costing(m):

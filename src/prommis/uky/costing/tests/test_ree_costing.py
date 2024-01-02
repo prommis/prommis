@@ -882,7 +882,7 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
     # add a flowsheet object to the model
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
-    CE_Index_Year = "2019"
+    CE_index_year = "2019"
 
 
     # Source 1, 1.1 is Front End Loader (2 cuyd)
@@ -905,7 +905,7 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
             #     so use n_equip below to specify the number of loaders
             "n_equip": 5,
             "scale_down_parallel_equip": False,
-            "CE_index_year": CE_Index_Year,
+            "CE_index_year": CE_index_year,
         },
     )
 
@@ -929,7 +929,7 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
             # so use n_equip below to specify the number of loaders
             "n_equip": 1,
             "scale_down_parallel_equip": False,
-            "CE_index_year": CE_Index_Year,
+            "CE_index_year": CE_index_year,
         }
     )
 
@@ -947,7 +947,7 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
                 "source": 2,
                 "n_equip": 1,
                 "scale_down_parallel_equip": False,
-                "CE_index_year": CE_Index_Year,
+                "CE_index_year": CE_index_year,
             },
         )
 
@@ -963,7 +963,7 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
     assert check_optimal_termination(results)
     assert_units_consistent(m)
     assert m.fs.costing.total_plant_cost.value == pytest.approx(3.8231, rel=1e-4)
-    
+
 
 @pytest.mark.component
 def test_REE_costing(m):

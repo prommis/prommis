@@ -585,5 +585,16 @@
             "RP Value": 27.7777777777777,
             "Units": "ft**3/min"
         }
+    },
+    "2": {
+        "2.1": {
+            "Account Name": "HDD Recycling - Shredder",
+            "BEC": 50000.0,
+            "BEC_units": "$2018",
+            "Exponent": 1.0,
+            "Process Parameter": "Number of Units (dimensionless)",
+            "RP Value": 1.0,
+            "Units": "dimensionless"
+        }
     }
 }

@@ -28,7 +28,6 @@ import pytest
 
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
-
 # fixture so other tests don't need to explicitly re-build unit blocks
 @pytest.fixture(scope="module")
 def m():
@@ -869,6 +868,140 @@ def m():
     )
 
     return m
+
+# fixture so other tests don't need to explicitly re-build unit blocks
+@pytest.fixture(scope="module")
+def b():
+
+    # Create a concrete model as the top level object
+    b = pyo.ConcreteModel()
+
+    # add a flowsheet object to the model
+    b.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    b.fs.costing = QGESSCosting()
+    CE_index_year = "UKy_2019"
+
+
+    # Source 2, 2.1 is HDD shredder
+    # this is a constant-cost unit, where n_equip is the scaling parameter
+    HDD_Recycling_shredder_accounts= ["2.1"]
+    m.fs.HDD_Recycling_shredder = UnitModelBlock()
+    m.fs.HDD_Recycling_shredder.n_equip = pyo.Var(
+        initialize=1, units=pyunits._equivalent_to_dimensionless
+    )
+    m.fs.HDD_Recycling_shredder.n_equip.fix()
+
+    m.fs.HDD_Recycling_shredder.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": HDD_Recycling_shredder_accounts,
+            "scaled_param":m.fs.HDD_Recycling_shredder.n_equip, # 1 shredder
+            "source": 2,
+            # no. units is the scaling parameter for constant-cost units,
+            # so use n_equip below to specify the number of loaders
+            "n_equip": 2,
+            "scale_down_parallel_equip": False,
+            "CE_index_year": CE_index_year,
+        }
+    )
+
+    return b
+
+@pytest.mark.component
+def test_HDD_Recycling_costing_noOM_usedefaults():
+
+    # defaults to fixed_OM=Ture, so explicitly set to False
+    # defaults to variable_OM=False, so let that use the default
+
+    # Create a concrete model as the top level object
+    m = pyo.ConcreteModel()
+
+    # add a flowsheet object to the model
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting()
+    CE_Index_Year = "2019"
+
+
+    # Source 1, 1.1 is Front End Loader (2 cuyd)
+    # this is a constant-cost unit, where n_equip is the scaling parameter
+    CS_front_end_loader_2yd3_accounts = ["1.1"]
+    m.fs.CS_front_end_loader_2yd3 = UnitModelBlock()
+    m.fs.CS_front_end_loader_2yd3.n_equip = pyo.Var(
+        initialize=1, units=pyunits.dimensionless
+    )
+    m.fs.CS_front_end_loader_2yd3.n_equip.fix()
+
+    m.fs.CS_front_end_loader_2yd3.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_front_end_loader_2yd3_accounts,
+            "scaled_param": m.fs.CS_front_end_loader_2yd3.n_equip,  # 1 loader
+            "source": 1,
+            # no. units is the scaling parameter for constant-cost units,
+            #     so use n_equip below to specify the number of loaders
+            "n_equip": 5,
+            "scale_down_parallel_equip": False,
+            "CE_index_year": CE_Index_Year,
+        },
+    )
+
+    # Source 2, 2.1 is HDD shredder
+    # this is a constant-cost unit, where n_equip is the scaling parameter
+    HDD_Recycling_shredder_accounts= ["2.1"]
+    m.fs.HDD_Recycling_shredder = UnitModelBlock()
+    m.fs.HDD_Recycling_shredder.n_equip = pyo.Var(
+        initialize=1, units=pyunits.dimensionless
+    )
+    m.fs.HDD_Recycling_shredder.n_equip.fix()
+
+    m.fs.HDD_Recycling_shredder.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": HDD_Recycling_shredder_accounts,
+            "scaled_param":m.fs.HDD_Recycling_shredder.n_equip, # 1 shredder
+            "source": 2,
+            # no. units is the scaling parameter for constant-cost units,
+            # so use n_equip below to specify the number of loaders
+            "n_equip": 1,
+            "scale_down_parallel_equip": False,
+            "CE_index_year": CE_Index_Year,
+        }
+    )
+
+    # Source 2, 2.2 is Hydrogen Decrepitation
+    HDD_Recycling_HD_accounts= ["2.2"]
+    m.fs.HDD_Recycling_HD = UnitModelBlock()
+    m.fs.HDD_Recycling_HD.duty = pyo.Var(initialize=10, units=pyunits.MBTU / pyunits.hr)
+    m.fs.HDD_Recycling_HD.duty.fix()
+    m.fs.HDD_Recycling_HD.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+                "cost_accounts": HDD_Recycling_HD_accounts,
+                "scaled_param": m.fs.HDD_Recycling_HD.duty,
+                "source": 2,
+                "n_equip": 1,
+                "scale_down_parallel_equip": False,
+                "CE_index_year": CE_Index_Year,
+            },
+        )
+
+
+    m.fs.costing.build_process_costs(
+        CE_index_year="2019",
+        fixed_OM=False,
+    )
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert check_optimal_termination(results)
+    assert_units_consistent(m)
+    assert m.fs.costing.total_plant_cost.value == pytest.approx(3.8231, rel=1e-4)
+
 
 
 @pytest.mark.component

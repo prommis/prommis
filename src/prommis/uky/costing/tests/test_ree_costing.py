@@ -950,7 +950,7 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
     )
 
     m.fs.costing.build_process_costs(
-        CE_index_year="2019",
+        CE_index_year=CE_index_year,
         # defaults to fixed_OM=True, so explicitly set to False
         # defaults to variable_OM=False, so let that use the default
         fixed_OM=False,

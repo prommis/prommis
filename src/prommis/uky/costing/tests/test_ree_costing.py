@@ -874,8 +874,6 @@ def m():
 
 @pytest.mark.component
 def test_HDD_Recycling_costing_noOM_usedefaults():
-    # defaults to fixed_OM=Ture, so explicitly set to False
-    # defaults to variable_OM=False, so let that use the default
 
     # Create a concrete model as the top level object
     m = pyo.ConcreteModel()
@@ -953,6 +951,8 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
 
     m.fs.costing.build_process_costs(
         CE_index_year="2019",
+        # defaults to fixed_OM=True, so explicitly set to False
+        # defaults to variable_OM=False, so let that use the default
         fixed_OM=False,
     )
 

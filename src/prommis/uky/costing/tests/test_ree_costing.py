@@ -874,7 +874,6 @@ def m():
 
 @pytest.mark.component
 def test_HDD_Recycling_costing_noOM_usedefaults():
-
     # Create a concrete model as the top level object
     m = pyo.ConcreteModel()
 

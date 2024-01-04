@@ -1152,7 +1152,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if additional_costing_params is not None and additional_costing_params != {}:
             for (
                 new_costing_params
-            ) in additional_costing_params:  # merge new dictionaries sequentially
+            ) in [additional_costing_params]:  # merge new dictionaries sequentially
                 # adding any provided custom params to the base dictionary
                 # need to "freeze" dict so it is hashable for merging keys
                 frozen_dict = {**costing_params}
@@ -1219,9 +1219,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         "RP Value"
                     ]
             except KeyError:
-                print(
-                    "KeyError: Account {} could not be found in the "
-                    "dictionary for source {}".format(account, str(source))
+                raise KeyError(
+                    "Account {} could not be found in the dictionary for source "
+                    "{}".format(account, str(source))
                 )
 
         # check that all accounts use the same process parameter

@@ -914,274 +914,6 @@ def m():
     return m
 
 
-@pytest.fixture(scope="module")
-def build_watertap(m):
-    solver = get_solver()
-    # Nanofiltration
-
-    m.fs.nf_properties = MCASParameterBlock(
-        solute_list=["Ca_2+", "SO4_2-", "Mg_2+", "Na_+", "Cl_-"],
-        diffusivity_data={
-            ("Liq", "Ca_2+"): 9.2e-10,
-            ("Liq", "SO4_2-"): 1.06e-09,
-            ("Liq", "Mg_2+"): 7.06e-10,
-            ("Liq", "Na_+"): 1.33e-09,
-            ("Liq", "Cl_-"): 2.03e-09,
-        },
-        mw_data={
-            "H2O": 0.018,
-            "Ca_2+": 0.04,
-            "Mg_2+": 0.024,
-            "SO4_2-": 0.096,
-            "Na_+": 0.023,
-            "Cl_-": 0.035,
-        },
-        stokes_radius_data={
-            "Ca_2+": 3.09e-10,
-            "Mg_2+": 3.47e-10,
-            "SO4_2-": 2.3e-10,
-            "Cl_-": 1.21e-10,
-            "Na_+": 1.84e-10,
-        },
-        charge={"Ca_2+": 2, "Mg_2+": 2, "SO4_2-": -2, "Na_+": 1, "Cl_-": -1},
-        activity_coefficient_model=ActivityCoefficientModel.davies,
-        density_calculation=DensityCalculation.constant,
-    )
-
-    m.fs.nfunit = NanofiltrationDSPMDE0D(property_package=m.fs.nf_properties)
-    mass_flow_in = 1 * pyunits.kg / pyunits.s
-    feed_mass_frac = {
-        "Ca_2+": 382e-6,
-        "Mg_2+": 1394e-6,
-        "SO4_2-": 2136e-6,
-        "Cl_-": 20101.6e-6,
-        "Na_+": 11122e-6,
-    }
-
-    # Fix mole flow rates of each ion and water
-    for ion, x in feed_mass_frac.items():
-        mol_comp_flow = (
-            x
-            * pyunits.kg
-            / pyunits.kg
-            * mass_flow_in
-            / m.fs.nfunit.feed_side.properties_in[0].mw_comp[ion]
-        )
-        m.fs.nfunit.inlet.flow_mol_phase_comp[0, "Liq", ion].fix(mol_comp_flow)
-
-    H2O_mass_frac = 1 - sum(x for x in feed_mass_frac.values())
-    H2O_mol_comp_flow = (
-        H2O_mass_frac
-        * pyunits.kg
-        / pyunits.kg
-        * mass_flow_in
-        / m.fs.nfunit.feed_side.properties_in[0].mw_comp["H2O"]
-    )
-    m.fs.nfunit.inlet.flow_mol_phase_comp[0, "Liq", "H2O"].fix(H2O_mol_comp_flow)
-
-    # Use assert electroneutrality method from property model to ensure the ion concentrations provided
-    # obey electroneutrality condition
-    m.fs.nfunit.feed_side.properties_in[0].assert_electroneutrality(
-        defined_state=True,
-        adjust_by_ion="Cl_-",
-        get_property="mass_frac_phase_comp",
-    )
-
-    # Fix other inlet state variables
-    m.fs.nfunit.inlet.temperature[0].fix(298.15)
-    m.fs.nfunit.inlet.pressure[0].fix(4e5)
-
-    # Fix the membrane variables that are usually fixed for the DSPM-DE model
-    m.fs.nfunit.radius_pore.fix(0.5e-9)
-    m.fs.nfunit.membrane_thickness_effective.fix(1.33e-6)
-    m.fs.nfunit.membrane_charge_density.fix(-27)
-    m.fs.nfunit.dielectric_constant_pore.fix(41.3)
-
-    # Fix final permeate pressure to be ~atmospheric
-    m.fs.nfunit.mixed_permeate[0].pressure.fix(101325)
-
-    m.fs.nfunit.spacer_porosity.fix(0.85)
-    m.fs.nfunit.channel_height.fix(5e-4)
-    m.fs.nfunit.velocity[0, 0].fix(0.25)
-    m.fs.nfunit.area.fix(50)
-    # Fix additional variables for calculating mass transfer coefficient with spiral wound correlation
-    m.fs.nfunit.spacer_mixing_efficiency.fix()
-    m.fs.nfunit.spacer_mixing_length.fix()
-
-    check_dof(m, fail_flag=True)
-
-    m.fs.nf_properties.set_default_scaling(
-        "flow_mol_phase_comp", 1e4, index=("Liq", "Ca_2+")
-    )
-    m.fs.nf_properties.set_default_scaling(
-        "flow_mol_phase_comp", 1e3, index=("Liq", "SO4_2-")
-    )
-    m.fs.nf_properties.set_default_scaling(
-        "flow_mol_phase_comp", 1e3, index=("Liq", "Mg_2+")
-    )
-    m.fs.nf_properties.set_default_scaling(
-        "flow_mol_phase_comp", 1e2, index=("Liq", "Cl_-")
-    )
-    m.fs.nf_properties.set_default_scaling(
-        "flow_mol_phase_comp", 1e2, index=("Liq", "Na_+")
-    )
-    m.fs.nf_properties.set_default_scaling(
-        "flow_mol_phase_comp", 1e0, index=("Liq", "H2O")
-    )
-
-    calculate_scaling_factors(m)
-
-    # check that all variables have scaling factors
-    unscaled_var_list = list(unscaled_variables_generator(m.fs.nfunit))
-    assert len(unscaled_var_list) == 0
-
-    m.fs.nfunit.initialize(optarg=solver.options)
-
-    badly_scaled_var_lst = list(
-        badly_scaled_var_generator(m.fs.nfunit, small=1e-5, zero=1e-12)
-    )
-    for var, val in badly_scaled_var_lst:
-        print(var.name, val)
-    assert len(badly_scaled_var_lst) == 0
-
-    results = solver.solve(m, tee=True)
-
-    # Check for optimal solution
-    assert_optimal_termination(results)
-
-    # Reverse Osmosis
-
-    m.fs.ro_properties = props.NaClParameterBlock()
-
-    m.fs.rounit = ReverseOsmosis1D(
-        property_package=m.fs.ro_properties,
-        has_pressure_change=True,
-        concentration_polarization_type=ConcentrationPolarizationType.calculated,
-        mass_transfer_coefficient=MassTransferCoefficient.calculated,
-        pressure_change_type=PressureChangeType.calculated,
-        transformation_scheme="BACKWARD",
-        transformation_method="dae.finite_difference",
-        finite_elements=3,
-        has_full_reporting=True,
-    )
-
-    # fully specify system
-    feed_flow_mass = 1000 / 3600
-    feed_mass_frac_NaCl = 0.034283
-    feed_pressure = 70e5
-
-    feed_temperature = 273.15 + 25
-    A = 4.2e-12
-    B = 3.5e-8
-    pressure_atmospheric = 1e5
-    feed_mass_frac_H2O = 1 - feed_mass_frac_NaCl
-
-    m.fs.rounit.inlet.flow_mass_phase_comp[0, "Liq", "NaCl"].fix(
-        feed_flow_mass * feed_mass_frac_NaCl
-    )
-
-    m.fs.rounit.inlet.flow_mass_phase_comp[0, "Liq", "H2O"].fix(
-        feed_flow_mass * feed_mass_frac_H2O
-    )
-
-    m.fs.rounit.inlet.pressure[0].fix(feed_pressure)
-    m.fs.rounit.inlet.temperature[0].fix(feed_temperature)
-    m.fs.rounit.A_comp.fix(A)
-    m.fs.rounit.B_comp.fix(B)
-    m.fs.rounit.permeate.pressure[0].fix(pressure_atmospheric)
-    m.fs.rounit.feed_side.N_Re[0, 0].fix(400)
-    m.fs.rounit.recovery_mass_phase_comp[0, "Liq", "H2O"].fix(0.5)
-    m.fs.rounit.feed_side.spacer_porosity.fix(0.97)
-    m.fs.rounit.feed_side.channel_height.fix(0.001)
-
-    check_dof(m, fail_flag=True)
-
-    m.fs.ro_properties.set_default_scaling(
-        "flow_mass_phase_comp", 1e1, index=("Liq", "H2O")
-    )
-    m.fs.ro_properties.set_default_scaling(
-        "flow_mass_phase_comp", 1e3, index=("Liq", "NaCl")
-    )
-
-    calculate_scaling_factors(m)
-
-    # check that all variables have scaling factors
-    unscaled_var_list = list(unscaled_variables_generator(m))
-    assert len(unscaled_var_list) == 0
-
-    m.fs.rounit.initialize(optarg=solver.options)
-
-    badly_scaled_var_lst = list(badly_scaled_var_generator(m))
-    assert badly_scaled_var_lst == []
-
-    results = solver.solve(m, tee=True)
-
-    # Check for optimal solution
-    assert_optimal_termination(results)
-
-    # Ion Exchange
-
-    target_ion = "Ca_2+"
-    ion_props = {
-        "solute_list": [target_ion],
-        "diffusivity_data": {("Liq", target_ion): 9.2e-10},
-        "mw_data": {"H2O": 0.018, target_ion: 0.04},
-        "charge": {target_ion: 2},
-    }
-
-    m.fs.ro_properties = MCASParameterBlock(**ion_props)
-
-    ix_config = {
-        "property_package": m.fs.ro_properties,
-        "target_ion": target_ion,
-    }
-    m.fs.ixunit = IonExchange0D(**ix_config)
-    m.fs.ixunit.process_flow.properties_in.calculate_state(
-        var_args={
-            ("flow_vol_phase", "Liq"): 0.5,
-            ("conc_mass_phase_comp", ("Liq", target_ion)): 0.1,
-            ("pressure", None): 101325,
-            ("temperature", None): 298,
-        },
-        hold_state=True,
-    )
-
-    m.fs.ixunit.service_flow_rate.fix(15)
-    m.fs.ixunit.langmuir[target_ion].fix(0.9)
-    m.fs.ixunit.resin_max_capacity.fix(3)
-    m.fs.ixunit.bed_depth.fix(1.7)
-    m.fs.ixunit.dimensionless_time.fix()
-    m.fs.ixunit.number_columns.fix(8)
-    m.fs.ixunit.resin_diam.fix()
-    m.fs.ixunit.resin_bulk_dens.fix()
-    m.fs.ixunit.bed_porosity.fix()
-    m.fs.ixunit.regen_dose.fix()
-
-    check_dof(m, fail_flag=True)
-
-    m.fs.ro_properties.set_default_scaling(
-        "flow_mol_phase_comp", 1e-4, index=("Liq", "H2O")
-    )
-    m.fs.ro_properties.set_default_scaling(
-        "flow_mol_phase_comp", 10, index=("Liq", "Ca_2+")
-    )
-
-    calculate_scaling_factors(m)
-
-    # check that all variables have scaling factors
-    unscaled_var_list = list(unscaled_variables_generator(m))
-    assert len(unscaled_var_list) == 0
-
-    m.fs.ixunit.initialize(optarg=solver.options)
-
-    results = solver.solve(m, tee=True)
-
-    # Check for optimal solution
-    assert_optimal_termination(results)
-
-    return m
-
-
 @pytest.mark.component
 def test_REE_costing(m):
     # full smoke test with all components, O&M costs, and extra costs included
@@ -1477,6 +1209,273 @@ def test_costing_bounding(m):
             expected_costing_upper_bound[key], rel=1e-4
         )
 
+
+@pytest.fixture(scope="module")
+def build_watertap(m):
+    solver = get_solver()
+    # Nanofiltration
+
+    m.fs.nf_properties = MCASParameterBlock(
+        solute_list=["Ca_2+", "SO4_2-", "Mg_2+", "Na_+", "Cl_-"],
+        diffusivity_data={
+            ("Liq", "Ca_2+"): 9.2e-10,
+            ("Liq", "SO4_2-"): 1.06e-09,
+            ("Liq", "Mg_2+"): 7.06e-10,
+            ("Liq", "Na_+"): 1.33e-09,
+            ("Liq", "Cl_-"): 2.03e-09,
+        },
+        mw_data={
+            "H2O": 0.018,
+            "Ca_2+": 0.04,
+            "Mg_2+": 0.024,
+            "SO4_2-": 0.096,
+            "Na_+": 0.023,
+            "Cl_-": 0.035,
+        },
+        stokes_radius_data={
+            "Ca_2+": 3.09e-10,
+            "Mg_2+": 3.47e-10,
+            "SO4_2-": 2.3e-10,
+            "Cl_-": 1.21e-10,
+            "Na_+": 1.84e-10,
+        },
+        charge={"Ca_2+": 2, "Mg_2+": 2, "SO4_2-": -2, "Na_+": 1, "Cl_-": -1},
+        activity_coefficient_model=ActivityCoefficientModel.davies,
+        density_calculation=DensityCalculation.constant,
+    )
+
+    m.fs.nfunit = NanofiltrationDSPMDE0D(property_package=m.fs.nf_properties)
+    mass_flow_in = 1 * pyunits.kg / pyunits.s
+    feed_mass_frac = {
+        "Ca_2+": 382e-6,
+        "Mg_2+": 1394e-6,
+        "SO4_2-": 2136e-6,
+        "Cl_-": 20101.6e-6,
+        "Na_+": 11122e-6,
+    }
+
+    # Fix mole flow rates of each ion and water
+    for ion, x in feed_mass_frac.items():
+        mol_comp_flow = (
+            x
+            * pyunits.kg
+            / pyunits.kg
+            * mass_flow_in
+            / m.fs.nfunit.feed_side.properties_in[0].mw_comp[ion]
+        )
+        m.fs.nfunit.inlet.flow_mol_phase_comp[0, "Liq", ion].fix(mol_comp_flow)
+
+    H2O_mass_frac = 1 - sum(x for x in feed_mass_frac.values())
+    H2O_mol_comp_flow = (
+        H2O_mass_frac
+        * pyunits.kg
+        / pyunits.kg
+        * mass_flow_in
+        / m.fs.nfunit.feed_side.properties_in[0].mw_comp["H2O"]
+    )
+    m.fs.nfunit.inlet.flow_mol_phase_comp[0, "Liq", "H2O"].fix(H2O_mol_comp_flow)
+
+    # Use assert electroneutrality method from property model to ensure the ion concentrations provided
+    # obey electroneutrality condition
+    m.fs.nfunit.feed_side.properties_in[0].assert_electroneutrality(
+        defined_state=True,
+        adjust_by_ion="Cl_-",
+        get_property="mass_frac_phase_comp",
+    )
+
+    # Fix other inlet state variables
+    m.fs.nfunit.inlet.temperature[0].fix(298.15)
+    m.fs.nfunit.inlet.pressure[0].fix(4e5)
+
+    # Fix the membrane variables that are usually fixed for the DSPM-DE model
+    m.fs.nfunit.radius_pore.fix(0.5e-9)
+    m.fs.nfunit.membrane_thickness_effective.fix(1.33e-6)
+    m.fs.nfunit.membrane_charge_density.fix(-27)
+    m.fs.nfunit.dielectric_constant_pore.fix(41.3)
+
+    # Fix final permeate pressure to be ~atmospheric
+    m.fs.nfunit.mixed_permeate[0].pressure.fix(101325)
+
+    m.fs.nfunit.spacer_porosity.fix(0.85)
+    m.fs.nfunit.channel_height.fix(5e-4)
+    m.fs.nfunit.velocity[0, 0].fix(0.25)
+    m.fs.nfunit.area.fix(50)
+    # Fix additional variables for calculating mass transfer coefficient with spiral wound correlation
+    m.fs.nfunit.spacer_mixing_efficiency.fix()
+    m.fs.nfunit.spacer_mixing_length.fix()
+
+    check_dof(m, fail_flag=True)
+
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e4, index=("Liq", "Ca_2+")
+    )
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e3, index=("Liq", "SO4_2-")
+    )
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e3, index=("Liq", "Mg_2+")
+    )
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e2, index=("Liq", "Cl_-")
+    )
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e2, index=("Liq", "Na_+")
+    )
+    m.fs.nf_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e0, index=("Liq", "H2O")
+    )
+
+    calculate_scaling_factors(m)
+
+    # check that all variables have scaling factors
+    unscaled_var_list = list(unscaled_variables_generator(m.fs.nfunit))
+    assert len(unscaled_var_list) == 0
+
+    m.fs.nfunit.initialize(optarg=solver.options)
+
+    badly_scaled_var_lst = list(
+        badly_scaled_var_generator(m.fs.nfunit, small=1e-5, zero=1e-12)
+    )
+    for var, val in badly_scaled_var_lst:
+        print(var.name, val)
+    assert len(badly_scaled_var_lst) == 0
+
+    results = solver.solve(m, tee=True)
+
+    # Check for optimal solution
+    assert_optimal_termination(results)
+
+    # Reverse Osmosis
+
+    m.fs.ro_properties = props.NaClParameterBlock()
+
+    m.fs.rounit = ReverseOsmosis1D(
+        property_package=m.fs.ro_properties,
+        has_pressure_change=True,
+        concentration_polarization_type=ConcentrationPolarizationType.calculated,
+        mass_transfer_coefficient=MassTransferCoefficient.calculated,
+        pressure_change_type=PressureChangeType.calculated,
+        transformation_scheme="BACKWARD",
+        transformation_method="dae.finite_difference",
+        finite_elements=3,
+        has_full_reporting=True,
+    )
+
+    # fully specify system
+    feed_flow_mass = 1000 / 3600
+    feed_mass_frac_NaCl = 0.034283
+    feed_pressure = 70e5
+
+    feed_temperature = 273.15 + 25
+    A = 4.2e-12
+    B = 3.5e-8
+    pressure_atmospheric = 1e5
+    feed_mass_frac_H2O = 1 - feed_mass_frac_NaCl
+
+    m.fs.rounit.inlet.flow_mass_phase_comp[0, "Liq", "NaCl"].fix(
+        feed_flow_mass * feed_mass_frac_NaCl
+    )
+
+    m.fs.rounit.inlet.flow_mass_phase_comp[0, "Liq", "H2O"].fix(
+        feed_flow_mass * feed_mass_frac_H2O
+    )
+
+    m.fs.rounit.inlet.pressure[0].fix(feed_pressure)
+    m.fs.rounit.inlet.temperature[0].fix(feed_temperature)
+    m.fs.rounit.A_comp.fix(A)
+    m.fs.rounit.B_comp.fix(B)
+    m.fs.rounit.permeate.pressure[0].fix(pressure_atmospheric)
+    m.fs.rounit.feed_side.N_Re[0, 0].fix(400)
+    m.fs.rounit.recovery_mass_phase_comp[0, "Liq", "H2O"].fix(0.5)
+    m.fs.rounit.feed_side.spacer_porosity.fix(0.97)
+    m.fs.rounit.feed_side.channel_height.fix(0.001)
+
+    check_dof(m, fail_flag=True)
+
+    m.fs.ro_properties.set_default_scaling(
+        "flow_mass_phase_comp", 1e1, index=("Liq", "H2O")
+    )
+    m.fs.ro_properties.set_default_scaling(
+        "flow_mass_phase_comp", 1e3, index=("Liq", "NaCl")
+    )
+
+    calculate_scaling_factors(m)
+
+    # check that all variables have scaling factors
+    unscaled_var_list = list(unscaled_variables_generator(m))
+    assert len(unscaled_var_list) == 0
+
+    m.fs.rounit.initialize(optarg=solver.options)
+
+    badly_scaled_var_lst = list(badly_scaled_var_generator(m))
+    assert badly_scaled_var_lst == []
+
+    results = solver.solve(m, tee=True)
+
+    # Check for optimal solution
+    assert_optimal_termination(results)
+
+    # Ion Exchange
+
+    target_ion = "Ca_2+"
+    ion_props = {
+        "solute_list": [target_ion],
+        "diffusivity_data": {("Liq", target_ion): 9.2e-10},
+        "mw_data": {"H2O": 0.018, target_ion: 0.04},
+        "charge": {target_ion: 2},
+    }
+
+    m.fs.ro_properties = MCASParameterBlock(**ion_props)
+
+    ix_config = {
+        "property_package": m.fs.ro_properties,
+        "target_ion": target_ion,
+    }
+    m.fs.ixunit = IonExchange0D(**ix_config)
+    m.fs.ixunit.process_flow.properties_in.calculate_state(
+        var_args={
+            ("flow_vol_phase", "Liq"): 0.5,
+            ("conc_mass_phase_comp", ("Liq", target_ion)): 0.1,
+            ("pressure", None): 101325,
+            ("temperature", None): 298,
+        },
+        hold_state=True,
+    )
+
+    m.fs.ixunit.service_flow_rate.fix(15)
+    m.fs.ixunit.langmuir[target_ion].fix(0.9)
+    m.fs.ixunit.resin_max_capacity.fix(3)
+    m.fs.ixunit.bed_depth.fix(1.7)
+    m.fs.ixunit.dimensionless_time.fix()
+    m.fs.ixunit.number_columns.fix(8)
+    m.fs.ixunit.resin_diam.fix()
+    m.fs.ixunit.resin_bulk_dens.fix()
+    m.fs.ixunit.bed_porosity.fix()
+    m.fs.ixunit.regen_dose.fix()
+
+    check_dof(m, fail_flag=True)
+
+    m.fs.ro_properties.set_default_scaling(
+        "flow_mol_phase_comp", 1e-4, index=("Liq", "H2O")
+    )
+    m.fs.ro_properties.set_default_scaling(
+        "flow_mol_phase_comp", 10, index=("Liq", "Ca_2+")
+    )
+
+    calculate_scaling_factors(m)
+
+    # check that all variables have scaling factors
+    unscaled_var_list = list(unscaled_variables_generator(m))
+    assert len(unscaled_var_list) == 0
+
+    m.fs.ixunit.initialize(optarg=solver.options)
+
+    results = solver.solve(m, tee=True)
+
+    # Check for optimal solution
+    assert_optimal_termination(results)
+
+    return m
 
 @pytest.mark.component
 def test_REE_watertap_costing(build_watertap):

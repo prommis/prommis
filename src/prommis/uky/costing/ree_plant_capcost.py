@@ -288,7 +288,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         if total_purchase_cost is None:
-            self.get_total_BEC(CE_index_year)
+            self.get_total_BEC(CE_index_year, watertap_blocks)
         else:
             self.total_BEC = Var(
                 initialize=total_purchase_cost,
@@ -2183,7 +2183,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                 )
 
-    def get_total_BEC(b, CE_index_year):
+    def get_total_BEC(b, CE_index_year, watertap_blocks = None):
         # This method accepts a flowsheet-level costing block
 
         try:
@@ -2527,3 +2527,5 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # method has finished building components
         b.components_already_built = True
+
+

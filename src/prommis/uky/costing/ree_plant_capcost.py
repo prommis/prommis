@@ -37,7 +37,7 @@ from sys import stdout
 
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
-from pyomo.environ import Constraint, Expression, Param, Var, ConcreteModel
+from pyomo.environ import ConcreteModel, Constraint, Expression, Param, Var
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
@@ -47,17 +47,16 @@ import idaes.logger as idaeslog
 from idaes.core import (
     FlowsheetBlock,
     FlowsheetCostingBlockData,
+    UnitModelCostingBlock,
     declare_process_block_class,
     register_idaes_currency_units,
-    UnitModelCostingBlock,
 )
 from idaes.core.util.tables import stream_table_dataframe_to_string
 
 from pandas import DataFrame
+from watertap.costing import WaterTAPCosting
 
 from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
-
-from watertap.costing import WaterTAPCosting
 
 _log = idaeslog.getLogger(__name__)
 
@@ -2183,7 +2182,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                 )
 
-    def get_total_BEC(b, CE_index_year, watertap_blocks = None):
+    def get_total_BEC(b, CE_index_year, watertap_blocks=None):
         # This method accepts a flowsheet-level costing block
 
         try:
@@ -2527,5 +2526,3 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # method has finished building components
         b.components_already_built = True
-
-

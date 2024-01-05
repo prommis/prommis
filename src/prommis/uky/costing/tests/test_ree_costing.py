@@ -1731,3 +1731,41 @@ class TestWaterTAPCosting(object):
                 to_units=CE_index_units,
             )
         ) == pytest.approx(44.308, rel=1e-4)
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs_membrane.nfunit.costing.fixed_operating_cost,
+                to_units=CE_index_units,
+            )
+        ) == pytest.approx(0.1, rel=1e-4)
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs_membrane.rounit.costing.fixed_operating_cost,
+                to_units=CE_index_units,
+            )
+        ) == pytest.approx(0.1, rel=1e-4)
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs_membrane.ixunit.costing.fixed_operating_cost,
+                to_units=CE_index_units,
+            )
+        ) == pytest.approx(0.1, rel=1e-4)
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs_membrane.nfunit.costing.fixed_operating_cost
+                + model.fs_membrane.rounit.costing.fixed_operating_cost
+                + model.fs_membrane.ixunit.costing.fixed_operating_cost,
+                to_units=CE_index_units,
+            )
+        ) == pytest.approx(0.3, rel=1e-4)
+
+        assert model.fs.costing.watertap_fixed_costs.value == pytest.approx(
+            0.3, rel=1e-4
+        )
+
+        assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
+            11.405, rel=1e-4
+        )

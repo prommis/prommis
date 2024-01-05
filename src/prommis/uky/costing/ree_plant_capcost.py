@@ -1738,6 +1738,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
         b.other_fixed_costs.fix(0)
 
+        # variable for user to assign watertap fixed costs to,
+        # fixed to 0 by default
+        b.watertap_fixed_costs = Var(
+            initialize=0,
+            bounds=(0, 1e4),
+            doc="watertap fixed costs in $MM/yr",
+            units=CE_index_units,
+        )
+
         # create constraints
         TPC = b.total_plant_cost  # quick reference to total_plant_cost
         operating_labor_types, technical_labor_types = [], []  # subset labor lists
@@ -1829,6 +1838,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             return c.property_taxes_and_insurance_cost == 0.01 * TPC
 
         # sum of fixed O&M costs
+
+        # sum of fixed operating costs of membrane units
+        @b.Constraint()
+        def sum_watertap_fixed_cost(c):
+            if b.watertap_fixed_costs_list is None:
+                return c.watertap_fixed_costs == 0
+            else:
+                return c.watertap_fixed_costs == sum(b.watertap_fixed_costs_list)
+
         @b.Constraint()
         def total_fixed_OM_cost_rule(c):
             return c.total_fixed_OM_cost == (
@@ -1839,6 +1857,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 + c.sales_patenting_and_research_cost
                 + c.property_taxes_and_insurance_cost
                 + c.other_fixed_costs
+                + c.watertap_fixed_costs
             )
 
         @b.Constraint()
@@ -2197,6 +2216,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         BEC_list = []
+        b.watertap_fixed_costs_list = []
 
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
@@ -2214,6 +2234,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 w.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
                 BEC_list.append(
                     pyunits.convert(w.costing.capital_cost, to_units=CE_index_units)
+                )
+                b.watertap_fixed_costs_list.append(
+                    pyunits.convert(
+                        w.costing.fixed_operating_costs, to_units=CE_index_units
+                    )
                 )
 
         b.total_BEC = Var(

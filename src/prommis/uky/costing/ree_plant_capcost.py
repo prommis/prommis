@@ -1839,7 +1839,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # sum of fixed O&M costs
 
-        #sum of fixed operating costs of membrane units
+        # sum of fixed operating costs of membrane units
         @b.Constraint()
         def sum_watertap_fixed_cost(c):
             if c.watertap_fixed_costs_list is None:
@@ -2237,7 +2237,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
                 b.watertap_fixed_costs_list.append(
                     pyunits.convert(
-                        w.costing.fixed_operating_cost*pyunits.year, to_units=CE_index_units
+                        w.costing.fixed_operating_cost * pyunits.year,
+                        to_units=CE_index_units,
                     )
                 )
 

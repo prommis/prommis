@@ -1,7 +1,6 @@
 [files]
 extend-exclude = [
     "*.svg",
-    "*.png",
     "*.json",
     ]
 

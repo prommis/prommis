@@ -16,4 +16,3 @@ def test_build():
 def test_solve():
     flowsheet = ui.build_flowsheet()
     ui.solve_flowsheet(flowsheet)
-

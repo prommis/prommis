@@ -19,12 +19,13 @@ __author__ = "Dan Gunter"
 # stdlib
 # third party
 from watertap.ui.fsapi import FlowsheetInterface
+
 # package
 from prommis.uky.uky_flowsheet import (
     build,
     set_operating_conditions,
     set_scaling,
-    solve
+    solve,
 )
 
 
@@ -37,7 +38,7 @@ def export_to_ui():
         get_diagram=get_diagram,
         requires_idaes_solver=True,
         category="PrOMMiS",
-        build_options={}
+        build_options={},
     )
 
 

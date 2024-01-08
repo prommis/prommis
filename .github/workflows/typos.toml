@@ -12,3 +12,8 @@ idaes = "idaes"
 # Atomic elements
 Nd = "Nd"
 nd = "nd"
+[default]
+extend-ignore-re = [
+    # Jupyter notebooks: ignore hexadecimal values in "id" cell metadata field
+    '"id": "[0-9a-f]+",'
+]

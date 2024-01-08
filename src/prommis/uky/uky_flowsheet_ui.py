@@ -17,7 +17,6 @@ Authors: Dan Gunter (LBNL)
 __author__ = "Dan Gunter"
 
 # stdlib
-None
 # third party
 from watertap.ui.fsapi import FlowsheetInterface
 # package
@@ -25,7 +24,6 @@ from prommis.uky.uky_flowsheet import (
     build,
     set_operating_conditions,
     set_scaling,
-    initialize_system,
     solve
 )
 

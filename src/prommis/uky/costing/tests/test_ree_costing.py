@@ -20,7 +20,7 @@ from pyomo.environ import assert_optimal_termination, check_optimal_termination
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.check_units import assert_units_consistent
-
+from pyomo.common.dependencies import attempt_import
 from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
@@ -31,25 +31,27 @@ from idaes.core.util.scaling import (
 )
 
 import pytest
-import watertap.property_models.NaCl_prop_pack as props
-from watertap.core.util.initialization import check_dof
-from watertap.property_models.multicomp_aq_sol_prop_pack import (
-    ActivityCoefficientModel,
-    DensityCalculation,
-    MCASParameterBlock,
-)
-from watertap.unit_models.ion_exchange_0D import IonExchange0D
-from watertap.unit_models.nanofiltration_DSPMDE_0D import (
-    ConcentrationPolarizationType,
-    MassTransferCoefficient,
-    NanofiltrationDSPMDE0D,
-)
-from watertap.unit_models.reverse_osmosis_1D import (
-    ConcentrationPolarizationType,
-    MassTransferCoefficient,
-    PressureChangeType,
-    ReverseOsmosis1D,
-)
+_, watertap_costing_available = attempt_import("watertap.costing")
+if watertap_costing_available:
+    import watertap.property_models.NaCl_prop_pack as props
+    from watertap.core.util.initialization import check_dof
+    from watertap.property_models.multicomp_aq_sol_prop_pack import (
+        ActivityCoefficientModel,
+        DensityCalculation,
+        MCASParameterBlock,
+    )
+    from watertap.unit_models.ion_exchange_0D import IonExchange0D
+    from watertap.unit_models.nanofiltration_DSPMDE_0D import (
+        ConcentrationPolarizationType,
+        MassTransferCoefficient,
+        NanofiltrationDSPMDE0D,
+    )
+    from watertap.unit_models.reverse_osmosis_1D import (
+        ConcentrationPolarizationType,
+        MassTransferCoefficient,
+        PressureChangeType,
+        ReverseOsmosis1D,
+    )
 
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
@@ -1207,6 +1209,8 @@ class TestREECosting(object):
 class TestWaterTAPCosting(object):
     @pytest.fixture(scope="class")
     def model(self):
+        pytest.importorskip("watertap", reason="WaterTAP dependency not available")
+
         model = base_model()
         model.fs_membrane = FlowsheetBlock(dynamic=False)
         solver = get_solver()

@@ -34,7 +34,7 @@ __version__ = "1.0.0"
 
 import textwrap
 from sys import stdout
-
+from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
 from pyomo.environ import ConcreteModel, Constraint, Expression, Param, Var
@@ -54,7 +54,9 @@ from idaes.core import (
 from idaes.core.util.tables import stream_table_dataframe_to_string
 
 from pandas import DataFrame
-from watertap.costing import WaterTAPCosting
+_, watertap_costing_available = attempt_import("watertap.costing")
+if watertap_costing_available:
+    from watertap.costing import WaterTAPCosting
 
 from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
 

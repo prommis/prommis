@@ -18,7 +18,7 @@ __author__ = "Dan Gunter"
 
 # stdlib
 # third party
-from watertap.ui.fsapi import FlowsheetInterface
+from watertap.ui.fsapi import FlowsheetInterface  # pylint: disable=import-error
 
 # package
 from prommis.uky.uky_flowsheet import (

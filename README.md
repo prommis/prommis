@@ -40,6 +40,12 @@ black .
 pylint prommis
 ```
 
+#### Running spell checker (Typos)
+
+```sh
+typos
+```
+
 #### Running tests
 
 ```sh

@@ -85,7 +85,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
       - name: Run Spell Checker
-        uses: crate-ci/typos@master
+        uses: crate-ci/typos@v1.17.0
 
   pytest:
     # description: Run pytest test suite

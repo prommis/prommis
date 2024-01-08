@@ -34,6 +34,11 @@ dependencies = [
     "idaes-pse >= 2.3.0rc1",
     "pyomo >= 6.7.0",
 ]
+[project.optional-dependencies]
+watertap = [
+    # TODO: update once 0.11.0 is available
+    "watertap==0.11.0rc1",
+]
 
 [tool.setuptools_scm]
 

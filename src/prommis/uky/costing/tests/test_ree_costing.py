@@ -1611,7 +1611,7 @@ class TestWaterTAPCosting(object):
             "Yb2O3": 0.00373 * pyunits.kg / pyunits.hr,
             "Lu2O3": 0.00105 * pyunits.kg / pyunits.hr,
         }
-
+        
         model.fs.costing.build_process_costs(
             # arguments related to installation costs
             piping_materials_and_labor_percentage=20,
@@ -1669,7 +1669,7 @@ class TestWaterTAPCosting(object):
                 model.fs_membrane.ixunit,
             ],
         )
-
+        
         # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
         model.fs.costing.other_plant_costs.unfix()
         model.fs.costing.other_plant_costs_rule = pyo.Constraint(
@@ -1735,37 +1735,37 @@ class TestWaterTAPCosting(object):
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.nfunit.costing.fixed_operating_cost,
-                to_units=CE_index_units,
+                to_units=CE_index_units/pyunits.year,
             )
-        ) == pytest.approx(0.1, rel=1e-4)
+        ) == pytest.approx(0.00015159, rel=1e-4)
 
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.rounit.costing.fixed_operating_cost,
-                to_units=CE_index_units,
+                to_units=CE_index_units/pyunits.year,
             )
-        ) == pytest.approx(0.1, rel=1e-4)
+        ) == pytest.approx(0.00016148, rel=1e-4)
 
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.ixunit.costing.fixed_operating_cost,
-                to_units=CE_index_units,
+                to_units=CE_index_units/pyunits.year,
             )
-        ) == pytest.approx(0.1, rel=1e-4)
+        ) == pytest.approx(0.037284, rel=1e-4)
 
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.nfunit.costing.fixed_operating_cost
                 + model.fs_membrane.rounit.costing.fixed_operating_cost
                 + model.fs_membrane.ixunit.costing.fixed_operating_cost,
-                to_units=CE_index_units,
+                to_units=CE_index_units/pyunits.year,
             )
-        ) == pytest.approx(0.3, rel=1e-4)
+        ) == pytest.approx(0.037597, rel=1e-4)
 
         assert model.fs.costing.watertap_fixed_costs.value == pytest.approx(
-            0.3, rel=1e-4
+            0.037597, rel=1e-4
         )
 
         assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
-            11.405, rel=1e-4
+            11.50202, rel=1e-4
         )

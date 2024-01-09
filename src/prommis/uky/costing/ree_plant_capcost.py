@@ -696,8 +696,16 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             feed_input_rate = None
 
         # build operating & maintenance costs
-        self.chemicals_list = chemicals
-        self.waste_list = waste
+        if chemicals is None:
+            self.chemicals_list = []
+        else:
+            self.chemicals_list = chemicals
+
+        if waste is None:
+            self.waste_list = []
+        else:
+            self.waste_list = waste
+
         if fixed_OM:
             self.get_fixed_OM_costs(
                 labor_types=labor_types,
@@ -757,15 +765,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
 
         if fixed_OM and variable_OM:
-            self.additional_cost_of_recovery = Var(
-                initialize=0,
-                doc="additional cost to be added to the COR calculations"
-                + " in millions",
-                units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
-            )
-
             # build cost of recovery (COR)
             if recovery_rate is not None:
+                self.additional_cost_of_recovery = Var(
+                    initialize=0,
+                    doc="additional cost to be added to the COR calculations"
+                    + " in millions",
+                    units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
+                )
+
                 if not hasattr(self, "recovery_rate"):
                     if (
                         pyunits.get_units(recovery_rate) == pyunits.dimensionless
@@ -2027,11 +2035,28 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 units=CE_index_units / pyunits.year,
             )
 
+        if (0, "power") in b.variable_operating_costs.id_index_map().values():
+
             @b.Constraint(b.parent_block().time)
             def plant_overhead_cost_rule(c, t):
                 return c.plant_overhead_cost[t] == 0.20 * (
                     c.total_fixed_OM_cost / pyunits.year
                     + c.variable_operating_costs[0, "power"]
+                    + c.land_cost / pyunits.year
+                    + sum(
+                        c.variable_operating_costs[0, chemical]
+                        for chemical in c.chemicals_list
+                    )
+                    + sum(
+                        c.variable_operating_costs[0, waste] for waste in c.waste_list
+                    )
+                )
+        else:
+            
+            @b.Constraint(b.parent_block().time)
+            def plant_overhead_cost_rule(c, t):
+                return c.plant_overhead_cost[t] == 0.20 * (
+                    c.total_fixed_OM_cost / pyunits.year
                     + c.land_cost / pyunits.year
                     + sum(
                         c.variable_operating_costs[0, chemical]

@@ -194,6 +194,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         total TPC.
 
         Args:
+            total_purchase_cost: user-defined value for the total equipment 
+                purchase cost. To use as the total plant cost, including 
+                installation, also set the Lang_factor to 1.
             Lang_factor: single multiplicative factor to estimate installation
                 costs; defaults to None and method will use percentages. The
                 default percentages yield an effective Lang factor of 2.97.
@@ -289,6 +292,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 initialize=total_purchase_cost,
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
+            self.total_BEC.fix()
 
         # define variables
         if Lang_factor is None:
@@ -671,11 +675,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
             else:
                 if pyunits.get_units(land_cost) == pyunits.dimensionless:
-                    self.land_cost = land_cost * CE_index_units
+                    self.land_cost = Expression(expr=land_cost * CE_index_units)
                 else:
-                    self.land_cost = pyunits.convert(land_cost, to_units=CE_index_units)
+                    self.land_cost = Expression(
+                        expr=pyunits.convert(land_cost, to_units=CE_index_units))
         else:
-            self.land_cost = 0 * CE_index_units
+            self.land_cost = Expression(expr=0 * CE_index_units)
 
         # define feed input, if passed
         if feed_input is not None:

@@ -893,7 +893,11 @@ def test_REE_costing(m):
     )
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3 * 0.8025 * pyo.value(m.fs.annual_operating_hours),  # TREO (total rare earth oxide), 80.25% REE in REO
+        initialize=39.3
+        * 0.8025
+        * pyo.value(
+            m.fs.annual_operating_hours
+        ),  # TREO (total rare earth oxide), 80.25% REE in REO
         units=pyunits.kg / pyunits.year,
     )
 
@@ -1089,7 +1093,6 @@ def test_solve(m):
 
 @pytest.mark.component
 def test_results(m):
-
     # check that the cost units are as expected
     assert m.fs.costing.total_plant_cost.get_units() == pyunits.MUSD_UKy_2019
     # check that some objects are built as expected
@@ -1186,9 +1189,9 @@ def test_costing_bounding(m):
             expected_costing_upper_bound[key], rel=1e-4
         )
 
+
 @pytest.mark.component
 def test_REE_costing_noOM_usedefaults():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1248,7 +1251,6 @@ def test_REE_costing_noOM_usedefaults():
 
 @pytest.mark.component
 def test_REE_costing_CE_index_year():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.costing = QGESSCosting()
@@ -1388,7 +1390,6 @@ def test_REE_costing_CE_index_year():
 
 @pytest.mark.component
 def test_REE_costing_disallowedunitmodelcostunits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1418,7 +1419,6 @@ def test_REE_costing_disallowedunitmodelcostunits():
 
 @pytest.mark.component
 def test_REE_costing_nonexistentcostaccount():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1446,7 +1446,6 @@ def test_REE_costing_nonexistentcostaccount():
 
 @pytest.mark.component
 def test_REE_costing_multipleaccountssameparameter():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1500,16 +1499,23 @@ def test_REE_costing_multipleaccountssameparameter():
     solver = get_solver()
     results = solver.solve(m, tee=True)
     assert_units_consistent(m)
-    
-    assert m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3"].value == pytest.approx(2.5122, rel=1e-4)
-    assert m.fs.CS_crusher.costing.bare_erected_cost["1.3"].value == pytest.approx(2.5122, rel=1e-4)
-    assert m.fs.CS_roll_crusher.costing.bare_erected_cost["1.5"].value == pytest.approx(0.32769, rel=1e-4)
-    assert m.fs.CS_crusher.costing.bare_erected_cost["1.5"].value == pytest.approx(0.32769, rel=1e-4)
+
+    assert m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3"].value == pytest.approx(
+        2.5122, rel=1e-4
+    )
+    assert m.fs.CS_crusher.costing.bare_erected_cost["1.3"].value == pytest.approx(
+        2.5122, rel=1e-4
+    )
+    assert m.fs.CS_roll_crusher.costing.bare_erected_cost["1.5"].value == pytest.approx(
+        0.32769, rel=1e-4
+    )
+    assert m.fs.CS_crusher.costing.bare_erected_cost["1.5"].value == pytest.approx(
+        0.32769, rel=1e-4
+    )
 
 
 @pytest.mark.component
 def test_REE_costing_multipleaccountsdifferentparameters():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1521,8 +1527,8 @@ def test_REE_costing_multipleaccountsdifferentparameters():
     m.fs.CS_crusher.power.fix()
 
     with pytest.raises(
-            ValueError,
-            match="fs.CS_crusher.costing cost accounts selected do not use the same process parameter",
+        ValueError,
+        match="fs.CS_crusher.costing cost accounts selected do not use the same process parameter",
     ):
         m.fs.CS_crusher.costing = UnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
@@ -1537,7 +1543,6 @@ def test_REE_costing_multipleaccountsdifferentparameters():
 
 @pytest.mark.component
 def test_REE_costing_additionalcostingparams_newaccount():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1553,7 +1558,7 @@ def test_REE_costing_additionalcostingparams_newaccount():
                 "Process Parameter": "Power Draw (hp)",
                 "RP Value": 589.0,
                 "Units": "hp",
-                },
+            },
         },
     }
 
@@ -1578,12 +1583,13 @@ def test_REE_costing_additionalcostingparams_newaccount():
     assert_units_consistent(m)
 
     # adding a check just to make sure everything works as expected
-    assert m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3new"].value == pytest.approx(2.5122, rel=1e-4)
+    assert m.fs.CS_jaw_crusher.costing.bare_erected_cost[
+        "1.3new"
+    ].value == pytest.approx(2.5122, rel=1e-4)
 
 
 @pytest.mark.component
 def test_REE_costing_additionalcostingparams_overwrite():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1599,7 +1605,7 @@ def test_REE_costing_additionalcostingparams_overwrite():
                 "Process Parameter": "Power Draw (hp)",
                 "RP Value": 689.0,  # changed this value from 589.0
                 "Units": "hp",
-                },
+            },
         },
     }
 
@@ -1625,12 +1631,13 @@ def test_REE_costing_additionalcostingparams_overwrite():
     assert_units_consistent(m)
 
     # adding a check just to make sure 1.3 was overwritten before it was used
-    assert m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3"].value == pytest.approx(2.0650, rel=1e-4)
+    assert m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3"].value == pytest.approx(
+        2.0650, rel=1e-4
+    )
 
 
 @pytest.mark.component
 def test_REE_costing_additionalcostingparams_nooverwrite():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1646,7 +1653,7 @@ def test_REE_costing_additionalcostingparams_nooverwrite():
                 "Process Parameter": "Power Draw (hp)",
                 "RP Value": 689.0,  # changed this value from 589.0
                 "Units": "hp",
-                },
+            },
         },
     }
 
@@ -1657,12 +1664,12 @@ def test_REE_costing_additionalcostingparams_nooverwrite():
     m.fs.CS_jaw_crusher.power.fix()
 
     with pytest.raises(
-            ValueError,
-            match="Data already exists for Account 1.3 using source 1. Please "
-            "confirm that the custom account dictionary is correct, or add the "
-            "new parameters as a new account. To use the custom account dictionary "
-            "for all conflicts, please pass the argument use_additional_costing_params "
-            "as True.",
+        ValueError,
+        match="Data already exists for Account 1.3 using source 1. Please "
+        "confirm that the custom account dictionary is correct, or add the "
+        "new parameters as a new account. To use the custom account dictionary "
+        "for all conflicts, please pass the argument use_additional_costing_params "
+        "as True.",
     ):
         m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
@@ -1679,7 +1686,6 @@ def test_REE_costing_additionalcostingparams_nooverwrite():
 
 @pytest.mark.component
 def test_REE_costing_scaledownparallelequip():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.costing = QGESSCosting()
@@ -1797,27 +1803,38 @@ def test_REE_costing_scaledownparallelequip():
     assert_units_consistent(m)
 
     # base case
-    assert m.fs.CS_jaw_crusher_1.costing.bare_erected_cost["1.3"].value == pytest.approx(1.0000, rel=1e-4)
+    assert m.fs.CS_jaw_crusher_1.costing.bare_erected_cost[
+        "1.3"
+    ].value == pytest.approx(1.0000, rel=1e-4)
 
     # only one unit, parallel doesn't change result
-    assert m.fs.CS_jaw_crusher_2.costing.bare_erected_cost["1.3"].value == pytest.approx(1.0000, rel=1e-4)
+    assert m.fs.CS_jaw_crusher_2.costing.bare_erected_cost[
+        "1.3"
+    ].value == pytest.approx(1.0000, rel=1e-4)
 
     # same capacity over two units should be slightly less expensive than one unit
-    assert m.fs.CS_jaw_crusher_3.costing.bare_erected_cost["1.3"].value == pytest.approx(0.84095, rel=1e-4)
+    assert m.fs.CS_jaw_crusher_3.costing.bare_erected_cost[
+        "1.3"
+    ].value == pytest.approx(0.84095, rel=1e-4)
 
     # two units with base case capacity should be double the cost
-    assert m.fs.CS_jaw_crusher_4.costing.bare_erected_cost["1.3"].value == pytest.approx(2.0000, rel=1e-4)
+    assert m.fs.CS_jaw_crusher_4.costing.bare_erected_cost[
+        "1.3"
+    ].value == pytest.approx(2.0000, rel=1e-4)
 
     # same capacity over five units should be much less expensive than one unit
-    assert m.fs.CS_jaw_crusher_5.costing.bare_erected_cost["1.3"].value == pytest.approx(0.66878, rel=1e-4)
+    assert m.fs.CS_jaw_crusher_5.costing.bare_erected_cost[
+        "1.3"
+    ].value == pytest.approx(0.66878, rel=1e-4)
 
     # five units with base case capacity should be five times the cost
-    assert m.fs.CS_jaw_crusher_6.costing.bare_erected_cost["1.3"].value == pytest.approx(5.0000, rel=1e-4)
+    assert m.fs.CS_jaw_crusher_6.costing.bare_erected_cost[
+        "1.3"
+    ].value == pytest.approx(5.0000, rel=1e-4)
 
 
 @pytest.mark.component
 def test_REE_costing_disallowedbuildprocesscostunits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1852,7 +1869,6 @@ def test_REE_costing_disallowedbuildprocesscostunits():
 
 @pytest.mark.component
 def test_REE_costing_usersetTPC():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1900,7 +1916,6 @@ def test_REE_costing_usersetTPC():
 
 @pytest.mark.component
 def test_REE_costing_useLangfactor():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1942,7 +1957,6 @@ def test_REE_costing_useLangfactor():
     assert hasattr(m.fs.costing, "total_plant_cost")
     assert hasattr(m.fs.costing, "total_overnight_capital")
 
-
     # if piping materials and labor DNE, all other factors DNE as well
     assert not hasattr(m.fs.costing, "piping_materials_and_labor_percentage")
     # instead of percentages, Lang factor should be built
@@ -1954,7 +1968,6 @@ def test_REE_costing_useLangfactor():
 
 @pytest.mark.component
 def test_REE_costing_landcostExpression_withunits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -1975,7 +1988,7 @@ def test_REE_costing_landcostExpression_withunits():
     )
 
     # define land_cost
-    m.fs.land_cost = pyo.Expression(expr=1e-3*pyunits.MUSD_2021)
+    m.fs.land_cost = pyo.Expression(expr=1e-3 * pyunits.MUSD_2021)
 
     # defaults to fixed_OM=True, so explicitly set to False
     # defaults to variable_OM=False, so let that use the default
@@ -1998,7 +2011,6 @@ def test_REE_costing_landcostExpression_withunits():
 
 @pytest.mark.component
 def test_REE_costing_landcostExpression_nounits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2042,7 +2054,6 @@ def test_REE_costing_landcostExpression_nounits():
 
 @pytest.mark.component
 def test_REE_costing_landcostnonExpression_withunits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2086,7 +2097,6 @@ def test_REE_costing_landcostnonExpression_withunits():
 
 @pytest.mark.component
 def test_REE_costing_landcostnonExpression_nounits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2130,7 +2140,6 @@ def test_REE_costing_landcostnonExpression_nounits():
 
 @pytest.mark.component
 def test_REE_costing_fixedOM_defaults():
-
     # use as many default values as possible, only pass required arguments
     # will build fixed O&M costs but not variable O&M costs
 
@@ -2155,8 +2164,12 @@ def test_REE_costing_fixedOM_defaults():
 
     # fixed_OM defaults to True, use default
     m.fs.costing.build_process_costs(
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
     )
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2184,14 +2197,28 @@ def test_REE_costing_fixedOM_defaults():
     assert not hasattr(m.fs.costing, "total_variable_OM_cost")
     assert not hasattr(m.fs.costing, "plant_overhead_cost")
 
-    assert m.fs.costing.annual_operating_labor_cost.value == pytest.approx(3.0730, rel=1e-4)
-    assert m.fs.costing.annual_technical_labor_cost.value == pytest.approx(1.1801, rel=1e-4)
+    assert m.fs.costing.annual_operating_labor_cost.value == pytest.approx(
+        3.0730, rel=1e-4
+    )
+    assert m.fs.costing.annual_technical_labor_cost.value == pytest.approx(
+        1.1801, rel=1e-4
+    )
     assert m.fs.costing.annual_labor_cost.value == pytest.approx(4.2531, rel=1e-4)
-    assert m.fs.costing.maintenance_and_material_cost.value == pytest.approx(0.14922, rel=1e-4)
-    assert m.fs.costing.quality_assurance_and_control_cost.value == pytest.approx(0.30730, rel=1e-4)
-    assert m.fs.costing.sales_patenting_and_research_cost.value == pytest.approx(0.32191, rel=1e-4)
-    assert m.fs.costing.admin_and_support_labor_cost.value == pytest.approx(0.61460, rel=1e-4)
-    assert m.fs.costing.property_taxes_and_insurance_cost.value == pytest.approx(0.074612, rel=1e-4)
+    assert m.fs.costing.maintenance_and_material_cost.value == pytest.approx(
+        0.14922, rel=1e-4
+    )
+    assert m.fs.costing.quality_assurance_and_control_cost.value == pytest.approx(
+        0.30730, rel=1e-4
+    )
+    assert m.fs.costing.sales_patenting_and_research_cost.value == pytest.approx(
+        0.32191, rel=1e-4
+    )
+    assert m.fs.costing.admin_and_support_labor_cost.value == pytest.approx(
+        0.61460, rel=1e-4
+    )
+    assert m.fs.costing.property_taxes_and_insurance_cost.value == pytest.approx(
+        0.074612, rel=1e-4
+    )
     assert m.fs.costing.other_fixed_costs.value == pytest.approx(0.0000, abs=1e-4)
     assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
     assert m.fs.costing.total_sales_revenue.value == pytest.approx(64.382, rel=1e-4)
@@ -2199,7 +2226,6 @@ def test_REE_costing_fixedOM_defaults():
 
 @pytest.mark.component
 def test_REE_costing_fixedOM_twiceonsamemodel():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2221,28 +2247,35 @@ def test_REE_costing_fixedOM_twiceonsamemodel():
 
     # fixed_OM defaults to True, use default
     m.fs.costing.build_process_costs(
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
     )
 
     with pytest.raises(
-            RuntimeError,
-            match="Cannot add component 'labor_rate_index' \\(type \\<class "
-            "'pyomo.core.base.set.OrderedScalarSet'\\>\\) to block "
-            "'fs.costing': a component by that name \\(type \\<class "
-            "'pyomo.core.base.set.OrderedScalarSet'\\>\\) is already "
-            "defined.",
+        RuntimeError,
+        match="Cannot add component 'labor_rate_index' \\(type \\<class "
+        "'pyomo.core.base.set.OrderedScalarSet'\\>\\) to block "
+        "'fs.costing': a component by that name \\(type \\<class "
+        "'pyomo.core.base.set.OrderedScalarSet'\\>\\) is already "
+        "defined.",
     ):
         # call costing a second time
         m.fs.costing.build_process_costs(
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
         )
 
 
 @pytest.mark.component
 def test_REE_costing_fixedOM_pureproductnotpassed():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2263,14 +2296,14 @@ def test_REE_costing_fixedOM_pureproductnotpassed():
     )
 
     with pytest.raises(
-            TypeError,
-            match="product_output_rates argument must be a dict",
+        TypeError,
+        match="product_output_rates argument must be a dict",
     ):
         m.fs.costing.build_process_costs()
 
+
 @pytest.mark.component
 def test_REE_costing_fixedOM_pureproductnotadict():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2291,17 +2324,18 @@ def test_REE_costing_fixedOM_pureproductnotadict():
     )
 
     with pytest.raises(
-            TypeError,
-            match="product_output_rates argument must be a dict",
+        TypeError,
+        match="product_output_rates argument must be a dict",
     ):
         m.fs.costing.build_process_costs(
-            pure_product_output_rates=[1.9 * pyunits.kg / pyunits.hr,],
+            pure_product_output_rates=[
+                1.9 * pyunits.kg / pyunits.hr,
+            ],
         )
 
 
 @pytest.mark.component
 def test_REE_costing_fixedOM_mixedproductnotpassed():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2322,17 +2356,18 @@ def test_REE_costing_fixedOM_mixedproductnotpassed():
     )
 
     with pytest.raises(
-            TypeError,
-            match="product_output_rates argument must be a dict",
+        TypeError,
+        match="product_output_rates argument must be a dict",
     ):
         m.fs.costing.build_process_costs(
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
         )
 
 
 @pytest.mark.component
 def test_REE_costing_fixedOM_mixedproductnotadict():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2353,18 +2388,21 @@ def test_REE_costing_fixedOM_mixedproductnotadict():
     )
 
     with pytest.raises(
-            TypeError,
-            match="product_output_rates argument must be a dict",
+        TypeError,
+        match="product_output_rates argument must be a dict",
     ):
         m.fs.costing.build_process_costs(
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates=[0.00143 * pyunits.kg / pyunits.hr,],
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates=[
+                0.00143 * pyunits.kg / pyunits.hr,
+            ],
         )
 
 
 @pytest.mark.component
 def test_REE_costing_fixedOM_salesprice():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2385,15 +2423,18 @@ def test_REE_costing_fixedOM_salesprice():
     )
 
     m.fs.costing.build_process_costs(
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         sale_prices={"newprod": 1e-6 * pyunits.MUSD_2021 / pyunits.kg},
     )
 
 
 @pytest.mark.component
 def test_REE_costing_fixedOM_salespricenotadict():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2414,19 +2455,22 @@ def test_REE_costing_fixedOM_salespricenotadict():
     )
 
     with pytest.raises(
-            TypeError,
-            match="Dictionary of custom sale_prices must be a dict object.",
+        TypeError,
+        match="Dictionary of custom sale_prices must be a dict object.",
     ):
         m.fs.costing.build_process_costs(
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
             sale_prices=[1e-6 * pyunits.MUSD_2021 / pyunits.kg],
         )
 
 
 @pytest.mark.component
 def test_REE_costing_fixedOM_pureproductnoprice():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2447,23 +2491,26 @@ def test_REE_costing_fixedOM_pureproductnoprice():
     )
 
     with pytest.raises(
-            Exception,
-            match="A pure product was included that does not contain a sale price. "
-            "Sale prices exist for the following products: \\['Sc', 'Y', 'La', "
-            "'Ce', 'Pr', 'Nd', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', "
-            "'Yb', 'Lu', 'Sc2O3', 'Y2O3', 'La2O3', 'CeO2', 'Pr6O11', 'Nd2O3', "
-            "'Sm2O3', 'Eu2O3', 'Gd2O3', 'Tb4O7', 'Dy2O3', 'Ho2O3', 'Er2O3', "
-            "'Tm2O3', 'Yb2O3', 'Lu2O3'\\]",
+        Exception,
+        match="A pure product was included that does not contain a sale price. "
+        "Sale prices exist for the following products: \\['Sc', 'Y', 'La', "
+        "'Ce', 'Pr', 'Nd', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', "
+        "'Yb', 'Lu', 'Sc2O3', 'Y2O3', 'La2O3', 'CeO2', 'Pr6O11', 'Nd2O3', "
+        "'Sm2O3', 'Eu2O3', 'Gd2O3', 'Tb4O7', 'Dy2O3', 'Ho2O3', 'Er2O3', "
+        "'Tm2O3', 'Yb2O3', 'Lu2O3'\\]",
     ):
         m.fs.costing.build_process_costs(
-            pure_product_output_rates={"newprod": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "newprod": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
         )
 
 
 @pytest.mark.component
 def test_REE_costing_fixedOM_mixedproductnoprice():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2484,15 +2531,19 @@ def test_REE_costing_fixedOM_mixedproductnoprice():
     )
 
     with pytest.raises(
-            ValueError,
-            match="Value newtype for labor_type is not allowed. "
-            "Allowed labor types for operating labor include skilled,"
-            "unskilled, supervisor and maintenance. Allowed labor types "
-            "for direct labor include technician and engineer.",
+        ValueError,
+        match="Value newtype for labor_type is not allowed. "
+        "Allowed labor types for operating labor include skilled,"
+        "unskilled, supervisor and maintenance. Allowed labor types "
+        "for direct labor include technician and engineer.",
     ):
         m.fs.costing.build_process_costs(
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
             labor_types=[
                 "skilled",
                 "unskilled",
@@ -2500,14 +2551,13 @@ def test_REE_costing_fixedOM_mixedproductnoprice():
                 "maintenance",
                 "technician",
                 "engineer",
-                "newtype"
+                "newtype",
             ],
         )
 
 
 @pytest.mark.component
 def test_REE_costing_fixedOM_disallowedlabortype():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2528,22 +2578,26 @@ def test_REE_costing_fixedOM_disallowedlabortype():
     )
 
     with pytest.raises(
-            Exception,
-            match="A mixed product was included that does not contain a sale price. "
-            "Sale prices exist for the following products: \\['Sc', 'Y', 'La', "
-            "'Ce', 'Pr', 'Nd', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', "
-            "'Yb', 'Lu', 'Sc2O3', 'Y2O3', 'La2O3', 'CeO2', 'Pr6O11', 'Nd2O3', "
-            "'Sm2O3', 'Eu2O3', 'Gd2O3', 'Tb4O7', 'Dy2O3', 'Ho2O3', 'Er2O3', "
-            "'Tm2O3', 'Yb2O3', 'Lu2O3'\\]",
+        Exception,
+        match="A mixed product was included that does not contain a sale price. "
+        "Sale prices exist for the following products: \\['Sc', 'Y', 'La', "
+        "'Ce', 'Pr', 'Nd', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', "
+        "'Yb', 'Lu', 'Sc2O3', 'Y2O3', 'La2O3', 'CeO2', 'Pr6O11', 'Nd2O3', "
+        "'Sm2O3', 'Eu2O3', 'Gd2O3', 'Tb4O7', 'Dy2O3', 'Ho2O3', 'Er2O3', "
+        "'Tm2O3', 'Yb2O3', 'Lu2O3'\\]",
     ):
         m.fs.costing.build_process_costs(
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"newprod": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "newprod": 0.00143 * pyunits.kg / pyunits.hr,
+            },
         )
+
 
 @pytest.mark.component
 def test_REE_costing_variableOM_defaults():
-
     # use as many default values as possible, only pass required arguments
 
     m = pyo.ConcreteModel()
@@ -2568,19 +2622,25 @@ def test_REE_costing_variableOM_defaults():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
     )
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2603,14 +2663,15 @@ def test_REE_costing_variableOM_defaults():
     assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
     assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
     assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(1.1595, rel=1e-4)
+    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+        1.1595, rel=1e-4
+    )
     assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1441, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
 
 
 @pytest.mark.component
 def test_REE_costing_variableOM_nofixedOM():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2633,27 +2694,28 @@ def test_REE_costing_variableOM_nofixedOM():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     with pytest.raises(
-            AttributeError,
-            match="_ScalarQGESSCosting' object has no attribute 'hours_per_shift'",
+        AttributeError,
+        match="_ScalarQGESSCosting' object has no attribute 'hours_per_shift'",
     ):
         m.fs.costing.build_process_costs(
             fixed_OM=False,
             variable_OM=True,
             feed_input=m.fs.feed_input,
-            resources=["water",],
-            rates=[m.fs.water,],
+            resources=[
+                "water",
+            ],
+            rates=[
+                m.fs.water,
+            ],
         )
 
 
 @pytest.mark.component
 def test_REE_costing_variableOM_nofeedinput():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2676,26 +2738,27 @@ def test_REE_costing_variableOM_nofeedinput():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     with pytest.raises(
-            AttributeError,
-            match="No feed_input rate variable passed to main costing block.",
+        AttributeError,
+        match="No feed_input rate variable passed to main costing block.",
     ):
         m.fs.costing.build_process_costs(
             fixed_OM=False,
             variable_OM=True,
-            resources=["water",],
-            rates=[m.fs.water,],
+            resources=[
+                "water",
+            ],
+            rates=[
+                m.fs.water,
+            ],
         )
 
 
 @pytest.mark.component
 def test_REE_costing_variableOM_feedinputnounits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2718,19 +2781,25 @@ def test_REE_costing_variableOM_feedinputnounits():
     m.fs.feed_input = pyo.Var(initialize=500)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
     )
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2748,7 +2817,6 @@ def test_REE_costing_variableOM_feedinputnounits():
 
 @pytest.mark.component
 def test_REE_costing_variableOM_resourcesnotalist():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2771,29 +2839,34 @@ def test_REE_costing_variableOM_resourcesnotalist():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     with pytest.raises(
-            TypeError,
-            match="resources argument must be a list",
+        TypeError,
+        match="resources argument must be a list",
     ):
         m.fs.costing.build_process_costs(
             fixed_OM=True,
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
             variable_OM=True,
             feed_input=m.fs.feed_input,
-            resources={"water",},
-            rates=[m.fs.water,],
+            resources={
+                "water",
+            },
+            rates=[
+                m.fs.water,
+            ],
         )
 
 
 @pytest.mark.component
 def test_REE_costing_variableOM_ratesnotalist():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2816,29 +2889,34 @@ def test_REE_costing_variableOM_ratesnotalist():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     with pytest.raises(
-            TypeError,
-            match="rates argument must be a list",
+        TypeError,
+        match="rates argument must be a list",
     ):
         m.fs.costing.build_process_costs(
             fixed_OM=True,
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
             variable_OM=True,
             feed_input=m.fs.feed_input,
-            resources=["water",],
-            rates={m.fs.water,},
+            resources=[
+                "water",
+            ],
+            rates={
+                m.fs.water,
+            },
         )
 
 
 @pytest.mark.component
 def test_REE_costing_variableOM_customprices():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2861,21 +2939,26 @@ def test_REE_costing_variableOM_customprices():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
-        prices={"water": 1.90e-3 * 1e-6 * pyunits.MUSD_2021 / pyunits.gallon}
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
+        prices={"water": 1.90e-3 * 1e-6 * pyunits.MUSD_2021 / pyunits.gallon},
     )
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2887,11 +2970,13 @@ def test_REE_costing_variableOM_customprices():
     assert_units_consistent(m)
 
     # check some cost results
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(1.1595, rel=1e-4)
+    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+        1.1595, rel=1e-4
+    )
+
 
 @pytest.mark.component
 def test_REE_costing_variableOM_custompricesnotadict():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2914,30 +2999,35 @@ def test_REE_costing_variableOM_custompricesnotadict():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     with pytest.raises(
-            TypeError,
-            match="prices argument must be a dictionary",
+        TypeError,
+        match="prices argument must be a dictionary",
     ):
         m.fs.costing.build_process_costs(
             fixed_OM=True,
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
             variable_OM=True,
             feed_input=m.fs.feed_input,
-            resources=["water",],
-            rates=[m.fs.water,],
-            prices=[1e-3 * 1e-6 * pyunits.MUSD_2021 / pyunits.gallon]
+            resources=[
+                "water",
+            ],
+            rates=[
+                m.fs.water,
+            ],
+            prices=[1e-3 * 1e-6 * pyunits.MUSD_2021 / pyunits.gallon],
         )
 
 
 @pytest.mark.component
 def test_REE_costing_variableOM_resourcesratesdifflengths():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2960,29 +3050,32 @@ def test_REE_costing_variableOM_resourcesratesdifflengths():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     with pytest.raises(
-            Exception,
-            match="resources and rates must be lists of the same length",
+        Exception,
+        match="resources and rates must be lists of the same length",
     ):
         m.fs.costing.build_process_costs(
             fixed_OM=True,
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
             variable_OM=True,
             feed_input=m.fs.feed_input,
             resources=["water", "water"],
-            rates=[m.fs.water,],
+            rates=[
+                m.fs.water,
+            ],
         )
 
 
 @pytest.mark.component
 def test_REE_costing_variableOM_resourcenotinpricelist():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3005,35 +3098,40 @@ def test_REE_costing_variableOM_resourcenotinpricelist():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.H2O = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.H2O = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.H2O.fix()
 
     with pytest.raises(
-            Exception,
-            match="A resource was included that does not contain a price. "
-            "Prices exist for the following resources: \\['power', 'water', "
-            "'diesel', 'bioleaching_solution', 'H2SO4', 'natural_gas', "
-            "'polymer', 'NAOH', 'CACO3', 'coal_calcite', 'HCL', 'oxalic_acid',"
-            " 'ascorbic_acid', 'kerosene', 'D2EHPA', 'NA2S', "
-            "'nonhazardous_solid_waste', 'nonhazardous_precipitate_waste', "
-            "'dust_and_volatiles'\\]",
+        Exception,
+        match="A resource was included that does not contain a price. "
+        "Prices exist for the following resources: \\['power', 'water', "
+        "'diesel', 'bioleaching_solution', 'H2SO4', 'natural_gas', "
+        "'polymer', 'NAOH', 'CACO3', 'coal_calcite', 'HCL', 'oxalic_acid',"
+        " 'ascorbic_acid', 'kerosene', 'D2EHPA', 'NA2S', "
+        "'nonhazardous_solid_waste', 'nonhazardous_precipitate_waste', "
+        "'dust_and_volatiles'\\]",
     ):
         m.fs.costing.build_process_costs(
             fixed_OM=True,
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
             variable_OM=True,
             feed_input=m.fs.feed_input,
-            resources=["H2O",],
-            rates=[m.fs.H2O,],
+            resources=[
+                "H2O",
+            ],
+            rates=[
+                m.fs.H2O,
+            ],
         )
 
 
 @pytest.mark.component
 def test_REE_costing_recovery_basecase():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3056,25 +3154,35 @@ def test_REE_costing_recovery_basecase():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3 * 0.8025 * 8 * 3 * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
+        initialize=39.3
+        * 0.8025
+        * 8
+        * 3
+        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
         units=pyunits.kg / pyunits.year,
     )
     m.fs.recovery_rate_per_year.fix()
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
     )
 
@@ -3096,12 +3204,13 @@ def test_REE_costing_recovery_basecase():
     assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
     assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(0.0000, abs=1e-4)
+    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+        0.0000, abs=1e-4
+    )
 
 
 @pytest.mark.component
 def test_REE_costing_recovery_nounits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3135,25 +3244,35 @@ def test_REE_costing_recovery_nounits():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3 * 0.8025 * pyo.value(m.fs.annual_operating_hours),  # TREO (total rare earth oxide), 80.25% REE in REO,
+        initialize=39.3
+        * 0.8025
+        * pyo.value(
+            m.fs.annual_operating_hours
+        ),  # TREO (total rare earth oxide), 80.25% REE in REO,
         # no units passed - should be parsed as kg/a (multipliers give numerical rate per year)
     )
     m.fs.recovery_rate_per_year.fix()
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
     )
 
@@ -3175,11 +3294,13 @@ def test_REE_costing_recovery_nounits():
     assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
     assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(0.0000, abs=1e-4)
+    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+        0.0000, abs=1e-4
+    )
+
 
 @pytest.mark.component
 def test_REE_costing_recovery_notmassunits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3213,13 +3334,15 @@ def test_REE_costing_recovery_notmassunits():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3 * 0.8025 * pyo.value(m.fs.annual_operating_hours),  # TREO (total rare earth oxide), 80.25% REE in REO,
+        initialize=39.3
+        * 0.8025
+        * pyo.value(
+            m.fs.annual_operating_hours
+        ),  # TREO (total rare earth oxide), 80.25% REE in REO,
         units=pyunits.mol / pyunits.year,
     )
     m.fs.recovery_rate_per_year.fix()
@@ -3233,19 +3356,26 @@ def test_REE_costing_recovery_notmassunits():
     ):
         m.fs.costing.build_process_costs(
             fixed_OM=True,
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
             variable_OM=True,
             feed_input=m.fs.feed_input,
-            resources=["water",],
-            rates=[m.fs.water,],
+            resources=[
+                "water",
+            ],
+            rates=[
+                m.fs.water,
+            ],
             recovery_rate_per_year=m.fs.recovery_rate_per_year,
         )
 
 
 @pytest.mark.component
 def test_REE_costing_recovery_notannualbasisunits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3279,13 +3409,15 @@ def test_REE_costing_recovery_notannualbasisunits():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3 * 0.8025 * pyo.value(m.fs.annual_operating_hours),  # TREO (total rare earth oxide), 80.25% REE in REO,
+        initialize=39.3
+        * 0.8025
+        * pyo.value(
+            m.fs.annual_operating_hours
+        ),  # TREO (total rare earth oxide), 80.25% REE in REO,
         units=pyunits.kg / pyunits.h,
     )
     m.fs.recovery_rate_per_year.fix()
@@ -3299,19 +3431,26 @@ def test_REE_costing_recovery_notannualbasisunits():
     ):
         m.fs.costing.build_process_costs(
             fixed_OM=True,
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
             variable_OM=True,
             feed_input=m.fs.feed_input,
-            resources=["water",],
-            rates=[m.fs.water,],
+            resources=[
+                "water",
+            ],
+            rates=[
+                m.fs.water,
+            ],
             recovery_rate_per_year=m.fs.recovery_rate_per_year,
         )
 
 
 @pytest.mark.component
 def test_REE_costing_recovery_passedinmethodcall():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3345,19 +3484,25 @@ def test_REE_costing_recovery_passedinmethodcall():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
         recovery_rate_per_year=39.3 * 0.8025 * pyo.value(m.fs.annual_operating_hours),
     )
 
@@ -3379,12 +3524,13 @@ def test_REE_costing_recovery_passedinmethodcall():
     assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
     assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(0.0000, abs=1e-4)
+    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+        0.0000, abs=1e-4
+    )
 
 
 @pytest.mark.component
 def test_REE_costing_recovery_transportcostExpression():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3407,27 +3553,39 @@ def test_REE_costing_recovery_transportcostExpression():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3 * 0.8025 * 8 * 3 * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
+        initialize=39.3
+        * 0.8025
+        * 8
+        * 3
+        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
         units=pyunits.kg / pyunits.year,
     )
     m.fs.recovery_rate_per_year.fix()
 
-    m.fs.transport_cost_per_ton_product = pyo.Expression(expr=10 * pyunits.USD_2021/pyunits.ton)
+    m.fs.transport_cost_per_ton_product = pyo.Expression(
+        expr=10 * pyunits.USD_2021 / pyunits.ton
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
@@ -3451,13 +3609,14 @@ def test_REE_costing_recovery_transportcostExpression():
     assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
     assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(0.0000, abs=1e-4)
+    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+        0.0000, abs=1e-4
+    )
     assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
 
 
 @pytest.mark.component
 def test_REE_costing_recovery_transportcostExpressionnounits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3480,13 +3639,15 @@ def test_REE_costing_recovery_transportcostExpressionnounits():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3 * 0.8025 * 8 * 3 * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
+        initialize=39.3
+        * 0.8025
+        * 8
+        * 3
+        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
         units=pyunits.kg / pyunits.year,
     )
     m.fs.recovery_rate_per_year.fix()
@@ -3495,12 +3656,20 @@ def test_REE_costing_recovery_transportcostExpressionnounits():
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
@@ -3524,13 +3693,14 @@ def test_REE_costing_recovery_transportcostExpressionnounits():
     assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
     assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(0.0000, abs=1e-4)
+    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+        0.0000, abs=1e-4
+    )
     assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
 
 
 @pytest.mark.component
 def test_REE_costing_recovery_transportcostParam():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3553,29 +3723,39 @@ def test_REE_costing_recovery_transportcostParam():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3 * 0.8025 * 8 * 3 * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
+        initialize=39.3
+        * 0.8025
+        * 8
+        * 3
+        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
         units=pyunits.kg / pyunits.year,
     )
     m.fs.recovery_rate_per_year.fix()
 
-    m.fs.transport_cost_per_ton_product = pyo.Param(initialize=10,
-                                                    units=pyunits.USD_2021/pyunits.ton,
-                                                    mutable=False)
+    m.fs.transport_cost_per_ton_product = pyo.Param(
+        initialize=10, units=pyunits.USD_2021 / pyunits.ton, mutable=False
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
@@ -3599,13 +3779,14 @@ def test_REE_costing_recovery_transportcostParam():
     assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
     assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(0.0000, abs=1e-4)
+    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+        0.0000, abs=1e-4
+    )
     assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
 
 
 @pytest.mark.component
 def test_REE_costing_recovery_transportcostParamnounits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3628,28 +3809,37 @@ def test_REE_costing_recovery_transportcostParamnounits():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3 * 0.8025 * 8 * 3 * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
+        initialize=39.3
+        * 0.8025
+        * 8
+        * 3
+        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
         units=pyunits.kg / pyunits.year,
     )
     m.fs.recovery_rate_per_year.fix()
 
-    m.fs.transport_cost_per_ton_product = pyo.Param(initialize=10,
-                                                    mutable=False)
+    m.fs.transport_cost_per_ton_product = pyo.Param(initialize=10, mutable=False)
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
@@ -3673,13 +3863,14 @@ def test_REE_costing_recovery_transportcostParamnounits():
     assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
     assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(0.0000, abs=1e-4)
+    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+        0.0000, abs=1e-4
+    )
     assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
 
 
 @pytest.mark.component
 def test_REE_costing_recovery_transportcostVar():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3702,29 +3893,40 @@ def test_REE_costing_recovery_transportcostVar():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3 * 0.8025 * 8 * 3 * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
+        initialize=39.3
+        * 0.8025
+        * 8
+        * 3
+        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
         units=pyunits.kg / pyunits.year,
     )
     m.fs.recovery_rate_per_year.fix()
 
-    m.fs.transport_cost_per_ton_product = pyo.Var(initialize=10,
-                                                  units=pyunits.USD_2021/pyunits.ton)
+    m.fs.transport_cost_per_ton_product = pyo.Var(
+        initialize=10, units=pyunits.USD_2021 / pyunits.ton
+    )
     m.fs.transport_cost_per_ton_product.fix()
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
@@ -3748,13 +3950,14 @@ def test_REE_costing_recovery_transportcostVar():
     assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
     assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(0.0000, abs=1e-4)
+    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+        0.0000, abs=1e-4
+    )
     assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
 
 
 @pytest.mark.component
 def test_REE_costing_recovery_transportcostVarnounits():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3777,13 +3980,15 @@ def test_REE_costing_recovery_transportcostVarnounits():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3 * 0.8025 * 8 * 3 * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
+        initialize=39.3
+        * 0.8025
+        * 8
+        * 3
+        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
         units=pyunits.kg / pyunits.year,
     )
     m.fs.recovery_rate_per_year.fix()
@@ -3793,12 +3998,20 @@ def test_REE_costing_recovery_transportcostVarnounits():
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
-        pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-        mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        resources=["water",],
-        rates=[m.fs.water,],
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
@@ -3822,13 +4035,14 @@ def test_REE_costing_recovery_transportcostVarnounits():
     assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
     assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(0.0000, abs=1e-4)
+    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+        0.0000, abs=1e-4
+    )
     assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
 
 
 @pytest.mark.component
 def test_REE_costing_recovery_Nonewithtransportcost():
-
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -3851,9 +4065,7 @@ def test_REE_costing_recovery_Nonewithtransportcost():
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
     m.fs.feed_input.fix()
 
-    m.fs.water = pyo.Var(
-        m.fs.time, initialize=1000 , units=pyunits.gallon / pyunits.hr
-    )
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
     with pytest.raises(
@@ -3863,11 +4075,19 @@ def test_REE_costing_recovery_Nonewithtransportcost():
     ):
         m.fs.costing.build_process_costs(
             fixed_OM=True,
-            pure_product_output_rates={"Sc2O3": 1.9 * pyunits.kg / pyunits.hr,},
-            mixed_product_output_rates={"Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,},
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
             variable_OM=True,
             feed_input=m.fs.feed_input,
-            resources=["water",],
-            rates=[m.fs.water,],
+            resources=[
+                "water",
+            ],
+            rates=[
+                m.fs.water,
+            ],
             transport_cost_per_ton_product=10,
         )

@@ -1957,7 +1957,7 @@ def test_REE_costing_useLangfactor():
     assert hasattr(m.fs.costing, "total_plant_cost")
     assert hasattr(m.fs.costing, "total_overnight_capital")
 
-    # if piping materials and labor DNE, all other factors DNE as well
+    # if piping materials and labor do not exist, all other factors do not exist as well
     assert not hasattr(m.fs.costing, "piping_materials_and_labor_percentage")
     # instead of percentages, Lang factor should be built
     assert hasattr(m.fs.costing, "Lang_factor")

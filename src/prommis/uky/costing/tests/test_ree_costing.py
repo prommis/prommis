@@ -16,11 +16,12 @@ Tests for REE costing.
 """
 
 import pyomo.environ as pyo
+from pyomo.common.dependencies import attempt_import
 from pyomo.environ import assert_optimal_termination, check_optimal_termination
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.check_units import assert_units_consistent
-from pyomo.common.dependencies import attempt_import
+
 from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom

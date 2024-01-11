@@ -34,6 +34,7 @@ __version__ = "1.0.0"
 
 import textwrap
 from sys import stdout
+
 from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError

@@ -32,6 +32,8 @@ from idaes.core.util.scaling import (
 
 import pytest
 
+from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
+
 _, watertap_costing_available = attempt_import("watertap.costing")
 if watertap_costing_available:
     import watertap.property_models.NaCl_prop_pack as props
@@ -53,8 +55,6 @@ if watertap_costing_available:
         PressureChangeType,
         ReverseOsmosis1D,
     )
-
-from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
 
 def base_model():

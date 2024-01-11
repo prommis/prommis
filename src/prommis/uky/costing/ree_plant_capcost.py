@@ -55,11 +55,11 @@ from idaes.core.util.tables import stream_table_dataframe_to_string
 
 from pandas import DataFrame
 
+from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
+
 _, watertap_costing_available = attempt_import("watertap.costing")
 if watertap_costing_available:
     from watertap.costing import WaterTAPCosting
-
-from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
 
 _log = idaeslog.getLogger(__name__)
 

@@ -31,6 +31,7 @@ from idaes.core.util.scaling import (
 )
 
 import pytest
+
 _, watertap_costing_available = attempt_import("watertap.costing")
 if watertap_costing_available:
     import watertap.property_models.NaCl_prop_pack as props

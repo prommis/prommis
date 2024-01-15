@@ -171,7 +171,7 @@ def set_inputs(m):
     """fix variables for geometry and design data"""
     # assuming no pressure drop
     m.fs.roaster.deltaP.fix(0)
-    # inlet flue gas composition, typical flue gas by buring CH4 with air to get excess O2 at 15.5%
+    # inlet flue gas composition, typical flue gas by burning CH4 with air to get excess O2 at 15.5%
     m.fs.roaster.gas_inlet.temperature.fix(895)
     m.fs.roaster.gas_inlet.pressure.fix(101325)
     gas_comp = {

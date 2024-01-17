@@ -13,7 +13,7 @@ from pyomo.environ import (
 from pyomo.network import Arc
 from idaes.core import FlowsheetBlock
 from idaes.core.util.scaling import calculate_scaling_factors
-from watertap.property_models.LiCl_prop_pack import LiClParameterBlock
+from prommis.membrane_examples.ro.property_models.LiCl_prop_pack import LiClParameterBlock
 from watertap.unit_models.reverse_osmosis_0D import (
     ReverseOsmosis0D,
     ConcentrationPolarizationType,

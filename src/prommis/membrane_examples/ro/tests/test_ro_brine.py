@@ -2,8 +2,10 @@
 # adapted from test_nf.py
 #################################################################################
 
-import pytest
 from pyomo.environ import value
+
+import pytest
+
 from src.prommis.membrane_examples.ro.ro_brine import main
 
 

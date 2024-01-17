@@ -5,26 +5,31 @@ from pyomo.environ import (
     ConcreteModel,
     Constraint,
     Objective,
-    maximize,
-    units as pyunits,
-    assert_optimal_termination,
     TransformationFactory,
+    assert_optimal_termination,
+    maximize,
 )
+from pyomo.environ import units as pyunits
 from pyomo.network import Arc
+
+import idaes.core.util.scaling as iscale
 from idaes.core import FlowsheetBlock
+from idaes.core.solvers import get_solver
+from idaes.core.util.initialization import propagate_state
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.scaling import calculate_scaling_factors
-from prommis.membrane_examples.ro.property_models.LiCl_prop_pack import LiClParameterBlock
+from idaes.models.unit_models import Feed, Product
+
 from watertap.unit_models.reverse_osmosis_0D import (
-    ReverseOsmosis0D,
     ConcentrationPolarizationType,
     MassTransferCoefficient,
+    ReverseOsmosis0D,
 )
-from idaes.core.solvers import get_solver
-from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-import idaes.core.util.scaling as iscale
-from idaes.core.util.initialization import propagate_state
-from idaes.models.unit_models import Feed,Product
+
+from prommis.membrane_examples.ro.property_models.LiCl_prop_pack import (
+    LiClParameterBlock,
+)
 
 
 def main():

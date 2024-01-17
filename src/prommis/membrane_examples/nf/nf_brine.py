@@ -12,31 +12,35 @@
 ####################################################################
 
 # import statements
-from math import log, floor
+from math import floor, log
+
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
     Objective,
-    maximize,
-    units as pyunits,
-    assert_optimal_termination,
     TransformationFactory,
+    assert_optimal_termination,
+    maximize,
 )
+from pyomo.environ import units as pyunits
 from pyomo.network import Arc
+
+import idaes.core.util.scaling as iscale
 from idaes.core import FlowsheetBlock
+from idaes.core.solvers import get_solver
+from idaes.core.util.initialization import propagate_state
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.models.unit_models import Feed, Product
+
 from watertap.property_models.multicomp_aq_sol_prop_pack import (
-    MCASParameterBlock,
     ActivityCoefficientModel,
     DensityCalculation,
+    MCASParameterBlock,
 )
-from watertap.unit_models.pressure_changer import Pump
 from watertap.unit_models.nanofiltration_DSPMDE_0D import NanofiltrationDSPMDE0D
-from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.solvers import get_solver
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-import idaes.core.util.scaling as iscale
-from idaes.core.util.initialization import propagate_state
-from idaes.models.unit_models import Feed,Product
+from watertap.unit_models.pressure_changer import Pump
+
 
 def main():
     solver = get_solver()

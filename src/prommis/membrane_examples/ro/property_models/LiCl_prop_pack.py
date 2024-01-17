@@ -6,57 +6,57 @@
 Initial property package for H2O-LiCl system
 """
 
-import numpy as np
-
-# Import Python libraries
-import idaes.logger as idaeslog
-
 # Import Pyomo libraries
 from pyomo.environ import (
     Constraint,
     Expression,
-    Reals,
     NonNegativeReals,
-    Var,
     Param,
+    Reals,
     Suffix,
-    value,
+    Var,
     check_optimal_termination,
-    exp
+    exp,
 )
 from pyomo.environ import units as pyunits
+from pyomo.environ import value
+
+import idaes.core.util.scaling as iscale
+
+# Import Python libraries
+import idaes.logger as idaeslog
 
 # Import IDAES cores
 from idaes.core import (
-    declare_process_block_class,
+    EnergyBalanceType,
+    MaterialBalanceType,
     MaterialFlowBasis,
     PhysicalParameterBlock,
-    StateBlockData,
     StateBlock,
-    MaterialBalanceType,
-    EnergyBalanceType,
+    StateBlockData,
+    declare_process_block_class,
 )
 from idaes.core.base.components import Solute, Solvent
 from idaes.core.base.phases import LiquidPhase
+from idaes.core.solvers import get_solver
 from idaes.core.util.constants import Constants
+from idaes.core.util.exceptions import (
+    ConfigurationError,
+    InitializationError,
+    PropertyPackageError,
+)
 from idaes.core.util.initialization import (
     fix_state_vars,
     revert_state_vars,
     solve_indexed_blocks,
 )
 from idaes.core.util.misc import extract_data
-from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
     number_unfixed_variables,
 )
-from idaes.core.util.exceptions import (
-    ConfigurationError,
-    InitializationError,
-    PropertyPackageError,
-)
-import idaes.core.util.scaling as iscale
 
+import numpy as np
 from watertap.core.util.scaling import transform_property_constraints
 
 # Set up logger

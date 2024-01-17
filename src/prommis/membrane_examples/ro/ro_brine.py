@@ -52,8 +52,14 @@ def main():
     m.fs.unit.report()
 
     print("Optimal area (m2)", m.fs.unit.area.value)
-    print("Optimal RO vol recovery (%)", m.fs.unit.recovery_vol_phase[0.0, "Liq"].value*100)
-    print("Optimal LiCl recovery (%)", m.fs.unit.recovery_mass_phase_comp[0,"Liq","LiCl"].value*100)
+    print(
+        "Optimal RO vol recovery (%)",
+        m.fs.unit.recovery_vol_phase[0.0, "Liq"].value * 100,
+    )
+    print(
+        "Optimal LiCl recovery (%)",
+        m.fs.unit.recovery_mass_phase_comp[0, "Liq", "LiCl"].value * 100,
+    )
 
     dt = DiagnosticsToolbox(m)
     dt.report_numerical_issues()
@@ -65,14 +71,16 @@ def main():
 
 def set_default_feed(blk):
     # mass flow rate (kg/s)
-    blk.feed.flow_mass_phase_comp[0, 'Liq', 'LiCl'].fix(0.03158)
-        # increasing the Li ion concentration fixed the permeate initializtion fail
-        # currently 100x too high for this ratio of water
-    blk.feed.flow_mass_phase_comp[0, 'Liq', 'H2O'].fix(1.058)
+    blk.feed.flow_mass_phase_comp[0, "Liq", "LiCl"].fix(0.03158)
+    # increasing the Li ion concentration fixed the permeate initializtion fail
+    # currently 100x too high for this ratio of water
+    blk.feed.flow_mass_phase_comp[0, "Liq", "H2O"].fix(1.058)
 
     # Set scaling factors for component mass flowrates.
-    blk.properties.set_default_scaling('flow_mass_phase_comp', 1, index=('Liq', 'H2O'))
-    blk.properties.set_default_scaling('flow_mass_phase_comp', 1e2, index=('Liq', 'LiCl'))
+    blk.properties.set_default_scaling("flow_mass_phase_comp", 1, index=("Liq", "H2O"))
+    blk.properties.set_default_scaling(
+        "flow_mass_phase_comp", 1e2, index=("Liq", "LiCl")
+    )
 
 
 def build():
@@ -90,15 +98,20 @@ def build():
         property_package=m.fs.properties,
         concentration_polarization_type=ConcentrationPolarizationType.none,
         mass_transfer_coefficient=MassTransferCoefficient.none,
-        has_pressure_change=False)
-    
+        has_pressure_change=False,
+    )
+
     # connect the streams and blocks
     m.fs.feed_to_ro = Arc(source=m.fs.feed.outlet, destination=m.fs.unit.inlet)
-    m.fs.ro_to_permeate = Arc(source=m.fs.unit.permeate, destination=m.fs.permeate.inlet)
-    m.fs.ro_to_retentate = Arc(source=m.fs.unit.retentate, destination=m.fs.retentate.inlet)
+    m.fs.ro_to_permeate = Arc(
+        source=m.fs.unit.permeate, destination=m.fs.permeate.inlet
+    )
+    m.fs.ro_to_retentate = Arc(
+        source=m.fs.unit.retentate, destination=m.fs.retentate.inlet
+    )
     TransformationFactory("network.expand_arcs").apply_to(m)
 
-    return(m)
+    return m
 
 
 def fix_init_vars(m):
@@ -123,7 +136,7 @@ def unfix_opt_vars(m):
 def add_obj(m):
     # min specific energy consumption
     m.fs.obj = Objective(
-        expr = m.fs.unit.inlet.pressure[0]/(3.6e6),
+        expr=m.fs.unit.inlet.pressure[0] / (3.6e6),
         # sense = maximize
     )
 

@@ -100,12 +100,7 @@ class LiClParameterData(PhysicalParameterBlock):
         )
 
         # mass density parameters, eq 10 in Song, limit x 0-0.56
-        dens_mass_param_dict = {
-            "0": 997.05,
-            "1": 539.37,
-            "2": -302.9,
-            "3": 98.48
-        }
+        dens_mass_param_dict = {"0": 997.05, "1": 539.37, "2": -302.9, "3": 98.48}
         self.dens_mass_param = Var(
             dens_mass_param_dict.keys(),
             domain=Reals,
@@ -120,7 +115,7 @@ class LiClParameterData(PhysicalParameterBlock):
             "1": 5.79e-6,
             "2": 1.25e-4,
             "3": 1.34e-6,
-            "4": 5.25e-6
+            "4": 5.25e-6,
         }
         self.visc_d_param = Var(
             visc_d_param_dict.keys(),
@@ -160,7 +155,7 @@ class LiClParameterData(PhysicalParameterBlock):
             osm_coeff_param_dict.keys(),
             domain=Reals,
             initialize=osm_coeff_param_dict,
-            units=(pyunits.mol / pyunits.kg)**(-1),
+            units=(pyunits.mol / pyunits.kg) ** (-1),
             doc="Osmotic coefficient parameters (m**(-1))",
         )
 
@@ -177,7 +172,7 @@ class LiClParameterData(PhysicalParameterBlock):
             osm_coeff_param_dict2.keys(),
             domain=Reals,
             initialize=osm_coeff_param_dict2,
-            units=(pyunits.mol / pyunits.kg)**(-1/2),
+            units=(pyunits.mol / pyunits.kg) ** (-1 / 2),
             doc="Osmotic coefficient parameters (m**(-1/2))",
         )
 
@@ -194,20 +189,16 @@ class LiClParameterData(PhysicalParameterBlock):
             osm_coeff_param_dict3.keys(),
             domain=Reals,
             initialize=osm_coeff_param_dict3,
-            units=(pyunits.mol / pyunits.kg)**(-2),
+            units=(pyunits.mol / pyunits.kg) ** (-2),
             doc="Osmotic coefficient parameters (m**(-2))",
         )
 
         # TODO: update variable name to "solution" not "water"
-        cp_w_param_dict = {
-            "0": 1.4398,
-            "1": -1.24317,
-            "2": -0.1207
-        }
+        cp_w_param_dict = {"0": 1.4398, "1": -1.24317, "2": -0.1207}
         self.cp_w = Var(
             cp_w_param_dict.keys(),
             domain=Reals,
-            initialize=cp_w_param_dict,  
+            initialize=cp_w_param_dict,
             units=pyunits.J / (pyunits.kg * pyunits.K),
             doc="Specific heat capacity parameters",
         )
@@ -587,9 +578,23 @@ class LiClStateBlockData(StateBlockData):
             return (
                 b.dens_mass_phase[p]
                 == b.params.dens_mass_param["0"]
-                + b.params.dens_mass_param["1"] * (b.mass_frac_phase_comp[p, "LiCl"]/(1-b.mass_frac_phase_comp[p, "LiCl"]))
-                + b.params.dens_mass_param["2"] * (b.mass_frac_phase_comp[p, "LiCl"]/(1-b.mass_frac_phase_comp[p, "LiCl"]))**2
-                + b.params.dens_mass_param["3"] * (b.mass_frac_phase_comp[p, "LiCl"]/(1-b.mass_frac_phase_comp[p, "LiCl"]))**3
+                + b.params.dens_mass_param["1"]
+                * (
+                    b.mass_frac_phase_comp[p, "LiCl"]
+                    / (1 - b.mass_frac_phase_comp[p, "LiCl"])
+                )
+                + b.params.dens_mass_param["2"]
+                * (
+                    b.mass_frac_phase_comp[p, "LiCl"]
+                    / (1 - b.mass_frac_phase_comp[p, "LiCl"])
+                )
+                ** 2
+                + b.params.dens_mass_param["3"]
+                * (
+                    b.mass_frac_phase_comp[p, "LiCl"]
+                    / (1 - b.mass_frac_phase_comp[p, "LiCl"])
+                )
+                ** 3
             )
 
         self.eq_dens_mass_phase = Constraint(
@@ -712,20 +717,33 @@ class LiClStateBlockData(StateBlockData):
     def _visc_d_phase(self):
         self.visc_d_phase = Var(
             self.params.phase_list,
-            initialize=1e-3,                # TODO: check these init values
-            bounds=(1e-4, 1e-2),            # TODO: check these init values
+            initialize=1e-3,  # TODO: check these init values
+            bounds=(1e-4, 1e-2),  # TODO: check these init values
             units=pyunits.Pa * pyunits.s,
             doc="Viscosity",
         )
 
         def rule_visc_d_phase(b, p):  # dynamic viscosity, eq 6 in Abdulagatou
-            return (
-                b.visc_d_phase[p]
-                == b.params.visc_d_param["0"]
-                + b.params.visc_d_param["1"] * (b.conc_mass_phase_comp[p, "LiCl"]/42.393)**(1/2)
-                + b.params.visc_d_param["2"] * (b.conc_mass_phase_comp[p, "LiCl"]/42.393)
-                + b.params.visc_d_param["3"] * (b.conc_mass_phase_comp[p, "LiCl"]/42.393)**2
-                + b.params.visc_d_param["4"] * (b.conc_mass_phase_comp[p, "LiCl"]/42.393)**(5/2)
+            return b.visc_d_phase[p] == b.params.visc_d_param[
+                "0"
+            ] + b.params.visc_d_param["1"] * (
+                b.conc_mass_phase_comp[p, "LiCl"] / 42.393
+            ) ** (
+                1 / 2
+            ) + b.params.visc_d_param[
+                "2"
+            ] * (
+                b.conc_mass_phase_comp[p, "LiCl"] / 42.393
+            ) + b.params.visc_d_param[
+                "3"
+            ] * (
+                b.conc_mass_phase_comp[p, "LiCl"] / 42.393
+            ) ** 2 + b.params.visc_d_param[
+                "4"
+            ] * (
+                b.conc_mass_phase_comp[p, "LiCl"] / 42.393
+            ) ** (
+                5 / 2
             )
 
         self.eq_visc_d_phase = Constraint(
@@ -736,18 +754,22 @@ class LiClStateBlockData(StateBlockData):
         self.diffus_phase_comp = Var(
             self.params.phase_list,
             ["LiCl"],
-            initialize=1e-9,        #TODO: update for LiCl
-            bounds=(1e-10, 1e-8),   #TODO: update for LiCl
+            initialize=1e-9,  # TODO: update for LiCl
+            bounds=(1e-10, 1e-8),  # TODO: update for LiCl
             units=pyunits.m**2 * pyunits.s**-1,
             doc="Diffusivity",
         )
 
         def rule_diffus_phase_comp(b, p, j):  # diffusivity, ref 6 in Lobo
             return b.diffus_phase_comp[p, j] == (
-                b.params.diffus_param["4"] * (b.conc_mass_phase_comp[p, "LiCl"]/42.393) ** 2
-                + b.params.diffus_param["3"] * (b.conc_mass_phase_comp[p, "LiCl"]/42.393) ** (3/2)
-                + b.params.diffus_param["2"] * (b.conc_mass_phase_comp[p, "LiCl"]/42.393)
-                + b.params.diffus_param["1"] * (b.conc_mass_phase_comp[p, "LiCl"]/42.393) ** (1/2)
+                b.params.diffus_param["4"]
+                * (b.conc_mass_phase_comp[p, "LiCl"] / 42.393) ** 2
+                + b.params.diffus_param["3"]
+                * (b.conc_mass_phase_comp[p, "LiCl"] / 42.393) ** (3 / 2)
+                + b.params.diffus_param["2"]
+                * (b.conc_mass_phase_comp[p, "LiCl"] / 42.393)
+                + b.params.diffus_param["1"]
+                * (b.conc_mass_phase_comp[p, "LiCl"] / 42.393) ** (1 / 2)
                 + b.params.diffus_param["0"]
             )
 
@@ -757,21 +779,37 @@ class LiClStateBlockData(StateBlockData):
 
     def _osm_coeff(self):
         self.osm_coeff = Var(
-            initialize=1,           # TODO: check these init values
-            bounds=(0.5, 2),        # TODO: check these init values
+            initialize=1,  # TODO: check these init values
+            bounds=(0.5, 2),  # TODO: check these init values
             units=pyunits.dimensionless,
             doc="Osmotic coefficient",
         )
 
-        def rule_osm_coeff(b):              # osmotic coefficients, table 11 in El Guendouzi
+        def rule_osm_coeff(b):  # osmotic coefficients, table 11 in El Guendouzi
             return b.osm_coeff == (
-                1 - (b.params.osm_coeff_param2["0"] * (b.molality_phase_comp["Liq", "LiCl"])**(1/2)) /
-                   (1 + b.params.osm_coeff_param2["1"] * (b.molality_phase_comp["Liq", "LiCl"])**(1/2))
-                + b.molality_phase_comp["Liq", "LiCl"] * (b.params.osm_coeff_param["2"] 
-                                                           + (b.params.osm_coeff_param["3"] 
-                                                           * exp(-b.params.osm_coeff_param2["4"]
-                                                                    * (b.molality_phase_comp["Liq", "LiCl"])**(1/2))))
-                + (b.molality_phase_comp["Liq", "LiCl"])**2 * b.params.osm_coeff_param3["5"]
+                1
+                - (
+                    b.params.osm_coeff_param2["0"]
+                    * (b.molality_phase_comp["Liq", "LiCl"]) ** (1 / 2)
+                )
+                / (
+                    1
+                    + b.params.osm_coeff_param2["1"]
+                    * (b.molality_phase_comp["Liq", "LiCl"]) ** (1 / 2)
+                )
+                + b.molality_phase_comp["Liq", "LiCl"]
+                * (
+                    b.params.osm_coeff_param["2"]
+                    + (
+                        b.params.osm_coeff_param["3"]
+                        * exp(
+                            -b.params.osm_coeff_param2["4"]
+                            * (b.molality_phase_comp["Liq", "LiCl"]) ** (1 / 2)
+                        )
+                    )
+                )
+                + (b.molality_phase_comp["Liq", "LiCl"]) ** 2
+                * b.params.osm_coeff_param3["5"]
             )
 
         self.eq_osm_coeff = Constraint(rule=rule_osm_coeff)
@@ -792,13 +830,13 @@ class LiClStateBlockData(StateBlockData):
             # )  # TODO: could make this variable based on temperature
             return (
                 b.pressure_osm_phase[p]
-                == i
-                * b.osm_coeff
-                * b.molality_phase_comp[p, "LiCl"]
+                == i * b.osm_coeff * b.molality_phase_comp[p, "LiCl"]
                 # * rhow                            # TODO: troubleshoot init errors when including this value
                 * Constants.gas_constant
                 * b.temperature
-                / (b.params.mw_comp["LiCl"])        # TODO: troubleshoot init errors when excluding this value
+                / (
+                    b.params.mw_comp["LiCl"]
+                )  # TODO: troubleshoot init errors when excluding this value
             )
 
         self.eq_pressure_osm_phase = Constraint(
@@ -808,29 +846,25 @@ class LiClStateBlockData(StateBlockData):
     def _cp_w(self):
         self.cp_w = Var(
             self.params.phase_list,
-            initialize=1e-3,            # TODO: check these init values
-            bounds=(1e-4, 1e-2),        # TODO: check these init values
+            initialize=1e-3,  # TODO: check these init values
+            bounds=(1e-4, 1e-2),  # TODO: check these init values
             units=pyunits.J / (pyunits.kg * pyunits.K),
             doc="Specific heat capacity",
         )
 
         def rule_cp_w_phase(b, p):  # heat capacity, eq 19 in Song
-            return (
-                b.cp_w_phase[p]
-                == 4187* (
-                    1 - 0.924 *
-                    (
-                        b.params.cp_w_param["0"] * b.conc_mass_phase_comp[p, "LiCl"]
-                        + b.params.cp_w_param["1"] * b.conc_mass_phase_comp[p, "LiCl"] ** 2
-                        + b.params.cp_w_param["2"] * b.conc_mass_phase_comp[p, "LiCl"] ** 3
-                    )
+            return b.cp_w_phase[p] == 4187 * (
+                1
+                - 0.924
+                * (
+                    b.params.cp_w_param["0"] * b.conc_mass_phase_comp[p, "LiCl"]
+                    + b.params.cp_w_param["1"] * b.conc_mass_phase_comp[p, "LiCl"] ** 2
+                    + b.params.cp_w_param["2"] * b.conc_mass_phase_comp[p, "LiCl"] ** 3
                 )
             )
 
-        self.eq_cp_w_phase = Constraint(
-            self.params.phase_list, rule=rule_cp_w_phase
-        )
-    
+        self.eq_cp_w_phase = Constraint(self.params.phase_list, rule=rule_cp_w_phase)
+
     # def _enth_mass_phase(self):
     #     self.enth_mass_phase = Var(
     #         self.params.phase_list,

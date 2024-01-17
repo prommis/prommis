@@ -46,7 +46,7 @@ def main():
     solver = get_solver()
     m = build()
 
-    initialize(m,solver)
+    initialize(m, solver)
     print("init_okay")
     m.fs.unit.report()
 
@@ -62,11 +62,28 @@ def main():
     m.fs.unit.report()
     print("Optimal NF pressure (Bar)", m.fs.pump.outlet.pressure[0].value / 1e5)
     print("Optimal area (m2)", m.fs.unit.area.value)
-    print("Optimal NF vol recovery (%)", m.fs.unit.recovery_vol_phase[0.0, "Liq"].value*100)
-    print("Optimal Li rejection (%)", m.fs.unit.rejection_intrinsic_phase_comp[0,"Liq","Li_+"].value * 100)
-    print("Optimal Mg rejection (%)", m.fs.unit.rejection_intrinsic_phase_comp[0,"Liq","Mg_2+"].value * 100)
-    print("Feed Mg:Li ratio (mass)", (m.fs.feed.flow_mol_phase_comp[0,"Liq","Mg_2+"].value/0.024) /  (m.fs.feed.flow_mol_phase_comp[0,"Liq","Li_+"].value/0.0069))
-    print("Permeate Mg:Li ratio (mass)", (m.fs.permeate.flow_mol_phase_comp[0,"Liq","Mg_2+"].value/0.024) /  (m.fs.permeate.flow_mol_phase_comp[0,"Liq","Li_+"].value/0.0069))
+    print(
+        "Optimal NF vol recovery (%)",
+        m.fs.unit.recovery_vol_phase[0.0, "Liq"].value * 100,
+    )
+    print(
+        "Optimal Li rejection (%)",
+        m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"].value * 100,
+    )
+    print(
+        "Optimal Mg rejection (%)",
+        m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Mg_2+"].value * 100,
+    )
+    print(
+        "Feed Mg:Li ratio (mass)",
+        (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
+        / (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
+    )
+    print(
+        "Permeate Mg:Li ratio (mass)",
+        (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
+        / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
+    )
 
     dt = DiagnosticsToolbox(m)
     dt.report_numerical_issues()
@@ -78,57 +95,44 @@ def main():
 def set_default_feed(m, solver):
     # fix the feed concentrations used in the initialization
     # approximate the kg/m3 = g/L conc of Salar de Atacama (Cl- gets overridden)
-    conc_mass_phase_comp = {
-        "Li_+": 1.19,
-        "Mg_2+": 7.31,
-        "Cl_-": 143.72
-    }
+    conc_mass_phase_comp = {"Li_+": 1.19, "Mg_2+": 7.31, "Cl_-": 143.72}
     set_NF_feed(
         blk=m.fs,
         solver=solver,
-        flow_mass_h2o=1,   # arbitraty for now
-        conc_mass_phase_comp=conc_mass_phase_comp
+        flow_mass_h2o=1,  # arbitraty for now
+        conc_mass_phase_comp=conc_mass_phase_comp,
     )
 
 
 def define_feed_comp():
     default = {
         # need to add Cl- for electroneutrality, assume LiCl and MgCl2 salts
-        "solute_list": ["Li_+","Mg_2+","Cl_-"],
+        "solute_list": ["Li_+", "Mg_2+", "Cl_-"],
         # https://www.aqion.de/site/diffusion-coefficients
         # very confident
         "diffusivity_data": {
-            ("Liq","Li_+"): 1.03e-09,
-            ("Liq","Mg_2+"): 0.705e-09,
-            ("Liq","Cl_-"): 2.03e-09
+            ("Liq", "Li_+"): 1.03e-09,
+            ("Liq", "Mg_2+"): 0.705e-09,
+            ("Liq", "Cl_-"): 2.03e-09,
         },
         # very confident
-        "mw_data": {
-            "H2O": 0.018,
-            "Li_+": 0.0069,
-            "Mg_2+": 0.024,
-            "Cl_-": 0.035
-        },
+        "mw_data": {"H2O": 0.018, "Li_+": 0.0069, "Mg_2+": 0.024, "Cl_-": 0.035},
         # avg vals from https://www.sciencedirect.com/science/article/pii/S138358661100637X
         # medium confident, these values come from above review paper, averaged values from multiple studies
         # reasonable orders of magnitude
         "stokes_radius_data": {
             "Li_+": 3.61e-10,
-            #"Mg_2+": 4.07e-10,
-            #"Cl_-": 3.28e-10
+            # "Mg_2+": 4.07e-10,
+            # "Cl_-": 3.28e-10
             # adjusted Cl and Mg to values from nf.py'
             "Cl_-": 0.121e-9,
             "Mg_2+": 0.347e-9,
         },
         # very confident
-        "charge": {
-            "Li_+": 1,
-            "Mg_2+": 2,
-            "Cl_-": -1
-        },
+        "charge": {"Li_+": 1, "Mg_2+": 2, "Cl_-": -1},
         # choose ideal for now, other option is davies
-        "activity_coefficient_model":ActivityCoefficientModel.ideal,
-        "density_calculation": DensityCalculation.constant
+        "activity_coefficient_model": ActivityCoefficientModel.ideal,
+        "density_calculation": DensityCalculation.constant,
     }
     return default
 
@@ -156,8 +160,12 @@ def build():
     # connect the streams and blocks
     m.fs.feed_to_pump = Arc(source=m.fs.feed.outlet, destination=m.fs.pump.inlet)
     m.fs.pump_to_nf = Arc(source=m.fs.pump.outlet, destination=m.fs.unit.inlet)
-    m.fs.nf_to_permeate = Arc(source=m.fs.unit.permeate, destination=m.fs.permeate.inlet)
-    m.fs.nf_to_retentate = Arc(source=m.fs.unit.retentate, destination=m.fs.retentate.inlet)
+    m.fs.nf_to_permeate = Arc(
+        source=m.fs.unit.permeate, destination=m.fs.permeate.inlet
+    )
+    m.fs.nf_to_retentate = Arc(
+        source=m.fs.unit.retentate, destination=m.fs.retentate.inlet
+    )
     TransformationFactory("network.expand_arcs").apply_to(m)
     return m
 
@@ -173,7 +181,7 @@ def fix_init_vars(m):
     iscale.set_scaling_factor(m.fs.pump.control_volume.work, 1e-4)
 
     # membrane operation
-    m.fs.unit.recovery_vol_phase[0,"Liq"].setub(0.95)
+    m.fs.unit.recovery_vol_phase[0, "Liq"].setub(0.95)
     m.fs.unit.spacer_porosity.fix(0.85)
     m.fs.unit.channel_height.fix(5e-4)
     m.fs.unit.velocity[0, 0].fix(0.1)
@@ -206,20 +214,24 @@ def add_obj(m):
 
     # maxmize the reduction in Mg:Li ratio
     m.fs.obj = Objective(
-        expr = (
-            ((m.fs.feed.flow_mol_phase_comp[0,"Liq","Mg_2+"].value/0.024)
-            /(m.fs.feed.flow_mol_phase_comp[0,"Liq","Li_+"].value/0.0069))
-            - ((m.fs.permeate.flow_mol_phase_comp[0,"Liq","Mg_2+"].value/0.024)
-               /(m.fs.permeate.flow_mol_phase_comp[0,"Liq","Li_+"].value/0.0069))
+        expr=(
+            (
+                (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
+                / (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069)
+            )
+            - (
+                (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
+                / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069)
+            )
         ),
-        sense = maximize
+        sense=maximize,
     )
 
 
 def add_con(m):
     # limit the Li rejection
     m.fs.li_rejection_con = Constraint(
-        expr = m.fs.unit.rejection_intrinsic_phase_comp[0,"Liq", "Li_+"] >= 0.2
+        expr=m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"] >= 0.2
     )
 
 
@@ -230,8 +242,8 @@ def optimize(m, solver):
     return simulation_results
 
 
-def initialize(m,solver):
-    set_default_feed(m,solver)
+def initialize(m, solver):
+    set_default_feed(m, solver)
     fix_init_vars(m)
 
     m.fs.feed.initialize(optarg=solver.options)
@@ -248,12 +260,7 @@ def initialize(m,solver):
     m.fs.retentate.initialize(optarg=solver.options)
 
 
-def set_NF_feed(
-        blk,
-        solver,
-        flow_mass_h2o,
-        conc_mass_phase_comp    # kg/m3
-):
+def set_NF_feed(blk, solver, flow_mass_h2o, conc_mass_phase_comp):  # kg/m3
     if solver is None:
         solver = get_solver()
 
@@ -282,9 +289,7 @@ def set_NF_feed(
 
     # assert electroneutrality
     blk.feed.properties[0].assert_electroneutrality(
-        defined_state = True,
-        adjust_by_ion = "Cl_-",
-        get_property = "flow_mol_phase_comp"
+        defined_state=True, adjust_by_ion="Cl_-", get_property="flow_mol_phase_comp"
     )
 
     # over-specifies the problem:
@@ -297,7 +302,7 @@ def set_NF_feed(
 
 
 def calc_scale(value):
-    return -1 * floor(log(value,10))
+    return -1 * floor(log(value, 10))
 
 
 def set_NF_feed_scaling(blk):

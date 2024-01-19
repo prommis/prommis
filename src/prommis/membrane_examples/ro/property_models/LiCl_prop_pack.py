@@ -817,7 +817,7 @@ class LiClStateBlockData(StateBlockData):
     def _pressure_osm_phase(self):
         self.pressure_osm_phase = Var(
             self.params.phase_list,
-            initialize=1e6,
+            initialize=1e5,
             bounds=(5e2, 5e7),
             units=pyunits.Pa,
             doc="Osmotic pressure",
@@ -825,18 +825,18 @@ class LiClStateBlockData(StateBlockData):
 
         def rule_pressure_osm_phase(b, p):
             i = 2  # number of ionic species
-            # rhow = (
-            #     1000 * pyunits.kg / pyunits.m**3
-            # )  # TODO: could make this variable based on temperature
+            rhow = (
+                1000 * pyunits.L / pyunits.m**3
+            )  # TODO: could make this variable based on temperature
             return (
                 b.pressure_osm_phase[p]
-                == i * b.osm_coeff * b.molality_phase_comp[p, "LiCl"]
-                # * rhow                            # TODO: troubleshoot init errors when including this value
+                == i
+                * b.osm_coeff
+                * b.conc_mass_phase_comp[p, "LiCl"]
+                * rhow  # TODO: troubleshoot init errors when including this value
                 * Constants.gas_constant
                 * b.temperature
-                / (
-                    b.params.mw_comp["LiCl"]
-                )  # TODO: troubleshoot init errors when excluding this value
+                / b.params.mw_comp["LiCl"]
             )
 
         self.eq_pressure_osm_phase = Constraint(

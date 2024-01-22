@@ -1,19 +1,19 @@
-import pytest
-
 from pyomo.environ import (
-    assert_optimal_termination,
     SolverFactory,
     TransformationFactory,
+    assert_optimal_termination,
     value,
 )
 
-from idaes.models.unit_models.mscontactor import MSContactorInitializer
 from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
-    number_variables,
     number_total_constraints,
     number_unused_variables,
+    number_variables,
 )
+from idaes.models.unit_models.mscontactor import MSContactorInitializer
+
+import pytest
 
 from prommis.leaching.leach_flowsheet import build_model
 

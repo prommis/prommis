@@ -913,11 +913,7 @@ class TestREECosting(object):
 
         model.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
         model.fs.feed_grade = pyo.Var(initialize=356.64, units=pyunits.ppm)
-        model.fs.recovery_rate = pyo.Var(
-            initialize=39.3
-            * 0.8025,  # TREO (total rare earth oxide), 80.25% REE in REO
-            units=pyunits.kg / pyunits.hr,
-        )
+
         hours_per_shift = 8
         shifts_per_day = 3
         operating_days_per_year = 336
@@ -927,6 +923,15 @@ class TestREECosting(object):
             initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
             mutable=False,
             units=pyunits.hours / pyunits.a,
+        )
+
+        model.fs.recovery_rate_per_year = pyo.Var(
+            initialize=39.3
+            * pyunits.kg
+            / pyunits.hr
+            * 0.8025  # TREO (total rare earth oxide), 80.25% REE in REO
+            * model.fs.annual_operating_hours,
+            units=pyunits.kg / pyunits.yr,
         )
 
         # the land cost is the lease cost, or refining cost of REO produced
@@ -1070,7 +1075,7 @@ class TestREECosting(object):
                 "nonhazardous_precipitate_waste",
                 "dust_and_volatiles",
             ],
-            recovery_rate=model.fs.recovery_rate,
+            recovery_rate_per_year=model.fs.recovery_rate_per_year,
             CE_index_year=CE_index_year,
         )
 
@@ -1092,7 +1097,7 @@ class TestREECosting(object):
         # fix costing vars that shouldn't change
         model.fs.feed_input.fix()
         model.fs.feed_grade.fix()
-        model.fs.recovery_rate.fix()
+        model.fs.recovery_rate_per_year.fix()
         model.fs.reagents.fix()
         model.fs.solid_waste.fix()
         model.fs.precipitate.fix()
@@ -1511,11 +1516,7 @@ class TestWaterTAPCosting(object):
 
         model.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
         model.fs.feed_grade = pyo.Var(initialize=356.64, units=pyunits.ppm)
-        model.fs.recovery_rate = pyo.Var(
-            initialize=39.3
-            * 0.8025,  # TREO (total rare earth oxide), 80.25% REE in REO
-            units=pyunits.kg / pyunits.hr,
-        )
+
         hours_per_shift = 8
         shifts_per_day = 3
         operating_days_per_year = 336
@@ -1525,6 +1526,15 @@ class TestWaterTAPCosting(object):
             initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
             mutable=False,
             units=pyunits.hours / pyunits.a,
+        )
+
+        model.fs.recovery_rate_per_year = pyo.Var(
+            initialize=39.3
+            * pyunits.kg
+            / pyunits.hr
+            * 0.8025  # TREO (total rare earth oxide), 80.25% REE in REO
+            * model.fs.annual_operating_hours,
+            units=pyunits.kg / pyunits.yr,
         )
 
         # the land cost is the lease cost, or refining cost of REO produced
@@ -1668,7 +1678,7 @@ class TestWaterTAPCosting(object):
                 "nonhazardous_precipitate_waste",
                 "dust_and_volatiles",
             ],
-            recovery_rate=model.fs.recovery_rate,
+            recovery_rate_per_year=model.fs.recovery_rate_per_year,
             CE_index_year=CE_index_year,
             watertap_blocks=[
                 model.fs_membrane.nfunit,
@@ -1695,7 +1705,7 @@ class TestWaterTAPCosting(object):
         # fix costing vars that shouldn't change
         model.fs.feed_input.fix()
         model.fs.feed_grade.fix()
-        model.fs.recovery_rate.fix()
+        model.fs.recovery_rate_per_year.fix()
         model.fs.reagents.fix()
         model.fs.solid_waste.fix()
         model.fs.precipitate.fix()

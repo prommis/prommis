@@ -30,6 +30,8 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
+from idaes.core.surrogate.surrogate_block import SurrogateBlock
+from idaes.core.surrogate.pysmo_surrogate import PysmoSurrogate
 
 
 # -----------------------------------------------------------------------------
@@ -60,27 +62,12 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Gd = Component()
         self.Dy = Component()
 
-        # parameter based on pH 1.28
-        # TODO add surrogate model/equation
-        self.split = Param(
-            self.component_list,
-            units=units.kg / units.kg,
-            initialize={
-                "H2O": 1e-20,
-                "Sc": 31.61,
-                "Y": 74.46,
-                "La": 51.51,
-                "Ce": 68.07,
-                "Pr": 78,
-                "Nd": 81.55,
-                "Sm": 87.35,
-                "Gd": 88.01,
-                "Dy": 87.16,
-                "Al": 0.9,
-                "Ca": 1e-20,
-                "Fe": 2.44,
-            },
-        )
+        self.pH = Var(initialize=1.28,
+                            bounds=(0.01, 10),
+                            units=units.dimensionless,
+                            doc='pH')
+        
+        self.pH.fix(1.28)
 
         self.mw = Param(
             self.component_list,
@@ -118,6 +105,60 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Dy",
             ]
         )
+
+        self.surrogate = Set(
+            initialize=[
+                "Al",
+                # "Ca",
+                "Fe",
+                "Sc",
+                "Y",
+                "La",
+                "Ce",
+                "Pr",
+                "Nd",
+                "Sm",
+                "Gd",
+                "Dy",
+            ]
+        )
+
+        # parameter based on pH 1.28
+        # TODO add surrogate model/equation
+        self.split = Var(
+            # domain=Reals,
+            self.component_list,
+            units=units.kg / units.kg,
+            initialize={
+                "H2O": 1e-20,
+                "Sc": 31.61,
+                "Y": 74.46,
+                "La": 51.51,
+                "Ce": 68.07,
+                "Pr": 78,
+                "Nd": 81.55,
+                "Sm": 87.35,
+                "Gd": 88.01,
+                "Dy": 87.16,
+                "Al": 0.9,
+                "Ca": 1e-20,
+                "Fe": 2.44,
+            },
+        )
+
+        for i in self.surrogate:
+            inputs=[self.pH]
+            outputs=[self.split[i]]
+            self.pysmo_surrogate = PysmoSurrogate.load_from_file('pysmo_poly_surrogate'+str(i)+'.json')
+            self.add_component("surrogate_split%s" % i, SurrogateBlock())
+            name = getattr(self,"surrogate_split%s" % i)
+            name.build_model(
+                self.pysmo_surrogate,
+                input_vars=inputs,
+                output_vars=outputs,
+            )
+
+        self.split["Ca"].fix()
 
         # Assume dilute acid, density of pure water
         self.dens_mass = Param(
@@ -211,6 +252,10 @@ class AqueousStateBlockkData(StateBlockData):
                 )
                 == b.flow_mol_comp[j]
             )
+
+
+
+
 
         iscale.set_scaling_factor(self.flow_vol, 1e1)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)

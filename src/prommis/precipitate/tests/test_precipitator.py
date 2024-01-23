@@ -22,6 +22,10 @@ from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitator import Precipitator
 
+import idaes.logger as idaeslog
+
+_log = idaeslog.getModelLogger("my_model", level=idaeslog.DEBUG, tag="model")
+
 # -----------------------------------------------------------------------------
 # Get default solver for testing
 solver = get_solver()
@@ -129,8 +133,8 @@ class TestPrec(object):
     @pytest.mark.component
     def test_initialize(self, prec):
         initializer = BlockTriangularizationInitializer(constraint_tolerance=2e-5)
-        initializer.initialize(prec.fs.unit)
-        assert initializer.summary[prec.fs.unit]["status"] == InitializationStatus.Ok
+        initializer.initialize(prec)
+        assert initializer.summary[prec]["status"] == InitializationStatus.Ok
 
     @pytest.mark.component
     def test_var_scaling(self, prec):
@@ -145,6 +149,7 @@ class TestPrec(object):
     def test_solve(self, prec):
         solver = get_solver()
         results = solver.solve(prec)
+        prec.fs.unit.aqueous_outlet.conc_mass_comp.display()
         assert_optimal_termination(results)
 
     @pytest.mark.solver
@@ -154,76 +159,76 @@ class TestPrec(object):
         assert pytest.approx(100, abs=1e-0) == value(
             prec.fs.unit.aqueous_outlet.flow_vol[0]
         )
-        assert pytest.approx(9.91, abs=1e-3) == value(
+        assert pytest.approx(10.0, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Al"]
         )
         assert pytest.approx(10, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Ca"]
         )
-        assert pytest.approx(3.193, abs=1e-3) == value(
+        assert pytest.approx(3.887, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Ce"]
         )
-        assert pytest.approx(1.284, abs=1e-3) == value(
+        assert pytest.approx(2.161, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Dy"]
         )
-        assert pytest.approx(9.756, abs=1e-3) == value(
+        assert pytest.approx(8.897, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Fe"]
         )
-        assert pytest.approx(1.199, abs=1e-3) == value(
+        assert pytest.approx(2.019, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Gd"]
         )
-        assert pytest.approx(4.849, rel=1e-3) == value(
+        assert pytest.approx(5.570, rel=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "La"]
         )
-        assert pytest.approx(1.845, abs=1e-3) == value(
+        assert pytest.approx(2.2913, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Nd"]
         )
-        assert pytest.approx(2.2, abs=1e-3) == value(
+        assert pytest.approx(2.802, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Pr"]
         )
-        assert pytest.approx(6.839, abs=1e-3) == value(
+        assert pytest.approx(5.514, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Sc"]
         )
-        assert pytest.approx(1.265, abs=1e-3) == value(
+        assert pytest.approx(2.039, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Sm"]
         )
-        assert pytest.approx(2.554, abs=1e-3) == value(
+        assert pytest.approx(3.283, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Y"]
         )
-        assert pytest.approx(0.00016678, abs=1e-6) == value(
+        assert pytest.approx(1e-20, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Al2(C2O4)3(s)"]
         )
         # assert pytest.approx(0.0051150, abs=1e-6) == value(
         #     prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Ca(C2O4)(s)"]
         # )
-        assert pytest.approx(0.002429, abs=1e-6) == value(
+        assert pytest.approx(0.002181, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Ce2(C2O4)3(s)"]
         )
-        assert pytest.approx(0.002682, abs=1e-6) == value(
+        assert pytest.approx(0.002411, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Dy2(C2O4)3(s)"]
         )
-        assert pytest.approx(0.0002189, abs=1e-6) == value(
+        assert pytest.approx(0.000986, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Fe2(C2O4)3(s)"]
         )
-        assert pytest.approx(0.002799, abs=1e-6) == value(
+        assert pytest.approx(0.002537, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Gd2(C2O4)3(s)"]
         )
-        assert pytest.approx(0.001854, abs=1e-6) == value(
+        assert pytest.approx(0.001594, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "La2(C2O4)3(s)"]
         )
-        assert pytest.approx(0.0028268, abs=1e-6) == value(
+        assert pytest.approx(0.0026721, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Nd2(C2O4)3(s)"]
         )
-        assert pytest.approx(0.0027677, abs=1e-6) == value(
+        assert pytest.approx(0.0025540, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Pr2(C2O4)3(s)"]
         )
-        assert pytest.approx(0.003517, abs=1e-6) == value(
+        assert pytest.approx(0.004989, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Sc2(C2O4)3(s)"]
         )
-        assert pytest.approx(0.0029047, abs=1e-6) == value(
+        assert pytest.approx(0.0026469, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Sm2(C2O4)3(s)"]
         )
-        assert pytest.approx(0.004188, abs=1e-6) == value(
+        assert pytest.approx(0.003777, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Y2(C2O4)3(s)"]
         )
         assert pytest.approx(348.15, abs=1e-3) == value(

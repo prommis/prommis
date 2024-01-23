@@ -14,6 +14,8 @@ from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
+import matplotlib.pyplot as plt
+
 m = ConcreteModel()
 
 time_duration = 60
@@ -43,7 +45,7 @@ m.fs.solex = SolventExtraction(
 )
 
 m.discretizer = TransformationFactory("dae.finite_difference")
-m.discretizer.apply_to(m, nfe=4, wrt=m.fs.time, scheme="BACKWARD")
+m.discretizer.apply_to(m, nfe=2, wrt=m.fs.time, scheme="BACKWARD")
 
 m.fs.solex.mscontactor.volume[:].fix(400)
 
@@ -145,3 +147,8 @@ m.fs.solex.mscontactor.organic[time_duration, 1].conc_mol_comp.display()
 # Final aqueous outlets display
 m.fs.solex.mscontactor.aqueous[time_duration, number_of_stages].conc_mass_comp.display()
 m.fs.solex.mscontactor.aqueous[time_duration, number_of_stages].conc_mol_comp.display()
+
+# Plot graphs
+plt.plot(m.fs.time, m.fs.solex.mscontactor.organic[:,1].conc_mass_comp["Ce"]())
+plt.show()
+plt.plot(m.fs.time, m.fs.solex.mscontactor.aqueous[:,1].conc_mass_comp["Ce"]())

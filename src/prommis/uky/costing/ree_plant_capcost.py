@@ -35,9 +35,10 @@ __version__ = "1.0.0"
 import textwrap
 from sys import stdout
 
+from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
-from pyomo.environ import Constraint, Expression, Param, Var
+from pyomo.environ import ConcreteModel, Constraint, Expression, Param, Var
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
@@ -45,7 +46,9 @@ from pyomo.util.calc_var_value import calculate_variable_from_constraint
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
 from idaes.core import (
+    FlowsheetBlock,
     FlowsheetCostingBlockData,
+    UnitModelCostingBlock,
     declare_process_block_class,
     register_idaes_currency_units,
 )
@@ -54,6 +57,10 @@ from idaes.core.util.tables import stream_table_dataframe_to_string
 from pandas import DataFrame
 
 from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
+
+_, watertap_costing_available = attempt_import("watertap.costing")
+if watertap_costing_available:
+    from watertap.costing import WaterTAPCosting
 
 _log = idaeslog.getLogger(__name__)
 
@@ -165,6 +172,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         transport_cost=None,
         recovery_rate=None,
         CE_index_year="2021",
+        watertap_blocks=None,
     ):
         """
         This method builds process-wide costing, including fixed and variable
@@ -283,7 +291,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         if total_purchase_cost is None:
-            self.get_total_BEC(CE_index_year)
+            self.get_total_BEC(CE_index_year, watertap_blocks)
         else:
             self.total_BEC = Var(
                 initialize=total_purchase_cost,
@@ -1720,7 +1728,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.total_sales_revenue = Var(
             initialize=4,
             bounds=(0, 1e4),
-            doc="total sales revneue in $MM/yr",
+            doc="total sales revenue in $MM/yr",
             units=CE_index_units,
         )
 
@@ -1733,6 +1741,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             units=CE_index_units,
         )
         b.other_fixed_costs.fix(0)
+
+        # variable for user to assign watertap fixed costs to,
+        # fixed to 0 by default
+        b.watertap_fixed_costs = Var(
+            initialize=0,
+            bounds=(0, 1e4),
+            doc="watertap fixed costs in $MM/yr",
+            units=CE_index_units,
+        )
 
         # create constraints
         TPC = b.total_plant_cost  # quick reference to total_plant_cost
@@ -1825,6 +1842,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             return c.property_taxes_and_insurance_cost == 0.01 * TPC
 
         # sum of fixed O&M costs
+
+        # sum of fixed operating costs of membrane units
+        @b.Constraint()
+        def sum_watertap_fixed_cost(c):
+            if c.watertap_fixed_costs_list is None:
+                return c.watertap_fixed_costs == 0
+            else:
+                return c.watertap_fixed_costs == sum(b.watertap_fixed_costs_list)
+
         @b.Constraint()
         def total_fixed_OM_cost_rule(c):
             return c.total_fixed_OM_cost == (
@@ -1835,6 +1861,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 + c.sales_patenting_and_research_cost
                 + c.property_taxes_and_insurance_cost
                 + c.other_fixed_costs
+                + c.watertap_fixed_costs
             )
 
         @b.Constraint()
@@ -2178,7 +2205,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                 )
 
-    def get_total_BEC(b, CE_index_year):
+    def get_total_BEC(b, CE_index_year, watertap_blocks=None):
         # This method accepts a flowsheet-level costing block
 
         try:
@@ -2193,6 +2220,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         BEC_list = []
+        b.watertap_fixed_costs_list = []
 
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
@@ -2201,6 +2229,22 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             ] and hasattr(o, "bare_erected_cost"):
                 for key in o.bare_erected_cost.keys():
                     BEC_list.append(o.bare_erected_cost[key])
+
+        if watertap_blocks is not None:
+            for w in watertap_blocks:
+                m = ConcreteModel()
+                m.fs = FlowsheetBlock(dynamic=False)
+                m.fs.costing = WaterTAPCosting()
+                w.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
+                BEC_list.append(
+                    pyunits.convert(w.costing.capital_cost, to_units=CE_index_units)
+                )
+                b.watertap_fixed_costs_list.append(
+                    pyunits.convert(
+                        w.costing.fixed_operating_cost * pyunits.year,
+                        to_units=CE_index_units,
+                    )
+                )
 
         b.total_BEC = Var(
             initialize=100,

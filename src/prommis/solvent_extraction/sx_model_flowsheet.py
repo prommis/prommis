@@ -11,6 +11,7 @@ from idaes.core.util import DiagnosticsToolbox
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
+from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 m = ConcreteModel()
@@ -20,6 +21,7 @@ time_duration = 60
 m.fs = FlowsheetBlock(dynamic=True, time_set=[0, time_duration], time_units=units.s)
 
 m.fs.prop_o = REESolExOgParameters()
+m.fs.prop_a = REESolExAqParameters()
 m.fs.leach_soln = LeachSolutionParameters()
 
 number_of_stages = 3
@@ -27,7 +29,7 @@ number_of_stages = 3
 m.fs.solex = SolventExtraction(
     number_of_finite_elements=number_of_stages,
     aqueous_stream={
-        "property_package": m.fs.leach_soln,
+        "property_package": m.fs.prop_a,
         "flow_direction": FlowDirection.forward,
         "has_energy_balance": False,
         "has_pressure_balance": False,

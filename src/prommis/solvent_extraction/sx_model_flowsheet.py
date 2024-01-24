@@ -45,7 +45,7 @@ m.fs.solex = SolventExtraction(
 )
 
 m.discretizer = TransformationFactory("dae.finite_difference")
-m.discretizer.apply_to(m, nfe=2, wrt=m.fs.time, scheme="BACKWARD")
+m.discretizer.apply_to(m, nfe=10, wrt=m.fs.time, scheme="BACKWARD")
 
 m.fs.solex.mscontactor.volume[:].fix(400)
 
@@ -125,7 +125,7 @@ print(dof(m))
 
 dt = DiagnosticsToolbox(m)
 
-dt.report_structural_issues()
+#dt.report_structural_issues()
 
 # Initializing of the model
 

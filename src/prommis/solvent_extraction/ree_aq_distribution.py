@@ -164,7 +164,7 @@ class REESolExAqStateBlockData(StateBlockData):
         else:
             return units.convert(
                 self.conc_mass_comp[j] / self.params.mw[j],
-                to_units=units.mol / units.L,
+                to_units=units.mol / units.m**3,
             )
 
     def define_state_vars(self):

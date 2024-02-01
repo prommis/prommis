@@ -47,7 +47,7 @@ m.fs.solex = SolventExtraction(
 m.discretizer = TransformationFactory("dae.finite_difference")
 m.discretizer.apply_to(m, nfe=10, wrt=m.fs.time, scheme="BACKWARD")
 
-m.fs.solex.mscontactor.volume[:].fix(400)
+m.fs.solex.mscontactor.volume[:].fix(0.4)
 
 m.fs.solex.mscontactor.volume_frac_stream[:,:,"aqueous"].fix(0.5)
 

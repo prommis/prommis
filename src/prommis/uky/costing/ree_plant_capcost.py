@@ -840,10 +840,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                                 + self.total_fixed_OM_cost / pyunits.year
                                 + self.total_variable_OM_cost[0]
                             )
-                            / (
-                                self.recovery_rate_per_year
-                                * recovery_units_factor
-                            ),
+                            / (self.recovery_rate_per_year * recovery_units_factor),
                             to_units=getattr(pyunits, "USD_" + CE_index_year)
                             / pyunits.kg,
                         )

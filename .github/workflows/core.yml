@@ -114,6 +114,7 @@ jobs:
             runner-image: windows-2022
           - install-variant: dev
             python-version: '3.11'
+            os: linux
             coverage: true
     steps:
       - uses: prommis/prommis/.github/actions/install@main

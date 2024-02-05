@@ -134,6 +134,8 @@ jobs:
         if: matrix.coverage
         uses: codecov/codecov-action@v3
         env:
+          # NOTE secrets are not available on workflow runs triggered by `pull_request`
+          # so CODECOV_TOKEN will only be populated when e.g. a PR is merged (`push`)
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           fail_ci_if_error: true

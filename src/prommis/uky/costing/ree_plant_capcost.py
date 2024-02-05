@@ -843,10 +843,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             / (
                                 self.recovery_rate_per_year
                                 * recovery_units_factor
-                                # * self.hours_per_shift
-                                # * self.shifts_per_day
-                                # * self.operating_days_per_year
-                                # / pyunits.year
                             ),
                             to_units=getattr(pyunits, "USD_" + CE_index_year)
                             / pyunits.kg,

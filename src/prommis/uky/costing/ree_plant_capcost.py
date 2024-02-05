@@ -169,8 +169,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         efficiency=0.85,
         chemicals=None,
         waste=None,
-        transport_cost=None,
-        recovery_rate=None,
+        transport_cost_per_ton_product=None,
+        recovery_rate_per_year=None,
         CE_index_year="2021",
         watertap_blocks=None,
     ):
@@ -202,6 +202,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         total TPC.
 
         Args:
+            total_purchase_cost: user-defined value for the total equipment
+                purchase cost. To use as the total plant cost, including
+                installation, also set the Lang_factor to 1.
             Lang_factor: single multiplicative factor to estimate installation
                 costs; defaults to None and method will use percentages. The
                 default percentages yield an effective Lang factor of 2.97.
@@ -269,10 +272,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             efficiency: power usage efficiency, or fixed motor/distribution efficiency
             chemicals: string setting chemicals type for chemicals costs
             waste: string setting waste type for waste costs
-            recovery_rate: Var or value to use for rate of REE recovered, in units
-                of mass/time
-            transport_cost: Expression, Var or Param to use for transport costs
-                per ton of REE captured (note, this is not part of the TOC)
+            recovery_rate_per_year: Var or value to use for rate of REE recovered, in units
+                of mass/year
+            transport_cost_per_ton_product: Expression, Var or Param to use for transport costs
+                per ton of product (note, this is not part of the TOC)
             CE_index_year: year for cost basis, e.g. "2021" to use 2021 dollars
         """
 
@@ -297,6 +300,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 initialize=total_purchase_cost,
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
+            self.total_BEC.fix()
 
         # define variables
         if Lang_factor is None:
@@ -679,11 +683,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
             else:
                 if pyunits.get_units(land_cost) == pyunits.dimensionless:
-                    self.land_cost = land_cost * CE_index_units
+                    self.land_cost = Expression(expr=land_cost * CE_index_units)
                 else:
-                    self.land_cost = pyunits.convert(land_cost, to_units=CE_index_units)
+                    self.land_cost = Expression(
+                        expr=pyunits.convert(land_cost, to_units=CE_index_units)
+                    )
         else:
-            self.land_cost = 0 * CE_index_units
+            self.land_cost = Expression(expr=0 * CE_index_units)
 
         # define feed input, if passed
         if feed_input is not None:
@@ -699,8 +705,16 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             feed_input_rate = None
 
         # build operating & maintenance costs
-        self.chemicals_list = chemicals
-        self.waste_list = waste
+        if chemicals is None:
+            self.chemicals_list = []
+        else:
+            self.chemicals_list = chemicals
+
+        if waste is None:
+            self.waste_list = []
+        else:
+            self.waste_list = waste
+
         if fixed_OM:
             self.get_fixed_OM_costs(
                 labor_types=labor_types,
@@ -760,34 +774,64 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
 
         if fixed_OM and variable_OM:
-            self.additional_cost_of_recovery = Var(
-                initialize=0,
-                doc="additional cost to be added to the COR calculations"
-                + " in millions",
-                units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
-            )
-
             # build cost of recovery (COR)
-            if recovery_rate is not None:
-                if not hasattr(self, "recovery_rate"):
+            if recovery_rate_per_year is not None:
+                self.additional_cost_of_recovery = Var(
+                    initialize=0,
+                    doc="additional cost to be added to the COR calculations"
+                    + " in millions",
+                    units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
+                )
+
+                if not hasattr(self, "recovery_rate_per_year"):
                     if (
-                        pyunits.get_units(recovery_rate) == pyunits.dimensionless
+                        pyunits.get_units(recovery_rate_per_year)
+                        == pyunits.dimensionless
                     ):  # assume it's in kg/year
-                        self.recovery_rate = Param(
-                            initialize=recovery_rate,
+                        self.recovery_rate_per_year = Param(
+                            initialize=recovery_rate_per_year,
                             mutable=True,
                             units=pyunits.kg / pyunits.year,
                         )
                     else:  # use source units
-                        self.recovery_rate = Param(
-                            initialize=recovery_rate,
+                        self.recovery_rate_per_year = Param(
+                            initialize=recovery_rate_per_year,
                             mutable=True,
-                            units=pyunits.get_units(recovery_rate),
+                            units=pyunits.get_units(recovery_rate_per_year),
                         )
                     recovery_units_factor = 1
                 else:
-                    if pyunits.get_units(self.recovery_rate) == pyunits.dimensionless:
+                    if (
+                        pyunits.get_units(self.recovery_rate_per_year)
+                        == pyunits.dimensionless
+                    ):
                         recovery_units_factor = pyunits.kg / pyunits.year
+
+                rec_rate_units = pyunits.get_units(self.recovery_rate_per_year)
+
+                # check that units are compatible
+                try:
+                    pyunits.convert(
+                        self.recovery_rate_per_year * recovery_units_factor,
+                        to_units=pyunits.kg / pyunits.year,
+                    )
+                except InconsistentUnitsError:
+                    raise Exception(
+                        "The argument recovery_rate_per_year was passed with units of "
+                        "%s which cannot be converted to units of mass per year. Please "
+                        "ensure that recovery_rate_per_year is passed with rate units "
+                        "of mass per year (mass/a) or dimensionless." % (rec_rate_units)
+                    )
+
+                # check that units are on an annual basis
+                if str(rec_rate_units).split("/")[1] not in ["a", "year"]:
+                    raise Exception(
+                        "The argument recovery_rate_per_year was passed with units of "
+                        "%s and must be on an anuual basis. Please "
+                        "ensure that recovery_rate_per_year is passed with rate units "
+                        "of mass per year (mass/a) or dimensionless." % (rec_rate_units)
+                    )
+
                 self.cost_of_recovery = Expression(
                     expr=(
                         pyunits.convert(
@@ -796,14 +840,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                                 + self.total_fixed_OM_cost / pyunits.year
                                 + self.total_variable_OM_cost[0]
                             )
-                            / (
-                                self.recovery_rate
-                                * recovery_units_factor
-                                * self.hours_per_shift
-                                * self.shifts_per_day
-                                * self.operating_days_per_year
-                                / pyunits.year
-                            ),
+                            / (self.recovery_rate_per_year * recovery_units_factor),
                             to_units=getattr(pyunits, "USD_" + CE_index_year)
                             / pyunits.kg,
                         )
@@ -811,27 +848,38 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                 )
 
-                if transport_cost is not None:
-                    if isinstance(transport_cost, (Expression, ScalarExpression)) or (
-                        isinstance(transport_cost, (Param, Var))
-                        and transport_cost.get_units is None
-                    ):
+                if transport_cost_per_ton_product is not None:
+                    if (
+                        isinstance(
+                            transport_cost_per_ton_product,
+                            (Expression, ScalarExpression, Param, Var),
+                        )
+                        and pyunits.get_units(transport_cost_per_ton_product)
+                        == pyunits.dimensionless
+                    ) or isinstance(transport_cost_per_ton_product, (int, float)):
+                        # no units, assume $/ton
                         self.transport_cost = (
-                            transport_cost
+                            transport_cost_per_ton_product
+                            * 1e-6
                             * CE_index_units
-                            / pyunits.kg
+                            / pyunits.ton
                             * pyunits.convert(
-                                self.recovery_rate, to_units=pyunits.kg / pyunits.year
+                                self.recovery_rate_per_year,
+                                to_units=pyunits.ton / pyunits.year,
                             )
                         )
                     else:
-                        self.transport_cost = transport_cost * self.recovery_rate
+                        self.transport_cost = pyunits.convert(
+                            transport_cost_per_ton_product
+                            * self.recovery_rate_per_year,
+                            to_units=CE_index_units / pyunits.year,
+                        )
 
-            else:  # except the case where transport_cost is passed but recovery_rate is not passed
-                if transport_cost is not None:
+            else:  # except the case where transport_cost_per_ton_product is passed but recovery_rate_per_year is not passed
+                if transport_cost_per_ton_product is not None:
                     raise Exception(
-                        "If a transport_cost is not None, "
-                        "recovery_rate cannot be None."
+                        "If a transport_cost_per_ton_product is not None, "
+                        "recovery_rate_per_year cannot be None."
                     )
 
     @staticmethod
@@ -1158,9 +1206,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         costing_params = REE_costing_params  # initialize with baseline accounts
         if additional_costing_params is not None and additional_costing_params != {}:
-            for (
-                new_costing_params
-            ) in additional_costing_params:  # merge new dictionaries sequentially
+            for new_costing_params in [
+                additional_costing_params
+            ]:  # merge new dictionaries sequentially
                 # adding any provided custom params to the base dictionary
                 # need to "freeze" dict so it is hashable for merging keys
                 frozen_dict = {**costing_params}
@@ -1227,9 +1275,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         "RP Value"
                     ]
             except KeyError:
-                print(
-                    "KeyError: Account {} could not be found in the "
-                    "dictionary for source {}".format(account, str(source))
+                raise KeyError(
+                    "Account {} could not be found in the dictionary for source "
+                    "{}".format(account, str(source))
                 )
 
         # check that all accounts use the same process parameter
@@ -2049,11 +2097,29 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 units=CE_index_units / pyunits.year,
             )
 
+        if (0, "power") in b.variable_operating_costs.id_index_map().values():
+
             @b.Constraint(b.parent_block().time)
             def plant_overhead_cost_rule(c, t):
                 return c.plant_overhead_cost[t] == 0.20 * (
                     c.total_fixed_OM_cost / pyunits.year
                     + c.variable_operating_costs[0, "power"]
+                    + c.land_cost / pyunits.year
+                    + sum(
+                        c.variable_operating_costs[0, chemical]
+                        for chemical in c.chemicals_list
+                    )
+                    + sum(
+                        c.variable_operating_costs[0, waste] for waste in c.waste_list
+                    )
+                )
+
+        else:
+
+            @b.Constraint(b.parent_block().time)
+            def plant_overhead_cost_rule(c, t):
+                return c.plant_overhead_cost[t] == 0.20 * (
+                    c.total_fixed_OM_cost / pyunits.year
                     + c.land_cost / pyunits.year
                     + sum(
                         c.variable_operating_costs[0, chemical]
@@ -2305,7 +2371,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         )
                     )
                 )
-            if hasattr(b, "recovery_rate"):
+            if hasattr(b, "recovery_rate_per_year"):
                 print(
                     "Total annual O&M cost: $%.3f per kg REE recovered"
                     % value(
@@ -2313,11 +2379,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         * 1e6
                         / (
                             pyunits.convert(
-                                b.recovery_rate, to_units=pyunits.kg / pyunits.hr
+                                b.recovery_rate_per_year,
+                                to_units=pyunits.kg / pyunits.year,
                             )
-                            * b.hours_per_shift
-                            * b.shifts_per_day
-                            * b.operating_days_per_year
                         )
                     )
                 )
@@ -2335,15 +2399,17 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     + b.total_variable_OM_cost[0]
                 )
             )
-        if hasattr(b, "recovery_rate"):
-            print("Rate of recovery: %.3f kg/hr REE recovered" % value(b.recovery_rate))
+        if hasattr(b, "recovery_rate_per_year"):
+            print(
+                "Rate of recovery: %.3f kg/hr REE recovered"
+                % value(b.recovery_rate_per_year)
+            )
             print(
                 "Annual recovery: %.3f ton/year REE recovered"
                 % value(
-                    pyunits.convert(b.recovery_rate, to_units=pyunits.ton / pyunits.hr)
-                    * b.hours_per_shift
-                    * b.shifts_per_day
-                    * b.operating_days_per_year
+                    pyunits.convert(
+                        b.recovery_rate_per_year, to_units=pyunits.ton / pyunits.year
+                    )
                 )
             )
         if hasattr(b, "cost_of_recovery"):

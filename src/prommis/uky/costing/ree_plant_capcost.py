@@ -842,12 +842,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             units=pyunits.get_units(recovery_rate_per_year),
                         )
                     recovery_units_factor = 1
-                # else:
-                #     if (
-                #         pyunits.get_units(self.recovery_rate_per_year)
-                #         == pyunits.dimensionless
-                #     ):
-                #         recovery_units_factor = pyunits.kg / pyunits.year
 
                 rec_rate_units = pyunits.get_units(self.recovery_rate_per_year)
 
@@ -1096,17 +1090,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         self.variable_operating_costs[0, waste] for waste in self.waste_list
                     ) + self.additional_waste_cost
                 )
-            # else:
-            #     var_dict["Total Variable Waste Cost [$MM/year]"] = value(
-            #         sum(
-            #             self.variable_operating_costs[0, waste] for waste in self.waste_list
-            #         )
-            #     )
-
-            # if hasattr(self, "fuel"):
-            #     var_dict["Total Variable Fuel Cost [$MM/year]"] = value(
-            #         self.variable_operating_costs[0, self.fuel]
-            #     )
 
             if hasattr(self, "additional_chemicals_cost"):
                 var_dict["Total Variable Chemicals Cost [$MM/year]"] = value(
@@ -1115,13 +1098,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         for chemical in self.chemicals_list
                     ) + self.additional_chemicals_cost
                 )
-            # else:
-            #     var_dict["Total Variable Chemicals Cost [$MM/year]"] = value(
-            #         sum(
-            #             self.variable_operating_costs[0, chemical]
-            #             for chemical in self.chemicals_list
-            #         )
-            #     )
 
             var_dict["General Plant Overhead Cost [$MM/year]"] = value(
                 self.plant_overhead_cost[0]

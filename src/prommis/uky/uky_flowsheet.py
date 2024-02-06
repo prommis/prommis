@@ -977,9 +977,7 @@ def add_costing(flowsheet):
     # 4.8 is UKy Leaching - Solution Heater
     L_solution_heater_accounts = ["4.8"]
     m.fs.L_solution_heater = UnitModelBlock()
-    m.fs.L_solution_heater.duty = Var(
-        initialize=2.4, units=units.MBTU / units.hr
-    )
+    m.fs.L_solution_heater.duty = Var(initialize=2.4, units=units.MBTU / units.hr)
     m.fs.L_solution_heater.duty.fix()
     m.fs.L_solution_heater.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1138,7 +1136,7 @@ def add_costing(flowsheet):
             "CE_index_year": CE_index_year,
         },
     )
-    
+
     # 7.1 is UKy Solvent Extraction Wash and Saponification - Polyethylene Tanks
     SX_wash_pe_tanks_accounts = ["7.1"]
     m.fs.SX_wash_pe_tanks = UnitModelBlock()
@@ -1178,9 +1176,7 @@ def add_costing(flowsheet):
     # 7.3 is UKy Solvent Extraction Wash and Saponification - Process Pump
     SX_wash_pump_accounts = ["7.3"]
     m.fs.SX_wash_pump = UnitModelBlock()
-    m.fs.SX_wash_pump.feed_rate = Var(
-        initialize=703, units=units.gal / units.min
-    )
+    m.fs.SX_wash_pump.feed_rate = Var(initialize=703, units=units.gal / units.min)
     m.fs.SX_wash_pump.feed_rate.fix()
     m.fs.SX_wash_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1231,7 +1227,6 @@ def add_costing(flowsheet):
         },
     )
 
-    
     # Precipitation costs
     # 9.2 is UKy Rare Earth Element Precipitation - Polyethylene Tanks
     reep_pe_tanks_accounts = ["9.2"]
@@ -1323,7 +1318,6 @@ def add_costing(flowsheet):
         },
     )
 
-
     # Roasting costs
     # 3.1 is UKy Roasting - Storage Bins
     R_storage_bins_accounts = ["3.1"]
@@ -1346,9 +1340,7 @@ def add_costing(flowsheet):
     # 3.2 is UKy Roasting - Conveyors
     R_conveyors_accounts = ["3.2"]
     m.fs.R_conveyors = UnitModelBlock()
-    m.fs.R_conveyors.throughput = Var(
-        initialize=575, units=units.ton / units.hr
-    )
+    m.fs.R_conveyors.throughput = Var(initialize=575, units=units.ton / units.hr)
     m.fs.R_conveyors.throughput.fix()
     m.fs.R_conveyors.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1457,44 +1449,44 @@ def add_costing(flowsheet):
     # TODO: Replace this number with the sum of flowsheet.fs.roaster.flow_mol_comp_product (need to convert units)
     m.fs.recovery_rate_per_year = Var(
         initialize=39.3
-                   * units.kg
-                   / units.hr
-                   * 0.8025  # TREO (total rare earth oxide), 80.25% REE in REO
-                   * m.fs.annual_operating_hours,
+        * units.kg
+        / units.hr
+        * 0.8025  # TREO (total rare earth oxide), 80.25% REE in REO
+        * m.fs.annual_operating_hours,
         units=units.kg / units.yr,
     )
 
     # the land cost is the lease cost, or refining cost of REO produced
     m.fs.land_cost = Expression(
         expr=0.303736
-             * 1e-6
-             * getattr(units, "MUSD_" + CE_index_year)
-             / units.ton
-             * units.convert(m.fs.feed_input, to_units=units.ton / units.hr)
-             * hours_per_shift
-             * units.hr
-             * shifts_per_day
-             * units.day ** -1
-             * operating_days_per_year
-             * units.day
+        * 1e-6
+        * getattr(units, "MUSD_" + CE_index_year)
+        / units.ton
+        * units.convert(m.fs.feed_input, to_units=units.ton / units.hr)
+        * hours_per_shift
+        * units.hr
+        * shifts_per_day
+        * units.day**-1
+        * operating_days_per_year
+        * units.day
     )
 
     # TODO: Revisit this
     # dummy reagent with cost of 1 USD/kg for each section
     reagent_costs = (
-            (  # all USD/year
-                    # 302962  # Crushing and Screening
-                    # + 0  # Dry Grinding
-                    + 5767543  # Roasting
-                    + 199053595  # Leaching
-                    + 152303329  # Rougher Solvent Extraction
-                    + 43702016  # Cleaner Solvent Extraction
-                    + 7207168  # Solvent Extraction Wash and Saponification
-                    + 1233763  # Rare Earth Element Precipiation
-                    # + 18684816  # Water Treatment
-            )
-            * units.kg
-            / units.a
+        (  # all USD/year
+            # 302962  # Crushing and Screening
+            # + 0  # Dry Grinding
+            +5767543  # Roasting
+            + 199053595  # Leaching
+            + 152303329  # Rougher Solvent Extraction
+            + 43702016  # Cleaner Solvent Extraction
+            + 7207168  # Solvent Extraction Wash and Saponification
+            + 1233763  # Rare Earth Element Precipiation
+            # + 18684816  # Water Treatment
+        )
+        * units.kg
+        / units.a
     )
 
     m.fs.reagents = Var(
@@ -1618,14 +1610,13 @@ def add_costing(flowsheet):
     m.fs.costing.other_plant_costs.unfix()
     m.fs.costing.other_plant_costs_rule = Constraint(
         expr=(
-                m.fs.costing.other_plant_costs
-                == units.convert(
-                            1218073 * units.USD_2016  # Rougher Solvent Extraction
-                            + 48723 * units.USD_2016  # Cleaner Solvent Extraction
-                            + 182711
-                            * units.USD_2016,  # Solvent Extraction Wash and Saponification
-                            to_units=getattr(units, "MUSD_" + CE_index_year),
-                )
+            m.fs.costing.other_plant_costs
+            == units.convert(
+                1218073 * units.USD_2016  # Rougher Solvent Extraction
+                + 48723 * units.USD_2016  # Cleaner Solvent Extraction
+                + 182711 * units.USD_2016,  # Solvent Extraction Wash and Saponification
+                to_units=getattr(units, "MUSD_" + CE_index_year),
+            )
         )
     )
 
@@ -1656,7 +1647,7 @@ def add_costing(flowsheet):
     m.fs.costing.variable_operating_costs.display()  # results will be in t = 0
     QGESSCostingData.display_bare_erected_costs(m.fs.costing)
     QGESSCostingData.display_flowsheet_cost(m.fs.costing)
-    
+
     return m
 
 

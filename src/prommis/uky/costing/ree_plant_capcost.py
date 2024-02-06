@@ -842,12 +842,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             units=pyunits.get_units(recovery_rate_per_year),
                         )
                     recovery_units_factor = 1
-                else:
-                    if (
-                        pyunits.get_units(self.recovery_rate_per_year)
-                        == pyunits.dimensionless
-                    ):
-                        recovery_units_factor = pyunits.kg / pyunits.year
+                # else:
+                #     if (
+                #         pyunits.get_units(self.recovery_rate_per_year)
+                #         == pyunits.dimensionless
+                #     ):
+                #         recovery_units_factor = pyunits.kg / pyunits.year
 
                 rec_rate_units = pyunits.get_units(self.recovery_rate_per_year)
 
@@ -1090,23 +1090,23 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 self.variable_operating_costs[0, "power"]
             )
 
-            if hasattr(self, "waste_cost"):
+            if hasattr(self, "additional_waste_cost"):
                 var_dict["Total Variable Waste Cost [$MM/year]"] = value(
                     sum(
                         self.variable_operating_costs[0, waste] for waste in self.waste_list
                     ) + self.additional_waste_cost
                 )
-            else:
-                var_dict["Total Variable Waste Cost [$MM/year]"] = value(
-                    sum(
-                        self.variable_operating_costs[0, waste] for waste in self.waste_list
-                    )
-                )
+            # else:
+            #     var_dict["Total Variable Waste Cost [$MM/year]"] = value(
+            #         sum(
+            #             self.variable_operating_costs[0, waste] for waste in self.waste_list
+            #         )
+            #     )
 
-            if hasattr(self, "fuel"):
-                var_dict["Total Variable Fuel Cost [$MM/year]"] = value(
-                    self.variable_operating_costs[0, self.fuel]
-                )
+            # if hasattr(self, "fuel"):
+            #     var_dict["Total Variable Fuel Cost [$MM/year]"] = value(
+            #         self.variable_operating_costs[0, self.fuel]
+            #     )
 
             if hasattr(self, "additional_chemicals_cost"):
                 var_dict["Total Variable Chemicals Cost [$MM/year]"] = value(
@@ -1115,13 +1115,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         for chemical in self.chemicals_list
                     ) + self.additional_chemicals_cost
                 )
-            else:
-                var_dict["Total Variable Chemicals Cost [$MM/year]"] = value(
-                    sum(
-                        self.variable_operating_costs[0, chemical]
-                        for chemical in self.chemicals_list
-                    )
-                )
+            # else:
+            #     var_dict["Total Variable Chemicals Cost [$MM/year]"] = value(
+            #         sum(
+            #             self.variable_operating_costs[0, chemical]
+            #             for chemical in self.chemicals_list
+            #         )
+            #     )
 
             var_dict["General Plant Overhead Cost [$MM/year]"] = value(
                 self.plant_overhead_cost[0]
@@ -1951,7 +1951,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # sum of fixed operating costs of membrane units
         @b.Constraint()
         def sum_watertap_fixed_cost(c):
-            if c.watertap_fixed_costs_list is None:
+            if not hasattr(c, "watertap_fixed_costs_list"):
                 return c.watertap_fixed_costs == 0
             else:
                 return c.watertap_fixed_costs == sum(b.watertap_fixed_costs_list)

@@ -1079,7 +1079,7 @@ class TestREECosting(object):
             CE_index_year=CE_index_year,
         )
 
-        # define reagent fill costs as another plant cost so framework adds this to TPC calculation
+        # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
         model.fs.costing.other_plant_costs.unfix()
         model.fs.costing.other_plant_costs_rule = pyo.Constraint(
             expr=(

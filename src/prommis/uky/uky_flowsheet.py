@@ -1606,7 +1606,7 @@ def add_costing(flowsheet):
         CE_index_year=CE_index_year,
     )
 
-    # define reagent fill costs as another plant cost so framework adds this to TPC calculation
+    # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
     m.fs.costing.other_plant_costs.unfix()
     m.fs.costing.other_plant_costs_rule = Constraint(
         expr=(

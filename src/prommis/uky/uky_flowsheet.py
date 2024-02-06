@@ -102,7 +102,7 @@ def main():
 
     display_results(scaled_model)
 
-    add_costing()
+    add_costing(scaled_model)
 
     return scaled_model, results
 
@@ -117,7 +117,7 @@ def build():
     m.fs.leach_rxns = CoalRefuseLeachingReactions()
 
     m.fs.leach = MSContactor(
-        number_of_finite_elements=1,
+        number_of_finite_elements=2,
         streams={
             "liquid": {
                 "property_package": m.fs.leach_soln,
@@ -874,7 +874,7 @@ def display_results(m):
     m.fs.roaster.display()
 
 
-def add_costing():
+def add_costing(flowsheet):
     m = ConcreteModel()
 
     # Add a flowsheet object to the model
@@ -882,8 +882,9 @@ def add_costing():
     m.fs.costing = QGESSCosting()
     CE_index_year = "UKy_2019"
 
+    # TODO: Add crushing/screening and grinding costs once those are added to the flowsheet
     # Leaching costs
-    # 4.2 is L PE Tanks
+    # 4.2 is UKy Leaching - Polyethylene Tanks
     L_pe_tanks_accounts = ["4.2"]
     m.fs.L_pe_tanks = UnitModelBlock()
     m.fs.L_pe_tanks.capacity = Var(initialize=164805, units=units.gal)
@@ -901,7 +902,7 @@ def add_costing():
         },
     )
 
-    # 4.3 is L Tank Mixer
+    # 4.3 is UKy Leaching - Tank Mixer
     L_tank_mixer_accounts = ["4.3"]
     m.fs.L_tank_mixers = UnitModelBlock()
     m.fs.L_tank_mixers.power = Var(initialize=474, units=units.hp)
@@ -919,7 +920,7 @@ def add_costing():
         },
     )
 
-    # 4.4 is L Process Pump
+    # 4.4 is UKy Leaching - Process Pump
     L_pump_accounts = ["4.4"]
     m.fs.L_pump = UnitModelBlock()
     m.fs.L_pump.feed_rate = Var(initialize=10987, units=units.gal / units.min)
@@ -937,7 +938,7 @@ def add_costing():
         },
     )
 
-    # 4.5 is L Thickener
+    # 4.5 is UKy Leaching - Thickener
     L_thickener_accounts = ["4.5"]
     m.fs.L_thickener = UnitModelBlock()
     m.fs.L_thickener.area = Var(initialize=22590, units=units.ft**2)
@@ -955,7 +956,7 @@ def add_costing():
         },
     )
 
-    # 4.6 is L Solid Waste Filter Press
+    # 4.6 is UKy Leaching - Solid Waste Filter Press
     L_filter_press_accounts = ["4.6"]
     m.fs.L_filter_press = UnitModelBlock()
     m.fs.L_filter_press.volume = Var(initialize=3600, units=units.ft**3)
@@ -973,7 +974,7 @@ def add_costing():
         },
     )
 
-    # 4.8 is L Solution Heater
+    # 4.8 is UKy Leaching - Solution Heater
     L_solution_heater_accounts = ["4.8"]
     m.fs.L_solution_heater = UnitModelBlock()
     m.fs.L_solution_heater.duty = Var(
@@ -994,7 +995,7 @@ def add_costing():
     )
 
     # Solvent extraction costs
-    # 5.1 is RSX PE Tanks
+    # 5.1 is UKy Rougher Solvent Extraction - Polyethylene Tanks
     RSX_pe_tanks_accounts = ["5.1"]
     m.fs.RSX_pe_tanks = UnitModelBlock()
     m.fs.RSX_pe_tanks.capacity = Var(initialize=35136, units=units.gal)
@@ -1012,7 +1013,7 @@ def add_costing():
         },
     )
 
-    # 5.2 is RSX Tank Mixer
+    # 5.2 is UKy Rougher Solvent Extraction - Tank Mixer
     RSX_tank_mixer_accounts = ["5.2"]
     m.fs.RSX_tank_mixers = UnitModelBlock()
     m.fs.RSX_tank_mixers.power = Var(initialize=20, units=units.hp)
@@ -1030,7 +1031,7 @@ def add_costing():
         },
     )
 
-    # 5.3 is RSX Process Pump
+    # 5.3 is UKy Rougher Solvent Extraction - Process Pump
     RSX_pump_accounts = ["5.3"]
     m.fs.RSX_pump = UnitModelBlock()
     m.fs.RSX_pump.feed_rate = Var(initialize=7027, units=units.gal / units.min)
@@ -1048,7 +1049,7 @@ def add_costing():
         },
     )
 
-    # 5.4 is RSX Mixer Settler
+    # 5.4 is UKy Rougher Solvent Extraction - Mixer Settler
     RSX_mixer_settler_accounts = ["5.4"]
     m.fs.RSX_mixer_settler = UnitModelBlock()
     m.fs.RSX_mixer_settler.volume = Var(initialize=61107, units=units.gal)
@@ -1066,7 +1067,7 @@ def add_costing():
         },
     )
 
-    # 6.1 is CSX PE Tanks
+    # 6.1 is UKy Cleaner Solvent Extraction - Polyethylene Tanks
     CSX_pe_tanks_accounts = ["6.1"]
     m.fs.CSX_pe_tanks = UnitModelBlock()
     m.fs.CSX_pe_tanks.capacity = Var(initialize=1405, units=units.gal)
@@ -1084,7 +1085,7 @@ def add_costing():
         },
     )
 
-    # 6.2 is CSX Tank Mixer
+    # 6.2 is UKy Cleaner Solvent Extraction - Tank Mixer
     CSX_tank_mixer_accounts = ["6.2"]
     m.fs.CSX_tank_mixers = UnitModelBlock()
     m.fs.CSX_tank_mixers.power = Var(initialize=0.8, units=units.hp)
@@ -1102,7 +1103,7 @@ def add_costing():
         },
     )
 
-    # 6.3 is CSX Process Pump
+    # 6.3 is UKy Cleaner Solvent Extraction - Process Pump
     CSX_pump_accounts = ["6.3"]
     m.fs.CSX_pump = UnitModelBlock()
     m.fs.CSX_pump.feed_rate = Var(initialize=281, units=units.gal / units.min)
@@ -1120,7 +1121,7 @@ def add_costing():
         },
     )
 
-    # 6.4 is CSX Mixer Settler
+    # 6.4 is UKy Cleaner Solvent Extraction - Mixer Settler
     CSX_mixer_settler_accounts = ["6.4"]
     m.fs.CSX_mixer_settler = UnitModelBlock()
     m.fs.CSX_mixer_settler.volume = Var(initialize=2444, units=units.gal)
@@ -1138,7 +1139,7 @@ def add_costing():
         },
     )
     
-    # 7.1 is SX Wash PE Tanks
+    # 7.1 is UKy Solvent Extraction Wash and Saponification - Polyethylene Tanks
     SX_wash_pe_tanks_accounts = ["7.1"]
     m.fs.SX_wash_pe_tanks = UnitModelBlock()
     m.fs.SX_wash_pe_tanks.capacity = Var(initialize=3514, units=units.gal)
@@ -1156,7 +1157,7 @@ def add_costing():
         },
     )
 
-    # 7.2 is SX Wash Tank Mixer
+    # 7.2 is "UKy Solvent Extraction Wash and Saponification - Tank Mixer
     SX_wash_tank_mixer_accounts = ["7.2"]
     m.fs.SX_wash_tank_mixers = UnitModelBlock()
     m.fs.SX_wash_tank_mixers.power = Var(initialize=2, units=units.hp)
@@ -1174,7 +1175,7 @@ def add_costing():
         },
     )
 
-    # 7.3 is SX Wash Process Pump
+    # 7.3 is UKy Solvent Extraction Wash and Saponification - Process Pump
     SX_wash_pump_accounts = ["7.3"]
     m.fs.SX_wash_pump = UnitModelBlock()
     m.fs.SX_wash_pump.feed_rate = Var(
@@ -1194,7 +1195,7 @@ def add_costing():
         },
     )
 
-    # 7.4 is SX Wash Mixer Settler
+    # 7.4 is UKy Solvent Extraction Wash and Saponification - Mixer Settler
     SX_wash_mixer_settler_accounts = ["7.4"]
     m.fs.SX_wash_mixer_settler = UnitModelBlock()
     m.fs.SX_wash_mixer_settler.volume = Var(initialize=18332, units=units.gal)
@@ -1212,7 +1213,7 @@ def add_costing():
         },
     )
 
-    # 7.5 is SX Wash Filter Press
+    # 7.5 is UKy Solvent Extraction Wash and Saponification - Filter Press
     SX_wash_filter_press_accounts = ["7.5"]
     m.fs.SX_wash_filter_press = UnitModelBlock()
     m.fs.SX_wash_filter_press.volume = Var(initialize=0.26, units=units.ft**3)
@@ -1232,7 +1233,7 @@ def add_costing():
 
     
     # Precipitation costs
-    # 9.2 is REE Precipitation PE Tanks
+    # 9.2 is UKy Rare Earth Element Precipitation - Polyethylene Tanks
     reep_pe_tanks_accounts = ["9.2"]
     m.fs.reep_pe_tanks = UnitModelBlock()
     m.fs.reep_pe_tanks.capacity = Var(initialize=1504, units=units.gal)
@@ -1250,7 +1251,7 @@ def add_costing():
         },
     )
 
-    # 9.3 is REE Precipitation Tank Mixer
+    # 9.3 is UKy Rare Earth Element Precipitation - Tank Mixer
     reep_tank_mixer_accounts = ["9.3"]
     m.fs.reep_tank_mixers = UnitModelBlock()
     m.fs.reep_tank_mixers.power = Var(initialize=0.61, units=units.hp)
@@ -1268,7 +1269,7 @@ def add_costing():
         },
     )
 
-    # 9.4 is REE Precipitation Process Pump
+    # 9.4 is UKy Rare Earth Element Precipitation - Process Pump
     reep_pump_accounts = ["9.4"]
     m.fs.reep_pump = UnitModelBlock()
     m.fs.reep_pump.feed_rate = Var(initialize=70, units=units.gal / units.min)
@@ -1286,7 +1287,7 @@ def add_costing():
         },
     )
 
-    # 9.5 is REE Precipitation Filter Press
+    # 9.5 is UKy Rare Earth Element Precipitation - Filter Press
     reep_filter_press_accounts = ["9.5"]
     m.fs.reep_filter_press = UnitModelBlock()
     m.fs.reep_filter_press.volume = Var(initialize=0.405, units=units.ft**3)
@@ -1304,7 +1305,7 @@ def add_costing():
         },
     )
 
-    # 9.8 is REE Precipitation Roaster
+    # 9.8 is UKy Rare Earth Element Precipitation - Roaster
     reep_roaster_accounts = ["9.8"]
     m.fs.reep_roaster = UnitModelBlock()
     m.fs.reep_roaster.duty = Var(initialize=0.35, units=units.MBTU / units.hr)
@@ -1324,7 +1325,7 @@ def add_costing():
 
 
     # Roasting costs
-    # 3.1 is R Storage Bins
+    # 3.1 is UKy Roasting - Storage Bins
     R_storage_bins_accounts = ["3.1"]
     m.fs.R_storage_bins = UnitModelBlock()
     m.fs.R_storage_bins.capacity = Var(initialize=100, units=units.ton)
@@ -1342,7 +1343,7 @@ def add_costing():
         },
     )
 
-    # 3.2 is R Conveyors
+    # 3.2 is UKy Roasting - Conveyors
     R_conveyors_accounts = ["3.2"]
     m.fs.R_conveyors = UnitModelBlock()
     m.fs.R_conveyors.throughput = Var(
@@ -1362,7 +1363,7 @@ def add_costing():
         },
     )
 
-    # 3.3 is R Roaster
+    # 3.3 is UKy Roasting - Roaster
     R_roaster_accounts = ["3.3"]
     m.fs.R_roaster = UnitModelBlock()
     m.fs.R_roaster.duty = Var(initialize=737, units=units.MBTU / units.hr)
@@ -1380,7 +1381,7 @@ def add_costing():
         },
     )
 
-    # 3.4 is R Gas Scrubber
+    # 3.4 is UKy Roasting - Gas Scrubber
     R_gas_scrubber_accounts = ["3.4"]
     m.fs.R_gas_scrubber = UnitModelBlock()
     m.fs.R_gas_scrubber.gas_rate = Var(
@@ -1400,7 +1401,7 @@ def add_costing():
         },
     )
 
-    # 3.5 is R Spray Chamber Quencher (7-60 kcfm)
+    # 3.5 is UKy Roasting - Spray Chamber Quencher (7000-60000 ft**3/min)
     R_spray_chamber_quencher_accounts = ["3.5"]
     m.fs.R_spray_chamber_quencher = UnitModelBlock()
     m.fs.R_spray_chamber_quencher.gas_rate = Var(
@@ -1420,7 +1421,7 @@ def add_costing():
         },
     )
 
-    # 3.7 is R Chiller
+    # 3.7 is UKy Roasting - Chiller
     R_chiller_accounts = ["3.7"]
     m.fs.R_chiller = UnitModelBlock()
     m.fs.R_chiller.duty = Var(initialize=131, units=units.MBTU / units.hr)
@@ -1437,7 +1438,8 @@ def add_costing():
             "CE_index_year": CE_index_year,
         },
     )
-    
+
+    # TODO: How should this be handled considering there are multiple feeds with varying concentrations?
     m.fs.feed_input = Var(initialize=500, units=units.ton / units.hr)
     m.fs.feed_grade = Var(initialize=356.64, units=units.ppm)
 
@@ -1452,6 +1454,7 @@ def add_costing():
         units=units.hours / units.a,
     )
 
+    # TODO: Replace this number with the sum of flowsheet.fs.roaster.flow_mol_comp_product (need to convert units)
     m.fs.recovery_rate_per_year = Var(
         initialize=39.3
                    * units.kg
@@ -1476,6 +1479,7 @@ def add_costing():
              * units.day
     )
 
+    # TODO: Revisit this
     # dummy reagent with cost of 1 USD/kg for each section
     reagent_costs = (
             (  # all USD/year
@@ -1499,6 +1503,7 @@ def add_costing():
         units=units.kg / units.hr,
     )
 
+    # TODO: Replace these with values from the flowsheet?
     m.fs.solid_waste = Var(
         m.fs.time, initialize=11136 / 24, units=units.ton / units.hr
     )  # non-hazardous solid waste
@@ -1510,6 +1515,7 @@ def add_costing():
     )  # dust and volatiles
     m.fs.power = Var(m.fs.time, initialize=14716, units=units.hp)
 
+    # TODO: Consider renaming dummy and verifying reagent cost
     resources = [
         "dummy",
         "nonhazardous_solid_waste",
@@ -1527,6 +1533,7 @@ def add_costing():
     ]
 
     # define product flowrates
+    # TODO: Replace with flowsheet values, but what's the difference between pure and mixed? Product vs dust?
 
     pure_product_output_rates = {
         "Sc2O3": 1.9 * units.kg / units.hr,
@@ -1589,6 +1596,7 @@ def add_costing():
         land_cost=m.fs.land_cost,
         resources=resources,
         rates=rates,
+        # TODO: Verify this cost
         prices={
             "dummy": 1 * getattr(units, "USD_" + CE_index_year) / units.kg,
         },
@@ -1644,24 +1652,6 @@ def add_costing():
     cost_results = solver.solve(m, tee=True)
     assert check_optimal_termination(cost_results)
 
-    tpc = value(m.fs.costing.total_plant_cost)
-    bec = value(m.fs.costing.total_BEC)
-    tic = value(m.fs.costing.total_installation_cost)
-    opc = value(m.fs.costing.other_plant_costs)
-    tfom = value(m.fs.costing.total_fixed_OM_cost)
-    tvom = value(m.fs.costing.total_variable_OM_cost[0])
-    lc = value(m.fs.costing.land_cost)
-    tsr = value(m.fs.costing.total_sales_revenue)
-
-    print(f"Total plant cost is {tpc}")
-    print(f"Total bare erected cost is {bec}")
-    print(f"Total installation cost is {tic}")
-    print(f"Other plant cost is {opc}")
-    print(f"Total fixed operating and maintenance cost is {tfom}")
-    print(f"Total variable operating and maintenance cost is {tvom}")
-    print(f"Land cost is {lc}")
-    print(f"Total sales revenue is {tsr}")
-
     QGESSCostingData.report(m.fs.costing)
     m.fs.costing.variable_operating_costs.display()  # results will be in t = 0
     QGESSCostingData.display_bare_erected_costs(m.fs.costing)
@@ -1669,212 +1659,6 @@ def add_costing():
     
     return m
 
-
-# def flowsheet_costing(m):
-#     CE_index_year = "UKy_2019"
-# 
-#     m.fs.feed_input = Var(initialize=500, units=units.ton / units.hr)
-#     m.fs.feed_grade = Var(initialize=356.64, units=units.ppm)
-#     m.fs.recovery_rate_per_year = Var(
-#         initialize=39.3
-#                    * 0.8025,  # TREO (total rare earth oxide), 80.25% REE in REO
-#         units=units.kg / units.hr,
-#     )
-#     hours_per_shift = 8
-#     shifts_per_day = 3
-#     operating_days_per_year = 336
-# 
-#     # for convenience
-#     m.fs.annual_operating_hours = Param(
-#         initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
-#         mutable=False,
-#         units=units.hours / units.a,
-#     )
-# 
-#     # the land cost is the lease cost, or refining cost of REO produced
-#     m.fs.land_cost = Expression(
-#         expr=0.303736
-#              * 1e-6
-#              * getattr(units, "MUSD_" + CE_index_year)
-#              / units.ton
-#              * units.convert(m.fs.feed_input, to_units=units.ton / units.hr)
-#              * hours_per_shift
-#              * units.hr
-#              * shifts_per_day
-#              * units.day ** -1
-#              * operating_days_per_year
-#              * units.day
-#     )
-# 
-#     # dummy reagent with cost of 1 USD/kg for each section
-#     reagent_costs = (
-#             (  # all USD/year
-#                     302962  # Crushing and Screening
-#                     + 0  # Dry Grinding
-#                     + 5767543  # Roasting
-#                     + 199053595  # Leaching
-#                     + 152303329  # Rougher Solvent Extraction
-#                     + 43702016  # Cleaner Solvent Extraction
-#                     + 7207168  # Solvent Extraction Wash and Saponification
-#                     + 1233763  # Rare Earth Element Precipiation
-#                     + 18684816  # Water Treatment
-#             )
-#             * units.kg
-#             / units.a
-#     )
-# 
-#     m.fs.reagents = Var(
-#         m.fs.time,
-#         initialize=reagent_costs / (m.fs.annual_operating_hours),
-#         units=units.kg / units.hr,
-#     )
-# 
-#     m.fs.solid_waste = Var(
-#         m.fs.time, initialize=11136 / 24, units=units.ton / units.hr
-#     )  # non-hazardous solid waste
-#     m.fs.precipitate = Var(
-#         m.fs.time, initialize=732 / 24, units=units.ton / units.hr
-#     )  # non-hazardous precipitate
-#     m.fs.dust_and_volatiles = Var(
-#         m.fs.time, initialize=120 / 24, units=units.ton / units.hr
-#     )  # dust and volatiles
-#     m.fs.power = Var(m.fs.time, initialize=14716, units=units.hp)
-# 
-#     resources = [
-#         "dummy",
-#         "nonhazardous_solid_waste",
-#         "nonhazardous_precipitate_waste",
-#         "dust_and_volatiles",
-#         "power",
-#     ]
-# 
-#     rates = [
-#         m.fs.reagents,
-#         m.fs.solid_waste,
-#         m.fs.precipitate,
-#         m.fs.dust_and_volatiles,
-#         m.fs.power,
-#     ]
-# 
-#     # define product flowrates
-# 
-#     pure_product_output_rates = {
-#         "Sc2O3": 1.9 * units.kg / units.hr,
-#         "Dy2O3": 0.4 * units.kg / units.hr,
-#         "Gd2O3": 0.5 * units.kg / units.hr,
-#     }
-# 
-#     mixed_product_output_rates = {
-#         "Sc2O3": 0.00143 * units.kg / units.hr,
-#         "Y2O3": 0.05418 * units.kg / units.hr,
-#         "La2O3": 0.13770 * units.kg / units.hr,
-#         "CeO2": 0.37383 * units.kg / units.hr,
-#         "Pr6O11": 0.03941 * units.kg / units.hr,
-#         "Nd2O3": 0.17289 * units.kg / units.hr,
-#         "Sm2O3": 0.02358 * units.kg / units.hr,
-#         "Eu2O3": 0.00199 * units.kg / units.hr,
-#         "Gd2O3": 0.00000 * units.kg / units.hr,
-#         "Tb4O7": 0.00801 * units.kg / units.hr,
-#         "Dy2O3": 0.00000 * units.kg / units.hr,
-#         "Ho2O3": 0.00000 * units.kg / units.hr,
-#         "Er2O3": 0.00000 * units.kg / units.hr,
-#         "Tm2O3": 0.00130 * units.kg / units.hr,
-#         "Yb2O3": 0.00373 * units.kg / units.hr,
-#         "Lu2O3": 0.00105 * units.kg / units.hr,
-#     }
-# 
-#     m.fs.costing.build_process_costs(
-#         # arguments related to installation costs
-#         piping_materials_and_labor_percentage=20,
-#         electrical_materials_and_labor_percentage=20,
-#         instrumentation_percentage=8,
-#         plants_services_percentage=10,
-#         process_buildings_percentage=40,
-#         auxiliary_buildings_percentage=15,
-#         site_improvements_percentage=10,
-#         equipment_installation_percentage=17,
-#         field_expenses_percentage=12,
-#         project_management_and_construction_percentage=30,
-#         process_contingency_percentage=15,
-#         # argument related to Fixed OM costs
-#         nameplate_capacity=500,  # short (US) ton/hr
-#         labor_types=[
-#             "skilled",
-#             "unskilled",
-#             "supervisor",
-#             "maintenance",
-#             "technician",
-#             "engineer",
-#         ],
-#         labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
-#         labor_burden=25,  # % fringe benefits
-#         operators_per_shift=[4, 9, 2, 2, 2, 3],
-#         hours_per_shift=hours_per_shift,
-#         shifts_per_day=shifts_per_day,
-#         operating_days_per_year=operating_days_per_year,
-#         pure_product_output_rates=pure_product_output_rates,
-#         mixed_product_output_rates=mixed_product_output_rates,
-#         mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
-#         # arguments related to total owners costs
-#         land_cost=m.fs.land_cost,
-#         resources=resources,
-#         rates=rates,
-#         prices={
-#             "dummy": 1 * getattr(units, "USD_" + CE_index_year) / units.kg,
-#         },
-#         fixed_OM=True,
-#         variable_OM=True,
-#         feed_input=m.fs.feed_input,
-#         efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
-#         chemicals=["dummy"],
-#         waste=[
-#             "nonhazardous_solid_waste",
-#             "nonhazardous_precipitate_waste",
-#             "dust_and_volatiles",
-#         ],
-#         recovery_rate_per_year=m.fs.recovery_rate_per_year,
-#         CE_index_year=CE_index_year,
-#     )
-# 
-#     # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
-#     m.fs.costing.other_plant_costs.unfix()
-#     m.fs.costing.other_plant_costs_rule = Constraint(
-#         expr=(
-#                 m.fs.costing.other_plant_costs
-#                 == units.convert(
-#                             1218073 * units.USD_2016  # Rougher Solvent Extraction
-#                             + 48723 * units.USD_2016  # Cleaner Solvent Extraction
-#                             + 182711
-#                             * units.USD_2016,  # Solvent Extraction Wash and Saponification
-#                             to_units=getattr(units, "MUSD_" + CE_index_year),
-#                 )
-#         )
-#     )
-# 
-#     # fix costing vars that shouldn't change
-#     m.fs.feed_input.fix()
-#     m.fs.feed_grade.fix()
-#     m.fs.recovery_rate_per_year.fix()
-#     m.fs.reagents.fix()
-#     m.fs.solid_waste.fix()
-#     m.fs.precipitate.fix()
-#     m.fs.dust_and_volatiles.fix()
-#     m.fs.power.fix()
-# 
-#     # check that the model is set up properly and has 0 degrees of freedom
-#     assert degrees_of_freedom(m) == 0
-# 
-#     # Initialize costing
-#     QGESSCostingData.costing_initialization(m.fs.costing)
-#     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-#     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-# 
-#     # Solve costing
-#     solver = get_solver()
-#     cost_results = solver.solve(m, tee=True)
-#     assert check_optimal_termination(cost_results)
-# 
-#     return m
 
 if __name__ == "__main__":
     m, results = main()

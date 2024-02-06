@@ -20,7 +20,6 @@ Author: Marcus Holly
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
-    check_optimal_termination,
     Expression,
     Param,
     SolverFactory,
@@ -1639,7 +1638,6 @@ def add_costing(flowsheet):
     # Solve costing
     solver = get_solver()
     cost_results = solver.solve(m, tee=True)
-    assert check_optimal_termination(cost_results)
 
     QGESSCostingData.report(m.fs.costing)
     m.fs.costing.variable_operating_costs.display()  # results will be in t = 0

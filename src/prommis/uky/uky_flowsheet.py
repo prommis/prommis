@@ -885,7 +885,7 @@ def add_costing(flowsheet):
     # 4.2 is UKy Leaching - Polyethylene Tanks
     L_pe_tanks_accounts = ["4.2"]
     m.fs.L_pe_tanks = UnitModelBlock()
-    m.fs.L_pe_tanks.capacity = Var(initialize=164805, units=units.gal)
+    m.fs.L_pe_tanks.capacity = Var(initialize=100, units=units.gal)
     m.fs.L_pe_tanks.capacity.fix()
     m.fs.L_pe_tanks.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,

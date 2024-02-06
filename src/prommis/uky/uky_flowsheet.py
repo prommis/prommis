@@ -26,6 +26,7 @@ from pyomo.environ import (
     Suffix,
     TransformationFactory,
     Var,
+    value,
     units,
 )
 from pyomo.network import Arc, SequentialDecomposition
@@ -884,7 +885,7 @@ def add_costing(flowsheet):
     # 4.2 is UKy Leaching - Polyethylene Tanks
     L_pe_tanks_accounts = ["4.2"]
     m.fs.L_pe_tanks = UnitModelBlock()
-    m.fs.L_pe_tanks.capacity = Var(initialize=100, units=units.gal)
+    m.fs.L_pe_tanks.capacity = Var(initialize=value(flowsheet.fs.leach.volume[0, 2]), units=units.gal)
     m.fs.L_pe_tanks.capacity.fix()
     m.fs.L_pe_tanks.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -893,7 +894,7 @@ def add_costing(flowsheet):
             "cost_accounts": L_pe_tanks_accounts,
             "scaled_param": m.fs.L_pe_tanks.capacity,
             "source": 1,
-            "n_equip": 3,
+            "n_equip": flowsheet.fs.leach.config.number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -911,7 +912,7 @@ def add_costing(flowsheet):
             "cost_accounts": L_tank_mixer_accounts,
             "scaled_param": m.fs.L_tank_mixers.power,
             "source": 1,
-            "n_equip": 3,
+            "n_equip": flowsheet.fs.leach.config.number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -929,7 +930,7 @@ def add_costing(flowsheet):
             "cost_accounts": L_pump_accounts,
             "scaled_param": m.fs.L_pump.feed_rate,
             "source": 1,
-            "n_equip": 3,
+            "n_equip": flowsheet.fs.leach.config.number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -993,6 +994,7 @@ def add_costing(flowsheet):
     # 5.1 is UKy Rougher Solvent Extraction - Polyethylene Tanks
     RSX_pe_tanks_accounts = ["5.1"]
     m.fs.RSX_pe_tanks = UnitModelBlock()
+    # TODO: Verify this volume (this is significantly larger than leaching volume)
     m.fs.RSX_pe_tanks.capacity = Var(initialize=35136, units=units.gal)
     m.fs.RSX_pe_tanks.capacity.fix()
     m.fs.RSX_pe_tanks.costing = UnitModelCostingBlock(
@@ -1002,7 +1004,7 @@ def add_costing(flowsheet):
             "cost_accounts": RSX_pe_tanks_accounts,
             "scaled_param": m.fs.RSX_pe_tanks.capacity,
             "source": 1,
-            "n_equip": 6,
+            "n_equip": flowsheet.fs.solex_rougher.config_number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1020,7 +1022,7 @@ def add_costing(flowsheet):
             "cost_accounts": RSX_tank_mixer_accounts,
             "scaled_param": m.fs.RSX_tank_mixers.power,
             "source": 1,
-            "n_equip": 2,
+            "n_equip": flowsheet.fs.solex_rougher.config_number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1056,7 +1058,7 @@ def add_costing(flowsheet):
             "cost_accounts": RSX_mixer_settler_accounts,
             "scaled_param": m.fs.RSX_mixer_settler.volume,
             "source": 1,
-            "n_equip": 6,
+            "n_equip": flowsheet.fs.solex_rougher.config_number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1065,6 +1067,7 @@ def add_costing(flowsheet):
     # 6.1 is UKy Cleaner Solvent Extraction - Polyethylene Tanks
     CSX_pe_tanks_accounts = ["6.1"]
     m.fs.CSX_pe_tanks = UnitModelBlock()
+    # TODO: verify volume
     m.fs.CSX_pe_tanks.capacity = Var(initialize=1405, units=units.gal)
     m.fs.CSX_pe_tanks.capacity.fix()
     m.fs.CSX_pe_tanks.costing = UnitModelCostingBlock(
@@ -1074,7 +1077,7 @@ def add_costing(flowsheet):
             "cost_accounts": CSX_pe_tanks_accounts,
             "scaled_param": m.fs.CSX_pe_tanks.capacity,
             "source": 1,
-            "n_equip": 5,
+            "n_equip": flowsheet.fs.solex_cleaner.config_number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1092,7 +1095,7 @@ def add_costing(flowsheet):
             "cost_accounts": CSX_tank_mixer_accounts,
             "scaled_param": m.fs.CSX_tank_mixers.power,
             "source": 1,
-            "n_equip": 2,
+            "n_equip": flowsheet.fs.solex_cleaner.config_number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1128,106 +1131,18 @@ def add_costing(flowsheet):
             "cost_accounts": CSX_mixer_settler_accounts,
             "scaled_param": m.fs.CSX_mixer_settler.volume,
             "source": 1,
-            "n_equip": 6,
+            "n_equip": flowsheet.fs.solex_cleaner.config.number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
     )
 
-    # 7.1 is UKy Solvent Extraction Wash and Saponification - Polyethylene Tanks
-    SX_wash_pe_tanks_accounts = ["7.1"]
-    m.fs.SX_wash_pe_tanks = UnitModelBlock()
-    m.fs.SX_wash_pe_tanks.capacity = Var(initialize=3514, units=units.gal)
-    m.fs.SX_wash_pe_tanks.capacity.fix()
-    m.fs.SX_wash_pe_tanks.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": SX_wash_pe_tanks_accounts,
-            "scaled_param": m.fs.SX_wash_pe_tanks.capacity,
-            "source": 1,
-            "n_equip": 3,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 7.2 is "UKy Solvent Extraction Wash and Saponification - Tank Mixer
-    SX_wash_tank_mixer_accounts = ["7.2"]
-    m.fs.SX_wash_tank_mixers = UnitModelBlock()
-    m.fs.SX_wash_tank_mixers.power = Var(initialize=2, units=units.hp)
-    m.fs.SX_wash_tank_mixers.power.fix()
-    m.fs.SX_wash_tank_mixers.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": SX_wash_tank_mixer_accounts,
-            "scaled_param": m.fs.SX_wash_tank_mixers.power,
-            "source": 1,
-            "n_equip": 1,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 7.3 is UKy Solvent Extraction Wash and Saponification - Process Pump
-    SX_wash_pump_accounts = ["7.3"]
-    m.fs.SX_wash_pump = UnitModelBlock()
-    m.fs.SX_wash_pump.feed_rate = Var(initialize=703, units=units.gal / units.min)
-    m.fs.SX_wash_pump.feed_rate.fix()
-    m.fs.SX_wash_pump.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": SX_wash_pump_accounts,
-            "scaled_param": m.fs.SX_wash_pump.feed_rate,
-            "source": 1,
-            "n_equip": 2,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 7.4 is UKy Solvent Extraction Wash and Saponification - Mixer Settler
-    SX_wash_mixer_settler_accounts = ["7.4"]
-    m.fs.SX_wash_mixer_settler = UnitModelBlock()
-    m.fs.SX_wash_mixer_settler.volume = Var(initialize=18332, units=units.gal)
-    m.fs.SX_wash_mixer_settler.volume.fix()
-    m.fs.SX_wash_mixer_settler.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": SX_wash_mixer_settler_accounts,
-            "scaled_param": m.fs.SX_wash_mixer_settler.volume,
-            "source": 1,
-            "n_equip": 3,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 7.5 is UKy Solvent Extraction Wash and Saponification - Filter Press
-    SX_wash_filter_press_accounts = ["7.5"]
-    m.fs.SX_wash_filter_press = UnitModelBlock()
-    m.fs.SX_wash_filter_press.volume = Var(initialize=0.26, units=units.ft**3)
-    m.fs.SX_wash_filter_press.volume.fix()
-    m.fs.SX_wash_filter_press.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": SX_wash_filter_press_accounts,
-            "scaled_param": m.fs.SX_wash_filter_press.volume,
-            "source": 1,
-            "n_equip": 1,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
 
     # Precipitation costs
     # 9.2 is UKy Rare Earth Element Precipitation - Polyethylene Tanks
     reep_pe_tanks_accounts = ["9.2"]
     m.fs.reep_pe_tanks = UnitModelBlock()
+    # TODO: verify volume
     m.fs.reep_pe_tanks.capacity = Var(initialize=1504, units=units.gal)
     m.fs.reep_pe_tanks.capacity.fix()
     m.fs.reep_pe_tanks.costing = UnitModelCostingBlock(
@@ -1237,7 +1152,7 @@ def add_costing(flowsheet):
             "cost_accounts": reep_pe_tanks_accounts,
             "scaled_param": m.fs.reep_pe_tanks.capacity,
             "source": 1,
-            "n_equip": 4,
+            "n_equip": 1,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1255,7 +1170,7 @@ def add_costing(flowsheet):
             "cost_accounts": reep_tank_mixer_accounts,
             "scaled_param": m.fs.reep_tank_mixers.power,
             "source": 1,
-            "n_equip": 3,
+            "n_equip": 1,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },

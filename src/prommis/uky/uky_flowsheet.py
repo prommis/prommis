@@ -27,6 +27,7 @@ from pyomo.environ import (
     Suffix,
     TransformationFactory,
     Var,
+    value,
     units,
 )
 from pyomo.network import Arc, SequentialDecomposition
@@ -101,10 +102,9 @@ def main():
 
     display_results(scaled_model)
 
-    cost_model = add_unit_costing()
-    costing = flowsheet_costing(cost_model)
+    add_costing()
 
-    return scaled_model, results, costing
+    return scaled_model, results
 
 
 def build():
@@ -874,8 +874,8 @@ def display_results(m):
     m.fs.roaster.display()
 
 
-def add_unit_costing():
-    m = pyo.ConcreteModel()
+def add_costing():
+    m = ConcreteModel()
 
     # Add a flowsheet object to the model
     m.fs = FlowsheetBlock(dynamic=True, time_units=units.s)
@@ -1138,6 +1138,99 @@ def add_unit_costing():
         },
     )
     
+    # 7.1 is SX Wash PE Tanks
+    SX_wash_pe_tanks_accounts = ["7.1"]
+    m.fs.SX_wash_pe_tanks = UnitModelBlock()
+    m.fs.SX_wash_pe_tanks.capacity = Var(initialize=3514, units=units.gal)
+    m.fs.SX_wash_pe_tanks.capacity.fix()
+    m.fs.SX_wash_pe_tanks.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": SX_wash_pe_tanks_accounts,
+            "scaled_param": m.fs.SX_wash_pe_tanks.capacity,
+            "source": 1,
+            "n_equip": 3,
+            "scale_down_parallel_equip": False,
+            "CE_index_year": CE_index_year,
+        },
+    )
+
+    # 7.2 is SX Wash Tank Mixer
+    SX_wash_tank_mixer_accounts = ["7.2"]
+    m.fs.SX_wash_tank_mixers = UnitModelBlock()
+    m.fs.SX_wash_tank_mixers.power = Var(initialize=2, units=units.hp)
+    m.fs.SX_wash_tank_mixers.power.fix()
+    m.fs.SX_wash_tank_mixers.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": SX_wash_tank_mixer_accounts,
+            "scaled_param": m.fs.SX_wash_tank_mixers.power,
+            "source": 1,
+            "n_equip": 1,
+            "scale_down_parallel_equip": False,
+            "CE_index_year": CE_index_year,
+        },
+    )
+
+    # 7.3 is SX Wash Process Pump
+    SX_wash_pump_accounts = ["7.3"]
+    m.fs.SX_wash_pump = UnitModelBlock()
+    m.fs.SX_wash_pump.feed_rate = Var(
+        initialize=703, units=units.gal / units.min
+    )
+    m.fs.SX_wash_pump.feed_rate.fix()
+    m.fs.SX_wash_pump.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": SX_wash_pump_accounts,
+            "scaled_param": m.fs.SX_wash_pump.feed_rate,
+            "source": 1,
+            "n_equip": 2,
+            "scale_down_parallel_equip": False,
+            "CE_index_year": CE_index_year,
+        },
+    )
+
+    # 7.4 is SX Wash Mixer Settler
+    SX_wash_mixer_settler_accounts = ["7.4"]
+    m.fs.SX_wash_mixer_settler = UnitModelBlock()
+    m.fs.SX_wash_mixer_settler.volume = Var(initialize=18332, units=units.gal)
+    m.fs.SX_wash_mixer_settler.volume.fix()
+    m.fs.SX_wash_mixer_settler.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": SX_wash_mixer_settler_accounts,
+            "scaled_param": m.fs.SX_wash_mixer_settler.volume,
+            "source": 1,
+            "n_equip": 3,
+            "scale_down_parallel_equip": False,
+            "CE_index_year": CE_index_year,
+        },
+    )
+
+    # 7.5 is SX Wash Filter Press
+    SX_wash_filter_press_accounts = ["7.5"]
+    m.fs.SX_wash_filter_press = UnitModelBlock()
+    m.fs.SX_wash_filter_press.volume = Var(initialize=0.26, units=units.ft**3)
+    m.fs.SX_wash_filter_press.volume.fix()
+    m.fs.SX_wash_filter_press.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": SX_wash_filter_press_accounts,
+            "scaled_param": m.fs.SX_wash_filter_press.volume,
+            "source": 1,
+            "n_equip": 1,
+            "scale_down_parallel_equip": False,
+            "CE_index_year": CE_index_year,
+        },
+    )
+
+    
     # Precipitation costs
     # 9.2 is REE Precipitation PE Tanks
     reep_pe_tanks_accounts = ["9.2"]
@@ -1345,19 +1438,9 @@ def add_unit_costing():
         },
     )
     
-    return m
-
-
-def flowsheet_costing(m):
-    CE_index_year = "UKy_2019"
-
     m.fs.feed_input = Var(initialize=500, units=units.ton / units.hr)
     m.fs.feed_grade = Var(initialize=356.64, units=units.ppm)
-    m.fs.recovery_rate = Var(
-        initialize=39.3
-                   * 0.8025,  # TREO (total rare earth oxide), 80.25% REE in REO
-        units=units.kg / units.hr,
-    )
+
     hours_per_shift = 8
     shifts_per_day = 3
     operating_days_per_year = 336
@@ -1367,6 +1450,15 @@ def flowsheet_costing(m):
         initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
         mutable=False,
         units=units.hours / units.a,
+    )
+
+    m.fs.recovery_rate_per_year = Var(
+        initialize=39.3
+                   * units.kg
+                   / units.hr
+                   * 0.8025  # TREO (total rare earth oxide), 80.25% REE in REO
+                   * m.fs.annual_operating_hours,
+        units=units.kg / units.yr,
     )
 
     # the land cost is the lease cost, or refining cost of REO produced
@@ -1387,15 +1479,15 @@ def flowsheet_costing(m):
     # dummy reagent with cost of 1 USD/kg for each section
     reagent_costs = (
             (  # all USD/year
-                    302962  # Crushing and Screening
-                    + 0  # Dry Grinding
+                    # 302962  # Crushing and Screening
+                    # + 0  # Dry Grinding
                     + 5767543  # Roasting
                     + 199053595  # Leaching
                     + 152303329  # Rougher Solvent Extraction
                     + 43702016  # Cleaner Solvent Extraction
                     + 7207168  # Solvent Extraction Wash and Saponification
                     + 1233763  # Rare Earth Element Precipiation
-                    + 18684816  # Water Treatment
+                    # + 18684816  # Water Treatment
             )
             * units.kg
             / units.a
@@ -1510,13 +1602,13 @@ def flowsheet_costing(m):
             "nonhazardous_precipitate_waste",
             "dust_and_volatiles",
         ],
-        recovery_rate=m.fs.recovery_rate,
+        recovery_rate_per_year=m.fs.recovery_rate_per_year,
         CE_index_year=CE_index_year,
     )
 
-    # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
+    # define reagent fill costs as another plant cost so framework adds this to TPC calculation
     m.fs.costing.other_plant_costs.unfix()
-    m.fs.costing.other_plant_costs_rule = pyo.Constraint(
+    m.fs.costing.other_plant_costs_rule = Constraint(
         expr=(
                 m.fs.costing.other_plant_costs
                 == units.convert(
@@ -1532,7 +1624,7 @@ def flowsheet_costing(m):
     # fix costing vars that shouldn't change
     m.fs.feed_input.fix()
     m.fs.feed_grade.fix()
-    m.fs.recovery_rate.fix()
+    m.fs.recovery_rate_per_year.fix()
     m.fs.reagents.fix()
     m.fs.solid_waste.fix()
     m.fs.precipitate.fix()
@@ -1552,7 +1644,237 @@ def flowsheet_costing(m):
     cost_results = solver.solve(m, tee=True)
     assert check_optimal_termination(cost_results)
 
+    tpc = value(m.fs.costing.total_plant_cost)
+    bec = value(m.fs.costing.total_BEC)
+    tic = value(m.fs.costing.total_installation_cost)
+    opc = value(m.fs.costing.other_plant_costs)
+    tfom = value(m.fs.costing.total_fixed_OM_cost)
+    tvom = value(m.fs.costing.total_variable_OM_cost[0])
+    lc = value(m.fs.costing.land_cost)
+    tsr = value(m.fs.costing.total_sales_revenue)
+
+    print(f"Total plant cost is {tpc}")
+    print(f"Total bare erected cost is {bec}")
+    print(f"Total installation cost is {tic}")
+    print(f"Other plant cost is {opc}")
+    print(f"Total fixed operating and maintenance cost is {tfom}")
+    print(f"Total variable operating and maintenance cost is {tvom}")
+    print(f"Land cost is {lc}")
+    print(f"Total sales revenue is {tsr}")
+
+    QGESSCostingData.report(m.fs.costing)
+    m.fs.costing.variable_operating_costs.display()  # results will be in t = 0
+    QGESSCostingData.display_bare_erected_costs(m.fs.costing)
+    QGESSCostingData.display_flowsheet_cost(m.fs.costing)
+    
     return m
 
+
+# def flowsheet_costing(m):
+#     CE_index_year = "UKy_2019"
+# 
+#     m.fs.feed_input = Var(initialize=500, units=units.ton / units.hr)
+#     m.fs.feed_grade = Var(initialize=356.64, units=units.ppm)
+#     m.fs.recovery_rate_per_year = Var(
+#         initialize=39.3
+#                    * 0.8025,  # TREO (total rare earth oxide), 80.25% REE in REO
+#         units=units.kg / units.hr,
+#     )
+#     hours_per_shift = 8
+#     shifts_per_day = 3
+#     operating_days_per_year = 336
+# 
+#     # for convenience
+#     m.fs.annual_operating_hours = Param(
+#         initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
+#         mutable=False,
+#         units=units.hours / units.a,
+#     )
+# 
+#     # the land cost is the lease cost, or refining cost of REO produced
+#     m.fs.land_cost = Expression(
+#         expr=0.303736
+#              * 1e-6
+#              * getattr(units, "MUSD_" + CE_index_year)
+#              / units.ton
+#              * units.convert(m.fs.feed_input, to_units=units.ton / units.hr)
+#              * hours_per_shift
+#              * units.hr
+#              * shifts_per_day
+#              * units.day ** -1
+#              * operating_days_per_year
+#              * units.day
+#     )
+# 
+#     # dummy reagent with cost of 1 USD/kg for each section
+#     reagent_costs = (
+#             (  # all USD/year
+#                     302962  # Crushing and Screening
+#                     + 0  # Dry Grinding
+#                     + 5767543  # Roasting
+#                     + 199053595  # Leaching
+#                     + 152303329  # Rougher Solvent Extraction
+#                     + 43702016  # Cleaner Solvent Extraction
+#                     + 7207168  # Solvent Extraction Wash and Saponification
+#                     + 1233763  # Rare Earth Element Precipiation
+#                     + 18684816  # Water Treatment
+#             )
+#             * units.kg
+#             / units.a
+#     )
+# 
+#     m.fs.reagents = Var(
+#         m.fs.time,
+#         initialize=reagent_costs / (m.fs.annual_operating_hours),
+#         units=units.kg / units.hr,
+#     )
+# 
+#     m.fs.solid_waste = Var(
+#         m.fs.time, initialize=11136 / 24, units=units.ton / units.hr
+#     )  # non-hazardous solid waste
+#     m.fs.precipitate = Var(
+#         m.fs.time, initialize=732 / 24, units=units.ton / units.hr
+#     )  # non-hazardous precipitate
+#     m.fs.dust_and_volatiles = Var(
+#         m.fs.time, initialize=120 / 24, units=units.ton / units.hr
+#     )  # dust and volatiles
+#     m.fs.power = Var(m.fs.time, initialize=14716, units=units.hp)
+# 
+#     resources = [
+#         "dummy",
+#         "nonhazardous_solid_waste",
+#         "nonhazardous_precipitate_waste",
+#         "dust_and_volatiles",
+#         "power",
+#     ]
+# 
+#     rates = [
+#         m.fs.reagents,
+#         m.fs.solid_waste,
+#         m.fs.precipitate,
+#         m.fs.dust_and_volatiles,
+#         m.fs.power,
+#     ]
+# 
+#     # define product flowrates
+# 
+#     pure_product_output_rates = {
+#         "Sc2O3": 1.9 * units.kg / units.hr,
+#         "Dy2O3": 0.4 * units.kg / units.hr,
+#         "Gd2O3": 0.5 * units.kg / units.hr,
+#     }
+# 
+#     mixed_product_output_rates = {
+#         "Sc2O3": 0.00143 * units.kg / units.hr,
+#         "Y2O3": 0.05418 * units.kg / units.hr,
+#         "La2O3": 0.13770 * units.kg / units.hr,
+#         "CeO2": 0.37383 * units.kg / units.hr,
+#         "Pr6O11": 0.03941 * units.kg / units.hr,
+#         "Nd2O3": 0.17289 * units.kg / units.hr,
+#         "Sm2O3": 0.02358 * units.kg / units.hr,
+#         "Eu2O3": 0.00199 * units.kg / units.hr,
+#         "Gd2O3": 0.00000 * units.kg / units.hr,
+#         "Tb4O7": 0.00801 * units.kg / units.hr,
+#         "Dy2O3": 0.00000 * units.kg / units.hr,
+#         "Ho2O3": 0.00000 * units.kg / units.hr,
+#         "Er2O3": 0.00000 * units.kg / units.hr,
+#         "Tm2O3": 0.00130 * units.kg / units.hr,
+#         "Yb2O3": 0.00373 * units.kg / units.hr,
+#         "Lu2O3": 0.00105 * units.kg / units.hr,
+#     }
+# 
+#     m.fs.costing.build_process_costs(
+#         # arguments related to installation costs
+#         piping_materials_and_labor_percentage=20,
+#         electrical_materials_and_labor_percentage=20,
+#         instrumentation_percentage=8,
+#         plants_services_percentage=10,
+#         process_buildings_percentage=40,
+#         auxiliary_buildings_percentage=15,
+#         site_improvements_percentage=10,
+#         equipment_installation_percentage=17,
+#         field_expenses_percentage=12,
+#         project_management_and_construction_percentage=30,
+#         process_contingency_percentage=15,
+#         # argument related to Fixed OM costs
+#         nameplate_capacity=500,  # short (US) ton/hr
+#         labor_types=[
+#             "skilled",
+#             "unskilled",
+#             "supervisor",
+#             "maintenance",
+#             "technician",
+#             "engineer",
+#         ],
+#         labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
+#         labor_burden=25,  # % fringe benefits
+#         operators_per_shift=[4, 9, 2, 2, 2, 3],
+#         hours_per_shift=hours_per_shift,
+#         shifts_per_day=shifts_per_day,
+#         operating_days_per_year=operating_days_per_year,
+#         pure_product_output_rates=pure_product_output_rates,
+#         mixed_product_output_rates=mixed_product_output_rates,
+#         mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
+#         # arguments related to total owners costs
+#         land_cost=m.fs.land_cost,
+#         resources=resources,
+#         rates=rates,
+#         prices={
+#             "dummy": 1 * getattr(units, "USD_" + CE_index_year) / units.kg,
+#         },
+#         fixed_OM=True,
+#         variable_OM=True,
+#         feed_input=m.fs.feed_input,
+#         efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
+#         chemicals=["dummy"],
+#         waste=[
+#             "nonhazardous_solid_waste",
+#             "nonhazardous_precipitate_waste",
+#             "dust_and_volatiles",
+#         ],
+#         recovery_rate_per_year=m.fs.recovery_rate_per_year,
+#         CE_index_year=CE_index_year,
+#     )
+# 
+#     # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
+#     m.fs.costing.other_plant_costs.unfix()
+#     m.fs.costing.other_plant_costs_rule = Constraint(
+#         expr=(
+#                 m.fs.costing.other_plant_costs
+#                 == units.convert(
+#                             1218073 * units.USD_2016  # Rougher Solvent Extraction
+#                             + 48723 * units.USD_2016  # Cleaner Solvent Extraction
+#                             + 182711
+#                             * units.USD_2016,  # Solvent Extraction Wash and Saponification
+#                             to_units=getattr(units, "MUSD_" + CE_index_year),
+#                 )
+#         )
+#     )
+# 
+#     # fix costing vars that shouldn't change
+#     m.fs.feed_input.fix()
+#     m.fs.feed_grade.fix()
+#     m.fs.recovery_rate_per_year.fix()
+#     m.fs.reagents.fix()
+#     m.fs.solid_waste.fix()
+#     m.fs.precipitate.fix()
+#     m.fs.dust_and_volatiles.fix()
+#     m.fs.power.fix()
+# 
+#     # check that the model is set up properly and has 0 degrees of freedom
+#     assert degrees_of_freedom(m) == 0
+# 
+#     # Initialize costing
+#     QGESSCostingData.costing_initialization(m.fs.costing)
+#     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+#     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+# 
+#     # Solve costing
+#     solver = get_solver()
+#     cost_results = solver.solve(m, tee=True)
+#     assert check_optimal_termination(cost_results)
+# 
+#     return m
+
 if __name__ == "__main__":
-    m, results, costing = main()
+    m, results = main()

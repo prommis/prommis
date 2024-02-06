@@ -16,7 +16,7 @@ Leach solid feed Nd2O3,"fs.leach_solid_feed.mass_frac_comp[0, 'Nd2O3']",Leach so
 Leach solid feed Sm2O3,"fs.leach_solid_feed.mass_frac_comp[0, 'Sm2O3']",Leach solid feed Sm2O3 fractional composition,none,none,3,TRUE,Leaching,FALSE,
 Leach solid feed Gd2O3,"fs.leach_solid_feed.mass_frac_comp[0, 'Gd2O3']",Leach solid feed Gd2O3 fractional composition,none,none,3,TRUE,Leaching,FALSE,
 Leach solid feed Dy2O3,"fs.leach_solid_feed.mass_frac_comp[0, 'Dy2O3']",Leach solid feed Dy2O3 fractional composition,none,none,3,TRUE,Leaching,FALSE,
-Solid feed mass flow,"fs.leach_solid_feed.flow_mass[0]",Leach solid feed mass flow,units.kg/units.hour,kg/hr,3,TRUE,Leaching,FALSE,
+Solid feed mass flow,"fs.leach_solid_feed.flow_mass[0]","Leach solid feed mass flow",units.kg/units.hour,kg/hr,3,TRUE,Leaching,FALSE,""
 Gas inlet temperature,"fs.roaster.gas_inlet.temperature[0]",Gas inlet temperature,units.K,K,2,TRUE,Roaster,FALSE,
 Gas inlet pressure,"fs.roaster.gas_inlet.pressure[0]",Gas inlet pressure,units.Pa,Pa,2,TRUE,Roaster,FALSE,
 Gas molar flow,"fs.roaster.gas_out[0].flow_mol",Gas molar flow,units.mol/units.s,mol/s,3,FALSE,,TRUE,Roaster

@@ -18,7 +18,9 @@ __author__ = "Dan Gunter"
 
 # stdlib
 import logging
+
 # third party
+import pyomo.environ as pyo
 from idaes import logger as idaeslog
 from watertap.ui.fsapi import FlowsheetInterface
 from watertap.ui.fsapi import FlowsheetCategory as FC
@@ -29,7 +31,7 @@ from prommis.uky.uky_flowsheet import (
     set_operating_conditions,
     set_scaling,
     solve,
-    initialize_system
+    initialize_system,
 )
 
 _log = idaeslog.getLogger(__name__)
@@ -53,59 +55,204 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     wlog.setLevel(logging.DEBUG)
 
     exports.from_csv(file="uky_flowsheet_ui.csv", flowsheet=flowsheet)
-    fs = flowsheet
 
-    # TODO: Fix compositions to match test_uky_flowsheet exactly
+    comp = {
+        "Al",
+        "Ca",
+        "Ce",
+        "Dy",
+        "Fe",
+        "Gd",
+        "La",
+        "Nd",
+        "Pr",
+        "Sc",
+        "Sm",
+        "Y",
+    }
+    comp_ox = {
+        "Al2O3",
+        "CaO",
+        "Ce2O3",
+        "Dy2O3",
+        "Fe2O3",
+        "Gd2O3",
+        "La2O3",
+        "Nd2O3",
+        "Pr2O3",
+        "Sc2O3",
+        "Sm2O3",
+        "Y2O3",
+    }
+    comp_liq = {
+        "H",
+        "H2O",
+        "HSO4",
+        "SO4"
+    }
+    comp_precip = {
+        "Al2(C2O4)3(s)",
+        "Ce2(C2O4)3(s)",
+        "Dy2(C2O4)3(s)",
+        "Fe2(C2O4)3(s)",
+        "Gd2(C2O4)3(s)",
+        "La2(C2O4)3(s)",
+        "Nd2(C2O4)3(s)",
+        "Pr2(C2O4)3(s)",
+        "Sc2(C2O4)3(s)",
+        "Sm2(C2O4)3(s)",
+        "Y2(C2O4)3(s)",
+    }
 
-    compositions = {
-        "liquid1": ("'Al', 'Ca', 'Ce', 'Dy', 'Fe', 'Gd', 'H', 'H2O', 'HSO4', 'SO4', 'La', 'Nd', 'Pr',
-        'Sc', 'Sm', 'Y'),
-        "solex"
-    }
-    units = {
-        "conc_mass_comp": {
-            "outlets": [
-                ("leach liquid", "fs.leach.liquid_outlet", liquid1),
-            "solex rougher mscontactor organic":
-                "fs.solex_rougher.mscontactor.organic_outlet",
-            "solex rougher mscontactor aqueous":
-                "fs.solex_rougher.mscontactor.aqueous_outlet",
-            "solex cleaner mscontactor organic":
-                "fs.solex_cleaner.mscontactor.organic_outlet",
-            "solex cleaner mscontactor aqueous":
-                "fs.solex_cleaner.mscontactor.aqueous_outlet",
-            "precipitator cv aqueous":
-                "fs.precipitator.cv_aqueous.properties_out[0]",
-            ],
-            "value_name": "mass composition concentration"
-        },
-        "flow_mol_comp": {
-            "value_name": "flow molar composition",
-            "compositions": ("Al2(C2O4)3(s)", "Dy2(C2O4)3(s)", "Fe2(C2O4)3(s)",
-                             "Gd2(C2O4)3(s)", "La2(C2O4)3(s)", "Nd2(C2O4)3(s)",
-                             "Pr2(C2O4)3(s)", "Sc2(C2O4)3(s)", "Sm2(C2O4)3(s)",
-                             "Y2(C2O4)3(s)"),
-            "outlets": {
-                "precipitator precipitate": fs.precipitator.precipitate_outlet
-            }
-        }
-    }
-    # add exports for: {type of value} X {unit} X {composition}
-    for value_type, data in units.items():
-        for name, outlet in data["outlets"].items():
-            for comp in data["compositions"]:
-                obj_name = f"{outlet}.{value_type}[0,'{comp}']"
-                _log.debug(f"start: add UI export for obj={obj_name}")
-                exports.add(
-                    deferred_obj=obj_name,
-                    name=name,
-                    rounding=2,
-                    description=f"{name} outlet",
-                    is_input=False,
-                    is_output=True,
-                    output_category=data["value_name"]
-                )
-                _log.info(f"end: add UI export for obj={obj_name}")
+    category = "solids"
+    exports.add(
+        deferred_obj=f"fs.leach.solid_outlet.flow_mass[0]",
+        name=f"solid flow mass",
+        rounding=4,
+        ui_units=pyo.units.kg/pyo.units.hour,
+        display_units="kg/hr",
+        description=f"solid flow mass",
+        is_input=False,
+        is_output=True,
+        output_category=category
+    )
+    for c in comp_ox:
+        name = f"leaching solid mass fraction of {c}"
+        obj_name = f"fs.leach.solid_outlet.mass_frac_comp[0, '{c}']"
+        exports.add(
+            deferred_obj=obj_name,
+            name=name,
+            rounding=4,
+            description=f"{name} outlet",
+            is_input=False,
+            is_output=True,
+            output_category=category
+        )
+    exports.add(
+        deferred_obj=f"fs.leach.solid_outlet.mass_frac_comp[0, 'inerts']",
+        name=f"leaching solid mass fraction of inerts",
+        rounding=4,
+        description=f"leaching solid mass fraction of inert components outlet",
+        is_input=False,
+        is_output=True,
+        output_category="solid outlet"
+    )
+
+    category = "leaching"
+    exports.add(
+        deferred_obj="fs.leach.liquid_outlet.flow_vol[0]",
+        name=f"liquid flow volume",
+        ui_units=pyo.units.l/pyo.units.hour,
+        display_units="l/h",
+        rounding=4,
+        description=f"liquid flow volume",
+        is_input=False,
+        is_output=True,
+        output_category=category
+    )
+    for c in comp.union(comp_liq):
+        name = f"leaching liquid mass composition fraction of {c}"
+        obj_name = f"fs.leach.liquid_outlet.conc_mass_comp[0, '{c}']"
+        exports.add(
+            deferred_obj=obj_name,
+            name=name,
+            ui_units=pyo.units.mg/pyo.units.l,
+            display_units="mg/l",
+            rounding=4,
+            description=f"{name} outlet",
+            is_input=False,
+            is_output=True,
+            output_category=category
+        )
+
+    category = "solex"
+    for stype in {"rougher", "cleaner"}:
+        # organic
+        for c in comp:
+            name = f"solex organic liquid mass composition fraction {c}"
+            obj_name = f"fs.solex_{stype}.mscontactor.organic_outlet" \
+                       f".conc_mass_comp[0, '{c}']"
+            exports.add(
+                deferred_obj=obj_name,
+                name=name,
+                ui_units=pyo.units.mg / pyo.units.l,
+                display_units="mg/l",
+                rounding=4,
+                description=f"{name} outlet",
+                is_input=False,
+                is_output=True,
+                output_category=category
+            )
+        # aqueous
+        complist = comp.union(comp_liq) if stype == "rougher" else comp
+        for c in complist:
+            name = f"solex aqueous liquid mass composition fraction {c}"
+            obj_name = f"fs.solex_{stype}.mscontactor.aqueous_outlet" \
+                       f".conc_mass_comp[0, '{c}']"
+            exports.add(
+                deferred_obj=obj_name,
+                name=name,
+                ui_units=pyo.units.mg / pyo.units.l,
+                display_units="mg/l",
+                rounding=4,
+                description=f"{name} outlet",
+                is_input=False,
+                is_output=True,
+                output_category=category
+            )
+
+    category = "precipitator"
+    exports.add(
+        deferred_obj="fs.precipitator.cv_aqueous.properties_out[0].flow_vol",
+        name=f"precipitator aqueous out",
+        ui_units=pyo.units.l / pyo.units.hour,
+        display_units="liters/hour",
+        rounding=4,
+        description=f"precipitator aqueous properties out",
+        is_input=False,
+        is_output=True,
+        output_category=category
+    )
+    for c in comp:
+        name = f"precipitator aqueous concentration mass composition of {c}"
+        obj_name = f"fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp['{c}']"
+        exports.add(
+            deferred_obj=obj_name,
+            name=name,
+            ui_units=pyo.units.mg/pyo.units.l,
+            display_units="mg/l",
+            rounding=4,
+            description=f"{name} outlet",
+            is_input=False,
+            is_output=True,
+            output_category=category
+        )
+    exports.add(
+        deferred_obj="fs.precipitator.precipitate_outlet.temperature[0]",
+        name="precipitator outlet temperature",
+        rounding=4,
+        ui_units=pyo.units.K,
+        display_units="K",
+        description="temperature of the precipitator's precipitate outlet",
+        is_input=False,
+        is_output=True,
+        output_category=category
+    )
+    for c in comp_precip:
+        name = f"precipitate molar flow composition of {c}"
+        obj_name = f"fs.precipitator.precipitate_outlet.flow_mol_comp[0, '{c}']"
+        exports.add(
+            deferred_obj=obj_name,
+            name=name,
+            ui_units=pyo.units.mol / pyo.units.hour,
+            display_units="moles/hour",
+            rounding=4,
+            description=f"{name} outlet",
+            is_input=False,
+            is_output=True,
+            output_category=category
+        )
+    _log.info(f"exports:\n{exports.json(indent=2)}")
 
 
 def build_flowsheet(build_options=None, **kwargs):
@@ -124,27 +271,3 @@ def get_diagram(build_options):
 
 def solve_flowsheet(flowsheet=None):
     return solve(flowsheet)
-
-
-# for terminal debugging
-if __name__ == "__main__":
-    import argparse
-    from idaes import logger
-    import logging
-    import sys
-
-    p = argparse.ArgumentParser()
-    p.add_argument("-v", "--verbose", action="count", default=0)
-    a = p.parse_args()
-
-    if a.verbose > 0:
-        log = logger.getLogger("watertap.ui.fsapi")
-        if a.verbose > 1:
-            log.setLevel(logging.DEBUG)
-        else:
-            log.setLevel(logging.INFO)
-
-    iface = export_to_ui()
-    iface.build()
-
-    iface.fs_exp.to_csv(output=sys.stdout)

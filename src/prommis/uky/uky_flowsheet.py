@@ -27,12 +27,10 @@ from pyomo.environ import (
     Suffix,
     TransformationFactory,
     Var,
-    value,
     units,
 )
 from pyomo.network import Arc, SequentialDecomposition
 from pyomo.util.check_units import assert_units_consistent
-from pyomo.common.dependencies import attempt_import
 
 from idaes.core import (
     FlowDirection,

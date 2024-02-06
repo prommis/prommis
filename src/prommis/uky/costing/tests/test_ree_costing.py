@@ -3342,8 +3342,12 @@ def test_REE_costing_variableOM_defaults():
     assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1441, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
     assert pyo.value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
+    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
+        0.0000, abs=1e-4
+    )
+    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
+        0.0000, abs=1e-4
+    )
 
 
 @pytest.mark.component
@@ -3422,8 +3426,12 @@ def test_REE_costing_variableOM_steadystateflowsheet():
     assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1441, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
     assert pyo.value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
+    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
+        0.0000, abs=1e-4
+    )
+    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
+        0.0000, abs=1e-4
+    )
 
 
 @pytest.mark.component
@@ -3501,7 +3509,9 @@ def test_REE_costing_chemicalscostExpression_withunits():
     )
     assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(0.001, rel=1e-4)
+    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
+        0.001, rel=1e-4
+    )
 
 
 @pytest.mark.component
@@ -3579,8 +3589,12 @@ def test_REE_costing_chemicalscostExpression_nounits():
     )
     assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(0.001, rel=1e-4)
-    assert pyunits.get_units(m.fs.costing.additional_chemicals_cost) == pyunits.MUSD_2021
+    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
+        0.001, rel=1e-4
+    )
+    assert (
+        pyunits.get_units(m.fs.costing.additional_chemicals_cost) == pyunits.MUSD_2021
+    )
 
 
 @pytest.mark.component
@@ -3659,8 +3673,12 @@ def test_REE_costing_chemicalscostnonExpression_withunits():
     )
     assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(0.001, rel=1e-4)
-    assert pyunits.get_units(m.fs.costing.additional_chemicals_cost) == pyunits.MUSD_2021
+    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
+        0.001, rel=1e-4
+    )
+    assert (
+        pyunits.get_units(m.fs.costing.additional_chemicals_cost) == pyunits.MUSD_2021
+    )
 
 
 @pytest.mark.component
@@ -3739,8 +3757,12 @@ def test_REE_costing_chemicalscostnonExpression_nounits():
     )
     assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(0.001, rel=1e-4)
-    assert pyunits.get_units(m.fs.costing.additional_chemicals_cost) == pyunits.MUSD_2021
+    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
+        0.001, rel=1e-4
+    )
+    assert (
+        pyunits.get_units(m.fs.costing.additional_chemicals_cost) == pyunits.MUSD_2021
+    )
 
 
 @pytest.mark.component
@@ -3818,7 +3840,9 @@ def test_REE_costing_wastecostExpression_withunits():
     )
     assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(0.001, rel=1e-4)
+    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
+        0.001, rel=1e-4
+    )
 
 
 @pytest.mark.component
@@ -3896,7 +3920,9 @@ def test_REE_costing_wastecostExpression_nounits():
     )
     assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(0.001, rel=1e-4)
+    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
+        0.001, rel=1e-4
+    )
     assert pyunits.get_units(m.fs.costing.additional_waste_cost) == pyunits.MUSD_2021
 
 
@@ -3976,7 +4002,9 @@ def test_REE_costing_wastecostnonExpression_withunits():
     )
     assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(0.001, rel=1e-4)
+    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
+        0.001, rel=1e-4
+    )
     assert pyunits.get_units(m.fs.costing.additional_waste_cost) == pyunits.MUSD_2021
 
 
@@ -4056,7 +4084,9 @@ def test_REE_costing_wastecostnonExpression_nounits():
     )
     assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(0.001, rel=1e-4)
+    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
+        0.001, rel=1e-4
+    )
     assert pyunits.get_units(m.fs.costing.additional_waste_cost) == pyunits.MUSD_2021
 
 

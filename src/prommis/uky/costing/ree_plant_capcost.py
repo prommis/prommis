@@ -717,18 +717,32 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # define additional chemicals cost
         if additional_chemicals_cost is not None:
             if type(additional_chemicals_cost) in [Expression, ScalarExpression]:
-                if pyunits.get_units(additional_chemicals_cost) == pyunits.dimensionless:
-                    self.additional_chemicals_cost = Expression(expr=additional_chemicals_cost.expr * CE_index_units)
+                if (
+                    pyunits.get_units(additional_chemicals_cost)
+                    == pyunits.dimensionless
+                ):
+                    self.additional_chemicals_cost = Expression(
+                        expr=additional_chemicals_cost.expr * CE_index_units
+                    )
                 else:
                     self.additional_chemicals_cost = Expression(
-                        expr=pyunits.convert(additional_chemicals_cost.expr, to_units=CE_index_units)
+                        expr=pyunits.convert(
+                            additional_chemicals_cost.expr, to_units=CE_index_units
+                        )
                     )
             else:
-                if pyunits.get_units(additional_chemicals_cost) == pyunits.dimensionless:
-                    self.additional_chemicals_cost = Expression(expr=additional_chemicals_cost * CE_index_units)
+                if (
+                    pyunits.get_units(additional_chemicals_cost)
+                    == pyunits.dimensionless
+                ):
+                    self.additional_chemicals_cost = Expression(
+                        expr=additional_chemicals_cost * CE_index_units
+                    )
                 else:
                     self.additional_chemicals_cost = Expression(
-                        expr=pyunits.convert(additional_chemicals_cost, to_units=CE_index_units)
+                        expr=pyunits.convert(
+                            additional_chemicals_cost, to_units=CE_index_units
+                        )
                     )
         else:
             self.additional_chemicals_cost = Expression(expr=0 * CE_index_units)
@@ -742,17 +756,25 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if additional_waste_cost is not None:
             if type(additional_waste_cost) in [Expression, ScalarExpression]:
                 if pyunits.get_units(additional_waste_cost) == pyunits.dimensionless:
-                    self.additional_waste_cost = Expression(expr=additional_waste_cost.expr * CE_index_units)
+                    self.additional_waste_cost = Expression(
+                        expr=additional_waste_cost.expr * CE_index_units
+                    )
                 else:
                     self.additional_waste_cost = Expression(
-                        expr=pyunits.convert(additional_waste_cost.expr, to_units=CE_index_units)
+                        expr=pyunits.convert(
+                            additional_waste_cost.expr, to_units=CE_index_units
+                        )
                     )
             else:
                 if pyunits.get_units(additional_waste_cost) == pyunits.dimensionless:
-                    self.additional_waste_cost = Expression(expr=additional_waste_cost * CE_index_units)
+                    self.additional_waste_cost = Expression(
+                        expr=additional_waste_cost * CE_index_units
+                    )
                 else:
                     self.additional_waste_cost = Expression(
-                        expr=pyunits.convert(additional_waste_cost, to_units=CE_index_units)
+                        expr=pyunits.convert(
+                            additional_waste_cost, to_units=CE_index_units
+                        )
                     )
         else:
             self.additional_waste_cost = Expression(expr=0 * CE_index_units)
@@ -1087,8 +1109,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             if hasattr(self, "additional_waste_cost"):
                 var_dict["Total Variable Waste Cost [$MM/year]"] = value(
                     sum(
-                        self.variable_operating_costs[0, waste] for waste in self.waste_list
-                    ) + self.additional_waste_cost
+                        self.variable_operating_costs[0, waste]
+                        for waste in self.waste_list
+                    )
+                    + self.additional_waste_cost
                 )
 
             if hasattr(self, "additional_chemicals_cost"):
@@ -1096,7 +1120,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     sum(
                         self.variable_operating_costs[0, chemical]
                         for chemical in self.chemicals_list
-                    ) + self.additional_chemicals_cost
+                    )
+                    + self.additional_chemicals_cost
                 )
 
             var_dict["General Plant Overhead Cost [$MM/year]"] = value(

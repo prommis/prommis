@@ -847,7 +847,7 @@ def initialize_system(m):
                 m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol.fix()
                 m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp.fix()
                 m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.fix()
-                # Re-solve leach unit
+                # Re-solve precipitator unit
                 solver = SolverFactory("ipopt")
                 solver.solve(m.fs.precipitator, tee=True)
                 # Unfix feed states
@@ -871,6 +871,20 @@ def solve(m):
 def display_results(m):
     m.fs.roaster.display()
 
+    # precipitate = value(units.convert(m.fs.leach_filter_cake.flow_mass[0], to_units=units.kg / units.hr))
+    # print(f"Precipitate mass flow is {precipitate} kg/hr")
+    # product = value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
+    # print(f"REE product mass flow is {product} kg/hr")
+    # dust = value(units.convert(m.fs.roaster.flow_mas_dust[0], to_units=units.kg / units.hr))
+    # print(f"Dust mass flow is {dust} kg/hr")
+    #
+    # precipitate_percent = 100 * precipitate / (precipitate + product + dust)
+    # product_percent = 100 * product / (precipitate + product + dust)
+    # dust_percent = 100 * dust / (precipitate + product + dust)
+    # print(f"Precipitate is {precipitate_percent}% of total outlet mass flow")
+    # print(f"Product is {product_percent}% of total outlet mass flow")
+    # print(f"Dust is {dust_percent}% of total outlet mass flow")
+
 
 def add_costing(flowsheet):
     m = ConcreteModel()
@@ -880,7 +894,6 @@ def add_costing(flowsheet):
     m.fs.costing = QGESSCosting()
     CE_index_year = "UKy_2019"
 
-    # TODO: Add crushing/screening and grinding costs once those are added to the flowsheet
     # Leaching costs
     # 4.2 is UKy Leaching - Polyethylene Tanks
     L_pe_tanks_accounts = ["4.2"]
@@ -923,7 +936,8 @@ def add_costing(flowsheet):
     # 4.4 is UKy Leaching - Process Pump
     L_pump_accounts = ["4.4"]
     m.fs.L_pump = UnitModelBlock()
-    m.fs.L_pump.feed_rate = Var(initialize=10987, units=units.gal / units.min)
+    flow_4_4 = value(units.convert(flowsheet.fs.leach_liquid_feed.flow_vol[0], to_units=units.gal / units.min))
+    m.fs.L_pump.feed_rate = Var(initialize=flow_4_4, units=units.gal / units.min)
     m.fs.L_pump.feed_rate.fix()
     m.fs.L_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1006,7 +1020,7 @@ def add_costing(flowsheet):
             "cost_accounts": RSX_pe_tanks_accounts,
             "scaled_param": m.fs.RSX_pe_tanks.capacity,
             "source": 1,
-            "n_equip": flowsheet.fs.solex_rougher.config_number_of_finite_elements,
+            "n_equip": flowsheet.fs.solex_rougher.config.number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1024,7 +1038,7 @@ def add_costing(flowsheet):
             "cost_accounts": RSX_tank_mixer_accounts,
             "scaled_param": m.fs.RSX_tank_mixers.power,
             "source": 1,
-            "n_equip": flowsheet.fs.solex_rougher.config_number_of_finite_elements,
+            "n_equip": flowsheet.fs.solex_rougher.config.number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1033,7 +1047,8 @@ def add_costing(flowsheet):
     # 5.3 is UKy Rougher Solvent Extraction - Process Pump
     RSX_pump_accounts = ["5.3"]
     m.fs.RSX_pump = UnitModelBlock()
-    m.fs.RSX_pump.feed_rate = Var(initialize=7027, units=units.gal / units.min)
+    flow_5_3 = value(units.convert(flowsheet.fs.solex_rougher.mscontactor.aqueous_inlet.flow_vol[0], to_units=units.gal / units.min))
+    m.fs.RSX_pump.feed_rate = Var(initialize=flow_5_3, units=units.gal / units.min)
     m.fs.RSX_pump.feed_rate.fix()
     m.fs.RSX_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1060,7 +1075,7 @@ def add_costing(flowsheet):
             "cost_accounts": RSX_mixer_settler_accounts,
             "scaled_param": m.fs.RSX_mixer_settler.volume,
             "source": 1,
-            "n_equip": flowsheet.fs.solex_rougher.config_number_of_finite_elements,
+            "n_equip": flowsheet.fs.solex_rougher.config.number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1079,7 +1094,7 @@ def add_costing(flowsheet):
             "cost_accounts": CSX_pe_tanks_accounts,
             "scaled_param": m.fs.CSX_pe_tanks.capacity,
             "source": 1,
-            "n_equip": flowsheet.fs.solex_cleaner.config_number_of_finite_elements,
+            "n_equip": flowsheet.fs.solex_cleaner.config.number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1097,7 +1112,7 @@ def add_costing(flowsheet):
             "cost_accounts": CSX_tank_mixer_accounts,
             "scaled_param": m.fs.CSX_tank_mixers.power,
             "source": 1,
-            "n_equip": flowsheet.fs.solex_cleaner.config_number_of_finite_elements,
+            "n_equip": flowsheet.fs.solex_cleaner.config.number_of_finite_elements,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1106,7 +1121,8 @@ def add_costing(flowsheet):
     # 6.3 is UKy Cleaner Solvent Extraction - Process Pump
     CSX_pump_accounts = ["6.3"]
     m.fs.CSX_pump = UnitModelBlock()
-    m.fs.CSX_pump.feed_rate = Var(initialize=281, units=units.gal / units.min)
+    flow_6_3 = value(units.convert(flowsheet.fs.solex_cleaner.mscontactor.aqueous_inlet.flow_vol[0], to_units=units.gal / units.min))
+    m.fs.CSX_pump.feed_rate = Var(initialize=flow_6_3, units=units.gal / units.min)
     m.fs.CSX_pump.feed_rate.fix()
     m.fs.CSX_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1180,7 +1196,8 @@ def add_costing(flowsheet):
     # 9.4 is UKy Rare Earth Element Precipitation - Process Pump
     reep_pump_accounts = ["9.4"]
     m.fs.reep_pump = UnitModelBlock()
-    m.fs.reep_pump.feed_rate = Var(initialize=70, units=units.gal / units.min)
+    flow_9_4 = value(units.convert(flowsheet.fs.precipitator.aqueous_inlet.flow_vol[0], to_units=units.gal / units.min))
+    m.fs.reep_pump.feed_rate = Var(initialize=flow_9_4, units=units.gal / units.min)
     m.fs.reep_pump.feed_rate.fix()
     m.fs.reep_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1253,7 +1270,9 @@ def add_costing(flowsheet):
     # 3.2 is UKy Roasting - Conveyors
     R_conveyors_accounts = ["3.2"]
     m.fs.R_conveyors = UnitModelBlock()
-    m.fs.R_conveyors.throughput = Var(initialize=575, units=units.ton / units.hr)
+
+    flow_3_2 = value(units.convert(flowsheet.fs.roaster.flow_mas_product[0] + flowsheet.fs.roaster.flow_mas_dust[0], to_units=units.ton / units.hr))
+    m.fs.R_conveyors.throughput = Var(initialize=flow_3_2, units=units.ton / units.hr)
     m.fs.R_conveyors.throughput.fix()
     m.fs.R_conveyors.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1344,9 +1363,25 @@ def add_costing(flowsheet):
         },
     )
 
-    # TODO: How should this be handled considering there are multiple feeds with varying concentrations?
-    m.fs.feed_input = Var(initialize=500, units=units.ton / units.hr)
-    m.fs.feed_grade = Var(initialize=356.64, units=units.ppm)
+    feed_input = units.convert(
+        flowsheet.fs.leach_solid_feed.flow_mass[0]
+        + flowsheet.fs.leach_liquid_feed.flow_vol[0]
+        * flowsheet.fs.leach.liquid[0, 1].dens_mol,
+        to_units=units.ton / units.hr
+                               )
+    # Feed grade is grams of solute per 1000 grams of solution (solution ~ water since dilute concentrations)
+    feed_grade = units.convert(
+        1 * units.L
+        *
+        (
+                flowsheet.fs.leach_liquid_feed.conc_mass_comp[0, "H"]
+                + flowsheet.fs.leach_liquid_feed.conc_mass_comp[0, "HSO4"]
+                + flowsheet.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"]
+         ),
+        to_units=units.g
+    )
+    m.fs.feed_input = Var(initialize=feed_input, units=units.ton / units.hr)
+    m.fs.feed_grade = Var(initialize=value(feed_grade * 1000), units=units.ppm)
 
     hours_per_shift = 8
     shifts_per_day = 3
@@ -1359,12 +1394,9 @@ def add_costing(flowsheet):
         units=units.hours / units.a,
     )
 
-    # TODO: Replace this number with the sum of flowsheet.fs.roaster.flow_mol_comp_product (need to convert units)
+    recovery_rate = units.convert(flowsheet.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr)
     m.fs.recovery_rate_per_year = Var(
-        initialize=39.3
-        * units.kg
-        / units.hr
-        * 0.8025  # TREO (total rare earth oxide), 80.25% REE in REO
+        initialize=recovery_rate
         * m.fs.annual_operating_hours,
         units=units.kg / units.yr,
     )
@@ -1384,45 +1416,22 @@ def add_costing(flowsheet):
         * units.day
     )
 
-    # TODO: Revisit this
-    # dummy reagent with cost of 1 USD/kg for each section
-    reagent_costs = (
-        (  # all USD/year
-            # 302962  # Crushing and Screening
-            # + 0  # Dry Grinding
-            +5767543  # Roasting
-            + 199053595  # Leaching
-            + 152303329  # Rougher Solvent Extraction
-            + 43702016  # Cleaner Solvent Extraction
-            + 7207168  # Solvent Extraction Wash and Saponification
-            + 1233763  # Rare Earth Element Precipiation
-            # + 18684816  # Water Treatment
-        )
-        * units.kg
-        / units.a
-    )
-
-    m.fs.reagents = Var(
-        m.fs.time,
-        initialize=reagent_costs / (m.fs.annual_operating_hours),
-        units=units.kg / units.hr,
-    )
-
-    # TODO: Replace these with values from the flowsheet?
     m.fs.solid_waste = Var(
-        m.fs.time, initialize=11136 / 24, units=units.ton / units.hr
+        m.fs.time, initialize=1e-9, units=units.ton / units.hr
     )  # non-hazardous solid waste
+
+    precipitate = value(units.convert(flowsheet.fs.leach_filter_cake.flow_mass[0], to_units=units.ton / units.hr))
     m.fs.precipitate = Var(
-        m.fs.time, initialize=732 / 24, units=units.ton / units.hr
+        m.fs.time, initialize=precipitate, units=units.ton / units.hr
     )  # non-hazardous precipitate
+
+    dust = value(units.convert(flowsheet.fs.roaster.flow_mas_dust[0], to_units=units.ton / units.hr))
     m.fs.dust_and_volatiles = Var(
-        m.fs.time, initialize=120 / 24, units=units.ton / units.hr
+        m.fs.time, initialize=dust, units=units.ton / units.hr
     )  # dust and volatiles
     m.fs.power = Var(m.fs.time, initialize=14716, units=units.hp)
 
-    # TODO: Consider renaming dummy and verifying reagent cost
     resources = [
-        "dummy",
         "nonhazardous_solid_waste",
         "nonhazardous_precipitate_waste",
         "dust_and_volatiles",
@@ -1430,7 +1439,6 @@ def add_costing(flowsheet):
     ]
 
     rates = [
-        m.fs.reagents,
         m.fs.solid_waste,
         m.fs.precipitate,
         m.fs.dust_and_volatiles,
@@ -1501,15 +1509,10 @@ def add_costing(flowsheet):
         land_cost=m.fs.land_cost,
         resources=resources,
         rates=rates,
-        # TODO: Verify this cost
-        prices={
-            "dummy": 1 * getattr(units, "USD_" + CE_index_year) / units.kg,
-        },
         fixed_OM=True,
         variable_OM=True,
         feed_input=m.fs.feed_input,
         efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
-        chemicals=["dummy"],
         waste=[
             "nonhazardous_solid_waste",
             "nonhazardous_precipitate_waste",
@@ -1537,7 +1540,6 @@ def add_costing(flowsheet):
     m.fs.feed_input.fix()
     m.fs.feed_grade.fix()
     m.fs.recovery_rate_per_year.fix()
-    m.fs.reagents.fix()
     m.fs.solid_waste.fix()
     m.fs.precipitate.fix()
     m.fs.dust_and_volatiles.fix()
@@ -1553,7 +1555,7 @@ def add_costing(flowsheet):
 
     # Solve costing
     solver = get_solver()
-    cost_results = solver.solve(m, tee=True)
+    solver.solve(m, tee=True)
 
     QGESSCostingData.report(m.fs.costing)
     m.fs.costing.variable_operating_costs.display()  # results will be in t = 0

@@ -51,8 +51,8 @@ def export_to_ui():
 
 
 def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs):
-    wlog = logging.getLogger("idaes.watertap.ui.fsapi")
-    wlog.setLevel(logging.DEBUG)
+    # wlog = logging.getLogger("idaes.watertap.ui.fsapi")
+    # wlog.setLevel(logging.DEBUG)
 
     exports.from_csv(file="uky_flowsheet_ui.csv", flowsheet=flowsheet)
 

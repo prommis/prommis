@@ -871,11 +871,17 @@ def solve(m):
 def display_results(m):
     m.fs.roaster.display()
 
-    solid_waste = value(units.convert(m.fs.leach_filter_cake.flow_mass[0], to_units=units.kg / units.hr))
+    solid_waste = value(
+        units.convert(m.fs.leach_filter_cake.flow_mass[0], to_units=units.kg / units.hr)
+    )
     print(f"Precipitate mass flow is {solid_waste} kg/hr")
-    product = value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
+    product = value(
+        units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr)
+    )
     print(f"REE product mass flow is {product} kg/hr")
-    dust = value(units.convert(m.fs.roaster.flow_mas_dust[0], to_units=units.kg / units.hr))
+    dust = value(
+        units.convert(m.fs.roaster.flow_mas_dust[0], to_units=units.kg / units.hr)
+    )
     print(f"Dust mass flow is {dust} kg/hr")
 
     solid_waste_percent = 100 * solid_waste / (solid_waste + product + dust)

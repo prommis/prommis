@@ -17,5 +17,6 @@ def test_uky_ui_build():
 
 @pytest.mark.component
 def test_uky_ui_solve():
-    flowsheet = ui.build_flowsheet()
-    ui.solve_flowsheet(flowsheet)
+    interface = ui.export_to_ui()
+    interface.build()
+    interface.solve()

@@ -17,8 +17,6 @@ Authors: Dan Gunter (LBNL)
 __author__ = "Dan Gunter"
 
 # stdlib
-import logging
-
 # third party
 import pyomo.environ as pyo
 from idaes import logger as idaeslog

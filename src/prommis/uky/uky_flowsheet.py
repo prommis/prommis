@@ -871,19 +871,19 @@ def solve(m):
 def display_results(m):
     m.fs.roaster.display()
 
-    # precipitate = value(units.convert(m.fs.leach_filter_cake.flow_mass[0], to_units=units.kg / units.hr))
-    # print(f"Precipitate mass flow is {precipitate} kg/hr")
-    # product = value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
-    # print(f"REE product mass flow is {product} kg/hr")
-    # dust = value(units.convert(m.fs.roaster.flow_mas_dust[0], to_units=units.kg / units.hr))
-    # print(f"Dust mass flow is {dust} kg/hr")
-    #
-    # precipitate_percent = 100 * precipitate / (precipitate + product + dust)
-    # product_percent = 100 * product / (precipitate + product + dust)
-    # dust_percent = 100 * dust / (precipitate + product + dust)
-    # print(f"Precipitate is {precipitate_percent}% of total outlet mass flow")
-    # print(f"Product is {product_percent}% of total outlet mass flow")
-    # print(f"Dust is {dust_percent}% of total outlet mass flow")
+    solid_waste = value(units.convert(m.fs.leach_filter_cake.flow_mass[0], to_units=units.kg / units.hr))
+    print(f"Precipitate mass flow is {solid_waste} kg/hr")
+    product = value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
+    print(f"REE product mass flow is {product} kg/hr")
+    dust = value(units.convert(m.fs.roaster.flow_mas_dust[0], to_units=units.kg / units.hr))
+    print(f"Dust mass flow is {dust} kg/hr")
+
+    solid_waste_percent = 100 * solid_waste / (solid_waste + product + dust)
+    product_percent = 100 * product / (solid_waste + product + dust)
+    dust_percent = 100 * dust / (solid_waste + product + dust)
+    print(f"Precipitate is {solid_waste_percent}% of total outlet mass flow")
+    print(f"Product is {product_percent}% of total outlet mass flow")
+    print(f"Dust is {dust_percent}% of total outlet mass flow")
 
 
 def add_costing(flowsheet):
@@ -1442,17 +1442,18 @@ def add_costing(flowsheet):
         * units.day
     )
 
-    m.fs.solid_waste = Var(
-        m.fs.time, initialize=1e-9, units=units.ton / units.hr
-    )  # non-hazardous solid waste
-
-    precipitate = value(
+    solid_waste = value(
         units.convert(
             flowsheet.fs.leach_filter_cake.flow_mass[0], to_units=units.ton / units.hr
         )
     )
+
+    m.fs.solid_waste = Var(
+        m.fs.time, initialize=solid_waste, units=units.ton / units.hr
+    )  # non-hazardous solid waste
+
     m.fs.precipitate = Var(
-        m.fs.time, initialize=precipitate, units=units.ton / units.hr
+        m.fs.time, initialize=0, units=units.ton / units.hr
     )  # non-hazardous precipitate
 
     dust = value(

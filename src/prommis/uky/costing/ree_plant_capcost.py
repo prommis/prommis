@@ -2465,14 +2465,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
         if hasattr(b, "recovery_rate_per_year"):
             print(
-                "Rate of recovery: %.3f kg/hr REE recovered"
-                % value(b.recovery_rate_per_year)
-            )
-            print(
-                "Annual recovery: %.3f ton/year REE recovered"
+                "Annual rate of recovery: %.3f kg/year REE recovered"
                 % value(
                     pyunits.convert(
-                        b.recovery_rate_per_year, to_units=pyunits.ton / pyunits.year
+                        b.recovery_rate_per_year, to_units=pyunits.kg / pyunits.year
                     )
                 )
             )

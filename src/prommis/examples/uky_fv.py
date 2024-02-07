@@ -8,9 +8,11 @@ Usage:
 import argparse
 import logging
 import sys
+
 # idaes
 from idaes_ui.fv import visualize
 from idaes import logger as idaeslog
+
 # prommis
 from prommis.uky.uky_flowsheet_ui import build_flowsheet
 from prommis.examples import util

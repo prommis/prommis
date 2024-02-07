@@ -84,12 +84,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sm2O3",
         "Y2O3",
     }
-    comp_liq = {
-        "H",
-        "H2O",
-        "HSO4",
-        "SO4"
-    }
+    comp_liq = {"H", "H2O", "HSO4", "SO4"}
     comp_precip = {
         "Al2(C2O4)3(s)",
         "Ce2(C2O4)3(s)",
@@ -109,12 +104,12 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         deferred_obj=f"fs.leach.solid_outlet.flow_mass[0]",
         name=f"solid flow mass",
         rounding=4,
-        ui_units=pyo.units.kg/pyo.units.hour,
+        ui_units=pyo.units.kg / pyo.units.hour,
         display_units="kg/hr",
         description=f"solid flow mass",
         is_input=False,
         is_output=True,
-        output_category=category
+        output_category=category,
     )
     for c in comp_ox:
         name = f"leaching solid mass fraction of {c}"
@@ -126,7 +121,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             description=f"{name} outlet",
             is_input=False,
             is_output=True,
-            output_category=category
+            output_category=category,
         )
     exports.add(
         deferred_obj=f"fs.leach.solid_outlet.mass_frac_comp[0, 'inerts']",
@@ -135,20 +130,20 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         description=f"leaching solid mass fraction of inert components outlet",
         is_input=False,
         is_output=True,
-        output_category="solid outlet"
+        output_category="solid outlet",
     )
 
     category = "leaching"
     exports.add(
         deferred_obj="fs.leach.liquid_outlet.flow_vol[0]",
         name=f"liquid flow volume",
-        ui_units=pyo.units.l/pyo.units.hour,
+        ui_units=pyo.units.l / pyo.units.hour,
         display_units="l/h",
         rounding=4,
         description=f"liquid flow volume",
         is_input=False,
         is_output=True,
-        output_category=category
+        output_category=category,
     )
     for c in comp.union(comp_liq):
         name = f"leaching liquid mass composition fraction of {c}"
@@ -156,13 +151,13 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         exports.add(
             deferred_obj=obj_name,
             name=name,
-            ui_units=pyo.units.mg/pyo.units.l,
+            ui_units=pyo.units.mg / pyo.units.l,
             display_units="mg/l",
             rounding=4,
             description=f"{name} outlet",
             is_input=False,
             is_output=True,
-            output_category=category
+            output_category=category,
         )
 
     category = "solex"
@@ -170,8 +165,10 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         # organic
         for c in comp:
             name = f"solex organic liquid mass composition fraction {c}"
-            obj_name = f"fs.solex_{stype}.mscontactor.organic_outlet" \
-                       f".conc_mass_comp[0, '{c}']"
+            obj_name = (
+                f"fs.solex_{stype}.mscontactor.organic_outlet"
+                f".conc_mass_comp[0, '{c}']"
+            )
             exports.add(
                 deferred_obj=obj_name,
                 name=name,
@@ -181,14 +178,16 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
                 description=f"{name} outlet",
                 is_input=False,
                 is_output=True,
-                output_category=category
+                output_category=category,
             )
         # aqueous
         complist = comp.union(comp_liq) if stype == "rougher" else comp
         for c in complist:
             name = f"solex aqueous liquid mass composition fraction {c}"
-            obj_name = f"fs.solex_{stype}.mscontactor.aqueous_outlet" \
-                       f".conc_mass_comp[0, '{c}']"
+            obj_name = (
+                f"fs.solex_{stype}.mscontactor.aqueous_outlet"
+                f".conc_mass_comp[0, '{c}']"
+            )
             exports.add(
                 deferred_obj=obj_name,
                 name=name,
@@ -198,7 +197,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
                 description=f"{name} outlet",
                 is_input=False,
                 is_output=True,
-                output_category=category
+                output_category=category,
             )
 
     category = "precipitator"
@@ -211,7 +210,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         description=f"precipitator aqueous properties out",
         is_input=False,
         is_output=True,
-        output_category=category
+        output_category=category,
     )
     for c in comp:
         name = f"precipitator aqueous concentration mass composition of {c}"
@@ -219,13 +218,13 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         exports.add(
             deferred_obj=obj_name,
             name=name,
-            ui_units=pyo.units.mg/pyo.units.l,
+            ui_units=pyo.units.mg / pyo.units.l,
             display_units="mg/l",
             rounding=4,
             description=f"{name} outlet",
             is_input=False,
             is_output=True,
-            output_category=category
+            output_category=category,
         )
     exports.add(
         deferred_obj="fs.precipitator.precipitate_outlet.temperature[0]",
@@ -236,7 +235,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         description="temperature of the precipitator's precipitate outlet",
         is_input=False,
         is_output=True,
-        output_category=category
+        output_category=category,
     )
     for c in comp_precip:
         name = f"precipitate molar flow composition of {c}"
@@ -250,7 +249,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             description=f"{name} outlet",
             is_input=False,
             is_output=True,
-            output_category=category
+            output_category=category,
         )
     _log.info(f"exports:\n{exports.json(indent=2)}")
 

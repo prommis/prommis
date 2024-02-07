@@ -10,7 +10,10 @@ import logging
 import sys
 
 # idaes
-from idaes_ui.fv import visualize
+try:
+    from idaes_ui.fv import visualize
+except ImportError:
+    visualize = None
 from idaes import logger as idaeslog
 
 # prommis
@@ -21,6 +24,10 @@ _log = idaeslog.getLogger(__name__)
 
 
 def main():
+    if visualize is None:
+        print("cannot continue: idaes_ui not installed")
+        return -1
+
     result = 0
 
     p = argparse.ArgumentParser()

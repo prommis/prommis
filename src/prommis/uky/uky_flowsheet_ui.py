@@ -158,11 +158,11 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             output_category=category,
         )
 
-    category = "solex"
     for stype in {"rougher", "cleaner"}:
+        category = f"solex {stype}"
         # organic
         for c in comp:
-            name = f"solex organic liquid mass composition fraction {c}"
+            name = f"solex {stype} organic liquid mass composition fraction {c}"
             obj_name = (
                 f"fs.solex_{stype}.mscontactor.organic_outlet"
                 f".conc_mass_comp[0, '{c}']"
@@ -181,7 +181,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         # aqueous
         complist = comp.union(comp_liq) if stype == "rougher" else comp
         for c in complist:
-            name = f"solex aqueous liquid mass composition fraction {c}"
+            name = f"solex {stype} aqueous liquid mass composition fraction {c}"
             obj_name = (
                 f"fs.solex_{stype}.mscontactor.aqueous_outlet"
                 f".conc_mass_comp[0, '{c}']"

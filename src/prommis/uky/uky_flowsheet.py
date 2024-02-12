@@ -100,7 +100,9 @@ def main():
 
     display_results(scaled_model)
 
-    add_costing(scaled_model)
+    costing = add_costing(scaled_model)
+
+    display_costing(costing)
 
     return scaled_model, results
 
@@ -871,28 +873,29 @@ def solve(m):
 def display_results(m):
     m.fs.roaster.display()
 
-    solid_waste = value(
-        units.convert(m.fs.leach_filter_cake.flow_mass[0], to_units=units.kg / units.hr)
-    )
-    print(f"Precipitate mass flow is {solid_waste} kg/hr")
-    product = value(
-        units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr)
-    )
-    print(f"REE product mass flow is {product} kg/hr")
-    dust = value(
-        units.convert(m.fs.roaster.flow_mas_dust[0], to_units=units.kg / units.hr)
-    )
-    print(f"Dust mass flow is {dust} kg/hr")
-
-    solid_waste_percent = 100 * solid_waste / (solid_waste + product + dust)
-    product_percent = 100 * product / (solid_waste + product + dust)
-    dust_percent = 100 * dust / (solid_waste + product + dust)
-    print(f"Precipitate is {solid_waste_percent}% of total outlet mass flow")
-    print(f"Product is {product_percent}% of total outlet mass flow")
-    print(f"Dust is {dust_percent}% of total outlet mass flow")
+    # solid_waste = value(
+    #     units.convert(m.fs.leach_filter_cake.flow_mass[0], to_units=units.kg / units.hr)
+    # )
+    # print(f"Precipitate mass flow is {solid_waste} kg/hr")
+    # product = value(
+    #     units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr)
+    # )
+    # print(f"REE product mass flow is {product} kg/hr")
+    # dust = value(
+    #     units.convert(m.fs.roaster.flow_mas_dust[0], to_units=units.kg / units.hr)
+    # )
+    # print(f"Dust mass flow is {dust} kg/hr")
+    #
+    # solid_waste_percent = 100 * solid_waste / (solid_waste + product + dust)
+    # product_percent = 100 * product / (solid_waste + product + dust)
+    # dust_percent = 100 * dust / (solid_waste + product + dust)
+    # print(f"Precipitate is {solid_waste_percent}% of total outlet mass flow")
+    # print(f"Product is {product_percent}% of total outlet mass flow")
+    # print(f"Dust is {dust_percent}% of total outlet mass flow")
 
 
 def add_costing(flowsheet):
+    # TODO: Costing is preliminary until more unit model costing metrics can be verified
     m = ConcreteModel()
 
     # Add a flowsheet object to the model
@@ -1421,7 +1424,7 @@ def add_costing(flowsheet):
     # for convenience
     m.fs.annual_operating_hours = Param(
         initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
-        mutable=False,
+        mutable=True,
         units=units.hours / units.a,
     )
 
@@ -1598,12 +1601,14 @@ def add_costing(flowsheet):
     solver = get_solver()
     solver.solve(m, tee=True)
 
+    return m
+
+
+def display_costing(m):
     QGESSCostingData.report(m.fs.costing)
     m.fs.costing.variable_operating_costs.display()  # results will be in t = 0
     QGESSCostingData.display_bare_erected_costs(m.fs.costing)
     QGESSCostingData.display_flowsheet_cost(m.fs.costing)
-
-    return m
 
 
 if __name__ == "__main__":

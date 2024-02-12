@@ -16,6 +16,7 @@ Tests for UKy flowsheet.
 """
 
 from pyomo.network import Arc
+from pyomo.environ import value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
@@ -49,6 +50,8 @@ from prommis.uky.uky_flowsheet import (
     set_operating_conditions,
     set_scaling,
     solve,
+    add_costing,
+    display_costing,
 )
 
 
@@ -517,3 +520,27 @@ class TestUKyFlowsheet:
         assert model.fs.roaster.gas_outlet.mole_frac_comp[
             0, "O2"
         ].value == pytest.approx(0.089950, 1e-4)
+
+    @pytest.mark.unit
+    def test_costing(self, model):
+        m = add_costing(model)
+
+        assert m.fs.costing.total_plant_cost.value == pytest.approx(71.27, rel=1e-4)
+        assert m.fs.costing.total_BEC.value == pytest.approx(23.446, rel=1e-4)
+        assert m.fs.costing.total_installation_cost.value == pytest.approx(
+            46.189, rel=1e-4
+        )
+        assert m.fs.costing.other_plant_costs.value == pytest.approx(1.6309, rel=1e-4)
+        assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(9.246, rel=1e-4)
+        assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+            11.142, rel=1e-4
+        )
+        assert value(m.fs.costing.land_cost) == pytest.approx(
+            0.0006668, rel=1e-4
+        )  # Expression, not Var
+        assert m.fs.costing.total_sales_revenue.value == pytest.approx(65.333, rel=1e-4)
+
+    @pytest.mark.component
+    def test_report(self, model):
+        m = add_costing(model)
+        display_costing(m)

@@ -23,10 +23,11 @@ This is a heterogeneous reactor model for roasting rare earth oxalate salts
 produced from the oxalate precipitation process to form rare earth oxides.
 
 The reactions involved are listed below:
-RE2(C2O4)3_xH2O + 1.5O2 -> RE2O3 + 6CO2(g) + xH2O(g)
+RE2(C2O4)3_xH2O + 1.5O2 -> RE2O3 + 6CO2(g) + xH2O(g)  Typically x=10 for REE
 Fe2(C2O4)3_2H2O + 1.5O2 -> Fe2O3 + 6CO2(g) + 2H2O(g)
-Al2(C2O4)2_H2O + 1.5O2 -> Al2O3 + 6CO2(g) + H2O(g)
-Note that Fe and Al are considered as impurity in the solid reactant.
+Al2(C2O4)3_H2O + 1.5O2 -> Al2O3 + 6CO2(g) + H2O(g)
+CaC2O4_H2O + 0.5O2 -> CaO + 2CO2(g) + H2O(g)
+Note that Fe, Al, and Ca are considered as impurity in the solid feed stream.
 
 Surface moisture is vaporized to become H2O in the gas phase
 
@@ -54,10 +55,13 @@ product streams.
 if the product temperature is specified as a user input, the heat duty added to the
 reactor is calculately. If the heat duty is given, the product temperature will be calculated.
 
-Currently, no ports for the solid inlet and outlet streams are used. The mass flow rate
-and composition of the solid reactant are specified as input variables inside the model.
-The mass flow rate and the composition of the product streams are also declared as model
-variables.
+Currently, solid inlet is declared as a port with state variables in property package named
+"property_package_precipitate". Note that the current property package for the precipitate
+assumes anhydrous oxalates, which eventually needs to be revised to oxalate hydrates.
+This model assumes the precipiate contains oxalate hydrates as the solid reactants.
+
+Currently, no port for the solid outlet stream is used. The mass flow rate and composition
+of the solid product are declared as model variables.
 
 """
 
@@ -199,6 +203,7 @@ constructed,
             default=[
                 "Al",
                 "Fe",
+                "Ca",
                 "Sc",
                 "Y",
                 "La",
@@ -211,9 +216,7 @@ constructed,
             ],
             domain=list,
             description="List of components in solid oxalate feed",
-            doc="""A dict of the components of interest in the mixture.
-        Keys are component names and values are configuration arguments to
-        be passed to Component on construction.
+            doc="""A list of metal elements contained in solid oxalate feed
         """,
         ),
     )
@@ -282,10 +285,11 @@ constructed,
         # reference temperature at standard condition
         self.temp_ref = Param(initialize=298.15, units=pyunits.K)
 
-        # atomic mass of elements involved in kg/mol
+        # List of all possible elements considered in this unit model
         self.metal_list_all = [
             "Al",
             "Fe",
+            "Ca",
             "Sc",
             "Y",
             "La",
@@ -305,30 +309,40 @@ constructed,
             "Lu",
             "Th",
         ]
+        # atomic mass of each metal element
         self.am_metal_list_all = Param(
             self.metal_list_all, mutable=True, units=pyunits.kg / pyunits.mol
         )
+        # count of C2O4 in each oxalate molecule
+        self.xC2O4_oxalate_list_all = Param(
+            self.metal_list_all, initialize=3, mutable=True
+        )
+        # count of associated H2O in each hydrate
         self.xH2O_oxalate_list_all = Param(
             self.metal_list_all, initialize=10, mutable=True
         )
+        # molecular weight of each oxalate molecule
         self.mw_oxalate_list_all = Param(
             self.metal_list_all,
             initialize=0.1,
             mutable=True,
             units=pyunits.kg / pyunits.mol,
         )
+        # molecular weight of each oxide molecule
         self.mw_oxide_list_all = Param(
             self.metal_list_all,
             initialize=0.1,
             mutable=True,
             units=pyunits.kg / pyunits.mol,
         )
+        # atomic masses of all elements involved
         self.am_H = Param(initialize=0.0010078, units=pyunits.kg / pyunits.mol)
         self.am_C = Param(initialize=0.012011, units=pyunits.kg / pyunits.mol)
         self.am_N = Param(initialize=0.014007, units=pyunits.kg / pyunits.mol)
         self.am_O = Param(initialize=0.015999, units=pyunits.kg / pyunits.mol)
         self.am_metal_list_all["Al"] = 0.026982
         self.am_metal_list_all["Fe"] = 0.055845
+        self.am_metal_list_all["Ca"] = 0.040078
         self.am_metal_list_all["Sc"] = 0.044956
         self.am_metal_list_all["Y"] = 0.088906
         self.am_metal_list_all["La"] = 0.13891
@@ -347,98 +361,129 @@ constructed,
         self.am_metal_list_all["Yb"] = 0.17304
         self.am_metal_list_all["Lu"] = 0.17497
         self.am_metal_list_all["Th"] = 0.23204
+        # The count of C2O4 unit in oxalate is 3 for all oxalate except CaC2O4_H2O
+        self.xC2O4_oxalate_list_all["Ca"] = 1
+        # The count of H2O in the oxalate hydrate is 10 except three listed below
         self.xH2O_oxalate_list_all["Al"] = 1
         self.xH2O_oxalate_list_all["Fe"] = 2
+        self.xH2O_oxalate_list_all["Ca"] = 1
 
         self.mw_H2O = Param(
             initialize=self.am_H * 2 + self.am_O, units=pyunits.kg / pyunits.mol
         )
 
         for i in self.metal_list_all:
-            self.mw_oxalate_list_all[i] = (
-                self.am_metal_list_all[i] * 2
-                + 3 * (self.am_C * 2 + self.am_O * 4)
-                + self.xH2O_oxalate_list_all[i] * (self.am_H + self.am_O)
-            )
-        for i in self.metal_list_all:
-            self.mw_oxide_list_all[i] = self.am_metal_list_all[i] * 2 + 3 * self.am_O
+            if i=='Ca':
+                self.mw_oxalate_list_all[i] = (
+                    self.am_metal_list_all[i]
+                    + self.xC2O4_oxalate_list_all[i] * (self.am_C * 2 + self.am_O * 4)
+                    + self.xH2O_oxalate_list_all[i] * (self.am_H * 2 + self.am_O)
+                    )
+            else:
+                self.mw_oxalate_list_all[i] = (
+                    self.am_metal_list_all[i] * 2
+                    + self.xC2O4_oxalate_list_all[i] * (self.am_C * 2 + self.am_O * 4)
+                    + self.xH2O_oxalate_list_all[i] * (self.am_H * 2 + self.am_O)
+                    )
 
-        # molar standard enthalpy at 298.15 K initialized to the average of La, Ce, Pr, and Nd
+        for i in self.metal_list_all:
+            if i=='Ca':
+                self.mw_oxide_list_all[i] = self.am_metal_list_all[i] + self.am_O
+            else:
+                self.mw_oxide_list_all[i] = self.am_metal_list_all[i] * 2 + 3 * self.am_O
+
+        # molar standard enthalpy of oxalate at 298.15 K initialized to the average of La, Ce, Pr, and Nd
         self.enth0_oxalate_list_all = Param(
             self.metal_list_all,
             initialize=-6350044,
             mutable=True,
             units=pyunits.J / pyunits.mol,
         )
-        # molar standard enthalpy at 298.15 K initialized to the average of La, Ce, Pr, and Nd
+        # molar standard enthalpy of oxide at 298.15 K initialized to the average of La, Ce, Pr, and Nd
         self.enth0_oxide_list_all = Param(
             self.metal_list_all,
             initialize=-1801865.75,
             mutable=True,
             units=pyunits.J / pyunits.mol,
         )
-        # molar heat capacity of oxalate initialized to the average of La, Ce, Pr, and Nd
+        # heat capacity Cp = Cp0 + Cp1*T (a linear function of temperature in K)
+        # constant term of molar heat capacity of oxalate initialized to the average of La, Ce, Pr, and Nd
         self.cp0_oxalate_list_all = Param(
             self.metal_list_all,
             initialize=45.751,
             mutable=True,
             units=pyunits.J / pyunits.mol / pyunits.K,
         )
+        # linear coefficient of molar heat capacity of oxalate initialized to the average of La, Ce, Pr, and Nd
         self.cp1_oxalate_list_all = Param(
             self.metal_list_all,
             initialize=0,
             mutable=True,
             units=pyunits.J / pyunits.mol / pyunits.K**2,
         )
-        # molar heat capacity of oxide initialized to the average of La, Ce, Pr, and Nd
+        # constant molar heat capacity of oxide initialized to the average of La, Ce, Pr, and Nd
         self.cp0_oxide_list_all = Param(
             self.metal_list_all,
             initialize=110.3625,
             mutable=True,
             units=pyunits.J / pyunits.mol / pyunits.K,
         )
+        # linear coefficient of molar heat capacity of oxide initialized to the average of La, Ce, Pr, and Nd
         self.cp1_oxide_list_all = Param(
             self.metal_list_all,
             initialize=0.033887,
             mutable=True,
             units=pyunits.J / pyunits.mol / pyunits.K**2,
         )
-
+        # Oxalate standard enthalpy available in literature
         self.enth0_oxalate_list_all["Al"] = -3397000
         self.enth0_oxalate_list_all["Fe"] = -6782000
+        self.enth0_oxalate_list_all["Ca"] = -1674860
         self.enth0_oxalate_list_all["La"] = -5916176
         self.enth0_oxalate_list_all["Ce"] = -6782000
         self.enth0_oxalate_list_all["Pr"] = -5920000
         self.enth0_oxalate_list_all["Nd"] = -6782000
-
+        # Oxide standard enthalpy available in literature
         self.enth0_oxide_list_all["Fe"] = -825500
         self.enth0_oxide_list_all["Al"] = -1675000
+        self.enth0_oxide_list_all["Ca"] = -635090
         self.enth0_oxide_list_all["La"] = -1793702
         self.enth0_oxide_list_all["Ce"] = -1796191
         self.enth0_oxide_list_all["Pr"] = -1809664
         self.enth0_oxide_list_all["Nd"] = -1807906
         self.enth0_oxide_list_all["Sc"] = -1908866
         self.enth0_oxide_list_all["Y"] = -1932800
-
+        # Heat capacity of oxalate available in literature
         self.cp0_oxalate_list_all["La"] = 45.751
         self.cp0_oxalate_list_all["Ce"] = 45.751
         self.cp0_oxalate_list_all["Pr"] = 45.751
         self.cp0_oxalate_list_all["Nd"] = 45.751
+        # cp0 for Fe and Al not available, using default
+        self.cp0_oxalate_list_all["Ca"] = 152.8
 
+        # for oxalates cp1 is always close to zero
         self.cp1_oxalate_list_all["La"] = 0
         self.cp1_oxalate_list_all["Ce"] = 0
         self.cp1_oxalate_list_all["Pr"] = 0
         self.cp1_oxalate_list_all["Nd"] = 0
-
+        self.cp1_oxalate_list_all["Ca"] = 0
+        # Heat capacity of oxide available in literature
         self.cp0_oxide_list_all["La"] = 107.72
         self.cp0_oxide_list_all["Ce"] = 115.78
         self.cp0_oxide_list_all["Pr"] = 112.82
         self.cp0_oxide_list_all["Nd"] = 105.13
+        self.cp0_oxide_list_all["Al"] = 28.039
+        self.cp0_oxide_list_all["Fe"] = 80.623
+        self.cp0_oxide_list_all["Ca"] = 47.2
 
         self.cp1_oxide_list_all["La"] = 0.026114
         self.cp1_oxide_list_all["Ce"] = 0.03477
         self.cp1_oxide_list_all["Pr"] = 0.034364
         self.cp1_oxide_list_all["Nd"] = 0.0403
+        self.cp1_oxide_list_all["Al"] = 0.17156
+        self.cp1_oxide_list_all["Fe"] = 0.09936
+        self.cp1_oxide_list_all["Ca"] = 0.00299
+
 
         # unit constants used for the expressions of liquid water enthalpy
         self.enth_mol_const = Param(
@@ -507,7 +552,6 @@ constructed,
 
         # Currently the solid feed port contains anhydrous REE oxalate
         # Convert solid inlet port anhydrous oxalate mol flow to flow_mol_comp_feed
-        # Since currently only Ce is in the precipiate property package, set all others to zero
         reversed_react = dict(
             map(reversed, self.config.property_package_precipitate.react.items())
         )
@@ -540,13 +584,21 @@ constructed,
                     + b.flow_mol_moist_feed[t]
                 )
             elif i == "O2":
-                return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[
-                    i
-                ] - 1.5 * sum(b.flow_mol_comp_feed[t, j] for j in b.metal_list)
+                return (
+                    b.gas_out[t].flow_mol_comp[i]
+                    == b.gas_in[t].flow_mol_comp[i]
+                    - sum(
+                        b.xC2O4_oxalate_list_all[j]/2 * b.flow_mol_comp_feed[t, j]
+                        for j in b.metal_list)
+                )
             elif i == "CO2":
-                return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[
-                    i
-                ] + 6 * sum(b.flow_mol_comp_feed[t, j] for j in b.metal_list)
+                return (
+                    b.gas_out[t].flow_mol_comp[i]
+                    == b.gas_in[t].flow_mol_comp[i]
+                    + sum(
+                        b.xC2O4_oxalate_list_all[j] * 2 * b.flow_mol_comp_feed[t, j]
+                        for j in b.metal_list)
+                )
             else:
                 return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[i]
 
@@ -635,7 +687,7 @@ constructed,
                 * (b.solid_in[t].temperature - b.temp_ref)
             )
 
-        # molar enthalpy of product solid
+        # molar enthalpy of solid product
         @self.Constraint(
             self.flowsheet().config.time,
             self.metal_list,

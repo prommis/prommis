@@ -84,7 +84,7 @@ class PrecipitateParametersData(PhysicalParameterBlock):
             "Gd2(C2O4)3(s)": "Gd",
             "Dy2(C2O4)3(s)": "Dy",
             "Al2(C2O4)3(s)": "Al",
-            "Ca(C2O4)(s)":"Ca",
+            "Ca(C2O4)(s)": "Ca",
             "Fe2(C2O4)3(s)": "Fe",
         }
 
@@ -102,7 +102,7 @@ class PrecipitateParametersData(PhysicalParameterBlock):
                 "Gd2(C2O4)3(s)": 2,
                 "Dy2(C2O4)3(s)": 2,
                 "Al2(C2O4)3(s)": 2,
-                "Ca(C2O4)(s)":1,
+                "Ca(C2O4)(s)": 1,
                 "Fe2(C2O4)3(s)": 2,
             },
         )
@@ -121,7 +121,7 @@ class PrecipitateParametersData(PhysicalParameterBlock):
                 "Gd2(C2O4)3(s)": 578.56 * 1e-3,
                 "Dy2(C2O4)3(s)": 769.21 * 1e-3,
                 "Al2(C2O4)3(s)": 318.02 * 1e-3,
-                "Ca(C2O4)(s)":128.097*1e-3,
+                "Ca(C2O4)(s)": 128.097 * 1e-3,
                 "Fe2(C2O4)3(s)": 143.86 * 1e-3,
             },
         )

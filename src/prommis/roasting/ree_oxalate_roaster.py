@@ -373,24 +373,26 @@ constructed,
         )
 
         for i in self.metal_list_all:
-            if i=='Ca':
+            if i == "Ca":
                 self.mw_oxalate_list_all[i] = (
                     self.am_metal_list_all[i]
                     + self.xC2O4_oxalate_list_all[i] * (self.am_C * 2 + self.am_O * 4)
                     + self.xH2O_oxalate_list_all[i] * (self.am_H * 2 + self.am_O)
-                    )
+                )
             else:
                 self.mw_oxalate_list_all[i] = (
                     self.am_metal_list_all[i] * 2
                     + self.xC2O4_oxalate_list_all[i] * (self.am_C * 2 + self.am_O * 4)
                     + self.xH2O_oxalate_list_all[i] * (self.am_H * 2 + self.am_O)
-                    )
+                )
 
         for i in self.metal_list_all:
-            if i=='Ca':
+            if i == "Ca":
                 self.mw_oxide_list_all[i] = self.am_metal_list_all[i] + self.am_O
             else:
-                self.mw_oxide_list_all[i] = self.am_metal_list_all[i] * 2 + 3 * self.am_O
+                self.mw_oxide_list_all[i] = (
+                    self.am_metal_list_all[i] * 2 + 3 * self.am_O
+                )
 
         # molar standard enthalpy of oxalate at 298.15 K initialized to the average of La, Ce, Pr, and Nd
         self.enth0_oxalate_list_all = Param(
@@ -483,7 +485,6 @@ constructed,
         self.cp1_oxide_list_all["Al"] = 0.17156
         self.cp1_oxide_list_all["Fe"] = 0.09936
         self.cp1_oxide_list_all["Ca"] = 0.00299
-
 
         # unit constants used for the expressions of liquid water enthalpy
         self.enth_mol_const = Param(
@@ -584,20 +585,18 @@ constructed,
                     + b.flow_mol_moist_feed[t]
                 )
             elif i == "O2":
-                return (
-                    b.gas_out[t].flow_mol_comp[i]
-                    == b.gas_in[t].flow_mol_comp[i]
-                    - sum(
-                        b.xC2O4_oxalate_list_all[j]/2 * b.flow_mol_comp_feed[t, j]
-                        for j in b.metal_list)
+                return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[
+                    i
+                ] - sum(
+                    b.xC2O4_oxalate_list_all[j] / 2 * b.flow_mol_comp_feed[t, j]
+                    for j in b.metal_list
                 )
             elif i == "CO2":
-                return (
-                    b.gas_out[t].flow_mol_comp[i]
-                    == b.gas_in[t].flow_mol_comp[i]
-                    + sum(
-                        b.xC2O4_oxalate_list_all[j] * 2 * b.flow_mol_comp_feed[t, j]
-                        for j in b.metal_list)
+                return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[
+                    i
+                ] + sum(
+                    b.xC2O4_oxalate_list_all[j] * 2 * b.flow_mol_comp_feed[t, j]
+                    for j in b.metal_list
                 )
             else:
                 return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[i]

@@ -99,7 +99,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
 
     category = "solids"
     exports.add(
-        deferred_obj=f"fs.leach.solid_outlet.flow_mass[0]",
+        deferred_obj=f"leach.solid_outlet.flow_mass[0]",
         name=f"solid flow mass",
         rounding=4,
         ui_units=pyo.units.kg / pyo.units.hour,
@@ -111,7 +111,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     )
     for c in comp_ox:
         name = f"leaching solid mass fraction of {c}"
-        obj_name = f"fs.leach.solid_outlet.mass_frac_comp[0, '{c}']"
+        obj_name = f"leach.solid_outlet.mass_frac_comp[0, '{c}']"
         exports.add(
             deferred_obj=obj_name,
             name=name,
@@ -122,7 +122,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             output_category=category,
         )
     exports.add(
-        deferred_obj=f"fs.leach.solid_outlet.mass_frac_comp[0, 'inerts']",
+        deferred_obj=f"leach.solid_outlet.mass_frac_comp[0, 'inerts']",
         name=f"leaching solid mass fraction of inerts",
         rounding=4,
         description=f"leaching solid mass fraction of inert components outlet",
@@ -133,7 +133,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
 
     category = "leaching"
     exports.add(
-        deferred_obj="fs.leach.liquid_outlet.flow_vol[0]",
+        deferred_obj="leach.liquid_outlet.flow_vol[0]",
         name=f"liquid flow volume",
         ui_units=pyo.units.l / pyo.units.hour,
         display_units="l/h",
@@ -145,7 +145,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     )
     for c in comp.union(comp_liq):
         name = f"leaching liquid mass composition fraction of {c}"
-        obj_name = f"fs.leach.liquid_outlet.conc_mass_comp[0, '{c}']"
+        obj_name = f"leach.liquid_outlet.conc_mass_comp[0, '{c}']"
         exports.add(
             deferred_obj=obj_name,
             name=name,
@@ -164,7 +164,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         for c in comp:
             name = f"solex {stype} organic liquid mass composition fraction {c}"
             obj_name = (
-                f"fs.solex_{stype}.mscontactor.organic_outlet"
+                f"solex_{stype}.mscontactor.organic_outlet"
                 f".conc_mass_comp[0, '{c}']"
             )
             exports.add(
@@ -183,7 +183,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         for c in complist:
             name = f"solex {stype} aqueous liquid mass composition fraction {c}"
             obj_name = (
-                f"fs.solex_{stype}.mscontactor.aqueous_outlet"
+                f"solex_{stype}.mscontactor.aqueous_outlet"
                 f".conc_mass_comp[0, '{c}']"
             )
             exports.add(
@@ -200,7 +200,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
 
     category = "precipitator"
     exports.add(
-        deferred_obj="fs.precipitator.cv_aqueous.properties_out[0].flow_vol",
+        deferred_obj="precipitator.cv_aqueous.properties_out[0].flow_vol",
         name=f"precipitator aqueous out",
         ui_units=pyo.units.l / pyo.units.hour,
         display_units="liters/hour",
@@ -212,7 +212,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     )
     for c in comp:
         name = f"precipitator aqueous concentration mass composition of {c}"
-        obj_name = f"fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp['{c}']"
+        obj_name = f"precipitator.cv_aqueous.properties_out[0].conc_mass_comp['{c}']"
         exports.add(
             deferred_obj=obj_name,
             name=name,
@@ -225,7 +225,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             output_category=category,
         )
     exports.add(
-        deferred_obj="fs.precipitator.precipitate_outlet.temperature[0]",
+        deferred_obj="precipitator.precipitate_outlet.temperature[0]",
         name="precipitator outlet temperature",
         rounding=4,
         ui_units=pyo.units.K,
@@ -237,7 +237,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     )
     for c in comp_precip:
         name = f"precipitate molar flow composition of {c}"
-        obj_name = f"fs.precipitator.precipitate_outlet.flow_mol_comp[0, '{c}']"
+        obj_name = f"precipitator.precipitate_outlet.flow_mol_comp[0, '{c}']"
         exports.add(
             deferred_obj=obj_name,
             name=name,

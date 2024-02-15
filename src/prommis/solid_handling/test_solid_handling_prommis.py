@@ -18,8 +18,7 @@ from idaes.core.util.model_statistics import (
 from idaes.core.util.scaling import unscaled_variables_generator
 
 # Assuming these imports are adjusted to your project's structure
-from my_project.solid_handling.solid_properties import SolidProperties
-from my_project.solid_handling.crush_and_breakage_unit import CrushAndBreakageUnit
+from solid_handling_prommis import CrushAndBreakageUnit
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing
@@ -36,7 +35,7 @@ def test_config():
         property_package=m.fs.properties_solid,
     )
 
-    assert len(m.fs.unit.config) == expected_number_of_config_options
+    assert len(m.fs.unit.config) == 1
 
     # Assert specific config options as per your model's requirements
     # Example:
@@ -67,8 +66,8 @@ class TestSolidHandling(object):
         assert hasattr(model.fs.unit, "some_inlet_or_outlet")
         # More assertions as needed for your model
 
-        assert number_variables(model.fs.unit) == expected_number_of_variables
-        assert number_total_constraints(model.fs.unit) == expected_number_of_constraints
+        assert number_variables(model.fs.unit) == 7
+        assert number_total_constraints(model.fs.unit) == 2
         assert number_unused_variables(model.fs.unit) == 0
 
     @pytest.mark.component

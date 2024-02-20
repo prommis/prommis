@@ -1886,12 +1886,12 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
         m.fs.HDD_Recycling_shredder.costing.bare_erected_cost[
             HDD_Recycling_shredder_accounts
         ]
-    ) == pytest.approx(0.05036, rel=1e-4)
+    ) == pytest.approx(0.05000, rel=1e-4)
     assert value(
         m.fs.HDD_Recycling_HD.costing.bare_erected_cost[HDD_Recycling_HD_accounts]
     ) == pytest.approx(0.41035, rel=1e-4)
 
-    assert m.fs.costing.total_plant_cost.value == pytest.approx(3.8231, rel=1e-4)
+    assert m.fs.costing.total_plant_cost.value == pytest.approx(3.8220, rel=1e-4)
 
 
 @pytest.mark.component

@@ -8,6 +8,7 @@ from idaes.core.initialization.block_triangularization import (
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 from idaes.core.util import DiagnosticsToolbox
+from pyomo.util.check_units import assert_units_consistent
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
@@ -20,7 +21,7 @@ m = ConcreteModel()
 
 time_duration = 60
 
-m.fs = FlowsheetBlock(dynamic=True, time_set=[0, time_duration], time_units=units.s)
+m.fs = FlowsheetBlock(dynamic=True, time_set=[0, time_duration], time_units=units.hour)
 
 m.fs.prop_o = REESolExOgParameters()
 m.fs.prop_a = REESolExAqParameters()
@@ -45,7 +46,7 @@ m.fs.solex = SolventExtraction(
 )
 
 m.discretizer = TransformationFactory("dae.finite_difference")
-m.discretizer.apply_to(m, nfe=10, wrt=m.fs.time, scheme="BACKWARD")
+m.discretizer.apply_to(m, nfe=15, wrt=m.fs.time, scheme="BACKWARD")
 
 m.fs.solex.mscontactor.volume[:].fix(0.4)
 
@@ -68,22 +69,22 @@ m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Sm"].fix(369.1)
 m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Gd"].fix(174.38)
 m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Dy"].fix(101.12)
 
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["H2O"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["H"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["SO4"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["HSO4"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Al"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Ca"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Fe"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Sc"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Y"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["La"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Ce"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Pr"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Nd"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Sm"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Gd"].fix(1e-20)
-m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Dy"].fix(1e-20)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["H2O"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["H"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["SO4"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["HSO4"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Al"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Ca"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Fe"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Sc"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Y"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["La"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Ce"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Pr"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Nd"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Sm"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Gd"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0,:].conc_mass_comp["Dy"].fix(1e-9)
 
 m.fs.solex.mscontactor.aqueous_inlet_state[:].flow_vol.fix(4.4)
 
@@ -102,18 +103,18 @@ m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Sm"].fix(3.285e-6)
 m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Gd"].fix(1.55e-6)
 m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Dy"].fix(9e-7)
 
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Al"].fix(1e-20)
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Ca"].fix(1e-20)
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Fe"].fix(1e-20)
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Sc"].fix(1e-20)
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Y"].fix(1e-20)
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["La"].fix(1e-20)
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Ce"].fix(1e-20)
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Pr"].fix(1e-20)
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Nd"].fix(1e-20)
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Sm"].fix(1e-20)
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Gd"].fix(1e-20)
-m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Dy"].fix(1e-20)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Al"].fix(1e-9)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Ca"].fix(1e-9)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Fe"].fix(1e-9)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Sc"].fix(1e-9)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Y"].fix(1e-9)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["La"].fix(1e-9)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Ce"].fix(1e-9)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Pr"].fix(1e-9)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Nd"].fix(1e-9)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Sm"].fix(1e-9)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Gd"].fix(1e-9)
+m.fs.solex.mscontactor.organic[0,:].conc_mass_comp["Dy"].fix(1e-9)
 
 m.fs.solex.mscontactor.organic_inlet_state[:].flow_vol.fix(62.01)
 
@@ -150,5 +151,11 @@ m.fs.solex.mscontactor.aqueous[time_duration, number_of_stages].conc_mol_comp.di
 
 # Plot graphs
 plt.plot(m.fs.time, m.fs.solex.mscontactor.organic[:,1].conc_mass_comp["Ce"]())
+plt.xlabel("Time hrs")
+plt.ylabel("Organic concentration mg/L")
+plt.title("Final organic profile")
 plt.show()
-plt.plot(m.fs.time, m.fs.solex.mscontactor.aqueous[:,1].conc_mass_comp["Ce"]())
+plt.plot(m.fs.time, m.fs.solex.mscontactor.aqueous[:,3].conc_mass_comp["Ce"]())
+plt.xlabel("Time hrs")
+plt.ylabel("Aqueous concentration mg/L")
+plt.title("Final aqueous profile")

@@ -146,7 +146,8 @@ class REESolExOgStateBlockData(StateBlockData):
     
     def get_material_density_terms(self, p, j):
         if j == "DEHPA":
-            return self.params.dens_mol / self.params.mw[j]
+            return units.convert(self.params.dens_mol / self.params.mw[j],
+                                 to_units=units.mol / units.m**3)
         else:
             return units.convert(
                 self.conc_mass_comp[j] / self.params.mw[j],

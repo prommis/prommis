@@ -7,20 +7,28 @@ from idaes.core.initialization.block_triangularization import (
 )
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
+import matplotlib.pyplot as plt
+
+import numpy as np
+
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
+from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 m = ConcreteModel()
 m.fs = FlowsheetBlock(dynamic=False)
 m.fs.prop_o = REESolExOgParameters()
+m.fs.prop_a = REESolExAqParameters()
 m.fs.leach_soln = LeachSolutionParameters()
 
+number_of_stages=3
+
 m.fs.solex = SolventExtraction(
-    number_of_finite_elements=3,
+    number_of_finite_elements=number_of_stages,
     dynamic=False,
     aqueous_stream={
-        "property_package": m.fs.leach_soln,
+        "property_package": m.fs.prop_a,
         "flow_direction": FlowDirection.forward,
         "has_energy_balance": False,
         "has_pressure_balance": False,
@@ -89,3 +97,19 @@ m.fs.solex.mscontactor.organic[0, 1].conc_mol_comp.display()
 # Final aqueous outlets display
 m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp.display()
 m.fs.solex.mscontactor.aqueous[0, 3].conc_mol_comp.display()
+
+stage_sequence = list(range(1,number_of_stages+1))
+
+plt.plot(stage_sequence, m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Sc"]())
+plt.plot(stage_sequence, m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Sc"]())
+plt.xticks(stage_sequence)
+plt.show()
+plt.plot(stage_sequence, m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Y"]())
+plt.plot(stage_sequence, m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Y"]())
+plt.xticks(stage_sequence)
+plt.show()
+plt.plot(stage_sequence, m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["La"]())
+plt.plot(stage_sequence, m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["La"]())
+plt.xticks(stage_sequence)
+plt.show()
+

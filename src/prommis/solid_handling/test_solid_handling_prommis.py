@@ -24,6 +24,7 @@ from solid_handling_prommis import CrushAndBreakageUnit
 # Get default solver for testing
 solver = get_solver()
 
+
 # -----------------------------------------------------------------------------
 @pytest.mark.unit
 def test_config():
@@ -41,6 +42,7 @@ def test_config():
     # Example:
     assert not m.fs.unit.config.dynamic
     assert m.fs.unit.config.property_package is m.fs.properties_solid
+
 
 # -----------------------------------------------------------------------------
 class TestSolidHandling(object):
@@ -94,4 +96,3 @@ class TestSolidHandling(object):
         assert_optimal_termination(results)
 
     # Additional tests as needed for solution verification, conservation checks, etc.
-

@@ -1,4 +1,4 @@
-from pyomo.environ import ConcreteModel, check_optimal_termination, value, TransformationFactory
+from pyomo.environ import ConcreteModel, check_optimal_termination, value, TransformationFactory, units
 
 from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.initialization import InitializationStatus
@@ -12,6 +12,7 @@ import pytest
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
+from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 solver = get_solver()
@@ -152,88 +153,89 @@ class TestSXmodel:
     @pytest.mark.component
     def test_solution(self, SolEx_frame):
         m = SolEx_frame
+        time_duration = 60
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["H2O"]
-        ) == pytest.approx(1000000.0, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["H2O"]
+        ) == pytest.approx(1e-9, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["H"]
-        ) == pytest.approx(2.267e-6, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["H"]
+        ) == pytest.approx(1e-9, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["SO4"]
-        ) == pytest.approx(2.815e-4, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["SO4"]
+        ) == pytest.approx(9.9e-10, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["HSO4"]
-        ) == pytest.approx(1.248e-4, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["HSO4"]
+        ) == pytest.approx(1e-9, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Al"]
-        ) == pytest.approx(730, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["Al"]
+        ) == pytest.approx(113.03, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Ca"]
-        ) == pytest.approx(4680, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["Ca"]
+        ) == pytest.approx(718.67, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Fe"]
-        ) == pytest.approx(250, rel=1e-1)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["Fe"]
+        ) == pytest.approx(38.98, rel=1e-1)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Sc"]
-        ) == pytest.approx(3.795e-5, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["Sc"]
+        ) == pytest.approx(3.24e-8, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Y"]
-        ) == pytest.approx(6.807e-05, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["Y"]
+        ) == pytest.approx(9.84e-08, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["La"]
-        ) == pytest.approx(30.84, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["La"]
+        ) == pytest.approx(4.77, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Ce"]
-        ) == pytest.approx(0.36, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["Ce"]
+        ) == pytest.approx(0.055, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Pr"]
-        ) == pytest.approx(0.0312, rel=1e-1)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["Pr"]
+        ) == pytest.approx(0.00499, rel=1e-1)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Nd"]
-        ) == pytest.approx(1.165e-3, rel=1e-1)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["Nd"]
+        ) == pytest.approx(0.00016, rel=1e-1)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Sm"]
-        ) == pytest.approx(1.063e-04, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["Sm"]
+        ) == pytest.approx(5.707e-08, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Gd"]
-        ) == pytest.approx(5.911e-04, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["Gd"]
+        ) == pytest.approx(7.36e-05, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Dy"]
-        ) == pytest.approx(1.105e-04, rel=1e-2)
+            m.fs.solex.mscontactor.aqueous[time_duration , 3].conc_mass_comp["Dy"]
+        ) == pytest.approx(1.584e-08, rel=1e-2)
 
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Al"]
-        ) == pytest.approx(6.03, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["Al"]
+        ) == pytest.approx(4.04, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Ca"]
-        ) == pytest.approx(39.64, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["Ca"]
+        ) == pytest.approx(26.47, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Fe"]
-        ) == pytest.approx(1.19, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["Fe"]
+        ) == pytest.approx(0.783, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Sc"]
-        ) == pytest.approx(336.25, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["Sc"]
+        ) == pytest.approx(336.104, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Y"]
-        ) == pytest.approx(45.41, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["Y"]
+        ) == pytest.approx(45.23, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["La"]
-        ) == pytest.approx(142.56, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["La"]
+        ) == pytest.approx(128.58, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Ce"]
-        ) == pytest.approx(321.59, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["Ce"]
+        ) == pytest.approx(315.71, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Pr"]
-        ) == pytest.approx(53.88, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["Pr"]
+        ) == pytest.approx(53.04, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Nd"]
-        ) == pytest.approx(145.83, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["Nd"]
+        ) == pytest.approx(144.92, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Sm"]
-        ) == pytest.approx(26.28, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["Sm"]
+        ) == pytest.approx(26.18, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Gd"]
-        ) == pytest.approx(12.42, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["Gd"]
+        ) == pytest.approx(12.315, rel=1e-2)
         assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Dy"]
-        ) == pytest.approx(7.20, rel=1e-2)
+            m.fs.solex.mscontactor.organic[time_duration , 1].conc_mass_comp["Dy"]
+        ) == pytest.approx(7.17, rel=1e-2)

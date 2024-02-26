@@ -112,6 +112,10 @@ jobs:
             runner-image: ubuntu-20.04
           - os: win64
             runner-image: windows-2022
+          - install-variant: dev
+            python-version: '3.11'
+            os: linux
+            coverage: true
     steps:
       - uses: prommis/prommis/.github/actions/install@main
         with:
@@ -121,8 +125,20 @@ jobs:
         run: |
           pip install pytest
           pip show pytest
+      - name: Add coverage options
+        if: matrix.coverage
+        run: echo PYTEST_ADDOPTS="$PYTEST_ADDOPTS --cov --cov-report=xml" >> $GITHUB_ENV
       - name: Run pytest
         run: pytest --pyargs prommis --xfail-known-issues
+      - name: Upload coverage report to Codecov
+        if: matrix.coverage
+        uses: codecov/codecov-action@v3
+        env:
+          # NOTE secrets are not available on workflow runs triggered by `pull_request`
+          # so CODECOV_TOKEN will only be populated when e.g. a PR is merged (`push`)
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          fail_ci_if_error: true
 
   docs:
     name: docs (${{ matrix.install-variant }}/py${{ matrix.python-version }}/${{ matrix.os }})

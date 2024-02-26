@@ -39,7 +39,7 @@ class TestSXmodel:
             "property_package": m.fs.prop_a,
             "flow_direction": FlowDirection.forward,
             "has_energy_balance": False,
-        "    has_pressure_balance": False,
+            "has_pressure_balance": False,
         },organic_stream={
         "property_package": m.fs.prop_o,
         "flow_direction": FlowDirection.backward,

@@ -57,6 +57,7 @@ class CrushAndBreakageUnitData(UnitModelBlockData):
         self.x = Var(initialize=60, doc="Particle size, micrometer")
         self.x50 = Var(initialize=80, doc="Median particle size, micrometer")
         self.n = Var(initialize=1.5, doc="Distribution width parameter")
+        self.soliddistribution = Var(initialize=1, doc="Share of solid distribution in size x")
 
         # CrushPower calculation as a constraint. This is the solid crushPower calculation as a constraint.
         self.CrushPower = Constraint(

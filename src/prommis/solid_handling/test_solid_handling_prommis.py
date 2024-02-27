@@ -18,7 +18,7 @@ from idaes.core.util.model_statistics import (
 from idaes.core.util.scaling import unscaled_variables_generator
 
 # Assuming these imports are adjusted to your project's structure
-from solid_handling_prommis import CrushAndBreakageUnit
+from prommis.solid_handling.solid_handling_prommis import CrushAndBreakageUnit
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing

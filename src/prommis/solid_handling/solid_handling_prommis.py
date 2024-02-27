@@ -19,7 +19,6 @@ __version__ = "1.0.0"
 
 from pyomo.environ import Var, Constraint, exp
 from pyomo.common.config import ConfigBlock, ConfigValue
-from idaes.core import declare_process_block_class
 from idaes.core import (
     declare_process_block_class,
     UnitModelBlockData,

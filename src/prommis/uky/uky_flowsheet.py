@@ -1467,7 +1467,7 @@ def add_costing(flowsheet):
     ]
 
     # define product flowrates
-    # TODO: Replace with flowsheet values, but what's the difference between pure and mixed? Product vs dust?
+    # TODO: Need to revisit this after getting costs for products defined in mw_comp_product in ree_feed_roaster
 
     pure_product_output_rates = {
         "Sc2O3": 1.9 * units.kg / units.hr,

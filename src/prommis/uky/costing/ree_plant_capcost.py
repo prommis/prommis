@@ -285,7 +285,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # define costing library
         if hasattr(self, "library") and self.library == "REE":  # costing already exists
-            raise Exception(
+            raise RuntimeError(
                 "Costing for the block %s already exists. Please ensure that "
                 "the costing build method is not called twice on the same "
                 "model." % (self)

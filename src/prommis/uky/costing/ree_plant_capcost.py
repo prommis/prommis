@@ -1369,7 +1369,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             ref_units[0][1]
                         ) / getattr(pyunits, ref_units[1])
                     except AttributeError:
-                        expected_units = str(ref_units[0][0] + "**" + ref_units[0][1] + "/" + ref_units[1])
+                        expected_units = str(
+                            ref_units[0][0]
+                            + "**"
+                            + ref_units[0][1]
+                            + "/"
+                            + ref_units[1]
+                        )
                         raise AttributeError(
                             f"Account {cost_accounts[0]} uses references units of "
                             f"{expected_units}. "
@@ -1386,7 +1392,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             pyunits, ref_units[1][0]
                         ) ** int(ref_units[1][1])
                     except AttributeError:
-                        expected_units = str(ref_units[0] + "/" + ref_units[1][0] + "**" + ref_units[1][1])
+                        expected_units = str(
+                            ref_units[0]
+                            + "/"
+                            + ref_units[1][0]
+                            + "**"
+                            + ref_units[1][1]
+                        )
                         raise AttributeError(
                             f"Account {cost_accounts[0]} uses references units of "
                             f"{expected_units}. "

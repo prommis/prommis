@@ -2926,12 +2926,10 @@ def test_REE_costing_fixedOM_twiceonsamemodel():
     )
 
     with pytest.raises(
-        RuntimeError,
-        match="Cannot add component 'labor_rate_index' \\(type \\<class "
-        "'pyomo.core.base.set.OrderedScalarSet'\\>\\) to block "
-        "'fs.costing': a component by that name \\(type \\<class "
-        "'pyomo.core.base.set.OrderedScalarSet'\\>\\) is already "
-        "defined.",
+        Exception,
+        match="Costing for the block fs.costing already exists. Please ensure "
+        "that the costing build method is not called twice on the same "
+        "model.",
     ):
         # call costing a second time
         m.fs.costing.build_process_costs(

@@ -31,8 +31,13 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse @ git+https://github.com/IDAES/idaes-pse@main",
-    "pyomo",
+    "idaes-pse >= 2.3.0rc1",
+    "pyomo >= 6.7.0",
+]
+[project.optional-dependencies]
+watertap = [
+    # TODO: update once 0.11.0 is available
+    "watertap==0.11.0rc1",
 ]
 
 [tool.setuptools_scm]
@@ -86,3 +91,20 @@ profile = "black"
 known_pyomo = "pyomo"
 known_idaes = "idaes"
 sections = "FUTURE,STDLIB,PYOMO,IDAES,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
+
+[tool.typos.files]
+extend-exclude = [
+    "*.svg",
+    "*.json",
+]
+
+[tool.typos.default.extend-words]
+# Ignore IDAES
+IDAES = "IDAES"
+# Atomic elements
+Nd = "Nd"
+[tool.typos.default]
+extend-ignore-re = [
+    # Jupyter notebooks: ignore hexadecimal values in "id" cell metadata field
+    '"id": "[0-9a-f]+",'
+]

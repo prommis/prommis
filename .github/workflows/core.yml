@@ -78,12 +78,21 @@ jobs:
         run: |
           pylint prommis
 
+  spell-check:
+    name: Check Spelling
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+      - name: Run Spell Checker
+        uses: crate-ci/typos@v1.17.0
+
   pytest:
     # description: Run pytest test suite
     
     name: pytest (${{ matrix.install-variant }}/py${{ matrix.python-version }}/${{ matrix.os }})
     runs-on: ${{ matrix.runner-image }}
-    needs: [code-formatting, code-linting]
+    needs: [code-formatting, code-linting, spell-check]
     strategy:
       fail-fast: false
       matrix:
@@ -103,6 +112,10 @@ jobs:
             runner-image: ubuntu-20.04
           - os: win64
             runner-image: windows-2022
+          - install-variant: dev
+            python-version: '3.11'
+            os: linux
+            coverage: true
     steps:
       - uses: prommis/prommis/.github/actions/install@main
         with:
@@ -112,13 +125,25 @@ jobs:
         run: |
           pip install pytest
           pip show pytest
+      - name: Add coverage options
+        if: matrix.coverage
+        run: echo PYTEST_ADDOPTS="$PYTEST_ADDOPTS --cov --cov-report=xml" >> $GITHUB_ENV
       - name: Run pytest
         run: pytest --pyargs prommis --xfail-known-issues
+      - name: Upload coverage report to Codecov
+        if: matrix.coverage
+        uses: codecov/codecov-action@v3
+        env:
+          # NOTE secrets are not available on workflow runs triggered by `pull_request`
+          # so CODECOV_TOKEN will only be populated when e.g. a PR is merged (`push`)
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          fail_ci_if_error: true
 
   docs:
     name: docs (${{ matrix.install-variant }}/py${{ matrix.python-version }}/${{ matrix.os }})
     runs-on: ${{ matrix.runner-image }}
-    needs: [code-formatting]
+    needs: [code-formatting, spell-check]
     strategy:
       fail-fast: false
       matrix:
@@ -138,5 +163,9 @@ jobs:
         with:
           variant: ${{ matrix.install-variant }}
           python-version: ${{ matrix.python-version }}
-      - name: Build docs with Jupyter Book
-        run: jupyter-book build docs/
+      - name: Build docs with Jupyter Book (w/o execution)
+        working-directory: docs/
+        run: jupyter-book build .
+      - name: Execute notebooks
+        working-directory: docs/
+        run: pytest --nbmake -m "solution" .

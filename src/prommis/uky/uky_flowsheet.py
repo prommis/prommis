@@ -67,10 +67,6 @@ from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
-from prommis.uky.autoscaling import (
-    autoscale_constraints_by_jacobian_norm,
-    autoscale_variables_by_magnitude,
-)
 
 
 def main():
@@ -856,16 +852,8 @@ def initialize_system(m):
 
 
 def solve(m):
-    scaling = TransformationFactory("core.scale_model")
-    # Scale variables
-    autoscale_variables_by_magnitude(m, overwrite=True)
-    # Scale constraints
-    autoscale_constraints_by_jacobian_norm(m, overwrite=True)
-    # Scale model
-    scaled_model = scaling.create_using(m, rename=False)
     solver = SolverFactory("ipopt")
-    solver.solve(scaled_model, tee=True)
-    results = scaling.propagate_solution(scaled_model, m)
+    results = solver.solve(m, tee=True)
 
     return results
 

@@ -40,9 +40,33 @@ black .
 pylint prommis
 ```
 
+#### Running spell checker (Typos)
+
+```sh
+typos
+```
+
+Note: if the `typos` executable is not found, it can be installed by running `conda install --yes -c conda-forge typos` after activating the `prommis-dev` Conda environment.
+
 #### Running tests
 
 ```sh
 pytest                          # run the complete test suite
 pytest -k test_my_flowsheet.py  # run only test defined in the file named test_my_flowsheet.py
+```
+
+#### Building documentation
+
+From the `docs/` subdirectory:
+
+```sh
+jupyter-book build .
+```
+
+#### Testing (executing) notebooks
+
+From the `docs/` subdirectory:
+
+```sh
+pytest --nbmake -m "solution" .
 ```

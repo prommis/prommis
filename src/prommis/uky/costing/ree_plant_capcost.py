@@ -880,7 +880,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         to_units=pyunits.kg / pyunits.year,
                     )
                 except InconsistentUnitsError:
-                    raise Exception(
+                    raise UnitsError(
                         f"The argument recovery_rate_per_year was passed with units of "
                         f"{rec_rate_units} which cannot be converted to units of mass per year. "
                         f"Please ensure that recovery_rate_per_year is passed with rate units "
@@ -889,7 +889,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
                 # check that units are on an annual basis
                 if str(rec_rate_units).split("/")[1] not in ["a", "year"]:
-                    raise Exception(
+                    raise UnitsError(
                         f"The argument recovery_rate_per_year was passed with units of "
                         f"{rec_rate_units} and must be on an anuual basis. Please "
                         f"ensure that recovery_rate_per_year is passed with rate units "
@@ -941,7 +941,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             else:  # except the case where transport_cost_per_ton_product is passed but recovery_rate_per_year is not passed
                 if transport_cost_per_ton_product is not None:
-                    raise Exception(
+                    raise AttributeError(
                         "If transport_cost_per_ton_product is not None, "
                         "recovery_rate_per_year cannot be None."
                     )
@@ -1456,7 +1456,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         try:
                             pyunits.convert(sp, ref_units)
                         except InconsistentUnitsError:
-                            raise Exception(
+                            raise UnitsError(
                                 f"Account {cost_accounts[0]} uses units of {ref_units}. "
                                 f"Units of {sp.get_units()} were passed. "
                                 f"Cannot convert unit containers."
@@ -1714,13 +1714,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # raise error if the user included a product not in default_sale_prices
         if not set(pure_product_output_rates).issubset(default_sale_prices.keys()):
-            raise Exception(
+            raise AttributeError(
                 f"A pure product was included that does not contain a "
                 f"sale price. Sale prices exist for the following products: "
                 f"{list(default_sale_prices.keys())}"
             )
         elif not set(mixed_product_output_rates).issubset(default_sale_prices.keys()):
-            raise Exception(
+            raise AttributeError(
                 f"A mixed product was included that does not contain a "
                 f"sale price. Sale prices exist for the following products: "
                 f"{list(default_sale_prices.keys())}"
@@ -2031,7 +2031,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # assert lists are the same length
         if len(resources) != len(rates):
-            raise Exception("resources and rates must be lists of the same length")
+            raise AttributeError("resources and rates must be lists of the same length")
 
         # dictionary of default prices
         # the currency units are millions of USD, so all prices need a 1e-6 multiplier to get USD
@@ -2066,7 +2066,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # raise error if the user included a resource not in default_prices
         if not set(resources).issubset(default_prices.keys()):
-            raise Exception(
+            raise AttributeError(
                 f"A resource was included that does not contain a "
                 f"price. Prices exist for the following resources: "
                 f"{list(default_prices.keys())}"

@@ -17,6 +17,7 @@ Tests for REE costing.
 
 import pyomo.environ as pyo
 from pyomo.common.dependencies import attempt_import
+from pyomo.core.base.units_container import UnitsError
 from pyomo.environ import assert_optimal_termination, check_optimal_termination
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
@@ -3159,7 +3160,7 @@ def test_REE_costing_fixedOM_pureproductnoprice():
     )
 
     with pytest.raises(
-        Exception,
+        AttributeError,
         match="A pure product was included that does not contain a sale price. "
         "Sale prices exist for the following products: \\['Sc', 'Y', 'La', "
         "'Ce', 'Pr', 'Nd', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', "
@@ -3246,7 +3247,7 @@ def test_REE_costing_fixedOM_disallowedlabortype():
     )
 
     with pytest.raises(
-        Exception,
+        AttributeError,
         match="A mixed product was included that does not contain a sale price. "
         "Sale prices exist for the following products: \\['Sc', 'Y', 'La', "
         "'Ce', 'Pr', 'Nd', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', "
@@ -4472,7 +4473,7 @@ def test_REE_costing_variableOM_resourcesratesdifflengths():
     m.fs.water.fix()
 
     with pytest.raises(
-        Exception,
+        AttributeError,
         match="resources and rates must be lists of the same length",
     ):
         m.fs.costing.build_process_costs(
@@ -4520,7 +4521,7 @@ def test_REE_costing_variableOM_resourcenotinpricelist():
     m.fs.H2O.fix()
 
     with pytest.raises(
-        Exception,
+        AttributeError,
         match="A resource was included that does not contain a price. "
         "Prices exist for the following resources: \\['power', 'water', "
         "'diesel', 'bioleaching_solution', 'H2SO4', 'natural_gas', "
@@ -4766,7 +4767,7 @@ def test_REE_costing_recovery_notmassunits():
     m.fs.recovery_rate_per_year.fix()
 
     with pytest.raises(
-        Exception,
+        UnitsError,
         match="The argument recovery_rate_per_year was passed with units of "
         "mol/a which cannot be converted to units of mass per year. Please "
         "ensure that recovery_rate_per_year is passed with rate units "
@@ -4841,7 +4842,7 @@ def test_REE_costing_recovery_notannualbasisunits():
     m.fs.recovery_rate_per_year.fix()
 
     with pytest.raises(
-        Exception,
+        UnitsError,
         match="The argument recovery_rate_per_year was passed with units of "
         "kg/h and must be on an anuual basis. Please "
         "ensure that recovery_rate_per_year is passed with rate units "
@@ -5487,7 +5488,7 @@ def test_REE_costing_recovery_Nonewithtransportcost():
     m.fs.water.fix()
 
     with pytest.raises(
-        Exception,
+        AttributeError,
         match="If transport_cost_per_ton_product is not None, "
         "recovery_rate_per_year cannot be None.",
     ):

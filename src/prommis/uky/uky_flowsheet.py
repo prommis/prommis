@@ -873,26 +873,6 @@ def solve(m):
 def display_results(m):
     m.fs.roaster.display()
 
-    # solid_waste = value(
-    #     units.convert(m.fs.leach_filter_cake.flow_mass[0], to_units=units.kg / units.hr)
-    # )
-    # print(f"Precipitate mass flow is {solid_waste} kg/hr")
-    # product = value(
-    #     units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr)
-    # )
-    # print(f"REE product mass flow is {product} kg/hr")
-    # dust = value(
-    #     units.convert(m.fs.roaster.flow_mas_dust[0], to_units=units.kg / units.hr)
-    # )
-    # print(f"Dust mass flow is {dust} kg/hr")
-    #
-    # solid_waste_percent = 100 * solid_waste / (solid_waste + product + dust)
-    # product_percent = 100 * product / (solid_waste + product + dust)
-    # dust_percent = 100 * dust / (solid_waste + product + dust)
-    # print(f"Precipitate is {solid_waste_percent}% of total outlet mass flow")
-    # print(f"Product is {product_percent}% of total outlet mass flow")
-    # print(f"Dust is {dust_percent}% of total outlet mass flow")
-
 
 def add_costing(flowsheet):
     # TODO: Costing is preliminary until more unit model costing metrics can be verified
@@ -918,7 +898,7 @@ def add_costing(flowsheet):
             "cost_accounts": L_pe_tanks_accounts,
             "scaled_param": m.fs.L_pe_tanks.capacity,
             "source": 1,
-            "n_equip": flowsheet.fs.leach.config.number_of_finite_elements,
+            "n_equip": 3,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -927,7 +907,7 @@ def add_costing(flowsheet):
     # 4.3 is UKy Leaching - Tank Mixer
     L_tank_mixer_accounts = ["4.3"]
     m.fs.L_tank_mixers = UnitModelBlock()
-    m.fs.L_tank_mixers.power = Var(initialize=474, units=units.hp)
+    m.fs.L_tank_mixers.power = Var(initialize=47.4, units=units.hp)
     m.fs.L_tank_mixers.power.fix()
     m.fs.L_tank_mixers.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -936,7 +916,7 @@ def add_costing(flowsheet):
             "cost_accounts": L_tank_mixer_accounts,
             "scaled_param": m.fs.L_tank_mixers.power,
             "source": 1,
-            "n_equip": flowsheet.fs.leach.config.number_of_finite_elements,
+            "n_equip": 3,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -959,7 +939,7 @@ def add_costing(flowsheet):
             "cost_accounts": L_pump_accounts,
             "scaled_param": m.fs.L_pump.feed_rate,
             "source": 1,
-            "n_equip": flowsheet.fs.leach.config.number_of_finite_elements,
+            "n_equip": 3,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -968,7 +948,7 @@ def add_costing(flowsheet):
     # 4.5 is UKy Leaching - Thickener
     L_thickener_accounts = ["4.5"]
     m.fs.L_thickener = UnitModelBlock()
-    m.fs.L_thickener.area = Var(initialize=22590, units=units.ft**2)
+    m.fs.L_thickener.area = Var(initialize=225.90, units=units.ft**2)
     m.fs.L_thickener.area.fix()
     m.fs.L_thickener.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -986,7 +966,7 @@ def add_costing(flowsheet):
     # 4.6 is UKy Leaching - Solid Waste Filter Press
     L_filter_press_accounts = ["4.6"]
     m.fs.L_filter_press = UnitModelBlock()
-    m.fs.L_filter_press.volume = Var(initialize=3600, units=units.ft**3)
+    m.fs.L_filter_press.volume = Var(initialize=36.00, units=units.ft**3)
     m.fs.L_filter_press.volume.fix()
     m.fs.L_filter_press.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1004,7 +984,7 @@ def add_costing(flowsheet):
     # 4.8 is UKy Leaching - Solution Heater
     L_solution_heater_accounts = ["4.8"]
     m.fs.L_solution_heater = UnitModelBlock()
-    m.fs.L_solution_heater.duty = Var(initialize=2.4, units=units.MBTU / units.hr)
+    m.fs.L_solution_heater.duty = Var(initialize=0.24, units=units.MBTU / units.hr)
     m.fs.L_solution_heater.duty.fix()
     m.fs.L_solution_heater.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1023,8 +1003,7 @@ def add_costing(flowsheet):
     # 5.1 is UKy Rougher Solvent Extraction - Polyethylene Tanks
     RSX_pe_tanks_accounts = ["5.1"]
     m.fs.RSX_pe_tanks = UnitModelBlock()
-    # TODO: Verify this volume (this is significantly larger than leaching volume)
-    m.fs.RSX_pe_tanks.capacity = Var(initialize=35136, units=units.gal)
+    m.fs.RSX_pe_tanks.capacity = Var(initialize=35.136, units=units.gal)
     m.fs.RSX_pe_tanks.capacity.fix()
     m.fs.RSX_pe_tanks.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1033,7 +1012,7 @@ def add_costing(flowsheet):
             "cost_accounts": RSX_pe_tanks_accounts,
             "scaled_param": m.fs.RSX_pe_tanks.capacity,
             "source": 1,
-            "n_equip": flowsheet.fs.solex_rougher.config.number_of_finite_elements,
+            "n_equip": 6,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1042,7 +1021,7 @@ def add_costing(flowsheet):
     # 5.2 is UKy Rougher Solvent Extraction - Tank Mixer
     RSX_tank_mixer_accounts = ["5.2"]
     m.fs.RSX_tank_mixers = UnitModelBlock()
-    m.fs.RSX_tank_mixers.power = Var(initialize=20, units=units.hp)
+    m.fs.RSX_tank_mixers.power = Var(initialize=2.0, units=units.hp)
     m.fs.RSX_tank_mixers.power.fix()
     m.fs.RSX_tank_mixers.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1051,7 +1030,7 @@ def add_costing(flowsheet):
             "cost_accounts": RSX_tank_mixer_accounts,
             "scaled_param": m.fs.RSX_tank_mixers.power,
             "source": 1,
-            "n_equip": flowsheet.fs.solex_rougher.config.number_of_finite_elements,
+            "n_equip": 2,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1084,7 +1063,7 @@ def add_costing(flowsheet):
     # 5.4 is UKy Rougher Solvent Extraction - Mixer Settler
     RSX_mixer_settler_accounts = ["5.4"]
     m.fs.RSX_mixer_settler = UnitModelBlock()
-    m.fs.RSX_mixer_settler.volume = Var(initialize=61107, units=units.gal)
+    m.fs.RSX_mixer_settler.volume = Var(initialize=61.107, units=units.gal)
     m.fs.RSX_mixer_settler.volume.fix()
     m.fs.RSX_mixer_settler.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1093,7 +1072,7 @@ def add_costing(flowsheet):
             "cost_accounts": RSX_mixer_settler_accounts,
             "scaled_param": m.fs.RSX_mixer_settler.volume,
             "source": 1,
-            "n_equip": flowsheet.fs.solex_rougher.config.number_of_finite_elements,
+            "n_equip": 6,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1102,8 +1081,7 @@ def add_costing(flowsheet):
     # 6.1 is UKy Cleaner Solvent Extraction - Polyethylene Tanks
     CSX_pe_tanks_accounts = ["6.1"]
     m.fs.CSX_pe_tanks = UnitModelBlock()
-    # TODO: verify volume
-    m.fs.CSX_pe_tanks.capacity = Var(initialize=1405, units=units.gal)
+    m.fs.CSX_pe_tanks.capacity = Var(initialize=14.05, units=units.gal)
     m.fs.CSX_pe_tanks.capacity.fix()
     m.fs.CSX_pe_tanks.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1112,7 +1090,7 @@ def add_costing(flowsheet):
             "cost_accounts": CSX_pe_tanks_accounts,
             "scaled_param": m.fs.CSX_pe_tanks.capacity,
             "source": 1,
-            "n_equip": flowsheet.fs.solex_cleaner.config.number_of_finite_elements,
+            "n_equip": 5,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1121,7 +1099,7 @@ def add_costing(flowsheet):
     # 6.2 is UKy Cleaner Solvent Extraction - Tank Mixer
     CSX_tank_mixer_accounts = ["6.2"]
     m.fs.CSX_tank_mixers = UnitModelBlock()
-    m.fs.CSX_tank_mixers.power = Var(initialize=0.8, units=units.hp)
+    m.fs.CSX_tank_mixers.power = Var(initialize=0.08, units=units.hp)
     m.fs.CSX_tank_mixers.power.fix()
     m.fs.CSX_tank_mixers.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1130,7 +1108,7 @@ def add_costing(flowsheet):
             "cost_accounts": CSX_tank_mixer_accounts,
             "scaled_param": m.fs.CSX_tank_mixers.power,
             "source": 1,
-            "n_equip": flowsheet.fs.solex_cleaner.config.number_of_finite_elements,
+            "n_equip": 2,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1163,7 +1141,7 @@ def add_costing(flowsheet):
     # 6.4 is UKy Cleaner Solvent Extraction - Mixer Settler
     CSX_mixer_settler_accounts = ["6.4"]
     m.fs.CSX_mixer_settler = UnitModelBlock()
-    m.fs.CSX_mixer_settler.volume = Var(initialize=2444, units=units.gal)
+    m.fs.CSX_mixer_settler.volume = Var(initialize=24.44, units=units.gal)
     m.fs.CSX_mixer_settler.volume.fix()
     m.fs.CSX_mixer_settler.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1172,7 +1150,7 @@ def add_costing(flowsheet):
             "cost_accounts": CSX_mixer_settler_accounts,
             "scaled_param": m.fs.CSX_mixer_settler.volume,
             "source": 1,
-            "n_equip": flowsheet.fs.solex_cleaner.config.number_of_finite_elements,
+            "n_equip": 6,
             "scale_down_parallel_equip": False,
             "CE_index_year": CE_index_year,
         },
@@ -1182,8 +1160,7 @@ def add_costing(flowsheet):
     # 9.2 is UKy Rare Earth Element Precipitation - Polyethylene Tanks
     reep_pe_tanks_accounts = ["9.2"]
     m.fs.reep_pe_tanks = UnitModelBlock()
-    # TODO: verify volume
-    m.fs.reep_pe_tanks.capacity = Var(initialize=1504, units=units.gal)
+    m.fs.reep_pe_tanks.capacity = Var(initialize=15.04, units=units.gal)
     m.fs.reep_pe_tanks.capacity.fix()
     m.fs.reep_pe_tanks.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1261,7 +1238,7 @@ def add_costing(flowsheet):
     # 9.8 is UKy Rare Earth Element Precipitation - Roaster
     reep_roaster_accounts = ["9.8"]
     m.fs.reep_roaster = UnitModelBlock()
-    m.fs.reep_roaster.duty = Var(initialize=0.35, units=units.MBTU / units.hr)
+    m.fs.reep_roaster.duty = Var(initialize=0.035, units=units.MBTU / units.hr)
     m.fs.reep_roaster.duty.fix()
     m.fs.reep_roaster.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1280,7 +1257,7 @@ def add_costing(flowsheet):
     # 3.1 is UKy Roasting - Storage Bins
     R_storage_bins_accounts = ["3.1"]
     m.fs.R_storage_bins = UnitModelBlock()
-    m.fs.R_storage_bins.capacity = Var(initialize=100, units=units.ton)
+    m.fs.R_storage_bins.capacity = Var(initialize=10.0, units=units.ton)
     m.fs.R_storage_bins.capacity.fix()
     m.fs.R_storage_bins.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1324,7 +1301,7 @@ def add_costing(flowsheet):
     # 3.3 is UKy Roasting - Roaster
     R_roaster_accounts = ["3.3"]
     m.fs.R_roaster = UnitModelBlock()
-    m.fs.R_roaster.duty = Var(initialize=737, units=units.MBTU / units.hr)
+    m.fs.R_roaster.duty = Var(initialize=73.7, units=units.MBTU / units.hr)
     m.fs.R_roaster.duty.fix()
     m.fs.R_roaster.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -1343,7 +1320,7 @@ def add_costing(flowsheet):
     R_gas_scrubber_accounts = ["3.4"]
     m.fs.R_gas_scrubber = UnitModelBlock()
     m.fs.R_gas_scrubber.gas_rate = Var(
-        initialize=11500, units=units.ft**3 / units.min
+        initialize=11.500, units=units.ft**3 / units.min
     )
     m.fs.R_gas_scrubber.gas_rate.fix()
     m.fs.R_gas_scrubber.costing = UnitModelCostingBlock(
@@ -1363,7 +1340,7 @@ def add_costing(flowsheet):
     R_spray_chamber_quencher_accounts = ["3.5"]
     m.fs.R_spray_chamber_quencher = UnitModelBlock()
     m.fs.R_spray_chamber_quencher.gas_rate = Var(
-        initialize=11500, units=units.ft**3 / units.min
+        initialize=11.500, units=units.ft**3 / units.min
     )
     m.fs.R_spray_chamber_quencher.gas_rate.fix()
     m.fs.R_spray_chamber_quencher.costing = UnitModelCostingBlock(
@@ -1382,7 +1359,7 @@ def add_costing(flowsheet):
     # 3.7 is UKy Roasting - Chiller
     R_chiller_accounts = ["3.7"]
     m.fs.R_chiller = UnitModelBlock()
-    m.fs.R_chiller.duty = Var(initialize=131, units=units.MBTU / units.hr)
+    m.fs.R_chiller.duty = Var(initialize=13.1, units=units.MBTU / units.hr)
     m.fs.R_chiller.duty.fix()
     m.fs.R_chiller.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,

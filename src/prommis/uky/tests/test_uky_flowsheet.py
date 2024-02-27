@@ -525,15 +525,15 @@ class TestUKyFlowsheet:
     def test_costing(self, model):
         m = add_costing(model)
 
-        assert m.fs.costing.total_plant_cost.value == pytest.approx(71.27, rel=1e-4)
-        assert m.fs.costing.total_BEC.value == pytest.approx(23.446, rel=1e-4)
+        assert m.fs.costing.total_plant_cost.value == pytest.approx(17.92, rel=1e-4)
+        assert m.fs.costing.total_BEC.value == pytest.approx(5.485, rel=1e-4)
         assert m.fs.costing.total_installation_cost.value == pytest.approx(
-            46.189, rel=1e-4
+            10.805, rel=1e-4
         )
-        assert m.fs.costing.other_plant_costs.value == pytest.approx(1.6309, rel=1e-4)
-        assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(9.246, rel=1e-4)
+        assert m.fs.costing.other_plant_costs.value == pytest.approx(1.631, rel=1e-4)
+        assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(7.645, rel=1e-4)
         assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-            11.142, rel=1e-4
+            10.822, rel=1e-4
         )
         assert value(m.fs.costing.land_cost) == pytest.approx(
             0.0006668, rel=1e-4

@@ -3,3 +3,4 @@ root: index
 chapters:
   - file: tutorials/diafiltration
   - file: tutorials/diafiltration-solution
+  - file: tutorials/uky_flowsheet

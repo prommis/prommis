@@ -284,6 +284,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         """
 
         # define costing library
+        if hasattr(self, "library") and self.library == "REE":  # costing already exists
+            raise Exception(
+                "Costing for the block %s already exists. Please ensure that "
+                "the costing build method is not called twice on the same "
+                "model." % (self)
+            )
         self.library = "REE"
 
         try:
@@ -2494,12 +2500,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             delattr(b, "grade")
             delattr(b, "costing_lower_bound")
             delattr(b, "costing_upper_bound")
-            delattr(b, "costing_lower_bound_index")
-            delattr(b, "costing_upper_bound_index")
             delattr(b, "costing_lower_bound_eq")
             delattr(b, "costing_upper_bound_eq")
-            delattr(b, "costing_lower_bound_eq_index")
-            delattr(b, "costing_upper_bound_eq_index")
 
         if not hasattr(b, "capacity"):
             b.capacity = Var(

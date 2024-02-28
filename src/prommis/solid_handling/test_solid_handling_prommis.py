@@ -19,6 +19,7 @@ from idaes.core.util.scaling import unscaled_variables_generator
 
 # Assuming these imports are adjusted to your project's structure
 from prommis.solid_handling.solid_handling_prommis import CrushAndBreakageUnit
+from prommis.leaching.leach_solids_properties import CoalRefuseParameters 
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing
@@ -30,7 +31,9 @@ solver = get_solver()
 def test_config():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.properties_solid = SolidProperties()
+    m.fs.properties_solid = CoalRefuseParameters(
+        doc = "solid property",
+    )
 
     m.fs.unit = CrushAndBreakageUnit(
         property_package=m.fs.properties_solid,
@@ -50,7 +53,9 @@ class TestSolidHandling(object):
     def model(self):
         m = ConcreteModel()
         m.fs = FlowsheetBlock(dynamic=False)
-        m.fs.properties_solid = SolidProperties()
+        m.fs.properties_solid = CoalRefuseParameters(
+        doc = "solid property",
+    )
 
         m.fs.unit = CrushAndBreakageUnit(
             property_package=m.fs.properties_solid,
@@ -68,7 +73,7 @@ class TestSolidHandling(object):
         assert hasattr(model.fs.unit, "some_inlet_or_outlet")
         # More assertions as needed for your model
 
-        assert number_variables(model.fs.unit) == 7
+        assert number_variables(model.fs.unit) == 8
         assert number_total_constraints(model.fs.unit) == 2
         assert number_unused_variables(model.fs.unit) == 0
 

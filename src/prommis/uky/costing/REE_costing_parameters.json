@@ -588,9 +588,9 @@
     },
     "2": {
         "2.1": {
-            "Account Name": "HDD Recycling - Shredder",
+            "Account Name": "HDD Recycling - Shredder (2,700 drives per hour)",
             "BEC": 50000.0,
-            "BEC_units": "$2018",
+            "BEC_units": "$2019",
             "Exponent": 1.0,
             "Process Parameter": "Number of Units (dimensionless)",
             "RP Value": 1.0,

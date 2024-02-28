@@ -106,7 +106,7 @@ def build():
     m.fs.leach_rxns = CoalRefuseLeachingReactions()
 
     m.fs.leach = MSContactor(
-        number_of_finite_elements=1,
+        number_of_finite_elements=2,
         streams={
             "liquid": {
                 "property_package": m.fs.leach_soln,
@@ -860,39 +860,34 @@ def solve(m):
 
 
 def display_results(m):
-    # m.fs.roaster.display()
+    m.fs.roaster.display()
 
-    # solid_waste = value(units.convert(m.fs.leach_filter_cake.flow_mass[0], to_units=units.kg / units.hr))
-    # print(f"Precipitate mass flow is {solid_waste} kg/hr")
-    product = value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
-    print(f"REE product mass flow is {product} kg/hr")
+    # Total mass basis yield calculation
 
-    REE_set = [
-        "Al2O3",
-        "Fe2O3",
-        "CaO",
-        "Sc2O3",
-        "Y2O3",
-        "La2O3",
-        "Ce2O3",
-        "Pr2O3",
-        "Nd2O3",
-        "Sm2O3",
-        "Gd2O3",
-        "Dy2O3",
-    ]
-
-    feed = value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
-    print(f"REE feed mass flow is {feed} kg/hr")
-    # dust = value(units.convert(m.fs.roaster.flow_mas_dust[0], to_units=units.kg / units.hr))
-    # print(f"Dust mass flow is {dust} kg/hr")
+    # product = value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
+    # print(f"REE product mass flow is {product} kg/hr")
     #
-    # solid_waste_percent = 100 * solid_waste / (solid_waste + product + dust)
-    # product_percent = 100 * product / (solid_waste + product + dust)
-    # dust_percent = 100 * dust / (solid_waste + product + dust)
-    # print(f"Precipitate is {solid_waste_percent}% of total outlet mass flow")
-    # print(f"Product is {product_percent}% of total outlet mass flow")
-    # print(f"Dust is {dust_percent}% of total outlet mass flow")
+    # REE_metal_mass_frac = {
+    #     "Al2O3": 26.98 * 2 / (29.68 * 2 + 16 * 3),
+    #     "Fe2O3": 55.845 * 2 / (55.845 * 2 + 16 * 3),
+    #     "CaO": 40.078 / (40.078 + 16),
+    #     "Sc2O3": 44.956 * 2 / (44.956 * 2 + 16 * 3),
+    #     "Y2O3": 88.906 * 2 / (88.906 * 2 + 16 * 3),
+    #     "La2O3": 138.91 * 2 / (138.91 * 2 + 16 * 3),
+    #     "Ce2O3": 140.12 * 2 / (140.12 * 2 + 16 * 3),
+    #     "Pr2O3": 140.91 * 2 / (140.91 * 2 + 16 * 3),
+    #     "Nd2O3": 144.24 * 2 / (144.24 * 2 + 16 * 3),
+    #     "Sm2O3": 150.36 * 2 / (150.36 * 2 + 16 * 3),
+    #     "Gd2O3": 157.25 * 2 / (157.25 * 2 + 16 * 3),
+    #     "Dy2O3": 162.5 * 2 / (162.5 * 2 + 16 * 3),
+    # }
+    #
+    # feed_REE = sum(value(m.fs.leach_solid_feed.flow_mass[0] * m.fs.leach_solid_feed.mass_frac_comp[0, molecule]) * REE_frac
+    #                for molecule, REE_frac in REE_metal_mass_frac.items())
+    # print(f"REE feed mass flow is {feed_REE} kg/hr")
+    #
+    # REE_yield = 100 * product / feed_REE
+    # print(f"Yield is {REE_yield} %")
 
 
 if __name__ == "__main__":

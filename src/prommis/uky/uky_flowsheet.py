@@ -24,6 +24,7 @@ from pyomo.environ import (
     Suffix,
     TransformationFactory,
     Var,
+    value,
     units,
 )
 from pyomo.network import Arc, SequentialDecomposition
@@ -859,7 +860,39 @@ def solve(m):
 
 
 def display_results(m):
-    m.fs.roaster.display()
+    # m.fs.roaster.display()
+
+    # solid_waste = value(units.convert(m.fs.leach_filter_cake.flow_mass[0], to_units=units.kg / units.hr))
+    # print(f"Precipitate mass flow is {solid_waste} kg/hr")
+    product = value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
+    print(f"REE product mass flow is {product} kg/hr")
+
+    REE_set = [
+        "Al2O3",
+        "Fe2O3",
+        "CaO",
+        "Sc2O3",
+        "Y2O3",
+        "La2O3",
+        "Ce2O3",
+        "Pr2O3",
+        "Nd2O3",
+        "Sm2O3",
+        "Gd2O3",
+        "Dy2O3",
+    ]
+
+    feed = value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
+    print(f"REE feed mass flow is {feed} kg/hr")
+    # dust = value(units.convert(m.fs.roaster.flow_mas_dust[0], to_units=units.kg / units.hr))
+    # print(f"Dust mass flow is {dust} kg/hr")
+    #
+    # solid_waste_percent = 100 * solid_waste / (solid_waste + product + dust)
+    # product_percent = 100 * product / (solid_waste + product + dust)
+    # dust_percent = 100 * dust / (solid_waste + product + dust)
+    # print(f"Precipitate is {solid_waste_percent}% of total outlet mass flow")
+    # print(f"Product is {product_percent}% of total outlet mass flow")
+    # print(f"Dust is {dust_percent}% of total outlet mass flow")
 
 
 if __name__ == "__main__":

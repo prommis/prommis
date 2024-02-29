@@ -19,7 +19,7 @@ from idaes.core.util.scaling import unscaled_variables_generator
 
 # Assuming these imports are adjusted to your project's structure
 from prommis.solid_handling.solid_handling_prommis import CrushAndBreakageUnit
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters 
+from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing
@@ -32,12 +32,10 @@ def test_config():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties_solid = CoalRefuseParameters(
-        doc = "solid property",
+        doc="solid property",
     )
 
     m.fs.unit = CrushAndBreakageUnit()
-
-    #assert len(m.fs.unit.config) == 1
 
     # Assert specific config options as per your model's requirements
     # Example:
@@ -51,10 +49,12 @@ class TestSolidHandling(object):
         m = ConcreteModel()
         m.fs = FlowsheetBlock(dynamic=False)
         m.fs.properties_solid = CoalRefuseParameters(
-        doc = "solid property",
-    )
+            doc="solid property",
+        )
 
         m.fs.unit = CrushAndBreakageUnit()
+        # Set up your model initialization here
+        # Example: m.fs.unit.some_inlet_variable.fix(some_value)
         m.fs.unit.BWI.fix(12)
         m.fs.unit.F80.fix(200)
         m.fs.unit.P80.fix(80)
@@ -62,20 +62,16 @@ class TestSolidHandling(object):
         m.fs.unit.x.fix(60)
         m.fs.unit.x50.fix(80)
         m.fs.unit.n.fix(1.5)
-        #m.fs.unit.soliddistribution.fix(0.48)
-
-        # Set up your model initialization here
-        # Example: m.fs.unit.some_inlet_variable.fix(some_value)
-
+        # m.fs.unit.soliddistribution.fix(0.48)
         return m
 
     @pytest.mark.build
     @pytest.mark.unit
     def test_build(self, model):
         # Assertions related to the build status of the model
-        #assert hasattr(model.fs.unit, "some_inlet_or_outlet")
+
         # More assertions as needed for your model
-        
+
         assert number_variables(model.fs.unit) == 9
         assert number_total_constraints(model.fs.unit) == 2
         assert number_unused_variables(model.fs.unit) == 0

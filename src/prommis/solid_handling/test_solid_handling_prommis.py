@@ -1,5 +1,5 @@
 import pytest
-from pyomo.environ import ConcreteModel, assert_optimal_termination, value
+from pyomo.environ import ConcreteModel, assert_optimal_termination
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
@@ -15,7 +15,6 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
-from idaes.core.util.scaling import unscaled_variables_generator
 
 # Assuming these imports are adjusted to your project's structure
 from prommis.solid_handling.solid_handling_prommis import CrushAndBreakageUnit

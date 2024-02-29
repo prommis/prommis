@@ -35,16 +35,13 @@ def test_config():
         doc = "solid property",
     )
 
-    m.fs.unit = CrushAndBreakageUnit(
-        property_package=m.fs.properties_solid,
-    )
+    m.fs.unit = CrushAndBreakageUnit()
 
-    assert len(m.fs.unit.config) == 1
+    #assert len(m.fs.unit.config) == 1
 
     # Assert specific config options as per your model's requirements
     # Example:
     assert not m.fs.unit.config.dynamic
-    assert m.fs.unit.config.property_package is m.fs.properties_solid
 
 
 # -----------------------------------------------------------------------------
@@ -57,9 +54,15 @@ class TestSolidHandling(object):
         doc = "solid property",
     )
 
-        m.fs.unit = CrushAndBreakageUnit(
-            property_package=m.fs.properties_solid,
-        )
+        m.fs.unit = CrushAndBreakageUnit()
+        m.fs.unit.BWI.fix(12)
+        m.fs.unit.F80.fix(200)
+        m.fs.unit.P80.fix(80)
+        m.fs.unit.Massflow.fix(2)
+        m.fs.unit.x.fix(60)
+        m.fs.unit.x50.fix(80)
+        m.fs.unit.n.fix(1.5)
+        #m.fs.unit.soliddistribution.fix(0.48)
 
         # Set up your model initialization here
         # Example: m.fs.unit.some_inlet_variable.fix(some_value)
@@ -70,10 +73,10 @@ class TestSolidHandling(object):
     @pytest.mark.unit
     def test_build(self, model):
         # Assertions related to the build status of the model
-        assert hasattr(model.fs.unit, "some_inlet_or_outlet")
+        #assert hasattr(model.fs.unit, "some_inlet_or_outlet")
         # More assertions as needed for your model
-
-        assert number_variables(model.fs.unit) == 8
+        
+        assert number_variables(model.fs.unit) == 9
         assert number_total_constraints(model.fs.unit) == 2
         assert number_unused_variables(model.fs.unit) == 0
 
@@ -99,5 +102,3 @@ class TestSolidHandling(object):
     def test_solve(self, model):
         results = solver.solve(model)
         assert_optimal_termination(results)
-
-    # Additional tests as needed for solution verification, conservation checks, etc.

@@ -57,8 +57,9 @@ class CrushAndBreakageUnitData(UnitModelBlockData):
         self.x = Var(initialize=60, doc="Particle size, micrometer")
         self.x50 = Var(initialize=80, doc="Median particle size, micrometer")
         self.n = Var(initialize=1.5, doc="Distribution width parameter")
+        self.PowerforCrush = Var(initialize=9.8623, doc="Power required to crush solid")
         self.soliddistribution = Var(
-            initialize=1, doc="Share of solid distribution in size x"
+            initialize=0.48, doc="Share of solid distribution in size x"
         )
 
         # CrushPower calculation as a constraint. This is the solid crushPower calculation as a constraint.
@@ -67,10 +68,7 @@ class CrushAndBreakageUnitData(UnitModelBlockData):
             * self.Massflow
             * self.BWI
             * (1 / self.P80**0.5 - 1 / self.F80**0.5)
-            == 10
-            * self.Massflow
-            * self.BWI
-            * (1 / self.P80**0.5 - 1 / self.F80**0.5)
+            == self.PowerforCrush
         )
 
         # BreakageDistribution calculation as a constraint. This is the equation for accumulative fraction of solid breakage probability distribution smaller than size x

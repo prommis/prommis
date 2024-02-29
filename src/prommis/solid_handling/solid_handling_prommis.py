@@ -18,7 +18,7 @@ __author__ = "Lingyan Deng"
 __version__ = "1.0.0"
 
 from pyomo.environ import Var, Constraint, exp
-from pyomo.common.config import ConfigBlock, ConfigValue
+from pyomo.common.config import ConfigValue
 from idaes.core import (
     declare_process_block_class,
     UnitModelBlockData,

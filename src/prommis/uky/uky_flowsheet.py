@@ -1469,10 +1469,10 @@ def add_costing(flowsheet):
     # define product flowrates
     # TODO: Default sale prices for some components in flow_mol_comp_product are missing
 
-    sc_product = value(
+    ce_product = value(
         units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_product[0, "Sc"]
-            * 137.912
+            flowsheet.fs.roaster.flow_mol_comp_product[0, "Ce"]
+            * 328.24
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
@@ -1496,53 +1496,78 @@ def add_costing(flowsheet):
             to_units=units.kg / units.hr,
         )
     )
-
-    pure_product_output_rates = {
-        "Sc2O3": sc_product * units.kg / units.hr,
-        "Dy2O3": dy_product * units.kg / units.hr,
-        "Gd2O3": gd_product * units.kg / units.hr,
-    }
-
-    sc_dust = value(
+    la_product = value(
         units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sc"]
-            * 137.912
-            * units.g
-            / units.mol,
-            to_units=units.kg / units.hr,
-        )
-    )
-    y_dust = value(
-        units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Y"]
-            * 225.812
-            * units.g
-            / units.mol,
-            to_units=units.kg / units.hr,
-        )
-    )
-    la_dust = value(
-        units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "La"]
+            flowsheet.fs.roaster.flow_mol_comp_product[0, "La"]
             * 325.82
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
         )
     )
-    nd_dust = value(
+    nd_product = value(
         units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Nd"]
+            flowsheet.fs.roaster.flow_mol_comp_product[0, "Nd"]
             * 336.48
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
         )
     )
-    sm_dust = value(
+    pr_product = value(
         units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sm"]
+            flowsheet.fs.roaster.flow_mol_comp_product[0, "Pr"]
+            * 329.82
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    sc_product = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_product[0, "Sc"]
+            * 137.912
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    sm_product = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_product[0, "Sm"]
             * 348.72
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    y_product = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_product[0, "Y"]
+            * 225.812
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+
+
+    pure_product_output_rates = {
+        "CeO2": ce_product * units.kg / units.hr,
+        "Sc2O3": sc_product * units.kg / units.hr,
+        "Y2O3": y_product * units.kg / units.hr,
+        "La2O3": la_product * units.kg / units.hr,
+        "Nd2O3": nd_product * units.kg / units.hr,
+        "Pr6O11": pr_product * units.kg / units.hr,
+        "Sm2O3": sm_product * units.kg / units.hr,
+        "Gd2O3": gd_product * units.kg / units.hr,
+        "Dy2O3": dy_product * units.kg / units.hr,
+    }
+
+    ce_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Ce"]
+            * 328.24
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
@@ -1566,24 +1591,70 @@ def add_costing(flowsheet):
             to_units=units.kg / units.hr,
         )
     )
-
+    la_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "La"]
+            * 325.82
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    nd_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Nd"]
+            * 336.48
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    pr_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Pr"]
+            * 329.82
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    sc_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sc"]
+            * 137.912
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    sm_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sm"]
+            * 348.72
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    y_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Y"]
+            * 225.812
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
     mixed_product_output_rates = {
+        "CeO2": ce_dust * units.kg / units.hr,
         "Sc2O3": sc_dust * units.kg / units.hr,
         "Y2O3": y_dust * units.kg / units.hr,
         "La2O3": la_dust * units.kg / units.hr,
-        "CeO2": 0.00000 * units.kg / units.hr,
-        "Pr6O11": 0.00000 * units.kg / units.hr,
         "Nd2O3": nd_dust * units.kg / units.hr,
+        "Pr6O11": pr_dust * units.kg / units.hr,
         "Sm2O3": sm_dust * units.kg / units.hr,
-        "Eu2O3": 0.00000 * units.kg / units.hr,
         "Gd2O3": gd_dust * units.kg / units.hr,
-        "Tb4O7": 0.00000 * units.kg / units.hr,
         "Dy2O3": dy_dust * units.kg / units.hr,
-        "Ho2O3": 0.00000 * units.kg / units.hr,
-        "Er2O3": 0.00000 * units.kg / units.hr,
-        "Tm2O3": 0.00000 * units.kg / units.hr,
-        "Yb2O3": 0.00000 * units.kg / units.hr,
-        "Lu2O3": 0.00000 * units.kg / units.hr,
     }
 
     m.fs.costing.build_process_costs(

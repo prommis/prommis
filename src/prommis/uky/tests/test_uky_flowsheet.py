@@ -540,7 +540,7 @@ class TestUKyFlowsheet:
         assert value(m.fs.costing.land_cost) == pytest.approx(
             0.0006668, rel=1e-4
         )  # Expression, not Var
-        assert m.fs.costing.total_sales_revenue.value == pytest.approx(0.5655, rel=1e-4)
+        assert m.fs.costing.total_sales_revenue.value == pytest.approx(0.5657, rel=1e-4)
 
     @pytest.mark.component
     def test_report(self, model):

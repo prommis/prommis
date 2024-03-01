@@ -1551,7 +1551,6 @@ def add_costing(flowsheet):
         )
     )
 
-
     pure_product_output_rates = {
         "CeO2": ce_product * units.kg / units.hr,
         "Sc2O3": sc_product * units.kg / units.hr,

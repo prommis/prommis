@@ -40,6 +40,14 @@ black .
 pylint prommis
 ```
 
+#### Running spell checker (Typos)
+
+```sh
+typos
+```
+
+Note: if the `typos` executable is not found, it can be installed by running `conda install --yes -c conda-forge typos` after activating the `prommis-dev` Conda environment.
+
 #### Running tests
 
 ```sh

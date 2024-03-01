@@ -35,9 +35,10 @@ __version__ = "1.0.0"
 import textwrap
 from sys import stdout
 
+from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
-from pyomo.environ import Constraint, Expression, Param, Var
+from pyomo.environ import ConcreteModel, Constraint, Expression, Param, Var
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
@@ -45,7 +46,9 @@ from pyomo.util.calc_var_value import calculate_variable_from_constraint
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
 from idaes.core import (
+    FlowsheetBlock,
     FlowsheetCostingBlockData,
+    UnitModelCostingBlock,
     declare_process_block_class,
     register_idaes_currency_units,
 )
@@ -54,6 +57,10 @@ from idaes.core.util.tables import stream_table_dataframe_to_string
 from pandas import DataFrame
 
 from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
+
+_, watertap_costing_available = attempt_import("watertap.costing")
+if watertap_costing_available:
+    from watertap.costing import WaterTAPCosting
 
 _log = idaeslog.getLogger(__name__)
 
@@ -161,10 +168,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         feed_input=None,
         efficiency=0.85,
         chemicals=None,
+        additional_chemicals_cost=None,
         waste=None,
-        transport_cost=None,
-        recovery_rate=None,
+        additional_waste_cost=None,
+        transport_cost_per_ton_product=None,
+        recovery_rate_per_year=None,
         CE_index_year="2021",
+        watertap_blocks=None,
     ):
         """
         This method builds process-wide costing, including fixed and variable
@@ -194,6 +204,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         total TPC.
 
         Args:
+            total_purchase_cost: user-defined value for the total equipment
+                purchase cost. To use as the total plant cost, including
+                installation, also set the Lang_factor to 1.
             Lang_factor: single multiplicative factor to estimate installation
                 costs; defaults to None and method will use percentages. The
                 default percentages yield an effective Lang factor of 2.97.
@@ -260,15 +273,23 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             variable_OM: True/False flag for calculating variable O&M costs
             efficiency: power usage efficiency, or fixed motor/distribution efficiency
             chemicals: string setting chemicals type for chemicals costs
+            additional_chemicals_cost: Expression, Var or Param to calculate additional chemical costs.
             waste: string setting waste type for waste costs
-            recovery_rate: Var or value to use for rate of REE recovered, in units
-                of mass/time
-            transport_cost: Expression, Var or Param to use for transport costs
-                per ton of REE captured (note, this is not part of the TOC)
+            additional_waste_cost: Expression, Var or Param to calculate additional waste disposal costs.
+            recovery_rate_per_year: Var or value to use for rate of REE recovered, in units
+                of mass/year
+            transport_cost_per_ton_product: Expression, Var or Param to use for transport costs
+                per ton of product (note, this is not part of the TOC)
             CE_index_year: year for cost basis, e.g. "2021" to use 2021 dollars
         """
 
         # define costing library
+        if hasattr(self, "library") and self.library == "REE":  # costing already exists
+            raise RuntimeError(
+                f"Costing for the block {self} already exists. Please ensure that "
+                f"the costing build method is not called twice on the same "
+                f"model."
+            )
         self.library = "REE"
 
         try:
@@ -277,18 +298,19 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )  # millions of USD, for base year
         except AttributeError:
             raise AttributeError(
-                "CE_index_year %s is not a valid currency base option. "
-                "Valid CE index options include CE500, CE394 and years from "
-                "1990 to 2020." % (CE_index_year)
+                f"CE_index_year {CE_index_year} is not a valid currency base option. "
+                f"Valid CE index options include CE500, CE394 and years from "
+                f"1990 to 2020."
             )
 
         if total_purchase_cost is None:
-            self.get_total_BEC(CE_index_year)
+            self.get_total_BEC(CE_index_year, watertap_blocks)
         else:
             self.total_BEC = Var(
                 initialize=total_purchase_cost,
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
+            self.total_BEC.fix()
 
         # define variables
         if Lang_factor is None:
@@ -671,11 +693,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
             else:
                 if pyunits.get_units(land_cost) == pyunits.dimensionless:
-                    self.land_cost = land_cost * CE_index_units
+                    self.land_cost = Expression(expr=land_cost * CE_index_units)
                 else:
-                    self.land_cost = pyunits.convert(land_cost, to_units=CE_index_units)
+                    self.land_cost = Expression(
+                        expr=pyunits.convert(land_cost, to_units=CE_index_units)
+                    )
         else:
-            self.land_cost = 0 * CE_index_units
+            self.land_cost = Expression(expr=0 * CE_index_units)
 
         # define feed input, if passed
         if feed_input is not None:
@@ -691,8 +715,76 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             feed_input_rate = None
 
         # build operating & maintenance costs
-        self.chemicals_list = chemicals
-        self.waste_list = waste
+        if chemicals is None:
+            self.chemicals_list = []
+        else:
+            self.chemicals_list = chemicals
+
+        # define additional chemicals cost
+        if additional_chemicals_cost is not None:
+            if type(additional_chemicals_cost) in [Expression, ScalarExpression]:
+                if (
+                    pyunits.get_units(additional_chemicals_cost)
+                    == pyunits.dimensionless
+                ):
+                    self.additional_chemicals_cost = Expression(
+                        expr=additional_chemicals_cost.expr * CE_index_units
+                    )
+                else:
+                    self.additional_chemicals_cost = Expression(
+                        expr=pyunits.convert(
+                            additional_chemicals_cost.expr, to_units=CE_index_units
+                        )
+                    )
+            else:
+                if (
+                    pyunits.get_units(additional_chemicals_cost)
+                    == pyunits.dimensionless
+                ):
+                    self.additional_chemicals_cost = Expression(
+                        expr=additional_chemicals_cost * CE_index_units
+                    )
+                else:
+                    self.additional_chemicals_cost = Expression(
+                        expr=pyunits.convert(
+                            additional_chemicals_cost, to_units=CE_index_units
+                        )
+                    )
+        else:
+            self.additional_chemicals_cost = Expression(expr=0 * CE_index_units)
+
+        if waste is None:
+            self.waste_list = []
+        else:
+            self.waste_list = waste
+
+        # define waste cost
+        if additional_waste_cost is not None:
+            if type(additional_waste_cost) in [Expression, ScalarExpression]:
+                if pyunits.get_units(additional_waste_cost) == pyunits.dimensionless:
+                    self.additional_waste_cost = Expression(
+                        expr=additional_waste_cost.expr * CE_index_units
+                    )
+                else:
+                    self.additional_waste_cost = Expression(
+                        expr=pyunits.convert(
+                            additional_waste_cost.expr, to_units=CE_index_units
+                        )
+                    )
+            else:
+                if pyunits.get_units(additional_waste_cost) == pyunits.dimensionless:
+                    self.additional_waste_cost = Expression(
+                        expr=additional_waste_cost * CE_index_units
+                    )
+                else:
+                    self.additional_waste_cost = Expression(
+                        expr=pyunits.convert(
+                            additional_waste_cost, to_units=CE_index_units
+                        )
+                    )
+        else:
+            self.additional_waste_cost = Expression(expr=0 * CE_index_units)
+
         if fixed_OM:
             self.get_fixed_OM_costs(
                 labor_types=labor_types,
@@ -752,34 +844,58 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
 
         if fixed_OM and variable_OM:
-            self.additional_cost_of_recovery = Var(
-                initialize=0,
-                doc="additional cost to be added to the COR calculations"
-                + " in millions",
-                units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
-            )
-
             # build cost of recovery (COR)
-            if recovery_rate is not None:
-                if not hasattr(self, "recovery_rate"):
+            if recovery_rate_per_year is not None:
+                self.additional_cost_of_recovery = Var(
+                    initialize=0,
+                    doc="additional cost to be added to the COR calculations"
+                    + " in millions",
+                    units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
+                )
+
+                if not hasattr(self, "recovery_rate_per_year"):
                     if (
-                        pyunits.get_units(recovery_rate) == pyunits.dimensionless
+                        pyunits.get_units(recovery_rate_per_year)
+                        == pyunits.dimensionless
                     ):  # assume it's in kg/year
-                        self.recovery_rate = Param(
-                            initialize=recovery_rate,
+                        self.recovery_rate_per_year = Param(
+                            initialize=recovery_rate_per_year,
                             mutable=True,
                             units=pyunits.kg / pyunits.year,
                         )
                     else:  # use source units
-                        self.recovery_rate = Param(
-                            initialize=recovery_rate,
+                        self.recovery_rate_per_year = Param(
+                            initialize=recovery_rate_per_year,
                             mutable=True,
-                            units=pyunits.get_units(recovery_rate),
+                            units=pyunits.get_units(recovery_rate_per_year),
                         )
                     recovery_units_factor = 1
-                else:
-                    if pyunits.get_units(self.recovery_rate) == pyunits.dimensionless:
-                        recovery_units_factor = pyunits.kg / pyunits.year
+
+                rec_rate_units = pyunits.get_units(self.recovery_rate_per_year)
+
+                # check that units are compatible
+                try:
+                    pyunits.convert(
+                        self.recovery_rate_per_year * recovery_units_factor,
+                        to_units=pyunits.kg / pyunits.year,
+                    )
+                except InconsistentUnitsError:
+                    raise UnitsError(
+                        f"The argument recovery_rate_per_year was passed with units of "
+                        f"{rec_rate_units} which cannot be converted to units of mass per year. "
+                        f"Please ensure that recovery_rate_per_year is passed with rate units "
+                        f"of mass per year (mass/a) or dimensionless."
+                    )
+
+                # check that units are on an annual basis
+                if str(rec_rate_units).split("/")[1] not in ["a", "year"]:
+                    raise UnitsError(
+                        f"The argument recovery_rate_per_year was passed with units of "
+                        f"{rec_rate_units} and must be on an anuual basis. Please "
+                        f"ensure that recovery_rate_per_year is passed with rate units "
+                        f"of mass per year (mass/a) or dimensionless."
+                    )
+
                 self.cost_of_recovery = Expression(
                     expr=(
                         pyunits.convert(
@@ -788,14 +904,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                                 + self.total_fixed_OM_cost / pyunits.year
                                 + self.total_variable_OM_cost[0]
                             )
-                            / (
-                                self.recovery_rate
-                                * recovery_units_factor
-                                * self.hours_per_shift
-                                * self.shifts_per_day
-                                * self.operating_days_per_year
-                                / pyunits.year
-                            ),
+                            / (self.recovery_rate_per_year * recovery_units_factor),
                             to_units=getattr(pyunits, "USD_" + CE_index_year)
                             / pyunits.kg,
                         )
@@ -803,27 +912,38 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                 )
 
-                if transport_cost is not None:
-                    if isinstance(transport_cost, (Expression, ScalarExpression)) or (
-                        isinstance(transport_cost, (Param, Var))
-                        and transport_cost.get_units is None
-                    ):
+                if transport_cost_per_ton_product is not None:
+                    if (
+                        isinstance(
+                            transport_cost_per_ton_product,
+                            (Expression, ScalarExpression, Param, Var),
+                        )
+                        and pyunits.get_units(transport_cost_per_ton_product)
+                        == pyunits.dimensionless
+                    ) or isinstance(transport_cost_per_ton_product, (int, float)):
+                        # no units, assume $/ton
                         self.transport_cost = (
-                            transport_cost
+                            transport_cost_per_ton_product
+                            * 1e-6
                             * CE_index_units
-                            / pyunits.kg
+                            / pyunits.ton
                             * pyunits.convert(
-                                self.recovery_rate, to_units=pyunits.kg / pyunits.year
+                                self.recovery_rate_per_year,
+                                to_units=pyunits.ton / pyunits.year,
                             )
                         )
                     else:
-                        self.transport_cost = transport_cost * self.recovery_rate
+                        self.transport_cost = pyunits.convert(
+                            transport_cost_per_ton_product
+                            * self.recovery_rate_per_year,
+                            to_units=CE_index_units / pyunits.year,
+                        )
 
-            else:  # except the case where transport_cost is passed but recovery_rate is not passed
-                if transport_cost is not None:
-                    raise Exception(
-                        "If a transport_cost is not None, "
-                        "recovery_rate cannot be None."
+            else:  # except the case where transport_cost_per_ton_product is passed but recovery_rate_per_year is not passed
+                if transport_cost_per_ton_product is not None:
+                    raise AttributeError(
+                        "If transport_cost_per_ton_product is not None, "
+                        "recovery_rate_per_year cannot be None."
                     )
 
     @staticmethod
@@ -992,23 +1112,23 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 self.variable_operating_costs[0, "power"]
             )
 
-            var_dict["Total Variable Waste Cost [$MM/year]"] = value(
-                sum(
-                    self.variable_operating_costs[0, waste] for waste in self.waste_list
-                )
-            )
-
-            if hasattr(self, "fuel"):
-                var_dict["Total Variable Fuel Cost [$MM/year]"] = value(
-                    self.variable_operating_costs[0, self.fuel]
+            if hasattr(self, "additional_waste_cost"):
+                var_dict["Total Variable Waste Cost [$MM/year]"] = value(
+                    sum(
+                        self.variable_operating_costs[0, waste]
+                        for waste in self.waste_list
+                    )
+                    + self.additional_waste_cost
                 )
 
-            var_dict["Total Variable Chemicals Cost [$MM/year]"] = value(
-                sum(
-                    self.variable_operating_costs[0, chemical]
-                    for chemical in self.chemicals_list
+            if hasattr(self, "additional_chemicals_cost"):
+                var_dict["Total Variable Chemicals Cost [$MM/year]"] = value(
+                    sum(
+                        self.variable_operating_costs[0, chemical]
+                        for chemical in self.chemicals_list
+                    )
+                    + self.additional_chemicals_cost
                 )
-            )
 
             var_dict["General Plant Overhead Cost [$MM/year]"] = value(
                 self.plant_overhead_cost[0]
@@ -1114,9 +1234,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             in blk.config.flowsheet_costing_block._registered_unit_costing  # pylint: disable=protected-access
         ):
             raise AttributeError(
-                "{} already has an attribute costing. "
-                "Check that you are not calling get_costing"
-                " twice on the same model".format(blk.name)
+                f"{blk.name} already has an attribute costing. "
+                f"Check that you are not calling get_costing"
+                f" twice on the same model"
             )
 
         # define costing library
@@ -1126,9 +1246,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             CE_index_units = getattr(pyunits, "MUSD_" + CE_index_year)
         except AttributeError:
             raise AttributeError(
-                "CE_index_year %s is not a valid currency base option. "
-                "Valid CE index options include CE500, CE394 and years from "
-                "1990 to 2020." % (CE_index_year)
+                f"CE_index_year {CE_index_year} is not a valid currency base option. "
+                f"Valid CE index options include CE500, CE394 and years from "
+                f"1990 to 2020."
             )
 
         # pull data for each account into dictionaries
@@ -1150,9 +1270,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         costing_params = REE_costing_params  # initialize with baseline accounts
         if additional_costing_params is not None and additional_costing_params != {}:
-            for (
-                new_costing_params
-            ) in additional_costing_params:  # merge new dictionaries sequentially
+            for new_costing_params in [
+                additional_costing_params
+            ]:  # merge new dictionaries sequentially
                 # adding any provided custom params to the base dictionary
                 # need to "freeze" dict so it is hashable for merging keys
                 frozen_dict = {**costing_params}
@@ -1170,15 +1290,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                                     pass  # not the current account, don't fail here
                                 else:  # this is not allowed
                                     raise ValueError(
-                                        "Data already exists for Account {} "
-                                        "using source {}. "
-                                        "Please confirm that the custom "
-                                        "account dictionary is correct, or "
-                                        "add the new parameters as a new "
-                                        "account. To use the custom account "
-                                        "dictionary for all conflicts, please "
-                                        "pass the argument use_additional_costing_params "
-                                        "as True.".format(accountkey, str(sourcekey))
+                                        f"Data already exists for Account {accountkey} "
+                                        f"using source {sourcekey}. "
+                                        f"Please confirm that the custom "
+                                        f"account dictionary is correct, or "
+                                        f"add the new parameters as a new "
+                                        f"account. To use the custom account "
+                                        f"dictionary for all conflicts, please "
+                                        f"pass the argument use_additional_costing_params "
+                                        f"as True."
                                     )
                             else:  # conflict is the account passed, and overwrite it
                                 frozen_dict[sourcekey][accountkey] = accountval
@@ -1219,9 +1339,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         "RP Value"
                     ]
             except KeyError:
-                print(
-                    "KeyError: Account {} could not be found in the "
-                    "dictionary for source {}".format(account, str(source))
+                raise KeyError(
+                    f"Account {account} could not be found in the dictionary for "
+                    f"source {source}"
                 )
 
         # check that all accounts use the same process parameter
@@ -1232,8 +1352,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 param_check = param
             elif param != param_check:
                 raise ValueError(
-                    "{} cost accounts selected do not use "
-                    "the same process parameter".format(blk.name)
+                    f"{blk.name} cost accounts selected do not use "
+                    f"the same process parameter"
                 )
 
         # check that the user passed the correct units type and try to convert
@@ -1249,21 +1369,21 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             ref_units[0][1]
                         ) / getattr(pyunits, ref_units[1])
                     except AttributeError:
+                        expected_units = str(
+                            ref_units[0][0]
+                            + "**"
+                            + ref_units[0][1]
+                            + "/"
+                            + ref_units[1]
+                        )
                         raise AttributeError(
-                            "Account %s uses references units of %s. Cannot "
-                            "parse reference units as Pyomo unit containers. "
-                            "Check that source uses correct syntax for Pyomo "
-                            "unit containers, for example gpm should be "
-                            "gal/min, tpd should be ton/d and MMBtu should be "
-                            "MBtu (using Pyomo prefix)."
-                            % (
-                                cost_accounts[0],
-                                ref_units[0][0]
-                                + "**"
-                                + ref_units[0][1]
-                                + "/"
-                                + ref_units[1],
-                            )
+                            f"Account {cost_accounts[0]} uses references units of "
+                            f"{expected_units}. "
+                            f"Cannot parse reference units as Pyomo unit containers. "
+                            f"Check that source uses correct syntax for Pyomo "
+                            f"unit containers, for example gpm should be "
+                            f"gal/min, tpd should be ton/d and MMBtu should be "
+                            f"MBtu (using Pyomo prefix)."
                         )
                 elif "**" in ref_units[1]:
                     ref_units[1] = ref_units[1].split("**")
@@ -1272,21 +1392,21 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             pyunits, ref_units[1][0]
                         ) ** int(ref_units[1][1])
                     except AttributeError:
+                        expected_units = str(
+                            ref_units[0]
+                            + "/"
+                            + ref_units[1][0]
+                            + "**"
+                            + ref_units[1][1]
+                        )
                         raise AttributeError(
-                            "Account %s uses references units of %s. Cannot "
-                            "parse reference units as Pyomo unit containers. "
-                            "Check that source uses correct syntax for Pyomo "
-                            "unit containers, for example gpm should be "
-                            "gal/min, tpd should be ton/d and MMBtu should be "
-                            "MBtu (using Pyomo prefix)."
-                            % (
-                                cost_accounts[0],
-                                ref_units[0]
-                                + "/"
-                                + ref_units[1][0]
-                                + "**"
-                                + ref_units[1][1],
-                            )
+                            f"Account {cost_accounts[0]} uses references units of "
+                            f"{expected_units}. "
+                            f"Cannot parse reference units as Pyomo unit containers. "
+                            f"Check that source uses correct syntax for Pyomo "
+                            f"unit containers, for example gpm should be "
+                            f"gal/min, tpd should be ton/d and MMBtu should be "
+                            f"MBtu (using Pyomo prefix)."
                         )
                 else:
                     try:
@@ -1294,14 +1414,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             pyunits, ref_units[1]
                         )
                     except AttributeError:
+                        expected_units = str(ref_units[0] + "/" + ref_units[1])
                         raise AttributeError(
-                            "Account %s uses references units of %s. Cannot "
-                            "parse reference units as Pyomo unit containers. "
-                            "Check that source uses correct syntax for Pyomo "
-                            "unit containers, for example gpm should be "
-                            "gal/min, tpd should be ton/d and MMBtu should be "
-                            "MBtu (using Pyomo prefix)."
-                            % (cost_accounts[0], ref_units[0] + "/" + ref_units[1])
+                            f"Account {cost_accounts[0]} uses references units of "
+                            f"{expected_units}. "
+                            f"Cannot parse reference units as Pyomo unit containers. "
+                            f"Check that source uses correct syntax for Pyomo "
+                            f"unit containers, for example gpm should be "
+                            f"gal/min, tpd should be ton/d and MMBtu should be "
+                            f"MBtu (using Pyomo prefix)."
                         )
 
             else:
@@ -1310,78 +1431,64 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     try:
                         ref_units = getattr(pyunits, ref_units[0]) ** int(ref_units[1])
                     except AttributeError:
+                        expected_units = str(ref_units[0] + "/" + ref_units[1])
                         raise AttributeError(
-                            "Account %s uses references units of %s. Cannot "
-                            "parse reference units as Pyomo unit containers. "
-                            "Check that source uses correct syntax for Pyomo "
-                            "unit containers, for example gpm should be "
-                            "gal/min, tpd should be ton/d and MMBtu should be "
-                            "MBtu (using Pyomo prefix)."
-                            % (cost_accounts[0], ref_units[0] + "/" + ref_units[1])
+                            f"Account {cost_accounts[0]} uses references units of "
+                            f"{expected_units}. "
+                            f"Cannot parse reference units as Pyomo unit containers. "
+                            f"Check that source uses correct syntax for Pyomo "
+                            f"unit containers, for example gpm should be "
+                            f"gal/min, tpd should be ton/d and MMBtu should be "
+                            f"MBtu (using Pyomo prefix)."
                         )
                 else:
                     try:
                         ref_units = getattr(pyunits, ref_units)
                     except AttributeError:
+                        expected_units = str(ref_units[0] + "/" + ref_units[1])
                         raise AttributeError(
-                            "Account %s uses references units of %s. Cannot "
-                            "parse reference units as Pyomo unit containers. "
-                            "Check that source uses correct syntax for Pyomo "
-                            "unit containers, for example gpm should be "
-                            "gal/min, tpd should be ton/d and MMBtu should be "
-                            "MBtu (using Pyomo prefix)."
-                            % (cost_accounts[0], ref_units[0] + "/" + ref_units[1])
+                            f"Account {cost_accounts[0]} uses references units of "
+                            f"{expected_units}. "
+                            f"Cannot parse reference units as Pyomo unit containers. "
+                            f"Check that source uses correct syntax for Pyomo "
+                            f"unit containers, for example gpm should be "
+                            f"gal/min, tpd should be ton/d and MMBtu should be "
+                            f"MBtu (using Pyomo prefix)."
                         )
 
             if isinstance(scaled_param, list):
                 for sp in scaled_param:
                     if sp.get_units() is None:
                         raise ValueError(
-                            "Account %s uses units of %s. "
-                            "Units of %s were passed. "
-                            "Scaled_param must have units."
-                            % (cost_accounts[0], ref_units, sp.get_units())
+                            f"Account {cost_accounts[0]} uses units of {ref_units}. "
+                            f"Units of {sp.get_units()} were passed. "
+                            f"Scaled_param must have units."
                         )
                     else:
                         try:
                             pyunits.convert(sp, ref_units)
                         except InconsistentUnitsError:
-                            raise Exception(
-                                "Account %s uses units of %s. "
-                                "Units of %s were passed. "
-                                "Cannot convert unit containers."
-                                % (
-                                    cost_accounts[0],
-                                    ref_units,
-                                    sp.get_units(),
-                                )
+                            raise UnitsError(
+                                f"Account {cost_accounts[0]} uses units of {ref_units}. "
+                                f"Units of {sp.get_units()} were passed. "
+                                f"Cannot convert unit containers."
                             )
             else:
                 try:
                     if pyunits.get_units(scaled_param) is None:
                         raise UnitsError(
-                            "Account %s uses units of %s. "
-                            "Units of %s were passed. "
-                            "Scaled_param must have units."
-                            % (
-                                cost_accounts[0],
-                                ref_units,
-                                pyunits.get_units(scaled_param),
-                            )
+                            f"Account {cost_accounts[0]} uses units of {ref_units}. "
+                            f"Units of {pyunits.get_units(scaled_param)} were passed. "
+                            f"Scaled_param must have units."
                         )
                     else:
                         try:
                             pyunits.convert(scaled_param, ref_units)
                         except InconsistentUnitsError:
                             raise UnitsError(
-                                "Account %s uses units of %s. "
-                                "Units of %s were passed. "
-                                "Cannot convert unit containers."
-                                % (
-                                    cost_accounts[0],
-                                    ref_units,
-                                    pyunits.get_units(scaled_param),
-                                )
+                                f"Account {cost_accounts[0]} uses units of {ref_units}. "
+                                f"Units of {pyunits.get_units(scaled_param)} were passed. "
+                                f"Cannot convert unit containers."
                             )
                 except InconsistentUnitsError:
                     raise UnitsError(
@@ -1557,9 +1664,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             CE_index_units = getattr(pyunits, "MUSD_" + CE_index_year)
         except AttributeError:
             raise AttributeError(
-                "CE_index_year %s is not a valid currency base option. "
-                "Valid CE index options include CE500, CE394 and years from "
-                "1990 to 2020." % (CE_index_year)
+                f"CE_index_year {CE_index_year} is not a valid currency base option. "
+                f"Valid CE index options include CE500, CE394 and years from "
+                f"1990 to 2020."
             )
 
         # check that required product arguments were passed
@@ -1619,16 +1726,16 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # raise error if the user included a product not in default_sale_prices
         if not set(pure_product_output_rates).issubset(default_sale_prices.keys()):
-            raise Exception(
-                "A pure product was included that does not contain a "
-                "sale price. Sale prices exist for the following products: "
-                "{}".format(list(default_sale_prices.keys()))
+            raise AttributeError(
+                f"A pure product was included that does not contain a "
+                f"sale price. Sale prices exist for the following products: "
+                f"{list(default_sale_prices.keys())}"
             )
         elif not set(mixed_product_output_rates).issubset(default_sale_prices.keys()):
-            raise Exception(
-                "A mixed product was included that does not contain a "
-                "sale price. Sale prices exist for the following products: "
-                "{}".format(list(default_sale_prices.keys()))
+            raise AttributeError(
+                f"A mixed product was included that does not contain a "
+                f"sale price. Sale prices exist for the following products: "
+                f"{list(default_sale_prices.keys())}"
             )
 
         # make params
@@ -1720,7 +1827,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.total_sales_revenue = Var(
             initialize=4,
             bounds=(0, 1e4),
-            doc="total sales revneue in $MM/yr",
+            doc="total sales revenue in $MM/yr",
             units=CE_index_units,
         )
 
@@ -1734,6 +1841,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
         b.other_fixed_costs.fix(0)
 
+        # variable for user to assign watertap fixed costs to,
+        # fixed to 0 by default
+        b.watertap_fixed_costs = Var(
+            initialize=0,
+            bounds=(0, 1e4),
+            doc="watertap fixed costs in $MM/yr",
+            units=CE_index_units,
+        )
+
         # create constraints
         TPC = b.total_plant_cost  # quick reference to total_plant_cost
         operating_labor_types, technical_labor_types = [], []  # subset labor lists
@@ -1744,10 +1860,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 technical_labor_types.append(i)
             else:
                 raise ValueError(
-                    "Value {} for labor_type is not allowed. "
-                    "Allowed labor types for operating labor include skilled,"
-                    "unskilled, supervisor and maintenance. Allowed labor types "
-                    "for direct labor include technician and engineer.".format(i)
+                    f"Value {i} for labor_type is not allowed. "
+                    f"Allowed labor types for operating labor include skilled,"
+                    f"unskilled, supervisor and maintenance. Allowed labor types "
+                    f"for direct labor include technician and engineer."
                 )
 
         # calculated from labor rate, labor burden, and operators per shift
@@ -1825,6 +1941,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             return c.property_taxes_and_insurance_cost == 0.01 * TPC
 
         # sum of fixed O&M costs
+
+        # sum of fixed operating costs of membrane units
+        @b.Constraint()
+        def sum_watertap_fixed_cost(c):
+            if not hasattr(c, "watertap_fixed_costs_list"):
+                return c.watertap_fixed_costs == 0
+            else:
+                return c.watertap_fixed_costs == sum(b.watertap_fixed_costs_list)
+
         @b.Constraint()
         def total_fixed_OM_cost_rule(c):
             return c.total_fixed_OM_cost == (
@@ -1835,6 +1960,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 + c.sales_patenting_and_research_cost
                 + c.property_taxes_and_insurance_cost
                 + c.other_fixed_costs
+                + c.watertap_fixed_costs
             )
 
         @b.Constraint()
@@ -1902,9 +2028,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             CE_index_units = getattr(pyunits, "MUSD_" + CE_index_year)
         except AttributeError:
             raise AttributeError(
-                "CE_index_year %s is not a valid currency base option. "
-                "Valid CE index options include CE500, CE394 and years from "
-                "1990 to 2021." % (CE_index_year)
+                f"CE_index_year {CE_index_year} is not a valid currency base option. "
+                f"Valid CE index options include CE500, CE394 and years from "
+                f"1990 to 2021."
             )
 
         # assert arguments are correct types
@@ -1917,7 +2043,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # assert lists are the same length
         if len(resources) != len(rates):
-            raise Exception("resources and rates must be lists of the same length")
+            raise AttributeError("resources and rates must be lists of the same length")
 
         # dictionary of default prices
         # the currency units are millions of USD, so all prices need a 1e-6 multiplier to get USD
@@ -1952,10 +2078,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # raise error if the user included a resource not in default_prices
         if not set(resources).issubset(default_prices.keys()):
-            raise Exception(
-                "A resource was included that does not contain a "
-                "price. Prices exist for the following resources: "
-                "{}".format(list(default_prices.keys()))
+            raise AttributeError(
+                f"A resource was included that does not contain a "
+                f"price. Prices exist for the following resources: "
+                f"{list(default_prices.keys())}"
             )
 
         # create list of prices
@@ -2022,6 +2148,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 units=CE_index_units / pyunits.year,
             )
 
+        if (0, "power") in b.variable_operating_costs.id_index_map().values():
+
             @b.Constraint(b.parent_block().time)
             def plant_overhead_cost_rule(c, t):
                 return c.plant_overhead_cost[t] == 0.20 * (
@@ -2035,6 +2163,26 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     + sum(
                         c.variable_operating_costs[0, waste] for waste in c.waste_list
                     )
+                    + c.additional_chemicals_cost / pyunits.year
+                    + c.additional_waste_cost / pyunits.year
+                )
+
+        else:
+
+            @b.Constraint(b.parent_block().time)
+            def plant_overhead_cost_rule(c, t):
+                return c.plant_overhead_cost[t] == 0.20 * (
+                    c.total_fixed_OM_cost / pyunits.year
+                    + c.land_cost / pyunits.year
+                    + sum(
+                        c.variable_operating_costs[0, chemical]
+                        for chemical in c.chemicals_list
+                    )
+                    + sum(
+                        c.variable_operating_costs[0, waste] for waste in c.waste_list
+                    )
+                    + c.additional_chemicals_cost / pyunits.year
+                    + c.additional_waste_cost / pyunits.year
                 )
 
         @b.Constraint(b.parent_block().time)
@@ -2045,6 +2193,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 + c.other_variable_costs[t]
                 + c.plant_overhead_cost[t]
                 + c.land_cost / pyunits.year
+                + c.additional_chemicals_cost / pyunits.year
+                + c.additional_waste_cost / pyunits.year
             )
 
     def initialize_fixed_OM_costs(b):
@@ -2178,7 +2328,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                 )
 
-    def get_total_BEC(b, CE_index_year):
+    def get_total_BEC(b, CE_index_year, watertap_blocks=None):
         # This method accepts a flowsheet-level costing block
 
         try:
@@ -2187,12 +2337,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )  # millions of USD, for base year
         except AttributeError:
             raise AttributeError(
-                "CE_index_year %s is not a valid currency base option. "
-                "Valid CE index options include CE500, CE394 and years from "
-                "1990 to 2020." % (CE_index_year)
+                f"CE_index_year {CE_index_year} is not a valid currency base option. "
+                f"Valid CE index options include CE500, CE394 and years from "
+                f"1990 to 2020."
             )
 
         BEC_list = []
+        b.watertap_fixed_costs_list = []
 
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
@@ -2201,6 +2352,22 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             ] and hasattr(o, "bare_erected_cost"):
                 for key in o.bare_erected_cost.keys():
                     BEC_list.append(o.bare_erected_cost[key])
+
+        if watertap_blocks is not None:
+            for w in watertap_blocks:
+                m = ConcreteModel()
+                m.fs = FlowsheetBlock(dynamic=False)
+                m.fs.costing = WaterTAPCosting()
+                w.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
+                BEC_list.append(
+                    pyunits.convert(w.costing.capital_cost, to_units=CE_index_units)
+                )
+                b.watertap_fixed_costs_list.append(
+                    pyunits.convert(
+                        w.costing.fixed_operating_cost * pyunits.year,
+                        to_units=CE_index_units,
+                    )
+                )
 
         b.total_BEC = Var(
             initialize=100,
@@ -2261,7 +2428,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         )
                     )
                 )
-            if hasattr(b, "recovery_rate"):
+            if hasattr(b, "recovery_rate_per_year"):
                 print(
                     "Total annual O&M cost: $%.3f per kg REE recovered"
                     % value(
@@ -2269,11 +2436,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         * 1e6
                         / (
                             pyunits.convert(
-                                b.recovery_rate, to_units=pyunits.kg / pyunits.hr
+                                b.recovery_rate_per_year,
+                                to_units=pyunits.kg / pyunits.year,
                             )
-                            * b.hours_per_shift
-                            * b.shifts_per_day
-                            * b.operating_days_per_year
                         )
                     )
                 )
@@ -2291,15 +2456,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     + b.total_variable_OM_cost[0]
                 )
             )
-        if hasattr(b, "recovery_rate"):
-            print("Rate of recovery: %.3f kg/hr REE recovered" % value(b.recovery_rate))
+        if hasattr(b, "recovery_rate_per_year"):
             print(
-                "Annual recovery: %.3f ton/year REE recovered"
+                "Annual rate of recovery: %.3f kg/year REE recovered"
                 % value(
-                    pyunits.convert(b.recovery_rate, to_units=pyunits.ton / pyunits.hr)
-                    * b.hours_per_shift
-                    * b.shifts_per_day
-                    * b.operating_days_per_year
+                    pyunits.convert(
+                        b.recovery_rate_per_year, to_units=pyunits.kg / pyunits.year
+                    )
                 )
             )
         if hasattr(b, "cost_of_recovery"):
@@ -2324,12 +2487,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             delattr(b, "grade")
             delattr(b, "costing_lower_bound")
             delattr(b, "costing_upper_bound")
-            delattr(b, "costing_lower_bound_index")
-            delattr(b, "costing_upper_bound_index")
             delattr(b, "costing_lower_bound_eq")
             delattr(b, "costing_upper_bound_eq")
-            delattr(b, "costing_lower_bound_eq_index")
-            delattr(b, "costing_upper_bound_eq_index")
 
         if not hasattr(b, "capacity"):
             b.capacity = Var(

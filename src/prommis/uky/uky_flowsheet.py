@@ -1469,12 +1469,33 @@ def add_costing(flowsheet):
     # define product flowrates
     # TODO: Default sale prices for some components in flow_mol_comp_product are missing
 
-    sc_product = value(units.convert(flowsheet.fs.roaster.flow_mol_comp_product[0, "Sc"] * 137.912 * units.g / units.mol,
-                               to_units=units.kg / units.hr))
-    dy_product = value(units.convert(flowsheet.fs.roaster.flow_mol_comp_product[0, "Dy"] * 373 * units.g / units.mol,
-                               to_units=units.kg / units.hr))
-    gd_product = value(units.convert(flowsheet.fs.roaster.flow_mol_comp_product[0, "Gd"] * 362.5 * units.g / units.mol,
-                               to_units=units.kg / units.hr))
+    sc_product = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_product[0, "Sc"]
+            * 137.912
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    dy_product = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_product[0, "Dy"]
+            * 373
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    gd_product = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_product[0, "Gd"]
+            * 362.5
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
 
     pure_product_output_rates = {
         "Sc2O3": sc_product * units.kg / units.hr,
@@ -1482,20 +1503,69 @@ def add_costing(flowsheet):
         "Gd2O3": gd_product * units.kg / units.hr,
     }
 
-    sc_dust = value(units.convert(flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sc"] * 137.912 * units.g / units.mol,
-                               to_units=units.kg / units.hr))
-    y_dust = value(units.convert(flowsheet.fs.roaster.flow_mol_comp_dust[0, "Y"] * 225.812 * units.g / units.mol,
-                               to_units=units.kg / units.hr))
-    la_dust = value(units.convert(flowsheet.fs.roaster.flow_mol_comp_dust[0, "La"] * 325.82 * units.g / units.mol,
-                               to_units=units.kg / units.hr))
-    nd_dust = value(units.convert(flowsheet.fs.roaster.flow_mol_comp_dust[0, "Nd"] * 336.48 * units.g / units.mol,
-                               to_units=units.kg / units.hr))
-    sm_dust = value(units.convert(flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sm"] * 348.72 * units.g / units.mol,
-                               to_units=units.kg / units.hr))
-    dy_dust = value(units.convert(flowsheet.fs.roaster.flow_mol_comp_dust[0, "Dy"] * 373 * units.g / units.mol,
-                               to_units=units.kg / units.hr))
-    gd_dust = value(units.convert(flowsheet.fs.roaster.flow_mol_comp_dust[0, "Gd"] * 362.5 * units.g / units.mol,
-                               to_units=units.kg / units.hr))
+    sc_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sc"]
+            * 137.912
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    y_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Y"]
+            * 225.812
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    la_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "La"]
+            * 325.82
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    nd_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Nd"]
+            * 336.48
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    sm_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sm"]
+            * 348.72
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    dy_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Dy"]
+            * 373
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
+    gd_dust = value(
+        units.convert(
+            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Gd"]
+            * 362.5
+            * units.g
+            / units.mol,
+            to_units=units.kg / units.hr,
+        )
+    )
 
     mixed_product_output_rates = {
         "Sc2O3": sc_dust * units.kg / units.hr,
@@ -1573,7 +1643,8 @@ def add_costing(flowsheet):
             == units.convert(
                 1218.073 * units.USD_2016  # Rougher Solvent Extraction
                 + 48.723 * units.USD_2016  # Cleaner Solvent Extraction
-                + 182.711 * units.USD_2016,  # Solvent Extraction Wash and Saponification
+                + 182.711
+                * units.USD_2016,  # Solvent Extraction Wash and Saponification
                 to_units=getattr(units, "MUSD_" + CE_index_year),
             )
         )

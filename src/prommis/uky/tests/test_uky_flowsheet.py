@@ -530,7 +530,9 @@ class TestUKyFlowsheet:
         assert m.fs.costing.total_installation_cost.value == pytest.approx(
             10.805, rel=1e-4
         )
-        assert m.fs.costing.other_plant_costs.value == pytest.approx(0.0016309, rel=1e-4)
+        assert m.fs.costing.other_plant_costs.value == pytest.approx(
+            0.0016309, rel=1e-4
+        )
         assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(7.2727, rel=1e-4)
         assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
             10.7472, rel=1e-4

@@ -7,15 +7,10 @@ from idaes.core.initialization.block_triangularization import (
 )
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
-from idaes.core.util import DiagnosticsToolbox
-from pyomo.util.check_units import assert_units_consistent
-
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
-
-import matplotlib.pyplot as plt
 
 m = ConcreteModel()
 
@@ -122,13 +117,6 @@ m.fs.solex.mscontactor.organic[0, :].flow_vol.fix(62.01)
 
 print(dof(m))
 
-# assert_units_consistent(m.fs)
-
-dt = DiagnosticsToolbox(m)
-
-# dt.report_structural_issues()
-
-# Initializing of the model
 
 initializer = BlockTriangularizationInitializer()
 initializer.initialize(m.fs.solex)
@@ -148,14 +136,3 @@ m.fs.solex.mscontactor.organic[time_duration, 1].conc_mol_comp.display()
 # Final aqueous outlets display
 m.fs.solex.mscontactor.aqueous[time_duration, number_of_stages].conc_mass_comp.display()
 m.fs.solex.mscontactor.aqueous[time_duration, number_of_stages].conc_mol_comp.display()
-
-# Plot graphs
-plt.plot(m.fs.time, m.fs.solex.mscontactor.organic[:, 1].conc_mass_comp["Ce"]())
-plt.xlabel("Time hrs")
-plt.ylabel("Organic concentration mg/L")
-plt.title("Final organic profile")
-plt.show()
-plt.plot(m.fs.time, m.fs.solex.mscontactor.aqueous[:, 3].conc_mass_comp["Ce"]())
-plt.xlabel("Time hrs")
-plt.ylabel("Aqueous concentration mg/L")
-plt.title("Final aqueous profile")

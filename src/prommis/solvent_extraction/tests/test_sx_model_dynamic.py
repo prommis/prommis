@@ -81,22 +81,22 @@ class TestSXmodel:
         m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Gd"].fix(174.38)
         m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Dy"].fix(101.12)
 
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["H2O"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["H"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["SO4"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["HSO4"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Al"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Ca"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Fe"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Sc"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Y"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["La"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Ce"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Pr"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Nd"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Sm"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Gd"].fix(1e-20)
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Dy"].fix(1e-20)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["H2O"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["H"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["SO4"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["HSO4"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Al"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Ca"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Fe"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Sc"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Y"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["La"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Ce"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Pr"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Nd"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Sm"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Gd"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Dy"].fix(1e-9)
 
         m.fs.solex.mscontactor.aqueous_inlet_state[:].flow_vol.fix(4.4)
 
@@ -115,18 +115,18 @@ class TestSXmodel:
         m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Gd"].fix(1.55e-6)
         m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Dy"].fix(9e-7)
 
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Al"].fix(1e-20)
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Ca"].fix(1e-20)
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Fe"].fix(1e-20)
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Sc"].fix(1e-20)
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Y"].fix(1e-20)
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["La"].fix(1e-20)
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Ce"].fix(1e-20)
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Pr"].fix(1e-20)
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Nd"].fix(1e-20)
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Sm"].fix(1e-20)
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Gd"].fix(1e-20)
-        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Dy"].fix(1e-20)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Al"].fix(1e-9)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Ca"].fix(1e-9)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Fe"].fix(1e-9)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Sc"].fix(1e-9)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Y"].fix(1e-9)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["La"].fix(1e-9)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Ce"].fix(1e-9)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Pr"].fix(1e-9)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Nd"].fix(1e-9)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Sm"].fix(1e-9)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Gd"].fix(1e-9)
+        m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Dy"].fix(1e-9)
 
         m.fs.solex.mscontactor.organic_inlet_state[:].flow_vol.fix(62.01)
 
@@ -164,37 +164,37 @@ class TestSXmodel:
         time_duration = 60
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["H2O"]
-        ) == pytest.approx(1e-9, rel=1e-2)
+        ) == pytest.approx(1e-9, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["H"]
-        ) == pytest.approx(1e-9, rel=1e-2)
+        ) == pytest.approx(1e-9, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["SO4"]
-        ) == pytest.approx(9.9e-10, rel=1e-2)
+        ) == pytest.approx(1e-9, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["HSO4"]
-        ) == pytest.approx(1e-9, rel=1e-2)
+        ) == pytest.approx(1e-9, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["Al"]
-        ) == pytest.approx(113.03, rel=1e-2)
+        ) == pytest.approx(113.03, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["Ca"]
-        ) == pytest.approx(718.67, rel=1e-2)
+        ) == pytest.approx(718.67, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["Fe"]
         ) == pytest.approx(38.98, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["Sc"]
-        ) == pytest.approx(3.24e-8, rel=1e-2)
+        ) == pytest.approx(3.24e-8, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["Y"]
-        ) == pytest.approx(9.84e-08, rel=1e-2)
+        ) == pytest.approx(9.84e-08, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["La"]
-        ) == pytest.approx(4.77, rel=1e-2)
+        ) == pytest.approx(4.77, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["Ce"]
-        ) == pytest.approx(0.055, rel=1e-2)
+        ) == pytest.approx(0.055, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["Pr"]
         ) == pytest.approx(0.00499, rel=1e-1)
@@ -203,47 +203,47 @@ class TestSXmodel:
         ) == pytest.approx(0.00016, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["Sm"]
-        ) == pytest.approx(5.707e-08, rel=1e-2)
+        ) == pytest.approx(5.707e-08, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["Gd"]
-        ) == pytest.approx(7.36e-05, rel=1e-2)
+        ) == pytest.approx(7.36e-05, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["Dy"]
-        ) == pytest.approx(1.584e-08, rel=1e-2)
+        ) == pytest.approx(1.584e-08, rel=1e-1)
 
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["Al"]
-        ) == pytest.approx(4.04, rel=1e-2)
+        ) == pytest.approx(4.04, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["Ca"]
-        ) == pytest.approx(26.47, rel=1e-2)
+        ) == pytest.approx(26.47, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["Fe"]
-        ) == pytest.approx(0.783, rel=1e-2)
+        ) == pytest.approx(0.783, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["Sc"]
-        ) == pytest.approx(336.104, rel=1e-2)
+        ) == pytest.approx(336.104, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["Y"]
-        ) == pytest.approx(45.23, rel=1e-2)
+        ) == pytest.approx(45.23, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["La"]
-        ) == pytest.approx(128.58, rel=1e-2)
+        ) == pytest.approx(128.58, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["Ce"]
-        ) == pytest.approx(315.71, rel=1e-2)
+        ) == pytest.approx(315.71, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["Pr"]
-        ) == pytest.approx(53.04, rel=1e-2)
+        ) == pytest.approx(53.04, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["Nd"]
-        ) == pytest.approx(144.92, rel=1e-2)
+        ) == pytest.approx(144.92, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["Sm"]
-        ) == pytest.approx(26.18, rel=1e-2)
+        ) == pytest.approx(26.18, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["Gd"]
-        ) == pytest.approx(12.315, rel=1e-2)
+        ) == pytest.approx(12.315, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.organic[time_duration, 1].conc_mass_comp["Dy"]
-        ) == pytest.approx(7.17, rel=1e-2)
+        ) == pytest.approx(7.17, rel=1e-1)

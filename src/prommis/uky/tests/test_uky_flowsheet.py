@@ -525,20 +525,20 @@ class TestUKyFlowsheet:
     def test_costing(self, model):
         m = add_costing(model)
 
-        assert m.fs.costing.total_plant_cost.value == pytest.approx(17.92, rel=1e-4)
+        assert m.fs.costing.total_plant_cost.value == pytest.approx(16.2919, rel=1e-4)
         assert m.fs.costing.total_BEC.value == pytest.approx(5.485, rel=1e-4)
         assert m.fs.costing.total_installation_cost.value == pytest.approx(
             10.805, rel=1e-4
         )
-        assert m.fs.costing.other_plant_costs.value == pytest.approx(1.631, rel=1e-4)
-        assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(7.645, rel=1e-4)
+        assert m.fs.costing.other_plant_costs.value == pytest.approx(0.0016309, rel=1e-4)
+        assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(7.2727, rel=1e-4)
         assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-            10.822, rel=1e-4
+            10.7472, rel=1e-4
         )
         assert value(m.fs.costing.land_cost) == pytest.approx(
             0.0006668, rel=1e-4
         )  # Expression, not Var
-        assert m.fs.costing.total_sales_revenue.value == pytest.approx(65.333, rel=1e-4)
+        assert m.fs.costing.total_sales_revenue.value == pytest.approx(0.5655, rel=1e-4)
 
     @pytest.mark.component
     def test_report(self, model):

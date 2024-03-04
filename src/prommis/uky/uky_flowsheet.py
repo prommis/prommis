@@ -18,6 +18,7 @@ Author: Marcus Holly
 
 
 from pyomo.environ import (
+    as_quantity,
     ConcreteModel,
     Constraint,
     Expression,
@@ -1469,191 +1470,263 @@ def add_costing(flowsheet):
     # define product flowrates
     # TODO: Default sale prices for some components in flow_mol_comp_product are missing
 
-    ce_product = value(
-        units.convert(
+    m.fs.Ce_product = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Ce"]
             * 328.24
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Product cerium mass flow",
     )
-    dy_product = value(
-        units.convert(
+
+    m.fs.Dy_product = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Dy"]
             * 373
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Product dysprosium mass flow",
     )
-    gd_product = value(
-        units.convert(
+
+    m.fs.Gd_product = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Gd"]
             * 362.5
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Product gadolinium mass flow",
     )
-    la_product = value(
-        units.convert(
+
+    m.fs.La_product = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "La"]
             * 325.82
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Product lanthanum mass flow",
     )
-    nd_product = value(
-        units.convert(
+
+    m.fs.Nd_product = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Nd"]
             * 336.48
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Product neodymium mass flow",
     )
-    pr_product = value(
-        units.convert(
+
+    m.fs.Pr_product = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Pr"]
             * 329.82
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Product praseodymium mass flow",
     )
-    sc_product = value(
-        units.convert(
+
+    m.fs.Sc_product = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Sc"]
             * 137.912
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Product scandium mass flow",
     )
-    sm_product = value(
-        units.convert(
+
+    m.fs.Sm_product = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Sm"]
             * 348.72
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Product samarium mass flow",
     )
-    y_product = value(
-        units.convert(
+
+    m.fs.Y_product = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Y"]
             * 225.812
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Product yttrium mass flow",
     )
 
+
     pure_product_output_rates = {
-        "CeO2": ce_product * units.kg / units.hr,
-        "Sc2O3": sc_product * units.kg / units.hr,
-        "Y2O3": y_product * units.kg / units.hr,
-        "La2O3": la_product * units.kg / units.hr,
-        "Nd2O3": nd_product * units.kg / units.hr,
-        "Pr6O11": pr_product * units.kg / units.hr,
-        "Sm2O3": sm_product * units.kg / units.hr,
-        "Gd2O3": gd_product * units.kg / units.hr,
-        "Dy2O3": dy_product * units.kg / units.hr,
+        "CeO2": m.fs.Ce_product,
+        "Sc2O3": m.fs.Sc_product,
+        "Y2O3": m.fs.Y_product,
+        "La2O3": m.fs.La_product,
+        "Nd2O3": m.fs.Nd_product,
+        "Pr6O11": m.fs.Pr_product,
+        "Sm2O3": m.fs.Sm_product,
+        "Gd2O3": m.fs.Gd_product,
+        "Dy2O3": m.fs.Dy_product,
     }
 
-    ce_dust = value(
-        units.convert(
+    m.fs.Ce_dust = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_dust[0, "Ce"]
-            * 328.24
+            * 382.24
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Dust cerium mass flow",
     )
-    dy_dust = value(
-        units.convert(
+
+    m.fs.Dy_dust = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_dust[0, "Dy"]
             * 373
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Dust dysprosium mass flow",
     )
-    gd_dust = value(
-        units.convert(
+
+    m.fs.Gd_dust = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_dust[0, "Gd"]
             * 362.5
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Dust gadolinium mass flow",
     )
-    la_dust = value(
-        units.convert(
+
+    m.fs.La_dust = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_dust[0, "La"]
             * 325.82
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Dust lanthanum mass flow",
     )
-    nd_dust = value(
-        units.convert(
+
+    m.fs.Nd_dust = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_dust[0, "Nd"]
             * 336.48
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Dust neodymium mass flow",
     )
-    pr_dust = value(
-        units.convert(
+
+    m.fs.Pr_dust = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_dust[0, "Pr"]
             * 329.82
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Dust praseodymium mass flow",
     )
-    sc_dust = value(
-        units.convert(
+
+    m.fs.Sc_dust = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sc"]
             * 137.912
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Dust scandium mass flow",
     )
-    sm_dust = value(
-        units.convert(
+
+    m.fs.Sm_dust = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sm"]
             * 348.72
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Dust samarium mass flow",
     )
-    y_dust = value(
-        units.convert(
+
+    m.fs.Y_dust = Param(
+        default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_dust[0, "Y"]
             * 225.812
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
-        )
+        ),
+        units=units.kg / units.hr,
+        mutable=True,
+        doc="Dust yttrium mass flow",
     )
+
     mixed_product_output_rates = {
-        "CeO2": ce_dust * units.kg / units.hr,
-        "Sc2O3": sc_dust * units.kg / units.hr,
-        "Y2O3": y_dust * units.kg / units.hr,
-        "La2O3": la_dust * units.kg / units.hr,
-        "Nd2O3": nd_dust * units.kg / units.hr,
-        "Pr6O11": pr_dust * units.kg / units.hr,
-        "Sm2O3": sm_dust * units.kg / units.hr,
-        "Gd2O3": gd_dust * units.kg / units.hr,
-        "Dy2O3": dy_dust * units.kg / units.hr,
+        "CeO2": m.fs.Ce_dust,
+        "Sc2O3": m.fs.Sc_dust,
+        "Y2O3": m.fs.Y_dust,
+        "La2O3": m.fs.La_dust,
+        "Nd2O3": m.fs.Nd_dust,
+        "Pr6O11": m.fs.Pr_dust,
+        "Sm2O3": m.fs.Sm_dust,
+        "Gd2O3": m.fs.Gd_dust,
+        "Dy2O3": m.fs.Dy_dust,
     }
 
     m.fs.costing.build_process_costs(
@@ -1730,6 +1803,9 @@ def add_costing(flowsheet):
     m.fs.power.fix()
 
     # check that the model is set up properly and has 0 degrees of freedom
+    dt = DiagnosticsToolbox(model=m)
+    print("Structural issues in costing")
+    dt.report_structural_issues()
     assert degrees_of_freedom(m) == 0
 
     # Initialize costing

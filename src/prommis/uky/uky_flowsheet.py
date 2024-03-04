@@ -18,7 +18,6 @@ Author: Marcus Holly
 
 
 from pyomo.environ import (
-    as_quantity,
     ConcreteModel,
     Constraint,
     Expression,
@@ -1586,7 +1585,6 @@ def add_costing(flowsheet):
         mutable=True,
         doc="Product yttrium mass flow",
     )
-
 
     pure_product_output_rates = {
         "CeO2": m.fs.Ce_product,

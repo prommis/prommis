@@ -69,6 +69,8 @@ from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
+import idaes.core.util.scaling as iscale
+
 
 def main():
     m = build()
@@ -82,6 +84,11 @@ def main():
     print("Structural issues after setting operating conditions")
     dt = DiagnosticsToolbox(model=scaled_model)
     dt.report_structural_issues()
+
+    badly_scaled_var_list = iscale.badly_scaled_var_generator(m, large=1e2, small=1e-2)
+    print("----------------   badly_scaled_var_list   ----------------")
+    for x in badly_scaled_var_list:
+        print(f"{x[0].name}\t{x[0].value}\tsf: {iscale.get_scaling_factor(x[0])}")
 
     initialize_system(scaled_model)
     print("Numerical issues after initialization")
@@ -195,15 +202,6 @@ def build():
         material_balance_type=MaterialBalanceType.componentTotal,
         momentum_balance_type=MomentumBalanceType.none,
         energy_split_basis=EnergySplittingType.none,
-    )
-
-    m.fs.sx_mixer = Mixer(
-        property_package=m.fs.prop_o,
-        num_inlets=2,
-        inlet_list=["aqueous_inlet", "organic_inlet"],
-        material_balance_type=MaterialBalanceType.componentTotal,
-        energy_mixing_type=MixingType.none,
-        momentum_mixing_type=MomentumMixingType.none,
     )
 
     m.fs.recycle1_purge = Product(property_package=m.fs.leach_soln)
@@ -323,21 +321,17 @@ def build():
     )
     m.fs.s04 = Arc(
         source=m.fs.solex_cleaner.mscontactor.aqueous_outlet,
-        destination=m.fs.sx_mixer.aqueous_inlet,
+        destination=m.fs.precipitator.aqueous_inlet,
     )
     m.fs.s05 = Arc(
         source=m.fs.solex_cleaner.mscontactor.organic_outlet,
-        destination=m.fs.sx_mixer.organic_inlet,
+        destination=m.fs.solex_rougher.mscontactor.organic_inlet,
     )
     m.fs.s06 = Arc(
-        source=m.fs.sx_mixer.outlet,
-        destination=m.fs.precipitator.aqueous_inlet,
-    )
-    m.fs.s07 = Arc(
         source=m.fs.precipitator.precipitate_outlet,
         destination=m.fs.sl_sep2.solid_inlet,
     )
-    m.fs.s08 = Arc(
+    m.fs.s07 = Arc(
         source=m.fs.precipitator.aqueous_outlet, destination=m.fs.sl_sep2.liquid_inlet
     )
     m.fs.sep2_solid = Arc(

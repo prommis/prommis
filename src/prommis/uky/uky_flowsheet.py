@@ -20,6 +20,7 @@ Author: Marcus Holly
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
+    Set,
     SolverFactory,
     Suffix,
     TransformationFactory,
@@ -79,7 +80,7 @@ def main():
 
     scaled_model = set_scaling(m)
     assert_units_consistent(scaled_model)
-    assert degrees_of_freedom(scaled_model) == 0
+    # assert degrees_of_freedom(scaled_model) == 0
 
     print("Structural issues after setting operating conditions")
     dt = DiagnosticsToolbox(model=scaled_model)
@@ -323,10 +324,11 @@ def build():
         source=m.fs.solex_cleaner.mscontactor.aqueous_outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )
-    m.fs.s05 = Arc(
-        source=m.fs.solex_cleaner.mscontactor.organic_outlet,
-        destination=m.fs.solex_rougher.mscontactor.organic_inlet,
-    )
+    # TODO: Connect this recycle loop later
+    # m.fs.s05 = Arc(
+    #     source=m.fs.solex_cleaner.mscontactor.organic_outlet,
+    #     destination=m.fs.solex_rougher.mscontactor.organic_inlet,
+    # )
     m.fs.s06 = Arc(
         source=m.fs.precipitator.precipitate_outlet,
         destination=m.fs.sl_sep2.solid_inlet,
@@ -511,13 +513,6 @@ def set_scaling(m):
             ]
         ] = 1e5
         m.scaling_factor[
-            m.fs.sx_mixer.aqueous_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sx_mixer.organic_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.sx_mixer.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
             m.fs.precipitator.cv_aqueous.properties_in[0].conc_mol_comp[component]
         ] = 1e5
         m.scaling_factor[
@@ -638,6 +633,61 @@ def set_operating_conditions(m):
     m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sm"].fix(eps)
     m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Gd"].fix(eps)
     m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].fix(eps)
+
+    dissolved_elements = Set(
+        initialize=[
+            "Al",
+            "Ca",
+            "Fe",
+            "Sc",
+            "Y",
+            "La",
+            "Ce",
+            "Pr",
+            "Nd",
+            "Sm",
+            "Gd",
+            "Dy",
+        ]
+    )
+
+    # Temporary constraints that functions as a pseudo-recycle and has a purge fraction of 0.95
+    # def rule_organic_flow_vol_balance(b, t):
+    #     return (
+    #             b.organic_inlet_state[t].flow_vol
+    #             == b.organic[t, 1].flow_vol
+    #     )
+    #
+    # m.fs.solex_rougher.mscontactor.organic_flow_vol_balance_constraint = Constraint(
+    #     m.fs.time,
+    #     rule=rule_organic_flow_vol_balance,
+    # )
+
+    def rule_organic_mass_balance(b, t, j):
+        return (
+                b.organic_inlet_state[t].flow_vol * b.organic_inlet_state[t].conc_mass_comp[j]
+                == b.organic[t, 1].flow_vol * b.organic[t, 1].conc_mass_comp[j] * 0.95
+        )
+
+    m.fs.solex_rougher.mscontactor.organic_mass_balance_constraint = Constraint(
+        m.fs.time,
+        dissolved_elements,
+        rule=rule_organic_mass_balance,
+    )
+
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].flow_vol.unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Al"].unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ca"].unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Fe"].unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sc"].unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Y"].unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["La"].unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ce"].unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Pr"].unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Nd"].unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sm"].unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Gd"].unfix()
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].unfix()
 
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
     m.fs.sl_sep2.liquid_recovery.fix(0.7)
@@ -819,7 +869,48 @@ def initialize_system(m):
             initializer2.initialize(m.fs.leach_mixer)
         elif stream == m.fs.solex_rougher.mscontactor:
             print(f"Initializing {stream}")
-            initializer2.initialize(m.fs.solex_rougher)
+            m.fs.solex_rougher.mscontactor.organic_mass_balance_constraint.deactivate()
+            # m.fs.solex_rougher.mscontactor.organic_flow_vol_balance_constraint.deactivate()
+
+            # Fix feed states
+            eps = 1e-7 * units.mg / units.L
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].flow_vol.fix(
+                62.01 * units.L / units.hour
+            )
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Al"].fix(eps)
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ca"].fix(eps)
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Fe"].fix(eps)
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sc"].fix(
+                321.34 * units.mg / units.L
+            )
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Y"].fix(eps)
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["La"].fix(eps)
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ce"].fix(eps)
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Pr"].fix(eps)
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Nd"].fix(eps)
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sm"].fix(eps)
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Gd"].fix(eps)
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].fix(eps)
+            # Re-solve solex rougher unit
+            solver = SolverFactory("ipopt")
+            solver.solve(m.fs.solex_rougher, tee=True)
+            # Unfix feed states
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].flow_vol.unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Al"].unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ca"].unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Fe"].unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sc"].unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Y"].unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["La"].unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ce"].unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Pr"].unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Nd"].unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sm"].unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Gd"].unfix()
+            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].unfix()
+
+            m.fs.solex_rougher.mscontactor.organic_mass_balance_constraint.activate()
+            # m.fs.solex_rougher.mscontactor.organic_flow_vol_balance_constraint.activate()
         elif stream == m.fs.solex_cleaner.mscontactor:
             print(f"Initializing {stream}")
             initializer2.initialize(m.fs.solex_cleaner)

@@ -80,7 +80,7 @@ def main():
 
     scaled_model = set_scaling(m)
     assert_units_consistent(scaled_model)
-    # assert degrees_of_freedom(scaled_model) == 0
+    assert degrees_of_freedom(scaled_model) == 0
 
     print("Structural issues after setting operating conditions")
     dt = DiagnosticsToolbox(model=scaled_model)
@@ -619,20 +619,7 @@ def set_operating_conditions(m):
     m.fs.solex_rougher.mscontactor.organic_inlet_state[0].flow_vol.fix(
         62.01 * units.L / units.hour
     )
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Al"].fix(eps)
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ca"].fix(eps)
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Fe"].fix(eps)
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sc"].fix(
-        321.34 * units.mg / units.L
-    )
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Y"].fix(eps)
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["La"].fix(eps)
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ce"].fix(eps)
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Pr"].fix(eps)
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Nd"].fix(eps)
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sm"].fix(eps)
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Gd"].fix(eps)
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].fix(eps)
+
 
     dissolved_elements = Set(
         initialize=[
@@ -651,43 +638,14 @@ def set_operating_conditions(m):
         ]
     )
 
-    # Temporary constraints that functions as a pseudo-recycle and has a purge fraction of 0.95
-    # def rule_organic_flow_vol_balance(b, t):
-    #     return (
-    #             b.organic_inlet_state[t].flow_vol
-    #             == b.organic[t, 1].flow_vol
-    #     )
-    #
-    # m.fs.solex_rougher.mscontactor.organic_flow_vol_balance_constraint = Constraint(
-    #     m.fs.time,
-    #     rule=rule_organic_flow_vol_balance,
-    # )
+    # Temporary constraint that functions as a pseudo-recycle and has a purge fraction of 0.95
 
-    def rule_organic_mass_balance(b, t, j):
-        return (
-                b.organic_inlet_state[t].flow_vol * b.organic_inlet_state[t].conc_mass_comp[j]
-                == b.organic[t, 1].flow_vol * b.organic[t, 1].conc_mass_comp[j] * 0.95
-        )
-
-    m.fs.solex_rougher.mscontactor.organic_mass_balance_constraint = Constraint(
-        m.fs.time,
-        dissolved_elements,
-        rule=rule_organic_mass_balance,
-    )
-
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Al"].unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ca"].unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Fe"].unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sc"].unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Y"].unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["La"].unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ce"].unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Pr"].unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Nd"].unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sm"].unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Gd"].unfix()
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].unfix()
+    @m.fs.solex_rougher.mscontactor.Constraint(m.fs.time, dissolved_elements, doc="SX rougher organic mass balance")
+    def organic_mass_balance(self, t, j):
+        return (m.fs.solex_rougher.mscontactor.organic_inlet_state[t].flow_vol
+                * m.fs.solex_rougher.mscontactor.organic_inlet_state[t].conc_mass_comp[j]
+                == m.fs.solex_cleaner.mscontactor.organic[t, 1].flow_vol
+                * m.fs.solex_cleaner.mscontactor.organic[t, 1].conc_mass_comp[j] * 0.95)
 
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
     m.fs.sl_sep2.liquid_recovery.fix(0.7)
@@ -869,14 +827,10 @@ def initialize_system(m):
             initializer2.initialize(m.fs.leach_mixer)
         elif stream == m.fs.solex_rougher.mscontactor:
             print(f"Initializing {stream}")
-            m.fs.solex_rougher.mscontactor.organic_mass_balance_constraint.deactivate()
-            # m.fs.solex_rougher.mscontactor.organic_flow_vol_balance_constraint.deactivate()
+            m.fs.solex_rougher.mscontactor.organic_mass_balance.deactivate()
 
             # Fix feed states
             eps = 1e-7 * units.mg / units.L
-            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].flow_vol.fix(
-                62.01 * units.L / units.hour
-            )
             m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Al"].fix(eps)
             m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ca"].fix(eps)
             m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Fe"].fix(eps)
@@ -895,7 +849,6 @@ def initialize_system(m):
             solver = SolverFactory("ipopt")
             solver.solve(m.fs.solex_rougher, tee=True)
             # Unfix feed states
-            m.fs.solex_rougher.mscontactor.organic_inlet_state[0].flow_vol.unfix()
             m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Al"].unfix()
             m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Ca"].unfix()
             m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Fe"].unfix()
@@ -909,8 +862,7 @@ def initialize_system(m):
             m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Gd"].unfix()
             m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].unfix()
 
-            m.fs.solex_rougher.mscontactor.organic_mass_balance_constraint.activate()
-            # m.fs.solex_rougher.mscontactor.organic_flow_vol_balance_constraint.activate()
+            m.fs.solex_rougher.mscontactor.organic_mass_balance.activate()
         elif stream == m.fs.solex_cleaner.mscontactor:
             print(f"Initializing {stream}")
             initializer2.initialize(m.fs.solex_cleaner)
@@ -945,16 +897,10 @@ def solve(m):
 
 
 def display_results(m):
-    m.fs.roaster.display()
-    m.fs.leach_solid_feed.display()
-    m.fs.leach_liquid_feed.display()
-    m.fs.sl_sep1.display()
+    m.fs.solex_rougher.display()
+    m.fs.solex_cleaner.display()
+    # m.fs.roaster.display()
 
-    # Total mass basis yield calculation
-
-    # product = value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
-    # print(f"REE product mass flow is {product} kg/hr")
-    #
     REE_metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),
         "Fe2O3": 55.845 * 2 / (55.845 * 2 + 16 * 3),
@@ -984,13 +930,20 @@ def display_results(m):
         "Gd2O3": (157.25 * 2 + 16 * 3) * units.g / units.mol,
         "Dy2O3": (162.5 * 2 + 16 * 3) * units.g / units.mol,
     }
-    #
+
+    # Total mass basis yield calculation
+
+    # product = value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
+    # print(f"REE product mass flow is {product} kg/hr")
     # feed_REE = sum(value(m.fs.leach_solid_feed.flow_mass[0] * m.fs.leach_solid_feed.mass_frac_comp[0, molecule]) * REE_frac
     #                for molecule, REE_frac in REE_metal_mass_frac.items())
     # print(f"REE feed mass flow is {feed_REE} kg/hr")
     #
     # REE_yield = 100 * product / feed_REE
     # print(f"Yield is {REE_yield} %")
+
+    # Individual elemental recoveries
+
     total_al_recovery = 100 * value(
         units.convert(m.fs.roaster.flow_mol_comp_product[0, "Al"] * REE_molar_mass["Al2O3"] * REE_metal_mass_frac["Al2O3"], to_units=units.kg / units.hr)
         / (

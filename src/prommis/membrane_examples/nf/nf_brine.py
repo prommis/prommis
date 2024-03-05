@@ -104,13 +104,13 @@ def set_default_feed(m, solver):
 
     Approximates the concentration of Salar de Atacama (kg/m3 = g/L)
 
-    Cl- concentraion will get overridden to enforce electroneutrality
+    Cl- concentration will get overridden to enforce electroneutrality
     """
     conc_mass_phase_comp = {"Li_+": 1.19, "Mg_2+": 7.31, "Cl_-": 143.72}
     set_nf_feed(
         blk=m.fs,
         solver=solver,
-        flow_mass_h2o=1,  # arbitraty for now
+        flow_mass_h2o=1,  # arbitrary for now
         conc_mass_phase_comp=conc_mass_phase_comp,
     )
 
@@ -129,14 +129,14 @@ def define_feed_comp():
     - very confident
 
     Stokes radius:
-    - avgerage valuess from https://www.sciencedirect.com/science/article/pii/S138358661100637X
+    - average values from https://www.sciencedirect.com/science/article/pii/S138358661100637X
     - medium confident (averaged values from multiple studies)
     - reasonable orders of magnitude
 
     ion charge:
     - very confident
 
-    The activty coefficient options are ideal or davies
+    The activity coefficient options are ideal or davies
     """
     default = {
         "solute_list": ["Li_+", "Mg_2+", "Cl_-"],
@@ -171,7 +171,7 @@ def build():
     # create the flowsheet
     m.fs = FlowsheetBlock(dynamic=False)
 
-    # define the propery model
+    # define the property model
     default = define_feed_comp()
     m.fs.properties = MCASParameterBlock(**default)
 

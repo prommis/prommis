@@ -2,6 +2,10 @@
 # adapted from test_nf.py
 #################################################################################
 
+"""
+Tests the reverse osmosis flowsheet
+"""
+
 from pyomo.environ import value
 
 import pytest
@@ -12,6 +16,9 @@ from src.prommis.membrane_examples.ro.ro_brine import main
 @pytest.mark.requires_idaes_solver
 @pytest.mark.component
 def test_main():
+    """
+    Tests the execution of the main function in ro_brine.py
+    """
     m = main()
     test_dict = {
         "area": [m.fs.unit.area, 1126.7194556],

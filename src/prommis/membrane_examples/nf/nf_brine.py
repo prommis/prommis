@@ -11,6 +11,10 @@
 # https://github.com/watertap-org/watertap/blob/main/tutorials/nawi_spring_meeting2023.ipynb
 ####################################################################
 
+"""
+Nanofiltration flowsheet for Donnan steric pore model with dielectric exclusion
+"""
+
 # import statements
 from math import floor, log
 
@@ -22,7 +26,6 @@ from pyomo.environ import (
     assert_optimal_termination,
     maximize,
 )
-from pyomo.environ import units as pyunits
 from pyomo.network import Arc
 
 import idaes.core.util.scaling as iscale
@@ -43,6 +46,9 @@ from watertap.unit_models.pressure_changer import Pump
 
 
 def main():
+    """
+    Builds and solves the NF flowsheet
+    """
     solver = get_solver()
     m = build()
 
@@ -93,10 +99,15 @@ def main():
 
 
 def set_default_feed(m, solver):
-    # fix the feed concentrations used in the initialization
-    # approximate the kg/m3 = g/L conc of Salar de Atacama (Cl- gets overridden)
+    """
+    Fixes the concentrations used to initialize the feed
+
+    Approximates the concentration of Salar de Atacama (kg/m3 = g/L)
+
+    Cl- concentraion will get overridden to enforce electroneutrality
+    """
     conc_mass_phase_comp = {"Li_+": 1.19, "Mg_2+": 7.31, "Cl_-": 143.72}
-    set_NF_feed(
+    set_nf_feed(
         blk=m.fs,
         solver=solver,
         flow_mass_h2o=1,  # arbitraty for now
@@ -105,21 +116,36 @@ def set_default_feed(m, solver):
 
 
 def define_feed_comp():
+    """
+    Defines the ion properties needed for the DSPM-DE property package
+
+    Ions include lithium, magnesium, and chloride, assuming LiCl and MgCl2 salts
+
+    diffusivity:
+    - https://www.aqion.de/site/diffusion-coefficients
+    - very confident
+
+    molecular weights:
+    - very confident
+
+    Stokes radius:
+    - avgerage valuess from https://www.sciencedirect.com/science/article/pii/S138358661100637X
+    - medium confident (averaged values from multiple studies)
+    - reasonable orders of magnitude
+
+    ion charge:
+    - very confident
+
+    The activty coefficient options are ideal or davies
+    """
     default = {
-        # need to add Cl- for electroneutrality, assume LiCl and MgCl2 salts
         "solute_list": ["Li_+", "Mg_2+", "Cl_-"],
-        # https://www.aqion.de/site/diffusion-coefficients
-        # very confident
         "diffusivity_data": {
             ("Liq", "Li_+"): 1.03e-09,
             ("Liq", "Mg_2+"): 0.705e-09,
             ("Liq", "Cl_-"): 2.03e-09,
         },
-        # very confident
         "mw_data": {"H2O": 0.018, "Li_+": 0.0069, "Mg_2+": 0.024, "Cl_-": 0.035},
-        # avg vals from https://www.sciencedirect.com/science/article/pii/S138358661100637X
-        # medium confident, these values come from above review paper, averaged values from multiple studies
-        # reasonable orders of magnitude
         "stokes_radius_data": {
             "Li_+": 3.61e-10,
             # "Mg_2+": 4.07e-10,
@@ -128,9 +154,7 @@ def define_feed_comp():
             "Cl_-": 0.121e-9,
             "Mg_2+": 0.347e-9,
         },
-        # very confident
         "charge": {"Li_+": 1, "Mg_2+": 2, "Cl_-": -1},
-        # choose ideal for now, other option is davies
         "activity_coefficient_model": ActivityCoefficientModel.ideal,
         "density_calculation": DensityCalculation.constant,
     }
@@ -138,6 +162,9 @@ def define_feed_comp():
 
 
 def build():
+    """
+    Builds the NF flowsheet
+    """
     # create the model
     m = ConcreteModel()
 
@@ -171,6 +198,9 @@ def build():
 
 
 def fix_init_vars(m):
+    """
+    Fixes the initial variables needed to create 0 DOF
+    """
     # feed state variables
     m.fs.unit.feed_side.properties_in[0].temperature.fix(298.15)
     m.fs.unit.feed_side.properties_in[0].pressure.fix(2e5)
@@ -201,11 +231,17 @@ def fix_init_vars(m):
 
 
 def unfix_opt_vars(m):
+    """
+    Unfixes select variables to enable optimization with DOF>0
+    """
     m.fs.pump.outlet.pressure[0].unfix()
     m.fs.unit.area.unfix()
 
 
 def add_obj(m):
+    """
+    Adds objectives to the pyomo model
+    """
     # limit Li loss
     # m.fs.obj = Objective(
     #     expr = m.fs.retentate.flow_mol_phase_comp[0,"Liq", "Li_+"],
@@ -229,6 +265,9 @@ def add_obj(m):
 
 
 def add_con(m):
+    """
+    Adds constraints to the pyomo model
+    """
     # limit the Li rejection
     m.fs.li_rejection_con = Constraint(
         expr=m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"] >= 0.2
@@ -236,13 +275,19 @@ def add_con(m):
 
 
 def optimize(m, solver):
-    print("Optimizing with {} DOFs".format(degrees_of_freedom(m)))
+    """
+    Optimizes the flowsheet
+    """
+    print(f"Optimizing with {format(degrees_of_freedom(m))} DOFs")
     simulation_results = solver.solve(m, tee=True)
     assert_optimal_termination(simulation_results)
     return simulation_results
 
 
 def initialize(m, solver):
+    """
+    Initializes the flowsheet units
+    """
     set_default_feed(m, solver)
     fix_init_vars(m)
 
@@ -260,12 +305,14 @@ def initialize(m, solver):
     m.fs.retentate.initialize(optarg=solver.options)
 
 
-def set_NF_feed(blk, solver, flow_mass_h2o, conc_mass_phase_comp):  # kg/m3
+def set_nf_feed(blk, solver, flow_mass_h2o, conc_mass_phase_comp):  # kg/m3
+    """
+    Calculates the concentration of the feed solution in molar flow rate
+    """
     if solver is None:
         solver = get_solver()
 
     # fix the inlet flow to the block as water flowrate
-    mass_flow_in = flow_mass_h2o * pyunits.kg / pyunits.s
     blk.feed.properties[0].flow_mass_phase_comp["Liq", "H2O"].fix(flow_mass_h2o)
 
     # fix the ion cncentrations and unfix ion flows
@@ -285,7 +332,7 @@ def set_NF_feed(blk, solver, flow_mass_h2o, conc_mass_phase_comp):  # kg/m3
     blk.feed.properties[0].flow_mass_phase_comp["Liq", "H2O"].unfix()
     blk.feed.properties[0].flow_mol_phase_comp["Liq", "H2O"].fix()
 
-    set_NF_feed_scaling(blk)
+    set_nf_feed_scaling(blk)
 
     # assert electroneutrality
     blk.feed.properties[0].assert_electroneutrality(
@@ -295,17 +342,24 @@ def set_NF_feed(blk, solver, flow_mass_h2o, conc_mass_phase_comp):  # kg/m3
     # over-specifies the problem:
     # blk.feed.properties[0].temperature.fix(298.15)
 
-    # switching to concentration for ease of adjusting in UI -- addresses error in fixing flow_mol_phase_comp
+    # switching to concentration for ease of adjusting in UI
+    # addresses error in fixing flow_mol_phase_comp
     for ion, x in conc_mass_phase_comp.items():
         blk.feed.properties[0].conc_mass_phase_comp["Liq", ion].unfix()
         blk.feed.properties[0].flow_mol_phase_comp["Liq", ion].fix()
 
 
 def calc_scale(value):
+    """
+    Calculates a default scaling value
+    """
     return -1 * floor(log(value, 10))
 
 
-def set_NF_feed_scaling(blk):
+def set_nf_feed_scaling(blk):
+    """
+    Calculates the default scaling for the feed solution
+    """
     _add = 0
     for i in blk.feed.properties[0].flow_mol_phase_comp:
         scale = calc_scale(blk.feed.properties[0].flow_mol_phase_comp[i].value)

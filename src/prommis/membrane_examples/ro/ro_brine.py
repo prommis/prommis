@@ -1,24 +1,25 @@
+####################################################################################################
 # adapted from https://watertap.readthedocs.io/en/stable/how_to_guides/how_to_setup_simple_RO.html
 # simple RO example
+####################################################################################################
+
+"""
+Reverse osmosis flowsheet
+"""
 
 from pyomo.environ import (
     ConcreteModel,
-    Constraint,
     Objective,
     TransformationFactory,
     assert_optimal_termination,
-    maximize,
 )
-from pyomo.environ import units as pyunits
 from pyomo.network import Arc
 
-import idaes.core.util.scaling as iscale
 from idaes.core import FlowsheetBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util.scaling import calculate_scaling_factors
 from idaes.models.unit_models import Feed, Product
 
 from watertap.unit_models.reverse_osmosis_0D import (
@@ -27,12 +28,15 @@ from watertap.unit_models.reverse_osmosis_0D import (
     ReverseOsmosis0D,
 )
 
-from prommis.membrane_examples.ro.property_models.LiCl_prop_pack import (
+from prommis.membrane_examples.ro.property_models.li_cl_prop_pack import (
     LiClParameterBlock,
 )
 
 
 def main():
+    """
+    Builds and solves the RO flowsheet
+    """
     solver = get_solver()
     m = build()
 
@@ -70,10 +74,15 @@ def main():
 
 
 def set_default_feed(blk):
-    # mass flow rate (kg/s)
+    """
+    Fixes the concentrations used to initialize the feed
+
+    Defines the mass flow rate (kg/s)
+
+    Increasing the Li ion concentration fixed the permeate initializtion fail
+    Currently 100x too high for this ratio of water
+    """
     blk.feed.flow_mass_phase_comp[0, "Liq", "LiCl"].fix(0.03158)
-    # increasing the Li ion concentration fixed the permeate initializtion fail
-    # currently 100x too high for this ratio of water
     blk.feed.flow_mass_phase_comp[0, "Liq", "H2O"].fix(1.058)
 
     # Set scaling factors for component mass flowrates.
@@ -84,6 +93,9 @@ def set_default_feed(blk):
 
 
 def build():
+    """
+    Builds the RO flowsheet
+    """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties = LiClParameterBlock()
@@ -115,6 +127,9 @@ def build():
 
 
 def fix_init_vars(m):
+    """
+    Fixes the initial variables needed to create 0 DOF
+    """
     # feed pressure (Pa)
     m.fs.unit.inlet.pressure[0].fix(5e5)
     # feed temperature (K)
@@ -130,10 +145,16 @@ def fix_init_vars(m):
 
 
 def unfix_opt_vars(m):
+    """
+    Unfixes select variables to enable optimization with DOF>0
+    """
     m.fs.unit.area.unfix()
 
 
 def add_obj(m):
+    """
+    Adds objectives to the pyomo model
+    """
     # min specific energy consumption
     m.fs.obj = Objective(
         expr=m.fs.unit.inlet.pressure[0] / (3.6e6),
@@ -142,13 +163,19 @@ def add_obj(m):
 
 
 def optimize(m, solver):
-    print("Optimizing with {} DOFs".format(degrees_of_freedom(m)))
+    """
+    Optimizes the flowsheet
+    """
+    print(f"Optimizing with {format(degrees_of_freedom(m))} DOFs")
     simulation_results = solver.solve(m, tee=True)
     assert_optimal_termination(simulation_results)
     return simulation_results
 
 
 def initialize(m, solver):
+    """
+    Initializes the flowsheet units
+    """
     set_default_feed(m.fs)
     fix_init_vars(m)
 

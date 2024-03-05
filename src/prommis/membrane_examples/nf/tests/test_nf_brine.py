@@ -2,6 +2,10 @@
 # adapted from test_nf.py
 #################################################################################
 
+"""
+Tests the nanofiltration flowsheet
+"""
+
 from pyomo.environ import value
 
 import pytest
@@ -12,6 +16,9 @@ from src.prommis.membrane_examples.nf.nf_brine import main
 @pytest.mark.requires_idaes_solver
 @pytest.mark.component
 def test_main():
+    """
+    Tests the execution of the main function in nf_brine.py
+    """
     m = main()
     test_dict = {
         "pressure": [m.fs.pump.outlet.pressure[0] * 1e-5, 2.0],

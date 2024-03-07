@@ -97,6 +97,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
             ("Ka2", "liquid", "HSO4"): -1,
             ("Ka2", "liquid", "SO4"): 1,
             ("Ka2", "liquid", "H2O"): 0,
+            ("Ka2", "liquid", "Cl"): 0,
             ("Ka2", "liquid", "Sc"): 0,
             ("Ka2", "liquid", "Y"): 0,
             ("Ka2", "liquid", "La"): 0,

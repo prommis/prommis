@@ -47,6 +47,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
         self.H = Component()
         self.HSO4 = Component()
         self.SO4 = Component()
+        self.Cl = Component()
 
         # REEs
         self.Sc = Component()
@@ -72,6 +73,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
                 "H": 1e-3,
                 "HSO4": 97e-3,
                 "SO4": 96e-3,
+                "Cl": 35.453e-3,
                 "Sc": 44.946e-3,
                 "Y": 88.905e-3,
                 "La": 138.905e-3,

@@ -77,7 +77,6 @@ class TestSXmodel:
         m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Gd"] = 98.6 / 100
         m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Dy"] = 99.9 / 100
 
-
         m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H2O"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["SO4"].fix(1e-9)

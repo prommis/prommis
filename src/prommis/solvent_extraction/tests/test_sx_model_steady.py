@@ -44,6 +44,19 @@ class TestSXmodel:
             },
         )
 
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Al"] = 3.6 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Ca"] = 3.7 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Fe"] = 2.1 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sc"] = 99.9 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Y"] = 99.9 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "La"] = 75.2 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Ce"] = 95.7 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Pr"] = 96.5 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Nd"] = 99.2 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sm"] = 99.9 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Gd"] = 98.6 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Dy"] = 99.9 / 100
+
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["SO4"].fix(1e-9)

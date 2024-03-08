@@ -17,7 +17,7 @@ from idaes.core.util.model_statistics import (
 )
 
 # Assuming these imports are adjusted to your project's structure
-from prommis.solid_handling.solid_handling_prommis import CrushAndBreakageUnit
+from prommis.solid_handling.crusher import CrushAndBreakageUnit
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 
 # -----------------------------------------------------------------------------
@@ -34,7 +34,7 @@ def test_config():
         doc="solid property",
     )
 
-    m.fs.unit = CrushAndBreakageUnit()
+    m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid)
 
     # Assert specific config options as per your model's requirements
     # Example:
@@ -51,16 +51,13 @@ class TestSolidHandling(object):
             doc="solid property",
         )
 
-        m.fs.unit = CrushAndBreakageUnit()
+        m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid)
         # Set up your model initialization here
         # Example: m.fs.unit.some_inlet_variable.fix(some_value)
-        m.fs.unit.BWI.fix(12)
-        m.fs.unit.F80.fix(200)
-        m.fs.unit.P80.fix(80)
-        m.fs.unit.Massflow.fix(2)
-        m.fs.unit.x.fix(60)
-        m.fs.unit.x50.fix(80)
-        m.fs.unit.n.fix(1.5)
+        m.fs.unit.inlet.fow_mass.fix(2) # tonne/hr
+        m.fs.unit.inlet.feed50size.fix(60) #eed particle size, micrometer
+        m.fs.unit.inlet.Prod50size.fix(30) # Product Particle Size that allows 80% passing, micrometer
+
         # m.fs.unit.soliddistribution.fix(0.48)
         return m
 
@@ -71,8 +68,8 @@ class TestSolidHandling(object):
 
         # More assertions as needed for your model
 
-        assert number_variables(model.fs.unit) == 9
-        assert number_total_constraints(model.fs.unit) == 2
+        assert number_variables(model.fs.unit) == 3
+        assert number_total_constraints(model.fs.unit) == 3
         assert number_unused_variables(model.fs.unit) == 0
 
     @pytest.mark.component

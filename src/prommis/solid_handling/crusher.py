@@ -25,7 +25,6 @@ from idaes.core import (
     declare_process_block_class,
     MaterialBalanceType,
     EnergyBalanceType,
-    MomentumBalanceType,
     UnitModelBlockData,
     useDefault,
 )

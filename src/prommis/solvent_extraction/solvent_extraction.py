@@ -97,8 +97,9 @@ class SolventExtractionData(UnitModelBlockData):
         "aqueous_to_organic",
         ConfigValue(
             default=True,
-            domain=Bool, 
-            description="Direction of the transfer between two phases"),
+            domain=Bool,
+            description="Direction of the transfer between two phases",
+        ),
     )
 
     def build(self):
@@ -114,7 +115,8 @@ class SolventExtractionData(UnitModelBlockData):
         )
 
         self.partition_coefficient = Param(
-            self.mscontactor.elements, self.mscontactor.stream_component_interactions,
+            self.mscontactor.elements,
+            self.mscontactor.stream_component_interactions,
             mutable=True,
             doc="The fraction of component that goes from aqueous to organic phase",
         )
@@ -131,10 +133,10 @@ class SolventExtractionData(UnitModelBlockData):
                     if s == b.mscontactor.elements.first():
                         return (
                             b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == -b.mscontactor.aqueous_inlet_state[t].get_material_flow_terms(
-                                aqueous.phase_list, m
-                            )
-                            * b.partition_coefficient[s,(k, l, m)]
+                            == -b.mscontactor.aqueous_inlet_state[
+                                t
+                            ].get_material_flow_terms(aqueous.phase_list, m)
+                            * b.partition_coefficient[s, (k, l, m)]
                         )
                     else:
                         return (
@@ -142,16 +144,16 @@ class SolventExtractionData(UnitModelBlockData):
                             == -b.mscontactor.aqueous[
                                 t, b.mscontactor.elements.prev(s)
                             ].get_material_flow_terms(aqueous.phase_list, m)
-                            * b.partition_coefficient[s,(k, l, m)]
+                            * b.partition_coefficient[s, (k, l, m)]
                         )
                 else:
                     if s == b.mscontactor.elements.last():
                         return (
                             b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == -b.mscontactor.aqueous_inlet_state[t].get_material_flow_terms(
-                                aqueous.phase_list, m
-                            )
-                            * b.partition_coefficient[s,(k, l, m)]
+                            == -b.mscontactor.aqueous_inlet_state[
+                                t
+                            ].get_material_flow_terms(aqueous.phase_list, m)
+                            * b.partition_coefficient[s, (k, l, m)]
                         )
                     else:
                         return (
@@ -159,7 +161,7 @@ class SolventExtractionData(UnitModelBlockData):
                             == -b.mscontactor.aqueous[
                                 t, b.mscontactor.elements.next(s)
                             ].get_material_flow_terms(aqueous.phase_list, m)
-                            * b.partition_coefficient[s,(k, l, m)]
+                            * b.partition_coefficient[s, (k, l, m)]
                         )
             else:
                 organic = b.mscontactor.organic
@@ -167,10 +169,10 @@ class SolventExtractionData(UnitModelBlockData):
                     if s == b.mscontactor.elements.first():
                         return (
                             b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == b.mscontactor.organic_inlet_state[t].get_material_flow_terms(
-                                organic.phase_list, m
-                            )
-                            * b.partition_coefficient[s,(k, l, m)]
+                            == b.mscontactor.organic_inlet_state[
+                                t
+                            ].get_material_flow_terms(organic.phase_list, m)
+                            * b.partition_coefficient[s, (k, l, m)]
                         )
                     else:
                         return (
@@ -178,16 +180,16 @@ class SolventExtractionData(UnitModelBlockData):
                             == b.mscontactor.organic[
                                 t, b.mscontactor.elements.prev(s)
                             ].get_material_flow_terms(organic.phase_list, m)
-                            * b.partition_coefficient[s,(k, l, m)]
+                            * b.partition_coefficient[s, (k, l, m)]
                         )
                 else:
                     if s == b.mscontactor.elements.last():
                         return (
                             b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == b.mscontactor.organic_inlet_state[t].get_material_flow_terms(
-                                organic.phase_list, m
-                            )
-                            * b.partition_coefficient[s,(k, l, m)]
+                            == b.mscontactor.organic_inlet_state[
+                                t
+                            ].get_material_flow_terms(organic.phase_list, m)
+                            * b.partition_coefficient[s, (k, l, m)]
                         )
                     else:
                         return (
@@ -195,9 +197,8 @@ class SolventExtractionData(UnitModelBlockData):
                             == b.mscontactor.organic[
                                 t, b.mscontactor.elements.next(s)
                             ].get_material_flow_terms(organic.phase_list, m)
-                            * b.partition_coefficient[s,(k, l, m)]
+                            * b.partition_coefficient[s, (k, l, m)]
                         )
-
 
         self.mass_transfer_constraint = Constraint(
             self.flowsheet().time,

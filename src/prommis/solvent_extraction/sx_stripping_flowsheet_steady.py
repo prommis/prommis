@@ -18,7 +18,7 @@ m.fs.prop_o = REESolExOgParameters()
 m.fs.prop_a = REESolExAqParameters()
 m.fs.leach_soln = LeachSolutionParameters()
 
-number_of_stages=1
+number_of_stages = 1
 
 m.fs.solex = SolventExtraction(
     number_of_finite_elements=number_of_stages,
@@ -35,22 +35,21 @@ m.fs.solex = SolventExtraction(
         "has_energy_balance": False,
         "has_pressure_balance": False,
     },
-    aqueous_to_organic=False
-    ,
+    aqueous_to_organic=False,
 )
 
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Al"] = 1-0.5/100
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Ca"] = 1-0.5/100
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Fe"] = 1-0.5/100
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sc"] = 1-98.5/100
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Y"] = 1-0.5/100
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "La"] = 1-0.5/100
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Ce"] = 1-0.5/100
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Pr"] = 1-0.5/100
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Nd"] = 1-0.5/100
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sm"] = 1-0.5/100
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Gd"] = 1-0.5/100
-m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Dy"] = 1-0.5/100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Al"] = 1 - 0.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Ca"] = 1 - 0.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Fe"] = 1 - 0.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sc"] = 1 - 98.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Y"] = 1 - 0.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "La"] = 1 - 0.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Ce"] = 1 - 0.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Pr"] = 1 - 0.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Nd"] = 1 - 0.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sm"] = 1 - 0.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Gd"] = 1 - 0.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Dy"] = 1 - 0.5 / 100
 
 m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e-9)
 m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1e-9)
@@ -103,9 +102,6 @@ solver.solve(m, tee=True)
 
 # Final organic outlet display
 m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()
-#m.fs.solex.mscontactor.organic[0, 1].conc_mol_comp.display()
 
 # Final aqueous outlets display
 m.fs.solex.mscontactor.aqueous[0, 1].conc_mass_comp.display()
-#m.fs.solex.mscontactor.aqueous[0, 1].conc_mol_comp.display()
-

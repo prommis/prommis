@@ -37,7 +37,9 @@ _log = idaeslog.getLogger(__name__)
 
 @declare_process_block_class("CrushAndBreakageUnit")
 class CrushAndBreakageUnitData(UnitModelBlockData):
-    CONFIG = ConfigBlock() # or  CONFIG = UnitModelBlockData.CONFIG() (not sure what's the difference)
+    CONFIG = (
+        ConfigBlock()
+    )  # or  CONFIG = UnitModelBlockData.CONFIG() (not sure what's the difference)
     CONFIG.declare(
         "dynamic",
         ConfigValue(
@@ -154,56 +156,66 @@ see property package for documentation.}""",
             has_heat_transfer=False,
         )
 
-
         # Add Ports
         self.add_inlet_port()
         self.add_outlet_port()
 
         solid_prop = self.config.property_package
-        solid_prop.flow_mass # mass low rate, property unit kg/hr, unit needed tonne/hr
-        solid_prop.feed50size # Feed median particle size, micrometer 
-        solid_prop.prod50size  # Product median particle size, micrometer 
+        solid_prop.flow_mass  # mass low rate, property unit kg/hr, unit needed tonne/hr
+        solid_prop.feed50size  # Feed median particle size, micrometer
+        solid_prop.prod50size  # Product median particle size, micrometer
 
         units_meta = self.control_volume.config.property_package.get_metadata()
         self.feed80size = Var(
             self.flowsheet().time,
             initialize=200.0,
             doc="Feed Particle Size that has 80% passing, micrometer",
-            units=units_meta.get_derived_units("length"), # unit should be changed to micrometer
+            units=units_meta.get_derived_units(
+                "length"
+            ),  # unit should be changed to micrometer
         )
+
         # BreakageDistribution calculation as a constraint. This is the equation for accumulative fraction of solid breakage probability distribution smaller than size x=feed80size
         @self.Constraint(self.flowsheet().time, doc="feed size constraint")
         def feed_size_eq(self, t):
             return self.feed80size[t] == (
-                (log(1-self.control_volume.properties_in[t].probfeed80))**(self.control_volume.properties_in[t].nfeed/2)
+                (log(1 - self.control_volume.properties_in[t].probfeed80))
+                ** (self.control_volume.properties_in[t].nfeed / 2)
                 * self.control_volume.properties_in[t].feed50size
             )
+
         self.prod80size = Var(
             self.flowsheet().time,
             initialize=80.0,
             doc="Feed Particle Size that has 80% passing, micrometer",
-            units=units_meta.get_derived_units("length"), # unit should be changed to micrometer
+            units=units_meta.get_derived_units(
+                "length"
+            ),  # unit should be changed to micrometer
         )
+
         @self.Constraint(self.flowsheet().time, doc="product size constraint")
         def prod_size_eq(self, t):
             return self.prod80size[t] == (
-                (log(1-self.control_volume.properties_in[t].probprod80))**(self.control_volume.properties_in[t].nprod/2)
+                (log(1 - self.control_volume.properties_in[t].probprod80))
+                ** (self.control_volume.properties_in[t].nprod / 2)
                 * self.control_volume.properties_in[t].prod50size
             )
+
         self.crushpower = Var(
             self.flowsheet().time,
             initialize=1.0,
             doc="Work required to increase crush the solid",
             units=units_meta.get_derived_units("power"),
         )
+
         @self.Constraint(self.flowsheet().time, doc="Crusher work constraint")
         def crush_work_eq(self, t):
             return self.crushpower[t] == (
-                10 * self.control_volume.properties_in[t].flow_mass
+                10
+                * self.control_volume.properties_in[t].flow_mass
                 * self.control_volume.properties_in[t].bwi
-                * (1 / self.control_volume.properties_in[t].prod80size ** 0.5 
-                        - 1 / self.control_volume.properties_in[t].feed80size ** 0.5)
+                * (
+                    1 / self.control_volume.properties_in[t].prod80size ** 0.5
+                    - 1 / self.control_volume.properties_in[t].feed80size ** 0.5
+                )
             )
-
-        
-

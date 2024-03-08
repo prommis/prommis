@@ -107,41 +107,40 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
         self._state_block_class = CoalRefuseStateBlock
 
         self.feed50size = Param(
-            units=units.um, # um micrometer. unit need to convert
-            initialize=50, # Feed median particle size, micrometer 
+            units=units.um,  # um micrometer. unit need to convert
+            initialize=50,  # Feed median particle size, micrometer
             mutable=True,
         )
         self.prod50size = Param(
-            units=units.um, # um micrometer. unit need to convert
-            initialize=30, # Product median particle size, micrometer 
+            units=units.um,  # um micrometer. unit need to convert
+            initialize=30,  # Product median particle size, micrometer
             mutable=True,
         )
         self.probfeed80 = Param(
-            units=None, # unitless
-            initialize=0.8, # 80% of feed pass the mesh 
+            units=None,  # unitless
+            initialize=0.8,  # 80% of feed pass the mesh
             mutable=True,
         )
         self.probprod80 = Param(
-            units=None, # unitless
-            initialize=0.8, # 80% of product pass the mesh 
+            units=None,  # unitless
+            initialize=0.8,  # 80% of product pass the mesh
             mutable=True,
         )
         self.nfeed = Param(
-            units=None, # unitless
-            initialize=1.5, # Feed particle distribution width parameter
+            units=None,  # unitless
+            initialize=1.5,  # Feed particle distribution width parameter
             mutable=True,
         )
         self.nprod = Param(
-            units=None, # unitless
-            initialize=1.5, # Product particle distribution width parameter
+            units=None,  # unitless
+            initialize=1.5,  # Product particle distribution width parameter
             mutable=True,
         )
         self.bwi = Param(
-            units=units.kWh / units.tonne, # maybe need convert to with default unit
-            initialize=1.5, # Product particle distribution width parameter
+            units=units.kWh / units.tonne,  # maybe need convert to with default unit
+            initialize=1.5,  # Product particle distribution width parameter
             mutable=True,
         )
-
 
     @classmethod
     def define_metadata(cls, obj):

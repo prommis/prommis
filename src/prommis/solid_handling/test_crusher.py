@@ -54,9 +54,11 @@ class TestSolidHandling(object):
         m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid)
         # Set up your model initialization here
         # Example: m.fs.unit.some_inlet_variable.fix(some_value)
-        m.fs.unit.inlet.fow_mass.fix(2) # tonne/hr
-        m.fs.unit.inlet.feed50size.fix(60) #eed particle size, micrometer
-        m.fs.unit.inlet.Prod50size.fix(30) # Product Particle Size that allows 80% passing, micrometer
+        m.fs.unit.inlet.fow_mass.fix(2)  # tonne/hr
+        m.fs.unit.inlet.feed50size.fix(60)  # eed particle size, micrometer
+        m.fs.unit.inlet.Prod50size.fix(
+            30
+        )  # Product Particle Size that allows 80% passing, micrometer
 
         # m.fs.unit.soliddistribution.fix(0.48)
         return m

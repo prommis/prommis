@@ -15,7 +15,7 @@ University of Kentucky Flowsheet
 
 Author: Marcus Holly
 """
-
+import numpy as np
 
 from pyomo.environ import (
     ConcreteModel,
@@ -626,6 +626,19 @@ def set_operating_conditions(m):
 
     m.fs.leach.volume.fix(100 * units.gallon)
 
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "Al"] = 3.6 / 100
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "Ca"] = 3.7 / 100
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "Fe"] = 2.1 / 100
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "Sc"] = 99.9 / 100
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "Y"] = 99.9 / 100
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "La"] = 75.2 / 100
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "Ce"] = 95.7 / 100
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "Pr"] = 96.5 / 100
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "Nd"] = 99.2 / 100
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "Sm"] = 99.9 / 100
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "Gd"] = 98.6 / 100
+    m.fs.solex_rougher.partition_coefficient[:, "aqueous", "organic", "Dy"] = 99.9 / 100
+
     m.fs.solex_rougher.mscontactor.organic_inlet_state[0].flow_vol.fix(
         62.01 * units.L / units.hour
     )
@@ -643,6 +656,85 @@ def set_operating_conditions(m):
     m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Sm"].fix(eps)
     m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Gd"].fix(eps)
     m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].fix(eps)
+
+    number_of_stages = 3
+    stage_number = np.arange(1, number_of_stages + 1)
+
+    for s in stage_number:
+        if s == 1:
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Al"] = (
+                5.2 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Ca"] = (
+                3.0 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Fe"] = (
+                24.7 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Sc"] = (
+                99.1 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Y"] = (
+                100 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "La"] = (
+                32.4 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Ce"] = (
+                58.2 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Pr"] = (
+                58.2 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Nd"] = (
+                87.6 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Sm"] = (
+                100 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Gd"] = (
+                69.8 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Dy"] = (
+                96.6 / 100
+            )
+        else:
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Al"] = (
+                4.9 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Ca"] = (
+                12.3 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Fe"] = (
+                6.4 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Sc"] = (
+                16.7 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Y"] = (
+                100 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "La"] = (
+                23.2 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Ce"] = (
+                24.9 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Pr"] = (
+                15.1 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Nd"] = (
+                100 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Sm"] = (
+                100 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Gd"] = (
+                7.6 / 100
+            )
+            m.fs.solex_cleaner.partition_coefficient[s, "aqueous", "organic", "Dy"] = (
+                5.0 / 100
+            )
 
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
     m.fs.sl_sep2.liquid_recovery.fix(0.7)
@@ -747,6 +839,7 @@ def initialize_system(m):
             (0, "H"): 20.06,
             (0, "H2O"): 1000000,
             (0, "HSO4"): 963.06,
+            (0, "Cl"): 1e-8,
             (0, "La"): 0.0037,
             (0, "Nd"): 1.81e-7,
             (0, "Pr"): 3.65e-6,

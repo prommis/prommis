@@ -2,11 +2,9 @@ from pyomo.environ import ConcreteModel, SolverFactory, TransformationFactory, S
 from pyomo.network import Arc, SequentialDecomposition
 
 from idaes.core import FlowDirection, FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
-from idaes.core.initialization import InitializationStatus
 from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )
-from idaes.core.util.model_statistics import degrees_of_freedom as dof
 from idaes.models.unit_models.separator import (
     EnergySplittingType,
     Separator,
@@ -437,23 +435,6 @@ def main():
             (0, "Y"): 1e-6,
         },
     }
-    tear_guesses2 = {
-        "flow_vol": {0: 80},
-        "conc_mass_comp": {
-            (0, "Al"): 1e-9,
-            (0, "Ca"): 1e-9,
-            (0, "Ce"): 1e-5,
-            (0, "Dy"): 1e-7,
-            (0, "Fe"): 1e-7,
-            (0, "Gd"): 1e-6,
-            (0, "La"): 1e-5,
-            (0, "Nd"): 1e-5,
-            (0, "Pr"): 1e-6,
-            (0, "Sc"): 321.34,
-            (0, "Sm"): 1e-6,
-            (0, "Y"): 1e-6,
-        },
-    }
     # Pass the tear_guess to the SD tool
     seq.set_guesses_for(m.fs.solex_rougher1.mscontactor.organic_inlet, tear_guesses1)
 
@@ -534,13 +515,6 @@ def main():
     print("Numerical issues after solve")
     dt.report_numerical_issues()
 
-    # Final organic outlet display
-    # m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()
-    # m.fs.solex.mscontactor.organic[0, 1].conc_mol_comp.display()
-    #
-    # # Final aqueous outlets display
-    # m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp.display()
-    # m.fs.solex.mscontactor.aqueous[0, 3].conc_mol_comp.display()
     m.fs.solex_rougher1.display()
     m.fs.solex_rougher2.display()
     m.fs.solex_rougher3.display()

@@ -11,9 +11,8 @@ from idaes.models.unit_models.separator import (
     SplittingType,
 )
 from idaes.models.unit_models.mixer import Mixer, MixingType, MomentumMixingType
-from idaes.models.unit_models.product import Product, ProductInitializer
+from idaes.models.unit_models.product import Product
 from idaes.models.unit_models.feed import Feed, FeedInitializer
-from idaes.models.unit_models.mscontactor import MSContactor, MSContactorInitializer
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
@@ -440,14 +439,10 @@ def main():
 
     def function(stream):
         initializer_feed = FeedInitializer()
-        initializer_product = ProductInitializer()
-        initializer1 = MSContactorInitializer()
         initializer2 = BlockTriangularizationInitializer()
 
         propagate_state(m.fs.aq_feed)
         propagate_state(m.fs.org_feed)
-        # propagate_state(m.fs.acid_feed1)
-        # propagate_state(m.fs.acid_feed2)
 
         if stream == m.fs.organic_make_up:
             initializer_feed.initialize(m.fs.organic_make_up)

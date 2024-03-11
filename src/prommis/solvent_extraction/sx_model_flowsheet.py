@@ -25,12 +25,14 @@ from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 import idaes.core.util.scaling as iscale
 from idaes.core.util.initialization import propagate_state
 
+
 def main():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.prop_o = REESolExOgParameters()
     m.fs.leach_soln = LeachSolutionParameters()
 
+    m.fs.aqueous_feed = Feed(property_package=m.fs.leach_soln)
     # TODO: May need to adjust feed such that mixed flow matches REESim
     m.fs.organic_make_up = Feed(property_package=m.fs.prop_o)
 
@@ -50,7 +52,47 @@ def main():
             "has_energy_balance": False,
             "has_pressure_balance": False,
         },
+        aqueous_to_organic=True,
     )
+
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "Al"] = 5.2 / 100
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "Ca"] = 3.0 / 100
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "Fe"] = 24.7 / 100
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "Sc"] = 99.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "Y"] = 99.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "La"] = 32.4 / 100
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "Ce"] = 58.2 / 100
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "Pr"] = 58.2 / 100
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "Nd"] = 87.6 / 100
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "Sm"] = 99.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "Gd"] = 69.8 / 100
+    m.fs.solex_rougher1.partition_coefficient[1, "aqueous", "organic", "Dy"] = 96.6 / 100
+
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "Al"] = 4.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "Ca"] = 12.3 / 100
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "Fe"] = 6.4 / 100
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "Sc"] = 16.7 / 100
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "Y"] = 99.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "La"] = 23.2 / 100
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "Ce"] = 24.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "Pr"] = 15.1 / 100
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "Nd"] = 99.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "Sm"] = 99.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "Gd"] = 7.6 / 100
+    m.fs.solex_rougher1.partition_coefficient[2, "aqueous", "organic", "Dy"] = 5.0 / 100
+
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "Al"] = 4.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "Ca"] = 12.3 / 100
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "Fe"] = 6.4 / 100
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "Sc"] = 16.7 / 100
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "Y"] = 99.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "La"] = 23.2 / 100
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "Ce"] = 24.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "Pr"] = 15.1 / 100
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "Nd"] = 99.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "Sm"] = 99.9 / 100
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "Gd"] = 7.6 / 100
+    m.fs.solex_rougher1.partition_coefficient[3, "aqueous", "organic", "Dy"] = 5.0 / 100
 
     m.fs.leach_recycle = Product(property_package=m.fs.leach_soln)
     # TODO: Double check what this HCl stream should be doing
@@ -71,7 +113,20 @@ def main():
             "has_energy_balance": False,
             "has_pressure_balance": False,
         },
+        aqueous_to_organic=False,
     )
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "Al"] = 0.12 / 100
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "Ca"] = 0.55 / 100
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "Fe"] = 0.007 / 100
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "Sc"] = 99.9 / 100
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "Y"] = 99.9 / 100
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "La"] = 99.8 / 100
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "Ce"] = 99.9 / 100
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "Pr"] = 99.9 / 100
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "Nd"] = 99.9 / 100
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "Sm"] = 99.9 / 100
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "Gd"] = 99.9 / 100
+    m.fs.solex_rougher2.partition_coefficient[1, "aqueous", "organic", "Dy"] = 99.9 / 100
 
     m.fs.leach_recycle2 = Product(property_package=m.fs.leach_soln)
     # TODO: Double check what this HCl stream should be doing
@@ -92,7 +147,33 @@ def main():
             "has_energy_balance": False,
             "has_pressure_balance": False,
         },
+        aqueous_to_organic=False,
     )
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "Al"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "Ca"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "Fe"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "Sc"] = 98.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "Y"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "La"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "Ce"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "Pr"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "Nd"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "Sm"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "Gd"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[1, "aqueous", "organic", "Dy"] = 0.5 / 100
+
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "Al"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "Ca"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "Fe"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "Sc"] = 98.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "Y"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "La"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "Ce"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "Pr"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "Nd"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "Sm"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "Gd"] = 0.5 / 100
+    m.fs.solex_rougher3.partition_coefficient[2, "aqueous", "organic", "Dy"] = 0.5 / 100
     # TODO: Double check split fraction
     m.fs.sep = Separator(
         property_package=m.fs.prop_o,
@@ -114,7 +195,10 @@ def main():
     m.fs.sc_circuit_purge = Product(property_package=m.fs.prop_o)
     m.fs.solex_cleaner_recycle = Product(property_package=m.fs.leach_soln)
 
-    m.fs.feed = Arc(
+    m.fs.aq_feed = Arc(
+        source=m.fs.aqueous_feed.outlet, destination=m.fs.solex_rougher1.mscontactor.aqueous_inlet
+    )
+    m.fs.org_feed = Arc(
         source=m.fs.organic_make_up.outlet, destination=m.fs.mixer.make_up
     )
     m.fs.mixed_feed = Arc(
@@ -190,7 +274,18 @@ def main():
         "Fe",
     ]
 
+    m.scaling_factor[m.fs.solex_rougher1.clean_sx_pe_tank_cap] = 1e-3
+    m.scaling_factor[m.fs.solex_rougher1.clean_sx_process_pump_feed] = 1e-2
+    m.scaling_factor[m.fs.solex_rougher1.clean_sx_mix_set_cap] = 1e-3
+    m.scaling_factor[m.fs.solex_rougher2.clean_sx_pe_tank_cap] = 1e-3
+    m.scaling_factor[m.fs.solex_rougher2.clean_sx_process_pump_feed] = 1e-2
+    m.scaling_factor[m.fs.solex_rougher2.clean_sx_mix_set_cap] = 1e-3
+    m.scaling_factor[m.fs.solex_rougher3.clean_sx_pe_tank_cap] = 1e-3
+    m.scaling_factor[m.fs.solex_rougher3.clean_sx_process_pump_feed] = 1e-2
+    m.scaling_factor[m.fs.solex_rougher3.clean_sx_mix_set_cap] = 1e-3
+
     for component in component_set1:
+        m.scaling_factor[m.fs.aqueous_feed.properties[0.0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.solex_rougher1.mscontactor.aqueous[0, 1].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.solex_rougher1.mscontactor.aqueous[0, 2].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.solex_rougher1.mscontactor.aqueous[0, 3].conc_mol_comp[component]] = 1e5
@@ -229,25 +324,25 @@ def main():
     m = scaling.create_using(m, rename=False)
 
     # TODO: verify where Arko got these values from
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].flow_vol.fix(4.4)
+    m.fs.aqueous_feed.flow_vol.fix(4.4)
 
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e-9)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1e-9)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["SO4"].fix(1e-9)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["HSO4"].fix(1e-9)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Cl"].fix(1e-9)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Al"].fix(820)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Ca"].fix(5230)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Fe"].fix(270)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Sc"].fix(209.31)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Y"].fix(637.74)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["La"].fix(2032.77)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Ce"].fix(4516.13)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Pr"].fix(756.64)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Nd"].fix(2047.85)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Sm"].fix(369.1)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Gd"].fix(174.38)
-    m.fs.solex_rougher1.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Dy"].fix(101.12)
+    m.fs.aqueous_feed.conc_mass_comp[0, "H2O"].fix(1e-9)
+    m.fs.aqueous_feed.conc_mass_comp[0, "H"].fix(1e-9)
+    m.fs.aqueous_feed.conc_mass_comp[0, "SO4"].fix(1e-9)
+    m.fs.aqueous_feed.conc_mass_comp[0, "HSO4"].fix(1e-9)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Cl"].fix(1e-9)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Al"].fix(820)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Ca"].fix(5230)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Fe"].fix(270)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Sc"].fix(209.31)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Y"].fix(637.74)
+    m.fs.aqueous_feed.conc_mass_comp[0, "La"].fix(2032.77)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Ce"].fix(4516.13)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Pr"].fix(756.64)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Nd"].fix(2047.85)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Sm"].fix(369.1)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Gd"].fix(174.38)
+    m.fs.aqueous_feed.conc_mass_comp[0, "Dy"].fix(101.12)
 
     # TODO: This make-up + recycle stream ~ 62.01
     m.fs.organic_make_up.flow_vol.fix(62.01)
@@ -327,40 +422,43 @@ def main():
     for o in order:
         print(o[0].name)
 
+    # # TODO: Adjust initialization routine from here down
     tear_guesses1 = {
-        "flow_mass": {0.007},
+        "flow_vol": {0: 80},
         "conc_mass_comp": {
-            "Al": 1493939.39,
-            "Ca": 501864.01,
-            "Ce": 49698.79,
-            "Dy": 466.86,
-            "Fe": 1685228.86,
-            "Gd": 1624.81,
-            "La": 32143.22,
-            "Nd": 12552.13,
-            "Pr": 4084.40,
-            "Sc": 17310.17,
-            "Sm": 931.35,
-            "Y": 2666.95,
-        },
-        "flow_mol_comp": {
-            "Al": 577.62,
-            "Ca": 64.65,
-            "Ce": 1.17,
-            "Dy": 0.0086,
-            "Fe": 231.93,
-            "Gd": 0.054,
-            "La": 0.63,
-            "Nd": 0.34,
-            "Pr": 0.099,
-            "Sc": 303.33,
-            "Sm": 0.021,
-            "Y": 0.090,
+            (0, "Al"): 1e-9,
+            (0, "Ca"): 1e-9,
+            (0, "Ce"): 1e-5,
+            (0, "Dy"): 1e-7,
+            (0, "Fe"): 1e-7,
+            (0, "Gd"): 1e-6,
+            (0, "La"): 1e-5,
+            (0, "Nd"): 1e-5,
+            (0, "Pr"): 1e-6,
+            (0, "Sc"): 321.34,
+            (0, "Sm"): 1e-6,
+            (0, "Y"): 1e-6,
         },
     }
-
+    tear_guesses2 = {
+        "flow_vol": {0: 80},
+        "conc_mass_comp": {
+            (0, "Al"): 1e-9,
+            (0, "Ca"): 1e-9,
+            (0, "Ce"): 1e-5,
+            (0, "Dy"): 1e-7,
+            (0, "Fe"): 1e-7,
+            (0, "Gd"): 1e-6,
+            (0, "La"): 1e-5,
+            (0, "Nd"): 1e-5,
+            (0, "Pr"): 1e-6,
+            (0, "Sc"): 321.34,
+            (0, "Sm"): 1e-6,
+            (0, "Y"): 1e-6,
+        },
+    }
     # Pass the tear_guess to the SD tool
-    seq.set_guesses_for(m.fs.precipitator.cv_aqueous.properties_out[0], tear_guesses1)
+    seq.set_guesses_for(m.fs.solex_rougher1.mscontactor.organic_inlet, tear_guesses1)
 
     def function(stream):
         initializer_feed = FeedInitializer()
@@ -368,64 +466,63 @@ def main():
         initializer1 = MSContactorInitializer()
         initializer2 = BlockTriangularizationInitializer()
 
-        propagate_state(m.fs.liq_feed)
-        propagate_state(m.fs.sol_feed)
+        propagate_state(m.fs.aq_feed)
+        propagate_state(m.fs.org_feed)
+        # propagate_state(m.fs.acid_feed1)
+        # propagate_state(m.fs.acid_feed2)
 
-        if stream == m.fs.leach_liquid_feed:
-            initializer_feed.initialize(m.fs.leach_liquid_feed)
-        elif stream == m.fs.leach_solid_feed:
-            initializer_feed.initialize(m.fs.leach_solid_feed)
-        elif stream == m.fs.leach_filter_cake:
+        if stream == m.fs.organic_make_up:
+            initializer_feed.initialize(m.fs.organic_make_up)
+        elif stream == m.fs.acid_feed1:
+            initializer_feed.initialize(m.fs.acid_feed1)
+        elif stream == m.fs.acid_feed2:
+            initializer_feed.initialize(m.fs.acid_feed2)
+        elif stream == m.fs.solex_rougher1.mscontactor:
             print(f"Initializing {stream}")
-            initializer_product.initialize(m.fs.leach_filter_cake)
-        elif stream == m.fs.leach:
-            print(f"Initializing {stream}")
-            try:
-                initializer1.initialize(m.fs.leach)
-            except:
-                # Fix feed states
-                m.fs.leach.liquid_inlet.flow_vol.fix()
-                m.fs.leach.liquid_inlet.conc_mass_comp.fix()
-                m.fs.leach.solid_inlet.flow_mass.fix()
-                m.fs.leach.solid_inlet.mass_frac_comp.fix()
-                # Re-solve leach unit
-                solver = SolverFactory("ipopt")
-                solver.solve(m.fs.leach, tee=True)
-                # Unfix feed states
-                m.fs.leach_liquid_feed.flow_vol.unfix()
-                m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
-                m.fs.leach.solid_inlet.flow_mass.unfix()
-                m.fs.leach.solid_inlet.mass_frac_comp.unfix()
-        elif stream == m.fs.leach_mixer:
-            initializer2.initialize(m.fs.leach_mixer)
-        elif stream == m.fs.solex_rougher.mscontactor:
-            print(f"Initializing {stream}")
-            initializer2.initialize(m.fs.solex_rougher)
-        elif stream == m.fs.solex_cleaner.mscontactor:
-            print(f"Initializing {stream}")
-            initializer2.initialize(m.fs.solex_cleaner)
-        elif stream == m.fs.precipitator:
+            initializer2.initialize(m.fs.solex_rougher1)
+        elif stream == m.fs.solex_rougher2.mscontactor:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.precipitator)
+                initializer2.initialize(m.fs.solex_rougher2)
             except:
                 # Fix feed states
-                m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol.fix()
-                m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp.fix()
-                m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.fix()
+                m.fs.solex_rougher2.mscontactor.organic_inlet_state[0].flow_vol.fix()
+                m.fs.solex_rougher2.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
+                m.fs.solex_rougher2.mscontactor.organic_inlet_state[0].conc_mass_comp.fix()
+                m.fs.solex_rougher2.mscontactor.aqueous_inlet_state[0].conc_mass_comp.fix()
                 # Re-solve leach unit
                 solver = SolverFactory("ipopt")
-                solver.solve(m.fs.precipitator, tee=True)
+                solver.solve(m.fs.solex_rougher2, tee=True)
                 # Unfix feed states
-                m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol.unfix()
-                m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp.unfix()
-                m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.unfix()
+                m.fs.solex_rougher2.mscontactor.organic_inlet_state[0].flow_vol.unfix()
+                m.fs.solex_rougher2.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
+                m.fs.solex_rougher2.mscontactor.organic_inlet_state[0].conc_mass_comp.unfix()
+                m.fs.solex_rougher2.mscontactor.aqueous_inlet_state[0].conc_mass_comp.unfix()
+        elif stream == m.fs.solex_rougher3.mscontactor:
+            print(f"Initializing {stream}")
+            try:
+                initializer2.initialize(m.fs.solex_rougher3)
+            except:
+                # Fix feed states
+                m.fs.solex_rougher3.mscontactor.organic_inlet_state[0].flow_vol.fix()
+                m.fs.solex_rougher3.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
+                m.fs.solex_rougher3.mscontactor.organic_inlet_state[0].conc_mass_comp.fix()
+                m.fs.solex_rougher3.mscontactor.aqueous_inlet_state[0].conc_mass_comp.fix()
+                # Re-solve leach unit
+                solver = SolverFactory("ipopt")
+                solver.solve(m.fs.solex_rougher3, tee=True)
+                # Unfix feed states
+                m.fs.solex_rougher3.mscontactor.organic_inlet_state[0].flow_vol.unfix()
+                m.fs.solex_rougher3.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
+                m.fs.solex_rougher3.mscontactor.organic_inlet_state[0].conc_mass_comp.unfix()
+                m.fs.solex_rougher3.mscontactor.aqueous_inlet_state[0].conc_mass_comp.unfix()
+        elif stream == m.fs.mixer:
+            initializer2.initialize(m.fs.mixer)
         else:
             print(f"Initializing {stream}")
             initializer2.initialize(stream)
 
     seq.run(m, function)
-
 
     print("Numerical issues after initialization")
     dt.report_numerical_issues()

@@ -1,5 +1,5 @@
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Param, Var, units
+from pyomo.environ import Constraint, Param
 from pyomo.network import Port
 
 from idaes.core import (

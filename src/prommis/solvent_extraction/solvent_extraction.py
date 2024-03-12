@@ -156,23 +156,3 @@ class SolventExtractionData(UnitModelBlockData):
             self.mscontactor.stream_component_interactions,
             rule=mass_transfer_term,
         )
-
-        self.clean_sx_pe_tank_cap = Var(
-            initialize=1405, units=units.gal, doc="Volume of polyethylene tanks"
-        )
-        self.num_sx_pe_tank = Var(initialize=5, doc="Number of polyethylene tanks")
-
-        self.clean_sx_tank_mixer_pow = Var(
-            initialize=1, units=units.hp, doc="Power of tank mixers"
-        )
-        self.num_sx_tank_mixer = Var(initialize=2, doc="Number of mixers")
-
-        self.clean_sx_process_pump_feed = Var(
-            initialize=281, units=units.gal / units.min, doc="Process pump feed rates"
-        )
-        self.num_sx_process_pump = Var(initialize=3, doc="Number of process pumps")
-
-        self.clean_sx_mix_set_cap = Var(
-            initialize=2444, units=units.gal, doc="Volume of mixer settler tanks"
-        )
-        self.num_sx_mix_set = Var(initialize=6, doc="Number of mixer settler tanks")

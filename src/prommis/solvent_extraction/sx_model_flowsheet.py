@@ -18,8 +18,6 @@ from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-import idaes.core.util.scaling as iscale
 from idaes.core.util.initialization import propagate_state
 
 
@@ -379,16 +377,6 @@ def main():
         "Fe",
     ]
 
-    m.scaling_factor[m.fs.solex_rougher1.clean_sx_pe_tank_cap] = 1e-3
-    m.scaling_factor[m.fs.solex_rougher1.clean_sx_process_pump_feed] = 1e-2
-    m.scaling_factor[m.fs.solex_rougher1.clean_sx_mix_set_cap] = 1e-3
-    m.scaling_factor[m.fs.solex_rougher2.clean_sx_pe_tank_cap] = 1e-3
-    m.scaling_factor[m.fs.solex_rougher2.clean_sx_process_pump_feed] = 1e-2
-    m.scaling_factor[m.fs.solex_rougher2.clean_sx_mix_set_cap] = 1e-3
-    m.scaling_factor[m.fs.solex_rougher3.clean_sx_pe_tank_cap] = 1e-3
-    m.scaling_factor[m.fs.solex_rougher3.clean_sx_process_pump_feed] = 1e-2
-    m.scaling_factor[m.fs.solex_rougher3.clean_sx_mix_set_cap] = 1e-3
-
     for component in component_set1:
         m.scaling_factor[m.fs.aqueous_feed.properties[0.0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.solex_rougher1.mscontactor.aqueous[0, 1].conc_mol_comp[component]] = 1e5
@@ -447,7 +435,7 @@ def main():
     m.fs.aqueous_feed.conc_mass_comp[0, "Gd"].fix(174.38)
     m.fs.aqueous_feed.conc_mass_comp[0, "Dy"].fix(101.12)
 
-    # Note: This stream + recycle = 62.01 L/hr
+    # Note: This stream + m.fs.s09 = 62.01 L/hr
     m.fs.organic_make_up.flow_vol.fix(6.201)
 
     m.fs.organic_make_up.conc_mass_comp[0, "Al"].fix(7.54e-10)
@@ -505,7 +493,7 @@ def main():
 
     m.fs.sep.split_fraction[:, "recycle"].fix(0.9)
 
-    # Note: This stream + recycle = 62.01 L/hr
+    # Note: This stream + m.fs.s18 = 62.01 L/hr
     m.fs.organic_make_up2.flow_vol.fix(6.201)
 
     m.fs.organic_make_up2.conc_mass_comp[0, "Al"].fix(7.54e-10)
@@ -541,15 +529,6 @@ def main():
     m.fs.acid_feed3.conc_mass_comp[0, "Dy"].fix(eps)
 
     m.fs.sep2.split_fraction[:, "recycle"].fix(0.9)
-
-    # print(dof(m))
-    dt = DiagnosticsToolbox(model=m)
-    dt.report_structural_issues()
-
-    badly_scaled_var_list = iscale.badly_scaled_var_generator(m, large=1e2, small=1e-2)
-    print("----------------   badly_scaled_var_list   ----------------")
-    for x in badly_scaled_var_list:
-        print(f"{x[0].name}\t{x[0].value}\tsf: {iscale.get_scaling_factor(x[0])}")
 
     seq = SequentialDecomposition()
     seq.options.tear_method = "Direct"
@@ -626,7 +605,7 @@ def main():
 
     def function(stream):
         initializer_feed = FeedInitializer()
-        initializer2 = BlockTriangularizationInitializer()
+        initializer = BlockTriangularizationInitializer()
 
         propagate_state(m.fs.aq_feed)
         propagate_state(m.fs.org_feed)
@@ -643,11 +622,11 @@ def main():
             initializer_feed.initialize(m.fs.acid_feed3)
         elif stream == m.fs.solex_rougher1.mscontactor:
             print(f"Initializing {stream}")
-            initializer2.initialize(m.fs.solex_rougher1)
+            initializer.initialize(m.fs.solex_rougher1)
         elif stream == m.fs.solex_rougher2.mscontactor:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.solex_rougher2)
+                initializer.initialize(m.fs.solex_rougher2)
             except:
                 # Fix feed states
                 m.fs.solex_rougher2.mscontactor.organic_inlet_state[0].flow_vol.fix()
@@ -665,7 +644,7 @@ def main():
         elif stream == m.fs.solex_rougher3.mscontactor:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.solex_rougher3)
+                initializer.initialize(m.fs.solex_rougher3)
             except:
                 # Fix feed states
                 m.fs.solex_rougher3.mscontactor.organic_inlet_state[0].flow_vol.fix()
@@ -683,7 +662,7 @@ def main():
         elif stream == m.fs.solex_cleaner1.mscontactor:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.solex_cleaner1)
+                initializer.initialize(m.fs.solex_cleaner1)
             except:
                 # Fix feed states
                 m.fs.solex_cleaner1.mscontactor.organic_inlet_state[0].flow_vol.fix()
@@ -701,7 +680,7 @@ def main():
         elif stream == m.fs.solex_cleaner2.mscontactor:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.solex_cleaner2)
+                initializer.initialize(m.fs.solex_cleaner2)
             except:
                 # Fix feed states
                 m.fs.solex_cleaner2.mscontactor.organic_inlet_state[0].flow_vol.fix()
@@ -719,26 +698,21 @@ def main():
 
         else:
             print(f"Initializing {stream}")
-            initializer2.initialize(stream)
+            initializer.initialize(stream)
 
     seq.run(m, function)
-
-    print("Numerical issues after initialization")
-    dt.report_numerical_issues()
-
-    # Solving of the model
 
     solver = SolverFactory("ipopt")
     # solver.options["bound_push"] = 1e-8
     # solver.options["mu_init"] = 1e-8
     results = solver.solve(m, tee=True)
 
-    print("Numerical issues after solve")
-    dt.report_numerical_issues()
-
     m.fs.solex_rougher1.display()
     m.fs.solex_rougher2.display()
     m.fs.solex_rougher3.display()
+
+    m.fs.solex_cleaner1.display()
+    m.fs.solex_cleaner2.display()
     return results
 
 

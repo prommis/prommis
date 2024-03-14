@@ -15,7 +15,6 @@ University of Kentucky Flowsheet
 
 Author: Marcus Holly
 """
-import numpy as np
 
 from pyomo.environ import (
     ConcreteModel,
@@ -84,7 +83,7 @@ def main():
 
     scaled_model = set_scaling(m)
     assert_units_consistent(scaled_model)
-    # assert degrees_of_freedom(scaled_model) == 0
+    assert degrees_of_freedom(scaled_model) == 0
 
     print("Structural issues after setting operating conditions")
     dt = DiagnosticsToolbox(model=scaled_model)
@@ -788,7 +787,7 @@ def set_scaling(m):
     # Scaling
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
-    component_set1 = [
+    aqueous_component_set = [
         "H2O",
         "H",
         "HSO4",
@@ -808,7 +807,7 @@ def set_scaling(m):
         "Fe",
     ]
 
-    component_set2 = [
+    organic_component_set = [
         "Sc",
         "Y",
         "La",
@@ -824,8 +823,9 @@ def set_scaling(m):
     ]
 
     # Leaching
-    for component in component_set1:
+    for component in aqueous_component_set:
         m.scaling_factor[m.fs.leach.liquid[0, 1].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[m.fs.leach.liquid[0, 2].conc_mol_comp[component]] = 1e5
         m.scaling_factor[
             m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
         ] = 1e5
@@ -955,6 +955,24 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.sl_sep2.split.recovered_state[0].conc_mol_comp[component]
         ] = 1e5
+        m.scaling_factor[
+            m.fs.load_sep.mixed_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.load_sep.recycle_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.load_sep.purge_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.scrub_sep.mixed_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.scrub_sep.recycle_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.scrub_sep.purge_state[0].conc_mol_comp[component]
+        ] = 1e5
         m.scaling_factor[m.fs.precip_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[
             m.fs.precip_sep.recycle_state[0].conc_mol_comp[component]
@@ -979,7 +997,7 @@ def set_scaling(m):
             m.fs.precipitator.cv_aqueous.properties_out[0].conc_mol_comp[component]
         ] = 1
 
-    for component in component_set2:
+    for component in organic_component_set:
         m.scaling_factor[
             m.fs.organic_make_up.properties[0].conc_mol_comp[component]
         ] = 1e5

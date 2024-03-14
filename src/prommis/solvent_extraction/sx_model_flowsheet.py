@@ -7,6 +7,7 @@ from idaes.core import (
     MaterialBalanceType,
     MomentumBalanceType,
 )
+from idaes.core.util.initialization import propagate_state
 from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )
@@ -22,8 +23,6 @@ from idaes.models.unit_models.feed import Feed, FeedInitializer
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
-
-from idaes.core.util.initialization import propagate_state
 
 
 def main():

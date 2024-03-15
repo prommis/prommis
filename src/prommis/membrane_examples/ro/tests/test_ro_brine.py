@@ -10,9 +10,8 @@ from pyomo.environ import value
 
 import pytest
 
-from prommis.membrane_examples.ro.ro_brine import main
-
 pytest.importorskip("watertap", reason="WaterTAP dependency not available")
+from prommis.membrane_examples.ro.ro_brine import main
 
 
 @pytest.mark.requires_idaes_solver

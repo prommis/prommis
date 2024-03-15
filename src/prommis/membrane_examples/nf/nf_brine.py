@@ -32,7 +32,6 @@ import idaes.core.util.scaling as iscale
 from idaes.core import FlowsheetBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.initialization import propagate_state
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.unit_models import Feed, Product
 
@@ -54,7 +53,6 @@ def main():
 
     initialize(m, solver)
     print("init_okay")
-    m.fs.unit.report()
 
     assert degrees_of_freedom(m) == 0
     optimize(m, solver)
@@ -90,10 +88,6 @@ def main():
         (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
         / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
     )
-
-    dt = DiagnosticsToolbox(m)
-    dt.report_numerical_issues()
-    dt.report_structural_issues()
 
     return m
 
@@ -201,12 +195,11 @@ def fix_init_vars(m):
     """
     Fixes the initial variables needed to create 0 DOF
     """
-    # feed state variables
-    m.fs.unit.feed_side.properties_in[0].temperature.fix(298.15)
-    m.fs.unit.feed_side.properties_in[0].pressure.fix(2e5)
 
     # pump variables
     m.fs.pump.efficiency_pump[0].fix(0.75)
+    m.fs.pump.control_volume.properties_in[0].temperature.fix(298.15)
+    m.fs.pump.control_volume.properties_in[0].pressure.fix(101325)
     m.fs.pump.outlet.pressure[0].fix(2e5)
     iscale.set_scaling_factor(m.fs.pump.control_volume.work, 1e-4)
 
@@ -234,7 +227,7 @@ def unfix_opt_vars(m):
     """
     Unfixes select variables to enable optimization with DOF>0
     """
-    m.fs.pump.outlet.pressure[0].unfix()
+    # m.fs.pump.outlet.pressure[0].unfix()
     m.fs.unit.area.unfix()
 
 
@@ -338,9 +331,6 @@ def set_nf_feed(blk, solver, flow_mass_h2o, conc_mass_phase_comp):  # kg/m3
     blk.feed.properties[0].assert_electroneutrality(
         defined_state=True, adjust_by_ion="Cl_-", get_property="flow_mol_phase_comp"
     )
-
-    # over-specifies the problem:
-    # blk.feed.properties[0].temperature.fix(298.15)
 
     # switching to concentration for ease of adjusting in UI
     # addresses error in fixing flow_mol_phase_comp

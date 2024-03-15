@@ -1875,14 +1875,21 @@ def display_results(m):
     )
 
     # total_ca_recovery = 100 * value(
-    #     units.convert(m.fs.roaster.flow_mol_comp_product[0, "Ca"] * molar_mass["CaO"], to_units=units.kg / units.hr)
-    #     / (
-    #             units.convert(m.fs.leach_liquid_feed.conc_mass_comp[0, "Ca"]
-    #                           * m.fs.leach_liquid_feed.flow_vol[0], to_units=units.kg / units.hr)
-    #             + units.convert(m.fs.leach_solid_feed.flow_mass[0]
-    #                             * m.fs.leach_solid_feed.mass_frac_comp[0, "CaO"] * metal_mass_frac["CaO"], to_units=units.kg / units.hr)
+    #     units.convert(
+    #         m.fs.roaster.flow_mol_comp_product[0, "Ca"]
+    #         * molar_mass["CaO"]
+    #         * metal_mass_frac["CaO"],
+    #         to_units=units.kg / units.hr,
     #     )
-    #
+    #     / (
+    #         units.convert(
+    #             m.fs.leach_solid_feed.flow_mass[0]
+    #             * m.fs.leach_solid_feed.mass_frac_comp[0, "Cao"]
+    #             * metal_mass_frac["CaO"],
+    #             to_units=units.kg / units.hr,
+    #         )
+    #     )
+    # )
 
     total_sc_recovery = 100 * value(
         units.convert(
@@ -2055,11 +2062,18 @@ def display_results(m):
     )
 
     # ca_recovery = value(
-    #     units.convert(m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Ca"]
-    #                   * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0], to_units=units.kg / units.hr)
+    #     units.convert(
+    #         m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Ca"]
+    #         * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
+    #         to_units=units.kg / units.hr,
+    #     )
     #     / (
-    #             units.convert(metal_mass_frac["CaO"] * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "CaO"]
-    #                           * m.fs.leach_solid_feed.outlet.flow_mass[0], to_units=units.kg / units.hr)
+    #         units.convert(
+    #             metal_mass_frac["CaO"]
+    #             * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Cao"]
+    #             * m.fs.leach_solid_feed.outlet.flow_mass[0],
+    #             to_units=units.kg / units.hr,
+    #         )
     #     )
     #     * 100
     # )

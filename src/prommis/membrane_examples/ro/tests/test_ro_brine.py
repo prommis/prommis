@@ -11,6 +11,7 @@ from pyomo.environ import value
 import pytest
 
 pytest.importorskip("watertap", reason="WaterTAP dependency not available")
+# pylint: disable-next=wrong-import-position
 from prommis.membrane_examples.ro.ro_brine import main
 
 

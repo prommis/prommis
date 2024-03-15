@@ -73,8 +73,6 @@ from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
-import idaes.core.util.scaling as iscale
-
 
 def main():
     m = build()
@@ -89,13 +87,6 @@ def main():
     dt = DiagnosticsToolbox(model=scaled_model)
     dt.report_structural_issues()
     dt.display_underconstrained_set()
-
-    badly_scaled_var_list = iscale.badly_scaled_var_generator(
-        scaled_model, large=1e2, small=1e-2
-    )
-    print("----------------   badly_scaled_var_list   ----------------")
-    for x in badly_scaled_var_list:
-        print(f"{x[0].name}\t{x[0].value}\tsf: {iscale.get_scaling_factor(x[0])}")
 
     initialize_system(scaled_model)
     print("Numerical issues after initialization")

@@ -23,6 +23,7 @@ from pyomo.environ import (
     Suffix,
     TransformationFactory,
     Var,
+    value,
     units,
 )
 from pyomo.network import Arc, SequentialDecomposition

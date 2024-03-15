@@ -9,6 +9,7 @@ Tests the nanofiltration flowsheet
 from pyomo.environ import value
 
 import pytest
+pytest.importorskip("watertap", reason="WaterTAP dependency not available")
 
 from prommis.membrane_examples.nf.nf_brine import main
 

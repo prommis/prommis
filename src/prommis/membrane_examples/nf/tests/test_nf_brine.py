@@ -10,7 +10,7 @@ from pyomo.environ import value
 
 import pytest
 
-from src.prommis.membrane_examples.nf.nf_brine import main
+from prommis.membrane_examples.nf.nf_brine import main
 
 
 @pytest.mark.requires_idaes_solver

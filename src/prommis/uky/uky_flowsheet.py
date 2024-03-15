@@ -955,24 +955,12 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.sl_sep2.split.recovered_state[0].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[
-            m.fs.load_sep.mixed_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.load_sep.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.load_sep.purge_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.scrub_sep.mixed_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.scrub_sep.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.scrub_sep.purge_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.load_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[m.fs.load_sep.recycle_state[0].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[m.fs.load_sep.purge_state[0].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[m.fs.scrub_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[m.fs.scrub_sep.recycle_state[0].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[m.fs.scrub_sep.purge_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.precip_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[
             m.fs.precip_sep.recycle_state[0].conc_mol_comp[component]

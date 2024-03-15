@@ -1751,11 +1751,6 @@ def solve(m):
 
 def display_results(m):
     m.fs.roaster.display()
-    # m.fs.solex_cleaner2.mscontactor.display()
-    # m.fs.scrub_sep.display()
-    # m.fs.load_sep.display()
-    # m.fs.precip_sx_mixer.display()
-    # m.fs.solex_cleaner1.mscontactor.display()
 
 
 if __name__ == "__main__":

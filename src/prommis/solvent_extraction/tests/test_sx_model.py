@@ -12,6 +12,7 @@ import pytest
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
+from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 solver = get_solver()
@@ -23,13 +24,14 @@ class TestSXmodel:
         m = ConcreteModel()
         m.fs = FlowsheetBlock(dynamic=False)
         m.fs.leach_soln = LeachSolutionParameters()
+        m.fs.prop_a = REESolExAqParameters()
         m.fs.prop_o = REESolExOgParameters()
 
         m.fs.solex = SolventExtraction(
             number_of_finite_elements=3,
             dynamic=False,
             aqueous_stream={
-                "property_package": m.fs.leach_soln,
+                "property_package": m.fs.prop_a,
                 "flow_direction": FlowDirection.forward,
                 "has_energy_balance": False,
                 "has_pressure_balance": False,
@@ -41,6 +43,19 @@ class TestSXmodel:
                 "has_pressure_balance": False,
             },
         )
+
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Al"] = 3.6 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Ca"] = 3.7 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Fe"] = 2.1 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sc"] = 99.9 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Y"] = 99.9 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "La"] = 75.2 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Ce"] = 95.7 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Pr"] = 96.5 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Nd"] = 99.2 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sm"] = 99.9 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Gd"] = 98.6 / 100
+        m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Dy"] = 99.9 / 100
 
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1e-9)
@@ -109,16 +124,16 @@ class TestSXmodel:
         m = SolEx_frame
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["H2O"]
-        ) == pytest.approx(1000000.0, rel=1e-2)
+        ) == pytest.approx(1e-9, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["H"]
-        ) == pytest.approx(2.267e-6, rel=1e-2)
+        ) == pytest.approx(1e-9, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["SO4"]
-        ) == pytest.approx(2.815e-4, rel=1e-2)
+        ) == pytest.approx(1e-9, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["HSO4"]
-        ) == pytest.approx(1.248e-4, rel=1e-2)
+        ) == pytest.approx(1e-9, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Al"]
         ) == pytest.approx(730, rel=1e-2)
@@ -130,10 +145,10 @@ class TestSXmodel:
         ) == pytest.approx(250, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Sc"]
-        ) == pytest.approx(3.795e-5, rel=1e-2)
+        ) == pytest.approx(2.093e-7, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Y"]
-        ) == pytest.approx(6.807e-05, rel=1e-2)
+        ) == pytest.approx(6.377e-07, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["La"]
         ) == pytest.approx(30.84, rel=1e-2)
@@ -145,16 +160,16 @@ class TestSXmodel:
         ) == pytest.approx(0.0312, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Nd"]
-        ) == pytest.approx(1.165e-3, rel=1e-1)
+        ) == pytest.approx(1.084e-3, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Sm"]
-        ) == pytest.approx(1.063e-04, rel=1e-2)
+        ) == pytest.approx(3.69e-07, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Gd"]
-        ) == pytest.approx(5.911e-04, rel=1e-2)
+        ) == pytest.approx(4.784e-04, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Dy"]
-        ) == pytest.approx(1.105e-04, rel=1e-2)
+        ) == pytest.approx(1.011e-07, rel=1e-2)
 
         assert value(
             m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Al"]

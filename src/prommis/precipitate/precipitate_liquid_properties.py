@@ -109,7 +109,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Fe": 55.845e-3,
                 "H": 1.008e-3,
                 "Cl": 35.453e-3,
-                "HSO4": 97.064 - 3,
+                "HSO4": 97.064e-3,
                 "SO4": 96.056e-3,
             },
         )

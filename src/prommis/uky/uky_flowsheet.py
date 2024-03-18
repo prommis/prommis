@@ -295,7 +295,7 @@ def build():
     )
 
     # -----------------------------------------------------------------------------------------------------------------
-    # UKy flowsheet with leach recycle loop
+    # UKy flowsheet connections
     m.fs.sol_feed = Arc(
         source=m.fs.leach_solid_feed.outlet, destination=m.fs.leach.solid_inlet
     )
@@ -410,7 +410,6 @@ def set_scaling(m):
         "Fe",
     ]
 
-    # Leaching
     for component in component_set1:
         m.scaling_factor[m.fs.leach.liquid[0, 1].conc_mol_comp[component]] = 1e5
         m.scaling_factor[

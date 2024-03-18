@@ -79,6 +79,11 @@ class TestPrec(object):
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Sm"].fix(10)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Gd"].fix(10)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Dy"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Cl"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "SO4"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1000000)
 
         m.fs.unit.cv_precipitate.properties_in[0].temperature.fix(348.15)
 
@@ -106,8 +111,8 @@ class TestPrec(object):
         assert hasattr(prec.fs.unit, "mass_balance")
         assert hasattr(prec.fs.unit, "vol_balance")
 
-        assert number_variables(prec.fs.unit) == 98
-        assert number_total_constraints(prec.fs.unit) == 84
+        assert number_variables(prec.fs.unit) == 128
+        assert number_total_constraints(prec.fs.unit) == 109
         assert number_unused_variables(prec.fs.unit) == 0
 
     @pytest.mark.component
@@ -247,8 +252,9 @@ class TestPrec(object):
         )
 
         reversed_react = dict(map(reversed, prec.fs.properties_solid.react.items()))
+        bypass_elements = ["Ca", "H", "Cl", "SO4", "H2O", "HSO4"]
         for j in prec.fs.properties_aq.dissolved_elements:
-            if j == "Ca":
+            if j in bypass_elements:
                 pass
             else:
                 assert (

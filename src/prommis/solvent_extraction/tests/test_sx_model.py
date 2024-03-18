@@ -208,27 +208,13 @@ class TestSXmodel:
         assert value(
             m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Dy"]
         ) == pytest.approx(7.20, rel=1e-2)
-        assert value(
-            m.fs.solex.clean_sx_pe_tank_cap
-        ) == pytest.approx(1405, rel=1e-2)
-        assert value(
-            m.fs.solex.num_sx_pe_tank
-        ) == pytest.approx(5, rel=1e-2)
-        assert value(
-            m.fs.solex.clean_sx_tank_mixer_pow
-        ) == pytest.approx(1, rel=1e-2)
-        assert value(
-            m.fs.solex.num_sx_tank_mixer
-        ) == pytest.approx(2, rel=1e-2)
-        assert value(
-            m.fs.solex.clean_sx_process_pump_feed
-        ) == pytest.approx(281, rel=1e-2)
-        assert value(
-            m.fs.solex.num_sx_process_pump
-        ) == pytest.approx(3, rel=1e-2)
-        assert value(
-            m.fs.solex.clean_sx_mix_set_cap
-        ) == pytest.approx(2444, rel=1e-2)
-        assert value(
-            m.fs.solex.num_sx_mix_set
-        ) == pytest.approx(6, rel=1e-2)
+        assert value(m.fs.solex.clean_sx_pe_tank_cap) == pytest.approx(1405, rel=1e-2)
+        assert value(m.fs.solex.num_sx_pe_tank) == pytest.approx(5, rel=1e-2)
+        assert value(m.fs.solex.clean_sx_tank_mixer_pow) == pytest.approx(1, rel=1e-2)
+        assert value(m.fs.solex.num_sx_tank_mixer) == pytest.approx(2, rel=1e-2)
+        assert value(m.fs.solex.clean_sx_process_pump_feed) == pytest.approx(
+            281, rel=1e-2
+        )
+        assert value(m.fs.solex.num_sx_process_pump) == pytest.approx(3, rel=1e-2)
+        assert value(m.fs.solex.clean_sx_mix_set_cap) == pytest.approx(2444, rel=1e-2)
+        assert value(m.fs.solex.num_sx_mix_set) == pytest.approx(6, rel=1e-2)

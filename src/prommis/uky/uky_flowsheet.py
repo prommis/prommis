@@ -177,7 +177,7 @@ def build():
     m.fs.prop_a = REESolExAqParameters()
     m.fs.prop_o = REESolExOgParameters()
 
-    m.fs.organic_make_up = Feed(property_package=m.fs.prop_o)
+    m.fs.rougher_org_make_up = Feed(property_package=m.fs.prop_o)
 
     # TODO: Make these names more descriptive: solex_rougher_load etc.
     m.fs.solex_rougher_load = SolventExtraction(
@@ -546,7 +546,7 @@ def build():
         100 - 0.5
     ) / 100
 
-    m.fs.organic_make_up2 = Feed(property_package=m.fs.prop_o)
+    m.fs.cleaner_org_make_up = Feed(property_package=m.fs.prop_o)
 
     m.fs.cleaner_mixer = Mixer(
         property_package=m.fs.prop_o,
@@ -662,7 +662,7 @@ def build():
         destination=m.fs.solex_rougher_load.mscontactor.aqueous_inlet,
     )
     m.fs.org_feed = Arc(
-        source=m.fs.organic_make_up.outlet, destination=m.fs.rougher_mixer.make_up
+        source=m.fs.rougher_org_make_up.outlet, destination=m.fs.rougher_mixer.make_up
     )
     m.fs.mixed_org_feed = Arc(
         source=m.fs.rougher_mixer.outlet,
@@ -717,7 +717,7 @@ def build():
         destination=m.fs.solex_cleaner_load.mscontactor.aqueous_inlet,
     )
     m.fs.org_feed2 = Arc(
-        source=m.fs.organic_make_up2.outlet, destination=m.fs.cleaner_mixer.make_up
+        source=m.fs.cleaner_org_make_up.outlet, destination=m.fs.cleaner_mixer.make_up
     )
     m.fs.s14 = Arc(
         source=m.fs.cleaner_mixer.outlet,
@@ -979,7 +979,7 @@ def set_scaling(m):
 
     for component in organic_component_set:
         m.scaling_factor[
-            m.fs.organic_make_up.properties[0].conc_mol_comp[component]
+            m.fs.rougher_org_make_up.properties[0].conc_mol_comp[component]
         ] = 1e5
         m.scaling_factor[
             m.fs.solex_rougher_load.mscontactor.organic[0, 1].conc_mol_comp[component]
@@ -1078,7 +1078,7 @@ def set_scaling(m):
         ] = 1e5
         m.scaling_factor[m.fs.cleaner_sep.purge_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[
-            m.fs.organic_make_up2.properties[0].conc_mol_comp[component]
+            m.fs.cleaner_org_make_up.properties[0].conc_mol_comp[component]
         ] = 1e5
 
         m.scaling_factor[
@@ -1198,20 +1198,20 @@ def set_operating_conditions(m):
     m.fs.scrub_sep.split_fraction[:, "recycle"].fix(0.9)
 
     # Note: This stream + m.fs.s09 = 62.01 L/hr
-    m.fs.organic_make_up.flow_vol.fix(6.201)
+    m.fs.rougher_org_make_up.flow_vol.fix(6.201)
 
-    m.fs.organic_make_up.conc_mass_comp[0, "Al"].fix(eps)
-    m.fs.organic_make_up.conc_mass_comp[0, "Ca"].fix(eps)
-    m.fs.organic_make_up.conc_mass_comp[0, "Fe"].fix(eps)
-    m.fs.organic_make_up.conc_mass_comp[0, "Sc"].fix(eps)
-    m.fs.organic_make_up.conc_mass_comp[0, "Y"].fix(eps)
-    m.fs.organic_make_up.conc_mass_comp[0, "La"].fix(eps)
-    m.fs.organic_make_up.conc_mass_comp[0, "Ce"].fix(eps)
-    m.fs.organic_make_up.conc_mass_comp[0, "Pr"].fix(eps)
-    m.fs.organic_make_up.conc_mass_comp[0, "Nd"].fix(eps)
-    m.fs.organic_make_up.conc_mass_comp[0, "Sm"].fix(eps)
-    m.fs.organic_make_up.conc_mass_comp[0, "Gd"].fix(eps)
-    m.fs.organic_make_up.conc_mass_comp[0, "Dy"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Al"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Ca"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Fe"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Sc"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Y"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "La"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Ce"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Pr"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Nd"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Sm"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Gd"].fix(eps)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Dy"].fix(eps)
 
     m.fs.acid_feed1.flow_vol.fix(0.09)
     m.fs.acid_feed1.conc_mass_comp[0, "H2O"].fix(1000000)
@@ -1279,20 +1279,20 @@ def set_operating_conditions(m):
     m.fs.acid_feed3.conc_mass_comp[0, "Dy"].fix(eps)
 
     # Note: This stream + m.fs.s18 = 62.01 L/hr
-    m.fs.organic_make_up2.flow_vol.fix(6.201)
+    m.fs.cleaner_org_make_up.flow_vol.fix(6.201)
 
-    m.fs.organic_make_up2.conc_mass_comp[0, "Al"].fix(eps)
-    m.fs.organic_make_up2.conc_mass_comp[0, "Ca"].fix(eps)
-    m.fs.organic_make_up2.conc_mass_comp[0, "Fe"].fix(eps)
-    m.fs.organic_make_up2.conc_mass_comp[0, "Sc"].fix(eps)
-    m.fs.organic_make_up2.conc_mass_comp[0, "Y"].fix(eps)
-    m.fs.organic_make_up2.conc_mass_comp[0, "La"].fix(eps)
-    m.fs.organic_make_up2.conc_mass_comp[0, "Ce"].fix(eps)
-    m.fs.organic_make_up2.conc_mass_comp[0, "Pr"].fix(eps)
-    m.fs.organic_make_up2.conc_mass_comp[0, "Nd"].fix(eps)
-    m.fs.organic_make_up2.conc_mass_comp[0, "Sm"].fix(eps)
-    m.fs.organic_make_up2.conc_mass_comp[0, "Gd"].fix(eps)
-    m.fs.organic_make_up2.conc_mass_comp[0, "Dy"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Al"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Ca"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Fe"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Sc"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Y"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "La"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Ce"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Pr"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Nd"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Sm"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Gd"].fix(eps)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Dy"].fix(eps)
 
     m.fs.cleaner_sep.split_fraction[:, "recycle"].fix(0.9)
 
@@ -1525,9 +1525,9 @@ def initialize_system(m):
         elif stream == m.fs.leach_solid_feed:
             print(f"Initializing {stream}")
             initializer_feed.initialize(m.fs.leach_solid_feed)
-        elif stream == m.fs.organic_make_up:
+        elif stream == m.fs.rougher_org_make_up:
             print(f"Initializing {stream}")
-            initializer_feed.initialize(m.fs.organic_make_up)
+            initializer_feed.initialize(m.fs.rougher_org_make_up)
         elif stream == m.fs.acid_feed1:
             print(f"Initializing {stream}")
             initializer_feed.initialize(m.fs.acid_feed1)
@@ -1537,9 +1537,9 @@ def initialize_system(m):
         elif stream == m.fs.acid_feed3:
             print(f"Initializing {stream}")
             initializer_feed.initialize(m.fs.acid_feed3)
-        elif stream == m.fs.organic_make_up2:
+        elif stream == m.fs.cleaner_org_make_up:
             print(f"Initializing {stream}")
-            initializer_feed.initialize(m.fs.organic_make_up2)
+            initializer_feed.initialize(m.fs.cleaner_org_make_up)
         elif stream == m.fs.leach_filter_cake:
             print(f"Initializing {stream}")
             initializer_product.initialize(m.fs.leach_filter_cake)
@@ -1571,8 +1571,33 @@ def initialize_system(m):
             print(f"Initializing {stream}")
             initializer2.initialize(m.fs.leach_mixer)
         elif stream == m.fs.solex_rougher_load.mscontactor:
+            # print(f"Initializing {stream}")
+            # initializer2.initialize(m.fs.solex_rougher_load)
             print(f"Initializing {stream}")
-            initializer2.initialize(m.fs.solex_rougher_load)
+            try:
+                initializer2.initialize(m.fs.solex_rougher_load)
+            except:
+                # Fix feed states
+                m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.fix()
+                m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
+                m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
+                    0
+                ].conc_mass_comp.fix()
+                m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
+                    0
+                ].conc_mass_comp.fix()
+                # Re-solve leach unit
+                solver = SolverFactory("ipopt")
+                solver.solve(m.fs.solex_rougher_load, tee=True)
+                # Unfix feed states
+                m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.unfix()
+                m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
+                m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
+                    0
+                ].conc_mass_comp.unfix()
+                m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
+                    0
+                ].conc_mass_comp.unfix()
         elif stream == m.fs.solex_rougher_scrub.mscontactor:
             print(f"Initializing {stream}")
             try:

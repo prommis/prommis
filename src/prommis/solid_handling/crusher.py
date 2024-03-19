@@ -17,9 +17,8 @@ This module including power consumption for solid crushing; breakage probability
 __author__ = "Lingyan Deng"
 __version__ = "1.0.0"
 
-from pyomo.environ import Var, Expression, Constraint, NonNegativeReals, log
+from pyomo.environ import Var, log
 from pyomo.common.config import ConfigValue, ConfigBlock, In
-from pyomo.network import Port
 from idaes.core import (
     ControlVolume0DBlock,
     declare_process_block_class,

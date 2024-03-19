@@ -43,6 +43,7 @@ from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.uky_flowsheet import (
+    main,
     build,
     initialize_system,
     set_operating_conditions,
@@ -611,3 +612,7 @@ class TestUKyFlowsheet:
         assert model.fs.precip_purge.inlet.flow_vol[0].value == pytest.approx(
             0.63, 1e-4
         )
+
+    def test_main(self):
+        main()
+

@@ -82,7 +82,6 @@ class TestUKyFlowsheet:
         assert isinstance(model.fs.leach_filter_cake_liquid, Product)
 
         # Solvent extraction section property packages and unit models
-        assert isinstance(model.fs.prop_a, REESolExAqParameters)
         assert isinstance(model.fs.prop_o, REESolExOgParameters)
 
         assert isinstance(model.fs.solex_rougher_load, SolventExtraction)
@@ -111,6 +110,8 @@ class TestUKyFlowsheet:
 
         assert isinstance(model.fs.precipitator, Precipitator)
         assert isinstance(model.fs.sl_sep2, SLSeparator)
+        assert isinstance(model.fs.precip_sx_mixer, Mixer)
+        assert isinstance(model.fs.precip_purge, Product)
 
         # Roasting property packages and unit models
         assert isinstance(model.fs.prop_gas, GenericParameterBlock)
@@ -545,3 +546,69 @@ class TestUKyFlowsheet:
         assert model.fs.roaster.gas_outlet.mole_frac_comp[
             0, "O2"
         ].value == pytest.approx(0.102388, 1e-4)
+
+        assert model.fs.leach_mixer.outlet.flow_vol[0].value == pytest.approx(
+            620.76162, 1e-4
+        )
+        assert model.fs.rougher_org_make_up.outlet.flow_vol[0].value == pytest.approx(
+            6.201, 1e-4
+        )
+        assert model.fs.solex_rougher_load.mscontactor.aqueous_outlet.flow_vol[
+            0
+        ].value == pytest.approx(440.422915, 1e-4)
+        assert model.fs.solex_rougher_scrub.mscontactor.aqueous_outlet.flow_vol[
+            0
+        ].value == pytest.approx(0.09, 1e-4)
+        assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.flow_vol[
+            0
+        ].value == pytest.approx(0.09, 1e-4)
+        assert model.fs.acid_feed1.outlet.flow_vol[0].value == pytest.approx(0.09, 1e-4)
+        assert model.fs.acid_feed2.outlet.flow_vol[0].value == pytest.approx(0.09, 1e-4)
+        assert model.fs.acid_feed3.outlet.flow_vol[0].value == pytest.approx(9, 1e-4)
+        assert model.fs.rougher_sep.inlet.flow_vol[0].value == pytest.approx(
+            62.01, 1e-4
+        )
+        assert model.fs.load_sep.inlet.flow_vol[0].value == pytest.approx(
+            440.422915, 1e-4
+        )
+        assert model.fs.scrub_sep.inlet.flow_vol[0].value == pytest.approx(0.09, 1e-4)
+        assert model.fs.rougher_mixer.outlet.flow_vol[0].value == pytest.approx(
+            62.01, 1e-4
+        )
+        assert model.fs.sc_circuit_purge.inlet.flow_vol[0].value == pytest.approx(
+            6.201, 1e-4
+        )
+        assert model.fs.solex_cleaner_load.mscontactor.aqueous_outlet.flow_vol[
+            0
+        ].value == pytest.approx(5.76, 1e-4)
+        assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.flow_vol[
+            0
+        ].value == pytest.approx(9.0, 1e-4)
+        assert model.fs.cleaner_org_make_up.outlet.flow_vol[0].value == pytest.approx(
+            6.201, 1e-4
+        )
+        assert model.fs.cleaner_mixer.outlet.flow_vol[0].value == pytest.approx(
+            62.01, 1e-4
+        )
+        assert model.fs.cleaner_sep.inlet.flow_vol[0].value == pytest.approx(
+            62.01, 1e-4
+        )
+        assert model.fs.leach_sx_mixer.outlet.flow_vol[0].value == pytest.approx(
+            440.422915, 1e-4
+        )
+        assert model.fs.cleaner_purge.inlet.flow_vol[0].value == pytest.approx(
+            6.201, 1e-4
+        )
+        assert model.fs.sl_sep1.recovered_liquid_outlet.flow_vol[
+            0
+        ].value == pytest.approx(434.662915, 1e-4)
+        assert model.fs.sl_sep2.recovered_liquid_outlet.flow_vol[
+            0
+        ].value == pytest.approx(6.3, 1e-4)
+        assert model.fs.precip_sep.inlet.flow_vol[0].value == pytest.approx(6.3, 1e-4)
+        assert model.fs.precip_sx_mixer.outlet.flow_vol[0].value == pytest.approx(
+            5.76, 1e-4
+        )
+        assert model.fs.precip_purge.inlet.flow_vol[0].value == pytest.approx(
+            0.63, 1e-4
+        )

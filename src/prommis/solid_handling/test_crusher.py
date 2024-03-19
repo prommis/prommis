@@ -19,6 +19,7 @@ from idaes.core.util.model_statistics import (
 # Assuming these imports are adjusted to your project's structure
 from prommis.solid_handling.crusher import CrushAndBreakageUnit
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
+from idaes.models.properties.activity_coeff_models import BTX_activity_coeff_VLE
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing
@@ -33,12 +34,17 @@ def test_config():
     m.fs.properties_solid = CoalRefuseParameters(
         doc="solid property",
     )
+    m.fs.properties_general = BTX_activity_coeff_VLE()
 
-    m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid)
+    m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid,
+                                     property_general=m.fs.properties_general)
 
     # Assert specific config options as per your model's requirements
     # Example:
     assert not m.fs.unit.config.dynamic
+    assert not m.fs.unit.config.has_holdup
+    assert m.fs.unit.config.property_package is m.fs.properties_solid
+    assert m.fs.unit.config.property_general is m.fs.properties_general
 
 
 # -----------------------------------------------------------------------------
@@ -51,7 +57,8 @@ class TestSolidHandling(object):
             doc="solid property",
         )
 
-        m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid)
+        m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid,
+                                         property_general=m.fs.properties_general)
         # Set up your model initialization here
         # Example: m.fs.unit.some_inlet_variable.fix(some_value)
         m.fs.unit.inlet.fow_mass.fix(2)  # tonne/hr

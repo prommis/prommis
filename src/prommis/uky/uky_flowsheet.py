@@ -1277,8 +1277,8 @@ def add_costing(flowsheet):
 
     flow_3_2 = value(
         units.convert(
-            flowsheet.fs.roaster.flow_mas_product[0]
-            + flowsheet.fs.roaster.flow_mas_dust[0],
+            flowsheet.fs.roaster.flow_mass_product[0]
+            + flowsheet.fs.roaster.flow_mass_dust[0],
             to_units=units.ton / units.hr,
         )
     )
@@ -1405,7 +1405,7 @@ def add_costing(flowsheet):
     )
 
     recovery_rate = units.convert(
-        flowsheet.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr
+        flowsheet.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr
     )
     m.fs.recovery_rate_per_year = Var(
         initialize=recovery_rate * m.fs.annual_operating_hours,
@@ -1443,7 +1443,7 @@ def add_costing(flowsheet):
 
     dust = value(
         units.convert(
-            flowsheet.fs.roaster.flow_mas_dust[0], to_units=units.ton / units.hr
+            flowsheet.fs.roaster.flow_mass_dust[0], to_units=units.ton / units.hr
         )
     )
     m.fs.dust_and_volatiles = Var(

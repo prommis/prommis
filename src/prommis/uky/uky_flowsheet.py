@@ -1374,24 +1374,35 @@ def add_costing(flowsheet):
     )
 
     feed_input = units.convert(
-        flowsheet.fs.leach_solid_feed.flow_mass[0]
-        + flowsheet.fs.leach_liquid_feed.flow_vol[0]
-        * flowsheet.fs.leach.liquid[0, 1].dens_mol,
+        flowsheet.fs.leach_solid_feed.flow_mass[0],
         to_units=units.ton / units.hr,
     )
-    # Feed grade is grams of solute per 1000 grams of solution (solution ~ water since dilute concentrations)
-    feed_grade = units.convert(
-        1
-        * units.L
-        * (
-            flowsheet.fs.leach_liquid_feed.conc_mass_comp[0, "H"]
-            + flowsheet.fs.leach_liquid_feed.conc_mass_comp[0, "HSO4"]
-            + flowsheet.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"]
-        ),
-        to_units=units.g,
+
+    REE_mass_frac = {
+        "Y2O3": 88.906 * 2 / (88.906 * 2 + 16 * 3),
+        "La2O3": 138.91 * 2 / (138.91 * 2 + 16 * 3),
+        "Ce2O3": 140.12 * 2 / (140.12 * 2 + 16 * 3),
+        "Pr2O3": 140.91 * 2 / (140.91 * 2 + 16 * 3),
+        "Nd2O3": 144.24 * 2 / (144.24 * 2 + 16 * 3),
+        "Sm2O3": 150.36 * 2 / (150.36 * 2 + 16 * 3),
+        "Gd2O3": 157.25 * 2 / (157.25 * 2 + 16 * 3),
+        "Dy2O3": 162.5 * 2 / (162.5 * 2 + 16 * 3),
+    }
+
+    feed_REE = sum(
+        flowsheet.fs.leach_solid_feed.flow_mass[0]
+        * flowsheet.fs.leach_solid_feed.mass_frac_comp[0, molecule]
+        * REE_frac
+        for molecule, REE_frac in REE_mass_frac.items()
     )
+
+    feed_grade = (
+        units.convert(feed_REE, to_units=units.kg / units.hr)
+        / flowsheet.fs.leach_solid_feed.flow_mass[0]
+    )
+
     m.fs.feed_input = Var(initialize=feed_input, units=units.ton / units.hr)
-    m.fs.feed_grade = Var(initialize=value(feed_grade * 1000), units=units.ppm)
+    m.fs.feed_grade = Var(initialize=value(feed_grade * 1000000), units=units.ppm)
 
     hours_per_shift = 8
     shifts_per_day = 3
@@ -1466,7 +1477,6 @@ def add_costing(flowsheet):
     ]
 
     # define product flowrates
-    # TODO: Default sale prices for some components in flow_mol_comp_product are missing
 
     m.fs.Ce_product = Param(
         default=units.convert(
@@ -1585,7 +1595,9 @@ def add_costing(flowsheet):
         doc="Product yttrium mass flow",
     )
 
-    pure_product_output_rates = {
+    pure_product_output_rates = {}
+
+    mixed_product_output_rates = {
         "CeO2": m.fs.Ce_product,
         "Sc2O3": m.fs.Sc_product,
         "Y2O3": m.fs.Y_product,
@@ -1595,135 +1607,6 @@ def add_costing(flowsheet):
         "Sm2O3": m.fs.Sm_product,
         "Gd2O3": m.fs.Gd_product,
         "Dy2O3": m.fs.Dy_product,
-    }
-
-    m.fs.Ce_dust = Param(
-        default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Ce"]
-            * 382.24
-            * units.g
-            / units.mol,
-            to_units=units.kg / units.hr,
-        ),
-        units=units.kg / units.hr,
-        mutable=True,
-        doc="Dust cerium mass flow",
-    )
-
-    m.fs.Dy_dust = Param(
-        default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Dy"]
-            * 373
-            * units.g
-            / units.mol,
-            to_units=units.kg / units.hr,
-        ),
-        units=units.kg / units.hr,
-        mutable=True,
-        doc="Dust dysprosium mass flow",
-    )
-
-    m.fs.Gd_dust = Param(
-        default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Gd"]
-            * 362.5
-            * units.g
-            / units.mol,
-            to_units=units.kg / units.hr,
-        ),
-        units=units.kg / units.hr,
-        mutable=True,
-        doc="Dust gadolinium mass flow",
-    )
-
-    m.fs.La_dust = Param(
-        default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "La"]
-            * 325.82
-            * units.g
-            / units.mol,
-            to_units=units.kg / units.hr,
-        ),
-        units=units.kg / units.hr,
-        mutable=True,
-        doc="Dust lanthanum mass flow",
-    )
-
-    m.fs.Nd_dust = Param(
-        default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Nd"]
-            * 336.48
-            * units.g
-            / units.mol,
-            to_units=units.kg / units.hr,
-        ),
-        units=units.kg / units.hr,
-        mutable=True,
-        doc="Dust neodymium mass flow",
-    )
-
-    m.fs.Pr_dust = Param(
-        default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Pr"]
-            * 329.82
-            * units.g
-            / units.mol,
-            to_units=units.kg / units.hr,
-        ),
-        units=units.kg / units.hr,
-        mutable=True,
-        doc="Dust praseodymium mass flow",
-    )
-
-    m.fs.Sc_dust = Param(
-        default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sc"]
-            * 137.912
-            * units.g
-            / units.mol,
-            to_units=units.kg / units.hr,
-        ),
-        units=units.kg / units.hr,
-        mutable=True,
-        doc="Dust scandium mass flow",
-    )
-
-    m.fs.Sm_dust = Param(
-        default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Sm"]
-            * 348.72
-            * units.g
-            / units.mol,
-            to_units=units.kg / units.hr,
-        ),
-        units=units.kg / units.hr,
-        mutable=True,
-        doc="Dust samarium mass flow",
-    )
-
-    m.fs.Y_dust = Param(
-        default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_dust[0, "Y"]
-            * 225.812
-            * units.g
-            / units.mol,
-            to_units=units.kg / units.hr,
-        ),
-        units=units.kg / units.hr,
-        mutable=True,
-        doc="Dust yttrium mass flow",
-    )
-
-    mixed_product_output_rates = {
-        "CeO2": m.fs.Ce_dust,
-        "Sc2O3": m.fs.Sc_dust,
-        "Y2O3": m.fs.Y_dust,
-        "La2O3": m.fs.La_dust,
-        "Nd2O3": m.fs.Nd_dust,
-        "Pr6O11": m.fs.Pr_dust,
-        "Sm2O3": m.fs.Sm_dust,
-        "Gd2O3": m.fs.Gd_dust,
-        "Dy2O3": m.fs.Dy_dust,
     }
 
     m.fs.costing.build_process_costs(

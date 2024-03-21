@@ -256,15 +256,13 @@ class TestPrec(object):
         for j in prec.fs.properties_aq.dissolved_elements:
             if j in pass_through_elements:
                 assert (
-                           abs(
-                               value(
-                                   prec.fs.unit.cv_aqueous.properties_in[0].flow_mol_comp[j]
-                                   - prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[
-                                           j
-                                       ]
-                               )
-                           )
-                           <= 1e-5
+                    abs(
+                        value(
+                            prec.fs.unit.cv_aqueous.properties_in[0].flow_mol_comp[j]
+                            - prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[j]
+                        )
+                    )
+                    <= 1e-5
                 )
             else:
                 assert (

@@ -252,10 +252,20 @@ class TestPrec(object):
         )
 
         reversed_react = dict(map(reversed, prec.fs.properties_solid.react.items()))
-        bypass_elements = ["Ca", "H", "Cl", "SO4", "H2O", "HSO4"]
+        pass_through_elements = ["Ca", "H", "Cl", "SO4", "H2O", "HSO4"]
         for j in prec.fs.properties_aq.dissolved_elements:
-            if j in bypass_elements:
-                pass
+            if j in pass_through_elements:
+                assert (
+                           abs(
+                               value(
+                                   prec.fs.unit.cv_aqueous.properties_in[0].flow_mol_comp[j]
+                                   - prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[
+                                           j
+                                       ]
+                               )
+                           )
+                           <= 1e-5
+                )
             else:
                 assert (
                     abs(

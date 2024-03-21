@@ -1402,7 +1402,7 @@ def add_costing(flowsheet):
     )
 
     m.fs.feed_input = Var(initialize=feed_input, units=units.ton / units.hr)
-    m.fs.feed_grade = Var(initialize=value(feed_grade * 1000000), units=units.ppm)
+    m.fs.feed_grade = Var(initialize=feed_grade * 1000000, units=units.ppm)
 
     hours_per_shift = 8
     shifts_per_day = 3

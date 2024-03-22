@@ -815,7 +815,7 @@ class LiClStateBlockData(StateBlockData):
                 == i
                 * b.osm_coeff
                 * b.conc_mass_phase_comp[p, "LiCl"]
-                * rhow  # TODO: troubleshoot init errors when including this value
+                # * rhow  # rhow conversion term is not needed
                 * Constants.gas_constant
                 * b.temperature
                 / b.params.mw_comp["LiCl"]

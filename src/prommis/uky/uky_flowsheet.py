@@ -1242,9 +1242,6 @@ def set_operating_conditions(m):
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Dy"].fix(eps)
 
-    m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
-    m.fs.rougher_org_make_up.flow_vol.unfix()
-
     m.fs.acid_feed1.flow_vol.fix(0.09)
     m.fs.acid_feed1.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(10.36)
@@ -1866,6 +1863,14 @@ def initialize_system(m):
 
 def solve(m):
     solver = SolverFactory("ipopt")
+    solver.solve(m, tee=True)
+
+    m.fs.rougher_org_make_up.flow_vol.unfix()
+    m.fs.rougher_mixer.outlet.flow_vol.fix(62.01)
+
+    m.fs.cleaner_org_make_up.flow_vol.unfix()
+    m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
+
     results = solver.solve(m, tee=True)
 
     return results

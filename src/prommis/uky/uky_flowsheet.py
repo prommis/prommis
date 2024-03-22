@@ -1226,7 +1226,6 @@ def set_operating_conditions(m):
     m.fs.load_sep.split_fraction[:, "recycle"].fix(0.9)
     m.fs.scrub_sep.split_fraction[:, "recycle"].fix(0.9)
 
-    # Note: This stream + m.fs.s09 = 62.01 L/hr
     m.fs.rougher_org_make_up.flow_vol.fix(6.201)
 
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Al"].fix(eps)
@@ -1307,7 +1306,6 @@ def set_operating_conditions(m):
     m.fs.acid_feed3.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Dy"].fix(eps)
 
-    # Note: This stream + m.fs.s18 = 62.01 L/hr
     m.fs.cleaner_org_make_up.flow_vol.fix(6.201)
 
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Al"].fix(eps)
@@ -1322,9 +1320,6 @@ def set_operating_conditions(m):
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Sm"].fix(eps)
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Dy"].fix(eps)
-
-    m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
-    m.fs.cleaner_org_make_up.flow_vol.unfix()
 
     m.fs.cleaner_sep.split_fraction[:, "recycle"].fix(0.9)
 
@@ -1524,40 +1519,6 @@ def initialize_system(m):
             (0, "Y"): 18,
         },
     }
-    tear_guesses8 = {
-        "flow_vol": {0: 6},
-        "conc_mass_comp": {
-            (0, "Al"): 1e-7,
-            (0, "Ca"): 1e-7,
-            (0, "Ce"): 1e-7,
-            (0, "Dy"): 1e-7,
-            (0, "Fe"): 1e-7,
-            (0, "Gd"): 1e-7,
-            (0, "La"): 1e-7,
-            (0, "Nd"): 1e-7,
-            (0, "Pr"): 1e-7,
-            (0, "Sc"): 1e-7,
-            (0, "Sm"): 1e-7,
-            (0, "Y"): 1e-7,
-        },
-    }
-    tear_guesses9 = {
-        "flow_vol": {0: 6},
-        "conc_mass_comp": {
-            (0, "Al"): 1e-7,
-            (0, "Ca"): 1e-7,
-            (0, "Ce"): 1e-7,
-            (0, "Dy"): 1e-7,
-            (0, "Fe"): 1e-7,
-            (0, "Gd"): 1e-7,
-            (0, "La"): 1e-7,
-            (0, "Nd"): 1e-7,
-            (0, "Pr"): 1e-7,
-            (0, "Sc"): 1e-7,
-            (0, "Sm"): 1e-7,
-            (0, "Y"): 1e-7,
-        },
-    }
 
     # Pass the tear_guess to the SD tool
     seq.set_guesses_for(m.fs.precipitator.cv_aqueous.properties_out[0], tear_guesses1)
@@ -1578,8 +1539,6 @@ def initialize_system(m):
         m.fs.solex_cleaner_load.mscontactor.aqueous_inlet, tear_guesses7
     )
     seq.set_guesses_for(m.fs.precip_sx_mixer.outlet, tear_guesses7)
-    seq.set_guesses_for(m.fs.rougher_org_make_up.outlet, tear_guesses8)
-    seq.set_guesses_for(m.fs.cleaner_org_make_up.outlet, tear_guesses9)
 
     def function(stream):
         initializer_feed = FeedInitializer()
@@ -1865,10 +1824,10 @@ def solve(m):
     solver = SolverFactory("ipopt")
     solver.solve(m, tee=True)
 
-    m.fs.rougher_org_make_up.flow_vol.unfix()
+    m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
     m.fs.rougher_mixer.outlet.flow_vol.fix(62.01)
 
-    m.fs.cleaner_org_make_up.flow_vol.unfix()
+    m.fs.cleaner_org_make_up.outlet.flow_vol.unfix()
     m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
 
     results = solver.solve(m, tee=True)

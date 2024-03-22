@@ -24,7 +24,7 @@ m.fs.solex = SolventExtraction(
     number_of_finite_elements=number_of_stages,
     dynamic=False,
     aqueous_stream={
-        "property_package": m.fs.prop_a,
+        "property_package": m.fs.leach_soln,
         "flow_direction": FlowDirection.forward,
         "has_energy_balance": False,
         "has_pressure_balance": False,

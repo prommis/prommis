@@ -114,9 +114,13 @@ class SolventExtractionData(UnitModelBlockData):
             number_of_finite_elements=self.config.number_of_finite_elements,
         )
 
+        def param_init(b, s, k, l, m):
+            b.partition_coefficient[s, (k, l, m)] = 1
+
         self.partition_coefficient = Param(
             self.mscontactor.elements,
             self.mscontactor.stream_component_interactions,
+            initialize=param_init,
             mutable=True,
             doc="The fraction of component that goes from aqueous to organic phase",
         )
@@ -126,83 +130,56 @@ class SolventExtractionData(UnitModelBlockData):
         self.organic_inlet = Port(extends=self.mscontactor.organic_inlet)
         self.organic_outlet = Port(extends=self.mscontactor.organic_outlet)
 
-        def mass_transfer_term(b, t, s, k, l, m):
-            if self.config.aqueous_to_organic == True:
-                aqueous = b.mscontactor.aqueous
-                if self.config.aqueous_stream.flow_direction == FlowDirection.forward:
-                    if s == b.mscontactor.elements.first():
-                        return (
-                            b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == -b.mscontactor.aqueous_inlet_state[
-                                t
-                            ].get_material_flow_terms(aqueous.phase_list, m)
-                            * b.partition_coefficient[s, (k, l, m)]
-                        )
-                    else:
-                        return (
-                            b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == -b.mscontactor.aqueous[
-                                t, b.mscontactor.elements.prev(s)
-                            ].get_material_flow_terms(aqueous.phase_list, m)
-                            * b.partition_coefficient[s, (k, l, m)]
-                        )
-                else:
-                    if s == b.mscontactor.elements.last():
-                        return (
-                            b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == -b.mscontactor.aqueous_inlet_state[
-                                t
-                            ].get_material_flow_terms(aqueous.phase_list, m)
-                            * b.partition_coefficient[s, (k, l, m)]
-                        )
-                    else:
-                        return (
-                            b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == -b.mscontactor.aqueous[
-                                t, b.mscontactor.elements.next(s)
-                            ].get_material_flow_terms(aqueous.phase_list, m)
-                            * b.partition_coefficient[s, (k, l, m)]
-                        )
+        def material_transfer_term(b, t, s, k, l, m):
+            if self.config.aqueous_to_organic:
+                state = b.mscontactor.aqueous
+                in_state = b.mscontactor.aqueous_inlet_state
+                stream_name = self.config.aqueous_stream
+                sign = -1
             else:
-                organic = b.mscontactor.organic
-                if self.config.organic_stream.flow_direction == FlowDirection.forward:
-                    if s == b.mscontactor.elements.first():
-                        return (
-                            b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == b.mscontactor.organic_inlet_state[
-                                t
-                            ].get_material_flow_terms(organic.phase_list, m)
-                            * b.partition_coefficient[s, (k, l, m)]
-                        )
-                    else:
-                        return (
-                            b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == b.mscontactor.organic[
-                                t, b.mscontactor.elements.prev(s)
-                            ].get_material_flow_terms(organic.phase_list, m)
-                            * b.partition_coefficient[s, (k, l, m)]
-                        )
+                state = b.mscontactor.organic
+                in_state = b.mscontactor.organic_inlet_state
+                stream_name = self.config.organic_stream
+                sign = 1
+
+            if stream_name.flow_direction == FlowDirection.forward:
+                if s == b.mscontactor.elements.first():
+                    return (
+                        b.mscontactor.material_transfer_term[t, s, (k, l, m)]
+                        == sign
+                        * in_state[t].get_material_flow_terms(state.phase_list, m)
+                        * b.partition_coefficient[s, (k, l, m)]
+                    )
                 else:
-                    if s == b.mscontactor.elements.last():
-                        return (
-                            b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == b.mscontactor.organic_inlet_state[
-                                t
-                            ].get_material_flow_terms(organic.phase_list, m)
-                            * b.partition_coefficient[s, (k, l, m)]
-                        )
-                    else:
-                        return (
-                            b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                            == b.mscontactor.organic[
-                                t, b.mscontactor.elements.next(s)
-                            ].get_material_flow_terms(organic.phase_list, m)
-                            * b.partition_coefficient[s, (k, l, m)]
-                        )
+                    return (
+                        b.mscontactor.material_transfer_term[t, s, (k, l, m)]
+                        == sign
+                        * state[
+                            t, b.mscontactor.elements.prev(s)
+                        ].get_material_flow_terms(state.phase_list, m)
+                        * b.partition_coefficient[s, (k, l, m)]
+                    )
+            else:
+                if s == b.mscontactor.elements.last():
+                    return (
+                        b.mscontactor.material_transfer_term[t, s, (k, l, m)]
+                        == sign
+                        * in_state[t].get_material_flow_terms(state.phase_list, m)
+                        * b.partition_coefficient[s, (k, l, m)]
+                    )
+                else:
+                    return (
+                        b.mscontactor.material_transfer_term[t, s, (k, l, m)]
+                        == sign
+                        * state[
+                            t, b.mscontactor.elements.next(s)
+                        ].get_material_flow_terms(state.phase_list, m)
+                        * b.partition_coefficient[s, (k, l, m)]
+                    )
 
         self.mass_transfer_constraint = Constraint(
             self.flowsheet().time,
             self.mscontactor.elements,
             self.mscontactor.stream_component_interactions,
-            rule=mass_transfer_term,
+            rule=material_transfer_term,
         )

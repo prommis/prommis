@@ -24,7 +24,9 @@ from pyomo.environ import (
     Objective,
     TransformationFactory,
     assert_optimal_termination,
+    minimize,
     maximize,
+    value
 )
 from pyomo.network import Arc
 
@@ -234,28 +236,28 @@ def unfix_opt_vars(m):
 
 def add_obj(m):
     """
-    Adds objectives to the pyomo model
+    Adds objective to the pyomo model
     """
     # limit Li loss
-    # m.fs.obj = Objective(
-    #     expr = m.fs.retentate.flow_mol_phase_comp[0,"Liq", "Li_+"],
-    #     # sense = maximize
-    # )
-
-    # maxmize the reduction in Mg:Li ratio
     m.fs.obj = Objective(
-        expr=(
-            (
-                (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
-                / (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069)
-            )
-            - (
-                (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
-                / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069)
-            )
-        ),
-        sense=maximize,
+        expr = m.fs.retentate.flow_mol_phase_comp[0,"Liq", "Li_+"],
+        sense=minimize
     )
+
+    # # maxmize the reduction in Mg:Li ratio
+    # m.fs.mg_li_ratio_obj = Objective(
+    #     expr=(
+    #         (
+    #             (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
+    #             / (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069)
+    #         )
+    #         - (
+    #             (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
+    #             / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069)
+    #         )
+    #     ),
+    #     sense=maximize
+    # )
 
 
 def add_pressure_con(m, pressure_limit=7e6):
@@ -267,14 +269,13 @@ def add_pressure_con(m, pressure_limit=7e6):
     m.fs.pressure_con = Constraint(expr=m.fs.pump.outlet.pressure[0] <= pressure_limit)
 
 
-
-def add_recovery_con(m, recovery_limit=0.8):
+def add_recovery_con(m, recovery_limit=0.5):
     """
     Adds lithium recovery constraint to the pyomo model
     """
     # limit the Li recovery
     m.fs.li_recovery_con = Constraint(
-        expr=m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"] >= recovery_limit
+        expr=m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value/m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value  >= recovery_limit
     )
 
 

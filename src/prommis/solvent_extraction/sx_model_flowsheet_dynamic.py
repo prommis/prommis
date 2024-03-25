@@ -60,8 +60,7 @@ m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sm"] = 99.9 / 100
 m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Gd"] = 98.6 / 100
 m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Dy"] = 99.9 / 100
 
-
-m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H2O"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H2SO4"].fix(1e-9)
 m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H"].fix(1e-9)
 m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["SO4"].fix(1e-9)
 m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["HSO4"].fix(1e-9)
@@ -78,7 +77,7 @@ m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Sm"].fix(369.1)
 m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Gd"].fix(174.38)
 m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Dy"].fix(101.12)
 
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["H2O"].fix(1e-9)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["H2SO4"].fix(1e-9)
 m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["H"].fix(1e-9)
 m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["SO4"].fix(1e-9)
 m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["HSO4"].fix(1e-9)

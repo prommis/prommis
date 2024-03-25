@@ -25,8 +25,6 @@ from pyomo.environ import (
     TransformationFactory,
     assert_optimal_termination,
     minimize,
-    maximize,
-    value
 )
 from pyomo.network import Arc
 
@@ -45,52 +43,38 @@ from watertap.property_models.multicomp_aq_sol_prop_pack import (
 from watertap.unit_models.nanofiltration_DSPMDE_0D import NanofiltrationDSPMDE0D
 from watertap.unit_models.pressure_changer import Pump
 
+import matplotlib.pyplot as plt
+import numpy as np
+
+
 
 def main():
     """
     Builds and solves the NF flowsheet
     """
-    solver = get_solver()
-    m = build()
 
-    initialize(m, solver)
-    print("init_okay")
+    (area, li_rejection, mg_rejection, feed_pressure, recovery_vals) = initialize_sensitivity()
+    for recovery in recovery_vals:
+        solver = get_solver()
+        m = build()
 
-    assert degrees_of_freedom(m) == 0
-    optimize(m, solver)
-    print("solved box problem")
-    m.fs.unit.report()
+        initialize(m, solver)
+        print("init_okay")
 
-    unfix_opt_vars(m)
-    add_obj(m)
-    add_pressure_con(m)
-    # add_recovery_con(m)
-    optimize(m, solver)
-    m.fs.unit.report()
-    print("Optimal NF feed pressure (Bar)", m.fs.pump.outlet.pressure[0].value / 1e5)
-    print("Optimal area (m2)", m.fs.unit.area.value)
-    print(
-        "Optimal NF vol recovery (%)",
-        m.fs.unit.recovery_vol_phase[0.0, "Liq"].value * 100,
-    )
-    print(
-        "Optimal Li rejection (%)",
-        m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"].value * 100,
-    )
-    print(
-        "Optimal Mg rejection (%)",
-        m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Mg_2+"].value * 100,
-    )
-    print(
-        "Feed Mg:Li ratio (mass)",
-        (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
-        / (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
-    )
-    print(
-        "Permeate Mg:Li ratio (mass)",
-        (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
-        / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
-    )
+        assert degrees_of_freedom(m) == 0
+        optimize(m, solver)
+        print("solved box problem")
+        # m.fs.unit.report()
+
+        unfix_opt_vars(m)
+        add_obj(m)
+        add_pressure_con(m, pressure_limit=None)
+        add_recovery_con(m, recovery_limit=recovery)
+        optimize(m, solver)
+        collect_plot_data(m,area,li_rejection,mg_rejection,feed_pressure)
+        # m.fs.unit.report()
+        print_info(m)
+    plot(recovery_vals, li_rejection, mg_rejection)
 
     return m
 
@@ -240,8 +224,7 @@ def add_obj(m):
     """
     # limit Li loss
     m.fs.obj = Objective(
-        expr = m.fs.retentate.flow_mol_phase_comp[0,"Liq", "Li_+"],
-        sense=minimize
+        expr=m.fs.retentate.flow_mol_phase_comp[0, "Liq", "Li_+"], sense=minimize
     )
 
     # # maxmize the reduction in Mg:Li ratio
@@ -260,22 +243,26 @@ def add_obj(m):
     # )
 
 
-def add_pressure_con(m, pressure_limit=7e6):
+def add_pressure_con(m, pressure_limit):
     """
     Adds feed pressure constraint to the pyomo model
     """
+    if pressure_limit == None:
+        pressure_limit = 7e6
     # bound the feed pressure to a reasonable value for nanofiltration
     # choose an upper limit of 70 bar (https://doi.org/10.1021/acs.est.2c08584)
     m.fs.pressure_con = Constraint(expr=m.fs.pump.outlet.pressure[0] <= pressure_limit)
 
 
-def add_recovery_con(m, recovery_limit=0.5):
+def add_recovery_con(m, recovery_limit):
     """
-    Adds lithium recovery constraint to the pyomo model
+    Adds recovery constraint to the pyomo model
     """
-    # limit the Li recovery
-    m.fs.li_recovery_con = Constraint(
-        expr=m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value/m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value  >= recovery_limit
+    if recovery_limit == None:
+        recovery_limit = 0.8
+    # limit the NF recovery
+    m.fs.recovery_con = Constraint(
+        expr=m.fs.unit.recovery_vol_phase[0.0, "Liq"] <= recovery_limit
     )
 
 
@@ -287,6 +274,68 @@ def optimize(m, solver):
     simulation_results = solver.solve(m, tee=True)
     assert_optimal_termination(simulation_results)
     return simulation_results
+
+
+def initialize_sensitivity():
+    """
+    Makes plots to perform a sensitivity analysis on the nanofiltration flowsheet
+    """
+    # initialize lists to store data
+    area = []  # m2
+    li_rejection = []
+    mg_rejection = []
+    feed_pressure = []  # bar
+
+    # provide values to constrain
+    recovery_vals = np.arange(0.75,1,0.05)
+    return (area, li_rejection, mg_rejection, feed_pressure, recovery_vals)
+
+
+def collect_plot_data(m,area,li_rejection,mg_rejection,feed_pressure):
+        area.append(m.fs.unit.area.value)
+        li_rejection.append(
+            m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"].value
+        )
+        mg_rejection.append(
+            m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Mg_2+"].value
+        )
+        feed_pressure.append(m.fs.pump.outlet.pressure[0].value / 1e5)
+
+
+def print_info(m):
+    print("Optimal NF feed pressure (Bar)", m.fs.pump.outlet.pressure[0].value / 1e5)
+    print("Optimal area (m2)", m.fs.unit.area.value)
+    print(
+        "Optimal NF vol recovery (%)",
+        m.fs.unit.recovery_vol_phase[0.0, "Liq"].value * 100,
+    )
+    print(
+        "Optimal Li rejection (%)",
+        m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"].value * 100,
+    )
+    print(
+        "Optimal Mg rejection (%)",
+        m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Mg_2+"].value * 100,
+    )
+    print(
+        "Feed Mg:Li ratio (mass)",
+        (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
+        / (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
+    )
+    print(
+        "Permeate Mg:Li ratio (mass)",
+        (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
+        / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
+    )
+
+
+def plot(recovery_vals, li_rejection, mg_rejection):
+    plt.plot(recovery_vals, li_rejection, "-o")
+    plt.plot(recovery_vals, mg_rejection, "-o")
+    plt.legend(["Li+", "Mg2+"])
+    plt.xlabel("Volume Recovery")
+    plt.ylabel("Ion Rejection")
+    plt.show()
 
 
 def initialize(m, solver):

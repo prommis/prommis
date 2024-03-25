@@ -61,7 +61,8 @@ def main():
 
     unfix_opt_vars(m)
     add_obj(m)
-    add_con(m, pressure_limit=7e6)
+    add_pressure_con(m)
+    # add_recovery_con(m)
     optimize(m, solver)
     m.fs.unit.report()
     print("Optimal NF feed pressure (Bar)", m.fs.pump.outlet.pressure[0].value / 1e5)
@@ -257,18 +258,24 @@ def add_obj(m):
     )
 
 
-def add_con(m, pressure_limit):
+def add_pressure_con(m, pressure_limit=7e6):
     """
-    Adds constraints to the pyomo model
+    Adds feed pressure constraint to the pyomo model
     """
-    # # limit the Li rejection
-    # m.fs.li_rejection_con = Constraint(
-    #     expr=m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"] >= 0.2
-    # )
-
     # bound the feed pressure to a reasonable value for nanofiltration
     # choose an upper limit of 70 bar (https://doi.org/10.1021/acs.est.2c08584)
     m.fs.pressure_con = Constraint(expr=m.fs.pump.outlet.pressure[0] <= pressure_limit)
+
+
+
+def add_recovery_con(m, recovery_limit=0.8):
+    """
+    Adds lithium recovery constraint to the pyomo model
+    """
+    # limit the Li recovery
+    m.fs.li_recovery_con = Constraint(
+        expr=m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"] >= recovery_limit
+    )
 
 
 def optimize(m, solver):

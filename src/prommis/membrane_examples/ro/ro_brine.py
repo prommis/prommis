@@ -14,6 +14,7 @@ from pyomo.environ import (
     assert_optimal_termination,
 )
 from pyomo.network import Arc
+from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
 from idaes.core.solvers import get_solver
@@ -37,38 +38,40 @@ def main():
     """
     Builds and solves the RO flowsheet
     """
+    # solver = get_solver(solver='ipopt',options={'tol':10**(-6)})
     solver = get_solver()
     m = build()
+    assert_units_consistent(m)
 
     initialize(m, solver)
     print("init_okay")
-    m.fs.unit.report()
+    # m.fs.unit.report()
 
     assert degrees_of_freedom(m) == 0
-    optimize(m, solver)
-    print("solved box problem")
-    m.fs.unit.report()
+    # optimize(m, solver)
+    # print("solved box problem")
+    # m.fs.unit.report()
 
-    unfix_opt_vars(m)
-    add_obj(m)
+    # unfix_opt_vars(m)
+    # add_obj(m)
     # add_con(m)
-    optimize(m, solver)
-    m.fs.unit.report()
+    # optimize(m, solver)
+    # m.fs.unit.report()
 
-    print("Optimal area (m2)", m.fs.unit.area.value)
-    print(
-        "Optimal RO vol recovery (%)",
-        m.fs.unit.recovery_vol_phase[0.0, "Liq"].value * 100,
-    )
-    print(
-        "Optimal LiCl recovery (%)",
-        m.fs.unit.recovery_mass_phase_comp[0, "Liq", "LiCl"].value * 100,
-    )
+    # print("Optimal area (m2)", m.fs.unit.area.value)
+    # print(
+    #     "Optimal RO vol recovery (%)",
+    #     m.fs.unit.recovery_vol_phase[0.0, "Liq"].value * 100,
+    # )
+    # print(
+    #     "Optimal LiCl recovery (%)",
+    #     m.fs.unit.recovery_mass_phase_comp[0, "Liq", "LiCl"].value * 100,
+    # )
 
     dt = DiagnosticsToolbox(m)
-    dt.report_numerical_issues()
+    # dt.report_numerical_issues()
     dt.report_structural_issues()
-    dt.display_components_with_inconsistent_units()
+    # dt.display_components_with_inconsistent_units()
 
     return m
 
@@ -112,6 +115,9 @@ def build():
         mass_transfer_coefficient=MassTransferCoefficient.none,
         has_pressure_change=False,
     )
+
+    set_default_feed(m.fs)
+    fix_init_vars(m)
 
     # connect the streams and blocks
     m.fs.feed_to_ro = Arc(source=m.fs.feed.outlet, destination=m.fs.unit.inlet)
@@ -176,8 +182,8 @@ def initialize(m, solver):
     """
     Initializes the flowsheet units
     """
-    set_default_feed(m.fs)
-    fix_init_vars(m)
+    # set_default_feed(m.fs)
+    # fix_init_vars(m)
 
     m.fs.feed.initialize(optarg=solver.options)
     propagate_state(m.fs.feed_to_ro)

@@ -906,7 +906,7 @@ def add_costing(flowsheet):
     # 4.3 is UKy Leaching - Tank Mixer
     L_tank_mixer_accounts = ["4.3"]
     m.fs.L_tank_mixers = UnitModelBlock()
-    m.fs.L_tank_mixers.power = Var(initialize=47.4, units=units.hp)
+    m.fs.L_tank_mixers.power = Var(initialize=4.74, units=units.hp)
     m.fs.L_tank_mixers.power.fix()
     m.fs.L_tank_mixers.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,

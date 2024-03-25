@@ -1181,7 +1181,7 @@ def set_operating_conditions(m):
     m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
     m.fs.leach_liquid_feed.conc_mass_comp.fix(1e-10 * units.mg / units.L)
     m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].fix(
-        2 * 0.05 * 1e3 * units.mg / units.L
+       2 * 0.05 * 1e3 * units.mg / units.L
     )
     m.fs.leach_liquid_feed.conc_mass_comp[0, "HSO4"].fix(1e-8 * units.mg / units.L)
     m.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"].fix(
@@ -1944,6 +1944,9 @@ def display_results(m):
 
     REE_recovery = 100 * product / feed_REE
     print(f"Total REE recovery is {REE_recovery} %")
+
+    product_purity = 100 * product / value(units.convert(m.fs.roaster.flow_mas_product[0], to_units=units.kg / units.hr))
+    print(f"Product purity is {product_purity} % REE")
 
     # Individual elemental recoveries
 

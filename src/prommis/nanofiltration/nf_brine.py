@@ -61,7 +61,7 @@ def main():
 
     unfix_opt_vars(m)
     add_obj(m)
-    # add_con(m)
+    add_con(m)
     optimize(m, solver)
     m.fs.unit.report()
     print("Optimal NF pressure (Bar)", m.fs.pump.outlet.pressure[0].value / 1e5)
@@ -227,7 +227,7 @@ def unfix_opt_vars(m):
     """
     Unfixes select variables to enable optimization with DOF>0
     """
-    # m.fs.pump.outlet.pressure[0].unfix()
+    m.fs.pump.outlet.pressure[0].unfix()
     m.fs.unit.area.unfix()
 
 
@@ -261,9 +261,15 @@ def add_con(m):
     """
     Adds constraints to the pyomo model
     """
-    # limit the Li rejection
-    m.fs.li_rejection_con = Constraint(
-        expr=m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"] >= 0.2
+    # # limit the Li rejection
+    # m.fs.li_rejection_con = Constraint(
+    #     expr=m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"] >= 0.2
+    # )
+
+    # limit the feed pressure to a reasonable value for nanofiltration
+    # choose an upper limit of 15 bar
+    m.fs.pressure_con = Constraint(
+        expr=m.fs.pump.outlet.pressure[0]<= 1.5e6
     )
 
 

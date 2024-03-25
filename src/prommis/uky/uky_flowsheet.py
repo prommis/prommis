@@ -1478,121 +1478,133 @@ def add_costing(flowsheet):
 
     # define product flowrates
 
+    REO_molar_mass = {
+        "Y2O3": 88.906 * 2 + 16 * 3,
+        "La2O3": 138.91 * 2 + 16 * 3,
+        "Ce2O3": 140.12 * 2 + 16 * 3,
+        "Pr2O3": 140.91 * 2 + 16 * 3,
+        "Nd2O3": 144.24 * 2 + 16 * 3,
+        "Sm2O3": 150.36 * 2 + 16 * 3,
+        "Gd2O3": 157.25 * 2 + 16 * 3,
+        "Dy2O3": 162.5 * 2 + 16 * 3,
+        "Sc2O3": 44.96 * 2 + 16 * 3,
+    }
+
     m.fs.Ce_product = Param(
         default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Ce"]
-            * 328.24
+            * REO_molar_mass["Ce2O3"]
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
         ),
         units=units.kg / units.hr,
         mutable=True,
-        doc="Product cerium mass flow",
+        doc="Product cerium oxide mass flow",
     )
 
     m.fs.Dy_product = Param(
         default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Dy"]
-            * 373
+            * REO_molar_mass["Dy2O3"]
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
         ),
         units=units.kg / units.hr,
         mutable=True,
-        doc="Product dysprosium mass flow",
+        doc="Product dysprosium oxide mass flow",
     )
 
     m.fs.Gd_product = Param(
         default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Gd"]
-            * 362.5
+            * REO_molar_mass["Gd2O3"]
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
         ),
         units=units.kg / units.hr,
         mutable=True,
-        doc="Product gadolinium mass flow",
+        doc="Product gadolinium oxide mass flow",
     )
 
     m.fs.La_product = Param(
         default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "La"]
-            * 325.82
+            * REO_molar_mass["La2O3"]
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
         ),
         units=units.kg / units.hr,
         mutable=True,
-        doc="Product lanthanum mass flow",
+        doc="Product lanthanum oxide mass flow",
     )
 
     m.fs.Nd_product = Param(
         default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Nd"]
-            * 336.48
+            * REO_molar_mass["Nd2O3"]
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
         ),
         units=units.kg / units.hr,
         mutable=True,
-        doc="Product neodymium mass flow",
+        doc="Product neodymium oxide mass flow",
     )
 
     m.fs.Pr_product = Param(
         default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Pr"]
-            * 329.82
+            * REO_molar_mass["Pr2O3"]
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
         ),
         units=units.kg / units.hr,
         mutable=True,
-        doc="Product praseodymium mass flow",
+        doc="Product praseodymium oxide mass flow",
     )
 
     m.fs.Sc_product = Param(
         default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Sc"]
-            * 137.912
+            * REO_molar_mass["Sc2O3"]
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
         ),
         units=units.kg / units.hr,
         mutable=True,
-        doc="Product scandium mass flow",
+        doc="Product scandium oxide mass flow",
     )
 
     m.fs.Sm_product = Param(
         default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Sm"]
-            * 348.72
+            * REO_molar_mass["Sm2O3"]
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
         ),
         units=units.kg / units.hr,
         mutable=True,
-        doc="Product samarium mass flow",
+        doc="Product samarium oxide mass flow",
     )
 
     m.fs.Y_product = Param(
         default=units.convert(
             flowsheet.fs.roaster.flow_mol_comp_product[0, "Y"]
-            * 225.812
+            * REO_molar_mass["Y2O3"]
             * units.g
             / units.mol,
             to_units=units.kg / units.hr,
         ),
         units=units.kg / units.hr,
         mutable=True,
-        doc="Product yttrium mass flow",
+        doc="Product yttrium oxide mass flow",
     )
 
     pure_product_output_rates = {}

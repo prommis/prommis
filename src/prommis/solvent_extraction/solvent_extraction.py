@@ -93,6 +93,15 @@ class SolventExtractionData(UnitModelBlockData):
         ConfigValue(domain=int, description="Number of finite elements to use"),
     )
 
+    CONFIG.declare(
+        "aqueous_to_organic",
+        ConfigValue(
+            default=True,
+            domain=Bool,
+            description="Direction of the transfer between two phases",
+        ),
+    )
+
     def build(self):
         super().build()
 
@@ -105,22 +114,13 @@ class SolventExtractionData(UnitModelBlockData):
             number_of_finite_elements=self.config.number_of_finite_elements,
         )
 
+        def param_init(b, s, k, l, m):
+            b.partition_coefficient[s, (k, l, m)] = 1
+
         self.partition_coefficient = Param(
+            self.mscontactor.elements,
             self.mscontactor.stream_component_interactions,
-            initialize={
-                ("aqueous", "organic", "Al"): 3.6 / 100,
-                ("aqueous", "organic", "Ca"): 3.7 / 100,
-                ("aqueous", "organic", "Fe"): 2.1 / 100,
-                ("aqueous", "organic", "Sc"): 99.9 / 100,
-                ("aqueous", "organic", "Y"): 99.9 / 100,
-                ("aqueous", "organic", "La"): 75.2 / 100,
-                ("aqueous", "organic", "Ce"): 95.7 / 100,
-                ("aqueous", "organic", "Pr"): 96.5 / 100,
-                ("aqueous", "organic", "Nd"): 99.2 / 100,
-                ("aqueous", "organic", "Sm"): 99.9 / 100,
-                ("aqueous", "organic", "Gd"): 98.6 / 100,
-                ("aqueous", "organic", "Dy"): 99.9 / 100,
-            },
+            initialize=param_init,
             mutable=True,
             doc="The fraction of component that goes from aqueous to organic phase",
         )
@@ -131,24 +131,34 @@ class SolventExtractionData(UnitModelBlockData):
         self.organic_outlet = Port(extends=self.mscontactor.organic_outlet)
 
         def mass_transfer_term(b, t, s, k, l, m):
-            aqueous = b.mscontactor.aqueous
-            phase_list = aqueous.phase_list
-            if s == b.mscontactor.elements.first():
-                return (
-                    b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                    == -b.mscontactor.aqueous_inlet_state[t].get_material_flow_terms(
-                        phase_list, m
-                    )
-                    * b.partition_coefficient[(k, l, m)]
-                )
+            if self.config.aqueous_to_organic:
+                stream_state = b.mscontactor.aqueous
+                in_state = b.mscontactor.aqueous_inlet_state
+                stream_name = self.config.aqueous_stream
+                sign = -1
             else:
-                return (
-                    b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                    == -b.mscontactor.aqueous[
-                        t, b.mscontactor.elements.prev(s)
-                    ].get_material_flow_terms(phase_list, m)
-                    * b.partition_coefficient[(k, l, m)]
-                )
+                stream_state = b.mscontactor.organic
+                in_state = b.mscontactor.organic_inlet_state
+                stream_name = self.config.organic_stream
+                sign = 1
+
+            if stream_name.flow_direction == FlowDirection.forward:
+                if s == b.mscontactor.elements.first():
+                    state = in_state[t]
+                else:
+                    state = stream_state[t, b.mscontactor.elements.prev(s)]
+            else:
+                if s == b.mscontactor.elements.last():
+                    state = in_state[t]
+                else:
+                    state = stream_state[t, b.mscontactor.elements.next(s)]
+
+            return (
+                b.mscontactor.material_transfer_term[t, s, (k, l, m)]
+                == sign
+                * state.get_material_flow_terms(stream_state.phase_list, m)
+                * b.partition_coefficient[s, (k, l, m)]
+            )
 
         self.mass_transfer_constraint = Constraint(
             self.flowsheet().time,

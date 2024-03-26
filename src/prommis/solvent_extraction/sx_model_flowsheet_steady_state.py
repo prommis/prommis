@@ -6,18 +6,23 @@ from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
+from idaes.core.util import DiagnosticsToolbox
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
+from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 m = ConcreteModel()
 m.fs = FlowsheetBlock(dynamic=False)
 m.fs.prop_o = REESolExOgParameters()
+m.fs.prop_a = REESolExAqParameters()
 m.fs.leach_soln = LeachSolutionParameters()
 
+number_of_stages = 3
+
 m.fs.solex = SolventExtraction(
-    number_of_finite_elements=3,
+    number_of_finite_elements=number_of_stages,
     dynamic=False,
     aqueous_stream={
         "property_package": m.fs.leach_soln,
@@ -32,6 +37,19 @@ m.fs.solex = SolventExtraction(
         "has_pressure_balance": False,
     },
 )
+
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Al"] = 3.6 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Ca"] = 3.7 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Fe"] = 2.1 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sc"] = 99.9 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Y"] = 99.9 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "La"] = 75.2 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Ce"] = 95.7 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Pr"] = 96.5 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Nd"] = 99.2 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sm"] = 99.9 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Gd"] = 98.6 / 100
+m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Dy"] = 99.9 / 100
 
 m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e-9)
 m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1e-9)
@@ -68,6 +86,9 @@ m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].fix(9e-7)
 m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
 
 print(dof(m))
+
+dt = DiagnosticsToolbox(m)
+dt.report_structural_issues()
 
 # Initializing of the model
 

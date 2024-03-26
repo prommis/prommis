@@ -22,7 +22,6 @@ from pyomo.environ import (
     Objective,
     TransformationFactory,
     assert_optimal_termination,
-    minimize,
     floor,
     log10,
 )
@@ -74,7 +73,6 @@ def main():
             raise Exception("Degrees of freedom were not equal to zero")
         optimize(m, solver)
         _log.info("Solved Box Problem")
-        # m.fs.unit.report()
 
         unfix_opt_vars(m)
         add_obj(m)
@@ -84,7 +82,6 @@ def main():
         collect_plot_data(
             m, area, li_rejection, mg_rejection, mg_li_ratio, feed_ratio, feed_pressure
         )
-        # m.fs.unit.report()
         print_info(m)
     plot(
         recovery_vals,
@@ -244,23 +241,8 @@ def add_obj(m):
     """
     # limit Li loss
     m.fs.obj = Objective(
-        expr=m.fs.retentate.flow_mol_phase_comp[0, "Liq", "Li_+"], sense=minimize
+        expr=m.fs.retentate.flow_mol_phase_comp[0, "Liq", "Li_+"]
     )
-
-    # # maxmize the reduction in Mg:Li ratio
-    # m.fs.mg_li_ratio_obj = Objective(
-    #     expr=(
-    #         (
-    #             (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
-    #             / (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069)
-    #         )
-    #         - (
-    #             (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
-    #             / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069)
-    #         )
-    #     ),
-    #     sense=maximize
-    # )
 
 
 def add_pressure_con(m, pressure_limit):

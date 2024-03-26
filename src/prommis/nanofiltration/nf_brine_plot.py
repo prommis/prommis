@@ -21,7 +21,6 @@ from pyomo.environ import (
     Constraint,
     Objective,
     TransformationFactory,
-    assert_optimal_termination,
     floor,
     log10,
 )
@@ -90,7 +89,7 @@ def main():
         )
         print_information(m)
 
-    # create the sensitvity analyis plots using the data collected above
+    # create the sensitvity analysis plots using the data collected above
     plot(
         area,
         li_rejection,

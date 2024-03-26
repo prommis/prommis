@@ -21,19 +21,18 @@ from pyomo.environ import (
     Constraint,
     Objective,
     TransformationFactory,
-    assert_optimal_termination,
     floor,
     log10,
 )
 from pyomo.network import Arc
 
 import idaes.core.util.scaling as iscale
-import idaes.logger as idaeslog
 from idaes.core import FlowsheetBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.unit_models import Feed, Product
+import idaes.logger as idaeslog
 
 from watertap.property_models.multicomp_aq_sol_prop_pack import (
     ActivityCoefficientModel,
@@ -286,7 +285,6 @@ def optimize(m, solver):
     """
     _log.info(f"Optimizing with {format(degrees_of_freedom(m))} DOFs")
     simulation_results = solver.solve(m, tee=True)
-    # print(simulation_results.solver.termination_condition)
     if simulation_results.solver.termination_condition != "optimal":
         raise Exception("The solver did not return optimal termination")
     return simulation_results

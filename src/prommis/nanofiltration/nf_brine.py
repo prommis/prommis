@@ -24,7 +24,6 @@ from pyomo.environ import (
     Objective,
     TransformationFactory,
     assert_optimal_termination,
-    maximize,
 )
 from pyomo.network import Arc
 
@@ -238,7 +237,7 @@ def add_obj(m):
     """
     # limit Li loss
     m.fs.obj = Objective(
-        expr = m.fs.retentate.flow_mol_phase_comp[0,"Liq", "Li_+"],
+        expr=m.fs.retentate.flow_mol_phase_comp[0, "Liq", "Li_+"],
         # sense = maximize
     )
 
@@ -267,14 +266,14 @@ def add_pressure_con(m, pressure_limit=7e6):
     m.fs.pressure_con = Constraint(expr=m.fs.pump.outlet.pressure[0] <= pressure_limit)
 
 
-
 def add_recovery_con(m, recovery_limit=0.8):
     """
     Adds lithium recovery constraint to the pyomo model
     """
     # limit the Li recovery
     m.fs.li_recovery_con = Constraint(
-        expr=m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"] >= recovery_limit
+        expr=m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"]
+        >= recovery_limit
     )
 
 

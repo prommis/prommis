@@ -23,15 +23,15 @@ def test_main():
     """
     m = main()
     test_dict = {
-        "pressure": [m.fs.pump.outlet.pressure[0] * 1e-5, 2.0],
-        "area": [m.fs.unit.area, 985.283],
+        "pressure": [m.fs.pump.outlet.pressure[0] * 1e-5, 11.362],
+        "area": [m.fs.unit.area, 999.99],
         "nf_recovery": [
             m.fs.unit.recovery_vol_phase[0.0, "Liq"] * 100,
-            9.983,
+            94.999,
         ],
         "li_rejection": [
             m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"].value * 100,
-            3.694,
+            1.838,
         ],
         "feed_ion_ratio": [
             (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
@@ -41,7 +41,7 @@ def test_main():
         "perm_ion_ratio": [
             (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
             / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
-            0.493,
+            0.497,
         ],
     }
     for model_result, testval in test_dict.values():

@@ -35,6 +35,8 @@ from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.unit_models import Feed, Product
 
+import matplotlib.pyplot as plt
+import numpy as np
 from watertap.property_models.multicomp_aq_sol_prop_pack import (
     ActivityCoefficientModel,
     DensityCalculation,
@@ -43,17 +45,21 @@ from watertap.property_models.multicomp_aq_sol_prop_pack import (
 from watertap.unit_models.nanofiltration_DSPMDE_0D import NanofiltrationDSPMDE0D
 from watertap.unit_models.pressure_changer import Pump
 
-import matplotlib.pyplot as plt
-import numpy as np
-
-
 
 def main():
     """
     Builds and solves the NF flowsheet
     """
 
-    (area, li_rejection, mg_rejection, feed_pressure, recovery_vals) = initialize_sensitivity()
+    (
+        area,
+        li_rejection,
+        mg_rejection,
+        mg_li_ratio,
+        feed_ratio,
+        feed_pressure,
+        recovery_vals,
+    ) = initialize_sensitivity()
     for recovery in recovery_vals:
         solver = get_solver()
         m = build()
@@ -71,10 +77,20 @@ def main():
         add_pressure_con(m, pressure_limit=None)
         add_recovery_con(m, recovery_limit=recovery)
         optimize(m, solver)
-        collect_plot_data(m,area,li_rejection,mg_rejection,feed_pressure)
+        collect_plot_data(
+            m, area, li_rejection, mg_rejection, mg_li_ratio, feed_ratio, feed_pressure
+        )
         # m.fs.unit.report()
         print_info(m)
-    plot(recovery_vals, li_rejection, mg_rejection)
+    plot(
+        recovery_vals,
+        li_rejection,
+        mg_rejection,
+        mg_li_ratio,
+        feed_ratio,
+        area,
+        feed_pressure,
+    )
 
     return m
 
@@ -247,7 +263,7 @@ def add_pressure_con(m, pressure_limit):
     """
     Adds feed pressure constraint to the pyomo model
     """
-    if pressure_limit == None:
+    if pressure_limit is None:
         pressure_limit = 7e6
     # bound the feed pressure to a reasonable value for nanofiltration
     # choose an upper limit of 70 bar (https://doi.org/10.1021/acs.est.2c08584)
@@ -258,7 +274,7 @@ def add_recovery_con(m, recovery_limit):
     """
     Adds recovery constraint to the pyomo model
     """
-    if recovery_limit == None:
+    if recovery_limit is None:
         recovery_limit = 0.8
     # limit the NF recovery
     m.fs.recovery_con = Constraint(
@@ -284,25 +300,51 @@ def initialize_sensitivity():
     area = []  # m2
     li_rejection = []
     mg_rejection = []
+    mg_li_ratio = []
+    feed_ratio = []
     feed_pressure = []  # bar
 
     # provide values to constrain
-    recovery_vals = np.arange(0.75,1,0.05)
-    return (area, li_rejection, mg_rejection, feed_pressure, recovery_vals)
+    recovery_vals = np.arange(0.2, 1, 0.1)
+    return (
+        area,
+        li_rejection,
+        mg_rejection,
+        mg_li_ratio,
+        feed_ratio,
+        feed_pressure,
+        recovery_vals,
+    )
 
 
-def collect_plot_data(m,area,li_rejection,mg_rejection,feed_pressure):
-        area.append(m.fs.unit.area.value)
-        li_rejection.append(
-            m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"].value
-        )
-        mg_rejection.append(
-            m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Mg_2+"].value
-        )
-        feed_pressure.append(m.fs.pump.outlet.pressure[0].value / 1e5)
+def collect_plot_data(
+    m, area, li_rejection, mg_rejection, mg_li_ratio, feed_ratio, feed_pressure
+):
+    """
+    Stores the relevent information after each flowsheet solve to prepare plots
+    """
+    area.append(m.fs.unit.area.value)
+    li_rejection.append(
+        m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"].value
+    )
+    mg_rejection.append(
+        m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Mg_2+"].value
+    )
+    mg_li_ratio.append(
+        (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
+        / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069)
+    )
+    feed_ratio.append(
+        (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
+        / (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069)
+    )
+    feed_pressure.append(m.fs.pump.outlet.pressure[0].value / 1e5)
 
 
 def print_info(m):
+    """
+    Prints relevent information about the system
+    """
     print("Optimal NF feed pressure (Bar)", m.fs.pump.outlet.pressure[0].value / 1e5)
     print("Optimal area (m2)", m.fs.unit.area.value)
     print(
@@ -329,12 +371,44 @@ def print_info(m):
     )
 
 
-def plot(recovery_vals, li_rejection, mg_rejection):
-    plt.plot(recovery_vals, li_rejection, "-o")
-    plt.plot(recovery_vals, mg_rejection, "-o")
-    plt.legend(["Li+", "Mg2+"])
-    plt.xlabel("Volume Recovery")
-    plt.ylabel("Ion Rejection")
+def plot(
+    recovery_vals,
+    li_rejection,
+    mg_rejection,
+    mg_li_ratio,
+    feed_ratio,
+    area,
+    feed_pressure,
+):
+    """
+    Creates four subplots of the nanofiltration system, reporting
+    ion rejection, Mg:Li ratio, membrane area, and feed pressure
+    as the volume recovery of the membrane changes
+    """
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+
+    ax1.plot(recovery_vals, li_rejection, "-o")
+    ax1.plot(recovery_vals, mg_rejection, "-o")
+    ax1.legend(["Li+", "Mg2+"])
+    ax1.set_title("Ion Rejection vs Volume Recovery")
+    ax1.set_ylabel("Rejection")
+
+    ax2.plot(recovery_vals, area, "-o")
+    ax2.set_title("Membrane Area vs Volume Recovery")
+    ax2.set_ylabel("Area (m2)")
+
+    ax3.plot(recovery_vals, mg_li_ratio, "-o")
+    ax3.plot(recovery_vals, feed_ratio, "r")
+    ax3.legend(["Permeate", "Feed"])
+    ax3.set_title("Mg:Li Mass Ratio vs Volume Recovery")
+    ax3.set_xlabel("Recovery")
+    ax3.set_ylabel("Mg:Li")
+
+    ax4.plot(recovery_vals, feed_pressure, "-o")
+    ax4.set_title("Feed Pressure vs Volume Recovery")
+    ax4.set_xlabel("Recovery")
+    ax4.set_ylabel("Feed Pressure (bar)")
+
     plt.show()
 
 

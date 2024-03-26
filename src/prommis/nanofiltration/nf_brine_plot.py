@@ -53,6 +53,7 @@ def main():
     Builds and solves the NF flowsheet
     """
 
+    # initialize lists to store sensitivity data
     (
         area,
         li_rejection,
@@ -62,6 +63,8 @@ def main():
         feed_pressure,
         recovery_vals,
     ) = initialize_sensitivity()
+
+    # solve the system at each point
     for recovery in recovery_vals:
         solver = get_solver()
         m = build()
@@ -83,6 +86,8 @@ def main():
             m, area, li_rejection, mg_rejection, mg_li_ratio, feed_ratio, feed_pressure
         )
         print_info(m)
+    
+    # create the sensitvity analyis plots using the data collected above
     plot(
         recovery_vals,
         li_rejection,

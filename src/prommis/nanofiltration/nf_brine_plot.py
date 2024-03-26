@@ -51,6 +51,9 @@ _log = idaeslog.getLogger(__name__)
 def main():
     """
     Builds and solves the NF flowsheet
+
+    Returns:
+        m: pyomo model
     """
 
     # initialize lists to store sensitivity data
@@ -77,25 +80,25 @@ def main():
         optimize(m, solver)
         _log.info("Solved Box Problem")
 
-        unfix_opt_vars(m)
-        add_obj(m)
-        add_pressure_con(m, pressure_limit=None)
-        add_recovery_con(m, recovery_limit=recovery)
+        unfix_optimization_variables(m)
+        add_objective(m)
+        add_pressure_constraint(m, pressure_limit=None)
+        add_recovery_constraint(m, recovery_limit=recovery)
         optimize(m, solver)
         collect_plot_data(
             m, area, li_rejection, mg_rejection, mg_li_ratio, feed_ratio, feed_pressure
         )
-        print_info(m)
-    
+        print_information(m)
+
     # create the sensitvity analyis plots using the data collected above
     plot(
-        recovery_vals,
+        area,
         li_rejection,
         mg_rejection,
         mg_li_ratio,
         feed_ratio,
-        area,
         feed_pressure,
+        recovery_vals,
     )
 
     return m
@@ -103,11 +106,13 @@ def main():
 
 def set_default_feed(m, solver):
     """
-    Fixes the concentrations used to initialize the feed
+    Fixes the concentrations used to initialize the feed using the
+    concentration of the Salar de Atacama (kg/m3 = g/L)
+    Note: Cl- concentration will get overridden to enforce electroneutrality
 
-    Approximates the concentration of Salar de Atacama (kg/m3 = g/L)
-
-    Cl- concentration will get overridden to enforce electroneutrality
+    Args:
+        m: pyomo model
+        solver: optimization solver
     """
     conc_mass_phase_comp = {"Li_+": 1.19, "Mg_2+": 7.31, "Cl_-": 143.72}
     set_nf_feed(
@@ -118,9 +123,9 @@ def set_default_feed(m, solver):
     )
 
 
-def define_feed_comp():
+def define_feed_composition():
     """
-    Defines the ion properties needed for the DSPM-DE property package
+    Returns the ion properties needed for the DSPM-DE property package
 
     Ions include lithium, magnesium, and chloride, assuming LiCl and MgCl2 salts
 
@@ -167,6 +172,9 @@ def define_feed_comp():
 def build():
     """
     Builds the NF flowsheet
+
+    Returns:
+        m: pyomo model
     """
     # create the model
     m = ConcreteModel()
@@ -175,7 +183,7 @@ def build():
     m.fs = FlowsheetBlock(dynamic=False)
 
     # define the property model
-    default = define_feed_comp()
+    default = define_feed_composition()
     m.fs.properties = MCASParameterBlock(**default)
 
     # add the feed and product streams
@@ -200,9 +208,12 @@ def build():
     return m
 
 
-def fix_init_vars(m):
+def fix_initial_variables(m):
     """
     Fixes the initial variables needed to create 0 DOF
+
+    Args:
+        m: pyomo model
     """
 
     # pump variables
@@ -232,43 +243,57 @@ def fix_init_vars(m):
     iscale.calculate_scaling_factors(m)
 
 
-def unfix_opt_vars(m):
+def unfix_optimization_variables(m):
     """
     Unfixes select variables to enable optimization with DOF>0
+
+    Args:
+        m: pyomo model
     """
     m.fs.pump.outlet.pressure[0].unfix()
     m.fs.unit.area.unfix()
 
 
-def add_obj(m):
+def add_objective(m):
     """
     Adds objective to the pyomo model
+
+    Args:
+        m: pyomo model
     """
     # limit Li loss
-    m.fs.obj = Objective(
-        expr=m.fs.retentate.flow_mol_phase_comp[0, "Liq", "Li_+"]
-    )
+    m.fs.obj = Objective(expr=m.fs.retentate.flow_mol_phase_comp[0, "Liq", "Li_+"])
 
 
-def add_pressure_con(m, pressure_limit):
+def add_pressure_constraint(m, pressure_limit):
     """
     Adds feed pressure constraint to the pyomo model
+
+    Args:
+        m: pyomo model
+        pressure_limit: upper bound on the outlet pump pressure
     """
     if pressure_limit is None:
         pressure_limit = 7e6
     # bound the feed pressure to a reasonable value for nanofiltration
     # choose an upper limit of 70 bar (https://doi.org/10.1021/acs.est.2c08584)
-    m.fs.pressure_con = Constraint(expr=m.fs.pump.outlet.pressure[0] <= pressure_limit)
+    m.fs.pressure_constraint = Constraint(
+        expr=m.fs.pump.outlet.pressure[0] <= pressure_limit
+    )
 
 
-def add_recovery_con(m, recovery_limit):
+def add_recovery_constraint(m, recovery_limit):
     """
     Adds recovery constraint to the pyomo model
+
+    Args:
+        m: pyomo model
+        recovery_limit: upper bound on the volume recovery
     """
     if recovery_limit is None:
         recovery_limit = 0.8
     # limit the NF recovery
-    m.fs.recovery_con = Constraint(
+    m.fs.recovery_constraint = Constraint(
         expr=m.fs.unit.recovery_vol_phase[0.0, "Liq"] <= recovery_limit
     )
 
@@ -276,6 +301,10 @@ def add_recovery_con(m, recovery_limit):
 def optimize(m, solver):
     """
     Optimizes the flowsheet
+
+    Args:
+        m: pyomo model
+        solver: optimization solver
     """
     _log.info(f"Optimizing with {format(degrees_of_freedom(m))} DOFs")
     simulation_results = solver.solve(m, tee=True)
@@ -286,6 +315,15 @@ def optimize(m, solver):
 def initialize_sensitivity():
     """
     Makes plots to perform a sensitivity analysis on the nanofiltration flowsheet
+
+    Returns:
+        area: list to store optimal membrane area (m2)
+        li_rejection: list to store lithium rejection
+        mg_rejection: list to store magnesium rejection
+        mg_li_ratio: list to store Mg:Li mass ratio of the permeate
+        feed_ratio: list to store Mg:Li mass ratio of the feed
+        feed_pressure: list to store the optimal feed pressure (bar)
+        recovery_vals: list that holds the volume recovery values to test
     """
     # initialize lists to store data
     area = []  # m2
@@ -313,6 +351,15 @@ def collect_plot_data(
 ):
     """
     Stores the relevant information after each flowsheet solve to prepare plots
+
+    Args:
+        m: pyomo model
+        area: list to store optimal membrane area (m2)
+        li_rejection: list to store lithium rejection
+        mg_rejection: list to store magnesium rejection
+        mg_li_ratio: list to store Mg:Li mass ratio of the permeate
+        feed_ratio: list to store Mg:Li mass ratio of the feed
+        feed_pressure: list to store the optimal feed pressure (bar)
     """
     area.append(m.fs.unit.area.value)
     li_rejection.append(
@@ -332,7 +379,7 @@ def collect_plot_data(
     feed_pressure.append(m.fs.pump.outlet.pressure[0].value / 1e5)
 
 
-def print_info(m):
+def print_information(m):
     """
     Prints relevant information about the system
     """
@@ -363,18 +410,27 @@ def print_info(m):
 
 
 def plot(
-    recovery_vals,
+    area,
     li_rejection,
     mg_rejection,
     mg_li_ratio,
     feed_ratio,
-    area,
     feed_pressure,
+    recovery_vals,
 ):
     """
     Creates four subplots of the nanofiltration system, reporting
     ion rejection, Mg:Li ratio, membrane area, and feed pressure
     as the volume recovery of the membrane changes
+
+    Args:
+        area: list to store optimal membrane area (m2)
+        li_rejection: list to store lithium rejection
+        mg_rejection: list to store magnesium rejection
+        mg_li_ratio: list to store Mg:Li mass ratio of the permeate
+        feed_ratio: list to store Mg:Li mass ratio of the feed
+        feed_pressure: list to store the optimal feed pressure (bar)
+        recovery_vals: list that holds the volume recovery values to test
     """
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
@@ -406,9 +462,13 @@ def plot(
 def initialize(m, solver):
     """
     Initializes the flowsheet units
+
+    Args:
+        m: pyomo model
+        solver: optimization solver
     """
     set_default_feed(m, solver)
-    fix_init_vars(m)
+    fix_initial_variables(m)
 
     m.fs.feed.initialize(optarg=solver.options)
     propagate_state(m.fs.feed_to_pump)
@@ -427,6 +487,12 @@ def initialize(m, solver):
 def set_nf_feed(blk, solver, flow_mass_h2o, conc_mass_phase_comp):  # kg/m3
     """
     Calculates the concentration of the feed solution in molar flow rate
+
+    Args:
+        blk: flowsheet block
+        solver: optimization solver
+        flow_mass_h2o: inlet water flow rate (feed)
+        conc_mass_phase_conc: mass concentration (feed)
     """
     if solver is None:
         solver = get_solver()
@@ -465,7 +531,7 @@ def set_nf_feed(blk, solver, flow_mass_h2o, conc_mass_phase_comp):  # kg/m3
         blk.feed.properties[0].flow_mol_phase_comp["Liq", ion].fix()
 
 
-def calc_scale(value):
+def calculate_scale(value):
     """
     Calculates a default scaling value
     """
@@ -478,7 +544,7 @@ def set_nf_feed_scaling(blk):
     """
     _add = 0
     for i in blk.feed.properties[0].flow_mol_phase_comp:
-        scale = calc_scale(blk.feed.properties[0].flow_mol_phase_comp[i].value)
+        scale = calculate_scale(blk.feed.properties[0].flow_mol_phase_comp[i].value)
         print(f"{i} flow_mol_phase_comp scaling factor = {10**(scale+_add)}")
         blk.properties.set_default_scaling(
             "flow_mol_phase_comp", 10 ** (scale + _add), index=i

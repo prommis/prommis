@@ -49,6 +49,9 @@ _log = idaeslog.getLogger(__name__)
 def main():
     """
     Builds and solves the NF flowsheet
+
+    Returns:
+        m: pyomo model
     """
     solver = get_solver()
     m = build()
@@ -57,14 +60,14 @@ def main():
     _log.info("Initialization Okay")
 
     if degrees_of_freedom(m) != 0:
-            raise Exception("Degrees of freedom were not equal to zero")
+        raise Exception("Degrees of freedom were not equal to zero")
     optimize(m, solver)
     _log.info("Solved Box Problem")
     m.fs.unit.report()
 
-    unfix_opt_vars(m)
-    add_obj(m)
-    add_pressure_con(m)
+    unfix_optimization_variables(m)
+    add_objective(m)
+    add_pressure_constraint(m)
     optimize(m, solver)
     m.fs.unit.report()
     print("Optimal NF feed pressure (Bar)", m.fs.pump.outlet.pressure[0].value / 1e5)
@@ -97,11 +100,13 @@ def main():
 
 def set_default_feed(m, solver):
     """
-    Fixes the concentrations used to initialize the feed
+    Fixes the concentrations used to initialize the feed using the
+    concentration of the Salar de Atacama (kg/m3 = g/L)
+    Note: Cl- concentration will get overridden to enforce electroneutrality
 
-    Approximates the concentration of Salar de Atacama (kg/m3 = g/L)
-
-    Cl- concentration will get overridden to enforce electroneutrality
+    Args:
+        m: pyomo model
+        solver: optimization solver
     """
     conc_mass_phase_comp = {"Li_+": 1.19, "Mg_2+": 7.31, "Cl_-": 143.72}
     set_nf_feed(
@@ -112,7 +117,7 @@ def set_default_feed(m, solver):
     )
 
 
-def define_feed_comp():
+def define_feed_composition():
     """
     Defines the ion properties needed for the DSPM-DE property package
 
@@ -161,6 +166,9 @@ def define_feed_comp():
 def build():
     """
     Builds the NF flowsheet
+
+    Returns:
+        m: pyomo model
     """
     # create the model
     m = ConcreteModel()
@@ -169,7 +177,7 @@ def build():
     m.fs = FlowsheetBlock(dynamic=False)
 
     # define the property model
-    default = define_feed_comp()
+    default = define_feed_composition()
     m.fs.properties = MCASParameterBlock(**default)
 
     # add the feed and product streams
@@ -194,9 +202,12 @@ def build():
     return m
 
 
-def fix_init_vars(m):
+def fix_initial_variables(m):
     """
     Fixes the initial variables needed to create 0 DOF
+
+    Args:
+        m: pyomo model
     """
 
     # pump variables
@@ -226,36 +237,52 @@ def fix_init_vars(m):
     iscale.calculate_scaling_factors(m)
 
 
-def unfix_opt_vars(m):
+def unfix_optimization_variables(m):
     """
     Unfixes select variables to enable optimization with DOF>0
+
+    Args:
+        m: pyomo model
     """
     m.fs.pump.outlet.pressure[0].unfix()
     m.fs.unit.area.unfix()
 
 
-def add_obj(m):
+def add_objective(m):
     """
     Adds objectives to the pyomo model
+
+    Args:
+        m: pyomo model
     """
     # limit Li loss
-    m.fs.obj = Objective(
+    m.fs.objective = Objective(
         expr=m.fs.retentate.flow_mol_phase_comp[0, "Liq", "Li_+"]
     )
 
 
-def add_pressure_con(m, pressure_limit=7e6):
+def add_pressure_constraint(m, pressure_limit=7e6):
     """
     Adds feed pressure constraint to the pyomo model
+
+    Args:
+        m: pyomo model
+        pressure_limit: upper bound on the outlet pump pressure
     """
     # bound the feed pressure to a reasonable value for nanofiltration
     # choose an upper limit of 70 bar (https://doi.org/10.1021/acs.est.2c08584)
-    m.fs.pressure_con = Constraint(expr=m.fs.pump.outlet.pressure[0] <= pressure_limit)
+    m.fs.pressure_constraint = Constraint(
+        expr=m.fs.pump.outlet.pressure[0] <= pressure_limit
+    )
 
 
 def optimize(m, solver):
     """
     Optimizes the flowsheet
+
+    Args:
+        m: pyomo model
+        solver: optimization solver
     """
     _log.info(f"Optimizing with {format(degrees_of_freedom(m))} DOFs")
     simulation_results = solver.solve(m, tee=True)
@@ -266,9 +293,13 @@ def optimize(m, solver):
 def initialize(m, solver):
     """
     Initializes the flowsheet units
+
+    Args:
+        m: pyomo model
+        solver: optimization solver
     """
     set_default_feed(m, solver)
-    fix_init_vars(m)
+    fix_initial_variables(m)
 
     m.fs.feed.initialize(optarg=solver.options)
     propagate_state(m.fs.feed_to_pump)
@@ -287,6 +318,12 @@ def initialize(m, solver):
 def set_nf_feed(blk, solver, flow_mass_h2o, conc_mass_phase_comp):  # kg/m3
     """
     Calculates the concentration of the feed solution in molar flow rate
+
+    Args:
+        blk: flowsheet block
+        solver: optimization solver
+        flow_mass_h2o: inlet water flow rate (feed)
+        conc_mass_phase_conc: mass concentration (feed)
     """
     if solver is None:
         solver = get_solver()
@@ -325,7 +362,7 @@ def set_nf_feed(blk, solver, flow_mass_h2o, conc_mass_phase_comp):  # kg/m3
         blk.feed.properties[0].flow_mol_phase_comp["Liq", ion].fix()
 
 
-def calc_scale(value):
+def calculate_scale(value):
     """
     Calculates a default scaling value
     """
@@ -338,7 +375,7 @@ def set_nf_feed_scaling(blk):
     """
     _add = 0
     for i in blk.feed.properties[0].flow_mol_phase_comp:
-        scale = calc_scale(blk.feed.properties[0].flow_mol_phase_comp[i].value)
+        scale = calculate_scale(blk.feed.properties[0].flow_mol_phase_comp[i].value)
         print(f"{i} flow_mol_phase_comp scaling factor = {10**(scale+_add)}")
         blk.properties.set_default_scaling(
             "flow_mol_phase_comp", 10 ** (scale + _add), index=i

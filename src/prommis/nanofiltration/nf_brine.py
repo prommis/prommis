@@ -16,14 +16,14 @@ Nanofiltration flowsheet for Donnan steric pore model with dielectric exclusion
 """
 
 # import statements
-from math import floor, log
-
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
     Objective,
     TransformationFactory,
     assert_optimal_termination,
+    floor,
+    log10,
 )
 from pyomo.network import Arc
 
@@ -353,7 +353,7 @@ def calc_scale(value):
     """
     Calculates a default scaling value
     """
-    return -1 * floor(log(value, 10))
+    return -1 * floor(log10(value))
 
 
 def set_nf_feed_scaling(blk):

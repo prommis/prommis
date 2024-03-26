@@ -15,7 +15,6 @@ pytest.importorskip("watertap", reason="WaterTAP dependency not available")
 from prommis.nanofiltration.nf_brine import main
 
 
-@pytest.mark.requires_idaes_solver
 @pytest.mark.component
 def test_main():
     """
@@ -45,4 +44,4 @@ def test_main():
         ],
     }
     for model_result, testval in test_dict.values():
-        assert pytest.approx(testval, rel=1e-3) == value(model_result)
+        assert pytest.approx(testval, rel=1e-5) == value(model_result)

@@ -56,7 +56,8 @@ def main():
     initialize(m, solver)
     _log.info("Initialization Okay")
 
-    assert degrees_of_freedom(m) == 0
+    if degrees_of_freedom(m) != 0:
+            raise Exception("Degrees of freedom were not equal to zero")
     optimize(m, solver)
     _log.info("Solved Box Problem")
     m.fs.unit.report()

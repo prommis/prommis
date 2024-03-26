@@ -28,12 +28,12 @@ from pyomo.environ import (
 from pyomo.network import Arc
 
 import idaes.core.util.scaling as iscale
+import idaes.logger as idaeslog
 from idaes.core import FlowsheetBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.unit_models import Feed, Product
-import idaes.logger as idaeslog
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -262,7 +262,9 @@ def add_objective(m):
         m: pyomo model
     """
     # limit Li loss
-    m.fs.obj = Objective(expr=m.fs.retentate.flow_mol_phase_comp[0, "Liq", "Li_+"])
+    m.fs.objective = Objective(
+        expr=m.fs.retentate.flow_mol_phase_comp[0, "Liq", "Li_+"]
+    )
 
 
 def add_pressure_constraint(m, pressure_limit):
@@ -308,7 +310,8 @@ def optimize(m, solver):
     """
     _log.info(f"Optimizing with {format(degrees_of_freedom(m))} DOFs")
     simulation_results = solver.solve(m, tee=True)
-    assert_optimal_termination(simulation_results)
+    if simulation_results.solver.termination_condition != "optimal":
+        raise Exception("The solver did not return optimal termination")
     return simulation_results
 
 

@@ -34,6 +34,7 @@ from idaes.core.solvers import get_solver
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.unit_models import Feed, Product
+import idaes.logger as idaeslog
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -44,6 +45,8 @@ from watertap.property_models.multicomp_aq_sol_prop_pack import (
 )
 from watertap.unit_models.nanofiltration_DSPMDE_0D import NanofiltrationDSPMDE0D
 from watertap.unit_models.pressure_changer import Pump
+
+_log = idaeslog.getLogger(__name__)
 
 
 def main():
@@ -65,11 +68,11 @@ def main():
         m = build()
 
         initialize(m, solver)
-        print("init_okay")
+        _log.info("Initialization Okay")
 
         assert degrees_of_freedom(m) == 0
         optimize(m, solver)
-        print("solved box problem")
+        _log.info("Solved Box Problem")
         # m.fs.unit.report()
 
         unfix_opt_vars(m)
@@ -286,7 +289,7 @@ def optimize(m, solver):
     """
     Optimizes the flowsheet
     """
-    print(f"Optimizing with {format(degrees_of_freedom(m))} DOFs")
+    _log.info(f"Optimizing with {format(degrees_of_freedom(m))} DOFs")
     simulation_results = solver.solve(m, tee=True)
     assert_optimal_termination(simulation_results)
     return simulation_results

@@ -321,7 +321,7 @@ def collect_plot_data(
     m, area, li_rejection, mg_rejection, mg_li_ratio, feed_ratio, feed_pressure
 ):
     """
-    Stores the relevent information after each flowsheet solve to prepare plots
+    Stores the relevant information after each flowsheet solve to prepare plots
     """
     area.append(m.fs.unit.area.value)
     li_rejection.append(
@@ -343,7 +343,7 @@ def collect_plot_data(
 
 def print_info(m):
     """
-    Prints relevent information about the system
+    Prints relevant information about the system
     """
     print("Optimal NF feed pressure (Bar)", m.fs.pump.outlet.pressure[0].value / 1e5)
     print("Optimal area (m2)", m.fs.unit.area.value)

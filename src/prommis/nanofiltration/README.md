@@ -5,7 +5,7 @@ The following files serve as a demonstration of membrane unit models (sourced fr
 ### nf_brine.py
 This is an example flowsheet for the separation of lithium and magnesium ions using nanofiltration (nf). The unit model is the DSPM-DE and the property model is the MCAS, both of which can be found in WaterTAP. Currently, the inlet feed is modeling the Salar de Atacama brine. 
 
-The objective of the pyomo model is to limit the amount of lithum lost in the retentate stream, with 2 DOF (pressure, area). Operating at this extreme end of the tradeoff bewteen the selectivity and permeability, combined with the low solvent flux for this example, the magnesium rejection is low (~14%). An additional constraint is enacted on the model to limit the feed pressure to 70 bar, per typical experimental capabilities.
+The objective of the pyomo model is to limit the amount of lithum lost in the retentate stream, with 2 DOF (pressure, area). Operating at this extreme end of the tradeoff between the selectivity and permeability, combined with the low solvent flux for this example, the magnesium rejection is low (~14%). An additional constraint is enacted on the model to limit the feed pressure to 70 bar, per typical experimental capabilities.
 
 good references: https://doi.org/10.1021/acs.est.2c08584 ; https://doi.org/10.1016/j.memsci.2020.118809
 

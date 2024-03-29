@@ -414,9 +414,9 @@ def set_scaling(m):
 
     for component in component_set1:
         m.scaling_factor[m.fs.leach.liquid[0, 1].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[
             m.fs.leach_liquid_feed.properties[0].conc_mol_comp[component]
         ] = 1e5
@@ -449,26 +449,26 @@ def set_scaling(m):
         m.scaling_factor[m.fs.sep1.mixed_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.sep1.recycle_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.sep1.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.recycle1_purge.properties[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_mixer.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.recycle1_purge.properties[0].conc_mol_comp[component]] = (
+            1e5
+        )
+        m.scaling_factor[m.fs.leach_mixer.recycle_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[m.fs.leach_mixer.feed_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.leach_mixer.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
 
     for component in component_set2:
         m.scaling_factor[
@@ -497,9 +497,9 @@ def set_scaling(m):
         m.scaling_factor[m.fs.sep2.mixed_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.sep2.recycle_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.sep2.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.recycle2_purge.properties[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.recycle2_purge.properties[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[
             m.fs.solex_cleaner.mscontactor.aqueous[0, 1].conc_mol_comp[component]
         ] = 1e5
@@ -541,9 +541,9 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.precipitator.cv_aqueous.properties_out[0].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
 
     m.scaling_factor[m.fs.sl_sep2.solid_state[0].temperature] = 1e-2
     m.scaling_factor[m.fs.sl_sep2.liquid_inlet_state[0].flow_vol] = 1e-2
@@ -558,19 +558,19 @@ def set_scaling(m):
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous[0, 1].flow_vol] = 1e-2
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous[0, 2].flow_vol] = 1e-2
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous[0, 3].flow_vol] = 1e-2
-    m.scaling_factor[
-        m.fs.solex_cleaner.mscontactor.aqueous_inlet_state[0].flow_vol
-    ] = 1e-2
+    m.scaling_factor[m.fs.solex_cleaner.mscontactor.aqueous_inlet_state[0].flow_vol] = (
+        1e-2
+    )
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic[0, 1].flow_vol] = 1e-2
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic[0, 2].flow_vol] = 1e-2
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic[0, 3].flow_vol] = 1e-2
 
-    m.scaling_factor[
-        m.fs.precipitator.cv_precipitate.properties_in[0].temperature
-    ] = 1e2
-    m.scaling_factor[
-        m.fs.precipitator.cv_precipitate.properties_out[0].temperature
-    ] = 1e-4
+    m.scaling_factor[m.fs.precipitator.cv_precipitate.properties_in[0].temperature] = (
+        1e2
+    )
+    m.scaling_factor[m.fs.precipitator.cv_precipitate.properties_out[0].temperature] = (
+        1e-4
+    )
 
     m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol] = 1e-2
     m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol] = 1e-2
@@ -1412,9 +1412,7 @@ def add_costing(flowsheet):
     # 3.4 is UKy Roasting - Gas Scrubber
     R_gas_scrubber_accounts = ["3.4"]
     m.fs.R_gas_scrubber = UnitModelBlock()
-    m.fs.R_gas_scrubber.gas_rate = Var(
-        initialize=11.500, units=units.ft**3 / units.min
-    )
+    m.fs.R_gas_scrubber.gas_rate = Var(initialize=11.500, units=units.ft**3 / units.min)
     m.fs.R_gas_scrubber.gas_rate.fix()
     m.fs.R_gas_scrubber.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,

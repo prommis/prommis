@@ -1,5 +1,5 @@
 import pytest
-from pyomo.environ import ConcreteModel, assert_optimal_termination
+from pyomo.environ import ConcreteModel, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
@@ -19,7 +19,6 @@ from idaes.core.util.model_statistics import (
 # Assuming these imports are adjusted to your project's structure
 from prommis.solid_handling.crusher import CrushAndBreakageUnit
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
-from idaes.models.properties.activity_coeff_models import BTX_activity_coeff_VLE
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing
@@ -34,17 +33,14 @@ def test_config():
     m.fs.properties_solid = CoalRefuseParameters(
         doc="solid property",
     )
-    m.fs.properties_general = BTX_activity_coeff_VLE()
 
-    m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid,
-                                     property_general=m.fs.properties_general)
+    m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid)
 
     # Assert specific config options as per your model's requirements
     # Example:
     assert not m.fs.unit.config.dynamic
     assert not m.fs.unit.config.has_holdup
     assert m.fs.unit.config.property_package is m.fs.properties_solid
-    assert m.fs.unit.config.property_general is m.fs.properties_general
 
 
 # -----------------------------------------------------------------------------
@@ -57,36 +53,33 @@ class TestSolidHandling(object):
             doc="solid property",
         )
 
-        m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid,
-                                         property_general=m.fs.properties_general)
+        m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid)
         # Set up your model initialization here
-        # Example: m.fs.unit.some_inlet_variable.fix(some_value)
-        m.fs.unit.inlet.fow_mass.fix(2)  # tonne/hr
-        m.fs.unit.inlet.feed50size.fix(60)  # eed particle size, micrometer
-        m.fs.unit.inlet.Prod50size.fix(
-            30
-        )  # Product Particle Size that allows 80% passing, micrometer
-
-        # m.fs.unit.soliddistribution.fix(0.48)
+        m.fs.unit.inlet.mass_frac_comp[0, :].fix(0.1)  # set mass frac value. 13
+        m.fs.unit.control_volume.properties_in[0].flow_mass.fix(2000)  # kg/hr
         return m
 
     @pytest.mark.build
     @pytest.mark.unit
     def test_build(self, model):
+        model.display()
         # Assertions related to the build status of the model
 
         # More assertions as needed for your model
 
-        assert number_variables(model.fs.unit) == 3
-        assert number_total_constraints(model.fs.unit) == 3
+        assert number_variables(model.fs.unit) == 57
+        assert number_total_constraints(model.fs.unit) == 43
         assert number_unused_variables(model.fs.unit) == 0
 
     @pytest.mark.component
     def test_units(self, model):
-        assert_units_consistent(model.fs.unit)
+        # assert_units_consistent(model.fs.unit)
 
         dt = DiagnosticsToolbox(model=model)
         dt.report_structural_issues()
+        dt.display_underconstrained_set()
+        dt.display_components_with_inconsistent_units()
+        assert_units_consistent(model)
         assert degrees_of_freedom(model) == 0
 
     @pytest.mark.solver
@@ -103,3 +96,11 @@ class TestSolidHandling(object):
     def test_solve(self, model):
         results = solver.solve(model)
         assert_optimal_termination(results)
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(solver is None, reason="Solver not available")
+    @pytest.mark.component
+    def test_solution(self, model):
+        assert pytest.approx(0.8, abs=1e-0) == value(model.fs.unit.probfeed80[0])
+        assert pytest.approx(0.8, abs=1e-0) == value(model.fs.unit.probfeed80[0])
+        assert pytest.approx(3.95, abs=1e-0) == value(model.fs.unit.crushpower[0])

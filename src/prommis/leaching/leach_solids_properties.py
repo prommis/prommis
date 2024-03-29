@@ -106,25 +106,29 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
 
         self._state_block_class = CoalRefuseStateBlock
 
+        self.feed80size = Param(
+            units=units.um,  # unit is micrometer
+            initialize=110.0,
+            mutable=True,
+            doc="Feed Particle Size that has 80% passing, micrometer",
+        )
         self.feed50size = Param(
             units=units.um,  # um micrometer. unit need to convert
-            initialize=50,  # Feed median particle size, micrometer
+            initialize=80,  # Feed median particle size, micrometer
             mutable=True,
+            doc="Feed median Particle Size, micrometer",
+        )
+        self.prod80size = Param(
+            units=units.um,  # unit is micrometer
+            initialize=80.0,
+            mutable=True,
+            doc="Prod Particle Size that has 80% passing, micrometer",
         )
         self.prod50size = Param(
             units=units.um,  # um micrometer. unit need to convert
-            initialize=30,  # Product median particle size, micrometer
+            initialize=58,  # Product median particle size, micrometer
             mutable=True,
-        )
-        self.probfeed80 = Param(
-            units=None,  # unitless
-            initialize=0.8,  # 80% of feed pass the mesh
-            mutable=True,
-        )
-        self.probprod80 = Param(
-            units=None,  # unitless
-            initialize=0.8,  # 80% of product pass the mesh
-            mutable=True,
+            doc="Prod median Particle Size, micrometer",
         )
         self.nfeed = Param(
             units=None,  # unitless
@@ -137,8 +141,10 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
             mutable=True,
         )
         self.bwi = Param(
-            units=units.kWh / units.tonne,  # maybe need convert to with default unit
-            initialize=1.5,  # Product particle distribution width parameter
+            units=units.kW
+            * units.hour
+            / units.tonne,  # maybe need convert to with default unit
+            initialize=12,  # Bond work index
             mutable=True,
         )
 

@@ -17,13 +17,12 @@ This module including power consumption for solid crushing; breakage probability
 __author__ = "Lingyan Deng"
 __version__ = "1.0.0"
 
-from pyomo.environ import Var, log
+from pyomo.environ import Var, Reals, exp, Param, units as pyunits
 from pyomo.common.config import ConfigValue, ConfigBlock, In
 from idaes.core import (
     ControlVolume0DBlock,
     declare_process_block_class,
     MaterialBalanceType,
-    EnergyBalanceType,
     UnitModelBlockData,
     useDefault,
 )
@@ -62,7 +61,7 @@ this must be False.""",
     CONFIG.declare(
         "material_balance_type",
         ConfigValue(
-            default=MaterialBalanceType.useDefault,
+            default=MaterialBalanceType.componentTotal,
             domain=In(MaterialBalanceType),
             description="Material balance construction flag",
             doc="""Indicates what type of mass balance should be constructed,
@@ -75,24 +74,6 @@ balance type
 **MaterialBalanceType.componentTotal** - use total component balances,
 **MaterialBalanceType.elementTotal** - use total element balances,
 **MaterialBalanceType.total** - use total material balance.}""",
-        ),
-    )
-    CONFIG.declare(
-        "energy_balance_type",
-        ConfigValue(
-            default=EnergyBalanceType.useDefault,
-            domain=In(EnergyBalanceType),
-            description="Energy balance construction flag",
-            doc="""Indicates what type of energy balance should be constructed,
-**default** - EnergyBalanceType.useDefault.
-**Valid values:** {
-**EnergyBalanceType.useDefault - refer to property package for default
-balance type
-**EnergyBalanceType.none** - exclude energy balances,
-**EnergyBalanceType.enthalpyTotal** - single enthalpy balance for material,
-**EnergyBalanceType.enthalpyPhase** - enthalpy balances for each phase,
-**EnergyBalanceType.energyTotal** - single energy balance for material,
-**EnergyBalanceType.energyPhase** - energy balances for each phase.}""",
         ),
     )
     CONFIG.declare(
@@ -146,74 +127,86 @@ see property package for documentation.}""",
         self.control_volume.add_state_blocks(has_phase_equilibrium=False)
 
         self.control_volume.add_material_balances(
-            balance_type=self.config.material_balance_type, has_phase_equilibrium=False
-        )
-
-        self.control_volume.add_energy_balances(
-            balance_type=self.config.energy_balance_type,
-            has_heat_transfer=False,
+            balance_type=self.config.material_balance_type,
+            has_phase_equilibrium=False,
         )
 
         # Add Ports
         self.add_inlet_port()
         self.add_outlet_port()
 
-        solid_prop = self.config.property_package
-        solid_prop.flow_mass  # mass low rate, property unit kg/hr, unit needed tonne/hr
-        solid_prop.feed50size  # Feed median particle size, micrometer
-        solid_prop.prod50size  # Product median particle size, micrometer
+        self.control_volume.properties_in[
+            0
+        ].flow_mass  # mass low rate, property unit kg/hr, unit needed tonne/hr
 
         units_meta = self.control_volume.config.property_package.get_metadata()
-        self.feed80size = Var(
+
+        self.probfeed80 = Var(
             self.flowsheet().time,
-            initialize=200.0,
-            doc="Feed Particle Size that has 80% passing, micrometer",
-            units=units_meta.get_derived_units(
-                "length"
-            ),  # unit should be changed to micrometer
+            units=None,  # unitless
+            initialize=0.8,  # 80% of feed pass the mesh
+            doc="probability of 80 percent feed passing the mesh",
         )
+        self.probprod80 = Var(
+            self.flowsheet().time,
+            units=None,  # unitless
+            initialize=0.8,  # 80% of product pass the mesh
+            doc="probability of 80 percent product passing the mesh",
+        )
+        self.crushpower = Var(
+            self.flowsheet().time,
+            units=pyunits.kW,
+            initialize=3.95,
+            doc="Work required to increase crush the solid",
+        )
+        # self.powerparam = Param(
+        #     units=pyunits.um,  # maybe need convert to with default unit
+        #     initialize=10,  # Bond work index
+        #     mutable=True,
+        # )
 
         # BreakageDistribution calculation as a constraint. This is the equation for accumulative fraction of solid breakage probability distribution smaller than size x=feed80size
         @self.Constraint(self.flowsheet().time, doc="feed size constraint")
         def feed_size_eq(self, t):
-            return self.feed80size[t] == (
-                (log(1 - self.control_volume.properties_in[t].probfeed80))
-                ** (self.control_volume.properties_in[t].nfeed / 2)
-                * self.control_volume.properties_in[t].feed50size
+            return self.probfeed80[t] == (
+                1
+                - exp(
+                    -(
+                        (
+                            self.config.property_package.feed80size
+                            / self.config.property_package.feed50size
+                        )
+                        ** self.config.property_package.nfeed
+                    )
+                )
             )
-
-        self.prod80size = Var(
-            self.flowsheet().time,
-            initialize=80.0,
-            doc="Feed Particle Size that has 80% passing, micrometer",
-            units=units_meta.get_derived_units(
-                "length"
-            ),  # unit should be changed to micrometer
-        )
 
         @self.Constraint(self.flowsheet().time, doc="product size constraint")
         def prod_size_eq(self, t):
-            return self.prod80size[t] == (
-                (log(1 - self.control_volume.properties_in[t].probprod80))
-                ** (self.control_volume.properties_in[t].nprod / 2)
-                * self.control_volume.properties_in[t].prod50size
+            return self.probprod80[t] == (
+                1
+                - exp(
+                    -(
+                        (
+                            self.config.property_package.prod80size
+                            / self.config.property_package.prod50size
+                        )
+                        ** self.config.property_package.nprod
+                    )
+                )
             )
-
-        self.crushpower = Var(
-            self.flowsheet().time,
-            initialize=1.0,
-            doc="Work required to increase crush the solid",
-            units=units_meta.get_derived_units("power"),
-        )
 
         @self.Constraint(self.flowsheet().time, doc="Crusher work constraint")
         def crush_work_eq(self, t):
             return self.crushpower[t] == (
                 10
-                * self.control_volume.properties_in[t].flow_mass
-                * self.control_volume.properties_in[t].bwi
+                * pyunits.convert(
+                    self.control_volume.properties_in[t].flow_mass,
+                    to_units=pyunits.tonne / pyunits.hour,
+                )
+                * self.config.property_package.bwi
                 * (
-                    1 / self.control_volume.properties_in[t].prod80size ** 0.5
-                    - 1 / self.control_volume.properties_in[t].feed80size ** 0.5
+                    1 / (self.config.property_package.prod80size / pyunits.um) ** 0.5
+                    - 1 / (self.config.property_package.feed80size / pyunits.um) ** 0.5
                 )
             )

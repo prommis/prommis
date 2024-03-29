@@ -104,6 +104,7 @@ class TestSXmodel:
         # Check for optimal solution
         assert check_optimal_termination(results)
 
+    @pytest.mark.known_issue(52)
     @pytest.mark.component
     def test_solution(self, SolEx_frame):
         m = SolEx_frame

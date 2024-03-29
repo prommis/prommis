@@ -17,7 +17,7 @@ This module including power consumption for solid crushing; breakage probability
 __author__ = "Lingyan Deng"
 __version__ = "1.0.0"
 
-from pyomo.environ import Var, Reals, exp, Param, units as pyunits
+from pyomo.environ import Var, exp, units as pyunits
 from pyomo.common.config import ConfigValue, ConfigBlock, In
 from idaes.core import (
     ControlVolume0DBlock,
@@ -139,8 +139,6 @@ see property package for documentation.}""",
             0
         ].flow_mass  # mass low rate, property unit kg/hr, unit needed tonne/hr
 
-        units_meta = self.control_volume.config.property_package.get_metadata()
-
         self.probfeed80 = Var(
             self.flowsheet().time,
             units=None,  # unitless
@@ -159,11 +157,6 @@ see property package for documentation.}""",
             initialize=3.95,
             doc="Work required to increase crush the solid",
         )
-        # self.powerparam = Param(
-        #     units=pyunits.um,  # maybe need convert to with default unit
-        #     initialize=10,  # Bond work index
-        #     mutable=True,
-        # )
 
         # BreakageDistribution calculation as a constraint. This is the equation for accumulative fraction of solid breakage probability distribution smaller than size x=feed80size
         @self.Constraint(self.flowsheet().time, doc="feed size constraint")

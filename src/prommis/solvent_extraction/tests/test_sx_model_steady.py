@@ -45,40 +45,92 @@ class TestSXmodel:
             },
         )
 
-        stage_number = np.arange(1,number_of_stages+1)
+        stage_number = np.arange(1, number_of_stages + 1)
 
         for s in stage_number:
-            if s==1:
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Al"] = 5.2 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ca"] = 3 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Fe"] = 24.7 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sc"] = 99.1 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Y"] = 99.9 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "La"] = 32.4 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ce"] = 58.2 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Pr"] = 58.2 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Nd"] = 87.6 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sm"] = 99.9 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Gd"] = 69.8 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Dy"] = 96.6 / 100
+            if s == 1:
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Al"] = (
+                    5.2 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ca"] = (
+                    3 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Fe"] = (
+                    24.7 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sc"] = (
+                    99.1 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Y"] = (
+                    99.9 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "La"] = (
+                    32.4 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ce"] = (
+                    58.2 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Pr"] = (
+                    58.2 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Nd"] = (
+                    87.6 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sm"] = (
+                    99.9 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Gd"] = (
+                    69.8 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Dy"] = (
+                    96.6 / 100
+                )
             else:
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Al"] = 4.9 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ca"] = 12.3 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Fe"] = 6.4 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sc"] = 16.7 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Y"] = 99.9 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "La"] = 23.2 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ce"] = 24.9 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Pr"] = 15.1 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Nd"] = 99.9 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sm"] = 99.9 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Gd"] = 7.6 / 100
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Dy"] = 5 / 100
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Al"] = (
+                    4.9 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ca"] = (
+                    12.3 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Fe"] = (
+                    6.4 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sc"] = (
+                    16.7 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Y"] = (
+                    99.9 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "La"] = (
+                    23.2 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ce"] = (
+                    24.9 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Pr"] = (
+                    15.1 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Nd"] = (
+                    99.9 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sm"] = (
+                    99.9 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Gd"] = (
+                    7.6 / 100
+                )
+                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Dy"] = (
+                    5 / 100
+                )
 
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e6)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1.755)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["SO4"].fix(3999.818)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["HSO4"].fix(693.459)
+        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["SO4"].fix(
+            3999.818
+        )
+        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["HSO4"].fix(
+            693.459
+        )
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Al"].fix(422.375)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Ca"].fix(109.542)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Fe"].fix(688.266)
@@ -130,14 +182,12 @@ class TestSXmodel:
     @pytest.mark.component
     def test_solve(self, SolEx_frame):
         m = SolEx_frame
-        results = solver.solve(m,tee=True)
+        results = solver.solve(m, tee=True)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mol_comp["H2O"].pprint()
 
         # Check for optimal solution
         assert check_optimal_termination(results)
 
-    @pytest.mark.solver
-    @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
     def test_solution(self, SolEx_frame):
         m = SolEx_frame
@@ -226,13 +276,9 @@ class TestSXmodel:
         assert value(
             m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Dy"]
         ) == pytest.approx(0.0455, rel=1e-2)
-   
+
     @pytest.mark.component
     def test_numerical_issues(self, SolEx_frame):
         m = SolEx_frame
         dt = DiagnosticsToolbox(m)
         dt.assert_no_numerical_warnings()
-
-        
-
-        

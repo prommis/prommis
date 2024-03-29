@@ -38,10 +38,10 @@ m.fs.solex = SolventExtraction(
     },
 )
 
-stage_number = np.arange(1,number_of_stages+1)
+stage_number = np.arange(1, number_of_stages + 1)
 
 for s in stage_number:
-    if s==1:
+    if s == 1:
         m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Al"] = 5.2 / 100
         m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ca"] = 3 / 100
         m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Fe"] = 24.7 / 100

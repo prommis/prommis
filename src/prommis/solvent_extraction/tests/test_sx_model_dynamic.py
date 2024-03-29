@@ -77,7 +77,7 @@ class TestSXmodel:
         m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Gd"] = 98.6 / 100
         m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Dy"] = 99.9 / 100
 
-        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H2O"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H2SO4"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["SO4"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["HSO4"].fix(1e-9)
@@ -94,7 +94,7 @@ class TestSXmodel:
         m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Gd"].fix(174.38)
         m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Dy"].fix(101.12)
 
-        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["H2O"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["H2SO4"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["H"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["SO4"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["HSO4"].fix(1e-9)
@@ -151,7 +151,7 @@ class TestSXmodel:
     def test_structural_issues(self, SolEx_frame):
         model = SolEx_frame
         dt = DiagnosticsToolbox(model)
-        dt.display_underconstrained_set()
+        dt.assert_no_structural_warnings()
 
     @pytest.mark.component
     def test_block_triangularization(self, SolEx_frame):
@@ -171,12 +171,12 @@ class TestSXmodel:
         # Check for optimal solution
         assert check_optimal_termination(results)
 
-    @pytest.mark.component
+    @pytest.mark.integration
     def test_solution(self, SolEx_frame):
         m = SolEx_frame
         time_duration = 60
         assert value(
-            m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["H2O"]
+            m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["H2SO4"]
         ) == pytest.approx(1e-9, rel=1e-1)
         assert value(
             m.fs.solex.mscontactor.aqueous[time_duration, 3].conc_mass_comp["H"]

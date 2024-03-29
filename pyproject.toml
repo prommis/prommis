@@ -37,7 +37,7 @@ dependencies = [
 [project.optional-dependencies]
 watertap = [
     # TODO: update once 0.12.0 is available
-    "watertap @ git+https://github.com/watertap-org/watertap@refs/pull/1309/merge",
+    "watertap >= 0.12.0",
 ]
 
 [tool.setuptools_scm]

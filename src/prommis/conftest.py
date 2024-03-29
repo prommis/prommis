@@ -3,7 +3,7 @@ import pytest
 
 # FIXME remove before merging
 try:
-    import watertap
+    import watertap  # pylint: disable=unused-import
 except ModuleNotFoundError:
     pass
 

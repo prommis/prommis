@@ -75,15 +75,15 @@ def main():
         _log.info("Initialization Okay")
 
         if degrees_of_freedom(m) != 0:
-            raise Exception("Degrees of freedom were not equal to zero")
-        optimize(m, solver)
+            raise ValueError("Degrees of freedom were not equal to zero")
+        solve_model(m, solver)
         _log.info("Solved Box Problem")
 
         unfix_optimization_variables(m)
         add_objective(m)
         add_pressure_constraint(m, pressure_limit=None)
         add_recovery_constraint(m, recovery_limit=recovery)
-        optimize(m, solver)
+        solve_model(m, solver)
         collect_plot_data(
             m, area, li_rejection, mg_rejection, mg_li_ratio, feed_ratio, feed_pressure
         )
@@ -299,7 +299,7 @@ def add_recovery_constraint(m, recovery_limit):
     )
 
 
-def optimize(m, solver):
+def solve_model(m, solver):
     """
     Optimizes the flowsheet
 
@@ -310,7 +310,7 @@ def optimize(m, solver):
     _log.info(f"Optimizing with {format(degrees_of_freedom(m))} DOFs")
     simulation_results = solver.solve(m, tee=True)
     if simulation_results.solver.termination_condition != "optimal":
-        raise Exception("The solver did not return optimal termination")
+        raise ValueError("The solver did not return optimal termination")
     return simulation_results
 
 

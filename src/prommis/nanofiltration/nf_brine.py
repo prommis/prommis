@@ -59,15 +59,15 @@ def main():
     _log.info("Initialization Okay")
 
     if degrees_of_freedom(m) != 0:
-        raise Exception("Degrees of freedom were not equal to zero")
-    optimize(m, solver)
+        raise ValueError("Degrees of freedom were not equal to zero")
+    solve_model(m, solver)
     _log.info("Solved Box Problem")
     m.fs.unit.report()
 
     unfix_optimization_variables(m)
     add_objective(m)
     add_pressure_constraint(m)
-    optimize(m, solver)
+    solve_model(m, solver)
     m.fs.unit.report()
     print("Optimal NF feed pressure (Bar)", m.fs.pump.outlet.pressure[0].value / 1e5)
     print("Optimal area (m2)", m.fs.unit.area.value)
@@ -275,7 +275,7 @@ def add_pressure_constraint(m, pressure_limit=7e6):
     )
 
 
-def optimize(m, solver):
+def solve_model(m, solver):
     """
     Optimizes the flowsheet
 
@@ -286,7 +286,7 @@ def optimize(m, solver):
     _log.info(f"Optimizing with {format(degrees_of_freedom(m))} DOFs")
     simulation_results = solver.solve(m, tee=True)
     if simulation_results.solver.termination_condition != "optimal":
-        raise Exception("The solver did not return optimal termination")
+        raise ValueError("The solver did not return optimal termination")
     return simulation_results
 
 

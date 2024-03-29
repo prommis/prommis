@@ -1,5 +1,13 @@
 import pytest
 
+
+# FIXME remove before merging
+try:
+    import watertap
+except ModuleNotFoundError:
+    pass
+
+
 IDAES_MARKERS = {
     "build": "Test of model build methods",
     "unit": "Quick tests that do not require a solver, must run in < 2 s",

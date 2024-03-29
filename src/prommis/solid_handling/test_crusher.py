@@ -90,16 +90,10 @@ class TestSolidHandling(object):
         initializer.initialize(model.fs.unit)
         assert initializer.summary[model.fs.unit]["status"] == InitializationStatus.Ok
 
-    @pytest.mark.solver
-    @pytest.mark.skipif(solver is None, reason="Solver not available")
-    @pytest.mark.component
     def test_solve(self, model):
         results = solver.solve(model)
         assert_optimal_termination(results)
 
-    @pytest.mark.solver
-    @pytest.mark.skipif(solver is None, reason="Solver not available")
-    @pytest.mark.component
     def test_solution(self, model):
         assert pytest.approx(0.8, abs=1e-0) == value(model.fs.unit.probfeed80[0])
         assert pytest.approx(0.8, abs=1e-0) == value(model.fs.unit.probfeed80[0])

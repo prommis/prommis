@@ -575,7 +575,7 @@ constructed,
             self.flowsheet().config.time,
             doc="total mass flow rate of recovered product",
         )
-        def flow_mas_product(b, t):
+        def flow_mass_product(b, t):
             return sum(
                 b.flow_mol_comp_product[t, i] * b.mw_oxide_list_all[i]
                 for i in b.metal_list
@@ -584,7 +584,7 @@ constructed,
         @self.Expression(
             self.flowsheet().config.time, doc="total mass flow rate of dust product"
         )
-        def flow_mas_dust(b, t):
+        def flow_mass_dust(b, t):
             return sum(
                 b.flow_mol_comp_dust[t, i] * b.mw_oxide_list_all[i]
                 for i in b.metal_list
@@ -599,7 +599,7 @@ constructed,
             return (
                 b.flow_mol_comp_product[t, i]
                 * b.mw_oxide_list_all[i]
-                / b.flow_mas_product[t]
+                / b.flow_mass_product[t]
             )
 
     def _make_energy_balance(self):

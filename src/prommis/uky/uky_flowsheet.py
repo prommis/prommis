@@ -847,9 +847,9 @@ def set_scaling(m):
     for component in aqueous_component_set:
         m.scaling_factor[m.fs.leach.liquid[0, 1].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.leach.liquid[0, 2].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[
             m.fs.leach_liquid_feed.properties[0].conc_mol_comp[component]
         ] = 1e5
@@ -865,18 +865,18 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.leach_filter_cake_liquid.properties[0].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[
             m.fs.leach_mixer.load_recycle_state[0].conc_mol_comp[component]
         ] = 1e5
@@ -983,9 +983,9 @@ def set_scaling(m):
         m.scaling_factor[m.fs.scrub_sep.recycle_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.scrub_sep.purge_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.precip_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.precip_sep.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.precip_sep.recycle_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[m.fs.precip_sep.purge_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.precip_purge.properties[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[
@@ -1049,13 +1049,13 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.rougher_mixer.recycle_state[0].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_mixer.mixed_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.rougher_mixer.mixed_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[m.fs.rougher_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_sep.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.rougher_sep.recycle_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[m.fs.rougher_sep.purge_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[
             m.fs.rougher_mixer.make_up_state[0].conc_mol_comp[component]
@@ -1063,9 +1063,9 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.rougher_mixer.recycle_state[0].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_mixer.mixed_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.rougher_mixer.mixed_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[
             m.fs.sc_circuit_purge.properties[0].conc_mol_comp[component]
         ] = 1e5
@@ -1075,9 +1075,9 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.cleaner_mixer.recycle_state[0].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[
-            m.fs.cleaner_mixer.mixed_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.cleaner_mixer.mixed_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[
             m.fs.sc_circuit_purge.properties[0].conc_mol_comp[component]
         ] = 1e5
@@ -1098,21 +1098,21 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.solex_cleaner_load.mscontactor.organic[0, 1].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[m.fs.cleaner_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.cleaner_sep.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.cleaner_sep.recycle_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[m.fs.cleaner_sep.purge_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[
             m.fs.cleaner_org_make_up.properties[0].conc_mol_comp[component]
         ] = 1e5
 
-        m.scaling_factor[
-            m.fs.cleaner_purge.properties[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.cleaner_purge.properties[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[
             m.fs.solex_cleaner_strip.mscontactor.organic[0, 1].conc_mol_comp[component]
         ] = 1e5
@@ -1149,12 +1149,12 @@ def set_scaling(m):
     m.scaling_factor[m.fs.precip_sep.purge_state[0].flow_vol] = 1e-2
     m.scaling_factor[m.fs.precip_purge.properties[0].flow_vol] = 1e-2
 
-    m.scaling_factor[
-        m.fs.precipitator.cv_precipitate.properties_in[0].temperature
-    ] = 1e2
-    m.scaling_factor[
-        m.fs.precipitator.cv_precipitate.properties_out[0].temperature
-    ] = 1e-4
+    m.scaling_factor[m.fs.precipitator.cv_precipitate.properties_in[0].temperature] = (
+        1e2
+    )
+    m.scaling_factor[m.fs.precipitator.cv_precipitate.properties_out[0].temperature] = (
+        1e-4
+    )
 
     m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol] = 1e-2
     m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol] = 1e-2

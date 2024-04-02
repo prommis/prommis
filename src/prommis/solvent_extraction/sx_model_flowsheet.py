@@ -530,9 +530,9 @@ def main():
     ]
 
     for component in component_set1:
-        m.scaling_factor[
-            m.fs.aqueous_feed.properties[0.0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.aqueous_feed.properties[0.0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[
             m.fs.solex_rougher1.mscontactor.aqueous[0, 1].conc_mol_comp[component]
         ] = 1e5
@@ -547,9 +547,9 @@ def main():
                 component
             ]
         ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_recycle.properties[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.leach_recycle.properties[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[m.fs.acid_feed1.properties[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[
             m.fs.solex_rougher2.mscontactor.aqueous[0, 1].conc_mol_comp[component]
@@ -559,9 +559,9 @@ def main():
                 component
             ]
         ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_recycle2.properties[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.leach_recycle2.properties[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[m.fs.acid_feed2.properties[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[
             m.fs.solex_rougher3.mscontactor.aqueous[0, 1].conc_mol_comp[component]
@@ -613,9 +613,9 @@ def main():
             ]
         ] = 1e5
         m.scaling_factor[m.fs.rougher_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_sep.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.rougher_sep.recycle_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[m.fs.rougher_sep.purge_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[
             m.fs.rougher_mixer.make_up_state[0].conc_mol_comp[component]
@@ -623,9 +623,9 @@ def main():
         m.scaling_factor[
             m.fs.rougher_mixer.recycle_state[0].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_mixer.mixed_state[0].conc_mol_comp[component]
-        ] = 1e5
+        m.scaling_factor[m.fs.rougher_mixer.mixed_state[0].conc_mol_comp[component]] = (
+            1e5
+        )
         m.scaling_factor[
             m.fs.sc_circuit_purge.properties[0].conc_mol_comp[component]
         ] = 1e5

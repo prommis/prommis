@@ -1988,7 +1988,15 @@ def display_results(m):
     REE_recovery = 100 * product / feed_REE
     print(f"Total REE recovery is {REE_recovery} %")
 
-    product_purity = 100 * product / value(units.convert(m.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr))
+    product_purity = (
+        100
+        * product
+        / value(
+            units.convert(
+                m.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr
+            )
+        )
+    )
     print(f"Product purity is {product_purity} % REE")
 
     # Individual elemental recoveries

@@ -46,7 +46,7 @@ class REESolExAqParameterData(PhysicalParameterBlock):
 
         self.dissolved_elements = Set(
             initialize=[
-                "H2O",
+                "H2SO4",
                 "H",
                 "SO4",
                 "HSO4",
@@ -89,9 +89,9 @@ class REESolExAqParameterData(PhysicalParameterBlock):
             },
         )
 
-        # density of H2SO4
+        # density of H2O
         self.dens_mol = Param(
-            initialize=1.83,
+            initialize=1,
             units=units.kg / units.litre,
             mutable=True,
         )
@@ -150,7 +150,7 @@ class REESolExAqStateBlockData(StateBlockData):
         return MaterialFlowBasis.molar
 
     def get_material_flow_terms(self, p, j):
-        if j == "H2SO4":
+        if j == "H2O":
             return self.flow_vol * self.params.dens_mol / self.params.mw[j]
         else:
             return units.convert(
@@ -159,7 +159,7 @@ class REESolExAqStateBlockData(StateBlockData):
             )
 
     def get_material_density_terms(self, p, j):
-        if j == "H2SO4":
+        if j == "H2O":
             return units.convert(
                 self.params.dens_mol / self.params.mw[j],
                 to_units=units.mol / units.m**3,

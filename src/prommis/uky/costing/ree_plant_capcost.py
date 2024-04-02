@@ -1016,9 +1016,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         if hasattr(self, "site_improvements_costs"):
-            var_dict[
-                "Total Site Improvements Buildings Installation Cost [$MM]"
-            ] = value(self.site_improvements_costs)
+            var_dict["Total Site Improvements Buildings Installation Cost [$MM]"] = (
+                value(self.site_improvements_costs)
+            )
 
         if hasattr(self, "epcm_costs"):
             var_dict["Summation of EPCM Installation Costs [$MM]"] = value(
@@ -1026,9 +1026,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         if hasattr(self, "equipment_installation_costs"):
-            var_dict[
-                "Total Equipment Installation EPCM Installation Cost [$MM]"
-            ] = value(self.equipment_installation_costs)
+            var_dict["Total Equipment Installation EPCM Installation Cost [$MM]"] = (
+                value(self.equipment_installation_costs)
+            )
 
         if hasattr(self, "field_expenses_costs"):
             var_dict["Total Field Expenses EPCM Cost [$MM]"] = value(

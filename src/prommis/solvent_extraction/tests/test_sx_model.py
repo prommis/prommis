@@ -24,14 +24,13 @@ class TestSXmodel:
         m = ConcreteModel()
         m.fs = FlowsheetBlock(dynamic=False)
         m.fs.leach_soln = LeachSolutionParameters()
-        m.fs.prop_a = REESolExAqParameters()
         m.fs.prop_o = REESolExOgParameters()
 
         m.fs.solex = SolventExtraction(
             number_of_finite_elements=3,
             dynamic=False,
             aqueous_stream={
-                "property_package": m.fs.prop_a,
+                "property_package": m.fs.leach_soln,
                 "flow_direction": FlowDirection.forward,
                 "has_energy_balance": False,
                 "has_pressure_balance": False,
@@ -60,6 +59,7 @@ class TestSXmodel:
 
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1e-9)
+        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Cl"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["SO4"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["HSO4"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Al"].fix(820)
@@ -125,16 +125,19 @@ class TestSXmodel:
         m = SolEx_frame
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["H2O"]
-        ) == pytest.approx(1e-9, rel=1e-2)
+        ) == pytest.approx(1000000, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["H"]
-        ) == pytest.approx(1e-9, rel=1e-2)
+        ) == pytest.approx(1.0652e-9, rel=1e-2)
+        assert value(
+            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Cl"]
+        ) == pytest.approx(2.2184e-9, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["SO4"]
-        ) == pytest.approx(1e-9, rel=1e-2)
+        ) == pytest.approx(7.0011e-9, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["HSO4"]
-        ) == pytest.approx(1e-9, rel=1e-2)
+        ) == pytest.approx(2.7929e-9, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Al"]
         ) == pytest.approx(730, rel=1e-2)
@@ -170,7 +173,7 @@ class TestSXmodel:
         ) == pytest.approx(4.784e-04, rel=1e-2)
         assert value(
             m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Dy"]
-        ) == pytest.approx(1.011e-07, rel=1e-2)
+        ) == pytest.approx(1.0331e-07, rel=1e-2)
 
         assert value(
             m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Al"]

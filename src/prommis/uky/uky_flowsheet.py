@@ -1319,7 +1319,6 @@ def set_operating_conditions(m):
     m.fs.acid_feed3.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Dy"].fix(eps)
 
-    # Note: This stream + m.fs.s18 = 62.01 L/hr
     m.fs.cleaner_org_make_up.flow_vol.fix(6.201)
 
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Al"].fix(eps)
@@ -3283,7 +3282,7 @@ def add_costing(flowsheet):
 
 def display_costing(m):
     QGESSCostingData.report(m.fs.costing)
-    m.fs.costing.variable_operating_costs.display()  # results will be in t = 0
+    m.fs.costing.variable_operating_costs.display()
     QGESSCostingData.display_bare_erected_costs(m.fs.costing)
     QGESSCostingData.display_flowsheet_cost(m.fs.costing)
 

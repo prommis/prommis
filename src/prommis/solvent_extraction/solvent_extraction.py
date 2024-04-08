@@ -1,5 +1,5 @@
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Param
+from pyomo.environ import Constraint, Param, Any
 from pyomo.network import Port
 
 from idaes.core import (
@@ -120,6 +120,7 @@ class SolventExtractionData(UnitModelBlockData):
         self.partition_coefficient = Param(
             self.mscontactor.elements,
             self.mscontactor.stream_component_interactions,
+            domain=Any,
             initialize=param_init,
             mutable=True,
             doc="The fraction of component that goes from aqueous to organic phase",

@@ -11,3 +11,6 @@ sphinx:
   - sphinx.ext.autosummary
   config:
     autosummary_generate: true
+    suppress_warnings:
+      # executablebooks/sphinx-external-toc#36
+      - etoc.toctree

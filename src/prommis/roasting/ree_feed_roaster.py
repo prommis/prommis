@@ -48,13 +48,6 @@ The reactions of impurities involved are listed below:
 
    Typically occurs above 600°C, assuming complete conversion.
 
-4. Pyrite combustion:
-
-   .. ce::
-      FeS2 + 2.75 O2 -> 0.5 Fe2O3 + 2 SO2 (g)
-
-   Typically occurs above 600°C, assuming complete conversion.
-
 Combustion of organic elements is modeled as follows:
 
 - :ce:`C + O2 -> CO2`

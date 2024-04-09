@@ -221,6 +221,18 @@ class LeachSolutionStateBlockData(StateBlockData):
                 to_units=units.mol / units.hour,
             )
 
+    def get_material_density_terms(self, p, j):
+        if j == "H2O":
+            return units.convert(
+                self.params.dens_mol / self.params.mw[j],
+                to_units=units.mol / units.m**3,
+            )
+        else:
+            return units.convert(
+                self.conc_mass_comp[j] / self.params.mw[j],
+                to_units=units.mol / units.m**3,
+            )
+
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar
 

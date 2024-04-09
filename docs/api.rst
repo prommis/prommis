@@ -1,6 +1,16 @@
 API Reference
 =============
 
+Leaching
+--------
+
+.. autosummary::
+   :toctree: _autosummary
+
+   prommis.leaching.leach_reactions
+   prommis.leaching.leach_solids_properties
+   prommis.leaching.leach_solution_properties
+
 Roasting
 --------
 

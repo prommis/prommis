@@ -29,24 +29,29 @@ The reactions of impurities involved are listed below:
 
 1. Kaolinite calcination:
    
-   .. math::
-      \require{mhchem}
-      \ce{Al2O3 \cdot 2SiO2 \cdot 2H2O -> Al2O3 + 2 SiO2 + 2 H2O (g)}
+   .. ce::
+      Al2O3 \cdot 2SiO2 \cdot 2H2O -> Al2O3 + 2 SiO2 + 2 H2O (g)
 
    Typically occurs above 400°C, assuming complete conversion.
 
 2. Limestone calcination:
 
-   .. math::
-      \ce{CaCO3 -> CaO + CO2 (g)}
+   .. ce::
+      CaCO3 -> CaO + CO2 (g)
 
    Typically occurs above 850°C; conversion is a user input.
 
 3. Pyrite combustion:
 
-   .. math::
-      \require{mhchem}
-      \ce{FeS2 + 2.75 O2 -> 0.5 Fe2O3 + 2 SO2 (g)}
+   .. ce::
+      FeS2 + 2.75 O2 -> 0.5 Fe2O3 + 2 SO2 (g)
+
+   Typically occurs above 600°C, assuming complete conversion.
+
+4. Pyrite combustion:
+
+   .. ce::
+      FeS2 + 2.75 O2 -> 0.5 Fe2O3 + 2 SO2 (g)
 
    Typically occurs above 600°C, assuming complete conversion.
 

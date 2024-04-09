@@ -1377,11 +1377,19 @@ def set_operating_conditions(m):
     m.fs.leach.liquid_inlet_state[0].flow_vol
     m.fs.leach.liquid_inlet_state[0].conc_mol_comp
 
-    m.fs.solex_cleaner.mscontactor.organic_inlet_state[0].conc_mass_comp
-    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp
+    m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].conc_mass_comp
+    m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].conc_mass_comp
 
-    m.fs.solex_cleaner.mscontactor.aqueous_inlet_state[0].conc_mass_comp
-    m.fs.solex_rougher.mscontactor.aqueous_inlet_state[0].conc_mass_comp
+    m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].conc_mass_comp
+    m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[0].conc_mass_comp
+    m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[0].conc_mass_comp
+
+    m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[0].conc_mass_comp
+    m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].conc_mass_comp
+
+    m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].conc_mass_comp
+    m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].conc_mass_comp
+    m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].conc_mass_comp
 
     m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol
     m.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp

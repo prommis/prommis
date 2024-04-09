@@ -781,6 +781,25 @@ def set_operating_conditions(m):
     m.fs.roaster.flow_mol_moist_feed.fix(6.75e-4)
     m.fs.roaster.frac_comp_recovery.fix(0.95)
 
+    # Touch properties that are used in the UI
+    m.fs.leach.solid_inlet_state[0].flow_mass
+    m.fs.leach.solid_inlet_state[0].mass_frac_comp
+
+    m.fs.leach.liquid_inlet_state[0].flow_vol
+    m.fs.leach.liquid_inlet_state[0].conc_mol_comp
+
+    m.fs.solex_cleaner.mscontactor.organic_inlet_state[0].conc_mass_comp
+    m.fs.solex_rougher.mscontactor.organic_inlet_state[0].conc_mass_comp
+
+    m.fs.solex_cleaner.mscontactor.aqueous_inlet_state[0].conc_mass_comp
+    m.fs.solex_rougher.mscontactor.aqueous_inlet_state[0].conc_mass_comp
+
+    m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol
+    m.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp
+
+    m.fs.precipitator.cv_precipitate.properties_out[0].temperature
+    m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp
+
 
 def initialize_system(m):
     seq = SequentialDecomposition()

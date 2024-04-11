@@ -1235,7 +1235,6 @@ def set_operating_conditions(m):
     m.fs.load_sep.split_fraction[:, "recycle"].fix(0.9)
     m.fs.scrub_sep.split_fraction[:, "recycle"].fix(0.9)
 
-    # Note: This stream + m.fs.s09 = 62.01 L/hr
     m.fs.rougher_org_make_up.flow_vol.fix(6.201)
 
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Al"].fix(eps)
@@ -1250,9 +1249,6 @@ def set_operating_conditions(m):
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Sm"].fix(eps)
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Dy"].fix(eps)
-
-    m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
-    m.fs.rougher_org_make_up.flow_vol.unfix()
 
     m.fs.acid_feed1.flow_vol.fix(0.09)
     m.fs.acid_feed1.conc_mass_comp[0, "H2O"].fix(1000000)
@@ -1333,9 +1329,6 @@ def set_operating_conditions(m):
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Sm"].fix(eps)
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Dy"].fix(eps)
-
-    m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
-    m.fs.cleaner_org_make_up.flow_vol.unfix()
 
     m.fs.cleaner_sep.split_fraction[:, "recycle"].fix(0.9)
 

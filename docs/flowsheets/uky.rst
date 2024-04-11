@@ -12,71 +12,39 @@ including acid tank leaching, solvent extraction, precipitation, and product roa
 Implementation
 --------------
 
-Figure 1 shows the process flow diagram for the simplified UKy plant where the solid and liquid feeds are
+Figure 1 shows the process flow diagram for the simplified, steady-state UKy plant where the solid and liquid feeds are
 sent to a leaching tank for initial processing; then the solids (with some retained liquid) are separated out as a filter
-cake while the remaining liquid is sent to the solvent extraction process. Solvent extraction is comprised of 2 distinct circuits.
+cake while the remaining liquid is sent to the solvent extraction process which is comprised of 2 distinct circuits.
 In the rougher circuit, solutes in the aqueous phase are transferred to the organic phase, and a portion of the
 depleted aqueous solution is recycled back to the leaching process while the remainder is sent to the cleaner circuit.
-In the cleaner circuit,
-
-to a primary clarifier (primary treatment); the effluent is then passed to a series of activated sludge
-reactors and a secondary clarifier (secondary treatment). CSTRs are used to model the anoxic reactors in the activated
-sludge process and CSTRs with injection (which accounts for aeration tanks) are used to model the aerobic reactors.
-Finally, the sludge is passed through a thickener and sent to the anaerobic digester. The anaerobic digester processes
-the sludge to produce a biogas stream and residual sludge stream that passes through a dewatering unit which recycles
-liquid to the headworks of the plant while sludge is released for disposal. Costing relationships for each of the unit
-models is described in the `WaterTAP Costing Package <https://watertap.readthedocs.io/en/latest/technical_reference/costing/watertap_costing.html>`_
-The flowsheet relies on the following key assumptions:
-
-   * supports steady-state only
-   * property and reaction package are provided for the activated sludge model (ASM)
-   * property and reaction package are provided for the anaerobic digester model (ADM)
-   * interfaces are provided to convert between the properties of ASM and ADM
+The degree to which components are transferred from one phase to the other is dependent upon the unit's partition coefficient for that particular component.
+In the cleaner circuit, solutes in the organic phase are transferred to the aqueous phase, and a portion of the loaded
+aqueous solution is recycled back to the rougher circuit while the remainder is sent to the precipitator. The precipitate
+(with some retained liquid) is sent to the roaster where the product rare earth oxides are generated, and the liquid from
+the precipitator is recycled back to the cleaner circuit.
 
 .. figure:: ../tutorials/uky_flowsheet.png
     :width: 800
     :align: center
 
-    Figure 1. BSM2 flowsheet
-
-The objective function is to minimize the levelized cost of water, which can be represented by the following equation
-where :math:`Q` represents volumetric flow, :math:`f_{crf}` represents capital recovery factor
-:math:`C_{ca,tot}` represents total capital cost, :math:`C_{op,tot}` represents total operating cost, and
-:math:`f_{util}` represents the utilization factor:
-
-    .. math::
-
-        LCOW_{Q} = \frac{f_{crf}   C_{ca,tot} + C_{op,tot}}{f_{util} Q}
+    Figure 1. University of Kentucky flowsheet
 
 Documentation for each of the unit models can be found here:
-    * `Thickener <https://watertap.readthedocs.io/en/latest/technical_reference/unit_models/thickener.html>`_
-    * `Anaerobic digester <https://watertap.readthedocs.io/en/latest/technical_reference/unit_models/anaerobic_digester.html>`_
-    * `Dewatering unit <https://watertap.readthedocs.io/en/latest/technical_reference/unit_models/dewatering_unit.html>`_
-    * `CSTR <https://idaes-pse.readthedocs.io/en/latest/reference_guides/model_libraries/generic/unit_models/cstr.html>`_
-    * `ADM1 to ASM1 Translator <https://watertap.readthedocs.io/en/latest/technical_reference/unit_models/translators/translator_adm1_asm1.html>`_
-    * `ASM1 to ADM1 Translator <https://watertap.readthedocs.io/en/latest/technical_reference/unit_models/translators/translator_asm1_adm1.html>`_
-    * CSTR with injection
-    * Primary clarifier
-    * Secondary clarifier
-
-Documentation for each of the property models can be found here:
-    * `ASM1 <https://watertap.readthedocs.io/en/latest/technical_reference/property_models/ASM1.html>`_
-    * `ADM1 <https://watertap.readthedocs.io/en/latest/technical_reference/property_models/ADM1.html>`_
+    * Leaching
+    * Solvent extraction
+    * Precipitation
+    * Product roaster
 
 Degrees of Freedom
 ------------------
-The following variables must be specified by the user to run the BSM2 flowsheet:
-    * feed water conditions (flow, temperature, pressure, component concentrations, and alkalinity)
-    * volume of activated sludge reactors
-    * component injection rates for aerobic reactors
-    * split fraction(s) for the recycle loop after the activated sludge reactors
-    * secondary clarifier surface area and split fraction(s)
-    * primary clarifier split fraction(s)
-    * split fraction(s) for the separator following the secondary clarifier
-    * pressure changer outlet pressure (feeds into the activated sludge process)
-    * anaerobic digester liquid volume, vapor volume, and liquid outlet temperature
-    * dewatering unit hydraulic retention time and specific energy consumption
-    * thickener hydraulic retention time and diameter
+The following variables must be specified by the user to run the UKy flowsheet:
+    * liquid feed volumetric flow rate and component concentrations
+    * solid feed mass flow and component mass fractions
+    * volume of leach tank(s)
+    * partition coefficients for each solvent extraction unit
+    * flow rate and component concentrations for organic make-up streams and acid feeds
+    * split fractions for each recycle loop
+
 
 Flowsheet Specifications
 ------------------------
@@ -199,4 +167,5 @@ The following modifications to BSM2 are planned for development:
 
 References
 ----------
-[1]
+[1] Steven Keim, "Production of salable rare earths products from coal and coal byproducts in the U.S.
+using advanced separation processes", 2019

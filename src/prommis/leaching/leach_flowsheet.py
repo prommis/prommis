@@ -18,8 +18,8 @@ from pyomo.environ import (
 )
 
 from idaes.core import FlowsheetBlock
-from idaes.models.unit_models.mscontactor import MSContactor, MSContactorInitializer
 
+from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
@@ -33,21 +33,19 @@ def build_model():
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactions()
 
-    m.fs.leach = MSContactor(
-        number_of_finite_elements=1,
-        streams={
-            "liquid": {
-                "property_package": m.fs.leach_soln,
-                "has_energy_balance": False,
-                "has_pressure_balance": False,
-            },
-            "solid": {
-                "property_package": m.fs.coal,
-                "has_energy_balance": False,
-                "has_pressure_balance": False,
-            },
+    m.fs.leach = LeachingTrain(
+        number_of_tanks=1,
+        liquid_phase={
+            "property_package": m.fs.leach_soln,
+            "has_energy_balance": False,
+            "has_pressure_balance": False,
         },
-        heterogeneous_reactions=m.fs.leach_rxns,
+        solid_phase={
+            "property_package": m.fs.coal,
+            "has_energy_balance": False,
+            "has_pressure_balance": False,
+        },
+        reaction_package=m.fs.leach_rxns,
     )
 
     # Liquid feed state
@@ -96,28 +94,7 @@ def build_model():
         7.54827e-06 * units.kg / units.kg
     )
 
-    # Reactor volume
-    m.fs.leach.volume = Var(
-        m.fs.time,
-        m.fs.leach.elements,
-        initialize=1,
-        units=units.litre,
-        doc="Volume of each finite element.",
-    )
     m.fs.leach.volume.fix(100 * units.gallon)
-
-    def rule_heterogeneous_reaction_extent(b, t, s, r):
-        return (
-            b.heterogeneous_reaction_extent[t, s, r]
-            == b.heterogeneous_reactions[t, s].reaction_rate[r] * b.volume[t, s]
-        )
-
-    m.fs.leach.heterogeneous_reaction_extent_constraint = Constraint(
-        m.fs.time,
-        m.fs.leach.elements,
-        m.fs.leach_rxns.reaction_idx,
-        rule=rule_heterogeneous_reaction_extent,
-    )
 
     # -------------------------------------------------------------------------------------
     # Scaling
@@ -125,15 +102,15 @@ def build_model():
 
     for j in m.fs.coal.component_list:
         if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
-            m.scaling_factor[m.fs.leach.solid[0.0, 1].mass_frac_comp[j]] = 1e5
-            m.scaling_factor[m.fs.leach.solid_inlet_state[0.0].mass_frac_comp[j]] = 1e5
+            m.scaling_factor[m.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j]] = 1e5
+            m.scaling_factor[m.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j]] = 1e5
             m.scaling_factor[
-                m.fs.leach.heterogeneous_reactions[0.0, 1].reaction_rate[j]
+                m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate[j]
             ] = 1e5
-            m.scaling_factor[m.fs.leach.solid[0.0, 1].conversion_eq[j]] = 1e3
-            m.scaling_factor[m.fs.leach.solid_inlet_state[0.0].conversion_eq[j]] = 1e3
+            m.scaling_factor[m.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j]] = 1e3
+            m.scaling_factor[m.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j]] = 1e3
             m.scaling_factor[
-                m.fs.leach.heterogeneous_reactions[0.0, 1].reaction_rate_eq[j]
+                m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate_eq[j]
             ] = 1e5
 
     return m
@@ -150,7 +127,7 @@ if __name__ == "__main__":
 
     # Initialize model
     # This is likely to fail to converge, but gives a good enough starting point
-    initializer = MSContactorInitializer()
+    initializer = LeachingTrainInitializer()
     try:
         initializer.initialize(scaled_model.fs.leach)
     except:
@@ -167,18 +144,4 @@ if __name__ == "__main__":
     m.fs.leach.liquid_outlet.display()
     m.fs.leach.solid_outlet.display()
 
-    for j in m.fs.coal.component_list:
-        f_in = m.fs.leach.solid_inlet.flow_mass[0]
-        f_out = m.fs.leach.solid_outlet.flow_mass[0]
-        x_in = m.fs.leach.solid_inlet.mass_frac_comp[0, j]
-        x_out = m.fs.leach.solid_outlet.mass_frac_comp[0, j]
-
-        r = value(1 - f_out * x_out / (f_in * x_in)) * 100
-
-        print(f"Recovery {j}: {r}")
-
-    print(f"pH in {-log10(value(m.fs.leach.liquid_inlet_state[0].conc_mol_comp['H']))}")
-    print(f"pH out {-log10(value(m.fs.leach.liquid[0, 1].conc_mol_comp['H']))}")
-
-    m.fs.leach.solid[0, 1].conversion.display()
-    m.fs.leach.liquid[0, 1].dens_mol.display()
+    m.fs.leach.report()

@@ -6,8 +6,6 @@ Train is modeled as a series of well mixed tank reactors.
 Authors: Andrew Lee
 """
 
-from math import log10
-
 from pyomo.environ import (
     Block,
     Constraint,
@@ -17,39 +15,22 @@ from pyomo.environ import (
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
 from pyomo.network import Port
 
-from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
+from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault, MaterialFlowBasis
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.models.unit_models.mscontactor import MSContactor
 from idaes.core.initialization import ModularInitializerBase
-from idaes.core.solvers import get_solver
-import idaes.logger as idaeslog
 
 
 class LeachingTrainInitializer(ModularInitializerBase):
     """
     This is a general purpose Initializer  for the Leaching Train unit model.
 
-    This routine calls the initializer for the internal MSContactor model, then
-    tries to solve the full model.
+    This routine calls the initializer for the internal MSContactor model.
 
     """
 
     CONFIG = ModularInitializerBase.CONFIG()
 
-    # CONFIG.declare(
-    #     "solver",
-    #     ConfigValue(
-    #         default=None,
-    #         description="Name of solver to use for final solve",
-    #     ),
-    # )
-    # CONFIG.declare(
-    #     "solver_options",
-    #     ConfigDict(
-    #         implicit=True,
-    #         description="Dict of arguments for final solver calls",
-    #     ),
-    # )
     CONFIG.declare(
         "ssc_solver_options",
         ConfigDict(
@@ -80,28 +61,12 @@ class LeachingTrainInitializer(ModularInitializerBase):
         Returns:
             None
         """
-        # Get loggers
-        init_log = idaeslog.getInitLogger(
-            model.name, self.get_output_level(), tag="unit"
-        )
-        solve_log = idaeslog.getSolveLogger(
-            model.name, self.get_output_level(), tag="unit"
-        )
-
         # Initialize MSContactor
         msc_init = model.mscontactor.default_initializer(
             ssc_solver_options=self.config.ssc_solver_options,
             calculate_variable_options=self.config.calculate_variable_options,
         )
-        msc_init.initialize(model.mscontactor)
-
-        # Solve full model
-        solver = get_solver(self.config.solver, options=self.config.solver_options)
-        with idaeslog.solver_log(solve_log, idaeslog.DEBUG) as slc:
-            res = solver.solve(model, tee=slc.tee)
-        init_log.info(f"Initialization Completed, {idaeslog.condition(res)}")
-
-        return res
+        return msc_init.initialize(model.mscontactor)
 
 
 StreamCONFIG= ConfigDict()
@@ -211,21 +176,36 @@ class LeachingTrainData(UnitModelBlockData):
             heterogeneous_reactions=self.config.reaction_package,
         )
 
+        # Get units of measurement from MSContactor
+        flow_basis = self.mscontactor.flow_basis
+        uom = self.mscontactor.uom
+
         # Reactor volume
         self.volume = Var(
             self.flowsheet().time,
             self.mscontactor.elements,
             initialize=1,
-            units=units.litre,  # TODO: Flexible units
+            units=uom.VOLUME,
             doc="Volume of each tank.",
         )
 
         # Note that this is being added to the MSContactor block
         def rule_heterogeneous_reaction_extent(b, t, s, r):
             volume = b.parent_block().volume
+
+            if flow_basis == MaterialFlowBasis.mass:
+                m_units = uom.MASS
+                x_units = m_units/uom.TIME
+            elif flow_basis == MaterialFlowBasis.molar:
+                m_units = uom.AMOUNT
+                x_units = m_units / uom.TIME
+            else:
+                # Undefined
+                x_units = None
+
             return (
-                b.heterogeneous_reaction_extent[t, s, r]
-                == b.heterogeneous_reactions[t, s].reaction_rate[r] * volume[t, s]
+                units.convert(b.heterogeneous_reaction_extent[t, s, r], to_units=x_units)
+                == units.convert(b.heterogeneous_reactions[t, s].reaction_rate[r] * volume[t, s], to_units=x_units)
             )
 
         self.mscontactor.heterogeneous_reaction_extent_constraint = Constraint(

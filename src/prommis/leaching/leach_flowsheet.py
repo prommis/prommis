@@ -4,8 +4,6 @@ Initial flowsheet for UKy leaching process
 Authors: Andrew Lee
 """
 
-from math import log10
-
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
@@ -48,6 +46,10 @@ def build_model():
         reaction_package=m.fs.leach_rxns,
     )
 
+    return m
+
+
+def set_inputs(m):
     # Liquid feed state
     m.fs.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
     m.fs.leach.liquid_inlet.conc_mass_comp.fix(1e-10 * units.mg / units.L)
@@ -96,6 +98,8 @@ def build_model():
 
     m.fs.leach.volume.fix(100 * units.gallon)
 
+
+def set_scaling(m):
     # -------------------------------------------------------------------------------------
     # Scaling
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
@@ -113,13 +117,13 @@ def build_model():
                 m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate_eq[j]
             ] = 1e5
 
-    return m
-
 
 # -------------------------------------------------------------------------------------
 if __name__ == "__main__":
     # Call build model function
     m = build_model()
+    set_inputs(m)
+    set_scaling(m)
 
     # Create a scaled version of the model to solve
     scaling = TransformationFactory("core.scale_model")

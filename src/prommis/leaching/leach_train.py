@@ -220,13 +220,15 @@ class LeachingTrainData(UnitModelBlockData):
             doc="Volume of each tank.",
         )
 
+        # Note that this is being added to the MSContactor block
         def rule_heterogeneous_reaction_extent(b, t, s, r):
+            volume = b.parent_block().volume
             return (
-                b.mscontactor.heterogeneous_reaction_extent[t, s, r]
-                == b.mscontactor.heterogeneous_reactions[t, s].reaction_rate[r] * b.volume[t, s]
+                b.heterogeneous_reaction_extent[t, s, r]
+                == b.heterogeneous_reactions[t, s].reaction_rate[r] * volume[t, s]
             )
 
-        self.heterogeneous_reaction_extent_constraint = Constraint(
+        self.mscontactor.heterogeneous_reaction_extent_constraint = Constraint(
             self.flowsheet().time,
             self.mscontactor.elements,
             self.config.reaction_package.reaction_idx,

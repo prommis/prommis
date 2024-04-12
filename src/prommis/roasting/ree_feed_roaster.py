@@ -587,7 +587,7 @@ constructed,
     def _make_vars(self):
         """This section declares variables within this model."""
 
-        self.flow_mas_feed = Var(
+        self.flow_mass_feed = Var(
             self.flowsheet().config.time,
             initialize=1,
             units=pyunits.kg / pyunits.s,
@@ -692,14 +692,14 @@ constructed,
             doc="mole flow rate of solid product in dust stream from calcination of impurity minerals",
         )
 
-        self.flow_mas_product_recovered = Var(
+        self.flow_mass_product_recovered = Var(
             self.flowsheet().config.time,
             initialize=1,
             units=pyunits.kg / pyunits.s,
             doc="mass flow rate of recovered solid product from calcination of impurity minerals",
         )
 
-        self.flow_mas_product_dust = Var(
+        self.flow_mass_product_dust = Var(
             self.flowsheet().config.time,
             initialize=0.1,
             units=pyunits.kg / pyunits.s,
@@ -735,14 +735,14 @@ constructed,
             self.flowsheet().config.time, doc="vaporized moisture mass flowrate [kg/s]"
         )
         def flow_mol_moist_feed(b, t):
-            return b.flow_mas_feed[t] * b.mass_frac_moist_feed[t] / b.mw_H2O
+            return b.flow_mass_feed[t] * b.mass_frac_moist_feed[t] / b.mw_H2O
 
         # Organic material mass flow rate
         @self.Expression(
             self.flowsheet().config.time, doc="Organic material mass flowrate [kg/s]"
         )
-        def flow_mas_organic_feed(b, t):
-            return b.flow_mas_feed[t] * b.mass_frac_organic_feed[t]
+        def flow_mass_organic_feed(b, t):
+            return b.flow_mass_feed[t] * b.mass_frac_organic_feed[t]
 
         # Organic element mole flow rate
         @self.Expression(
@@ -752,7 +752,7 @@ constructed,
         )
         def flow_mol_comp_organic_feed(b, t, i):
             return (
-                b.flow_mas_organic_feed[t]
+                b.flow_mass_organic_feed[t]
                 * b.mass_frac_comp_organic_feed[t, i]
                 / b.am_comp_organic_ele[i]
             )
@@ -762,8 +762,8 @@ constructed,
             self.flowsheet().config.time,
             doc="Impurity mineral material mass flowrate [kg/s]",
         )
-        def flow_mas_impurity_feed(b, t):
-            return b.flow_mas_feed[t] * (
+        def flow_mass_impurity_feed(b, t):
+            return b.flow_mass_feed[t] * (
                 1 - b.mass_frac_moist_feed[t] - b.mass_frac_organic_feed[t]
             )
 
@@ -773,8 +773,8 @@ constructed,
             self.impurity_list,
             doc="mass flow rate of individual impurity minerals [kg/s]",
         )
-        def flow_mas_comp_impurity_feed(b, t, i):
-            return b.flow_mas_impurity_feed[t] * b.mass_frac_comp_impurity_feed[t, i]
+        def flow_mass_comp_impurity_feed(b, t, i):
+            return b.flow_mass_impurity_feed[t] * b.mass_frac_comp_impurity_feed[t, i]
 
         # mole flow rates of individual mineral impurity
         @self.Expression(
@@ -783,7 +783,7 @@ constructed,
             doc="mole flow rate of individual impurity minerals [mol/s]",
         )
         def flow_mol_comp_impurity_feed(b, t, i):
-            return b.flow_mas_comp_impurity_feed[t, i] / b.mw_comp_impurity[i]
+            return b.flow_mass_comp_impurity_feed[t, i] / b.mw_comp_impurity[i]
 
         # the gas product should contain at least N2, O2, H2O, CO2, and SO2
         @self.Constraint(
@@ -897,16 +897,16 @@ constructed,
 
         # mass flow rate of solid product recovered
         @self.Constraint(self.flowsheet().config.time, doc="mass flow rate of product")
-        def flow_mas_product_recovered_eqn(b, t):
-            return b.flow_mas_product_recovered[t] == sum(
+        def flow_mass_product_recovered_eqn(b, t):
+            return b.flow_mass_product_recovered[t] == sum(
                 b.flow_mol_comp_product_recovered[t, i] * b.mw_comp_product[i]
                 for i in b.product_list
             )
 
         # mass flow rate of solid product in dust stream
         @self.Constraint(self.flowsheet().config.time, doc="mass flow rate of product")
-        def flow_mas_product_dust_eqn(b, t):
-            return b.flow_mas_product_dust[t] == sum(
+        def flow_mass_product_dust_eqn(b, t):
+            return b.flow_mass_product_dust[t] == sum(
                 b.flow_mol_comp_product_dust[t, i] * b.mw_comp_product[i]
                 for i in b.product_list
             )
@@ -922,7 +922,7 @@ constructed,
                 return (
                     b.flow_mol_comp_impurity_feed[t, "CaCO3"]
                     * b.am_Ca
-                    / b.flow_mas_impurity_feed[t]
+                    / b.flow_mass_impurity_feed[t]
                 )
             elif i == "Si":
                 return (
@@ -931,7 +931,7 @@ constructed,
                         + b.flow_mol_comp_impurity_feed[t, "Kaolinite"] * 2
                     )
                     * b.am_Si
-                    / b.flow_mas_impurity_feed[t]
+                    / b.flow_mass_impurity_feed[t]
                 )
             elif i == "Al":
                 return (
@@ -941,20 +941,20 @@ constructed,
                     )
                     * b.am_Al
                     * 2
-                    / b.flow_mas_impurity_feed[t]
+                    / b.flow_mass_impurity_feed[t]
                 )
             elif i == "Fe":
                 return (
                     b.flow_mol_comp_impurity_feed[t, "Pyrite"]
                     * b.am_Fe
-                    / b.flow_mas_impurity_feed[t]
+                    / b.flow_mass_impurity_feed[t]
                 )
             else:  # i==Un
                 return (
                     b.flow_mol_comp_impurity_feed[t, "Un2O3"]
                     * b.am_Un
                     * 2
-                    / b.flow_mas_impurity_feed[t]
+                    / b.flow_mass_impurity_feed[t]
                 )
 
         # mass fraction of impurity metal in the product stream
@@ -967,7 +967,7 @@ constructed,
             if i == "Ca":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
-                    * b.flow_mas_product_recovered[t]
+                    * b.flow_mass_product_recovered[t]
                     == (
                         b.flow_mol_comp_product_recovered[t, "CaCO3"]
                         + b.flow_mol_comp_product_recovered[t, "CaO"]
@@ -977,25 +977,25 @@ constructed,
             elif i == "Si":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
-                    * b.flow_mas_product_recovered[t]
+                    * b.flow_mass_product_recovered[t]
                     == b.flow_mol_comp_product_recovered[t, "SiO2"] * b.am_Si
                 )
             elif i == "Al":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
-                    * b.flow_mas_product_recovered[t]
+                    * b.flow_mass_product_recovered[t]
                     == b.flow_mol_comp_product_recovered[t, "Al2O3"] * 2 * b.am_Al
                 )
             elif i == "Fe":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
-                    * b.flow_mas_product_recovered[t]
+                    * b.flow_mass_product_recovered[t]
                     == b.flow_mol_comp_product_recovered[t, "Fe2O3"] * 2 * b.am_Fe
                 )
             else:  # i=='Un':
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
-                    * b.flow_mas_product_recovered[t]
+                    * b.flow_mass_product_recovered[t]
                     == b.flow_mol_comp_product_recovered[t, "Un2O3"] * 2 * b.am_Un
                 )
 
@@ -1007,8 +1007,8 @@ constructed,
         )
         def ppm_comp_ree_ins_product_eqn(b, t, i):
             return (
-                b.ppm_comp_ree_ins_product[t, i] * b.flow_mas_product_recovered[t]
-                == b.flow_mas_impurity_feed[t]
+                b.ppm_comp_ree_ins_product[t, i] * b.flow_mass_product_recovered[t]
+                == b.flow_mass_impurity_feed[t]
                 * b.ppm_comp_ree_ins_feed[t, i]
                 * (1 - b.xconv_comp_ins[t, i])
                 * b.frac_comp_ree_recovery[t, i]
@@ -1022,8 +1022,8 @@ constructed,
         )
         def ppm_comp_ree_dis_product_eqn_eqn(b, t, i):
             return (
-                b.ppm_comp_ree_dis_product[t, i] * b.flow_mas_product_recovered[t]
-                == b.flow_mas_impurity_feed[t]
+                b.ppm_comp_ree_dis_product[t, i] * b.flow_mass_product_recovered[t]
+                == b.flow_mass_impurity_feed[t]
                 * (
                     b.ppm_comp_ree_ins_feed[t, i] * b.xconv_comp_ins[t, i]
                     + b.ppm_comp_ree_dis_feed[t, i]
@@ -1247,7 +1247,7 @@ constructed,
                     for i in b.impurity_list
                 )
                 + b.flow_mol_moist_feed[t] * b.enth_mol_moist_feed[t]
-                + b.flow_mas_organic_feed[t]
+                + b.flow_mass_organic_feed[t]
                 * (b.Hf_organic[t] + b.cp_organic * (b.temp_feed[t] - b.temp_ref))
                 + b.gas_in[t].flow_mol * b.gas_in[t].enth_mol
                 + heat

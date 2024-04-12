@@ -76,7 +76,7 @@ def main(m=None):
     print("heat_duty=", m.fs.roaster.heat_duty[0].value)
     print(
         "Total mass flow of dry organic free impurity in feed stream=",
-        pyo.value(m.fs.roaster.flow_mas_impurity_feed[0]),
+        pyo.value(m.fs.roaster.flow_mass_impurity_feed[0]),
     )
     print(
         "Un mass fraction in dry organic free feed",
@@ -100,7 +100,7 @@ def main(m=None):
     )
     print(
         "Total mass flow of recovered solid product=",
-        pyo.value(m.fs.roaster.flow_mas_product_recovered[0]),
+        pyo.value(m.fs.roaster.flow_mass_product_recovered[0]),
     )
     print(
         "Un mass fraction in recovered solid product",
@@ -194,7 +194,7 @@ def set_inputs(m):
     m.fs.roaster.xconv_caco3.fix(0.5)
 
     # solid feed rate at 1030 kg/hr
-    m.fs.roaster.flow_mas_feed.fix(1030 / 3600)
+    m.fs.roaster.flow_mass_feed.fix(1030 / 3600)
     # surface moisture in solid feed
     m.fs.roaster.mass_frac_moist_feed.fix(0.029126)
     # combustible organic material

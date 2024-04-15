@@ -221,9 +221,6 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
         )
 
         def rule_reaction_rate_eq(b, r):
-            if r == "inerts":
-                return b.reaction_rate[r] == 0 * units.mol / units.litre / units.hour
-
             l_block = b.parent_block().liquid[b.index()]
             s_block = b.parent_block().solid[b.index()]
 

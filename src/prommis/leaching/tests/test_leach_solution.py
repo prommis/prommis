@@ -25,7 +25,22 @@ def test_parameters(model):
 
     for k in model.fs.leach_soln.component_list:
         assert k in [
-            "H2O", "H", "HSO4", "SO4", "Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy", "Al", "Ca", "Fe",
+            "H2O",
+            "H",
+            "HSO4",
+            "SO4",
+            "Sc",
+            "Y",
+            "La",
+            "Ce",
+            "Pr",
+            "Nd",
+            "Sm",
+            "Gd",
+            "Dy",
+            "Al",
+            "Ca",
+            "Fe",
         ]
         assert k in model.fs.leach_soln.mw
 
@@ -53,11 +68,10 @@ def test_parameters(model):
     }
 
     assert isinstance(model.fs.leach_soln.Ka2, Param)
-    assert value(model.fs.leach_soln.Ka2) == pytest.approx(10 ** -1.99, rel=1e-8)
+    assert value(model.fs.leach_soln.Ka2) == pytest.approx(10**-1.99, rel=1e-8)
 
     assert isinstance(model.fs.leach_soln.dens_mol, Param)
     assert value(model.fs.leach_soln.dens_mol) == pytest.approx(1, rel=1e-8)
-
 
 
 @pytest.mark.unit

@@ -110,8 +110,12 @@ def test_build(model):
     assert isinstance(model.fs.leach.mscontactor, MSContactor)
     assert isinstance(model.fs.leach.volume, Var)
     assert len(model.fs.leach.volume) == 1
-    assert isinstance(model.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint, Constraint)
-    assert len(model.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint) == 12
+    assert isinstance(
+        model.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint, Constraint
+    )
+    assert (
+        len(model.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint) == 12
+    )
 
     assert number_variables(model.fs.leach) == 191
     assert number_total_constraints(model.fs.leach) == 159
@@ -132,15 +136,27 @@ def test_initialize_and_solve(model):
 
     for j in model.fs.coal.component_list:
         if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
-            model.scaling_factor[model.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j]] = 1e5
-            model.scaling_factor[model.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j]] = 1e5
             model.scaling_factor[
-                model.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate[j]
+                model.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j]
             ] = 1e5
-            model.scaling_factor[model.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j]] = 1e3
-            model.scaling_factor[model.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j]] = 1e3
             model.scaling_factor[
-                model.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate_eq[j]
+                model.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j]
+            ] = 1e5
+            model.scaling_factor[
+                model.fs.leach.mscontactor.heterogeneous_reactions[
+                    0.0, 1
+                ].reaction_rate[j]
+            ] = 1e5
+            model.scaling_factor[
+                model.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j]
+            ] = 1e3
+            model.scaling_factor[
+                model.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j]
+            ] = 1e3
+            model.scaling_factor[
+                model.fs.leach.mscontactor.heterogeneous_reactions[
+                    0.0, 1
+                ].reaction_rate_eq[j]
             ] = 1e5
 
     # Create a scaled version of the model to solve

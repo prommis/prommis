@@ -15,7 +15,12 @@ from pyomo.environ import (
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
 from pyomo.network import Port
 
-from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault, MaterialFlowBasis
+from idaes.core import (
+    UnitModelBlockData,
+    declare_process_block_class,
+    useDefault,
+    MaterialFlowBasis,
+)
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.models.unit_models.mscontactor import MSContactor
 from idaes.core.initialization import ModularInitializerBase
@@ -69,7 +74,7 @@ class LeachingTrainInitializer(ModularInitializerBase):
         return msc_init.initialize(model.mscontactor)
 
 
-StreamCONFIG= ConfigDict()
+StreamCONFIG = ConfigDict()
 StreamCONFIG.declare(
     "property_package",
     ConfigValue(
@@ -146,9 +151,8 @@ class LeachingTrainData(UnitModelBlockData):
     CONFIG.declare(
         "number_of_tanks",
         ConfigValue(
-            default=1,
-            domain=int,
-            description="Number of tanks in leaching train"),
+            default=1, domain=int, description="Number of tanks in leaching train"
+        ),
     )
 
     def build(self):
@@ -195,7 +199,7 @@ class LeachingTrainData(UnitModelBlockData):
 
             if flow_basis == MaterialFlowBasis.mass:
                 m_units = uom.MASS
-                x_units = m_units/uom.TIME
+                x_units = m_units / uom.TIME
             elif flow_basis == MaterialFlowBasis.molar:
                 m_units = uom.AMOUNT
                 x_units = m_units / uom.TIME
@@ -203,9 +207,11 @@ class LeachingTrainData(UnitModelBlockData):
                 # Undefined
                 x_units = None
 
-            return (
-                units.convert(b.heterogeneous_reaction_extent[t, s, r], to_units=x_units)
-                == units.convert(b.heterogeneous_reactions[t, s].reaction_rate[r] * volume[t, s], to_units=x_units)
+            return units.convert(
+                b.heterogeneous_reaction_extent[t, s, r], to_units=x_units
+            ) == units.convert(
+                b.heterogeneous_reactions[t, s].reaction_rate[r] * volume[t, s],
+                to_units=x_units,
             )
 
         self.mscontactor.heterogeneous_reaction_extent_constraint = Constraint(
@@ -225,7 +231,8 @@ class LeachingTrainData(UnitModelBlockData):
         @self.Expression(
             self.flowsheet().time,
             self.mscontactor.solid.component_list,
-            doc="Percent recovery of solid species")
+            doc="Percent recovery of solid species",
+        )
         def recovery(b, t, j):
             f_in = b.solid_inlet.flow_mass[t]
             f_out = b.solid_outlet.flow_mass[t]

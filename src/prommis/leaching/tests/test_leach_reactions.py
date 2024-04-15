@@ -8,7 +8,20 @@ import pytest
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 
 
-RXN_LIST = ["Sc2O3", "Y2O3", "La2O3", "Ce2O3", "Pr2O3", "Nd2O3", "Sm2O3", "Gd2O3", "Dy2O3", "Al2O3", "CaO", "Fe2O3"]
+RXN_LIST = [
+    "Sc2O3",
+    "Y2O3",
+    "La2O3",
+    "Ce2O3",
+    "Pr2O3",
+    "Nd2O3",
+    "Sm2O3",
+    "Gd2O3",
+    "Dy2O3",
+    "Al2O3",
+    "CaO",
+    "Fe2O3",
+]
 
 
 @pytest.fixture
@@ -18,15 +31,15 @@ def model():
 
     # Dummy blocks for liquid and solid states
     m.fs.liquid = Block(m.fs.time)
-    m.fs.liquid[0].flow_vol = Var(units=units.liter/units.hour)
-    m.fs.liquid[0].conc_mol_comp = Var(["H"], units=units.mol/units.liter)
+    m.fs.liquid[0].flow_vol = Var(units=units.liter / units.hour)
+    m.fs.liquid[0].conc_mol_comp = Var(["H"], units=units.mol / units.liter)
 
     m.fs.solid = Block(m.fs.time)
-    m.fs.solid[0].flow_mass = Var(units=units.kg/units.hour)
+    m.fs.solid[0].flow_mass = Var(units=units.kg / units.hour)
     m.fs.solid[0].conversion = Var(RXN_LIST, units=units.dimensionless)
 
     m.fs.solid[0].params = Block()
-    m.fs.solid[0].params.dens_mass = Var(units=units.kg/units.liter)
+    m.fs.solid[0].params.dens_mass = Var(units=units.kg / units.liter)
 
     # Leaching reaction parameters
     m.fs.leach_rxns = CoalRefuseLeachingReactions()

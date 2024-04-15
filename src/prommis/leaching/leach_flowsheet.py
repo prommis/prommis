@@ -106,15 +106,25 @@ def set_scaling(m):
 
     for j in m.fs.coal.component_list:
         if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
-            m.scaling_factor[m.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j]] = 1e5
-            m.scaling_factor[m.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j]] = 1e5
+            m.scaling_factor[
+                m.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j]
+            ] = 1e5
+            m.scaling_factor[
+                m.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j]
+            ] = 1e5
             m.scaling_factor[
                 m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate[j]
             ] = 1e5
-            m.scaling_factor[m.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j]] = 1e3
-            m.scaling_factor[m.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j]] = 1e3
             m.scaling_factor[
-                m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate_eq[j]
+                m.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j]
+            ] = 1e3
+            m.scaling_factor[
+                m.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j]
+            ] = 1e3
+            m.scaling_factor[
+                m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate_eq[
+                    j
+                ]
             ] = 1e5
 
 

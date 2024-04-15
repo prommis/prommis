@@ -25,7 +25,19 @@ def test_parameters(model):
 
     for k in model.fs.leach_sol.component_list:
         assert k in [
-            "inerts", "Sc2O3", "Y2O3", "La2O3", "Ce2O3", "Pr2O3", "Nd2O3", "Sm2O3", "Gd2O3", "Dy2O3", "Al2O3", "CaO", "Fe2O3",
+            "inerts",
+            "Sc2O3",
+            "Y2O3",
+            "La2O3",
+            "Ce2O3",
+            "Pr2O3",
+            "Nd2O3",
+            "Sm2O3",
+            "Gd2O3",
+            "Dy2O3",
+            "Al2O3",
+            "CaO",
+            "Fe2O3",
         ]
         assert k in model.fs.leach_sol.mw
         assert k in model.fs.leach_sol.mass_frac_comp_initial

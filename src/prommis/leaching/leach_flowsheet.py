@@ -1,5 +1,6 @@
 """
-Initial flowsheet for UKy leaching process
+Demonstration flowsheet for LeachTrain unit model using
+parameters and data for West Kentucky No. 13 coal refuse.
 
 Authors: Andrew Lee
 """
@@ -24,6 +25,10 @@ from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 
 
 def build_model():
+    """
+    Method to build a single stage leaching system using data for
+    West Kentucky No. 13 coal refuse.
+    """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
@@ -50,6 +55,10 @@ def build_model():
 
 
 def set_inputs(m):
+    """
+    Set inlet conditions ot leach reactor based on one case study from
+    University of Kentucky pilot plant study.
+    """
     # Liquid feed state
     m.fs.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
     m.fs.leach.liquid_inlet.conc_mass_comp.fix(1e-10 * units.mg / units.L)
@@ -100,8 +109,9 @@ def set_inputs(m):
 
 
 def set_scaling(m):
-    # -------------------------------------------------------------------------------------
-    # Scaling
+    """
+    Apply scaling factors to improve solver performance.
+    """
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
     for j in m.fs.coal.component_list:

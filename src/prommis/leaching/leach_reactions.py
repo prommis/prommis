@@ -29,6 +29,33 @@ from idaes.core.util.misc import add_object_reference
 class CoalRefuseLeachingReactionsData(
     ProcessBlockData, property_meta.HasPropertyClassMetadata
 ):
+    """
+    Reaction package for heterogeneous reactions involved in leaching REEs from
+    solid West Kentucky No. 13 coal refuse using H2SO4.
+
+    This reaction package is designed to be used with the LeachTrain or MSContactor
+    unit models and assumed two streams named 'liquid' and 'solid'.
+
+    Reaction parameters fitted to a shrinking core model using data from:
+
+    RESEARCH PERFORMANCE FINAL REPORT, Pilot-Scale Testing of an Integrated
+    Circuit for the Extraction of Rare Earth Minerals and Elements from Coal
+    and Coal Byproducts Using Advanced Separation Technologies,
+    Honaker, R.Q., et al., DE-FE0027035
+
+    Includes reactions for the following components with H2SO4:
+
+    * Rare Earth Oxides: Sc2O3, Y2O3, La2O3, Ce2O3, Pr2O3, Nd2O3, Sm2O3, Gd2O3, Dy2O3
+    * Impurities: Al2O3, CaO, Fe2O3
+
+    All reactions use the follwoing form:
+
+    rate[j] = eps*B*[H+]^A*(1-X[j])^(2/3)
+
+    where X[j] is the solid phase conversion (i.e., recovery) of species j, eps is the
+    mass-based pulp density and A and B are fitted parameters.
+
+    """
     def build(self):
         super().build()
 
@@ -210,6 +237,10 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
     )
 
     def build(self):
+        """
+        Reaction block for leaching of West Kentucky No. 13 coal refuse in H2SO4.
+
+        """
         super().build()
 
         add_object_reference(self, "_params", self.config.parameters)

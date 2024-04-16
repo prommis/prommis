@@ -11,7 +11,7 @@
 # for full copyright and license information.
 #################################################################################
 """
-University of Kentucky Flowsheet
+University of Kentucky REE Processing Plant
 
 Author: Marcus Holly
 """
@@ -80,6 +80,9 @@ from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
 
 def main():
+    """
+    Run the flowsheet by calling the appropriate functions in series.
+    """
     m = build()
 
     set_operating_conditions(m)
@@ -110,6 +113,9 @@ def main():
 
 
 def build():
+    """
+    Build and connect the unit model blocks present in the University of Kentucky REE processing plant.
+    """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
@@ -375,6 +381,10 @@ def build():
 
 
 def set_scaling(m):
+    """
+    Set the scaling factors to improve solver performance.
+    """
+
     # Scaling
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
@@ -592,6 +602,9 @@ def set_scaling(m):
 
 
 def set_operating_conditions(m):
+    """
+    Set the operating conditions of the flowsheet such that the degrees of freedom are zero.
+    """
     eps = 1e-7 * units.mg / units.L
 
     m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
@@ -802,6 +815,9 @@ def set_operating_conditions(m):
 
 
 def initialize_system(m):
+    """
+    Provide initialized values for all streams in the system.
+    """
     seq = SequentialDecomposition()
     seq.options.tear_method = "Direct"
     seq.options.iterLim = 1
@@ -976,6 +992,9 @@ def initialize_system(m):
 
 
 def solve(m):
+    """
+    Solve the system with IPOPT.
+    """
     solver = SolverFactory("ipopt")
     results = solver.solve(m, tee=True)
 
@@ -983,10 +1002,16 @@ def solve(m):
 
 
 def display_results(m):
+    """
+    Print key flowsheet outputs.
+    """
     m.fs.roaster.display()
 
 
 def add_costing(flowsheet):
+    """
+    Set the costing parameters for each unit model.
+    """
     # TODO: Costing is preliminary until more unit model costing metrics can be verified
     m = ConcreteModel()
 
@@ -1824,6 +1849,9 @@ def add_costing(flowsheet):
 
 
 def display_costing(m):
+    """
+    Print the key costing results.
+    """
     QGESSCostingData.report(m.fs.costing)
     m.fs.costing.variable_operating_costs.display()  # results will be in t = 0
     QGESSCostingData.display_bare_erected_costs(m.fs.costing)

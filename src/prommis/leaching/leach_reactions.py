@@ -15,7 +15,7 @@ Simple leaching model for West Kentucky No. 13 coal refuse in H2SO4.
 
 Authors: Andrew Lee
 
-This is an example of how ot write a custom heterogeneosu reaction package for use with the
+This is an example of how to write a custom heterogeneous reaction package for use with the
 LeachTrain unit model.
 
 """

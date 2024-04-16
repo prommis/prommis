@@ -45,7 +45,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
     * Rare Earths: Sc, Y, La, Ce, Pr, Nd, Sm, Gd, Dy
     * Impurities: Al, Ca, Fe
 
-    First dissociation of H2SO4 is assumed ot be complete.
+    First dissociation of H2SO4 is assumed to be complete.
     Second dissociation governed by equilibrium (Ka2) - inherent reaction.
 
     """

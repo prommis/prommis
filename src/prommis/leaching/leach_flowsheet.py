@@ -56,7 +56,7 @@ def build_model():
 
 def set_inputs(m):
     """
-    Set inlet conditions ot leach reactor based on one case study from
+    Set inlet conditions to leach reactor based on one case study from
     University of Kentucky pilot plant study.
     """
     # Liquid feed state

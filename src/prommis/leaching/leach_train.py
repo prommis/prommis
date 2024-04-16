@@ -1,9 +1,63 @@
-"""
-Unit model for a leaching train.
+r"""
+Leach Train
+===========
 
-Train is modeled as a series of well mixed tank reactors.
+Author: Andrew Lee
 
-Authors: Andrew Lee
+The Leach Train unit model represents a series of leaching tanks in which a solid and liquid stream are contacted and
+undergo heterogeneous chemical reactions.
+
+Configuration Arguments
+-----------------------
+
+When creating an instance of a Leach Train model, the user must specify the number of tanks in train using the
+``number_of_tanks`` configuration argument. This value cannot be changed later.
+
+A Leach Train model also requires a special "heterogeneous reaction package" to define the reactions which occur in the
+system and the constraints defining the rate or reaction or equilibrium condition associated with each. These custom
+reaction packages are similar to normal IDAES reaction packages with the following differences:
+
+* the reaction package is not coupled to any specific thermophysical property package (i.e., the liquid or solid phase
+properties). Instead, it is expected that the reaction package will link to both the solid and liquid phase properties
+using ``self.parent_block().liquid`` and ``self.parent_block().solid`` as required.
+
+Degrees of Freedom
+------------------
+
+A Leach Train module has a number of degrees of freedom equal to the number of tanks in the train. These are the volume
+of each tank, and is specified using the ``volume`` attribute on the unit model (indexed by tank number).
+
+Model Structure
+---------------
+
+The core Leach Train unit model consists of a single ``MSContactor`` model (named ``mscontactor``) with hard coded
+stream names (``liquid`` and ``solid`` respectively). The Leach Train model also has two inlets and two outlets named
+``liquid_inlet``, ``solid_inlet``, ``liquid_outlet`` and ``solid_outlet`` respectively.
+
+Additional Constraints
+----------------------
+
+Leach Train units add one additional constraint to define the extent of reaction for rate reactions in the system
+(indexed by number of tanks and list of rate reactions).
+
+.. math:: X_{t,e,r} = V_{t,e} \times r_{t,e,r}
+
+where :math:`X_{t,e,r}` is the extent of reaction for reaction :math:`r` in tank :math:`e` at time :math:`t`,
+:math:`V_{t,e}` is the volume of the reacting material in tank :math:`e` at time :math:`t` (allows for varying reactor
+volume with time) and :math:`r_{t,e,r}` is the volumetric rate of reaction for reaction :math:`r` in tank :math:`e` at
+time :math:`t` (from the reaction package).
+
+Variables
+---------
+
+Leach Train units add the following additional Variables beyond those created by the MSContactor Block.
+
+================ ====== ================================================================================================
+Variable         Name   Notes
+================ ====== ================================================================================================
+:math:`V_{t,e}`  volume
+================ ====== ================================================================================================
+
 """
 
 from pyomo.environ import (

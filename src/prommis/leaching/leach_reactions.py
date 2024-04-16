@@ -10,10 +10,14 @@
 # All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
 # for full copyright and license information.
 #################################################################################
-"""
+r"""
 Simple leaching model for West Kentucky No. 13 coal refuse in H2SO4.
 
 Authors: Andrew Lee
+
+This is an example of how ot write a custom heterogeneosu reaction package for use with the
+LeachTrain unit model.
+
 """
 from pyomo.common.config import ConfigValue
 from pyomo.environ import Constraint, Param, Set, Var, units
@@ -48,7 +52,7 @@ class CoalRefuseLeachingReactionsData(
     * Rare Earth Oxides: Sc2O3, Y2O3, La2O3, Ce2O3, Pr2O3, Nd2O3, Sm2O3, Gd2O3, Dy2O3
     * Impurities: Al2O3, CaO, Fe2O3
 
-    All reactions use the follwoing form:
+    All reactions use the following form:
 
     rate[j] = eps*B*[H+]^A*(1-X[j])^(2/3)
 

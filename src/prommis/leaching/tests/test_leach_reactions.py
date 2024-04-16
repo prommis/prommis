@@ -1,4 +1,4 @@
-from pyomo.environ import Block, ConcreteModel, Constraint, Param, units, value, Var
+from pyomo.environ import Block, ConcreteModel, Constraint, units, Var
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock

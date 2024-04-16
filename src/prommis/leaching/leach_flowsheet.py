@@ -7,13 +7,10 @@ Authors: Andrew Lee
 
 from pyomo.environ import (
     ConcreteModel,
-    Constraint,
     SolverFactory,
     Suffix,
     TransformationFactory,
-    Var,
     units,
-    value,
 )
 
 from idaes.core import FlowsheetBlock

@@ -66,7 +66,7 @@ from pyomo.environ import (
     Var,
     units,
 )
-from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
+from pyomo.common.config import Bool, ConfigDict, ConfigValue
 from pyomo.network import Port
 
 from idaes.core import (
@@ -203,6 +203,14 @@ class LeachingTrainData(UnitModelBlockData):
         ),
     )
     CONFIG.declare(
+        "reaction_package_args",
+        ConfigValue(
+            default=None,
+            domain=dict,
+            description="Arguments for heterogeneous reaction package for leaching.",
+        ),
+    )
+    CONFIG.declare(
         "number_of_tanks",
         ConfigValue(
             default=1, domain=int, description="Number of tanks in leaching train"
@@ -232,6 +240,7 @@ class LeachingTrainData(UnitModelBlockData):
                 },
             },
             heterogeneous_reactions=self.config.reaction_package,
+            heterogeneous_reactions_args=self.config.reaction_package_args,
         )
 
         # Get units of measurement from MSContactor

@@ -35,7 +35,7 @@ from idaes.core.util.initialization import fix_state_vars
 @declare_process_block_class("CoalRefuseParameters")
 class CoalRefuseParameterData(PhysicalParameterBlock):
     """
-    Solid phase property package for est Kentucky No. 13 coal waste.
+    Solid phase property package for West Kentucky No. 13 coal waste.
 
     Based on assay provided in:
 

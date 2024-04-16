@@ -14,7 +14,7 @@ When creating an instance of a Leach Train model, the user must specify the numb
 ``number_of_tanks`` configuration argument. This value cannot be changed later.
 
 A Leach Train model also requires a special "heterogeneous reaction package" to define the reactions which occur in the
-system and the constraints defining the rate or reaction or equilibrium condition associated with each. These custom
+system and the constraints defining the rate of reaction or equilibrium condition associated with each. These custom
 reaction packages are similar to normal IDAES reaction packages with the following differences:
 
 * the reaction package is not coupled to any specific thermophysical property package (i.e., the liquid or solid phase
@@ -192,7 +192,7 @@ class LeachingTrainData(UnitModelBlockData):
     CONFIG.declare(
         "solid_phase",
         StreamCONFIG(
-            description="Solid stream properties",
+            description="Solid phase properties",
         ),
     )
     CONFIG.declare(

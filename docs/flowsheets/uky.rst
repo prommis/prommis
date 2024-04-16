@@ -42,7 +42,10 @@ The following variables must be specified by the user to run the UKy flowsheet:
     * solid feed mass flow and component mass fractions
     * volume of leach tank(s)
     * partition coefficients for each solvent extraction unit
-    * flow rate and component concentrations for organic make-up streams and acid feeds
+    * flow rate and component concentrations for organic make-up streams and HCl feeds
+    * liquid recovery fraction for solid-liquid separators
+    * precipitator inlet temperature
+    * roaster inlet temperature and pressure, pressure drop, molar flow, and component mole fractions
     * split fractions for each recycle loop
 
 
@@ -52,118 +55,78 @@ Flowsheet Specifications
 .. csv-table::
    :header: "Description", "Value", "Units"
 
-   "**Feed Water**"
-   "Volumetric flow","20648", ":math:`\text{m}^3\text{/day}`"
-   "Temperature", "308.15", ":math:`\text{K}`"
-   "Pressure", "1", ":math:`\text{atm}`"
-   "Soluble inert organic matter (S_I) concentration", "27", ":math:`\text{g/}\text{m}^3`"
-   "Readily biodegradable substrate (S_S) concentration", "58", ":math:`\text{g/}\text{m}^3`"
-   "Particulate inert organic matter (X_I) concentration", "92", ":math:`\text{g/}\text{m}^3`"
-   "Slowly biodegradable substrate (X_S) concentration", "363", ":math:`\text{g/}\text{m}^3`"
-   "Active heterotrophic biomass (X_B,H) concentration", "50", ":math:`\text{g/}\text{m}^3`"
-   "Active autotrophic biomass (X_B,A) concentration", "0", ":math:`\text{g/}\text{m}^3`"
-   "Particulate products arising from biomass decay (X_P) concentration", "0", ":math:`\text{g/}\text{m}^3`"
-   "Oxygen (S_O) concentration", "0", ":math:`\text{g/}\text{m}^3`"
-   "Nitrate and nitrite nitrogen (S_NO) concentration", "0", ":math:`\text{g/}\text{m}^3`"
-   "NH4 :math:`^{+}` + NH :math:`_{3}` Nitrogen (S_NH) concentration", "23", ":math:`\text{g/}\text{m}^3`"
-   "Soluble biodegradable organic nitrogen (S_ND) concentration", "5", ":math:`\text{g/}\text{m}^3`"
-   "Particulate biodegradable organic nitrogen (X_ND) concentration", "16", ":math:`\text{g/}\text{m}^3`"
-   "Alkalinity (S_ALK)", "7", ":math:`\text{mol/}\text{m}^3`"
+   "**Leaching**"
+   "Tank volume", "100", ":math:`\text{m}^3`"
+   "Liquid feed volumetric flow","224.3", ":math:`\text{L/hr}`"
+   "Liquid feed H concentration", "100", ":math:`\text{mg/L}`"
+   "Liquid feed HSO4 concentration", "1e-8", ":math:`\text{mg/L}`"
+   "Liquid feed SO4 concentration", "4800", ":math:`\text{mg/L}`"
+   "Liquid feed REE and contaminant concentrations", "1e-10", ":math:`\text{mg/L}`"
+   "Solid feed mass flow","22.68", ":math:`\text{kg/hr}`"
+   "Solid feed inerts mass fraction","0.6952", ":math:`\text{dimensionless}`"
+   "Solid feed Al2O3 mass fraction","0.237", ":math:`\text{dimensionless}`"
+   "Solid feed Fe2O3 mass fraction","0.0642", ":math:`\text{dimensionless}`"
+   "Solid feed CaO mass fraction","0.00331", ":math:`\text{dimensionless}`"
+   "Solid feed Sc2O3 mass fraction","2.8e-5", ":math:`\text{dimensionless}`"
+   "Solid feed Y2O3 mass fraction","0.237", ":math:`\text{dimensionless}`"
+   "Solid feed La2O3 mass fraction","0.237", ":math:`\text{dimensionless}`"
+   "Solid feed Ce2O3 mass fraction","0.237", ":math:`\text{dimensionless}`"
+   "Solid feed Pr2O3 mass fraction","0.237", ":math:`\text{dimensionless}`"
+   "Solid feed Nd2O3 mass fraction","0.237", ":math:`\text{dimensionless}`"
+   "Solid feed Sm2O3 mass fraction","0.237", ":math:`\text{dimensionless}`"
+   "Solid feed Gd2O3 mass fraction","0.237", ":math:`\text{dimensionless}`"
+   "Solid feed Dy2O3 mass fraction","0.237", ":math:`\text{dimensionless}`"
 
-   "**Activated Sludge Process**"
-   "Reactor 1 volume", "1000", ":math:`\text{m}^3`"
-   "Reactor 2 volume", "1000", ":math:`\text{m}^3`"
-   "Reactor 3 volume", "1333", ":math:`\text{m}^3`"
-   "Reactor 4 volume", "1333", ":math:`\text{m}^3`"
-   "Reactor 5 volume", "1333", ":math:`\text{m}^3`"
-   "Reactor 3 injection rate for component j", "0", ":math:`\text{g/}\text{s}`"
-   "Reactor 4 injection rate for component j", "0", ":math:`\text{g/}\text{s}`"
-   "Reactor 5 injection rate for component j", "0", ":math:`\text{g/}\text{s}`"
-   "Reactor 3 outlet oxygen (S_O) concentration", "0.00172", ":math:`\text{g/}\text{m}^3`"
-   "Reactor 4 outlet oxygen (S_O) concentration", "0.00243", ":math:`\text{g/}\text{m}^3`"
-   "Reactor 5 outlet oxygen (S_O) concentration", "0.00449", ":math:`\text{g/}\text{m}^3`"
-   "Reactor 5 underflow split fraction", "0.6", ":math:`\text{dimensionless}`"
-   "Reactor 3 oxygen mass transfer coefficient", "7.6", ":math:`\text{hr}^{-1}`"
-   "Reactor 4 oxygen mass transfer coefficient", "5.7", ":math:`\text{hr}^{-1}`"
-   "Secondary clarifier H2O split fraction", "0.48956", ":math:`\text{dimensionless}`"
-   "Secondary clarifier S_I split fraction", "0.48956", ":math:`\text{dimensionless}`"
-   "Secondary clarifier S_S split fraction", "0.48956", ":math:`\text{dimensionless}`"
-   "Secondary clarifier X_I split fraction", "0.00187", ":math:`\text{dimensionless}`"
-   "Secondary clarifier X_S split fraction", "0.00187", ":math:`\text{dimensionless}`"
-   "Secondary clarifier X_BH split fraction", "0.00187", ":math:`\text{dimensionless}`"
-   "Secondary clarifier X_BA split fraction", "0.00187", ":math:`\text{dimensionless}`"
-   "Secondary clarifier X_P split fraction", "0.00187", ":math:`\text{dimensionless}`"
-   "Secondary clarifier S_O split fraction", "0.48956", ":math:`\text{dimensionless}`"
-   "Secondary clarifier S_NO split fraction", "0.48956", ":math:`\text{dimensionless}`"
-   "Secondary clarifier S_NH split fraction", "0.48956", ":math:`\text{dimensionless}`"
-   "Secondary clarifier S_ND split fraction", "0.48956", ":math:`\text{dimensionless}`"
-   "Secondary clarifier X_ND split fraction", "0.00187", ":math:`\text{dimensionless}`"
-   "Secondary clarifier S_ALK split fraction", "0.48956", ":math:`\text{dimensionless}`"
-   "Secondary clarifier surface area", "1500", ":math:`\text{m}^2`"
-   "Separator recycle split fraction", "0.985", ":math:`\text{dimensionless}`"
-   "Recycle pump outlet pressure", "101325", ":math:`\text{Pa}`"
+   "**Solvent Extraction Rougher**"
+   "Loading section organic feed volumetric flow","62.01", ":math:`\text{L/hr}`"
+   "Organic make-up REE and contaminant concentrations","1e-7", ":math:`\text{mg/L}`"
+   "Scrubbing section acid feed volumetric flow","0.09", ":math:`\text{L/hr}`"
+   "Scrubbing section acid feed H concentration","10.36", ":math:`\text{mg/L}`"
+   "Scrubbing section acid feed Cl concentration","359.64", ":math:`\text{mg/L}`"
+   "Scrubbing section acid feed REE and contaminant concentrations","1e-7", ":math:`\text{mg/L}`"
+   "Stripping section acid feed volumetric flow","0.09", ":math:`\text{L/hr}`"
+   "Stripping section acid feed H concentration","41.44", ":math:`\text{mg/L}`"
+   "Stripping section acid feed Cl concentration","1438.56", ":math:`\text{mg/L}`"
+   "Stripping section acid feed REE and contaminant concentrations","1e-7", ":math:`\text{mg/L}`"
 
-   "**Primary Clarifier**"
-   "Primary clarifier H2O split fraction", "0.993", ":math:`\text{dimensionless}`"
-   "Primary clarifier S_I split fraction", "0.993", ":math:`\text{dimensionless}`"
-   "Primary clarifier S_S split fraction", "0.993", ":math:`\text{dimensionless}`"
-   "Primary clarifier X_I split fraction", "0.5192", ":math:`\text{dimensionless}`"
-   "Primary clarifier X_S split fraction", "0.5192", ":math:`\text{dimensionless}`"
-   "Primary clarifier X_BH split fraction", "0.5192", ":math:`\text{dimensionless}`"
-   "Primary clarifier X_BA split fraction", "0.5192", ":math:`\text{dimensionless}`"
-   "Primary clarifier X_P split fraction", "0.5192", ":math:`\text{dimensionless}`"
-   "Primary clarifier S_O split fraction", "0.993", ":math:`\text{dimensionless}`"
-   "Primary clarifier S_NO split fraction", "0.993", ":math:`\text{dimensionless}`"
-   "Primary clarifier S_NH split fraction", "0.993", ":math:`\text{dimensionless}`"
-   "Primary clarifier S_ND split fraction", "0.993", ":math:`\text{dimensionless}`"
-   "Primary clarifier X_ND split fraction", "0.5192", ":math:`\text{dimensionless}`"
-   "Primary clarifier S_ALK split fraction", "0.993", ":math:`\text{dimensionless}`"
+   "**Solvent Extraction Cleaner**"
+   "Loading section organic feed volumetric flow","62.01", ":math:`\text{L/hr}`"
+   "Organic make-up REE and contaminant concentrations","1e-7", ":math:`\text{mg/L}`"
+   "Stripping section acid feed volumetric flow","0.09", ":math:`\text{L/hr}`"
+   "Stripping section acid feed H concentration","41.44", ":math:`\text{mg/L}`"
+   "Stripping section acid feed Cl concentration","1438.56", ":math:`\text{mg/L}`"
+   "Stripping section acid feed REE and contaminant concentrations","1e-7", ":math:`\text{mg/L}`"
 
-   "**Anaerobic Digester**"
-   "Anaerobic digester liquid volume", "3400", ":math:`\text{m}^3`"
-   "Anaerobic digester vapor volume", "300", ":math:`\text{m}^3`"
-   "Anaerobic digester liquid outlet temperature", "308.15", ":math:`\text{m}^3`"
+   "**Precipitator**"
+   "Inlet temperature","348.15", ":math:`\text{K}`"
 
-   "**Dewatering Unit**"
-   "Dewatering unit hydraulic retention time", "1800", ":math:`\text{s}`"
-   "Dewatering unit specific energy consumption", "0.069", ":math:`\text{kWh/}\text{m}^3`"
+   "**Roaster**"
+   "Pressure drop","0", ":math:`\text{Pa}`"
+   "Gas inlet temperature","348.15", ":math:`\text{K}`"
+   "Gas outlet temperature","873.15", ":math:`\text{K}`"
+   "Gas inlet pressure","101325", ":math:`\text{Pa}`"
+   "Gas inlet molar flow","0.00781", ":math:`\text{mol/s}`"
+   "Gas inlet O2 mole fraction","0.1118", ":math:`\text{dimensionless}`"
+   "Gas inlet H2O mole fraction","0.1005", ":math:`\text{dimensionless}`"
+   "Gas inlet CO2 mole fraction","0.0431", ":math:`\text{dimensionless}`"
+   "Gas inlet N2 mole fraction","0.7446", ":math:`\text{dimensionless}`"
+   "Moisture inlet molar flow","6.75e-4", ":math:`\text{mol/s}`"
+   "Oxide recovery fraction","0.95", ":math:`\text{dimensionless}`"
 
-   "**Thickener**"
-   "Thickener hydraulic retention time", "86400", ":math:`\text{s}`"
-   "Thickener diameter", "10", ":math:`\text{kWh/}\text{m}`"
+   "**Separators**"
+   "Leaching solid-liquid separator liquid recovery fraction","0.7", ":math:`\text{dimensionless}`"
+   "Solvent extraction rougher load recycle split fraction","0.9", ":math:`\text{dimensionless}`"
+   "Solvent extraction rougher scrub recycle split fraction","0.9", ":math:`\text{dimensionless}`"
+   "Solvent extraction rougher organic recycle split fraction","0.9", ":math:`\text{dimensionless}`"
+   "Solvent extraction cleaner organic recycle split fraction","0.9", ":math:`\text{dimensionless}`"
+   "Precipitator solid-liquid separator liquid recovery fraction","0.7", ":math:`\text{dimensionless}`"
+   "Precipitator solid-liquid separator liquid recycle split fraction","0.9", ":math:`\text{dimensionless}`"
 
-Additional Variables
---------------------
-
-.. csv-table::
-   :header: "Description", "Symbol", "Value", "Units"
-
-   "Maximum total suspended solids concentration", ":math:`TSS_{max}`", "0.03", ":math:`\text{kg/}\text{m}^3`"
-   "Maximum chemical oxygen demand", ":math:`COD_{max}`", "0.1", ":math:`\text{kg/}\text{m}^3`"
-   "Maximum total nitrogen concentration", ":math:`N_{max}`", "0.018", ":math:`\text{kg/}\text{m}^3`"
-   "Maximum 5-day biological oxygen demand", ":math:`BOD5_{max}`", "0.01", ":math:`\text{kg/}\text{m}^3`"
-
-
-Additional Constraints
-----------------------
-The subscript "out" represents the effluent from the secondary clarifier
-
-.. csv-table::
-   :header: "Description", "Equation"
-
-   "Total suspended solids concentration", ":math:`TSS_{out} <= TSS_{max}`"
-   "Chemical oxygen demand", ":math:`COD_{out} <= COD_{max}`"
-   "Total nitrogen concentration", ":math:`N_{out} <= N_{max}`"
-   "5-day biological oxygen demand", ":math:`BOD5_{out} <= BOD5_{max}`"
-
-Future Refinements
-------------------
-
-The following modifications to BSM2 are planned for development:
-    * Improving costing relationships in terms of detail, completeness, and reasonable validity
-    * Accounting for temperature-dependence in the oxygen mass transfer coefficient (KLa) and oxygen concentration at saturation
-    * Adding thermal energy requirements to the anaerobic digester and refining energy consumption estimates for units collectively
-    * Replacing the ideal-separator formulation in the secondary clarifier with the widely used double-exponential settling model (i.e., the Takacs model)
+Costing
+-------
+Unit model costing in this flowsheet is preliminary and is based on the commercial scale unit model parameters provided in Table 4-28 :math:`^1`.
+However, this flowsheet is at the pilot scale, so while some of the unit model costing parameters have been scaled down
+accordingly, a more robust scale-down procedure of the costing parameters is necessary to accurately approximate the cost of this pilot scale system.
 
 References
 ----------

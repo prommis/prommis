@@ -60,6 +60,7 @@ class CoalRefuseLeachingReactionsData(
     mass-based pulp density and A and B are fitted parameters.
 
     """
+
     def build(self):
         super().build()
 

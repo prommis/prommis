@@ -49,6 +49,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
     Second dissociation governed by equilibrium (Ka2) - inherent reaction.
 
     """
+
     def build(self):
         super().build()
 
@@ -184,6 +185,7 @@ class LeachSolutionStateBlockData(StateBlockData):
     State block for leach solution of West Kentucky No. 13 coal by H2SO4.
 
     """
+
     def build(self):
         super().build()
 

@@ -51,6 +51,7 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
     * Impurities: Al2O3, CaO, Fe2O3
 
     """
+
     def build(self):
         super().build()
 
@@ -158,6 +159,7 @@ class CoalRefuseStateBlockData(StateBlockData):
     State block for solid West Kentucky No. 13 coal waste.
 
     """
+
     def build(self):
         super().build()
 

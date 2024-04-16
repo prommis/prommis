@@ -5,7 +5,7 @@ Introduction
 ------------
 The University of Kentucky (UKy) rare earth element (REE) processing plant is designed to extract salable rare earth oxides
 from domestic U.S. coal and coal byproducts. While this implementation of the plant does not take into account
-all of the complexities and unit processes detailed in the project report:math:`^1`, it details the major phenomena
+all of the complexities and unit processes detailed in the project report :math:`^1`, it details the major phenomena
 by utilizing a series of conventional REE extraction techniques,
 including acid tank leaching, solvent extraction, precipitation, and product roasting.
 
@@ -27,7 +27,7 @@ the precipitator is recycled back to the cleaner circuit.
     :width: 800
     :align: center
 
-    Figure 1. University of Kentucky flowsheet
+    University of Kentucky flowsheet
 
 Documentation for each of the unit models can be found here:
     * Leaching

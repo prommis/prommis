@@ -1,6 +1,7 @@
 """
 Utility functions for the examples
 """
+
 import logging
 from typing import Union
 

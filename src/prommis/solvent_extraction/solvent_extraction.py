@@ -1,3 +1,26 @@
+"""
+Solvent Extraction Model
+
+========================
+
+Author: Arkoprabho Dasgupta
+
+The Solvent Extraction unit model is used to perform the solvent extraction unit operation.
+It represents a series of tanks, referred to as stages, through whch the aqueous and organic
+phases are passed through, and then subsequent extraction of the desired components happen.
+
+This model is based on the MSContactor model, but it only accounts for the material balance.
+Any kind of energy balance, pressure balance is not considered in this model. However since 
+this model is based on MSContactor, the energy balance and pressure balances have to be specified
+as False in the stream configuration.
+
+Configuration Arguments
+-----------------------
+
+The user must specify the following configurations in a solvent extraction model to be able to use it.
+
+"""
+
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
 from pyomo.environ import Constraint, Param
 from pyomo.network import Port
@@ -56,16 +79,16 @@ Stream_Config.declare(
     ConfigValue(
         default=False,
         domain=Bool,
-        doc="Bool indicating whether to include energy balance for stream. Default=True.",
+        doc="Bool indicating whether to include energy balance for stream. Default=False.",
     ),
 )
 
 Stream_Config.declare(
     "has_pressure_balance",
     ConfigValue(
-        default=True,
+        default=False,
         domain=Bool,
-        doc="Bool indicating whether to include pressure balance for stream. Default=True.",
+        doc="Bool indicating whether to include pressure balance for stream. Default=False.",
     ),
 )
 

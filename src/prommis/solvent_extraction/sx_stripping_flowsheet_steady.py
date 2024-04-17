@@ -1,3 +1,11 @@
+""" 
+Demonstration flowsheet for steady state solvent extraction stripping process
+using parameters and data derived from West Kentucky No. 13 coal refuse.
+
+Authors: Arkoprabho Dasgupta
+
+"""
+
 from pyomo.environ import ConcreteModel, SolverFactory
 
 from idaes.core import FlowDirection, FlowsheetBlock
@@ -9,13 +17,18 @@ from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+
+"""
+Method of building a solvent extraction model with a specified number of stages
+and with two separate property packages for the two inlet streams.
+This is a stripping operation, so an additional argument regarding the direction 
+of mass transfer flow has to be specified.
+"""
 
 m = ConcreteModel()
 m.fs = FlowsheetBlock(dynamic=False)
 m.fs.prop_o = REESolExOgParameters()
-m.fs.prop_a = REESolExAqParameters()
 m.fs.leach_soln = LeachSolutionParameters()
 
 number_of_stages = 1
@@ -24,7 +37,7 @@ m.fs.solex = SolventExtraction(
     number_of_finite_elements=number_of_stages,
     dynamic=False,
     aqueous_stream={
-        "property_package": m.fs.prop_a,
+        "property_package": m.fs.leach_soln,
         "flow_direction": FlowDirection.backward,
         "has_energy_balance": False,
         "has_pressure_balance": False,
@@ -38,6 +51,12 @@ m.fs.solex = SolventExtraction(
     aqueous_to_organic=False,
 )
 
+"""
+Specification of the values of the partition coefficients of the elements
+based on the values provided in the REESim file. 
+
+"""
+
 m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Al"] = 1 - 0.5 / 100
 m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Ca"] = 1 - 0.5 / 100
 m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Fe"] = 1 - 0.5 / 100
@@ -50,6 +69,12 @@ m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Nd"] = 1 - 0.5 / 100
 m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Sm"] = 1 - 0.5 / 100
 m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Gd"] = 1 - 0.5 / 100
 m.fs.solex.partition_coefficient[:, "aqueous", "organic", "Dy"] = 1 - 0.5 / 100
+
+"""
+Fixing the inlet conditions of the two feed streams to the solvent extraction model,
+based on a case study of University of Kentucky pilot plant.
+
+"""
 
 m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e-9)
 m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1e-9)
@@ -87,13 +112,19 @@ m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
 
 print(dof(m))
 
-# Initializing of the model
+"""
+Initialization of the model, which gives a good starting point.
+
+"""
 
 initializer = BlockTriangularizationInitializer()
 initializer.initialize(m.fs.solex)
 assert initializer.summary[m.fs.solex]["status"] == InitializationStatus.Ok
 
-# Solving of the model
+"""
+Solution of the model and display of the final results.
+
+"""
 
 solver = SolverFactory("ipopt")
 solver.options["bound_push"] = 1e-8

@@ -17,6 +17,8 @@ Authors: Dan Gunter (LBNL)
 __author__ = "Dan Gunter"
 
 # stdlib
+import logging
+
 # third party
 import pyomo.environ as pyo
 from idaes import logger as idaeslog
@@ -48,16 +50,15 @@ def export_to_ui():
     )
 
 
-import logging
 _log.setLevel(logging.DEBUG)
 
 
 def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs):
-    _log.info(f"begin:setup-UI-exports build_options={build_options}")
+    _log.info(f"begin/setup-UI-exports build_options={build_options}")
 
-    _log.debug(f"begin:load-from-csv file=uky_flowsheet_ui.csv")
+    _log.debug(f"begin/load-from-csv file=uky_flowsheet_ui.csv")
     exports.from_csv(file="uky_flowsheet_ui.csv", flowsheet=flowsheet)
-    _log.debug(f"end:load-from-csv")
+    _log.debug(f"end/load-from-csv")
 
     comp = {
         "Al",
@@ -241,18 +242,18 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             output_category=category,
         )
     _log.debug(f"exports:\n{exports.json()}")
-    _log.info(f"end:setup-UI-exports build_options={build_options}")
+    _log.info(f"end/setup-UI-exports build_options={build_options}")
 
 
 def build_flowsheet(build_options=None, **kwargs):
-    _log.info(f"begin:build-flowsheet build_options={build_options}")
+    _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
     set_operating_conditions(m)
     scaled_model = set_scaling(m)
     # assert_units_consistent(scaled_model)
     # assert degrees_of_freedom(scaled_model) == 0
     initialize_system(scaled_model)
-    _log.info(f"end:build-flowsheet build_options={build_options}")
+    _log.info(f"end/build-flowsheet build_options={build_options}")
     return scaled_model
 
 

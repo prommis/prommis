@@ -63,7 +63,6 @@ Default Flowsheet Specifications
 Description                                                           Value        Units
 ===================================================================== ============ ============================
 Leaching
-===================================================================== ============ ============================
 Tank volume                                                           100          :math:`\text{m}^3`
 Liquid feed volumetric flow                                           224.3        :math:`\text{L/hr}`
 Liquid feed H concentration                                           100          :math:`\text{mg/L}`
@@ -84,9 +83,8 @@ Solid feed Nd2O3 mass fraction                                        0.237     
 Solid feed Sm2O3 mass fraction                                        0.237        :math:`\text{dimensionless}`
 Solid feed Gd2O3 mass fraction                                        0.237        :math:`\text{dimensionless}`
 Solid feed Dy2O3 mass fraction                                        0.237        :math:`\text{dimensionless}`
-===================================================================== ============ ============================
+
 Solvent Extraction Rougher
-===================================================================== ============ ============================
 Loading section organic feed volumetric flow                          62.01        :math:`\text{L/hr}`
 Organic make-up REE and contaminant concentrations                    1e-7         :math:`\text{mg/L}`
 Scrubbing section acid feed volumetric flow                           0.09         :math:`\text{L/hr}`
@@ -97,22 +95,19 @@ Stripping section acid feed volumetric flow                           0.09      
 Stripping section acid feed H concentration                           41.44        :math:`\text{mg/L}`
 Stripping section acid feed Cl concentration                          1438.56      :math:`\text{mg/L}`
 Stripping section acid feed REE and contaminant concentrations        1e-7         :math:`\text{mg/L}`
-===================================================================== ============ ============================
+
 Solvent Extraction Cleaner
-===================================================================== ============ ============================
 Loading section organic feed volumetric flow                          62.01        :math:`\text{L/hr}`
 Organic make-up REE and contaminant concentrations                    1e-7         :math:`\text{mg/L}`
 Stripping section acid feed volumetric flow                           0.09         :math:`\text{L/hr}`
 Stripping section acid feed H concentration                           41.44        :math:`\text{mg/L}`
 Stripping section acid feed Cl concentration                          1438.56      :math:`\text{mg/L}`
 Stripping section acid feed REE and contaminant concentrations        1e-7         :math:`\text{mg/L}`
-===================================================================== ============ ============================
+
 Precipitator
-===================================================================== ============ ============================
 Inlet temperature                                                     348.15       :math:`\text{K}`
-===================================================================== ============ ============================
+
 Roaster
-===================================================================== ============ ============================
 Pressure drop                                                         0            :math:`\text{Pa}`
 Gas inlet temperature                                                 348.15       :math:`\text{K}`
 Gas outlet temperature                                                873.15       :math:`\text{K}`
@@ -124,9 +119,8 @@ Gas inlet CO2 mole fraction                                           0.0431    
 Gas inlet N2 mole fraction                                            0.7446       :math:`\text{dimensionless}`
 Moisture inlet molar flow                                             6.75e-4      :math:`\text{mol/s}`
 Oxide recovery fraction                                               0.95         :math:`\text{dimensionless}`
-===================================================================== ============ ============================
+
 Separators
-===================================================================== ============ ============================
 Leaching solid-liquid separator liquid recovery fraction              0.7          :math:`\text{dimensionless}`
 Solvent extraction rougher load recycle split fraction                0.9          :math:`\text{dimensionless}`
 Solvent extraction rougher scrub recycle split fraction               0.9          :math:`\text{dimensionless}`

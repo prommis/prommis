@@ -12,12 +12,50 @@ phases are passed through, and then subsequent extraction of the desired compone
 This model is based on the MSContactor model, but it only accounts for the material balance.
 Any kind of energy balance, pressure balance is not considered in this model. However since 
 this model is based on MSContactor, the energy balance and pressure balances have to be specified
-as False in the stream configuration.
+as False in the stream configuration. At present this model only takes 2 inlets, one stream for 
+each of the phases.
 
 Configuration Arguments
 -----------------------
 
-The user must specify the following configurations in a solvent extraction model to be able to use it.
+The user must specify the following configurations in a solvent extraction model to be able to 
+use it.
+
+The user must specify the aqueous feed input in the "aqueous_stream" configuration, with a 
+configuration defined with it which describes the properties of the aqueous feed.
+
+The user must specify the organic feed input in the "organic_stream" configuration, with a 
+configuration defined with it which describes the properties of the organic feed.
+
+The number of stages in the solvent extraction process has to be specified by the user through 
+the "number_of_finite_elements" configuration. It takes an integer value.
+
+The material transfer can happen from either of the phases to the other. To specify the direction 
+of the transfer, the "aqueous_to_organic" configuration is to be used by the user. This is a boolean 
+configuration. The default value is True, which means the material transfer is happening from the 
+aqueous phase to the organic  phase, like in the loading operation. For scrubbing and stripping, the 
+reverse happens, so the value of the configuration will be False.
+
+Stream configurations
+---------------------
+
+Each of the feed streams has to have a dictionary which specifies the property packages and other 
+details as mentioned below.
+
+The "property_package" configuration is the property package which describes the state conditions 
+and properties of a particular stream.
+
+The "property_package_args" configuration is any specific set of arguments that has to be passed to 
+the property block for the unit operation.
+
+The user can specify the direction of the flow of the stream through the stages through the 
+configuration "flow_direction". This is a Boolean type of configuration, with two inputs, based
+on the FlowDirection package. The default value is "FlowDirection.forward" which is the forward 
+direction, and the other is "FlowDirection.backward" which is the backward direction. 
+
+Since this model is based on MSContactor, the user has to give two additional arguments of 
+"has_energy_balance" and "has_pressure_balance", and set the values to False, since energy balance 
+and pressure balance is not supported yet in the model.
 
 """
 

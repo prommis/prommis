@@ -19,3 +19,11 @@ Roasting
 
    prommis.roasting.ree_feed_roaster
    prommis.roasting.ree_oxalate_roaster
+
+Flowsheets
+----------
+
+.. autosummary::
+   :toctree: _autosummary
+
+   prommis.uky.uky_flowsheet

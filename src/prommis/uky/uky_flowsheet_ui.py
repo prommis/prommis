@@ -56,10 +56,6 @@ _log.setLevel(logging.DEBUG)
 def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs):
     _log.info(f"begin/setup-UI-exports build_options={build_options}")
 
-    _log.debug(f"begin/load-from-csv file=uky_flowsheet_ui.csv")
-    exports.from_csv(file="uky_flowsheet_ui.csv", flowsheet=flowsheet)
-    _log.debug(f"end/load-from-csv")
-
     comp = {
         "Al",
         "Ca",
@@ -102,6 +98,111 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sm2(C2O4)3(s)",
         "Y2(C2O4)3(s)",
     }
+
+    llf = flowsheet.leach_liquid_feed
+    exports.add(
+        obj=llf.flow_vol[0],
+        name="Leach liquid feed rate",
+        ui_units=pyo.units.l / pyo.units.hour,
+        display_units="L/h",
+        rounding=2,
+        description="Leach liquid feed volumetric flow rate",
+        is_input=True,
+        is_output=False,
+        input_category="Leaching liquid feed",
+    )
+    # Mass comp
+    for compound, compound_name in (("H", "hydrogen"), ("SO4", "SO4"), ("HSO4", "HSO4")):
+        exports.add(
+            obj=llf.conc_mass_comp[0, compound],
+            name=f"Leach liquid feed {compound_name}",
+            description=f"Leach liquid feed {compound_name} mass composition",
+            ui_units=pyo.units.mg / pyo.units.l,
+            display_units="mg/L",
+            rounding=3,
+            is_input=True,
+            is_output=False,
+            input_category="Leaching liquid feed",
+        )
+
+    # Leaching solid feed
+    lsf = flowsheet.leach_solid_feed
+    category = "Leaching solid feed"
+    comp_solid_in = {"inerts"}.union(comp_ox)
+    for compound in comp_solid_in:
+        exports.add(
+            obj=lsf.mass_frac_comp[0, compound],
+            name=f"Leach solid feed {compound}",
+            description=f"Leach solid feed {compound} fractional composition",
+            rounding=3,
+            is_input=True,
+            is_output=False,
+            input_category=category,
+        )
+    exports.add(
+        obj=lsf.flow_mass[0],
+        name="Leach solid feed mass flow",
+        rounding=3,
+        ui_units=pyo.units.kg/pyo.units.hour,
+        display_units="kg/hr",
+        is_input=True,
+        is_output=False,
+        input_category=category,
+    )
+
+    # Gas inlet/outlet
+    category = "Roaster"
+    rst = flowsheet.roaster
+    exports.add(
+        obj=rst.gas_inlet.temperature[0],
+        name="Gas inlet temperature",
+        rounding=3,
+        ui_units=pyo.units.K,
+        display_units="K",
+        is_input=True,
+        is_output=False,
+        input_category=category,
+    )
+    exports.add(
+        obj=rst.gas_outlet.temperature[0],
+        name="Gas outlet temperature",
+        rounding=3,
+        ui_units=pyo.units.K,
+        display_units="K",
+        is_input=False,
+        is_output=True,
+        input_category=category,
+    )
+    exports.add(
+        obj=rst.gas_inlet.pressure[0],
+        name="Gas inlet temperature",
+        rounding=2,
+        ui_units=pyo.units.Pa,
+        display_units="Pa",
+        is_input=True,
+        is_output=False,
+        input_category=category,
+    )
+    exports.add(
+        obj=rst.gas_outlet.pressure[0],
+        name="Gas pressure",
+        rounding=2,
+        ui_units=pyo.units.Pa,
+        display_units="Pa",
+        is_input=False,
+        is_output=True,
+        input_category=category,
+    )
+    exports.add(
+        obj=rst.gas_out[0].flow_mol,
+        name="Gas molar flow",
+        ui_units=pyo.units.mol/pyo.units.s,
+        display_units="mol/s",
+        rounding=3,
+        is_input=False,
+        is_output=True,
+        input_category=category,
+    )
 
     category = "solids"
     leach = flowsheet.leach

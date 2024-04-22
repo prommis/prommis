@@ -1,5 +1,5 @@
 name,obj,description,ui_units,display_units,rounding,is_input,input_category,is_output,output_category
-Leach liquid feed rate,leach_liquid_feed.flow_vol[0],Leach liquid feed volumetric flow rate,L/hour,L/h,2,TRUE,Leaching liquid feed,FALSE,
+Leach liquid feed rate,"leach_liquid_feed.flow_vol[0]",Leach liquid feed volumetric flow rate,L/hour,L/h,2,TRUE,Leaching liquid feed,FALSE,
 Leach liquid feed H,"leach_liquid_feed.conc_mass_comp[0,'H']",Leach liquid feed hydrogen mass composition,mg/L,mg/L,3,TRUE,Leaching liquid feed,FALSE,
 Leach liquid feed HSO4,"leach_liquid_feed.conc_mass_comp[0,'HSO4']",Leach liquid feed HSO4 mass composition,mg/L,mg/L,3,TRUE,Leaching liquid feed,FALSE,
 Leach liquid feed SO4,"leach_liquid_feed.conc_mass_comp[0,'SO4']",Leach liquid feed SO4 mass composition,mg/L,mg/L,3,TRUE,Leaching liquid feed,FALSE,

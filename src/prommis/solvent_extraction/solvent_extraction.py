@@ -123,7 +123,6 @@ class SolventExtractionData(UnitModelBlockData):
             domain=Any,
             initialize=param_init,
             mutable=True,
-            domain=Any,
             doc="The fraction of component that goes from aqueous to organic phase",
         )
 

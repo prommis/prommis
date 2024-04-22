@@ -112,7 +112,11 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         input_category="Leaching liquid feed",
     )
     # Mass comp
-    for compound, compound_name in (("H", "hydrogen"), ("SO4", "SO4"), ("HSO4", "HSO4")):
+    for compound, compound_name in (
+        ("H", "hydrogen"),
+        ("SO4", "SO4"),
+        ("HSO4", "HSO4"),
+    ):
         exports.add(
             obj=llf.conc_mass_comp[0, compound],
             name=f"Leach liquid feed {compound_name}",
@@ -143,7 +147,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         obj=lsf.flow_mass[0],
         name="Leach solid feed mass flow",
         rounding=3,
-        ui_units=pyo.units.kg/pyo.units.hour,
+        ui_units=pyo.units.kg / pyo.units.hour,
         display_units="kg/hr",
         is_input=True,
         is_output=False,
@@ -196,7 +200,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     exports.add(
         obj=rst.gas_out[0].flow_mol,
         name="Gas molar flow",
-        ui_units=pyo.units.mol/pyo.units.s,
+        ui_units=pyo.units.mol / pyo.units.s,
         display_units="mol/s",
         rounding=3,
         is_input=False,

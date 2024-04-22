@@ -120,6 +120,7 @@ class SolventExtractionData(UnitModelBlockData):
         self.partition_coefficient = Param(
             self.mscontactor.elements,
             self.mscontactor.stream_component_interactions,
+            domain=Any,
             initialize=param_init,
             mutable=True,
             domain=Any,

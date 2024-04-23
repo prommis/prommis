@@ -80,7 +80,7 @@ class TestPrec(object):
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Gd"].fix(10)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Dy"].fix(10)
 
-        m.fs.unit.cv_precipitate.properties_in[0].temperature.fix(348.15)
+        m.fs.unit.cv_precipitate[0].temperature.fix(348.15)
 
         return m
 
@@ -106,9 +106,9 @@ class TestPrec(object):
         assert hasattr(prec.fs.unit, "mass_balance")
         assert hasattr(prec.fs.unit, "vol_balance")
 
-        assert number_variables(prec.fs.unit) == 98
-        assert number_total_constraints(prec.fs.unit) == 84
-        assert number_unused_variables(prec.fs.unit) == 0
+        assert number_variables(prec.fs.unit) == 86
+        assert number_total_constraints(prec.fs.unit) == 72
+        assert number_unused_variables(prec.fs.unit) == 1
 
     @pytest.mark.component
     def test_units(self, prec):

@@ -102,8 +102,8 @@ class TestPrec(object):
         assert hasattr(prec.fs.unit.precipitate_outlet, "flow_mol_comp")
         assert hasattr(prec.fs.unit.precipitate_outlet, "temperature")
 
-        assert hasattr(prec.fs.unit, "generation")
-        assert hasattr(prec.fs.unit, "mass_balance")
+        assert hasattr(prec.fs.unit, "precipitate_generation")
+        assert hasattr(prec.fs.unit, "aqueous_depletion")
         assert hasattr(prec.fs.unit, "vol_balance")
 
         assert number_variables(prec.fs.unit) == 86

@@ -47,30 +47,6 @@ where :math:`split_{c}` is the fixed recovery fraction of component c, this fact
 solved by a surrogate or a model equation.
 
 """
-        def generation(blk, t, comp):
-            return blk.cv_precipitate[t].flow_mol_comp[
-                comp
-            ] == (
-                (
-                    blk.cv_aqueous.properties_in[t].flow_mol_comp[prop_s.react[comp]]
-                    - blk.cv_aqueous.properties_out[t].flow_mol_comp[prop_s.react[comp]]
-                )
-                / prop_s.stoich[comp]
-            )
-
-        @self.Constraint(
-            self.flowsheet().time,
-            prop_aq.dissolved_elements,
-            doc="Mass balance equations.",
-        )
-        def mass_balance(blk, t, comp):
-            return blk.cv_aqueous.properties_out[t].conc_mass_comp[
-                comp
-            ] * blk.cv_aqueous.properties_out[t].flow_vol == (
-                blk.cv_aqueous.properties_in[t].conc_mass_comp[comp]
-                * blk.cv_aqueous.properties_in[t].flow_vol
-                * (1 - prop_aq.split[comp] / 100)
-            )
 
 # Import Pyomo libraries
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
@@ -229,7 +205,7 @@ see reaction package for documentation.}""",
             has_holdup=False,
             property_package=self.config.property_package_aqueous,
             property_package_args=self.config.property_package_args_aqueous,
-        )   
+        )
         # Add inlet and outlet state blocks to control volume
         self.cv_aqueous.add_state_blocks(has_phase_equilibrium=False)
 
@@ -238,12 +214,14 @@ see reaction package for documentation.}""",
         tmp_dict = dict(**self.config.property_package_args_precipitate)
         tmp_dict["has_phase_equilibrium"] = False
         tmp_dict["defined_state"] = False
-        self.cv_precipitate = self.config.property_package_precipitate.build_state_block(
-            self.flowsheet().time, doc="Vapor phase properties", **tmp_dict
+        self.cv_precipitate = (
+            self.config.property_package_precipitate.build_state_block(
+                self.flowsheet().time, doc="Vapor phase properties", **tmp_dict
+            )
         )
 
         # ---------------------------------------------------------------------
-        # Check flow basis is compatable
+        # Check flow basis is compatible
         # TODO : Could add code to convert flow bases, but not now
         t_init = self.flowsheet().time.first()
         if (
@@ -270,14 +248,16 @@ see reaction package for documentation.}""",
             )
 
         @self.Constraint(
-            self.flowsheet().time, 
-            prop_s.component_list, 
-            doc="Mass balance equations precipitate."
+            self.flowsheet().time,
+            prop_s.component_list,
+            doc="Mass balance equations precipitate.",
         )
-        def generation(blk, t, comp):
+        def precipitate_generation(blk, t, comp):
             return blk.cv_precipitate[t].flow_mol_comp[comp] == (
-                (blk.cv_aqueous.properties_in[t].flow_mol_comp[prop_s.react[comp]]
-                    - blk.cv_aqueous.properties_out[t].flow_mol_comp[prop_s.react[comp]])
+                (
+                    blk.cv_aqueous.properties_in[t].flow_mol_comp[prop_s.react[comp]]
+                    - blk.cv_aqueous.properties_out[t].flow_mol_comp[prop_s.react[comp]]
+                )
                 / prop_s.stoich[comp]
             )
 
@@ -286,7 +266,7 @@ see reaction package for documentation.}""",
             prop_aq.dissolved_elements,
             doc="Mass balance equations aqueous.",
         )
-        def mass_balance(blk, t, comp):
+        def aqueous_depletion(blk, t, comp):
             return blk.cv_aqueous.properties_out[t].conc_mass_comp[
                 comp
             ] * blk.cv_aqueous.properties_out[t].flow_vol == (

@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Install Black
@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run Spell Checker
         uses: crate-ci/typos@v1.17.0
 
@@ -109,7 +109,7 @@ jobs:
           - win64
         include:
           - os: linux
-            runner-image: ubuntu-20.04
+            runner-image: ubuntu-22.04
           - os: win64
             runner-image: windows-2022
           - install-variant: dev
@@ -174,7 +174,7 @@ jobs:
           - win64
         include:
           - os: linux
-            runner-image: ubuntu-20.04
+            runner-image: ubuntu-22.04
           - os: win64
             runner-image: windows-2022
     steps:

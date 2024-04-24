@@ -17,9 +17,9 @@ def model():
     m = build_model()
     set_inputs(m)
 
-    assert number_variables(model.fs.leach) == 197
-    assert number_total_constraints(model.fs.leach) == 164
-    assert number_unused_variables(model.fs.leach) == 0
+    assert number_variables(m.fs.leach) == 197
+    assert number_total_constraints(m.fs.leach) == 164
+    assert number_unused_variables(m.fs.leach) == 0
 
     return m
 

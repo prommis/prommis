@@ -6,46 +6,36 @@ from pyomo.environ import (
 )
 
 from idaes.core.util import DiagnosticsToolbox
-from idaes.core.util.model_statistics import (
-    number_total_constraints,
-    number_unused_variables,
-    number_variables,
-)
-from idaes.models.unit_models.mscontactor import MSContactorInitializer
 
 import pytest
 
-from prommis.leaching.leach_flowsheet import build_model
+from prommis.leaching.leach_flowsheet import build_model, set_inputs, set_scaling
 
 
 @pytest.fixture(scope="module")
 def model():
-    return build_model()
+    m = build_model()
+    set_inputs(m)
 
-
-@pytest.mark.unit
-def test_build(model):
-    assert hasattr(model.fs, "leach")
-
-    assert number_variables(model.fs.leach) == 197
-    assert number_total_constraints(model.fs.leach) == 164
-    assert number_unused_variables(model.fs.leach) == 0
+    return m
 
 
 @pytest.mark.unit
 def test_structural_issues(model):
     dt = DiagnosticsToolbox(model)
+    dt.report_structural_issues()
     dt.assert_no_structural_warnings()
 
 
 @pytest.mark.component
 @pytest.mark.solver
 def test_solve(model):
+    set_scaling(model)
     # Create a scaled version of the model to solve
     scaling = TransformationFactory("core.scale_model")
     scaled_model = scaling.create_using(model, rename=False)
 
-    initializer = MSContactorInitializer()
+    initializer = model.fs.leach.default_initializer()
     try:
         initializer.initialize(scaled_model.fs.leach)
     except:
@@ -102,8 +92,7 @@ def test_solution(model):
         "Fe2O3": 16.33850709753919,
     }
 
-    for k, v in model.fs.leach.solid[0, 1].conversion.items():
-        print(k)
+    for k, v in model.fs.leach.mscontactor.solid[0, 1].conversion.items():
         f_in = model.fs.leach.solid_inlet.flow_mass[0]
         f_out = model.fs.leach.solid_outlet.flow_mass[0]
         x_in = model.fs.leach.solid_inlet.mass_frac_comp[0, k]

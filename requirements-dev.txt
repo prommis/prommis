@@ -7,6 +7,4 @@ jupyter-book==0.15.*
 isort
 nbmake==1.4.6
 
-idaes-pse==2.4.0
-
 --editable .[watertap]

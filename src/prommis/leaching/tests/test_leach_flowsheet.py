@@ -6,16 +6,15 @@ from pyomo.environ import (
 )
 
 from idaes.core.util import DiagnosticsToolbox
-
-import pytest
-
-from prommis.leaching.leach_flowsheet import build_model, set_inputs, set_scaling
-
 from idaes.core.util.model_statistics import (
     number_total_constraints,
     number_unused_variables,
     number_variables,
 )
+
+import pytest
+
+from prommis.leaching.leach_flowsheet import build_model, set_inputs, set_scaling
 
 
 @pytest.fixture(scope="module")

@@ -11,11 +11,21 @@ import pytest
 
 from prommis.leaching.leach_flowsheet import build_model, set_inputs, set_scaling
 
+from idaes.core.util.model_statistics import (
+    number_total_constraints,
+    number_unused_variables,
+    number_variables,
+)
+
 
 @pytest.fixture(scope="module")
 def model():
     m = build_model()
     set_inputs(m)
+
+    assert number_variables(m.fs.leach) == 197
+    assert number_total_constraints(m.fs.leach) == 164
+    assert number_unused_variables(m.fs.leach) == 0
 
     return m
 

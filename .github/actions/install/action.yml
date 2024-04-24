@@ -27,7 +27,7 @@ runs:
   steps:
 
     - name: Set up Conda environment
-      uses: conda-incubator/setup-miniconda@v2.3.0
+      uses: conda-incubator/setup-miniconda@v3
       with:
         activate-environment: ${{ inputs.conda-environment }}
         python-version: ${{ inputs.python-version }}

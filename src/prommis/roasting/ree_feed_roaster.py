@@ -55,7 +55,6 @@ Combustion of organic elements is modeled as follows:
 - :ce:`O -> 0.5 O2`
 - :ce:`N -> 0.5 N2`
 - :ce:`S + O2 -> SO2`
-- :ce:`S + O2 -> SO2`
 
 Physical Changes
 ----------------
@@ -80,6 +79,20 @@ Streams
 - **Gas Inlet Stream**: :ce:`O2`-containing hot flue gas.
 - **Gas Outlet Stream**: Gas product leaving the reactor.
 - **Solid Outlet Stream**: Recovered solid product leaving the reactor.
+
+Thermal Properties
+------------------
+
+The standard heats of formation and heat capacities of solid components involved are defined as parameters in this model. The default values of those parameters are obtained from two sources as listed below:
+1. NIST Chemistry WebBook
+2. Wagman, D.D., W.H. Evans, V.B. Parker, R.H.Schumm, I. Halow, S.M. Bailey, K.L. Churney,
+   R.L. Nuttall, "The NBS tables of chemical thermodynamic properties-Selected values for
+   inorganic and C1 and C2 organic substances in SI units," Journal of Physical and Chemical
+   Reference Data, 11(2), 1982
+
+The NIST WebBook data are used for the properties of :ce:`Al2O3`, :ce:`SiO2`, :ce:`CaO`, :ce:`Fe2O3`, and `pyrite`. Note that the heat capacity model is simplified as a linear function of temperature.
+The data of Wagman et al are used for the properties of :ce:`CaCO3` and `kaolinite`.
+The gas phase properties are calculated based on user configured property package.
 
 Assumptions
 -----------

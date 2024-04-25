@@ -16,52 +16,119 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and
 # license information.
 ###############################################################################
-"""
-IDAES REE oxalate salt roaster unit model.
+r"""
+IDAES REE Oxalate Roaster Unit Model
+====================================
 
-This is a heterogeneous reactor model for roasting rare earth oxalate salts
-produced from the oxalate precipitation process to form rare earth oxides.
+REE Oxalate Roaster is a unit operation to convert oxalates of rare earth and gangue
+elements to metal oxides through thermal decomposition and oxidation. There are 18 rare earth elements
+including `Sc`, `Y`, `La`, `Ce`, `Pr`, `Nd`, `Pm`, `Sm`, `Eu`, `Gd`, `Tb`, `Dy`, `Ho`, `Er`, `Tm`, `Yb`, `Lu`,
+and `Th` in the model. The user can specify a subset of those 18 elements through configuration when creating
+the unit model. The 3 gangue elements considered in the model are `Fe`, `Al`, and `Ca`.
 
-The reactions involved are listed below:
-RE2(C2O4)3_xH2O + 1.5O2 -> RE2O3 + 6CO2(g) + xH2O(g)  Typically x=10 for REE
-Fe2(C2O4)3_2H2O + 1.5O2 -> Fe2O3 + 6CO2(g) + 2H2O(g)
-Al2(C2O4)3_H2O + 1.5O2 -> Al2O3 + 6CO2(g) + H2O(g)
-CaC2O4_H2O + 0.5O2 -> CaO + 2CO2(g) + H2O(g)
-Note that Fe, Al, and Ca are considered as impurity in the solid feed stream.
+The feed oxalate mixture stream is typically from a precipiator in an upstream process. It is assumed
+that all oxalates are in their hydrate forms. In case the anhydrous oxalate feed flow rates are specified in
+the property package of the solid feed stream, the mole flow rates are converted to the corresponding hydrate flow rates. 
+The molecular formula of an oxalate hydrate can be expressed in a general form as :ce:`RE2(C2O4)3 \cdot xH2O` where RE is
+one of the 18 rare earth elements and x is the number of water molecules associated with the hyrate. The three 
+gangue oxalate hydrates considered in the model are :ce:`Fe2(C2O4)3 \cdot 2H2O`, :ce:`Al2(C2O4)3 \cdot H2O`, and
+:ce:`CaC2O4 \cdot H2O`, for `Fe`, `Al`, and `Ca` elements, respectively.
 
-Surface moisture is vaporized to become H2O in the gas phase
+The feed stream could optionally contain surface moisture. The amount of surface moisture entering the
+reactor is specified by an input variable in the current model rather than a state variable in the property
+package of the solid feed stream.
 
-The feed stream is from oxalate acid precipitator and solid filter
-which may contain surface moisture.
-The heat for the reaction can be provided by either external heating, modeled
-as a user-specified heat duty or by the combustion of fossil fuel with air to form
-a hot O2-containing flue gas entering the reactor through a gas inlet port.
-The O2 is used to oxidize the feed salt to form REE oxides.
-The gas inlet should contain enough O2 for the oxidation reactions.
-The gas outlet port represents the gas product stream leaving the reactor.
-The solid product streams include a recovered final product stream and
-a dust stream containing the fine particles which are not recovered.
 
-Current model assumes that all hydrous oxalates are decomposted without
-considering the kinetics or mass transfer. Therefore, it is a steady-state
-model only.
+Physical Changes
+----------------
 
-Full material and energy balances are modeled. Note that the standard heats of formation of
-many RE oxalates and RE oxides are unavailable in the literature and, therefore, the average
-values of La, Ce, Pr, and Nd compounds are used in case of unavailable data.
+Moisture in the solid feed stream is vaporized.
 
-The outlet gas product stream is assumed to have the same temperature as the two solid
-product streams.
-if the product temperature is specified as a user input, the heat duty added to the
-reactor is calculately. If the heat duty is given, the product temperature will be calculated.
 
-Currently, solid inlet is declared as a port with state variables in property package named
-"property_package_precipitate". Note that the current property package for the precipitate
-assumes anhydrous oxalates, which eventually needs to be revised to oxalate hydrates.
-This model assumes the precipiate contains oxalate hydrates as the solid reactants.
+Reactions
+---------
 
-Currently, no port for the solid outlet stream is used. The mass flow rate and composition
-of the solid product are declared as model variables.
+The thermal decomposition reactions modeled for rare earth oxalates and three gaugue oxalates are as
+listed below:
+
+- :ce:`RE2(C2O4)3 \cdot xH2O(s) + 1.5O2(g) -> RE2O3(s) + 6CO2(g) + xH2O(g)`
+- :ce:`Fe2(C2O4)3 \cdot 2H2O(s) + 1.5O2(g) -> Fe2O3(s) + 6CO2(g) + 2H2O(g)`
+- :ce:`Al2(C2O4)3 \cdot H2O(s) + 1.5O2(g) -> Al2O3(s) + 6CO2(g) + H2O(g)`
+- :ce:`CaC2O4 \cdot H2O(s) + 0.5O2(g) -> CaO(s) + 2CO2(g) + H2O(g)`
+
+In the first reaction, RE represent any of 18 rare earth elements and x is the number of water molecules
+associated with the oxalate. Typically x=10 for most rare earth elements.
+It is assumed in the current model that the reaction is carried out at a high enough temperature and
+long enough residence time that the reactants are completely decomposed. It is also assumed that a gas
+feed stream provides enough :ce:`O2` reactant to carry out the reactions. Since the kinetics of the reactions
+are not modeled, the current unit model is valid for steady-state simulations only.
+
+
+Thermal Properties
+------------------
+
+The standard heats of formation and heat capacities of solid components involved are defined as parameters in this model.
+The default values of those parameters are obtained from three sources as listed below:
+
+1. NIST Chemistry WebBook
+2. Wagman, D.D., W.H. Evans, V.B. Parker, R.H.Schumm, I. Halow, S.M. Bailey, K.L. Churney,
+   R.L. Nuttall, "The NBS tables of chemical thermodynamic properties-Selected values for
+   inorganic and C1 and C2 organic substances in SI units," Journal of Physical and Chemical
+   Reference Data, 11(2), 1982
+3. Kotz, J.C., P.M. Treichel, J. Townsend, D. Treichel, "Chemistry and Chemical Reactivity,"
+   9th Edition, Cengage Learning, 2014
+
+The solid heat capacity model is simplified as a linear function of temperature. Since the data for the rare earth
+components are very limited, default parameters based on the average values of :ce:`La`, :ce:`Ce`, :ce:`Pr`, and :ce:`Nd`
+are used for the species if no reported data are found.
+
+The gas phase properties are calculated based on user configured property package.
+
+
+Mass Balance
+------------
+
+The content of the surface moisture in the solid feed stream is vaporized to enter the gas phase.
+
+The species mass balance is based on complete conversion of solid reactants such that the mole flow rates of
+individual metals (rare earth and gaugue elements) are conserved. For the species in the gas phase, the :ce:`O2`
+is consumed while :ce:`CO2` and :ce:`H2O` are produced. For any other species in the gas feed stream that does not
+participate in any reactions, its mole flow rate in the gas product stream is the same as that in the
+inlet stream. Note that the user needs to make sure that the gas feed stream contains enough :ce:`O2` to avoid
+negative flow rate of :ce:`O2` in the gas product stream.
+
+Two solid product streams are modeled, one representing the fine solid product particles carried out by the gas
+product stream and the other are the remaining solid oxides leaving the reactor that is recovered as the final
+metal oxide product. The fractions of recovery for individual metal oxides are specified by the user as model inputs.
+
+
+Energy Balance
+--------------
+
+The model considers the heat required to vaporize the moisture content of the solid feed based on the enthalpy
+increase from the liquid water in the solid feed stream to water vapor in the gas outlet stream.
+The heats of reactions are also considered along with the heat capacities of the reactants and product species.
+The total enthalpy including the standard heat of formation and sensible heat of an individual component (either
+a gas or a solid species) is used for energy balance calculation.
+The outlet gas product stream is assumed to have the same temperature as the two solid product streams.
+
+
+Heat Source
+-----------
+
+The heat to the reactor can be provided either by external heating as a user input or by the combustion of a fossil fuel
+with air to form a hot :ce:`O2`-containing flue gas. The gas inlet stream is an :ce:`O2`-containing hot flue gas.
+
+
+Streams
+-------
+
+- **Gas Inlet Stream**: :ce:`O2`-containing hot flue gas.
+- **Gas Outlet Stream**: Gas product leaving the reactor.
+- **Solid Inlet Stream**: Solid feed of oxalate mixture entering the reactor.
+
+Note that the two solid product streams (fine solid carried by the gas stream and the recovered solid product stream)
+are not defined as outlet streams and their flow rates are defined as model variables.
 
 """
 
@@ -395,6 +462,7 @@ constructed,
                 )
 
         # molar standard enthalpy of oxalate at 298.15 K initialized to the average of La, Ce, Pr, and Nd
+        # Data from Wagman et al (1982)
         self.enth0_oxalate_list_all = Param(
             self.metal_list_all,
             initialize=-6350044,
@@ -438,53 +506,42 @@ constructed,
             units=pyunits.J / pyunits.mol / pyunits.K**2,
         )
         # Oxalate standard enthalpy available in literature
-        self.enth0_oxalate_list_all["Al"] = -3397000
-        self.enth0_oxalate_list_all["Fe"] = -6782000
-        self.enth0_oxalate_list_all["Ca"] = -1674860
-        self.enth0_oxalate_list_all["La"] = -5916176
-        self.enth0_oxalate_list_all["Ce"] = -6782000
-        self.enth0_oxalate_list_all["Pr"] = -5920000
-        self.enth0_oxalate_list_all["Nd"] = -6782000
+        self.enth0_oxalate_list_all["Al"] = -3397000  # Kotz et al (2014), anhydrous data
+        self.enth0_oxalate_list_all["Fe"] = -2572300  # Wagman et al (1982), anhydrous data
+        self.enth0_oxalate_list_all["Ca"] = -1674860  # Wagman et al (1982)
+        self.enth0_oxalate_list_all["La"] = -5916176  # Not in Wagman et al
+        self.enth0_oxalate_list_all["Ce"] = -6782000  # Wagman et al (1982)
+        self.enth0_oxalate_list_all["Pr"] = -5920000  # Wagman et al (1982)
+        self.enth0_oxalate_list_all["Nd"] = -6782000  # Wagman et al (1982)
         # Oxide standard enthalpy available in literature
-        self.enth0_oxide_list_all["Fe"] = -825500
-        self.enth0_oxide_list_all["Al"] = -1675000
-        self.enth0_oxide_list_all["Ca"] = -635090
-        self.enth0_oxide_list_all["La"] = -1793702
-        self.enth0_oxide_list_all["Ce"] = -1796191
-        self.enth0_oxide_list_all["Pr"] = -1809664
-        self.enth0_oxide_list_all["Nd"] = -1807906
-        self.enth0_oxide_list_all["Sc"] = -1908866
-        self.enth0_oxide_list_all["Y"] = -1932800
-        # Heat capacity of oxalate available in literature
-        self.cp0_oxalate_list_all["La"] = 45.751
-        self.cp0_oxalate_list_all["Ce"] = 45.751
-        self.cp0_oxalate_list_all["Pr"] = 45.751
-        self.cp0_oxalate_list_all["Nd"] = 45.751
-        # cp0 for Fe and Al not available, using default
-        self.cp0_oxalate_list_all["Ca"] = 152.8
+        self.enth0_oxide_list_all["Fe"] = -825500   # NIST WebBook
+        self.enth0_oxide_list_all["Al"] = -1675700  # NIST WebBook
+        self.enth0_oxide_list_all["Ca"] = -635090   # NIST WebBook
+        self.enth0_oxide_list_all["La"] = -1793702  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Ce"] = -1796191  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Pr"] = -1809664  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Nd"] = -1807906  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Sc"] = -1908820  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Y"]  = -1905310  # Wagman et al (1982)
+        # Heat capacity of most oxalates except Ca are unavailable, use the default value
+        self.cp0_oxalate_list_all["Ca"] = 152.8     # Wagman et al (1982)
 
-        # for oxalates cp1 is always close to zero
-        self.cp1_oxalate_list_all["La"] = 0
-        self.cp1_oxalate_list_all["Ce"] = 0
-        self.cp1_oxalate_list_all["Pr"] = 0
-        self.cp1_oxalate_list_all["Nd"] = 0
-        self.cp1_oxalate_list_all["Ca"] = 0
         # Heat capacity of oxide available in literature
-        self.cp0_oxide_list_all["La"] = 107.72
-        self.cp0_oxide_list_all["Ce"] = 115.78
-        self.cp0_oxide_list_all["Pr"] = 112.82
-        self.cp0_oxide_list_all["Nd"] = 105.13
-        self.cp0_oxide_list_all["Al"] = 28.039
-        self.cp0_oxide_list_all["Fe"] = 80.623
-        self.cp0_oxide_list_all["Ca"] = 47.2
+        self.cp0_oxide_list_all["La"] = 107.72  # revised based on Wagman et al (1982)
+        self.cp0_oxide_list_all["Ce"] = 115.78  # revised based on Wagman et al (1982)
+        self.cp0_oxide_list_all["Pr"] = 112.82  # revised based on Wagman et al (1982)
+        self.cp0_oxide_list_all["Nd"] = 105.13  # revised based on Wagman et al (1982)
+        self.cp0_oxide_list_all["Al"] = 28.039  # NIST WebBook
+        self.cp0_oxide_list_all["Fe"] = 80.623  # NIST WebBook
+        self.cp0_oxide_list_all["Ca"] = 47.2    # NIST WebBook
 
-        self.cp1_oxide_list_all["La"] = 0.026114
-        self.cp1_oxide_list_all["Ce"] = 0.03477
-        self.cp1_oxide_list_all["Pr"] = 0.034364
-        self.cp1_oxide_list_all["Nd"] = 0.0403
-        self.cp1_oxide_list_all["Al"] = 0.17156
-        self.cp1_oxide_list_all["Fe"] = 0.09936
-        self.cp1_oxide_list_all["Ca"] = 0.00299
+        self.cp1_oxide_list_all["La"] = 0.026114 # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Ce"] = 0.03477  # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Pr"] = 0.034364 # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Nd"] = 0.0403   # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Al"] = 0.17156  # NIST WebBook
+        self.cp1_oxide_list_all["Fe"] = 0.09936  # NIST WebBook
+        self.cp1_oxide_list_all["Ca"] = 0.00299  # NIST WebBook
 
         # unit constants used for the expressions of liquid water enthalpy
         self.enth_mol_const = Param(

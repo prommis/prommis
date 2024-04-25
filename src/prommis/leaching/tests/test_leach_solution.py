@@ -41,6 +41,7 @@ def test_parameters(model):
             "Al",
             "Ca",
             "Fe",
+            "Cl",
         ]
         assert k in model.fs.leach_soln.mw
 
@@ -65,6 +66,7 @@ def test_parameters(model):
         ("Ka2", "liquid", "Al"): 0,
         ("Ka2", "liquid", "Ca"): 0,
         ("Ka2", "liquid", "Fe"): 0,
+        ("Ka2", "liquid", "Cl"): 0,
     }
 
     assert isinstance(model.fs.leach_soln.Ka2, Param)

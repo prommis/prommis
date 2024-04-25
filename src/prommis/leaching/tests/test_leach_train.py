@@ -117,8 +117,8 @@ def test_build(model):
         len(model.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint) == 12
     )
 
-    assert number_variables(model.fs.leach) == 191
-    assert number_total_constraints(model.fs.leach) == 159
+    assert number_variables(model.fs.leach) == 197
+    assert number_total_constraints(model.fs.leach) == 164
     assert number_unused_variables(model.fs.leach) == 0
 
 

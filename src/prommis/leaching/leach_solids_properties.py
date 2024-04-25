@@ -106,46 +106,13 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
 
         self._state_block_class = CoalRefuseStateBlock
 
-        self.feed80size = Param(
-            units=units.um,  # unit is micrometer
-            initialize=110.0,
-            mutable=True,
-            doc="Feed Particle Size that has 80% passing, micrometer",
-        )
-        self.feed50size = Param(
-            units=units.um,  # um micrometer. unit need to convert
-            initialize=80,  # Feed median particle size, micrometer
-            mutable=True,
-            doc="Feed median Particle Size, micrometer",
-        )
-        self.prod80size = Param(
-            units=units.um,  # unit is micrometer
-            initialize=80.0,
-            mutable=True,
-            doc="Prod Particle Size that has 80% passing, micrometer",
-        )
-        self.prod50size = Param(
-            units=units.um,  # um micrometer. unit need to convert
-            initialize=58,  # Product median particle size, micrometer
-            mutable=True,
-            doc="Prod median Particle Size, micrometer",
-        )
-        self.nfeed = Param(
-            units=None,  # unitless
-            initialize=1.5,  # Feed particle distribution width parameter
-            mutable=True,
-        )
-        self.nprod = Param(
-            units=None,  # unitless
-            initialize=1.5,  # Product particle distribution width parameter
-            mutable=True,
-        )
-        self.bwi = Param(
-            units=units.kW
+        self.bond_work_index = Param(
+            units=units.W
             * units.hour
-            / units.tonne,  # maybe need convert to with default unit
+            / units.kg,  # original unit in equation (kw.hour/tonne)
             initialize=12,  # Bond work index
             mutable=True,
+            doc="Bond work index",
         )
 
     @classmethod
@@ -198,6 +165,18 @@ class CoalRefuseStateBlockData(StateBlockData):
             initialize=0,
             units=units.dimensionless,
             bounds=(None, 0.99),
+        )
+        self.particle_size_median = Var(
+            units=units.um,  # um micrometer. unit need to convert
+            initialize=80,  # Feed median particle size, micrometer
+            bounds=(10, None),
+            doc="Feed median Particle Size, micrometer",
+        )
+        self.particle_size_width = Var(
+            units=units.dimensionless,  # unitless
+            initialize=1.5,  # Feed particle distribution width parameter
+            bounds=(1e-6, None),
+            doc="Feed particle distribution width parameter",
         )
 
         @self.Constraint(self.params.component_list)

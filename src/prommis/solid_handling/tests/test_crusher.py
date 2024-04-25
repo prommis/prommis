@@ -15,8 +15,6 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
-
-# Assuming these imports are adjusted to your project's structure
 from prommis.solid_handling.crusher import CrushAndBreakageUnit
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 
@@ -55,32 +53,38 @@ class TestSolidHandling(object):
 
         m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid)
         # Set up your model initialization here
-        m.fs.unit.inlet.mass_frac_comp[0, :].fix(0.1)  # set mass frac value. 13
+        m.fs.unit.inlet.mass_frac_comp[0, :].fix(
+            0.1
+        )  # set mass frac value. There are 13 component in property package
         m.fs.unit.control_volume.properties_in[0].flow_mass.fix(2000)  # kg/hr
+        m.fs.unit.control_volume.properties_in[0].particle_size_median.fix(
+            80
+        )  # micrometer
+        m.fs.unit.control_volume.properties_in[0].particle_size_width.fix(
+            1.5
+        )  # dimensionless
+        m.fs.unit.control_volume.properties_out[0].particle_size_median.fix(
+            58
+        )  # micrometer
+        m.fs.unit.control_volume.properties_out[0].particle_size_width.fix(
+            1.5
+        )  # dimensionless
         return m
 
     @pytest.mark.build
     @pytest.mark.unit
     def test_build(self, model):
-        model.display()
         # Assertions related to the build status of the model
-
         # More assertions as needed for your model
 
-        assert number_variables(model.fs.unit) == 57
-        assert number_total_constraints(model.fs.unit) == 43
+        assert number_variables(model.fs.unit) == 59
+        assert number_total_constraints(model.fs.unit) == 41
         assert number_unused_variables(model.fs.unit) == 0
 
     @pytest.mark.component
-    def test_units(self, model):
-        # assert_units_consistent(model.fs.unit)
-
+    def test_structural_issues(self, model):
         dt = DiagnosticsToolbox(model=model)
-        dt.report_structural_issues()
-        dt.display_underconstrained_set()
-        dt.display_components_with_inconsistent_units()
-        assert_units_consistent(model)
-        assert degrees_of_freedom(model) == 0
+        dt.assert_no_structural_warnings()
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
@@ -95,6 +99,13 @@ class TestSolidHandling(object):
         assert_optimal_termination(results)
 
     def test_solution(self, model):
-        assert pytest.approx(0.8, abs=1e-0) == value(model.fs.unit.probfeed80[0])
-        assert pytest.approx(0.8, abs=1e-0) == value(model.fs.unit.probfeed80[0])
-        assert pytest.approx(3.95, abs=1e-0) == value(model.fs.unit.crushpower[0])
+        assert pytest.approx(2000.0, rel=1e-5) == value(
+            model.fs.unit.control_volume.properties_in[0].flow_mass
+        )
+        assert pytest.approx(114.31301, rel=1e-5) == value(
+            model.fs.unit.feed_p80[0]
+        )  # Test feed size expressions.
+        assert pytest.approx(82.87693, rel=1e-5) == value(
+            model.fs.unit.prod_p80[0]
+        )  # Test prod size expressions.
+        assert pytest.approx(3915.710575, rel=1e-5) == value(model.fs.unit.work[0])

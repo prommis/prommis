@@ -37,8 +37,8 @@ The Precipitator unit adds two additional constraint to define the stochiometry 
 
 .. math:: n_{t,prec,c} = \frac{n_{t,aq_in,c} - n_{t,aq_out,c}}{S_{comp}} 
 
-where :math:`n_{t,prec,c}` is the outlet precipitacion of c component, :math:`n_{t,aq_in,c}` is the inlet of c comp in 
-the aqueous phase, :math:`n_{t,aq_in,c}` is the outlet of c comp in the aqueous phase at time :math:`t`, divided by the
+where :math:`n_{t,prec,c}` is the outlet precipitation of component c, :math:`n_{t,aq_in,c}` is the inlet of component c in 
+the aqueous phase, :math:`n_{t,aq_in,c}` is the outlet of component c in the aqueous phase at time :math:`t`, divided by the
 stoichiometric parameter of component c :math:`S_{comp}`
 
 .. math:: n_{t,aq_out,c} = n_{t,aq_in,c} * (1 - split_{c})

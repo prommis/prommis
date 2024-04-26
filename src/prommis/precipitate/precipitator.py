@@ -16,7 +16,7 @@ Preliminary Precipitator Unit Model
 
 Author: Alejandro Garciadiego
 
-The Precipitator Unit Model represents an Equilibrium reactor unit model with fixed partition coefficients unit model.
+The Precipitator Unit Model represents an Equilibrium reactor unit model with fixed partition coefficients.
 
 Configuration Arguments
 -----------------------

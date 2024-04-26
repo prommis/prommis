@@ -7,6 +7,7 @@ Leaching
 .. autosummary::
    :toctree: _autosummary
 
+   prommis.leaching.leach_train
    prommis.leaching.leach_reactions
    prommis.leaching.leach_solids_properties
    prommis.leaching.leach_solution_properties
@@ -28,4 +29,4 @@ Precipitate
    
    prommis.precipitate.precipitator
    prommis.precipitate.precipitate_liquid_properties
-   prommis.precipitate.precipitate_solid_properties
+   prommis.precipitate.precipitate_solids_properties

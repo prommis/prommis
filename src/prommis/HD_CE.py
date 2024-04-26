@@ -1,21 +1,9 @@
 from pyomo.environ import ConcreteModel, Constraint, Param, Var, units,PositiveReals, log
 from pyomo.environ import units as pyunits
-
-
-from idaes.core import (
-    FlowsheetBlock,
-    UnitModelCostingBlock,
-    UnitModelBlock,
-)
-from idaes.models.costing.SSLW import (
-    SSLWCosting,
-    SSLWCostingData,
-    VesselMaterial,
-)
+from idaes.core import FlowsheetBlock,UnitModelCostingBlock,UnitModelBlock
+from idaes.models.costing.SSLW import SSLWCosting, SSLWCostingData, VesselMaterial
 from idaes.core.solvers import get_solver
-
 from math import pi 
-
 
 
 class HDFurnaceCostEstimator:
@@ -25,38 +13,38 @@ class HDFurnaceCostEstimator:
     def __init__(self,
                 ramp_up_time = 20,                                                  #Ramp Up time (in minutes)   
                 sample_shape = "cylindrical",
-                operating_temperature = 443.15,                                       #in Kelvin
-                decrepitation_duration = 3,                                     #Amount of time the furnace runs at operating temperature(in hr)
-                preparation_time = 1,                                           # in hr
-                cool_down_time = 1,                                             # in hr
-                sample_cp = 0.44,                                               #in kJ/(kg*K)
+                operating_temperature = 443.15,                                     #in Kelvin
+                decrepitation_duration = 3,                                         #Amount of time the furnace runs at operating temperature(in hr)
+                preparation_time = 1,                                               # in hr
+                cool_down_time = 1,                                                 # in hr
+                sample_cp = 0.44,                                                   #in kJ/(kg*K)
                 diameter = 0.152,
                 length=0.456,
                 breadth=0.1524, 
                 width=0.2191,
-                sample_mass =  62.025,                                          #kg 
-                length_insulation1 = 7.62,                                      #m
-                width_insulation1 = 0.6096,                                     #m
-                thickness_insulation1 = 0.0254,                                 #m
-                price_insulation1 = 65.16,                                      #USD
-                weight_insulation1 = 15.12,                                     #kg
-                length_insulation2 = 1.2192,                                    #m
-                width_insulation2 = 0.6096,                                     #m
-                thickness_insulation2 = 0.0508,                                 #m
-                price_insulation2 = 35.76,                                      #USD
-                weight_insulation2 = 1.814,                                     #kg                                                                  
+                sample_mass =  62.025,                                              #kg 
+                length_insulation1 = 7.62,                                          #m
+                width_insulation1 = 0.6096,                                         #m
+                thickness_insulation1 = 0.0254,                                     #m
+                price_insulation1 = 65.16,                                          #USD
+                weight_insulation1 = 15.12,                                         #kg
+                length_insulation2 = 1.2192,                                        #m
+                width_insulation2 = 0.6096,                                         #m
+                thickness_insulation2 = 0.0508,                                     #m
+                price_insulation2 = 35.76,                                          #USD
+                weight_insulation2 = 1.814,                                         #kg                                                                  
                 metal_material1 = VesselMaterial.StainlessSteel304,
                 metal_material2 = VesselMaterial.CarbonSteel,
                 hours_per_shift=8,
                 shifts_per_day=3,
-                specific_heat_capacity_insulation1 = 1.08,                        #KJ/(kg*K)                                       
-                specific_heat_capacity_Metal1 = 0.468,                            #KJ/(kg*K)
-                specific_heat_capacity_insulation2 =0.9,                          #KJ/(kg*K)
-                specific_heat_capacity_Metal2 = 0.502416,                         #KJ/(kg*K)
+                specific_heat_capacity_insulation1 = 1.08,                          #KJ/(kg*K)                                       
+                specific_heat_capacity_Metal1 = 0.468,                              #KJ/(kg*K)
+                specific_heat_capacity_insulation2 =0.9,                            #KJ/(kg*K)
+                specific_heat_capacity_Metal2 = 0.502416,                           #KJ/(kg*K)
                 operating_days_per_year=336,
                 efficiency = 0.95,
                 electricity_rate = 0.0683,
-                labor_rate = 75,                                                  #USD
+                labor_rate = 75,                                                    #USD
                 transformer_cost = 2647.50, 
                 temperature_controller_price = 129.00
                 ):
@@ -125,7 +113,7 @@ class HDFurnaceCostEstimator:
             volume = self.length**3
         elif self.sample_shape == 4:
             volume = (pi*(self.diameter**3))/6
-        else: #didn't match any of the expected strings    
+        else:     
             raise TypeError(f"Shape type {self.sample_shape} is not a valid type.")
         
         internal_volume = 2 * volume
@@ -291,26 +279,26 @@ class HDFurnaceCostEstimator:
         #	Energy required to raise the interior temperature of the furnace to operating_temperature
         Q1 = ((self.C_Ins1()[0])*self.specific_heat_capacity_insulation1*((490.13 - 298.15)))+((((self.C_Metal1()[0])*0.453592))*self.specific_heat_capacity_Metal1*(490.00-298.15))+((self.C_Ins2()[0])*self.specific_heat_capacity_insulation2*(333.18-298.15))+(((self.C_Metal2()[0])*0.453592)*self.specific_heat_capacity_Metal2*(333.15-298.15))
         Q1_spec = Q1/self.sample_mass
-        Q1_R = (Q1/(self.ramp_up_time*60))                                                   #kW
+        Q1_R = (Q1/(self.ramp_up_time*60))                                                                                      #kW
         
-        Q2 = self.heat_loss()[5]                                                        #W                                                            #Heat loss from the external surface area of a furnace
-        p2 = Q2/self.efficiency                                                         #W                                                                            #power
-        E = p2*self.decrepitation_duration                                              #W-hr                                                               #W-hr
-        Q2_spec = (E*3.6)/self.sample_mass                                              #kJ/kg of Sample                                                                                                         #kJ/kg
+        Q2 = self.heat_loss()[5]                                                                                                #W                            
+        p2 = Q2/self.efficiency                                                                                                 #W                                                                           
+        E = p2*self.decrepitation_duration                                                                                      #W-hr                                                              
+        Q2_spec = (E*3.6)/self.sample_mass                                                                                      #kJ/kg of Sample                                                                                                         
 
         #Energy (specific) required to raise the temperature of the sample from room temperature to operating temperature
         Q3 = self.sample_mass*self.sample_cp*(self.operating_temperature - 298.15)
         Q3_spec = self.sample_cp*(self.operating_temperature - 298.15)
-        Q3_R =  (Q3/(self.ramp_up_time*60))                                                         #KJ/KG of sample
+        Q3_R =  (Q3/(self.ramp_up_time*60))                                                                                     #KJ/KG of sample
 
         Actual_coil_rating = (Q1_R+Q3_R)/self.efficiency
-
         M = [Q1_spec, Q2_spec, Q3_spec, Actual_coil_rating]
+
         return  M
     
     def HDF_power(self):
         
-        Q2 = self.heat_loss()[5]                                                                                #Heat loss from the external surface area of a furnace
+        Q2 = self.heat_loss()[5]                                                                                                                            #Heat loss from the external surface area of a furnace
         power = Q2/self.efficiency
         return power
     
@@ -318,11 +306,11 @@ class HDFurnaceCostEstimator:
         M = self.energy_req()
 
         Q_total = M[0] + M[1] + M[2]                                                                                                                        #KJ/KG of sample
-        total_runs = (self.hours_per_shift*self.shifts_per_day*self.operating_days_per_year)/self.decrepitation_duration                                 #Total number of runs in a year 
+        total_runs = (self.hours_per_shift*self.shifts_per_day*self.operating_days_per_year)/self.decrepitation_duration                                    #Total number of runs in a year 
         total_energy_required = (Q_total * total_runs)/3600
-        utility = (total_energy_required * self.electricity_rate)                                                                                        #USD Per kg of sample
-        processing_time = (self.preparation_time + (self.ramp_up_time/60) + self.decrepitation_duration+self.cool_down_time)/self.sample_mass                 # hr/kg
-        opex = (1/processing_time) * (utility) * (8000)                                            #USD per year
+        utility = (total_energy_required * self.electricity_rate)                                                                                           #USD Per kg of sample
+        processing_time = (self.preparation_time + (self.ramp_up_time/60) + self.decrepitation_duration+self.cool_down_time)/self.sample_mass               # hr/kg
+        opex = (1/processing_time) * (utility) * (8000)                                                                                                     #USD per year
 
         return opex                                                              
         
@@ -349,9 +337,8 @@ class HDFurnaceCostEstimator:
 
         CAPEX = self.C_Ins1()[1] + self.C_Metal1()[1] + self.C_Ins2()[1]+ self.C_Metal2()[1] + self.transformer_cost + self.temperature_controller_price+self.heating_coil() + transportation_cost + inspection_cleaning_and_testing                                             
         return CAPEX
-                                                                                               #USD per kg of sample
+                                                                                                    
 
-HD1 = HDFurnaceCostEstimator(sample_shape=1)
-print(HD1.HDF_OPEX()) 
+ 
   
 

@@ -43,7 +43,7 @@ stoichiometric parameter of component c :math:`S_{comp}`
 
 .. math:: n_{t,aq_out,c} = n_{t,aq_in,c} * (1 - split_{c})
 
-where :math:`split_{c}` is the fixed recovery fraction of component c, this factor can be a parameter or idealy a variable
+where :math:`split_{c}` is the fixed recovery fraction of component c; this factor can be a parameter or ideally a variable
 solved by a surrogate or a model equation.
 
 """

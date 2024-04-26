@@ -21,7 +21,7 @@ The Precipitator Unit Model represents an Equilibrium reactor unit model with fi
 Configuration Arguments
 -----------------------
 
-The presipitator unit model needs an aqueos property package which includes stoichiometric values for solids being
+The precipitator unit model needs an aqueous property package which includes stoichiometric values for solids being
 created in the precipitator and fixed separation coefficients of the solids.
 
 Model Structure

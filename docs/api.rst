@@ -19,3 +19,13 @@ Roasting
 
    prommis.roasting.ree_feed_roaster
    prommis.roasting.ree_oxalate_roaster
+
+Precipitate
+-----------
+
+.. autosummary::
+   :toctree: _autosummary
+   
+   prommis.precipitate.precipitator
+   prommis.precipitate.precipitate_liquid_properties
+   prommis.precipitate.precipitate_solid_properties

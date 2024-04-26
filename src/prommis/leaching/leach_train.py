@@ -18,8 +18,8 @@ system and the constraints defining the rate of reaction or equilibrium conditio
 reaction packages are similar to normal IDAES reaction packages with the following differences:
 
 * the reaction package is not coupled to any specific thermophysical property package (i.e., the liquid or solid phase
-    properties). Instead, it is expected that the reaction package will link to both the solid and liquid phase properties
-    using ``self.parent_block().liquid`` and ``self.parent_block().solid`` as required.
+  properties). Instead, it is expected that the reaction package will link to both the solid and liquid phase properties
+  using ``self.parent_block().liquid`` and ``self.parent_block().solid`` as required.
 
 Degrees of Freedom
 ------------------

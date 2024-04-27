@@ -17,6 +17,7 @@ Basic precipitator model
 
 # Import Pyomo libraries
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
+from idaes.core.util.math import smooth_max
 
 import idaes.logger as idaeslog
 
@@ -231,7 +232,7 @@ see reaction package for documentation.}""",
             ] * blk.cv_aqueous.properties_out[t].flow_vol == (
                 blk.cv_aqueous.properties_in[t].conc_mass_comp[comp]
                 * blk.cv_aqueous.properties_in[t].flow_vol
-                * (1 - prop_aq.split[comp] / 100)
+                * (1 - smooth_max(0, prop_aq.split[comp], eps=1e-8) / 100)
             )
 
         @self.Constraint(self.flowsheet().time)

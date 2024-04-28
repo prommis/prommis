@@ -6,14 +6,14 @@ Solvent Extraction Model
 Author: Arkoprabho Dasgupta
 
 The Solvent Extraction unit model is used to perform the solvent extraction unit operation.
-It represents a series of tanks, referred to as stages, through whch the aqueous and organic
+It represents a series of tanks, referred to as stages, through which the aqueous and organic
 phases are passed through, and then subsequent extraction of the desired components happen.
 
 This model is based on the MSContactor model, but it only accounts for the material balance.
-Any kind of energy balance, pressure balance is not considered in this model. However since 
-this model is based on MSContactor, the energy balance and pressure balances have to be specified
-as False in the stream configuration. At present this model only takes 2 inlets, one stream for 
-each of the phases.
+Any kind of energy balance, pressure balance and reaction kinetics is not considered in this 
+model. However since this model is based on MSContactor, the energy balance and pressure balances 
+have to be specified as False in the stream configuration. At present this model only takes 
+2 inlets, one stream for each of the phases.
 
 Configuration Arguments
 -----------------------
@@ -57,6 +57,27 @@ Since this model is based on MSContactor, the user has to give two additional ar
 "has_energy_balance" and "has_pressure_balance", and set the values to False, since energy balance 
 and pressure balance is not supported yet in the model.
 
+Degrees of freedom 
+------------------
+
+When the solvent extraction model is operated in steady state, the number of degrees of freedom of
+the model is equal to the number of partition coefficients of the total components involved in the
+mass transfer operation, for all the stages.
+
+If the model is operated in dynamic state, the number of degrees of freedom is equal to the sum
+total of the partition coefficient of all components involved in the mass transfer operation, 
+values of the state block based variables of all the components of the system at the start of the
+operation, the volumes and the volume fractions, for all the stages.
+
+Model structure
+---------------
+
+The core model consists of a MSContactor model, with stream names hard coded as 'aqueous' and 
+'organic', and the stream dictionaries and number of finite elements same as those provided by 
+the user.
+
+This model defines the material transfer term defined in the MSContactor, and expresses it as a
+function of the parameter of partition coefficient defined by the user.
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In

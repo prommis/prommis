@@ -23,6 +23,7 @@ from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 solver = get_solver()
 
+
 class TestSXmodel:
     @pytest.fixture(scope="class")
     def SolEx_frame(self):
@@ -32,7 +33,9 @@ class TestSXmodel:
 
         time_duration = 60
 
-        m.fs = FlowsheetBlock(dynamic=True, time_set=[0, time_duration], time_units=units.hour)
+        m.fs = FlowsheetBlock(
+            dynamic=True, time_set=[0, time_duration], time_units=units.hour
+        )
 
         m.fs.prop_o = REESolExOgParameters()
         m.fs.prop_a = REESolExAqParameters()
@@ -108,7 +111,7 @@ class TestSXmodel:
         m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Gd"].fix(1e-9)
         m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Dy"].fix(1e-9)
 
-        m.fs.solex.mscontactor.aqueous_inherent_reaction_extent[0,:,'Ka2'].fix(0)
+        m.fs.solex.mscontactor.aqueous_inherent_reaction_extent[0, :, "Ka2"].fix(0)
 
         m.fs.solex.mscontactor.aqueous_inlet_state[:].flow_vol.fix(4.4)
 

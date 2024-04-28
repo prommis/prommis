@@ -24,7 +24,7 @@ from idaes.core.util.initialization import fix_state_vars
 class REESolExAqParameterData(PhysicalParameterBlock):
 
     """
-    This is a property package for the aqueous phase solution of the solvent extraction 
+    This is a property package for the aqueous phase solution of the solvent extraction
     unit operation of the University of Kentucky pilot plant flowsheet.
 
     This  includes the following components:

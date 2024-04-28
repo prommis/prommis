@@ -17,7 +17,6 @@ from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 solver = get_solver()
 
-
 class TestSXmodel:
     @pytest.fixture(scope="class")
     def SolEx_frame(self):

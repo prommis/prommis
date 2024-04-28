@@ -54,7 +54,7 @@ m.fs.solex = SolventExtraction(
 
 """
 Discretization of the time domain, and specification of the partition coefficients,
-volume, volume fractions, and the initial state variable conditions of the components
+volume, volume fractions, and the initial conditions of state variables for the components
 for all the stages. 
 
 """

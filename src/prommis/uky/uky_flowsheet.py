@@ -75,14 +75,14 @@ Solid feed Al2O3 mass fraction                                        0.237     
 Solid feed Fe2O3 mass fraction                                        0.0642       :math:`\text{dimensionless}`
 Solid feed CaO mass fraction                                          0.00331      :math:`\text{dimensionless}`
 Solid feed Sc2O3 mass fraction                                        2.8e-5       :math:`\text{dimensionless}`
-Solid feed Y2O3 mass fraction                                         0.237        :math:`\text{dimensionless}`
-Solid feed La2O3 mass fraction                                        0.237        :math:`\text{dimensionless}`
-Solid feed Ce2O3 mass fraction                                        0.237        :math:`\text{dimensionless}`
-Solid feed Pr2O3 mass fraction                                        0.237        :math:`\text{dimensionless}`
-Solid feed Nd2O3 mass fraction                                        0.237        :math:`\text{dimensionless}`
-Solid feed Sm2O3 mass fraction                                        0.237        :math:`\text{dimensionless}`
-Solid feed Gd2O3 mass fraction                                        0.237        :math:`\text{dimensionless}`
-Solid feed Dy2O3 mass fraction                                        0.237        :math:`\text{dimensionless}`
+Solid feed Y2O3 mass fraction                                         3.3e-5       :math:`\text{dimensionless}`
+Solid feed La2O3 mass fraction                                        6.8e-5       :math:`\text{dimensionless}`
+Solid feed Ce2O3 mass fraction                                        1.6e-4       :math:`\text{dimensionless}`
+Solid feed Pr2O3 mass fraction                                        1.7e-5       :math:`\text{dimensionless}`
+Solid feed Nd2O3 mass fraction                                        6.8e-5       :math:`\text{dimensionless}`
+Solid feed Sm2O3 mass fraction                                        1.5e-5       :math:`\text{dimensionless}`
+Solid feed Gd2O3 mass fraction                                        1.0e-5       :math:`\text{dimensionless}`
+Solid feed Dy2O3 mass fraction                                        7.5e-6       :math:`\text{dimensionless}`
 
 Solvent Extraction Rougher
 Loading section organic feed volumetric flow                          62.01        :math:`\text{L/hr}`

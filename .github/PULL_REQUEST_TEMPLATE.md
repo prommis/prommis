@@ -8,6 +8,11 @@
 -
 -
 
+## Reviewer's checklist / merge requirements:
+- [ ] Documentation
+- [ ] Tests
+- [ ] Diagnostic tests for models
+
 ### Legal Acknowledgement
 
 By contributing to this software project, I agree to the following terms and conditions for my contribution:

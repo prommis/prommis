@@ -9,7 +9,6 @@ Authors: Arkoprabho Dasgupta
 from pyomo.environ import ConcreteModel, SolverFactory
 
 from idaes.core import FlowDirection, FlowsheetBlock
-from idaes.core.initialization import InitializationStatus
 from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )

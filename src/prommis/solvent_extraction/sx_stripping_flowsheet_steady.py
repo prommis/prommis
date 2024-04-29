@@ -1,3 +1,11 @@
+""" 
+Demonstration flowsheet for steady state solvent extraction stripping process
+using parameters and data derived from West Kentucky No. 13 coal refuse.
+
+Authors: Arkoprabho Dasgupta
+
+"""
+
 from pyomo.environ import ConcreteModel, SolverFactory
 
 from idaes.core import FlowDirection, FlowsheetBlock
@@ -12,12 +20,18 @@ from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.ree_aq_distribution import REESolExAqParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
+"""
+Method of building a solvent extraction model with a specified number of stages
+and with two separate property packages for the two inlet streams.
+This is a stripping operation, so an additional argument regarding the direction 
+of mass transfer flow has to be specified.
+
+"""
 
 def main():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.prop_o = REESolExOgParameters()
-    m.fs.prop_a = REESolExAqParameters()
     m.fs.leach_soln = LeachSolutionParameters()
 
     number_of_stages = 1
@@ -26,7 +40,7 @@ def main():
         number_of_finite_elements=number_of_stages,
         dynamic=False,
         aqueous_stream={
-            "property_package": m.fs.prop_a,
+            "property_package": m.fs.leach_soln,
             "flow_direction": FlowDirection.backward,
             "has_energy_balance": False,
             "has_pressure_balance": False,

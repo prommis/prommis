@@ -55,7 +55,7 @@ direction, and the other is "FlowDirection.backward" which is the backward direc
 
 Since this model is based on MSContactor, the user has to give two additional arguments of 
 "has_energy_balance" and "has_pressure_balance", and set the values to False, since energy balance 
-and pressure balance is not supported yet in the model.
+and pressure balance are not supported yet in the model.
 
 Degrees of freedom 
 ------------------
@@ -65,18 +65,18 @@ the model is equal to the number of partition coefficients of the total componen
 mass transfer operation, for all the stages.
 
 If the model is operated in dynamic state, the number of degrees of freedom is equal to the sum
-total of the partition coefficient of all components involved in the mass transfer operation, 
-values of the state block based variables of all the components of the system at the start of the
+of the partition coefficient of all components involved in the mass transfer operation, 
+values of the state block variables of all the components of the system at the start of the
 operation, the volumes and the volume fractions, for all the stages.
 
 Model structure
 ---------------
 
 The core model consists of a MSContactor model, with stream names hard coded as 'aqueous' and 
-'organic', and the stream dictionaries and number of finite elements same as those provided by 
-the user.
+'organic', and the stream dictionaries and number of finite elements are the same as those provided
+by the user.
 
-This model defines the material transfer term defined in the MSContactor, and expresses it as a
+This model defines the material transfer term defined in the MSContactor and expresses it as a
 function of the parameter of partition coefficient defined by the user.
 """
 

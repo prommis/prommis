@@ -506,25 +506,29 @@ constructed,
             units=pyunits.J / pyunits.mol / pyunits.K**2,
         )
         # Oxalate standard enthalpy available in literature
-        self.enth0_oxalate_list_all["Al"] = -3397000  # Kotz et al (2014), anhydrous data
-        self.enth0_oxalate_list_all["Fe"] = -2572300  # Wagman et al (1982), anhydrous data
+        self.enth0_oxalate_list_all[
+            "Al"
+        ] = -3397000  # Kotz et al (2014), anhydrous data
+        self.enth0_oxalate_list_all[
+            "Fe"
+        ] = -2572300  # Wagman et al (1982), anhydrous data
         self.enth0_oxalate_list_all["Ca"] = -1674860  # Wagman et al (1982)
         self.enth0_oxalate_list_all["La"] = -5916176  # Not in Wagman et al
         self.enth0_oxalate_list_all["Ce"] = -6782000  # Wagman et al (1982)
         self.enth0_oxalate_list_all["Pr"] = -5920000  # Wagman et al (1982)
         self.enth0_oxalate_list_all["Nd"] = -6782000  # Wagman et al (1982)
         # Oxide standard enthalpy available in literature
-        self.enth0_oxide_list_all["Fe"] = -825500   # NIST WebBook
+        self.enth0_oxide_list_all["Fe"] = -825500  # NIST WebBook
         self.enth0_oxide_list_all["Al"] = -1675700  # NIST WebBook
-        self.enth0_oxide_list_all["Ca"] = -635090   # NIST WebBook
+        self.enth0_oxide_list_all["Ca"] = -635090  # NIST WebBook
         self.enth0_oxide_list_all["La"] = -1793702  # Wagman et al (1982)
         self.enth0_oxide_list_all["Ce"] = -1796191  # Wagman et al (1982)
         self.enth0_oxide_list_all["Pr"] = -1809664  # Wagman et al (1982)
         self.enth0_oxide_list_all["Nd"] = -1807906  # Wagman et al (1982)
         self.enth0_oxide_list_all["Sc"] = -1908820  # Wagman et al (1982)
-        self.enth0_oxide_list_all["Y"]  = -1905310  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Y"] = -1905310  # Wagman et al (1982)
         # Heat capacity of most oxalates except Ca are unavailable, use the default value
-        self.cp0_oxalate_list_all["Ca"] = 152.8     # Wagman et al (1982)
+        self.cp0_oxalate_list_all["Ca"] = 152.8  # Wagman et al (1982)
 
         # Heat capacity of oxide available in literature
         self.cp0_oxide_list_all["La"] = 107.72  # revised based on Wagman et al (1982)
@@ -533,12 +537,12 @@ constructed,
         self.cp0_oxide_list_all["Nd"] = 105.13  # revised based on Wagman et al (1982)
         self.cp0_oxide_list_all["Al"] = 28.039  # NIST WebBook
         self.cp0_oxide_list_all["Fe"] = 80.623  # NIST WebBook
-        self.cp0_oxide_list_all["Ca"] = 47.2    # NIST WebBook
+        self.cp0_oxide_list_all["Ca"] = 47.2  # NIST WebBook
 
-        self.cp1_oxide_list_all["La"] = 0.026114 # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["La"] = 0.026114  # revised based on Wagman et al (1982)
         self.cp1_oxide_list_all["Ce"] = 0.03477  # revised based on Wagman et al (1982)
-        self.cp1_oxide_list_all["Pr"] = 0.034364 # revised based on Wagman et al (1982)
-        self.cp1_oxide_list_all["Nd"] = 0.0403   # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Pr"] = 0.034364  # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Nd"] = 0.0403  # revised based on Wagman et al (1982)
         self.cp1_oxide_list_all["Al"] = 0.17156  # NIST WebBook
         self.cp1_oxide_list_all["Fe"] = 0.09936  # NIST WebBook
         self.cp1_oxide_list_all["Ca"] = 0.00299  # NIST WebBook

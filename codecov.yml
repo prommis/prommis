@@ -15,5 +15,5 @@ codecov:
   notify:
     wait_for_ci: false
     # after_n_builds should match the number of CI jobs configured to upload reports to Codecov
-    # in PrOMMiS there is only 1 such job (1 version of Python running on 1 OS)
+    # in PrOMMiS there is only 1 such job
     after_n_builds: 1

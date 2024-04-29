@@ -31,13 +31,13 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse >= 2.3.0rc1",
+    "idaes-pse @ git+https://github.com/IDAES/idaes-pse@main",
     "pyomo >= 6.7.0",
 ]
 [project.optional-dependencies]
 watertap = [
-    # TODO: update once 0.11.0 is available
-    "watertap==0.11.0rc1",
+    # TODO: update once 0.12.0 is available
+    "watertap >= 0.12.0",
 ]
 
 [tool.setuptools_scm]

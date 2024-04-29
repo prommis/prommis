@@ -20,7 +20,7 @@ r"""
 IDAES REE Oxalate Roaster Unit Model
 ====================================
 
-REE Oxalate Roaster is a unit operation to convert oxalates of rare earth and gangue
+REE Oxalate Roaster is a unit operation to convert oxalates of rare earth and gangue metal
 elements to metal oxides through thermal decomposition and oxidation. There are 18 rare earth elements
 including `Sc`, `Y`, `La`, `Ce`, `Pr`, `Nd`, `Pm`, `Sm`, `Eu`, `Gd`, `Tb`, `Dy`, `Ho`, `Er`, `Tm`, `Yb`, `Lu`,
 and `Th` in the model. The user can specify a subset of those 18 elements through configuration when creating

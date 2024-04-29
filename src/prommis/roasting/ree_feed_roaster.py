@@ -20,7 +20,7 @@ r"""
 IDAES REE Feed Roaster Unit Model
 ==================================
 
-This model represents a roaster/calcination unit for Rare Earth Element (REE) feedstock, which includes rare earth minerals, impurity minerals, moisture, and combustible organic materials.
+This model represents a roaster/calcination unit for Rare Earth Element (REE) feedstock, which includes rare earth minerals, gangue/impurity minerals, moisture, and combustible organic materials.
 
 Reactions
 ---------

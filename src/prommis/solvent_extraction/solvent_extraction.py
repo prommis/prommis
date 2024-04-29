@@ -10,10 +10,8 @@ It represents a series of tanks, referred to as stages, through which the aqueou
 phases are passed through, and then subsequent extraction of the desired components happen.
 
 This model is based on the MSContactor model, but it only accounts for the material balance.
-Any kind of energy balance, pressure balance and reaction kinetics is not considered in this 
-model. However since this model is based on MSContactor, the energy balance and pressure balances 
-have to be specified as False in the stream configuration. At present this model only takes 
-2 inlets, one stream for each of the phases.
+The energy balance and pressure balances have to be specified as False in the stream configuration. 
+At present this model only takes 2 inlets, one stream for each of the phases.
 
 Configuration Arguments
 -----------------------

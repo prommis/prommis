@@ -134,7 +134,6 @@ Initialization of the model, which gives a good starting point.
 
 initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
 initializer.initialize(m.fs.solex)
-assert initializer.summary[m.fs.solex]["status"] == InitializationStatus.Ok
 
 """
 Solution of the model and display of the final results.

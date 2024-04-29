@@ -22,7 +22,6 @@ from idaes.core.util.initialization import fix_state_vars
 
 @declare_process_block_class("REESolExAqParameters")
 class REESolExAqParameterData(PhysicalParameterBlock):
-
     """
     This is a property package for the aqueous phase solution of the solvent extraction
     unit operation of the University of Kentucky pilot plant flowsheet.
@@ -142,7 +141,6 @@ class _REESolExAqStateBlock(StateBlock):
 
 @declare_process_block_class("REESolExAqStateBlock", block_class=_REESolExAqStateBlock)
 class REESolExAqStateBlockData(StateBlockData):
-
     """
     State block for aqueous phase solution of the solvent extraction process.
 

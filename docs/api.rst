@@ -19,3 +19,15 @@ Roasting
 
    prommis.roasting.ree_feed_roaster
    prommis.roasting.ree_oxalate_roaster
+
+Solvent Extraction
+------------------
+
+.. autosummary::
+   :toctree: _autosummary
+
+   prommis.solvent_extraction.ree_aq_distribution
+   prommis.solvent_extraction.ree_og_distribution
+   prommis.solvent_extraction.solvent_extraction
+   prommis.solvent_extraction.sx_model_flowsheet_steady_state
+   prommis.solvent_extraction.sx_stripping_flowsheet_steady

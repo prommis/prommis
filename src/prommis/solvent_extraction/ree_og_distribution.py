@@ -22,7 +22,6 @@ from idaes.core.util.initialization import fix_state_vars
 
 @declare_process_block_class("REESolExOgParameters")
 class REESolExOgParameterData(PhysicalParameterBlock):
-
     """
     This is a property package for the organic phase solution of the solvent extraction
     unit operation of the University of Kentucky pilot plant flowsheet.
@@ -127,7 +126,6 @@ class _REESolExOgStateBlock(StateBlock):
 
 @declare_process_block_class("REESolExOgStateBlock", block_class=_REESolExOgStateBlock)
 class REESolExOgStateBlockData(StateBlockData):
-
     """
     State block for organic phase solution of the solvent extraction process.
 

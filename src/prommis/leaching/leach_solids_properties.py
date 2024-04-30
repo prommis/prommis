@@ -34,6 +34,24 @@ from idaes.core.util.initialization import fix_state_vars
 # Leach solution property package
 @declare_process_block_class("CoalRefuseParameters")
 class CoalRefuseParameterData(PhysicalParameterBlock):
+    """
+    Solid phase property package for West Kentucky No. 13 coal waste.
+
+    Based on assay provided in:
+
+    RESEARCH PERFORMANCE FINAL REPORT, Pilot-Scale Testing of an Integrated
+    Circuit for the Extraction of Rare Earth Minerals and Elements from Coal
+    and Coal Byproducts Using Advanced Separation Technologies,
+    Honaker, R.Q., et al., DE-FE0027035
+
+    Includes the following components:
+
+    * Inerts
+    * Rare Earth Oxides: Sc2O3, Y2O3, La2O3, Ce2O3, Pr2O3, Nd2O3, Sm2O3, Gd2O3, Dy2O3
+    * Impurities: Al2O3, CaO, Fe2O3
+
+    """
+
     def build(self):
         super().build()
 
@@ -137,6 +155,11 @@ class _CoalRefuseStateBlock(StateBlock):
 
 @declare_process_block_class("CoalRefuseStateBlock", block_class=_CoalRefuseStateBlock)
 class CoalRefuseStateBlockData(StateBlockData):
+    """
+    State block for solid West Kentucky No. 13 coal waste.
+
+    """
+
     def build(self):
         super().build()
 

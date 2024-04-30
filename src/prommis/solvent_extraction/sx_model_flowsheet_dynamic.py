@@ -1,4 +1,3 @@
-
 """ 
 Demonstration flowsheet for dynamic state solvent extraction loading process
 using parameters and data derived from West Kentucky No. 13 coal refuse.

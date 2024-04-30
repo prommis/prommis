@@ -86,27 +86,23 @@ def main():
     set_operating_conditions(m)
 
     scaled_model = set_scaling(m)
+
     assert_units_consistent(scaled_model)
     assert degrees_of_freedom(scaled_model) == 0
 
-    print("Structural issues after setting operating conditions")
-    dt = DiagnosticsToolbox(model=scaled_model)
-    dt.report_structural_issues()
-
     initialize_system(scaled_model)
-    print("Numerical issues after initialization")
-    dt.report_numerical_issues()
 
-    results = solve(scaled_model)
-    print("Numerical issues after solving")
-    dt.report_numerical_issues()
+    solve(scaled_model)
 
-    display_results(scaled_model)
+    scaling = TransformationFactory("core.scale_model")
+    results = scaling.propagate_solution(scaled_model, m)
 
-    costing = add_costing(scaled_model)
+    display_results(m)
+
+    costing = add_costing(m)
     display_costing(costing)
 
-    return scaled_model, results
+    return m, results
 
 
 def build():
@@ -1906,9 +1902,7 @@ def solve(m):
 
 
 def display_results(m):
-    m.fs.solex_rougher_load.display()
-    m.fs.solex_cleaner_load.display()
-    m.fs.solex_rougher_strip.display()
+    m.fs.roaster.display()
 
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),

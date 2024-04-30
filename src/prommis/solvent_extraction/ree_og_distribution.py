@@ -32,7 +32,7 @@ class REESolExOgParameterData(PhysicalParameterBlock):
     * Rare Earths: Sc, Y, La, Ce, Pr, Nd, Sm, Gd, Dy
     * Impurities: Al, Ca, Fe
 
-    DEHPA is considered to be not involved in any kind of reaction.
+    DEHPA is not considered to be involved in any reaction.
 
     """
 

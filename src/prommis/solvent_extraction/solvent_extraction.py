@@ -7,7 +7,7 @@ Author: Arkoprabho Dasgupta
 
 The Solvent Extraction unit model is used to perform the solvent extraction unit operation.
 It represents a series of tanks, referred to as stages, through which the aqueous and organic
-phases are passed through, and then subsequent extraction of the desired components happen.
+phases are passed, and the desired components are extracted subsequently.
 
 Configuration Arguments
 -----------------------

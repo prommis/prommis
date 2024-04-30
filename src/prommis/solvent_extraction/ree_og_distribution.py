@@ -1,3 +1,11 @@
+"""
+Initial property package for the organic phase solution of the solvent extraction
+unit operation.
+
+Authors: Arkoprabho Dasgupta
+
+"""
+
 from pyomo.environ import Param, Set, Var, units
 
 from idaes.core import (
@@ -14,6 +22,20 @@ from idaes.core.util.initialization import fix_state_vars
 
 @declare_process_block_class("REESolExOgParameters")
 class REESolExOgParameterData(PhysicalParameterBlock):
+    """
+    This is a property package for the organic phase solution of the solvent extraction
+    unit operation of the University of Kentucky pilot plant flowsheet.
+
+    This  includes the following components:
+
+    * Solvent: DEHPA
+    * Rare Earths: Sc, Y, La, Ce, Pr, Nd, Sm, Gd, Dy
+    * Impurities: Al, Ca, Fe
+
+    DEHPA is not considered to be involved in any reaction.
+
+    """
+
     def build(self):
         super().build()
 
@@ -104,6 +126,11 @@ class _REESolExOgStateBlock(StateBlock):
 
 @declare_process_block_class("REESolExOgStateBlock", block_class=_REESolExOgStateBlock)
 class REESolExOgStateBlockData(StateBlockData):
+    """
+    State block for organic phase solution of the solvent extraction process.
+
+    """
+
     def build(self):
         super().build()
 

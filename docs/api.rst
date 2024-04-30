@@ -30,3 +30,11 @@ Precipitate
    prommis.precipitate.precipitator
    prommis.precipitate.precipitate_liquid_properties
    prommis.precipitate.precipitate_solids_properties
+
+Flowsheets
+----------
+
+.. autosummary::
+   :toctree: _autosummary
+
+   prommis.uky.uky_flowsheet

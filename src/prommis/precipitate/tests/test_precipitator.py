@@ -240,11 +240,12 @@ class TestPrec(object):
     @pytest.mark.component
     def test_conservation(self, prec):
         assert value(
-            prec.fs.unit.aqueous_inlet.flow_vol[0]
-            * prec.fs.properties_aq.dens_mass
+            prec.fs.unit.aqueous_inlet.flow_vol[0] * prec.fs.properties_aq.dens_mass
         ) == pytest.approx(
-            value(prec.fs.unit.aqueous_outlet.flow_vol[0]
-                  * prec.fs.properties_aq.dens_mass),
+            value(
+                prec.fs.unit.aqueous_outlet.flow_vol[0]
+                * prec.fs.properties_aq.dens_mass
+            ),
             rel=1e-6,
             abs=1e-6,
         )
@@ -264,12 +265,15 @@ class TestPrec(object):
                 assert value(
                     prec.fs.unit.cv_aqueous.properties_in[0].flow_mol_comp[j]
                 ) == pytest.approx(
-                    value(prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[j]
-                          + (
-                                  prec.fs.unit.precipitate_outlet.flow_mol_comp[0, reversed_react[j]]
-                                  * prec.fs.properties_solid.stoich[reversed_react[j]]
-                          )
-                          ),
+                    value(
+                        prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[j]
+                        + (
+                            prec.fs.unit.precipitate_outlet.flow_mol_comp[
+                                0, reversed_react[j]
+                            ]
+                            * prec.fs.properties_solid.stoich[reversed_react[j]]
+                        )
+                    ),
                     rel=1e-5,
                     abs=1e-5,
                 )

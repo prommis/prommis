@@ -17,7 +17,6 @@ Tests for UKy flowsheet.
 
 from pyomo.environ import value
 from pyomo.network import Arc
-from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
@@ -44,14 +43,12 @@ from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.uky_flowsheet import (
-    main,
     build,
     initialize_system,
     set_operating_conditions,
     set_scaling,
     solve,
     add_costing,
-    display_costing,
 )
 
 
@@ -724,7 +721,6 @@ class TestUKyFlowsheet:
         assert scaled_model.fs.precip_purge.inlet.flow_vol[0].value == pytest.approx(
             0.0063, 1e-4
         )
-
 
     @pytest.mark.unit
     def test_costing(self, scaled_model):

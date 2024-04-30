@@ -43,6 +43,7 @@ from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.uky_flowsheet import (
+    main,
     build,
     initialize_system,
     set_operating_conditions,
@@ -637,6 +638,9 @@ class TestUKyFlowsheet:
         assert value(m.fs.costing.total_sales_revenue) == pytest.approx(
             0.00018136, rel=1e-4
         )
+
+    def test_main(self):
+        main()
 
     @pytest.mark.component
     def test_report(self, model):

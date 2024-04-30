@@ -16,10 +16,10 @@ The user must specify the following configurations in a solvent extraction model
 use it.
 
 The user must specify the aqueous feed input in the "aqueous_stream" configuration, with a 
-configuration defined with it which describes the properties of the aqueous feed.
+configuration that describes the aqueous feed's properties.
 
 The user must specify the organic feed input in the "organic_stream" configuration, with a 
-configuration defined with it which describes the properties of the organic feed.
+configuration that describes the organic feed's properties.
 
 The number of stages in the solvent extraction process has to be specified by the user through 
 the "number_of_finite_elements" configuration. It takes an integer value.
@@ -27,16 +27,16 @@ the "number_of_finite_elements" configuration. It takes an integer value.
 The material transfer can happen from either of the phases to the other. To specify the direction 
 of the transfer, the "aqueous_to_organic" configuration is to be used by the user. This is a boolean 
 configuration. The default value is True, which means the material transfer is happening from the 
-aqueous phase to the organic  phase, like in the loading operation. For scrubbing and stripping, the 
+aqueous phase to the organic phase, like in the loading operation. For scrubbing and stripping, the 
 reverse happens, so the value of the configuration will be False.
 
 Stream configurations
 ---------------------
 
-Each of the feed streams has to have a dictionary which specifies the property packages and other 
+Each of the feed streams has to have a dictionary that specifies the property packages and other 
 details as mentioned below.
 
-The "property_package" configuration is the property package which describes the state conditions 
+The "property_package" configuration is the property package that describes the state conditions 
 and properties of a particular stream.
 
 The "property_package_args" configuration is any specific set of arguments that has to be passed to 

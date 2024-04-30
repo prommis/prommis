@@ -90,7 +90,7 @@ class REESolExAqParameterData(PhysicalParameterBlock):
         )
 
         # density of H2O
-        self.dens_mol = Param(
+        self.dens_mass = Param(
             initialize=1,
             units=units.kg / units.litre,
             mutable=True,
@@ -151,7 +151,7 @@ class REESolExAqStateBlockData(StateBlockData):
 
     def get_material_flow_terms(self, p, j):
         if j == "H2O":
-            return self.flow_vol * self.params.dens_mol / self.params.mw[j]
+            return self.flow_vol * self.params.dens_mass / self.params.mw[j]
         else:
             return units.convert(
                 self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
@@ -161,7 +161,7 @@ class REESolExAqStateBlockData(StateBlockData):
     def get_material_density_terms(self, p, j):
         if j == "H2O":
             return units.convert(
-                self.params.dens_mol / self.params.mw[j],
+                self.params.dens_mass / self.params.mw[j],
                 to_units=units.mol / units.m**3,
             )
         else:

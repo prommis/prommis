@@ -9,10 +9,6 @@ The Solvent Extraction unit model is used to perform the solvent extraction unit
 It represents a series of tanks, referred to as stages, through which the aqueous and organic
 phases are passed through, and then subsequent extraction of the desired components happen.
 
-This model is based on the MSContactor model, but it only accounts for the material balance.
-The energy balance and pressure balances have to be specified as False in the stream configuration. 
-At present this model only takes 2 inlets, one stream for each of the phases.
-
 Configuration Arguments
 -----------------------
 
@@ -50,10 +46,6 @@ The user can specify the direction of the flow of the stream through the stages 
 configuration "flow_direction". This is a Boolean type of configuration, with two inputs, based
 on the FlowDirection package. The default value is "FlowDirection.forward" which is the forward 
 direction, and the other is "FlowDirection.backward" which is the backward direction. 
-
-Since this model is based on MSContactor, the user has to give two additional arguments of 
-"has_energy_balance" and "has_pressure_balance", and set the values to False, since energy balance 
-and pressure balance are not supported yet in the model.
 
 Degrees of freedom 
 ------------------

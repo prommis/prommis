@@ -703,12 +703,7 @@ def set_scaling(m):
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic[0, 2].flow_vol] = 1e-2
     m.scaling_factor[m.fs.solex_cleaner.mscontactor.organic[0, 3].flow_vol] = 1e-2
 
-    m.scaling_factor[m.fs.precipitator.cv_precipitate.properties_in[0].temperature] = (
-        1e2
-    )
-    m.scaling_factor[m.fs.precipitator.cv_precipitate.properties_out[0].temperature] = (
-        1e-4
-    )
+    m.scaling_factor[m.fs.precipitator.cv_precipitate[0].temperature] = 1e2
 
     m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol] = 1e-2
     m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol] = 1e-2
@@ -896,7 +891,7 @@ def set_operating_conditions(m):
     m.fs.sep1.split_fraction[:, "recycle"].fix(0.9)
     m.fs.sep2.split_fraction[:, "recycle"].fix(0.9)
 
-    m.fs.precipitator.cv_precipitate.properties_in[0].temperature.fix(348.15 * units.K)
+    m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
 
     # Roaster gas feed
     m.fs.roaster.deltaP.fix(0)
@@ -938,8 +933,8 @@ def set_operating_conditions(m):
     m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol
     m.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp
 
-    m.fs.precipitator.cv_precipitate.properties_out[0].temperature
-    m.fs.precipitator.cv_precipitate.properties_out[0].flow_mol_comp
+    m.fs.precipitator.cv_precipitate[0].temperature
+    m.fs.precipitator.cv_precipitate[0].flow_mol_comp
 
 
 def initialize_system(m):
@@ -1048,9 +1043,7 @@ def initialize_system(m):
 
     # Pass the tear_guess to the SD tool
     seq.set_guesses_for(m.fs.precipitator.cv_aqueous.properties_out[0], tear_guesses1)
-    seq.set_guesses_for(
-        m.fs.precipitator.cv_precipitate.properties_out[0], tear_guesses2
-    )
+    seq.set_guesses_for(m.fs.precipitator.cv_precipitate[0], tear_guesses2)
     seq.set_guesses_for(m.fs.leach.liquid_inlet, tear_guesses3)
     seq.set_guesses_for(m.fs.solex_rougher.mscontactor.aqueous_inlet, tear_guesses4)
 
@@ -1104,14 +1097,12 @@ def initialize_system(m):
                 # Fix feed states
                 m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol.fix()
                 m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp.fix()
-                m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.fix()
                 # Re-solve precipitator unit
                 solver = SolverFactory("ipopt")
                 solver.solve(m.fs.precipitator, tee=True)
                 # Unfix feed states
                 m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol.unfix()
                 m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp.unfix()
-                m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.unfix()
         else:
             print(f"Initializing {stream}")
             initializer2.initialize(stream)

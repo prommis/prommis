@@ -239,48 +239,37 @@ class TestPrec(object):
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
     def test_conservation(self, prec):
-        assert (
-            abs(
-                value(
-                    prec.fs.unit.aqueous_inlet.flow_vol[0]
-                    * prec.fs.properties_aq.dens_mass
-                    - prec.fs.unit.aqueous_outlet.flow_vol[0]
-                    * prec.fs.properties_aq.dens_mass
-                )
-            )
-            <= 1e-6
+        assert value(
+            prec.fs.unit.aqueous_inlet.flow_vol[0]
+            * prec.fs.properties_aq.dens_mass
+        ) == pytest.approx(
+            value(prec.fs.unit.aqueous_outlet.flow_vol[0]
+                  * prec.fs.properties_aq.dens_mass),
+            rel=1e-6,
+            abs=1e-6,
         )
 
         reversed_react = dict(map(reversed, prec.fs.properties_solid.react.items()))
         pass_through_elements = ["Ca", "H", "Cl", "SO4", "H2O", "HSO4"]
         for j in prec.fs.properties_aq.dissolved_elements:
             if j in pass_through_elements:
-                assert (
-                    abs(
-                        value(
-                            prec.fs.unit.cv_aqueous.properties_in[0].flow_mol_comp[j]
-                            - prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[j]
-                        )
-                    )
-                    <= 1e-5
+                assert value(
+                    prec.fs.unit.cv_aqueous.properties_in[0].flow_mol_comp[j]
+                ) == pytest.approx(
+                    value(prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[j]),
+                    rel=1e-5,
+                    abs=1e-5,
                 )
             else:
-                assert (
-                    abs(
-                        value(
-                            prec.fs.unit.cv_aqueous.properties_in[0].flow_mol_comp[j]
-                            - (
-                                prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[
-                                    j
-                                ]
-                                + (
-                                    prec.fs.unit.precipitate_outlet.flow_mol_comp[
-                                        0, reversed_react[j]
-                                    ]
-                                    * prec.fs.properties_solid.stoich[reversed_react[j]]
-                                )
-                            )
-                        )
-                    )
-                    <= 1e-5
+                assert value(
+                    prec.fs.unit.cv_aqueous.properties_in[0].flow_mol_comp[j]
+                ) == pytest.approx(
+                    value(prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[j]
+                          + (
+                                  prec.fs.unit.precipitate_outlet.flow_mol_comp[0, reversed_react[j]]
+                                  * prec.fs.properties_solid.stoich[reversed_react[j]]
+                          )
+                          ),
+                    rel=1e-5,
+                    abs=1e-5,
                 )

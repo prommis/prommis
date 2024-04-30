@@ -85,7 +85,7 @@ class TestPrec(object):
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(1e-9)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1000000)
 
-        m.fs.unit.cv_precipitate.properties_in[0].temperature.fix(348.15)
+        m.fs.unit.cv_precipitate[0].temperature.fix(348.15)
 
         return m
 
@@ -107,8 +107,8 @@ class TestPrec(object):
         assert hasattr(prec.fs.unit.precipitate_outlet, "flow_mol_comp")
         assert hasattr(prec.fs.unit.precipitate_outlet, "temperature")
 
-        assert hasattr(prec.fs.unit, "generation")
-        assert hasattr(prec.fs.unit, "mass_balance")
+        assert hasattr(prec.fs.unit, "precipitate_generation")
+        assert hasattr(prec.fs.unit, "aqueous_depletion")
         assert hasattr(prec.fs.unit, "vol_balance")
 
         assert number_variables(prec.fs.unit) == 128

@@ -36,6 +36,24 @@ from idaes.core.util.misc import add_object_reference
 # Precipitate solution property package
 @declare_process_block_class("AqueousParameter")
 class AqueousParameterData(PhysicalParameterBlock):
+    """
+    Property package for aqueous solution generated in oxalate precipitator.
+
+    Includes the following components:
+
+    * Rare Earths: Sc, Y, La, Ce, Pr, Nd, Sm, Gd, Dy
+    * Impurities: Al, Ca, Fe
+
+    Assumes the equilibrium reaction has a fixed rate and fixed partition coefficients
+    based on:
+
+    Wang, Y., Ziemkiewicz, P., Noble, A., A Hybrid Experimental and Theoretical Approach
+    to Optimize Recovery of Rare Earth Elements from Acid Mine Drainage,
+    Minerals, 2022, 12. 236
+
+    self.split can be substituted by surrogate model
+    """
+
     def build(self):
         super().build()
 
@@ -180,6 +198,11 @@ class _AqueousStateBlock(StateBlock):
 
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
 class AqueousStateBlockkData(StateBlockData):
+    """
+    State block for aqueous solution generated in oxalate precipitator.
+
+    """
+
     def build(self):
         super().build()
 

@@ -72,8 +72,8 @@ def test_parameters(model):
     assert isinstance(model.fs.leach_soln.Ka2, Param)
     assert value(model.fs.leach_soln.Ka2) == pytest.approx(10**-1.99, rel=1e-8)
 
-    assert isinstance(model.fs.leach_soln.dens_mol, Param)
-    assert value(model.fs.leach_soln.dens_mol) == pytest.approx(1, rel=1e-8)
+    assert isinstance(model.fs.leach_soln.dens_mass, Param)
+    assert value(model.fs.leach_soln.dens_mass) == pytest.approx(1, rel=1e-8)
 
 
 @pytest.mark.unit
@@ -90,7 +90,7 @@ def test_build_state(model):
     assert isinstance(model.fs.state[0].h2o_concentration, Constraint)
     assert isinstance(model.fs.state[0].hso4_dissociation, Constraint)
 
-    assert isinstance(model.fs.state[0].dens_mol, Param)
+    assert isinstance(model.fs.state[0].dens_mass, Param)
 
 
 @pytest.mark.unit

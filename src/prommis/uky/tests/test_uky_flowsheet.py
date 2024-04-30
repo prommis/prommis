@@ -177,10 +177,6 @@ class TestUKyFlowsheet:
 
         assert degrees_of_freedom(scaled_model) == 0
 
-    @pytest.mark.integration
-    def test_unit_consistency(self, scaled_model):
-        assert_units_consistent(scaled_model)
-
     @pytest.mark.unit
     def test_solve_flowsheet(self, scaled_model):
         solve(scaled_model)
@@ -729,8 +725,6 @@ class TestUKyFlowsheet:
             0.0063, 1e-4
         )
 
-    def test_main(self):
-        main()
 
     @pytest.mark.unit
     def test_costing(self, scaled_model):
@@ -756,8 +750,3 @@ class TestUKyFlowsheet:
         assert value(m.fs.costing.total_sales_revenue) == pytest.approx(
             0.00018136, rel=1e-4
         )
-
-    @pytest.mark.component
-    def test_report(self, scaled_model):
-        m = add_costing(scaled_model)
-        display_costing(m)

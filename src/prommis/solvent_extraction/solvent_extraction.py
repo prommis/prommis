@@ -43,9 +43,8 @@ The ``property_package_args`` configuration is any specific set of arguments tha
 the property block for the unit operation.
 
 The user can specify the direction of the flow of the stream through the stages through the 
-configuration ``flow_direction``. This is a Boolean type of configuration, with two inputs, based
-on the FlowDirection package. The default value is ``FlowDirection.forward`` which is the forward 
-direction, and the other is ``FlowDirection.backward`` which is the backward direction. 
+configuration ``flow_direction``. This is a configuration, that uses FlowDirection Enum, which
+can have two possible values.
 
 Degrees of freedom 
 ------------------

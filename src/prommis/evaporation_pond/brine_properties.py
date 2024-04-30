@@ -16,7 +16,7 @@ Initial property package for lithium brine solutions.
 Authors: Andrew Lee
 """
 
-from pyomo.environ import Constraint, Param, Set, Var, units
+from pyomo.environ import Constraint, Param, Var, units
 
 from idaes.core import (
     Component,

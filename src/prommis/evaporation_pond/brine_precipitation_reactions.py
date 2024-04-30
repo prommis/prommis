@@ -15,7 +15,7 @@ Example property package for precipitation reactions associated with lithium bri
 """
 
 # Import Pyomo libraries
-from pyomo.environ import Constraint, log, Param, Set, units, Var
+from pyomo.environ import log, Param, Set, units
 
 # Import IDAES cores
 from idaes.core import (

@@ -7,12 +7,11 @@ Authors: Andrew Lee
 from pyomo.environ import (
     ConcreteModel,
     SolverFactory,
-    Suffix,
-    TransformationFactory,
     units,
 )
 
 from idaes.core import FlowsheetBlock
+from idaes.core.initialization import BlockTriangularizationInitializer
 
 from prommis.evaporation_pond.evaporation_pond import EvaporationPond
 from prommis.evaporation_pond.brine_properties import BrineParameters
@@ -67,6 +66,9 @@ if __name__ == "__main__":
     m = build_model()
     set_inputs(m)
     set_scaling(m)
+
+    initializer = BlockTriangularizationInitializer()
+    initializer.initialize(m.fs.pond_1)
 
     # Solve scaled model
     solver = SolverFactory("ipopt")

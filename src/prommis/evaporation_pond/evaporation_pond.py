@@ -7,13 +7,11 @@ Author: Andrew Lee
 """
 
 from pyomo.environ import (
-    Block,
-    Constraint,
     Reference,
     Var,
     units,
 )
-from pyomo.common.config import Bool, ConfigDict, ConfigValue
+from pyomo.common.config import ConfigDict, ConfigValue
 
 from idaes.core import (
     ControlVolume0DBlock,
@@ -109,7 +107,7 @@ class EvaporationPondData(UnitModelBlockData):
                 f"{len(self.config.property_package.phase_list)} phases."
             )
         else:
-            phase_name = self.config.property_package.phase_list[1]
+            phase_name = self.config.property_package.phase_list.at(1)
 
         # Build control volume
         self.control_volume = ControlVolume0DBlock(
@@ -163,7 +161,9 @@ class EvaporationPondData(UnitModelBlockData):
         )
 
         self.water_loss_rate = Reference(
-            self.control_volume.mass_transfer_term[:, phase_name, self.config.solvent_id]
+            self.control_volume.mass_transfer_term[
+                :, phase_name, self.config.solvent_id
+            ]
         )
 
         # Add unit level constraints

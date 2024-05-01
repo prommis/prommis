@@ -12,7 +12,11 @@
 """
 Interface for UKy plant model in WaterTAP UI
 
-Authors: Dan Gunter (LBNL)
+The `export_to_ui()` function provides all the functions that the UI
+will invoke to export the inputs and outputs, build the flowsheet,
+and solve the flowsheet.
+
+Authors: Dan Gunter (LBNL), Marcus Holly (KeyLogic)
 """
 __author__ = "Dan Gunter"
 
@@ -38,6 +42,8 @@ _log = idaeslog.getLogger(__name__)
 
 
 def export_to_ui():
+    """Hook called by the UI to get the interface to the flowsheet.
+    """
     return FlowsheetInterface(
         name="UKy",
         do_export=export_variables,
@@ -50,12 +56,12 @@ def export_to_ui():
     )
 
 
-_log.setLevel(logging.DEBUG)
-
-
 def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs):
+    """Export input and output variables for the UKy flowsheet.
+    """
     _log.info(f"begin/setup-UI-exports build_options={build_options}")
 
+    # Chemical components
     comp = {
         "Al",
         "Ca",
@@ -70,6 +76,8 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sm",
         "Y",
     }
+
+    # Chemical components - oxides
     comp_ox = {
         "Al2O3",
         "CaO",
@@ -84,7 +92,11 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sm2O3",
         "Y2O3",
     }
+
+    # Liquid chemical components
     comp_liq = {"H", "H2O", "HSO4", "SO4"}
+
+    # Chemical components - precipitates
     comp_precip = {
         "Al2(C2O4)3(s)",
         "Ce2(C2O4)3(s)",
@@ -99,6 +111,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Y2(C2O4)3(s)",
     }
 
+    # Export the leach liquid feed and its mass components, as inputs
     llf = flowsheet.leach_liquid_feed
     exports.add(
         obj=llf.flow_vol[0],
@@ -129,7 +142,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             input_category="Leaching liquid feed",
         )
 
-    # Leaching solid feed
+    # Export the leaching solid feed, and its mass flow components, as inputs
     lsf = flowsheet.leach_solid_feed
     category = "Leaching solid feed"
     comp_solid_in = {"inerts"}.union(comp_ox)
@@ -154,7 +167,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         input_category=category,
     )
 
-    # Gas inlet/outlet
+    # Export the roaster inlet as an input
     category = "Roaster"
     rst = flowsheet.roaster
     exports.add(
@@ -168,16 +181,6 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         input_category=category,
     )
     exports.add(
-        obj=rst.gas_outlet.temperature[0],
-        name="Gas outlet temperature",
-        rounding=3,
-        ui_units=pyo.units.K,
-        display_units="K",
-        is_input=False,
-        is_output=True,
-        input_category=category,
-    )
-    exports.add(
         obj=rst.gas_inlet.pressure[0],
         name="Gas inlet temperature",
         rounding=2,
@@ -185,6 +188,18 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         display_units="Pa",
         is_input=True,
         is_output=False,
+        input_category=category,
+    )
+
+    # Export the roaster outlet as an output
+    exports.add(
+        obj=rst.gas_outlet.temperature[0],
+        name="Gas outlet temperature",
+        rounding=3,
+        ui_units=pyo.units.K,
+        display_units="K",
+        is_input=False,
+        is_output=True,
         input_category=category,
     )
     exports.add(
@@ -208,6 +223,8 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         input_category=category,
     )
 
+    # Export the leach solid outputs, which includes overall mass flow,
+    # and mass fraction of oxides and inerts.
     category = "solids"
     leach = flowsheet.leach
     exports.add(
@@ -243,6 +260,8 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         output_category="solid outlet",
     )
 
+    # Export leach liquid outputs, which includes the liquid flow
+    # and liquid mass compositions
     category = "leaching"
     exports.add(
         obj=leach.liquid_outlet.flow_vol[0],
@@ -270,14 +289,17 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             output_category=category,
         )
 
+    # Export the outputs for the solex rougher and cleaner
     for stype in {"rougher", "cleaner"}:
         category = f"solex {stype}"
         block = getattr(flowsheet, f"solex_{stype}")
         for ltype in {"organic", "aqueous"}:
             if stype == "rougher" and ltype == "aqueous":
+                # add aqueous components for the aqueous rougher
                 complist = comp.union(comp_liq)
             else:
                 complist = comp
+            # export the output for each component
             for c in complist:
                 name = f"solex {stype} {ltype} liquid mass composition fraction {c}"
                 _log.debug(f"export: {name}")
@@ -294,6 +316,9 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
                     output_category=category,
                 )
 
+    # Export the outputs for the precipitator, including overall flow
+    # as well as concentration mass composition for chemical components
+    # and precipitate components.
     category = "precipitator"
     precipitator = flowsheet.precipitator
     exports.add(
@@ -351,6 +376,10 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
 
 
 def build_flowsheet(build_options=None, **kwargs):
+    """Called by the UI to build the flowsheet.
+    Does not solve the flowsheet, but does set operating conditions, scaling, and
+    initialize the system.
+    """
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
     set_operating_conditions(m)
@@ -363,8 +392,12 @@ def build_flowsheet(build_options=None, **kwargs):
 
 
 def get_diagram(build_options):
-    return "uky_ui.png"
+    """Return a diagram to be shown in the UI for this flowsheet.
+    """
+    return "uky_flowsheet_ui.png"
 
 
 def solve_flowsheet(flowsheet=None):
+    """Solve a built/initialized flowsheet.
+    """
     return solve(flowsheet)

@@ -1,3 +1,11 @@
+"""
+Initial property package for the aqueous phase solution of the solvent extraction
+unit operation.
+
+Authors: Arkoprabho Dasgupta
+
+"""
+
 from pyomo.environ import Param, Set, Var, units
 
 from idaes.core import (
@@ -14,16 +22,31 @@ from idaes.core.util.initialization import fix_state_vars
 
 @declare_process_block_class("REESolExAqParameters")
 class REESolExAqParameterData(PhysicalParameterBlock):
+    """
+    This is a property package for the aqueous phase solution of the solvent extraction
+    unit operation of the University of Kentucky pilot plant flowsheet.
+
+    This  includes the following components:
+
+    * Solvent: H2O
+    * Acid components: H, SO4, HSO4, H2SO4
+    * Rare Earths: Sc, Y, La, Ce, Pr, Nd, Sm, Gd, Dy
+    * Impurities: Al, Ca, Fe
+
+    Any kind of reactive interactions of the acid components are not considered.
+
+    """
+
     def build(self):
         super().build()
 
         self.liquid = Phase()
 
         # Solvents
-        self.H2SO4 = Component()
+        self.H2O = Component()
 
         # Inerts
-        self.H2O = Component()
+        self.H2SO4 = Component()
         self.H = Component()
         self.SO4 = Component()
         self.HSO4 = Component()
@@ -118,6 +141,11 @@ class _REESolExAqStateBlock(StateBlock):
 
 @declare_process_block_class("REESolExAqStateBlock", block_class=_REESolExAqStateBlock)
 class REESolExAqStateBlockData(StateBlockData):
+    """
+    State block for aqueous phase solution of the solvent extraction process.
+
+    """
+
     def build(self):
         super().build()
 

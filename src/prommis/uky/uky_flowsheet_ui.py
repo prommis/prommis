@@ -42,8 +42,7 @@ _log = idaeslog.getLogger(__name__)
 
 
 def export_to_ui():
-    """Hook called by the UI to get the interface to the flowsheet.
-    """
+    """Hook called by the UI to get the interface to the flowsheet."""
     return FlowsheetInterface(
         name="UKy",
         do_export=export_variables,
@@ -57,8 +56,7 @@ def export_to_ui():
 
 
 def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs):
-    """Export input and output variables for the UKy flowsheet.
-    """
+    """Export input and output variables for the UKy flowsheet."""
     _log.info(f"begin/setup-UI-exports build_options={build_options}")
 
     # Chemical components
@@ -392,12 +390,10 @@ def build_flowsheet(build_options=None, **kwargs):
 
 
 def get_diagram(build_options):
-    """Return a diagram to be shown in the UI for this flowsheet.
-    """
+    """Return a diagram to be shown in the UI for this flowsheet."""
     return "uky_flowsheet_ui.png"
 
 
 def solve_flowsheet(flowsheet=None):
-    """Solve a built/initialized flowsheet.
-    """
+    """Solve a built/initialized flowsheet."""
     return solve(flowsheet)

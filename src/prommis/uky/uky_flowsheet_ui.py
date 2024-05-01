@@ -20,14 +20,11 @@ Authors: Dan Gunter (LBNL), Marcus Holly (KeyLogic)
 """
 __author__ = "Dan Gunter"
 
-# stdlib
-import logging
-
 # third party
 import pyomo.environ as pyo
 from idaes import logger as idaeslog
 from watertap.ui.fsapi import FlowsheetInterface
-from watertap.ui.fsapi import FlowsheetCategory as FC
+from watertap.ui.fsapi import FlowsheetCategory
 
 # package
 from prommis.uky.uky_flowsheet import (
@@ -50,7 +47,7 @@ def export_to_ui():
         do_solve=solve_flowsheet,
         get_diagram=get_diagram,
         requires_idaes_solver=True,
-        category=FC.wastewater,
+        category=FlowsheetCategory.wastewater,
         build_options={},
     )
 
@@ -58,6 +55,8 @@ def export_to_ui():
 def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs):
     """Export input and output variables for the UKy flowsheet."""
     _log.info(f"begin/setup-UI-exports build_options={build_options}")
+
+    kwargs.get("", None)  # eliminate not-used warning
 
     # Chemical components
     comp = {

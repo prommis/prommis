@@ -3,7 +3,8 @@ pylint==2.17.7
 astroid==2.15.8
 pytest==7.*
 pytest-cov
-jupyter-book==1.0.*
+jupyter-book==0.15.* ; python_version < '3.9'
+jupyter-book==1.0.* ; python_version >= '3.9'
 isort
 nbmake==1.4.6
 

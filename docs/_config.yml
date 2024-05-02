@@ -15,3 +15,4 @@ sphinx:
     suppress_warnings:
       # executablebooks/sphinx-external-toc#36
       - etoc.toctree
+    templates_path: _templates

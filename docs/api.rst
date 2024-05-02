@@ -6,6 +6,7 @@ Leaching
 
 .. autosummary::
    :toctree: _autosummary
+   :template: autosummary/module-with-contents.rst
 
    prommis.leaching.leach_train
    prommis.leaching.leach_reactions
@@ -17,6 +18,7 @@ Roasting
 
 .. autosummary::
    :toctree: _autosummary
+   :template: autosummary/module-with-contents.rst
 
    prommis.roasting.ree_feed_roaster
    prommis.roasting.ree_oxalate_roaster
@@ -26,6 +28,7 @@ Solvent Extraction
 
 .. autosummary::
    :toctree: _autosummary
+   :template: autosummary/module-with-contents.rst
 
    prommis.solvent_extraction.ree_aq_distribution
    prommis.solvent_extraction.ree_og_distribution
@@ -36,6 +39,7 @@ Precipitate
 
 .. autosummary::
    :toctree: _autosummary
+   :template: autosummary/module-with-contents.rst
    
    prommis.precipitate.precipitator
    prommis.precipitate.precipitate_liquid_properties
@@ -46,5 +50,6 @@ Flowsheets
 
 .. autosummary::
    :toctree: _autosummary
+   :template: autosummary/module-with-contents.rst
 
    prommis.uky.uky_flowsheet

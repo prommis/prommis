@@ -15,7 +15,7 @@ Tests for UKy flowsheet.
 
 """
 
-from pyomo.environ import value, TransformationFactory
+from pyomo.environ import value, TransformationFactory, assert_optimal_termination
 from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
@@ -45,9 +45,10 @@ from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.uky_flowsheet import (
     main,
     build,
-    initialize_system,
+    set_partition_coefficients,
     set_operating_conditions,
     set_scaling,
+    initialize_system,
     solve,
     add_costing,
     display_costing,
@@ -58,6 +59,7 @@ class TestUKyFlowsheet:
     @pytest.fixture(scope="class")
     def model(self):
         m = build()
+        set_partition_coefficients(m)
         set_operating_conditions(m)
         return m
 
@@ -176,13 +178,15 @@ class TestUKyFlowsheet:
         initialize_system(scaled_model)
 
         # Solve scaled model
-        solve(scaled_model)
+        results = solve(scaled_model)
 
         # Propagate results back to unscaled model
         scaling.propagate_solution(scaled_model, model)
 
+        assert_optimal_termination(results)
+
     @pytest.mark.unit
-    def test_solve_flowsheet(self, model):
+    def test_solution(self, model):
 
         assert model.fs.leach.solid_outlet.flow_mass[0].value == pytest.approx(
             22.234694, 1e-4
@@ -640,7 +644,8 @@ class TestUKyFlowsheet:
         )
 
     def test_main(self):
-        main()
+        m, results = main()
+        assert_optimal_termination(results)
 
     @pytest.mark.component
     def test_report(self, model):

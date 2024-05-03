@@ -29,6 +29,7 @@ from idaes.core.util.config import is_physical_parameter_block
 import idaes.logger as idaeslog
 
 _log = idaeslog.getLogger(__name__)
+from idaes.core.util.tables import create_stream_table_dataframe
 
 
 @declare_process_block_class("CrushAndBreakageUnit")
@@ -160,6 +161,20 @@ see property package for documentation.}""",
                 * self.config.property_package.bond_work_index
                 * (1 / (self.prod_p80[t]) ** 0.5 - 1 / (self.feed_p80[t]) ** 0.5)
             )
+
+    def _get_stream_table_contents(self, time_point=0):
+        # Dictionary to hold data for all streams
+        io_dict = {"Inlet": self.properties_in, "Outlet": self.properties_out}
+        return create_stream_table_dataframe(io_dict, time_point=time_point)
+
+    def _get_performance_contents(self, time_point=0):
+        # Report
+        var_dict = {
+            "Work Required (W)": self.work[time_point].value,
+        }
+        if hasattr(self, "additional_variable"):
+            var_dict["Additional Variable"] = self.additional_variable[time_point].value
+        return {"vars": var_dict}
 
 
 def _state_rule(b, time, index, state):

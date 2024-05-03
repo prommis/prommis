@@ -21,9 +21,7 @@ from functools import partial
 from pyomo.environ import Var, log, Constraint, units as pyunits
 from pyomo.common.config import ConfigValue, ConfigDict, In
 from idaes.core import (
-    ControlVolume0DBlock,
     declare_process_block_class,
-    MaterialBalanceType,
     UnitModelBlockData,
     useDefault,
 )

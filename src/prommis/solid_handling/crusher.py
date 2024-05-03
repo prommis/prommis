@@ -26,10 +26,10 @@ from idaes.core import (
     useDefault,
 )
 from idaes.core.util.config import is_physical_parameter_block
+from idaes.core.util.tables import create_stream_table_dataframe
 import idaes.logger as idaeslog
 
 _log = idaeslog.getLogger(__name__)
-from idaes.core.util.tables import create_stream_table_dataframe
 
 
 @declare_process_block_class("CrushAndBreakageUnit")

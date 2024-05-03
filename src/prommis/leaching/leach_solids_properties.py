@@ -106,15 +106,6 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
 
         self._state_block_class = CoalRefuseStateBlock
 
-        self.bond_work_index = Param(
-            units=units.W
-            * units.hour
-            / units.kg,  # original unit in equation (kw.hour/tonne)
-            initialize=12,  # Bond work index
-            mutable=True,
-            doc="Bond work index",
-        )
-
     @classmethod
     def define_metadata(cls, obj):
         obj.add_default_units(
@@ -165,18 +156,6 @@ class CoalRefuseStateBlockData(StateBlockData):
             initialize=0,
             units=units.dimensionless,
             bounds=(None, 0.99),
-        )
-        self.particle_size_median = Var(
-            units=units.um,  # um micrometer. unit need to convert
-            initialize=80,  # Feed median particle size, micrometer
-            bounds=(10, None),
-            doc="Feed median Particle Size, micrometer",
-        )
-        self.particle_size_width = Var(
-            units=units.dimensionless,  # unitless
-            initialize=1.5,  # Feed particle distribution width parameter
-            bounds=(1e-6, None),
-            doc="Feed particle distribution width parameter",
         )
 
         @self.Constraint(self.params.component_list)

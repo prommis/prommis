@@ -17,7 +17,8 @@ This module including power consumption for solid crushing; breakage probability
 __author__ = "Lingyan Deng"
 __version__ = "1.0.0"
 
-from pyomo.environ import Var, log, units as pyunits
+from functools import partial
+from pyomo.environ import Var, log, Constraint, units as pyunits
 from pyomo.common.config import ConfigValue, ConfigDict, In
 from idaes.core import (
     ControlVolume0DBlock,
@@ -94,23 +95,32 @@ see property package for documentation.}""",
         # Call UnitModel.build to setup dynamics
         super().build()
 
-        # Build Control Volume
-        self.control_volume = ControlVolume0DBlock(
-            dynamic=False,
-            has_holdup=False,
-            property_package=self.config.property_package,
-            property_package_args=self.config.property_package_args,
+        self.properties_in = self.config.property_package.build_state_block(
+            self.flowsheet().time,
+            defined_state = True,
+            **self.config.property_package_args,
         )
-
-        self.control_volume.add_state_blocks(has_phase_equilibrium=False)
-
-        self.control_volume.add_material_balances(
-            balance_type=MaterialBalanceType.componentPhase,
+        self.properties_out = self.config.property_package.build_state_block(
+            self.flowsheet().time,
+            defined_state = True,
+            **self.config.property_package_args,
         )
+       
+        tref = self.flowsheet().time.first()
+        statevars = self.properties_in[tref].define_state_vars()
+        
+        for k, v in statevars.items():
+            if k not in ["particle_size_median", "particle_size_width"]:
+                idx = v.index_set()
+                c = Constraint(self.flowsheet().time, idx, doc = f"{k} constraint", 
+                               rule = partial(_state_rule, state = k))
+                self.add_component(k+"_constraint", c)
+
+
 
         # Add Ports
-        self.add_inlet_port()
-        self.add_outlet_port()
+        self.add_port("inlet", self.properties_in)
+        self.add_port("outlet", self.properties_out)
 
         self.work = Var(
             self.flowsheet().time,
@@ -123,32 +133,38 @@ see property package for documentation.}""",
         This is the equation for accumulative fraction of solid breakage 
         probability distribution smaller than size x=feed80size
         """
-        tref = self.flowsheet().time.first()
-        sunit = self.control_volume.properties_in[tref].particle_size_median.get_units()
+        
+        sunit = self.properties_in[tref].particle_size_median.get_units()
 
         @self.Expression(self.flowsheet().time, doc="Feed P80 Size")
         def feed_p80(self, t):
             return (
-                self.control_volume.properties_in[t].particle_size_median
+                self.properties_in[t].particle_size_median
                 / sunit
                 * (-log(1 - 0.8))
-                ** (self.control_volume.properties_in[t].particle_size_width / 2)
+                ** (self.properties_in[t].particle_size_width / 2)
             )
 
         @self.Expression(self.flowsheet().time, doc="product p80 size")
         def prod_p80(self, t):
             return (
-                self.control_volume.properties_out[t].particle_size_median
+                self.properties_out[t].particle_size_median
                 / sunit
                 * (-log(1 - 0.8))
-                ** (self.control_volume.properties_out[t].particle_size_width / 2)
+                ** (self.properties_out[t].particle_size_width / 2)
             )
 
         @self.Constraint(self.flowsheet().time, doc="Crusher work constraint")
         def crush_work_eq(self, t):
             return self.work[t] == (
                 10  # 10 is an empirical correlation, this should not be changed.
-                * self.control_volume.properties_in[t].flow_mass
+                * self.properties_in[t].flow_mass
                 * self.config.property_package.bond_work_index
                 * (1 / (self.prod_p80[t]) ** 0.5 - 1 / (self.feed_p80[t]) ** 0.5)
             )
+
+
+def _state_rule(b, time, index, state):
+    sin = b.properties_in[time].define_state_vars()[state]
+    sout = b.properties_out[time].define_state_vars()[state]
+    return sin[index] == sout[index]

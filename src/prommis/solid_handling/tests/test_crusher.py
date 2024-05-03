@@ -14,7 +14,7 @@ from idaes.core.util.model_statistics import (
     number_variables,
 )
 from prommis.solid_handling.crusher import CrushAndBreakageUnit
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
+from prommis.solid_handling.crusher_solids_properties import CoalRefuseParameters
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing
@@ -54,17 +54,17 @@ class TestSolidHandling(object):
         m.fs.unit.inlet.mass_frac_comp[0, :].fix(
             0.1
         )  # set mass frac value. There are 13 component in property package
-        m.fs.unit.control_volume.properties_in[0].flow_mass.fix(2000)  # kg/hr
-        m.fs.unit.control_volume.properties_in[0].particle_size_median.fix(
+        m.fs.unit.properties_in[0].flow_mass.fix(2000)  # kg/hr
+        m.fs.unit.properties_in[0].particle_size_median.fix(
             80
         )  # micrometer
-        m.fs.unit.control_volume.properties_in[0].particle_size_width.fix(
+        m.fs.unit.properties_in[0].particle_size_width.fix(
             1.5
         )  # dimensionless
-        m.fs.unit.control_volume.properties_out[0].particle_size_median.fix(
+        m.fs.unit.properties_out[0].particle_size_median.fix(
             58
         )  # micrometer
-        m.fs.unit.control_volume.properties_out[0].particle_size_width.fix(
+        m.fs.unit.properties_out[0].particle_size_width.fix(
             1.5
         )  # dimensionless
         return m
@@ -98,7 +98,7 @@ class TestSolidHandling(object):
 
     def test_solution(self, model):
         assert pytest.approx(2000.0, rel=1e-5) == value(
-            model.fs.unit.control_volume.properties_in[0].flow_mass
+            model.fs.unit.properties_in[0].flow_mass
         )
         assert pytest.approx(114.31301, rel=1e-5) == value(
             model.fs.unit.feed_p80[0]

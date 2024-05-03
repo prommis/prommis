@@ -145,6 +145,7 @@ using advanced separation processes", 2019
 """
 
 from pyomo.environ import (
+    assert_optimal_termination,
     ConcreteModel,
     Constraint,
     Expression,
@@ -224,7 +225,9 @@ def main():
 
     initialize_system(scaled_model)
 
-    solve(scaled_model)
+    scaled_results = solve(scaled_model)
+
+    assert_optimal_termination(scaled_results)
 
     scaling = TransformationFactory("core.scale_model")
     results = scaling.propagate_solution(scaled_model, m)
@@ -2036,11 +2039,12 @@ def initialize_system(m):
     seq.run(m, function)
 
 
-def solve(m):
+def solve(m, solver=None):
     """
     Solve the system with IPOPT.
     """
-    solver = SolverFactory("ipopt")
+    if solver is None:
+        solver = SolverFactory("ipopt")
     results = solver.solve(m, tee=True)
 
     m.fs.rougher_org_make_up.outlet.flow_vol.unfix()

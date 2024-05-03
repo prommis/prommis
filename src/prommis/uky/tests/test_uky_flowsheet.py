@@ -44,12 +44,6 @@ from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.uky_flowsheet import (
     main,
-    build,
-    set_partition_coefficients,
-    set_operating_conditions,
-    set_scaling,
-    initialize_system,
-    solve,
     add_costing,
     display_costing,
 )
@@ -57,19 +51,20 @@ from prommis.uky.uky_flowsheet import (
 
 class TestUKyFlowsheet:
     @pytest.fixture(scope="class")
-    def model(self):
-        m = build()
-        set_partition_coefficients(m)
-        set_operating_conditions(m)
+    def system_frame(self):
+        m, res = main()
+        m.results = res
         return m
 
     @pytest.mark.component
-    def test_structural_issues(self, model):
+    def test_structural_issues(self, system_frame):
+        model = system_frame
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.unit
-    def test_build_flowsheet(self, model):
+    def test_build_flowsheet(self, system_frame):
+        model = system_frame
         assert isinstance(model.fs, FlowsheetBlock)
 
         # Leaching section property packages and unit models
@@ -166,28 +161,9 @@ class TestUKyFlowsheet:
 
         assert degrees_of_freedom(model) == 0
 
-    @pytest.mark.component
-    @pytest.mark.solver
-    def test_solve(self, model):
-        set_scaling(model)
-        # Create a scaled version of the model to solve
-        scaling = TransformationFactory("core.scale_model")
-        scaled_model = scaling.create_using(model, rename=False)
-
-        # Initialize system
-        initialize_system(scaled_model)
-
-        # Solve scaled model
-        results = solve(scaled_model)
-
-        # Propagate results back to unscaled model
-        scaling.propagate_solution(scaled_model, model)
-
-        assert_optimal_termination(results)
-
     @pytest.mark.unit
-    def test_solution(self, model):
-
+    def test_solution(self, system_frame):
+        model = system_frame
         assert model.fs.leach.solid_outlet.flow_mass[0].value == pytest.approx(
             22.234694, 1e-4
         )
@@ -619,35 +595,102 @@ class TestUKyFlowsheet:
         )
 
     @pytest.mark.unit
-    def test_costing(self, model):
-        m = add_costing(model)
+    def test_costing(self, system_frame):
+        model = add_costing(system_frame)
+        display_costing(model)
 
-        assert value(m.fs.costing.total_plant_cost) == pytest.approx(15.579, rel=1e-4)
-        assert value(m.fs.costing.total_BEC) == pytest.approx(5.245, rel=1e-4)
-        assert value(m.fs.costing.total_installation_cost) == pytest.approx(
+        assert value(model.fs.costing.total_plant_cost) == pytest.approx(15.579, rel=1e-4)
+        assert value(model.fs.costing.total_BEC) == pytest.approx(5.245, rel=1e-4)
+        assert value(model.fs.costing.total_installation_cost) == pytest.approx(
             10.332, rel=1e-4
         )
-        assert value(m.fs.costing.other_plant_costs) == pytest.approx(
+        assert value(model.fs.costing.other_plant_costs) == pytest.approx(
             0.0016309, rel=1e-4
         )
-        assert value(m.fs.costing.total_fixed_OM_cost) == pytest.approx(
+        assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(
             7.2484, rel=1e-4
         )
-        assert value(m.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
+        assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
             10.7422, rel=1e-4
         )
-        assert value(m.fs.costing.land_cost) == pytest.approx(
+        assert value(model.fs.costing.land_cost) == pytest.approx(
             6.1234e-5, rel=1e-4
         )  # Expression, not Var
-        assert value(m.fs.costing.total_sales_revenue) == pytest.approx(
+        assert value(model.fs.costing.total_sales_revenue) == pytest.approx(
             0.00018136, rel=1e-4
         )
-
-    def test_main(self):
-        m, results = main()
-        assert_optimal_termination(results)
-
-    @pytest.mark.component
-    def test_report(self, model):
-        m = add_costing(model)
-        display_costing(m)
+        assert value(model.fs.L_pe_tanks.costing.bare_erected_cost["4.2"]) == pytest.approx(
+            0.0013054, rel=1e-4
+        )
+        assert value(model.fs.L_tank_mixers.costing.bare_erected_cost["4.3"]) == pytest.approx(
+            0.08625, rel=1e-4
+        )
+        assert value(model.fs.L_pump.costing.bare_erected_cost["4.4"]) == pytest.approx(
+            0.01446, rel=1e-4
+        )
+        assert value(model.fs.L_thickener.costing.bare_erected_cost["4.5"]) == pytest.approx(
+            0.0243540, rel=1e-4
+        )
+        assert value(model.fs.L_filter_press.costing.bare_erected_cost["4.6"]) == pytest.approx(
+            0.08919, rel=1e-4
+        )
+        assert value(model.fs.L_solution_heater.costing.bare_erected_cost["4.8"]) == pytest.approx(
+            0.00750107, rel=1e-4
+        )
+        assert value(model.fs.RSX_pe_tanks.costing.bare_erected_cost["5.1"]) == pytest.approx(
+            0.000273433, rel=1e-4
+        )
+        assert value(model.fs.RSX_tank_mixers.costing.bare_erected_cost["5.2"]) == pytest.approx(
+            0.03558, rel=1e-4
+        )
+        assert value(model.fs.RSX_pump.costing.bare_erected_cost["5.3"]) == pytest.approx(
+            0.00623416, rel=1e-4
+        )
+        assert value(model.fs.RSX_mixer_settler.costing.bare_erected_cost["5.4"]) == pytest.approx(
+            0.3876, rel=1e-4
+        )
+        assert value(model.fs.CSX_pe_tanks.costing.bare_erected_cost["6.1"]) == pytest.approx(
+            9.54821e-5, rel=1e-4
+        )
+        assert value(model.fs.CSX_tank_mixers.costing.bare_erected_cost["6.2"]) == pytest.approx(
+            0.0057947, rel=1e-4
+        )
+        assert value(model.fs.CSX_pump.costing.bare_erected_cost["6.3"]) == pytest.approx(
+            0.00357727, rel=1e-4
+        )
+        assert value(model.fs.CSX_mixer_settler.costing.bare_erected_cost["6.4"]) == pytest.approx(
+            0.25796, rel=1e-4
+        )
+        assert value(model.fs.reep_pe_tanks.costing.bare_erected_cost["9.2"]) == pytest.approx(
+            1.453344e-5, rel=1e-4
+        )
+        assert value(model.fs.reep_tank_mixers.costing.bare_erected_cost["9.3"]) == pytest.approx(
+            0.0090271, rel=1e-4
+        )
+        assert value(model.fs.reep_pump.costing.bare_erected_cost["9.4"]) == pytest.approx(
+            0.0014137, rel=1e-4
+        )
+        assert value(model.fs.reep_filter_press.costing.bare_erected_cost["9.5"]) == pytest.approx(
+            0.00356786, rel=1e-4
+        )
+        assert value(model.fs.reep_roaster.costing.bare_erected_cost["9.8"]) == pytest.approx(
+            0.0877, rel=1e-4
+        )
+        assert value(model.fs.R_storage_bins.costing.bare_erected_cost["3.1"]) == pytest.approx(
+            0.04151, rel=1e-4
+        )
+        assert value(model.fs.R_conveyors.costing.bare_erected_cost["3.2"]) == pytest.approx(
+            1.7062e-6, rel=1e-4
+        )
+        assert value(model.fs.R_roaster.costing.bare_erected_cost["3.3"]) == pytest.approx(
+            3.4557, rel=1e-4
+        )
+        assert value(model.fs.R_gas_scrubber.costing.bare_erected_cost["3.4"]) == pytest.approx(
+            7.4055e-5, rel=1e-4
+        )
+        assert value(model.fs.R_spray_chamber_quencher.costing.bare_erected_cost["3.5"]) == pytest.approx(
+            0.21234, rel=1e-4
+        )
+        assert value(model.fs.R_chiller.costing.bare_erected_cost["3.7"]) == pytest.approx(
+            0.51352, rel=1e-4
+        )

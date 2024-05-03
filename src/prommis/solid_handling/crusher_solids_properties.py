@@ -207,5 +207,5 @@ class CoalRefuseStateBlockData(StateBlockData):
             "flow_mass": self.flow_mass,
             "mass_frac_comp": self.mass_frac_comp,
             "particle_size_median": self.particle_size_median,
-            "particle_size_width": self.particle_size_width, 
+            "particle_size_width": self.particle_size_width,
         }

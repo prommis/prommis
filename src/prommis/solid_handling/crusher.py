@@ -97,26 +97,28 @@ see property package for documentation.}""",
 
         self.properties_in = self.config.property_package.build_state_block(
             self.flowsheet().time,
-            defined_state = True,
+            defined_state=True,
             **self.config.property_package_args,
         )
         self.properties_out = self.config.property_package.build_state_block(
             self.flowsheet().time,
-            defined_state = True,
+            defined_state=True,
             **self.config.property_package_args,
         )
-       
+
         tref = self.flowsheet().time.first()
         statevars = self.properties_in[tref].define_state_vars()
-        
+
         for k, v in statevars.items():
             if k not in ["particle_size_median", "particle_size_width"]:
                 idx = v.index_set()
-                c = Constraint(self.flowsheet().time, idx, doc = f"{k} constraint", 
-                               rule = partial(_state_rule, state = k))
-                self.add_component(k+"_constraint", c)
-
-
+                c = Constraint(
+                    self.flowsheet().time,
+                    idx,
+                    doc=f"{k} constraint",
+                    rule=partial(_state_rule, state=k),
+                )
+                self.add_component(k + "_constraint", c)
 
         # Add Ports
         self.add_port("inlet", self.properties_in)
@@ -133,7 +135,7 @@ see property package for documentation.}""",
         This is the equation for accumulative fraction of solid breakage 
         probability distribution smaller than size x=feed80size
         """
-        
+
         sunit = self.properties_in[tref].particle_size_median.get_units()
 
         @self.Expression(self.flowsheet().time, doc="Feed P80 Size")
@@ -141,8 +143,7 @@ see property package for documentation.}""",
             return (
                 self.properties_in[t].particle_size_median
                 / sunit
-                * (-log(1 - 0.8))
-                ** (self.properties_in[t].particle_size_width / 2)
+                * (-log(1 - 0.8)) ** (self.properties_in[t].particle_size_width / 2)
             )
 
         @self.Expression(self.flowsheet().time, doc="product p80 size")
@@ -150,8 +151,7 @@ see property package for documentation.}""",
             return (
                 self.properties_out[t].particle_size_median
                 / sunit
-                * (-log(1 - 0.8))
-                ** (self.properties_out[t].particle_size_width / 2)
+                * (-log(1 - 0.8)) ** (self.properties_out[t].particle_size_width / 2)
             )
 
         @self.Constraint(self.flowsheet().time, doc="Crusher work constraint")

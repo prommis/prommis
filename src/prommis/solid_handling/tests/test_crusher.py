@@ -55,18 +55,10 @@ class TestSolidHandling(object):
             0.1
         )  # set mass frac value. There are 13 component in property package
         m.fs.unit.properties_in[0].flow_mass.fix(2000)  # kg/hr
-        m.fs.unit.properties_in[0].particle_size_median.fix(
-            80
-        )  # micrometer
-        m.fs.unit.properties_in[0].particle_size_width.fix(
-            1.5
-        )  # dimensionless
-        m.fs.unit.properties_out[0].particle_size_median.fix(
-            58
-        )  # micrometer
-        m.fs.unit.properties_out[0].particle_size_width.fix(
-            1.5
-        )  # dimensionless
+        m.fs.unit.properties_in[0].particle_size_median.fix(80)  # micrometer
+        m.fs.unit.properties_in[0].particle_size_width.fix(1.5)  # dimensionless
+        m.fs.unit.properties_out[0].particle_size_median.fix(58)  # micrometer
+        m.fs.unit.properties_out[0].particle_size_width.fix(1.5)  # dimensionless
         return m
 
     @pytest.mark.build

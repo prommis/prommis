@@ -98,10 +98,17 @@ class TestSolidHandling(object):
         assert pytest.approx(82.87693, rel=1e-5) == value(
             model.fs.unit.prod_p80[0]
         )  # Test prod size expressions.
-        assert pytest.approx(80, rel=1e-5) == value(model.fs.unit.properties_in[0].particle_size_median)
-        assert pytest.approx(1.5, rel=1e-5) == value(model.fs.unit.properties_in[0].particle_size_width)
-        assert pytest.approx(58, rel=1e-5) == value(model.fs.unit.properties_out[0].particle_size_median)
-        assert pytest.approx(1.5, rel=1e-5) == value(model.fs.unit.properties_out[0].particle_size_width)
+        assert pytest.approx(80, rel=1e-5) == value(
+            model.fs.unit.properties_in[0].particle_size_median
+        )
+        assert pytest.approx(1.5, rel=1e-5) == value(
+            model.fs.unit.properties_in[0].particle_size_width
+        )
+        assert pytest.approx(58, rel=1e-5) == value(
+            model.fs.unit.properties_out[0].particle_size_median
+        )
+        assert pytest.approx(1.5, rel=1e-5) == value(
+            model.fs.unit.properties_out[0].particle_size_width
+        )
 
         assert pytest.approx(3915.710575, rel=1e-5) == value(model.fs.unit.work[0])
-        

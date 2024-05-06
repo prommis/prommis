@@ -15,7 +15,7 @@ Tests for UKy flowsheet.
 
 """
 
-from pyomo.environ import value, TransformationFactory, assert_optimal_termination
+from pyomo.environ import value
 from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
@@ -26,13 +26,13 @@ from idaes.models.properties.modular_properties.base.generic_property import (
 )
 from idaes.models.unit_models.feed import Feed
 from idaes.models.unit_models.mixer import Mixer
-from idaes.models.unit_models.mscontactor import MSContactor
 from idaes.models.unit_models.product import Product
 from idaes.models.unit_models.separator import Separator
 from idaes.models.unit_models.solid_liquid import SLSeparator
 
 import pytest
 
+from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
@@ -72,7 +72,7 @@ class TestUKyFlowsheet:
         assert isinstance(model.fs.coal, CoalRefuseParameters)
         assert isinstance(model.fs.leach_rxns, CoalRefuseLeachingReactions)
 
-        assert isinstance(model.fs.leach, MSContactor)
+        assert isinstance(model.fs.leach, LeachingTrain)
         assert isinstance(model.fs.sl_sep1, SLSeparator)
         assert isinstance(model.fs.leach_mixer, Mixer)
         assert isinstance(model.fs.leach_liquid_feed, Feed)
@@ -599,10 +599,10 @@ class TestUKyFlowsheet:
         model = add_costing(system_frame)
         display_costing(model)
 
-        assert value(model.fs.costing.total_plant_cost) == pytest.approx(15.579, rel=1e-4)
-        assert value(model.fs.costing.total_BEC) == pytest.approx(5.245, rel=1e-4)
+        assert value(model.fs.costing.total_plant_cost) == pytest.approx(15.576, rel=1e-4)
+        assert value(model.fs.costing.total_BEC) == pytest.approx(5.244, rel=1e-4)
         assert value(model.fs.costing.total_installation_cost) == pytest.approx(
-            10.332, rel=1e-4
+            10.33, rel=1e-4
         )
         assert value(model.fs.costing.other_plant_costs) == pytest.approx(
             0.0016309, rel=1e-4
@@ -620,7 +620,7 @@ class TestUKyFlowsheet:
             0.00018136, rel=1e-4
         )
         assert value(model.fs.L_pe_tanks.costing.bare_erected_cost["4.2"]) == pytest.approx(
-            0.0013054, rel=1e-4
+            0.0003690, rel=1e-4
         )
         assert value(model.fs.L_tank_mixers.costing.bare_erected_cost["4.3"]) == pytest.approx(
             0.08625, rel=1e-4

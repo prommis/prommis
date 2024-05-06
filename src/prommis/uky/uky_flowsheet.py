@@ -183,7 +183,6 @@ from idaes.models.unit_models.mixer import (
     MomentumMixingType,
     MixerInitializer,
 )
-from idaes.models.unit_models.mscontactor import MSContactor, MSContactorInitializer
 from idaes.models.unit_models.product import Product, ProductInitializer
 from idaes.models.unit_models.separator import (
     EnergySplittingType,
@@ -197,6 +196,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     get_prop,
 )
 
+from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
@@ -252,43 +252,19 @@ def build():
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactions()
 
-    m.fs.leach = MSContactor(
-        number_of_finite_elements=2,
-        streams={
-            "liquid": {
-                "property_package": m.fs.leach_soln,
-                "has_energy_balance": False,
-                "has_pressure_balance": False,
-            },
-            "solid": {
-                "property_package": m.fs.coal,
-                "has_energy_balance": False,
-                "has_pressure_balance": False,
-            },
+    m.fs.leach = LeachingTrain(
+        number_of_tanks=2,
+        liquid_phase={
+            "property_package": m.fs.leach_soln,
+            "has_energy_balance": False,
+            "has_pressure_balance": False,
         },
-        heterogeneous_reactions=m.fs.leach_rxns,
-    )
-
-    # Reactor volume
-    m.fs.leach.volume = Var(
-        m.fs.time,
-        m.fs.leach.elements,
-        initialize=1,
-        units=units.litre,
-        doc="Volume of each finite element.",
-    )
-
-    def rule_heterogeneous_reaction_extent(b, t, s, r):
-        return (
-            b.heterogeneous_reaction_extent[t, s, r]
-            == b.heterogeneous_reactions[t, s].reaction_rate[r] * b.volume[t, s]
-        )
-
-    m.fs.leach.heterogeneous_reaction_extent_constraint = Constraint(
-        m.fs.time,
-        m.fs.leach.elements,
-        m.fs.leach_rxns.reaction_idx,
-        rule=rule_heterogeneous_reaction_extent,
+        solid_phase={
+            "property_package": m.fs.coal,
+            "has_energy_balance": False,
+            "has_pressure_balance": False,
+        },
+        reaction_package=m.fs.leach_rxns,
     )
 
     m.fs.sl_sep1 = SLSeparator(
@@ -1002,9 +978,9 @@ def set_scaling(m):
     ]
 
     for component in aqueous_component_set:
-        m.scaling_factor[m.fs.leach.liquid[0, 1].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach.liquid[0, 2].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+        m.scaling_factor[m.fs.leach.mscontactor.liquid[0, 1].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[m.fs.leach.mscontactor.liquid[0, 2].conc_mol_comp[component]] = 1e5
+        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
             1e5
         )
         m.scaling_factor[
@@ -1022,16 +998,16 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.leach_filter_cake_liquid.properties[0].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
             1e5
         )
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
             1e5
         )
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
             1e5
         )
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
             1e5
         )
         m.scaling_factor[
@@ -1255,7 +1231,7 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.solex_cleaner_load.mscontactor.organic[0, 1].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[m.fs.leach.liquid_inlet_state[0].conc_mol_comp[component]] = (
+        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
             1e5
         )
         m.scaling_factor[m.fs.cleaner_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
@@ -1510,11 +1486,11 @@ def set_operating_conditions(m):
     m.fs.roaster.frac_comp_recovery.fix(0.95)
 
     # Touch properties that are used in the UI
-    m.fs.leach.solid_inlet_state[0].flow_mass
-    m.fs.leach.solid_inlet_state[0].mass_frac_comp
+    m.fs.leach.mscontactor.solid_inlet_state[0].flow_mass
+    m.fs.leach.mscontactor.solid_inlet_state[0].mass_frac_comp
 
-    m.fs.leach.liquid_inlet_state[0].flow_vol
-    m.fs.leach.liquid_inlet_state[0].conc_mol_comp
+    m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol
+    m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp
 
     m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].conc_mass_comp
     m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].conc_mass_comp
@@ -1764,9 +1740,8 @@ def initialize_system(m):
         initializer_product = ProductInitializer()
         initializer_sep = SeparatorInitializer()
         initializer_mix = MixerInitializer()
-
-        initializer1 = MSContactorInitializer()
-        initializer2 = BlockTriangularizationInitializer()
+        initializer_leach = LeachingTrainInitializer()
+        initializer_bt = BlockTriangularizationInitializer()
 
         propagate_state(m.fs.liq_feed)
         propagate_state(m.fs.sol_feed)
@@ -1806,7 +1781,7 @@ def initialize_system(m):
         elif stream == m.fs.leach:
             print(f"Initializing {stream}")
             try:
-                initializer1.initialize(m.fs.leach)
+                initializer_leach.initialize(m.fs.leach)
             except:
                 # Fix feed states
                 m.fs.leach.liquid_inlet.flow_vol.fix()
@@ -1823,11 +1798,11 @@ def initialize_system(m):
                 m.fs.leach.solid_inlet.mass_frac_comp.unfix()
         elif stream == m.fs.leach_mixer:
             print(f"Initializing {stream}")
-            initializer2.initialize(m.fs.leach_mixer)
+            initializer_bt.initialize(m.fs.leach_mixer)
         elif stream == m.fs.solex_rougher_load.mscontactor:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.solex_rougher_load)
+                initializer_bt.initialize(m.fs.solex_rougher_load)
             except:
                 # Fix feed states
                 m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
@@ -1861,7 +1836,7 @@ def initialize_system(m):
         elif stream == m.fs.solex_rougher_scrub.mscontactor:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.solex_rougher_scrub)
+                initializer_bt.initialize(m.fs.solex_rougher_scrub)
             except:
                 # Fix feed states
                 m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
@@ -1895,7 +1870,7 @@ def initialize_system(m):
         elif stream == m.fs.solex_rougher_strip.mscontactor:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.solex_rougher_strip)
+                initializer_bt.initialize(m.fs.solex_rougher_strip)
             except:
                 # Fix feed states
                 m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
@@ -1929,7 +1904,7 @@ def initialize_system(m):
         elif stream == m.fs.solex_cleaner_load.mscontactor:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.solex_cleaner_load)
+                initializer_bt.initialize(m.fs.solex_cleaner_load)
             except:
                 # Fix feed states
                 m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
@@ -1963,7 +1938,7 @@ def initialize_system(m):
         elif stream == m.fs.solex_cleaner_strip.mscontactor:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.solex_cleaner_strip)
+                initializer_bt.initialize(m.fs.solex_cleaner_strip)
             except:
                 # Fix feed states
                 m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
@@ -1997,7 +1972,7 @@ def initialize_system(m):
         elif stream == m.fs.precipitator:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.precipitator)
+                initializer_bt.initialize(m.fs.precipitator)
             except:
                 # Fix feed states
                 m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol.fix()
@@ -2013,7 +1988,7 @@ def initialize_system(m):
         elif stream == m.fs.sl_sep2:
             print(f"Initializing {stream}")
             try:
-                initializer2.initialize(m.fs.sl_sep2)
+                initializer_bt.initialize(m.fs.sl_sep2)
             except:
                 # Fix feed states
                 m.fs.sl_sep2.liquid_inlet_state[0].flow_vol.fix()
@@ -2034,7 +2009,7 @@ def initialize_system(m):
             initializer_mix.initialize(m.fs.precip_sx_mixer)
         else:
             print(f"Initializing {stream}")
-            initializer2.initialize(stream)
+            initializer_bt.initialize(stream)
 
     seq.run(m, function)
 
@@ -2061,6 +2036,8 @@ def display_results(m):
     Print key flowsheet outputs.
     """
     m.fs.roaster.display()
+    m.fs.leach.display()
+    m.fs.leach.mscontactor.display()
 
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),
@@ -2629,10 +2606,11 @@ def add_costing(flowsheet):
 
     # Leaching costs
     # 4.2 is UKy Leaching - Polyethylene Tanks
+    tank_volume = value(units.convert(flowsheet.fs.leach.volume[0, 1], to_units=units.gal))
     L_pe_tanks_accounts = ["4.2"]
     m.fs.L_pe_tanks = UnitModelBlock()
     m.fs.L_pe_tanks.capacity = Var(
-        initialize=value(flowsheet.fs.leach.volume[0, 2]), units=units.gal
+        initialize=tank_volume, units=units.gal
     )
     m.fs.L_pe_tanks.capacity.fix()
     m.fs.L_pe_tanks.costing = UnitModelCostingBlock(

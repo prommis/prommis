@@ -978,11 +978,15 @@ def set_scaling(m):
     ]
 
     for component in aqueous_component_set:
-        m.scaling_factor[m.fs.leach.mscontactor.liquid[0, 1].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach.mscontactor.liquid[0, 2].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
+        m.scaling_factor[
+            m.fs.leach.mscontactor.liquid[0, 1].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach.mscontactor.liquid[0, 2].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
         m.scaling_factor[
             m.fs.leach_liquid_feed.properties[0].conc_mol_comp[component]
         ] = 1e5
@@ -998,18 +1002,18 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.leach_filter_cake_liquid.properties[0].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
+        m.scaling_factor[
+            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
+        m.scaling_factor[
+            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
         m.scaling_factor[
             m.fs.leach_mixer.load_recycle_state[0].conc_mol_comp[component]
         ] = 1e5
@@ -1231,9 +1235,9 @@ def set_scaling(m):
         m.scaling_factor[
             m.fs.solex_cleaner_load.mscontactor.organic[0, 1].conc_mol_comp[component]
         ] = 1e5
-        m.scaling_factor[m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
+        m.scaling_factor[
+            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
+        ] = 1e5
         m.scaling_factor[m.fs.cleaner_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
         m.scaling_factor[m.fs.cleaner_sep.recycle_state[0].conc_mol_comp[component]] = (
             1e5
@@ -2606,12 +2610,12 @@ def add_costing(flowsheet):
 
     # Leaching costs
     # 4.2 is UKy Leaching - Polyethylene Tanks
-    tank_volume = value(units.convert(flowsheet.fs.leach.volume[0, 1], to_units=units.gal))
+    tank_volume = value(
+        units.convert(flowsheet.fs.leach.volume[0, 1], to_units=units.gal)
+    )
     L_pe_tanks_accounts = ["4.2"]
     m.fs.L_pe_tanks = UnitModelBlock()
-    m.fs.L_pe_tanks.capacity = Var(
-        initialize=tank_volume, units=units.gal
-    )
+    m.fs.L_pe_tanks.capacity = Var(initialize=tank_volume, units=units.gal)
     m.fs.L_pe_tanks.capacity.fix()
     m.fs.L_pe_tanks.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,

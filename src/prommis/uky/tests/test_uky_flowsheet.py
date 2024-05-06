@@ -599,7 +599,9 @@ class TestUKyFlowsheet:
         model = add_costing(system_frame)
         display_costing(model)
 
-        assert value(model.fs.costing.total_plant_cost) == pytest.approx(15.576, rel=1e-4)
+        assert value(model.fs.costing.total_plant_cost) == pytest.approx(
+            15.576, rel=1e-4
+        )
         assert value(model.fs.costing.total_BEC) == pytest.approx(5.244, rel=1e-4)
         assert value(model.fs.costing.total_installation_cost) == pytest.approx(
             10.33, rel=1e-4
@@ -619,78 +621,78 @@ class TestUKyFlowsheet:
         assert value(model.fs.costing.total_sales_revenue) == pytest.approx(
             0.00018136, rel=1e-4
         )
-        assert value(model.fs.L_pe_tanks.costing.bare_erected_cost["4.2"]) == pytest.approx(
-            0.0003690, rel=1e-4
-        )
-        assert value(model.fs.L_tank_mixers.costing.bare_erected_cost["4.3"]) == pytest.approx(
-            0.08625, rel=1e-4
-        )
+        assert value(
+            model.fs.L_pe_tanks.costing.bare_erected_cost["4.2"]
+        ) == pytest.approx(0.0003690, rel=1e-4)
+        assert value(
+            model.fs.L_tank_mixers.costing.bare_erected_cost["4.3"]
+        ) == pytest.approx(0.08625, rel=1e-4)
         assert value(model.fs.L_pump.costing.bare_erected_cost["4.4"]) == pytest.approx(
             0.01446, rel=1e-4
         )
-        assert value(model.fs.L_thickener.costing.bare_erected_cost["4.5"]) == pytest.approx(
-            0.0243540, rel=1e-4
-        )
-        assert value(model.fs.L_filter_press.costing.bare_erected_cost["4.6"]) == pytest.approx(
-            0.08919, rel=1e-4
-        )
-        assert value(model.fs.L_solution_heater.costing.bare_erected_cost["4.8"]) == pytest.approx(
-            0.00750107, rel=1e-4
-        )
-        assert value(model.fs.RSX_pe_tanks.costing.bare_erected_cost["5.1"]) == pytest.approx(
-            0.000273433, rel=1e-4
-        )
-        assert value(model.fs.RSX_tank_mixers.costing.bare_erected_cost["5.2"]) == pytest.approx(
-            0.03558, rel=1e-4
-        )
-        assert value(model.fs.RSX_pump.costing.bare_erected_cost["5.3"]) == pytest.approx(
-            0.00623416, rel=1e-4
-        )
-        assert value(model.fs.RSX_mixer_settler.costing.bare_erected_cost["5.4"]) == pytest.approx(
-            0.3876, rel=1e-4
-        )
-        assert value(model.fs.CSX_pe_tanks.costing.bare_erected_cost["6.1"]) == pytest.approx(
-            9.54821e-5, rel=1e-4
-        )
-        assert value(model.fs.CSX_tank_mixers.costing.bare_erected_cost["6.2"]) == pytest.approx(
-            0.0057947, rel=1e-4
-        )
-        assert value(model.fs.CSX_pump.costing.bare_erected_cost["6.3"]) == pytest.approx(
-            0.00357727, rel=1e-4
-        )
-        assert value(model.fs.CSX_mixer_settler.costing.bare_erected_cost["6.4"]) == pytest.approx(
-            0.25796, rel=1e-4
-        )
-        assert value(model.fs.reep_pe_tanks.costing.bare_erected_cost["9.2"]) == pytest.approx(
-            1.453344e-5, rel=1e-4
-        )
-        assert value(model.fs.reep_tank_mixers.costing.bare_erected_cost["9.3"]) == pytest.approx(
-            0.0090271, rel=1e-4
-        )
-        assert value(model.fs.reep_pump.costing.bare_erected_cost["9.4"]) == pytest.approx(
-            0.0014137, rel=1e-4
-        )
-        assert value(model.fs.reep_filter_press.costing.bare_erected_cost["9.5"]) == pytest.approx(
-            0.00356786, rel=1e-4
-        )
-        assert value(model.fs.reep_roaster.costing.bare_erected_cost["9.8"]) == pytest.approx(
-            0.0877, rel=1e-4
-        )
-        assert value(model.fs.R_storage_bins.costing.bare_erected_cost["3.1"]) == pytest.approx(
-            0.04151, rel=1e-4
-        )
-        assert value(model.fs.R_conveyors.costing.bare_erected_cost["3.2"]) == pytest.approx(
-            1.7062e-6, rel=1e-4
-        )
-        assert value(model.fs.R_roaster.costing.bare_erected_cost["3.3"]) == pytest.approx(
-            3.4557, rel=1e-4
-        )
-        assert value(model.fs.R_gas_scrubber.costing.bare_erected_cost["3.4"]) == pytest.approx(
-            7.4055e-5, rel=1e-4
-        )
-        assert value(model.fs.R_spray_chamber_quencher.costing.bare_erected_cost["3.5"]) == pytest.approx(
-            0.21234, rel=1e-4
-        )
-        assert value(model.fs.R_chiller.costing.bare_erected_cost["3.7"]) == pytest.approx(
-            0.51352, rel=1e-4
-        )
+        assert value(
+            model.fs.L_thickener.costing.bare_erected_cost["4.5"]
+        ) == pytest.approx(0.0243540, rel=1e-4)
+        assert value(
+            model.fs.L_filter_press.costing.bare_erected_cost["4.6"]
+        ) == pytest.approx(0.08919, rel=1e-4)
+        assert value(
+            model.fs.L_solution_heater.costing.bare_erected_cost["4.8"]
+        ) == pytest.approx(0.00750107, rel=1e-4)
+        assert value(
+            model.fs.RSX_pe_tanks.costing.bare_erected_cost["5.1"]
+        ) == pytest.approx(0.000273433, rel=1e-4)
+        assert value(
+            model.fs.RSX_tank_mixers.costing.bare_erected_cost["5.2"]
+        ) == pytest.approx(0.03558, rel=1e-4)
+        assert value(
+            model.fs.RSX_pump.costing.bare_erected_cost["5.3"]
+        ) == pytest.approx(0.00623416, rel=1e-4)
+        assert value(
+            model.fs.RSX_mixer_settler.costing.bare_erected_cost["5.4"]
+        ) == pytest.approx(0.3876, rel=1e-4)
+        assert value(
+            model.fs.CSX_pe_tanks.costing.bare_erected_cost["6.1"]
+        ) == pytest.approx(9.54821e-5, rel=1e-4)
+        assert value(
+            model.fs.CSX_tank_mixers.costing.bare_erected_cost["6.2"]
+        ) == pytest.approx(0.0057947, rel=1e-4)
+        assert value(
+            model.fs.CSX_pump.costing.bare_erected_cost["6.3"]
+        ) == pytest.approx(0.00357727, rel=1e-4)
+        assert value(
+            model.fs.CSX_mixer_settler.costing.bare_erected_cost["6.4"]
+        ) == pytest.approx(0.25796, rel=1e-4)
+        assert value(
+            model.fs.reep_pe_tanks.costing.bare_erected_cost["9.2"]
+        ) == pytest.approx(1.453344e-5, rel=1e-4)
+        assert value(
+            model.fs.reep_tank_mixers.costing.bare_erected_cost["9.3"]
+        ) == pytest.approx(0.0090271, rel=1e-4)
+        assert value(
+            model.fs.reep_pump.costing.bare_erected_cost["9.4"]
+        ) == pytest.approx(0.0014137, rel=1e-4)
+        assert value(
+            model.fs.reep_filter_press.costing.bare_erected_cost["9.5"]
+        ) == pytest.approx(0.00356786, rel=1e-4)
+        assert value(
+            model.fs.reep_roaster.costing.bare_erected_cost["9.8"]
+        ) == pytest.approx(0.0877, rel=1e-4)
+        assert value(
+            model.fs.R_storage_bins.costing.bare_erected_cost["3.1"]
+        ) == pytest.approx(0.04151, rel=1e-4)
+        assert value(
+            model.fs.R_conveyors.costing.bare_erected_cost["3.2"]
+        ) == pytest.approx(1.7062e-6, rel=1e-4)
+        assert value(
+            model.fs.R_roaster.costing.bare_erected_cost["3.3"]
+        ) == pytest.approx(3.4557, rel=1e-4)
+        assert value(
+            model.fs.R_gas_scrubber.costing.bare_erected_cost["3.4"]
+        ) == pytest.approx(7.4055e-5, rel=1e-4)
+        assert value(
+            model.fs.R_spray_chamber_quencher.costing.bare_erected_cost["3.5"]
+        ) == pytest.approx(0.21234, rel=1e-4)
+        assert value(
+            model.fs.R_chiller.costing.bare_erected_cost["3.7"]
+        ) == pytest.approx(0.51352, rel=1e-4)

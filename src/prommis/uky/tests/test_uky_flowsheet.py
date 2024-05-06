@@ -15,7 +15,6 @@ Tests for UKy flowsheet.
 
 """
 
-from pyomo.environ import value
 from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
@@ -42,11 +41,7 @@ from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
-from prommis.uky.uky_flowsheet import (
-    main,
-    add_costing,
-    display_costing,
-)
+from prommis.uky.uky_flowsheet import main
 
 
 class TestUKyFlowsheet:

@@ -2020,10 +2020,10 @@ def initialize_system(m):
 
 def solve(m, solver=None):
     """
-    Solve the system with IPOPT.
+    Solve the scaled system.
     """
     if solver is None:
-        solver = SolverFactory("ipopt")
+        solver = get_solver()
     results = solver.solve(m, tee=True)
 
     m.fs.rougher_org_make_up.outlet.flow_vol.unfix()

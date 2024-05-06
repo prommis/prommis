@@ -70,7 +70,7 @@ function of the parameter of partition coefficient defined by the user.
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Param, Any
+from pyomo.environ import Constraint, Param
 from pyomo.network import Port
 
 from idaes.core import (
@@ -185,15 +185,11 @@ class SolventExtractionData(UnitModelBlockData):
             number_of_finite_elements=self.config.number_of_finite_elements,
         )
 
-        def param_init(b, s, k, l, m):
-            b.partition_coefficient[s, (k, l, m)] = 1
-
         self.partition_coefficient = Param(
             self.mscontactor.elements,
             self.mscontactor.stream_component_interactions,
-            initialize=param_init,
+            initialize=1,
             mutable=True,
-            domain=Any,
             doc="The fraction of component that goes from aqueous to organic phase",
         )
 

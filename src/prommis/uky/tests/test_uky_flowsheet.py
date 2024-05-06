@@ -593,4 +593,3 @@ class TestUKyFlowsheet:
         assert model.fs.precip_purge.inlet.flow_vol[0].value == pytest.approx(
             0.63, 1e-4
         )
-

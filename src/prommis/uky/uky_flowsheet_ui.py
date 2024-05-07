@@ -288,7 +288,13 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         )
 
     # Export the outputs for the solex rougher and cleaner
-    for stype in {"rougher_load", "rougher_scrub", "rougher_strip", "cleaner_load", "cleaner_strip"}:
+    for stype in {
+        "rougher_load",
+        "rougher_scrub",
+        "rougher_strip",
+        "cleaner_load",
+        "cleaner_strip",
+    }:
         category = f"solex {stype}"
         block = getattr(flowsheet, f"solex_{stype}")
         for ltype in {"organic", "aqueous"}:

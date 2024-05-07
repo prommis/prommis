@@ -13,7 +13,7 @@
 """
 Initial property package for West Kentucky No. 13 coal refuse.
 
-Authors: Andrew Lee
+Authors: Andrew Lee, Lingyan Deng
 """
 
 from pyomo.environ import Constraint, Param, Var, units

@@ -12,6 +12,7 @@
 #################################################################################
 """
 This module including power consumption for solid crushing; breakage probability and distribution.
+
 """
 
 __author__ = "Lingyan Deng"
@@ -172,8 +173,6 @@ see property package for documentation.}""",
         var_dict = {
             "Work Required (W)": self.work[time_point].value,
         }
-        if hasattr(self, "additional_variable"):
-            var_dict["Additional Variable"] = self.additional_variable[time_point].value
         return {"vars": var_dict}
 
 

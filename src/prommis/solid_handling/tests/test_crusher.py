@@ -1,5 +1,5 @@
 import pytest
-from pyomo.environ import ConcreteModel, assert_optimal_termination, value
+from pyomo.environ import ConcreteModel, Constraint, Expression, Var, assert_optimal_termination, value
 
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
@@ -66,7 +66,13 @@ class TestSolidHandling(object):
     def test_build(self, model):
         # Assertions related to the build status of the model
         # More assertions as needed for your model
+        unit = model.fs.unit
+        assert isinstance(unit.work, Var), "Variable 'work' is not properly initialized as a Pyomo Var."
+        assert isinstance(unit.feed_p80, Expression), "Expression 'feed_p80' is not properly initialized as a Pyomo Expression."
+        assert isinstance(unit.prod_p80, Expression), "Expression 'prod_p80' is not properly initialized as a Pyomo Expression."
+        assert isinstance(unit.crush_work_eq, Constraint), "Constraint 'crush_work_eq' is not properly initialized as a Pyomo Constraint."
 
+ 
         assert number_variables(model.fs.unit) == 59
         assert number_total_constraints(model.fs.unit) == 41
         assert number_unused_variables(model.fs.unit) == 0
@@ -84,13 +90,20 @@ class TestSolidHandling(object):
         initializer.initialize(model.fs.unit)
         assert initializer.summary[model.fs.unit]["status"] == InitializationStatus.Ok
 
+    @pytest.mark.component
+    @pytest.mark.solver
     def test_solve(self, model):
         results = solver.solve(model)
         assert_optimal_termination(results)
 
+    @pytest.mark.component
+    @pytest.mark.solver
     def test_solution(self, model):
         assert pytest.approx(2000.0, rel=1e-5) == value(
             model.fs.unit.properties_in[0].flow_mass
+        )
+        assert pytest.approx(2000.0, rel=1e-5) == value(
+            model.fs.unit.properties_out[0].flow_mass
         )
         assert pytest.approx(114.31301, rel=1e-5) == value(
             model.fs.unit.feed_p80[0]

@@ -16,6 +16,7 @@ Tests for UKy flowsheet.
 """
 
 from pyomo.network import Arc
+from pyomo.environ import value, units
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
@@ -156,7 +157,8 @@ class TestUKyFlowsheet:
 
         assert degrees_of_freedom(model) == 0
 
-    @pytest.mark.unit
+    @pytest.mark.component
+    @pytest.mark.solver
     def test_solution(self, system_frame):
         model = system_frame
         assert model.fs.leach.solid_outlet.flow_mass[0].value == pytest.approx(
@@ -588,3 +590,132 @@ class TestUKyFlowsheet:
         assert model.fs.precip_purge.inlet.flow_vol[0].value == pytest.approx(
             0.63, 1e-4
         )
+
+    @pytest.mark.component
+    @pytest.mark.solver
+    def test_conservation(self, system_frame):
+        m = system_frame
+
+        metal_mass_frac = {
+            "Y2O3": 88.906 * 2 / (88.906 * 2 + 16 * 3),
+            "La2O3": 138.91 * 2 / (138.91 * 2 + 16 * 3),
+            "Ce2O3": 140.12 * 2 / (140.12 * 2 + 16 * 3),
+            "Pr2O3": 140.91 * 2 / (140.91 * 2 + 16 * 3),
+            "Nd2O3": 144.24 * 2 / (144.24 * 2 + 16 * 3),
+            "Sm2O3": 150.36 * 2 / (150.36 * 2 + 16 * 3),
+            "Gd2O3": 157.25 * 2 / (157.25 * 2 + 16 * 3),
+            "Dy2O3": 162.5 * 2 / (162.5 * 2 + 16 * 3),
+        }
+
+        REE_mass_frac = {
+            "Y2O3": 88.906 * 2 / (88.906 * 2 + 16 * 3),
+            "La2O3": 138.91 * 2 / (138.91 * 2 + 16 * 3),
+            "Ce2O3": 140.12 * 2 / (140.12 * 2 + 16 * 3),
+            "Pr2O3": 140.91 * 2 / (140.91 * 2 + 16 * 3),
+            "Nd2O3": 144.24 * 2 / (144.24 * 2 + 16 * 3),
+            "Sm2O3": 150.36 * 2 / (150.36 * 2 + 16 * 3),
+            "Gd2O3": 157.25 * 2 / (157.25 * 2 + 16 * 3),
+            "Dy2O3": 162.5 * 2 / (162.5 * 2 + 16 * 3),
+        }
+
+        molar_mass = {
+            "Y2O3": (88.906 * 2 + 16 * 3) * units.g / units.mol,
+            "La2O3": (138.91 * 2 + 16 * 3) * units.g / units.mol,
+            "Ce2O3": (140.12 * 2 + 16 * 3) * units.g / units.mol,
+            "Pr2O3": (140.91 * 2 + 16 * 3) * units.g / units.mol,
+            "Nd2O3": (144.24 * 2 + 16 * 3) * units.g / units.mol,
+            "Sm2O3": (150.36 * 2 + 16 * 3) * units.g / units.mol,
+            "Gd2O3": (157.25 * 2 + 16 * 3) * units.g / units.mol,
+            "Dy2O3": (162.5 * 2 + 16 * 3) * units.g / units.mol,
+        }
+
+        component_list = [
+            ("Y2O3", "Y"),
+            ("La2O3", "La"),
+            ("Ce2O3", "Ce"),
+            ("Pr2O3", "Pr"),
+            ("Nd2O3", "Nd"),
+            ("Sm2O3", "Sm"),
+            ("Gd2O3", "Gd"),
+            ("Dy2O3", "Dy"),
+        ]
+
+        for REO, REE in component_list:
+            feed = value(
+                units.convert(
+                    m.fs.leach_solid_feed.flow_mass[0]
+                    * m.fs.leach_solid_feed.mass_frac_comp[0, REO]
+                    * metal_mass_frac[REO],
+                    to_units=units.kg / units.hr,
+                )
+            )
+
+            filter_cake = value(
+                units.convert(
+                    m.fs.sl_sep1.solid_outlet.flow_mass[0]
+                    * m.fs.sl_sep1.solid_outlet.mass_frac_comp[0, REO]
+                    * metal_mass_frac[REO],
+                    to_units=units.kg / units.hr,
+                )
+            )
+
+            filter_cake_liquid = value(
+                units.convert(
+                    m.fs.sl_sep1.retained_liquid_outlet.conc_mass_comp[0, REE]
+                    * m.fs.sl_sep1.retained_liquid_outlet.flow_vol[0],
+                    to_units=units.kg / units.hr,
+                )
+            )
+
+            load_purge = value(
+                units.convert(
+                    m.fs.load_sep.purge.conc_mass_comp[0, REE]
+                    * m.fs.load_sep.purge.flow_vol[0],
+                    to_units=units.kg / units.hr,
+                )
+            )
+
+            scrub_purge = value(
+                units.convert(
+                    m.fs.scrub_sep.purge.conc_mass_comp[0, REE]
+                    * m.fs.scrub_sep.purge.flow_vol[0],
+                    to_units=units.kg / units.hr,
+                )
+            )
+
+            precip_purge = value(
+                units.convert(
+                    m.fs.precip_sep.purge.conc_mass_comp[0, REE]
+                    * m.fs.precip_sep.purge.flow_vol[0],
+                    to_units=units.kg / units.hr,
+                )
+            )
+
+            roaster_retained_liquid = value(
+                units.convert(
+                    m.fs.sl_sep2.retained_liquid_outlet.conc_mass_comp[0, REE]
+                    * m.fs.sl_sep2.retained_liquid_outlet.flow_vol[0],
+                    to_units=units.kg / units.hr,
+                )
+            )
+
+            roaster_product = value(
+                units.convert(
+                    m.fs.roaster.flow_mol_comp_product[0, REE]
+                    * molar_mass[REO]
+                    * REE_mass_frac[REO],
+                    to_units=units.kg / units.hr,
+                )
+            )
+
+            assert feed == pytest.approx(
+                filter_cake
+                + filter_cake_liquid
+                + load_purge
+                + scrub_purge
+                + precip_purge
+                + roaster_retained_liquid
+                + roaster_product,
+                rel=1e-4,
+                abs=1e-4,
+            )

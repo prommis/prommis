@@ -410,4 +410,4 @@ def solve_flowsheet(flowsheet=None):
     #
     # return results
 
-    solve(flowsheet)
+    return solve(flowsheet)

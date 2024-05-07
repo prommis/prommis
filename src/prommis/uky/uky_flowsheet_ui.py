@@ -29,6 +29,7 @@ from watertap.ui.fsapi import FlowsheetCategory
 # package
 from prommis.uky.uky_flowsheet import (
     build,
+    set_partition_coefficients,
     set_operating_conditions,
     set_scaling,
     solve,
@@ -287,7 +288,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         )
 
     # Export the outputs for the solex rougher and cleaner
-    for stype in {"rougher", "cleaner"}:
+    for stype in {"rougher_load", "rougher_scrub", "rougher_strip", "cleaner_load", "cleaner_strip"}:
         category = f"solex {stype}"
         block = getattr(flowsheet, f"solex_{stype}")
         for ltype in {"organic", "aqueous"}:
@@ -379,6 +380,7 @@ def build_flowsheet(build_options=None, **kwargs):
     """
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
+    set_partition_coefficients(m)
     set_operating_conditions(m)
     scaled_model = set_scaling(m)
     # assert_units_consistent(scaled_model)
@@ -395,4 +397,17 @@ def get_diagram(build_options):
 
 def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
-    return solve(flowsheet)
+    # m = build()
+    # set_partition_coefficients(m)
+    #
+    # set_operating_conditions(m)
+    #
+    # scaled_model = set_scaling(m)
+    #
+    # initialize_system(scaled_model)
+    #
+    # results = solve(scaled_model)
+    #
+    # return results
+
+    solve(flowsheet)

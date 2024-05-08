@@ -23,7 +23,7 @@ Degrees of Freedom
 
 A Crusher module has one degree of freedom, which is the "work" output. 
 
-Model Strucutre
+Model Structure
 ---------------
 
 The Crusher model mainly use port for properties goes in and out. The properties of the Crusher Unit model is mainly the particle size distribution. 
@@ -35,7 +35,7 @@ Crusher add one additional constraint to calculate the work required to crush th
 
 .. math:: work_{t} = 10 \times flow_mass_in_{t} \times bond_work_index \times \left(\frac{1}{\sqrt{prod\_p80}}_{t} - \frac{1}{\sqrt{feed\_p80}}_{t}\right) 
 
-where :math: `work_{t}` is the work required to crush the particles at `t` time, 10 is an emperical value and should not be chagned, :math: `flow_mass_in_{t}` is the inlet mass flow rate
+where :math: `work_{t}` is the work required to crush the particles at `t` time, 10 is an empirical value and should not be changed, :math: `flow_mass_in_{t}` is the inlet mass flow rate
 at `t` time, :math: `bond_work_index` is the bond work index of particles, :math: `prod\_p80_{t}` is production particle size with 80% passing the mesh at `t` time, :math: `feed\_p80_{t}` is 
 feed particle size with 80% passing the mesh at `t` time.
 

@@ -15,7 +15,8 @@ Crusher
 =======
 
 Author: Lingyan Deng
-This module including power consumption for solid crushing; breakage probability and distribution.
+
+The Crusher module including power consumption for solid crushing. It is a function of particle size distribution, mass flow rate, and bond work index.
 
 Degrees of Freedom
 ------------------

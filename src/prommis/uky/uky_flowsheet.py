@@ -225,6 +225,14 @@ def main():
 
     initialize_system(scaled_model)
 
+    solve(scaled_model)
+
+    m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
+    m.fs.rougher_mixer.outlet.flow_vol.fix(62.01)
+
+    m.fs.cleaner_org_make_up.outlet.flow_vol.unfix()
+    m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
+
     scaled_results = solve(scaled_model)
 
     assert_optimal_termination(scaled_results)
@@ -2026,12 +2034,6 @@ def solve(m, solver=None):
         solver = get_solver()
     results = solver.solve(m, tee=True)
 
-    m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
-    m.fs.rougher_mixer.outlet.flow_vol.fix(62.01)
-
-    m.fs.cleaner_org_make_up.outlet.flow_vol.unfix()
-    m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
-
     return results
 
 
@@ -2040,8 +2042,6 @@ def display_results(m):
     Print key flowsheet outputs.
     """
     m.fs.roaster.display()
-    m.fs.leach.display()
-    m.fs.leach.mscontactor.display()
 
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),

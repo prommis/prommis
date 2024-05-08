@@ -225,15 +225,9 @@ def main():
 
     initialize_system(scaled_model)
 
-    solve(scaled_model)
-
-    m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
-    m.fs.rougher_mixer.outlet.flow_vol.fix(62.01)
-
-    m.fs.cleaner_org_make_up.outlet.flow_vol.unfix()
-    m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
-
     scaled_results = solve(scaled_model)
+
+    fix_recycle_flow(scaled_model)
 
     assert_optimal_termination(scaled_results)
 
@@ -2035,6 +2029,18 @@ def solve(m, solver=None):
     results = solver.solve(m, tee=True)
 
     return results
+
+
+def fix_recycle_flow(m):
+    """
+    Fixes the flow rates of the organic feed recycle loops.
+    """
+
+    m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
+    m.fs.rougher_mixer.outlet.flow_vol.fix(62.01)
+
+    m.fs.cleaner_org_make_up.outlet.flow_vol.unfix()
+    m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
 
 
 def display_results(m):

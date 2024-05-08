@@ -10,13 +10,46 @@
 # All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
 # for full copyright and license information.
 #################################################################################
-"""
+r"""
+Crusher 
+=======
+
+Author: Lingyan Deng
 This module including power consumption for solid crushing; breakage probability and distribution.
 
-"""
+Degrees of Freedom
+------------------
 
-__author__ = "Lingyan Deng"
-__version__ = "1.0.0"
+A Crusher module has one degree of freedom, which is the "work" output. 
+
+Model Strucutre
+---------------
+
+The Crusher model mainly use port for properties goes in and out. The properties of the Crusher Unit model is mainly the particle size distribution. 
+
+Additional Constraints
+----------------------
+
+Crusher add one additional constraint to calculate the work required to crush the particles.
+
+.. math:: work_{t} = 10 \times flow_mass_in_{t} \times bond_work_index \times \left(\frac{1}{\sqrt{prod\_p80}}_{t} - \frac{1}{\sqrt{feed\_p80}}_{t}\right) 
+
+where :math: `work_{t}` is the work required to crush the particles at `t` time, 10 is an emperical value and should not be chagned, :math: `flow_mass_in_{t}` is the inlet mass flow rate
+at `t` time, :math: `bond_work_index` is the bond work index of particles, :math: `prod\_p80_{t}` is production particle size with 80% passing the mesh at `t` time, :math: `feed\_p80_{t}` is 
+feed particle size with 80% passing the mesh at `t` time.
+
+Variables
+---------
+
+Crusher add the following additional variables beyond those created in property packages.
+
+================ ====== ================================================================================================
+Variable         Name   Notes
+================ ====== ================================================================================================
+:math:`work_{t}`  work
+================ ====== ================================================================================================
+
+"""
 
 from functools import partial
 from pyomo.environ import Var, log, Constraint, units as pyunits

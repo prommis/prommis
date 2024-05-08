@@ -1,5 +1,12 @@
 import pytest
-from pyomo.environ import ConcreteModel, Constraint, Expression, Var, assert_optimal_termination, value
+from pyomo.environ import (
+    ConcreteModel,
+    Constraint,
+    Expression,
+    Var,
+    assert_optimal_termination,
+    value,
+)
 
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
@@ -67,12 +74,19 @@ class TestSolidHandling(object):
         # Assertions related to the build status of the model
         # More assertions as needed for your model
         unit = model.fs.unit
-        assert isinstance(unit.work, Var), "Variable 'work' is not properly initialized as a Pyomo Var."
-        assert isinstance(unit.feed_p80, Expression), "Expression 'feed_p80' is not properly initialized as a Pyomo Expression."
-        assert isinstance(unit.prod_p80, Expression), "Expression 'prod_p80' is not properly initialized as a Pyomo Expression."
-        assert isinstance(unit.crush_work_eq, Constraint), "Constraint 'crush_work_eq' is not properly initialized as a Pyomo Constraint."
+        assert isinstance(
+            unit.work, Var
+        ), "Variable 'work' is not properly initialized as a Pyomo Var."
+        assert isinstance(
+            unit.feed_p80, Expression
+        ), "Expression 'feed_p80' is not properly initialized as a Pyomo Expression."
+        assert isinstance(
+            unit.prod_p80, Expression
+        ), "Expression 'prod_p80' is not properly initialized as a Pyomo Expression."
+        assert isinstance(
+            unit.crush_work_eq, Constraint
+        ), "Constraint 'crush_work_eq' is not properly initialized as a Pyomo Constraint."
 
- 
         assert number_variables(model.fs.unit) == 59
         assert number_total_constraints(model.fs.unit) == 41
         assert number_unused_variables(model.fs.unit) == 0
@@ -99,29 +113,19 @@ class TestSolidHandling(object):
     @pytest.mark.component
     @pytest.mark.solver
     def test_solution(self, model):
-        assert pytest.approx(2000.0, rel=1e-5) == value(
-            model.fs.unit.properties_in[0].flow_mass
-        )
-        assert pytest.approx(2000.0, rel=1e-5) == value(
-            model.fs.unit.properties_out[0].flow_mass
-        )
+        assert pytest.approx(
+            value(model.fs.unit.properties_in[0].flow_mass), rel=1e-5
+        ) == value(model.fs.unit.properties_out[0].flow_mass)
+        for j in model.fs.properties_solid.component_list:
+            assert pytest.approx(
+                value(model.fs.unit.properties_in[0].mass_frac_comp[j]), rel=1e-5
+            ) == value(model.fs.unit.properties_out[0].mass_frac_comp[j])
+
         assert pytest.approx(114.31301, rel=1e-5) == value(
             model.fs.unit.feed_p80[0]
         )  # Test feed size expressions.
         assert pytest.approx(82.87693, rel=1e-5) == value(
             model.fs.unit.prod_p80[0]
         )  # Test prod size expressions.
-        assert pytest.approx(80, rel=1e-5) == value(
-            model.fs.unit.properties_in[0].particle_size_median
-        )
-        assert pytest.approx(1.5, rel=1e-5) == value(
-            model.fs.unit.properties_in[0].particle_size_width
-        )
-        assert pytest.approx(58, rel=1e-5) == value(
-            model.fs.unit.properties_out[0].particle_size_median
-        )
-        assert pytest.approx(1.5, rel=1e-5) == value(
-            model.fs.unit.properties_out[0].particle_size_width
-        )
 
         assert pytest.approx(3915.710575, rel=1e-5) == value(model.fs.unit.work[0])

@@ -2026,11 +2026,11 @@ def solve(m, solver=None):
         solver = get_solver()
     results = solver.solve(m, tee=True)
 
-    # m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
-    # m.fs.rougher_mixer.outlet.flow_vol.fix(62.01)
-    #
-    # m.fs.cleaner_org_make_up.outlet.flow_vol.unfix()
-    # m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
+    m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
+    m.fs.rougher_mixer.outlet.flow_vol.fix(62.01)
+
+    m.fs.cleaner_org_make_up.outlet.flow_vol.unfix()
+    m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
 
     return results
 

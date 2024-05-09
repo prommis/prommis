@@ -2040,8 +2040,6 @@ def display_results(m):
     Print key flowsheet outputs.
     """
     m.fs.roaster.display()
-    m.fs.leach.display()
-    m.fs.leach.mscontactor.display()
 
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),

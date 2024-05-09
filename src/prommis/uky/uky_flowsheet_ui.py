@@ -403,6 +403,7 @@ def get_diagram(build_options):
 
 def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
+
     m = build()
     set_partition_coefficients(m)
 
@@ -417,3 +418,4 @@ def solve_flowsheet(flowsheet=None):
     return results
 
     # return solve(flowsheet)
+

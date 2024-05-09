@@ -207,7 +207,6 @@ from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 
 def main():
@@ -221,19 +220,12 @@ def main():
 
     scaled_model = set_scaling(m)
 
-    dt = DiagnosticsToolbox(scaled_model)
-    print("-------Structural Issues----------")
-    dt.report_structural_issues()
-
     assert_units_consistent(scaled_model)
     assert degrees_of_freedom(scaled_model) == 0
 
     initialize_system(scaled_model)
 
     scaled_results = solve(scaled_model)
-
-    print("-------Numerical Issues----------")
-    dt.report_numerical_issues()
 
     assert_optimal_termination(scaled_results)
 

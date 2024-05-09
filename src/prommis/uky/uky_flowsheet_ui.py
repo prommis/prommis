@@ -403,5 +403,7 @@ def get_diagram(build_options):
 
 def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
+    # TODO: Address this workaround so that fixing flowsheet isn't necessary
 
+    flowsheet = build_flowsheet()
     return solve(flowsheet)

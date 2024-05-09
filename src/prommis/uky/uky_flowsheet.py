@@ -227,8 +227,6 @@ def main():
 
     scaled_results = solve(scaled_model)
 
-    fix_recycle_flow(scaled_model)
-
     assert_optimal_termination(scaled_results)
 
     scaling = TransformationFactory("core.scale_model")
@@ -2028,19 +2026,13 @@ def solve(m, solver=None):
         solver = get_solver()
     results = solver.solve(m, tee=True)
 
-    return results
-
-
-def fix_recycle_flow(m):
-    """
-    Fixes the flow rates of the organic feed recycle loops.
-    """
-
     m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
     m.fs.rougher_mixer.outlet.flow_vol.fix(62.01)
 
     m.fs.cleaner_org_make_up.outlet.flow_vol.unfix()
     m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
+
+    return results
 
 
 def display_results(m):

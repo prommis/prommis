@@ -403,17 +403,17 @@ def get_diagram(build_options):
 
 def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
-    # m = build()
-    # set_partition_coefficients(m)
-    #
-    # set_operating_conditions(m)
-    #
-    # scaled_model = set_scaling(m)
-    #
-    # initialize_system(scaled_model)
-    #
-    # results = solve(scaled_model)
-    #
-    # return results
+    m = build()
+    set_partition_coefficients(m)
 
-    return solve(flowsheet)
+    set_operating_conditions(m)
+
+    scaled_model = set_scaling(m)
+
+    initialize_system(scaled_model)
+
+    results = solve(scaled_model)
+
+    return results
+
+    # return solve(flowsheet)

@@ -10,10 +10,43 @@
 # All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
 # for full copyright and license information.
 #################################################################################
-"""
-Basic precipitator model
-"""
+r"""
+Preliminary Precipitator Unit Model
+===================================
 
+Author: Alejandro Garciadiego
+
+The Precipitator Unit Model represents an Equilibrium reactor unit model with fixed partition coefficients.
+
+Configuration Arguments
+-----------------------
+
+The precipitator unit model needs an aqueous property package which includes stoichiometric values for solids being
+created in the precipitator and fixed separation coefficients of the solids.
+
+Model Structure
+---------------
+
+The Precitator unit model has hard coded stream names (``aqueous`` and ``precipitate`` respectively). The Precipitator 
+model also has one inlet and two outlets named ``aqueous_inlet``, ``aqueous_outlet`` and ``precipitate_outlet`` respectively.
+
+Additional Constraints
+----------------------
+
+The Precipitator unit adds two additional constraint to define the stochiometry and separation.
+
+.. math:: n_{t,prec,c} = \frac{n_{t,aq_in,c} - n_{t,aq_out,c}}{S_{comp}} 
+
+where :math:`n_{t,prec,c}` is the outlet precipitation of component c, :math:`n_{t,aq_in,c}` is the inlet of component c in 
+the aqueous phase, :math:`n_{t,aq_in,c}` is the outlet of component c in the aqueous phase at time :math:`t`, divided by the
+stoichiometric parameter of component c :math:`S_{comp}`
+
+.. math:: n_{t,aq_out,c} = n_{t,aq_in,c} * (1 - split_{c})
+
+where :math:`split_{c}` is the fixed recovery fraction of component c; this factor can be a parameter or ideally a variable
+solved by a surrogate or a model equation.
+
+"""
 
 # Import Pyomo libraries
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
@@ -160,12 +193,8 @@ see reaction package for documentation.}""",
     )
 
     def build(self):
-        """Building model
-
-        Args:
-            None
-        Returns:
-            None
+        """
+        Build method for precipitator unit model.
         """
         # Call UnitModel.build to setup dynamics
         super(PrecipitatorData, self).build()
@@ -177,15 +206,33 @@ see reaction package for documentation.}""",
             property_package=self.config.property_package_aqueous,
             property_package_args=self.config.property_package_args_aqueous,
         )
-        self.cv_precipitate = ControlVolume0DBlock(
-            dynamic=False,
-            has_holdup=False,
-            property_package=self.config.property_package_precipitate,
-            property_package_args=self.config.property_package_args_precipitate,
-        )
         # Add inlet and outlet state blocks to control volume
         self.cv_aqueous.add_state_blocks(has_phase_equilibrium=False)
-        self.cv_precipitate.add_state_blocks(has_phase_equilibrium=False)
+
+        # ---------------------------------------------------------------------
+        # Add single state block for vapor phase
+        tmp_dict = dict(**self.config.property_package_args_precipitate)
+        tmp_dict["has_phase_equilibrium"] = False
+        tmp_dict["defined_state"] = False
+        self.cv_precipitate = (
+            self.config.property_package_precipitate.build_state_block(
+                self.flowsheet().time, doc="Vapor phase properties", **tmp_dict
+            )
+        )
+
+        # ---------------------------------------------------------------------
+        # Check flow basis is compatible
+        # TODO : Could add code to convert flow bases, but not now
+        t_init = self.flowsheet().time.first()
+        if (
+            self.cv_precipitate[t_init].get_material_flow_basis()
+            != self.cv_aqueous.properties_out[t_init].get_material_flow_basis()
+        ):
+            raise ConfigurationError(
+                f"{self.name} Solid and aqueous property packages must use the "
+                f"same material flow basis."
+            )
+
         # add ports
         self.add_inlet_port(block=self.cv_aqueous, name="aqueous_inlet")
         self.add_outlet_port(block=self.cv_aqueous, name="aqueous_outlet")
@@ -194,25 +241,19 @@ see reaction package for documentation.}""",
         prop_aq = self.config.property_package_aqueous
         prop_s = self.config.property_package_precipitate
 
-        @self.Constraint(self.flowsheet().time, doc="Mass balance equations.")
+        @self.Constraint(self.flowsheet().time, doc="volume balance equation.")
         def vol_balance(blk, t):
             return blk.cv_aqueous.properties_out[t].flow_vol == (
                 blk.cv_aqueous.properties_in[t].flow_vol
             )
 
         @self.Constraint(
-            self.flowsheet().time, prop_s.component_list, doc="Mass balance equations."
+            self.flowsheet().time,
+            prop_s.component_list,
+            doc="Mass balance equations precipitate.",
         )
-        def in_zero(blk, t, comp):
-            return self.cv_precipitate.properties_in[t].flow_mol_comp[comp] == 0
-
-        @self.Constraint(
-            self.flowsheet().time, prop_s.component_list, doc="Mass balance equations."
-        )
-        def generation(blk, t, comp):
-            return blk.cv_precipitate.properties_out[t].flow_mol_comp[
-                comp
-            ] == blk.cv_precipitate.properties_in[t].flow_mol_comp[comp] + (
+        def precipitate_generation(blk, t, comp):
+            return blk.cv_precipitate[t].flow_mol_comp[comp] == (
                 (
                     blk.cv_aqueous.properties_in[t].flow_mol_comp[prop_s.react[comp]]
                     - blk.cv_aqueous.properties_out[t].flow_mol_comp[prop_s.react[comp]]
@@ -223,20 +264,13 @@ see reaction package for documentation.}""",
         @self.Constraint(
             self.flowsheet().time,
             prop_aq.dissolved_elements,
-            doc="Mass balance equations.",
+            doc="Mass balance equations aqueous.",
         )
-        def mass_balance(blk, t, comp):
+        def aqueous_depletion(blk, t, comp):
             return blk.cv_aqueous.properties_out[t].conc_mass_comp[
                 comp
             ] * blk.cv_aqueous.properties_out[t].flow_vol == (
                 blk.cv_aqueous.properties_in[t].conc_mass_comp[comp]
                 * blk.cv_aqueous.properties_in[t].flow_vol
                 * (1 - prop_aq.split[comp] / 100)
-            )
-
-        @self.Constraint(self.flowsheet().time)
-        def temperature_s_eqn(blk, t):
-            return (
-                blk.cv_precipitate.properties_out[t].temperature
-                == blk.cv_precipitate.properties_in[t].temperature
             )

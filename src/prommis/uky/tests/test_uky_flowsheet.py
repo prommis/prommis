@@ -16,7 +16,7 @@ Tests for UKy flowsheet.
 """
 
 from pyomo.network import Arc
-from pyomo.environ import value, units, TransformationFactory
+from pyomo.environ import assert_optimal_termination, value, units, TransformationFactory
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
@@ -44,23 +44,16 @@ from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.uky_flowsheet import (
     main,
-    build,
-    set_partition_coefficients,
-    set_operating_conditions,
     set_scaling,
     initialize_system,
     solve,
-    display_results,
-    add_costing,
-    display_costing,
 )
 
 
 @pytest.fixture(scope="module")
 def system_frame():
-    m = build()
-    set_partition_coefficients(m)
-    set_operating_conditions(m)
+    m, res = main()
+    m.results = res
 
     return m
 
@@ -181,10 +174,12 @@ def test_solve(system_frame):
     scaled_model = set_scaling(model)
     initialize_system(scaled_model)
 
-    solve(scaled_model)
+    results = solve(scaled_model)
 
     scaling = TransformationFactory("core.scale_model")
     scaling.propagate_solution(scaled_model, model)
+
+    assert_optimal_termination(results)
 
 
 @pytest.mark.component

@@ -131,6 +131,10 @@ class BrineStateBlockData(StateBlockData):
                 expr=self.conc_mass_comp["H2O"] == 1e6 * units.mg / units.L
             )
 
+    @property
+    def mw(self):
+        return self.params.mw
+
     def _dens_mass(self):
         add_object_reference(self, "dens_mass", self.params.dens_mass)
 

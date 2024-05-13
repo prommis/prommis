@@ -16,7 +16,12 @@ Tests for UKy flowsheet.
 """
 
 from pyomo.network import Arc
-from pyomo.environ import assert_optimal_termination, value, units, TransformationFactory
+from pyomo.environ import (
+    assert_optimal_termination,
+    value,
+    units,
+    TransformationFactory,
+)
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox

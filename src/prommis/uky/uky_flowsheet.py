@@ -1311,7 +1311,7 @@ def set_operating_conditions(m):
     """
     Set the operating conditions of the flowsheet such that the degrees of freedom are zero.
     """
-    eps = 1e-7 * units.mg / units.L
+    eps = 1e-8 * units.mg / units.L
 
     m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
     m.fs.leach_liquid_feed.conc_mass_comp.fix(1e-10 * units.mg / units.L)

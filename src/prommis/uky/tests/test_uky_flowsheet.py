@@ -337,10 +337,10 @@ def test_solution(system_frame):
     ].value == pytest.approx(41.44, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "SO4"
-    ].value == pytest.approx(3.940233e-8, 1e-4)
+    ].value == pytest.approx(3.940239e-9, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "HSO4"
-    ].value == pytest.approx(1.6122889e-7, 1e-4)
+    ].value == pytest.approx(1.6122889e-8, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Al"
     ].value == pytest.approx(349.184092, 1e-4)

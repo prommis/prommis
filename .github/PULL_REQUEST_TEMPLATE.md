@@ -9,6 +9,7 @@
 -
 
 ## Reviewer's checklist / merge requirements:
+- [ ] The head branch (i.e. the "source" of the changes) is not the `main` branch on the PR author's fork
 - [ ] Documentation
 - [ ] Tests
 - [ ] Diagnostic tests for models

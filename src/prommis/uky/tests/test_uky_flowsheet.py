@@ -175,13 +175,22 @@ def test_build_flowsheet(system_frame):
 
 @pytest.mark.component
 @pytest.mark.solver
-def test_solution(system_frame):
+def test_solve(system_frame):
     model = system_frame
+
     scaled_model = set_scaling(model)
     initialize_system(scaled_model)
+
     solve(scaled_model)
+
     scaling = TransformationFactory("core.scale_model")
     scaling.propagate_solution(scaled_model, model)
+
+
+@pytest.mark.component
+@pytest.mark.solver
+def test_solution(system_frame):
+    model = system_frame
 
     assert model.fs.leach.solid_outlet.flow_mass[0].value == pytest.approx(
         22.234694, 1e-4
@@ -601,7 +610,7 @@ def test_solution(system_frame):
 @pytest.mark.component
 @pytest.mark.solver
 def test_conservation(system_frame):
-    m = system_frame
+    model = system_frame
 
     metal_mass_frac = {
         "Y2O3": 88.906 * 2 / (88.906 * 2 + 16 * 3),
@@ -650,8 +659,8 @@ def test_conservation(system_frame):
     for REO, REE in component_list:
         feed = value(
             units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, REO]
+                model.fs.leach_solid_feed.flow_mass[0]
+                * model.fs.leach_solid_feed.mass_frac_comp[0, REO]
                 * metal_mass_frac[REO],
                 to_units=units.kg / units.hr,
             )
@@ -659,8 +668,8 @@ def test_conservation(system_frame):
 
         filter_cake = value(
             units.convert(
-                m.fs.sl_sep1.solid_outlet.flow_mass[0]
-                * m.fs.sl_sep1.solid_outlet.mass_frac_comp[0, REO]
+                model.fs.sl_sep1.solid_outlet.flow_mass[0]
+                * model.fs.sl_sep1.solid_outlet.mass_frac_comp[0, REO]
                 * metal_mass_frac[REO],
                 to_units=units.kg / units.hr,
             )
@@ -668,47 +677,47 @@ def test_conservation(system_frame):
 
         filter_cake_liquid = value(
             units.convert(
-                m.fs.sl_sep1.retained_liquid_outlet.conc_mass_comp[0, REE]
-                * m.fs.sl_sep1.retained_liquid_outlet.flow_vol[0],
+                model.fs.sl_sep1.retained_liquid_outlet.conc_mass_comp[0, REE]
+                * model.fs.sl_sep1.retained_liquid_outlet.flow_vol[0],
                 to_units=units.kg / units.hr,
             )
         )
 
         load_purge = value(
             units.convert(
-                m.fs.load_sep.purge.conc_mass_comp[0, REE]
-                * m.fs.load_sep.purge.flow_vol[0],
+                model.fs.load_sep.purge.conc_mass_comp[0, REE]
+                * model.fs.load_sep.purge.flow_vol[0],
                 to_units=units.kg / units.hr,
             )
         )
 
         scrub_purge = value(
             units.convert(
-                m.fs.scrub_sep.purge.conc_mass_comp[0, REE]
-                * m.fs.scrub_sep.purge.flow_vol[0],
+                model.fs.scrub_sep.purge.conc_mass_comp[0, REE]
+                * model.fs.scrub_sep.purge.flow_vol[0],
                 to_units=units.kg / units.hr,
             )
         )
 
         precip_purge = value(
             units.convert(
-                m.fs.precip_sep.purge.conc_mass_comp[0, REE]
-                * m.fs.precip_sep.purge.flow_vol[0],
+                model.fs.precip_sep.purge.conc_mass_comp[0, REE]
+                * model.fs.precip_sep.purge.flow_vol[0],
                 to_units=units.kg / units.hr,
             )
         )
 
         roaster_retained_liquid = value(
             units.convert(
-                m.fs.sl_sep2.retained_liquid_outlet.conc_mass_comp[0, REE]
-                * m.fs.sl_sep2.retained_liquid_outlet.flow_vol[0],
+                model.fs.sl_sep2.retained_liquid_outlet.conc_mass_comp[0, REE]
+                * model.fs.sl_sep2.retained_liquid_outlet.flow_vol[0],
                 to_units=units.kg / units.hr,
             )
         )
 
         roaster_product = value(
             units.convert(
-                m.fs.roaster.flow_mol_comp_product[0, REE]
+                model.fs.roaster.flow_mol_comp_product[0, REE]
                 * molar_mass[REO]
                 * REE_mass_frac[REO],
                 to_units=units.kg / units.hr,

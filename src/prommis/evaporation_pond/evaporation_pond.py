@@ -289,28 +289,36 @@ class EvaporationPondData(UnitModelBlockData):
         self.surface_area = Var(
             time,
             initialize=1000,
+            bounds=(1, None),
             units=uom.AREA,
             doc="Surface area of evaporation pond",
         )
         self.average_pond_depth = Var(
             time,
             initialize=1,
+            bounds=(1e-6, None),
             units=uom.LENGTH,
             doc="Average depth of evaporation pond",
         )
         self.volume = Var(
-            time, initialize=1000, units=uom.VOLUME, doc="Volume of liquid in pond"
+            time,
+            initialize=1000,
+            bounds=(1e-6, None),
+            units=uom.VOLUME,
+            doc="Volume of liquid in pond",
         )
 
         self.evaporation_rate = Var(
             time,
             initialize=0,
+            bounds=(0, None),  # TODO: Need to relax this for dynamics
             units=units.mm / units.day,
             doc="Evaporation rate of water",
         )
         self.water_loss_rate = Var(
             time,
             initialize=0,
+            bounds=(None, 0),  # TODO: Need to relax this for dynamics
             units=mb_units,
             doc="Flowrate of water lost to evaporation",
         )
@@ -319,6 +327,7 @@ class EvaporationPondData(UnitModelBlockData):
             time,
             comp_set,
             initialize=0,
+            bounds=(None, 0),  # TODO: Need to relax this for dynamics
             units=mb_units,
             doc="Rate of precipitation of species",
         )
@@ -373,6 +382,7 @@ class EvaporationPondData(UnitModelBlockData):
             time,
             rxn_idx,
             initialize=0,
+            bounds=(0, None),  # TODO: Need to relax this for dynamics
             units=rxn_units,
             doc="Extent of equilibrium reaction",
         )

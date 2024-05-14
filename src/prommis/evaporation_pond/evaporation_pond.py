@@ -388,14 +388,17 @@ class EvaporationPondData(UnitModelBlockData):
         )
 
         self.eps = Param(
-            mutable=True, initialize=1e-4, doc="Smoothing parameter for smooth maximum"
+            mutable=True,
+            initialize=1e-4,
+            units=units.dimensionless,
+            doc="Smoothing parameter for smooth maximum"
         )
 
         self.s_norm = Param(
             rxn_idx,
             mutable=True,
             initialize=1,
-            units=mb_units,
+            units=rxn_units,
             doc="Normalizing factor for solid precipitation term. Should match magnitude of Ksp",
         )
 
@@ -403,11 +406,12 @@ class EvaporationPondData(UnitModelBlockData):
             rxn_idx,
             mutable=True,
             initialize=1,
+            units=units.dimensionless,
             doc="Scaling factor for solid precipitation term w.r.t saturated status Q = Ksp - f(C)",
         )
 
         @self.Constraint(time, pc_set, doc="Stoichiometry constraints")
-        def stoichiometry_constraints(b, t, p, j):
+        def stoichiometry_constraint(b, t, p, j):
             exp = sum(rxn_stoic[r, p, j] * b.reaction_extent[t, r] for r in rxn_idx)
             # Convert units if required
             if (
@@ -431,12 +435,11 @@ class EvaporationPondData(UnitModelBlockData):
                 conc = b.properties_out[t].conc_mole_comp
             else:
                 conc = b.properties_out[t].conc_mass_comp
-            c_units = units.get_units(conc)
 
             # Equilibrium expression
             # Assume equilibrium reactions will always be defined on a molar basis
             e = sum(
-                -rxn_stoic[r, phase_name, j] * log(conc[j] / c_units)
+                -rxn_stoic[r, phase_name, j] * log(conc[j] / units.get_units(conc[j]))
                 for j in comp_set
                 if rxn_stoic[r, phase_name, j] != 0.0
             )

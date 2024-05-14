@@ -11,7 +11,9 @@
 # for full copyright and license information.
 #################################################################################
 """
-Example property package for precipitation reactions associated with lithium brines.
+Example reaction package for testing evaporation pond unit model.
+
+Authors: Andrew Lee
 """
 
 # Import Pyomo libraries

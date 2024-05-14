@@ -11,7 +11,7 @@
 # for full copyright and license information.
 #################################################################################
 """
-Initial property package for lithium brine solutions.
+Example property package for testing evaporation pond unit model.
 
 Authors: Andrew Lee
 """
@@ -36,7 +36,7 @@ from idaes.core.util.misc import add_object_reference
 @declare_process_block_class("BrineParameters")
 class BrineParameterData(PhysicalParameterBlock):
     """
-    Property package for lithum brine solutions.
+    Simple property package for lithum brine solutions.
 
     """
 

@@ -7,35 +7,127 @@ Author: Andrew Lee
 """
 
 from pyomo.environ import (
-    Reference,
-    Var,
-    units,
-    Param,
-    Set,
+    Block,
     log,
+    Param,
+    units,
+    Var,
 )
 from pyomo.common.config import ConfigDict, ConfigValue
 
 from idaes.core import (
-    ControlVolume0DBlock,
     UnitModelBlockData,
     declare_process_block_class,
     useDefault,
     MaterialFlowBasis,
-    MaterialBalanceType,
 )
-from idaes.core.util.config import is_physical_parameter_block
+from idaes.core.util.config import (
+    is_physical_parameter_block,
+    is_reaction_parameter_block,
+)
 from idaes.core.util.exceptions import ConfigurationError
 from idaes.core.util.math import smooth_max
+from idaes.core.initialization.initializer_base import ModularInitializerBase
+from idaes.core.util import to_json, from_json, StoreSpec
+import idaes.logger as idaeslog
+
+__author__ = "Andrew Lee"
+
+
+class EvaporationPondInitializer(ModularInitializerBase):
+    """
+    Initializer object for EvaporationPond unit models.
+
+    This Initializer initializes the inlet StateBlock, maps the solution of
+    this onto the outlet StateBlock, and then solves the full model.
+
+    """
+
+    CONFIG = ModularInitializerBase.CONFIG()
+
+    def initialization_routine(
+        self,
+        model: Block,
+        plugin_initializer_args: dict = None,
+    ):
+        """
+        Common initialization routine for EvaporationPond unit models.
+
+        Args:
+            model: Pyomo Block to be initialized
+            plugin_initializer_args: dict-of-dicts containing arguments to be passed to plug-in Initializers.
+                Keys should be submodel components.
+
+        Returns:
+            Pyomo solver results object
+        """
+        # The default initialization_routine is sufficient
+        return super().initialization_routine(
+            model=model,
+            plugin_initializer_args=plugin_initializer_args,
+        )
+
+    def initialize_main_model(
+        self,
+        model: Block,
+    ):
+        """
+        Initialization routine for EvaporationPond unit models.
+
+        Args:
+            model: current model being initialized
+
+        Returns:
+            Pyomo solver results object from solve of main model
+
+        """
+        # Get logger
+        _log = self.get_logger(model)
+
+        # Initialize inlet properties - inlet state should already be fixed
+        prop_init = self.get_submodel_initializer(model.properties_in)
+
+        if prop_init is not None:
+            prop_init.initialize(
+                model=model.properties_in,
+                output_level=self.get_output_level(),
+            )
+            _log.info_high("Inlet properties initialization complete.")
+
+        # Map solution from inlet properties to outlet properties
+        state = to_json(
+            model.properties_in,
+            wts=StoreSpec().value(),
+            return_dict=True,
+        )
+        from_json(
+            model.properties_out,
+            sd=state,
+            wts=StoreSpec().value(only_not_fixed=True),
+        )
+
+        # Solve main model
+        solve_log = idaeslog.getSolveLogger(
+            model.name, self.get_output_level(), tag="unit"
+        )
+
+        with idaeslog.solver_log(solve_log, idaeslog.DEBUG) as slc:
+            results = self._get_solver().solve(model, tee=slc.tee)
+
+        _log.info_high(
+            f"Evaporation Pond initialization {idaeslog.condition(results)}."
+        )
+
+        return results
 
 
 @declare_process_block_class("EvaporationPond")
 class EvaporationPondData(UnitModelBlockData):
     """
-    Leaching Train Unit Model Class
+    Evaporation Pond Unit Model Class
     """
 
-    # TODO: Set default initializer
+    default_initializer = EvaporationPondInitializer
 
     CONFIG = UnitModelBlockData.CONFIG()
 
@@ -62,6 +154,18 @@ class EvaporationPondData(UnitModelBlockData):
     **default** - None.
     **Valid values:** {
     see property package for documentation.}""",
+        ),
+    )
+    CONFIG.declare(
+        "reaction_package",
+        ConfigValue(
+            domain=is_reaction_parameter_block,
+            description="Reaction package to use",
+            doc="""Reaction parameter object used to define precipitation reactions,
+        **default** - useDefault.
+        **Valid values:** {
+        **useDefault** - use default package from parent model or flowsheet,
+        **ReactionParameterObject** - a ReactionParameterBlock object.}""",
         ),
     )
     CONFIG.declare(
@@ -94,8 +198,7 @@ class EvaporationPondData(UnitModelBlockData):
                 f"the property package provided includes "
                 f"{len(self.config.property_package.phase_list)} phases."
             )
-        else:
-            phase_name = self.config.property_package.phase_list.at(1)
+        phase_name = self.config.property_package.phase_list.at(1)
 
         # Build property blocks
         self.properties_in = self.config.property_package.build_state_block(
@@ -193,6 +296,7 @@ class EvaporationPondData(UnitModelBlockData):
             return b.volume[t] == b.surface_area[t] * b.average_pond_depth[t]
 
         # Material balances
+        # TODO: For dynamics, need to include tracking of solids
         @self.Constraint(time, pc_set, doc="Component balances")
         def component_balances(b, t, p, j):
             rhs = (
@@ -210,32 +314,13 @@ class EvaporationPondData(UnitModelBlockData):
             return lhs == rhs
 
         # Equilibrium reactions and precipitation rate
-        # Reaction Index
-        self.equilibrium_reaction_idx = Set(initialize=["P1", "P2"])
-
-        # Reaction Stoichiometry
-        self.equilibrium_reaction_stoichiometry = {
-            ("P1", "liquid", "Li"): 0,
-            ("P1", "liquid", "Na"): -1,
-            ("P1", "liquid", "Cl"): -1,
-            ("P1", "liquid", "H2O"): 0,
-            ("P2", "liquid", "Li"): -1,
-            ("P2", "liquid", "Na"): 0,
-            ("P2", "liquid", "Cl"): -1,
-            ("P2", "liquid", "H2O"): 0,
-        }
-
-        # TODO: Time indexing?
-        self.solubility_constant = Param(
-            self.equilibrium_reaction_idx,
-            default={"P1": 1.5e6, "P2": 3e6},
-            units=units.mg**2 / units.L**2,
-            mutable=True,
-        )
+        # Reaction parameters
+        rxn_idx = self.config.reaction_package.equilibrium_reaction_idx
+        rxn_stoic = self.config.reaction_package.equilibrium_reaction_stoichiometry
 
         self.reaction_extent = Var(
             time,
-            self.equilibrium_reaction_idx,
+            rxn_idx,
             initialize=0,
             units=mb_units,
             doc="Extent of equilibrium reaction",
@@ -246,6 +331,7 @@ class EvaporationPondData(UnitModelBlockData):
         )
 
         self.s_norm = Param(
+            rxn_idx,
             mutable=True,
             initialize=1e6,  # TODO: Value should match Ksp
             units=mb_units,  # Units are based on mb_units... how to match value?
@@ -253,6 +339,7 @@ class EvaporationPondData(UnitModelBlockData):
         )
 
         self.s_scale = Param(
+            rxn_idx,
             mutable=True,
             initialize=1,
             doc="Scaling factor for solid precipitation term w.r.t saturated status Q = Ksp - f(C)",
@@ -262,27 +349,37 @@ class EvaporationPondData(UnitModelBlockData):
         def stoichiometry_constraints(b, t, p, j):
             # TODO: Handle mass-mole conversions as necessary
             return b.precipitation_rate[t, j] == sum(
-                b.equilibrium_reaction_stoichiometry[r, p, j]
-                * b.reaction_extent[t, r]
-                for r in b.equilibrium_reaction_idx
+                rxn_stoic[r, p, j] * b.reaction_extent[t, r] for r in rxn_idx
             )
 
-        @self.Constraint(time, self.equilibrium_reaction_idx, doc="Equilibrium constraint")
+        @self.Constraint(time, rxn_idx, doc="Equilibrium constraint")
         def equilibrium_constraint(b, t, r):
-            k_units = b.solubility_constant.get_units()
+            # TODO: Time indexing/varying Ksp?
+            Ksp = getattr(b.config.reaction_package, "solubility_constant_" + r)
+            k_units = Ksp.get_units()
             c_units = b.properties_out[t].conc_mass_comp.get_units()
-            # TODO: different Ks to allow for different units
-            # TODO: phase name
+
+            # Equilibrium expression
+            # TODO: Different bases
             e = sum(
-                -b.equilibrium_reaction_stoichiometry[r, "liquid", j]
-                * log(b.properties_out[t].conc_mass_comp[j]/c_units)
+                -rxn_stoic[r, phase_name, j]
+                * log(b.properties_out[t].conc_mass_comp[j] / c_units)
                 for j in comp_set
-                if b.equilibrium_reaction_stoichiometry[r, "liquid", j] != 0.0
+                if rxn_stoic[r, phase_name, j] != 0.0
             )
 
             # Complementarity formulation to support conditional precipitation
-            k = log(b.solubility_constant[r] / k_units)
-            s = b.s_scale * b.reaction_extent[t, r] / (b.reaction_extent[t, r] + b.s_norm)
+            k = log(Ksp / k_units)
+
+            # TODO: For steady-state, it is sufficient to use extent of precipitation reactions
+            # TODO: For dynamics, need to track amount of solids in basin and use that instead
+            # This is because solids can redissolve in dynamic mode, thus we need to check
+            # for the presence of solids, not just the occurance of precipitation
+            s = (
+                b.s_scale[r]
+                * b.reaction_extent[t, r]
+                / (b.reaction_extent[t, r] + b.s_norm[r])
+            )
             Q = k - e
 
             return Q - smooth_max(0, Q - s, b.eps) == 0

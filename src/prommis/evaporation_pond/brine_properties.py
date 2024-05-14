@@ -133,34 +133,33 @@ class BrineStateBlockData(StateBlockData):
 
     @property
     def mw(self):
+        """Molecular weight of species"""
         return self.params.mw
 
     def _dens_mass(self):
         add_object_reference(self, "dens_mass", self.params.dens_mass)
 
-    def get_material_flow_terms(self, p, j):
+    def get_material_flow_terms(self, _, j):
         # Note conversion to mol/hour
         if j == "H2O":
             # Assume constant density of 1 kg/L
             return self.flow_vol * self.params.dens_mass / self.params.mw[j]
-        else:
-            # Need to convert from moles to mass
-            return units.convert(
-                self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
-                to_units=units.mol / units.hour,
-            )
+        # Need to convert from moles to mass
+        return units.convert(
+            self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
+            to_units=units.mol / units.hour,
+        )
 
-    def get_material_density_terms(self, p, j):
+    def get_material_density_terms(self, _, j):
         if j == "H2O":
             return units.convert(
                 self.params.dens_mass / self.params.mw[j],
                 to_units=units.mol / units.m**3,
             )
-        else:
-            return units.convert(
-                self.conc_mass_comp[j] / self.params.mw[j],
-                to_units=units.mol / units.m**3,
-            )
+        return units.convert(
+            self.conc_mass_comp[j] / self.params.mw[j],
+            to_units=units.mol / units.m**3,
+        )
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar

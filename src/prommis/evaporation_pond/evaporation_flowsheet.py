@@ -11,10 +11,15 @@ from pyomo.environ import (
 )
 
 from idaes.core import FlowsheetBlock
-from idaes.core.initialization import BlockTriangularizationInitializer
 
-from prommis.evaporation_pond.evaporation_pond import EvaporationPond
+from prommis.evaporation_pond.evaporation_pond import (
+    EvaporationPond,
+    EvaporationPondInitializer,
+)
 from prommis.evaporation_pond.brine_properties import BrineParameters
+from prommis.evaporation_pond.brine_precipitation_reactions import (
+    BrineReactionParameters,
+)
 
 
 def build_model():
@@ -25,9 +30,13 @@ def build_model():
     m.fs = FlowsheetBlock(dynamic=False)
 
     m.fs.brine_props = BrineParameters()
+    m.fs.brine_rxns = BrineReactionParameters(
+        property_package=m.fs.brine_props,
+    )
 
     m.fs.pond_1 = EvaporationPond(
         property_package=m.fs.brine_props,
+        reaction_package=m.fs.brine_rxns,
     )
 
     return m
@@ -49,36 +58,18 @@ def set_inputs(m):
     m.fs.pond_1.evaporation_rate.fix(4.75 * units.mm / units.day)
 
 
-def set_scaling(m):
-    """
-    Apply scaling factors to improve solver performance.
-    """
-    pass
-
-
 # -------------------------------------------------------------------------------------
 if __name__ == "__main__":
     # Call build model function
-    m = build_model()
-    set_inputs(m)
-    set_scaling(m)
+    model = build_model()
+    set_inputs(model)
 
-    from idaes.core.util import DiagnosticsToolbox
+    initializer = EvaporationPondInitializer()
+    initializer.initialize(model.fs.pond_1)
 
-    dt = DiagnosticsToolbox(m.fs.pond_1)
-    dt.report_structural_issues()
-
-    # initializer = BlockTriangularizationInitializer()
-    # initializer.initialize(m.fs.pond_1)
-    m.fs.pond_1.outlet.flow_vol[0].set_value(23725 * units.L / units.s)
-    m.fs.pond_1.outlet.conc_mass_comp[0, "Li"].set_value(657.53 * units.mg / units.L)
-    m.fs.pond_1.outlet.conc_mass_comp[0, "Na"].set_value(381.29 * units.mg / units.L)
-    m.fs.pond_1.outlet.conc_mass_comp[0, "Cl"].set_value(3934 * units.mg / units.L)
-    m.fs.pond_1.outlet.conc_mass_comp[0, "H2O"].set_value(1 * units.kg / units.L)
-
-    # Solve scaled model
+    # Solve model
     solver = SolverFactory("ipopt")
-    solver.solve(m, tee=True)
+    solver.solve(model, tee=True)
 
     # Display some results
-    m.fs.pond_1.report()
+    model.fs.pond_1.report()

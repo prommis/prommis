@@ -15,15 +15,12 @@ Example property package for precipitation reactions associated with lithium bri
 """
 
 # Import Pyomo libraries
-from pyomo.environ import log, Param, Set, units
+from pyomo.environ import Param, Set, units
 
 # Import IDAES cores
 from idaes.core import (
     declare_process_block_class,
-    MaterialFlowBasis,
     ReactionParameterBlock,
-    ReactionBlockDataBase,
-    ReactionBlockBase,
 )
 
 
@@ -44,10 +41,11 @@ class BrineReactionParametersData(ReactionParameterBlock):
         """
         super().build()
 
-        self._reaction_block_class = BrineReactionBlock
+        # For the case of evaporation ponds, we don't actually need a ReactionBlock
+        # so no need to create a link here.
 
         # Reaction Index
-        self.equilibrium_reaction_idx = Set(initialize=["P1"])
+        self.equilibrium_reaction_idx = Set(initialize=["P1", "P2"])
 
         # Reaction Stoichiometry
         self.equilibrium_reaction_stoichiometry = {
@@ -55,13 +53,25 @@ class BrineReactionParametersData(ReactionParameterBlock):
             ("P1", "liquid", "Na"): -1,
             ("P1", "liquid", "Cl"): -1,
             ("P1", "liquid", "H2O"): 0,
+            ("P2", "liquid", "Li"): -1,
+            ("P2", "liquid", "Na"): 0,
+            ("P2", "liquid", "Cl"): -1,
+            ("P2", "liquid", "H2O"): 0,
         }
 
-        self.solubility_constant = Param(
-            self.equilibrium_reaction_idx,
-            default={"P1": 8e5},
+        # Units of solubility constants may differ depending on stoichiometry
+        # Need separate parameters for each
+        self.solubility_constant_P1 = Param(
+            default=1.5e6,
             units=units.mg**2 / units.L**2,
             mutable=True,
+            doc="Solubility constant for reaction P1",
+        )
+        self.solubility_constant_P2 = Param(
+            default=3e6,
+            units=units.mg**2 / units.L**2,
+            mutable=True,
+            doc="Solubility constant for reaction P2",
         )
 
     @classmethod
@@ -77,35 +87,5 @@ class BrineReactionParametersData(ReactionParameterBlock):
         )
 
 
-class _BrineReactionBlock(ReactionBlockBase):
-    """
-    This Class contains methods which should be applied to Reaction Blocks as a
-    whole, rather than individual elements of indexed Reaction Blocks.
-    """
-
-    pass
-
-
-@declare_process_block_class("BrineReactionBlock", block_class=_BrineReactionBlock)
-class BrineReactionBlockData(ReactionBlockDataBase):
-    """
-    An example reaction package for lithium brine precipitation
-    """
-
-    def build(self):
-        """
-        Callable method for Block construction
-        """
-        super().build()
-
-        @self.Constraint(self.params.equilibrium_reaction_idx)
-        def equilibrium_constraint(b, r):
-            return log(b.params.solubility_constant[r]) == sum(
-                -b.params.equilibrium_reaction_stoichiometry[r, "liquid", j]
-                * log(b.state_ref.conc_mass_comp[j])
-                for j in b.state_ref.component_list
-                if b.params.equilibrium_reaction_stoichiometry[r, "liquid", j] != 0.0
-            )
-
-    def get_reaction_rate_basis(self):
-        return MaterialFlowBasis.molar
+# Evaporation ponds will create their own equilibrium constraints,
+# so we don't need a ReactionBlock here.

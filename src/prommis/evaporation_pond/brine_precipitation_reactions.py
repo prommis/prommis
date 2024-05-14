@@ -94,9 +94,7 @@ class _BrineReactionBlock(ReactionBlockBase):
     pass
 
 
-@declare_process_block_class(
-    "BrineReactionBlock", block_class=_BrineReactionBlock
-)
+@declare_process_block_class("BrineReactionBlock", block_class=_BrineReactionBlock)
 class BrineReactionData(ReactionBlockDataBase):
     def build(self):
         """
@@ -106,8 +104,8 @@ class BrineReactionData(ReactionBlockDataBase):
         super().build()
 
         for k in self.params.equilibrium_reaction_idx:
-            Ksp = getattr( self.params, "solubility_product_"+k)
-            add_object_reference(self, "solubility_product_"+k, Ksp)
+            Ksp = getattr(self.params, "solubility_product_" + k)
+            add_object_reference(self, "solubility_product_" + k, Ksp)
 
     def get_reaction_rate_basis(b):
         return MaterialFlowBasis.molar

@@ -398,14 +398,18 @@ class EvaporationPondData(UnitModelBlockData):
 
         @self.Constraint(time, pc_set, doc="Stoichiometry constraints")
         def stoichiometry_constraints(b, t, p, j):
-            exp = sum(
-                rxn_stoic[r, p, j] * b.reaction_extent[t, r] for r in rxn_idx
-            )
+            exp = sum(rxn_stoic[r, p, j] * b.reaction_extent[t, r] for r in rxn_idx)
             # Convert units if required
-            if flow_basis is MaterialFlowBasis.mass and rxn_basis is MaterialFlowBasis.molar:
-                exp = units.convert(exp*b.properties_out[t].mw[j], to_units=mb_units)
-            elif flow_basis is MaterialFlowBasis.molar and rxn_basis is MaterialFlowBasis.mass:
-                exp = units.convert(exp/b.properties_out[t].mw[j], to_units=mb_units)
+            if (
+                flow_basis is MaterialFlowBasis.mass
+                and rxn_basis is MaterialFlowBasis.molar
+            ):
+                exp = units.convert(exp * b.properties_out[t].mw[j], to_units=mb_units)
+            elif (
+                flow_basis is MaterialFlowBasis.molar
+                and rxn_basis is MaterialFlowBasis.mass
+            ):
+                exp = units.convert(exp / b.properties_out[t].mw[j], to_units=mb_units)
             return b.precipitation_rate[t, j] == exp
 
         @self.Constraint(time, rxn_idx, doc="Equilibrium constraint")
@@ -423,7 +427,8 @@ class EvaporationPondData(UnitModelBlockData):
             # Assume equilibrium reactions will always be defined on a molar basis
             e = sum(
                 -rxn_stoic[r, phase_name, j] * log(conc[j] / c_units)
-                for j in comp_set if rxn_stoic[r, phase_name, j] != 0.0
+                for j in comp_set
+                if rxn_stoic[r, phase_name, j] != 0.0
             )
 
             # Complementarity formulation to support conditional precipitation

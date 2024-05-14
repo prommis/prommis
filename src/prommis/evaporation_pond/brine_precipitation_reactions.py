@@ -21,7 +21,11 @@ from pyomo.environ import Param, Set, units
 from idaes.core import (
     declare_process_block_class,
     ReactionParameterBlock,
+    ReactionBlockDataBase,
+    ReactionBlockBase,
+    MaterialFlowBasis,
 )
+from idaes.core.util.misc import add_object_reference
 
 
 # Some more information about this module
@@ -41,8 +45,7 @@ class BrineReactionParametersData(ReactionParameterBlock):
         """
         super().build()
 
-        # For the case of evaporation ponds, we don't actually need a ReactionBlock
-        # so no need to create a link here.
+        self._reaction_block_class = BrineReactionBlock
 
         # Reaction Index
         self.equilibrium_reaction_idx = Set(initialize=["P1", "P2"])
@@ -61,15 +64,15 @@ class BrineReactionParametersData(ReactionParameterBlock):
 
         # Units of solubility constants may differ depending on stoichiometry
         # Need separate parameters for each
-        self.solubility_constant_P1 = Param(
-            default=1.5e6,
-            units=units.mg**2 / units.L**2,
+        self.solubility_product_P1 = Param(
+            default=1.84e-3,
+            units=units.mol**2 / units.L**2,
             mutable=True,
             doc="Solubility constant for reaction P1",
         )
-        self.solubility_constant_P2 = Param(
-            default=3e6,
-            units=units.mg**2 / units.L**2,
+        self.solubility_product_P2 = Param(
+            default=1.22e-2,
+            units=units.mol**2 / units.L**2,
             mutable=True,
             doc="Solubility constant for reaction P2",
         )
@@ -87,5 +90,24 @@ class BrineReactionParametersData(ReactionParameterBlock):
         )
 
 
-# Evaporation ponds will create their own equilibrium constraints,
-# so we don't need a ReactionBlock here.
+class _BrineReactionBlock(ReactionBlockBase):
+    pass
+
+
+@declare_process_block_class(
+    "BrineReactionBlock", block_class=_BrineReactionBlock
+)
+class BrineReactionData(ReactionBlockDataBase):
+    def build(self):
+        """
+        Reaction block for leaching of West Kentucky No. 13 coal refuse in H2SO4.
+
+        """
+        super().build()
+
+        for k in self.params.equilibrium_reaction_idx:
+            Ksp = getattr( self.params, "solubility_product_"+k)
+            add_object_reference(self, "solubility_product_"+k, Ksp)
+
+    def get_reaction_rate_basis(b):
+        return MaterialFlowBasis.molar

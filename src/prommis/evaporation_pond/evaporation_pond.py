@@ -13,7 +13,7 @@ from pyomo.environ import (
     units,
     Var,
 )
-from pyomo.common.config import ConfigDict, ConfigValue
+from pyomo.common.config import ConfigDict, ConfigValue, In
 
 from idaes.core import (
     UnitModelBlockData,
@@ -25,7 +25,7 @@ from idaes.core.util.config import (
     is_physical_parameter_block,
     is_reaction_parameter_block,
 )
-from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.exceptions import ConfigurationError, PropertyPackageError
 from idaes.core.util.math import smooth_max
 from idaes.core.initialization.initializer_base import ModularInitializerBase
 from idaes.core.util import to_json, from_json, StoreSpec
@@ -129,8 +129,28 @@ class EvaporationPondData(UnitModelBlockData):
 
     default_initializer = EvaporationPondInitializer
 
-    CONFIG = UnitModelBlockData.CONFIG()
-
+    CONFIG = ConfigDict()
+    CONFIG.declare(
+        "dynamic",
+        ConfigValue(
+            domain=In([False]),
+            default=False,
+            description="Dynamic model flag - must be False",
+            doc="""Indicates whether this model will be dynamic or not,
+    **default** = False. Equilibrium Reactors do not support dynamic behavior.""",
+        ),
+    )
+    CONFIG.declare(
+        "has_holdup",
+        ConfigValue(
+            default=False,
+            domain=In([False]),
+            description="Holdup construction flag - must be False",
+            doc="""Indicates whether holdup terms should be constructed or not.
+    **default** - False. Equilibrium reactors do not have defined volume, thus
+    this must be False.""",
+        ),
+    )
     CONFIG.declare(
         "property_package",
         ConfigValue(
@@ -148,7 +168,7 @@ class EvaporationPondData(UnitModelBlockData):
         "property_package_args",
         ConfigDict(
             implicit=True,
-            description="Dict of arguments to use for constructing property package",
+            description="Dict of arguments to use for constructing property blocks",
             doc="""A ConfigDict with arguments to be passed to property block(s)
     and used when constructing these,
     **default** - None.
@@ -166,6 +186,18 @@ class EvaporationPondData(UnitModelBlockData):
         **Valid values:** {
         **useDefault** - use default package from parent model or flowsheet,
         **ReactionParameterObject** - a ReactionParameterBlock object.}""",
+        ),
+    )
+    CONFIG.declare(
+        "reaction_package_args",
+        ConfigDict(
+            implicit=True,
+            description="Dict of arguments to use for constructing reaction blocks",
+            doc="""A ConfigDict with arguments to be passed to reaction block(s)
+        and used when constructing these,
+        **default** - None.
+        **Valid values:** {
+        see reaction package for documentation.}""",
         ),
     )
     CONFIG.declare(
@@ -211,10 +243,21 @@ class EvaporationPondData(UnitModelBlockData):
             defined_state=False,
             **self.config.property_package_args,
         )
+        self.reactions = self.config.reaction_package.build_reaction_block(
+            self.flowsheet().time,
+            state_block=self.properties_out,
+            **self.config.reaction_package_args,
+        )
 
         # Construct Ports
         self.add_port("inlet", self.properties_in)
         self.add_port("outlet", self.properties_out)
+
+        # Get indexing sets
+        time = self.flowsheet().time
+        comp_set = self.config.property_package.component_list
+        pc_set = self.config.property_package.get_phase_component_set()
+        rxn_basis = self.reactions[time.first()].get_reaction_rate_basis()
 
         # Get units of measurement
         flow_basis = self.properties_in[
@@ -227,12 +270,20 @@ class EvaporationPondData(UnitModelBlockData):
         elif flow_basis is MaterialFlowBasis.mass:
             mb_units = uom.FLOW_MASS
         else:
-            mb_units = None
+            raise PropertyPackageError(
+                f"{self.name} - Property package uses a flow basisof 'other'. "
+                "EvaporationPond model only supports mass or molar bases."
+            )
 
-        # Get indexing sets
-        time = self.flowsheet().time
-        comp_set = self.config.property_package.component_list
-        pc_set = self.config.property_package.get_phase_component_set()
+        if rxn_basis is MaterialFlowBasis.molar:
+            rxn_units = uom.FLOW_MOLE
+        elif rxn_basis is MaterialFlowBasis.mass:
+            rxn_units = uom.FLOW_MASS
+        else:
+            raise PropertyPackageError(
+                f"{self.name} - Reaction package uses a reaction basis other than mass or "
+                "mole. EvaporationPond model only supports mass or molar bases."
+            )
 
         # Build unit model level variables
         self.surface_area = Var(
@@ -322,7 +373,7 @@ class EvaporationPondData(UnitModelBlockData):
             time,
             rxn_idx,
             initialize=0,
-            units=mb_units,
+            units=rxn_units,
             doc="Extent of equilibrium reaction",
         )
 
@@ -333,9 +384,9 @@ class EvaporationPondData(UnitModelBlockData):
         self.s_norm = Param(
             rxn_idx,
             mutable=True,
-            initialize=1e6,  # TODO: Value should match Ksp
-            units=mb_units,  # Units are based on mb_units... how to match value?
-            doc="Normalizing factor for solid precipitation term",
+            initialize=1,
+            units=mb_units,
+            doc="Normalizing factor for solid precipitation term. Should match magnitude of Ksp",
         )
 
         self.s_scale = Param(
@@ -347,25 +398,32 @@ class EvaporationPondData(UnitModelBlockData):
 
         @self.Constraint(time, pc_set, doc="Stoichiometry constraints")
         def stoichiometry_constraints(b, t, p, j):
-            # TODO: Handle mass-mole conversions as necessary
-            return b.precipitation_rate[t, j] == sum(
+            exp = sum(
                 rxn_stoic[r, p, j] * b.reaction_extent[t, r] for r in rxn_idx
             )
+            # Convert units if required
+            if flow_basis is MaterialFlowBasis.mass and rxn_basis is MaterialFlowBasis.molar:
+                exp = units.convert(exp*b.properties_out[t].mw[j], to_units=mb_units)
+            elif flow_basis is MaterialFlowBasis.molar and rxn_basis is MaterialFlowBasis.mass:
+                exp = units.convert(exp/b.properties_out[t].mw[j], to_units=mb_units)
+            return b.precipitation_rate[t, j] == exp
 
         @self.Constraint(time, rxn_idx, doc="Equilibrium constraint")
         def equilibrium_constraint(b, t, r):
-            # TODO: Time indexing/varying Ksp?
-            Ksp = getattr(b.config.reaction_package, "solubility_constant_" + r)
+            Ksp = getattr(b.reactions[t], "solubility_product_" + r)
             k_units = Ksp.get_units()
-            c_units = b.properties_out[t].conc_mass_comp.get_units()
+
+            if rxn_basis == MaterialFlowBasis.molar:
+                conc = b.properties_out[t].conc_mole_comp
+            else:
+                conc = b.properties_out[t].conc_mass_comp
+            c_units = units.get_units(conc)
 
             # Equilibrium expression
-            # TODO: Different bases
+            # Assume equilibrium reactions will always be defined on a molar basis
             e = sum(
-                -rxn_stoic[r, phase_name, j]
-                * log(b.properties_out[t].conc_mass_comp[j] / c_units)
-                for j in comp_set
-                if rxn_stoic[r, phase_name, j] != 0.0
+                -rxn_stoic[r, phase_name, j] * log(conc[j] / c_units)
+                for j in comp_set if rxn_stoic[r, phase_name, j] != 0.0
             )
 
             # Complementarity formulation to support conditional precipitation
@@ -374,7 +432,7 @@ class EvaporationPondData(UnitModelBlockData):
             # TODO: For steady-state, it is sufficient to use extent of precipitation reactions
             # TODO: For dynamics, need to track amount of solids in basin and use that instead
             # This is because solids can redissolve in dynamic mode, thus we need to check
-            # for the presence of solids, not just the occurance of precipitation
+            # for the presence of solids, not just the occurrence of precipitation
             s = (
                 b.s_scale[r]
                 * b.reaction_extent[t, r]
@@ -396,5 +454,6 @@ class EvaporationPondData(UnitModelBlockData):
         var_dict["Water Loss Rate"] = self.water_loss_rate[time_point]
         for j in self.properties_out.component_list:
             var_dict[f"Precipitation Rate {j}"] = self.precipitation_rate[time_point, j]
+        # TODO: For dynamics, show inventory of solids as well
 
         return {"vars": var_dict}

@@ -16,7 +16,7 @@ Initial property package for lithium brine solutions.
 Authors: Andrew Lee
 """
 
-from pyomo.environ import Constraint, Param, Var, units
+from pyomo.environ import Constraint, Expression, Param, units, Var
 
 from idaes.core import (
     Component,
@@ -124,6 +124,10 @@ class BrineStateBlockData(StateBlockData):
             units=units.mg / units.L,
             bounds=(1e-20, None),
         )
+
+        @self.Expression(self.params.component_list, doc="Molar concentration")
+        def conc_mole_comp(b, j):
+            return units.convert(b.conc_mass_comp[j]/b.mw[j], to_units=units.mol/units.L)
 
         if not self.config.defined_state:
             # Concentration of H2O based on assumed density

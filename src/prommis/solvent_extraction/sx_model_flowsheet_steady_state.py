@@ -149,5 +149,5 @@ m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()
 m.fs.solex.mscontactor.organic[0, 1].conc_mol_comp.display()
 
 # Final aqueous outlets display
-m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp.display()
-m.fs.solex.mscontactor.aqueous[0, 3].conc_mol_comp.display()
+m.fs.solex.mscontactor.aqueous[0, number_of_stages].conc_mass_comp.display()
+m.fs.solex.mscontactor.aqueous[0, number_of_stages].conc_mol_comp.display()

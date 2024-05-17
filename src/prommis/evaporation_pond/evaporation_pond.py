@@ -219,7 +219,7 @@ class EvaporationPondData(UnitModelBlockData):
         if self.config.solvent_id not in self.config.property_package.component_list:
             raise ConfigurationError(
                 f"{self.name} - {self.config.solvent_id} was set as the solvent_id for "
-                f"an EvaporationPond model, however this is not a valid component name "
+                f"EvaporationPond model, however this is not a valid component name "
                 f"in the property package provided."
             )
 
@@ -271,7 +271,7 @@ class EvaporationPondData(UnitModelBlockData):
             mb_units = uom.FLOW_MASS
         else:
             raise PropertyPackageError(
-                f"{self.name} - Property package uses a flow basisof 'other'. "
+                f"{self.name} - Property package uses a flow basis of 'other'. "
                 "EvaporationPond model only supports mass or molar bases."
             )
 
@@ -391,7 +391,7 @@ class EvaporationPondData(UnitModelBlockData):
             mutable=True,
             initialize=1e-4,
             units=units.dimensionless,
-            doc="Smoothing parameter for smooth maximum"
+            doc="Smoothing parameter for smooth maximum",
         )
 
         self.s_norm = Param(
@@ -412,7 +412,15 @@ class EvaporationPondData(UnitModelBlockData):
 
         @self.Constraint(time, pc_set, doc="Stoichiometry constraints")
         def stoichiometry_constraint(b, t, p, j):
-            exp = sum(rxn_stoic[r, p, j] * b.reaction_extent[t, r] for r in rxn_idx)
+            # Catch inerts and avoid sum expression
+            if all(rxn_stoic[r, p, j] == 0 for r in rxn_idx):
+                return b.precipitation_rate[t, j] == 0 * mb_units
+
+            exp = sum(
+                rxn_stoic[r, p, j] * b.reaction_extent[t, r]
+                for r in rxn_idx
+                if rxn_stoic[r, p, j] != 0
+            )
             # Convert units if required
             if (
                 flow_basis is MaterialFlowBasis.mass

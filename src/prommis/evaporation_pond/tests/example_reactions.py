@@ -37,7 +37,7 @@ __author__ = "Andrew Lee"
 @declare_process_block_class("BrineReactionParameters")
 class BrineReactionParametersData(ReactionParameterBlock):
     """
-    Property parameters associated with lithium brine precipitation reactions.
+    Reaction parameters associated with lithium brine precipitation.
 
     """
 
@@ -92,15 +92,11 @@ class BrineReactionParametersData(ReactionParameterBlock):
         )
 
 
-class _BrineReactionBlock(ReactionBlockBase):
-    pass
-
-
-@declare_process_block_class("BrineReactionBlock", block_class=_BrineReactionBlock)
+@declare_process_block_class("BrineReactionBlock", block_class=ReactionBlockBase)
 class BrineReactionData(ReactionBlockDataBase):
     def build(self):
         """
-        Reaction block for leaching of West Kentucky No. 13 coal refuse in H2SO4.
+        Reaction block for brine precipitation.
 
         """
         super().build()

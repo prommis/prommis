@@ -4,6 +4,127 @@ Solar Evaporation Pond
 
 Author: Andrew Lee
 
+The EvaporationPond model isa general purpose model for representing evaporation ponds
+(both solar and enhanced). Currently, the model only supports steady-state operation
+(although it could eb easily extended to dynamics). The model also only supports
+material balances with equlibrium reactions, as energy and momentum balances are less
+meaningful given the open-air nature of these operations and the long-duration time
+constants involved.
+
+Configuration Arguments
+-----------------------
+
+When creating an instance of an evaporation Pond model, the user may specify the name of the solvent phase
+used by the associated property package, which is used to determine which component requires an evaporation
+term in the material balances. The default name is 'H2O', and only a single solvent is supported.
+
+Evaporation Pond models also require a reaction package to define the precipitation reactions which occur in the
+system. However, unlike normal reaction packages, the equilibrium constraints are writen by the unit model as
+it is necessary to include a conditional check for sub-saturated reactions. Thus, the reaction package should not
+create any equilibrium constraints, and need only meet the following conditions:
+
+Reaction Parameter Block:
+
+  * Define the set of equilibrium reaction names (``equilibrium_reaction_idx``), and
+  * define the stoichiometry coefficients for the equilibrium reactions (``equilibrium_reaction_stoichiometry``).
+
+Reaction Block:
+
+  * Define the solubility products for each reaction. Each reaction requires a separate Var or Param
+  named ``solubility_product_X`` where ``X`` is the identifier for each reaction in ``equilibrium_reaction_idx``.
+  Separate components are required as the units of measurement for each reaction may be different.
+  * All reactions are assumed ot use a standard power law form.
+
+Degrees of Freedom
+------------------
+
+Evaporation Pond models have three degrees of freedom in addition to the feed stream state. The most common
+variables to specify are:
+
+  * the surface area of the evaporation pond, ``surface_area``,
+  * the average depth of liquid in the pond, ``average_pond_depth``, and
+  * the rate of evaporation in units of length/time (or volume evaporated  per unit area per time),
+  ``evaporation_rate``.
+
+Model Structure
+---------------
+
+The Evaporation Pond unit model does not use Control Volumes, and writes custom material balances and
+reaction constraints. The Evaporation Pond model has one inlet and one outlet ``Port`` (named
+``inlet`` and ``outlet`` respectively).
+
+Variables
+---------
+
+Evaporation Pond models have the following Variables.
+
+================= =================== =====================
+Variable          Name                Indexing Set(s)
+================= =================== =====================
+:math:`A_{t}`     surface_area        time
+:math:`D_{t}`     average_pond_depth  time
+:math:`V_{t}`     volume              time
+:math:`e_{t}`     evaporation_rate    time
+:math:`W_{t}`     water_loss_rate     time
+:math:`P_{t, j}`  precipitation_rate  time, component list
+:math:`X_{t, r}`  reaction_extent     time, reaction list
+================= =================== =====================
+
+Parameters
+----------
+
+Evaporation Pond models have the following Params, which are used in the complementarity constraint
+for precipitation.
+
+================= ========= ============== ==================================================================
+Parameter         Name      Indexing Set   Notes
+================= ========= ============== ==================================================================
+:math:`\eps`       eps                     Smoothing parameter for smooth_max
+:math:`norm_{r}`   s_norm   reaction list  Normalizing factor, should match magnitude of solubility product
+:math:`scale_{r}`  s_scale  reaction list  Scaling factor for reaction product, Q = Ksp - f(C)
+================= ========= ============== ==================================================================
+
+Constraints
+-----------
+
+Evaporation Pond models have the following constraints.
+
+Component balances:
+
+For the solvent:
+
+.. math:: 0 = F_{in,t,j} - F_{out,t,j} + P_{t_j} + W_{t}
+
+For other species:
+
+.. math:: 0 = F_{in,t,j} - F_{out,t,j} + P_{t_j}
+
+where :math:`F_{in,t,j}` and :math:`F_{out,t,j}` are the flow rate of component :math:`j` in to and out of
+the pond at time :math:`t`.
+
+Stoichiometry Constraint:
+
+.. math:: P_{t, j} = \sum_r{n_{r,j} \times X_{t,r}}
+
+where :math:`n_{r,j}` is the stoichiometric coefficient for component :math:`j` in reaction :math:`r`.
+
+Equilibrium Constraint:
+
+.. math:: Q_{t, r} - \max{0, Q_{t,r}-\bar{X}_{t,r}} = 0
+
+where :math:`Q_{t,r} = \ln{K_{t,r} - \sum_j{-n_{r,j} \times \ln{C_{t,j}} and :math:`K_{t,r}` is the
+solubility product for reaction :math:`r` at time :math:`t`, :math:`C_{t,j}` is the concentration
+of species :math:`j` at time :math:`t`, and :math:`\bar{X}_{t,r}} = scale_{r} \times \frac{X_{t,r}}{X_{t,r} + norm_{r}`
+The math:`max` operator is approximated using a smooth maximum,
+
+Evaporation Constraint:
+
+.. math:: W_{t} = e_{t} \times A_{t}
+
+Volume Constraint:
+
+.. math:: V_{t} = D_{t} \timesA_{t}
+
 """
 
 from pyomo.environ import (

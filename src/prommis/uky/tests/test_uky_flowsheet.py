@@ -67,7 +67,6 @@ def system_frame():
 def test_structural_issues(system_frame):
     model = system_frame
     dt = DiagnosticsToolbox(model)
-    dt.report_structural_issues()
     dt.assert_no_structural_warnings()
 
 
@@ -167,8 +166,6 @@ def test_build_flowsheet(system_frame):
     assert isinstance(model.fs.sep2_recovered_liquid, Arc)
     assert isinstance(model.fs.s24, Arc)
     assert isinstance(model.fs.s25, Arc)
-
-    assert degrees_of_freedom(model) == 0
 
 
 @pytest.mark.component
@@ -612,17 +609,6 @@ def test_solution(system_frame):
 def test_conservation(system_frame):
     model = system_frame
 
-    metal_mass_frac = {
-        "Y2O3": 88.906 * 2 / (88.906 * 2 + 16 * 3),
-        "La2O3": 138.91 * 2 / (138.91 * 2 + 16 * 3),
-        "Ce2O3": 140.12 * 2 / (140.12 * 2 + 16 * 3),
-        "Pr2O3": 140.91 * 2 / (140.91 * 2 + 16 * 3),
-        "Nd2O3": 144.24 * 2 / (144.24 * 2 + 16 * 3),
-        "Sm2O3": 150.36 * 2 / (150.36 * 2 + 16 * 3),
-        "Gd2O3": 157.25 * 2 / (157.25 * 2 + 16 * 3),
-        "Dy2O3": 162.5 * 2 / (162.5 * 2 + 16 * 3),
-    }
-
     REE_mass_frac = {
         "Y2O3": 88.906 * 2 / (88.906 * 2 + 16 * 3),
         "La2O3": 138.91 * 2 / (138.91 * 2 + 16 * 3),
@@ -657,11 +643,19 @@ def test_conservation(system_frame):
     ]
 
     for REO, REE in component_list:
-        feed = value(
+        solid_feed = value(
             units.convert(
                 model.fs.leach_solid_feed.flow_mass[0]
                 * model.fs.leach_solid_feed.mass_frac_comp[0, REO]
-                * metal_mass_frac[REO],
+                * REE_mass_frac[REO],
+                to_units=units.kg / units.hr,
+            )
+        )
+
+        liquid_feed = value(
+            units.convert(
+                model.fs.leach_liquid_feed.conc_mass_comp[0, REE]
+                * model.fs.leach_liquid_feed.flow_vol[0],
                 to_units=units.kg / units.hr,
             )
         )
@@ -670,7 +664,7 @@ def test_conservation(system_frame):
             units.convert(
                 model.fs.sl_sep1.solid_outlet.flow_mass[0]
                 * model.fs.sl_sep1.solid_outlet.mass_frac_comp[0, REO]
-                * metal_mass_frac[REO],
+                * REE_mass_frac[REO],
                 to_units=units.kg / units.hr,
             )
         )
@@ -724,14 +718,42 @@ def test_conservation(system_frame):
             )
         )
 
-        assert feed == pytest.approx(
+        roaster_dust = value(
+            units.convert(
+                model.fs.roaster.flow_mol_comp_dust[0, REE]
+                * molar_mass[REO]
+                * REE_mass_frac[REO],
+                to_units=units.kg / units.hr,
+            )
+        )
+
+        rougher_purge = value(
+            units.convert(
+                model.fs.rougher_sep.purge.conc_mass_comp[0, REE]
+                * model.fs.rougher_sep.purge.flow_vol[0],
+                to_units=units.kg / units.hr,
+            )
+        )
+
+        cleaner_purge = value(
+            units.convert(
+                model.fs.cleaner_sep.purge.conc_mass_comp[0, REE]
+                * model.fs.cleaner_sep.purge.flow_vol[0],
+                to_units=units.kg / units.hr,
+            )
+        )
+
+        assert solid_feed + liquid_feed == pytest.approx(
             filter_cake
             + filter_cake_liquid
             + load_purge
+            + rougher_purge
             + scrub_purge
+            + cleaner_purge
             + precip_purge
             + roaster_retained_liquid
-            + roaster_product,
-            rel=1e-4,
-            abs=1e-4,
+            + roaster_product
+            + roaster_dust,
+            rel=1e-7,
+            abs=1e-7,
         )

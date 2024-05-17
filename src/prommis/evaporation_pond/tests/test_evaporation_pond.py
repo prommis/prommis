@@ -12,7 +12,6 @@ from pyomo.environ import (
     Constraint,
     Param,
     Set,
-    SolverFactory,
     units,
     value,
     Var,

@@ -7,7 +7,7 @@ Author: Andrew Lee
 The EvaporationPond model isa general purpose model for representing evaporation ponds
 (both solar and enhanced). Currently, the model only supports steady-state operation
 (although it could eb easily extended to dynamics). The model also only supports
-material balances with equlibrium reactions, as energy and momentum balances are less
+material balances with equilibrium reactions, as energy and momentum balances are less
 meaningful given the open-air nature of these operations and the long-duration time
 constants involved.
 
@@ -19,7 +19,7 @@ used by the associated property package, which is used to determine which compon
 term in the material balances. The default name is 'H2O', and only a single solvent is supported.
 
 Evaporation Pond models also require a reaction package to define the precipitation reactions which occur in the
-system. However, unlike normal reaction packages, the equilibrium constraints are writen by the unit model as
+system. However, unlike normal reaction packages, the equilibrium constraints are written by the unit model as
 it is necessary to include a conditional check for sub-saturated reactions. Thus, the reaction package should not
 create any equilibrium constraints, and need only meet the following conditions:
 
@@ -33,7 +33,7 @@ Reaction Block:
   * Define the solubility products for each reaction. Each reaction requires a separate Var or Param
   named ``solubility_product_X`` where ``X`` is the identifier for each reaction in ``equilibrium_reaction_idx``.
   Separate components are required as the units of measurement for each reaction may be different.
-  * All reactions are assumed ot use a standard power law form.
+  * All reactions are assumed to use a standard power law form.
 
 Degrees of Freedom
 ------------------

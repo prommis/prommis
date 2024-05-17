@@ -2613,7 +2613,6 @@ def add_costing(flowsheet):
     m.fs.L_pe_tanks.capacity = Var(
         initialize=flowsheet.fs.leach.volume[0, 1], units=units.gal
     )
-    m.fs.L_pe_tanks.capacity.fix()
     m.fs.L_pe_tanks.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,

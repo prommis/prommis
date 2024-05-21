@@ -234,8 +234,8 @@ def main():
 
     display_results(m)
 
-    costing = add_costing(m)
-    display_costing(costing)
+    add_costing(m)
+    display_costing(m)
 
     return m, results
 
@@ -2594,15 +2594,11 @@ def display_results(m):
     print(f"Total Yttrium recovery is {total_yt_recovery} %")
 
 
-def add_costing(flowsheet):
+def add_costing(m):
     """
     Set the costing parameters for each unit model.
     """
     # TODO: Costing is preliminary until more unit model costing metrics can be verified
-    m = ConcreteModel()
-
-    # Add a flowsheet object to the model
-    m.fs = FlowsheetBlock(dynamic=True, time_units=units.s)
     m.fs.costing = QGESSCosting()
     CE_index_year = "UKy_2019"
 
@@ -2610,16 +2606,12 @@ def add_costing(flowsheet):
     # 4.2 is UKy Leaching - Polyethylene Tanks
     L_pe_tanks_accounts = ["4.2"]
     m.fs.L_pe_tanks = UnitModelBlock()
-    m.fs.L_pe_tanks.capacity = Var(
-        initialize=flowsheet.fs.leach.volume[0, 1], units=units.gal
-    )
-    m.fs.L_pe_tanks.capacity.fix()
     m.fs.L_pe_tanks.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": L_pe_tanks_accounts,
-            "scaled_param": m.fs.L_pe_tanks.capacity,
+            "scaled_param": m.fs.leach.volume[0, 1],
             "source": 1,
             "n_equip": 3,
             "scale_down_parallel_equip": False,
@@ -2648,19 +2640,12 @@ def add_costing(flowsheet):
     # 4.4 is UKy Leaching - Process Pump
     L_pump_accounts = ["4.4"]
     m.fs.L_pump = UnitModelBlock()
-    flow_4_4 = value(
-        units.convert(
-            flowsheet.fs.leach_liquid_feed.flow_vol[0], to_units=units.gal / units.min
-        )
-    )
-    m.fs.L_pump.feed_rate = Var(initialize=flow_4_4, units=units.gal / units.min)
-    m.fs.L_pump.feed_rate.fix()
     m.fs.L_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": L_pump_accounts,
-            "scaled_param": m.fs.L_pump.feed_rate,
+            "scaled_param": m.fs.leach_liquid_feed.flow_vol[0],
             "source": 1,
             "n_equip": 3,
             "scale_down_parallel_equip": False,
@@ -2762,20 +2747,14 @@ def add_costing(flowsheet):
     # 5.3 is UKy Rougher Solvent Extraction - Process Pump
     RSX_pump_accounts = ["5.3"]
     m.fs.RSX_pump = UnitModelBlock()
-    flow_5_3 = value(
-        units.convert(
-            flowsheet.fs.solex_rougher_load.mscontactor.aqueous_inlet.flow_vol[0],
-            to_units=units.gal / units.min,
-        )
-    )
-    m.fs.RSX_pump.feed_rate = Var(initialize=flow_5_3, units=units.gal / units.min)
-    m.fs.RSX_pump.feed_rate.fix()
     m.fs.RSX_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": RSX_pump_accounts,
-            "scaled_param": m.fs.RSX_pump.feed_rate,
+            "scaled_param": m.fs.solex_rougher_load.mscontactor.aqueous_inlet.flow_vol[
+                0
+            ],
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,
@@ -2840,20 +2819,14 @@ def add_costing(flowsheet):
     # 6.3 is UKy Cleaner Solvent Extraction - Process Pump
     CSX_pump_accounts = ["6.3"]
     m.fs.CSX_pump = UnitModelBlock()
-    flow_6_3 = value(
-        units.convert(
-            flowsheet.fs.solex_cleaner_load.mscontactor.aqueous_inlet.flow_vol[0],
-            to_units=units.gal / units.min,
-        )
-    )
-    m.fs.CSX_pump.feed_rate = Var(initialize=flow_6_3, units=units.gal / units.min)
-    m.fs.CSX_pump.feed_rate.fix()
     m.fs.CSX_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": CSX_pump_accounts,
-            "scaled_param": m.fs.CSX_pump.feed_rate,
+            "scaled_param": m.fs.solex_cleaner_load.mscontactor.aqueous_inlet.flow_vol[
+                0
+            ],
             "source": 1,
             "n_equip": 3,
             "scale_down_parallel_equip": False,
@@ -2919,20 +2892,12 @@ def add_costing(flowsheet):
     # 9.4 is UKy Rare Earth Element Precipitation - Process Pump
     reep_pump_accounts = ["9.4"]
     m.fs.reep_pump = UnitModelBlock()
-    flow_9_4 = value(
-        units.convert(
-            flowsheet.fs.precipitator.aqueous_inlet.flow_vol[0],
-            to_units=units.gal / units.min,
-        )
-    )
-    m.fs.reep_pump.feed_rate = Var(initialize=flow_9_4, units=units.gal / units.min)
-    m.fs.reep_pump.feed_rate.fix()
     m.fs.reep_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": reep_pump_accounts,
-            "scaled_param": m.fs.reep_pump.feed_rate,
+            "scaled_param": m.fs.precipitator.aqueous_inlet.flow_vol[0],
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,
@@ -2995,31 +2960,23 @@ def add_costing(flowsheet):
         },
     )
 
-    # 3.2 is UKy Roasting - Conveyors
-    R_conveyors_accounts = ["3.2"]
-    m.fs.R_conveyors = UnitModelBlock()
+    # TODO: Add bounds to flow_mass_product by converting it to a variable
 
-    flow_3_2 = value(
-        units.convert(
-            flowsheet.fs.roaster.flow_mass_product[0]
-            + flowsheet.fs.roaster.flow_mass_dust[0],
-            to_units=units.ton / units.hr,
-        )
-    )
-    m.fs.R_conveyors.throughput = Var(initialize=flow_3_2, units=units.ton / units.hr)
-    m.fs.R_conveyors.throughput.fix()
-    m.fs.R_conveyors.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_conveyors_accounts,
-            "scaled_param": m.fs.R_conveyors.throughput,
-            "source": 1,
-            "n_equip": 1,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
+    # 3.2 is UKy Roasting - Conveyors
+    # R_conveyors_accounts = ["3.2"]
+    # m.fs.R_conveyors = UnitModelBlock()
+    # m.fs.R_conveyors.costing = UnitModelCostingBlock(
+    #     flowsheet_costing_block=m.fs.costing,
+    #     costing_method=QGESSCostingData.get_REE_costing,
+    #     costing_method_arguments={
+    #         "cost_accounts": R_conveyors_accounts,
+    #         "scaled_param": m.fs.roaster.flow_mass_product[0],
+    #         "source": 1,
+    #         "n_equip": 1,
+    #         "scale_down_parallel_equip": False,
+    #         "CE_index_year": CE_index_year,
+    #     },
+    # )
 
     # 3.3 is UKy Roasting - Roaster
     R_roaster_accounts = ["3.3"]
@@ -3096,7 +3053,7 @@ def add_costing(flowsheet):
     )
 
     feed_input = units.convert(
-        flowsheet.fs.leach_solid_feed.flow_mass[0],
+        m.fs.leach_solid_feed.flow_mass[0],
         to_units=units.ton / units.hr,
     )
 
@@ -3112,15 +3069,15 @@ def add_costing(flowsheet):
     }
 
     feed_REE = sum(
-        flowsheet.fs.leach_solid_feed.flow_mass[0]
-        * flowsheet.fs.leach_solid_feed.mass_frac_comp[0, molecule]
+        m.fs.leach_solid_feed.flow_mass[0]
+        * m.fs.leach_solid_feed.mass_frac_comp[0, molecule]
         * REE_frac
         for molecule, REE_frac in REE_mass_frac.items()
     )
 
     feed_grade = (
         units.convert(feed_REE, to_units=units.kg / units.hr)
-        / flowsheet.fs.leach_solid_feed.flow_mass[0]
+        / m.fs.leach_solid_feed.flow_mass[0]
     )
 
     m.fs.feed_input = Var(initialize=feed_input, units=units.ton / units.hr)
@@ -3138,7 +3095,7 @@ def add_costing(flowsheet):
     )
 
     recovery_rate = units.convert(
-        flowsheet.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr
+        m.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr
     )
     m.fs.recovery_rate_per_year = Var(
         initialize=recovery_rate * m.fs.annual_operating_hours,
@@ -3162,7 +3119,7 @@ def add_costing(flowsheet):
 
     solid_waste = value(
         units.convert(
-            flowsheet.fs.leach_filter_cake.flow_mass[0], to_units=units.ton / units.hr
+            m.fs.leach_filter_cake.flow_mass[0], to_units=units.ton / units.hr
         )
     )
 
@@ -3175,9 +3132,7 @@ def add_costing(flowsheet):
     )  # non-hazardous precipitate
 
     dust = value(
-        units.convert(
-            flowsheet.fs.roaster.flow_mass_dust[0], to_units=units.ton / units.hr
-        )
+        units.convert(m.fs.roaster.flow_mass_dust[0], to_units=units.ton / units.hr)
     )
     m.fs.dust_and_volatiles = Var(
         m.fs.time, initialize=dust, units=units.ton / units.hr
@@ -3214,7 +3169,7 @@ def add_costing(flowsheet):
 
     m.fs.Ce_product = Param(
         default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_product[0, "Ce"]
+            m.fs.roaster.flow_mol_comp_product[0, "Ce"]
             * REO_molar_mass["Ce2O3"]
             * units.g
             / units.mol,
@@ -3227,7 +3182,7 @@ def add_costing(flowsheet):
 
     m.fs.Dy_product = Param(
         default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_product[0, "Dy"]
+            m.fs.roaster.flow_mol_comp_product[0, "Dy"]
             * REO_molar_mass["Dy2O3"]
             * units.g
             / units.mol,
@@ -3240,7 +3195,7 @@ def add_costing(flowsheet):
 
     m.fs.Gd_product = Param(
         default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_product[0, "Gd"]
+            m.fs.roaster.flow_mol_comp_product[0, "Gd"]
             * REO_molar_mass["Gd2O3"]
             * units.g
             / units.mol,
@@ -3253,7 +3208,7 @@ def add_costing(flowsheet):
 
     m.fs.La_product = Param(
         default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_product[0, "La"]
+            m.fs.roaster.flow_mol_comp_product[0, "La"]
             * REO_molar_mass["La2O3"]
             * units.g
             / units.mol,
@@ -3266,7 +3221,7 @@ def add_costing(flowsheet):
 
     m.fs.Nd_product = Param(
         default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_product[0, "Nd"]
+            m.fs.roaster.flow_mol_comp_product[0, "Nd"]
             * REO_molar_mass["Nd2O3"]
             * units.g
             / units.mol,
@@ -3279,7 +3234,7 @@ def add_costing(flowsheet):
 
     m.fs.Pr_product = Param(
         default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_product[0, "Pr"]
+            m.fs.roaster.flow_mol_comp_product[0, "Pr"]
             * REO_molar_mass["Pr2O3"]
             * units.g
             / units.mol,
@@ -3292,7 +3247,7 @@ def add_costing(flowsheet):
 
     m.fs.Sc_product = Param(
         default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_product[0, "Sc"]
+            m.fs.roaster.flow_mol_comp_product[0, "Sc"]
             * REO_molar_mass["Sc2O3"]
             * units.g
             / units.mol,
@@ -3305,7 +3260,7 @@ def add_costing(flowsheet):
 
     m.fs.Sm_product = Param(
         default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_product[0, "Sm"]
+            m.fs.roaster.flow_mol_comp_product[0, "Sm"]
             * REO_molar_mass["Sm2O3"]
             * units.g
             / units.mol,
@@ -3318,7 +3273,7 @@ def add_costing(flowsheet):
 
     m.fs.Y_product = Param(
         default=units.convert(
-            flowsheet.fs.roaster.flow_mol_comp_product[0, "Y"]
+            m.fs.roaster.flow_mol_comp_product[0, "Y"]
             * REO_molar_mass["Y2O3"]
             * units.g
             / units.mol,
@@ -3420,6 +3375,7 @@ def add_costing(flowsheet):
     dt = DiagnosticsToolbox(model=m)
     print("Structural issues in costing")
     dt.report_structural_issues()
+    dt.display_potential_evaluation_errors()
     assert degrees_of_freedom(m) == 0
 
     # Initialize costing

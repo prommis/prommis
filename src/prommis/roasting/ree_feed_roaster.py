@@ -80,10 +80,12 @@ Streams
 - **Gas Outlet Stream**: Gas product leaving the reactor.
 - **Solid Outlet Stream**: Recovered solid product leaving the reactor.
 
+
 Thermal Properties
 ------------------
 
 The standard heats of formation and heat capacities of solid components involved are defined as parameters in this model. The default values of those parameters are obtained from two sources as listed below:
+
 1. NIST Chemistry WebBook
 2. Wagman, D.D., W.H. Evans, V.B. Parker, R.H.Schumm, I. Halow, S.M. Bailey, K.L. Churney,
    R.L. Nuttall, "The NBS tables of chemical thermodynamic properties-Selected values for

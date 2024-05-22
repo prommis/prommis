@@ -430,7 +430,7 @@ class TestUKyFlowsheet:
         ].value == pytest.approx(251.90944330, 1e-4)
         assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
             "Ca"
-        ].value == pytest.approx( 41.4791, 1e-4)
+        ].value == pytest.approx(41.4791, 1e-4)
         assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
             "Ce"
         ].value == pytest.approx(2.01891339, 1e-4)

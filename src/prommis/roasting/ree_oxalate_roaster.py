@@ -90,7 +90,7 @@ Mass Balance
 
 The content of the surface moisture in the solid feed stream is vaporized to enter the gas phase.
 
-The species mass balance is based on complete conversion of solid reactants such that the mole flow rates of
+The species mass balance is based on complete conversion of solid reactants such that the molar flow rates of
 individual metals (rare earth and gaugue elements) are conserved. For the species in the gas phase, the :ce:`O2`
 is consumed while :ce:`CO2` and :ce:`H2O` are produced. For any other species in the gas feed stream that does not
 participate in any reactions, its molar flow rate in the gas product stream is the same as that in the

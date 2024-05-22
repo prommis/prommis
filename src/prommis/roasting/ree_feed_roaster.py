@@ -68,6 +68,7 @@ Impurity minerals are assumed to be a mixture of :ce:`Un2O3`, :ce:`CaCO3`, :ce:`
 
 The feed stream also contains organic material including :ce:`C`, :ce:`H`, :ce:`O`, :ce:`N`, :ce:`S` elements. The composition of the organic material is specified by the user.
 
+
 Heat Source
 -----------
 

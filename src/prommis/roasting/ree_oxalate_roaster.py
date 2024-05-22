@@ -26,7 +26,7 @@ including `Sc`, `Y`, `La`, `Ce`, `Pr`, `Nd`, `Pm`, `Sm`, `Eu`, `Gd`, `Tb`, `Dy`,
 and `Th` in the model. The user can specify a subset of those 18 elements through configuration when creating
 the unit model. The 3 gangue elements considered in the model are `Fe`, `Al`, and `Ca`.
 
-The feed oxalate mixture stream is typically from a precipiator in an upstream process. It is assumed
+The feed oxalate mixture stream is typically from a precipitator in an upstream process. It is assumed
 that all oxalates are in their hydrate forms. In case the anhydrous oxalate feed flow rates are specified in
 the property package of the solid feed stream, the mole flow rates are converted to the corresponding hydrate flow rates. 
 The molecular formula of an oxalate hydrate can be expressed in a general form as :ce:`RE2(C2O4)3 \cdot xH2O` where RE is

@@ -11,7 +11,6 @@ _logger = logging.getLogger(f"sphinx.ext.{Path(__file__).stem}")
 
 
 class DirectiveCE(MathDirective):
-
     @property
     def equations(self) -> List[str]:
         return list(self.arguments)
@@ -67,6 +66,5 @@ class RoleCE:
 
 
 def setup(app: SphinxApp):
-
     app.add_role("ce", RoleCE())
     app.add_directive("ce", DirectiveCE)

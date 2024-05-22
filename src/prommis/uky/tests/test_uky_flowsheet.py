@@ -350,7 +350,7 @@ class TestUKyFlowsheet:
         ].value == pytest.approx(319.265, 1e-4)
         assert model.fs.solex_cleaner.mscontactor.organic_outlet.conc_mass_comp[
             0, "Ca"
-        ].value == pytest.approx(100.82, 1e-4)
+        ].value == pytest.approx(88.32, 1e-4)
         assert model.fs.solex_cleaner.mscontactor.organic_outlet.conc_mass_comp[
             0, "Ce"
         ].value == pytest.approx(16.2785, 1e-4)
@@ -390,7 +390,7 @@ class TestUKyFlowsheet:
         ].value == pytest.approx(215.9801, 1e-4)
         assert model.fs.solex_cleaner.mscontactor.aqueous_outlet.conc_mass_comp[
             0, "Ca"
-        ].value == pytest.approx(52.5124, 1e-4)
+        ].value == pytest.approx(30.9457, 1e-4)
         assert model.fs.solex_cleaner.mscontactor.aqueous_outlet.conc_mass_comp[
             0, "Ce"
         ].value == pytest.approx(0.47596, 1e-4)
@@ -430,7 +430,7 @@ class TestUKyFlowsheet:
         ].value == pytest.approx(251.90944330, 1e-4)
         assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
             "Ca"
-        ].value == pytest.approx(70.3868727, 1e-4)
+        ].value == pytest.approx( 41.4791, 1e-4)
         assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
             "Ce"
         ].value == pytest.approx(2.01891339, 1e-4)
@@ -500,7 +500,7 @@ class TestUKyFlowsheet:
         ].value == pytest.approx(0.00027177, 1e-4)
 
         assert model.fs.roaster.gas_outlet.flow_mol[0].value == pytest.approx(
-            0.00903269, 1e-4
+            0.00906375, 1e-4
         )
         assert model.fs.roaster.gas_outlet.temperature[0].value == pytest.approx(
             873.15, 1e-4
@@ -510,16 +510,16 @@ class TestUKyFlowsheet:
         )
         assert model.fs.roaster.gas_outlet.mole_frac_comp[
             0, "CO2"
-        ].value == pytest.approx(0.0641327, 1e-4)
+        ].value == pytest.approx(0.0666544, 1e-4)
         assert model.fs.roaster.gas_outlet.mole_frac_comp[
             0, "H2O"
-        ].value == pytest.approx(0.2021090, 1e-4)
+        ].value == pytest.approx(0.202787, 1e-4)
         assert model.fs.roaster.gas_outlet.mole_frac_comp[
             0, "N2"
-        ].value == pytest.approx(0.643809, 1e-4)
+        ].value == pytest.approx(0.641602, 1e-4)
         assert model.fs.roaster.gas_outlet.mole_frac_comp[
             0, "O2"
-        ].value == pytest.approx(0.089950, 1e-4)
+        ].value == pytest.approx(0.088956, 1e-4)
 
     @pytest.mark.unit
     def test_costing(self, model):

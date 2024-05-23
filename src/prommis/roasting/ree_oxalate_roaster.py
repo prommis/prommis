@@ -29,10 +29,10 @@ the unit model. The 3 gangue elements considered in the model are `Fe`, `Al`, an
 The feed oxalate mixture stream is typically from a precipitator in an upstream process. It is assumed
 that all oxalates are in their hydrate forms. In case the anhydrous oxalate feed flow rates are specified in
 the property package of the solid feed stream, the molar flow rates are converted to the corresponding hydrate flow rates. 
-The molecular formula of an oxalate hydrate can be expressed in a general form as :ce:`RE2(C2O4)3 \cdot xH2O` where RE is
+The molecular formula of an oxalate hydrate can be expressed in a general form as :ce:`RE2(C2O4)3 \\cdot xH2O` where RE is
 one of the 18 rare earth elements and x is the number of water molecules associated with the hyrate. The three 
-gangue oxalate hydrates considered in the model are :ce:`Fe2(C2O4)3 \cdot 2H2O`, :ce:`Al2(C2O4)3 \cdot H2O`, and
-:ce:`CaC2O4 \cdot H2O`, for `Fe`, `Al`, and `Ca` elements, respectively.
+gangue oxalate hydrates considered in the model are :ce:`Fe2(C2O4)3 \\cdot 2H2O`, :ce:`Al2(C2O4)3 \\cdot H2O`, and
+:ce:`CaC2O4 \\cdot H2O`, for `Fe`, `Al`, and `Ca` elements, respectively.
 
 The feed stream could optionally contain surface moisture. The amount of surface moisture entering the
 reactor is specified by an input variable in the current model rather than a state variable in the property

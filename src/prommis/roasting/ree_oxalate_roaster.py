@@ -51,10 +51,10 @@ Reactions
 The thermal decomposition reactions modeled for rare earth oxalates and three gaugue oxalates are as
 listed below:
 
-- :ce:`RE2(C2O4)3 \cdot xH2O(s) + 1.5O2(g) -> RE2O3(s) + 6CO2(g) + xH2O(g)`
-- :ce:`Fe2(C2O4)3 \cdot 2H2O(s) + 1.5O2(g) -> Fe2O3(s) + 6CO2(g) + 2H2O(g)`
-- :ce:`Al2(C2O4)3 \cdot H2O(s) + 1.5O2(g) -> Al2O3(s) + 6CO2(g) + H2O(g)`
-- :ce:`CaC2O4 \cdot H2O(s) + 0.5O2(g) -> CaO(s) + 2CO2(g) + H2O(g)`
+- :ce:`RE2(C2O4)3 \\cdot xH2O(s) + 1.5O2(g) -> RE2O3(s) + 6CO2(g) + xH2O(g)`
+- :ce:`Fe2(C2O4)3 \\cdot 2H2O(s) + 1.5O2(g) -> Fe2O3(s) + 6CO2(g) + 2H2O(g)`
+- :ce:`Al2(C2O4)3 \\cdot H2O(s) + 1.5O2(g) -> Al2O3(s) + 6CO2(g) + H2O(g)`
+- :ce:`CaC2O4 \\cdot H2O(s) + 0.5O2(g) -> CaO(s) + 2CO2(g) + H2O(g)`
 
 In the first reaction, RE represent any of 18 rare earth elements and x is the number of water molecules
 associated with the oxalate. Typically x=10 for most rare earth elements.

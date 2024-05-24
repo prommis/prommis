@@ -47,17 +47,22 @@ from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.uky_flowsheet import (
-    main,
+    build,
+    set_partition_coefficients,
+    set_operating_conditions,
     set_scaling,
     initialize_system,
     solve,
+    add_costing,
+    display_costing,
 )
 
 
 @pytest.fixture(scope="module")
 def system_frame():
-    m, res = main()
-    m.results = res
+    m = build()
+    set_partition_coefficients(m)
+    set_operating_conditions(m)
 
     return m
 
@@ -756,3 +761,35 @@ def test_conservation(system_frame):
             rel=1e-7,
             abs=1e-7,
         )
+
+@pytest.mark.component
+@pytest.mark.solver
+def test_costing(system_frame):
+    model = system_frame
+
+    scaled_model = set_scaling(model)
+    initialize_system(scaled_model)
+
+    results = solve(scaled_model)
+
+    scaling = TransformationFactory("core.scale_model")
+    scaling.propagate_solution(scaled_model, model)
+
+    assert_optimal_termination(results)
+
+    add_costing(model)
+    display_costing(model)
+
+    assert model.fs.costing.total_plant_cost.value == pytest.approx(15.5766, rel=1e-4)
+    assert model.fs.costing.total_BEC.value == pytest.approx(5.244, rel=1e-4)
+    assert model.fs.costing.total_installation_cost.value == pytest.approx(
+        10.331, rel=1e-4)
+    assert model.fs.costing.other_plant_costs.value == pytest.approx(
+        0.0016309, rel=1e-4)
+    assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(7.2485, rel=1e-4)
+    assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+        10.7422, rel=1e-4)
+    assert value(model.fs.costing.land_cost) == pytest.approx(
+        6.1234e-5, rel=1e-4)
+    assert model.fs.costing.total_sales_revenue.value == pytest.approx(
+        0.00018136, rel=1e-4)

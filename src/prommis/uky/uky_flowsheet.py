@@ -3052,11 +3052,6 @@ def add_costing(m):
         },
     )
 
-    feed_input = units.convert(
-        m.fs.leach_solid_feed.flow_mass[0],
-        to_units=units.ton / units.hr,
-    )
-
     REE_mass_frac = {
         "Y2O3": 88.906 * 2 / (88.906 * 2 + 16 * 3),
         "La2O3": 138.91 * 2 / (138.91 * 2 + 16 * 3),
@@ -3075,13 +3070,21 @@ def add_costing(m):
         for molecule, REE_frac in REE_mass_frac.items()
     )
 
-    feed_grade = (
-        units.convert(feed_REE, to_units=units.kg / units.hr)
-        / m.fs.leach_solid_feed.flow_mass[0]
+    m.fs.feed_input = Var(initialize=0.025, units=units.ton / units.hr)
+    m.fs.feed_input_constraint = Constraint(
+        expr=m.fs.feed_input
+        == units.convert(
+            m.fs.leach_solid_feed.flow_mass[0], to_units=units.ton / units.hr
+        )
     )
 
-    m.fs.feed_input = Var(initialize=feed_input, units=units.ton / units.hr)
-    m.fs.feed_grade = Var(initialize=feed_grade * 1000000, units=units.ppm)
+    m.fs.feed_grade = Var(initialize=318.015, units=units.ppm)
+    m.fs.feed_grade_constraint = Constraint(
+        expr=m.fs.feed_grade
+        == units.convert(
+            feed_REE / m.fs.leach_solid_feed.flow_mass[0], to_units=units.ppm
+        )
+    )
 
     hours_per_shift = 8
     shifts_per_day = 3
@@ -3094,12 +3097,13 @@ def add_costing(m):
         units=units.hours / units.a,
     )
 
-    recovery_rate = units.convert(
-        m.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr
-    )
-    m.fs.recovery_rate_per_year = Var(
-        initialize=recovery_rate * m.fs.annual_operating_hours,
-        units=units.kg / units.yr,
+    m.fs.recovery_rate_per_year = Var(initialize=13.306, units=units.kg / units.yr)
+    m.fs.recovery_rate_per_year_constraint = Constraint(
+        expr=m.fs.recovery_rate_per_year
+        == units.convert(
+            m.fs.roaster.flow_mass_product[0] * m.fs.annual_operating_hours,
+            to_units=units.kg / units.yr,
+        )
     )
 
     # the land cost is the lease cost, or refining cost of REO produced
@@ -3117,26 +3121,26 @@ def add_costing(m):
         * units.day
     )
 
-    solid_waste = value(
-        units.convert(
+    m.fs.solid_waste = Var(m.fs.time, initialize=0.0245, units=units.ton / units.hr)
+    m.fs.solid_waste_constraint = Constraint(
+        expr=m.fs.solid_waste[0]
+        == units.convert(
             m.fs.leach_filter_cake.flow_mass[0], to_units=units.ton / units.hr
         )
     )
-
-    m.fs.solid_waste = Var(
-        m.fs.time, initialize=solid_waste, units=units.ton / units.hr
-    )  # non-hazardous solid waste
 
     m.fs.precipitate = Var(
         m.fs.time, initialize=0, units=units.ton / units.hr
     )  # non-hazardous precipitate
 
-    dust = value(
-        units.convert(m.fs.roaster.flow_mass_dust[0], to_units=units.ton / units.hr)
-    )
     m.fs.dust_and_volatiles = Var(
-        m.fs.time, initialize=dust, units=units.ton / units.hr
-    )  # dust and volatiles
+        m.fs.time, initialize=9.5e-8, units=units.ton / units.hr
+    )
+    m.fs.dust_and_volatiles_constraint = Constraint(
+        expr=m.fs.dust_and_volatiles[0]
+        == units.convert(m.fs.roaster.flow_mass_dust[0], to_units=units.ton / units.hr)
+    )
+
     m.fs.power = Var(m.fs.time, initialize=14716, units=units.hp)
 
     resources = [
@@ -3363,19 +3367,13 @@ def add_costing(m):
     )
 
     # fix costing vars that shouldn't change
-    m.fs.feed_input.fix()
-    m.fs.feed_grade.fix()
-    m.fs.recovery_rate_per_year.fix()
-    m.fs.solid_waste.fix()
     m.fs.precipitate.fix()
-    m.fs.dust_and_volatiles.fix()
     m.fs.power.fix()
 
     # check that the model is set up properly and has 0 degrees of freedom
     dt = DiagnosticsToolbox(model=m)
     print("Structural issues in costing")
     dt.report_structural_issues()
-    dt.display_potential_evaluation_errors()
     assert degrees_of_freedom(m) == 0
 
     # Initialize costing

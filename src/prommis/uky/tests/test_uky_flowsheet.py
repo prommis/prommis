@@ -762,6 +762,7 @@ def test_conservation(system_frame):
             abs=1e-7,
         )
 
+
 @pytest.mark.component
 @pytest.mark.solver
 def test_costing(system_frame):
@@ -783,13 +784,16 @@ def test_costing(system_frame):
     assert model.fs.costing.total_plant_cost.value == pytest.approx(15.5766, rel=1e-4)
     assert model.fs.costing.total_BEC.value == pytest.approx(5.244, rel=1e-4)
     assert model.fs.costing.total_installation_cost.value == pytest.approx(
-        10.331, rel=1e-4)
+        10.331, rel=1e-4
+    )
     assert model.fs.costing.other_plant_costs.value == pytest.approx(
-        0.0016309, rel=1e-4)
+        0.0016309, rel=1e-4
+    )
     assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(7.2485, rel=1e-4)
     assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        10.7422, rel=1e-4)
-    assert value(model.fs.costing.land_cost) == pytest.approx(
-        6.1234e-5, rel=1e-4)
+        10.7422, rel=1e-4
+    )
+    assert value(model.fs.costing.land_cost) == pytest.approx(6.1234e-5, rel=1e-4)
     assert model.fs.costing.total_sales_revenue.value == pytest.approx(
-        0.00018136, rel=1e-4)
+        0.00018136, rel=1e-4
+    )

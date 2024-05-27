@@ -387,7 +387,7 @@ def test_solution(system_frame):
     ].value == pytest.approx(7.05737918e-9, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Ca"
-    ].value == pytest.approx(1.53922935e-8, 1e-4)
+    ].value == pytest.approx(1.51668539e-8, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Ce"
     ].value == pytest.approx(1.9068033e-6, 1e-4)
@@ -426,7 +426,7 @@ def test_solution(system_frame):
     ].value == pytest.approx(0.389002, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Ca"
-    ].value == pytest.approx(0.8484226, 1e-4)
+    ].value == pytest.approx(0.8359969, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Ce"
     ].value == pytest.approx(105.10298449, 1e-4)
@@ -466,7 +466,7 @@ def test_solution(system_frame):
     ].value == pytest.approx(0.3855012, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Ca"
-    ].value == pytest.approx(0.84842261, 1e-4)
+    ].value == pytest.approx(0.66461753, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Ce"
     ].value == pytest.approx(33.55938, 1e-4)

@@ -8,6 +8,12 @@
 -
 -
 
+## Reviewer's checklist / merge requirements:
+- [ ] The head branch (i.e. the "source" of the changes) is not the `main` branch on the PR author's fork
+- [ ] Documentation
+- [ ] Tests
+- [ ] Diagnostic tests for models
+
 ### Legal Acknowledgement
 
 By contributing to this software project, I agree to the following terms and conditions for my contribution:

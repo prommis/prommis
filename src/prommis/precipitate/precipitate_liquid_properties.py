@@ -95,7 +95,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Gd": 88.01,
                 "Dy": 87.16,
                 "Al": 0.9,
-                "Ca": 1e-20,
+                "Ca": 20.50,
                 "Fe": 2.44,
             },
         )

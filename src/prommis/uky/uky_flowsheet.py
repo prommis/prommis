@@ -1745,53 +1745,80 @@ def initialize_system(m):
     seq.set_guesses_for(m.fs.rougher_org_make_up.outlet, tear_guesses8)
     seq.set_guesses_for(m.fs.cleaner_org_make_up.outlet, tear_guesses9)
 
-    def function(stream):
-        initializer_feed = FeedInitializer()
-        initializer_product = ProductInitializer()
-        initializer_sep = SeparatorInitializer()
-        initializer_mix = MixerInitializer()
-        initializer_leach = LeachingTrainInitializer()
-        initializer_bt = BlockTriangularizationInitializer()
+    initializer_feed = FeedInitializer()
+    feed_units = [
+        m.fs.leach_liquid_feed,
+        m.fs.leach_solid_feed,
+        m.fs.rougher_org_make_up,
+        m.fs.acid_feed1,
+        m.fs.acid_feed2,
+        m.fs.acid_feed3,
+        m.fs.cleaner_org_make_up,
+    ]
 
+    initializer_product = ProductInitializer()
+    product_units = [
+        m.fs.leach_filter_cake,
+        m.fs.leach_filter_cake_liquid,
+        m.fs.cleaner_purge,
+        m.fs.sc_circuit_purge,
+        m.fs.precip_purge,
+    ]
+
+    initializer_sep = SeparatorInitializer()
+    sep_units = [
+        m.fs.load_sep,
+        m.fs.scrub_sep,
+        m.fs.precip_sep,
+        m.fs.cleaner_sep,
+        m.fs.rougher_sep,
+    ]
+
+    initializer_mix = MixerInitializer()
+    mix_units = [
+        m.fs.precip_sx_mixer,
+        m.fs.cleaner_mixer,
+        m.fs.rougher_mixer,
+    ]
+
+    initializer_leach = LeachingTrainInitializer()
+    leach_units = [
+        m.fs.leach,
+    ]
+
+    initializer_bt = BlockTriangularizationInitializer()
+    bt_units = [
+        m.fs.leach_mixer,
+        m.fs.leach_sx_mixer,
+        m.fs.sl_sep1,
+        m.fs.roaster,
+    ]
+
+    def function(unit):
         propagate_state(m.fs.liq_feed)
         propagate_state(m.fs.sol_feed)
         propagate_state(m.fs.org_feed)
         propagate_state(m.fs.org_feed2)
 
-        if stream == m.fs.leach_liquid_feed:
-            print(f"Initializing {stream}")
-            initializer_feed.initialize(m.fs.leach_liquid_feed)
-        elif stream == m.fs.leach_solid_feed:
-            print(f"Initializing {stream}")
-            initializer_feed.initialize(m.fs.leach_solid_feed)
-        elif stream == m.fs.rougher_org_make_up:
-            print(f"Initializing {stream}")
-            initializer_feed.initialize(m.fs.rougher_org_make_up)
-        elif stream == m.fs.acid_feed1:
-            print(f"Initializing {stream}")
-            initializer_feed.initialize(m.fs.acid_feed1)
-        elif stream == m.fs.acid_feed2:
-            print(f"Initializing {stream}")
-            initializer_feed.initialize(m.fs.acid_feed2)
-        elif stream == m.fs.acid_feed3:
-            print(f"Initializing {stream}")
-            initializer_feed.initialize(m.fs.acid_feed3)
-        elif stream == m.fs.cleaner_org_make_up:
-            print(f"Initializing {stream}")
-            initializer_feed.initialize(m.fs.cleaner_org_make_up)
-        elif stream == m.fs.leach_filter_cake:
-            print(f"Initializing {stream}")
-            initializer_product.initialize(m.fs.leach_filter_cake)
-        elif stream == m.fs.load_sep:
-            print(f"Initializing {stream}")
-            initializer_sep.initialize(m.fs.load_sep)
-        elif stream == m.fs.scrub_sep:
-            print(f"Initializing {stream}")
-            initializer_sep.initialize(m.fs.scrub_sep)
-        elif stream == m.fs.leach:
-            print(f"Initializing {stream}")
+        if unit in feed_units:
+            print(f"Initializing {unit}")
+            initializer_feed.initialize(unit)
+        elif unit in product_units:
+            print(f"Initializing {unit}")
+            initializer_product.initialize(unit)
+        elif unit in sep_units:
+            print(f"Initializing {unit}")
+            initializer_sep.initialize(unit)
+        elif unit in mix_units:
+            print(f"Initializing {unit}")
+            initializer_mix.initialize(unit)
+        elif unit in bt_units:
+            print(f"Initializing {unit}")
+            initializer_bt.initialize(unit)
+        elif unit in leach_units:
+            print(f"Initializing {unit}")
             try:
-                initializer_leach.initialize(m.fs.leach)
+                initializer_leach.initialize(unit)
             except:
                 # Fix feed states
                 m.fs.leach.liquid_inlet.flow_vol.fix()
@@ -1806,11 +1833,8 @@ def initialize_system(m):
                 m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
                 m.fs.leach.solid_inlet.flow_mass.unfix()
                 m.fs.leach.solid_inlet.mass_frac_comp.unfix()
-        elif stream == m.fs.leach_mixer:
-            print(f"Initializing {stream}")
-            initializer_bt.initialize(m.fs.leach_mixer)
-        elif stream == m.fs.solex_rougher_load.mscontactor:
-            print(f"Initializing {stream}")
+        elif unit == m.fs.solex_rougher_load.mscontactor:
+            print(f"Initializing {unit}")
             try:
                 initializer_bt.initialize(m.fs.solex_rougher_load)
             except:
@@ -1843,8 +1867,8 @@ def initialize_system(m):
                 m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
                     0
                 ].conc_mass_comp.unfix()
-        elif stream == m.fs.solex_rougher_scrub.mscontactor:
-            print(f"Initializing {stream}")
+        elif unit == m.fs.solex_rougher_scrub.mscontactor:
+            print(f"Initializing {unit}")
             try:
                 initializer_bt.initialize(m.fs.solex_rougher_scrub)
             except:
@@ -1877,8 +1901,8 @@ def initialize_system(m):
                 m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
                     0
                 ].conc_mass_comp.unfix()
-        elif stream == m.fs.solex_rougher_strip.mscontactor:
-            print(f"Initializing {stream}")
+        elif unit == m.fs.solex_rougher_strip.mscontactor:
+            print(f"Initializing {unit}")
             try:
                 initializer_bt.initialize(m.fs.solex_rougher_strip)
             except:
@@ -1911,8 +1935,8 @@ def initialize_system(m):
                 m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
                     0
                 ].conc_mass_comp.unfix()
-        elif stream == m.fs.solex_cleaner_load.mscontactor:
-            print(f"Initializing {stream}")
+        elif unit == m.fs.solex_cleaner_load.mscontactor:
+            print(f"Initializing {unit}")
             try:
                 initializer_bt.initialize(m.fs.solex_cleaner_load)
             except:
@@ -1945,8 +1969,8 @@ def initialize_system(m):
                 m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
                     0
                 ].conc_mass_comp.unfix()
-        elif stream == m.fs.solex_cleaner_strip.mscontactor:
-            print(f"Initializing {stream}")
+        elif unit == m.fs.solex_cleaner_strip.mscontactor:
+            print(f"Initializing {unit}")
             try:
                 initializer_bt.initialize(m.fs.solex_cleaner_strip)
             except:
@@ -1979,8 +2003,8 @@ def initialize_system(m):
                 m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
                     0
                 ].conc_mass_comp.unfix()
-        elif stream == m.fs.precipitator:
-            print(f"Initializing {stream}")
+        elif unit == m.fs.precipitator:
+            print(f"Initializing {unit}")
             try:
                 initializer_bt.initialize(m.fs.precipitator)
             except:
@@ -1995,8 +2019,8 @@ def initialize_system(m):
                 m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol.unfix()
                 m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp.unfix()
                 m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.unfix()
-        elif stream == m.fs.sl_sep2:
-            print(f"Initializing {stream}")
+        elif unit == m.fs.sl_sep2:
+            print(f"Initializing {unit}")
             try:
                 initializer_bt.initialize(m.fs.sl_sep2)
             except:
@@ -2011,15 +2035,8 @@ def initialize_system(m):
                 m.fs.sl_sep2.liquid_inlet_state[0].flow_vol.unfix()
                 m.fs.sl_sep2.liquid_inlet_state[0].conc_mass_comp.unfix()
                 m.fs.sl_sep2.solid_state[0].flow_mol_comp.unfix()
-        elif stream == m.fs.precip_sep:
-            print(f"Initializing {stream}")
-            initializer_sep.initialize(m.fs.precip_sep)
-        elif stream == m.fs.precip_sx_mixer:
-            print(f"Initializing {stream}")
-            initializer_mix.initialize(m.fs.precip_sx_mixer)
         else:
-            print(f"Initializing {stream}")
-            initializer_bt.initialize(stream)
+            print(f"{unit} is not being initialized.")
 
     seq.run(m, function)
 

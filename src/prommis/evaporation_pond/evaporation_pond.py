@@ -69,19 +69,19 @@ Variable          Name                Indexing Set(s)
 :math:`X_{t, r}`  reaction_extent     time, reaction list
 ================= =================== =====================
 
-Parameters
-----------
+Params
+------
 
 Evaporation Pond models have the following Params, which are used in the complementarity constraint
 for precipitation.
 
-================== ======== ============== ==================================================================
+================== ======== ============== =================================================================
 Parameter          Name     Indexing Set   Notes
-================== ======== ============== ==================================================================
-:math:`\eps`       eps                     Smoothing parameter for smooth_max
+================== ======== ============== =================================================================
+:math:`\epsilon`   eps                     Smoothing parameter for smooth_max
 :math:`norm_{r}`   s_norm   reaction list  Normalizing factor, should match magnitude of solubility product
 :math:`scale_{r}`  s_scale  reaction list  Scaling factor for reaction product, Q = Ksp - f(C)
-================== ======== ============== ==================================================================
+================== ======== ============== =================================================================
 
 Constraints
 -----------

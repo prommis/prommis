@@ -70,7 +70,7 @@ class TestSolidHandling(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build(self, model):
-         # More assertions as needed for your model
+        # More assertions as needed for your model
         unit = model.fs.unit
         assert isinstance(
             unit.work, Var

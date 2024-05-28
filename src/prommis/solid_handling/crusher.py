@@ -84,9 +84,7 @@ _log = idaeslog.getLogger(__name__)
 
 @declare_process_block_class("CrushAndBreakageUnit")
 class CrushAndBreakageUnitData(UnitModelBlockData):
-    CONFIG = (
-        ConfigDict()
-    )  
+    CONFIG = ConfigDict()
     CONFIG.declare(
         "dynamic",
         ConfigValue(

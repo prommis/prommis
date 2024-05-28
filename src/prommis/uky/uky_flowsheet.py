@@ -3141,7 +3141,17 @@ def add_costing(m):
         == units.convert(m.fs.roaster.flow_mass_dust[0], to_units=units.ton / units.hr)
     )
 
-    m.fs.power = Var(m.fs.time, initialize=14716, units=units.hp)
+    m.fs.power = Var(m.fs.time, initialize=7, units=units.hp)
+    m.fs.power_constraint = Constraint(
+        expr=m.fs.power[0]
+        == units.convert(
+            m.fs.reep_tank_mixers.power
+            + m.fs.CSX_tank_mixers.power
+            + m.fs.RSX_tank_mixers.power
+            + m.fs.L_tank_mixers.power,
+            to_units=units.hp,
+        )
+    )
 
     resources = [
         "nonhazardous_solid_waste",
@@ -3368,7 +3378,6 @@ def add_costing(m):
 
     # fix costing vars that shouldn't change
     m.fs.precipitate.fix()
-    m.fs.power.fix()
 
     # check that the model is set up properly and has 0 degrees of freedom
     dt = DiagnosticsToolbox(model=m)

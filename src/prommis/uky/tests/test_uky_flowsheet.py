@@ -791,7 +791,7 @@ def test_costing(system_frame):
     )
     assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(7.2485, rel=1e-4)
     assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        10.7422, rel=1e-4
+        1.45469, rel=1e-4
     )
     assert value(model.fs.costing.land_cost) == pytest.approx(6.1234e-5, rel=1e-4)
     assert model.fs.costing.total_sales_revenue.value == pytest.approx(

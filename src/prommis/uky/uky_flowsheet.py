@@ -228,6 +228,10 @@ def main():
 
     initialize_system(scaled_model)
 
+    solve(scaled_model)
+
+    fix_organic_recycle(scaled_model)
+
     scaled_results = solve(scaled_model)
 
     if not check_optimal_termination(scaled_results):
@@ -2043,20 +2047,25 @@ def initialize_system(m):
 
 def solve(m, solver=None):
     """
-    Solve the scaled system.
+    Solve the model.
     """
     if solver is None:
         solver = get_solver()
     results = solver.solve(m, tee=True)
+
+    return results
+
+
+def fix_organic_recycle(m):
+    """
+    Fix the volumetric flow rate of the organic recycle streams and unfix make-up streams.
+    """
 
     m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
     m.fs.rougher_mixer.outlet.flow_vol.fix(62.01)
 
     m.fs.cleaner_org_make_up.outlet.flow_vol.unfix()
     m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
-
-    return results
-
 
 def display_results(m):
     """
@@ -2217,22 +2226,22 @@ def display_results(m):
         )
     )
 
-    # total_ca_recovery = 100 * value(
-    #     units.convert(
-    #         m.fs.roaster.flow_mol_comp_product[0, "Ca"]
-    #         * molar_mass["CaO"]
-    #         * metal_mass_frac["CaO"],
-    #         to_units=units.kg / units.hr,
-    #     )
-    #     / (
-    #         units.convert(
-    #             m.fs.leach_solid_feed.flow_mass[0]
-    #             * m.fs.leach_solid_feed.mass_frac_comp[0, "Cao"]
-    #             * metal_mass_frac["CaO"],
-    #             to_units=units.kg / units.hr,
-    #         )
-    #     )
-    # )
+    total_ca_recovery = 100 * value(
+        units.convert(
+            m.fs.roaster.flow_mol_comp_product[0, "Ca"]
+            * molar_mass["CaO"]
+            * metal_mass_frac["CaO"],
+            to_units=units.kg / units.hr,
+        )
+        / (
+            units.convert(
+                m.fs.leach_solid_feed.flow_mass[0]
+                * m.fs.leach_solid_feed.mass_frac_comp[0, "CaO"]
+                * metal_mass_frac["CaO"],
+                to_units=units.kg / units.hr,
+            )
+        )
+    )
 
     total_sc_recovery = 100 * value(
         units.convert(
@@ -2404,22 +2413,22 @@ def display_results(m):
         * 100
     )
 
-    # ca_recovery = value(
-    #     units.convert(
-    #         m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Ca"]
-    #         * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-    #         to_units=units.kg / units.hr,
-    #     )
-    #     / (
-    #         units.convert(
-    #             metal_mass_frac["CaO"]
-    #             * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Cao"]
-    #             * m.fs.leach_solid_feed.outlet.flow_mass[0],
-    #             to_units=units.kg / units.hr,
-    #         )
-    #     )
-    #     * 100
-    # )
+    ca_recovery = value(
+        units.convert(
+            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Ca"]
+            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
+            to_units=units.kg / units.hr,
+        )
+        / (
+            units.convert(
+                metal_mass_frac["CaO"]
+                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "CaO"]
+                * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+        )
+        * 100
+    )
 
     ce_recovery = value(
         units.convert(
@@ -2593,8 +2602,8 @@ def display_results(m):
 
     print(f"\nLeaching Aluminum recovery is {al_recovery} %")
     print(f"Total aluminum recovery is {total_al_recovery} %")
-    # print(f"\nLeaching Calcium recovery is {ca_recovery} %")
-    # print(f"Total Calcium recovery is {total_ca_recovery} %")
+    print(f"\nLeaching Calcium recovery is {ca_recovery} %")
+    print(f"Total Calcium recovery is {total_ca_recovery} %")
     print(f"\nLeaching Cerium recovery is {ce_recovery} %")
     print(f"Total Cerium recovery is {total_ce_recovery} %")
     print(f"\nLeaching Dysprosium recovery is {dy_recovery} %")

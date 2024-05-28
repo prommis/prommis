@@ -53,6 +53,7 @@ from prommis.uky.uky_flowsheet import (
     set_scaling,
     initialize_system,
     solve,
+    fix_organic_recycle,
     display_results,
     add_costing,
     display_costing,
@@ -180,6 +181,10 @@ def test_solve(system_frame):
 
     scaled_model = set_scaling(model)
     initialize_system(scaled_model)
+
+    solve(scaled_model)
+
+    fix_organic_recycle(scaled_model)
 
     results = solve(scaled_model)
 

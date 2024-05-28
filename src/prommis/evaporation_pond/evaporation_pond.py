@@ -31,8 +31,8 @@ Reaction Parameter Block:
 Reaction Block:
 
 * Define the solubility products for each reaction. Each reaction requires a separate Var or Param
-named ``solubility_product_X`` where ``X`` is the identifier for each reaction in ``equilibrium_reaction_idx``.
-Separate components are required as the units of measurement for each reaction may be different.
+  named ``solubility_product_X`` where ``X`` is the identifier for each reaction in ``equilibrium_reaction_idx``.
+  Separate components are required as the units of measurement for each reaction may be different.
 * All reactions are assumed to use a standard power law form.
 
 Degrees of Freedom
@@ -75,13 +75,13 @@ Parameters
 Evaporation Pond models have the following Params, which are used in the complementarity constraint
 for precipitation.
 
-================= ========= ============== ==================================================================
-Parameter         Name      Indexing Set   Notes
-================= ========= ============== ==================================================================
+================== ======== ============== ==================================================================
+Parameter          Name     Indexing Set   Notes
+================== ======== ============== ==================================================================
 :math:`\eps`       eps                     Smoothing parameter for smooth_max
 :math:`norm_{r}`   s_norm   reaction list  Normalizing factor, should match magnitude of solubility product
 :math:`scale_{r}`  s_scale  reaction list  Scaling factor for reaction product, Q = Ksp - f(C)
-================= ========= ============== ==================================================================
+================== ======== ============== ==================================================================
 
 Constraints
 -----------

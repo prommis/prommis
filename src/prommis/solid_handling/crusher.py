@@ -21,12 +21,12 @@ The Crusher module including power consumption for solid crushing. It is a funct
 Degrees of Freedom
 ------------------
 
-A Crusher module has one degree of freedom, which is the "work" output. 
+A Crusher module has two degree of freedom, which are the output of "particle_size_median" and "particle_size_width". 
 
 Model Structure
 ---------------
 
-The Crusher model mainly use port for properties goes in and out. The properties of the Crusher Unit model is mainly the particle size distribution. 
+The Crusher model includes one inlet Port (inlet) and one outlet Port (outlet). The properties of the Crusher Unit model is mainly the particle size distribution. 
 
 Additional Constraints
 ----------------------
@@ -38,6 +38,21 @@ Crusher add one additional constraint to calculate the work required to crush th
 where :math: `work_{t}` is the work required to crush the particles at `t` time, 10 is an empirical value and should not be changed, :math: `flow_mass_in_{t}` is the inlet mass flow rate
 at `t` time, :math: `bond_work_index` is the bond work index of particles, :math: `prod\_p80_{t}` is production particle size with 80% passing the mesh at `t` time, :math: `feed\_p80_{t}` is 
 feed particle size with 80% passing the mesh at `t` time.
+
+Expressions
+-----------
+
+Crusher includes two expressions to calculate the size of particles that has 80% passing the mesh for both feed and product particles.
+
+.. math:: feed_p80_{t} = \frac{particle_size_median_{in_{t}}}{sunit} \times \left(-\log(1 - 0.8)\right)^{\frac{particle_size_width_{in_{t}}}{2}}
+
+where :math: `feed_p80_{t}` is the feed particle size that has 80% passing the mesh at `t` time, :math: `particle_size_median_{in_{t}}}{sunit}` is the median partile size of input at `t` time and unitless. The 
+default particle size is in micrometer, the expression convert it to unitless to avoide unit error in the work_{t} constraint. The :math: `particle_size_width_{in_{t}}` is the partile size width of input at `t` time. 
+
+.. math:: prod_p80_{t} = \frac{particle_size_median_{out_{t}}}{sunit} \times \left(-\log(1 - 0.8)\right)^{\frac{particle_size_width_{out_{t}}}{2}}
+
+where :math: `prod_p80_{t}` is the product particle size that has 80% passing the mesh at `t` time, :math: `particle_size_median_{out_{t}}}{sunit}` is the median partile size of output at `t` time and unitless. The 
+default particle size is in micrometer, the expression convert it to unitless to avoide unit error in the work_{t} constraint. The :math: `particle_size_width_{out_{t}}` is the partile size width of output at `t` time. 
 
 Variables
 ---------
@@ -71,7 +86,7 @@ _log = idaeslog.getLogger(__name__)
 class CrushAndBreakageUnitData(UnitModelBlockData):
     CONFIG = (
         ConfigDict()
-    )  # or  CONFIG = UnitModelBlockData.CONFIG() (not sure what's the difference)
+    )  
     CONFIG.declare(
         "dynamic",
         ConfigValue(
@@ -129,6 +144,7 @@ see property package for documentation.}""",
         # Call UnitModel.build to setup dynamics
         super().build()
 
+        # Build state blocks.
         self.properties_in = self.config.property_package.build_state_block(
             self.flowsheet().time,
             defined_state=True,
@@ -143,6 +159,7 @@ see property package for documentation.}""",
         tref = self.flowsheet().time.first()
         statevars = self.properties_in[tref].define_state_vars()
 
+        # A constraint of In=Out for all state variables which are not related to particle size.
         for k, v in statevars.items():
             if k not in ["particle_size_median", "particle_size_width"]:
                 idx = v.index_set()

@@ -39,7 +39,6 @@ def test_config():
 
     m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid)
 
-    # Assert specific config options as per your model's requirements
     # Example:
     assert not m.fs.unit.config.dynamic
     assert not m.fs.unit.config.has_holdup
@@ -71,8 +70,7 @@ class TestSolidHandling(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build(self, model):
-        # Assertions related to the build status of the model
-        # More assertions as needed for your model
+         # More assertions as needed for your model
         unit = model.fs.unit
         assert isinstance(
             unit.work, Var

@@ -31,7 +31,7 @@ from idaes.core.util.initialization import fix_state_vars
 
 
 # -----------------------------------------------------------------------------
-# Leach solution property package
+# Crusher solid property package
 @declare_process_block_class("CoalRefuseParameters")
 class CoalRefuseParameterData(PhysicalParameterBlock):
     def build(self):
@@ -146,6 +146,11 @@ class _CoalRefuseStateBlock(StateBlock):
 
 @declare_process_block_class("CoalRefuseStateBlock", block_class=_CoalRefuseStateBlock)
 class CoalRefuseStateBlockData(StateBlockData):
+    """
+    State block for solid West Kentucky No. 13 coal waste. Particle size related from SysCAD Crusher2 model.
+
+    """
+
     def build(self):
         super().build()
 

@@ -4,9 +4,9 @@ Solar Evaporation Pond
 
 Author: Andrew Lee
 
-The EvaporationPond model isa general purpose model for representing evaporation ponds
+The Evaporation Pond model is a general purpose model for representing evaporation ponds
 (both solar and enhanced). Currently, the model only supports steady-state operation
-(although it could eb easily extended to dynamics). The model also only supports
+(although it could be easily extended to dynamics). The model also only supports
 material balances with equilibrium reactions, as energy and momentum balances are less
 meaningful given the open-air nature of these operations and the long-duration time
 constants involved.
@@ -25,15 +25,15 @@ create any equilibrium constraints, and need only meet the following conditions:
 
 Reaction Parameter Block:
 
-  * Define the set of equilibrium reaction names (``equilibrium_reaction_idx``), and
-  * define the stoichiometry coefficients for the equilibrium reactions (``equilibrium_reaction_stoichiometry``).
+* Define the set of equilibrium reaction names (``equilibrium_reaction_idx``), and
+* define the stoichiometry coefficients for the equilibrium reactions (``equilibrium_reaction_stoichiometry``).
 
 Reaction Block:
 
-  * Define the solubility products for each reaction. Each reaction requires a separate Var or Param
-  named ``solubility_product_X`` where ``X`` is the identifier for each reaction in ``equilibrium_reaction_idx``.
-  Separate components are required as the units of measurement for each reaction may be different.
-  * All reactions are assumed to use a standard power law form.
+* Define the solubility products for each reaction. Each reaction requires a separate Var or Param
+named ``solubility_product_X`` where ``X`` is the identifier for each reaction in ``equilibrium_reaction_idx``.
+Separate components are required as the units of measurement for each reaction may be different.
+* All reactions are assumed to use a standard power law form.
 
 Degrees of Freedom
 ------------------
@@ -41,10 +41,9 @@ Degrees of Freedom
 Evaporation Pond models have three degrees of freedom in addition to the feed stream state. The most common
 variables to specify are:
 
-  * the surface area of the evaporation pond, ``surface_area``,
-  * the average depth of liquid in the pond, ``average_pond_depth``, and
-  * the rate of evaporation in units of length/time (or volume evaporated  per unit area per time),
-  ``evaporation_rate``.
+* the surface area of the evaporation pond, ``surface_area``,
+* the average depth of liquid in the pond, ``average_pond_depth``, and
+* the rate of evaporation in units of length/time (or volume evaporated  per unit area per time), ``evaporation_rate``.
 
 Model Structure
 ---------------

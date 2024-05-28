@@ -53,6 +53,7 @@ from prommis.uky.uky_flowsheet import (
     set_scaling,
     initialize_system,
     solve,
+    display_results,
     add_costing,
     display_costing,
 )
@@ -779,7 +780,6 @@ def test_costing(system_frame):
     assert_optimal_termination(results)
 
     add_costing(model)
-    display_costing(model)
 
     assert model.fs.costing.total_plant_cost.value == pytest.approx(15.5766, rel=1e-4)
     assert model.fs.costing.total_BEC.value == pytest.approx(5.244, rel=1e-4)
@@ -797,3 +797,10 @@ def test_costing(system_frame):
     assert model.fs.costing.total_sales_revenue.value == pytest.approx(
         0.00018136, rel=1e-4
     )
+
+
+@pytest.mark.unit
+def test_display(system_frame):
+    model = system_frame
+    display_results(model)
+    display_costing(model)

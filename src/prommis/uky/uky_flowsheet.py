@@ -2067,6 +2067,7 @@ def fix_organic_recycle(m):
     m.fs.cleaner_org_make_up.outlet.flow_vol.unfix()
     m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
 
+
 def display_results(m):
     """
     Print key flowsheet outputs.

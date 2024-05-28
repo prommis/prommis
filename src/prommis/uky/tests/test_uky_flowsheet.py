@@ -188,6 +188,9 @@ def test_solve(system_frame):
 
     assert_optimal_termination(results)
 
+    dt = DiagnosticsToolbox(model)
+    dt.assert_no_numerical_warnings()
+
 
 @pytest.mark.component
 @pytest.mark.solver

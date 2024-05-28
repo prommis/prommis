@@ -145,7 +145,7 @@ using advanced separation processes", 2019
 """
 
 from pyomo.environ import (
-    assert_optimal_termination,
+    check_optimal_termination,
     ConcreteModel,
     Constraint,
     Expression,
@@ -158,7 +158,6 @@ from pyomo.environ import (
     units,
 )
 from pyomo.network import Arc, SequentialDecomposition
-from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import (
     FlowDirection,
@@ -220,14 +219,21 @@ def main():
 
     scaled_model = set_scaling(m)
 
-    assert_units_consistent(scaled_model)
-    assert degrees_of_freedom(scaled_model) == 0
+    if degrees_of_freedom(scaled_model) != 0:
+        raise AssertionError(
+            "The degrees of freedom are not equal to 0."
+            "Check that the expected variables are fixed and unfixed."
+            "For more guidance, run assert_no_structural_warnings from the IDAES DiagnosticToolbox "
+        )
 
     initialize_system(scaled_model)
 
     scaled_results = solve(scaled_model)
 
-    assert_optimal_termination(scaled_results)
+    if not check_optimal_termination(scaled_results):
+        raise RuntimeError(
+            "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
+        )
 
     scaling = TransformationFactory("core.scale_model")
     results = scaling.propagate_solution(scaled_model, m)

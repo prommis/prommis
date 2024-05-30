@@ -1799,11 +1799,6 @@ def initialize_system(m):
     ]
 
     def function(unit):
-        propagate_state(m.fs.liq_feed)
-        propagate_state(m.fs.sol_feed)
-        propagate_state(m.fs.org_feed)
-        propagate_state(m.fs.org_feed2)
-
         if unit in feed_units:
             print(f"Initializing {unit}")
             initializer_feed.initialize(unit)
@@ -2058,7 +2053,7 @@ def solve(m, solver=None):
 
 def fix_organic_recycle(m):
     """
-    Fix the volumetric flow rate of the organic recycle streams and unfix make-up streams.
+    Fix the volumetric flow rate of the organic recycle streams and unfix the flow of make-up streams.
     """
 
     m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
@@ -2192,7 +2187,6 @@ def display_results(m):
     print(f"Product purity is {product_purity} % REE")
 
     # Individual elemental recoveries
-
     total_al_recovery = 100 * value(
         units.convert(
             m.fs.roaster.flow_mol_comp_product[0, "Al"]
@@ -2632,6 +2626,8 @@ def add_costing(m):
     Set the costing parameters for each unit model.
     """
     # TODO: Costing is preliminary until more unit model costing metrics can be verified
+    # TODO: Should ideally define balance-of-plant equipment in the flowsheet and attach costing to it,
+    # eliminating the need to create UnitModelBlocks in the costing
     m.fs.costing = QGESSCosting()
     CE_index_year = "UKy_2019"
 
@@ -2993,23 +2989,22 @@ def add_costing(m):
         },
     )
 
-    # TODO: Add bounds to flow_mass_product by converting it to a variable
-
+    # TODO: Add bounds to flow_mass_product by converting it to a variable in the roaster model
     # 3.2 is UKy Roasting - Conveyors
-    # R_conveyors_accounts = ["3.2"]
-    # m.fs.R_conveyors = UnitModelBlock()
-    # m.fs.R_conveyors.costing = UnitModelCostingBlock(
-    #     flowsheet_costing_block=m.fs.costing,
-    #     costing_method=QGESSCostingData.get_REE_costing,
-    #     costing_method_arguments={
-    #         "cost_accounts": R_conveyors_accounts,
-    #         "scaled_param": m.fs.roaster.flow_mass_product[0],
-    #         "source": 1,
-    #         "n_equip": 1,
-    #         "scale_down_parallel_equip": False,
-    #         "CE_index_year": CE_index_year,
-    #     },
-    # )
+    R_conveyors_accounts = ["3.2"]
+    m.fs.R_conveyors = UnitModelBlock()
+    m.fs.R_conveyors.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": R_conveyors_accounts,
+            "scaled_param": m.fs.roaster.flow_mass_product[0],
+            "source": 1,
+            "n_equip": 1,
+            "scale_down_parallel_equip": False,
+            "CE_index_year": CE_index_year,
+        },
+    )
 
     # 3.3 is UKy Roasting - Roaster
     R_roaster_accounts = ["3.3"]

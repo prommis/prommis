@@ -776,18 +776,16 @@ def test_conservation(system_frame):
 @pytest.mark.solver
 def test_costing(system_frame):
     model = system_frame
-
-    scaled_model = set_scaling(model)
-    initialize_system(scaled_model)
-
-    results = solve(scaled_model)
-
-    scaling = TransformationFactory("core.scale_model")
-    scaling.propagate_solution(scaled_model, model)
-
-    assert_optimal_termination(results)
-
     add_costing(model)
+
+    dt = DiagnosticsToolbox(model)
+    dt.assert_no_structural_warnings(ignore_evaluation_errors=True)
+
+
+@pytest.mark.component
+@pytest.mark.solver
+def test_costing_solution(system_frame):
+    model = system_frame
 
     assert model.fs.costing.total_plant_cost.value == pytest.approx(15.5766, rel=1e-4)
     assert model.fs.costing.total_BEC.value == pytest.approx(5.244, rel=1e-4)

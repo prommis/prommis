@@ -169,7 +169,6 @@ from idaes.core import (
 )
 from idaes.core.solvers import get_solver
 from idaes.core.initialization import BlockTriangularizationInitializer
-from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.properties.modular_properties.base.generic_property import (

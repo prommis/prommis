@@ -18,7 +18,6 @@ from idaes.core.initialization.block_triangularization import (
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 
 def build_model():
@@ -196,9 +195,6 @@ if __name__ == "__main__":
 
     m = build_model()
     set_inputs(m)
-
-    dt = DiagnosticsToolbox(m)
-    dt.report_structural_issues()
 
     """
     Initialization of the model, which gives a good starting point.

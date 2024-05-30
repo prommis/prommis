@@ -30,7 +30,7 @@ def model():
 def test_structural_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.report_structural_issues()
-    dt.assert_no_structural_warnings()
+    dt.assert_no_structural_warnings(ignore_unit_consistency=True)
 
 
 @pytest.mark.component

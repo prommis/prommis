@@ -135,7 +135,7 @@ def set_inputs(m):
     m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
 
 
-def main():
+def model_evaluation():
 
     # Call build model function
 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     number_of_stages = 3
 
-    m = main()
+    m = model_evaluation()
 
     # Final organic outlet display
     m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()

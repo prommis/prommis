@@ -13,7 +13,7 @@ from idaes.core.initialization.block_triangularization import (
 import pytest
 
 from prommis.solvent_extraction.sx_model_flowsheet_steady_state import (
-main,
+    main,
 )
 
 

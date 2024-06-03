@@ -134,6 +134,7 @@ def set_inputs(m):
 
     m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
 
+
 def main():
 
     # Call build model function
@@ -159,7 +160,8 @@ def main():
     solver.options["mu_init"] = 1e-8
     solver.solve(m, tee=True)
 
-    return m    
+    return m
+
 
 if __name__ == "__main__":
 

@@ -13,15 +13,13 @@ from idaes.core.initialization.block_triangularization import (
 import pytest
 
 from prommis.solvent_extraction.sx_model_flowsheet_steady_state import (
-    build_model,
-    set_inputs,
+main,
 )
 
 
 @pytest.fixture(scope="module")
 def model():
-    m = build_model()
-    set_inputs(m)
+    m = main()
 
     return m
 

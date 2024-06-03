@@ -134,10 +134,7 @@ def set_inputs(m):
 
     m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
 
-
-if __name__ == "__main__":
-
-    number_of_stages = 3
+def main():
 
     # Call build model function
 
@@ -161,6 +158,14 @@ if __name__ == "__main__":
     solver.options["bound_push"] = 1e-8
     solver.options["mu_init"] = 1e-8
     solver.solve(m, tee=True)
+
+    return m    
+
+if __name__ == "__main__":
+
+    number_of_stages = 3
+
+    m = main()
 
     # Final organic outlet display
     m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()

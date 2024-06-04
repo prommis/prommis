@@ -45,6 +45,16 @@ Precipitate
    prommis.precipitate.precipitate_liquid_properties
    prommis.precipitate.precipitate_solids_properties
 
+Crusher
+-------
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: autosummary/module-with-contents.rst
+   
+   prommis.solid_handling.crusher
+   prommis.solid_handling.crusher_solids_properties
+
 Flowsheets
 ----------
 

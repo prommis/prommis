@@ -21,7 +21,7 @@ The Crusher module including power consumption for solid crushing. It is a funct
 Degrees of Freedom
 ------------------
 
-A Crusher module has two degree of freedom, which are the output of "particle_size_median" and "particle_size_width". 
+A Crusher module has two degrees of freedom, which are the output of "particle_size_median" and "particle_size_width". 
 
 Model Structure
 ---------------
@@ -31,7 +31,7 @@ The Crusher model includes one inlet Port (inlet) and one outlet Port (outlet). 
 Additional Constraints
 ----------------------
 
-Crusher add one additional constraint to calculate the work required to crush the particles.
+Crusher adds one additional constraint to calculate the work required to crush the particles.
 
 .. math:: work_{t} = 10 \times flow_mass_in_{t} \times bond_work_index \times \left(\frac{1}{\sqrt{prod\_p80}}_{t} - \frac{1}{\sqrt{feed\_p80}}_{t}\right) 
 
@@ -46,13 +46,13 @@ Crusher includes two expressions to calculate the size of particles that has 80%
 
 .. math:: feed_p80_{t} = \frac{particle_size_median_{in_{t}}}{sunit} \times \left(-\log(1 - 0.8)\right)^{\frac{particle_size_width_{in_{t}}}{2}}
 
-where :math: `feed_p80_{t}` is the feed particle size that has 80% passing the mesh at `t` time, :math: `particle_size_median_{in_{t}}}{sunit}` is the median partile size of input at `t` time and unitless. The 
-default particle size is in micrometer, the expression convert it to unitless to avoide unit error in the work_{t} constraint. The :math: `particle_size_width_{in_{t}}` is the partile size width of input at `t` time. 
+where :math: `feed_p80_{t}` is the feed particle size that has 80% passing the mesh at `t` time, :math: `particle_size_median_{in_{t}}}{sunit}` is the median particle size of input at `t` time and unitless. The 
+default particle size is in micrometer. The :math: `particle_size_width_{in_{t}}` is the particle size width of input at `t` time. 
 
 .. math:: prod_p80_{t} = \frac{particle_size_median_{out_{t}}}{sunit} \times \left(-\log(1 - 0.8)\right)^{\frac{particle_size_width_{out_{t}}}{2}}
 
-where :math: `prod_p80_{t}` is the product particle size that has 80% passing the mesh at `t` time, :math: `particle_size_median_{out_{t}}}{sunit}` is the median partile size of output at `t` time and unitless. The 
-default particle size is in micrometer, the expression convert it to unitless to avoide unit error in the work_{t} constraint. The :math: `particle_size_width_{out_{t}}` is the partile size width of output at `t` time. 
+where :math: `prod_p80_{t}` is the product particle size that has 80% passing the mesh at `t` time, :math: `particle_size_median_{out_{t}}}{sunit}` is the median particle size of output at `t` time and unitless. The 
+default particle size is in micrometer. The :math: `particle_size_width_{out_{t}}` is the particle size width of output at `t` time. 
 
 Variables
 ---------

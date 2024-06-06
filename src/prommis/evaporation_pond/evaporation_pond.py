@@ -14,7 +14,7 @@ constants involved.
 Configuration Arguments
 -----------------------
 
-When creating an instance of an evaporation Pond model, the user may specify the name of the solvent phase
+When creating an instance of an Evaporation Pond model, the user may specify the name of the solvent phase
 used by the associated property package, which is used to determine which component requires an evaporation
 term in the material balances. The default name is 'H2O', and only a single solvent is supported.
 
@@ -111,9 +111,9 @@ Equilibrium Constraint:
 
 .. math:: Q_{t, r} - \max{0, Q_{t,r}-\bar{X}_{t,r}} = 0
 
-where :math:`Q_{t,r} = \ln{K_{t,r} - \sum_j{-n_{r,j} \times \ln{C_{t,j}} and :math:`K_{t,r}` is the
+where :math:`Q_{t,r} = \ln{K_{t,r}} - \sum_j{-n_{r,j} \times \ln{C_{t,j}}}` and :math:`K_{t,r}` is the
 solubility product for reaction :math:`r` at time :math:`t`, :math:`C_{t,j}` is the concentration
-of species :math:`j` at time :math:`t`, and :math:`\bar{X}_{t,r}} = scale_{r} \times \frac{X_{t,r}}{X_{t,r} + norm_{r}`
+of species :math:`j` at time :math:`t`, and :math:`\bar{X}_{t,r} = scale_{r} \times \frac{X_{t,r}}{X_{t,r} + norm_{r}}`
 The math:`max` operator is approximated using a smooth maximum,
 
 Evaporation Constraint:
@@ -122,7 +122,7 @@ Evaporation Constraint:
 
 Volume Constraint:
 
-.. math:: V_{t} = D_{t} \timesA_{t}
+.. math:: V_{t} = D_{t} \times A_{t}
 
 """
 

@@ -519,7 +519,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             doc="additional plant costs in $MM",
             units=getattr(pyunits, "MUSD_" + CE_index_year),
         )
-        self.other_plant_costs.fix(0)
+        self.other_plant_costs.fix(1e-12)
 
         if Lang_factor is None:
             # rules for calculating Ancillary costs
@@ -1839,7 +1839,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             doc="other fixed costs in $MM/yr",
             units=CE_index_units,
         )
-        b.other_fixed_costs.fix(0)
+        b.other_fixed_costs.fix(1e-12)
 
         # variable for user to assign watertap fixed costs to,
         # fixed to 0 by default
@@ -1946,7 +1946,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         @b.Constraint()
         def sum_watertap_fixed_cost(c):
             if not hasattr(c, "watertap_fixed_costs_list"):
-                return c.watertap_fixed_costs == 0
+                return c.watertap_fixed_costs == 1e-12
             else:
                 return c.watertap_fixed_costs == sum(b.watertap_fixed_costs_list)
 
@@ -2108,7 +2108,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
 
         # assume the user is not using this
-        b.other_variable_costs.fix(0)
+        b.other_variable_costs.fix(1e-12)
 
         b.total_variable_OM_cost = Var(
             b.parent_block().time,
@@ -2497,6 +2497,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 doc="feedstock capacity of site",
                 units=pyunits.tonnes,
             )
+            b.capacity.fix(value(pyunits.convert(capacity, to_units=pyunits.tonnes)))
             print("New variable 'capacity' created as attribute of {}".format(b.name))
         else:
             print(
@@ -2512,6 +2513,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 doc="grade percentage of site",
                 units=pyunits.percent,
             )
+            b.grade.fix(value(pyunits.convert(grade, to_units=pyunits.percent)))
             print("New variable 'grade' created as attribute of {}".format(b.name))
         else:
             print(
@@ -2539,7 +2541,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if not hasattr(b, "costing_lower_bound"):
             b.costing_lower_bound = Var(
                 processes,
-                initialize=10,
+                initialize=1,
                 bounds=(0, 100),
                 doc="estimated lower bound on per unit production cost of site",
                 units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
@@ -2559,7 +2561,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if not hasattr(b, "costing_upper_bound"):
             b.costing_upper_bound = Var(
                 processes,
-                initialize=10,
+                initialize=1,
                 bounds=(0, 100),
                 doc="estimated upper bound on per unit production cost of site",
                 units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,

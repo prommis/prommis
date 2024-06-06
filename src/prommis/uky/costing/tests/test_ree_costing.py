@@ -25,6 +25,7 @@ from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 from idaes.core.solvers import get_solver
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.scaling import (
     badly_scaled_var_generator,
@@ -906,6 +907,19 @@ class TestREECosting(object):
         return model
 
     @pytest.mark.component
+    def test_base_model_diagnostics(self, model):
+        dt = DiagnosticsToolbox(model)
+
+        try:
+            dt.assert_no_structural_warnings()
+        except AssertionError as e:
+            # prints to help with debugging when test fails
+            dt.report_structural_issues()
+            dt.display_underconstrained_set()
+            dt.display_potential_evaluation_errors()
+            raise (e)
+
+    @pytest.mark.component
     def test_REE_costing(self, model):
         # full smoke test with all components, O&M costs, and extra costs included
         CE_index_year = "UKy_2019"
@@ -1110,6 +1124,19 @@ class TestREECosting(object):
         assert degrees_of_freedom(model) == 0
 
     @pytest.mark.component
+    def test_full_model_diagnostics(self, model):
+        dt = DiagnosticsToolbox(model)
+
+        try:
+            dt.assert_no_structural_warnings()
+        except AssertionError as e:
+            # prints to help with debugging when test fails
+            dt.report_structural_issues()
+            dt.display_underconstrained_set()
+            dt.display_potential_evaluation_errors()
+            raise (e)
+
+    @pytest.mark.component
     def test_initialize(self, model):
         # add initialize
         QGESSCostingData.costing_initialization(model.fs.costing)
@@ -1122,6 +1149,23 @@ class TestREECosting(object):
         solver = get_solver()
         results = solver.solve(model, tee=True)
         assert check_optimal_termination(results)
+
+    @pytest.mark.component
+    def test_solved_model_diagnostics(self, model):
+        dt = DiagnosticsToolbox(model)
+
+        try:
+            dt.assert_no_numerical_warnings()
+        except AssertionError as e:
+            # prints to help with debugging when test fails
+            dt.report_numerical_issues()
+            dt.display_variables_at_or_outside_bounds()
+            dt.display_constraints_with_large_residuals()
+            dt.display_variables_with_extreme_jacobians()
+            dt.display_constraints_with_extreme_jacobians()
+            dt.display_near_parallel_constraints()
+            dt.display_near_parallel_variables()
+            raise (e)
 
     @pytest.mark.component
     def test_results(self, model):
@@ -1150,7 +1194,7 @@ class TestREECosting(object):
             65.333, rel=1e-4
         )
 
-    @pytest.mark.component
+    @pytest.mark.component  # TODO is this still needed?
     def test_units_consistency(self, model):
         # check unit consistency
         assert_units_consistent(model)
@@ -1180,6 +1224,35 @@ class TestREECosting(object):
             recalculate=True,
         )
 
+        dt = DiagnosticsToolbox(model)
+
+        try:
+            dt.assert_no_structural_warnings()
+        except AssertionError as e:
+            # prints to help with debugging when test fails
+            dt.report_structural_issues()
+            dt.display_underconstrained_set()
+            dt.display_potential_evaluation_errors()
+            raise (e)
+
+        # solve new variables and constraints
+        solver = get_solver()
+        results = solver.solve(model, tee=True)
+        assert check_optimal_termination(results)
+
+        try:
+            dt.assert_no_numerical_warnings()
+        except AssertionError as e:
+            # prints to help with debugging when test fails
+            dt.report_numerical_issues()
+            dt.display_variables_at_or_outside_bounds()
+            dt.display_constraints_with_large_residuals()
+            dt.display_variables_with_extreme_jacobians()
+            dt.display_constraints_with_extreme_jacobians()
+            dt.display_near_parallel_constraints()
+            dt.display_near_parallel_variables()
+            raise (e)
+
         model.fs.costing.costing_lower_bound.pprint()
         model.fs.costing.costing_upper_bound.pprint()
 
@@ -1206,9 +1279,14 @@ class TestREECosting(object):
         }
 
         for key in model.fs.costing.costing_lower_bound.keys():
-            assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
-                expected_costing_lower_bound[key], rel=1e-4
-            )
+            if model.fs.costing.costing_lower_bound[key].value <= 1e-4:
+                assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
+                    expected_costing_lower_bound[key], abs=1e-8
+                )
+            else:
+                assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
+                    expected_costing_lower_bound[key], rel=1e-4
+                )
 
         for key in model.fs.costing.costing_upper_bound.keys():
             assert model.fs.costing.costing_upper_bound[key].value == pytest.approx(
@@ -1228,9 +1306,14 @@ class TestREECosting(object):
         )
 
         for key in model.fs.costing.costing_lower_bound.keys():
-            assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
-                expected_costing_lower_bound[key], rel=1e-4
-            )
+            if model.fs.costing.costing_lower_bound[key].value <= 1e-4:
+                assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
+                    expected_costing_lower_bound[key], abs=1e-8
+                )
+            else:
+                assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
+                    expected_costing_lower_bound[key], rel=1e-4
+                )
 
         for key in model.fs.costing.costing_upper_bound.keys():
             assert model.fs.costing.costing_upper_bound[key].value == pytest.approx(

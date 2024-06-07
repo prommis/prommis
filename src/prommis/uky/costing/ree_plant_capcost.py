@@ -2497,7 +2497,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 doc="feedstock capacity of site",
                 units=pyunits.tonnes,
             )
-            b.capacity.fix(value(pyunits.convert(capacity, to_units=pyunits.tonnes)))
+            b.capacity.fix(capacity)
             print("New variable 'capacity' created as attribute of {}".format(b.name))
         else:
             print(
@@ -2513,7 +2513,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 doc="grade percentage of site",
                 units=pyunits.percent,
             )
-            b.grade.fix(value(pyunits.convert(grade, to_units=pyunits.percent)))
+            b.grade.fix(grade)
             print("New variable 'grade' created as attribute of {}".format(b.name))
         else:
             print(

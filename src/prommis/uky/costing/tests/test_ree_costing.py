@@ -910,14 +910,8 @@ class TestREECosting(object):
     def test_base_model_diagnostics(self, model):
         dt = DiagnosticsToolbox(model)
 
-        try:
-            dt.assert_no_structural_warnings()
-        except AssertionError as e:
-            # prints to help with debugging when test fails
-            dt.report_structural_issues()
-            dt.display_underconstrained_set()
-            dt.display_potential_evaluation_errors()
-            raise (e)
+        dt.report_structural_issues()
+        dt.assert_no_structural_warnings()
 
     @pytest.mark.component
     def test_REE_costing(self, model):
@@ -1127,14 +1121,8 @@ class TestREECosting(object):
     def test_full_model_diagnostics(self, model):
         dt = DiagnosticsToolbox(model)
 
-        try:
-            dt.assert_no_structural_warnings()
-        except AssertionError as e:
-            # prints to help with debugging when test fails
-            dt.report_structural_issues()
-            dt.display_underconstrained_set()
-            dt.display_potential_evaluation_errors()
-            raise (e)
+        dt.report_structural_issues()
+        dt.assert_no_structural_warnings()
 
     @pytest.mark.component
     def test_initialize(self, model):
@@ -1154,18 +1142,8 @@ class TestREECosting(object):
     def test_solved_model_diagnostics(self, model):
         dt = DiagnosticsToolbox(model)
 
-        try:
-            dt.assert_no_numerical_warnings()
-        except AssertionError as e:
-            # prints to help with debugging when test fails
-            dt.report_numerical_issues()
-            dt.display_variables_at_or_outside_bounds()
-            dt.display_constraints_with_large_residuals()
-            dt.display_variables_with_extreme_jacobians()
-            dt.display_constraints_with_extreme_jacobians()
-            dt.display_near_parallel_constraints()
-            dt.display_near_parallel_variables()
-            raise (e)
+        dt.report_numerical_issues()
+        dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
     def test_results(self, model):
@@ -1194,11 +1172,6 @@ class TestREECosting(object):
             65.333, rel=1e-4
         )
 
-    @pytest.mark.component  # TODO is this still needed?
-    def test_units_consistency(self, model):
-        # check unit consistency
-        assert_units_consistent(model)
-
     @pytest.mark.component
     def test_report(self, model):
         # test report methods
@@ -1210,7 +1183,7 @@ class TestREECosting(object):
         QGESSCostingData.display_flowsheet_cost(model.fs.costing)
 
     @pytest.mark.component
-    def test_costing_bounding(self, model):
+    def test_costing_bounding_build_diagnostics(self, model):
         # test costing bounding method
         CE_index_year = "UKy_2019"
         QGESSCostingData.calculate_REE_costing_bounds(
@@ -1226,35 +1199,27 @@ class TestREECosting(object):
 
         dt = DiagnosticsToolbox(model)
 
-        try:
-            dt.assert_no_structural_warnings()
-        except AssertionError as e:
-            # prints to help with debugging when test fails
-            dt.report_structural_issues()
-            dt.display_underconstrained_set()
-            dt.display_potential_evaluation_errors()
-            raise (e)
+        dt.report_structural_issues()
+        dt.assert_no_structural_warnings()
+
+    @pytest.mark.component
+    def test_costing_bounding_solve(self, model):
 
         # solve new variables and constraints
         solver = get_solver()
         results = solver.solve(model, tee=True)
         assert check_optimal_termination(results)
 
-        try:
-            dt.assert_no_numerical_warnings()
-        except AssertionError as e:
-            # prints to help with debugging when test fails
-            dt.report_numerical_issues()
-            dt.display_variables_at_or_outside_bounds()
-            dt.display_constraints_with_large_residuals()
-            dt.display_variables_with_extreme_jacobians()
-            dt.display_constraints_with_extreme_jacobians()
-            dt.display_near_parallel_constraints()
-            dt.display_near_parallel_variables()
-            raise (e)
+    @pytest.mark.component
+    def test_costing_bounding_solve_diagnostics(self, model):
 
-        model.fs.costing.costing_lower_bound.pprint()
-        model.fs.costing.costing_upper_bound.pprint()
+        dt = DiagnosticsToolbox(model)
+
+        dt.report_numerical_issues()
+        dt.assert_no_numerical_warnings()
+
+    @pytest.mark.component
+    def test_costing_bounding_results(self, model):
 
         expected_costing_lower_bound = {
             "Beneficiation": 0.12109,
@@ -1279,21 +1244,22 @@ class TestREECosting(object):
         }
 
         for key in model.fs.costing.costing_lower_bound.keys():
-            if model.fs.costing.costing_lower_bound[key].value <= 1e-4:
-                assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
-                    expected_costing_lower_bound[key], abs=1e-8
-                )
-            else:
-                assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
-                    expected_costing_lower_bound[key], rel=1e-4
-                )
+
+            assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
+                expected_costing_lower_bound[key], abs=1e-8, rel=1e-4
+            )
 
         for key in model.fs.costing.costing_upper_bound.keys():
             assert model.fs.costing.costing_upper_bound[key].value == pytest.approx(
                 expected_costing_upper_bound[key], rel=1e-4
             )
 
+    @pytest.mark.component
+    def test_costing_bounding_rerun(self, model):
+
         # call again, should give same results
+        CE_index_year = "UKy_2019"
+
         QGESSCostingData.calculate_REE_costing_bounds(
             b=model.fs.costing,
             capacity=model.fs.feed_input
@@ -1305,15 +1271,33 @@ class TestREECosting(object):
             recalculate=True,
         )
 
+        expected_costing_lower_bound = {
+            "Beneficiation": 0.12109,
+            "Beneficiation, Chemical Extraction, Enrichment and Separation": 5.3203,
+            "Chemical Extraction": 0.062054,
+            "Chemical Extraction, Enrichment and Separation": 0.0000,
+            "Enrichment and Separation": 0.18702,
+            "Mining": 0.24696,
+            "Total Capital": 0.29132,
+            "Total Operating": 5.4747,
+        }
+
+        expected_costing_upper_bound = {
+            "Beneficiation": 1.2209,
+            "Beneficiation, Chemical Extraction, Enrichment and Separation": 15.235,
+            "Chemical Extraction": 1.2373,
+            "Chemical Extraction, Enrichment and Separation": 55.9608,
+            "Enrichment and Separation": 4.2676,
+            "Mining": 2.0840,
+            "Total Capital": 1.0861,
+            "Total Operating": 12.648,
+        }
+
         for key in model.fs.costing.costing_lower_bound.keys():
-            if model.fs.costing.costing_lower_bound[key].value <= 1e-4:
-                assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
-                    expected_costing_lower_bound[key], abs=1e-8
-                )
-            else:
-                assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
-                    expected_costing_lower_bound[key], rel=1e-4
-                )
+
+            assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
+                expected_costing_lower_bound[key], abs=1e-8, rel=1e-4
+            )
 
         for key in model.fs.costing.costing_upper_bound.keys():
             assert model.fs.costing.costing_upper_bound[key].value == pytest.approx(

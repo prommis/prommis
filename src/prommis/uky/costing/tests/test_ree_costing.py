@@ -1242,12 +1242,11 @@ class TestREECosting(object):
 class TestWaterTAPCosting(object):
     @pytest.fixture(scope="class")
     def solver(self):
+        pytest.importorskip("watertap", reason="WaterTAP dependency not available")
         return get_watertap_solver()
 
     @pytest.fixture(scope="class")
     def model(self, solver):
-        pytest.importorskip("watertap", reason="WaterTAP dependency not available")
-
         model = base_model()
         model.fs_membrane = FlowsheetBlock(dynamic=False)
         # Nanofiltration

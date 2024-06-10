@@ -52,7 +52,7 @@ from prommis.uky.uky_flowsheet import (
     set_operating_conditions,
     set_scaling,
     initialize_system,
-    solve,
+    solve_system,
     fix_organic_recycle,
     display_results,
     add_costing,
@@ -182,18 +182,22 @@ def test_solve(system_frame):
     scaled_model = set_scaling(model)
     initialize_system(scaled_model)
 
-    solve(scaled_model)
+    solve_system(scaled_model)
 
     fix_organic_recycle(scaled_model)
 
-    results = solve(scaled_model)
+    results = solve_system(scaled_model)
 
     scaling = TransformationFactory("core.scale_model")
     scaling.propagate_solution(scaled_model, model)
 
     assert_optimal_termination(results)
 
-    dt = DiagnosticsToolbox(model)
+
+@pytest.mark.component
+@pytest.mark.solver
+def test_numerical_issues(system_frame):
+    dt = DiagnosticsToolbox(system_frame)
     dt.assert_no_numerical_warnings()
 
 

@@ -193,8 +193,9 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
     get_prop,
 )
+import idaes.logger as idaeslog
 
-from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
+from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
@@ -205,6 +206,8 @@ from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
+
+_log = idaeslog.getLogger(__name__)
 
 
 def main():
@@ -227,11 +230,13 @@ def main():
 
     initialize_system(scaled_model)
 
-    solve(scaled_model)
+    solve_system(scaled_model)
 
+    # fixes the volumetric flow rate of the organic recycle streams and unfixes the flow of the make-up streams
+    # we want to be able to adjust the total recycle flow rate, not just the make-up portion of it
     fix_organic_recycle(scaled_model)
 
-    scaled_results = solve(scaled_model)
+    scaled_results = solve_system(scaled_model)
 
     if not check_optimal_termination(scaled_results):
         raise RuntimeError(
@@ -681,6 +686,9 @@ def build():
 def set_partition_coefficients(m):
     """
     Sets the partition coefficients for each finite element in the solvent extraction blocks.
+
+    Args:
+        m: pyomo model
     """
 
     m.fs.solex_rougher_load.partition_coefficient[1, "aqueous", "organic", "Al"] = (
@@ -946,6 +954,9 @@ def set_partition_coefficients(m):
 def set_scaling(m):
     """
     Set the scaling factors to improve solver performance.
+
+    Args:
+        m: pyomo model
     """
 
     # Scaling
@@ -1319,6 +1330,9 @@ def set_scaling(m):
 def set_operating_conditions(m):
     """
     Set the operating conditions of the flowsheet such that the degrees of freedom are zero.
+
+    Args:
+        m: pyomo model
     """
     eps = 1e-8 * units.mg / units.L
 
@@ -1529,6 +1543,9 @@ def set_operating_conditions(m):
 def initialize_system(m):
     """
     Provide initialized values for all streams in the system.
+
+    Args:
+        m: pyomo model
     """
     seq = SequentialDecomposition()
     seq.options.tear_method = "Direct"
@@ -1548,52 +1565,6 @@ def initialize_system(m):
         print(o[0].name)
 
     tear_guesses1 = {
-        "flow_mass": {0.007},
-        "conc_mass_comp": {
-            "Al": 1493939.39,
-            "Ca": 501864.01,
-            "Ce": 49698.79,
-            "Dy": 466.86,
-            "Fe": 1685228.86,
-            "Gd": 1624.81,
-            "La": 32143.22,
-            "Nd": 12552.13,
-            "Pr": 4084.40,
-            "Sc": 17310.17,
-            "Sm": 931.35,
-            "Y": 2666.95,
-        },
-        "flow_mol_comp": {
-            "Al": 577.62,
-            "Ca": 64.65,
-            "Ce": 1.17,
-            "Dy": 0.0086,
-            "Fe": 231.93,
-            "Gd": 0.054,
-            "La": 0.63,
-            "Nd": 0.34,
-            "Pr": 0.099,
-            "Sc": 303.33,
-            "Sm": 0.021,
-            "Y": 0.090,
-        },
-    }
-    tear_guesses2 = {
-        "flow_mol_comp": {
-            "Al2(C2O4)3(s)": 1.76,
-            "Ce2(C2O4)3(s)": 2.65,
-            "Dy2(C2O4)3(s)": 0.068,
-            "Fe2(C2O4)3(s)": 2.64,
-            "Gd2(C2O4)3(s)": 0.27,
-            "La2(C2O4)3(s)": 0.86,
-            "Nd2(C2O4)3(s)": 1.35,
-            "Pr2(C2O4)3(s)": 0.36,
-            "Sc2(C2O4)3(s)": 0.62,
-            "Sm2(C2O4)3(s)": 0.15,
-            "Y2(C2O4)3(s)": 0.31,
-        },
-    }
-    tear_guesses3 = {
         "flow_vol": {0: 747.99},
         "conc_mass_comp": {
             (0, "Al"): 180.84,
@@ -1615,7 +1586,7 @@ def initialize_system(m):
             (0, "Y"): 7.18e-11,
         },
     }
-    tear_guesses4 = {
+    tear_guesses2 = {
         "flow_vol": {0: 62.01},
         "conc_mass_comp": {
             (0, "Al"): 1e-9,
@@ -1632,7 +1603,7 @@ def initialize_system(m):
             (0, "Y"): 1e-6,
         },
     }
-    tear_guesses5 = {
+    tear_guesses3 = {
         "flow_vol": {0: 520},
         "conc_mass_comp": {
             (0, "Al"): 430,
@@ -1654,7 +1625,7 @@ def initialize_system(m):
             (0, "Y"): 0.1,
         },
     }
-    tear_guesses6 = {
+    tear_guesses4 = {
         "flow_vol": {0: 64},
         "conc_mass_comp": {
             (0, "Al"): 1e-9,
@@ -1671,7 +1642,7 @@ def initialize_system(m):
             (0, "Y"): 1e-6,
         },
     }
-    tear_guesses7 = {
+    tear_guesses5 = {
         "flow_vol": {0: 5.7},
         "conc_mass_comp": {
             (0, "Al"): 5,
@@ -1693,60 +1664,21 @@ def initialize_system(m):
             (0, "Y"): 18,
         },
     }
-    tear_guesses8 = {
-        "flow_vol": {0: 6},
-        "conc_mass_comp": {
-            (0, "Al"): 1e-7,
-            (0, "Ca"): 1e-7,
-            (0, "Ce"): 1e-7,
-            (0, "Dy"): 1e-7,
-            (0, "Fe"): 1e-7,
-            (0, "Gd"): 1e-7,
-            (0, "La"): 1e-7,
-            (0, "Nd"): 1e-7,
-            (0, "Pr"): 1e-7,
-            (0, "Sc"): 1e-7,
-            (0, "Sm"): 1e-7,
-            (0, "Y"): 1e-7,
-        },
-    }
-    tear_guesses9 = {
-        "flow_vol": {0: 6},
-        "conc_mass_comp": {
-            (0, "Al"): 1e-7,
-            (0, "Ca"): 1e-7,
-            (0, "Ce"): 1e-7,
-            (0, "Dy"): 1e-7,
-            (0, "Fe"): 1e-7,
-            (0, "Gd"): 1e-7,
-            (0, "La"): 1e-7,
-            (0, "Nd"): 1e-7,
-            (0, "Pr"): 1e-7,
-            (0, "Sc"): 1e-7,
-            (0, "Sm"): 1e-7,
-            (0, "Y"): 1e-7,
-        },
-    }
 
     # Pass the tear_guess to the SD tool
-    seq.set_guesses_for(m.fs.precipitator.cv_aqueous.properties_out[0], tear_guesses1)
-    seq.set_guesses_for(m.fs.precipitator.cv_precipitate[0], tear_guesses2)
-    seq.set_guesses_for(m.fs.leach.liquid_inlet, tear_guesses3)
+    seq.set_guesses_for(m.fs.leach.liquid_inlet, tear_guesses1)
     seq.set_guesses_for(
-        m.fs.solex_rougher_load.mscontactor.organic_inlet, tear_guesses4
+        m.fs.solex_rougher_load.mscontactor.organic_inlet, tear_guesses2
     )
     seq.set_guesses_for(
-        m.fs.solex_rougher_load.mscontactor.aqueous_inlet, tear_guesses5
+        m.fs.solex_rougher_load.mscontactor.aqueous_inlet, tear_guesses3
     )
     seq.set_guesses_for(
-        m.fs.solex_cleaner_load.mscontactor.organic_inlet, tear_guesses6
+        m.fs.solex_cleaner_load.mscontactor.organic_inlet, tear_guesses4
     )
     seq.set_guesses_for(
-        m.fs.solex_cleaner_load.mscontactor.aqueous_inlet, tear_guesses7
+        m.fs.solex_cleaner_load.mscontactor.aqueous_inlet, tear_guesses5
     )
-    seq.set_guesses_for(m.fs.precip_sx_mixer.outlet, tear_guesses7)
-    seq.set_guesses_for(m.fs.rougher_org_make_up.outlet, tear_guesses8)
-    seq.set_guesses_for(m.fs.cleaner_org_make_up.outlet, tear_guesses9)
 
     initializer_feed = FeedInitializer()
     feed_units = [
@@ -1784,268 +1716,172 @@ def initialize_system(m):
         m.fs.rougher_mixer,
     ]
 
-    initializer_leach = LeachingTrainInitializer()
-    leach_units = [
-        m.fs.leach,
-    ]
-
     initializer_bt = BlockTriangularizationInitializer()
-    bt_units = [
-        m.fs.leach_mixer,
-        m.fs.leach_sx_mixer,
-        m.fs.sl_sep1,
-        m.fs.roaster,
-    ]
 
     def function(unit):
         if unit in feed_units:
-            print(f"Initializing {unit}")
+            _log.info(f"Initializing {unit}")
             initializer_feed.initialize(unit)
         elif unit in product_units:
-            print(f"Initializing {unit}")
+            _log.info(f"Initializing {unit}")
             initializer_product.initialize(unit)
         elif unit in sep_units:
-            print(f"Initializing {unit}")
+            _log.info(f"Initializing {unit}")
             initializer_sep.initialize(unit)
         elif unit in mix_units:
-            print(f"Initializing {unit}")
+            _log.info(f"Initializing {unit}")
             initializer_mix.initialize(unit)
-        elif unit in bt_units:
-            print(f"Initializing {unit}")
-            initializer_bt.initialize(unit)
-        elif unit in leach_units:
-            print(f"Initializing {unit}")
-            try:
-                initializer_leach.initialize(unit)
-            except:
-                # Fix feed states
-                m.fs.leach.liquid_inlet.flow_vol.fix()
-                m.fs.leach.liquid_inlet.conc_mass_comp.fix()
-                m.fs.leach.solid_inlet.flow_mass.fix()
-                m.fs.leach.solid_inlet.mass_frac_comp.fix()
-                # Re-solve unit
-                solver = SolverFactory("ipopt")
-                solver.solve(m.fs.leach, tee=True)
-                # Unfix feed states
-                m.fs.leach.liquid_inlet.flow_vol.unfix()
-                m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
-                m.fs.leach.solid_inlet.flow_mass.unfix()
-                m.fs.leach.solid_inlet.mass_frac_comp.unfix()
+        elif unit == m.fs.leach:
+            _log.info(f"Initializing {unit}")
+            # Fix feed states
+            m.fs.leach.liquid_inlet.flow_vol.fix()
+            m.fs.leach.liquid_inlet.conc_mass_comp.fix()
+            m.fs.leach.solid_inlet.flow_mass.fix()
+            m.fs.leach.solid_inlet.mass_frac_comp.fix()
+            # Re-solve unit
+            solver = SolverFactory("ipopt")
+            solver.solve(m.fs.leach, tee=True)
+            # Unfix feed states
+            m.fs.leach.liquid_inlet.flow_vol.unfix()
+            m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
+            m.fs.leach.solid_inlet.flow_mass.unfix()
+            m.fs.leach.solid_inlet.mass_frac_comp.unfix()
         elif unit == m.fs.solex_rougher_load.mscontactor:
-            print(f"Initializing {unit}")
-            try:
-                initializer_bt.initialize(m.fs.solex_rougher_load)
-            except:
-                # Fix feed states
-                m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
-                    0
-                ].flow_vol.fix()
-                m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
-                    0
-                ].flow_vol.fix()
-                m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
-                    0
-                ].conc_mass_comp.fix()
-                m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
-                    0
-                ].conc_mass_comp.fix()
-                # Re-solve unit
-                solver = SolverFactory("ipopt")
-                solver.solve(m.fs.solex_rougher_load, tee=True)
-                # Unfix feed states
-                m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
-                    0
-                ].flow_vol.unfix()
-                m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
-                    0
-                ].flow_vol.unfix()
-                m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
-                    0
-                ].conc_mass_comp.unfix()
-                m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
-                    0
-                ].conc_mass_comp.unfix()
+            _log.info(f"Initializing {unit}")
+            # Fix feed states
+            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.fix()
+            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
+            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
+                0
+            ].conc_mass_comp.fix()
+            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
+                0
+            ].conc_mass_comp.fix()
+            # Re-solve unit
+            solver = SolverFactory("ipopt")
+            solver.solve(m.fs.solex_rougher_load, tee=True)
+            # Unfix feed states
+            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.unfix()
+            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
+            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
+                0
+            ].conc_mass_comp.unfix()
+            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
+                0
+            ].conc_mass_comp.unfix()
         elif unit == m.fs.solex_rougher_scrub.mscontactor:
-            print(f"Initializing {unit}")
-            try:
-                initializer_bt.initialize(m.fs.solex_rougher_scrub)
-            except:
-                # Fix feed states
-                m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
-                    0
-                ].flow_vol.fix()
-                m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
-                    0
-                ].flow_vol.fix()
-                m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
-                    0
-                ].conc_mass_comp.fix()
-                m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
-                    0
-                ].conc_mass_comp.fix()
-                # Re-solve unit
-                solver = SolverFactory("ipopt")
-                solver.solve(m.fs.solex_rougher_scrub, tee=True)
-                # Unfix feed states
-                m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
-                    0
-                ].flow_vol.unfix()
-                m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
-                    0
-                ].flow_vol.unfix()
-                m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
-                    0
-                ].conc_mass_comp.unfix()
-                m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
-                    0
-                ].conc_mass_comp.unfix()
+            _log.info(f"Initializing {unit}")
+            # Fix feed states
+            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[0].flow_vol.fix()
+            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
+            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
+                0
+            ].conc_mass_comp.fix()
+            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
+                0
+            ].conc_mass_comp.fix()
+            # Re-solve unit
+            solver = SolverFactory("ipopt")
+            solver.solve(m.fs.solex_rougher_scrub, tee=True)
+            # Unfix feed states
+            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[0].flow_vol.unfix()
+            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
+            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
+                0
+            ].conc_mass_comp.unfix()
+            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
+                0
+            ].conc_mass_comp.unfix()
         elif unit == m.fs.solex_rougher_strip.mscontactor:
-            print(f"Initializing {unit}")
-            try:
-                initializer_bt.initialize(m.fs.solex_rougher_strip)
-            except:
-                # Fix feed states
-                m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
-                    0
-                ].flow_vol.fix()
-                m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
-                    0
-                ].flow_vol.fix()
-                m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
-                    0
-                ].conc_mass_comp.fix()
-                m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
-                    0
-                ].conc_mass_comp.fix()
-                # Re-solve unit
-                solver = SolverFactory("ipopt")
-                solver.solve(m.fs.solex_rougher_strip, tee=True)
-                # Unfix feed states
-                m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
-                    0
-                ].flow_vol.unfix()
-                m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
-                    0
-                ].flow_vol.unfix()
-                m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
-                    0
-                ].conc_mass_comp.unfix()
-                m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
-                    0
-                ].conc_mass_comp.unfix()
+            _log.info(f"Initializing {unit}")
+            # Fix feed states
+            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[0].flow_vol.fix()
+            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
+            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
+                0
+            ].conc_mass_comp.fix()
+            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
+                0
+            ].conc_mass_comp.fix()
+            # Re-solve unit
+            solver = SolverFactory("ipopt")
+            solver.solve(m.fs.solex_rougher_strip, tee=True)
+            # Unfix feed states
+            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[0].flow_vol.unfix()
+            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
+            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
+                0
+            ].conc_mass_comp.unfix()
+            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
+                0
+            ].conc_mass_comp.unfix()
         elif unit == m.fs.solex_cleaner_load.mscontactor:
-            print(f"Initializing {unit}")
-            try:
-                initializer_bt.initialize(m.fs.solex_cleaner_load)
-            except:
-                # Fix feed states
-                m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
-                    0
-                ].flow_vol.fix()
-                m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
-                    0
-                ].flow_vol.fix()
-                m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
-                    0
-                ].conc_mass_comp.fix()
-                m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
-                    0
-                ].conc_mass_comp.fix()
-                # Re-solve unit
-                solver = SolverFactory("ipopt")
-                solver.solve(m.fs.solex_cleaner_load, tee=True)
-                # Unfix feed states
-                m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
-                    0
-                ].flow_vol.unfix()
-                m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
-                    0
-                ].flow_vol.unfix()
-                m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
-                    0
-                ].conc_mass_comp.unfix()
-                m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
-                    0
-                ].conc_mass_comp.unfix()
+            _log.info(f"Initializing {unit}")
+            # Fix feed states
+            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].flow_vol.fix()
+            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
+            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
+                0
+            ].conc_mass_comp.fix()
+            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
+                0
+            ].conc_mass_comp.fix()
+            # Re-solve unit
+            solver = SolverFactory("ipopt")
+            solver.solve(m.fs.solex_cleaner_load, tee=True)
+            # Unfix feed states
+            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].flow_vol.unfix()
+            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
+            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
+                0
+            ].conc_mass_comp.unfix()
+            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
+                0
+            ].conc_mass_comp.unfix()
         elif unit == m.fs.solex_cleaner_strip.mscontactor:
-            print(f"Initializing {unit}")
-            try:
-                initializer_bt.initialize(m.fs.solex_cleaner_strip)
-            except:
-                # Fix feed states
-                m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
-                    0
-                ].flow_vol.fix()
-                m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
-                    0
-                ].flow_vol.fix()
-                m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
-                    0
-                ].conc_mass_comp.fix()
-                m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
-                    0
-                ].conc_mass_comp.fix()
-                # Re-solve unit
-                solver = SolverFactory("ipopt")
-                solver.solve(m.fs.solex_cleaner_strip, tee=True)
-                # Unfix feed states
-                m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
-                    0
-                ].flow_vol.unfix()
-                m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
-                    0
-                ].flow_vol.unfix()
-                m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
-                    0
-                ].conc_mass_comp.unfix()
-                m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
-                    0
-                ].conc_mass_comp.unfix()
-        elif unit == m.fs.precipitator:
-            print(f"Initializing {unit}")
-            try:
-                initializer_bt.initialize(m.fs.precipitator)
-            except:
-                # Fix feed states
-                m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol.fix()
-                m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp.fix()
-                m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.fix()
-                # Re-solve precipitator unit
-                solver = SolverFactory("ipopt")
-                solver.solve(m.fs.precipitator, tee=True)
-                # Unfix feed states
-                m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol.unfix()
-                m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp.unfix()
-                m.fs.precipitator.cv_precipitate.properties_in[0].flow_mol_comp.unfix()
-        elif unit == m.fs.sl_sep2:
-            print(f"Initializing {unit}")
-            try:
-                initializer_bt.initialize(m.fs.sl_sep2)
-            except:
-                # Fix feed states
-                m.fs.sl_sep2.liquid_inlet_state[0].flow_vol.fix()
-                m.fs.sl_sep2.liquid_inlet_state[0].conc_mass_comp.fix()
-                m.fs.sl_sep2.solid_state[0].flow_mol_comp.fix()
-                # Re-solve unit
-                solver = SolverFactory("ipopt")
-                solver.solve(m.fs.sl_sep2, tee=True)
-                # Unfix feed states
-                m.fs.sl_sep2.liquid_inlet_state[0].flow_vol.unfix()
-                m.fs.sl_sep2.liquid_inlet_state[0].conc_mass_comp.unfix()
-                m.fs.sl_sep2.solid_state[0].flow_mol_comp.unfix()
+            _log.info(f"Initializing {unit}")
+            # Fix feed states
+            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].flow_vol.fix()
+            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
+            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
+                0
+            ].conc_mass_comp.fix()
+            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
+                0
+            ].conc_mass_comp.fix()
+            # Re-solve unit
+            solver = SolverFactory("ipopt")
+            solver.solve(m.fs.solex_cleaner_strip, tee=True)
+            # Unfix feed states
+            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].flow_vol.unfix()
+            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
+            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
+                0
+            ].conc_mass_comp.unfix()
+            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
+                0
+            ].conc_mass_comp.unfix()
         else:
-            print(f"{unit} is not being initialized.")
+            _log.info(f"Initializing {unit}")
+            initializer_bt.initialize(unit)
 
     seq.run(m, function)
 
 
-def solve(m, solver=None):
+def solve_system(m, solver=None, tee=False):
     """
     Solve the model.
+
+    Args:
+        m: pyomo model
+        solver: optimization solver
+        tee: boolean indicator to stream IPOPT solution
     """
-    if solver is None:
+    if hasattr(solver, "solve"):
+        solver = solver
+    else:
         solver = get_solver()
-    results = solver.solve(m, tee=True)
+    results = solver.solve(m, tee=tee)
 
     return results
 
@@ -2053,6 +1889,9 @@ def solve(m, solver=None):
 def fix_organic_recycle(m):
     """
     Fix the volumetric flow rate of the organic recycle streams and unfix the flow of make-up streams.
+
+    Args:
+        m: pyomo model
     """
 
     m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
@@ -2065,6 +1904,9 @@ def fix_organic_recycle(m):
 def display_results(m):
     """
     Print key flowsheet outputs.
+
+    Args:
+        m: pyomo model
     """
     m.fs.roaster.display()
 
@@ -2623,6 +2465,9 @@ def display_results(m):
 def add_costing(m):
     """
     Set the costing parameters for each unit model.
+
+    Args:
+        m: pyomo model
     """
     # TODO: Costing is preliminary until more unit model costing metrics can be verified
     # TODO: Should ideally define balance-of-plant equipment in the flowsheet and attach costing to it,
@@ -3427,6 +3272,9 @@ def add_costing(m):
 def display_costing(m):
     """
     Print the key costing results.
+
+    Args:
+        m: pyomo model
     """
     QGESSCostingData.report(m.fs.costing)
     m.fs.costing.variable_operating_costs.display()

@@ -1381,6 +1381,7 @@ class TestREECosting(object):
 class TestWaterTAPCosting(object):
     @pytest.fixture(scope="class")
     def solver(self):
+        pytest.importorskip("watertap", reason="WaterTAP dependency not available")
         return get_watertap_solver()
 
     @pytest.fixture(scope="class")

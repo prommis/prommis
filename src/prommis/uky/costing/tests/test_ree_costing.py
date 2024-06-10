@@ -909,8 +909,6 @@ class TestREECosting(object):
     @pytest.mark.component
     def test_base_model_diagnostics(self, model):
         dt = DiagnosticsToolbox(model)
-
-        dt.report_structural_issues()
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -1120,8 +1118,6 @@ class TestREECosting(object):
     @pytest.mark.component
     def test_full_model_diagnostics(self, model):
         dt = DiagnosticsToolbox(model)
-
-        dt.report_structural_issues()
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -1141,8 +1137,6 @@ class TestREECosting(object):
     @pytest.mark.component
     def test_solved_model_diagnostics(self, model):
         dt = DiagnosticsToolbox(model)
-
-        dt.report_numerical_issues()
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -1198,8 +1192,6 @@ class TestREECosting(object):
         )
 
         dt = DiagnosticsToolbox(model)
-
-        dt.report_structural_issues()
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -1214,8 +1206,6 @@ class TestREECosting(object):
     def test_costing_bounding_solve_diagnostics(self, model):
 
         dt = DiagnosticsToolbox(model)
-
-        dt.report_numerical_issues()
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component

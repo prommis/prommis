@@ -66,6 +66,7 @@ if watertap_costing_available:
         PressureChangeType,
         ReverseOsmosis1D,
     )
+    from watertap.core.solvers import get_solver as get_watertap_solver
 
 _log = idaeslog.getLogger(__name__)
 
@@ -1380,6 +1381,10 @@ class TestREECosting(object):
 class TestWaterTAPCosting(object):
     @pytest.fixture(scope="class")
     def solver(self):
+        return get_watertap_solver()
+
+    @pytest.fixture(scope="class")
+    def model(self, solver):
         pytest.importorskip("watertap", reason="WaterTAP dependency not available")
         return get_watertap_solver()
 

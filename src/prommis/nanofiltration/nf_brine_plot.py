@@ -29,13 +29,13 @@ from pyomo.network import Arc
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
 from idaes.core import FlowsheetBlock
-from idaes.core.solvers import get_solver
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.unit_models import Feed, Product
 
 import matplotlib.pyplot as plt
 import numpy as np
+from watertap.core.solvers import get_solver
 from watertap.property_models.multicomp_aq_sol_prop_pack import (
     ActivityCoefficientModel,
     DensityCalculation,

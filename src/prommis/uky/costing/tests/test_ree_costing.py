@@ -57,6 +57,7 @@ if watertap_costing_available:
         PressureChangeType,
         ReverseOsmosis1D,
     )
+    from watertap.core.solvers import get_solver as get_watertap_solver
 
 
 def base_model():
@@ -1240,12 +1241,14 @@ class TestREECosting(object):
 
 class TestWaterTAPCosting(object):
     @pytest.fixture(scope="class")
-    def model(self):
+    def solver(self):
         pytest.importorskip("watertap", reason="WaterTAP dependency not available")
+        return get_watertap_solver()
 
+    @pytest.fixture(scope="class")
+    def model(self, solver):
         model = base_model()
         model.fs_membrane = FlowsheetBlock(dynamic=False)
-        solver = get_solver()
         # Nanofiltration
 
         model.fs_membrane.nf_properties = MCASParameterBlock(
@@ -1529,7 +1532,7 @@ class TestWaterTAPCosting(object):
         return model
 
     @pytest.mark.component
-    def test_REE_watertap_costing(self, model):
+    def test_REE_watertap_costing(self, model, solver):
         # full smoke test with all components, O&M costs, and extra costs included
         CE_index_year = "UKy_2019"
 
@@ -1744,7 +1747,6 @@ class TestWaterTAPCosting(object):
         QGESSCostingData.initialize_fixed_OM_costs(model.fs.costing)
         QGESSCostingData.initialize_variable_OM_costs(model.fs.costing)
 
-        solver = get_solver()
         results = solver.solve(model, tee=True)
         assert check_optimal_termination(results)
 

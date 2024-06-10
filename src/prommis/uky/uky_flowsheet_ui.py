@@ -32,7 +32,7 @@ from prommis.uky.uky_flowsheet import (
     set_partition_coefficients,
     set_operating_conditions,
     set_scaling,
-    solve,
+    solve_system,
     initialize_system,
 )
 
@@ -413,7 +413,7 @@ def solve_flowsheet(flowsheet=None):
 
     initialize_system(scaled_model)
 
-    results = solve(scaled_model)
+    results = solve_system(scaled_model)
 
     return results
 

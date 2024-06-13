@@ -18,10 +18,9 @@ Tests for REE costing.
 import pyomo.environ as pyo
 from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.units_container import UnitsError
-from pyomo.environ import assert_optimal_termination, check_optimal_termination
+from pyomo.environ import assert_optimal_termination
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
-from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 from idaes.core.solvers import get_solver
@@ -1133,7 +1132,7 @@ class TestREECosting(object):
         # try solving
         solver = get_solver()
         results = solver.solve(model, tee=True)
-        assert check_optimal_termination(results)
+        assert_optimal_termination(results)
 
     @pytest.mark.component
     def test_solved_model_diagnostics(self, model):
@@ -1201,7 +1200,7 @@ class TestREECosting(object):
         # solve new variables and constraints
         solver = get_solver()
         results = solver.solve(model, tee=True)
-        assert check_optimal_termination(results)
+        assert_optimal_termination(results)
 
     @pytest.mark.component
     def test_costing_bounding_solve_diagnostics(self, model):
@@ -1805,7 +1804,7 @@ class TestWaterTAPCosting(object):
         QGESSCostingData.initialize_variable_OM_costs(model.fs.costing)
 
         results = solver.solve(model, tee=True)
-        assert check_optimal_termination(results)
+        assert_optimal_termination(results)
 
         assert model.fs.costing.total_BEC.value == pytest.approx(48.347, rel=1e-4)
         assert pyo.value(
@@ -1955,11 +1954,14 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
         fixed_OM=False,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     assert value(
         m.fs.CS_front_end_loader_2yd3.costing.bare_erected_cost[
@@ -2056,15 +2058,14 @@ def test_REE_costing_CE_index_year():
         },
     )
 
-    # add initialize
-    QGESSCostingData.costing_initialization(m.fs.costing)
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
 
-    # try solving
+    QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-
-    # check unit consistency
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that total plant cost ratios match expected currency conversions
     for account in CS_jaw_crusher_accounts:
@@ -2225,9 +2226,14 @@ def test_REE_costing_multipleaccountssameparameter():
         },
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     assert m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3"].value == pytest.approx(
         2.5122, rel=1e-4
@@ -2307,9 +2313,14 @@ def test_REE_costing_additionalcostingparams_newaccount():
         },
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # adding a check just to make sure everything works as expected
     assert m.fs.CS_jaw_crusher.costing.bare_erected_cost[
@@ -2355,9 +2366,14 @@ def test_REE_costing_additionalcostingparams_overwrite():
         },
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # adding a check just to make sure 1.3 was overwritten before it was used
     assert m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3"].value == pytest.approx(
@@ -2521,15 +2537,14 @@ def test_REE_costing_scaledownparallelequip():
         },
     )
 
-    # add initialize
-    QGESSCostingData.costing_initialization(m.fs.costing)
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
 
-    # try solving
+    QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-
-    # check unit consistency
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # base case
     assert m.fs.CS_jaw_crusher_1.costing.bare_erected_cost[
@@ -2624,11 +2639,14 @@ def test_REE_costing_usersetTPC():
         fixed_OM=False,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that the cost units are as expected
     assert m.fs.costing.total_plant_cost.get_units() == pyunits.MUSD_2021
@@ -2671,11 +2689,14 @@ def test_REE_costing_useLangfactor():
         fixed_OM=False,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that the cost units are as expected
     assert m.fs.costing.total_plant_cost.get_units() == pyunits.MUSD_2021
@@ -2726,11 +2747,14 @@ def test_REE_costing_landcostExpression_withunits():
         fixed_OM=False,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that the cost units are as expected
     assert hasattr(m.fs.costing, "land_cost")
@@ -2769,11 +2793,14 @@ def test_REE_costing_landcostExpression_nounits():
         fixed_OM=False,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that the cost units are as expected
     assert hasattr(m.fs.costing, "land_cost")
@@ -2813,11 +2840,14 @@ def test_REE_costing_landcostnonExpression_withunits():
         fixed_OM=False,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that the cost units are as expected
     assert hasattr(m.fs.costing, "land_cost")
@@ -2856,11 +2886,14 @@ def test_REE_costing_landcostnonExpression_nounits():
         fixed_OM=False,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that the cost units are as expected
     assert hasattr(m.fs.costing, "land_cost")
@@ -2902,13 +2935,16 @@ def test_REE_costing_fixedOM_defaults():
         },
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects are built as expected
     assert hasattr(m.fs.costing, "annual_operating_labor_cost")
@@ -3371,13 +3407,16 @@ def test_REE_costing_variableOM_defaults():
         ],
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
@@ -3455,13 +3494,16 @@ def test_REE_costing_variableOM_steadystateflowsheet():
         ],
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
@@ -3541,13 +3583,16 @@ def test_REE_costing_chemicalscostExpression_withunits():
         additional_chemicals_cost=m.fs.additional_chemicals_cost,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
@@ -3621,13 +3666,16 @@ def test_REE_costing_chemicalscostExpression_nounits():
         additional_chemicals_cost=m.fs.additional_chemicals_cost,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
@@ -3705,13 +3753,16 @@ def test_REE_costing_chemicalscostnonExpression_withunits():
         additional_chemicals_cost=m.fs.additional_chemicals_cost,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
@@ -3789,13 +3840,16 @@ def test_REE_costing_chemicalscostnonExpression_nounits():
         additional_chemicals_cost=m.fs.additional_chemicals_cost,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
@@ -3872,13 +3926,16 @@ def test_REE_costing_wastecostExpression_withunits():
         additional_waste_cost=m.fs.additional_waste_cost,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
@@ -3952,13 +4009,16 @@ def test_REE_costing_wastecostExpression_nounits():
         additional_waste_cost=m.fs.additional_waste_cost,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
@@ -4034,13 +4094,16 @@ def test_REE_costing_wastecostnonExpression_withunits():
         additional_waste_cost=m.fs.additional_waste_cost,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
@@ -4116,13 +4179,16 @@ def test_REE_costing_wastecostnonExpression_nounits():
         additional_waste_cost=m.fs.additional_waste_cost,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
@@ -4280,13 +4346,16 @@ def test_REE_costing_variableOM_feedinputnounits():
         ],
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check some cost results
     assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
@@ -4439,13 +4508,16 @@ def test_REE_costing_variableOM_customprices():
         prices={"water": 1.90e-3 * 1e-6 * pyunits.MUSD_2021 / pyunits.gallon},
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check some cost results
     assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
@@ -4664,13 +4736,16 @@ def test_REE_costing_recovery_basecase():
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "recovery_rate_per_year")
@@ -4754,13 +4829,16 @@ def test_REE_costing_recovery_nounits():
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "recovery_rate_per_year")
@@ -4984,13 +5062,16 @@ def test_REE_costing_recovery_passedinmethodcall():
         recovery_rate_per_year=39.3 * 0.8025 * pyo.value(m.fs.annual_operating_hours),
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "recovery_rate_per_year")
@@ -5068,13 +5149,16 @@ def test_REE_costing_recovery_transportcostExpression():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "recovery_rate_per_year")
@@ -5152,13 +5236,16 @@ def test_REE_costing_recovery_transportcostExpressionnounits():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "recovery_rate_per_year")
@@ -5238,13 +5325,16 @@ def test_REE_costing_recovery_transportcostParam():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "recovery_rate_per_year")
@@ -5322,13 +5412,16 @@ def test_REE_costing_recovery_transportcostParamnounits():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "recovery_rate_per_year")
@@ -5409,13 +5502,16 @@ def test_REE_costing_recovery_transportcostVar():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "recovery_rate_per_year")
@@ -5494,13 +5590,16 @@ def test_REE_costing_recovery_transportcostVarnounits():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
     solver = get_solver()
     results = solver.solve(m, tee=True)
-    assert check_optimal_termination(results)
-    assert_units_consistent(m)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
 
     # check that some objects builts as expected
     assert hasattr(m.fs.costing, "recovery_rate_per_year")

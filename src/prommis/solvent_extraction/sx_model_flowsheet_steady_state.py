@@ -11,13 +11,13 @@ from pyomo.environ import ConcreteModel, SolverFactory
 import numpy as np
 
 from idaes.core import FlowDirection, FlowsheetBlock
-from idaes.core.initialization.block_triangularization import (
-    BlockTriangularizationInitializer,
-)
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction, SolventExtractionInitializer
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
 
 
 def build_model():
@@ -147,7 +147,6 @@ def model_evaluation():
 
     """
 
-    #initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
     initializer = SolventExtractionInitializer()
     try:
         initializer.initialize(m.fs.solex)

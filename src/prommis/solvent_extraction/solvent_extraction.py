@@ -107,22 +107,22 @@ class SolventExtractionInitializer(ModularInitializerBase):
 
     CONFIG = ModularInitializerBase.CONFIG()
 
-    CONFIG.declare(
-        "ssc_solver_options",
-        ConfigDict(
-            implicit=True,
-            description="Dict of arguments for solver calls by ssc_solver",
-        ),
-    )
-    CONFIG.declare(
-        "calculate_variable_options",
-        ConfigDict(
-            implicit=True,
-            description="Dict of options to pass to 1x1 block solver",
-            doc="Dict of options to pass to calc_var_kwds argument in "
-            "scc_solver method.",
-        ),
-    )
+    # CONFIG.declare(
+    #     "ssc_solver_options",
+    #     ConfigDict(
+    #         implicit=True,
+    #         description="Dict of arguments for solver calls by ssc_solver",
+    #     ),
+    # )
+    # CONFIG.declare(
+    #     "calculate_variable_options",
+    #     ConfigDict(
+    #         implicit=True,
+    #         description="Dict of options to pass to 1x1 block solver",
+    #         doc="Dict of options to pass to calc_var_kwds argument in "
+    #         "scc_solver method.",
+    #     ),
+    # )
 
     def initialize_main_model(
         self,
@@ -137,12 +137,18 @@ class SolventExtractionInitializer(ModularInitializerBase):
         Returns:
             None
         """
+        model.mscontactor.material_transfer_term.fix(1e-8)
+
         # Initialize MSContactor
-        msc_init = model.mscontactor.default_initializer(
-            ssc_solver_options=self.config.ssc_solver_options,
-            calculate_variable_options=self.config.calculate_variable_options,
-        )
-        return msc_init.initialize(model.mscontactor)
+        msc_init = model.mscontactor.default_initializer()
+        msc_init.initialize(model.mscontactor)
+
+        model.mscontactor.material_transfer_term.unfix()
+
+        solver = self._get_solver()
+        init_model = solver.solve(model.mscontactor)
+
+        return init_model
 
 
 Stream_Config = ConfigDict()

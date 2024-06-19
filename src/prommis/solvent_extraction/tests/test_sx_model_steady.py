@@ -9,17 +9,20 @@ from idaes.core.util import DiagnosticsToolbox
 from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )
+from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer
 
 import pytest
 
 from prommis.solvent_extraction.sx_model_flowsheet_steady_state import (
-    model_evaluation,
+    build_model,
+    set_inputs,
 )
 
 
 @pytest.fixture(scope="module")
 def model():
-    m = model_evaluation()
+    m = build_model()
+    set_inputs(m)
 
     return m
 
@@ -35,7 +38,7 @@ def test_structural_issues(model):
 @pytest.mark.solver
 def test_solve(model):
 
-    initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
+    initializer = SolventExtractionInitializer()
     initializer.initialize(model.fs.solex)
 
     try:

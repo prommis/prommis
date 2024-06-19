@@ -19,6 +19,8 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+
 
 def build_model():
     """
@@ -135,9 +137,9 @@ def set_inputs(m):
     m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
 
 
-def model_evaluation():
+if __name__ == "__main__":
 
-    # Call build model function
+    number_of_stages = 3
 
     m = build_model()
     set_inputs(m)
@@ -153,7 +155,7 @@ def model_evaluation():
     except:
         pass
 
-    """
+    """ 
     Solution of the model and display of the final results.
 
     """
@@ -162,15 +164,6 @@ def model_evaluation():
     solver.options["bound_push"] = 1e-8
     solver.options["mu_init"] = 1e-8
     solver.solve(m, tee=True)
-
-    return m
-
-
-if __name__ == "__main__":
-
-    number_of_stages = 3
-
-    m = model_evaluation()
 
     # Final organic outlet display
     m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()

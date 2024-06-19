@@ -17,7 +17,10 @@ from idaes.core.initialization.block_triangularization import (
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
 
 
 def build_model():
@@ -200,8 +203,8 @@ if __name__ == "__main__":
     Initialization of the model, which gives a good starting point.
 
     """
-
     initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
+    # initializer = SolventExtractionInitializer()
     initializer.initialize(m.fs.solex)
 
     """

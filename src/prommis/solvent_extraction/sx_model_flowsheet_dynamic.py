@@ -14,6 +14,7 @@ from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )
+from idaes.core.util import DiagnosticsToolbox
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
@@ -72,7 +73,7 @@ def set_inputs(m):
     """
 
     m.discretizer = TransformationFactory("dae.collocation")
-    m.discretizer.apply_to(m, nfe=5, ncp=2, wrt=m.fs.time, scheme="LAGRANGE-RADAU")
+    m.discretizer.apply_to(m, nfe=1, ncp=2, wrt=m.fs.time, scheme="LAGRANGE-RADAU")
 
     """
     Specifications of the partition coefficients, volume and volume fractions for all
@@ -203,8 +204,15 @@ if __name__ == "__main__":
     Initialization of the model, which gives a good starting point.
 
     """
-    initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
+    # initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
     # initializer = SolventExtractionInitializer()
+    # try:
+    #     initializer.initialize(m.fs.solex)
+    # except:
+    #     dt = DiagnosticsToolbox(m.fs.solex.mscontactor)
+    #     dt.report_structural_issues()
+
+    initializer = SolventExtractionInitializer()
     initializer.initialize(m.fs.solex)
 
     """

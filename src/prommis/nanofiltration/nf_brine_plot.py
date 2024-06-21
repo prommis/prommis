@@ -1,4 +1,10 @@
-####################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+####
 # This code has been adapted from a test in the WaterTAP repo to
 # simulate a simple separation of lithium and magnesium
 #
@@ -9,8 +15,7 @@
 # watertap > examples > flowsheets > nf_dspmde > nf.py
 #
 # https://github.com/watertap-org/watertap/blob/main/tutorials/nawi_spring_meeting2023.ipynb
-####################################################################
-
+####
 """
 Nanofiltration flowsheet for Donnan steric pore model with dielectric exclusion
 """

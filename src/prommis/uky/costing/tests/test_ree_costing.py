@@ -1079,6 +1079,19 @@ class TestREECosting(object):
             recovery_rate_per_year=model.fs.recovery_rate_per_year,
             CE_index_year=CE_index_year,
             transport_cost_per_ton_product=0,
+            # arguments related to NPV calculation
+            calculate_NPV=True,
+            discount_percentage=10,  # percent
+            plant_lifetime=20,  # years
+            capital_expenditure_percentages=[10, 60, 30],
+            capital_escalation_percentage=3.6,
+            operating_inflation_percentage=3,
+            revenue_inflation_percentage=3,
+            royalty_charge_percentage_of_revenue=6.5,
+            debt_percentage_of_CAPEX=50,
+            loan_interest_percentage=6,
+            loan_repayment_period=10,
+            capital_depreciation_declining_balance_percentage=150,
         )
 
         # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
@@ -1121,6 +1134,7 @@ class TestREECosting(object):
         # try solving
         solver = get_solver()
         results = solver.solve(model, tee=True)
+
         assert check_optimal_termination(results)
 
     @pytest.mark.component
@@ -1149,6 +1163,27 @@ class TestREECosting(object):
         assert model.fs.costing.total_sales_revenue.value == pytest.approx(
             65.333, rel=1e-4
         )
+        assert model.fs.costing.pv_capital_cost.value == pytest.approx(
+            -256.00419, rel=1e-4
+            )
+        assert model.fs.costing.pv_operating_cost.value == pytest.approx(
+            -4677.8978, rel=1e-4
+            )
+        assert model.fs.costing.pv_royalties.value == pytest.approx(
+            -36.434467, rel=1e-4
+            )
+        assert model.fs.costing.pv_revenue.value == pytest.approx(
+            560.53027, rel=1e-4
+            )
+        assert model.fs.costing.pv_loan_interest.value == pytest.approx(
+            -23.892648, rel=1e-4
+            )
+        assert model.fs.costing.pv_capital_depreciation.value == pytest.approx(
+            -105.20854, rel=1e-4
+            )
+        assert model.fs.costing.npv.value == pytest.approx(
+            -4538.9082, rel=1e-4
+            )
 
     @pytest.mark.component
     def test_units_consistency(self, model):
@@ -5509,4 +5544,108 @@ def test_REE_costing_recovery_Nonewithtransportcost():
                 m.fs.water,
             ],
             transport_cost_per_ton_product=10,
+        )
+
+@pytest.mark.component
+def test_REE_costing_NPV_defaults():
+    # use as many default values as possible, only pass required arguments
+
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting()
+
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=True,
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
+        variable_OM=True,
+        feed_input=m.fs.feed_input,
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
+        calculate_NPV=True,
+        discount_percentage=10,  # percent
+        plant_lifetime=20,  # years
+    )
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert check_optimal_termination(results)
+    assert_units_consistent(m)
+
+    # check that some objects builts as expected
+    assert hasattr(m.fs.costing, "pv_capital_cost")
+    assert hasattr(m.fs.costing, "pv_operating_cost")
+    assert hasattr(m.fs.costing, "pv_revenue")
+    assert hasattr(m.fs.costing, "pv_royalties")
+    assert hasattr(m.fs.costing, "loan_debt")
+    assert hasattr(m.fs.costing, "loan_annual_payment")
+    assert hasattr(m.fs.costing, "pv_loan_interest")
+    assert hasattr(m.fs.costing, "pv_capital_depreciation")
+    assert hasattr(m.fs.costing, "npv")
+    assert hasattr(m.fs.costing, "discount_percentage")
+    assert hasattr(m.fs.costing, "plant_lifetime")
+    assert hasattr(m.fs.costing, "capital_expenditure_percentages")
+    assert hasattr(m.fs.costing, "capital_escalation_percentage")
+    assert hasattr(m.fs.costing, "operating_inflation_percentage")
+    assert hasattr(m.fs.costing, "revenue_inflation_percentage")
+    assert hasattr(m.fs.costing, "royalty_charge_percentage_of_revenue")
+    assert hasattr(m.fs.costing, "debt_percentage_of_CAPEX")
+    assert hasattr(m.fs.costing, "loan_interest_percentage")
+    assert hasattr(m.fs.costing, "loan_repayment_period")
+    assert hasattr(m.fs.costing, "capital_depreciation_declining_balance_percentage")
+
+
+    # check some NPV results
+    assert m.fs.costing.pv_capital_cost.value == pytest.approx(
+        -14.33727, rel=1e-4
+        )
+    assert m.fs.costing.pv_operating_cost.value == pytest.approx(
+        -59.02935, rel=1e-4
+        )
+    assert m.fs.costing.pv_royalties.value == pytest.approx(
+        -35.90449, rel=1e-4
+        )
+    assert m.fs.costing.pv_revenue.value == pytest.approx(
+        552.37672, rel=1e-4
+        )
+    assert m.fs.costing.pv_loan_interest.value == pytest.approx(
+        -1.3380851, rel=1e-4
+        )
+    assert m.fs.costing.pv_capital_depreciation.value == pytest.approx(
+        -5.8921045, rel=1e-4
+        )
+    assert m.fs.costing.npv.value == pytest.approx(
+        435.87542, rel=1e-4
         )

@@ -175,6 +175,21 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         recovery_rate_per_year=None,
         CE_index_year="2021",
         watertap_blocks=None,
+        # arguments related to NPV calculation
+        calculate_NPV=False,
+        discount_percentage=None,
+        plant_lifetime=None,
+        capital_expenditure_percentages=[10, 60, 30],
+        capital_escalation_percentage=3.6,
+        operating_inflation_percentage=3,
+        revenue_inflation_percentage=3,
+        royalty_charge_percentage_of_revenue=6.5,
+        royalty_expression=None,
+        debt_percentage_of_CAPEX=50,
+        debt_expression=None,
+        loan_interest_percentage=6,
+        loan_repayment_period=10,
+        capital_depreciation_declining_balance_percentage=150,
     ):
         """
         This method builds process-wide costing, including fixed and variable
@@ -281,6 +296,35 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             transport_cost_per_ton_product: Expression, Var or Param to use for transport costs
                 per ton of product (note, this is not part of the TOC)
             CE_index_year: year for cost basis, e.g. "2021" to use 2021 dollars
+            watertap_block: list of unit model blocks corresponding to watertap models
+            calculate_NPV: True/false flag for calculating net present value (NPV)
+            discount_percentage: rate at which currency devalues over time;
+                alternatively, this is the required rate of return on investment.
+            plant_lifetime: length of operating period in years.
+            capital_expenditure_percentages: a list of values that sum to 100
+                representing how capital costs are spread over a capital
+                expenditure period; for example, an input of [10, 60, 30] is parsed
+                as a 3-year period where capital costs are spread as 10% in year 1,
+                60% in year 2,and 30% in year 3. The capital period precedes
+                the operating period. Set to None to indicate no expenditure period.
+            capital_escalation_percentage: rate at which capital costs
+                escalate during the capital expenditure period. Set to 0 to indicate expenditure
+                is spread but there is no cost escalation.
+            operating_inflation_percentage: inflation rate for operating costs
+                during the operating period. Set to 0 to indicate no inflation.
+            revenue_inflation_percentage: inflation rate for revenue during the
+                operating period. Set to 0 to indicate no inflation.
+            royalty_charge_percentage_of_revenue: percentage of revenue charged
+                as royalties; ignored if royalty_expression is not None. Set to zero
+                to indicate no royalties are charged.
+            royalty_expression: set the value or expression to calculate royalties
+            debt_percentage_of_CAPEX: percentage of CAPEX financed by debt; ignored if
+                debt_expression is not None. Set to zero to indicate no loans are taken out on capital.
+            debt_expression: set the value or expression to calculate total debt
+            loan_interest_percentage: interest rate for loan repayment.
+            loan_repayment_period: length of repayment period in years.
+            capital_depreciation_declining_balance_percentage: factor to use for declining balance
+                depreciation. Set to 0 to indicate that capital does not depreciate over time.
         """
 
         # define costing library
@@ -946,6 +990,23 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         "recovery_rate_per_year cannot be None."
                     )
 
+            if calculate_NPV:
+                self.calculate_NPV(
+                    discount_percentage=discount_percentage,
+                    plant_lifetime=plant_lifetime,
+                    capital_expenditure_percentages=capital_expenditure_percentages,
+                    capital_escalation_percentage=capital_escalation_percentage,
+                    operating_inflation_percentage=operating_inflation_percentage,
+                    revenue_inflation_percentage=revenue_inflation_percentage,
+                    royalty_charge_percentage_of_revenue=royalty_charge_percentage_of_revenue,
+                    royalty_expression=royalty_expression,
+                    debt_percentage_of_CAPEX=debt_percentage_of_CAPEX,
+                    debt_expression=debt_expression,
+                    loan_interest_percentage=loan_interest_percentage,
+                    loan_repayment_period=loan_repayment_period,
+                    capital_depreciation_declining_balance_percentage=capital_depreciation_declining_balance_percentage,
+                    )
+
     @staticmethod
     def initialize_build(*args, **kwargs):
         """
@@ -1016,9 +1077,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         if hasattr(self, "site_improvements_costs"):
-            var_dict[
-                "Total Site Improvements Buildings Installation Cost [$MM]"
-            ] = value(self.site_improvements_costs)
+            var_dict["Total Site Improvements Buildings Installation Cost [$MM]"] = (
+                value(self.site_improvements_costs)
+            )
 
         if hasattr(self, "epcm_costs"):
             var_dict["Summation of EPCM Installation Costs [$MM]"] = value(
@@ -1026,9 +1087,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         if hasattr(self, "equipment_installation_costs"):
-            var_dict[
-                "Total Equipment Installation EPCM Installation Cost [$MM]"
-            ] = value(self.equipment_installation_costs)
+            var_dict["Total Equipment Installation EPCM Installation Cost [$MM]"] = (
+                value(self.equipment_installation_costs)
+            )
 
         if hasattr(self, "field_expenses_costs"):
             var_dict["Total Field Expenses EPCM Cost [$MM]"] = value(
@@ -2671,3 +2732,661 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # method has finished building components
         b.components_already_built = True
+
+    def calculate_NPV(
+        # flowsheet block or costing block
+        b,
+        # required NPV arguments
+        discount_percentage,
+        plant_lifetime,
+        # required NPV arguments if b is not passed
+        total_capital_cost=None,
+        annual_operating_cost=None,
+        annual_revenue=None,
+        cost_year=None,
+        # capital_escalation arguments
+        capital_expenditure_percentages=[10, 60, 30],
+        capital_escalation_percentage=3.6,
+        # inflation arguments
+        operating_inflation_percentage=3,
+        revenue_inflation_percentage=3,
+        # royalties
+        royalty_charge_percentage_of_revenue=6.5,
+        royalty_expression=None,
+        # loans
+        debt_percentage_of_CAPEX=50,
+        debt_expression=None,
+        loan_interest_percentage=6,
+        loan_repayment_period=10,
+        # capital depreciation
+        capital_depreciation_declining_balance_percentage=150,
+    ):
+        """
+        Equations for cash flow expressions derive from the textbook
+        Engineering Economy: Applying Theory to Practice, 3rd Ed. by Ted. G. Eschenbach.
+
+        The net present value (NPV) is a representative measure of the "current
+        day" value of a chemical plant over the total lifetime, including all
+        cash flows. The basic NPV formula is
+
+        NPV = Cash Flow In - Cash Flow Out
+
+        where Cash Flow In is revenue from product sales or salvage, and
+        Cash Flow Out is costs from capital, operating, royalties and loans.
+
+        This method supports capital expenditure, inflation, royalties,
+        loan repayment and capital depreciation. If these additional details
+        are not included, the NPV formulation assumes that negative cash flows
+        consists only of capital and operating costs that remain numerically
+        constant over time, and the resulting NPV formula is
+
+        NPV = [(REVENUE - OPEX) * P/A(r, N)] - CAPEX - Other_costs
+
+        where P/A(r, N) is the series present worth factor; this factor scales
+        a future cost to its present value from a known discount rate r and
+        project lifetime N based on annuity growth over time. This factor is
+        calculated as
+
+        P/A(r, N) = [ 1 - (1+r)**(-N) ] / r
+
+        where r is expressed as a decimal and N is expressed in years. In the
+        NPV expression above, REVENUE is the constant annual revenue, OPEX is
+        the constant annual operating cost, and CAPEX is the total capital cost.
+        Other_costs includes royalties, loan repayment, and capital depreciation
+        losses that are described in further detail below.
+
+        In the expressions above, revenue and operating costs are assumed to
+        remain numerically constant over time. Operating costs and revenues are
+        then adjusted based on predicted annuity growth to obtain the present
+        value. These expressions are implemented if there is no capital
+        expenditure period.
+
+        ----------------------------------------------------------------------
+
+        The general NPV formulation allows capital costs, operating costs,
+        and revenues to escalate over time via geometric gradient growth, e.g.
+        a constant proportional growth rate expressed as an escalation or
+        inflation percentage. Additionally, the formulation includes negative
+        cash flows from royalties, loan repayment and capital depreciation.
+        The general formulation is given by
+
+        NPV = PV_Revenue - PV_Operating_Cost - PV_Royalties - PV_Capital_Cost
+              - Loan_Interest_Owed - Capital_Depreciation
+
+        For escalating costs, the series present worth factor is modified to
+        account for escalation, yielding a modifed formula
+
+        P/A(r, g, N) = ( 1 - [ (1+g)**(N) ] * [(1+r)**(-N)] ) / (r - g)
+
+        where r is the discount rate expressed as a decimal, N is the project
+        lifetime, and g is the escalation rate (e.g. inflation) expressed as a
+        decimal.
+
+        The general formulation considers a capital escalation period followed
+        by the operating period, and capital costs may be distributed across
+        the capital escalation period rather than fully paid for upfront. For
+        example, if the capital expenditures are distributed across a 3-year
+        capital escalation period, the PV from the capital costs are given as
+
+        PV_Capital_Cost = Y1_% * CAPEX * P/A(r, gCap, 1)
+                          + Y2_% * CAPEX * P/A(r, gCap, 2)
+                          + Y3_% * CAPEX * P/A(r, gCap, 3)
+
+        where Y1_%, Y2_%, and Y3_% are the percentage of capital expenditures
+        in each year expressed as decimals, CAPEX is the total capital cost from
+        equipment purchasing, and gCap is the capital escalation growth rate
+        expressed as a decimal. The capital costs spent in each year are handled
+        separately to properly account for the value growth over time.
+
+        Revenue, operating costs and royalties based on revenue escalate with
+        standard inflation. Notably, these cash flows occur after any capital
+        expenditure period, meaning that the annuity growth must be offset by
+        the length of the capital expenditure period. This yields the expressions
+
+        PV_Revenue = REVENUE * [ P/A(r, gRev, NOp+NCap) - P/A(r, gRev, NCap) ]
+
+        PV_Operating_Cost = OPEX * [ P/A(r, gOp, NOp+NCap) - P/A(r, gOp, NCap) ]
+
+        PV_Royalties = iRoy_% * REVENUE * [ P/A(r, gRev, NOp+NCap) - P/A(r, gRev, NCap) ]
+
+        where REVENUE is the annual revenue, OPEX is the annual operating cost,
+        gRev is the inflation or growth rate of revenue year-on-year expressed as
+        a decimal, gOp is the inflation or growth rate of operating costs year-on-year
+        expressed as a decimal, NOp is the length of the operating period or plant
+        lifetime, NCap is the length of the capital expenditure period, and iRoy_%
+        is the percentage of the revenue charged as royalties expressed as a decimal.
+        The expressions above take the annuity growth during the entire analysis
+        period (NOp+NCap) and subtract the capital expenditure period (NCap) as there
+        is no operation or production during that time.
+
+        Finally, the full formulation supports estimation of interest
+        owed on loans and value losses due to capital depreciation. The loan
+        interest is calculated as an annual loan payment
+
+        Annual_Loan_Payment = Debt * [ iLoan_% * (1 + iLoan_%)**Nloan ] / [ (1 + iLoan_%)**Nloan - 1 ]
+
+        PV_Loan_Interest_Owed = Nloan * Annual_Loan_Payment - Debt
+
+        where Annual_Loan_Payment is the required combined principal and interest
+        that should be paid annually to pay off the loan on-time, Debt is the
+        loan principal (typically a percentage of the CAPEX), iLoan_% is the loan
+        interest rate expressed as a decimal, and Nloan is the loan repayment period.
+        Capital depreciation is calculated using a declining balance model over
+        the plant lifetime as
+
+        PV_Capital_Depreciation = CAPEX * [1 - ( 1 - Depr_%/NOp)**NOp]
+
+        where CAPEX is the initial capital cost (equal to the initial book value),
+        Depr_% is the declining balance factor expressed as a decimal, and NOp is the
+        plant lifetime over which depreciation occurs.
+
+
+        Args:
+            b: costing block to retrieve total plant cost (capital), total plant
+                operating cost, and total revenue from, and add net present
+                value (NPV) calculations to; if not a costing block, b should
+                be a flowsheet block to attach parameters and variables to
+            discount_percentage: rate at which currency devalues over time;
+                alternatively, this is the required rate of return on investment.
+            plant_lifetime: length of operating period in years.
+            total_capital_cost: value for total capital cost; ignored if b is not None.
+            annual_operating_cost: value for total operating cost; ignored if b is not None.
+            annual_revenue: value for total revenue; ignored if b is not None.
+            cost_year: assumed project start year for costs, which is the basis for NPV results
+            capital_expenditure_percentages: a list of values that sum to 100
+                representing how capital costs are spread over a capital
+                expenditure period; for example, an input of [10, 60, 30] is parsed
+                as a 3-year period where capital costs are spread as 10% in year 1,
+                60% in year 2,and 30% in year 3. The capital period precedes
+                the operating period. Set to None to indicate no expenditure period.
+            capital_escalation_percentage: rate at which capital costs
+                escalate during the capital expenditure period. Set to 0 to indicate expenditure
+                is spread but there is no cost escalation.
+            operating_inflation_percentage: inflation rate for operating costs
+                during the operating period. Set to 0 to indicate no inflation.
+            revenue_inflation_percentage: inflation rate for revenue during the
+                operating period. Set to 0 to indicate no inflation.
+            royalty_charge_percentage_of_revenue: percentage of revenue charged
+                as royalties; ignored if royalty_expression is not None. Set to zero
+                to indicate no royalties are charged.
+            royalty_expression: set the value or expression to calculate royalties
+            debt_percentage_of_CAPEX: percentage of CAPEX financed by debt; ignored if
+                debt_expression is not None. Set to zero to indicate no loans are taken out on capital.
+            debt_expression: set the value or expression to calculate total debt
+            loan_interest_percentage: interest rate for loan repayment.
+            loan_repayment_period: length of repayment period in years.
+            capital_depreciation_declining_balance_percentage: factor to use for declining balance
+                depreciation. Set to 0 to indicate that capital does not depreciate over time.
+        """
+
+        # check if costing block was passed, and extract necessary components
+        # variables and constraints will be added to the costing block
+        if isinstance(b, FlowsheetCostingBlockData) and b.library == "REE":
+
+            try:
+                CAPEX = (
+                    b.total_BEC +
+                    b.total_installation_cost +
+                    b.other_plant_costs
+                    )
+                OPEX = (
+                    b.total_fixed_OM_cost
+                    + b.total_variable_OM_cost[0] * pyunits.year
+                    + b.land_cost
+                )
+                REVENUE = b.total_sales_revenue
+
+                cost_units = pyunits.get_units(CAPEX)
+
+            except AttributeError:
+                raise AttributeError(
+                    "Expected FlowsheetCostingBlockData object "
+                    "with attributes total_BEC, total_installation_cost, "
+                    "total_fixed_OM_cost, total_variable_OM_cost, "
+                    "other_plant_costs, land_cost, and total_sales_revenue. "
+                    "Please confirm that b is a FlowsheetCostingBlockData object "
+                    "and that all expected attributes exist."
+                )
+        elif isinstance(b, FlowsheetBlock):
+            # if b is not a costing block, it must be a flowsheet block
+            # variables and constraints will be added there
+
+            if None in [
+                total_capital_cost,
+                annual_operating_cost,
+                annual_operating_cost,
+                cost_year,
+            ]:
+                raise AttributeError(
+                    "If b is not passed as a FlowsheetcostingBlockData object, "
+                    "then total_capital_cost, annual_operating_cost, and annual_revenue "
+                    "must be passed, and cost_year must be passed as a string, e.g. '2021'."
+                )
+
+            else:
+                # check if the cost arguments are variables or expressions with units and handle appropriately
+                costs = {
+                    "CAPEX": total_capital_cost,
+                    "OPEX": annual_operating_cost,
+                    "REVENUE": annual_revenue,
+                }
+                cost_units = getattr(pyunits, "MUSD_" + cost_year)
+
+                for key in costs.keys():
+                    if type(key) in [Expression, ScalarExpression]:
+                        if pyunits.get_units(key) == pyunits.dimensionless:
+                            costs[key] = Expression(expr=costs[key].expr * cost_units)
+                        else:
+                            costs[key] = Expression(
+                                expr=pyunits.convert(
+                                    costs[key].expr, to_units=cost_units
+                                )
+                            )
+                    else:
+                        if pyunits.get_units(key) == pyunits.dimensionless:
+                            costs[key] = Expression(expr=costs[key] * cost_units)
+                        else:
+                            costs[key] = Expression(
+                                expr=pyunits.convert(costs[key], to_units=cost_units)
+                            )
+
+                # store for later use
+                CAPEX = costs["CAPEX"]
+                OPEX = costs["OPEX"]
+                REVENUE = costs["REVENUE"]
+        else:
+            # another block type is not allowed
+            raise TypeError(
+                f"Argument {b} is not a valid block type. The argument b "
+                "must be passed a FlowsheetCostingBlockData or FlowsheetBlock object."
+            )
+
+        # check capital expenditure arguments
+        if capital_expenditure_percentages is not None:
+
+            if not isinstance(capital_expenditure_percentages, list):
+                raise TypeError(
+                    f"Argument {capital_expenditure_percentages} is not a list. "
+                    "Capital expenditure percentages per year must be passed as "
+                    "a list."
+                )
+            if len(capital_expenditure_percentages) == 0:
+                raise TypeError(
+                    f"Argument {capital_expenditure_percentages} has a length of "
+                    "zero. The capital expenditure percentages list must have a "
+                    "nonzero length."
+                )
+
+            if not sum(capital_expenditure_percentages) == 100:
+                raise TypeError(
+                    f"Argument {capital_expenditure_percentages} has a sum of "
+                    "{sum(capital_expenditure_percentages)}. The capital "
+                    "expenditure percentages list must sum to 100 percent."
+                )
+
+        # check expression arguments
+        if royalty_expression is not None:
+            if not (
+                isinstance(royalty_expression, Param)
+                or isinstance(royalty_expression, Var)
+                or isinstance(royalty_expression, Expression)
+            ):
+                raise TypeError(
+                    f"Argument {royalty_expression} is not a supported object type. "
+                    "Ensure royalty_expression is a Pyomo parameter, variable or expression."
+                )
+
+        if debt_expression is not None:
+            if not (
+                isinstance(royalty_expression, Param)
+                or isinstance(royalty_expression, Var)
+                or isinstance(royalty_expression, Expression)
+            ):
+                raise TypeError(
+                    f"Argument {royalty_expression} is not a supported object type. "
+                    "Ensure royalty_expression is a Pyomo parameter, variable or expression."
+                )
+
+        # build variables
+
+        b.pv_capital_cost = Var(
+            initialize=CAPEX,
+            bounds=(-1e4, 0),
+            doc="present value of total lifetime capital costs in $MM; negative cash flow",
+            units=cost_units,
+        )
+
+        b.pv_operating_cost = Var(
+            initialize=CAPEX,
+            bounds=(-1e4, 0),
+            doc="present value of total lifetime operating costs in $MM; negative cash flow",
+            units=cost_units,
+        )
+
+        b.pv_revenue = Var(
+            initialize=CAPEX,
+            bounds=(0, 1e4),
+            doc="present value of total lifetime sales revenue in $MM; postive cash flow",
+            units=cost_units,
+        )
+
+        b.pv_royalties = Var(
+            initialize=CAPEX,
+            bounds=(-1e4, 0),
+            doc="present value of total lifetime royalties in $MM; negative cash flow",
+            units=cost_units,
+        )
+
+        b.loan_debt = Var(
+            initialize=CAPEX,
+            bounds=(0, 1e4),
+            doc="total debt from loans in $MM",
+            units=cost_units,
+        )
+
+        b.loan_annual_payment = Var(
+            initialize=CAPEX,
+            bounds=(0, 1e4),
+            doc="amortized annual payment on loans in $MM",
+            units=cost_units,
+        )
+
+        b.pv_loan_interest = Var(
+            initialize=CAPEX,
+            bounds=(-1e4, 0),
+            doc="present value of total lifetime loan interest in $MM; negative cash flow",
+            units=cost_units,
+        )
+
+        b.pv_capital_depreciation = Var(
+            initialize=CAPEX,
+            bounds=(-1e4, 0),
+            doc="present value of total lifetime capital depreciation in $MM; negative cash flow",
+            units=cost_units,
+        )
+
+        b.npv = Var(
+            initialize=CAPEX,
+            bounds=(-1e4, 1e4),
+            doc="present value of total lifetime capital depreciation in $MM",
+            units=cost_units,
+        )
+
+        # build parameters
+
+        b.discount_percentage = Param(
+            initialize=discount_percentage, units=pyunits.percent
+        )
+        b.plant_lifetime = Param(
+            initialize=plant_lifetime, units=pyunits.years
+        )
+
+        if capital_expenditure_percentages is not None:
+            b.capital_expenditure_percentages = Param(
+                range(len(capital_expenditure_percentages)),
+                initialize=dict(
+                    zip(
+                        range(len(capital_expenditure_percentages)),
+                        capital_expenditure_percentages,
+                    )
+                )
+            )
+
+        b.capital_escalation_percentage = Param(
+            initialize=capital_escalation_percentage, units=pyunits.percent
+        )
+
+        b.operating_inflation_percentage = Param(
+            initialize=operating_inflation_percentage, units=pyunits.percent
+        )
+        b.revenue_inflation_percentage = Param(
+            initialize=revenue_inflation_percentage, units=pyunits.percent
+        )
+
+        b.royalty_charge_percentage_of_revenue = Param(
+            initialize=royalty_charge_percentage_of_revenue, units=pyunits.percent
+        )
+
+        b.debt_percentage_of_CAPEX = Param(
+            initialize=debt_percentage_of_CAPEX, units=pyunits.percent
+        )
+        b.loan_interest_percentage = Param(
+            initialize=loan_interest_percentage, units=pyunits.percent
+        )
+        b.loan_repayment_period = Param(
+            initialize=loan_repayment_period, units=pyunits.years
+        )
+
+        b.capital_depreciation_declining_balance_percentage = Param(
+            initialize=capital_depreciation_declining_balance_percentage,
+            units=pyunits.percent,
+        )
+
+        # define series present worth factor as an method so it can be called
+
+        def series_present_worth_factor(r, g, N):
+            """
+            Returns expression for series present worth factor.
+            """
+            return ( 1 - ( (1+g)**(N) ) * ((1+r)**(-N)) ) / (r - g)
+
+        # build constraints
+
+        if capital_expenditure_percentages is not None:
+
+            @b.Constraint()
+            def pv_capital_cost_constraint(c):
+                # PV_Capital_Cost = - (%year1 * CAPEX * P/A_year1 + %year2 * CAPEX * P/A_year2 + ...)
+                
+                return c.pv_capital_cost == - pyunits.convert(
+                    sum(
+                        pyunits.convert(
+                            capital_expenditure_percentages[idx] * pyunits.percent,
+                            to_units=pyunits.dimensionless) *
+                        CAPEX *
+                        series_present_worth_factor(
+                            pyunits.convert(
+                                c.discount_percentage,
+                                to_units=pyunits.dimensionless),
+                            pyunits.convert(
+                                c.capital_escalation_percentage,
+                                to_units=pyunits.dimensionless),
+                            idx + 1
+                            )
+                        for idx in range(len(capital_expenditure_percentages))
+                        ),
+                    to_units = cost_units
+                    )
+
+        else:
+
+            @b.Constraint()
+            def pv_capital_cost_constraint(c):
+                # PV_Capital_Cost = - CAPEX
+                
+                return c.pv_capital_cost == - pyunits.convert(
+                    CAPEX *
+                        series_present_worth_factor(
+                            pyunits.convert(
+                                c.discount_percentage,
+                                to_units=pyunits.dimensionless),
+                            pyunits.convert(
+                                c.capital_escalation_percentage,
+                                to_units=pyunits.dimensionless),
+                            0
+                            ),  # formula gives P/A (r, g, 0) = 1
+                        to_units = cost_units
+                        )
+
+        @b.Constraint()
+        def pv_operating_cost_constraint(c):
+            # PV_Operating_Cost = - OPEX * [ P/A_OPEX+CAPEX_periods - P/A_CAPEX_period ]
+            
+            return c.pv_operating_cost == - pyunits.convert(
+                OPEX * (
+                    series_present_worth_factor(
+                        pyunits.convert(
+                            c.discount_percentage,
+                            to_units=pyunits.dimensionless),
+                        pyunits.convert(
+                            c.operating_inflation_percentage,
+                            to_units=pyunits.dimensionless),
+                        c.plant_lifetime/pyunits.year + len(capital_expenditure_percentages)
+                        ) -
+                    series_present_worth_factor(
+                        pyunits.convert(
+                            c.discount_percentage,
+                            to_units=pyunits.dimensionless),
+                        pyunits.convert(
+                            c.operating_inflation_percentage,
+                            to_units=pyunits.dimensionless),
+                        len(capital_expenditure_percentages)
+                        )
+                    ),
+                to_units = cost_units
+                )
+
+        @b.Constraint()
+        def pv_revenue_constraint(c):
+            # PV_Revenue = REVENUE * [ P/A_OPEX+CAPEX_periods - P/A_CAPEX_period ]
+            
+            return c.pv_revenue == pyunits.convert(
+                REVENUE * (
+                    series_present_worth_factor(
+                        pyunits.convert(
+                            c.discount_percentage,
+                            to_units=pyunits.dimensionless),
+                        pyunits.convert(
+                            c.revenue_inflation_percentage,
+                            to_units=pyunits.dimensionless),
+                        c.plant_lifetime/pyunits.year + len(capital_expenditure_percentages)
+                        ) -
+                    series_present_worth_factor(
+                        pyunits.convert(
+                            c.discount_percentage,
+                            to_units=pyunits.dimensionless),
+                        pyunits.convert(
+                            c.revenue_inflation_percentage,
+                            to_units=pyunits.dimensionless),
+                        len(capital_expenditure_percentages)
+                        )
+                    ),
+                to_units = cost_units
+                )
+
+        if royalty_expression is None:
+            # PV_Royalties = - %royalty_charge_of_revenue * REVENUE
+
+            @b.Constraint()
+            def pv_royalties_constraint(c):
+                
+                return c.pv_royalties == - pyunits.convert(
+                    pyunits.convert(
+                        c.royalty_charge_percentage_of_revenue,
+                        to_units=pyunits.dimensionless
+                        ) * c.pv_revenue,
+                    to_units = cost_units
+                    )
+
+        else:
+
+            @b.Constraint()
+            def pv_royalties_constraint(c):
+                
+                return c.pv_royalties == - pyunits.convert(
+                    royalty_expression,
+                    to_units = cost_units
+                    )
+
+        if debt_expression is None:
+
+            @b.Constraint()
+            def loan_debt_constraint(c):
+                # Debt  = - %debt_charge_of_CAPEX * CAPEX
+    
+                return c.loan_debt == pyunits.convert(
+                    pyunits.convert(
+                        c.debt_percentage_of_CAPEX,
+                        to_units=pyunits.dimensionless
+                        ) * CAPEX,
+                    to_units = cost_units
+                    )
+
+        else:
+
+            @b.Constraint()
+            def loan_debt_constraint(c):
+    
+                return c.loan_debt == pyunits.convert(
+                    debt_expression,
+                    to_units = cost_units
+                    )
+
+        @b.Constraint()
+        def loan_annual_payment_constraint(c):
+            # Annual Loan Payment =
+            # Debt * [ %interest * (1 + interest)**loan_length ] / [ (1 + interest)**loan_length - 1 ]
+
+            return c.loan_annual_payment == pyunits.convert(
+                c.loan_debt * (
+                    pyunits.convert(
+                        c.loan_interest_percentage,
+                        to_units = pyunits.dimensionless
+                        ) *
+                    (
+                        1 + pyunits.convert(
+                            c.loan_interest_percentage,
+                            to_units = pyunits.dimensionless
+                            )
+                        )**(c.loan_repayment_period/pyunits.year)
+                    ) /
+                (
+                    (
+                        1 + pyunits.convert(
+                            c.loan_interest_percentage,
+                            to_units = pyunits.dimensionless
+                            )
+                        )**(c.loan_repayment_period/pyunits.year)
+                    - 1
+                    ),
+                to_units = cost_units
+                )
+
+        @b.Constraint()
+        def pv_loan_interest_constraint(c):
+            # PV_Loan_Interest_Owed = - loan_length * Annual_Loan_Payment - Debt
+            
+            return c.pv_loan_interest == - pyunits.convert(
+                c.loan_repayment_period/pyunits.year * c.loan_annual_payment - c.loan_debt,
+                to_units = cost_units
+                )
+
+        @b.Constraint()
+        def pv_capital_depreciation_constraint(c):
+            # PV_Capital_Depreciation = - CAPEX * [1 - ( 1 - %depreciation/plant_lifetime)**plant_lifetime]
+            
+            return c.pv_capital_depreciation == - pyunits.convert(
+                CAPEX * (
+                    1 - (
+                        1 - pyunits.convert(
+                            c.capital_depreciation_declining_balance_percentage,
+                            to_units = pyunits.dimensionless
+                            ) /
+                        (c.plant_lifetime/pyunits.year)
+                        )**(c.plant_lifetime/pyunits.year)
+                        ),
+                to_units = cost_units
+                )
+
+        @b.Constraint()
+        def npv_constraint(c):
+            
+            return c.npv == pyunits.convert(
+                c.pv_revenue
+                + c.pv_capital_cost
+                + c.pv_operating_cost
+                + c.pv_royalties
+                + c.pv_loan_interest
+                + c.pv_capital_depreciation,
+                to_units = cost_units
+                )

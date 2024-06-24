@@ -2499,7 +2499,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 units=pyunits.tonnes,
             )
             b.capacity.fix(capacity)
-            _log.info("New variable 'capacity' created as attribute of {}".format(b.name))
+            _log.info(
+                "New variable 'capacity' created as attribute of {}".format(b.name)
+            )
         else:
             _log.info(
                 "Flowsheet-level costing block {} already has attribute "

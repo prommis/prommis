@@ -15,6 +15,8 @@ Tests for REE costing.
 
 """
 
+from contextlib import nullcontext as does_not_raise
+
 import pyomo.environ as pyo
 from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.units_container import UnitsError
@@ -33,13 +35,13 @@ from idaes.core.util.scaling import (
 )
 
 import pytest
-from contextlib import nullcontext as does_not_raise
 
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
 _, watertap_costing_available = attempt_import("watertap.costing")
 if watertap_costing_available:
     import watertap.property_models.NaCl_prop_pack as props
+    from watertap.core.solvers import get_solver as get_watertap_solver
     from watertap.core.util.initialization import check_dof
     from watertap.property_models.multicomp_aq_sol_prop_pack import (
         ActivityCoefficientModel,
@@ -58,7 +60,6 @@ if watertap_costing_available:
         PressureChangeType,
         ReverseOsmosis1D,
     )
-    from watertap.core.solvers import get_solver as get_watertap_solver
 
 
 def base_model():
@@ -1872,17 +1873,18 @@ class TestWaterTAPCosting(object):
             11.50202, rel=1e-4
         )
 
+
 class TestHDDRecyclingCosting(object):
     @pytest.fixture(scope="class")
     def model(self):
         # Create a concrete model as the top level object
         m = pyo.ConcreteModel()
-    
+
         # add a flowsheet object to the model
         m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
         m.fs.costing = QGESSCosting()
         CE_index_year = "2019"
-    
+
         # Source 1, 1.1 is Front End Loader (2 cuyd)
         # this is a constant-cost unit, where n_equip is the scaling parameter
         CS_front_end_loader_2yd3_accounts = ["1.1"]
@@ -1891,7 +1893,7 @@ class TestHDDRecyclingCosting(object):
             initialize=1, units=pyunits.dimensionless
         )
         m.fs.CS_front_end_loader_2yd3.n_equip.fix()
-    
+
         m.fs.CS_front_end_loader_2yd3.costing = UnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
             costing_method=QGESSCostingData.get_REE_costing,
@@ -1906,7 +1908,7 @@ class TestHDDRecyclingCosting(object):
                 "CE_index_year": CE_index_year,
             },
         )
-    
+
         # Source 2, 2.1 is HDD shredder
         # this is a constant-cost unit, where n_equip is the scaling parameter
         HDD_Recycling_shredder_accounts = ["2.1"]
@@ -1915,7 +1917,7 @@ class TestHDDRecyclingCosting(object):
             initialize=1, units=pyunits.dimensionless
         )
         m.fs.HDD_Recycling_shredder.n_equip.fix()
-    
+
         m.fs.HDD_Recycling_shredder.costing = UnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
             costing_method=QGESSCostingData.get_REE_costing,
@@ -1930,11 +1932,13 @@ class TestHDDRecyclingCosting(object):
                 "CE_index_year": CE_index_year,
             },
         )
-    
+
         # Source 2, 2.2 is Hydrogen Decrepitation
         HDD_Recycling_HD_accounts = ["2.2"]
         m.fs.HDD_Recycling_HD = UnitModelBlock()
-        m.fs.HDD_Recycling_HD.duty = pyo.Var(initialize=10, units=pyunits.MBTU / pyunits.hr)
+        m.fs.HDD_Recycling_HD.duty = pyo.Var(
+            initialize=10, units=pyunits.MBTU / pyunits.hr
+        )
         m.fs.HDD_Recycling_HD.duty.fix()
         m.fs.HDD_Recycling_HD.costing = UnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
@@ -1960,7 +1964,7 @@ class TestHDDRecyclingCosting(object):
             # defaults to variable_OM=False, so let that use the default
             fixed_OM=False,
         )
-    
+
         dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
@@ -1975,7 +1979,7 @@ class TestHDDRecyclingCosting(object):
         assert_optimal_termination(results)
 
     @pytest.mark.component
-    def test_HDD_Recycling_costing_solve_diagnostics(self,model):
+    def test_HDD_Recycling_costing_solve_diagnostics(self, model):
         dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_numerical_warnings()
 
@@ -1996,10 +2000,14 @@ class TestHDDRecyclingCosting(object):
             ]
         ) == pytest.approx(0.05000, rel=1e-4)
         assert value(
-            model.fs.HDD_Recycling_HD.costing.bare_erected_cost[HDD_Recycling_HD_accounts]
+            model.fs.HDD_Recycling_HD.costing.bare_erected_cost[
+                HDD_Recycling_HD_accounts
+            ]
         ) == pytest.approx(0.41035, rel=1e-4)
-    
-        assert model.fs.costing.total_plant_cost.value == pytest.approx(3.8220, rel=1e-4)
+
+        assert model.fs.costing.total_plant_cost.value == pytest.approx(
+            3.8220, rel=1e-4
+        )
 
 
 @pytest.mark.component
@@ -2744,13 +2752,13 @@ cost_obj_dict = {
     "Expression_nounits": pyo.Expression(expr=1e-3),
     "Nonexpression_withunits": pyo.Var(initialize=1e-3, units=pyunits.MUSD_2021),
     "Nonexpression_nounits": pyo.Var(initialize=1e-3),
-    }
+}
+
+
 @pytest.mark.parametrize("cost_obj", cost_obj_dict.keys())
-@pytest.mark.parametrize("argument", [
-    "land_cost",
-    "additional_chemicals_cost",
-    "additional_waste_cost"
-    ])
+@pytest.mark.parametrize(
+    "argument", ["land_cost", "additional_chemicals_cost", "additional_waste_cost"]
+)
 @pytest.mark.component
 def test_REE_costing_optionalexpressionarguments(argument, cost_obj):
     m = pyo.ConcreteModel()
@@ -3453,6 +3461,7 @@ def test_REE_costing_variableOM_steadystateflowsheet():
         0.0000, abs=1e-4
     )
 
+
 @pytest.mark.component
 def test_REE_costing_variableOM_nofixedOM():
     m = pyo.ConcreteModel()
@@ -3918,36 +3927,43 @@ def test_REE_costing_variableOM_resourcenotinpricelist():
             ],
         )
 
+
 # recovery rate
 recovery_rate_units_dict = {
     "base_case": pyunits.kg / pyunits.year,
     "no_units": pyunits.dimensionless,
     "not_mass_units": pyunits.mol / pyunits.year,
     "not_per_year_units": pyunits.kg / pyunits.h,
-    }
-@pytest.mark.parametrize("recovery_rate_units, expectation",
-                         [("base_case", does_not_raise()),
-                          ("no_units", does_not_raise()),
-                          ("not_mass_units",
-                           pytest.raises(
-                               UnitsError,
-                               match="The argument recovery_rate_per_year was passed with units of "
-                               "mol/a which cannot be converted to units of mass per year. Please "
-                               "ensure that recovery_rate_per_year is passed with rate units "
-                               "of mass per year \\(mass/a\\) or dimensionless.",
-                               )
-                           ),
-                          ("not_per_year_units",
-                           pytest.raises(
-                               UnitsError,
-                               match="The argument recovery_rate_per_year was passed with units of "
-                               "kg/h and must be on an anuual basis. Please "
-                               "ensure that recovery_rate_per_year is passed with rate units "
-                               "of mass per year \\(mass/a\\) or dimensionless.",
-                               )
-                           ),
-                          ]
-                         )
+}
+
+
+@pytest.mark.parametrize(
+    "recovery_rate_units, expectation",
+    [
+        ("base_case", does_not_raise()),
+        ("no_units", does_not_raise()),
+        (
+            "not_mass_units",
+            pytest.raises(
+                UnitsError,
+                match="The argument recovery_rate_per_year was passed with units of "
+                "mol/a which cannot be converted to units of mass per year. Please "
+                "ensure that recovery_rate_per_year is passed with rate units "
+                "of mass per year \\(mass/a\\) or dimensionless.",
+            ),
+        ),
+        (
+            "not_per_year_units",
+            pytest.raises(
+                UnitsError,
+                match="The argument recovery_rate_per_year was passed with units of "
+                "kg/h and must be on an anuual basis. Please "
+                "ensure that recovery_rate_per_year is passed with rate units "
+                "of mass per year \\(mass/a\\) or dimensionless.",
+            ),
+        ),
+    ],
+)
 @pytest.mark.component
 def test_REE_costing_recovery(recovery_rate_units, expectation):
     m = pyo.ConcreteModel()
@@ -4004,10 +4020,10 @@ def test_REE_costing_recovery(recovery_rate_units, expectation):
             ],
             recovery_rate_per_year=m.fs.recovery_rate_per_year,
         )
-    
+
         dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
-    
+
         QGESSCostingData.costing_initialization(m.fs.costing)
         QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
         QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
@@ -4015,20 +4031,25 @@ def test_REE_costing_recovery(recovery_rate_units, expectation):
         results = solver.solve(m, tee=True)
         assert_optimal_termination(results)
         dt.assert_no_numerical_warnings()
-    
+
         # check that some objects builts as expected
         assert hasattr(m.fs.costing, "recovery_rate_per_year")
         assert hasattr(m.fs.costing, "additional_cost_of_recovery")
         assert hasattr(m.fs.costing, "cost_of_recovery")
-    
+
         # check some cost results
         assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-        assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
+        assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(
+            254324, rel=1e-4
+        )
         assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-        assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
+        assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(
+            30.416, rel=1e-4
+        )
         assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
             0.0000, abs=1e-4
         )
+
 
 @pytest.mark.component
 def test_REE_costing_recovery_passedinmethodcall():
@@ -4112,15 +4133,20 @@ def test_REE_costing_recovery_passedinmethodcall():
         0.0000, abs=1e-4
     )
 
+
 # transport cost
 transport_cost_obj_dict = {
     "Expression_withunits": pyo.Expression(expr=10 * pyunits.USD_2021 / pyunits.ton),
     "Expression_nounits": pyo.Expression(expr=10),
-    "Param_withunits": pyo.Param(initialize=10, units=pyunits.USD_2021 / pyunits.ton, mutable=False),
+    "Param_withunits": pyo.Param(
+        initialize=10, units=pyunits.USD_2021 / pyunits.ton, mutable=False
+    ),
     "Param_nounits": pyo.Param(initialize=10, mutable=False),
     "Var_withunits": pyo.Var(initialize=10, units=pyunits.USD_2021 / pyunits.ton),
     "Var_nounits": pyo.Var(initialize=10),
-    }
+}
+
+
 @pytest.mark.parametrize("transport_cost_obj", transport_cost_obj_dict.keys())
 @pytest.mark.component
 def test_REE_costing_recovery_transportcost(transport_cost_obj):
@@ -4209,6 +4235,7 @@ def test_REE_costing_recovery_transportcost(transport_cost_obj):
         0.0000, abs=1e-4
     )
     assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
+
 
 @pytest.mark.component
 def test_REE_costing_recovery_Nonewithtransportcost():

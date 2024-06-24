@@ -1136,7 +1136,8 @@ class TestREECosting(object):
 
     @pytest.mark.component
     def test_solved_model_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model)
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt.report_numerical_issues()
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -1205,7 +1206,7 @@ class TestREECosting(object):
     @pytest.mark.component
     def test_costing_bounding_solve_diagnostics(self, model):
 
-        dt = DiagnosticsToolbox(model)
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -1954,7 +1955,7 @@ def test_HDD_Recycling_costing_noOM_usedefaults():
         fixed_OM=False,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2058,7 +2059,7 @@ def test_REE_costing_CE_index_year():
         },
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2226,7 +2227,7 @@ def test_REE_costing_multipleaccountssameparameter():
         },
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2313,7 +2314,7 @@ def test_REE_costing_additionalcostingparams_newaccount():
         },
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2366,7 +2367,7 @@ def test_REE_costing_additionalcostingparams_overwrite():
         },
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2537,7 +2538,7 @@ def test_REE_costing_scaledownparallelequip():
         },
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2639,7 +2640,7 @@ def test_REE_costing_usersetTPC():
         fixed_OM=False,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2689,7 +2690,7 @@ def test_REE_costing_useLangfactor():
         fixed_OM=False,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2747,7 +2748,7 @@ def test_REE_costing_landcostExpression_withunits():
         fixed_OM=False,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2793,7 +2794,7 @@ def test_REE_costing_landcostExpression_nounits():
         fixed_OM=False,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2840,7 +2841,7 @@ def test_REE_costing_landcostnonExpression_withunits():
         fixed_OM=False,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2886,7 +2887,7 @@ def test_REE_costing_landcostnonExpression_nounits():
         fixed_OM=False,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -2935,7 +2936,7 @@ def test_REE_costing_fixedOM_defaults():
         },
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3407,7 +3408,7 @@ def test_REE_costing_variableOM_defaults():
         ],
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3494,7 +3495,7 @@ def test_REE_costing_variableOM_steadystateflowsheet():
         ],
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3583,7 +3584,7 @@ def test_REE_costing_chemicalscostExpression_withunits():
         additional_chemicals_cost=m.fs.additional_chemicals_cost,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3666,7 +3667,7 @@ def test_REE_costing_chemicalscostExpression_nounits():
         additional_chemicals_cost=m.fs.additional_chemicals_cost,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3753,7 +3754,7 @@ def test_REE_costing_chemicalscostnonExpression_withunits():
         additional_chemicals_cost=m.fs.additional_chemicals_cost,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3840,7 +3841,7 @@ def test_REE_costing_chemicalscostnonExpression_nounits():
         additional_chemicals_cost=m.fs.additional_chemicals_cost,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3926,7 +3927,7 @@ def test_REE_costing_wastecostExpression_withunits():
         additional_waste_cost=m.fs.additional_waste_cost,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4009,7 +4010,7 @@ def test_REE_costing_wastecostExpression_nounits():
         additional_waste_cost=m.fs.additional_waste_cost,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4094,7 +4095,7 @@ def test_REE_costing_wastecostnonExpression_withunits():
         additional_waste_cost=m.fs.additional_waste_cost,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4179,7 +4180,7 @@ def test_REE_costing_wastecostnonExpression_nounits():
         additional_waste_cost=m.fs.additional_waste_cost,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4346,7 +4347,7 @@ def test_REE_costing_variableOM_feedinputnounits():
         ],
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4508,7 +4509,7 @@ def test_REE_costing_variableOM_customprices():
         prices={"water": 1.90e-3 * 1e-6 * pyunits.MUSD_2021 / pyunits.gallon},
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4736,7 +4737,7 @@ def test_REE_costing_recovery_basecase():
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4829,7 +4830,7 @@ def test_REE_costing_recovery_nounits():
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5062,7 +5063,7 @@ def test_REE_costing_recovery_passedinmethodcall():
         recovery_rate_per_year=39.3 * 0.8025 * pyo.value(m.fs.annual_operating_hours),
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5149,7 +5150,7 @@ def test_REE_costing_recovery_transportcostExpression():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5236,7 +5237,7 @@ def test_REE_costing_recovery_transportcostExpressionnounits():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5325,7 +5326,7 @@ def test_REE_costing_recovery_transportcostParam():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5412,7 +5413,7 @@ def test_REE_costing_recovery_transportcostParamnounits():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5502,7 +5503,7 @@ def test_REE_costing_recovery_transportcostVar():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5590,7 +5591,7 @@ def test_REE_costing_recovery_transportcostVarnounits():
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)

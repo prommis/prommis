@@ -519,7 +519,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             doc="additional plant costs in $MM",
             units=getattr(pyunits, "MUSD_" + CE_index_year),
         )
-        self.other_plant_costs.fix(1e-12)
+        self.other_plant_costs.fix(0)
 
         if Lang_factor is None:
             # rules for calculating Ancillary costs
@@ -1839,7 +1839,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             doc="other fixed costs in $MM/yr",
             units=CE_index_units,
         )
-        b.other_fixed_costs.fix(1e-12)
+        b.other_fixed_costs.fix(0)
 
         # variable for user to assign watertap fixed costs to,
         # fixed to 0 by default
@@ -1946,7 +1946,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         @b.Constraint()
         def sum_watertap_fixed_cost(c):
             if not hasattr(c, "watertap_fixed_costs_list"):
-                return c.watertap_fixed_costs == 1e-12
+                return c.watertap_fixed_costs == 0
             else:
                 return c.watertap_fixed_costs == sum(b.watertap_fixed_costs_list)
 
@@ -2103,12 +2103,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.other_variable_costs = Var(
             b.parent_block().time,
             initialize=0,
+            bounds=(0, 1e4),
             doc="a variable to include non-standard O&M costs in $MM/year",
             units=CE_index_units / pyunits.year,
         )
 
         # assume the user is not using this
-        b.other_variable_costs.fix(1e-12)
+        b.other_variable_costs.fix(0)
 
         b.total_variable_OM_cost = Var(
             b.parent_block().time,
@@ -2498,9 +2499,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 units=pyunits.tonnes,
             )
             b.capacity.fix(capacity)
-            print("New variable 'capacity' created as attribute of {}".format(b.name))
+            _log.info("New variable 'capacity' created as attribute of {}".format(b.name))
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has attribute "
                 "'capacity', moving on. Set 'recalculate' to True to delete "
                 "old objects and recalculate for new inputs".format(b.name)
@@ -2514,9 +2515,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 units=pyunits.percent,
             )
             b.grade.fix(grade)
-            print("New variable 'grade' created as attribute of {}".format(b.name))
+            _log.info("New variable 'grade' created as attribute of {}".format(b.name))
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has attribute "
                 "'grade', moving on. Set 'recalculate' to True to delete "
                 "old objects and recalculate for new inputs".format(b.name)
@@ -2546,13 +2547,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 doc="estimated lower bound on per unit production cost of site",
                 units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
             )
-            print(
+            _log.info(
                 "New variable 'costing_lower_bound' created as attribute of {}".format(
                     b.name
                 )
             )
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has attribute "
                 "'costing_lower_bound', moving on. Set 'recalculate' to True to delete "
                 "old objects and recalculate for new inputs".format(b.name)
@@ -2566,13 +2567,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 doc="estimated upper bound on per unit production cost of site",
                 units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
             )
-            print(
+            _log.info(
                 "New variable 'costing_upper_bound' created as attribute of {}".format(
                     b.name
                 )
             )
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has attribute "
                 "'costing_upper_bound', moving on. Set 'recalculate' to True to delete "
                 "old objects and recalculate for new inputs".format(b.name)
@@ -2605,13 +2606,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     b.costing_lower_bound[i],
                     b.costing_lower_bound_eq[i],
                 )
-            print(
+            _log.info(
                 "New constraint 'costing_lower_bounding_eq' created as attribute of {}".format(
                     b.name
                 )
             )
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has indexed "
                 "constraint 'costing_lower_bounding_eq', reporting existing results. "
                 "Set 'recalculate' to True to delete old objects and recalculate "
@@ -2645,20 +2646,20 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     b.costing_upper_bound[i],
                     b.costing_upper_bound_eq[i],
                 )
-            print(
+            _log.info(
                 "New constraint 'costing_upper_bounding_eq' created as attribute of {}".format(
                     b.name
                 )
             )
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has indexed "
                 "constraint 'costing_upper_bounding_eq', reporting existing results. "
                 "Set 'recalculate' to True to delete old objects and recalculate "
                 "for new inputs".format(b.name)
             )
 
-        print("\nPrinting calculated costing bounds for processes:")
+        _log.info("\nPrinting calculated costing bounds for processes:")
         for p in processes:
             print(
                 p,

@@ -33,6 +33,7 @@ from idaes.core.util.scaling import (
 )
 
 import pytest
+from contextlib import nullcontext as does_not_raise
 
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
@@ -2737,8 +2738,21 @@ def test_REE_costing_useLangfactor():
     assert m.fs.costing.total_plant_cost.value == pytest.approx(7.4612, rel=1e-4)
 
 
+# optional cost arguments - land, additional chemicals, additional waste
+cost_obj_dict = {
+    "Expression_withunits": pyo.Expression(expr=1e-3 * pyunits.MUSD_2021),
+    "Expression_nounits": pyo.Expression(expr=1e-3),
+    "Nonexpression_withunits": pyo.Var(initialize=1e-3, units=pyunits.MUSD_2021),
+    "Nonexpression_nounits": pyo.Var(initialize=1e-3),
+    }
+@pytest.mark.parametrize("cost_obj", cost_obj_dict.keys())
+@pytest.mark.parametrize("argument", [
+    "land_cost",
+    "additional_chemicals_cost",
+    "additional_waste_cost"
+    ])
 @pytest.mark.component
-def test_REE_costing_landcostExpression_withunits():
+def test_REE_costing_optionalexpressionarguments(argument, cost_obj):
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2758,153 +2772,35 @@ def test_REE_costing_landcostExpression_withunits():
         },
     )
 
-    # define land_cost
-    m.fs.land_cost = pyo.Expression(expr=1e-3 * pyunits.MUSD_2021)
+    # define optional argument - land_cost, additional_chemicals_cost, or additional_waste_cost
+    setattr(m.fs, argument, cost_obj_dict[cost_obj])
+    if isinstance(getattr(m.fs, argument), pyo.Var):
+        getattr(m.fs, argument).fix()  # pyo.Var objects must be fixed
 
-    # defaults to fixed_OM=True, so explicitly set to False
-    # defaults to variable_OM=False, so let that use the default
+    # required for variable cost calculations
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
     m.fs.costing.build_process_costs(
-        land_cost=m.fs.land_cost,
-        fixed_OM=False,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that the cost units are as expected
-    assert hasattr(m.fs.costing, "land_cost")
-    assert pyo.value(m.fs.costing.land_cost) == pytest.approx(1e-3, rel=1e-4)
-    assert pyunits.get_units(m.fs.costing.land_cost) == pyunits.MUSD_2021
-
-
-@pytest.mark.component
-def test_REE_costing_landcostExpression_nounits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
+        fixed_OM=True,
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
         },
-    )
-
-    # define land_cost
-    m.fs.land_cost = pyo.Expression(expr=1e-3)
-
-    # defaults to fixed_OM=True, so explicitly set to False
-    # defaults to variable_OM=False, so let that use the default
-    m.fs.costing.build_process_costs(
-        land_cost=m.fs.land_cost,
-        fixed_OM=False,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that the cost units are as expected
-    assert hasattr(m.fs.costing, "land_cost")
-    assert pyo.value(m.fs.costing.land_cost) == pytest.approx(1e-3, rel=1e-4)
-    assert pyunits.get_units(m.fs.costing.land_cost) == pyunits.MUSD_2021
-
-
-@pytest.mark.component
-def test_REE_costing_landcostnonExpression_withunits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
         },
-    )
-
-    # define land_cost
-    m.fs.land_cost = pyo.Var(initialize=1e-3, units=pyunits.MUSD_2021)
-    m.fs.land_cost.fix()
-
-    # defaults to fixed_OM=True, so explicitly set to False
-    # defaults to variable_OM=False, so let that use the default
-    m.fs.costing.build_process_costs(
-        land_cost=m.fs.land_cost,
-        fixed_OM=False,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that the cost units are as expected
-    assert hasattr(m.fs.costing, "land_cost")
-    assert pyo.value(m.fs.costing.land_cost) == pytest.approx(1e-3, rel=1e-4)
-    assert pyunits.get_units(m.fs.costing.land_cost) == pyunits.MUSD_2021
-
-
-@pytest.mark.component
-def test_REE_costing_landcostnonExpression_nounits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    # define land_cost
-    m.fs.land_cost = pyo.Var(initialize=1e-3)
-
-    # defaults to fixed_OM=True, so explicitly set to False
-    # defaults to variable_OM=False, so let that use the default
-    m.fs.costing.build_process_costs(
-        land_cost=m.fs.land_cost,
-        fixed_OM=False,
+        variable_OM=True,
+        feed_input=m.fs.feed_input,
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
+        # pass the test argument - land_cost, additional_chemicals_cost, or waste_cost
+        **{argument: getattr(m.fs, argument)},
     )
 
     dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
@@ -2917,9 +2813,12 @@ def test_REE_costing_landcostnonExpression_nounits():
     dt.assert_no_numerical_warnings()
 
     # check that the cost units are as expected
-    assert hasattr(m.fs.costing, "land_cost")
-    assert pyo.value(m.fs.costing.land_cost) == pytest.approx(1e-3, rel=1e-4)
-    assert pyunits.get_units(m.fs.costing.land_cost) == pyunits.MUSD_2021
+    assert hasattr(m.fs.costing, argument)
+    assert pyo.value(getattr(m.fs.costing, argument)) == pytest.approx(1e-3, rel=1e-4)
+    assert pyunits.get_units(getattr(m.fs.costing, argument)) == pyunits.MUSD_2021
+
+    # clean up for subsequent parameterization runs
+    delattr(m.fs, argument)
 
 
 @pytest.mark.component
@@ -3554,687 +3453,6 @@ def test_REE_costing_variableOM_steadystateflowsheet():
         0.0000, abs=1e-4
     )
 
-
-@pytest.mark.component
-def test_REE_costing_chemicalscostExpression_withunits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    # define additional_chemicals_cost
-    m.fs.additional_chemicals_cost = pyo.Expression(expr=1e-3 * pyunits.MUSD_2021)
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        additional_chemicals_cost=m.fs.additional_chemicals_cost,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "feed_input_rate")
-    assert hasattr(m.fs.costing, "total_fixed_OM_cost")
-    assert hasattr(m.fs.costing, "total_variable_OM_cost")
-    assert hasattr(m.fs.costing, "plant_overhead_cost")
-    assert hasattr(m.fs.costing, "other_variable_costs")
-    assert hasattr(m.fs.costing, "additional_chemicals_cost")
-    assert not hasattr(m.fs.costing, "cost_of_recovery")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
-    assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1607, rel=1e-4
-    )
-    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
-    assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
-        0.001, rel=1e-4
-    )
-
-
-@pytest.mark.component
-def test_REE_costing_chemicalscostExpression_nounits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    # define additional_chemicals_cost
-    m.fs.additional_chemicals_cost = pyo.Expression(expr=1e-3)
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        additional_chemicals_cost=m.fs.additional_chemicals_cost,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "feed_input_rate")
-    assert hasattr(m.fs.costing, "total_fixed_OM_cost")
-    assert hasattr(m.fs.costing, "total_variable_OM_cost")
-    assert hasattr(m.fs.costing, "plant_overhead_cost")
-    assert hasattr(m.fs.costing, "other_variable_costs")
-    assert hasattr(m.fs.costing, "additional_chemicals_cost")
-    assert not hasattr(m.fs.costing, "cost_of_recovery")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
-    assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1607, rel=1e-4
-    )
-    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
-    assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
-        0.001, rel=1e-4
-    )
-    assert (
-        pyunits.get_units(m.fs.costing.additional_chemicals_cost) == pyunits.MUSD_2021
-    )
-
-
-@pytest.mark.component
-def test_REE_costing_chemicalscostnonExpression_withunits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    # define additional_chemicals_cost
-    m.fs.additional_chemicals_cost = pyo.Var(initialize=1e-3, units=pyunits.MUSD_2021)
-    m.fs.additional_chemicals_cost.fix()
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        additional_chemicals_cost=m.fs.additional_chemicals_cost,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "feed_input_rate")
-    assert hasattr(m.fs.costing, "total_fixed_OM_cost")
-    assert hasattr(m.fs.costing, "total_variable_OM_cost")
-    assert hasattr(m.fs.costing, "plant_overhead_cost")
-    assert hasattr(m.fs.costing, "other_variable_costs")
-    assert hasattr(m.fs.costing, "additional_chemicals_cost")
-    assert not hasattr(m.fs.costing, "cost_of_recovery")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
-    assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1607, rel=1e-4
-    )
-    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
-    assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
-        0.001, rel=1e-4
-    )
-    assert (
-        pyunits.get_units(m.fs.costing.additional_chemicals_cost) == pyunits.MUSD_2021
-    )
-
-
-@pytest.mark.component
-def test_REE_costing_chemicalscostnonExpression_nounits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    # define additional_chemicals_cost
-    m.fs.additional_chemicals_cost = pyo.Var(initialize=1e-3)
-    m.fs.additional_chemicals_cost.fix()
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        additional_chemicals_cost=m.fs.additional_chemicals_cost,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "feed_input_rate")
-    assert hasattr(m.fs.costing, "total_fixed_OM_cost")
-    assert hasattr(m.fs.costing, "total_variable_OM_cost")
-    assert hasattr(m.fs.costing, "plant_overhead_cost")
-    assert hasattr(m.fs.costing, "other_variable_costs")
-    assert hasattr(m.fs.costing, "additional_chemicals_cost")
-    assert not hasattr(m.fs.costing, "cost_of_recovery")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
-    assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1607, rel=1e-4
-    )
-    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
-    assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
-        0.001, rel=1e-4
-    )
-    assert (
-        pyunits.get_units(m.fs.costing.additional_chemicals_cost) == pyunits.MUSD_2021
-    )
-
-
-@pytest.mark.component
-def test_REE_costing_wastecostExpression_withunits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    # define additional_waste_cost
-    m.fs.additional_waste_cost = pyo.Expression(expr=1e-3 * pyunits.MUSD_2021)
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        additional_waste_cost=m.fs.additional_waste_cost,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "feed_input_rate")
-    assert hasattr(m.fs.costing, "total_fixed_OM_cost")
-    assert hasattr(m.fs.costing, "total_variable_OM_cost")
-    assert hasattr(m.fs.costing, "plant_overhead_cost")
-    assert hasattr(m.fs.costing, "other_variable_costs")
-    assert hasattr(m.fs.costing, "additional_waste_cost")
-    assert not hasattr(m.fs.costing, "cost_of_recovery")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
-    assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1607, rel=1e-4
-    )
-    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
-    assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
-        0.001, rel=1e-4
-    )
-
-
-@pytest.mark.component
-def test_REE_costing_wastecostExpression_nounits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    # define additional_waste_cost
-    m.fs.additional_waste_cost = pyo.Expression(expr=1e-3)
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        additional_waste_cost=m.fs.additional_waste_cost,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "feed_input_rate")
-    assert hasattr(m.fs.costing, "total_fixed_OM_cost")
-    assert hasattr(m.fs.costing, "total_variable_OM_cost")
-    assert hasattr(m.fs.costing, "plant_overhead_cost")
-    assert hasattr(m.fs.costing, "other_variable_costs")
-    assert hasattr(m.fs.costing, "additional_waste_cost")
-    assert not hasattr(m.fs.costing, "cost_of_recovery")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
-    assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1607, rel=1e-4
-    )
-    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
-    assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
-        0.001, rel=1e-4
-    )
-    assert pyunits.get_units(m.fs.costing.additional_waste_cost) == pyunits.MUSD_2021
-
-
-@pytest.mark.component
-def test_REE_costing_wastecostnonExpression_withunits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    # define additional_waste_cost
-    m.fs.additional_waste_cost = pyo.Var(initialize=1e-3, units=pyunits.MUSD_2021)
-    m.fs.additional_waste_cost.fix()
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        additional_waste_cost=m.fs.additional_waste_cost,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "feed_input_rate")
-    assert hasattr(m.fs.costing, "total_fixed_OM_cost")
-    assert hasattr(m.fs.costing, "total_variable_OM_cost")
-    assert hasattr(m.fs.costing, "plant_overhead_cost")
-    assert hasattr(m.fs.costing, "other_variable_costs")
-    assert hasattr(m.fs.costing, "additional_waste_cost")
-    assert not hasattr(m.fs.costing, "cost_of_recovery")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
-    assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1607, rel=1e-4
-    )
-    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
-    assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
-        0.001, rel=1e-4
-    )
-    assert pyunits.get_units(m.fs.costing.additional_waste_cost) == pyunits.MUSD_2021
-
-
-@pytest.mark.component
-def test_REE_costing_wastecostnonExpression_nounits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    # define additional_waste_cost
-    m.fs.additional_waste_cost = pyo.Var(initialize=1e-3)
-    m.fs.additional_waste_cost.fix()
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        additional_waste_cost=m.fs.additional_waste_cost,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "feed_input_rate")
-    assert hasattr(m.fs.costing, "total_fixed_OM_cost")
-    assert hasattr(m.fs.costing, "total_variable_OM_cost")
-    assert hasattr(m.fs.costing, "plant_overhead_cost")
-    assert hasattr(m.fs.costing, "other_variable_costs")
-    assert hasattr(m.fs.costing, "additional_waste_cost")
-    assert not hasattr(m.fs.costing, "cost_of_recovery")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
-    assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1607, rel=1e-4
-    )
-    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1443, rel=1e-4)
-    assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
-        0.001, rel=1e-4
-    )
-    assert pyunits.get_units(m.fs.costing.additional_waste_cost) == pyunits.MUSD_2021
-
-
 @pytest.mark.component
 def test_REE_costing_variableOM_nofixedOM():
     m = pyo.ConcreteModel()
@@ -4700,9 +3918,38 @@ def test_REE_costing_variableOM_resourcenotinpricelist():
             ],
         )
 
-
+# recovery rate
+recovery_rate_units_dict = {
+    "base_case": pyunits.kg / pyunits.year,
+    "no_units": pyunits.dimensionless,
+    "not_mass_units": pyunits.mol / pyunits.year,
+    "not_per_year_units": pyunits.kg / pyunits.h,
+    }
+@pytest.mark.parametrize("recovery_rate_units, expectation",
+                         [("base_case", does_not_raise()),
+                          ("no_units", does_not_raise()),
+                          ("not_mass_units",
+                           pytest.raises(
+                               UnitsError,
+                               match="The argument recovery_rate_per_year was passed with units of "
+                               "mol/a which cannot be converted to units of mass per year. Please "
+                               "ensure that recovery_rate_per_year is passed with rate units "
+                               "of mass per year \\(mass/a\\) or dimensionless.",
+                               )
+                           ),
+                          ("not_per_year_units",
+                           pytest.raises(
+                               UnitsError,
+                               match="The argument recovery_rate_per_year was passed with units of "
+                               "kg/h and must be on an anuual basis. Please "
+                               "ensure that recovery_rate_per_year is passed with rate units "
+                               "of mass per year \\(mass/a\\) or dimensionless.",
+                               )
+                           ),
+                          ]
+                         )
 @pytest.mark.component
-def test_REE_costing_recovery_basecase():
+def test_REE_costing_recovery(recovery_rate_units, expectation):
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -4734,203 +3981,11 @@ def test_REE_costing_recovery_basecase():
         * 8
         * 3
         * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
-        units=pyunits.kg / pyunits.year,
+        units=recovery_rate_units_dict[recovery_rate_units],
     )
     m.fs.recovery_rate_per_year.fix()
 
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        recovery_rate_per_year=m.fs.recovery_rate_per_year,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "recovery_rate_per_year")
-    assert hasattr(m.fs.costing, "additional_cost_of_recovery")
-    assert hasattr(m.fs.costing, "cost_of_recovery")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-    assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
-    assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-    assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
-        0.0000, abs=1e-4
-    )
-
-
-@pytest.mark.component
-def test_REE_costing_recovery_nounits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    hours_per_shift = 8
-    shifts_per_day = 3
-    operating_days_per_year = 336
-
-    # for convenience
-    m.fs.annual_operating_hours = pyo.Param(
-        initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
-        mutable=False,
-        units=pyunits.hours / pyunits.a,
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3
-        * 0.8025
-        * pyo.value(
-            m.fs.annual_operating_hours
-        ),  # TREO (total rare earth oxide), 80.25% REE in REO,
-        # no units passed - should be parsed as kg/a (multipliers give numerical rate per year)
-    )
-    m.fs.recovery_rate_per_year.fix()
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        recovery_rate_per_year=m.fs.recovery_rate_per_year,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "recovery_rate_per_year")
-    assert hasattr(m.fs.costing, "additional_cost_of_recovery")
-    assert hasattr(m.fs.costing, "cost_of_recovery")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-    assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
-    assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-    assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
-        0.0000, abs=1e-4
-    )
-
-
-@pytest.mark.component
-def test_REE_costing_recovery_notmassunits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    hours_per_shift = 8
-    shifts_per_day = 3
-    operating_days_per_year = 336
-
-    # for convenience
-    m.fs.annual_operating_hours = pyo.Param(
-        initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
-        mutable=False,
-        units=pyunits.hours / pyunits.a,
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3
-        * 0.8025
-        * pyo.value(
-            m.fs.annual_operating_hours
-        ),  # TREO (total rare earth oxide), 80.25% REE in REO,
-        units=pyunits.mol / pyunits.year,
-    )
-    m.fs.recovery_rate_per_year.fix()
-
-    with pytest.raises(
-        UnitsError,
-        match="The argument recovery_rate_per_year was passed with units of "
-        "mol/a which cannot be converted to units of mass per year. Please "
-        "ensure that recovery_rate_per_year is passed with rate units "
-        "of mass per year \\(mass/a\\) or dimensionless.",
-    ):
+    with expectation:
         m.fs.costing.build_process_costs(
             fixed_OM=True,
             pure_product_output_rates={
@@ -4949,82 +4004,31 @@ def test_REE_costing_recovery_notmassunits():
             ],
             recovery_rate_per_year=m.fs.recovery_rate_per_year,
         )
-
-
-@pytest.mark.component
-def test_REE_costing_recovery_notannualbasisunits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    hours_per_shift = 8
-    shifts_per_day = 3
-    operating_days_per_year = 336
-
-    # for convenience
-    m.fs.annual_operating_hours = pyo.Param(
-        initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
-        mutable=False,
-        units=pyunits.hours / pyunits.a,
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3
-        * 0.8025
-        * pyo.value(
-            m.fs.annual_operating_hours
-        ),  # TREO (total rare earth oxide), 80.25% REE in REO,
-        units=pyunits.kg / pyunits.h,
-    )
-    m.fs.recovery_rate_per_year.fix()
-
-    with pytest.raises(
-        UnitsError,
-        match="The argument recovery_rate_per_year was passed with units of "
-        "kg/h and must be on an anuual basis. Please "
-        "ensure that recovery_rate_per_year is passed with rate units "
-        "of mass per year \\(mass/a\\) or dimensionless.",
-    ):
-        m.fs.costing.build_process_costs(
-            fixed_OM=True,
-            pure_product_output_rates={
-                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-            },
-            mixed_product_output_rates={
-                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-            },
-            variable_OM=True,
-            feed_input=m.fs.feed_input,
-            resources=[
-                "water",
-            ],
-            rates=[
-                m.fs.water,
-            ],
-            recovery_rate_per_year=m.fs.recovery_rate_per_year,
+    
+        dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+        dt.assert_no_structural_warnings()
+    
+        QGESSCostingData.costing_initialization(m.fs.costing)
+        QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+        QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+        solver = get_solver()
+        results = solver.solve(m, tee=True)
+        assert_optimal_termination(results)
+        dt.assert_no_numerical_warnings()
+    
+        # check that some objects builts as expected
+        assert hasattr(m.fs.costing, "recovery_rate_per_year")
+        assert hasattr(m.fs.costing, "additional_cost_of_recovery")
+        assert hasattr(m.fs.costing, "cost_of_recovery")
+    
+        # check some cost results
+        assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
+        assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
+        assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
+        assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
+        assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+            0.0000, abs=1e-4
         )
-
 
 @pytest.mark.component
 def test_REE_costing_recovery_passedinmethodcall():
@@ -5108,9 +4112,18 @@ def test_REE_costing_recovery_passedinmethodcall():
         0.0000, abs=1e-4
     )
 
-
+# transport cost
+transport_cost_obj_dict = {
+    "Expression_withunits": pyo.Expression(expr=10 * pyunits.USD_2021 / pyunits.ton),
+    "Expression_nounits": pyo.Expression(expr=10),
+    "Param_withunits": pyo.Param(initialize=10, units=pyunits.USD_2021 / pyunits.ton, mutable=False),
+    "Param_nounits": pyo.Param(initialize=10, mutable=False),
+    "Var_withunits": pyo.Var(initialize=10, units=pyunits.USD_2021 / pyunits.ton),
+    "Var_nounits": pyo.Var(initialize=10),
+    }
+@pytest.mark.parametrize("transport_cost_obj", transport_cost_obj_dict.keys())
 @pytest.mark.component
-def test_REE_costing_recovery_transportcostExpression():
+def test_REE_costing_recovery_transportcost(transport_cost_obj):
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -5146,9 +4159,9 @@ def test_REE_costing_recovery_transportcostExpression():
     )
     m.fs.recovery_rate_per_year.fix()
 
-    m.fs.transport_cost_per_ton_product = pyo.Expression(
-        expr=10 * pyunits.USD_2021 / pyunits.ton
-    )
+    m.fs.transport_cost_per_ton_product = transport_cost_obj_dict[transport_cost_obj]
+    if isinstance(m.fs.transport_cost_per_ton_product, pyo.Var):
+        m.fs.transport_cost_per_ton_product.fix()  # pyo.Var must be fixed
 
     m.fs.costing.build_process_costs(
         fixed_OM=True,
@@ -5196,448 +4209,6 @@ def test_REE_costing_recovery_transportcostExpression():
         0.0000, abs=1e-4
     )
     assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
-
-
-@pytest.mark.component
-def test_REE_costing_recovery_transportcostExpressionnounits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3
-        * 0.8025
-        * 8
-        * 3
-        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
-        units=pyunits.kg / pyunits.year,
-    )
-    m.fs.recovery_rate_per_year.fix()
-
-    m.fs.transport_cost_per_ton_product = pyo.Expression(expr=10)
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        recovery_rate_per_year=m.fs.recovery_rate_per_year,
-        transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "recovery_rate_per_year")
-    assert hasattr(m.fs.costing, "additional_cost_of_recovery")
-    assert hasattr(m.fs.costing, "cost_of_recovery")
-    assert hasattr(m.fs.costing, "transport_cost")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-    assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
-    assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-    assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
-        0.0000, abs=1e-4
-    )
-    assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
-
-
-@pytest.mark.component
-def test_REE_costing_recovery_transportcostParam():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3
-        * 0.8025
-        * 8
-        * 3
-        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
-        units=pyunits.kg / pyunits.year,
-    )
-    m.fs.recovery_rate_per_year.fix()
-
-    m.fs.transport_cost_per_ton_product = pyo.Param(
-        initialize=10, units=pyunits.USD_2021 / pyunits.ton, mutable=False
-    )
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        recovery_rate_per_year=m.fs.recovery_rate_per_year,
-        transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "recovery_rate_per_year")
-    assert hasattr(m.fs.costing, "additional_cost_of_recovery")
-    assert hasattr(m.fs.costing, "cost_of_recovery")
-    assert hasattr(m.fs.costing, "transport_cost")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-    assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
-    assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-    assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
-        0.0000, abs=1e-4
-    )
-    assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
-
-
-@pytest.mark.component
-def test_REE_costing_recovery_transportcostParamnounits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3
-        * 0.8025
-        * 8
-        * 3
-        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
-        units=pyunits.kg / pyunits.year,
-    )
-    m.fs.recovery_rate_per_year.fix()
-
-    m.fs.transport_cost_per_ton_product = pyo.Param(initialize=10, mutable=False)
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        recovery_rate_per_year=m.fs.recovery_rate_per_year,
-        transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "recovery_rate_per_year")
-    assert hasattr(m.fs.costing, "additional_cost_of_recovery")
-    assert hasattr(m.fs.costing, "cost_of_recovery")
-    assert hasattr(m.fs.costing, "transport_cost")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-    assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
-    assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-    assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
-        0.0000, abs=1e-4
-    )
-    assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
-
-
-@pytest.mark.component
-def test_REE_costing_recovery_transportcostVar():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3
-        * 0.8025
-        * 8
-        * 3
-        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
-        units=pyunits.kg / pyunits.year,
-    )
-    m.fs.recovery_rate_per_year.fix()
-
-    m.fs.transport_cost_per_ton_product = pyo.Var(
-        initialize=10, units=pyunits.USD_2021 / pyunits.ton
-    )
-    m.fs.transport_cost_per_ton_product.fix()
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        recovery_rate_per_year=m.fs.recovery_rate_per_year,
-        transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "recovery_rate_per_year")
-    assert hasattr(m.fs.costing, "additional_cost_of_recovery")
-    assert hasattr(m.fs.costing, "cost_of_recovery")
-    assert hasattr(m.fs.costing, "transport_cost")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-    assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
-    assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-    assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
-        0.0000, abs=1e-4
-    )
-    assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
-
-
-@pytest.mark.component
-def test_REE_costing_recovery_transportcostVarnounits():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
-    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
-    m.fs.water.fix()
-
-    m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3
-        * 0.8025
-        * 8
-        * 3
-        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
-        units=pyunits.kg / pyunits.year,
-    )
-    m.fs.recovery_rate_per_year.fix()
-
-    m.fs.transport_cost_per_ton_product = pyo.Var(initialize=10)
-    m.fs.transport_cost_per_ton_product.fix()
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-        recovery_rate_per_year=m.fs.recovery_rate_per_year,
-        transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check that some objects builts as expected
-    assert hasattr(m.fs.costing, "recovery_rate_per_year")
-    assert hasattr(m.fs.costing, "additional_cost_of_recovery")
-    assert hasattr(m.fs.costing, "cost_of_recovery")
-    assert hasattr(m.fs.costing, "transport_cost")
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-    assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
-    assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-    assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
-        0.0000, abs=1e-4
-    )
-    assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
-
 
 @pytest.mark.component
 def test_REE_costing_recovery_Nonewithtransportcost():

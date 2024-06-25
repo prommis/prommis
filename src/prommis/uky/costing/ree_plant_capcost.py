@@ -78,12 +78,11 @@ def custom_REE_plant_currency_units():
     if (
         "USD_2022" in pyunits._pint_registry  # pylint: disable=protected-access
         and "USD_2025" in pyunits._pint_registry  # pylint: disable=protected-access
-        and "USD__UKy_2019"
-        in pyunits._pint_registry  # pylint: disable=protected-access
+        and "USD_UKy_2019" in pyunits._pint_registry  # pylint: disable=protected-access
     ):
         # Assume that custom REE plant units have already been registered
         # Log a message and end
-        _log.debug(
+        _log.info(
             "Custom REE plant currency units (USD_2022, USD_2025, USD_UKy_2019) "
             "already appear in Pyomo unit registry. Assuming repeated "
             "call of custom_power_plant_currency_units."

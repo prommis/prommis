@@ -15,6 +15,7 @@ Tests for REE costing.
 
 """
 
+import os
 from contextlib import nullcontext as does_not_raise
 
 import pyomo.environ as pyo
@@ -24,6 +25,7 @@ from pyomo.environ import assert_optimal_termination
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 
+import idaes.logger as idaeslog
 from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
@@ -36,7 +38,11 @@ from idaes.core.util.scaling import (
 
 import pytest
 
-from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
+from prommis.uky.costing.ree_plant_capcost import (
+    QGESSCosting,
+    QGESSCostingData,
+    custom_REE_plant_currency_units,
+)
 
 _, watertap_costing_available = attempt_import("watertap.costing")
 if watertap_costing_available:
@@ -60,6 +66,26 @@ if watertap_costing_available:
         PressureChangeType,
         ReverseOsmosis1D,
     )
+
+_log = idaeslog.getLogger(__name__)
+
+
+@pytest.mark.component
+def test_register_REE_currency_units_twice(caplog):
+    # check that units exist - they are registered when QGESSCosting imports
+    assert hasattr(pyunits, "USD_UKy_2019")
+    assert hasattr(pyunits, "USD_2022")
+    assert hasattr(pyunits, "USD_2025")
+
+    # register units again
+    custom_REE_plant_currency_units()
+    msg = (
+        "Custom REE plant currency units (USD_2022, USD_2025, USD_UKy_2019) "
+        "already appear in Pyomo unit registry. Assuming repeated call of "
+        "custom_power_plant_currency_units."
+    )
+    for record in caplog.records:
+        assert msg in record.message
 
 
 def base_model():
@@ -1139,7 +1165,6 @@ class TestREECosting(object):
     @pytest.mark.component
     def test_solved_model_diagnostics(self, model):
         dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
-        dt.report_numerical_issues()
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -1172,7 +1197,12 @@ class TestREECosting(object):
     @pytest.mark.component
     def test_report(self, model):
         # test report methods
-        QGESSCostingData.report(model.fs.costing)
+        QGESSCostingData.report(model.fs.costing, export=True)
+        assert os.path.exists(os.path.join(os.getcwd(), "costing_report.csv"))
+        # cleanup
+        os.remove(os.path.join(os.getcwd(), "costing_report.csv"))
+        assert not os.path.exists(os.path.join(os.getcwd(), "costing_report.csv"))
+
         model.fs.costing.variable_operating_costs.display()  # results will be in t = 0
         print()
         QGESSCostingData.display_total_plant_costs(model.fs.costing)
@@ -1191,7 +1221,6 @@ class TestREECosting(object):
             * pyunits.a,
             grade=model.fs.feed_grade,
             CE_index_year=CE_index_year,
-            recalculate=True,
         )
 
         dt = DiagnosticsToolbox(model)
@@ -1248,7 +1277,42 @@ class TestREECosting(object):
             )
 
     @pytest.mark.component
-    def test_costing_bounding_rerun(self, model):
+    def test_costing_bounding_rerun_norecalculate(self, model):
+        expected_costing_lower_bound = {
+            "Beneficiation": 0.12109,
+            "Beneficiation, Chemical Extraction, Enrichment and Separation": 5.3203,
+            "Chemical Extraction": 0.062054,
+            "Chemical Extraction, Enrichment and Separation": 0.0000,
+            "Enrichment and Separation": 0.18702,
+            "Mining": 0.24696,
+            "Total Capital": 0.29132,
+            "Total Operating": 5.4747,
+        }
+
+        expected_costing_upper_bound = {
+            "Beneficiation": 1.2209,
+            "Beneficiation, Chemical Extraction, Enrichment and Separation": 15.235,
+            "Chemical Extraction": 1.2373,
+            "Chemical Extraction, Enrichment and Separation": 55.9608,
+            "Enrichment and Separation": 4.2676,
+            "Mining": 2.0840,
+            "Total Capital": 1.0861,
+            "Total Operating": 12.648,
+        }
+
+        for key in model.fs.costing.costing_lower_bound.keys():
+
+            assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
+                expected_costing_lower_bound[key], abs=1e-8, rel=1e-4
+            )
+
+        for key in model.fs.costing.costing_upper_bound.keys():
+            assert model.fs.costing.costing_upper_bound[key].value == pytest.approx(
+                expected_costing_upper_bound[key], rel=1e-4
+            )
+
+    @pytest.mark.component
+    def test_costing_bounding_rerun_recalculate(self, model):
 
         # call again, should give same results
         CE_index_year = "UKy_2019"
@@ -2642,7 +2706,7 @@ def test_REE_costing_disallowedbuildprocesscostunits():
 
 
 @pytest.mark.component
-def test_REE_costing_usersetTPC():
+def test_REE_costing_usersetTPC_noOM():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -2667,6 +2731,74 @@ def test_REE_costing_usersetTPC():
     m.fs.costing.build_process_costs(
         total_purchase_cost=1,
         fixed_OM=False,
+    )
+
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    # check that the cost units are as expected
+    assert m.fs.costing.total_plant_cost.get_units() == pyunits.MUSD_2021
+    # check that some objects are built as expected
+    assert hasattr(m.fs.costing, "total_BEC")  # built using passed TPC
+    assert not hasattr(m.fs.costing, "total_BEC_eq")  # shouldn't be built
+    assert hasattr(m.fs.costing, "total_installation_cost")
+    assert hasattr(m.fs.costing, "total_plant_cost")
+    assert hasattr(m.fs.costing, "total_overnight_capital")
+    # check some results
+    assert m.fs.costing.total_BEC.value == pytest.approx(1.0000, rel=1e-4)
+    assert m.fs.costing.total_plant_cost.value == pytest.approx(2.9700, rel=1e-4)
+
+
+@pytest.mark.component
+def test_REE_costing_usersetTPC_withOM():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting()
+
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    m.fs.costing.build_process_costs(
+        total_purchase_cost=1,
+        fixed_OM=True,
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
+        variable_OM=True,
+        feed_input=m.fs.feed_input,
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
     )
 
     dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)

@@ -1278,6 +1278,21 @@ class TestREECosting(object):
 
     @pytest.mark.component
     def test_costing_bounding_rerun_norecalculate(self, model):
+
+        # call again, should give same results
+        CE_index_year = "UKy_2019"
+
+        QGESSCostingData.calculate_REE_costing_bounds(
+            b=model.fs.costing,
+            capacity=model.fs.feed_input
+            * model.fs.annual_operating_hours
+            * 20
+            * pyunits.a,
+            grade=model.fs.feed_grade,
+            CE_index_year=CE_index_year,
+            recalculate=False,
+        )
+
         expected_costing_lower_bound = {
             "Beneficiation": 0.12109,
             "Beneficiation, Chemical Extraction, Enrichment and Separation": 5.3203,

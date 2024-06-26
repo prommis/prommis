@@ -3,3 +3,17 @@ author: PrOMMiS Contributors
 
 execute:
   execute_notebooks: "off"
+sphinx:
+  extra_extensions:
+  - sphinx.ext.autodoc
+  - sphinx.ext.napoleon
+  - sphinx.ext.viewcode
+  - sphinx.ext.autosummary
+  - prommis._sphinx_extensions.chem
+  config:
+    autosummary_generate: true
+    suppress_warnings:
+      # executablebooks/sphinx-external-toc#36
+      - etoc.toctree
+    templates_path:
+      - _templates

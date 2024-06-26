@@ -1,3 +1,11 @@
+"""
+Initial property package for the organic phase solution of the solvent extraction
+unit operation.
+
+Authors: Arkoprabho Dasgupta
+
+"""
+
 from pyomo.environ import Param, Set, Var, units
 
 from idaes.core import (
@@ -14,6 +22,20 @@ from idaes.core.util.initialization import fix_state_vars
 
 @declare_process_block_class("REESolExOgParameters")
 class REESolExOgParameterData(PhysicalParameterBlock):
+    """
+    This is a property package for the organic phase solution of the solvent extraction
+    unit operation of the University of Kentucky pilot plant flowsheet.
+
+    This  includes the following components:
+
+    * Solvent: DEHPA
+    * Rare Earths: Sc, Y, La, Ce, Pr, Nd, Sm, Gd, Dy
+    * Impurities: Al, Ca, Fe
+
+    DEHPA is not considered to be involved in any reaction.
+
+    """
+
     def build(self):
         super().build()
 
@@ -76,7 +98,7 @@ class REESolExOgParameterData(PhysicalParameterBlock):
         )
 
         # density of DEHPA
-        self.dens_mol = Param(
+        self.dens_mass = Param(
             initialize=975.8e-3,
             units=units.kg / units.litre,
             mutable=True,
@@ -104,6 +126,11 @@ class _REESolExOgStateBlock(StateBlock):
 
 @declare_process_block_class("REESolExOgStateBlock", block_class=_REESolExOgStateBlock)
 class REESolExOgStateBlockData(StateBlockData):
+    """
+    State block for organic phase solution of the solvent extraction process.
+
+    """
+
     def build(self):
         super().build()
 
@@ -137,11 +164,23 @@ class REESolExOgStateBlockData(StateBlockData):
 
     def get_material_flow_terms(self, p, j):
         if j == "DEHPA":
-            return self.flow_vol * self.params.dens_mol / self.params.mw[j]
+            return self.flow_vol * self.params.dens_mass / self.params.mw[j]
         else:
             return units.convert(
                 self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
                 to_units=units.mol / units.hour,
+            )
+
+    def get_material_density_terms(self, p, j):
+        if j == "DEHPA":
+            return units.convert(
+                self.params.dens_mass / self.params.mw[j],
+                to_units=units.mol / units.m**3,
+            )
+        else:
+            return units.convert(
+                self.conc_mass_comp[j] / self.params.mw[j],
+                to_units=units.mol / units.m**3,
             )
 
     def define_state_vars(self):

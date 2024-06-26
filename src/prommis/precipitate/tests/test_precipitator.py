@@ -80,7 +80,7 @@ class TestPrec(object):
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Gd"].fix(10)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Dy"].fix(10)
 
-        m.fs.unit.cv_precipitate.properties_in[0].temperature.fix(348.15)
+        m.fs.unit.cv_precipitate[0].temperature.fix(348.15)
 
         return m
 
@@ -102,13 +102,13 @@ class TestPrec(object):
         assert hasattr(prec.fs.unit.precipitate_outlet, "flow_mol_comp")
         assert hasattr(prec.fs.unit.precipitate_outlet, "temperature")
 
-        assert hasattr(prec.fs.unit, "generation")
-        assert hasattr(prec.fs.unit, "mass_balance")
+        assert hasattr(prec.fs.unit, "precipitate_generation")
+        assert hasattr(prec.fs.unit, "aqueous_depletion")
         assert hasattr(prec.fs.unit, "vol_balance")
 
-        assert number_variables(prec.fs.unit) == 98
-        assert number_total_constraints(prec.fs.unit) == 84
-        assert number_unused_variables(prec.fs.unit) == 0
+        assert number_variables(prec.fs.unit) == 87
+        assert number_total_constraints(prec.fs.unit) == 73
+        assert number_unused_variables(prec.fs.unit) == 1
 
     @pytest.mark.component
     def test_units(self, prec):
@@ -157,7 +157,7 @@ class TestPrec(object):
         assert pytest.approx(9.91, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Al"]
         )
-        assert pytest.approx(10, abs=1e-3) == value(
+        assert pytest.approx(7.95, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Ca"]
         )
         assert pytest.approx(3.193, abs=1e-3) == value(
@@ -193,9 +193,9 @@ class TestPrec(object):
         assert pytest.approx(0.00016678, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Al2(C2O4)3(s)"]
         )
-        # assert pytest.approx(0.0051150, abs=1e-6) == value(
-        #     prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Ca(C2O4)(s)"]
-        # )
+        assert pytest.approx(0.0051150, abs=1e-6) == value(
+            prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Ca(C2O4)(s)"]
+        )
         assert pytest.approx(0.002429, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Ce2(C2O4)3(s)"]
         )

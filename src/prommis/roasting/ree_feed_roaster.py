@@ -16,65 +16,99 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and
 # license information.
 ###############################################################################
-"""
-IDAES REE feed roaster unit model.
+r"""
+IDAES REE Feed Roaster Unit Model
+==================================
 
-This is used to model the roaster/calcination unit for REE feedstock containing 
-rare earth minerals, impurity minerals, moisture, and combustible organic materials.
+This model represents a roaster/calcination unit for Rare Earth Element (REE) feedstock, which includes rare earth minerals, gangue/impurity minerals, moisture, and combustible organic materials.
+
+Reactions
+---------
 
 The reactions of impurities involved are listed below:
-1. Kaolinite calcination. Typically above 400 C, assuming fully converted
-Al2O3_2SiO2_2H2O -> Al2O3 + 2SiO2 + 2H2O(g)
-2. Limestone calcination. Typically above 850 C, conversion as a user input
-CaCO3 -> CaO + CO2(g)
-3. Pyrite combustion. Typically above 600 C, assuming fully converted
-FeS2 + 2.75O2 -> 0.5Fe2O3 + 2SO2(g), 
-#Dolomite calcination, currently ignored CaMg(CO3)2 -> CaO + MgO + 2CO2(g)
 
-Combustion of the organic elements is modeled as
-C + O2 -> CO2
-H + 0.25O2-> 0.5H2O
-O -> 0.5O2
-N -> 0.5N2
-S + O2 -> SO2
+1. Kaolinite calcination:
+   
+   .. ce::
+      Al2O3 \cdot 2SiO2 \cdot 2H2O -> Al2O3 + 2 SiO2 + 2 H2O (g)
 
-Physical change: Moisture in the feed stream is vaporized.
+   Typically occurs above 400°C, assuming complete conversion.
 
-Note that the impurity minerals are assumed as a mixture of Un2O3, CaCO3, SiO2, Al2O3, kaolinite,
-, and pyrite. Here Un is an unknown element with an atomic mass same as Al.
+2. Limestone calcination:
 
-The feed stream also contains organic material including C, H, O, N, S elements.
-The composition the organic material are specified by the user.
-The HHV of the organic material is currently calculated based on Dulong's formula for coal.
+   .. ce::
+      CaCO3 -> CaO + CO2 (g)
 
-The heat to the reactor can be either provided by the external heating as a user input or
-by the combusition of a fossil fuel with air to form a hot O2-containing flue gas.
-The gas inlet stream is a O2-containing hot flue gas.
-The gas outlet stream contains the gas product leaving the reactor.
-The solid outlet stream contains the recovered solid product leaving the reactor
+   Typically occurs above 850°C; conversion is a user input.
 
-Currently no kinetics or mass transfer is considered for the calcination of impurity minerals.
-The user should specify the conversion of limestone as an input.
-Calcination of kaolinite and combustion of pyrite are assumed to be complete.
-The conversion of insoluble REE mineral to dissolvable mineral for each element is
-currently specified as user input.
-The final solid product is split to a recovered product stream and a dust stream with
-user specified recovery fractions for the impurity and individual RE elements.
+3. Pyrite combustion:
 
-Since the rare earth minerals are in ppm level, they are ignored in energy balance.
-The material balance of the REE is considered for the element only; the forms of the
-RE compounds (in salt or oxide forms)are note considered.
+   .. ce::
+      FeS2 + 2.75 O2 -> 0.5 Fe2O3 + 2 SO2 (g)
 
-If the product temperature is specified as a user input, the heat duty will be calculated.
-If the heat duty is given, the product temperature will be calculated.
-Temperatures of solid and gas products are assumed to be the same.
+   Typically occurs above 600°C, assuming complete conversion.
 
-Currently, no port for the solid inlet stream is used. The mass flow rate
-and composition of the solid reactant are specified as input variables inside the model.
-The mass flow rate and the composition of the solid product and dust streams are also
-declared as model variables.
-When mapping the solid products to the solid_outlet port, only the components defined
-in the leach_solids_properties are mapped. The other species are thrown away.
+Combustion of organic elements is modeled as follows:
+
+- :ce:`C + O2 -> CO2`
+- :ce:`H + 0.25 O2 -> 0.5 H2O`
+- :ce:`O -> 0.5 O2`
+- :ce:`N -> 0.5 N2`
+- :ce:`S + O2 -> SO2`
+
+Physical Changes
+----------------
+
+Moisture in the feed stream is vaporized.
+
+Composition
+-----------
+
+Impurity minerals are assumed to be a mixture of :ce:`Un2O3`, :ce:`CaCO3`, :ce:`SiO2`, :ce:`Al2O3`, kaolinite, and pyrite, where :ce:`Un` is an unknown element with the same atomic mass as :ce:`Al`.
+
+The feed stream also contains organic material including :ce:`C`, :ce:`H`, :ce:`O`, :ce:`N`, :ce:`S` elements. The composition of the organic material is specified by the user.
+
+Heat Source
+-----------
+
+The heat to the reactor can be provided either by external heating as a user input or by the combustion of a fossil fuel with air to form a hot :ce:`O2`-containing flue gas. The gas inlet stream is an :ce:`O2`-containing hot flue gas.
+
+Streams
+-------
+
+- **Gas Inlet Stream**: :ce:`O2`-containing hot flue gas.
+- **Gas Outlet Stream**: Gas product leaving the reactor.
+- **Solid Outlet Stream**: Recovered solid product leaving the reactor.
+
+
+Thermal Properties
+------------------
+
+The standard heats of formation and heat capacities of solid components involved are defined as parameters in this model. The default values of those parameters are obtained from two sources as listed below:
+
+1. NIST Chemistry WebBook
+2. Wagman, D.D., W.H. Evans, V.B. Parker, R.H.Schumm, I. Halow, S.M. Bailey, K.L. Churney,
+   R.L. Nuttall, "The NBS tables of chemical thermodynamic properties-Selected values for
+   inorganic and C1 and C2 organic substances in SI units," Journal of Physical and Chemical
+   Reference Data, 11(2), 1982
+
+The NIST WebBook data are used for the properties of :ce:`Al2O3`, :ce:`SiO2`, :ce:`CaO`, :ce:`Fe2O3`, and `pyrite`. Note that the heat capacity model is simplified as a linear function of temperature.
+The data of Wagman et al are used for the properties of :ce:`CaCO3` and `kaolinite`.
+The gas phase properties are calculated based on user configured property package.
+
+Assumptions
+-----------
+
+- No kinetics or mass transfer is considered for the calcination of impurity minerals.
+- User specifies the conversion of limestone.
+- Calcination of kaolinite and combustion of pyrite are assumed to be complete.
+- Conversion of insoluble REE mineral to dissolvable mineral for each element is a user input.
+- Final solid product is split to a recovered product stream and a dust stream with user-specified recovery fractions for the impurity and individual RE elements.
+- Rare earth minerals, being in ppm level, are ignored in energy balance.
+- Material balance of the REE is considered for the element only; the forms of the RE compounds (in salt or oxide forms) are not considered.
+- If the product temperature is specified as a user input, the heat duty will be calculated. If the heat duty is given, the product temperature will be calculated.
+- Temperatures of solid and gas products are assumed to be the same.
+- No port for the solid inlet stream is used. The mass flow rate and composition of the solid reactant are specified as input variables inside the model. The mass flow rate and the composition of the solid product and dust streams are also declared as model variables. When mapping the solid products to the ``solid_outlet`` port, only the components defined in the :mod:`prommis.leaching.leach_solids_properties` module are mapped. The other species are discarded.
 
 """
 
@@ -587,7 +621,7 @@ constructed,
     def _make_vars(self):
         """This section declares variables within this model."""
 
-        self.flow_mas_feed = Var(
+        self.flow_mass_feed = Var(
             self.flowsheet().config.time,
             initialize=1,
             units=pyunits.kg / pyunits.s,
@@ -692,14 +726,14 @@ constructed,
             doc="mole flow rate of solid product in dust stream from calcination of impurity minerals",
         )
 
-        self.flow_mas_product_recovered = Var(
+        self.flow_mass_product_recovered = Var(
             self.flowsheet().config.time,
             initialize=1,
             units=pyunits.kg / pyunits.s,
             doc="mass flow rate of recovered solid product from calcination of impurity minerals",
         )
 
-        self.flow_mas_product_dust = Var(
+        self.flow_mass_product_dust = Var(
             self.flowsheet().config.time,
             initialize=0.1,
             units=pyunits.kg / pyunits.s,
@@ -735,14 +769,14 @@ constructed,
             self.flowsheet().config.time, doc="vaporized moisture mass flowrate [kg/s]"
         )
         def flow_mol_moist_feed(b, t):
-            return b.flow_mas_feed[t] * b.mass_frac_moist_feed[t] / b.mw_H2O
+            return b.flow_mass_feed[t] * b.mass_frac_moist_feed[t] / b.mw_H2O
 
         # Organic material mass flow rate
         @self.Expression(
             self.flowsheet().config.time, doc="Organic material mass flowrate [kg/s]"
         )
-        def flow_mas_organic_feed(b, t):
-            return b.flow_mas_feed[t] * b.mass_frac_organic_feed[t]
+        def flow_mass_organic_feed(b, t):
+            return b.flow_mass_feed[t] * b.mass_frac_organic_feed[t]
 
         # Organic element mole flow rate
         @self.Expression(
@@ -752,7 +786,7 @@ constructed,
         )
         def flow_mol_comp_organic_feed(b, t, i):
             return (
-                b.flow_mas_organic_feed[t]
+                b.flow_mass_organic_feed[t]
                 * b.mass_frac_comp_organic_feed[t, i]
                 / b.am_comp_organic_ele[i]
             )
@@ -762,8 +796,8 @@ constructed,
             self.flowsheet().config.time,
             doc="Impurity mineral material mass flowrate [kg/s]",
         )
-        def flow_mas_impurity_feed(b, t):
-            return b.flow_mas_feed[t] * (
+        def flow_mass_impurity_feed(b, t):
+            return b.flow_mass_feed[t] * (
                 1 - b.mass_frac_moist_feed[t] - b.mass_frac_organic_feed[t]
             )
 
@@ -773,8 +807,8 @@ constructed,
             self.impurity_list,
             doc="mass flow rate of individual impurity minerals [kg/s]",
         )
-        def flow_mas_comp_impurity_feed(b, t, i):
-            return b.flow_mas_impurity_feed[t] * b.mass_frac_comp_impurity_feed[t, i]
+        def flow_mass_comp_impurity_feed(b, t, i):
+            return b.flow_mass_impurity_feed[t] * b.mass_frac_comp_impurity_feed[t, i]
 
         # mole flow rates of individual mineral impurity
         @self.Expression(
@@ -783,7 +817,7 @@ constructed,
             doc="mole flow rate of individual impurity minerals [mol/s]",
         )
         def flow_mol_comp_impurity_feed(b, t, i):
-            return b.flow_mas_comp_impurity_feed[t, i] / b.mw_comp_impurity[i]
+            return b.flow_mass_comp_impurity_feed[t, i] / b.mw_comp_impurity[i]
 
         # the gas product should contain at least N2, O2, H2O, CO2, and SO2
         @self.Constraint(
@@ -897,16 +931,16 @@ constructed,
 
         # mass flow rate of solid product recovered
         @self.Constraint(self.flowsheet().config.time, doc="mass flow rate of product")
-        def flow_mas_product_recovered_eqn(b, t):
-            return b.flow_mas_product_recovered[t] == sum(
+        def flow_mass_product_recovered_eqn(b, t):
+            return b.flow_mass_product_recovered[t] == sum(
                 b.flow_mol_comp_product_recovered[t, i] * b.mw_comp_product[i]
                 for i in b.product_list
             )
 
         # mass flow rate of solid product in dust stream
         @self.Constraint(self.flowsheet().config.time, doc="mass flow rate of product")
-        def flow_mas_product_dust_eqn(b, t):
-            return b.flow_mas_product_dust[t] == sum(
+        def flow_mass_product_dust_eqn(b, t):
+            return b.flow_mass_product_dust[t] == sum(
                 b.flow_mol_comp_product_dust[t, i] * b.mw_comp_product[i]
                 for i in b.product_list
             )
@@ -922,7 +956,7 @@ constructed,
                 return (
                     b.flow_mol_comp_impurity_feed[t, "CaCO3"]
                     * b.am_Ca
-                    / b.flow_mas_impurity_feed[t]
+                    / b.flow_mass_impurity_feed[t]
                 )
             elif i == "Si":
                 return (
@@ -931,7 +965,7 @@ constructed,
                         + b.flow_mol_comp_impurity_feed[t, "Kaolinite"] * 2
                     )
                     * b.am_Si
-                    / b.flow_mas_impurity_feed[t]
+                    / b.flow_mass_impurity_feed[t]
                 )
             elif i == "Al":
                 return (
@@ -941,20 +975,20 @@ constructed,
                     )
                     * b.am_Al
                     * 2
-                    / b.flow_mas_impurity_feed[t]
+                    / b.flow_mass_impurity_feed[t]
                 )
             elif i == "Fe":
                 return (
                     b.flow_mol_comp_impurity_feed[t, "Pyrite"]
                     * b.am_Fe
-                    / b.flow_mas_impurity_feed[t]
+                    / b.flow_mass_impurity_feed[t]
                 )
             else:  # i==Un
                 return (
                     b.flow_mol_comp_impurity_feed[t, "Un2O3"]
                     * b.am_Un
                     * 2
-                    / b.flow_mas_impurity_feed[t]
+                    / b.flow_mass_impurity_feed[t]
                 )
 
         # mass fraction of impurity metal in the product stream
@@ -967,7 +1001,7 @@ constructed,
             if i == "Ca":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
-                    * b.flow_mas_product_recovered[t]
+                    * b.flow_mass_product_recovered[t]
                     == (
                         b.flow_mol_comp_product_recovered[t, "CaCO3"]
                         + b.flow_mol_comp_product_recovered[t, "CaO"]
@@ -977,25 +1011,25 @@ constructed,
             elif i == "Si":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
-                    * b.flow_mas_product_recovered[t]
+                    * b.flow_mass_product_recovered[t]
                     == b.flow_mol_comp_product_recovered[t, "SiO2"] * b.am_Si
                 )
             elif i == "Al":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
-                    * b.flow_mas_product_recovered[t]
+                    * b.flow_mass_product_recovered[t]
                     == b.flow_mol_comp_product_recovered[t, "Al2O3"] * 2 * b.am_Al
                 )
             elif i == "Fe":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
-                    * b.flow_mas_product_recovered[t]
+                    * b.flow_mass_product_recovered[t]
                     == b.flow_mol_comp_product_recovered[t, "Fe2O3"] * 2 * b.am_Fe
                 )
             else:  # i=='Un':
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
-                    * b.flow_mas_product_recovered[t]
+                    * b.flow_mass_product_recovered[t]
                     == b.flow_mol_comp_product_recovered[t, "Un2O3"] * 2 * b.am_Un
                 )
 
@@ -1007,8 +1041,8 @@ constructed,
         )
         def ppm_comp_ree_ins_product_eqn(b, t, i):
             return (
-                b.ppm_comp_ree_ins_product[t, i] * b.flow_mas_product_recovered[t]
-                == b.flow_mas_impurity_feed[t]
+                b.ppm_comp_ree_ins_product[t, i] * b.flow_mass_product_recovered[t]
+                == b.flow_mass_impurity_feed[t]
                 * b.ppm_comp_ree_ins_feed[t, i]
                 * (1 - b.xconv_comp_ins[t, i])
                 * b.frac_comp_ree_recovery[t, i]
@@ -1022,8 +1056,8 @@ constructed,
         )
         def ppm_comp_ree_dis_product_eqn_eqn(b, t, i):
             return (
-                b.ppm_comp_ree_dis_product[t, i] * b.flow_mas_product_recovered[t]
-                == b.flow_mas_impurity_feed[t]
+                b.ppm_comp_ree_dis_product[t, i] * b.flow_mass_product_recovered[t]
+                == b.flow_mass_impurity_feed[t]
                 * (
                     b.ppm_comp_ree_ins_feed[t, i] * b.xconv_comp_ins[t, i]
                     + b.ppm_comp_ree_dis_feed[t, i]
@@ -1247,7 +1281,7 @@ constructed,
                     for i in b.impurity_list
                 )
                 + b.flow_mol_moist_feed[t] * b.enth_mol_moist_feed[t]
-                + b.flow_mas_organic_feed[t]
+                + b.flow_mass_organic_feed[t]
                 * (b.Hf_organic[t] + b.cp_organic * (b.temp_feed[t] - b.temp_ref))
                 + b.gas_in[t].flow_mol * b.gas_in[t].enth_mol
                 + heat

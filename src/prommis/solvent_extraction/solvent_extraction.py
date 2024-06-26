@@ -1,3 +1,74 @@
+"""
+Solvent Extraction Model
+
+========================
+
+Author: Arkoprabho Dasgupta
+
+The Solvent Extraction unit model is used to perform the solvent extraction unit operation.
+It represents a series of tanks, referred to as stages, through which the aqueous and organic
+phases are passed, and the desired components are extracted subsequently.
+
+Configuration Arguments
+-----------------------
+
+The user must specify the following configurations in a solvent extraction model to be able to 
+use it.
+
+The user must specify the aqueous feed input in the ``aqueous_stream`` configuration, with a 
+configuration that describes the aqueous feed's properties.
+
+The user must specify the organic feed input in the ``organic_stream`` configuration, with a 
+configuration that describes the organic feed's properties.
+
+The number of stages in the solvent extraction process has to be specified by the user through 
+the ``number_of_finite_elements`` configuration. It takes an integer value.
+
+The material transfer can happen from either of the phases to the other. To specify the direction 
+of the transfer, the ``aqueous_to_organic`` configuration is to be used by the user. This is a boolean 
+configuration. The default value is True, which means the material transfer is happening from the 
+aqueous phase to the organic phase, like in the loading operation. For scrubbing and stripping, the 
+reverse happens, so the value of the configuration will be False.
+
+Stream configurations
+---------------------
+
+Each of the feed streams has to have a dictionary that specifies the property packages and other 
+details as mentioned below.
+
+The ``property_package`` configuration is the property package that describes the state conditions 
+and properties of a particular stream.
+
+The ``property_package_args`` configuration is any specific set of arguments that has to be passed to 
+the property block for the unit operation.
+
+The user can specify the direction of the flow of the stream through the stages through the 
+configuration ``flow_direction``. This is a configuration, that uses FlowDirection Enum, which
+can have two possible values.
+
+Degrees of freedom 
+------------------
+
+When the solvent extraction model is operated in steady state, the number of degrees of freedom of
+the model is equal to the number of partition coefficients of the total components involved in the
+mass transfer operation, for all the stages.
+
+If the model is operated in dynamic state, the number of degrees of freedom is equal to the sum
+of the partition coefficient of all components involved in the mass transfer operation, 
+values of the state block variables of all the components of the system at the start of the
+operation, the volumes and the volume fractions, for all the stages.
+
+Model structure
+---------------
+
+The core model consists of a MSContactor model, with stream names hard coded as 'aqueous' and 
+'organic', and the stream dictionaries and number of finite elements are the same as those provided
+by the user.
+
+This model defines the material transfer term defined in the MSContactor and expresses it as a
+function of the parameter of partition coefficient defined by the user.
+"""
+
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
 from pyomo.environ import Constraint, Param
 from pyomo.network import Port
@@ -56,16 +127,16 @@ Stream_Config.declare(
     ConfigValue(
         default=False,
         domain=Bool,
-        doc="Bool indicating whether to include energy balance for stream. Default=True.",
+        doc="Bool indicating whether to include energy balance for stream. Default=False.",
     ),
 )
 
 Stream_Config.declare(
     "has_pressure_balance",
     ConfigValue(
-        default=True,
+        default=False,
         domain=Bool,
-        doc="Bool indicating whether to include pressure balance for stream. Default=True.",
+        doc="Bool indicating whether to include pressure balance for stream. Default=False.",
     ),
 )
 
@@ -93,6 +164,15 @@ class SolventExtractionData(UnitModelBlockData):
         ConfigValue(domain=int, description="Number of finite elements to use"),
     )
 
+    CONFIG.declare(
+        "aqueous_to_organic",
+        ConfigValue(
+            default=True,
+            domain=Bool,
+            description="Direction of the transfer between two phases",
+        ),
+    )
+
     def build(self):
         super().build()
 
@@ -105,22 +185,13 @@ class SolventExtractionData(UnitModelBlockData):
             number_of_finite_elements=self.config.number_of_finite_elements,
         )
 
+        def param_init(b, s, k, l, m):
+            b.partition_coefficient[s, (k, l, m)] = 1
+
         self.partition_coefficient = Param(
+            self.mscontactor.elements,
             self.mscontactor.stream_component_interactions,
-            initialize={
-                ("aqueous", "organic", "Al"): 3.6 / 100,
-                ("aqueous", "organic", "Ca"): 3.7 / 100,
-                ("aqueous", "organic", "Fe"): 2.1 / 100,
-                ("aqueous", "organic", "Sc"): 99.9 / 100,
-                ("aqueous", "organic", "Y"): 99.9 / 100,
-                ("aqueous", "organic", "La"): 75.2 / 100,
-                ("aqueous", "organic", "Ce"): 95.7 / 100,
-                ("aqueous", "organic", "Pr"): 96.5 / 100,
-                ("aqueous", "organic", "Nd"): 99.2 / 100,
-                ("aqueous", "organic", "Sm"): 99.9 / 100,
-                ("aqueous", "organic", "Gd"): 98.6 / 100,
-                ("aqueous", "organic", "Dy"): 99.9 / 100,
-            },
+            initialize=param_init,
             mutable=True,
             doc="The fraction of component that goes from aqueous to organic phase",
         )
@@ -131,24 +202,34 @@ class SolventExtractionData(UnitModelBlockData):
         self.organic_outlet = Port(extends=self.mscontactor.organic_outlet)
 
         def mass_transfer_term(b, t, s, k, l, m):
-            aqueous = b.mscontactor.aqueous
-            phase_list = aqueous.phase_list
-            if s == b.mscontactor.elements.first():
-                return (
-                    b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                    == -b.mscontactor.aqueous_inlet_state[t].get_material_flow_terms(
-                        phase_list, m
-                    )
-                    * b.partition_coefficient[(k, l, m)]
-                )
+            if self.config.aqueous_to_organic:
+                stream_state = b.mscontactor.aqueous
+                in_state = b.mscontactor.aqueous_inlet_state
+                stream_name = self.config.aqueous_stream
+                sign = -1
             else:
-                return (
-                    b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                    == -b.mscontactor.aqueous[
-                        t, b.mscontactor.elements.prev(s)
-                    ].get_material_flow_terms(phase_list, m)
-                    * b.partition_coefficient[(k, l, m)]
-                )
+                stream_state = b.mscontactor.organic
+                in_state = b.mscontactor.organic_inlet_state
+                stream_name = self.config.organic_stream
+                sign = 1
+
+            if stream_name.flow_direction == FlowDirection.forward:
+                if s == b.mscontactor.elements.first():
+                    state = in_state[t]
+                else:
+                    state = stream_state[t, b.mscontactor.elements.prev(s)]
+            else:
+                if s == b.mscontactor.elements.last():
+                    state = in_state[t]
+                else:
+                    state = stream_state[t, b.mscontactor.elements.next(s)]
+
+            return (
+                b.mscontactor.material_transfer_term[t, s, (k, l, m)]
+                == sign
+                * state.get_material_flow_terms(stream_state.phase_list, m)
+                * b.partition_coefficient[s, (k, l, m)]
+            )
 
         self.mass_transfer_constraint = Constraint(
             self.flowsheet().time,

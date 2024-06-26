@@ -1,12 +1,11 @@
-black[jupyter]==23.11.0
+black[jupyter]==24.3.0
 pylint==2.17.7
 astroid==2.15.8
 pytest==7.*
 pytest-cov
-jupyter-book==0.15.*
+jupyter-book==0.15.* ; python_version < '3.9'
+jupyter-book==1.0.* ; python_version >= '3.9'
 isort
 nbmake==1.4.6
-
-idaes-pse==2.3.0
 
 --editable .[watertap]

@@ -62,6 +62,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
         self.H = Component()
         self.HSO4 = Component()
         self.SO4 = Component()
+        self.Cl = Component()
 
         # REEs
         self.Sc = Component()
@@ -87,6 +88,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
                 "H": 1e-3,
                 "HSO4": 97e-3,
                 "SO4": 96e-3,
+                "Cl": 35.453e-3,
                 "Sc": 44.946e-3,
                 "Y": 88.905e-3,
                 "La": 138.905e-3,
@@ -110,6 +112,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
             ("Ka2", "liquid", "HSO4"): -1,
             ("Ka2", "liquid", "SO4"): 1,
             ("Ka2", "liquid", "H2O"): 0,
+            ("Ka2", "liquid", "Cl"): 0,
             ("Ka2", "liquid", "Sc"): 0,
             ("Ka2", "liquid", "Y"): 0,
             ("Ka2", "liquid", "La"): 0,
@@ -196,6 +199,7 @@ class LeachSolutionStateBlockData(StateBlockData):
         self.conc_mass_comp = Var(
             self.params.component_list,
             units=units.mg / units.L,
+            initialize=1e-8,
             bounds=(1e-20, None),
         )
         self.conc_mol_comp = Var(

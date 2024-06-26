@@ -91,6 +91,7 @@ m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Nd"].fix(352.60)
 m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Sm"].fix(64.22)
 m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Gd"].fix(30.39)
 m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Dy"].fix(17.63)
+m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Cl"].fix(1e-8)
 
 m.fs.solex.mscontactor.aqueous_inlet_state[0].flow_vol.fix(0.13)
 

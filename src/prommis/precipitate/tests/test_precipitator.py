@@ -79,6 +79,11 @@ class TestPrec(object):
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Sm"].fix(10)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Gd"].fix(10)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Dy"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Cl"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "SO4"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1000000)
 
         m.fs.unit.cv_precipitate[0].temperature.fix(348.15)
 
@@ -106,8 +111,8 @@ class TestPrec(object):
         assert hasattr(prec.fs.unit, "aqueous_depletion")
         assert hasattr(prec.fs.unit, "vol_balance")
 
-        assert number_variables(prec.fs.unit) == 87
-        assert number_total_constraints(prec.fs.unit) == 73
+        assert number_variables(prec.fs.unit) == 117
+        assert number_total_constraints(prec.fs.unit) == 98
         assert number_unused_variables(prec.fs.unit) == 1
 
     @pytest.mark.component
@@ -234,39 +239,41 @@ class TestPrec(object):
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
     def test_conservation(self, prec):
-        assert (
-            abs(
-                value(
-                    prec.fs.unit.aqueous_inlet.flow_vol[0]
-                    * prec.fs.properties_aq.dens_mass
-                    - prec.fs.unit.aqueous_outlet.flow_vol[0]
-                    * prec.fs.properties_aq.dens_mass
-                )
-            )
-            <= 1e-6
+        assert value(
+            prec.fs.unit.aqueous_inlet.flow_vol[0] * prec.fs.properties_aq.dens_mass
+        ) == pytest.approx(
+            value(
+                prec.fs.unit.aqueous_outlet.flow_vol[0]
+                * prec.fs.properties_aq.dens_mass
+            ),
+            rel=1e-6,
+            abs=1e-6,
         )
 
         reversed_react = dict(map(reversed, prec.fs.properties_solid.react.items()))
+        pass_through_elements = ["H", "Cl", "SO4", "H2O", "HSO4"]
         for j in prec.fs.properties_aq.dissolved_elements:
-            if j == "Ca":
-                pass
+            if j in pass_through_elements:
+                assert value(
+                    prec.fs.unit.cv_aqueous.properties_in[0].flow_mol_comp[j]
+                ) == pytest.approx(
+                    value(prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[j]),
+                    rel=1e-5,
+                    abs=1e-5,
+                )
             else:
-                assert (
-                    abs(
-                        value(
-                            prec.fs.unit.cv_aqueous.properties_in[0].flow_mol_comp[j]
-                            - (
-                                prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[
-                                    j
-                                ]
-                                + (
-                                    prec.fs.unit.precipitate_outlet.flow_mol_comp[
-                                        0, reversed_react[j]
-                                    ]
-                                    * prec.fs.properties_solid.stoich[reversed_react[j]]
-                                )
-                            )
+                assert value(
+                    prec.fs.unit.cv_aqueous.properties_in[0].flow_mol_comp[j]
+                ) == pytest.approx(
+                    value(
+                        prec.fs.unit.cv_aqueous.properties_out[0].flow_mol_comp[j]
+                        + (
+                            prec.fs.unit.precipitate_outlet.flow_mol_comp[
+                                0, reversed_react[j]
+                            ]
+                            * prec.fs.properties_solid.stoich[reversed_react[j]]
                         )
-                    )
-                    <= 1e-5
+                    ),
+                    rel=1e-5,
+                    abs=1e-5,
                 )

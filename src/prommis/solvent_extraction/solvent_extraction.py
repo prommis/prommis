@@ -185,13 +185,10 @@ class SolventExtractionData(UnitModelBlockData):
             number_of_finite_elements=self.config.number_of_finite_elements,
         )
 
-        def param_init(b, s, k, l, m):
-            b.partition_coefficient[s, (k, l, m)] = 1
-
         self.partition_coefficient = Param(
             self.mscontactor.elements,
             self.mscontactor.stream_component_interactions,
-            initialize=param_init,
+            initialize=1,
             mutable=True,
             doc="The fraction of component that goes from aqueous to organic phase",
         )

@@ -2818,7 +2818,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
               - Loan_Interest_Owed - Capital_Depreciation
 
         For escalating costs, the series present worth factor is modified to
-        account for escalation, yielding a modifed formula
+        account for escalation, yielding a modified formula
 
         P/A(r, g, N) = ( 1 - [ (1+g)**(N) ] * [(1+r)**(-N)] ) / (r - g)
 
@@ -3066,7 +3066,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.pv_revenue = Var(
             initialize=CAPEX,
             bounds=(0, 1e4),
-            doc="present value of total lifetime sales revenue in $MM; postive cash flow",
+            doc="present value of total lifetime sales revenue in $MM; positive cash flow",
             units=cost_units,
         )
 

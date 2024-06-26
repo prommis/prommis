@@ -78,12 +78,11 @@ def custom_REE_plant_currency_units():
     if (
         "USD_2022" in pyunits._pint_registry  # pylint: disable=protected-access
         and "USD_2025" in pyunits._pint_registry  # pylint: disable=protected-access
-        and "USD__UKy_2019"
-        in pyunits._pint_registry  # pylint: disable=protected-access
+        and "USD_UKy_2019" in pyunits._pint_registry  # pylint: disable=protected-access
     ):
         # Assume that custom REE plant units have already been registered
         # Log a message and end
-        _log.debug(
+        _log.info(
             "Custom REE plant currency units (USD_2022, USD_2025, USD_UKy_2019) "
             "already appear in Pyomo unit registry. Assuming repeated "
             "call of custom_power_plant_currency_units."
@@ -362,102 +361,102 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             self.piping_materials_and_labor_percentage = Param(
                 mutable=True,
                 initialize=piping_materials_and_labor_percentage / 100,
-                doc="piping, materials and labor",
+                doc="Piping, materials and labor",
             )
 
             self.electrical_materials_and_labor_percentage = Param(
                 mutable=True,
                 initialize=electrical_materials_and_labor_percentage / 100,
-                doc="electrical, materials and labor",
+                doc="Electrical, materials and labor",
             )
 
             self.instrumentation_percentage = Param(
                 mutable=True,
                 initialize=instrumentation_percentage / 100,
-                doc="instrumentation",
+                doc="Instrumentation",
             )
 
             self.plant_services_percentage = Param(
                 mutable=True,
                 initialize=plants_services_percentage / 100,
-                doc="plant services",
+                doc="Plant services",
             )
 
             self.process_buildings_percentage = Param(
                 mutable=True,
                 initialize=process_buildings_percentage / 100,
-                doc="process buildings",
+                doc="Process buildings",
             )
 
             self.auxiliary_buildings_percentage = Param(
                 mutable=True,
                 initialize=auxiliary_buildings_percentage / 100,
-                doc="auxiliary buildings",
+                doc="Auxiliary buildings",
             )
 
             self.site_improvements_percentage = Param(
                 mutable=True,
                 initialize=site_improvements_percentage / 100,
-                doc="site improvements",
+                doc="Site improvements",
             )
 
             self.equipment_installation_percentage = Param(
                 mutable=True,
                 initialize=equipment_installation_percentage / 100,
-                doc="equipment installation",
+                doc="Equipment installation",
             )
 
             self.field_expenses_percentage = Param(
                 mutable=True,
                 initialize=field_expenses_percentage / 100,
-                doc="field expenses",
+                doc="Field expenses",
             )
 
             self.project_management_and_construction_percentage = Param(
                 mutable=True,
                 initialize=project_management_and_construction_percentage / 100,
-                doc="project management and construction",
+                doc="Project management and construction",
             )
 
             self.process_contingency_percentage = Param(
                 mutable=True,
                 initialize=process_contingency_percentage / 100,
-                doc="process contingency",
+                doc="Process contingency",
             )
 
             # ancillary cost variables
             self.ancillary_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="ancillary cost in $MM",
+                doc="Ancillary cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.piping_materials_and_labor_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="piping, materials and labor ancillary cost in $MM",
+                doc="Piping, materials and labor ancillary cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.electrical_materials_and_labor_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="electrical, materials and labor ancillary cost in $MM",
+                doc="Electrical, materials and labor ancillary cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.instrumentation_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="ancillary cost in $MM",
+                doc="Ancillary cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.plant_services_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="ancillary cost in $MM",
+                doc="Ancillary cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
@@ -465,28 +464,28 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             self.buildings_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="buildings cost in $MM",
+                doc="Buildings cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.process_buildings_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="process buildings cost in $MM",
+                doc="Process buildings cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.auxiliary_buildings_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="auxiliary buildings cost in $MM",
+                doc="Auxiliary buildings cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.site_improvements_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="site improvements buildings cost in $MM",
+                doc="Site improvements buildings cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
@@ -494,28 +493,28 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             self.epcm_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="epcm cost in $MM",
+                doc="EPCM cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.equipment_installation_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="equipment installation epcm cost in $MM",
+                doc="Equipment installation EPCM cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.field_expenses_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="field expenses epcm cost in $MM",
+                doc="Field expenses EPCM cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.project_management_and_construction_costs = Var(
                 initialize=self.total_BEC,
                 bounds=(0, 1e4),
-                doc="project management and construction epcm cost in $MM",
+                doc="Project management and construction EPCM cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
@@ -523,14 +522,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             self.contingency_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="contingency cost in $MM",
+                doc="Contingency cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.process_contingency_costs = Var(
                 initialize=value(self.total_BEC),
                 bounds=(0, 1e4),
-                doc="contingency cost in $MM",
+                doc="Contingency cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
         else:
@@ -545,14 +544,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         self.total_installation_cost = Var(
             initialize=self.total_BEC,
             bounds=(0, 1e4),
-            doc="total installation cost in $MM",
+            doc="Total installation cost in $MM",
             units=getattr(pyunits, "MUSD_" + CE_index_year),
         )
 
         self.total_plant_cost = Var(
             initialize=self.total_BEC,
             bounds=(0, 1e4),
-            doc="total plant cost in $MM",
+            doc="Total plant cost in $MM",
             units=getattr(pyunits, "MUSD_" + CE_index_year),
         )
 
@@ -560,7 +559,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         self.other_plant_costs = Var(
             initialize=0,
             bounds=(0, 1e4),
-            doc="additional plant costs in $MM",
+            doc="Additional plant costs in $MM",
             units=getattr(pyunits, "MUSD_" + CE_index_year),
         )
         self.other_plant_costs.fix(0)
@@ -892,7 +891,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             if recovery_rate_per_year is not None:
                 self.additional_cost_of_recovery = Var(
                     initialize=0,
-                    doc="additional cost to be added to the COR calculations"
+                    doc="Additional cost to be added to the COR calculations"
                     + " in millions",
                     units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
                 )
@@ -1005,7 +1004,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     loan_interest_percentage=loan_interest_percentage,
                     loan_repayment_period=loan_repayment_period,
                     capital_depreciation_declining_balance_percentage=capital_depreciation_declining_balance_percentage,
-                    )
+                )
 
     @staticmethod
     def initialize_build(*args, **kwargs):
@@ -1564,14 +1563,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             cost_accounts,
             mutable=True,
             initialize=exponents,
-            doc="exponential parameter for account",
+            doc="Exponential parameter for account",
         )
 
         blk.ref_cost = Param(
             cost_accounts,
             mutable=True,
             initialize=reference_costs,
-            doc="reference cost for account",
+            doc="Reference cost for account",
             # units not defined here, since every account could have different
             # currency units
         )
@@ -1583,14 +1582,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     process_params[cost_accounts[0]],
                     mutable=True,
                     initialize=reference_params,
-                    doc="reference parameter for account",
+                    doc="Reference parameter for account",
                 )
         elif isinstance(process_params[cost_accounts[0]], str):
             blk.ref_param = Param(
                 cost_accounts,
                 mutable=True,
                 initialize=reference_params,
-                doc="reference parameter for account",
+                doc="Reference parameter for account",
             )
 
         # define variables
@@ -1598,7 +1597,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             cost_accounts,
             initialize=reference_costs_init,
             bounds=(0, 1e4),
-            doc="scaled bare erected cost in $MM",
+            doc="Scaled bare erected cost in $MM",
             units=getattr(pyunits, "MUSD_" + CE_index_year),
         )
 
@@ -1834,61 +1833,61 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.annual_operating_labor_cost = Var(
             initialize=1,
             bounds=(0, 1e4),
-            doc="annual operating labor cost in $MM/yr",
+            doc="Annual operating labor cost in $MM/yr",
             units=CE_index_units,
         )
         b.annual_technical_labor_cost = Var(
             initialize=1,
             bounds=(0, 1e4),
-            doc="annual technical labor cost in $MM/yr",
+            doc="Annual technical labor cost in $MM/yr",
             units=CE_index_units,
         )
         b.annual_labor_cost = Var(
             initialize=1,
             bounds=(0, 1e4),
-            doc="annual labor cost in $MM/yr",
+            doc="Annual labor cost in $MM/yr",
             units=CE_index_units,
         )
         b.maintenance_and_material_cost = Var(
             initialize=1,
             bounds=(0, 1e4),
-            doc="maintenance and material cost in $MM/yr",
+            doc="Maintenance and material cost in $MM/yr",
             units=CE_index_units,
         )
         b.quality_assurance_and_control_cost = Var(
             initialize=1,
             bounds=(0, 1e4),
-            doc="quality assurance and control cost in $MM/yr",
+            doc="Quality assurance and control cost in $MM/yr",
             units=CE_index_units,
         )
         b.sales_patenting_and_research_cost = Var(
             initialize=1,
             bounds=(0, 1e4),
-            doc="sales, patenting and research cost in $MM/yr",
+            doc="Sales, patenting and research cost in $MM/yr",
             units=CE_index_units,
         )
         b.admin_and_support_labor_cost = Var(
             initialize=1,
             bounds=(0, 1e4),
-            doc="admin and support labor cost in $MM/yr",
+            doc="Admin and support labor cost in $MM/yr",
             units=CE_index_units,
         )
         b.property_taxes_and_insurance_cost = Var(
             initialize=1,
             bounds=(0, 1e4),
-            doc="property taxes and insurance cost in $MM/yr",
+            doc="Property taxes and insurance cost in $MM/yr",
             units=CE_index_units,
         )
         b.total_fixed_OM_cost = Var(
             initialize=4,
             bounds=(0, 1e4),
-            doc="total fixed O&M costs in $MM/yr",
+            doc="Total fixed O&M costs in $MM/yr",
             units=CE_index_units,
         )
         b.total_sales_revenue = Var(
             initialize=4,
             bounds=(0, 1e4),
-            doc="total sales revenue in $MM/yr",
+            doc="Total sales revenue in $MM/yr",
             units=CE_index_units,
         )
 
@@ -1897,7 +1896,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.other_fixed_costs = Var(
             initialize=0,
             bounds=(0, 1e4),
-            doc="other fixed costs in $MM/yr",
+            doc="Other fixed costs in $MM/yr",
             units=CE_index_units,
         )
         b.other_fixed_costs.fix(0)
@@ -1907,7 +1906,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.watertap_fixed_costs = Var(
             initialize=0,
             bounds=(0, 1e4),
-            doc="watertap fixed costs in $MM/yr",
+            doc="Watertap fixed costs in $MM/yr",
             units=CE_index_units,
         )
 
@@ -2157,14 +2156,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.parent_block().time,
             resources,
             initialize=2e-7,
-            doc="variable operating costs in $MM/year",
+            doc="Variable operating costs in $MM/year",
             units=CE_index_units / pyunits.year,
         )
 
         b.other_variable_costs = Var(
             b.parent_block().time,
             initialize=0,
-            doc="a variable to include non-standard O&M costs in $MM/year",
+            bounds=(0, 1e4),
+            doc="A variable to include non-standard O&M costs in $MM/year",
             units=CE_index_units / pyunits.year,
         )
 
@@ -2174,7 +2174,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.total_variable_OM_cost = Var(
             b.parent_block().time,
             initialize=4e-6,
-            doc="total variable operating and maintenance costs in $MM/year",
+            doc="Total variable operating and maintenance costs in $MM/year",
             units=CE_index_units / pyunits.year,
         )
 
@@ -2205,7 +2205,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.plant_overhead_cost = Var(
                 b.parent_block().time,
                 initialize=0,
-                doc="plant overhead costs in $MM/year",
+                doc="Plant overhead costs in $MM/year",
                 units=CE_index_units / pyunits.year,
             )
 
@@ -2433,7 +2433,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.total_BEC = Var(
             initialize=100,
             bounds=(0, 1e4),
-            doc="total TPC in $MM",
+            doc="Total TPC in $MM",
             # assume that total_plant_cost is in millions of
             # USD_year, where year is the CE_index_year users set
             units=CE_index_units,
@@ -2555,12 +2555,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.capacity = Var(
                 initialize=value(pyunits.convert(capacity, to_units=pyunits.tonnes)),
                 bounds=(0, 1e9),
-                doc="feedstock capacity of site",
+                doc="Feedstock capacity of site",
                 units=pyunits.tonnes,
             )
-            print("New variable 'capacity' created as attribute of {}".format(b.name))
+            b.capacity.fix(capacity)
+            _log.info(
+                "New variable 'capacity' created as attribute of {}".format(b.name)
+            )
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has attribute "
                 "'capacity', moving on. Set 'recalculate' to True to delete "
                 "old objects and recalculate for new inputs".format(b.name)
@@ -2570,12 +2573,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.grade = Var(
                 initialize=value(pyunits.convert(grade, to_units=pyunits.percent)),
                 bounds=(0, 100),
-                doc="grade percentage of site",
+                doc="Grade percentage of site",
                 units=pyunits.percent,
             )
-            print("New variable 'grade' created as attribute of {}".format(b.name))
+            b.grade.fix(grade)
+            _log.info("New variable 'grade' created as attribute of {}".format(b.name))
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has attribute "
                 "'grade', moving on. Set 'recalculate' to True to delete "
                 "old objects and recalculate for new inputs".format(b.name)
@@ -2600,18 +2604,18 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if not hasattr(b, "costing_lower_bound"):
             b.costing_lower_bound = Var(
                 processes,
-                initialize=10,
+                initialize=1,
                 bounds=(0, 100),
-                doc="estimated lower bound on per unit production cost of site",
+                doc="Estimated lower bound on per unit production cost of site",
                 units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
             )
-            print(
+            _log.info(
                 "New variable 'costing_lower_bound' created as attribute of {}".format(
                     b.name
                 )
             )
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has attribute "
                 "'costing_lower_bound', moving on. Set 'recalculate' to True to delete "
                 "old objects and recalculate for new inputs".format(b.name)
@@ -2620,18 +2624,18 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if not hasattr(b, "costing_upper_bound"):
             b.costing_upper_bound = Var(
                 processes,
-                initialize=10,
+                initialize=1,
                 bounds=(0, 100),
-                doc="estimated upper bound on per unit production cost of site",
+                doc="Estimated upper bound on per unit production cost of site",
                 units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
             )
-            print(
+            _log.info(
                 "New variable 'costing_upper_bound' created as attribute of {}".format(
                     b.name
                 )
             )
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has attribute "
                 "'costing_upper_bound', moving on. Set 'recalculate' to True to delete "
                 "old objects and recalculate for new inputs".format(b.name)
@@ -2664,13 +2668,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     b.costing_lower_bound[i],
                     b.costing_lower_bound_eq[i],
                 )
-            print(
+            _log.info(
                 "New constraint 'costing_lower_bounding_eq' created as attribute of {}".format(
                     b.name
                 )
             )
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has indexed "
                 "constraint 'costing_lower_bounding_eq', reporting existing results. "
                 "Set 'recalculate' to True to delete old objects and recalculate "
@@ -2704,20 +2708,20 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     b.costing_upper_bound[i],
                     b.costing_upper_bound_eq[i],
                 )
-            print(
+            _log.info(
                 "New constraint 'costing_upper_bounding_eq' created as attribute of {}".format(
                     b.name
                 )
             )
         else:
-            print(
+            _log.info(
                 "Flowsheet-level costing block {} already has indexed "
                 "constraint 'costing_upper_bounding_eq', reporting existing results. "
                 "Set 'recalculate' to True to delete old objects and recalculate "
                 "for new inputs".format(b.name)
             )
 
-        print("\nPrinting calculated costing bounds for processes:")
+        _log.info("\nPrinting calculated costing bounds for processes:")
         for p in processes:
             print(
                 p,
@@ -2924,11 +2928,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if isinstance(b, FlowsheetCostingBlockData) and b.library == "REE":
 
             try:
-                CAPEX = (
-                    b.total_BEC +
-                    b.total_installation_cost +
-                    b.other_plant_costs
-                    )
+                CAPEX = b.total_BEC + b.total_installation_cost + b.other_plant_costs
                 OPEX = (
                     b.total_fixed_OM_cost
                     + b.total_variable_OM_cost[0] * pyunits.year
@@ -3117,9 +3117,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.discount_percentage = Param(
             initialize=discount_percentage, units=pyunits.percent
         )
-        b.plant_lifetime = Param(
-            initialize=plant_lifetime, units=pyunits.years
-        )
+        b.plant_lifetime = Param(initialize=plant_lifetime, units=pyunits.years)
 
         if capital_expenditure_percentages is not None:
             b.capital_expenditure_percentages = Param(
@@ -3129,7 +3127,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         range(len(capital_expenditure_percentages)),
                         capital_expenditure_percentages,
                     )
-                )
+                ),
             )
 
         b.capital_escalation_percentage = Param(
@@ -3168,7 +3166,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             """
             Returns expression for series present worth factor.
             """
-            return ( 1 - ( (1+g)**(N) ) * ((1+r)**(-N)) ) / (r - g)
+            return (1 - ((1 + g) ** (N)) * ((1 + r) ** (-N))) / (r - g)
 
         # build constraints
 
@@ -3177,150 +3175,160 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             @b.Constraint()
             def pv_capital_cost_constraint(c):
                 # PV_Capital_Cost = - (%year1 * CAPEX * P/A_year1 + %year2 * CAPEX * P/A_year2 + ...)
-                
-                return c.pv_capital_cost == - pyunits.convert(
+
+                return c.pv_capital_cost == -pyunits.convert(
                     sum(
                         pyunits.convert(
                             capital_expenditure_percentages[idx] * pyunits.percent,
-                            to_units=pyunits.dimensionless) *
-                        CAPEX *
-                        series_present_worth_factor(
+                            to_units=pyunits.dimensionless,
+                        )
+                        * CAPEX
+                        * series_present_worth_factor(
                             pyunits.convert(
-                                c.discount_percentage,
-                                to_units=pyunits.dimensionless),
+                                c.discount_percentage, to_units=pyunits.dimensionless
+                            ),
                             pyunits.convert(
                                 c.capital_escalation_percentage,
-                                to_units=pyunits.dimensionless),
-                            idx + 1
-                            )
+                                to_units=pyunits.dimensionless,
+                            ),
+                            idx + 1,
+                        )
                         for idx in range(len(capital_expenditure_percentages))
-                        ),
-                    to_units = cost_units
-                    )
+                    ),
+                    to_units=cost_units,
+                )
 
         else:
 
             @b.Constraint()
             def pv_capital_cost_constraint(c):
                 # PV_Capital_Cost = - CAPEX
-                
-                return c.pv_capital_cost == - pyunits.convert(
-                    CAPEX *
-                        series_present_worth_factor(
-                            pyunits.convert(
-                                c.discount_percentage,
-                                to_units=pyunits.dimensionless),
-                            pyunits.convert(
-                                c.capital_escalation_percentage,
-                                to_units=pyunits.dimensionless),
-                            0
-                            ),  # formula gives P/A (r, g, 0) = 1
-                        to_units = cost_units
-                        )
+
+                return c.pv_capital_cost == -pyunits.convert(
+                    CAPEX
+                    * series_present_worth_factor(
+                        pyunits.convert(
+                            c.discount_percentage, to_units=pyunits.dimensionless
+                        ),
+                        pyunits.convert(
+                            c.capital_escalation_percentage,
+                            to_units=pyunits.dimensionless,
+                        ),
+                        0,
+                    ),  # formula gives P/A (r, g, 0) = 1
+                    to_units=cost_units,
+                )
 
         @b.Constraint()
         def pv_operating_cost_constraint(c):
             # PV_Operating_Cost = - OPEX * [ P/A_OPEX+CAPEX_periods - P/A_CAPEX_period ]
-            
-            return c.pv_operating_cost == - pyunits.convert(
-                OPEX * (
+
+            return c.pv_operating_cost == -pyunits.convert(
+                OPEX
+                * (
                     series_present_worth_factor(
                         pyunits.convert(
-                            c.discount_percentage,
-                            to_units=pyunits.dimensionless),
+                            c.discount_percentage, to_units=pyunits.dimensionless
+                        ),
                         pyunits.convert(
                             c.operating_inflation_percentage,
-                            to_units=pyunits.dimensionless),
-                        c.plant_lifetime/pyunits.year + len(capital_expenditure_percentages)
-                        ) -
-                    series_present_worth_factor(
+                            to_units=pyunits.dimensionless,
+                        ),
+                        c.plant_lifetime / pyunits.year
+                        + len(capital_expenditure_percentages),
+                    )
+                    - series_present_worth_factor(
                         pyunits.convert(
-                            c.discount_percentage,
-                            to_units=pyunits.dimensionless),
+                            c.discount_percentage, to_units=pyunits.dimensionless
+                        ),
                         pyunits.convert(
                             c.operating_inflation_percentage,
-                            to_units=pyunits.dimensionless),
-                        len(capital_expenditure_percentages)
-                        )
-                    ),
-                to_units = cost_units
-                )
+                            to_units=pyunits.dimensionless,
+                        ),
+                        len(capital_expenditure_percentages),
+                    )
+                ),
+                to_units=cost_units,
+            )
 
         @b.Constraint()
         def pv_revenue_constraint(c):
             # PV_Revenue = REVENUE * [ P/A_OPEX+CAPEX_periods - P/A_CAPEX_period ]
-            
+
             return c.pv_revenue == pyunits.convert(
-                REVENUE * (
+                REVENUE
+                * (
                     series_present_worth_factor(
                         pyunits.convert(
-                            c.discount_percentage,
-                            to_units=pyunits.dimensionless),
+                            c.discount_percentage, to_units=pyunits.dimensionless
+                        ),
                         pyunits.convert(
                             c.revenue_inflation_percentage,
-                            to_units=pyunits.dimensionless),
-                        c.plant_lifetime/pyunits.year + len(capital_expenditure_percentages)
-                        ) -
-                    series_present_worth_factor(
+                            to_units=pyunits.dimensionless,
+                        ),
+                        c.plant_lifetime / pyunits.year
+                        + len(capital_expenditure_percentages),
+                    )
+                    - series_present_worth_factor(
                         pyunits.convert(
-                            c.discount_percentage,
-                            to_units=pyunits.dimensionless),
+                            c.discount_percentage, to_units=pyunits.dimensionless
+                        ),
                         pyunits.convert(
                             c.revenue_inflation_percentage,
-                            to_units=pyunits.dimensionless),
-                        len(capital_expenditure_percentages)
-                        )
-                    ),
-                to_units = cost_units
-                )
+                            to_units=pyunits.dimensionless,
+                        ),
+                        len(capital_expenditure_percentages),
+                    )
+                ),
+                to_units=cost_units,
+            )
 
         if royalty_expression is None:
             # PV_Royalties = - %royalty_charge_of_revenue * REVENUE
 
             @b.Constraint()
             def pv_royalties_constraint(c):
-                
-                return c.pv_royalties == - pyunits.convert(
+
+                return c.pv_royalties == -pyunits.convert(
                     pyunits.convert(
                         c.royalty_charge_percentage_of_revenue,
-                        to_units=pyunits.dimensionless
-                        ) * c.pv_revenue,
-                    to_units = cost_units
+                        to_units=pyunits.dimensionless,
                     )
+                    * c.pv_revenue,
+                    to_units=cost_units,
+                )
 
         else:
 
             @b.Constraint()
             def pv_royalties_constraint(c):
-                
-                return c.pv_royalties == - pyunits.convert(
-                    royalty_expression,
-                    to_units = cost_units
-                    )
+
+                return c.pv_royalties == -pyunits.convert(
+                    royalty_expression, to_units=cost_units
+                )
 
         if debt_expression is None:
 
             @b.Constraint()
             def loan_debt_constraint(c):
                 # Debt  = - %debt_charge_of_CAPEX * CAPEX
-    
+
                 return c.loan_debt == pyunits.convert(
                     pyunits.convert(
-                        c.debt_percentage_of_CAPEX,
-                        to_units=pyunits.dimensionless
-                        ) * CAPEX,
-                    to_units = cost_units
+                        c.debt_percentage_of_CAPEX, to_units=pyunits.dimensionless
                     )
+                    * CAPEX,
+                    to_units=cost_units,
+                )
 
         else:
 
             @b.Constraint()
             def loan_debt_constraint(c):
-    
+
                 return c.loan_debt == pyunits.convert(
-                    debt_expression,
-                    to_units = cost_units
-                    )
+                    debt_expression, to_units=cost_units
+                )
 
         @b.Constraint()
         def loan_annual_payment_constraint(c):
@@ -3328,59 +3336,66 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # Debt * [ %interest * (1 + interest)**loan_length ] / [ (1 + interest)**loan_length - 1 ]
 
             return c.loan_annual_payment == pyunits.convert(
-                c.loan_debt * (
+                c.loan_debt
+                * (
                     pyunits.convert(
-                        c.loan_interest_percentage,
-                        to_units = pyunits.dimensionless
-                        ) *
-                    (
-                        1 + pyunits.convert(
-                            c.loan_interest_percentage,
-                            to_units = pyunits.dimensionless
-                            )
-                        )**(c.loan_repayment_period/pyunits.year)
-                    ) /
-                (
-                    (
-                        1 + pyunits.convert(
-                            c.loan_interest_percentage,
-                            to_units = pyunits.dimensionless
-                            )
-                        )**(c.loan_repayment_period/pyunits.year)
-                    - 1
-                    ),
-                to_units = cost_units
+                        c.loan_interest_percentage, to_units=pyunits.dimensionless
+                    )
+                    * (
+                        1
+                        + pyunits.convert(
+                            c.loan_interest_percentage, to_units=pyunits.dimensionless
+                        )
+                    )
+                    ** (c.loan_repayment_period / pyunits.year)
                 )
+                / (
+                    (
+                        1
+                        + pyunits.convert(
+                            c.loan_interest_percentage, to_units=pyunits.dimensionless
+                        )
+                    )
+                    ** (c.loan_repayment_period / pyunits.year)
+                    - 1
+                ),
+                to_units=cost_units,
+            )
 
         @b.Constraint()
         def pv_loan_interest_constraint(c):
             # PV_Loan_Interest_Owed = - loan_length * Annual_Loan_Payment - Debt
-            
-            return c.pv_loan_interest == - pyunits.convert(
-                c.loan_repayment_period/pyunits.year * c.loan_annual_payment - c.loan_debt,
-                to_units = cost_units
-                )
+
+            return c.pv_loan_interest == -pyunits.convert(
+                c.loan_repayment_period / pyunits.year * c.loan_annual_payment
+                - c.loan_debt,
+                to_units=cost_units,
+            )
 
         @b.Constraint()
         def pv_capital_depreciation_constraint(c):
             # PV_Capital_Depreciation = - CAPEX * [1 - ( 1 - %depreciation/plant_lifetime)**plant_lifetime]
-            
-            return c.pv_capital_depreciation == - pyunits.convert(
-                CAPEX * (
-                    1 - (
-                        1 - pyunits.convert(
+
+            return c.pv_capital_depreciation == -pyunits.convert(
+                CAPEX
+                * (
+                    1
+                    - (
+                        1
+                        - pyunits.convert(
                             c.capital_depreciation_declining_balance_percentage,
-                            to_units = pyunits.dimensionless
-                            ) /
-                        (c.plant_lifetime/pyunits.year)
-                        )**(c.plant_lifetime/pyunits.year)
-                        ),
-                to_units = cost_units
-                )
+                            to_units=pyunits.dimensionless,
+                        )
+                        / (c.plant_lifetime / pyunits.year)
+                    )
+                    ** (c.plant_lifetime / pyunits.year)
+                ),
+                to_units=cost_units,
+            )
 
         @b.Constraint()
         def npv_constraint(c):
-            
+
             return c.npv == pyunits.convert(
                 c.pv_revenue
                 + c.pv_capital_cost
@@ -3388,5 +3403,5 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 + c.pv_royalties
                 + c.pv_loan_interest
                 + c.pv_capital_depreciation,
-                to_units = cost_units
-                )
+                to_units=cost_units,
+            )

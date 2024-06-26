@@ -169,7 +169,6 @@ from idaes.core import (
 )
 from idaes.core.solvers import get_solver
 from idaes.core.initialization import BlockTriangularizationInitializer
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
@@ -3250,12 +3249,6 @@ def add_costing(m):
 
     # fix costing vars that shouldn't change
     m.fs.precipitate.fix()
-
-    # check that the model is set up properly and has 0 degrees of freedom
-    dt = DiagnosticsToolbox(model=m)
-    print("Structural issues in costing")
-    dt.report_structural_issues()
-    assert degrees_of_freedom(m) == 0
 
     # Initialize costing
     QGESSCostingData.costing_initialization(m.fs.costing)

@@ -139,17 +139,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         process_contingency_percentage=15,
         # arguments related to Fixed OM costs
         nameplate_capacity=500,
-        labor_types=[
-            "skilled",
-            "unskilled",
-            "supervisor",
-            "maintenance",
-            "technician",
-            "engineer",
-        ],
-        labor_rate=[27.90, 23.26, 30.29, 24.06, 23.43, 46.82],
+        labor_types=None,
+        labor_rate=None,
         labor_burden=25,
-        operators_per_shift=[2, 5, 2, 3, 1, 2],
+        operators_per_shift=None,
         hours_per_shift=8,
         shifts_per_day=3,
         operating_days_per_year=336,
@@ -178,7 +171,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         calculate_NPV=False,
         discount_percentage=None,
         plant_lifetime=None,
-        capital_expenditure_percentages=[10, 60, 30],
+        capital_expenditure_percentages=None,
         capital_escalation_percentage=3.6,
         operating_inflation_percentage=3,
         revenue_inflation_percentage=3,
@@ -1676,17 +1669,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
     # pylint: disable-next=dangerous-default-value
     def get_fixed_OM_costs(
         b,
-        labor_types=[
-            "skilled",
-            "unskilled",
-            "supervisor",
-            "maintenance",
-            "technician",
-            "engineer",
-        ],
-        labor_rate=[27.90, 23.26, 30.29, 24.06, 23.43, 46.82],
+        labor_types=None,
+        labor_rate=None,
         labor_burden=25,
-        operators_per_shift=[2, 5, 2, 3, 1, 2],
+        operators_per_shift=None,
         hours_per_shift=8,
         shifts_per_day=3,
         operating_days_per_year=336,
@@ -1797,6 +1783,23 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"sale price. Sale prices exist for the following products: "
                 f"{list(default_sale_prices.keys())}"
             )
+
+        # set default values
+        if labor_types is None:
+            labor_types = [
+                "skilled",
+                "unskilled",
+                "supervisor",
+                "maintenance",
+                "technician",
+                "engineer",
+            ]
+
+        if labor_rate is None:
+            labor_rate = [27.90, 23.26, 30.29, 24.06, 23.43, 46.82]
+
+        if operators_per_shift is None:
+            operators_per_shift = [2, 5, 2, 3, 1, 2]
 
         # make params
         b.labor_rate = Param(
@@ -2749,7 +2752,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         annual_revenue=None,
         cost_year=None,
         # capital_escalation arguments
-        capital_expenditure_percentages=[10, 60, 30],
+        capital_expenditure_percentages=None,
         capital_escalation_percentage=3.6,
         # inflation arguments
         operating_inflation_percentage=3,
@@ -3002,27 +3005,28 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         # check capital expenditure arguments
-        if capital_expenditure_percentages is not None:
+        if capital_expenditure_percentages is None:
+            capital_expenditure_percentages = [10, 60, 30]
 
-            if not isinstance(capital_expenditure_percentages, list):
-                raise TypeError(
-                    f"Argument {capital_expenditure_percentages} is not a list. "
-                    "Capital expenditure percentages per year must be passed as "
-                    "a list."
-                )
-            if len(capital_expenditure_percentages) == 0:
-                raise TypeError(
-                    f"Argument {capital_expenditure_percentages} has a length of "
-                    "zero. The capital expenditure percentages list must have a "
-                    "nonzero length."
-                )
+        if not isinstance(capital_expenditure_percentages, list):
+            raise TypeError(
+                f"Argument {capital_expenditure_percentages} is not a list. "
+                "Capital expenditure percentages per year must be passed as "
+                "a list."
+            )
+        if len(capital_expenditure_percentages) == 0:
+            raise TypeError(
+                f"Argument {capital_expenditure_percentages} has a length of "
+                "zero. The capital expenditure percentages list must have a "
+                "nonzero length."
+            )
 
-            if not sum(capital_expenditure_percentages) == 100:
-                raise TypeError(
-                    f"Argument {capital_expenditure_percentages} has a sum of "
-                    "{sum(capital_expenditure_percentages)}. The capital "
-                    "expenditure percentages list must sum to 100 percent."
-                )
+        if not sum(capital_expenditure_percentages) == 100:
+            raise TypeError(
+                f"Argument {capital_expenditure_percentages} has a sum of "
+                "{sum(capital_expenditure_percentages)}. The capital "
+                "expenditure percentages list must sum to 100 percent."
+            )
 
         # check expression arguments
         if royalty_expression is not None:

@@ -35,6 +35,7 @@ __version__ = "1.0.0"
 import textwrap
 from sys import stdout
 
+from pyomo.common.config import ConfigDict, ConfigValue, In
 from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
@@ -167,21 +168,21 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         recovery_rate_per_year=None,
         CE_index_year="2021",
         watertap_blocks=None,
-        # arguments related to NPV calculation
-        calculate_NPV=False,
-        discount_percentage=None,
-        plant_lifetime=None,
-        capital_expenditure_percentages=None,
-        capital_escalation_percentage=3.6,
-        operating_inflation_percentage=3,
-        revenue_inflation_percentage=3,
-        royalty_charge_percentage_of_revenue=6.5,
-        royalty_expression=None,
-        debt_percentage_of_CAPEX=50,
-        debt_expression=None,
-        loan_interest_percentage=6,
-        loan_repayment_period=10,
-        capital_depreciation_declining_balance_percentage=150,
+        **kwargs,
+        # keyword arguments related to NPV calculation
+        # discount_percentage=None,
+        # plant_lifetime=None,
+        # capital_expenditure_percentages=None,
+        # capital_escalation_percentage=3.6,
+        # operating_inflation_percentage=3,
+        # revenue_inflation_percentage=3,
+        # royalty_charge_percentage_of_revenue=6.5,
+        # royalty_expression=None,
+        # debt_percentage_of_CAPEX=50,
+        # debt_expression=None,
+        # loan_interest_percentage=6,
+        # loan_repayment_period=10,
+        # capital_depreciation_declining_balance_percentage=150,
     ):
         """
         This method builds process-wide costing, including fixed and variable
@@ -289,7 +290,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 per ton of product (note, this is not part of the TOC)
             CE_index_year: year for cost basis, e.g. "2021" to use 2021 dollars
             watertap_block: list of unit model blocks corresponding to watertap models
-            calculate_NPV: True/false flag for calculating net present value (NPV)
+
+            Keyword arguments related to NPV:
+            calculate_NPV: True/false flag for calculating net present value (NPV).
             discount_percentage: rate at which currency devalues over time;
                 alternatively, this is the required rate of return on investment.
             plant_lifetime: length of operating period in years.
@@ -309,15 +312,162 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             royalty_charge_percentage_of_revenue: percentage of revenue charged
                 as royalties; ignored if royalty_expression is not None. Set to zero
                 to indicate no royalties are charged.
-            royalty_expression: set the value or expression to calculate royalties
+            royalty_expression: set the value or expression to calculate royalties.
             debt_percentage_of_CAPEX: percentage of CAPEX financed by debt; ignored if
                 debt_expression is not None. Set to zero to indicate no loans are taken out on capital.
-            debt_expression: set the value or expression to calculate total debt
+            debt_expression: set the value or expression to calculate total debt.
             loan_interest_percentage: interest rate for loan repayment.
             loan_repayment_period: length of repayment period in years.
             capital_depreciation_declining_balance_percentage: factor to use for declining balance
                 depreciation. Set to 0 to indicate that capital does not depreciate over time.
         """
+
+        # build configuration dictionary
+        CONFIG = QGESSCostingData.CONFIG()
+        CONFIG.declare(
+            "calculate_NPV",
+            ConfigValue(
+                default=False,
+                domain=bool,
+                description="True/false flag for calculating net present value (NPV).",
+            ),
+        )
+        CONFIG.declare(
+            "discount_percentage",
+            ConfigValue(
+                default=None,
+                domain=float,
+                description="rate at which currency devalues over time; alternatively, this is the required rate of return on investment.",
+            ),
+        )
+        CONFIG.declare(
+            "plant_lifetime",
+            ConfigValue(
+                default=None,
+                domain=float,
+                description="length of operating period in years.",
+            ),
+        )
+        CONFIG.declare(
+            "total_capital_cost",
+            ConfigValue(
+                default=None,
+                domain=float,
+                description="value for total capital cost; ignored if b is not None.",
+            ),
+        )
+        CONFIG.declare(
+            "annual_operating_cost",
+            ConfigValue(
+                default=None,
+                domain=float,
+                description="value for total operating cost; ignored if b is not None.",
+            ),
+        )
+        CONFIG.declare(
+            "annual_revenue",
+            ConfigValue(
+                default=None,
+                domain=float,
+                description="value for total revenue; ignored if b is not None.",
+            ),
+        )
+        CONFIG.declare(
+            "cost_year",
+            ConfigValue(
+                default=None,
+                domain=str,
+                description="assumed project start year for costs, which is the basis for NPV results",
+            ),
+        )
+        CONFIG.declare(
+            "capital_expenditure_percentages",
+            ConfigValue(
+                default=None,
+                domain=list,
+                description="a list of values that sum to 100 representing how capital costs are spread over a capital expenditure period; for example, an input of [10, 60, 30] is parsed as a 3-year period where capital costs are spread as 10% in year 1, 60% in year 2,and 30% in year 3. The capital period precedes the operating period. Set to None to indicate no expenditure period.",
+            ),
+        )
+        CONFIG.declare(
+            "capital_escalation_percentage",
+            ConfigValue(
+                default=3.6,
+                domain=float,
+                description="rate at which capital costs escalate during the capital expenditure period. Set to 0 to indicate expenditure is spread but there is no cost escalation.",
+            ),
+        )
+        CONFIG.declare(
+            "operating_inflation_percentage",
+            ConfigValue(
+                default=3,
+                domain=float,
+                description="inflation rate for operating costs during the operating period. Set to 0 to indicate no inflation.",
+            ),
+        )
+        CONFIG.declare(
+            "revenue_inflation_percentage",
+            ConfigValue(
+                default=3,
+                domain=float,
+                description="inflation rate for revenue during the operating period. Set to 0 to indicate no inflation.",
+            ),
+        )
+        CONFIG.declare(
+            "royalty_charge_percentage_of_revenue",
+            ConfigValue(
+                default=6.5,
+                domain=float,
+                description="percentage of revenue charged as royalties; ignored if royalty_expression is not None. Set to zero to indicate no royalties are charged.",
+            ),
+        )
+        CONFIG.declare(
+            "royalty_expression",
+            ConfigValue(
+                default=None,
+                domain=In([ScalarExpression, Expression, Param, Var]),
+                description="set the value or expression to calculate royalties.",
+            ),
+        )
+        CONFIG.declare(
+            "debt_percentage_of_CAPEX",
+            ConfigValue(
+                default=50,
+                domain=float,
+                description="percentage of CAPEX financed by debt; ignored if debt_expression is not None. Set to zero to indicate no loans are taken out on capital.",
+            ),
+        )
+        CONFIG.declare(
+            "debt_expression",
+            ConfigValue(
+                default=None,
+                domain=In([ScalarExpression, Expression, Param, Var]),
+                description="set the value or expression to calculate total debt.",
+            ),
+        )
+        CONFIG.declare(
+            "loan_interest_percentage",
+            ConfigValue(
+                default=6, domain=float, description="interest rate for loan repayment."
+            ),
+        )
+        CONFIG.declare(
+            "loan_repayment_period",
+            ConfigValue(
+                default=10,
+                domain=float,
+                description="length of repayment period in years.",
+            ),
+        )
+        CONFIG.declare(
+            "capital_depreciation_declining_balance_percentage",
+            ConfigValue(
+                default=150,
+                domain=float,
+                description="factor to use for declining balance depreciation. Set to 0 to indicate that capital does not depreciate over time.",
+            ),
+        )
+
+        self.config = CONFIG(kwargs)
 
         # define costing library
         if hasattr(self, "library") and self.library == "REE":  # costing already exists
@@ -982,21 +1132,21 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         "recovery_rate_per_year cannot be None."
                     )
 
-            if calculate_NPV:
+            if self.config.calculate_NPV:
                 self.calculate_NPV(
-                    discount_percentage=discount_percentage,
-                    plant_lifetime=plant_lifetime,
-                    capital_expenditure_percentages=capital_expenditure_percentages,
-                    capital_escalation_percentage=capital_escalation_percentage,
-                    operating_inflation_percentage=operating_inflation_percentage,
-                    revenue_inflation_percentage=revenue_inflation_percentage,
-                    royalty_charge_percentage_of_revenue=royalty_charge_percentage_of_revenue,
-                    royalty_expression=royalty_expression,
-                    debt_percentage_of_CAPEX=debt_percentage_of_CAPEX,
-                    debt_expression=debt_expression,
-                    loan_interest_percentage=loan_interest_percentage,
-                    loan_repayment_period=loan_repayment_period,
-                    capital_depreciation_declining_balance_percentage=capital_depreciation_declining_balance_percentage,
+                    discount_percentage=self.config.discount_percentage,
+                    plant_lifetime=self.config.plant_lifetime,
+                    capital_expenditure_percentages=self.config.capital_expenditure_percentages,
+                    capital_escalation_percentage=self.config.capital_escalation_percentage,
+                    operating_inflation_percentage=self.config.operating_inflation_percentage,
+                    revenue_inflation_percentage=self.config.revenue_inflation_percentage,
+                    royalty_charge_percentage_of_revenue=self.config.royalty_charge_percentage_of_revenue,
+                    royalty_expression=self.config.royalty_expression,
+                    debt_percentage_of_CAPEX=self.config.debt_percentage_of_CAPEX,
+                    debt_expression=self.config.debt_expression,
+                    loan_interest_percentage=self.config.loan_interest_percentage,
+                    loan_repayment_period=self.config.loan_repayment_period,
+                    capital_depreciation_declining_balance_percentage=self.config.capital_depreciation_declining_balance_percentage,
                 )
 
     @staticmethod
@@ -2916,10 +3066,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             royalty_charge_percentage_of_revenue: percentage of revenue charged
                 as royalties; ignored if royalty_expression is not None. Set to zero
                 to indicate no royalties are charged.
-            royalty_expression: set the value or expression to calculate royalties
+            royalty_expression: set the value or expression to calculate royalties.
             debt_percentage_of_CAPEX: percentage of CAPEX financed by debt; ignored if
                 debt_expression is not None. Set to zero to indicate no loans are taken out on capital.
-            debt_expression: set the value or expression to calculate total debt
+            debt_expression: set the value or expression to calculate total debt.
             loan_interest_percentage: interest rate for loan repayment.
             loan_repayment_period: length of repayment period in years.
             capital_depreciation_declining_balance_percentage: factor to use for declining balance
@@ -3003,6 +3153,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"Argument {b} is not a valid block type. The argument b "
                 "must be passed a FlowsheetCostingBlockData or FlowsheetBlock object."
             )
+
+        # check required arguments
+        if discount_percentage is None:
+            raise AttributeError("Missing required argument discount_percentage.")
+        if plant_lifetime is None:
+            raise AttributeError("Missing required argument plant_lifetime.")
 
         # check capital expenditure arguments
         if capital_expenditure_percentages is None:

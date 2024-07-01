@@ -19,6 +19,7 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 
+
 def build_model():
     """
     Method of building a solvent extraction model with a specified number of stages
@@ -54,6 +55,7 @@ def build_model():
     )
 
     return m
+
 
 def set_inputs(m):
     """
@@ -131,6 +133,7 @@ def set_inputs(m):
     m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].fix(8.008e-6)
 
     m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
+
 
 if __name__ == "__main__":
 

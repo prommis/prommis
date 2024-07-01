@@ -17,12 +17,12 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 
+
 def build_model():
-   
     """
     Method of building a solvent extraction model with a specified number of stages
     and with two separate property packages for the two inlet streams.
-    This is a stripping operation, so an additional argument regarding the direction 
+    This is a stripping operation, so an additional argument regarding the direction
     of mass transfer flow has to be specified.
     """
 
@@ -53,11 +53,11 @@ def build_model():
 
     return m
 
-def set_inputs(m):
 
+def set_inputs(m):
     """
     Specification of the values of the partition coefficients of the elements
-    based on the values provided in the REESim file. 
+    based on the values provided in the REESim file.
 
     """
 
@@ -114,6 +114,7 @@ def set_inputs(m):
 
     m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
 
+
 if __name__ == "__main__":
 
     m = build_model()
@@ -142,4 +143,3 @@ if __name__ == "__main__":
 
     # Final aqueous outlets display
     m.fs.solex.mscontactor.aqueous[0, 1].conc_mass_comp.display()
-

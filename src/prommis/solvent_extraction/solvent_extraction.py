@@ -83,6 +83,7 @@ from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.initialization import ModularInitializerBase
 from idaes.models.unit_models.mscontactor import MSContactor
 
+
 class SolventExtractionInitializer(ModularInitializerBase):
     """
     This is a general purpose Initializer  for the Solvent Extraction unit model.

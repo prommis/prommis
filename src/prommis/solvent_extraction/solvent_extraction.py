@@ -70,7 +70,7 @@ function of the parameter of partition coefficient defined by the user.
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Param
+from pyomo.environ import Constraint, Param, Block
 from pyomo.network import Port
 
 from idaes.core import (
@@ -80,7 +80,44 @@ from idaes.core import (
     useDefault,
 )
 from idaes.core.util.config import is_physical_parameter_block
+from idaes.core.initialization import ModularInitializerBase
 from idaes.models.unit_models.mscontactor import MSContactor
+
+class SolventExtractionInitializer(ModularInitializerBase):
+    """
+    This is a general purpose Initializer  for the Solvent Extraction unit model.
+
+    This routine calls the initializer for the internal MSContactor model.
+
+    """
+
+    CONFIG = ModularInitializerBase.CONFIG()
+
+    def initialize_main_model(
+        self,
+        model: Block,
+    ):
+        """
+        Initialization routine for MSContactor Blocks.
+
+        Args:
+            model: model to be initialized
+
+        Returns:
+            None
+        """
+        model.mscontactor.material_transfer_term.fix(1e-8)
+
+        msc_init = model.mscontactor.default_initializer()
+        msc_init.initialize(model.mscontactor)
+
+        model.mscontactor.material_transfer_term.unfix()
+
+        solver = self._get_solver()
+        init_model = solver.solve(model.mscontactor)
+
+        return init_model
+
 
 Stream_Config = ConfigDict()
 

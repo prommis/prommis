@@ -6,9 +6,9 @@ from pyomo.environ import (
 
 from idaes.core.util import DiagnosticsToolbox
 
-from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer
-
 import pytest
+
+from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer
 
 from prommis.solvent_extraction.sx_model_flowsheet_steady_state import (
     build_model,

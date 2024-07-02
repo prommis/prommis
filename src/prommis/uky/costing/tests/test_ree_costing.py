@@ -70,7 +70,7 @@ if watertap_costing_available:
 _log = idaeslog.getLogger(__name__)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_register_REE_currency_units_twice(caplog):
     # check that units exist - they are registered when QGESSCosting imports
     assert hasattr(pyunits, "USD_UKy_2019")
@@ -934,12 +934,12 @@ class TestREECosting(object):
         model = base_model()
         return model
 
-    @pytest.mark.component
+    @pytest.mark.unit
     def test_base_model_diagnostics(self, model):
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
-    @pytest.mark.component
+    @pytest.mark.unit
     def test_REE_costing(self, model):
         # full smoke test with all components, O&M costs, and extra costs included
         CE_index_year = "UKy_2019"
@@ -1156,7 +1156,7 @@ class TestREECosting(object):
         # check that the model is set up properly and has 0 degrees of freedom
         assert degrees_of_freedom(model) == 0
 
-    @pytest.mark.component
+    @pytest.mark.unit
     def test_full_model_diagnostics(self, model):
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
@@ -1225,7 +1225,7 @@ class TestREECosting(object):
         )
         assert model.fs.costing.npv.value == pytest.approx(-4538.9082, rel=1e-4)
 
-    @pytest.mark.component
+    @pytest.mark.unit
     def test_report(self, model):
         # test report methods
         QGESSCostingData.report(model.fs.costing, export=True)
@@ -1240,7 +1240,7 @@ class TestREECosting(object):
         QGESSCostingData.display_bare_erected_costs(model.fs.costing)
         QGESSCostingData.display_flowsheet_cost(model.fs.costing)
 
-    @pytest.mark.component
+    @pytest.mark.unit
     def test_costing_bounding_build_diagnostics(self, model):
         # test costing bounding method
         CE_index_year = "UKy_2019"
@@ -2065,8 +2065,8 @@ class TestHDDRecyclingCosting(object):
 
         return m
 
-    @pytest.mark.component
-    def test_HDD_Recycling_costing_build_diagnostic(self, model):
+    @pytest.mark.unit
+    def test_HDD_Recycling_costing_build_diagnostics(self, model):
         CE_index_year = "2019"
         model.fs.costing.build_process_costs(
             CE_index_year=CE_index_year,
@@ -2258,7 +2258,7 @@ def test_REE_costing_CE_index_year():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_disallowedunitmodelcostunits():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -2287,7 +2287,7 @@ def test_REE_costing_disallowedunitmodelcostunits():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_nonexistentcostaccount():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -2389,7 +2389,7 @@ def test_REE_costing_multipleaccountssameparameter():
     )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_multipleaccountsdifferentparameters():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -2521,7 +2521,7 @@ def test_REE_costing_additionalcostingparams_overwrite():
     )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_additionalcostingparams_nooverwrite():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -2717,7 +2717,7 @@ def test_REE_costing_scaledownparallelequip():
     ].value == pytest.approx(5.0000, rel=1e-4)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_disallowedbuildprocesscostunits():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3096,7 +3096,7 @@ def test_REE_costing_fixedOM_defaults():
     assert m.fs.costing.total_sales_revenue.value == pytest.approx(64.382, rel=1e-4)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_twiceonsamemodel():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3144,7 +3144,7 @@ def test_REE_costing_fixedOM_twiceonsamemodel():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_pureproductnotpassed():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3172,7 +3172,7 @@ def test_REE_costing_fixedOM_pureproductnotpassed():
         m.fs.costing.build_process_costs()
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_pureproductnotadict():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3204,7 +3204,7 @@ def test_REE_costing_fixedOM_pureproductnotadict():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_mixedproductnotpassed():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3236,7 +3236,7 @@ def test_REE_costing_fixedOM_mixedproductnotpassed():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_mixedproductnotadict():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3271,7 +3271,7 @@ def test_REE_costing_fixedOM_mixedproductnotadict():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_salesprice():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3303,7 +3303,7 @@ def test_REE_costing_fixedOM_salesprice():
     )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_salespricenotadict():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3339,7 +3339,7 @@ def test_REE_costing_fixedOM_salespricenotadict():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_pureproductnoprice():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3379,7 +3379,7 @@ def test_REE_costing_fixedOM_pureproductnoprice():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_mixedproductnoprice():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3426,7 +3426,7 @@ def test_REE_costing_fixedOM_mixedproductnoprice():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_disallowedlabortype():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3640,7 +3640,7 @@ def test_REE_costing_variableOM_steadystateflowsheet():
     )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_nofixedOM():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3684,7 +3684,7 @@ def test_REE_costing_variableOM_nofixedOM():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_nofeedinput():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3788,7 +3788,7 @@ def test_REE_costing_variableOM_feedinputnounits():
     assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_resourcesnotalist():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3838,7 +3838,7 @@ def test_REE_costing_variableOM_resourcesnotalist():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_ratesnotalist():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3951,7 +3951,7 @@ def test_REE_costing_variableOM_customprices():
     )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_custompricesnotadict():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -4002,7 +4002,7 @@ def test_REE_costing_variableOM_custompricesnotadict():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_resourcesratesdifflengths():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -4050,7 +4050,7 @@ def test_REE_costing_variableOM_resourcesratesdifflengths():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_resourcenotinpricelist():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -4415,7 +4415,7 @@ def test_REE_costing_recovery_transportcost(transport_cost_obj):
     assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_recovery_Nonewithtransportcost():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)

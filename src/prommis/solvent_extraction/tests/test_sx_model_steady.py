@@ -38,11 +38,6 @@ def test_solve(model):
     initializer = SolventExtractionInitializer()
     initializer.initialize(model.fs.solex)
 
-    try:
-        initializer.initialize(model.fs.solex)
-    except:
-        pass
-
     solver = SolverFactory("ipopt")
     results = solver.solve(model, tee=False)
 

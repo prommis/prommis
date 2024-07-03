@@ -148,10 +148,7 @@ if __name__ == "__main__":
     """
 
     initializer = SolventExtractionInitializer()
-    try:
-        initializer.initialize(m.fs.solex)
-    except:
-        pass
+    initializer.initialize(m.fs.solex)
 
     """ 
     Solution of the model and display of the final results.
@@ -159,8 +156,6 @@ if __name__ == "__main__":
     """
 
     solver = SolverFactory("ipopt")
-    solver.options["bound_push"] = 1e-8
-    solver.options["mu_init"] = 1e-8
     solver.solve(m, tee=True)
 
     # Final organic outlet display

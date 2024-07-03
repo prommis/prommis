@@ -134,8 +134,8 @@ if __name__ == "__main__":
     """
 
     solver = SolverFactory("ipopt")
-    solver.options["bound_push"] = 1e-8
-    solver.options["mu_init"] = 1e-8
+    # solver.options["bound_push"] = 1e-8
+    # solver.options["mu_init"] = 1e-8
     solver.solve(m, tee=True)
 
     # Final organic outlet display

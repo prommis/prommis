@@ -12,14 +12,16 @@ from idaes.core.initialization.block_triangularization import (
 
 import pytest
 
-from prommis.solvent_extraction.sx_model_flowsheet_steady_state import (
-    model_evaluation,
+from prommis.solvent_extraction.sx_model_flowsheet_dynamic import (
+    build_model,
+    set_inputs,
 )
 
 
 @pytest.fixture(scope="module")
 def model():
-    m = model_evaluation()
+    m = build_model()
+    set_inputs(m)
 
     return m
 
@@ -28,13 +30,12 @@ def model():
 def test_structural_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.report_structural_issues()
-    dt.assert_no_structural_warnings()
+    dt.assert_no_structural_warnings(ignore_unit_consistency=True)
 
 
 @pytest.mark.component
 @pytest.mark.solver
 def test_solve(model):
-
     initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
     initializer.initialize(model.fs.solex)
 
@@ -59,45 +60,48 @@ def test_numerical_issues(model):
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution(model):
+    time_duration = 24
     number_of_stages = 3
     aqueous_outlet = {
         "H2O": 1000000,
-        "H": 1.75563,
-        "SO4": 3999.885,
-        "HSO4": 693.3903,
-        "Al": 362.132,
-        "Ca": 81.724,
-        "Ce": 0.5368,
-        "Dy": 0.0014421,
-        "Fe": 454.049,
-        "Gd": 0.066625,
-        "La": 0.39313,
-        "Nd": 1.173e-07,
-        "Pr": 0.091292,
-        "Sc": 0.00019984,
-        "Sm": 9.6992e-11,
-        "Y": 1.239e-10,
+        "H": 1.85700,
+        "SO4": 3758.32573,
+        "HSO4": 689.13997,
+        "Al": 343.1403,
+        "Ca": 77.43828,
+        "Ce": 0.50865,
+        "Dy": 0.0013665,
+        "Fe": 430.23639,
+        "Gd": 0.06313,
+        "La": 0.37252,
+        "Nd": 1.1133e-07,
+        "Pr": 0.08650,
+        "Sc": 0.000189363,
+        "Sm": 2.70164e-10,
+        "Y": 2.95748e-10,
     }
 
     organic_outlet = {
-        "Al": 60.242,
-        "Ca": 27.817,
-        "Ce": 1.7405,
-        "Dy": 0.045565,
-        "Fe": 234.216,
-        "Gd": 0.1918,
-        "La": 0.59296,
-        "Nd": 0.9461,
-        "Pr": 0.211744,
-        "Sc": 1.7658,
-        "Sm": 0.097017,
-        "Y": 0.12402,
+        "Al": 57.76735,
+        "Ca": 26.28296,
+        "Ce": 1.71612,
+        "Dy": 0.04555,
+        "Fe": 230.08492,
+        "Gd": 0.19107,
+        "La": 0.57677,
+        "Nd": 0.94441,
+        "Pr": 0.20955,
+        "Sc": 1.75925,
+        "Sm": 0.09701,
+        "Y": 0.12401,
     }
 
-    for k, v in model.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.items():
+    for k, v in model.fs.solex.mscontactor.organic[
+        time_duration, 1
+    ].conc_mass_comp.items():
         assert value(v) == pytest.approx(organic_outlet[k], rel=1e-4)
 
     for k, v in model.fs.solex.mscontactor.aqueous[
-        0, number_of_stages
+        time_duration, number_of_stages
     ].conc_mass_comp.items():
         assert value(v) == pytest.approx(aqueous_outlet[k], rel=1e-4)

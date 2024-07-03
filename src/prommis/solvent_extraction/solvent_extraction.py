@@ -1,3 +1,16 @@
+#################################################################################
+# The Institute for the Design of Advanced Energy Systems Integrated Platform
+# Framework (IDAES IP) was produced under the DOE Institute for the
+# Design of Advanced Energy Systems (IDAES).
+#
+# Copyright (c) 2018-2023 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory,
+# National Technology & Engineering Solutions of Sandia, LLC, Carnegie Mellon
+# University, West Virginia University Research Corporation, et al.
+# All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
+# for full copyright and license information.
+#################################################################################
+
 """
 Solvent Extraction Model
 
@@ -70,7 +83,7 @@ function of the parameter of partition coefficient defined by the user.
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Param
+from pyomo.environ import Constraint, Param, Block
 from pyomo.network import Port
 
 from idaes.core import (
@@ -80,7 +93,57 @@ from idaes.core import (
     useDefault,
 )
 from idaes.core.util.config import is_physical_parameter_block
+from idaes.core.initialization import ModularInitializerBase
 from idaes.models.unit_models.mscontactor import MSContactor
+
+
+class SolventExtractionInitializer(ModularInitializerBase):
+    """
+    This is a general purpose Initializer  for the Solvent Extraction unit model.
+
+    This routine calls the initializer for the internal MSContactor model.
+
+    """
+
+    CONFIG = ModularInitializerBase.CONFIG()
+
+    CONFIG.declare(
+        "ssc_solver_options",
+        ConfigDict(
+            implicit=True,
+            description="Dict of arguments for solver calls by ssc_solver",
+        ),
+    )
+    CONFIG.declare(
+        "calculate_variable_options",
+        ConfigDict(
+            implicit=True,
+            description="Dict of options to pass to 1x1 block solver",
+            doc="Dict of options to pass to calc_var_kwds argument in "
+            "scc_solver method.",
+        ),
+    )
+
+    def initialize_main_model(
+        self,
+        model: Block,
+    ):
+        """
+        Initialization routine for MSContactor Blocks.
+
+        Args:
+            model: model to be initialized
+
+        Returns:
+            None
+        """
+        # Initialize MSContactor
+        msc_init = model.mscontactor.default_initializer(
+            ssc_solver_options=self.config.ssc_solver_options,
+            calculate_variable_options=self.config.calculate_variable_options,
+        )
+        return msc_init.initialize(model.mscontactor)
+
 
 Stream_Config = ConfigDict()
 
@@ -143,6 +206,9 @@ Stream_Config.declare(
 
 @declare_process_block_class("SolventExtraction")
 class SolventExtractionData(UnitModelBlockData):
+
+    default_initializer = SolventExtractionInitializer
+
     CONFIG = UnitModelBlockData.CONFIG()
 
     CONFIG.declare(

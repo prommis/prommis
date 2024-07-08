@@ -1,3 +1,9 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """
 Initial property package for the organic phase solution of the solvent extraction
 unit operation.
@@ -137,6 +143,7 @@ class REESolExOgStateBlockData(StateBlockData):
         self.conc_mass_comp = Var(
             self.params.dissolved_elements,
             units=units.mg / units.L,
+            initialize=1e-7,
             bounds=(1e-20, None),
         )
 

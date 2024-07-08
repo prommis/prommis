@@ -1,15 +1,9 @@
-#################################################################################
-# The Institute for the Design of Advanced Energy Systems Integrated Platform
-# Framework (IDAES IP) was produced under the DOE Institute for the
-# Design of Advanced Energy Systems (IDAES).
-#
-# Copyright (c) 2018-2023 by the software owners: The Regents of the
-# University of California, through Lawrence Berkeley National Laboratory,
-# National Technology & Engineering Solutions of Sandia, LLC, Carnegie Mellon
-# University, West Virginia University Research Corporation, et al.
-# All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
-# for full copyright and license information.
-#################################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """
 Initial property package for REE leach solutions from coal refuse.
 
@@ -62,6 +56,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
         self.H = Component()
         self.HSO4 = Component()
         self.SO4 = Component()
+        self.Cl = Component()
 
         # REEs
         self.Sc = Component()
@@ -87,6 +82,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
                 "H": 1e-3,
                 "HSO4": 97e-3,
                 "SO4": 96e-3,
+                "Cl": 35.453e-3,
                 "Sc": 44.946e-3,
                 "Y": 88.905e-3,
                 "La": 138.905e-3,
@@ -110,6 +106,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
             ("Ka2", "liquid", "HSO4"): -1,
             ("Ka2", "liquid", "SO4"): 1,
             ("Ka2", "liquid", "H2O"): 0,
+            ("Ka2", "liquid", "Cl"): 0,
             ("Ka2", "liquid", "Sc"): 0,
             ("Ka2", "liquid", "Y"): 0,
             ("Ka2", "liquid", "La"): 0,
@@ -196,6 +193,7 @@ class LeachSolutionStateBlockData(StateBlockData):
         self.conc_mass_comp = Var(
             self.params.component_list,
             units=units.mg / units.L,
+            initialize=1e-8,
             bounds=(1e-20, None),
         )
         self.conc_mol_comp = Var(

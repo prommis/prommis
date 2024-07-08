@@ -60,6 +60,10 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Al = Component()
         self.Ca = Component()
         self.Fe = Component()
+        self.H = Component()
+        self.Cl = Component()
+        self.HSO4 = Component()
+        self.SO4 = Component()
 
         # REEs
         self.Sc = Component()
@@ -91,6 +95,10 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Al": 0.9,
                 "Ca": 20.50,
                 "Fe": 2.44,
+                "H": 1e-20,
+                "Cl": 1e-20,
+                "HSO4": 1e-20,
+                "SO4": 1e-20,
             },
         )
 
@@ -111,6 +119,10 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Al": 26.982e-3,
                 "Ca": 40.078e-3,
                 "Fe": 55.845e-3,
+                "H": 1.008e-3,
+                "Cl": 35.453e-3,
+                "HSO4": 97.064e-3,
+                "SO4": 96.056e-3,
             },
         )
 
@@ -128,6 +140,11 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Sm",
                 "Gd",
                 "Dy",
+                "H",
+                "Cl",
+                "HSO4",
+                "SO4",
+                "H2O",
             ]
         )
 

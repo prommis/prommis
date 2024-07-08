@@ -143,6 +143,7 @@ class REESolExOgStateBlockData(StateBlockData):
         self.conc_mass_comp = Var(
             self.params.dissolved_elements,
             units=units.mg / units.L,
+            initialize=1e-7,
             bounds=(1e-20, None),
         )
 

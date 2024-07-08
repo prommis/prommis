@@ -111,8 +111,150 @@ def custom_REE_plant_currency_units():
 @declare_process_block_class("QGESSCosting")
 class QGESSCostingData(FlowsheetCostingBlockData):
     # Register currency and conversion rates based on CE Index
-    # register_idaes_currency_units()
+
     custom_REE_plant_currency_units()
+
+    # set CONFIG
+
+    CONFIG = FlowsheetCostingBlockData.CONFIG()
+
+    CONFIG.declare(
+        "discount_percentage",
+        ConfigValue(
+            default=None,
+            domain=float,
+            description="rate at which currency devalues over time; alternatively, this is the required rate of return on investment.",
+        ),
+    )
+    CONFIG.declare(
+        "plant_lifetime",
+        ConfigValue(
+            default=None,
+            domain=float,
+            description="length of operating period in years.",
+        ),
+    )
+    CONFIG.declare(
+        "total_capital_cost",
+        ConfigValue(
+            default=None,
+            description="value for total capital cost; ignored if b is a FlowsheetCostingBlock.",
+        ),
+    )
+    CONFIG.declare(
+        "annual_operating_cost",
+        ConfigValue(
+            default=None,
+            description="value for total operating cost; ignored if b is a FlowsheetCostingBlock.",
+        ),
+    )
+    CONFIG.declare(
+        "annual_revenue",
+        ConfigValue(
+            default=None,
+            description="value for total revenue; ignored if b is a FlowsheetCostingBlock.",
+        ),
+    )
+    CONFIG.declare(
+        "cost_year",
+        ConfigValue(
+            default=None,
+            domain=str,
+            description="assumed project start year for costs, which is the basis for NPV results; ignored if b is a FlowsheetCostingBlock.",
+        ),
+    )
+    CONFIG.declare(
+        "has_capital_expenditure_period",
+        ConfigValue(
+            default=False,
+            domain=bool,
+            description="True/false flag whether a capital expenditure period occurs.",
+        ),
+    )
+    CONFIG.declare(
+        "capital_expenditure_percentages",
+        ConfigValue(
+            default=None,
+            domain=list,
+            description="a list of values that sum to 100 representing how capital costs are spread over a capital expenditure period; for example, an input of [10, 60, 30] is parsed as a 3-year period where capital costs are spread as 10% in year 1, 60% in year 2,and 30% in year 3. The capital period precedes the operating period. Set to None to indicate no expenditure period.",
+        ),
+    )
+    CONFIG.declare(
+        "capital_escalation_percentage",
+        ConfigValue(
+            default=3.6,
+            domain=float,
+            description="rate at which capital costs escalate during the capital expenditure period. Set to 0 to indicate expenditure is spread but there is no cost escalation.",
+        ),
+    )
+    CONFIG.declare(
+        "operating_inflation_percentage",
+        ConfigValue(
+            default=3,
+            domain=float,
+            description="inflation rate for operating costs during the operating period. Set to 0 to indicate no inflation.",
+        ),
+    )
+    CONFIG.declare(
+        "revenue_inflation_percentage",
+        ConfigValue(
+            default=3,
+            domain=float,
+            description="inflation rate for revenue during the operating period. Set to 0 to indicate no inflation.",
+        ),
+    )
+    CONFIG.declare(
+        "royalty_charge_percentage_of_revenue",
+        ConfigValue(
+            default=6.5,
+            domain=float,
+            description="percentage of revenue charged as royalties; ignored if royalty_expression is not None. Set to zero to indicate no royalties are charged.",
+        ),
+    )
+    CONFIG.declare(
+        "royalty_expression",
+        ConfigValue(
+            default=None,
+            description="set the value or expression to calculate royalties.",
+        ),
+    )
+    CONFIG.declare(
+        "debt_percentage_of_CAPEX",
+        ConfigValue(
+            default=50,
+            domain=float,
+            description="percentage of CAPEX financed by debt; ignored if debt_expression is not None. Set to zero to indicate no loans are taken out on capital.",
+        ),
+    )
+    CONFIG.declare(
+        "debt_expression",
+        ConfigValue(
+            default=None,
+            description="set the value or expression to calculate total debt.",
+        ),
+    )
+    CONFIG.declare(
+        "loan_interest_percentage",
+        ConfigValue(
+            default=6, domain=float, description="interest rate for loan repayment."
+        ),
+    )
+    CONFIG.declare(
+        "loan_repayment_period",
+        ConfigValue(
+            default=10,
+            domain=float,
+            description="length of repayment period in years.",
+        ),
+    )
+    CONFIG.declare(
+        "capital_depreciation_declining_balance_percentage",
+        ConfigValue(
+            default=150,
+            domain=float,
+            description="factor to use for declining balance depreciation. Set to 0 to indicate that capital does not depreciate over time.",
+        ),
+    )
 
     def build_global_params(self):
         """
@@ -175,7 +317,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         recovery_rate_per_year=None,
         CE_index_year="2021",
         watertap_blocks=None,
-        **kwargs,
+        calculate_NPV=False,
     ):
         """
         This method builds process-wide costing, including fixed and variable
@@ -289,6 +431,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             discount_percentage: rate at which currency devalues over time;
                 alternatively, this is the required rate of return on investment.
             plant_lifetime: length of operating period in years.
+            has_capital_expenditure_period: True/false flag whether a capital expenditure period occurs. 
             capital_expenditure_percentages: a list of values that sum to 100
                 representing how capital costs are spread over a capital
                 expenditure period; for example, an input of [10, 60, 30] is parsed
@@ -314,153 +457,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             capital_depreciation_declining_balance_percentage: factor to use for declining balance
                 depreciation. Set to 0 to indicate that capital does not depreciate over time.
         """
-
-        # build configuration dictionary
-        CONFIG = QGESSCostingData.CONFIG()
-        CONFIG.declare(
-            "calculate_NPV",
-            ConfigValue(
-                default=False,
-                domain=bool,
-                description="True/false flag for calculating net present value (NPV).",
-            ),
-        )
-        CONFIG.declare(
-            "discount_percentage",
-            ConfigValue(
-                default=None,
-                domain=float,
-                description="rate at which currency devalues over time; alternatively, this is the required rate of return on investment.",
-            ),
-        )
-        CONFIG.declare(
-            "plant_lifetime",
-            ConfigValue(
-                default=None,
-                domain=float,
-                description="length of operating period in years.",
-            ),
-        )
-        CONFIG.declare(
-            "total_capital_cost",
-            ConfigValue(
-                default=None,
-                domain=float,
-                description="value for total capital cost; ignored if b is not None.",
-            ),
-        )
-        CONFIG.declare(
-            "annual_operating_cost",
-            ConfigValue(
-                default=None,
-                domain=float,
-                description="value for total operating cost; ignored if b is not None.",
-            ),
-        )
-        CONFIG.declare(
-            "annual_revenue",
-            ConfigValue(
-                default=None,
-                domain=float,
-                description="value for total revenue; ignored if b is not None.",
-            ),
-        )
-        CONFIG.declare(
-            "cost_year",
-            ConfigValue(
-                default=None,
-                domain=str,
-                description="assumed project start year for costs, which is the basis for NPV results",
-            ),
-        )
-        CONFIG.declare(
-            "capital_expenditure_percentages",
-            ConfigValue(
-                default=None,
-                domain=list,
-                description="a list of values that sum to 100 representing how capital costs are spread over a capital expenditure period; for example, an input of [10, 60, 30] is parsed as a 3-year period where capital costs are spread as 10% in year 1, 60% in year 2,and 30% in year 3. The capital period precedes the operating period. Set to None to indicate no expenditure period.",
-            ),
-        )
-        CONFIG.declare(
-            "capital_escalation_percentage",
-            ConfigValue(
-                default=3.6,
-                domain=float,
-                description="rate at which capital costs escalate during the capital expenditure period. Set to 0 to indicate expenditure is spread but there is no cost escalation.",
-            ),
-        )
-        CONFIG.declare(
-            "operating_inflation_percentage",
-            ConfigValue(
-                default=3,
-                domain=float,
-                description="inflation rate for operating costs during the operating period. Set to 0 to indicate no inflation.",
-            ),
-        )
-        CONFIG.declare(
-            "revenue_inflation_percentage",
-            ConfigValue(
-                default=3,
-                domain=float,
-                description="inflation rate for revenue during the operating period. Set to 0 to indicate no inflation.",
-            ),
-        )
-        CONFIG.declare(
-            "royalty_charge_percentage_of_revenue",
-            ConfigValue(
-                default=6.5,
-                domain=float,
-                description="percentage of revenue charged as royalties; ignored if royalty_expression is not None. Set to zero to indicate no royalties are charged.",
-            ),
-        )
-        CONFIG.declare(
-            "royalty_expression",
-            ConfigValue(
-                default=None,
-                domain=In([ScalarExpression, Expression, Param, Var]),
-                description="set the value or expression to calculate royalties.",
-            ),
-        )
-        CONFIG.declare(
-            "debt_percentage_of_CAPEX",
-            ConfigValue(
-                default=50,
-                domain=float,
-                description="percentage of CAPEX financed by debt; ignored if debt_expression is not None. Set to zero to indicate no loans are taken out on capital.",
-            ),
-        )
-        CONFIG.declare(
-            "debt_expression",
-            ConfigValue(
-                default=None,
-                domain=In([ScalarExpression, Expression, Param, Var]),
-                description="set the value or expression to calculate total debt.",
-            ),
-        )
-        CONFIG.declare(
-            "loan_interest_percentage",
-            ConfigValue(
-                default=6, domain=float, description="interest rate for loan repayment."
-            ),
-        )
-        CONFIG.declare(
-            "loan_repayment_period",
-            ConfigValue(
-                default=10,
-                domain=float,
-                description="length of repayment period in years.",
-            ),
-        )
-        CONFIG.declare(
-            "capital_depreciation_declining_balance_percentage",
-            ConfigValue(
-                default=150,
-                domain=float,
-                description="factor to use for declining balance depreciation. Set to 0 to indicate that capital does not depreciate over time.",
-            ),
-        )
-
-        self.config = CONFIG(kwargs)
 
         # define costing library
         if hasattr(self, "library") and self.library == "REE":  # costing already exists
@@ -1125,8 +1121,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         "recovery_rate_per_year cannot be None."
                     )
 
-            if self.config.calculate_NPV:
-                self.calculate_NPV()
+        if calculate_NPV:
+            self.calculate_NPV(fixed_OM, variable_OM)
 
     @staticmethod
     def initialize_build(*args, **kwargs):
@@ -2869,7 +2865,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # method has finished building components
         b.components_already_built = True
 
-    def calculate_NPV(b):
+    def calculate_NPV(b, fixed_OM, variable_OM):
         """
         Equations for cash flow expressions derive from the textbook
         Engineering Economy: Applying Theory to Practice, 3rd Ed. by Ted. G. Eschenbach.
@@ -3000,10 +2996,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             discount_percentage: rate at which currency devalues over time;
                 alternatively, this is the required rate of return on investment.
             plant_lifetime: length of operating period in years.
-            total_capital_cost: value for total capital cost; ignored if b is not None.
-            annual_operating_cost: value for total operating cost; ignored if b is not None.
-            annual_revenue: value for total revenue; ignored if b is not None.
-            cost_year: assumed project start year for costs, which is the basis for NPV results
+            total_capital_cost: value for total capital cost; ignored if b is a FlowsheetCostingBlock.
+            annual_operating_cost: value for total operating cost; ignored if b is a FlowsheetCostingBlock.
+            annual_revenue: value for total revenue; ignored if b is a FlowsheetCostingBlock.
+            cost_year: assumed project start year for costs, which is the basis for NPV results; ignored if b is a FlowsheetCostingBlock.
+            has_capital_expenditure_period: True/false flag whether a capital expenditure period occurs.
             capital_expenditure_percentages: a list of values that sum to 100
                 representing how capital costs are spread over a capital
                 expenditure period; for example, an input of [10, 60, 30] is parsed
@@ -3032,30 +3029,41 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # input verification
 
-        if isinstance(b, FlowsheetCostingBlockData) and b.library == "REE":
-            b.verify_NPV_costing_block()
-            
-        elif isinstance(b, FlowsheetBlock):
-            b.verify_NPV_flowsheet_block()
-        else:
-            # another block type is not allowed
-            raise TypeError(
-                f"Argument {b} is not a valid block type. The argument b "
-                "must be passed a FlowsheetCostingBlockData or FlowsheetBlock object."
+        input_list = [
+            b.config.total_capital_cost,
+            b.config.annual_operating_cost,
+            b.config.annual_revenue,
+            b.config.cost_year,
+            ]
+
+        if True in [i is not None for i in input_list]:  # if one fixed input is passed, require all fixed inputs
+            b.verify_calculate_from_inputs()
+        elif not (fixed_OM and variable_OM):  # if OM variables don't exist, fail and suggest ways to fix error
+            raise AttributeError(
+                "If capital, fixed O&M, or variable O&M costs are not calculated, "
+                "then inputs for total_capital_cost, annual_operating_cost, and annual_revenue "
+                "must be passed, and cost_year must be passed as a string, e.g. '2021'."
+                "Alternatively, set fixed_OM and variable_OM to True to calculate O&M results."
             )
+        else: # otherwise use expected results from costing block
+            b.verify_calculate_from_costing_block()
 
         # check required arguments
-        b.assert_has_config_argument(name="discount_percentage")
-        b.assert_has_config_argument(name="plant_lifetime")
+        QGESSCostingData.assert_config_argument_set(b, name="discount_percentage")
+        QGESSCostingData.assert_config_argument_set(b, name="plant_lifetime")
 
         # check capital expenditure arguments
-        if b.config.capital_expenditure_percentages is None:
+        if b.config.has_capital_expenditure_period and b.config.capital_expenditure_percentages is None:
             b.config.capital_expenditure_percentages = [10, 60, 30]
-        b.verify_percentages_list(name="capital_expenditure_percentages")
+        elif not b.config.has_capital_expenditure_period:
+            b.config.capital_expenditure_percentages = []
+
+        if b.config.has_capital_expenditure_period:
+            QGESSCostingData.verify_percentages_list(b.config, name="capital_expenditure_percentages")
 
         # check optional expressions
-        b.assert_Pyomo_object(name="royalty_expression")
-        b.assert_Pyomo_object(name="debt_expression")
+        QGESSCostingData.assert_Pyomo_object(b.config, name="royalty_expression")
+        QGESSCostingData.assert_Pyomo_object(b.config, name="debt_expression")
 
         # build variables
 
@@ -3129,7 +3137,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
         b.plant_lifetime = Param(initialize=b.config.plant_lifetime, units=pyunits.years)
 
-        if b.config.capital_expenditure_percentages is not None:
+        if b.config.has_capital_expenditure_period:
             b.capital_expenditure_percentages = Param(
                 range(len(b.config.capital_expenditure_percentages)),
                 initialize=dict(
@@ -3180,7 +3188,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # build constraints
 
-        if b.config.capital_expenditure_percentages is not None:
+        if b.config.has_capital_expenditure_period:
 
             @b.Constraint()
             def pv_capital_cost_constraint(c):
@@ -3189,10 +3197,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 return c.pv_capital_cost == -pyunits.convert(
                     sum(
                         pyunits.convert(
-                            b.config.capital_expenditure_percentages[idx] * pyunits.percent,
+                            c.config.capital_expenditure_percentages[idx] * pyunits.percent,
                             to_units=pyunits.dimensionless,
                         )
-                        * b.CAPEX
+                        * c.CAPEX
                         * series_present_worth_factor(
                             pyunits.convert(
                                 c.discount_percentage, to_units=pyunits.dimensionless
@@ -3203,9 +3211,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             ),
                             idx + 1,
                         )
-                        for idx in range(len(b.config.capital_expenditure_percentages))
+                        for idx in range(len(c.config.capital_expenditure_percentages))
                     ),
-                    to_units=b.cost_units,
+                    to_units=c.cost_units,
                 )
 
         else:
@@ -3215,7 +3223,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 # PV_Capital_Cost = - CAPEX
 
                 return c.pv_capital_cost == -pyunits.convert(
-                    b.CAPEX
+                    c.CAPEX
                     * series_present_worth_factor(
                         pyunits.convert(
                             c.discount_percentage, to_units=pyunits.dimensionless
@@ -3226,7 +3234,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         ),
                         0,
                     ),  # formula gives P/A (r, g, 0) = 1
-                    to_units=b.cost_units,
+                    to_units=c.cost_units,
                 )
 
         @b.Constraint()
@@ -3234,7 +3242,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # PV_Operating_Cost = - OPEX * [ P/A_OPEX+CAPEX_periods - P/A_CAPEX_period ]
 
             return c.pv_operating_cost == -pyunits.convert(
-                b.OPEX
+                c.OPEX
                 * (
                     series_present_worth_factor(
                         pyunits.convert(
@@ -3245,7 +3253,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             to_units=pyunits.dimensionless,
                         ),
                         c.plant_lifetime / pyunits.year
-                        + len(b.config.capital_expenditure_percentages),
+                        + len(c.config.capital_expenditure_percentages),
                     )
                     - series_present_worth_factor(
                         pyunits.convert(
@@ -3255,10 +3263,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             c.operating_inflation_percentage,
                             to_units=pyunits.dimensionless,
                         ),
-                        len(b.config.capital_expenditure_percentages),
+                        len(c.config.capital_expenditure_percentages),
                     )
                 ),
-                to_units=b.cost_units,
+                to_units=c.cost_units,
             )
 
         @b.Constraint()
@@ -3266,7 +3274,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # PV_Revenue = REVENUE * [ P/A_OPEX+CAPEX_periods - P/A_CAPEX_period ]
 
             return c.pv_revenue == pyunits.convert(
-                b.REVENUE[None]
+                c.REVENUE[None]
                 * (
                     series_present_worth_factor(
                         pyunits.convert(
@@ -3277,7 +3285,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             to_units=pyunits.dimensionless,
                         ),
                         c.plant_lifetime / pyunits.year
-                        + len(b.config.capital_expenditure_percentages),
+                        + len(c.config.capital_expenditure_percentages),
                     )
                     - series_present_worth_factor(
                         pyunits.convert(
@@ -3287,10 +3295,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             c.revenue_inflation_percentage,
                             to_units=pyunits.dimensionless,
                         ),
-                        len(b.config.capital_expenditure_percentages),
+                        len(c.config.capital_expenditure_percentages),
                     )
                 ),
-                to_units=b.cost_units,
+                to_units=c.cost_units,
             )
 
         if b.config.royalty_expression is None:
@@ -3305,7 +3313,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         to_units=pyunits.dimensionless,
                     )
                     * c.pv_revenue,
-                    to_units=b.cost_units,
+                    to_units=c.cost_units,
                 )
 
         else:
@@ -3322,8 +3330,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     pyunits.convert(
                         c.debt_percentage_of_CAPEX, to_units=pyunits.dimensionless
                     )
-                    * b.CAPEX,
-                    to_units=b.cost_units,
+                    * c.CAPEX,
+                    to_units=c.cost_units,
                 )
 
         else:
@@ -3360,12 +3368,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
             )
 
-            if b.config.debt_expression is None:
+            if c.config.debt_expression is None:
 
                 return c.loan_annual_payment == pyunits.convert(
                     c.loan_debt
                     * annual_payment_multiplier,
-                    to_units=b.cost_units,
+                    to_units=c.cost_units,
                 )
 
             else:
@@ -3373,25 +3381,37 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 return c.loan_annual_payment == pyunits.convert(
                     c.loan_debt[None]
                     * annual_payment_multiplier,
-                    to_units=b.cost_units,
+                    to_units=c.cost_units,
                 )
 
         @b.Constraint()
         def pv_loan_interest_constraint(c):
             # PV_Loan_Interest_Owed = - loan_length * Annual_Loan_Payment - Debt
 
-            return c.pv_loan_interest == -pyunits.convert(
-                c.loan_repayment_period / pyunits.year * c.loan_annual_payment
-                - c.loan_debt,
-                to_units=b.cost_units,
-            )
+            
+            if c.config.debt_expression is None:
+
+                return c.pv_loan_interest == -pyunits.convert(
+                    c.loan_repayment_period / pyunits.year * c.loan_annual_payment
+                    - c.loan_debt,
+                    to_units=c.cost_units,
+                )
+
+            else:
+
+                
+                return c.pv_loan_interest == -pyunits.convert(
+                    c.loan_repayment_period / pyunits.year * c.loan_annual_payment
+                    - c.loan_debt[None],
+                    to_units=c.cost_units,
+                )
 
         @b.Constraint()
         def pv_capital_depreciation_constraint(c):
             # PV_Capital_Depreciation = - CAPEX * [1 - ( 1 - %depreciation/plant_lifetime)**plant_lifetime]
 
             return c.pv_capital_depreciation == -pyunits.convert(
-                b.CAPEX
+                c.CAPEX
                 * (
                     1
                     - (
@@ -3404,13 +3424,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                     ** (c.plant_lifetime / pyunits.year)
                 ),
-                to_units=b.cost_units,
+                to_units=c.cost_units,
             )
 
         @b.Constraint()
         def npv_constraint(c):
 
-            if b.config.royalty_expression is None:
+            if c.config.royalty_expression is None:
 
                 return c.npv == pyunits.convert(
                     c.pv_revenue
@@ -3419,7 +3439,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     + c.pv_royalties
                     + c.pv_loan_interest
                     + c.pv_capital_depreciation,
-                    to_units=b.cost_units,
+                    to_units=c.cost_units,
                 )
 
             else:
@@ -3431,10 +3451,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     + c.pv_royalties[None]
                     + c.pv_loan_interest
                     + c.pv_capital_depreciation,
-                    to_units=b.cost_units,
-                )
+                    to_units=c.cost_units,
+                )           
 
-    def verify_NPV_costing_block(b):
+    def verify_calculate_from_costing_block(b):
         """
         Verify that parent block for NPV calculations is of expected type.
         """
@@ -3459,24 +3479,34 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 "and that all expected attributes exist."
             )
 
-    def verify_NPV_flowsheet_block(b):
+    def verify_calculate_from_inputs(b):
         """
         Verify that parent block for NPV calculations is of expected type.
         """
         # if b is not a costing block, it must be a flowsheet block
         # variables and constraints will be added there
-
-        if None in [
+        for attr in [
             b.config.total_capital_cost,
             b.config.annual_operating_cost,
-            b.config.annual_operating_cost,
+            b.config.annual_revenue,
             b.config.cost_year,
         ]:
-            raise AttributeError(
-                "If b is not passed as a FlowsheetcostingBlockData object, "
-                "then total_capital_cost, annual_operating_cost, and annual_revenue "
-                "must be passed, and cost_year must be passed as a string, e.g. '2021'."
-            )
+            if attr is None:
+                raise AttributeError(
+                    "If capital, fixed O&M, or variable O&M costs are not calculated, "
+                    "then inputs for total_capital_cost, annual_operating_cost, and annual_revenue "
+                    "must be passed, and cost_year must be passed as a string, e.g. '2021'."
+                )
+
+        for attr in [
+                "total_capital_cost",
+                "annual_operating_cost",
+                "annual_revenue",
+                ]:
+            # config value can be a number (int or float), or a Pyomo object
+            if not type(getattr(b.config, attr)) in [int, float]:
+                QGESSCostingData.assert_Pyomo_object(b.config, name=attr)
+            
 
         else:
             # check if the cost arguments are variables or expressions with units and handle appropriately
@@ -3488,8 +3518,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.cost_units = getattr(pyunits, "MUSD_" + b.config.cost_year)
 
             for key in costs.keys():
-                if type(key) in [Expression, ScalarExpression]:
-                    if pyunits.get_units(key) == pyunits.dimensionless:
+                # check if the object is a Reference
+                try:
+                    costs[key] = costs[key][None]
+                except:
+                    # continue on
+                    pass
+
+                if type(costs[key]) in [Expression, ScalarExpression]:
+                    if pyunits.get_units(costs[key]) == pyunits.dimensionless:
                         costs[key] = Expression(expr=costs[key].expr * b.cost_units)
                     else:
                         costs[key] = Expression(
@@ -3498,7 +3535,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             )
                         )
                 else:
-                    if pyunits.get_units(key) == pyunits.dimensionless:
+                    if pyunits.get_units(costs[key]) == pyunits.dimensionless:
                         costs[key] = Expression(expr=costs[key] * b.cost_units)
                     else:
                         costs[key] = Expression(
@@ -3510,36 +3547,33 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.OPEX = costs["OPEX"]
             b.REVENUE = costs["REVENUE"]
 
-    def assert_has_config_argument(b, name):
+    def assert_config_argument_set(b, name):
         if getattr(b.config, name) is None:
-            raise AttributeError(f"Missing required argument {name}")
+            raise AttributeError(f"Required argument {name} not set")
     
     def verify_percentages_list(b, name):
-        percentages_list = getattr(b.config, name)
+        percentages_list = getattr(b, name)
 
         if not isinstance(percentages_list, list):
             raise TypeError(
-                f"Argument {b.config.capital_expenditure_percentages} is not a list. "
-                "Capital expenditure percentages per year must be passed as "
-                "a list."
+                f"{percentages_list} is not a list. "
+                f"Argument {name} must be passed as a list."
             )
         if len(percentages_list) == 0:
-            raise TypeError(
-                f"Argument {b.config.capital_expenditure_percentages} has a length of "
-                "zero. The capital expenditure percentages list must have a "
-                "nonzero length."
+            raise AttributeError(
+                f"Argument {name} has a length of "
+                "zero. List must have a nonzero length."
             )
 
         if not sum(percentages_list) == 100:
-            raise TypeError(
-                f"Argument {b.config.capital_expenditure_percentages} has a sum of "
-                "{sum(b.config.capital_expenditure_percentages)}. The capital "
-                "expenditure percentages list must sum to 100 percent."
+            raise AttributeError(
+                f"Argument {name} has a sum of "
+                f"{sum(percentages_list)}. List must sum to 100 percent."
             )
 
     def assert_Pyomo_object(b, name):
-        if getattr(b.config, name) is not None:
-            obj = getattr(b.config, name)
+        if getattr(b, name) is not None:
+            obj = getattr(b, name)
             if not (
                 isinstance(obj, Param)
                 or isinstance(obj, Var)
@@ -3547,6 +3581,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 or isinstance(obj, ScalarExpression)
             ):
                 raise TypeError(
-                    f"Argument {obj} is not a supported object type. "
-                    "Ensure {obj} is a Pyomo parameter, variable or expression."
+                    f"Argument {obj} of type {type(obj)} is not a supported object type. "
+                    f"Ensure {name} is a Pyomo Param, Var, Expression, or ScalarExpression."
                 )

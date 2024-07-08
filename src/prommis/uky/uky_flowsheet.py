@@ -549,7 +549,9 @@ def build():
     m.fs.leaching_feed_mixture = Arc(
         source=m.fs.leach_mixer.outlet, destination=m.fs.leach.liquid_inlet
     )
-    m.fs.leaching_solid_outlet = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.sl_sep1.solid_inlet)
+    m.fs.leaching_solid_outlet = Arc(
+        source=m.fs.leach.solid_outlet, destination=m.fs.sl_sep1.solid_inlet
+    )
     m.fs.leaching_liquid_outlet = Arc(
         source=m.fs.leach.liquid_outlet, destination=m.fs.sl_sep1.liquid_inlet
     )
@@ -646,7 +648,9 @@ def build():
         source=m.fs.solex_cleaner_strip.mscontactor.organic_outlet,
         destination=m.fs.cleaner_sep.inlet,
     )
-    m.fs.sx_cleaner_strip_org_purge = Arc(source=m.fs.cleaner_sep.purge, destination=m.fs.cleaner_purge.inlet)
+    m.fs.sx_cleaner_strip_org_purge = Arc(
+        source=m.fs.cleaner_sep.purge, destination=m.fs.cleaner_purge.inlet
+    )
     m.fs.sx_cleaner_strip_org_recycle = Arc(
         source=m.fs.cleaner_sep.recycle, destination=m.fs.cleaner_mixer.recycle
     )
@@ -671,7 +675,9 @@ def build():
     m.fs.sl_sep2_liquid_outlet = Arc(
         source=m.fs.sl_sep2.recovered_liquid_outlet, destination=m.fs.precip_sep.inlet
     )
-    m.fs.sl_sep2_aq_purge = Arc(source=m.fs.precip_sep.purge, destination=m.fs.precip_purge.inlet)
+    m.fs.sl_sep2_aq_purge = Arc(
+        source=m.fs.precip_sep.purge, destination=m.fs.precip_purge.inlet
+    )
     m.fs.sl_sep2_aq_recycle = Arc(
         source=m.fs.precip_sep.recycle,
         destination=m.fs.precip_sx_mixer.precip,

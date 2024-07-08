@@ -1333,6 +1333,7 @@ def set_operating_conditions(m):
     Args:
         m: pyomo model
     """
+    # Epsilon represents near-zero component concentrations
     eps = 1e-8 * units.mg / units.L
 
     m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
@@ -1417,7 +1418,6 @@ def set_operating_conditions(m):
     m.fs.acid_feed1.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Dy"].fix(eps)
 
-    # TODO: flow rate and HCl concentration are not defined in REESim
     m.fs.acid_feed2.flow_vol.fix(0.09)
     m.fs.acid_feed2.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed2.conc_mass_comp[0, "H"].fix(
@@ -1441,7 +1441,6 @@ def set_operating_conditions(m):
 
     m.fs.rougher_sep.split_fraction[:, "recycle"].fix(0.9)
 
-    # TODO: flow rate and HCl concentration are not defined in REESim
     m.fs.acid_feed3.flow_vol.fix(9)
     m.fs.acid_feed3.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed3.conc_mass_comp[0, "H"].fix(

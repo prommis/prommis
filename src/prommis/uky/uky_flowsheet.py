@@ -215,7 +215,10 @@ def main():
 
     set_operating_conditions(m)
 
-    scaled_model = set_scaling(m)
+    set_scaling(m)
+
+    scaling = TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(m, rename=False)
 
     if degrees_of_freedom(scaled_model) != 0:
         raise AssertionError(
@@ -239,7 +242,6 @@ def main():
             "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
         )
 
-    scaling = TransformationFactory("core.scale_model")
     results = scaling.propagate_solution(scaled_model, m)
 
     display_results(m)
@@ -1323,10 +1325,7 @@ def set_scaling(m):
     m.scaling_factor[m.fs.roaster.gas_out[0].pressure] = 1e-5
     m.scaling_factor[m.fs.roaster.solid_in[0].temperature] = 1e-2
 
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-
-    return scaled_model
+    return m
 
 
 def set_operating_conditions(m):

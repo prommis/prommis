@@ -173,7 +173,11 @@ def test_build_flowsheet(system_frame):
 def test_solve(system_frame):
     model = system_frame
 
-    scaled_model = set_scaling(model)
+    set_scaling(model)
+
+    scaling = TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(model, rename=False)
+
     initialize_system(scaled_model)
 
     solve_system(scaled_model)

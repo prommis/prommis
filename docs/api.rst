@@ -51,9 +51,18 @@ Crusher
 .. autosummary::
    :toctree: _autosummary
    :template: autosummary/module-with-contents.rst
-   
+
    prommis.solid_handling.crusher
    prommis.solid_handling.crusher_solids_properties
+
+Evaporation Ponds
+-----------------
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: autosummary/module-with-contents.rst
+   
+   prommis.evaporation_pond.evaporation_pond
 
 Flowsheets
 ----------

@@ -1,26 +1,14 @@
-##############################################################################
-# Institute for the Design of Advanced Energy Systems Process Systems
-# Engineering Framework (IDAES PSE Framework) Copyright (c) 2018, by the
-# software owners: The Regents of the University of California, through
-# Lawrence Berkeley National Laboratory,  National Technology & Engineering
-# Solutions of Sandia, LLC, Carnegie Mellon University, West Virginia
-###############################################################################
-# The Institute for the Design of Advanced Energy Systems Integrated Platform
-# Framework (IDAES IP) was produced under the DOE Institute for the
-# Design of Advanced Energy Systems (IDAES), and is copyright (c) 2018-2023
-# by the software owners: The Regents of the University of California, through
-# Lawrence Berkeley National Laboratory,  National Technology & Engineering
-# Solutions of Sandia, LLC, Carnegie Mellon University, West Virginia University
-# Research Corporation, et al.  All rights reserved.
-#
-# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and
-# license information.
-###############################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 r"""
 IDAES REE Feed Roaster Unit Model
 ==================================
 
-This model represents a roaster/calcination unit for Rare Earth Element (REE) feedstock, which includes rare earth minerals, impurity minerals, moisture, and combustible organic materials.
+This model represents a roaster/calcination unit for Rare Earth Element (REE) feedstock, which includes rare earth minerals, gangue/impurity minerals, moisture, and combustible organic materials.
 
 Reactions
 ---------
@@ -55,7 +43,6 @@ Combustion of organic elements is modeled as follows:
 - :ce:`O -> 0.5 O2`
 - :ce:`N -> 0.5 N2`
 - :ce:`S + O2 -> SO2`
-- :ce:`S + O2 -> SO2`
 
 Physical Changes
 ----------------
@@ -81,6 +68,22 @@ Streams
 - **Gas Outlet Stream**: Gas product leaving the reactor.
 - **Solid Outlet Stream**: Recovered solid product leaving the reactor.
 
+
+Thermal Properties
+------------------
+
+The standard heats of formation and heat capacities of solid components involved are defined as parameters in this model. The default values of those parameters are obtained from two sources as listed below:
+
+1. NIST Chemistry WebBook
+2. Wagman, D.D., W.H. Evans, V.B. Parker, R.H.Schumm, I. Halow, S.M. Bailey, K.L. Churney,
+   R.L. Nuttall, "The NBS tables of chemical thermodynamic properties-Selected values for
+   inorganic and C1 and C2 organic substances in SI units," Journal of Physical and Chemical
+   Reference Data, 11(2), 1982
+
+The NIST WebBook data are used for the properties of :ce:`Al2O3`, :ce:`SiO2`, :ce:`CaO`, :ce:`Fe2O3`, and `pyrite`. Note that the heat capacity model is simplified as a linear function of temperature.
+The data of Wagman et al are used for the properties of :ce:`CaCO3` and `kaolinite`.
+The gas phase properties are calculated based on user configured property package.
+
 Assumptions
 -----------
 
@@ -94,6 +97,7 @@ Assumptions
 - If the product temperature is specified as a user input, the heat duty will be calculated. If the heat duty is given, the product temperature will be calculated.
 - Temperatures of solid and gas products are assumed to be the same.
 - No port for the solid inlet stream is used. The mass flow rate and composition of the solid reactant are specified as input variables inside the model. The mass flow rate and the composition of the solid product and dust streams are also declared as model variables. When mapping the solid products to the ``solid_outlet`` port, only the components defined in the :mod:`prommis.leaching.leach_solids_properties` module are mapped. The other species are discarded.
+
 """
 
 # Import Pyomo libraries

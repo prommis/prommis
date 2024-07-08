@@ -1,14 +1,9 @@
-#################################################################################
-# WaterTAP Copyright (c) 2020-2023, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory, Oak Ridge National Laboratory,
-# National Renewable Energy Laboratory, and National Energy Technology
-# Laboratory (subject to receipt of any required approvals from the U.S. Dept.
-# of Energy). All rights reserved.
-#
-# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license
-# information, respectively. These files are also available online at the URL
-# "https://github.com/watertap-org/watertap/"
-#################################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """
 Interface for UKy plant model in WaterTAP UI
 
@@ -29,9 +24,10 @@ from watertap.ui.fsapi import FlowsheetCategory
 # package
 from prommis.uky.uky_flowsheet import (
     build,
+    set_partition_coefficients,
     set_operating_conditions,
     set_scaling,
-    solve,
+    solve_system,
     initialize_system,
 )
 
@@ -287,7 +283,13 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         )
 
     # Export the outputs for the solex rougher and cleaner
-    for stype in {"rougher", "cleaner"}:
+    for stype in {
+        "rougher_load",
+        "rougher_scrub",
+        "rougher_strip",
+        "cleaner_load",
+        "cleaner_strip",
+    }:
         category = f"solex {stype}"
         block = getattr(flowsheet, f"solex_{stype}")
         for ltype in {"organic", "aqueous"}:
@@ -379,6 +381,7 @@ def build_flowsheet(build_options=None, **kwargs):
     """
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
+    set_partition_coefficients(m)
     set_operating_conditions(m)
     scaled_model = set_scaling(m)
     # assert_units_consistent(scaled_model)
@@ -395,4 +398,18 @@ def get_diagram(build_options):
 
 def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
-    return solve(flowsheet)
+
+    m = build()
+    set_partition_coefficients(m)
+
+    set_operating_conditions(m)
+
+    scaled_model = set_scaling(m)
+
+    initialize_system(scaled_model)
+
+    results = solve_system(scaled_model)
+
+    return results
+
+    # return solve(flowsheet)

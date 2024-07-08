@@ -1,15 +1,9 @@
-#################################################################################
-# The Institute for the Design of Advanced Energy Systems Integrated Platform
-# Framework (IDAES IP) was produced under the DOE Institute for the
-# Design of Advanced Energy Systems (IDAES).
-#
-# Copyright (c) 2018-2023 by the software owners: The Regents of the
-# University of California, through Lawrence Berkeley National Laboratory,
-# National Technology & Engineering Solutions of Sandia, LLC, Carnegie Mellon
-# University, West Virginia University Research Corporation, et al.
-# All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
-# for full copyright and license information.
-#################################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 r"""
 University of Kentucky REE Processing Plant
 ===========================================
@@ -207,6 +201,9 @@ from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
 _log = idaeslog.getLogger(__name__)
+
+# Epsilon represents near-zero component concentrations
+eps = 1e-8 * units.mg / units.L
 
 
 def main():
@@ -1339,9 +1336,6 @@ def set_operating_conditions(m):
     Args:
         m: pyomo model
     """
-    # Epsilon represents near-zero component concentrations
-    eps = 1e-8 * units.mg / units.L
-
     m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
     m.fs.leach_liquid_feed.conc_mass_comp.fix(1e-10 * units.mg / units.L)
     m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].fix(

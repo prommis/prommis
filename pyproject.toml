@@ -37,7 +37,7 @@ dependencies = [
 [project.optional-dependencies]
 watertap = [
     # TODO: update once watertap 1.0.0 is available
-    "watertap @ git+https://github.com/watertap-org/watertap@main",
+    "watertap >= 1.0.0rc0",
 ]
 
 [tool.setuptools_scm]

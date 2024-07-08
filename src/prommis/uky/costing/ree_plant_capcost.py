@@ -35,20 +35,13 @@ __version__ = "1.0.0"
 import textwrap
 from sys import stdout
 
-from pyomo.common.config import ConfigValue, In
+from pyomo.common.config import ConfigValue
 from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
-from pyomo.environ import (
-    ConcreteModel,
-    Constraint,
-    Expression,
-    Param,
-    Var,
-    Reference,
-    value,
-    units as pyunits
-    )
+from pyomo.environ import ConcreteModel, Constraint, Expression, Param, Reference, Var
+from pyomo.environ import units as pyunits
+from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 import idaes.core.util.scaling as iscale
@@ -431,7 +424,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             discount_percentage: rate at which currency devalues over time;
                 alternatively, this is the required rate of return on investment.
             plant_lifetime: length of operating period in years.
-            has_capital_expenditure_period: True/false flag whether a capital expenditure period occurs. 
+            has_capital_expenditure_period: True/false flag whether a capital expenditure period occurs.
             capital_expenditure_percentages: a list of values that sum to 100
                 representing how capital costs are spread over a capital
                 expenditure period; for example, an input of [10, 60, 30] is parsed
@@ -3034,18 +3027,22 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.config.annual_operating_cost,
             b.config.annual_revenue,
             b.config.cost_year,
-            ]
+        ]
 
-        if True in [i is not None for i in input_list]:  # if one fixed input is passed, require all fixed inputs
+        if True in [
+            i is not None for i in input_list
+        ]:  # if one fixed input is passed, require all fixed inputs
             b.verify_calculate_from_inputs()
-        elif not (fixed_OM and variable_OM):  # if OM variables don't exist, fail and suggest ways to fix error
+        elif not (
+            fixed_OM and variable_OM
+        ):  # if OM variables don't exist, fail and suggest ways to fix error
             raise AttributeError(
                 "If capital, fixed O&M, or variable O&M costs are not calculated, "
                 "then inputs for total_capital_cost, annual_operating_cost, and annual_revenue "
                 "must be passed, and cost_year must be passed as a string, e.g. '2021'."
                 "Alternatively, set fixed_OM and variable_OM to True to calculate O&M results."
             )
-        else: # otherwise use expected results from costing block
+        else:  # otherwise use expected results from costing block
             b.verify_calculate_from_costing_block()
 
         # check required arguments
@@ -3053,13 +3050,18 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         QGESSCostingData.assert_config_argument_set(b, name="plant_lifetime")
 
         # check capital expenditure arguments
-        if b.config.has_capital_expenditure_period and b.config.capital_expenditure_percentages is None:
+        if (
+            b.config.has_capital_expenditure_period
+            and b.config.capital_expenditure_percentages is None
+        ):
             b.config.capital_expenditure_percentages = [10, 60, 30]
         elif not b.config.has_capital_expenditure_period:
             b.config.capital_expenditure_percentages = []
 
         if b.config.has_capital_expenditure_period:
-            QGESSCostingData.verify_percentages_list(b.config, name="capital_expenditure_percentages")
+            QGESSCostingData.verify_percentages_list(
+                b.config, name="capital_expenditure_percentages"
+            )
 
         # check optional expressions
         QGESSCostingData.assert_Pyomo_object(b.config, name="royalty_expression")
@@ -3135,7 +3137,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.discount_percentage = Param(
             initialize=b.config.discount_percentage, units=pyunits.percent
         )
-        b.plant_lifetime = Param(initialize=b.config.plant_lifetime, units=pyunits.years)
+        b.plant_lifetime = Param(
+            initialize=b.config.plant_lifetime, units=pyunits.years
+        )
 
         if b.config.has_capital_expenditure_period:
             b.capital_expenditure_percentages = Param(
@@ -3160,7 +3164,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
 
         b.royalty_charge_percentage_of_revenue = Param(
-            initialize=b.config.royalty_charge_percentage_of_revenue, units=pyunits.percent
+            initialize=b.config.royalty_charge_percentage_of_revenue,
+            units=pyunits.percent,
         )
 
         b.debt_percentage_of_CAPEX = Param(
@@ -3197,7 +3202,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 return c.pv_capital_cost == -pyunits.convert(
                     sum(
                         pyunits.convert(
-                            c.config.capital_expenditure_percentages[idx] * pyunits.percent,
+                            c.config.capital_expenditure_percentages[idx]
+                            * pyunits.percent,
                             to_units=pyunits.dimensionless,
                         )
                         * c.CAPEX
@@ -3342,45 +3348,40 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         def loan_annual_payment_constraint(c):
             # Annual Loan Payment =
             # Debt * [ %interest * (1 + interest)**loan_length ] / [ (1 + interest)**loan_length - 1 ]
-            
+
             annual_payment_multiplier = (
-                (
-                    pyunits.convert(
+                pyunits.convert(
+                    c.loan_interest_percentage, to_units=pyunits.dimensionless
+                )
+                * (
+                    1
+                    + pyunits.convert(
                         c.loan_interest_percentage, to_units=pyunits.dimensionless
                     )
-                    * (
-                        1
-                        + pyunits.convert(
-                            c.loan_interest_percentage, to_units=pyunits.dimensionless
-                        )
-                    )
-                    ** (c.loan_repayment_period / pyunits.year)
                 )
-                / (
-                    (
-                        1
-                        + pyunits.convert(
-                            c.loan_interest_percentage, to_units=pyunits.dimensionless
-                        )
+                ** (c.loan_repayment_period / pyunits.year)
+            ) / (
+                (
+                    1
+                    + pyunits.convert(
+                        c.loan_interest_percentage, to_units=pyunits.dimensionless
                     )
-                    ** (c.loan_repayment_period / pyunits.year)
-                    - 1
                 )
+                ** (c.loan_repayment_period / pyunits.year)
+                - 1
             )
 
             if c.config.debt_expression is None:
 
                 return c.loan_annual_payment == pyunits.convert(
-                    c.loan_debt
-                    * annual_payment_multiplier,
+                    c.loan_debt * annual_payment_multiplier,
                     to_units=c.cost_units,
                 )
 
             else:
 
                 return c.loan_annual_payment == pyunits.convert(
-                    c.loan_debt[None]
-                    * annual_payment_multiplier,
+                    c.loan_debt[None] * annual_payment_multiplier,
                     to_units=c.cost_units,
                 )
 
@@ -3388,7 +3389,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         def pv_loan_interest_constraint(c):
             # PV_Loan_Interest_Owed = - loan_length * Annual_Loan_Payment - Debt
 
-            
             if c.config.debt_expression is None:
 
                 return c.pv_loan_interest == -pyunits.convert(
@@ -3399,7 +3399,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             else:
 
-                
                 return c.pv_loan_interest == -pyunits.convert(
                     c.loan_repayment_period / pyunits.year * c.loan_annual_payment
                     - c.loan_debt[None],
@@ -3452,7 +3451,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     + c.pv_loan_interest
                     + c.pv_capital_depreciation,
                     to_units=c.cost_units,
-                )           
+                )
 
     def verify_calculate_from_costing_block(b):
         """
@@ -3499,14 +3498,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
 
         for attr in [
-                "total_capital_cost",
-                "annual_operating_cost",
-                "annual_revenue",
-                ]:
+            "total_capital_cost",
+            "annual_operating_cost",
+            "annual_revenue",
+        ]:
             # config value can be a number (int or float), or a Pyomo object
             if not type(getattr(b.config, attr)) in [int, float]:
                 QGESSCostingData.assert_Pyomo_object(b.config, name=attr)
-            
 
         else:
             # check if the cost arguments are variables or expressions with units and handle appropriately
@@ -3530,9 +3528,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         costs[key] = Expression(expr=costs[key].expr * b.cost_units)
                     else:
                         costs[key] = Expression(
-                            expr=pyunits.convert(
-                                costs[key].expr, to_units=b.cost_units
-                            )
+                            expr=pyunits.convert(costs[key].expr, to_units=b.cost_units)
                         )
                 else:
                     if pyunits.get_units(costs[key]) == pyunits.dimensionless:
@@ -3550,7 +3546,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
     def assert_config_argument_set(b, name):
         if getattr(b.config, name) is None:
             raise AttributeError(f"Required argument {name} not set")
-    
+
     def verify_percentages_list(b, name):
         percentages_list = getattr(b, name)
 

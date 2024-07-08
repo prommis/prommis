@@ -19,9 +19,9 @@ import os
 from contextlib import nullcontext as does_not_raise
 
 import pyomo.environ as pyo
-from pyomo.core.base.expression import ScalarExpression
+from pyomo.common.config import ConfigDict
 from pyomo.common.dependencies import attempt_import
-from pyomo.common.config import ConfigValue, ConfigDict
+from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import UnitsError
 from pyomo.environ import assert_optimal_termination
 from pyomo.environ import units as pyunits
@@ -63,8 +63,6 @@ if watertap_costing_available:
         NanofiltrationDSPMDE0D,
     )
     from watertap.unit_models.reverse_osmosis_1D import (
-        ConcentrationPolarizationType,
-        MassTransferCoefficient,
         PressureChangeType,
         ReverseOsmosis1D,
     )
@@ -110,7 +108,7 @@ def base_model():
         loan_interest_percentage=6,
         loan_repayment_period=10,
         capital_depreciation_declining_balance_percentage=150,
-        )
+    )
     CE_index_year = "UKy_2019"
 
     ###########################################################################
@@ -2135,7 +2133,7 @@ class TestNPVCostingBlock(object):
             discount_percentage=10,  # percent
             plant_lifetime=20,  # years
             has_capital_expenditure_period=True,
-            )
+        )
 
         # 1.3 is CS Jaw Crusher
         CS_jaw_crusher_accounts = ["1.3"]
@@ -2155,7 +2153,9 @@ class TestNPVCostingBlock(object):
         m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
         m.fs.feed_input.fix()
 
-        m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+        m.fs.water = pyo.Var(
+            m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr
+        )
         m.fs.water.fix()
 
         m.fs.costing.build_process_costs(
@@ -2197,19 +2197,28 @@ class TestNPVCostingBlock(object):
         assert isinstance(model.fs.costing.capital_escalation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
-        assert isinstance(model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param)
+        assert isinstance(
+            model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param
+        )
         assert isinstance(model.fs.costing.debt_percentage_of_CAPEX, pyo.Param)
         assert isinstance(model.fs.costing.loan_interest_percentage, pyo.Param)
         assert isinstance(model.fs.costing.loan_repayment_period, pyo.Param)
-        assert isinstance(model.fs.costing.capital_depreciation_declining_balance_percentage, pyo.Param)
+        assert isinstance(
+            model.fs.costing.capital_depreciation_declining_balance_percentage,
+            pyo.Param,
+        )
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_royalties_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.loan_debt_constraint, pyo.Constraint)
-        assert isinstance(model.fs.costing.loan_annual_payment_constraint, pyo.Constraint)
+        assert isinstance(
+            model.fs.costing.loan_annual_payment_constraint, pyo.Constraint
+        )
         assert isinstance(model.fs.costing.pv_loan_interest_constraint, pyo.Constraint)
-        assert isinstance(model.fs.costing.pv_capital_depreciation_constraint, pyo.Constraint)
+        assert isinstance(
+            model.fs.costing.pv_capital_depreciation_constraint, pyo.Constraint
+        )
         assert isinstance(model.fs.costing.npv_constraint, pyo.Constraint)
 
     @pytest.mark.unit
@@ -2235,13 +2244,22 @@ class TestNPVCostingBlock(object):
     @pytest.mark.component
     def test_NPV_costingblock_results(self, model):
         # check some NPV results
-        assert model.fs.costing.pv_capital_cost.value == pytest.approx(-14.33727, rel=1e-4)
-        assert model.fs.costing.pv_operating_cost.value == pytest.approx(-59.02935, rel=1e-4)
+        assert model.fs.costing.pv_capital_cost.value == pytest.approx(
+            -14.33727, rel=1e-4
+        )
+        assert model.fs.costing.pv_operating_cost.value == pytest.approx(
+            -59.02935, rel=1e-4
+        )
         assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
         assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.pv_loan_interest.value == pytest.approx(-1.3380851, rel=1e-4)
-        assert model.fs.costing.pv_capital_depreciation.value == pytest.approx(-5.8921045, rel=1e-4)
+        assert model.fs.costing.pv_loan_interest.value == pytest.approx(
+            -1.3380851, rel=1e-4
+        )
+        assert model.fs.costing.pv_capital_depreciation.value == pytest.approx(
+            -5.8921045, rel=1e-4
+        )
         assert model.fs.costing.npv.value == pytest.approx(435.87542, rel=1e-4)
+
 
 class TestNPVFixedInputs(object):
     @pytest.fixture(scope="class")
@@ -2257,13 +2275,13 @@ class TestNPVFixedInputs(object):
             annual_revenue=64.38220104959998,
             has_capital_expenditure_period=True,
             cost_year="2021",
-            )
+        )
 
         # use CAPEX, OPEX, REVENUE from CostingBlock to verify results are the same
         m.fs.costing.build_process_costs(
             fixed_OM=False,
             calculate_NPV=True,
-            )
+        )
 
         return m
 
@@ -2285,19 +2303,28 @@ class TestNPVFixedInputs(object):
         assert isinstance(model.fs.costing.capital_escalation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
-        assert isinstance(model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param)
+        assert isinstance(
+            model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param
+        )
         assert isinstance(model.fs.costing.debt_percentage_of_CAPEX, pyo.Param)
         assert isinstance(model.fs.costing.loan_interest_percentage, pyo.Param)
         assert isinstance(model.fs.costing.loan_repayment_period, pyo.Param)
-        assert isinstance(model.fs.costing.capital_depreciation_declining_balance_percentage, pyo.Param)
+        assert isinstance(
+            model.fs.costing.capital_depreciation_declining_balance_percentage,
+            pyo.Param,
+        )
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_royalties_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.loan_debt_constraint, pyo.Constraint)
-        assert isinstance(model.fs.costing.loan_annual_payment_constraint, pyo.Constraint)
+        assert isinstance(
+            model.fs.costing.loan_annual_payment_constraint, pyo.Constraint
+        )
         assert isinstance(model.fs.costing.pv_loan_interest_constraint, pyo.Constraint)
-        assert isinstance(model.fs.costing.pv_capital_depreciation_constraint, pyo.Constraint)
+        assert isinstance(
+            model.fs.costing.pv_capital_depreciation_constraint, pyo.Constraint
+        )
         assert isinstance(model.fs.costing.npv_constraint, pyo.Constraint)
 
     @pytest.mark.unit
@@ -2319,14 +2346,30 @@ class TestNPVFixedInputs(object):
     @pytest.mark.component
     def test_NPV_fixedinputs_results(self, model):
         # check some NPV results
-        for i in ["pv_capital_cost", "pv_operating_cost", "pv_royalties", "pv_revenue", "pv_loan_interest", "pv_capital_depreciation", "npv",]:
+        for i in [
+            "pv_capital_cost",
+            "pv_operating_cost",
+            "pv_royalties",
+            "pv_revenue",
+            "pv_loan_interest",
+            "pv_capital_depreciation",
+            "npv",
+        ]:
             print(getattr(model.fs.costing, i).value)
-        assert model.fs.costing.pv_capital_cost.value == pytest.approx(-14.33727, rel=1e-4)
-        assert model.fs.costing.pv_operating_cost.value == pytest.approx(-59.02935, rel=1e-4)
+        assert model.fs.costing.pv_capital_cost.value == pytest.approx(
+            -14.33727, rel=1e-4
+        )
+        assert model.fs.costing.pv_operating_cost.value == pytest.approx(
+            -59.02935, rel=1e-4
+        )
         assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
         assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.pv_loan_interest.value == pytest.approx(-1.3380851, rel=1e-4)
-        assert model.fs.costing.pv_capital_depreciation.value == pytest.approx(-5.8921045, rel=1e-4)
+        assert model.fs.costing.pv_loan_interest.value == pytest.approx(
+            -1.3380851, rel=1e-4
+        )
+        assert model.fs.costing.pv_capital_depreciation.value == pytest.approx(
+            -5.8921045, rel=1e-4
+        )
         assert model.fs.costing.npv.value == pytest.approx(435.87542, rel=1e-4)
 
 
@@ -4733,7 +4776,7 @@ def test_REE_costing_config_kwargs():
         loan_interest_percentage=2,
         loan_repayment_period=2,
         capital_depreciation_declining_balance_percentage=2,
-        )
+    )
 
     assert isinstance(m.fs.costing.config, ConfigDict)
     assert m.fs.costing.config.discount_percentage == 10
@@ -4763,7 +4806,7 @@ def test_REE_costing_NPV_costing_block_success():
     m.fs.costing = QGESSCosting(
         discount_percentage=10,
         plant_lifetime=20,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -4805,6 +4848,7 @@ def test_REE_costing_NPV_costing_block_success():
         calculate_NPV=True,
     )
 
+
 @pytest.mark.unit
 def test_REE_costing_verify_NPV_costing_block_failure():
     m = pyo.ConcreteModel()
@@ -4828,7 +4872,7 @@ npv_cost_obj_dict = {
     "Expression_withunits": pyo.Expression(expr=100 * pyunits.MUSD_2021),
     "Expression_nounits": pyo.Expression(expr=100),
     "Param_withunits": pyo.Param(
-        initialize=100, units = pyunits.MUSD_2021, mutable=False
+        initialize=100, units=pyunits.MUSD_2021, mutable=False
     ),
     "Param_nounits": pyo.Param(initialize=100, mutable=False),
     "Var_withunits": pyo.Var(initialize=100, units=pyunits.MUSD_2021),
@@ -4861,13 +4905,13 @@ def test_REE_costing_verify_NPV_fixed_inputs_success(npv_cost_obj):
         total_capital_cost=m.fs.total_capital_cost,
         annual_operating_cost=m.fs.annual_operating_cost,
         annual_revenue=m.fs.annual_revenue,
-        cost_year="2021"
-        )
+        cost_year="2021",
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=False,
         calculate_NPV=True,
-        )
+    )
 
 
 @pytest.mark.unit
@@ -4876,8 +4920,7 @@ def test_REE_costing_verify_NPV_fixed_inputs_failure():
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.costing = QGESSCosting(
         total_capital_cost=100,
-        )
-
+    )
 
     with pytest.raises(
         AttributeError,
@@ -4899,7 +4942,6 @@ def test_REE_costing_verify_NPV_no_OM_useful_exception():
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.costing = QGESSCosting()
 
-
     with pytest.raises(
         AttributeError,
         match="If capital, fixed O&M, or variable O&M costs are not calculated, "
@@ -4915,8 +4957,13 @@ def test_REE_costing_verify_NPV_no_OM_useful_exception():
 
 @pytest.mark.parametrize(
     "block_passed_as_None",
-    ["total_capital_cost", "annual_operating_cost", "annual_revenue", "cost_year",]
-    )
+    [
+        "total_capital_cost",
+        "annual_operating_cost",
+        "annual_revenue",
+        "cost_year",
+    ],
+)
 @pytest.mark.unit
 def test_REE_costing_verify_NPV_fixed_input_failure_input_not_set(block_passed_as_None):
     m = pyo.ConcreteModel()
@@ -4937,28 +4984,26 @@ def test_REE_costing_verify_NPV_fixed_input_failure_input_not_set(block_passed_a
         total_capital_cost=m.fs.total_capital_cost,
         annual_operating_cost=m.fs.annual_operating_cost,
         annual_revenue=m.fs.annual_revenue,
-        cost_year=m.fs.cost_year
-        )
+        cost_year=m.fs.cost_year,
+    )
 
     with pytest.raises(
         AttributeError,
         match="If capital, fixed O&M, or variable O&M costs are not calculated, "
         "then inputs for total_capital_cost, annual_operating_cost, and annual_revenue "
         "must be passed, and cost_year must be passed as a string, e.g. '2021'.",
-    ):    
+    ):
         m.fs.costing.build_process_costs(
             fixed_OM=False,
             calculate_NPV=True,
-            )
+        )
 
 
 @pytest.mark.unit
 def test_REE_costing_assert_has_config_argument_success():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.costing = QGESSCosting(
-        discount_percentage=10
-        )
+    m.fs.costing = QGESSCosting(discount_percentage=10)
 
     QGESSCostingData.assert_config_argument_set(m.fs.costing, "discount_percentage")
 
@@ -4985,7 +5030,7 @@ def test_REE_costing_assert_has_config_argument_failure_argument_not_set():
         annual_operating_cost=100,
         annual_revenue=100,
         cost_year="2021",
-        )
+    )
 
     with pytest.raises(
         AttributeError,
@@ -4995,7 +5040,7 @@ def test_REE_costing_assert_has_config_argument_failure_argument_not_set():
         m.fs.costing.build_process_costs(
             fixed_OM=False,
             calculate_NPV=True,
-            )
+        )
 
 
 @pytest.mark.unit
@@ -5010,17 +5055,23 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset():
         annual_revenue=100,
         cost_year="2021",
         has_capital_expenditure_period=True,
-        capital_expenditure_percentages=[100,]
-        )
+        capital_expenditure_percentages=[
+            100,
+        ],
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=False,
         calculate_NPV=True,
-        )
+    )
 
-    assert m.fs.costing.config.capital_expenditure_percentages == [100,]
+    assert m.fs.costing.config.capital_expenditure_percentages == [
+        100,
+    ]
     assert isinstance(m.fs.costing.capital_expenditure_percentages, pyo.Param)
-    assert m.fs.costing.capital_expenditure_percentages.index_set() == [0,]
+    assert m.fs.costing.capital_expenditure_percentages.index_set() == [
+        0,
+    ]
 
 
 @pytest.mark.component
@@ -5035,13 +5086,15 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
         annual_revenue=100,
         cost_year="2021",
         has_capital_expenditure_period=True,
-        capital_expenditure_percentages=[100,]
-        )
+        capital_expenditure_percentages=[
+            100,
+        ],
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=False,
         calculate_NPV=True,
-        )
+    )
 
     dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
@@ -5061,13 +5114,15 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
             -pyunits.convert(
                 sum(
                     pyunits.convert(
-                        m.fs.costing.config.capital_expenditure_percentages[idx] * pyunits.percent,
+                        m.fs.costing.config.capital_expenditure_percentages[idx]
+                        * pyunits.percent,
                         to_units=pyunits.dimensionless,
                     )
                     * m.fs.costing.CAPEX
                     * series_present_worth_factor(
                         pyunits.convert(
-                            m.fs.costing.discount_percentage, to_units=pyunits.dimensionless
+                            m.fs.costing.discount_percentage,
+                            to_units=pyunits.dimensionless,
                         ),
                         pyunits.convert(
                             m.fs.costing.capital_escalation_percentage,
@@ -5075,12 +5130,15 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
                         ),
                         idx + 1,
                     )
-                    for idx in range(len(m.fs.costing.config.capital_expenditure_percentages))
+                    for idx in range(
+                        len(m.fs.costing.config.capital_expenditure_percentages)
+                    )
                 ),
                 to_units=m.fs.costing.cost_units,
             )
-            ), rel=1e-4
-        )
+        ),
+        rel=1e-4,
+    )
 
 
 @pytest.mark.unit
@@ -5095,12 +5153,12 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset():
         annual_revenue=100,
         cost_year="2021",
         has_capital_expenditure_period=True,
-        )
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=False,
         calculate_NPV=True,
-        )
+    )
 
     assert m.fs.costing.config.capital_expenditure_percentages == [10, 60, 30]
     assert isinstance(m.fs.costing.capital_expenditure_percentages, pyo.Param)
@@ -5119,12 +5177,12 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
         annual_revenue=100,
         cost_year="2021",
         has_capital_expenditure_period=True,
-        )
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=False,
         calculate_NPV=True,
-        )
+    )
 
     dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
@@ -5144,13 +5202,15 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
             -pyunits.convert(
                 sum(
                     pyunits.convert(
-                        m.fs.costing.config.capital_expenditure_percentages[idx] * pyunits.percent,
+                        m.fs.costing.config.capital_expenditure_percentages[idx]
+                        * pyunits.percent,
                         to_units=pyunits.dimensionless,
                     )
                     * m.fs.costing.CAPEX
                     * series_present_worth_factor(
                         pyunits.convert(
-                            m.fs.costing.discount_percentage, to_units=pyunits.dimensionless
+                            m.fs.costing.discount_percentage,
+                            to_units=pyunits.dimensionless,
                         ),
                         pyunits.convert(
                             m.fs.costing.capital_escalation_percentage,
@@ -5158,12 +5218,15 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
                         ),
                         idx + 1,
                     )
-                    for idx in range(len(m.fs.costing.config.capital_expenditure_percentages))
+                    for idx in range(
+                        len(m.fs.costing.config.capital_expenditure_percentages)
+                    )
                 ),
                 to_units=m.fs.costing.cost_units,
             )
-            ), rel=1e-4
-        )
+        ),
+        rel=1e-4,
+    )
 
 
 @pytest.mark.unit
@@ -5178,12 +5241,12 @@ def test_REE_costing_not_has_capital_expenditure_period():
         annual_revenue=100,
         cost_year="2021",
         has_capital_expenditure_period=False,
-        )
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=False,
         calculate_NPV=True,
-        )
+    )
 
     assert m.fs.costing.config.capital_expenditure_percentages == []
     assert not hasattr(m.fs, "capital_expenditure_percentages")
@@ -5201,12 +5264,12 @@ def test_REE_costing_not_has_capital_expenditure_period_solve():
         annual_revenue=100,
         cost_year="2021",
         has_capital_expenditure_period=False,
-        )
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=False,
         calculate_NPV=True,
-        )
+    )
 
     dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
@@ -5237,8 +5300,10 @@ def test_REE_costing_not_has_capital_expenditure_period_solve():
                 ),  # formula gives P/A (r, g, 0) = 1
                 to_units=m.fs.costing.cost_units,
             )
-            ), rel=1e-4
-        )
+        ),
+        rel=1e-4,
+    )
+
 
 @pytest.mark.unit
 def test_REE_costing_verify_percentages_list():
@@ -5260,21 +5325,25 @@ def test_REE_costing_verify_percentages_list_notalist():
         match="10 is not a list. "
         "Argument capital_expenditure_percentages must be passed as a list.",
     ):
-        QGESSCostingData.verify_percentages_list(m.fs, "capital_expenditure_percentages")
+        QGESSCostingData.verify_percentages_list(
+            m.fs, "capital_expenditure_percentages"
+        )
 
 
 @pytest.mark.unit
 def test_REE_costing_verify_percentages_list_zerolength():
-   m = pyo.ConcreteModel()
-   m.fs = FlowsheetBlock(dynamic=False)
-   m.fs.capital_expenditure_percentages = []
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.capital_expenditure_percentages = []
 
-   with pytest.raises(
+    with pytest.raises(
         AttributeError,
         match="Argument capital_expenditure_percentages has a length of "
         "zero. List must have a nonzero length.",
     ):
-        QGESSCostingData.verify_percentages_list(m.fs, "capital_expenditure_percentages")
+        QGESSCostingData.verify_percentages_list(
+            m.fs, "capital_expenditure_percentages"
+        )
 
 
 @pytest.mark.unit
@@ -5288,14 +5357,14 @@ def test_REE_costing_verify_percentages_list_doesnotsumto100():
         match="Argument capital_expenditure_percentages has a sum of 90. "
         "List must sum to 100 percent.",
     ):
-        QGESSCostingData.verify_percentages_list(m.fs, "capital_expenditure_percentages")
+        QGESSCostingData.verify_percentages_list(
+            m.fs, "capital_expenditure_percentages"
+        )
 
 
 # assert cost objects
 assert_cost_obj_dict = {
-    "Param": pyo.Param(
-        initialize=100, units = pyunits.MUSD_2021, mutable=False
-    ),
+    "Param": pyo.Param(initialize=100, units=pyunits.MUSD_2021, mutable=False),
     "Var": pyo.Var(initialize=100, units=pyunits.MUSD_2021),
     "Expression": pyo.Expression(expr=100 * pyunits.MUSD_2021),
     "ScalarExpression": ScalarExpression(expr=100 * pyunits.MUSD_2021),
@@ -5320,7 +5389,8 @@ assert_cost_obj_dict = {
             ),
         ),
         (
-            "None", does_not_raise(),  # method assumes argument was not passed, since None is the default
+            "None",
+            does_not_raise(),  # method assumes argument was not passed, since None is the default
         ),
     ],
 )
@@ -5345,7 +5415,9 @@ def test_REE_costing_royalty_expression():
     m.fs.cost_year = "2021"
 
     # suppose royalties are 6.5% of revenue (default), plus $100,000 flat fee
-    m.fs.royalty_formula = pyo.Expression(expr=6.5/100 * m.fs.annual_revenue + 0.1 * pyunits.MUSD_2021)
+    m.fs.royalty_formula = pyo.Expression(
+        expr=6.5 / 100 * m.fs.annual_revenue + 0.1 * pyunits.MUSD_2021
+    )
 
     m.fs.costing = QGESSCosting(
         discount_percentage=10,
@@ -5355,12 +5427,12 @@ def test_REE_costing_royalty_expression():
         annual_revenue=m.fs.annual_revenue,
         cost_year=m.fs.cost_year,
         royalty_expression=m.fs.royalty_formula,
-        )
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=False,
         calculate_NPV=True,
-        )
+    )
 
     assert isinstance(m.fs.costing.pv_royalties[None], ScalarExpression)
     assert not hasattr(m.fs.costing, "pv_royalties_constraint")
@@ -5381,7 +5453,9 @@ def test_REE_costing_royalty_expression_solve():
     m.fs.cost_year = "2021"
 
     # suppose royalties are 6.5% of revenue (default), plus $100,000 flat fee
-    m.fs.royalty_formula = pyo.Expression(expr=6.5/100 * m.fs.annual_revenue + 0.1 * pyunits.MUSD_2021)
+    m.fs.royalty_formula = pyo.Expression(
+        expr=6.5 / 100 * m.fs.annual_revenue + 0.1 * pyunits.MUSD_2021
+    )
 
     m.fs.costing = QGESSCosting(
         discount_percentage=10,
@@ -5391,12 +5465,12 @@ def test_REE_costing_royalty_expression_solve():
         annual_revenue=m.fs.annual_revenue,
         cost_year=m.fs.cost_year,
         royalty_expression=m.fs.royalty_formula,
-        )
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=False,
         calculate_NPV=True,
-        )
+    )
 
     dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()
@@ -5422,7 +5496,9 @@ def test_REE_costing_debt_expression():
     m.fs.cost_year = "2021"
 
     # suppose debt is 50% of CAPEX (default), plus 5% of OPEX
-    m.fs.debt_formula = pyo.Expression(expr=50/100 * m.fs.total_capital_cost + 5/100 * m.fs.annual_operating_cost)
+    m.fs.debt_formula = pyo.Expression(
+        expr=50 / 100 * m.fs.total_capital_cost + 5 / 100 * m.fs.annual_operating_cost
+    )
 
     m.fs.costing = QGESSCosting(
         discount_percentage=10,
@@ -5432,12 +5508,12 @@ def test_REE_costing_debt_expression():
         annual_revenue=m.fs.annual_revenue,
         cost_year=m.fs.cost_year,
         debt_expression=m.fs.debt_formula,
-        )
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=False,
         calculate_NPV=True,
-        )
+    )
 
     assert isinstance(m.fs.costing.loan_debt[None], ScalarExpression)
     assert not hasattr(m.fs.costing, "loan_debt_constraint")
@@ -5458,7 +5534,9 @@ def test_REE_costing_debt_expression_solve():
     m.fs.cost_year = "2021"
 
     # suppose debt is 50% of CAPEX (default), plus 5% of OPEX
-    m.fs.debt_formula = pyo.Expression(expr=50/100 * m.fs.total_capital_cost + 5/100 * m.fs.annual_operating_cost)
+    m.fs.debt_formula = pyo.Expression(
+        expr=50 / 100 * m.fs.total_capital_cost + 5 / 100 * m.fs.annual_operating_cost
+    )
 
     m.fs.costing = QGESSCosting(
         discount_percentage=10,
@@ -5468,12 +5546,12 @@ def test_REE_costing_debt_expression_solve():
         annual_revenue=m.fs.annual_revenue,
         cost_year=m.fs.cost_year,
         debt_expression=m.fs.debt_formula,
-        )
+    )
 
     m.fs.costing.build_process_costs(
         fixed_OM=False,
         calculate_NPV=True,
-        )
+    )
 
     dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
     dt.assert_no_structural_warnings()

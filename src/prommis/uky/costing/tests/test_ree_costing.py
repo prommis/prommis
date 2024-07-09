@@ -57,12 +57,10 @@ if watertap_costing_available:
         MCASParameterBlock,
     )
     from watertap.unit_models.ion_exchange_0D import IonExchange0D
-    from watertap.unit_models.nanofiltration_DSPMDE_0D import (
+    from watertap.unit_models.nanofiltration_DSPMDE_0D import NanofiltrationDSPMDE0D
+    from watertap.unit_models.reverse_osmosis_1D import (
         ConcentrationPolarizationType,
         MassTransferCoefficient,
-        NanofiltrationDSPMDE0D,
-    )
-    from watertap.unit_models.reverse_osmosis_1D import (
         PressureChangeType,
         ReverseOsmosis1D,
     )

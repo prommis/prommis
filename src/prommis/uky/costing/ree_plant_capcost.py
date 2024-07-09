@@ -412,9 +412,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 per ton of product (note, this is not part of the TOC)
             CE_index_year: year for cost basis, e.g. "2021" to use 2021 dollars
             watertap_block: list of unit model blocks corresponding to watertap models
-
-            Keyword arguments related to NPV:
             calculate_NPV: True/false flag for calculating net present value (NPV).
+
+            Keyword arguments related to NPV, entered at class instantiation:
             discount_percentage: rate at which currency devalues over time;
                 alternatively, this is the required rate of return on investment.
             plant_lifetime: length of operating period in years.
@@ -1322,6 +1322,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             var_dict["Total Sales Revenue Cost [$MM/year]"] = value(
                 self.total_sales_revenue
             )
+
+        if hasattr(self, "npv"):
+            var_dict["Net Present Value [$MM]"] = value(self.npv)
 
         report_dir = {}
         report_dir["Value"] = {}
@@ -2646,6 +2649,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 "Cost of recovery: $%.3f per kg REE recovered"
                 % value(b.cost_of_recovery)
             )
+        print()
+
+        if hasattr(b, "npv"):
+            print("Net present value: $%.3f Million" % value(b.npv))
         print("\n")
 
     def calculate_REE_costing_bounds(
@@ -2978,8 +2985,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 operating cost, and total revenue from, and add net present
                 value (NPV) calculations to; if not a costing block, b should
                 be a flowsheet block to attach parameters and variables to
+            fixed_OM: True/False flag for calculating fixed O&M costs
+            variable_OM: True/False flag for calculating variable O&M costs
 
-            Keywords arguments for NPV:
+            Keyword arguments related to NPV, entered at class instantiation:
             discount_percentage: rate at which currency devalues over time;
                 alternatively, this is the required rate of return on investment.
             plant_lifetime: length of operating period in years.
@@ -3449,7 +3458,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
     def verify_calculate_from_costing_block(b):
         """
-        Verify that parent block for NPV calculations is of expected type.
+        Verify that parent block for NPV calculations has expected attributes.
         """
         try:
             b.CAPEX = b.total_BEC + b.total_installation_cost + b.other_plant_costs
@@ -3474,7 +3483,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
     def verify_calculate_from_inputs(b):
         """
-        Verify that parent block for NPV calculations is of expected type.
+        Verify that expected inputs are set.
         """
         # if b is not a costing block, it must be a flowsheet block
         # variables and constraints will be added there
@@ -3538,10 +3547,16 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.REVENUE = costs["REVENUE"]
 
     def assert_config_argument_set(b, name):
+        """
+        Verify that required arguments are set.
+        """
         if getattr(b.config, name) is None:
             raise AttributeError(f"Required argument {name} not set")
 
     def verify_percentages_list(b, name):
+        """
+        Verify that percentage lists have expected properties.
+        """
         percentages_list = getattr(b, name)
 
         if not isinstance(percentages_list, list):
@@ -3562,6 +3577,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
     def assert_Pyomo_object(b, name):
+        """
+        Verify that objects are of a supported type.
+        """
         if getattr(b, name) is not None:
             obj = getattr(b, name)
             if not (

@@ -58,7 +58,6 @@ if watertap_costing_available:
         PressureChangeType,
         ReverseOsmosis1D,
     )
-    from watertap.core.solvers import get_solver as get_watertap_solver
 
 _log = idaeslog.getLogger(__name__)
 
@@ -1231,7 +1230,6 @@ class TestREECosting(object):
         assert not os.path.exists(os.path.join(os.getcwd(), "costing_report.csv"))
 
         model.fs.costing.variable_operating_costs.display()  # results will be in t = 0
-        print()
         QGESSCostingData.display_total_plant_costs(model.fs.costing)
         QGESSCostingData.display_bare_erected_costs(model.fs.costing)
         QGESSCostingData.display_flowsheet_cost(model.fs.costing)
@@ -1407,11 +1405,6 @@ class TestREECosting(object):
 class TestWaterTAPCosting(object):
     @pytest.fixture(scope="class")
     def solver(self):
-        pytest.importorskip("watertap", reason="WaterTAP dependency not available")
-        return get_watertap_solver()
-
-    @pytest.fixture(scope="class")
-    def model(self, solver):
         pytest.importorskip("watertap", reason="WaterTAP dependency not available")
         return get_watertap_solver()
 
@@ -2268,6 +2261,7 @@ class TestNPVFixedInputs(object):
         m.fs.costing = QGESSCosting(
             discount_percentage=10,
             plant_lifetime=20,
+            # use CAPEX, OPEX, REVENUE from CostingBlock test to verify results are the same
             total_capital_cost=7.461172417869669,
             annual_operating_cost=6.880158261340908,
             annual_revenue=64.38220104959998,
@@ -2275,7 +2269,6 @@ class TestNPVFixedInputs(object):
             cost_year="2021",
         )
 
-        # use CAPEX, OPEX, REVENUE from CostingBlock to verify results are the same
         m.fs.costing.build_process_costs(
             fixed_OM=False,
             calculate_NPV=True,

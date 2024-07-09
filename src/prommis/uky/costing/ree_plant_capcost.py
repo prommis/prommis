@@ -163,7 +163,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=None,
             domain=list,
-            description="a list of values that sum to 100 representing how capital costs are spread over a capital expenditure period; for example, an input of [10, 60, 30] is parsed as a 3-year period where capital costs are spread as 10% in year 1, 60% in year 2,and 30% in year 3. The capital period precedes the operating period. Set to None to indicate no expenditure period.",
+            description="a list of values that sum to 100 representing how capital costs are spread over a capital expenditure period; for example, an input of [10, 60, 30] is parsed as a 3-year period where capital costs are spread as 10% in year 1, 60% in year 2, and 30% in year 3. The capital period precedes the operating period. Set to None to indicate no expenditure period.",
         ),
     )
     CONFIG.declare(
@@ -2861,7 +2861,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
     def calculate_NPV(b, fixed_OM, variable_OM):
         """
-        Equations for cash flow expressions derive from the textbook
+        Equations for cash flow expressions derived from the textbook
         Engineering Economy: Applying Theory to Practice, 3rd Ed. by Ted. G. Eschenbach.
 
         The net present value (NPV) is a representative measure of the "current
@@ -3190,7 +3190,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         def series_present_worth_factor(r, g, N):
             """
-            Returns expression for series present worth factor.
+            Returns expression for series present worth factor where r is the discount rate
+            expressed as a decimal, N is the project lifetime, and g is the escalation rate
+            (e.g. inflation) expressed as a decimal.
             """
             return (1 - ((1 + g) ** (N)) * ((1 + r) ** (-N))) / (r - g)
 
@@ -3333,7 +3335,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             @b.Constraint()
             def loan_debt_constraint(c):
-                # Debt  = - %debt_charge_of_CAPEX * CAPEX
+                # Debt  = %debt_charge_of_CAPEX * CAPEX
 
                 return c.loan_debt == pyunits.convert(
                     pyunits.convert(

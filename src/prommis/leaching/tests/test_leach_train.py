@@ -1,3 +1,9 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 from pyomo.environ import (
     assert_optimal_termination,
     ConcreteModel,
@@ -117,8 +123,8 @@ def test_build(model):
         len(model.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint) == 12
     )
 
-    assert number_variables(model.fs.leach) == 191
-    assert number_total_constraints(model.fs.leach) == 159
+    assert number_variables(model.fs.leach) == 197
+    assert number_total_constraints(model.fs.leach) == 164
     assert number_unused_variables(model.fs.leach) == 0
 
 

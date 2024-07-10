@@ -1,9 +1,3 @@
-
-from pyomo.environ import (
-    SolverFactory,
-    assert_optimal_termination,
-    value,
-=======
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
 # (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
@@ -15,18 +9,13 @@ import numpy as np
 
 from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.initialization import InitializationStatus
-from idaes.core.initialization.block_triangularization import (
-    BlockTriangularizationInitializer,
-
-)
-
 from idaes.core.util import DiagnosticsToolbox
+from idaes.core.solvers import get_solver
 
 import pytest
 
-
 from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer
-=======
+
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
@@ -161,77 +150,102 @@ class TestSXmodel:
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Dy"].fix(0.047)
         m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Cl"].fix(1e-8)
 
+        m.fs.solex.mscontactor.aqueous_inlet_state[0].flow_vol.fix(62.01)
 
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Al"].fix(1.267e-5)
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Ca"].fix(2.684e-5)
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Fe"].fix(2.873e-6)
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Sc"].fix(1.734)
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Y"].fix(2.179e-5)
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["La"].fix(0.000105)
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Ce"].fix(0.00031)
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Pr"].fix(3.711e-5)
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Nd"].fix(0.000165)
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Sm"].fix(1.701e-5)
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Gd"].fix(3.357e-5)
+        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].fix(8.008e-6)
 
-@pytest.mark.unit
-def test_structural_issues(model):
-    dt = DiagnosticsToolbox(model)
-    dt.report_structural_issues()
-    dt.assert_no_structural_warnings()
+        m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
 
+        return m
 
-@pytest.mark.component
-@pytest.mark.solver
-def test_solve(model):
+    @pytest.mark.component
+    def test_structural_issues(self, SolEx_frame):
+        model = SolEx_frame
+        dt = DiagnosticsToolbox(model)
+        dt.assert_no_structural_warnings()
 
-    initializer = SolventExtractionInitializer()
-    initializer.initialize(model.fs.solex)
+    @pytest.mark.component
+    def test_block_triangularization(self, SolEx_frame):
+        model = SolEx_frame
+        initializer = SolventExtractionInitializer()
+        initializer.initialize(model.fs.solex)
 
-    solver = SolverFactory("ipopt")
-    results = solver.solve(model, tee=False)
+        assert initializer.summary[model.fs.solex]["status"] == InitializationStatus.Ok
 
-    assert_optimal_termination(results)
+    @pytest.mark.solver
+    @pytest.mark.skipif(solver is None, reason="Solver not available")
+    @pytest.mark.component
+    def test_solve(self, SolEx_frame):
+        m = SolEx_frame
+        results = solver.solve(m, tee=True)
+        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mol_comp["H2O"].pprint()
 
+        # Check for optimal solution
+        assert check_optimal_termination(results)
 
-@pytest.mark.component
-@pytest.mark.solver
-def test_numerical_issues(model):
-    dt = DiagnosticsToolbox(model)
-    dt.assert_no_numerical_warnings()
+    @pytest.mark.component
+    @pytest.mark.solver
+    def test_numerical_issues(self, SolEx_frame):
+        model = SolEx_frame
+        dt = DiagnosticsToolbox(model)
+        dt.assert_no_numerical_warnings()
 
+    @pytest.mark.component
+    @pytest.mark.solver
+    def test_solution(self, SolEx_frame):
 
-@pytest.mark.component
-@pytest.mark.solver
-def test_solution(model):
-    number_of_stages = 3
-    aqueous_outlet = {
-        "H2O": 1000000,
-        "H": 1.75563,
-        "SO4": 3999.885,
-        "HSO4": 693.3903,
-        "Al": 362.132,
-        "Ca": 81.724,
-        "Ce": 0.5368,
-        "Dy": 0.0014421,
-        "Fe": 454.049,
-        "Gd": 0.066625,
-        "La": 0.39313,
-        "Nd": 1.173e-07,
-        "Pr": 0.091292,
-        "Sc": 0.00019984,
-        "Sm": 9.6992e-11,
-        "Y": 1.239e-10,
-    }
+        model = SolEx_frame
+        number_of_stages = 3
+        aqueous_outlet = {
+            "H2O": 1000000,
+            "H": 1.75563,
+            "SO4": 3999.885,
+            "HSO4": 693.3903,
+            "Al": 362.132,
+            "Ca": 81.724,
+            "Cl": 1e-8,
+            "Ce": 0.5368,
+            "Dy": 0.0014421,
+            "Fe": 454.049,
+            "Gd": 0.066625,
+            "La": 0.39313,
+            "Nd": 1.173e-07,
+            "Pr": 0.091292,
+            "Sc": 0.00019984,
+            "Sm": 9.6992e-11,
+            "Y": 1.239e-10,
+        }
 
-    organic_outlet = {
-        "Al": 60.242,
-        "Ca": 27.817,
-        "Ce": 1.7405,
-        "Dy": 0.045565,
-        "Fe": 234.216,
-        "Gd": 0.1918,
-        "La": 0.59296,
-        "Nd": 0.9461,
-        "Pr": 0.211744,
-        "Sc": 1.7658,
-        "Sm": 0.097017,
-        "Y": 0.12402,
-    }
+        organic_outlet = {
+            "Al": 60.242,
+            "Ca": 27.817,
+            "Ce": 1.7405,
+            "Dy": 0.045565,
+            "Fe": 234.216,
+            "Gd": 0.1918,
+            "La": 0.59296,
+            "Nd": 0.9461,
+            "Pr": 0.211744,
+            "Sc": 1.7658,
+            "Sm": 0.097017,
+            "Y": 0.12402,
+        }
 
-    for k, v in model.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.items():
-        assert value(v) == pytest.approx(organic_outlet[k], rel=1e-4)
+        for k, v in model.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.items():
+            assert value(v) == pytest.approx(organic_outlet[k], rel=1e-4)
 
-    for k, v in model.fs.solex.mscontactor.aqueous[
-        0, number_of_stages
-    ].conc_mass_comp.items():
-        assert value(v) == pytest.approx(aqueous_outlet[k], rel=1e-4)
+        for k, v in model.fs.solex.mscontactor.aqueous[
+            0, number_of_stages
+        ].conc_mass_comp.items():
+            assert value(v) == pytest.approx(aqueous_outlet[k], rel=1e-4)

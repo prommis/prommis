@@ -26,6 +26,37 @@ from prommis.solvent_extraction.solvent_extraction import (
 )
 
 """
+Method of building a solvent extraction model with a specified number of stages
+and with two separate property packages for the two inlet streams.
+This is a loading operation, so no additional argument has to be specified.
+
+"""
+
+m = ConcreteModel()
+m.fs = FlowsheetBlock(dynamic=False)
+m.fs.prop_o = REESolExOgParameters()
+m.fs.leach_soln = LeachSolutionParameters()
+
+number_of_stages = 3
+
+m.fs.solex = SolventExtraction(
+    number_of_finite_elements=number_of_stages,
+    dynamic=False,
+    aqueous_stream={
+        "property_package": m.fs.leach_soln,
+        "flow_direction": FlowDirection.forward,
+        "has_energy_balance": False,
+        "has_pressure_balance": False,
+    },
+    organic_stream={
+        "property_package": m.fs.prop_o,
+        "flow_direction": FlowDirection.backward,
+        "has_energy_balance": False,
+        "has_pressure_balance": False,
+    },
+)
+
+"""
 Specification of the values of the partition coefficients of the elements
 based on the values provided in the REESim file. 
 
@@ -107,7 +138,7 @@ Initialization of the model, which gives a good starting point.
 
 """
 
-initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
+initializer = SolventExtractionInitializer()
 initializer.initialize(m.fs.solex)
 
 """
@@ -116,10 +147,12 @@ Solution of the model and display of the final results.
 """
 
 solver = SolverFactory("ipopt")
-solver.options["bound_push"] = 1e-8
-solver.options["mu_init"] = 1e-8
 solver.solve(m, tee=True)
 
 # Final organic outlet display
 m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()
 m.fs.solex.mscontactor.organic[0, 1].conc_mol_comp.display()
+
+# Final aqueous outlets display
+m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp.display()
+m.fs.solex.mscontactor.aqueous[0, 3].conc_mol_comp.display()

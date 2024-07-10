@@ -16,11 +16,45 @@ from pyomo.environ import ConcreteModel, SolverFactory
 
 from idaes.core import FlowDirection, FlowsheetBlock
 
+from idaes.core.util.model_statistics import degrees_of_freedom as dof
+
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import (
     SolventExtraction,
     SolventExtractionInitializer,
+)
+
+"""
+Method of building a solvent extraction model with a specified number of stages
+and with two separate property packages for the two inlet streams.
+This is a stripping operation, so an additional argument regarding the direction 
+of mass transfer flow has to be specified.
+"""
+
+m = ConcreteModel()
+m.fs = FlowsheetBlock(dynamic=False)
+m.fs.prop_o = REESolExOgParameters()
+m.fs.leach_soln = LeachSolutionParameters()
+
+number_of_stages = 1
+
+m.fs.solex = SolventExtraction(
+    number_of_finite_elements=number_of_stages,
+    dynamic=False,
+    aqueous_stream={
+        "property_package": m.fs.leach_soln,
+        "flow_direction": FlowDirection.backward,
+        "has_energy_balance": False,
+        "has_pressure_balance": False,
+    },
+    organic_stream={
+        "property_package": m.fs.prop_o,
+        "flow_direction": FlowDirection.forward,
+        "has_energy_balance": False,
+        "has_pressure_balance": False,
+    },
+    aqueous_to_organic=False,
 )
 
 """
@@ -90,7 +124,7 @@ Initialization of the model, which gives a good starting point.
 
 """
 
-initializer = BlockTriangularizationInitializer()
+initializer = SolventExtractionInitializer()
 initializer.initialize(m.fs.solex)
 
 """
@@ -105,3 +139,6 @@ solver.solve(m, tee=True)
 
 # Final organic outlet display
 m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()
+
+# Final aqueous outlets display
+m.fs.solex.mscontactor.aqueous[0, 1].conc_mass_comp.display()

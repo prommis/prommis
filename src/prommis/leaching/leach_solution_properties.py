@@ -1,15 +1,9 @@
-#################################################################################
-# The Institute for the Design of Advanced Energy Systems Integrated Platform
-# Framework (IDAES IP) was produced under the DOE Institute for the
-# Design of Advanced Energy Systems (IDAES).
-#
-# Copyright (c) 2018-2023 by the software owners: The Regents of the
-# University of California, through Lawrence Berkeley National Laboratory,
-# National Technology & Engineering Solutions of Sandia, LLC, Carnegie Mellon
-# University, West Virginia University Research Corporation, et al.
-# All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
-# for full copyright and license information.
-#################################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """
 Initial property package for REE leach solutions from coal refuse.
 
@@ -62,6 +56,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
         self.H = Component()
         self.HSO4 = Component()
         self.SO4 = Component()
+        self.Cl = Component()
 
         # REEs
         self.Sc = Component()
@@ -87,6 +82,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
                 "H": 1e-3,
                 "HSO4": 97e-3,
                 "SO4": 96e-3,
+                "Cl": 35.453e-3,
                 "Sc": 44.946e-3,
                 "Y": 88.905e-3,
                 "La": 138.905e-3,
@@ -110,6 +106,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
             ("Ka2", "liquid", "HSO4"): -1,
             ("Ka2", "liquid", "SO4"): 1,
             ("Ka2", "liquid", "H2O"): 0,
+            ("Ka2", "liquid", "Cl"): 0,
             ("Ka2", "liquid", "Sc"): 0,
             ("Ka2", "liquid", "Y"): 0,
             ("Ka2", "liquid", "La"): 0,
@@ -130,7 +127,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
         )
 
         # Assume dilute acid, density of pure water
-        self.dens_mol = Param(
+        self.dens_mass = Param(
             initialize=1,
             units=units.kg / units.litre,
             mutable=True,
@@ -145,7 +142,7 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
                 "flow_vol": {"method": None},
                 "conc_mass_comp": {"method": None},
                 "conc_mol_comp": {"method": None},
-                "dens_mol": {"method": "_dens_mol"},
+                "dens_mass": {"method": "_dens_mass"},
             }
         )
         obj.add_default_units(
@@ -196,6 +193,7 @@ class LeachSolutionStateBlockData(StateBlockData):
         self.conc_mass_comp = Var(
             self.params.component_list,
             units=units.mg / units.L,
+            initialize=1e-8,
             bounds=(1e-20, None),
         )
         self.conc_mol_comp = Var(
@@ -226,14 +224,14 @@ class LeachSolutionStateBlockData(StateBlockData):
                 == self.conc_mol_comp["H"] * self.conc_mol_comp["SO4"]
             )
 
-    def _dens_mol(self):
-        add_object_reference(self, "dens_mol", self.params.dens_mol)
+    def _dens_mass(self):
+        add_object_reference(self, "dens_mass", self.params.dens_mass)
 
     def get_material_flow_terms(self, p, j):
         # Note conversion to mol/hour
         if j == "H2O":
             # Assume constant density of 1 kg/L
-            return self.flow_vol * self.params.dens_mol / self.params.mw[j]
+            return self.flow_vol * self.params.dens_mass / self.params.mw[j]
         else:
             # Need to convert from moles to mass
             return units.convert(
@@ -244,7 +242,7 @@ class LeachSolutionStateBlockData(StateBlockData):
     def get_material_density_terms(self, p, j):
         if j == "H2O":
             return units.convert(
-                self.params.dens_mol / self.params.mw[j],
+                self.params.dens_mass / self.params.mw[j],
                 to_units=units.mol / units.m**3,
             )
         else:

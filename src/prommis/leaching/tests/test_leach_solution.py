@@ -1,3 +1,9 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 from pyomo.environ import ConcreteModel, Constraint, Param, Set, value, Var
 
 from idaes.core import FlowsheetBlock
@@ -41,6 +47,7 @@ def test_parameters(model):
             "Al",
             "Ca",
             "Fe",
+            "Cl",
         ]
         assert k in model.fs.leach_soln.mw
 
@@ -65,13 +72,14 @@ def test_parameters(model):
         ("Ka2", "liquid", "Al"): 0,
         ("Ka2", "liquid", "Ca"): 0,
         ("Ka2", "liquid", "Fe"): 0,
+        ("Ka2", "liquid", "Cl"): 0,
     }
 
     assert isinstance(model.fs.leach_soln.Ka2, Param)
     assert value(model.fs.leach_soln.Ka2) == pytest.approx(10**-1.99, rel=1e-8)
 
-    assert isinstance(model.fs.leach_soln.dens_mol, Param)
-    assert value(model.fs.leach_soln.dens_mol) == pytest.approx(1, rel=1e-8)
+    assert isinstance(model.fs.leach_soln.dens_mass, Param)
+    assert value(model.fs.leach_soln.dens_mass) == pytest.approx(1, rel=1e-8)
 
 
 @pytest.mark.unit
@@ -88,7 +96,7 @@ def test_build_state(model):
     assert isinstance(model.fs.state[0].h2o_concentration, Constraint)
     assert isinstance(model.fs.state[0].hso4_dissociation, Constraint)
 
-    assert isinstance(model.fs.state[0].dens_mol, Param)
+    assert isinstance(model.fs.state[0].dens_mass, Param)
 
 
 @pytest.mark.unit

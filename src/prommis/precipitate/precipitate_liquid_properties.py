@@ -1,15 +1,9 @@
-#################################################################################
-# The Institute for the Design of Advanced Energy Systems Integrated Platform
-# Framework (IDAES IP) was produced under the DOE Institute for the
-# Design of Advanced Energy Systems (IDAES).
-#
-# Copyright (c) 2018-2023 by the software owners: The Regents of the
-# University of California, through Lawrence Berkeley National Laboratory,
-# National Technology & Engineering Solutions of Sandia, LLC, Carnegie Mellon
-# University, West Virginia University Research Corporation, et al.
-# All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
-# for full copyright and license information.
-#################################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """
 Initial property package for precipitate.
 
@@ -36,6 +30,24 @@ from idaes.core.util.misc import add_object_reference
 # Precipitate solution property package
 @declare_process_block_class("AqueousParameter")
 class AqueousParameterData(PhysicalParameterBlock):
+    """
+    Property package for aqueous solution generated in oxalate precipitator.
+
+    Includes the following components:
+
+    * Rare Earths: Sc, Y, La, Ce, Pr, Nd, Sm, Gd, Dy
+    * Impurities: Al, Ca, Fe
+
+    Assumes the equilibrium reaction has a fixed rate and fixed partition coefficients
+    based on:
+
+    Wang, Y., Ziemkiewicz, P., Noble, A., A Hybrid Experimental and Theoretical Approach
+    to Optimize Recovery of Rare Earth Elements from Acid Mine Drainage,
+    Minerals, 2022, 12. 236
+
+    self.split can be substituted by surrogate model
+    """
+
     def build(self):
         super().build()
 
@@ -48,6 +60,10 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Al = Component()
         self.Ca = Component()
         self.Fe = Component()
+        self.H = Component()
+        self.Cl = Component()
+        self.HSO4 = Component()
+        self.SO4 = Component()
 
         # REEs
         self.Sc = Component()
@@ -77,8 +93,12 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Gd": 88.01,
                 "Dy": 87.16,
                 "Al": 0.9,
-                "Ca": 1e-20,
+                "Ca": 20.50,
                 "Fe": 2.44,
+                "H": 1e-20,
+                "Cl": 1e-20,
+                "HSO4": 1e-20,
+                "SO4": 1e-20,
             },
         )
 
@@ -99,6 +119,10 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Al": 26.982e-3,
                 "Ca": 40.078e-3,
                 "Fe": 55.845e-3,
+                "H": 1.008e-3,
+                "Cl": 35.453e-3,
+                "HSO4": 97.064e-3,
+                "SO4": 96.056e-3,
             },
         )
 
@@ -116,6 +140,11 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Sm",
                 "Gd",
                 "Dy",
+                "H",
+                "Cl",
+                "HSO4",
+                "SO4",
+                "H2O",
             ]
         )
 
@@ -163,6 +192,11 @@ class _AqueousStateBlock(StateBlock):
 
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
 class AqueousStateBlockkData(StateBlockData):
+    """
+    State block for aqueous solution generated in oxalate precipitator.
+
+    """
+
     def build(self):
         super().build()
 

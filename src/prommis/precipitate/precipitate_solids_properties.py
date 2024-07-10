@@ -1,17 +1,11 @@
-#################################################################################
-# The Institute for the Design of Advanced Energy Systems Integrated Platform
-# Framework (IDAES IP) was produced under the DOE Institute for the
-# Design of Advanced Energy Systems (IDAES).
-#
-# Copyright (c) 2018-2023 by the software owners: The Regents of the
-# University of California, through Lawrence Berkeley National Laboratory,
-# National Technology & Engineering Solutions of Sandia, LLC, Carnegie Mellon
-# University, West Virginia University Research Corporation, et al.
-# All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
-# for full copyright and license information.
-#################################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """
-Initial property package for West Kentucky No. 13 coal refuse.
+Preliminary property package for West Kentucky No. 13 coal refuse.
 
 Authors: Alejandro Garciadiego
 """
@@ -48,6 +42,23 @@ def _config_blk_build(blk):
 
 @declare_process_block_class("PrecipitateParameters")
 class PrecipitateParametersData(PhysicalParameterBlock):
+    """
+    Solid phase property package for oxalate precipitation.
+
+    Based on assay provided in:
+
+    RESEARCH PERFORMANCE FINAL REPORT, Pilot-Scale Testing of an Integrated
+    Circuit for the Extraction of Rare Earth Minerals and Elements from Coal
+    and Coal Byproducts Using Advanced Separation Technologies,
+    Honaker, R.Q., et al., DE-FE0027035
+
+    Includes the following components:
+    * Rare Earth Oxalates: "Al2(C2O4)3(s)", "Fe2(C2O4)3(s)", "Sc2(C2O4)3(s)",
+    "Y2(C2O4)3(s)", "La2(C2O4)3(s)", "Ce2(C2O4)3(s)", "Pr2(C2O4)3(s)",
+    "Nd2(C2O4)3(s)", "Sm2(C2O4)3(s)", "Gd2(C2O4)3(s)", "Dy2(C2O4)3(s)"
+
+    """
+
     CONFIG = PhysicalParameterBlock.CONFIG()
     _config_blk_build(CONFIG)
 
@@ -161,6 +172,10 @@ class _PrecipitateBlock(StateBlock):
 
 @declare_process_block_class("PrecipitateBlock", block_class=_PrecipitateBlock)
 class PrecipitateStateBlockData(StateBlockData):
+    """
+    State block for solid REE oxalate.
+    """
+
     def build(self):
         super().build()
 

@@ -4,8 +4,19 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-import prommis
+"""
+Utility functions for the examples
+"""
+
+import logging
+from typing import Union
 
 
-def test_version():
-    assert bool(prommis.__version__)
+class DropAll(logging.Filter):
+    def filter(self, record):
+        return False
+
+
+def silence_log(obj: Union[logging.Logger, logging.LoggerAdapter]):
+    log = getattr(obj, "logger", obj)
+    log.addFilter(DropAll())

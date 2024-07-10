@@ -1,26 +1,14 @@
-##############################################################################
-# Institute for the Design of Advanced Energy Systems Process Systems
-# Engineering Framework (IDAES PSE Framework) Copyright (c) 2018, by the
-# software owners: The Regents of the University of California, through
-# Lawrence Berkeley National Laboratory,  National Technology & Engineering
-# Solutions of Sandia, LLC, Carnegie Mellon University, West Virginia
-###############################################################################
-# The Institute for the Design of Advanced Energy Systems Integrated Platform
-# Framework (IDAES IP) was produced under the DOE Institute for the
-# Design of Advanced Energy Systems (IDAES), and is copyright (c) 2018-2023
-# by the software owners: The Regents of the University of California, through
-# Lawrence Berkeley National Laboratory,  National Technology & Engineering
-# Solutions of Sandia, LLC, Carnegie Mellon University, West Virginia University
-# Research Corporation, et al.  All rights reserved.
-#
-# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and
-# license information.
-###############################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 r"""
 IDAES REE Feed Roaster Unit Model
 ==================================
 
-This model represents a roaster/calcination unit for Rare Earth Element (REE) feedstock, which includes rare earth minerals, impurity minerals, moisture, and combustible organic materials.
+This model represents a roaster/calcination unit for Rare Earth Element (REE) feedstock, which includes rare earth minerals, gangue/impurity minerals, moisture, and combustible organic materials.
 
 Reactions
 ---------
@@ -107,6 +95,7 @@ Assumptions
 - If the product temperature is specified as a user input, the heat duty will be calculated. If the heat duty is given, the product temperature will be calculated.
 - Temperatures of solid and gas products are assumed to be the same.
 - No port for the solid inlet stream is used. The mass flow rate and composition of the solid reactant are specified as input variables inside the model. The mass flow rate and the composition of the solid product and dust streams are also declared as model variables. When mapping the solid products to the ``solid_outlet`` port, only the components defined in the :mod:`prommis.leaching.leach_solids_properties` module are mapped. The other species are discarded.
+
 """
 
 # Import Pyomo libraries

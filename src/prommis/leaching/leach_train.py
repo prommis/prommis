@@ -1,3 +1,9 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 r"""
 Leach Train
 ===========
@@ -18,8 +24,8 @@ system and the constraints defining the rate of reaction or equilibrium conditio
 reaction packages are similar to normal IDAES reaction packages with the following differences:
 
 * the reaction package is not coupled to any specific thermophysical property package (i.e., the liquid or solid phase
-properties). Instead, it is expected that the reaction package will link to both the solid and liquid phase properties
-using ``self.parent_block().liquid`` and ``self.parent_block().solid`` as required.
+  properties). Instead, it is expected that the reaction package will link to both the solid and liquid phase properties
+  using ``self.parent_block().liquid`` and ``self.parent_block().solid`` as required.
 
 Degrees of Freedom
 ------------------

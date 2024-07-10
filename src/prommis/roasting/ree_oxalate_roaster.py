@@ -1,38 +1,26 @@
-##############################################################################
-# Institute for the Design of Advanced Energy Systems Process Systems
-# Engineering Framework (IDAES PSE Framework) Copyright (c) 2018, by the
-# software owners: The Regents of the University of California, through
-# Lawrence Berkeley National Laboratory,  National Technology & Engineering
-# Solutions of Sandia, LLC, Carnegie Mellon University, West Virginia
-###############################################################################
-# The Institute for the Design of Advanced Energy Systems Integrated Platform
-# Framework (IDAES IP) was produced under the DOE Institute for the
-# Design of Advanced Energy Systems (IDAES), and is copyright (c) 2018-2023
-# by the software owners: The Regents of the University of California, through
-# Lawrence Berkeley National Laboratory,  National Technology & Engineering
-# Solutions of Sandia, LLC, Carnegie Mellon University, West Virginia University
-# Research Corporation, et al.  All rights reserved.
-#
-# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and
-# license information.
-###############################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 r"""
 IDAES REE Oxalate Roaster Unit Model
 ====================================
 
-REE Oxalate Roaster is a unit operation to convert oxalates of rare earth and gangue
+REE Oxalate Roaster is a unit operation to convert oxalates of rare earth and gangue metal
 elements to metal oxides through thermal decomposition and oxidation. There are 18 rare earth elements
 including `Sc`, `Y`, `La`, `Ce`, `Pr`, `Nd`, `Pm`, `Sm`, `Eu`, `Gd`, `Tb`, `Dy`, `Ho`, `Er`, `Tm`, `Yb`, `Lu`,
 and `Th` in the model. The user can specify a subset of those 18 elements through configuration when creating
 the unit model. The 3 gangue elements considered in the model are `Fe`, `Al`, and `Ca`.
 
-The feed oxalate mixture stream is typically from a precipiator in an upstream process. It is assumed
+The feed oxalate mixture stream is typically from a precipitator in an upstream process. It is assumed
 that all oxalates are in their hydrate forms. In case the anhydrous oxalate feed flow rates are specified in
-the property package of the solid feed stream, the mole flow rates are converted to the corresponding hydrate flow rates. 
-The molecular formula of an oxalate hydrate can be expressed in a general form as :ce:`RE2(C2O4)3 \cdot xH2O` where RE is
+the property package of the solid feed stream, the molar flow rates are converted to the corresponding hydrate flow rates. 
+The molecular formula of an oxalate hydrate can be expressed in a general form as :ce:`RE2(C2O4)3 \\cdot xH2O` where RE is
 one of the 18 rare earth elements and x is the number of water molecules associated with the hyrate. The three 
-gangue oxalate hydrates considered in the model are :ce:`Fe2(C2O4)3 \cdot 2H2O`, :ce:`Al2(C2O4)3 \cdot H2O`, and
-:ce:`CaC2O4 \cdot H2O`, for `Fe`, `Al`, and `Ca` elements, respectively.
+gangue oxalate hydrates considered in the model are :ce:`Fe2(C2O4)3 \\cdot 2H2O`, :ce:`Al2(C2O4)3 \\cdot H2O`, and
+:ce:`CaC2O4 \\cdot H2O`, for `Fe`, `Al`, and `Ca` elements, respectively.
 
 The feed stream could optionally contain surface moisture. The amount of surface moisture entering the
 reactor is specified by an input variable in the current model rather than a state variable in the property
@@ -51,10 +39,10 @@ Reactions
 The thermal decomposition reactions modeled for rare earth oxalates and three gaugue oxalates are as
 listed below:
 
-- :ce:`RE2(C2O4)3 \cdot xH2O(s) + 1.5O2(g) -> RE2O3(s) + 6CO2(g) + xH2O(g)`
-- :ce:`Fe2(C2O4)3 \cdot 2H2O(s) + 1.5O2(g) -> Fe2O3(s) + 6CO2(g) + 2H2O(g)`
-- :ce:`Al2(C2O4)3 \cdot H2O(s) + 1.5O2(g) -> Al2O3(s) + 6CO2(g) + H2O(g)`
-- :ce:`CaC2O4 \cdot H2O(s) + 0.5O2(g) -> CaO(s) + 2CO2(g) + H2O(g)`
+- :ce:`RE2(C2O4)3 \\cdot xH2O(s) + 1.5O2(g) -> RE2O3(s) + 6CO2(g) + xH2O(g)`
+- :ce:`Fe2(C2O4)3 \\cdot 2H2O(s) + 1.5O2(g) -> Fe2O3(s) + 6CO2(g) + 2H2O(g)`
+- :ce:`Al2(C2O4)3 \\cdot H2O(s) + 1.5O2(g) -> Al2O3(s) + 6CO2(g) + H2O(g)`
+- :ce:`CaC2O4 \\cdot H2O(s) + 0.5O2(g) -> CaO(s) + 2CO2(g) + H2O(g)`
 
 In the first reaction, RE represent any of 18 rare earth elements and x is the number of water molecules
 associated with the oxalate. Typically x=10 for most rare earth elements.
@@ -90,10 +78,10 @@ Mass Balance
 
 The content of the surface moisture in the solid feed stream is vaporized to enter the gas phase.
 
-The species mass balance is based on complete conversion of solid reactants such that the mole flow rates of
+The species mass balance is based on complete conversion of solid reactants such that the molar flow rates of
 individual metals (rare earth and gaugue elements) are conserved. For the species in the gas phase, the :ce:`O2`
 is consumed while :ce:`CO2` and :ce:`H2O` are produced. For any other species in the gas feed stream that does not
-participate in any reactions, its mole flow rate in the gas product stream is the same as that in the
+participate in any reactions, its molar flow rate in the gas product stream is the same as that in the
 inlet stream. Note that the user needs to make sure that the gas feed stream contains enough :ce:`O2` to avoid
 negative flow rate of :ce:`O2` in the gas product stream.
 
@@ -506,25 +494,29 @@ constructed,
             units=pyunits.J / pyunits.mol / pyunits.K**2,
         )
         # Oxalate standard enthalpy available in literature
-        self.enth0_oxalate_list_all["Al"] = -3397000  # Kotz et al (2014), anhydrous data
-        self.enth0_oxalate_list_all["Fe"] = -2572300  # Wagman et al (1982), anhydrous data
+        self.enth0_oxalate_list_all["Al"] = (
+            -3397000
+        )  # Kotz et al (2014), anhydrous data
+        self.enth0_oxalate_list_all["Fe"] = (
+            -2572300
+        )  # Wagman et al (1982), anhydrous data
         self.enth0_oxalate_list_all["Ca"] = -1674860  # Wagman et al (1982)
         self.enth0_oxalate_list_all["La"] = -5916176  # Not in Wagman et al
         self.enth0_oxalate_list_all["Ce"] = -6782000  # Wagman et al (1982)
         self.enth0_oxalate_list_all["Pr"] = -5920000  # Wagman et al (1982)
         self.enth0_oxalate_list_all["Nd"] = -6782000  # Wagman et al (1982)
         # Oxide standard enthalpy available in literature
-        self.enth0_oxide_list_all["Fe"] = -825500   # NIST WebBook
+        self.enth0_oxide_list_all["Fe"] = -825500  # NIST WebBook
         self.enth0_oxide_list_all["Al"] = -1675700  # NIST WebBook
-        self.enth0_oxide_list_all["Ca"] = -635090   # NIST WebBook
+        self.enth0_oxide_list_all["Ca"] = -635090  # NIST WebBook
         self.enth0_oxide_list_all["La"] = -1793702  # Wagman et al (1982)
         self.enth0_oxide_list_all["Ce"] = -1796191  # Wagman et al (1982)
         self.enth0_oxide_list_all["Pr"] = -1809664  # Wagman et al (1982)
         self.enth0_oxide_list_all["Nd"] = -1807906  # Wagman et al (1982)
         self.enth0_oxide_list_all["Sc"] = -1908820  # Wagman et al (1982)
-        self.enth0_oxide_list_all["Y"]  = -1905310  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Y"] = -1905310  # Wagman et al (1982)
         # Heat capacity of most oxalates except Ca are unavailable, use the default value
-        self.cp0_oxalate_list_all["Ca"] = 152.8     # Wagman et al (1982)
+        self.cp0_oxalate_list_all["Ca"] = 152.8  # Wagman et al (1982)
 
         # Heat capacity of oxide available in literature
         self.cp0_oxide_list_all["La"] = 107.72  # revised based on Wagman et al (1982)
@@ -533,12 +525,12 @@ constructed,
         self.cp0_oxide_list_all["Nd"] = 105.13  # revised based on Wagman et al (1982)
         self.cp0_oxide_list_all["Al"] = 28.039  # NIST WebBook
         self.cp0_oxide_list_all["Fe"] = 80.623  # NIST WebBook
-        self.cp0_oxide_list_all["Ca"] = 47.2    # NIST WebBook
+        self.cp0_oxide_list_all["Ca"] = 47.2  # NIST WebBook
 
-        self.cp1_oxide_list_all["La"] = 0.026114 # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["La"] = 0.026114  # revised based on Wagman et al (1982)
         self.cp1_oxide_list_all["Ce"] = 0.03477  # revised based on Wagman et al (1982)
-        self.cp1_oxide_list_all["Pr"] = 0.034364 # revised based on Wagman et al (1982)
-        self.cp1_oxide_list_all["Nd"] = 0.0403   # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Pr"] = 0.034364  # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Nd"] = 0.0403  # revised based on Wagman et al (1982)
         self.cp1_oxide_list_all["Al"] = 0.17156  # NIST WebBook
         self.cp1_oxide_list_all["Fe"] = 0.09936  # NIST WebBook
         self.cp1_oxide_list_all["Ca"] = 0.00299  # NIST WebBook

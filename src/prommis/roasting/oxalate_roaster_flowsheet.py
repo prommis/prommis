@@ -32,6 +32,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 )
 
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 
 _log = idaeslog.getModelLogger(__name__)
@@ -52,22 +53,8 @@ def main(m=None):
             **get_prop(gas_species, ["Vap"], EosType.IDEAL),
             doc="gas property",
         )
-        key_components = {
-            "H^+",
-            "Ce^3+",
-            "Al^3+",
-            "Fe^3+",
-            # "Fe^2+",
-            # "Ca^2+",
-            # "Mg^2+",
-            "C2O4^2-",
-            # "NO3^-",
-            # "SO4^2-",
-            # "Cl^-",
-        }
-        m.fs.prop_solid = PrecipitateParameters(
-            key_components=key_components,
-        )
+        m.fs.prop_solid = PrecipitateParameters()
+        m.fs.prop_liquid = AqueousParameter()
 
     create_model(m)
     set_inputs(m)
@@ -77,11 +64,15 @@ def main(m=None):
     print("dof=", dof)
     result = solver.solve(m, tee=True)
     print("Gas feed mole flow =", pyo.value(m.fs.roaster.gas_in[0].flow_mol), "mol/s")
+    print("Gas product mole flow =", pyo.value(m.fs.roaster.gas_out[0].flow_mol), "mol/s")
     print(
         "Solid feed Ce mole flow =",
         m.fs.roaster.solid_in[0].flow_mol_comp["Ce2(C2O4)3(s)"].value,
         "mol/s",
     )
+    print("Solid product mass flow =", pyo.value(m.fs.roaster.flow_mass_product[0]), "kg/s")
+    print("Moisture feed mole flow =", pyo.value(m.fs.roaster.liquid_in[0].flow_mol_comp["H2O"]), "mol/hr")
+    print("Moisture feed in roaster =", pyo.value(m.fs.roaster.flow_mol_moist_feed[0]), "mol/s")
     print("heat_duty=", m.fs.roaster.heat_duty[0].value)
     print("mass fraction of metal oxide in solid product:")
     for x in m.fs.roaster.metal_list:
@@ -93,7 +84,8 @@ def create_model(m):
     """Create unit models"""
     m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
-        property_package_precipitate=m.fs.prop_solid,
+        property_package_precipitate_solid=m.fs.prop_solid,
+        property_package_precipitate_liquid=m.fs.prop_liquid,
         has_holdup=False,
         has_heat_transfer=True,
         has_pressure_change=True,
@@ -126,8 +118,9 @@ def set_inputs(m):
     # solid feed temperature
     m.fs.roaster.solid_in[0].temperature.fix(298.15)
     m.fs.roaster.solid_in[0].flow_mol_comp["Ce2(C2O4)3(s)"].fix(6.1e-5)
-    m.fs.roaster.flow_mol_moist_feed.fix(6.75e-4)
-    # total solid mass flow rate including surface moisture
+    m.fs.roaster.liquid_in[0].flow_vol.fix(6.75e-4*0.018*3600) # in L/hr
+    m.fs.roaster.liquid_in[0].conc_mass_comp.fix(1e-5) # use default
+    m.fs.roaster.liquid_in[0].conc_mass_comp["H2O"].fix(1e6) # mg/L
 
     """
     m.fs.roaster.mass_frac_feed_dry[0,'Sc'].fix(0.001648997)

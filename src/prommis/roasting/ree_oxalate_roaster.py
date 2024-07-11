@@ -318,12 +318,18 @@ constructed,
             self.flowsheet().time, **self.config.property_package_args_gas
         )
         # solid phase inlet stream from precipitator
-        self.solid_in = self.config.property_package_precipitate_solid.build_state_block(
-            self.flowsheet().time, **self.config.property_package_args_precipitate_solid
+        self.solid_in = (
+            self.config.property_package_precipitate_solid.build_state_block(
+                self.flowsheet().time,
+                **self.config.property_package_args_precipitate_solid,
+            )
         )
         # liquid phase inlet stream from precipitator
-        self.liquid_in = self.config.property_package_precipitate_liquid.build_state_block(
-            self.flowsheet().time, **self.config.property_package_args_precipitate_liquid
+        self.liquid_in = (
+            self.config.property_package_precipitate_liquid.build_state_block(
+                self.flowsheet().time,
+                **self.config.property_package_args_precipitate_liquid,
+            )
         )
         self.add_port("gas_inlet", self.gas_in)
         self.add_port("gas_outlet", self.gas_out)
@@ -525,12 +531,12 @@ constructed,
             units=pyunits.J / pyunits.mol / pyunits.K**2,
         )
         # Oxalate standard enthalpy available in literature
-        self.enth0_oxalate_list_all["Al"] = (
-            -3397000
-        )  # Kotz et al (2014), anhydrous data
-        self.enth0_oxalate_list_all["Fe"] = (
-            -2572300
-        )  # Wagman et al (1982), anhydrous data
+        self.enth0_oxalate_list_all[
+            "Al"
+        ] = -3397000  # Kotz et al (2014), anhydrous data
+        self.enth0_oxalate_list_all[
+            "Fe"
+        ] = -2572300  # Wagman et al (1982), anhydrous data
         self.enth0_oxalate_list_all["Ca"] = -1674860  # Wagman et al (1982)
         self.enth0_oxalate_list_all["La"] = -5916176  # Not in Wagman et al
         self.enth0_oxalate_list_all["Ce"] = -6782000  # Wagman et al (1982)

@@ -64,15 +64,29 @@ def main(m=None):
     print("dof=", dof)
     result = solver.solve(m, tee=True)
     print("Gas feed mole flow =", pyo.value(m.fs.roaster.gas_in[0].flow_mol), "mol/s")
-    print("Gas product mole flow =", pyo.value(m.fs.roaster.gas_out[0].flow_mol), "mol/s")
+    print(
+        "Gas product mole flow =", pyo.value(m.fs.roaster.gas_out[0].flow_mol), "mol/s"
+    )
     print(
         "Solid feed Ce mole flow =",
         m.fs.roaster.solid_in[0].flow_mol_comp["Ce2(C2O4)3(s)"].value,
         "mol/s",
     )
-    print("Solid product mass flow =", pyo.value(m.fs.roaster.flow_mass_product[0]), "kg/s")
-    print("Moisture feed mole flow =", pyo.value(m.fs.roaster.liquid_in[0].flow_mol_comp["H2O"]), "mol/hr")
-    print("Moisture feed in roaster =", pyo.value(m.fs.roaster.flow_mol_moist_feed[0]), "mol/s")
+    print(
+        "Solid product mass flow =",
+        pyo.value(m.fs.roaster.flow_mass_product[0]),
+        "kg/s",
+    )
+    print(
+        "Moisture feed mole flow =",
+        pyo.value(m.fs.roaster.liquid_in[0].flow_mol_comp["H2O"]),
+        "mol/hr",
+    )
+    print(
+        "Moisture feed in roaster =",
+        pyo.value(m.fs.roaster.flow_mol_moist_feed[0]),
+        "mol/s",
+    )
     print("heat_duty=", m.fs.roaster.heat_duty[0].value)
     print("mass fraction of metal oxide in solid product:")
     for x in m.fs.roaster.metal_list:
@@ -118,9 +132,9 @@ def set_inputs(m):
     # solid feed temperature
     m.fs.roaster.solid_in[0].temperature.fix(298.15)
     m.fs.roaster.solid_in[0].flow_mol_comp["Ce2(C2O4)3(s)"].fix(6.1e-5)
-    m.fs.roaster.liquid_in[0].flow_vol.fix(6.75e-4*0.018*3600) # in L/hr
-    m.fs.roaster.liquid_in[0].conc_mass_comp.fix(1e-5) # use default
-    m.fs.roaster.liquid_in[0].conc_mass_comp["H2O"].fix(1e6) # mg/L
+    m.fs.roaster.liquid_in[0].flow_vol.fix(6.75e-4 * 0.018 * 3600)  # in L/hr
+    m.fs.roaster.liquid_in[0].conc_mass_comp.fix(1e-5)  # use default
+    m.fs.roaster.liquid_in[0].conc_mass_comp["H2O"].fix(1e6)  # mg/L
 
     """
     m.fs.roaster.mass_frac_feed_dry[0,'Sc'].fix(0.001648997)

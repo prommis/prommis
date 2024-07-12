@@ -33,10 +33,10 @@ Additional Constraints
 
 Crusher adds one additional constraint to calculate the work required to crush the particles.
 
-.. math:: work_{t} = 10 \times flow_mass_in_{t} \times bond_work_index \times \left(\frac{1}{\sqrt{prod\_p80}}_{t} - \frac{1}{\sqrt{feed\_p80}}_{t}\right) 
+.. math:: work_{t} = 10 \times flow\_mass\_in_{t} \times bond\_work\_index \times \left(\frac{1}{\sqrt{prod\_p80}}_{t} - \frac{1}{\sqrt{feed\_p80}}_{t}\right) 
 
-where :math: `work_{t}` is the work required to crush the particles at `t` time, 10 is an empirical value and should not be changed, :math: `flow_mass_in_{t}` is the inlet mass flow rate
-at `t` time, :math: `bond_work_index` is the bond work index of particles, :math: `prod\_p80_{t}` is production particle size with 80% passing the mesh at `t` time, :math: `feed\_p80_{t}` is 
+where :math: `work_{t}` is the work required to crush the particles at `t` time, 10 is an empirical value and should not be changed, :math: `flow\_mass\_in\_{t}` is the inlet mass flow rate
+at `t` time, :math: `bond\_work\_index` is the bond work index of particles, :math: `prod\_p80_{t}` is production particle size with 80% passing the mesh at `t` time, :math: `feed\_p80_{t}` is 
 feed particle size with 80% passing the mesh at `t` time.
 
 Expressions
@@ -44,15 +44,15 @@ Expressions
 
 Crusher includes two expressions to calculate the size of particles that has 80% passing the mesh for both feed and product particles.
 
-.. math:: feed_p80_{t} = \frac{particle_size_median_{in_{t}}}{sunit} \times \left(-\log(1 - 0.8)\right)^{\frac{particle_size_width_{in_{t}}}{2}}
+.. math:: feed\_p80_{t} = \frac{particle\_size\_median\_in_{t}}{sunit} \times \left(-\log(1 - 0.8)\right)^{\frac{particle\_size\_width\_in_{t}}{2}}
 
-where :math: `feed_p80_{t}` is the feed particle size that has 80% passing the mesh at `t` time, :math: `particle_size_median_{in_{t}}}{sunit}` is the median particle size of input at `t` time and unitless. The 
-default particle size is in micrometer. The :math: `particle_size_width_{in_{t}}` is the particle size width of input at `t` time. 
+where :math: `feed\_p80_{t}` is the feed particle size that has 80% passing the mesh at `t` time, :math: `particle\_size\_median\_in_{t}}{sunit}` is the median particle size of input at `t` time and unitless. The 
+default particle size is in micrometer. The :math: `particle\_size\_width\_in_{t}` is the particle size width of input at `t` time. 
 
-.. math:: prod_p80_{t} = \frac{particle_size_median_{out_{t}}}{sunit} \times \left(-\log(1 - 0.8)\right)^{\frac{particle_size_width_{out_{t}}}{2}}
+.. math:: prod\_p80_{t} = \frac{particle\_size\_median\_out_{t}}{sunit} \times \left(-\log(1 - 0.8)\right)^{\frac{particle\_size\_width\_out_{t}}{2}}
 
-where :math: `prod_p80_{t}` is the product particle size that has 80% passing the mesh at `t` time, :math: `particle_size_median_{out_{t}}}{sunit}` is the median particle size of output at `t` time and unitless. The 
-default particle size is in micrometer. The :math: `particle_size_width_{out_{t}}` is the particle size width of output at `t` time. 
+where :math: `prod\_p80_{t}` is the product particle size that has 80% passing the mesh at `t` time, :math: `particle\_size\_median\_out_{t}}{sunit}` is the median particle size of output at `t` time and unitless. The 
+default particle size is in micrometer. The :math: `particle\_size\_width\_out_{t}` is the particle size width of output at `t` time. 
 
 Variables
 ---------

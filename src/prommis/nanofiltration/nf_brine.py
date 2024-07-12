@@ -1,4 +1,10 @@
-####################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+####
 # This code has been adapted from a test in the WaterTAP repo to
 # simulate a simple separation of lithium and magnesium
 #
@@ -9,8 +15,7 @@
 # watertap > examples > flowsheets > nf_dspmde > nf.py
 #
 # https://github.com/watertap-org/watertap/blob/main/tutorials/nawi_spring_meeting2023.ipynb
-####################################################################
-
+####
 """
 Nanofiltration flowsheet for Donnan steric pore model with dielectric exclusion
 """
@@ -28,12 +33,12 @@ from pyomo.network import Arc
 
 import idaes.core.util.scaling as iscale
 from idaes.core import FlowsheetBlock
-from idaes.core.solvers import get_solver
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.unit_models import Feed, Product
 import idaes.logger as idaeslog
 
+from watertap.core.solvers import get_solver
 from watertap.property_models.multicomp_aq_sol_prop_pack import (
     ActivityCoefficientModel,
     DensityCalculation,

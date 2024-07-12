@@ -33,7 +33,7 @@ Additional Constraints
 
 Crusher adds one additional constraint to calculate the work required to crush the particles.
 
-.. math:: work_{t} = 10 * m_{t,in} * BWI * \left(\frac{1}{\sqrt{P_{t, prod, 80}}} - \frac{1}{\sqrt{P_{t, feed, 80}}\right) 
+.. math:: work_{t} = 10 * m_{t, in} * BWI * \left(\frac{1}{\sqrt{P_{t, prod, 80}}} - \frac{1}{\sqrt{P_{t, feed, 80}}\right) 
 
 where :math: `work_{t}` is the work required to crush the particles at `t` time, 10 is an empirical value and should not be changed, :math: `m_{t,in}` is the inlet mass flow rate
 at `t` time, :math: `BWI` is the bond work index of particles, :math: `P_{t, prod, 80}` is production particle size with 80% passing the mesh at `t` time, :math: `P_{t, feed, 80}` is 

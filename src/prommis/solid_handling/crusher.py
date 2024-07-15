@@ -46,12 +46,12 @@ Crusher includes two expressions to calculate the size of particles that has 80%
 
 .. math:: P_{t, feed, 80} = \frac{S_{t, in, median}}{unit} * \left(-\log(1 - 0.8)\right)^{\frac{SW_{t, in}}{2}}
 
-where :math:`P_{t, feed, 80}` is the feed particle size that has 80% passing the mesh at :math:`t` time, :math:`{S_{t, in, median}}{unit}` is the median particle size of input at :math:`t` time and unitless. The 
+where :math:`P_{t, feed, 80}` is the feed particle size that has 80% passing the mesh at :math:`t` time, :math:`\frac{S_{t, in, median}}{unit}` is the median particle size of input at :math:`t` time and unitless. The 
 default particle size is in micrometer. The :math:`SW_{t, in}` is the particle size width of input at :math:`t` time. 
 
 .. math:: P_{t, prod, 80} = \frac{S_{t, out, median}}{unit} * \left(-\log(1 - 0.8)\right)^{\frac{SW_{t, out}}{2}}
 
-where :math:`P_{t, prod, 80}` is the product particle size that has 80% passing the mesh at :math:`t` time, :math:`{S_{t, out, median}}{unit}` is the median particle size of output at :math:`t` time and unitless. The 
+where :math:`P_{t, prod, 80}` is the product particle size that has 80% passing the mesh at :math:`t` time, :math:`\frac{S_{t, out, median}}{unit}` is the median particle size of output at :math:`t` time and unitless. The 
 default particle size is in micrometer. The :math:`SW_{t, in}` is the particle size width of output at :math:`t` time. 
 
 Variables

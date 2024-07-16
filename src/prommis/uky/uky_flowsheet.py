@@ -1699,7 +1699,6 @@ def initialize_system(m):
 
     initializer_sep = SeparatorInitializer()
     sep_units = [
-        m.fs.load_sep,
         m.fs.scrub_sep,
         m.fs.precip_sep,
         m.fs.cleaner_sep,

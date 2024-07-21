@@ -172,7 +172,7 @@ class CoalRefuseStateBlockData(StateBlockData):
             self.params.component_list,
             initialize=0,
             units=units.dimensionless,
-            bounds=(None, 0.99),
+            bounds=(None, 0.999999),
         )
 
         @self.Constraint(self.params.component_list)

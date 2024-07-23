@@ -6,7 +6,8 @@ Authors: Arkoprabho Dasgupta
 
 """
 
-from pyomo.environ import ConcreteModel, SolverFactory, units, TransformationFactory
+from pyomo.environ import ConcreteModel, SolverFactory, units, TransformationFactory, Var
+from pyomo.dae.flatten import flatten_dae_components
 
 import numpy as np
 
@@ -14,7 +15,10 @@ from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )
+from idaes.core.initialization.initialize_from_data import FromDataInitializer
 from idaes.core.util import DiagnosticsToolbox
+from idaes.core.util import to_json, from_json
+from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
@@ -138,6 +142,26 @@ def set_inputs(m):
     m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Gd"].fix(0.2584)
     m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Dy"].fix(0.047)
 
+    m.fs.solex.mscontactor.aqueous_inlet_state[:].flow_vol.fix(62.01)
+
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Al"].fix(1.267e-5)
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Ca"].fix(2.684e-5)
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Fe"].fix(2.873e-6)
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Sc"].fix(1.734)
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Y"].fix(2.179e-5)
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["La"].fix(0.000105)
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Ce"].fix(0.00031)
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Pr"].fix(3.711e-5)
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Nd"].fix(0.000165)
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Sm"].fix(1.701e-5)
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Gd"].fix(3.357e-5)
+    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Dy"].fix(8.008e-6)
+
+    m.fs.solex.mscontactor.organic_inlet_state[:].flow_vol.fix(62.01)
+
+    print(dof(m))
+
+
     m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["HSO4"].fix(1e-7)
     m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["SO4"].fix(1e-7)
     m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Al"].fix(1e-7)
@@ -154,24 +178,8 @@ def set_inputs(m):
     m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Dy"].fix(1e-7)
 
     m.fs.solex.mscontactor.aqueous_inherent_reaction_extent[0, :, "Ka2"].fix(0)
-
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].flow_vol.fix(62.01)
-
     m.fs.solex.mscontactor.aqueous[0, :].flow_vol.fix(62.01)
-
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Al"].fix(1.267e-5)
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Ca"].fix(2.684e-5)
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Fe"].fix(2.873e-6)
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Sc"].fix(1.734)
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Y"].fix(2.179e-5)
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["La"].fix(0.000105)
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Ce"].fix(0.00031)
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Pr"].fix(3.711e-5)
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Nd"].fix(0.000165)
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Sm"].fix(1.701e-5)
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Gd"].fix(3.357e-5)
-    m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Dy"].fix(8.008e-6)
-
+    
     m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Al"].fix(1e-7)
     m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Ca"].fix(1e-7)
     m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Fe"].fix(1e-7)
@@ -184,8 +192,6 @@ def set_inputs(m):
     m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Sm"].fix(1e-7)
     m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Gd"].fix(1e-7)
     m.fs.solex.mscontactor.organic[0, :].conc_mass_comp["Dy"].fix(1e-7)
-
-    m.fs.solex.mscontactor.organic_inlet_state[:].flow_vol.fix(62.01)
 
     m.fs.solex.mscontactor.organic[0, :].flow_vol.fix(62.01)
 
@@ -212,8 +218,23 @@ if __name__ == "__main__":
     #     dt = DiagnosticsToolbox(m.fs.solex.mscontactor)
     #     dt.report_structural_issues()
 
-    initializer = SolventExtractionInitializer()
-    initializer.initialize(m.fs.solex)
+    # initializer = SolventExtractionInitializer()
+    # initializer.initialize(m.fs.solex)
+
+    from_json(m, fname="ex.json.gz", gz=True)
+    # initializer = FromDataInitializer()
+    # initializer.initialize(m, json_file="ex.json.gz")
+    def copy_first_steady_state():
+    # Function that propogates initial steady state guess to future time points
+    # regular_vars 
+        regular_vars, time_vars = flatten_dae_components(m, m.fs.time, Var, active=True)
+        # Copy initial conditions forward
+        for var in time_vars:
+            for t in m.fs.time:
+                if t == m.fs.time.first():
+                    continue
+                else:
+                    var[t].value = var[m.fs.time.first()].value
 
     """
     Solution of the model and display of the final results.

@@ -20,6 +20,7 @@ from prommis.solvent_extraction.solvent_extraction import (
 )
 
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util import to_json, from_json
 
 
 def build_model():
@@ -164,6 +165,9 @@ if __name__ == "__main__":
     solver.options["bound_push"] = 1e-8
     solver.options["mu_init"] = 1e-8
     solver.solve(m, tee=True)
+
+    to_json(m, fname="ex.json.gz", gz=True, human_read=True)
+
 
     # Final organic outlet display
     m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()

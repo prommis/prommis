@@ -30,7 +30,7 @@ from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.solvent_extraction.solvent_extraction import SolventExtraction, SolventExtractionInitializer
 
 
 # Model development and flowsheet creation
@@ -643,6 +643,9 @@ m.fs.acid_feed4.conc_mass_comp[0, "Dy"].fix(0.047)
 # m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Sm"].fix(0.097)
 # m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Gd"].fix(0.2584)
 # m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Dy"].fix(0.047)
+
+initializer = SolventExtractionInitializer()
+initializer.initialize(m.fs.solex_cleaner_load)
 
 m.fs.precip_purge.flow_vol.fix(0.09)
 m.fs.precip_purge.conc_mass_comp[0, "H2O"].fix(1000000)

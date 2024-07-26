@@ -182,7 +182,7 @@ see property package for documentation.}""",
 
         """ Breakage Distribution calculation as a constraint. 
         This is the equation for accumulative fraction of solid breakage 
-        probability distribution smaller than size x=feed80size
+        probability distribution smaller than size x=feed_p80
         """
 
         sunit = self.properties_in[tref].particle_size_median.get_units()

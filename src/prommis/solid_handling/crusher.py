@@ -195,7 +195,7 @@ see property package for documentation.}""",
                 * (-log(1 - 0.8)) ** (self.properties_in[t].particle_size_width / 2)
             )
 
-        @self.Expression(self.flowsheet().time, doc="product p80 size")
+        @self.Expression(self.flowsheet().time, doc="Product P80 size")
         def prod_p80(self, t):
             return (
                 self.properties_out[t].particle_size_median

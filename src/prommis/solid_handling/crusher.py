@@ -82,8 +82,8 @@ import idaes.logger as idaeslog
 _log = idaeslog.getLogger(__name__)
 
 
-@declare_process_block_class("CrushAndBreakageUnit")
-class CrushAndBreakageUnitData(UnitModelBlockData):
+@declare_process_block_class("Crusher")
+class CrusherData(UnitModelBlockData):
     CONFIG = ConfigDict()
     CONFIG.declare(
         "dynamic",

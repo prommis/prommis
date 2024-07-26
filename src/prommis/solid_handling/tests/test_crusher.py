@@ -20,7 +20,7 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
-from prommis.solid_handling.crusher import CrushAndBreakageUnit
+from prommis.solid_handling.crusher import Crusher
 from prommis.solid_handling.crusher_solids_properties import CoalRefuseParameters
 
 # -----------------------------------------------------------------------------
@@ -37,7 +37,7 @@ def test_config():
         doc="solid property",
     )
 
-    m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid)
+    m.fs.unit = Crusher(property_package=m.fs.properties_solid)
 
     # Example:
     assert not m.fs.unit.config.dynamic
@@ -55,7 +55,7 @@ class TestSolidHandling(object):
             doc="solid property",
         )
 
-        m.fs.unit = CrushAndBreakageUnit(property_package=m.fs.properties_solid)
+        m.fs.unit = Crusher(property_package=m.fs.properties_solid)
         # Set up your model initialization here
         m.fs.unit.inlet.mass_frac_comp[0, :].fix(
             0.1

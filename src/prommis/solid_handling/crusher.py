@@ -187,7 +187,7 @@ see property package for documentation.}""",
 
         sunit = self.properties_in[tref].particle_size_median.get_units()
 
-        @self.Expression(self.flowsheet().time, doc="Feed P80 Size")
+        @self.Expression(self.flowsheet().time, doc="Feed P80 size")
         def feed_p80(self, t):
             return (
                 self.properties_in[t].particle_size_median

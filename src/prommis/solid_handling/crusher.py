@@ -16,7 +16,7 @@ Crusher
 
 Author: Lingyan Deng
 
-The Crusher module including power consumption for solid crushing. It is a function of particle size distribution, mass flow rate, and bond work index.
+The Crusher module includes power consumption for solid crushing. It is a function of particle size distribution, mass flow rate, and bond work index.
 
 Degrees of Freedom
 ------------------

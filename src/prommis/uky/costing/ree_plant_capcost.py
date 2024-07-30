@@ -110,7 +110,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=None,
             domain=float,
-            description="rate at which currency devalues over time; alternatively, this is the required rate of return on investment.",
+            description="rate of return used to discount future cash flows "
+            "back to their present value. The NETL QGESS recommends setting "
+            "the discount rate as the calculated after-tax weighted average "
+            "cost of ccapital (ATWACC).",
         ),
     )
     CONFIG.declare(
@@ -125,21 +128,23 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         "total_capital_cost",
         ConfigValue(
             default=None,
-            description="value for total capital cost; ignored if b is a FlowsheetCostingBlock.",
+            description="value for total capital cost; ignored if no value is "
+            "passed.",
         ),
     )
     CONFIG.declare(
         "annual_operating_cost",
         ConfigValue(
             default=None,
-            description="value for total operating cost; ignored if b is a FlowsheetCostingBlock.",
+            description="value for total operating cost; ignored if no value "
+            "is passed.",
         ),
     )
     CONFIG.declare(
         "annual_revenue",
         ConfigValue(
             default=None,
-            description="value for total revenue; ignored if b is a FlowsheetCostingBlock.",
+            description="value for total revenue; ignored if no value is " "passed.",
         ),
     )
     CONFIG.declare(
@@ -147,7 +152,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=None,
             domain=str,
-            description="assumed project start year for costs, which is the basis for NPV results; ignored if b is a FlowsheetCostingBlock.",
+            description="assumed project start year for costs, which is the "
+            "basis for NPV results; ignored if no value is passed.",
         ),
     )
     CONFIG.declare(
@@ -155,7 +161,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=False,
             domain=bool,
-            description="True/false flag whether a capital expenditure period occurs.",
+            description="True/false flag whether a capital expenditure period "
+            "occurs.",
         ),
     )
     CONFIG.declare(
@@ -163,7 +170,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=None,
             domain=list,
-            description="a list of values that sum to 100 representing how capital costs are spread over a capital expenditure period; for example, an input of [10, 60, 30] is parsed as a 3-year period where capital costs are spread as 10% in year 1, 60% in year 2, and 30% in year 3. The capital period precedes the operating period. Set to None to indicate no expenditure period.",
+            description="a list of values that sum to 100 representing how "
+            "capital costs are spread over a capital expenditure period; for "
+            "example, an input of [10, 60, 30] is parsed as a 3-year period "
+            "where capital costs are spread as 10% in year 1, 60% in year 2, "
+            "and 30% in year 3. The capital period precedes the operating "
+            "period, for example an input of [100] means that 100% of capital "
+            "expenses occur in the year preceding the operating period. Set "
+            "to None to indicate no expenditure period, which means that all "
+            "capital expenses occur in the first operating year t=0.",
         ),
     )
     CONFIG.declare(
@@ -171,7 +186,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=3.6,
             domain=float,
-            description="rate at which capital costs escalate during the capital expenditure period. Set to 0 to indicate expenditure is spread but there is no cost escalation.",
+            description="rate at which capital costs escalate during the "
+            "capital expenditure period. Set to 0 to indicate expenditure is "
+            "spread but there is no cost escalation.",
         ),
     )
     CONFIG.declare(
@@ -179,7 +196,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=3,
             domain=float,
-            description="inflation rate for operating costs during the operating period. Set to 0 to indicate no inflation.",
+            description="inflation rate for operating costs during the "
+            "operating period. Set to 0 to indicate no inflation.",
         ),
     )
     CONFIG.declare(
@@ -187,7 +205,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=3,
             domain=float,
-            description="inflation rate for revenue during the operating period. Set to 0 to indicate no inflation.",
+            description="inflation rate for revenue during the operating "
+            "period. Set to 0 to indicate no inflation.",
         ),
     )
     CONFIG.declare(
@@ -195,7 +214,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=6.5,
             domain=float,
-            description="percentage of revenue charged as royalties; ignored if royalty_expression is not None. Set to zero to indicate no royalties are charged.",
+            description="percentage of revenue charged as royalties; ignored "
+            "if royalty_expression is not None. Set to zero to indicate no "
+            "royalties are charged.",
         ),
     )
     CONFIG.declare(
@@ -210,7 +231,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=50,
             domain=float,
-            description="percentage of CAPEX financed by debt; ignored if debt_expression is not None. Set to zero to indicate no loans are taken out on capital.",
+            description="percentage of CAPEX financed by debt; ignored if "
+            "debt_expression is not None. Set to zero to indicate no loans "
+            "are taken out on capital.",
         ),
     )
     CONFIG.declare(
@@ -223,7 +246,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
     CONFIG.declare(
         "loan_interest_percentage",
         ConfigValue(
-            default=6, domain=float, description="interest rate for loan repayment."
+            default=6, domain=float, description="interest rate for loan " "repayment."
         ),
     )
     CONFIG.declare(
@@ -239,7 +262,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=150,
             domain=float,
-            description="factor to use for declining balance depreciation. Set to 0 to indicate that capital does not depreciate over time.",
+            description="factor to use for declining balance depreciation. "
+            "Set to 0 to indicate that capital does not depreciate over time.",
         ),
     )
 
@@ -415,8 +439,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             calculate_NPV: True/false flag for calculating net present value (NPV).
 
             Keyword arguments related to NPV, entered at class instantiation:
-            discount_percentage: rate at which currency devalues over time;
-                alternatively, this is the required rate of return on investment.
+            discount_percentage: rate of return used to discount future cash flows back
+                to their present value. The NETL QGESS recommends setting the discount
+                rate as the calculated after-tax weighted average cost of ccapital (ATWACC).
             plant_lifetime: length of operating period in years.
             has_capital_expenditure_period: True/false flag whether a capital expenditure period occurs.
             capital_expenditure_percentages: a list of values that sum to 100
@@ -2866,18 +2891,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         The net present value (NPV) is a representative measure of the "current
         day" value of a chemical plant over the total lifetime, including all
-        cash flows. The basic NPV formula is
-
-        NPV = Cash Flow In - Cash Flow Out
-
-        where Cash Flow In is revenue from product sales or salvage, and
-        Cash Flow Out is costs from capital, operating, royalties and loans.
+        cash flows.
 
         This method supports capital expenditure, inflation, royalties,
         loan repayment and capital depreciation. If these additional details
         are not included, the NPV formulation assumes that negative cash flows
-        consists only of capital and operating costs that remain numerically
-        constant over time, and the resulting NPV formula is
+        consists only of capital and operating costs scaled to a constant
+        present value. The general NPV formula is
 
         NPV = [(REVENUE - OPEX) * P/A(r, N)] - CAPEX - Other_costs
 
@@ -2894,11 +2914,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         Other_costs includes royalties, loan repayment, and capital depreciation
         losses that are described in further detail below.
 
-        In the expressions above, revenue and operating costs are assumed to
-        remain numerically constant over time. Operating costs and revenues are
-        then adjusted based on predicted annuity growth to obtain the present
-        value. These expressions are implemented if there is no capital
-        expenditure period.
+        Operating costs and revenues are adjusted based on predicted annuity
+        growth to obtain the present value. These expressions are implemented
+        if there is no capital expenditure period or additional growth rate.
 
         ----------------------------------------------------------------------
 
@@ -2912,8 +2930,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         NPV = PV_Revenue - PV_Operating_Cost - PV_Royalties - PV_Capital_Cost
               - Loan_Interest_Owed - Capital_Depreciation
 
-        For escalating costs, the series present worth factor is modified to
-        account for escalation, yielding a modified formula
+        For costs escalating at a constant rate for the project lifetime, the
+        series present worth factor is modified to account for escalation,
+        yielding a modified formula
 
         P/A(r, g, N) = ( 1 - [ (1+g)**(N) ] * [(1+r)**(-N)] ) / (r - g)
 
@@ -2989,13 +3008,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             variable_OM: True/False flag for calculating variable O&M costs
 
             Keyword arguments related to NPV, entered at class instantiation:
-            discount_percentage: rate at which currency devalues over time;
-                alternatively, this is the required rate of return on investment.
+            discount_percentage: rate of return used to discount future cash flows back
+                to their present value. The NETL QGESS recommends setting the discount
+                rate as the calculated after-tax weighted average cost of ccapital (ATWACC).
             plant_lifetime: length of operating period in years.
-            total_capital_cost: value for total capital cost; ignored if b is a FlowsheetCostingBlock.
-            annual_operating_cost: value for total operating cost; ignored if b is a FlowsheetCostingBlock.
-            annual_revenue: value for total revenue; ignored if b is a FlowsheetCostingBlock.
-            cost_year: assumed project start year for costs, which is the basis for NPV results; ignored if b is a FlowsheetCostingBlock.
+            total_capital_cost: value for total capital cost; ignored if no value is passed.
+            annual_operating_cost: value for total operating cost; ignored if no value is passed.
+            annual_revenue: value for total revenue; ignored if no value is passed.
+            cost_year: assumed project start year for costs, which is the basis for NPV results; ignored if no value is passed.
             has_capital_expenditure_period: True/false flag whether a capital expenditure period occurs.
             capital_expenditure_percentages: a list of values that sum to 100
                 representing how capital costs are spread over a capital

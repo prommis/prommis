@@ -3,5 +3,8 @@ root: index
 chapters:
   - file: tutorials/diafiltration
   - file: tutorials/diafiltration-solution
+  - file: tutorials/ree_costing_framework_basic_features
+  - file: tutorials/ree_costing_framework_basic_features-solution
+  - file: tutorials/ree_costing_framework_advanced_features-solution
   - file: tutorials/uky_flowsheet-solution
   - file: api.rst

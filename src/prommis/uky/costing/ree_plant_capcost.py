@@ -1078,11 +1078,19 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
             general_sales_and_admin += value(self.sales_patenting_and_research_cost)
 
+            var_dict["Summation of Sales, Admin and Insurance Cost [$MM/year]"] = value(
+                general_sales_and_admin
+            )
+
         if hasattr(self, "admin_and_support_labor_cost"):
             var_dict["Total Admin Support and Labor Cost [$MM/year]"] = value(
                 self.admin_and_support_labor_cost
             )
             general_sales_and_admin += value(self.admin_and_support_labor_cost)
+
+            var_dict["Summation of Sales, Admin and Insurance Cost [$MM/year]"] = value(
+                general_sales_and_admin
+            )
 
         if hasattr(self, "property_taxes_and_insurance_cost"):
             var_dict["Total Property Taxes and Insurance Cost [$MM/year]"] = value(
@@ -1090,9 +1098,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
             general_sales_and_admin += value(self.property_taxes_and_insurance_cost)
 
-        var_dict["Summation of Sales, Admin and Insurance Cost [$MM/year]"] = value(
-            general_sales_and_admin
-        )
+            var_dict["Summation of Sales, Admin and Insurance Cost [$MM/year]"] = value(
+                general_sales_and_admin
+            )
 
         if hasattr(self, "other_fixed_costs"):
             var_dict["Total Other Fixed Costs [$MM/year]"] = value(

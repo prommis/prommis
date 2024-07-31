@@ -195,8 +195,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
     CONFIG.declare(
         "capital_loan_interest_percentage",
         ConfigValue(
-            default=6, domain=float, description="interest rate for capital"
-            "equipment loan repayment."
+            default=6,
+            domain=float,
+            description="interest rate for capital" "equipment loan repayment.",
         ),
     )
     CONFIG.declare(
@@ -3129,7 +3130,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         * c.CAPEX
                         * series_present_worth_factor(
                             pyunits.convert(
-                                c.capital_loan_interest_percentage, to_units=pyunits.dimensionless
+                                c.capital_loan_interest_percentage,
+                                to_units=pyunits.dimensionless,
                             ),
                             pyunits.convert(
                                 c.capital_escalation_percentage,
@@ -3152,7 +3154,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     c.CAPEX
                     * series_present_worth_factor(
                         pyunits.convert(
-                            c.capital_loan_interest_percentage, to_units=pyunits.dimensionless
+                            c.capital_loan_interest_percentage,
+                            to_units=pyunits.dimensionless,
                         ),
                         pyunits.convert(
                             c.capital_escalation_percentage,

@@ -5209,7 +5209,8 @@ def test_REE_costing_not_has_capital_expenditure_period_solve():
                 m.fs.costing.CAPEX
                 * series_present_worth_factor(
                     pyunits.convert(
-                        m.fs.costing.capital_loan_interest_percentage, to_units=pyunits.dimensionless
+                        m.fs.costing.capital_loan_interest_percentage,
+                        to_units=pyunits.dimensionless,
                     ),
                     pyunits.convert(
                         m.fs.costing.capital_escalation_percentage,

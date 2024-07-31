@@ -132,7 +132,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         project_management_and_construction_percentage=30,
         process_contingency_percentage=15,
         # arguments related to Fixed OM costs
-        nameplate_capacity=500,
         labor_types=[
             "skilled",
             "unskilled",
@@ -241,7 +240,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 function will try to use the BEC calculated from the individual
                 units. This quantity should be a Pyomo Var or Param that will
                 contain the BEC value.
-            nameplate_capacity: rated plant output in short (US) ton/hr
             labor_type: list of types of operators present in plant; assumed to
                 correspond with labor rate and operator per shift lists
             labor_rate: hourly rate of plant operators in project dollar year;

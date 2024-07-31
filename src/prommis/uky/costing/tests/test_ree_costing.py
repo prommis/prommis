@@ -1200,7 +1200,7 @@ class TestREECosting(object):
             65.333, rel=1e-4
         )
         assert model.fs.costing.pv_capital_cost.value == pytest.approx(
-            -256.00419, rel=1e-4
+            -272.25734, rel=1e-4
         )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -4677.8978, rel=1e-4
@@ -1209,7 +1209,7 @@ class TestREECosting(object):
             -36.434467, rel=1e-4
         )
         assert model.fs.costing.pv_revenue.value == pytest.approx(560.53027, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(-4409.8067, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(-4426.0593, rel=1e-4)
 
     @pytest.mark.unit
     def test_report(self, model):
@@ -2209,14 +2209,14 @@ class TestNPVCostingBlock(object):
     def test_NPV_costingblock_results(self, model):
         # check some NPV results
         assert model.fs.costing.pv_capital_cost.value == pytest.approx(
-            -14.33727, rel=1e-4
+            -15.24748, rel=1e-4
         )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -59.02935, rel=1e-4
         )
         assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
         assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(443.10561, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(442.19540, rel=1e-4)
 
 
 class TestNPVFixedInputs(object):
@@ -2295,14 +2295,14 @@ class TestNPVFixedInputs(object):
         ]:
             print(getattr(model.fs.costing, i).value)
         assert model.fs.costing.pv_capital_cost.value == pytest.approx(
-            -14.33727, rel=1e-4
+            -15.24747, rel=1e-4
         )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -59.02935, rel=1e-4
         )
         assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
         assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(443.10561, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(442.19540, rel=1e-4)
 
 
 @pytest.mark.component
@@ -5040,7 +5040,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
                     * m.fs.costing.CAPEX
                     * series_present_worth_factor(
                         pyunits.convert(
-                            m.fs.costing.discount_percentage,
+                            m.fs.costing.capital_loan_interest_percentage,
                             to_units=pyunits.dimensionless,
                         ),
                         pyunits.convert(
@@ -5128,7 +5128,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
                     * m.fs.costing.CAPEX
                     * series_present_worth_factor(
                         pyunits.convert(
-                            m.fs.costing.discount_percentage,
+                            m.fs.costing.capital_loan_interest_percentage,
                             to_units=pyunits.dimensionless,
                         ),
                         pyunits.convert(
@@ -5209,7 +5209,7 @@ def test_REE_costing_not_has_capital_expenditure_period_solve():
                 m.fs.costing.CAPEX
                 * series_present_worth_factor(
                     pyunits.convert(
-                        m.fs.costing.discount_percentage, to_units=pyunits.dimensionless
+                        m.fs.costing.capital_loan_interest_percentage, to_units=pyunits.dimensionless
                     ),
                     pyunits.convert(
                         m.fs.costing.capital_escalation_percentage,

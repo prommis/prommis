@@ -3129,7 +3129,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         * c.CAPEX
                         * series_present_worth_factor(
                             pyunits.convert(
-                                c.discount_percentage, to_units=pyunits.dimensionless
+                                c.capital_loan_interest_percentage, to_units=pyunits.dimensionless
                             ),
                             pyunits.convert(
                                 c.capital_escalation_percentage,
@@ -3152,7 +3152,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     c.CAPEX
                     * series_present_worth_factor(
                         pyunits.convert(
-                            c.discount_percentage, to_units=pyunits.dimensionless
+                            c.capital_loan_interest_percentage, to_units=pyunits.dimensionless
                         ),
                         pyunits.convert(
                             c.capital_escalation_percentage,

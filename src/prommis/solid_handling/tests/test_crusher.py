@@ -110,6 +110,12 @@ class TestSolidHandling(object):
 
     @pytest.mark.component
     @pytest.mark.solver
+    def test_numerical_issues(self, model):
+        dt = DiagnosticsToolbox(model=model)
+        dt.assert_no_numerical_warnings()    
+
+    @pytest.mark.component
+    @pytest.mark.solver
     def test_solution(self, model):
         assert pytest.approx(
             value(model.fs.unit.properties_in[0].flow_mass), rel=1e-5

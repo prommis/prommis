@@ -113,7 +113,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             description="rate of return used to discount future cash flows "
             "back to their present value. The NETL QGESS recommends setting "
             "the discount rate as the calculated after-tax weighted average "
-            "cost of ccapital (ATWACC).",
+            "cost of ccapital (ATWACC). For the UKy case study, the ATWACC is"
+            "5.77%.",
         ),
     )
     CONFIG.declare(
@@ -192,6 +193,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ),
     )
     CONFIG.declare(
+        "capital_loan_interest_percentage",
+        ConfigValue(
+            default=6, domain=float, description="interest rate for capital"
+            "equipment loan repayment."
+        ),
+    )
+    CONFIG.declare(
         "operating_inflation_percentage",
         ConfigValue(
             default=3,
@@ -224,46 +232,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=None,
             description="set the value or expression to calculate royalties.",
-        ),
-    )
-    CONFIG.declare(
-        "debt_percentage_of_CAPEX",
-        ConfigValue(
-            default=50,
-            domain=float,
-            description="percentage of CAPEX financed by debt; ignored if "
-            "debt_expression is not None. Set to zero to indicate no loans "
-            "are taken out on capital.",
-        ),
-    )
-    CONFIG.declare(
-        "debt_expression",
-        ConfigValue(
-            default=None,
-            description="set the value or expression to calculate total debt.",
-        ),
-    )
-    CONFIG.declare(
-        "loan_interest_percentage",
-        ConfigValue(
-            default=6, domain=float, description="interest rate for loan " "repayment."
-        ),
-    )
-    CONFIG.declare(
-        "loan_repayment_period",
-        ConfigValue(
-            default=10,
-            domain=float,
-            description="length of repayment period in years.",
-        ),
-    )
-    CONFIG.declare(
-        "capital_depreciation_declining_balance_percentage",
-        ConfigValue(
-            default=150,
-            domain=float,
-            description="factor to use for declining balance depreciation. "
-            "Set to 0 to indicate that capital does not depreciate over time.",
         ),
     )
 
@@ -441,7 +409,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             Keyword arguments related to NPV, entered at class instantiation:
             discount_percentage: rate of return used to discount future cash flows back
                 to their present value. The NETL QGESS recommends setting the discount
-                rate as the calculated after-tax weighted average cost of ccapital (ATWACC).
+                rate as the calculated after-tax weighted average cost of capital (ATWACC).
+                For the UKy case study, the ATWACC is 5.77%.
             plant_lifetime: length of operating period in years.
             has_capital_expenditure_period: True/false flag whether a capital expenditure period occurs.
             capital_expenditure_percentages: a list of values that sum to 100
@@ -453,6 +422,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             capital_escalation_percentage: rate at which capital costs
                 escalate during the capital expenditure period. Set to 0 to indicate expenditure
                 is spread but there is no cost escalation.
+            capital_loan_interest_percentage: interest rate for capital equipment loan repayment.
             operating_inflation_percentage: inflation rate for operating costs
                 during the operating period. Set to 0 to indicate no inflation.
             revenue_inflation_percentage: inflation rate for revenue during the
@@ -461,13 +431,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 as royalties; ignored if royalty_expression is not None. Set to zero
                 to indicate no royalties are charged.
             royalty_expression: set the value or expression to calculate royalties.
-            debt_percentage_of_CAPEX: percentage of CAPEX financed by debt; ignored if
-                debt_expression is not None. Set to zero to indicate no loans are taken out on capital.
-            debt_expression: set the value or expression to calculate total debt.
-            loan_interest_percentage: interest rate for loan repayment.
-            loan_repayment_period: length of repayment period in years.
-            capital_depreciation_declining_balance_percentage: factor to use for declining balance
-                depreciation. Set to 0 to indicate that capital does not depreciate over time.
         """
 
         # define costing library
@@ -2893,13 +2856,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         day" value of a chemical plant over the total lifetime, including all
         cash flows.
 
-        This method supports capital expenditure, inflation, royalties,
-        loan repayment and capital depreciation. If these additional details
-        are not included, the NPV formulation assumes that negative cash flows
-        consists only of capital and operating costs scaled to a constant
-        present value. The general NPV formula is
+        This method supports capital expenditure, inflation, and royalties.
+        The NPV formulation assumes that negative cash flows consists capital
+        and operating costs scaled to a constant present value. The general
+        NPV formula with 100% of capital expenditure upfront at the start of
+        the operating period and no capital or operating growth rate is
 
-        NPV = [(REVENUE - OPEX) * P/A(r, N)] - CAPEX - Other_costs
+        NPV = [(REVENUE - OPEX - ROYALTIES) * P/A(r, N)] - CAPEX
 
         where P/A(r, N) is the series present worth factor; this factor scales
         a future cost to its present value from a known discount rate r and
@@ -2911,8 +2874,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         where r is expressed as a decimal and N is expressed in years. In the
         NPV expression above, REVENUE is the constant annual revenue, OPEX is
         the constant annual operating cost, and CAPEX is the total capital cost.
-        Other_costs includes royalties, loan repayment, and capital depreciation
-        losses that are described in further detail below.
+        ROYALTIES are charged based on revenue, usually a fixed percentage.
 
         Operating costs and revenues are adjusted based on predicted annuity
         growth to obtain the present value. These expressions are implemented
@@ -2923,12 +2885,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         The general NPV formulation allows capital costs, operating costs,
         and revenues to escalate over time via geometric gradient growth, e.g.
         a constant proportional growth rate expressed as an escalation or
-        inflation percentage. Additionally, the formulation includes negative
-        cash flows from royalties, loan repayment and capital depreciation.
-        The general formulation is given by
+        inflation percentage. The general formulation is given by
 
         NPV = PV_Revenue - PV_Operating_Cost - PV_Royalties - PV_Capital_Cost
-              - Loan_Interest_Owed - Capital_Depreciation
 
         For costs escalating at a constant rate for the project lifetime, the
         series present worth factor is modified to account for escalation,
@@ -2946,15 +2905,17 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         example, if the capital expenditures are distributed across a 3-year
         capital escalation period, the PV from the capital costs are given as
 
-        PV_Capital_Cost = Y1_% * CAPEX * P/A(r, gCap, 1)
-                          + Y2_% * CAPEX * P/A(r, gCap, 2)
-                          + Y3_% * CAPEX * P/A(r, gCap, 3)
+        PV_Capital_Cost = Y1_% * CAPEX * P/A(iLoan_%, gCap, 1)
+                          + Y2_% * CAPEX * P/A(iLoan_%, gCap, 2)
+                          + Y3_% * CAPEX * P/A(iLoan_%, gCap, 3)
 
         where Y1_%, Y2_%, and Y3_% are the percentage of capital expenditures
         in each year expressed as decimals, CAPEX is the total capital cost from
-        equipment purchasing, and gCap is the capital escalation growth rate
-        expressed as a decimal. The capital costs spent in each year are handled
-        separately to properly account for the value growth over time.
+        equipment purchasing, gCap is the capital escalation growth rate
+        expressed as a decimal, and iLoan_% is the capital equipment loan
+        interest rate expressed as a decimal. The capital costs spent in each
+        year are handled separately to properly account for the value growth
+        over time.
 
         Revenue, operating costs and royalties based on revenue escalate with
         standard inflation. Notably, these cash flows occur after any capital
@@ -2977,28 +2938,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         period (NOp+NCap) and subtract the capital expenditure period (NCap) as there
         is no operation or production during that time.
 
-        Finally, the full formulation supports estimation of interest
-        owed on loans and value losses due to capital depreciation. The loan
-        interest is calculated as an annual loan payment
-
-        Annual_Loan_Payment = Debt * [ iLoan_% * (1 + iLoan_%)**Nloan ] / [ (1 + iLoan_%)**Nloan - 1 ]
-
-        PV_Loan_Interest_Owed = Nloan * Annual_Loan_Payment - Debt
-
-        where Annual_Loan_Payment is the required combined principal and interest
-        that should be paid annually to pay off the loan on-time, Debt is the
-        loan principal (typically a percentage of the CAPEX), iLoan_% is the loan
-        interest rate expressed as a decimal, and Nloan is the loan repayment period.
-        Capital depreciation is calculated using a declining balance model over
-        the plant lifetime as
-
-        PV_Capital_Depreciation = CAPEX * [1 - ( 1 - Depr_%/NOp)**NOp]
-
-        where CAPEX is the initial capital cost (equal to the initial book value),
-        Depr_% is the declining balance factor expressed as a decimal, and NOp is the
-        plant lifetime over which depreciation occurs.
-
-
         Args:
             b: costing block to retrieve total plant cost (capital), total plant
                 operating cost, and total revenue from, and add net present
@@ -3010,7 +2949,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             Keyword arguments related to NPV, entered at class instantiation:
             discount_percentage: rate of return used to discount future cash flows back
                 to their present value. The NETL QGESS recommends setting the discount
-                rate as the calculated after-tax weighted average cost of ccapital (ATWACC).
+                rate as the calculated after-tax weighted average cost of capital (ATWACC).
+                For the UKy case study, the ATWACC is 5.77%.
             plant_lifetime: length of operating period in years.
             total_capital_cost: value for total capital cost; ignored if no value is passed.
             annual_operating_cost: value for total operating cost; ignored if no value is passed.
@@ -3026,6 +2966,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             capital_escalation_percentage: rate at which capital costs
                 escalate during the capital expenditure period. Set to 0 to indicate expenditure
                 is spread but there is no cost escalation.
+            capital_loan_interest_percentage: interest rate for capital equipment loan repayment.
             operating_inflation_percentage: inflation rate for operating costs
                 during the operating period. Set to 0 to indicate no inflation.
             revenue_inflation_percentage: inflation rate for revenue during the
@@ -3034,13 +2975,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 as royalties; ignored if royalty_expression is not None. Set to zero
                 to indicate no royalties are charged.
             royalty_expression: set the value or expression to calculate royalties.
-            debt_percentage_of_CAPEX: percentage of CAPEX financed by debt; ignored if
-                debt_expression is not None. Set to zero to indicate no loans are taken out on capital.
-            debt_expression: set the value or expression to calculate total debt.
-            loan_interest_percentage: interest rate for loan repayment.
-            loan_repayment_period: length of repayment period in years.
-            capital_depreciation_declining_balance_percentage: factor to use for declining balance
-                depreciation. Set to 0 to indicate that capital does not depreciate over time.
         """
 
         # input verification
@@ -3088,7 +3022,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # check optional expressions
         QGESSCostingData.assert_Pyomo_object(b.config, name="royalty_expression")
-        QGESSCostingData.assert_Pyomo_object(b.config, name="debt_expression")
 
         # build variables
 
@@ -3120,38 +3053,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             units=b.cost_units,
         )
 
-        b.loan_debt = Var(
-            initialize=b.CAPEX,
-            bounds=(0, 1e4),
-            doc="total debt from loans in $MM",
-            units=b.cost_units,
-        )
-
-        b.loan_annual_payment = Var(
-            initialize=b.CAPEX,
-            bounds=(0, 1e4),
-            doc="amortized annual payment on loans in $MM",
-            units=b.cost_units,
-        )
-
-        b.pv_loan_interest = Var(
-            initialize=-b.CAPEX,
-            bounds=(-1e4, 0),
-            doc="present value of total lifetime loan interest in $MM; negative cash flow",
-            units=b.cost_units,
-        )
-
-        b.pv_capital_depreciation = Var(
-            initialize=-b.CAPEX,
-            bounds=(-1e4, 0),
-            doc="present value of total lifetime capital depreciation in $MM; negative cash flow",
-            units=b.cost_units,
-        )
-
         b.npv = Var(
             initialize=-b.CAPEX,
             bounds=(-1e4, 1e4),
-            doc="present value of total lifetime capital depreciation in $MM",
+            doc="present value of plant over entire capital and operation lifetime in $MM",
             units=b.cost_units,
         )
 
@@ -3179,30 +3084,20 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=b.config.capital_escalation_percentage, units=pyunits.percent
         )
 
+        b.capital_loan_interest_percentage = Param(
+            initialize=b.config.capital_loan_interest_percentage, units=pyunits.percent
+        )
+
         b.operating_inflation_percentage = Param(
             initialize=b.config.operating_inflation_percentage, units=pyunits.percent
         )
+
         b.revenue_inflation_percentage = Param(
             initialize=b.config.revenue_inflation_percentage, units=pyunits.percent
         )
 
         b.royalty_charge_percentage_of_revenue = Param(
             initialize=b.config.royalty_charge_percentage_of_revenue,
-            units=pyunits.percent,
-        )
-
-        b.debt_percentage_of_CAPEX = Param(
-            initialize=b.config.debt_percentage_of_CAPEX, units=pyunits.percent
-        )
-        b.loan_interest_percentage = Param(
-            initialize=b.config.loan_interest_percentage, units=pyunits.percent
-        )
-        b.loan_repayment_period = Param(
-            initialize=b.config.loan_repayment_period, units=pyunits.years
-        )
-
-        b.capital_depreciation_declining_balance_percentage = Param(
-            initialize=b.config.capital_depreciation_declining_balance_percentage,
             units=pyunits.percent,
         )
 
@@ -3351,106 +3246,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             b.pv_royalties = Reference(b.config.royalty_expression)
 
-        if b.config.debt_expression is None:
-
-            @b.Constraint()
-            def loan_debt_constraint(c):
-                # Debt  = %debt_charge_of_CAPEX * CAPEX
-
-                return c.loan_debt == pyunits.convert(
-                    pyunits.convert(
-                        c.debt_percentage_of_CAPEX, to_units=pyunits.dimensionless
-                    )
-                    * c.CAPEX,
-                    to_units=c.cost_units,
-                )
-
-        else:
-
-            b.loan_debt = Reference(b.config.debt_expression)
-
-        @b.Constraint()
-        def loan_annual_payment_constraint(c):
-            # Annual Loan Payment =
-            # Debt * [ %interest * (1 + interest)**loan_length ] / [ (1 + interest)**loan_length - 1 ]
-
-            annual_payment_multiplier = (
-                pyunits.convert(
-                    c.loan_interest_percentage, to_units=pyunits.dimensionless
-                )
-                * (
-                    1
-                    + pyunits.convert(
-                        c.loan_interest_percentage, to_units=pyunits.dimensionless
-                    )
-                )
-                ** (c.loan_repayment_period / pyunits.year)
-            ) / (
-                (
-                    1
-                    + pyunits.convert(
-                        c.loan_interest_percentage, to_units=pyunits.dimensionless
-                    )
-                )
-                ** (c.loan_repayment_period / pyunits.year)
-                - 1
-            )
-
-            if c.config.debt_expression is None:
-
-                return c.loan_annual_payment == pyunits.convert(
-                    c.loan_debt * annual_payment_multiplier,
-                    to_units=c.cost_units,
-                )
-
-            else:
-
-                return c.loan_annual_payment == pyunits.convert(
-                    c.loan_debt[None] * annual_payment_multiplier,
-                    to_units=c.cost_units,
-                )
-
-        @b.Constraint()
-        def pv_loan_interest_constraint(c):
-            # PV_Loan_Interest_Owed = - loan_length * Annual_Loan_Payment - Debt
-
-            if c.config.debt_expression is None:
-
-                return c.pv_loan_interest == -pyunits.convert(
-                    c.loan_repayment_period / pyunits.year * c.loan_annual_payment
-                    - c.loan_debt,
-                    to_units=c.cost_units,
-                )
-
-            else:
-
-                return c.pv_loan_interest == -pyunits.convert(
-                    c.loan_repayment_period / pyunits.year * c.loan_annual_payment
-                    - c.loan_debt[None],
-                    to_units=c.cost_units,
-                )
-
-        @b.Constraint()
-        def pv_capital_depreciation_constraint(c):
-            # PV_Capital_Depreciation = - CAPEX * [1 - ( 1 - %depreciation/plant_lifetime)**plant_lifetime]
-
-            return c.pv_capital_depreciation == -pyunits.convert(
-                c.CAPEX
-                * (
-                    1
-                    - (
-                        1
-                        - pyunits.convert(
-                            c.capital_depreciation_declining_balance_percentage,
-                            to_units=pyunits.dimensionless,
-                        )
-                        / (c.plant_lifetime / pyunits.year)
-                    )
-                    ** (c.plant_lifetime / pyunits.year)
-                ),
-                to_units=c.cost_units,
-            )
-
         @b.Constraint()
         def npv_constraint(c):
 
@@ -3460,9 +3255,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     c.pv_revenue
                     + c.pv_capital_cost
                     + c.pv_operating_cost
-                    + c.pv_royalties
-                    + c.pv_loan_interest
-                    + c.pv_capital_depreciation,
+                    + c.pv_royalties,
                     to_units=c.cost_units,
                 )
 
@@ -3472,9 +3265,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     c.pv_revenue
                     + c.pv_capital_cost
                     + c.pv_operating_cost
-                    + c.pv_royalties[None]
-                    + c.pv_loan_interest
-                    + c.pv_capital_depreciation,
+                    + c.pv_royalties[None],
                     to_units=c.cost_units,
                 )
 

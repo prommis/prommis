@@ -272,6 +272,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             transport_cost_per_ton_product: Expression, Var or Param to use for transport costs
                 per ton of product (note, this is not part of the TOC)
             CE_index_year: year for cost basis, e.g. "2021" to use 2021 dollars
+            watertap_blocks: list of unit model blocks corresponding to watertap models
         """
 
         # define costing library
@@ -1935,7 +1936,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # sum of fixed operating costs of membrane units
         @b.Constraint()
-        def sum_watertap_fixed_cost(c):
+        def sum_watertap_fixed_costs(c):
             if not hasattr(c, "watertap_fixed_costs_list"):
                 return c.watertap_fixed_costs == 0
             else:

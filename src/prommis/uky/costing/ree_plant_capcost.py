@@ -454,651 +454,673 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"1990 to 2020."
             )
 
-        if total_purchase_cost is None:
-            self.get_total_BEC(CE_index_year, watertap_blocks)
-        else:
-            self.total_BEC = Var(
-                initialize=total_purchase_cost,
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
-            self.total_BEC.fix()
+        if (
+            fixed_OM is False and calculate_NPV is True
+        ):  # NPV method invoked with fixed inputs
+            self.calculate_NPV(fixed_OM, variable_OM)
 
-        # define variables
-        if Lang_factor is None:
-            # initialize parameters from specified percentages
-            self.piping_materials_and_labor_percentage = Param(
-                mutable=True,
-                initialize=piping_materials_and_labor_percentage / 100,
-                doc="Piping, materials and labor",
-            )
+        else:  # continue on with building the plant costs
 
-            self.electrical_materials_and_labor_percentage = Param(
-                mutable=True,
-                initialize=electrical_materials_and_labor_percentage / 100,
-                doc="Electrical, materials and labor",
-            )
+            if total_purchase_cost is None:
+                self.get_total_BEC(CE_index_year, watertap_blocks)
+            else:
+                self.total_BEC = Var(
+                    initialize=total_purchase_cost,
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
+                self.total_BEC.fix()
 
-            self.instrumentation_percentage = Param(
-                mutable=True,
-                initialize=instrumentation_percentage / 100,
-                doc="Instrumentation",
-            )
+            # define variables
+            if Lang_factor is None:
+                # initialize parameters from specified percentages
+                self.piping_materials_and_labor_percentage = Param(
+                    mutable=True,
+                    initialize=piping_materials_and_labor_percentage / 100,
+                    doc="Piping, materials and labor",
+                )
 
-            self.plant_services_percentage = Param(
-                mutable=True,
-                initialize=plants_services_percentage / 100,
-                doc="Plant services",
-            )
+                self.electrical_materials_and_labor_percentage = Param(
+                    mutable=True,
+                    initialize=electrical_materials_and_labor_percentage / 100,
+                    doc="Electrical, materials and labor",
+                )
 
-            self.process_buildings_percentage = Param(
-                mutable=True,
-                initialize=process_buildings_percentage / 100,
-                doc="Process buildings",
-            )
+                self.instrumentation_percentage = Param(
+                    mutable=True,
+                    initialize=instrumentation_percentage / 100,
+                    doc="Instrumentation",
+                )
 
-            self.auxiliary_buildings_percentage = Param(
-                mutable=True,
-                initialize=auxiliary_buildings_percentage / 100,
-                doc="Auxiliary buildings",
-            )
+                self.plant_services_percentage = Param(
+                    mutable=True,
+                    initialize=plants_services_percentage / 100,
+                    doc="Plant services",
+                )
 
-            self.site_improvements_percentage = Param(
-                mutable=True,
-                initialize=site_improvements_percentage / 100,
-                doc="Site improvements",
-            )
+                self.process_buildings_percentage = Param(
+                    mutable=True,
+                    initialize=process_buildings_percentage / 100,
+                    doc="Process buildings",
+                )
 
-            self.equipment_installation_percentage = Param(
-                mutable=True,
-                initialize=equipment_installation_percentage / 100,
-                doc="Equipment installation",
-            )
+                self.auxiliary_buildings_percentage = Param(
+                    mutable=True,
+                    initialize=auxiliary_buildings_percentage / 100,
+                    doc="Auxiliary buildings",
+                )
 
-            self.field_expenses_percentage = Param(
-                mutable=True,
-                initialize=field_expenses_percentage / 100,
-                doc="Field expenses",
-            )
+                self.site_improvements_percentage = Param(
+                    mutable=True,
+                    initialize=site_improvements_percentage / 100,
+                    doc="Site improvements",
+                )
 
-            self.project_management_and_construction_percentage = Param(
-                mutable=True,
-                initialize=project_management_and_construction_percentage / 100,
-                doc="Project management and construction",
-            )
+                self.equipment_installation_percentage = Param(
+                    mutable=True,
+                    initialize=equipment_installation_percentage / 100,
+                    doc="Equipment installation",
+                )
 
-            self.process_contingency_percentage = Param(
-                mutable=True,
-                initialize=process_contingency_percentage / 100,
-                doc="Process contingency",
-            )
+                self.field_expenses_percentage = Param(
+                    mutable=True,
+                    initialize=field_expenses_percentage / 100,
+                    doc="Field expenses",
+                )
 
-            # ancillary cost variables
-            self.ancillary_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="Ancillary cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                self.project_management_and_construction_percentage = Param(
+                    mutable=True,
+                    initialize=project_management_and_construction_percentage / 100,
+                    doc="Project management and construction",
+                )
 
-            self.piping_materials_and_labor_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="Piping, materials and labor ancillary cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                self.process_contingency_percentage = Param(
+                    mutable=True,
+                    initialize=process_contingency_percentage / 100,
+                    doc="Process contingency",
+                )
 
-            self.electrical_materials_and_labor_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="Electrical, materials and labor ancillary cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                # ancillary cost variables
+                self.ancillary_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Ancillary cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
 
-            self.instrumentation_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="Ancillary cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                self.piping_materials_and_labor_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Piping, materials and labor ancillary cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
 
-            self.plant_services_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="Ancillary cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                self.electrical_materials_and_labor_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Electrical, materials and labor ancillary cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
 
-            # buildings cost variables
-            self.buildings_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="Buildings cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                self.instrumentation_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Ancillary cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
 
-            self.process_buildings_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="Process buildings cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                self.plant_services_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Ancillary cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
 
-            self.auxiliary_buildings_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="Auxiliary buildings cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                # buildings cost variables
+                self.buildings_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Buildings cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
 
-            self.site_improvements_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="Site improvements buildings cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                self.process_buildings_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Process buildings cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
 
-            # engineering, procurement and construction management cost variables
-            self.epcm_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="EPCM cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                self.auxiliary_buildings_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Auxiliary buildings cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
 
-            self.equipment_installation_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="Equipment installation EPCM cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                self.site_improvements_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Site improvements buildings cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
 
-            self.field_expenses_costs = Var(
-                initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
-                doc="Field expenses EPCM cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
-            )
+                # engineering, procurement and construction management cost variables
+                self.epcm_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="EPCM cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
 
-            self.project_management_and_construction_costs = Var(
+                self.equipment_installation_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Equipment installation EPCM cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
+
+                self.field_expenses_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Field expenses EPCM cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
+
+                self.project_management_and_construction_costs = Var(
+                    initialize=self.total_BEC,
+                    bounds=(0, 1e4),
+                    doc="Project management and construction EPCM cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
+
+                # contingency cost variables - generic to support more contingency cost types in the future
+                self.contingency_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Contingency cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
+
+                self.process_contingency_costs = Var(
+                    initialize=value(self.total_BEC),
+                    bounds=(0, 1e4),
+                    doc="Contingency cost in $MM",
+                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
+            else:
+                self.Lang_factor = Param(
+                    initialize=Lang_factor,
+                    mutable=True,
+                    doc="Lang factor",
+                    units=pyunits.dimensionless,
+                )
+
+            # total cost variables
+            self.total_installation_cost = Var(
                 initialize=self.total_BEC,
                 bounds=(0, 1e4),
-                doc="Project management and construction EPCM cost in $MM",
+                doc="Total installation cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
-            # contingency cost variables - generic to support more contingency cost types in the future
-            self.contingency_costs = Var(
-                initialize=value(self.total_BEC),
+            self.total_plant_cost = Var(
+                initialize=self.total_BEC,
                 bounds=(0, 1e4),
-                doc="Contingency cost in $MM",
+                doc="Total plant cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
-            self.process_contingency_costs = Var(
-                initialize=value(self.total_BEC),
+            # add other plant costs to catch non-equipment capital costs, e.g. reagent fills
+            self.other_plant_costs = Var(
+                initialize=0,
                 bounds=(0, 1e4),
-                doc="Contingency cost in $MM",
+                doc="Additional plant costs in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
-        else:
-            self.Lang_factor = Param(
-                initialize=Lang_factor,
-                mutable=True,
-                doc="Lang factor",
-                units=pyunits.dimensionless,
-            )
+            self.other_plant_costs.fix(0)
 
-        # total cost variables
-        self.total_installation_cost = Var(
-            initialize=self.total_BEC,
-            bounds=(0, 1e4),
-            doc="Total installation cost in $MM",
-            units=getattr(pyunits, "MUSD_" + CE_index_year),
-        )
-
-        self.total_plant_cost = Var(
-            initialize=self.total_BEC,
-            bounds=(0, 1e4),
-            doc="Total plant cost in $MM",
-            units=getattr(pyunits, "MUSD_" + CE_index_year),
-        )
-
-        # add other plant costs to catch non-equipment capital costs, e.g. reagent fills
-        self.other_plant_costs = Var(
-            initialize=0,
-            bounds=(0, 1e4),
-            doc="Additional plant costs in $MM",
-            units=getattr(pyunits, "MUSD_" + CE_index_year),
-        )
-        self.other_plant_costs.fix(0)
-
-        if Lang_factor is None:
-            # rules for calculating Ancillary costs
-            def piping_materials_and_labor_cost_rule(self):
-                return self.piping_materials_and_labor_costs == (
-                    self.total_BEC * self.piping_materials_and_labor_percentage
-                )
-
-            self.piping_materials_and_labor_cost_eq = Constraint(
-                rule=piping_materials_and_labor_cost_rule
-            )
-
-            def electrical_materials_and_labor_cost_rule(self):
-                return self.electrical_materials_and_labor_costs == (
-                    self.total_BEC * self.electrical_materials_and_labor_percentage
-                )
-
-            self.electrical_materials_and_labor_cost_eq = Constraint(
-                rule=electrical_materials_and_labor_cost_rule
-            )
-
-            def instrumentation_cost_rule(self):
-                return self.instrumentation_costs == (
-                    self.total_BEC * self.instrumentation_percentage
-                )
-
-            self.instrumentation_cost_eq = Constraint(rule=instrumentation_cost_rule)
-
-            def plant_services_cost_rule(self, i):
-                return self.plant_services_costs == (
-                    self.total_BEC * self.plant_services_percentage
-                )
-
-            self.plant_services_cost_eq = Constraint(rule=plant_services_cost_rule)
-
-            def ancillary_cost_rule(self):
-                return self.ancillary_costs == (
-                    self.piping_materials_and_labor_costs
-                    + self.electrical_materials_and_labor_costs
-                    + self.instrumentation_costs
-                    + self.plant_services_costs
-                )
-
-            self.ancillary_cost_eq = Constraint(rule=ancillary_cost_rule)
-
-            # rules for calculating Buildings costs
-            def process_buildings_cost_rule(self):
-                return self.process_buildings_costs == (
-                    self.total_BEC * self.process_buildings_percentage
-                )
-
-            self.process_buildings_cost_eq = Constraint(
-                rule=process_buildings_cost_rule
-            )
-
-            def auxiliary_buildings_cost_rule(self):
-                return self.auxiliary_buildings_costs == (
-                    self.total_BEC * self.auxiliary_buildings_percentage
-                )
-
-            self.auxiliary_buildings_cost_eq = Constraint(
-                rule=auxiliary_buildings_cost_rule
-            )
-
-            def site_improvements_cost_rule(self):
-                return self.site_improvements_costs == (
-                    self.total_BEC * self.site_improvements_percentage
-                )
-
-            self.site_improvements_cost_eq = Constraint(
-                rule=site_improvements_cost_rule
-            )
-
-            def buildings_cost_rule(self):
-                return self.buildings_costs == (
-                    self.process_buildings_costs
-                    + self.auxiliary_buildings_costs
-                    + self.site_improvements_costs
-                )
-
-            self.buildings_cost_eq = Constraint(rule=buildings_cost_rule)
-
-            # rules for calculating Engineering, Procurement and Construction Management costs
-            def equipment_installation_cost_rule(self):
-                return self.equipment_installation_costs == (
-                    self.total_BEC * self.equipment_installation_percentage
-                )
-
-            self.equipment_installation_cost_eq = Constraint(
-                rule=equipment_installation_cost_rule
-            )
-
-            def field_expenses_cost_rule(self):
-                return self.field_expenses_costs == (
-                    self.total_BEC * self.field_expenses_percentage
-                )
-
-            self.field_expenses_cost_eq = Constraint(rule=field_expenses_cost_rule)
-
-            def project_management_and_construction_cost_rule(self):
-                return self.project_management_and_construction_costs == (
-                    self.total_BEC * self.project_management_and_construction_percentage
-                )
-
-            self.project_management_and_construction_cost_eq = Constraint(
-                rule=project_management_and_construction_cost_rule
-            )
-
-            def epcm_cost_rule(self):
-                return self.epcm_costs == (
-                    self.equipment_installation_costs
-                    + self.field_expenses_costs
-                    + self.project_management_and_construction_costs
-                )
-
-            self.epcm_cost_eq = Constraint(rule=epcm_cost_rule)
-
-            # rules for calculating Contingency costs
-            def process_contingency_cost_rule(self):
-                return self.contingency_costs == (
-                    self.total_BEC * self.process_contingency_percentage
-                )
-
-            self.process_contingency_cost_eq = Constraint(
-                rule=process_contingency_cost_rule
-            )
-
-            def contingency_cost_rule(self):
-                return self.contingency_costs == (self.process_contingency_costs)
-
-            self.contingency_cost_eq = Constraint(rule=contingency_cost_rule)
-
-            def total_installation_cost_rule(self):
-                return self.total_installation_cost == (
-                    self.ancillary_costs
-                    + self.buildings_costs
-                    + self.epcm_costs
-                    + self.contingency_costs
-                )
-
-            self.total_installation_cost_eq = Constraint(
-                rule=total_installation_cost_rule
-            )
-        else:
-
-            def total_installation_cost_rule(self):
-                return self.total_installation_cost == self.total_BEC * (
-                    self.Lang_factor - 1
-                )
-
-            self.total_installation_cost_eq = Constraint(
-                rule=total_installation_cost_rule
-            )
-
-        # rule for calculating TPC
-        def total_plant_cost_rule(self):
-            return self.total_plant_cost == (
-                self.total_BEC + self.total_installation_cost + self.other_plant_costs
-            )
-
-        self.total_plant_cost_eq = Constraint(rule=total_plant_cost_rule)
-
-        # define land cost
-        if land_cost is not None:
-            if type(land_cost) in [Expression, ScalarExpression]:
-                if pyunits.get_units(land_cost) == pyunits.dimensionless:
-                    self.land_cost = Expression(expr=land_cost.expr * CE_index_units)
-                else:
-                    self.land_cost = Expression(
-                        expr=pyunits.convert(land_cost.expr, to_units=CE_index_units)
+            if Lang_factor is None:
+                # rules for calculating Ancillary costs
+                def piping_materials_and_labor_cost_rule(self):
+                    return self.piping_materials_and_labor_costs == (
+                        self.total_BEC * self.piping_materials_and_labor_percentage
                     )
+
+                self.piping_materials_and_labor_cost_eq = Constraint(
+                    rule=piping_materials_and_labor_cost_rule
+                )
+
+                def electrical_materials_and_labor_cost_rule(self):
+                    return self.electrical_materials_and_labor_costs == (
+                        self.total_BEC * self.electrical_materials_and_labor_percentage
+                    )
+
+                self.electrical_materials_and_labor_cost_eq = Constraint(
+                    rule=electrical_materials_and_labor_cost_rule
+                )
+
+                def instrumentation_cost_rule(self):
+                    return self.instrumentation_costs == (
+                        self.total_BEC * self.instrumentation_percentage
+                    )
+
+                self.instrumentation_cost_eq = Constraint(
+                    rule=instrumentation_cost_rule
+                )
+
+                def plant_services_cost_rule(self, i):
+                    return self.plant_services_costs == (
+                        self.total_BEC * self.plant_services_percentage
+                    )
+
+                self.plant_services_cost_eq = Constraint(rule=plant_services_cost_rule)
+
+                def ancillary_cost_rule(self):
+                    return self.ancillary_costs == (
+                        self.piping_materials_and_labor_costs
+                        + self.electrical_materials_and_labor_costs
+                        + self.instrumentation_costs
+                        + self.plant_services_costs
+                    )
+
+                self.ancillary_cost_eq = Constraint(rule=ancillary_cost_rule)
+
+                # rules for calculating Buildings costs
+                def process_buildings_cost_rule(self):
+                    return self.process_buildings_costs == (
+                        self.total_BEC * self.process_buildings_percentage
+                    )
+
+                self.process_buildings_cost_eq = Constraint(
+                    rule=process_buildings_cost_rule
+                )
+
+                def auxiliary_buildings_cost_rule(self):
+                    return self.auxiliary_buildings_costs == (
+                        self.total_BEC * self.auxiliary_buildings_percentage
+                    )
+
+                self.auxiliary_buildings_cost_eq = Constraint(
+                    rule=auxiliary_buildings_cost_rule
+                )
+
+                def site_improvements_cost_rule(self):
+                    return self.site_improvements_costs == (
+                        self.total_BEC * self.site_improvements_percentage
+                    )
+
+                self.site_improvements_cost_eq = Constraint(
+                    rule=site_improvements_cost_rule
+                )
+
+                def buildings_cost_rule(self):
+                    return self.buildings_costs == (
+                        self.process_buildings_costs
+                        + self.auxiliary_buildings_costs
+                        + self.site_improvements_costs
+                    )
+
+                self.buildings_cost_eq = Constraint(rule=buildings_cost_rule)
+
+                # rules for calculating Engineering, Procurement and Construction Management costs
+                def equipment_installation_cost_rule(self):
+                    return self.equipment_installation_costs == (
+                        self.total_BEC * self.equipment_installation_percentage
+                    )
+
+                self.equipment_installation_cost_eq = Constraint(
+                    rule=equipment_installation_cost_rule
+                )
+
+                def field_expenses_cost_rule(self):
+                    return self.field_expenses_costs == (
+                        self.total_BEC * self.field_expenses_percentage
+                    )
+
+                self.field_expenses_cost_eq = Constraint(rule=field_expenses_cost_rule)
+
+                def project_management_and_construction_cost_rule(self):
+                    return self.project_management_and_construction_costs == (
+                        self.total_BEC
+                        * self.project_management_and_construction_percentage
+                    )
+
+                self.project_management_and_construction_cost_eq = Constraint(
+                    rule=project_management_and_construction_cost_rule
+                )
+
+                def epcm_cost_rule(self):
+                    return self.epcm_costs == (
+                        self.equipment_installation_costs
+                        + self.field_expenses_costs
+                        + self.project_management_and_construction_costs
+                    )
+
+                self.epcm_cost_eq = Constraint(rule=epcm_cost_rule)
+
+                # rules for calculating Contingency costs
+                def process_contingency_cost_rule(self):
+                    return self.contingency_costs == (
+                        self.total_BEC * self.process_contingency_percentage
+                    )
+
+                self.process_contingency_cost_eq = Constraint(
+                    rule=process_contingency_cost_rule
+                )
+
+                def contingency_cost_rule(self):
+                    return self.contingency_costs == (self.process_contingency_costs)
+
+                self.contingency_cost_eq = Constraint(rule=contingency_cost_rule)
+
+                def total_installation_cost_rule(self):
+                    return self.total_installation_cost == (
+                        self.ancillary_costs
+                        + self.buildings_costs
+                        + self.epcm_costs
+                        + self.contingency_costs
+                    )
+
+                self.total_installation_cost_eq = Constraint(
+                    rule=total_installation_cost_rule
+                )
             else:
-                if pyunits.get_units(land_cost) == pyunits.dimensionless:
-                    self.land_cost = Expression(expr=land_cost * CE_index_units)
-                else:
-                    self.land_cost = Expression(
-                        expr=pyunits.convert(land_cost, to_units=CE_index_units)
+
+                def total_installation_cost_rule(self):
+                    return self.total_installation_cost == self.total_BEC * (
+                        self.Lang_factor - 1
                     )
-        else:
-            self.land_cost = Expression(expr=0 * CE_index_units)
 
-        # define feed input, if passed
-        if feed_input is not None:
-            if (
-                pyunits.get_units(feed_input) == pyunits.dimensionless
-            ):  # assume it's short ton per hour
-                feed_input_rate = feed_input * pyunits.ton / pyunits.hr
-            else:
-                feed_input_rate = pyunits.convert(
-                    feed_input, to_units=pyunits.ton / pyunits.hr
-                )
-        else:
-            feed_input_rate = None
-
-        # build operating & maintenance costs
-        if chemicals is None:
-            self.chemicals_list = []
-        else:
-            self.chemicals_list = chemicals
-
-        # define additional chemicals cost
-        if additional_chemicals_cost is not None:
-            if type(additional_chemicals_cost) in [Expression, ScalarExpression]:
-                if (
-                    pyunits.get_units(additional_chemicals_cost)
-                    == pyunits.dimensionless
-                ):
-                    self.additional_chemicals_cost = Expression(
-                        expr=additional_chemicals_cost.expr * CE_index_units
-                    )
-                else:
-                    self.additional_chemicals_cost = Expression(
-                        expr=pyunits.convert(
-                            additional_chemicals_cost.expr, to_units=CE_index_units
-                        )
-                    )
-            else:
-                if (
-                    pyunits.get_units(additional_chemicals_cost)
-                    == pyunits.dimensionless
-                ):
-                    self.additional_chemicals_cost = Expression(
-                        expr=additional_chemicals_cost * CE_index_units
-                    )
-                else:
-                    self.additional_chemicals_cost = Expression(
-                        expr=pyunits.convert(
-                            additional_chemicals_cost, to_units=CE_index_units
-                        )
-                    )
-        else:
-            self.additional_chemicals_cost = Expression(expr=0 * CE_index_units)
-
-        if waste is None:
-            self.waste_list = []
-        else:
-            self.waste_list = waste
-
-        # define waste cost
-        if additional_waste_cost is not None:
-            if type(additional_waste_cost) in [Expression, ScalarExpression]:
-                if pyunits.get_units(additional_waste_cost) == pyunits.dimensionless:
-                    self.additional_waste_cost = Expression(
-                        expr=additional_waste_cost.expr * CE_index_units
-                    )
-                else:
-                    self.additional_waste_cost = Expression(
-                        expr=pyunits.convert(
-                            additional_waste_cost.expr, to_units=CE_index_units
-                        )
-                    )
-            else:
-                if pyunits.get_units(additional_waste_cost) == pyunits.dimensionless:
-                    self.additional_waste_cost = Expression(
-                        expr=additional_waste_cost * CE_index_units
-                    )
-                else:
-                    self.additional_waste_cost = Expression(
-                        expr=pyunits.convert(
-                            additional_waste_cost, to_units=CE_index_units
-                        )
-                    )
-        else:
-            self.additional_waste_cost = Expression(expr=0 * CE_index_units)
-
-        if fixed_OM:
-            self.get_fixed_OM_costs(
-                labor_types=labor_types,
-                labor_rate=labor_rate,
-                labor_burden=labor_burden,
-                operators_per_shift=operators_per_shift,
-                hours_per_shift=hours_per_shift,
-                shifts_per_day=shifts_per_day,
-                operating_days_per_year=operating_days_per_year,
-                pure_product_output_rates=pure_product_output_rates,
-                mixed_product_output_rates=mixed_product_output_rates,
-                mixed_product_sale_price_realization_factor=mixed_product_sale_price_realization_factor,
-                sale_prices=sale_prices,
-                CE_index_year=CE_index_year,
-            )
-
-        if variable_OM:
-            self.get_variable_OM_costs(
-                efficiency=efficiency,
-                resources=resources,
-                rates=rates,
-                prices=prices,
-                feed_input_rate=feed_input_rate,
-                CE_index_year=CE_index_year,
-            )
-
-        # build system costs (owner's, total overnight costs, annualized costs,
-        # and cost of recovery)
-
-        self.total_overnight_capital = Expression(expr=self.total_plant_cost)
-
-        self.tasc_toc_factor = Param(
-            initialize=1.144,
-            mutable=True,
-            doc="TASC/TOC factor calculated from UKy report using 3 year "
-            "expenditure period with 10/60/30 % expenditure at 3.6% "
-            "escalation at 2.94% debt interest rate with 7.84% return on "
-            "equity, 26% combined federal/state tax, and 50/50 % debt and "
-            "equity financed.",
-        )
-
-        self.total_as_spent_cost = Expression(
-            expr=self.total_overnight_capital * self.tasc_toc_factor
-        )
-
-        self.fixed_charge_factor = Param(
-            initialize=0.1002,
-            mutable=True,
-            doc="Fixed charge rate calculated from UKy report using a 26% "
-            "effective tax rate, a tax depreciation fraction of 2.231 over "
-            "21 years of depreciation, a nominal capital recovery factor of "
-            "0.0856, an after-tax weighted average cost of capital of 5.77%, "
-            "= Present value of tax depreciation expense of 0.237",
-        )
-        self.annualized_cost = Expression(
-            expr=self.fixed_charge_factor * self.total_as_spent_cost
-        )
-
-        if fixed_OM and variable_OM:
-            # build cost of recovery (COR)
-            if recovery_rate_per_year is not None:
-                self.additional_cost_of_recovery = Var(
-                    initialize=0,
-                    doc="Additional cost to be added to the COR calculations"
-                    + " in millions",
-                    units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
+                self.total_installation_cost_eq = Constraint(
+                    rule=total_installation_cost_rule
                 )
 
-                if not hasattr(self, "recovery_rate_per_year"):
-                    if (
-                        pyunits.get_units(recovery_rate_per_year)
-                        == pyunits.dimensionless
-                    ):  # assume it's in kg/year
-                        self.recovery_rate_per_year = Param(
-                            initialize=recovery_rate_per_year,
-                            mutable=True,
-                            units=pyunits.kg / pyunits.year,
-                        )
-                    else:  # use source units
-                        self.recovery_rate_per_year = Param(
-                            initialize=recovery_rate_per_year,
-                            mutable=True,
-                            units=pyunits.get_units(recovery_rate_per_year),
-                        )
-                    recovery_units_factor = 1
-
-                rec_rate_units = pyunits.get_units(self.recovery_rate_per_year)
-
-                # check that units are compatible
-                try:
-                    pyunits.convert(
-                        self.recovery_rate_per_year * recovery_units_factor,
-                        to_units=pyunits.kg / pyunits.year,
-                    )
-                except InconsistentUnitsError:
-                    raise UnitsError(
-                        f"The argument recovery_rate_per_year was passed with units of "
-                        f"{rec_rate_units} which cannot be converted to units of mass per year. "
-                        f"Please ensure that recovery_rate_per_year is passed with rate units "
-                        f"of mass per year (mass/a) or dimensionless."
-                    )
-
-                # check that units are on an annual basis
-                if str(rec_rate_units).split("/")[1] not in ["a", "year"]:
-                    raise UnitsError(
-                        f"The argument recovery_rate_per_year was passed with units of "
-                        f"{rec_rate_units} and must be on an anuual basis. Please "
-                        f"ensure that recovery_rate_per_year is passed with rate units "
-                        f"of mass per year (mass/a) or dimensionless."
-                    )
-
-                self.cost_of_recovery = Expression(
-                    expr=(
-                        pyunits.convert(
-                            (
-                                self.annualized_cost / pyunits.year
-                                + self.total_fixed_OM_cost / pyunits.year
-                                + self.total_variable_OM_cost[0]
-                            )
-                            / (self.recovery_rate_per_year * recovery_units_factor),
-                            to_units=getattr(pyunits, "USD_" + CE_index_year)
-                            / pyunits.kg,
-                        )
-                        + self.additional_cost_of_recovery
-                    )
+            # rule for calculating TPC
+            def total_plant_cost_rule(self):
+                return self.total_plant_cost == (
+                    self.total_BEC
+                    + self.total_installation_cost
+                    + self.other_plant_costs
                 )
 
-                if transport_cost_per_ton_product is not None:
-                    if (
-                        isinstance(
-                            transport_cost_per_ton_product,
-                            (Expression, ScalarExpression, Param, Var),
-                        )
-                        and pyunits.get_units(transport_cost_per_ton_product)
-                        == pyunits.dimensionless
-                    ) or isinstance(transport_cost_per_ton_product, (int, float)):
-                        # no units, assume $/ton
-                        self.transport_cost = (
-                            transport_cost_per_ton_product
-                            * 1e-6
-                            * CE_index_units
-                            / pyunits.ton
-                            * pyunits.convert(
-                                self.recovery_rate_per_year,
-                                to_units=pyunits.ton / pyunits.year,
-                            )
+            self.total_plant_cost_eq = Constraint(rule=total_plant_cost_rule)
+
+            # define land cost
+            if land_cost is not None:
+                if type(land_cost) in [Expression, ScalarExpression]:
+                    if pyunits.get_units(land_cost) == pyunits.dimensionless:
+                        self.land_cost = Expression(
+                            expr=land_cost.expr * CE_index_units
                         )
                     else:
-                        self.transport_cost = pyunits.convert(
-                            transport_cost_per_ton_product
-                            * self.recovery_rate_per_year,
-                            to_units=CE_index_units / pyunits.year,
+                        self.land_cost = Expression(
+                            expr=pyunits.convert(
+                                land_cost.expr, to_units=CE_index_units
+                            )
                         )
+                else:
+                    if pyunits.get_units(land_cost) == pyunits.dimensionless:
+                        self.land_cost = Expression(expr=land_cost * CE_index_units)
+                    else:
+                        self.land_cost = Expression(
+                            expr=pyunits.convert(land_cost, to_units=CE_index_units)
+                        )
+            else:
+                self.land_cost = Expression(expr=0 * CE_index_units)
 
-            else:  # except the case where transport_cost_per_ton_product is passed but recovery_rate_per_year is not passed
-                if transport_cost_per_ton_product is not None:
-                    raise AttributeError(
-                        "If transport_cost_per_ton_product is not None, "
-                        "recovery_rate_per_year cannot be None."
+            # define feed input, if passed
+            if feed_input is not None:
+                if (
+                    pyunits.get_units(feed_input) == pyunits.dimensionless
+                ):  # assume it's short ton per hour
+                    feed_input_rate = feed_input * pyunits.ton / pyunits.hr
+                else:
+                    feed_input_rate = pyunits.convert(
+                        feed_input, to_units=pyunits.ton / pyunits.hr
+                    )
+            else:
+                feed_input_rate = None
+
+            # build operating & maintenance costs
+            if chemicals is None:
+                self.chemicals_list = []
+            else:
+                self.chemicals_list = chemicals
+
+            # define additional chemicals cost
+            if additional_chemicals_cost is not None:
+                if type(additional_chemicals_cost) in [Expression, ScalarExpression]:
+                    if (
+                        pyunits.get_units(additional_chemicals_cost)
+                        == pyunits.dimensionless
+                    ):
+                        self.additional_chemicals_cost = Expression(
+                            expr=additional_chemicals_cost.expr * CE_index_units
+                        )
+                    else:
+                        self.additional_chemicals_cost = Expression(
+                            expr=pyunits.convert(
+                                additional_chemicals_cost.expr, to_units=CE_index_units
+                            )
+                        )
+                else:
+                    if (
+                        pyunits.get_units(additional_chemicals_cost)
+                        == pyunits.dimensionless
+                    ):
+                        self.additional_chemicals_cost = Expression(
+                            expr=additional_chemicals_cost * CE_index_units
+                        )
+                    else:
+                        self.additional_chemicals_cost = Expression(
+                            expr=pyunits.convert(
+                                additional_chemicals_cost, to_units=CE_index_units
+                            )
+                        )
+            else:
+                self.additional_chemicals_cost = Expression(expr=0 * CE_index_units)
+
+            if waste is None:
+                self.waste_list = []
+            else:
+                self.waste_list = waste
+
+            # define waste cost
+            if additional_waste_cost is not None:
+                if type(additional_waste_cost) in [Expression, ScalarExpression]:
+                    if (
+                        pyunits.get_units(additional_waste_cost)
+                        == pyunits.dimensionless
+                    ):
+                        self.additional_waste_cost = Expression(
+                            expr=additional_waste_cost.expr * CE_index_units
+                        )
+                    else:
+                        self.additional_waste_cost = Expression(
+                            expr=pyunits.convert(
+                                additional_waste_cost.expr, to_units=CE_index_units
+                            )
+                        )
+                else:
+                    if (
+                        pyunits.get_units(additional_waste_cost)
+                        == pyunits.dimensionless
+                    ):
+                        self.additional_waste_cost = Expression(
+                            expr=additional_waste_cost * CE_index_units
+                        )
+                    else:
+                        self.additional_waste_cost = Expression(
+                            expr=pyunits.convert(
+                                additional_waste_cost, to_units=CE_index_units
+                            )
+                        )
+            else:
+                self.additional_waste_cost = Expression(expr=0 * CE_index_units)
+
+            if fixed_OM:
+                self.get_fixed_OM_costs(
+                    labor_types=labor_types,
+                    labor_rate=labor_rate,
+                    labor_burden=labor_burden,
+                    operators_per_shift=operators_per_shift,
+                    hours_per_shift=hours_per_shift,
+                    shifts_per_day=shifts_per_day,
+                    operating_days_per_year=operating_days_per_year,
+                    pure_product_output_rates=pure_product_output_rates,
+                    mixed_product_output_rates=mixed_product_output_rates,
+                    mixed_product_sale_price_realization_factor=mixed_product_sale_price_realization_factor,
+                    sale_prices=sale_prices,
+                    CE_index_year=CE_index_year,
+                )
+
+            if variable_OM:
+                self.get_variable_OM_costs(
+                    efficiency=efficiency,
+                    resources=resources,
+                    rates=rates,
+                    prices=prices,
+                    feed_input_rate=feed_input_rate,
+                    CE_index_year=CE_index_year,
+                )
+
+            # build system costs (owner's, total overnight costs, annualized costs,
+            # and cost of recovery)
+
+            self.total_overnight_capital = Expression(expr=self.total_plant_cost)
+
+            self.tasc_toc_factor = Param(
+                initialize=1.144,
+                mutable=True,
+                doc="TASC/TOC factor calculated from UKy report using 3 year "
+                "expenditure period with 10/60/30 % expenditure at 3.6% "
+                "escalation at 2.94% debt interest rate with 7.84% return on "
+                "equity, 26% combined federal/state tax, and 50/50 % debt and "
+                "equity financed.",
+            )
+
+            self.total_as_spent_cost = Expression(
+                expr=self.total_overnight_capital * self.tasc_toc_factor
+            )
+
+            self.fixed_charge_factor = Param(
+                initialize=0.1002,
+                mutable=True,
+                doc="Fixed charge rate calculated from UKy report using a 26% "
+                "effective tax rate, a tax depreciation fraction of 2.231 over "
+                "21 years of depreciation, a nominal capital recovery factor of "
+                "0.0856, an after-tax weighted average cost of capital of 5.77%, "
+                "= Present value of tax depreciation expense of 0.237",
+            )
+            self.annualized_cost = Expression(
+                expr=self.fixed_charge_factor * self.total_as_spent_cost
+            )
+
+            if fixed_OM and variable_OM:
+                # build cost of recovery (COR)
+                if recovery_rate_per_year is not None:
+                    self.additional_cost_of_recovery = Var(
+                        initialize=0,
+                        doc="Additional cost to be added to the COR calculations"
+                        + " in millions",
+                        units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
                     )
 
-        if calculate_NPV:
-            self.calculate_NPV(fixed_OM, variable_OM)
+                    if not hasattr(self, "recovery_rate_per_year"):
+                        if (
+                            pyunits.get_units(recovery_rate_per_year)
+                            == pyunits.dimensionless
+                        ):  # assume it's in kg/year
+                            self.recovery_rate_per_year = Param(
+                                initialize=recovery_rate_per_year,
+                                mutable=True,
+                                units=pyunits.kg / pyunits.year,
+                            )
+                        else:  # use source units
+                            self.recovery_rate_per_year = Param(
+                                initialize=recovery_rate_per_year,
+                                mutable=True,
+                                units=pyunits.get_units(recovery_rate_per_year),
+                            )
+                        recovery_units_factor = 1
+
+                    rec_rate_units = pyunits.get_units(self.recovery_rate_per_year)
+
+                    # check that units are compatible
+                    try:
+                        pyunits.convert(
+                            self.recovery_rate_per_year * recovery_units_factor,
+                            to_units=pyunits.kg / pyunits.year,
+                        )
+                    except InconsistentUnitsError:
+                        raise UnitsError(
+                            f"The argument recovery_rate_per_year was passed with units of "
+                            f"{rec_rate_units} which cannot be converted to units of mass per year. "
+                            f"Please ensure that recovery_rate_per_year is passed with rate units "
+                            f"of mass per year (mass/a) or dimensionless."
+                        )
+
+                    # check that units are on an annual basis
+                    if str(rec_rate_units).split("/")[1] not in ["a", "year"]:
+                        raise UnitsError(
+                            f"The argument recovery_rate_per_year was passed with units of "
+                            f"{rec_rate_units} and must be on an anuual basis. Please "
+                            f"ensure that recovery_rate_per_year is passed with rate units "
+                            f"of mass per year (mass/a) or dimensionless."
+                        )
+
+                    self.cost_of_recovery = Expression(
+                        expr=(
+                            pyunits.convert(
+                                (
+                                    self.annualized_cost / pyunits.year
+                                    + self.total_fixed_OM_cost / pyunits.year
+                                    + self.total_variable_OM_cost[0]
+                                )
+                                / (self.recovery_rate_per_year * recovery_units_factor),
+                                to_units=getattr(pyunits, "USD_" + CE_index_year)
+                                / pyunits.kg,
+                            )
+                            + self.additional_cost_of_recovery
+                        )
+                    )
+
+                    if transport_cost_per_ton_product is not None:
+                        if (
+                            isinstance(
+                                transport_cost_per_ton_product,
+                                (Expression, ScalarExpression, Param, Var),
+                            )
+                            and pyunits.get_units(transport_cost_per_ton_product)
+                            == pyunits.dimensionless
+                        ) or isinstance(transport_cost_per_ton_product, (int, float)):
+                            # no units, assume $/ton
+                            self.transport_cost = (
+                                transport_cost_per_ton_product
+                                * 1e-6
+                                * CE_index_units
+                                / pyunits.ton
+                                * pyunits.convert(
+                                    self.recovery_rate_per_year,
+                                    to_units=pyunits.ton / pyunits.year,
+                                )
+                            )
+                        else:
+                            self.transport_cost = pyunits.convert(
+                                transport_cost_per_ton_product
+                                * self.recovery_rate_per_year,
+                                to_units=CE_index_units / pyunits.year,
+                            )
+
+                else:  # except the case where transport_cost_per_ton_product is passed but recovery_rate_per_year is not passed
+                    if transport_cost_per_ton_product is not None:
+                        raise AttributeError(
+                            "If transport_cost_per_ton_product is not None, "
+                            "recovery_rate_per_year cannot be None."
+                        )
+
+            if calculate_NPV:
+                self.calculate_NPV(fixed_OM, variable_OM)
 
     @staticmethod
     def initialize_build(*args, **kwargs):

@@ -32,6 +32,7 @@ from idaes.core.util.scaling import (
 
 import pytest
 
+from prommis.uky.costing.custom_costing_example import CustomCostingData
 from prommis.uky.costing.ree_plant_capcost import (
     QGESSCosting,
     QGESSCostingData,
@@ -2001,6 +2002,298 @@ class TestWaterTAPCosting(object):
 
         assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
             533.42952, rel=1e-4
+        )
+
+
+class TestCustomCosting(object):
+    @pytest.fixture(scope="class")
+    def model(self):
+        model = base_model()
+
+        # create model
+        model.fs.custom_vessel = UnitModelBlock()
+        model.fs.custom_vessel.volume = pyo.Var(initialize=5000, units=pyunits.m**3)
+        model.fs.custom_vessel.volume.fix()
+        model.fs.custom_vessel.water_injection_rate = pyo.Var(
+            initialize=0.1, units=pyunits.m**3 / pyunits.s
+        )
+        model.fs.custom_vessel.water_injection_rate.fix()
+
+        # add costing
+        model.fs.custom_vessel.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=model.fs.costing,
+            costing_method=CustomCostingData.cost_custom_vessel,
+            costing_method_arguments={
+                "volume_per_unit": model.fs.custom_vessel.volume,
+                "material": "carbonsteel",
+                "water_injection_rate_per_unit": model.fs.custom_vessel.water_injection_rate,
+                "number_of_units": 3,
+                "CE_index_year": "2022",
+            },
+        )
+
+        return model
+
+    @pytest.mark.component
+    def test_REE_custom_costing(self, model):
+        # full smoke test with all components, O&M costs, and extra costs included
+        CE_index_year = "UKy_2019"
+
+        CE_index_units = getattr(
+            pyunits, "MUSD_" + CE_index_year
+        )  # millions of USD, for base year
+
+        # add plant-level cost constraints
+
+        model.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+        model.fs.feed_grade = pyo.Var(initialize=356.64, units=pyunits.ppm)
+
+        hours_per_shift = 8
+        shifts_per_day = 3
+        operating_days_per_year = 336
+
+        # for convenience
+        model.fs.annual_operating_hours = pyo.Param(
+            initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
+            mutable=False,
+            units=pyunits.hours / pyunits.a,
+        )
+
+        model.fs.recovery_rate_per_year = pyo.Var(
+            initialize=39.3
+            * pyunits.kg
+            / pyunits.hr
+            * 0.8025  # TREO (total rare earth oxide), 80.25% REE in REO
+            * model.fs.annual_operating_hours,
+            units=pyunits.kg / pyunits.yr,
+        )
+
+        # the land cost is the lease cost, or refining cost of REO produced
+        model.fs.land_cost = pyo.Expression(
+            expr=0.303736
+            * 1e-6
+            * getattr(pyunits, "MUSD_" + CE_index_year)
+            / pyunits.ton
+            * pyunits.convert(model.fs.feed_input, to_units=pyunits.ton / pyunits.hr)
+            * hours_per_shift
+            * pyunits.hr
+            * shifts_per_day
+            * pyunits.day**-1
+            * operating_days_per_year
+            * pyunits.day
+        )
+
+        # dummy reagent with cost of 1 USD/kg for each section
+        reagent_costs = (
+            (  # all USD/year
+                302962  # Crushing and Screening
+                + 0  # Dry Grinding
+                + 5767543  # Roasting
+                + 199053595  # Leaching
+                + 152303329  # Rougher Solvent Extraction
+                + 43702016  # Cleaner Solvent Extraction
+                + 7207168  # Solvent Extraction Wash and Saponification
+                + 1233763  # Rare Earth Element Precipiation
+                + 18684816  # Water Treatment
+            )
+            * pyunits.kg
+            / pyunits.a
+        )
+
+        model.fs.reagents = pyo.Var(
+            model.fs.time,
+            initialize=reagent_costs / (model.fs.annual_operating_hours),
+            units=pyunits.kg / pyunits.hr,
+        )
+
+        model.fs.solid_waste = pyo.Var(
+            model.fs.time, initialize=11136 / 24, units=pyunits.ton / pyunits.hr
+        )  # non-hazardous solid waste
+        model.fs.precipitate = pyo.Var(
+            model.fs.time, initialize=732 / 24, units=pyunits.ton / pyunits.hr
+        )  # non-hazardous precipitate
+        model.fs.dust_and_volatiles = pyo.Var(
+            model.fs.time, initialize=120 / 24, units=pyunits.ton / pyunits.hr
+        )  # dust and volatiles
+        model.fs.power = pyo.Var(model.fs.time, initialize=14716, units=pyunits.hp)
+
+        resources = [
+            "dummy",
+            "nonhazardous_solid_waste",
+            "nonhazardous_precipitate_waste",
+            "dust_and_volatiles",
+            "power",
+        ]
+
+        rates = [
+            model.fs.reagents,
+            model.fs.solid_waste,
+            model.fs.precipitate,
+            model.fs.dust_and_volatiles,
+            model.fs.power,
+        ]
+
+        # define product flowrates
+
+        pure_product_output_rates = {
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            "Dy2O3": 0.4 * pyunits.kg / pyunits.hr,
+            "Gd2O3": 0.5 * pyunits.kg / pyunits.hr,
+        }
+
+        mixed_product_output_rates = {
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            "Y2O3": 0.05418 * pyunits.kg / pyunits.hr,
+            "La2O3": 0.13770 * pyunits.kg / pyunits.hr,
+            "CeO2": 0.37383 * pyunits.kg / pyunits.hr,
+            "Pr6O11": 0.03941 * pyunits.kg / pyunits.hr,
+            "Nd2O3": 0.17289 * pyunits.kg / pyunits.hr,
+            "Sm2O3": 0.02358 * pyunits.kg / pyunits.hr,
+            "Eu2O3": 0.00199 * pyunits.kg / pyunits.hr,
+            "Gd2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Tb4O7": 0.00801 * pyunits.kg / pyunits.hr,
+            "Dy2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Ho2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Er2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Tm2O3": 0.00130 * pyunits.kg / pyunits.hr,
+            "Yb2O3": 0.00373 * pyunits.kg / pyunits.hr,
+            "Lu2O3": 0.00105 * pyunits.kg / pyunits.hr,
+        }
+
+        model.fs.costing.build_process_costs(
+            # arguments related to installation costs
+            piping_materials_and_labor_percentage=20,
+            electrical_materials_and_labor_percentage=20,
+            instrumentation_percentage=8,
+            plants_services_percentage=10,
+            process_buildings_percentage=40,
+            auxiliary_buildings_percentage=15,
+            site_improvements_percentage=10,
+            equipment_installation_percentage=17,
+            field_expenses_percentage=12,
+            project_management_and_construction_percentage=30,
+            process_contingency_percentage=15,
+            # argument related to Fixed OM costs
+            labor_types=[
+                "skilled",
+                "unskilled",
+                "supervisor",
+                "maintenance",
+                "technician",
+                "engineer",
+            ],
+            labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
+            labor_burden=25,  # % fringe benefits
+            operators_per_shift=[4, 9, 2, 2, 2, 3],
+            hours_per_shift=hours_per_shift,
+            shifts_per_day=shifts_per_day,
+            operating_days_per_year=operating_days_per_year,
+            pure_product_output_rates=pure_product_output_rates,
+            mixed_product_output_rates=mixed_product_output_rates,
+            mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
+            # arguments related to total owners costs
+            land_cost=model.fs.land_cost,
+            resources=resources,
+            rates=rates,
+            prices={
+                "dummy": 1 * getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
+            },
+            fixed_OM=True,
+            variable_OM=True,
+            feed_input=model.fs.feed_input,
+            efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
+            chemicals=["dummy"],
+            waste=[
+                "nonhazardous_solid_waste",
+                "nonhazardous_precipitate_waste",
+                "dust_and_volatiles",
+            ],
+            recovery_rate_per_year=model.fs.recovery_rate_per_year,
+            CE_index_year=CE_index_year,
+        )
+
+        # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
+        model.fs.costing.other_plant_costs.unfix()
+        model.fs.costing.other_plant_costs_rule = pyo.Constraint(
+            expr=(
+                model.fs.costing.other_plant_costs
+                == pyunits.convert(
+                    1218073 * pyunits.USD_2016  # Rougher Solvent Extraction
+                    + 48723 * pyunits.USD_2016  # Cleaner Solvent Extraction
+                    + 182711
+                    * pyunits.USD_2016,  # Solvent Extraction Wash and Saponification
+                    to_units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
+            )
+        )
+
+        # fix costing vars that shouldn't change
+        model.fs.feed_input.fix()
+        model.fs.feed_grade.fix()
+        model.fs.recovery_rate_per_year.fix()
+        model.fs.reagents.fix()
+        model.fs.solid_waste.fix()
+        model.fs.precipitate.fix()
+        model.fs.dust_and_volatiles.fix()
+        model.fs.power.fix()
+
+        # check model structural diagnostics
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt.assert_no_structural_warnings()
+
+        QGESSCostingData.costing_initialization(model.fs.costing)
+        QGESSCostingData.initialize_fixed_OM_costs(model.fs.costing)
+        QGESSCostingData.initialize_variable_OM_costs(model.fs.costing)
+
+        solver = get_solver()
+        results = solver.solve(model, tee=True)
+        assert_optimal_termination(results)
+
+        # check model numerical diagnostics
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt.assert_no_numerical_warnings()
+
+        assert model.fs.costing.total_BEC.value == pytest.approx(44.377, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.custom_vessel.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.0686081, rel=1e-4)
+        assert pyo.value(
+            model.fs.costing.total_BEC
+            - pyunits.convert(
+                model.fs.custom_vessel.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(44.308, rel=1e-4)
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.custom_vessel.costing.fixed_operating_cost,
+                to_units=CE_index_units,
+            )
+        ) == pytest.approx(0.010291, rel=1e-4)
+
+        assert model.fs.costing.custom_fixed_costs.value == pytest.approx(
+            0.010291, rel=1e-4
+        )
+
+        assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
+            11.12100, rel=1e-4
+        )
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.custom_vessel.costing.variable_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(4.13750, rel=1e-4)
+
+        assert model.fs.costing.custom_variable_costs.value == pytest.approx(
+            4.13750, rel=1e-4
+        )
+
+        assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+            537.04332, rel=1e-4
         )
 
 

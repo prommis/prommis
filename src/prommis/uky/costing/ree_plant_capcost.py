@@ -2008,11 +2008,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             None.
 
         """
-        if feed_input_rate is None:
-            raise AttributeError(
-                "No feed_input rate variable passed to main costing block."
-            )
-        else:
+        if feed_input_rate is not None:
             b.feed_input_rate = value(feed_input_rate) * pyunits.get_units(
                 feed_input_rate
             )

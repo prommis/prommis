@@ -3672,26 +3672,39 @@ def test_REE_costing_variableOM_nofeedinput():
         },
     )
 
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
     m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
-    with pytest.raises(
-        AttributeError,
-        match="No feed_input rate variable passed to main costing block.",
-    ):
-        m.fs.costing.build_process_costs(
-            fixed_OM=False,
-            variable_OM=True,
-            resources=[
-                "water",
-            ],
-            rates=[
-                m.fs.water,
-            ],
-        )
+    m.fs.costing.build_process_costs(
+        fixed_OM=True,
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
+        variable_OM=True,
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
+    )
+
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    # check some cost results
+    assert not hasattr(m.fs.costing, "feed_input_rate")
 
 
 @pytest.mark.component

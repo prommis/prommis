@@ -3056,28 +3056,39 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
 
         b.pv_operating_cost = Var(
-            initialize=-b.CAPEX,
+            initialize=-b.OPEX * b.config.plant_lifetime,
             bounds=(-1e4, 0),
             doc="present value of total lifetime operating costs in $MM; negative cash flow",
             units=b.cost_units,
         )
 
         b.pv_revenue = Var(
-            initialize=b.CAPEX,
+            initialize=b.REVENUE[None] * b.config.plant_lifetime,
             bounds=(0, 1e4),
             doc="present value of total lifetime sales revenue in $MM; positive cash flow",
             units=b.cost_units,
         )
 
         b.pv_royalties = Var(
-            initialize=-b.CAPEX,
+            initialize=-b.REVENUE[None]
+            * b.config.plant_lifetime
+            * b.config.royalty_charge_percentage_of_revenue
+            / 100,
             bounds=(-1e4, 0),
             doc="present value of total lifetime royalties in $MM; negative cash flow",
             units=b.cost_units,
         )
 
         b.npv = Var(
-            initialize=-b.CAPEX,
+            initialize=(
+                -b.CAPEX
+                + (
+                    b.REVENUE[None]
+                    * (1 - b.config.royalty_charge_percentage_of_revenue / 100)
+                    - b.OPEX
+                )
+                * b.config.plant_lifetime
+            ),
             bounds=(-1e4, 1e4),
             doc="present value of plant over entire capital and operation lifetime in $MM",
             units=b.cost_units,
@@ -3253,7 +3264,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         if b.config.royalty_expression is None:
-            # PV_Royalties = - %royalty_charge_of_revenue * REVENUE
+            # PV_Royalties = - %royalty_charge_of_revenue * PV_REVENUE
 
             @b.Constraint()
             def pv_royalties_constraint(c):

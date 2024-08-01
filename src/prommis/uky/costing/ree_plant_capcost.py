@@ -2657,7 +2657,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 "for new inputs".format(b.name)
             )
 
-        _log.info("\nPrinting calculated costing bounds for processes:")
+        _log.info("\n\nPrinting calculated costing bounds for processes:")
         for p in processes:
             print(
                 p,

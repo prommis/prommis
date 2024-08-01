@@ -43,6 +43,8 @@ if watertap_costing_available:
     import watertap.property_models.NaCl_prop_pack as props
     from watertap.core.solvers import get_solver as get_watertap_solver
     from watertap.core.util.initialization import check_dof
+    from watertap.core.wt_database import Database
+    from watertap.core.zero_order_properties import WaterParameterBlock
     from watertap.property_models.multicomp_aq_sol_prop_pack import (
         ActivityCoefficientModel,
         DensityCalculation,
@@ -60,7 +62,7 @@ if watertap_costing_available:
         PressureChangeType,
         ReverseOsmosis1D,
     )
-    from watertap.core.solvers import get_solver as get_watertap_solver
+    from watertap.unit_models.zero_order import NanofiltrationZO
 
 _log = idaeslog.getLogger(__name__)
 
@@ -1666,6 +1668,30 @@ class TestWaterTAPCosting(object):
         # Check for optimal solution
         assert_optimal_termination(results)
 
+        # Nanofiltration Zero Order
+
+        model.fs_membrane.db = Database()
+        model.fs_membrane.nfzo_params = WaterParameterBlock(solute_list=["tds", "dye"])
+
+        model.fs_membrane.nfzounit = NanofiltrationZO(
+            property_package=model.fs_membrane.nfzo_params,
+            database=model.fs_membrane.db,
+            process_subtype="rHGO_dye_rejection",
+        )
+
+        model.fs_membrane.nfzounit.inlet.flow_mass_comp[0, "H2O"].fix(10000)
+        model.fs_membrane.nfzounit.inlet.flow_mass_comp[0, "tds"].fix(1)
+        model.fs_membrane.nfzounit.inlet.flow_mass_comp[0, "dye"].fix(2)
+
+        model.fs_membrane.nfzounit.load_parameters_from_database(
+            use_default_removal=True
+        )
+
+        results = solver.solve(model.fs_membrane, tee=True)
+
+        # # Check for optimal solution
+        assert_optimal_termination(results)
+
         return model
 
     @pytest.mark.component
@@ -1848,6 +1874,7 @@ class TestWaterTAPCosting(object):
                 model.fs_membrane.nfunit,
                 model.fs_membrane.rounit,
                 model.fs_membrane.ixunit,
+                model.fs_membrane.nfzounit,
             ],
         )
 
@@ -1886,7 +1913,7 @@ class TestWaterTAPCosting(object):
         results = solver.solve(model, tee=True)
         assert_optimal_termination(results)
 
-        assert model.fs.costing.total_BEC.value == pytest.approx(48.347, rel=1e-4)
+        assert model.fs.costing.total_BEC.value == pytest.approx(50.401, rel=1e-4)
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.nfunit.costing.capital_cost, to_units=CE_index_units
@@ -1903,12 +1930,23 @@ class TestWaterTAPCosting(object):
             )
         ) == pytest.approx(4.0354, rel=1e-4)
         assert pyo.value(
+            pyunits.convert(
+                model.fs_membrane.nfzounit.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(2.0544, rel=1e-4)
+        assert pyo.value(
             model.fs.costing.total_BEC
             - pyunits.convert(
-                model.fs_membrane.nfunit.costing.capital_cost
-                + model.fs_membrane.rounit.costing.capital_cost
-                + model.fs_membrane.ixunit.costing.capital_cost,
-                to_units=CE_index_units,
+                model.fs_membrane.nfunit.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs_membrane.rounit.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs_membrane.ixunit.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs_membrane.nfzounit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(44.308, rel=1e-4)
 
@@ -1947,7 +1985,22 @@ class TestWaterTAPCosting(object):
         )
 
         assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
-            11.50202, rel=1e-4
+            11.68508, rel=1e-4
+        )
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs_membrane.nfzounit.costing.variable_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.410881, rel=1e-4)
+
+        assert model.fs.costing.watertap_variable_costs.value == pytest.approx(
+            0.410881, rel=1e-4
+        )
+
+        assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+            533.42952, rel=1e-4
         )
 
 

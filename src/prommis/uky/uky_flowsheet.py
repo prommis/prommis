@@ -3194,7 +3194,6 @@ def add_costing(m):
         project_management_and_construction_percentage=30,
         process_contingency_percentage=15,
         # argument related to Fixed OM costs
-        nameplate_capacity=500,  # short (US) ton/hr
         labor_types=[
             "skilled",
             "unskilled",

@@ -15,14 +15,15 @@ Authors: Arkoprabho Dasgupta
 from pyomo.environ import ConcreteModel, SolverFactory
 
 from idaes.core import FlowDirection, FlowsheetBlock
-from idaes.core.initialization.block_triangularization import (
-    BlockTriangularizationInitializer,
-)
+
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
 
 """
 Method of building a solvent extraction model with a specified number of stages
@@ -123,7 +124,7 @@ Initialization of the model, which gives a good starting point.
 
 """
 
-initializer = BlockTriangularizationInitializer()
+initializer = SolventExtractionInitializer()
 initializer.initialize(m.fs.solex)
 
 """

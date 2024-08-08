@@ -1122,7 +1122,7 @@ class TestREECosting(object):
 
         # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
         model.fs.costing.other_plant_costs.unfix()
-        model.fs.costing.other_plant_costs_rule = pyo.Constraint(
+        model.fs.costing.other_plant_costs_eq = pyo.Constraint(
             expr=(
                 model.fs.costing.other_plant_costs
                 == pyunits.convert(
@@ -1871,7 +1871,7 @@ class TestWaterTAPCosting(object):
 
         # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
         model.fs.costing.other_plant_costs.unfix()
-        model.fs.costing.other_plant_costs_rule = pyo.Constraint(
+        model.fs.costing.other_plant_costs_eq = pyo.Constraint(
             expr=(
                 model.fs.costing.other_plant_costs
                 == pyunits.convert(

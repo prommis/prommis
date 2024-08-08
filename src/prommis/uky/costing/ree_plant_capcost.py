@@ -678,170 +678,130 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             self.other_plant_costs.fix(0)
 
             if Lang_factor is None:
-                # rules for calculating Ancillary costs
-                def piping_materials_and_labor_cost_rule(self):
-                    return self.piping_materials_and_labor_costs == (
-                        self.total_BEC * self.piping_materials_and_labor_percentage / 100
+                # constraints for calculating Ancillary costs
+                @self.Constraint()
+                def piping_materials_and_labor_cost_eq(c):
+                    return c.piping_materials_and_labor_costs == (
+                        c.total_BEC * c.piping_materials_and_labor_percentage / 100
                     )
 
-                self.piping_materials_and_labor_cost_eq = Constraint(
-                    rule=piping_materials_and_labor_cost_rule
-                )
-
-                def electrical_materials_and_labor_cost_rule(self):
-                    return self.electrical_materials_and_labor_costs == (
-                        self.total_BEC * self.electrical_materials_and_labor_percentage / 100
+                @self.Constraint()
+                def electrical_materials_and_labor_cost_eq(c):
+                    return c.electrical_materials_and_labor_costs == (
+                        c.total_BEC * c.electrical_materials_and_labor_percentage / 100
                     )
 
-                self.electrical_materials_and_labor_cost_eq = Constraint(
-                    rule=electrical_materials_and_labor_cost_rule
-                )
-
-                def instrumentation_cost_rule(self):
-                    return self.instrumentation_costs == (
-                        self.total_BEC * self.instrumentation_percentage / 100
+                @self.Constraint()
+                def instrumentation_cost_eq(c):
+                    return c.instrumentation_costs == (
+                        c.total_BEC * c.instrumentation_percentage / 100
                     )
 
-                self.instrumentation_cost_eq = Constraint(
-                    rule=instrumentation_cost_rule
-                )
-
-                def plant_services_cost_rule(self, i):
-                    return self.plant_services_costs == (
-                        self.total_BEC * self.plant_services_percentage / 100
+                @self.Constraint()
+                def plant_services_cost_eq(c):
+                    return c.plant_services_costs == (
+                        c.total_BEC * c.plant_services_percentage / 100
                     )
 
-                self.plant_services_cost_eq = Constraint(rule=plant_services_cost_rule)
-
-                def ancillary_cost_rule(self):
-                    return self.ancillary_costs == (
-                        self.piping_materials_and_labor_costs
-                        + self.electrical_materials_and_labor_costs
-                        + self.instrumentation_costs
-                        + self.plant_services_costs
+                @self.Constraint()
+                def ancillary_cost_eq(c):
+                    return c.ancillary_costs == (
+                        c.piping_materials_and_labor_costs
+                        + c.electrical_materials_and_labor_costs
+                        + c.instrumentation_costs
+                        + c.plant_services_costs
                     )
 
-                self.ancillary_cost_eq = Constraint(rule=ancillary_cost_rule)
-
-                # rules for calculating Buildings costs
-                def process_buildings_cost_rule(self):
-                    return self.process_buildings_costs == (
-                        self.total_BEC * self.process_buildings_percentage / 100
+                # constraints for calculating Buildings costs
+                @self.Constraint()
+                def process_buildings_cost_eq(c):
+                    return c.process_buildings_costs == (
+                        c.total_BEC * c.process_buildings_percentage / 100
                     )
 
-                self.process_buildings_cost_eq = Constraint(
-                    rule=process_buildings_cost_rule
-                )
-
-                def auxiliary_buildings_cost_rule(self):
-                    return self.auxiliary_buildings_costs == (
-                        self.total_BEC * self.auxiliary_buildings_percentage / 100
+                @self.Constraint()
+                def auxiliary_buildings_cost_eq(c):
+                    return c.auxiliary_buildings_costs == (
+                        c.total_BEC * c.auxiliary_buildings_percentage / 100
                     )
 
-                self.auxiliary_buildings_cost_eq = Constraint(
-                    rule=auxiliary_buildings_cost_rule
-                )
-
-                def site_improvements_cost_rule(self):
-                    return self.site_improvements_costs == (
-                        self.total_BEC * self.site_improvements_percentage / 100
+                @self.Constraint()
+                def site_improvements_cost_eq(c):
+                    return c.site_improvements_costs == (
+                        c.total_BEC * c.site_improvements_percentage / 100
                     )
 
-                self.site_improvements_cost_eq = Constraint(
-                    rule=site_improvements_cost_rule
-                )
-
-                def buildings_cost_rule(self):
-                    return self.buildings_costs == (
-                        self.process_buildings_costs
-                        + self.auxiliary_buildings_costs
-                        + self.site_improvements_costs
+                @self.Constraint()
+                def buildings_cost_eq(c):
+                    return c.buildings_costs == (
+                        c.process_buildings_costs
+                        + c.auxiliary_buildings_costs
+                        + c.site_improvements_costs
                     )
 
-                self.buildings_cost_eq = Constraint(rule=buildings_cost_rule)
-
-                # rules for calculating Engineering, Procurement and Construction Management costs
-                def equipment_installation_cost_rule(self):
-                    return self.equipment_installation_costs == (
-                        self.total_BEC * self.equipment_installation_percentage / 100
+                # constraints for calculating Engineering, Procurement and Construction Management costs
+                @self.Constraint()
+                def equipment_installation_cost_eq(c):
+                    return c.equipment_installation_costs == (
+                        c.total_BEC * c.equipment_installation_percentage / 100
                     )
 
-                self.equipment_installation_cost_eq = Constraint(
-                    rule=equipment_installation_cost_rule
-                )
-
-                def field_expenses_cost_rule(self):
-                    return self.field_expenses_costs == (
-                        self.total_BEC * self.field_expenses_percentage / 100
+                @self.Constraint()
+                def field_expenses_cost_eq(c):
+                    return c.field_expenses_costs == (
+                        c.total_BEC * c.field_expenses_percentage / 100
                     )
 
-                self.field_expenses_cost_eq = Constraint(rule=field_expenses_cost_rule)
-
-                def project_management_and_construction_cost_rule(self):
-                    return self.project_management_and_construction_costs == (
-                        self.total_BEC
-                        * self.project_management_and_construction_percentage / 100
+                @self.Constraint()
+                def project_management_and_construction_cost_eq(c):
+                    return c.project_management_and_construction_costs == (
+                        c.total_BEC
+                        * c.project_management_and_construction_percentage / 100
                     )
 
-                self.project_management_and_construction_cost_eq = Constraint(
-                    rule=project_management_and_construction_cost_rule
-                )
-
-                def epcm_cost_rule(self):
-                    return self.epcm_costs == (
-                        self.equipment_installation_costs
-                        + self.field_expenses_costs
-                        + self.project_management_and_construction_costs
+                @self.Constraint()
+                def epcm_cost_eq(c):
+                    return c.epcm_costs == (
+                        c.equipment_installation_costs
+                        + c.field_expenses_costs
+                        + c.project_management_and_construction_costs
                     )
 
-                self.epcm_cost_eq = Constraint(rule=epcm_cost_rule)
-
-                # rules for calculating Contingency costs
-                def process_contingency_cost_rule(self):
-                    return self.contingency_costs == (
-                        self.total_BEC * self.process_contingency_percentage / 100
+                # constraints for calculating Contingency costs
+                @self.Constraint()
+                def process_contingency_cost_eq(c):
+                    return c.contingency_costs == (
+                        c.total_BEC * c.process_contingency_percentage / 100
                     )
 
-                self.process_contingency_cost_eq = Constraint(
-                    rule=process_contingency_cost_rule
-                )
+                @self.Constraint()
+                def contingency_cost_eq(c):
+                    return c.contingency_costs == (c.process_contingency_costs)
 
-                def contingency_cost_rule(self):
-                    return self.contingency_costs == (self.process_contingency_costs)
-
-                self.contingency_cost_eq = Constraint(rule=contingency_cost_rule)
-
-                def total_installation_cost_rule(self):
-                    return self.total_installation_cost == (
-                        self.ancillary_costs
-                        + self.buildings_costs
-                        + self.epcm_costs
-                        + self.contingency_costs
+                @self.Constraint()
+                def total_installation_cost_eq(c):
+                    return c.total_installation_cost == (
+                        c.ancillary_costs
+                        + c.buildings_costs
+                        + c.epcm_costs
+                        + c.contingency_costs
                     )
-
-                self.total_installation_cost_eq = Constraint(
-                    rule=total_installation_cost_rule
-                )
             else:
 
-                def total_installation_cost_rule(self):
-                    return self.total_installation_cost == self.total_BEC * (
-                        self.Lang_factor - 1
+                @self.Constraint()
+                def total_installation_cost_eq(c):
+                    return c.total_installation_cost == c.total_BEC * (
+                        c.Lang_factor - 1
                     )
 
-                self.total_installation_cost_eq = Constraint(
-                    rule=total_installation_cost_rule
+            # constraint for calculating TPC
+            @self.Constraint()
+            def total_plant_cost_eq(c):
+                return c.total_plant_cost == (
+                    c.total_BEC
+                    + c.total_installation_cost
+                    + c.other_plant_costs
                 )
-
-            # rule for calculating TPC
-            def total_plant_cost_rule(self):
-                return self.total_plant_cost == (
-                    self.total_BEC
-                    + self.total_installation_cost
-                    + self.other_plant_costs
-                )
-
-            self.total_plant_cost_eq = Constraint(rule=total_plant_cost_rule)
 
             # define land cost
             if land_cost is not None:
@@ -1718,8 +1678,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             units=CE_index_units,
         )
 
-        # rule for scaling BEC
-        def bare_erected_cost_rule(costing, i):
+        # constraint for scaling BEC
+        @blk.Constraint(cost_accounts)
+        def bare_erected_cost_eq(c, i):
             ref_units = reference_units[i]
             if "/" in ref_units:
                 ref_units = ref_units.split("/")
@@ -1746,36 +1707,32 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             if isinstance(process_params[i], list):
                 if len(process_params[i]) > 1:
-                    return costing.bare_erected_cost[i] == (
+                    return c.bare_erected_cost[i] == (
                         n_equip
                         * pyunits.convert(
-                            costing.ref_cost[i] * ref_cost_units, CE_index_units
+                            c.ref_cost[i] * ref_cost_units, CE_index_units
                         )
                         * sum(
                             (
                                 pyunits.convert(scaled_param[j], ref_units)
-                                / (scaler * costing.ref_param[i, p] * ref_units)
+                                / (scaler * c.ref_param[i, p] * ref_units)
                             )
-                            ** costing.exp[i]
+                            ** c.exp[i]
                             for j, p in enumerate(process_params[i])
                         )
                     )
             elif isinstance(process_params[i], str):
-                return costing.bare_erected_cost[i] == (
+                return c.bare_erected_cost[i] == (
                     n_equip
                     * pyunits.convert(
-                        costing.ref_cost[i] * ref_cost_units, CE_index_units
+                        c.ref_cost[i] * ref_cost_units, CE_index_units
                     )
                     * (
                         pyunits.convert(scaled_param, ref_units)
-                        / (scaler * costing.ref_param[i] * ref_units)
+                        / (scaler * c.ref_param[i] * ref_units)
                     )
-                    ** costing.exp[i]
+                    ** c.exp[i]
                 )
-
-        blk.bare_erected_cost_eq = Constraint(
-            cost_accounts, rule=bare_erected_cost_rule
-        )
 
         # add variable and constraint scaling
         for i in cost_accounts:
@@ -2056,7 +2013,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # calculated from labor rate, labor burden, and operators per shift
         @b.Constraint()
-        def annual_operating_labor_cost_rule(c):
+        def annual_operating_labor_cost_eq(c):
             return c.annual_operating_labor_cost == pyunits.convert(
                 (
                     sum(
@@ -2072,7 +2029,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         @b.Constraint()
-        def annual_technical_labor_cost_rule(c):
+        def annual_technical_labor_cost_eq(c):
             return c.annual_technical_labor_cost == pyunits.convert(
                 (
                     sum(
@@ -2088,7 +2045,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         @b.Constraint()
-        def annual_labor_cost_rule(c):
+        def annual_labor_cost_eq(c):
             return c.annual_labor_cost == pyunits.convert(
                 (c.annual_operating_labor_cost + c.annual_technical_labor_cost),
                 CE_index_units,
@@ -2096,12 +2053,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # maintenance cost is 2% of TPC
         @b.Constraint()
-        def maintenance_and_material_cost_rule(c):
+        def maintenance_and_material_cost_eq(c):
             return c.maintenance_and_material_cost == 0.02 * TPC
 
         # quality assurance cost is 10% of operating labor
         @b.Constraint()
-        def quality_assurance_and_control_cost_rule(c):
+        def quality_assurance_and_control_cost_eq(c):
             return c.quality_assurance_and_control_cost == 0.10 * pyunits.convert(
                 (c.annual_operating_labor_cost),
                 CE_index_units,
@@ -2109,7 +2066,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # sales cost is 0.5% of total revenue
         @b.Constraint()
-        def sales_patenting_and_research_cost_rule(c):
+        def sales_patenting_and_research_cost_eq(c):
             return c.sales_patenting_and_research_cost == 0.005 * pyunits.convert(
                 (c.total_sales_revenue),
                 CE_index_units,
@@ -2117,7 +2074,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # admin cost is 20% of direct labor
         @b.Constraint()
-        def admin_and_support_labor_cost_rule(c):
+        def admin_and_support_labor_cost_eq(c):
             return c.admin_and_support_labor_cost == 0.20 * pyunits.convert(
                 (c.annual_operating_labor_cost),
                 CE_index_units,
@@ -2125,7 +2082,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # taxes are 1% of TPC
         @b.Constraint()
-        def taxes_and_insurance_cost_rule(c):
+        def taxes_and_insurance_cost_eq(c):
             return c.property_taxes_and_insurance_cost == 0.01 * TPC
 
         # sum of fixed O&M costs
@@ -2139,7 +2096,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 return c.watertap_fixed_costs == sum(b.watertap_fixed_costs_list)
 
         @b.Constraint()
-        def total_fixed_OM_cost_rule(c):
+        def total_fixed_OM_cost_eq(c):
             return c.total_fixed_OM_cost == (
                 c.annual_labor_cost
                 + c.maintenance_and_material_cost
@@ -2152,7 +2109,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         @b.Constraint()
-        def total_sales_revenue_rule(c):
+        def total_sales_revenue_eq(c):
             return c.total_sales_revenue == pyunits.convert(
                 (
                     (
@@ -2307,7 +2264,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
 
         @b.Constraint(b.parent_block().time, resources)
-        def variable_cost_rule(c, t, r):
+        def variable_cost_eq(c, t, r):
             if r == "power":
                 efficiency_factor = efficiency  # fixed motor efficiency
             else:
@@ -2340,7 +2297,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if (0, "power") in b.variable_operating_costs.id_index_map().values():
 
             @b.Constraint(b.parent_block().time)
-            def plant_overhead_cost_rule(c, t):
+            def plant_overhead_cost_eq(c, t):
                 return c.plant_overhead_cost[t] == 0.20 * (
                     c.total_fixed_OM_cost / pyunits.year
                     + c.variable_operating_costs[0, "power"]
@@ -2359,7 +2316,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         else:
 
             @b.Constraint(b.parent_block().time)
-            def plant_overhead_cost_rule(c, t):
+            def plant_overhead_cost_eq(c, t):
                 return c.plant_overhead_cost[t] == 0.20 * (
                     c.total_fixed_OM_cost / pyunits.year
                     + c.land_cost / pyunits.year
@@ -2375,7 +2332,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
 
         @b.Constraint(b.parent_block().time)
-        def total_variable_cost_rule(c, t):
+        def total_variable_cost_eq(c, t):
             return (
                 c.total_variable_OM_cost[t]
                 == sum(c.variable_operating_costs[t, r] for r in resources)
@@ -2390,35 +2347,35 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # b is the flowsheet-level costing block
         if hasattr(b, "total_fixed_OM_cost"):
             calculate_variable_from_constraint(
-                b.annual_operating_labor_cost, b.annual_labor_cost_rule
+                b.annual_operating_labor_cost, b.annual_labor_cost_eq
             )
 
             calculate_variable_from_constraint(
-                b.maintenance_and_material_cost, b.maintenance_and_material_cost_rule
+                b.maintenance_and_material_cost, b.maintenance_and_material_cost_eq
             )
 
             calculate_variable_from_constraint(
                 b.quality_assurance_and_control_cost,
-                b.quality_assurance_and_control_cost_rule,
+                b.quality_assurance_and_control_cost_eq,
             )
 
             calculate_variable_from_constraint(
                 b.sales_patenting_and_research_cost,
-                b.sales_patenting_and_research_cost_rule,
+                b.sales_patenting_and_research_cost_eq,
             )
 
             calculate_variable_from_constraint(
                 b.admin_and_support_labor_cost,
-                b.admin_and_support_labor_cost_rule,
+                b.admin_and_support_labor_cost_eq,
             )
 
             calculate_variable_from_constraint(
                 b.property_taxes_and_insurance_cost,
-                b.taxes_and_insurance_cost_rule,
+                b.taxes_and_insurance_cost_eq,
             )
 
             calculate_variable_from_constraint(
-                b.total_fixed_OM_cost, b.total_fixed_OM_cost_rule
+                b.total_fixed_OM_cost, b.total_fixed_OM_cost_eq
             )
 
     def initialize_variable_OM_costs(b):
@@ -2426,16 +2383,16 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # initialization for power generation costs
         if hasattr(b, "variable_operating_costs"):
             for i in b.variable_operating_costs.keys():
-                if hasattr(b, "variable_cost_rule"):
+                if hasattr(b, "variable_cost_eq"):
                     calculate_variable_from_constraint(
                         b.variable_operating_costs[i],
-                        b.variable_cost_rule[i],
+                        b.variable_cost_eq[i],
                     )
 
             for i in b.total_variable_OM_cost.keys():
                 calculate_variable_from_constraint(
                     b.total_variable_OM_cost[i],
-                    b.total_variable_cost_rule[i],
+                    b.total_variable_cost_eq[i],
                 )
 
     # -----------------------------------------------------------------------------

@@ -29,7 +29,7 @@ __version__ = "1.0.0"
 import textwrap
 from sys import stdout
 
-from pyomo.common.config import ConfigValue
+from pyomo.common.config import ConfigValue, ListOf
 from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
@@ -110,11 +110,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=None,
             domain=float,
-            description="rate of return used to discount future cash flows "
-            "back to their present value. The NETL QGESS recommends setting "
-            "the discount rate as the calculated after-tax weighted average "
-            "cost of ccapital (ATWACC). For the UKy case study, the ATWACC is"
-            "5.77%.",
+            description="Rate of return used to discount future cash flows "
+            "back to their present value. The value should be a percentage, "
+            "for example 10 for a 10% discount. The NETL QGESS recommends "
+            "setting the discount rate as the calculated after-tax weighted "
+            "average cost of capital (ATWACC).",
         ),
     )
     CONFIG.declare(
@@ -122,30 +122,35 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=None,
             domain=float,
-            description="length of operating period in years.",
+            description="Length of operating period in years.",
         ),
     )
     CONFIG.declare(
         "total_capital_cost",
         ConfigValue(
             default=None,
-            description="value for total capital cost; ignored if no value is "
-            "passed.",
+            description="Value for total capital cost (including equipment, "
+            "installation, and other plant costs); ignored if no value is "
+            "passed. Can be a Var, Param, or Expression with currency units, "
+            "or can specific a cost year in the cost_year argument.",
         ),
     )
     CONFIG.declare(
         "annual_operating_cost",
         ConfigValue(
             default=None,
-            description="value for total operating cost; ignored if no value "
-            "is passed.",
+            description="Value for total operating cost; ignored if no value "
+            "is passed. If a Var, Param, or Expression, must have the same "
+            "units as the Var, Param, or Expression provided for total_capital_cost.",
         ),
     )
     CONFIG.declare(
         "annual_revenue",
         ConfigValue(
             default=None,
-            description="value for total revenue; ignored if no value is " "passed.",
+            description="Value for total revenue; ignored if no value is passed. "
+            "If a Var, Param, or Expression, must have the same units "
+            "as the Var, Param, or Expression provided for total_capital_cost.",
         ),
     )
     CONFIG.declare(
@@ -153,7 +158,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=None,
             domain=str,
-            description="assumed project start year for costs, which is the "
+            description="Assumed project start year for costs, which is the "
             "basis for NPV results; ignored if no value is passed.",
         ),
     )
@@ -170,8 +175,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         "capital_expenditure_percentages",
         ConfigValue(
             default=None,
-            domain=list,
-            description="a list of values that sum to 100 representing how "
+            domain=ListOf(float),
+            description="A list of values that sum to 100 representing how "
             "capital costs are spread over a capital expenditure period; for "
             "example, an input of [10, 60, 30] is parsed as a 3-year period "
             "where capital costs are spread as 10% in year 1, 60% in year 2, "
@@ -187,9 +192,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=3.6,
             domain=float,
-            description="rate at which capital costs escalate during the "
-            "capital expenditure period. Set to 0 to indicate expenditure is "
-            "spread but there is no cost escalation.",
+            description="Rate at which capital costs escalate during the "
+            "capital expenditure period. The value should be a percentage, "
+            "for example 10 for a 10% escalation rate. Set to 0 to indicate "
+            "there is no cost escalation in the expenditure period.",
         ),
     )
     CONFIG.declare(
@@ -197,7 +203,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=6,
             domain=float,
-            description="interest rate for capital" "equipment loan repayment.",
+            description="Interest rate for capital equipment loan repayment."
+            "The value should be a percentage, for example 10 for a 10% "
+            "interest rate.",
         ),
     )
     CONFIG.declare(
@@ -205,8 +213,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=3,
             domain=float,
-            description="inflation rate for operating costs during the "
-            "operating period. Set to 0 to indicate no inflation.",
+            description="Inflation rate for operating costs during the "
+            "operating period. The value should be a percentage, for example "
+            "10 for a 10% inflation rate. Set to 0 to indicate no inflation.",
         ),
     )
     CONFIG.declare(
@@ -214,8 +223,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=3,
             domain=float,
-            description="inflation rate for revenue during the operating "
-            "period. Set to 0 to indicate no inflation.",
+            description="Inflation rate for revenue during the operating "
+            "period. The value should be a percentage, for example 10 for a "
+            "10% inflation rate. Set to 0 to indicate no inflation.",
         ),
     )
     CONFIG.declare(
@@ -223,16 +233,18 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ConfigValue(
             default=6.5,
             domain=float,
-            description="percentage of revenue charged as royalties; ignored "
-            "if royalty_expression is not None. Set to zero to indicate no "
-            "royalties are charged.",
+            description="Percentage of revenue charged as royalties; ignored "
+            "if royalty_expression is not None. The value should be a "
+            "percentage, for example 10 for a 10% royalty charge rate. Set to "
+            "0 to indicate no royalties are charged.",
         ),
     )
     CONFIG.declare(
         "royalty_expression",
         ConfigValue(
             default=None,
-            description="set the value or expression to calculate royalties.",
+            description="Set the value or expression to calculate royalties. "
+            "If set, royalty_charge_percentage_of_revenue is ignored.",
         ),
     )
 
@@ -250,7 +262,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # Set a base period for all operating costs
         self.base_period = pyunits.year
 
-    # pylint: disable-next=dangerous-default-value
     def build_process_costs(
         self,
         # arguments related to installation costs
@@ -328,43 +339,55 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         Args:
             total_purchase_cost: user-defined value for the total equipment
-                purchase cost. To use as the total plant cost, including
-                installation, also set the Lang_factor to 1.
+                purchase cost (not including installation or other plant costs).
+                To use as the total plant cost, including installation, set the
+                Lang_factor to 1.
             Lang_factor: single multiplicative factor to estimate installation
                 costs; defaults to None and method will use percentages. The
                 default percentages yield an effective Lang factor of 2.97.
             piping_materials_and_labor_percentage: Piping, materials and labor
-                costs as a percentage of the total plant cost. If Lang_factor
+                costs as a percentage of the total plant cost. The value
+                should be a percentage, for example 10 for 10%. If Lang_factor
                 is not None, this value will not be used.
             electrical_materials_and_labor_percentage: Electrical, materials
-                and labor costs as a percentage of the total plant cost. If
+                and labor costs as a percentage of the total plant cost. The
+                value should be a percentage, for example 10 for 10%. If
                 Lang_factor is not None, this value will not be used.
             instrumentation_percentage: Instrumentation costs as a percentage
-                of the total plant cost. If Lang_factor is not None, this value
+                of the total plant cost. The value should be a percentage, for
+                example 10 for 10%. If Lang_factor is not None, this value
                 will not be used.
             plants_services_percentage: Plant services costs as a percentage
-                of the total plant cost. If Lang_factor is not None, this value
+                of the total plant cost. The value should be a percentage, for
+                example 10 for 10%. If Lang_factor is not None, this value
                 will not be used.
             process_buildings_percentage: Process buildings costs as a
-                percentage of the total plant cost. If Lang_factor is not None,
+                percentage of the total plant cost. The value should be a
+                percentage, for example 10 for 10%. If Lang_factor is not None,
                 this value will not be used.
             auxiliary_buildings_percentage: Auxiliary buildings costs as a
-                percentage of the total plant cost. If Lang_factor is not None,
+                percentage of the total plant cost. The value should be a
+                percentage, for example 10 for 10%. If Lang_factor is not None,
                 this value will not be used.
             site_improvements_percentage: Site improvements costs as a
-                percentage of the total plant cost. If Lang_factor is not None,
+                percentage of the total plant cost. The value should be a
+                percentage, for example 10 for 10%. If Lang_factor is not None,
                 this value will not be used.
             equipment_installation_percentage: Equipment installation costs as
-                a percentage of the total plant cost. If Lang_factor is not
+                a percentage of the total plant cost. The value should be a
+                percentage, for example 10 for 10%. If Lang_factor is not
                 None, this value will not be used.
             field_expenses_percentage: Field expenses costs as a percentage of
-                the total plant cost. If Lang_factor is not None, this value
+                the total plant cost. The value should be a percentage, for
+                example 10 for 10%. If Lang_factor is not None, this value
                 will not be used.
             project_management_and_construction_percentage: Project management
                 and construction costs as a percentage of the total plant cost.
-                If Lang_factor is not None, this value will not be used.
+                The value should be a percentage, for example 10 for 10%. If
+                Lang_factor is not None, this value will not be used.
             process_contingency_percentage: Process contingency costs as a
-                percentage of the total plant cost. If Lang_factor is not None,
+                percentage of the total plant cost. The value should be a
+                percentage, for example 10 for 10%. If Lang_factor is not None,
                 this value will not be used.
             total_purchase_cost: The BEC in $MM that will be used to determine
                 installation and fixed O&M costs. If the value is None, the
@@ -377,7 +400,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             labor_rate: hourly rate of plant operators in project dollar year;
                 defined as list corresponding to different operator types
             labor_burden: a percentage multiplier used to estimate non-salary
-                labor expenses; assumed constant for all operator types
+                labor expenses; assumed constant for all operator types. The
+                value should be a percentage, for example 10 for 10%.
             operators_per_shift: number of operators per shift; defined as list
                 of operators per shift for each operator type
             hours_per_shift: number of hours per shift
@@ -406,32 +430,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             CE_index_year: year for cost basis, e.g. "2021" to use 2021 dollars
             watertap_block: list of unit model blocks corresponding to watertap models
             calculate_NPV: True/false flag for calculating net present value (NPV).
-
-            Keyword arguments related to NPV, entered at class instantiation:
-            discount_percentage: rate of return used to discount future cash flows back
-                to their present value. The NETL QGESS recommends setting the discount
-                rate as the calculated after-tax weighted average cost of capital (ATWACC).
-                For the UKy case study, the ATWACC is 5.77%.
-            plant_lifetime: length of operating period in years.
-            has_capital_expenditure_period: True/false flag whether a capital expenditure period occurs.
-            capital_expenditure_percentages: a list of values that sum to 100
-                representing how capital costs are spread over a capital
-                expenditure period; for example, an input of [10, 60, 30] is parsed
-                as a 3-year period where capital costs are spread as 10% in year 1,
-                60% in year 2,and 30% in year 3. The capital period precedes
-                the operating period. Set to None to indicate no expenditure period.
-            capital_escalation_percentage: rate at which capital costs
-                escalate during the capital expenditure period. Set to 0 to indicate expenditure
-                is spread but there is no cost escalation.
-            capital_loan_interest_percentage: interest rate for capital equipment loan repayment.
-            operating_inflation_percentage: inflation rate for operating costs
-                during the operating period. Set to 0 to indicate no inflation.
-            revenue_inflation_percentage: inflation rate for revenue during the
-                operating period. Set to 0 to indicate no inflation.
-            royalty_charge_percentage_of_revenue: percentage of revenue charged
-                as royalties; ignored if royalty_expression is not None. Set to zero
-                to indicate no royalties are charged.
-            royalty_expression: set the value or expression to calculate royalties.
         """
 
         # define costing library
@@ -466,7 +464,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             else:
                 self.total_BEC = Var(
                     initialize=total_purchase_cost,
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
                 self.total_BEC.fix()
 
@@ -475,68 +473,68 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 # initialize parameters from specified percentages
                 self.piping_materials_and_labor_percentage = Param(
                     mutable=True,
-                    initialize=piping_materials_and_labor_percentage / 100,
-                    doc="Piping, materials and labor",
+                    initialize=piping_materials_and_labor_percentage,
+                    doc="Percentage of BEC used to estimate piping, materials and labor installation costs",
                 )
 
                 self.electrical_materials_and_labor_percentage = Param(
                     mutable=True,
-                    initialize=electrical_materials_and_labor_percentage / 100,
-                    doc="Electrical, materials and labor",
+                    initialize=electrical_materials_and_labor_percentage,
+                    doc="Percentage of BEC used to estimate electrical, materials and labor installation costs",
                 )
 
                 self.instrumentation_percentage = Param(
                     mutable=True,
-                    initialize=instrumentation_percentage / 100,
-                    doc="Instrumentation",
+                    initialize=instrumentation_percentage,
+                    doc="Percentage of BEC used to estimate instrumentation installation costs",
                 )
 
                 self.plant_services_percentage = Param(
                     mutable=True,
-                    initialize=plants_services_percentage / 100,
-                    doc="Plant services",
+                    initialize=plants_services_percentage,
+                    doc="Percentage of BEC used to estimate plant services installation costs",
                 )
 
                 self.process_buildings_percentage = Param(
                     mutable=True,
-                    initialize=process_buildings_percentage / 100,
-                    doc="Process buildings",
+                    initialize=process_buildings_percentage,
+                    doc="Percentage of BEC used to estimate process buildings installation costs",
                 )
 
                 self.auxiliary_buildings_percentage = Param(
                     mutable=True,
-                    initialize=auxiliary_buildings_percentage / 100,
-                    doc="Auxiliary buildings",
+                    initialize=auxiliary_buildings_percentage,
+                    doc="Percentage of BEC used to estimate auxiliary buildings installation costs",
                 )
 
                 self.site_improvements_percentage = Param(
                     mutable=True,
-                    initialize=site_improvements_percentage / 100,
-                    doc="Site improvements",
+                    initialize=site_improvements_percentage,
+                    doc="Percentage of BEC used to estimate site improvements installation costs",
                 )
 
                 self.equipment_installation_percentage = Param(
                     mutable=True,
-                    initialize=equipment_installation_percentage / 100,
-                    doc="Equipment installation",
+                    initialize=equipment_installation_percentage,
+                    doc="Percentage of BEC used to estimate equipment installation costs",
                 )
 
                 self.field_expenses_percentage = Param(
                     mutable=True,
-                    initialize=field_expenses_percentage / 100,
-                    doc="Field expenses",
+                    initialize=field_expenses_percentage,
+                    doc="Percentage of BEC used to estimate field expenses installation costs",
                 )
 
                 self.project_management_and_construction_percentage = Param(
                     mutable=True,
-                    initialize=project_management_and_construction_percentage / 100,
-                    doc="Project management and construction",
+                    initialize=project_management_and_construction_percentage,
+                    doc="Percentage of BEC used to estimate project management and construction installation costs",
                 )
 
                 self.process_contingency_percentage = Param(
                     mutable=True,
-                    initialize=process_contingency_percentage / 100,
-                    doc="Process contingency",
+                    initialize=process_contingency_percentage,
+                    doc="Percentage of BEC used to estimate process contingency installation costs",
                 )
 
                 # ancillary cost variables
@@ -544,35 +542,35 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Ancillary cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 self.piping_materials_and_labor_costs = Var(
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Piping, materials and labor ancillary cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 self.electrical_materials_and_labor_costs = Var(
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Electrical, materials and labor ancillary cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 self.instrumentation_costs = Var(
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Ancillary cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 self.plant_services_costs = Var(
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Ancillary cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 # buildings cost variables
@@ -580,28 +578,28 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Buildings cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 self.process_buildings_costs = Var(
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Process buildings cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 self.auxiliary_buildings_costs = Var(
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Auxiliary buildings cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 self.site_improvements_costs = Var(
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Site improvements buildings cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 # engineering, procurement and construction management cost variables
@@ -609,28 +607,28 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="EPCM cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 self.equipment_installation_costs = Var(
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Equipment installation EPCM cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 self.field_expenses_costs = Var(
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Field expenses EPCM cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 self.project_management_and_construction_costs = Var(
                     initialize=self.total_BEC,
                     bounds=(0, 1e4),
                     doc="Project management and construction EPCM cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 # contingency cost variables - generic to support more contingency cost types in the future
@@ -638,14 +636,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Contingency cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
 
                 self.process_contingency_costs = Var(
                     initialize=value(self.total_BEC),
                     bounds=(0, 1e4),
                     doc="Contingency cost in $MM",
-                    units=getattr(pyunits, "MUSD_" + CE_index_year),
+                    units=CE_index_units,
                 )
             else:
                 self.Lang_factor = Param(
@@ -660,14 +658,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 initialize=self.total_BEC,
                 bounds=(0, 1e4),
                 doc="Total installation cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
+                units=CE_index_units,
             )
 
             self.total_plant_cost = Var(
                 initialize=self.total_BEC,
                 bounds=(0, 1e4),
                 doc="Total plant cost in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
+                units=CE_index_units,
             )
 
             # add other plant costs to catch non-equipment capital costs, e.g. reagent fills
@@ -675,7 +673,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 initialize=0,
                 bounds=(0, 1e4),
                 doc="Additional plant costs in $MM",
-                units=getattr(pyunits, "MUSD_" + CE_index_year),
+                units=CE_index_units,
             )
             self.other_plant_costs.fix(0)
 
@@ -683,7 +681,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 # rules for calculating Ancillary costs
                 def piping_materials_and_labor_cost_rule(self):
                     return self.piping_materials_and_labor_costs == (
-                        self.total_BEC * self.piping_materials_and_labor_percentage
+                        self.total_BEC * self.piping_materials_and_labor_percentage / 100
                     )
 
                 self.piping_materials_and_labor_cost_eq = Constraint(
@@ -692,7 +690,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
                 def electrical_materials_and_labor_cost_rule(self):
                     return self.electrical_materials_and_labor_costs == (
-                        self.total_BEC * self.electrical_materials_and_labor_percentage
+                        self.total_BEC * self.electrical_materials_and_labor_percentage / 100
                     )
 
                 self.electrical_materials_and_labor_cost_eq = Constraint(
@@ -701,7 +699,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
                 def instrumentation_cost_rule(self):
                     return self.instrumentation_costs == (
-                        self.total_BEC * self.instrumentation_percentage
+                        self.total_BEC * self.instrumentation_percentage / 100
                     )
 
                 self.instrumentation_cost_eq = Constraint(
@@ -710,7 +708,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
                 def plant_services_cost_rule(self, i):
                     return self.plant_services_costs == (
-                        self.total_BEC * self.plant_services_percentage
+                        self.total_BEC * self.plant_services_percentage / 100
                     )
 
                 self.plant_services_cost_eq = Constraint(rule=plant_services_cost_rule)
@@ -728,7 +726,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 # rules for calculating Buildings costs
                 def process_buildings_cost_rule(self):
                     return self.process_buildings_costs == (
-                        self.total_BEC * self.process_buildings_percentage
+                        self.total_BEC * self.process_buildings_percentage / 100
                     )
 
                 self.process_buildings_cost_eq = Constraint(
@@ -737,7 +735,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
                 def auxiliary_buildings_cost_rule(self):
                     return self.auxiliary_buildings_costs == (
-                        self.total_BEC * self.auxiliary_buildings_percentage
+                        self.total_BEC * self.auxiliary_buildings_percentage / 100
                     )
 
                 self.auxiliary_buildings_cost_eq = Constraint(
@@ -746,7 +744,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
                 def site_improvements_cost_rule(self):
                     return self.site_improvements_costs == (
-                        self.total_BEC * self.site_improvements_percentage
+                        self.total_BEC * self.site_improvements_percentage / 100
                     )
 
                 self.site_improvements_cost_eq = Constraint(
@@ -765,7 +763,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 # rules for calculating Engineering, Procurement and Construction Management costs
                 def equipment_installation_cost_rule(self):
                     return self.equipment_installation_costs == (
-                        self.total_BEC * self.equipment_installation_percentage
+                        self.total_BEC * self.equipment_installation_percentage / 100
                     )
 
                 self.equipment_installation_cost_eq = Constraint(
@@ -774,7 +772,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
                 def field_expenses_cost_rule(self):
                     return self.field_expenses_costs == (
-                        self.total_BEC * self.field_expenses_percentage
+                        self.total_BEC * self.field_expenses_percentage / 100
                     )
 
                 self.field_expenses_cost_eq = Constraint(rule=field_expenses_cost_rule)
@@ -782,7 +780,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 def project_management_and_construction_cost_rule(self):
                     return self.project_management_and_construction_costs == (
                         self.total_BEC
-                        * self.project_management_and_construction_percentage
+                        * self.project_management_and_construction_percentage / 100
                     )
 
                 self.project_management_and_construction_cost_eq = Constraint(
@@ -801,7 +799,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 # rules for calculating Contingency costs
                 def process_contingency_cost_rule(self):
                     return self.contingency_costs == (
-                        self.total_BEC * self.process_contingency_percentage
+                        self.total_BEC * self.process_contingency_percentage / 100
                     )
 
                 self.process_contingency_cost_eq = Constraint(
@@ -1717,7 +1715,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=reference_costs_init,
             bounds=(0, 1e4),
             doc="Scaled bare erected cost in $MM",
-            units=getattr(pyunits, "MUSD_" + CE_index_year),
+            units=CE_index_units,
         )
 
         # rule for scaling BEC
@@ -1816,7 +1814,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             labor_rate: hourly rate of plant operators in project dollar year;
                 defined as list corresponding to different operator types
             labor_burden: a percentage multiplier used to estimate non-salary
-                labor expenses; assumed constant for all operator types
+                labor expenses; assumed constant for all operator types. The
+                value should be a percentage, for example 10 for 10%.
             operators_per_shift: number of operators per shift; defined as list
                 of operators per shift for each operator type
             hours_per_shift: number of hours per shift
@@ -2706,7 +2705,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.grade = Var(
                 initialize=value(pyunits.convert(grade, to_units=pyunits.percent)),
                 bounds=(0, 100),
-                doc="Grade percentage of site",
+                doc="Grade percentage of site. The value should be a "
+                "percentage, for example 10 for 10%.",
                 units=pyunits.percent,
             )
             b.grade.fix(grade)
@@ -2932,7 +2932,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                           + Y2_% * CAPEX * P/A(iLoan_%, gCap, 2)
                           + Y3_% * CAPEX * P/A(iLoan_%, gCap, 3)
 
-        where Y1_%, Y2_%, and Y3_% are the percentage of capital expenditures
+        where Y1_%, Y2_%, and Y3_% are the percentages of capital expenditure
         in each year expressed as decimals, CAPEX is the total capital cost from
         equipment purchasing, gCap is the capital escalation growth rate
         expressed as a decimal, and iLoan_% is the capital equipment loan
@@ -2964,40 +2964,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         Args:
             b: costing block to retrieve total plant cost (capital), total plant
                 operating cost, and total revenue from, and add net present
-                value (NPV) calculations to; if not a costing block, b should
-                be a flowsheet block to attach parameters and variables to
+                value (NPV) calculations to
             fixed_OM: True/False flag for calculating fixed O&M costs
             variable_OM: True/False flag for calculating variable O&M costs
-
-            Keyword arguments related to NPV, entered at class instantiation:
-            discount_percentage: rate of return used to discount future cash flows back
-                to their present value. The NETL QGESS recommends setting the discount
-                rate as the calculated after-tax weighted average cost of capital (ATWACC).
-                For the UKy case study, the ATWACC is 5.77%.
-            plant_lifetime: length of operating period in years.
-            total_capital_cost: value for total capital cost; ignored if no value is passed.
-            annual_operating_cost: value for total operating cost; ignored if no value is passed.
-            annual_revenue: value for total revenue; ignored if no value is passed.
-            cost_year: assumed project start year for costs, which is the basis for NPV results; ignored if no value is passed.
-            has_capital_expenditure_period: True/false flag whether a capital expenditure period occurs.
-            capital_expenditure_percentages: a list of values that sum to 100
-                representing how capital costs are spread over a capital
-                expenditure period; for example, an input of [10, 60, 30] is parsed
-                as a 3-year period where capital costs are spread as 10% in year 1,
-                60% in year 2,and 30% in year 3. The capital period precedes
-                the operating period. Set to None to indicate no expenditure period.
-            capital_escalation_percentage: rate at which capital costs
-                escalate during the capital expenditure period. Set to 0 to indicate expenditure
-                is spread but there is no cost escalation.
-            capital_loan_interest_percentage: interest rate for capital equipment loan repayment.
-            operating_inflation_percentage: inflation rate for operating costs
-                during the operating period. Set to 0 to indicate no inflation.
-            revenue_inflation_percentage: inflation rate for revenue during the
-                operating period. Set to 0 to indicate no inflation.
-            royalty_charge_percentage_of_revenue: percentage of revenue charged
-                as royalties; ignored if royalty_expression is not None. Set to zero
-                to indicate no royalties are charged.
-            royalty_expression: set the value or expression to calculate royalties.
         """
 
         # input verification
@@ -3051,21 +3020,21 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.pv_capital_cost = Var(
             initialize=-b.CAPEX,
             bounds=(-1e4, 0),
-            doc="present value of total lifetime capital costs in $MM; negative cash flow",
+            doc="Present value of total lifetime capital costs in $MM; negative cash flow",
             units=b.cost_units,
         )
 
         b.pv_operating_cost = Var(
             initialize=-b.OPEX * b.config.plant_lifetime,
             bounds=(-1e4, 0),
-            doc="present value of total lifetime operating costs in $MM; negative cash flow",
+            doc="Present value of total lifetime operating costs in $MM; negative cash flow",
             units=b.cost_units,
         )
 
         b.pv_revenue = Var(
             initialize=b.REVENUE[None] * b.config.plant_lifetime,
             bounds=(0, 1e4),
-            doc="present value of total lifetime sales revenue in $MM; positive cash flow",
+            doc="Present value of total lifetime sales revenue in $MM; positive cash flow",
             units=b.cost_units,
         )
 
@@ -3075,7 +3044,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             * b.config.royalty_charge_percentage_of_revenue
             / 100,
             bounds=(-1e4, 0),
-            doc="present value of total lifetime royalties in $MM; negative cash flow",
+            doc="Present value of total lifetime royalties in $MM; negative cash flow",
             units=b.cost_units,
         )
 
@@ -3090,7 +3059,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 * b.config.plant_lifetime
             ),
             bounds=(-1e4, 1e4),
-            doc="present value of plant over entire capital and operation lifetime in $MM",
+            doc="Present value of plant over entire capital and operation lifetime in $MM",
             units=b.cost_units,
         )
 

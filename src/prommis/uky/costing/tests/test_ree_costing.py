@@ -3941,7 +3941,7 @@ def test_REE_costing_variableOM_feedinputnounits():
 
     with pytest.raises(
         UnitsError,
-        match="The argument feed_input was passed as a dimensionless quanity "
+        match="The argument feed_input was passed as a dimensionless quantity "
         "with no units. Please ensure that the feed rate is passed in units "
         "of mass / time.",
     ):
@@ -4300,7 +4300,7 @@ recovery_rate_units_dict = {
             pytest.raises(
                 UnitsError,
                 match="The argument recovery_rate_per_year was passed as a "
-                "dimensionless quanity with no units. Please ensure that the "
+                "dimensionless quantity with no units. Please ensure that the "
                 "feed rate is passed in units of mass / time.",
             ),
         ),
@@ -4467,7 +4467,11 @@ def test_REE_costing_recovery_passedinmethodcall():
         rates=[
             m.fs.water,
         ],
-        recovery_rate_per_year=39.3 * 0.8025 * pyo.value(m.fs.annual_operating_hours) * pyunits.kg/pyunits.year,
+        recovery_rate_per_year=39.3
+        * 0.8025
+        * pyo.value(m.fs.annual_operating_hours)
+        * pyunits.kg
+        / pyunits.year,
     )
 
     dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)

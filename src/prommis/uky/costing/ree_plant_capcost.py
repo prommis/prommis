@@ -33,7 +33,7 @@ from pyomo.common.config import ConfigValue, ListOf
 from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
-from pyomo.environ import ConcreteModel, Constraint, Expression, Param, Reference, Var
+from pyomo.environ import ConcreteModel, Expression, Param, Reference, Var
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
@@ -756,7 +756,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 def project_management_and_construction_cost_eq(c):
                     return c.project_management_and_construction_costs == (
                         c.total_BEC
-                        * c.project_management_and_construction_percentage / 100
+                        * c.project_management_and_construction_percentage
+                        / 100
                     )
 
                 @self.Constraint()
@@ -786,6 +787,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         + c.epcm_costs
                         + c.contingency_costs
                     )
+
             else:
 
                 @self.Constraint()
@@ -798,9 +800,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             @self.Constraint()
             def total_plant_cost_eq(c):
                 return c.total_plant_cost == (
-                    c.total_BEC
-                    + c.total_installation_cost
-                    + c.other_plant_costs
+                    c.total_BEC + c.total_installation_cost + c.other_plant_costs
                 )
 
             # define land cost
@@ -833,7 +833,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 ):  # require units
                     raise UnitsError(
                         "The argument feed_input was passed as a dimensionless "
-                        "quanity with no units. Please ensure that the feed "
+                        "quantity with no units. Please ensure that the feed "
                         "rate is passed in units of mass / time."
                     )
                 else:
@@ -995,7 +995,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         ):
                             raise UnitsError(
                                 "The argument recovery_rate_per_year was passed as a dimensionless "
-                                "quanity with no units. Please ensure that the feed "
+                                "quantity with no units. Please ensure that the feed "
                                 "rate is passed in units of mass / time."
                             )
                         else:  # use source units
@@ -1728,9 +1728,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             elif isinstance(process_params[i], str):
                 return c.bare_erected_cost[i] == (
                     n_equip
-                    * pyunits.convert(
-                        c.ref_cost[i] * ref_cost_units, CE_index_units
-                    )
+                    * pyunits.convert(c.ref_cost[i] * ref_cost_units, CE_index_units)
                     * (
                         pyunits.convert(scaled_param, ref_units)
                         / (scaler * c.ref_param[i] * ref_units)

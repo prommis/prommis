@@ -830,8 +830,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             if feed_input is not None:
                 if (
                     pyunits.get_units(feed_input) == pyunits.dimensionless
-                ):  # assume it's short ton per hour
-                    feed_input_rate = feed_input * pyunits.ton / pyunits.hr
+                ):  # require units
+                    raise UnitsError(
+                        "The argument feed_input was passed as a dimensionless "
+                        "quanity with no units. Please ensure that the feed "
+                        "rate is passed in units of mass / time."
+                    )
                 else:
                     feed_input_rate = pyunits.convert(
                         feed_input, to_units=pyunits.ton / pyunits.hr
@@ -988,11 +992,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         if (
                             pyunits.get_units(recovery_rate_per_year)
                             == pyunits.dimensionless
-                        ):  # assume it's in kg/year
-                            self.recovery_rate_per_year = Param(
-                                initialize=recovery_rate_per_year,
-                                mutable=True,
-                                units=pyunits.kg / pyunits.year,
+                        ):
+                            raise UnitsError(
+                                "The argument recovery_rate_per_year was passed as a dimensionless "
+                                "quanity with no units. Please ensure that the feed "
+                                "rate is passed in units of mass / time."
                             )
                         else:  # use source units
                             self.recovery_rate_per_year = Param(
@@ -2742,7 +2746,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         * (processes[p][0] - processes[p][1])
                         * (
                             pyunits.convert(c.grade, to_units=pyunits.dimensionless)
-                            / pyunits.dimensionless
                             * pyunits.convert(c.capacity, to_units=pyunits.tonnes)
                             / pyunits.tonnes
                         )
@@ -2782,7 +2785,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         * (processes[p][0] + processes[p][1])
                         * (
                             pyunits.convert(c.grade, to_units=pyunits.dimensionless)
-                            / pyunits.dimensionless
                             * pyunits.convert(c.capacity, to_units=pyunits.tonnes)
                             / pyunits.tonnes
                         )

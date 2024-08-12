@@ -781,7 +781,7 @@ def test_costing(system_frame):
     add_costing(model)
 
     dt = DiagnosticsToolbox(model)
-    dt.assert_no_structural_warnings(ignore_evaluation_errors=True)
+    dt.assert_no_structural_warnings()
 
 
 @pytest.mark.component

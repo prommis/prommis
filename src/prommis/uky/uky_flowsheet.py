@@ -667,7 +667,8 @@ def build():
         source=m.fs.sl_sep2.solid_outlet, destination=m.fs.roaster.solid_inlet
     )
     m.fs.sl_sep2_retained_liquid_outlet = Arc(
-        source=m.fs.sl_sep2.retained_liquid_outlet, destination=m.fs.roaster.liquid_inlet
+        source=m.fs.sl_sep2.retained_liquid_outlet,
+        destination=m.fs.roaster.liquid_inlet,
     )
     m.fs.sl_sep2_liquid_outlet = Arc(
         source=m.fs.sl_sep2.recovered_liquid_outlet, destination=m.fs.precip_sep.inlet

@@ -547,23 +547,23 @@ def test_solution(system_frame):
     ].value == pytest.approx(2.6984e-4, 1e-4)
 
     assert model.fs.roaster.gas_outlet.flow_mol[0].value == pytest.approx(
-        0.0085064, 1e-4
+        0.049498, 1e-4
     )
     assert model.fs.roaster.gas_outlet.temperature[0].value == pytest.approx(
         873.15, 1e-4
     )
     assert model.fs.roaster.gas_outlet.pressure[0].value == pytest.approx(101325, 1e-4)
     assert model.fs.roaster.gas_outlet.mole_frac_comp[0, "CO2"].value == pytest.approx(
-        0.04061137, 1e-4
+        0.0069796, 1e-4
     )
     assert model.fs.roaster.gas_outlet.mole_frac_comp[0, "H2O"].value == pytest.approx(
-        0.173358, 1e-4
+        0.857939, 1e-4
     )
     assert model.fs.roaster.gas_outlet.mole_frac_comp[0, "N2"].value == pytest.approx(
-        0.683643, 1e-4
+        0.1174859, 1e-4
     )
     assert model.fs.roaster.gas_outlet.mole_frac_comp[0, "O2"].value == pytest.approx(
-        0.102388, 1e-4
+        0.017595, 1e-4
     )
 
     assert model.fs.leach_mixer.outlet.flow_vol[0].value == pytest.approx(

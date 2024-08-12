@@ -525,13 +525,12 @@ def build():
         doc="gas property",
     )
 
-    m.fs.prop_solid = PrecipitateParameters(
-        key_components=key_components,
-    )
+    m.fs.prop_solid = PrecipitateParameters()
 
     m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
-        property_package_precipitate=m.fs.prop_solid,
+        property_package_precipitate_solid=m.fs.prop_solid,
+        property_package_precipitate_liquid=m.fs.properties_aq,
         has_holdup=False,
         has_heat_transfer=True,
         has_pressure_change=True,
@@ -667,10 +666,9 @@ def build():
     m.fs.sl_sep2_solid_outlet = Arc(
         source=m.fs.sl_sep2.solid_outlet, destination=m.fs.roaster.solid_inlet
     )
-    # # TODO: roaster model cannot currently handle liquid inlets
-    # m.fs.sl_sep2_retained_liquid_outlet = Arc(
-    #     source=m.fs.sl_sep2.retained_liquid_outlet, destination=m.fs.roaster.liquid_inlet
-    # )
+    m.fs.sl_sep2_retained_liquid_outlet = Arc(
+        source=m.fs.sl_sep2.retained_liquid_outlet, destination=m.fs.roaster.liquid_inlet
+    )
     m.fs.sl_sep2_liquid_outlet = Arc(
         source=m.fs.sl_sep2.recovered_liquid_outlet, destination=m.fs.precip_sep.inlet
     )
@@ -1506,7 +1504,6 @@ def set_operating_conditions(m):
     m.fs.roaster.gas_outlet.temperature.fix(873.15)
 
     # Fix operating conditions
-    m.fs.roaster.flow_mol_moist_feed.fix(6.75e-4)
     m.fs.roaster.frac_comp_recovery.fix(0.95)
 
     # Touch properties that are used in the UI

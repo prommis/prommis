@@ -1,13 +1,19 @@
-#####################################################################################################
-# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
-# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
-# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
-#####################################################################################################
+#################################################################################
+# The Institute for the Design of Advanced Energy Systems Integrated Platform
+# Framework (IDAES IP) was produced under the DOE Institute for the
+# Design of Advanced Energy Systems (IDAES).
+#
+# Copyright (c) 2018-2023 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory,
+# National Technology & Engineering Solutions of Sandia, LLC, Carnegie Mellon
+# University, West Virginia University Research Corporation, et al.
+# All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
+# for full copyright and license information.
+#################################################################################
 """
 Initial property package for West Kentucky No. 13 coal refuse.
 
-Authors: Andrew Lee
+Authors: Andrew Lee, Lingyan Deng
 """
 
 from pyomo.environ import Constraint, Param, Var, units
@@ -25,27 +31,9 @@ from idaes.core.util.initialization import fix_state_vars
 
 
 # -----------------------------------------------------------------------------
-# Leach solution property package
+# Crusher solid property package
 @declare_process_block_class("CoalRefuseParameters")
 class CoalRefuseParameterData(PhysicalParameterBlock):
-    """
-    Solid phase property package for West Kentucky No. 13 coal waste.
-
-    Based on assay provided in:
-
-    RESEARCH PERFORMANCE FINAL REPORT, Pilot-Scale Testing of an Integrated
-    Circuit for the Extraction of Rare Earth Minerals and Elements from Coal
-    and Coal Byproducts Using Advanced Separation Technologies,
-    Honaker, R.Q., et al., DE-FE0027035
-
-    Includes the following components:
-
-    * Inerts
-    * Rare Earth Oxides: Sc2O3, Y2O3, La2O3, Ce2O3, Pr2O3, Nd2O3, Sm2O3, Gd2O3, Dy2O3
-    * Impurities: Al2O3, CaO, Fe2O3
-
-    """
-
     def build(self):
         super().build()
 
@@ -118,6 +106,15 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
 
         self._state_block_class = CoalRefuseStateBlock
 
+        self.bond_work_index = Param(
+            units=units.W
+            * units.hour
+            / units.kg,  # original unit in equation (kw.hour/tonne)
+            initialize=12,  # Bond work index
+            mutable=True,
+            doc="Bond work index",
+        )
+
     @classmethod
     def define_metadata(cls, obj):
         obj.add_default_units(
@@ -150,7 +147,7 @@ class _CoalRefuseStateBlock(StateBlock):
 @declare_process_block_class("CoalRefuseStateBlock", block_class=_CoalRefuseStateBlock)
 class CoalRefuseStateBlockData(StateBlockData):
     """
-    State block for solid West Kentucky No. 13 coal waste.
+    State block for solid West Kentucky No. 13 coal waste. Particle size related from SysCAD Crusher2 model.
 
     """
 
@@ -172,7 +169,19 @@ class CoalRefuseStateBlockData(StateBlockData):
             self.params.component_list,
             initialize=0,
             units=units.dimensionless,
-            bounds=(None, 0.999999),
+            bounds=(None, 0.99),
+        )
+        self.particle_size_median = Var(
+            units=units.um,  # um micrometer. unit need to convert
+            initialize=80,  # Feed median particle size, micrometer
+            bounds=(10, None),
+            doc="Feed median Particle Size, micrometer",
+        )
+        self.particle_size_width = Var(
+            units=units.dimensionless,  # unitless
+            initialize=1.5,  # Feed particle distribution width parameter
+            bounds=(1e-6, None),
+            doc="Feed particle distribution width parameter",
         )
 
         @self.Constraint(self.params.component_list)
@@ -202,4 +211,6 @@ class CoalRefuseStateBlockData(StateBlockData):
         return {
             "flow_mass": self.flow_mass,
             "mass_frac_comp": self.mass_frac_comp,
+            "particle_size_median": self.particle_size_median,
+            "particle_size_width": self.particle_size_width,
         }

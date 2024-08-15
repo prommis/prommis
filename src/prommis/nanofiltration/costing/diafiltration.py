@@ -23,7 +23,10 @@ from idaes.core import (
 )
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.initialization import fix_state_vars, propagate_state
-from diafiltration_cost_model import DiafiltrationCosting, DiafiltrationCostingData
+from prommis.nanofiltration.costing.diafiltration_cost_model import (
+    DiafiltrationCosting,
+    DiafiltrationCostingData,
+)
 
 from idaes.models.unit_models import (
     MSContactor,

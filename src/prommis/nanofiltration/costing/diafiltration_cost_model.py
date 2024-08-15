@@ -3,13 +3,16 @@ Flowsheet costing block for diafiltration flowsheet model
 
 Reference: Reference: watertap > watertap > costing > watertap_costing_package.py
 """
+
 from idaes.core import declare_process_block_class, register_idaes_currency_units
 from idaes.core.util.constants import Constants
 from pyomo.environ import Constraint, Expression, Param, Var, units
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 from watertap.costing.util import make_capital_cost_var, make_fixed_operating_cost_var
 
-from diafiltration_cost_block import DiafiltrationCostingBlockData
+from prommis.nanofiltration.costing.diafiltration_cost_block import (
+    DiafiltrationCostingBlockData,
+)
 
 
 @declare_process_block_class("DiafiltrationCosting")
@@ -78,13 +81,13 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
     ):
         """
         Builds the process-wide cositng
-        Using the same method as the refernce file
+        Using the same method as the reference file
 
         Arguments:
 
         """
 
-        # add total_captial_cost and total_operating_cost
+        # add total_capital_cost and total_operating_cost
         self._build_common_process_costs()
 
         self.maintenance_labor_chemical_operating_cost = Var(
@@ -161,7 +164,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
     @staticmethod
     def initialize_build(self):
         """
-        Same method as the refernce file
+        Same method as the reference file
         """
         calculate_variable_from_constraint(
             self.total_capital_cost, self.total_capital_cost_constraint

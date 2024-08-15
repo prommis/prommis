@@ -1095,7 +1095,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
     def report(self, export=False):
         var_dict = {}
-        var_dict["Plant Cost Units"] = pyunits.get_units(self.total_plant_cost)
+        var_dict["Plant Cost Units"] = str(pyunits.get_units(self.total_plant_cost))
 
         if hasattr(self, "total_plant_cost"):
             var_dict["Total Plant Cost"] = value(self.total_plant_cost)

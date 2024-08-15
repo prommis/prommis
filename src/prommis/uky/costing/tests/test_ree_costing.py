@@ -2037,23 +2037,50 @@ class TestCustomCosting(object):
     def test_model(self, model):
 
         # confirm that base units match the QGESS costing block
-        assert model.fs.custom_vessel.costing.costing_package.base_currency == pyunits.USD_2021
-        assert model.fs.custom_vessel.costing.costing_package.base_period == pyunits.year
+        assert (
+            model.fs.custom_vessel.costing.costing_package.base_currency
+            == pyunits.USD_2021
+        )
+        assert (
+            model.fs.custom_vessel.costing.costing_package.base_period == pyunits.year
+        )
 
         assert isinstance(model.fs.custom_vessel.costing.number_of_units, pyo.Param)
         assert isinstance(model.fs.custom_vessel.costing.capital_cost_per_unit, pyo.Var)
         assert isinstance(model.fs.custom_vessel.costing.capital_cost, pyo.Var)
-        assert isinstance(model.fs.custom_vessel.costing.fixed_operating_cost_per_unit, pyo.Var)
+        assert isinstance(
+            model.fs.custom_vessel.costing.fixed_operating_cost_per_unit, pyo.Var
+        )
         assert isinstance(model.fs.custom_vessel.costing.fixed_operating_cost, pyo.Var)
-        assert isinstance(model.fs.custom_vessel.costing.variable_operating_cost_per_unit, pyo.Var)
-        assert isinstance(model.fs.custom_vessel.costing.variable_operating_cost, pyo.Var)
-        
-        assert isinstance(model.fs.custom_vessel.costing.capital_cost_per_unit_eq, pyo.Constraint)
-        assert isinstance(model.fs.custom_vessel.costing.capital_cost_constraint, pyo.Constraint)
-        assert isinstance(model.fs.custom_vessel.costing.fixed_operating_cost_per_unit_eq, pyo.Constraint)
-        assert isinstance(model.fs.custom_vessel.costing.fixed_operating_cost_constraint, pyo.Constraint)
-        assert isinstance(model.fs.custom_vessel.costing.variable_operating_cost_per_unit_eq, pyo.Constraint)
-        assert isinstance(model.fs.custom_vessel.costing.variable_operating_cost_constraint, pyo.Constraint)
+        assert isinstance(
+            model.fs.custom_vessel.costing.variable_operating_cost_per_unit, pyo.Var
+        )
+        assert isinstance(
+            model.fs.custom_vessel.costing.variable_operating_cost, pyo.Var
+        )
+
+        assert isinstance(
+            model.fs.custom_vessel.costing.capital_cost_per_unit_eq, pyo.Constraint
+        )
+        assert isinstance(
+            model.fs.custom_vessel.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert isinstance(
+            model.fs.custom_vessel.costing.fixed_operating_cost_per_unit_eq,
+            pyo.Constraint,
+        )
+        assert isinstance(
+            model.fs.custom_vessel.costing.fixed_operating_cost_constraint,
+            pyo.Constraint,
+        )
+        assert isinstance(
+            model.fs.custom_vessel.costing.variable_operating_cost_per_unit_eq,
+            pyo.Constraint,
+        )
+        assert isinstance(
+            model.fs.custom_vessel.costing.variable_operating_cost_constraint,
+            pyo.Constraint,
+        )
 
     @pytest.mark.component
     def test_REE_custom_costing(self, model):

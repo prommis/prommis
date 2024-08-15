@@ -2,15 +2,11 @@
 # MSContactor flowsheet code adapted from Andrew Lee.
 #########################################################
 
-
 import pyomo.environ as pyo
 from pyomo.network import Arc
 
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-
 from idaes.core import (
     Component,
-    declare_process_block_class,
     FlowsheetBlock,
     MaterialBalanceType,
     MaterialFlowBasis,
@@ -20,21 +16,23 @@ from idaes.core import (
     StateBlockData,
     UnitModelBlock,
     UnitModelCostingBlock,
+    declare_process_block_class,
 )
-from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.initialization import fix_state_vars, propagate_state
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.models.unit_models import (
+    Mixer,
+    MixerInitializer,
+    MixingType,
+    MomentumMixingType,
+    MSContactor,
+    MSContactorInitializer,
+)
+
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
     DiafiltrationCosting,
     DiafiltrationCostingData,
-)
-
-from idaes.models.unit_models import (
-    MSContactor,
-    MSContactorInitializer,
-    Mixer,
-    MixingType,
-    MomentumMixingType,
-    MixerInitializer,
 )
 
 
@@ -118,7 +116,6 @@ class LiCoParameterData(PhysicalParameterBlock):
 # Global constants
 Jw = 0.1 * pyo.units.m / pyo.units.hour
 w = 1.5 * pyo.units.m
-diff_Co = 2.64e-06  # m2/h   https://www.aqion.de/site/diffusion-coefficients
 diafiltrate_inlet_pressure = 101325 * pyo.units.Pa
 diafiltrate_outlet_pressure = 145 * pyo.units.psi
 Q_feed = 100 * pyo.units.m**3 / pyo.units.h
@@ -131,36 +128,21 @@ C_Co_diaf = 0.2 * pyo.units.kg / pyo.units.m**3
 
 def main():
     m = build_and_init_model()
+    assert degrees_of_freedom(m) == 0
 
-    (
-        R_Li,
-        R_Co,
-        P_Li,
-        P_Co,
-        membrane_length,
-        feed_flow_rate,
-        diafiltrate_flow_rate,
-        permeate_flow_rate,
-    ) = get_values(m)
-
-    add_costing(
-        m,
-        membrane_length,
-        membrane_width=w,
-        water_flux=Jw,
-        feed_flow=feed_flow_rate,
-        perm_flow=permeate_flow_rate,
-        inlet_pressure=diafiltrate_inlet_pressure,
-        outlet_pressure=diafiltrate_outlet_pressure,
-        diaf_flow=diafiltrate_flow_rate,
-    )
-
-    # print(f"DOF = {degrees_of_freedom(m)}")
-    # dt = DiagnosticsToolbox(m)
-    # dt.report_structural_issues()
+    dt = DiagnosticsToolbox(m)
+    dt.report_structural_issues()
     # dt.display_components_with_inconsistent_units()
     # dt.display_potential_evaluation_errors()
-    # dt.report_numerical_issues()
+    dt.report_numerical_issues()
+
+    add_costing(m)
+    assert degrees_of_freedom(m) == 0
+
+    dt.report_structural_issues()
+    # dt.display_components_with_inconsistent_units()
+    # dt.display_potential_evaluation_errors()
+    dt.report_numerical_issues()
 
     unfix_variables(m)
     add_constraints(m)
@@ -168,15 +150,24 @@ def main():
     print(f"DOF = {degrees_of_freedom(m)}")
     solve_model(m)
     print_information(m)
-    # dt.report_structural_issues()
-    # dt.report_numerical_issues()
 
 
 def build_and_init_model():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties = LiCoParameters()
+    m.fs.stage1, m.fs.stage2, m.fs.stage3 = build_stages(m)
+    m.fs.mix1, m.fs.mix2 = build_mixers(m)
+    add_streams(m)
+    check_model(m)
+    add_transport_constraints(m)
+    initialize(m)
+    assert degrees_of_freedom(m) == 0
+    add_expressions(m)
+    return m
 
+
+def build_stages(m):
     m.fs.stage1 = MSContactor(
         number_of_finite_elements=10,
         streams={
@@ -194,45 +185,12 @@ def build_and_init_model():
         },
     )
 
-    # Add mass transfer variables and constraints
-    m.fs.solutes = pyo.Set(initialize=["Li", "Co"])
-
-    m.fs.sieving_coefficient = pyo.Var(
-        m.fs.solutes,
-        units=pyo.units.dimensionless,
-    )
-    m.fs.sieving_coefficient["Li"].fix(1.3)
-    m.fs.sieving_coefficient["Co"].fix(0.5)
-
     m.fs.stage1.length = pyo.Var(units=pyo.units.m)
-
-    # Start by initializing with a short length
-    # Too long and we deplete solvent due to lack of recycles
     m.fs.stage1.length.fix(10)
-
-    solvent_rule, solute_rule, stage3_solute_rule = create_rules(m)
-
-    m.fs.stage1.solvent_flux = pyo.Constraint(
-        m.fs.stage1.elements,
-        rule=solvent_rule,
-    )
-
-    m.fs.stage1.solute_sieving = pyo.Constraint(
-        m.fs.stage1.elements,
-        m.fs.solutes,
-        rule=solute_rule,
-    )
-
     m.fs.stage1.retentate_inlet.flow_vol[0].fix(Q_feed)
     m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].fix(C_Li_feed)
     m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].fix(C_Co_feed)
 
-    assert degrees_of_freedom(m.fs.stage1) == 0
-
-    initializer = MSContactorInitializer()
-    initializer.initialize(m.fs.stage1)
-
-    # Create an instance of the MSContactor model for the second stage here
     m.fs.stage2 = MSContactor(
         number_of_finite_elements=10,
         streams={
@@ -250,73 +208,9 @@ def build_and_init_model():
         },
     )
 
-    # Also add the necessary variables and constraints for the material flow terms
-    # Do not forget to fix any design variables you might need to add
     m.fs.stage2.length = pyo.Var(units=pyo.units.m)
     m.fs.stage2.length.fix(10)
 
-    m.fs.stage2.solvent_flux = pyo.Constraint(
-        m.fs.stage2.elements,
-        rule=solvent_rule,
-    )
-
-    m.fs.stage2.solute_sieving = pyo.Constraint(
-        m.fs.stage2.elements,
-        m.fs.solutes,
-        rule=solute_rule,
-    )
-
-    m.fs.mix1 = Mixer(
-        num_inlets=2,
-        property_package=m.fs.properties,
-        material_balance_type=MaterialBalanceType.componentTotal,
-        energy_mixing_type=MixingType.none,
-        momentum_mixing_type=MomentumMixingType.none,
-    )
-
-    m.fs.stream1 = Arc(
-        source=m.fs.stage1.permeate_outlet,
-        destination=m.fs.mix1.inlet_2,
-    )
-    m.fs.stream2 = Arc(
-        source=m.fs.mix1.outlet,
-        destination=m.fs.stage2.retentate_inlet,
-    )
-
-    # Add an Arc connecting the retentate of the 2nd stage to the retentate feed of the 1st stage
-    m.fs.stream3 = Arc(
-        source=m.fs.stage2.retentate_outlet,
-        destination=m.fs.stage1.retentate_inlet,
-    )
-
-    pyo.TransformationFactory("network.expand_arcs").apply_to(m)
-
-    m.fs.stage1.retentate_inlet.flow_vol[0].unfix()
-    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].unfix()
-    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].unfix()
-
-    m.fs.mix1.inlet_1.flow_vol[0].fix(Q_feed)
-    m.fs.mix1.inlet_1.conc_mass_solute[0, "Li"].fix(C_Li_feed)
-    m.fs.mix1.inlet_1.conc_mass_solute[0, "Co"].fix(C_Co_feed)
-
-    assert degrees_of_freedom(m) == 0
-
-    propagate_state(
-        destination=m.fs.mix1.inlet_2,
-        source=m.fs.stage1.permeate_outlet,
-    )
-
-    mix_initializer = MixerInitializer()
-    mix_initializer.initialize(m.fs.mix1)
-
-    propagate_state(
-        destination=m.fs.stage2.retentate_inlet,
-        source=m.fs.mix1.outlet,
-    )
-
-    initializer.initialize(m.fs.stage2)
-
-    # Add third stage, including side stream feed at element 10
     m.fs.stage3 = MSContactor(
         number_of_finite_elements=10,
         streams={
@@ -335,6 +229,86 @@ def build_and_init_model():
         },
     )
 
+    m.fs.stage3.length = pyo.Var(units=pyo.units.m)
+    m.fs.stage3.length.fix(10)
+
+    return m.fs.stage1, m.fs.stage2, m.fs.stage3
+
+
+def build_mixers(m):
+    m.fs.mix1 = Mixer(
+        num_inlets=2,
+        property_package=m.fs.properties,
+        material_balance_type=MaterialBalanceType.componentTotal,
+        energy_mixing_type=MixingType.none,
+        momentum_mixing_type=MomentumMixingType.none,
+    )
+
+    m.fs.mix2 = Mixer(
+        num_inlets=2,
+        property_package=m.fs.properties,
+        material_balance_type=MaterialBalanceType.componentTotal,
+        energy_mixing_type=MixingType.none,
+        momentum_mixing_type=MomentumMixingType.none,
+    )
+
+    return m.fs.mix1, m.fs.mix2
+
+
+def add_streams(m):
+    m.fs.stream1 = Arc(
+        source=m.fs.stage1.permeate_outlet,
+        destination=m.fs.mix1.inlet_2,
+    )
+    m.fs.stream2 = Arc(
+        source=m.fs.mix1.outlet,
+        destination=m.fs.stage2.retentate_inlet,
+    )
+    m.fs.stream3 = Arc(
+        source=m.fs.stage2.retentate_outlet,
+        destination=m.fs.stage1.retentate_inlet,
+    )
+
+    m.fs.stage1.retentate_inlet.flow_vol[0].unfix()
+    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].unfix()
+    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].unfix()
+
+    m.fs.mix1.inlet_1.flow_vol[0].fix(Q_feed)
+    m.fs.mix1.inlet_1.conc_mass_solute[0, "Li"].fix(C_Li_feed)
+    m.fs.mix1.inlet_1.conc_mass_solute[0, "Co"].fix(C_Co_feed)
+
+    m.fs.stream4 = Arc(
+        source=m.fs.stage2.permeate_outlet,
+        destination=m.fs.mix2.inlet_2,
+    )
+    m.fs.stream5 = Arc(
+        source=m.fs.mix2.outlet,
+        destination=m.fs.stage3.retentate_inlet,
+    )
+    m.fs.stream6 = Arc(
+        source=m.fs.stage3.retentate_outlet,
+        destination=m.fs.mix1.inlet_1,
+    )
+
+    # Unfix Feed to Mixer 1 inlet 1
+    m.fs.mix1.inlet_1.flow_vol[0].unfix()
+    m.fs.mix1.inlet_1.conc_mass_solute[0, "Li"].unfix()
+    m.fs.mix1.inlet_1.conc_mass_solute[0, "Co"].unfix()
+
+    # Fix Diafiltrate feed to Mixer 2 inlet 1
+    m.fs.mix2.inlet_1.flow_vol[0].fix(30)
+    m.fs.mix2.inlet_1.conc_mass_solute[0, "Li"].fix(0.1)
+    m.fs.mix2.inlet_1.conc_mass_solute[0, "Co"].fix(0.2)
+
+    # Fix Feed stream at element 10 of stage 3
+    m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.fix(Q_feed)
+    m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].fix(C_Li_feed)
+    m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(C_Co_feed)
+
+    pyo.TransformationFactory("network.expand_arcs").apply_to(m)
+
+
+def check_model(m):
     assert isinstance(
         m.fs.stage3, MSContactor
     )  # check that stage3 exists and is an MSContactor
@@ -369,75 +343,34 @@ def build_and_init_model():
         m.fs.stage3, "permeate_pressure_balance"
     )  # check that there are no pressure balances
 
-    m.fs.stage3.length = pyo.Var(units=pyo.units.m)
-    m.fs.stage3.length.fix(10)
 
-    m.fs.stage3.solvent_flux = pyo.Constraint(
-        m.fs.stage3.elements,
-        rule=solvent_rule,
+def initialize(m):
+    initializer = MSContactorInitializer()
+    initializer.initialize(m.fs.stage1)
+
+    propagate_state(
+        destination=m.fs.mix1.inlet_2,
+        source=m.fs.stage1.permeate_outlet,
     )
-    m.fs.stage3.solute_sieving = pyo.Constraint(
-        m.fs.stage3.elements,
-        m.fs.solutes,
-        rule=stage3_solute_rule,
+    mix_initializer = MixerInitializer()
+    mix_initializer.initialize(m.fs.mix1)
+
+    propagate_state(
+        destination=m.fs.stage2.retentate_inlet,
+        source=m.fs.mix1.outlet,
     )
+    initializer.initialize(m.fs.stage2)
 
-    # Add second feed mixer
-    m.fs.mix2 = Mixer(
-        num_inlets=2,
-        property_package=m.fs.properties,
-        material_balance_type=MaterialBalanceType.componentTotal,
-        energy_mixing_type=MixingType.none,
-        momentum_mixing_type=MomentumMixingType.none,
-    )
-
-    # Add 3 Arcs to connect third stage to remainder of flowsheet
-    m.fs.stream4 = Arc(
-        source=m.fs.stage2.permeate_outlet,
-        destination=m.fs.mix2.inlet_2,
-    )
-    m.fs.stream5 = Arc(
-        source=m.fs.mix2.outlet,
-        destination=m.fs.stage3.retentate_inlet,
-    )
-    m.fs.stream6 = Arc(
-        source=m.fs.stage3.retentate_outlet,
-        destination=m.fs.mix1.inlet_1,
-    )
-
-    pyo.TransformationFactory("network.expand_arcs").apply_to(m)
-
-    # Unfix Feed to Mixer 1 inlet 1
-    m.fs.mix1.inlet_1.flow_vol[0].unfix()
-    m.fs.mix1.inlet_1.conc_mass_solute[0, "Li"].unfix()
-    m.fs.mix1.inlet_1.conc_mass_solute[0, "Co"].unfix()
-
-    # Fix Diafiltrate feed to Mixer 2 inlet 1
-    m.fs.mix2.inlet_1.flow_vol[0].fix(30)
-    m.fs.mix2.inlet_1.conc_mass_solute[0, "Li"].fix(0.1)
-    m.fs.mix2.inlet_1.conc_mass_solute[0, "Co"].fix(0.2)
-
-    # Fix Feed stream at element 10 of stage 3
-    m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.fix(Q_feed)
-    m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].fix(C_Li_feed)
-    m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(C_Co_feed)
-
-    assert degrees_of_freedom(m) == 0
-
-    # Initialize Mixer 2
     propagate_state(
         destination=m.fs.mix2.inlet_2,
         source=m.fs.stage2.permeate_outlet,
     )
-
     mix_initializer.initialize(m.fs.mix2)
 
-    # Try to initialize stage 3
     propagate_state(
         destination=m.fs.stage3.retentate_inlet,
         source=m.fs.mix2.outlet,
     )
-
     initializer.initialize(m.fs.stage3)
 
     # Lets try again
@@ -449,9 +382,47 @@ def build_and_init_model():
 
     initializer.initialize(m.fs.stage3)
 
-    add_expressions(m)
 
-    return m
+def add_transport_constraints(m):
+    # Add mass transfer variables and constraints
+    m.fs.solutes = pyo.Set(initialize=["Li", "Co"])
+
+    m.fs.sieving_coefficient = pyo.Var(
+        m.fs.solutes,
+        units=pyo.units.dimensionless,
+    )
+    m.fs.sieving_coefficient["Li"].fix(1.3)
+    m.fs.sieving_coefficient["Co"].fix(0.5)
+
+    solvent_rule, solute_rule, stage3_solute_rule = create_rules(m)
+
+    m.fs.stage1.solvent_flux = pyo.Constraint(
+        m.fs.stage1.elements,
+        rule=solvent_rule,
+    )
+    m.fs.stage1.solute_sieving = pyo.Constraint(
+        m.fs.stage1.elements,
+        m.fs.solutes,
+        rule=solute_rule,
+    )
+    m.fs.stage2.solvent_flux = pyo.Constraint(
+        m.fs.stage2.elements,
+        rule=solvent_rule,
+    )
+    m.fs.stage2.solute_sieving = pyo.Constraint(
+        m.fs.stage2.elements,
+        m.fs.solutes,
+        rule=solute_rule,
+    )
+    m.fs.stage3.solvent_flux = pyo.Constraint(
+        m.fs.stage3.elements,
+        rule=solvent_rule,
+    )
+    m.fs.stage3.solute_sieving = pyo.Constraint(
+        m.fs.stage3.elements,
+        m.fs.solutes,
+        rule=stage3_solute_rule,
+    )
 
 
 def create_rules(m):
@@ -564,13 +535,17 @@ def add_expressions(m):
     )
 
 
-def get_values(m):
+def get_expression_values(m):
     R_Li = round(pyo.value(m.Li_recovery) * 100, 2)
     R_Co = round(pyo.value(m.Co_recovery) * 100, 2)
 
     P_Li = round(pyo.value(m.Li_purity) * 100, 2)
     P_Co = round(pyo.value(m.Co_purity) * 100, 2)
 
+    return R_Li, R_Co, P_Li, P_Co
+
+
+def get_model_values(m):
     membrane_length = (
         pyo.value(m.fs.stage1.length)
         + pyo.value(m.fs.stage2.length)
@@ -598,31 +573,24 @@ def get_values(m):
         / pyo.units.hr
     )
 
-    return (
-        R_Li,
-        R_Co,
-        P_Li,
-        P_Co,
-        membrane_length,
-        feed_flow_rate,
-        diafiltrate_flow_rate,
-        permeate_flow_rate,
-    )
+    return membrane_length, feed_flow_rate, diafiltrate_flow_rate, permeate_flow_rate
 
 
 def add_costing(
     m,
-    membrame_length,
-    membrane_width,
-    water_flux,
-    feed_flow,
-    perm_flow,
-    inlet_pressure,
-    outlet_pressure,
-    diaf_flow,
+    membrane_width=w,
+    water_flux=Jw,
+    inlet_pressure=diafiltrate_inlet_pressure,
+    outlet_pressure=diafiltrate_outlet_pressure,
 ):
+    (
+        membrane_length,
+        feed_flow_rate,
+        diafiltrate_flow_rate,
+        permeate_flow_rate,
+    ) = get_model_values(m)
+
     # creating dummy variables to store the UnitModelCostingBlocks
-    # TODO: assign costing blocks to each stage
     m.fs.membrane = UnitModelBlock()
     m.fs.pump = UnitModelBlock()
 
@@ -631,11 +599,11 @@ def add_costing(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_membranes,
         costing_method_arguments={
-            "membrane_length": membrame_length,
+            "membrane_length": membrane_length,
             "membrane_width": membrane_width,
             "water_flux": water_flux,
-            "vol_flow_feed": feed_flow,
-            "vol_flow_perm": perm_flow,
+            "vol_flow_feed": feed_flow_rate,
+            "vol_flow_perm": permeate_flow_rate,
         },
     )
 
@@ -645,7 +613,7 @@ def add_costing(
         costing_method_arguments={
             "inlet_pressure": inlet_pressure,
             "outlet_pressure": outlet_pressure,
-            "inlet_vol_flow": diaf_flow,
+            "inlet_vol_flow": diafiltrate_flow_rate,
         },
     )
     m.fs.costing.cost_process()
@@ -673,16 +641,7 @@ def add_objective(m):
 
 
 def print_information(m):
-    (
-        R_Li,
-        R_Co,
-        P_Li,
-        P_Co,
-        membrane_length,
-        feed_flow_rate,
-        diafiltrate_flow_rate,
-        permeate_flow_rate,
-    ) = get_values(m)
+    R_Li, R_Co, P_Li, P_Co = get_expression_values(m)
 
     print(f"The lithium recovery is {R_Li}% at purity {P_Li}")
     print(f"The cobalt recovery is {R_Co}% at purity {P_Co}")

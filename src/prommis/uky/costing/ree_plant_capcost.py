@@ -1104,14 +1104,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             var_dict["Total Bare Erected Cost"] = value(self.total_BEC)
 
         if hasattr(self, "total_installation_cost"):
-            var_dict["Total Installation Cost"] = value(
-                self.total_installation_cost
-            )
+            var_dict["Total Installation Cost"] = value(self.total_installation_cost)
 
         if hasattr(self, "other_plant_costs"):
-            var_dict["Total Other Plant Costs"] = value(
-                self.other_plant_costs
-            )
+            var_dict["Total Other Plant Costs"] = value(self.other_plant_costs)
 
         if hasattr(self, "ancillary_costs"):
             var_dict["Summation of Ancillary Installation Costs"] = value(
@@ -1154,18 +1150,16 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         if hasattr(self, "site_improvements_costs"):
-            var_dict["Total Site Improvements Buildings Installation Cost"] = (
-                value(self.site_improvements_costs)
+            var_dict["Total Site Improvements Buildings Installation Cost"] = value(
+                self.site_improvements_costs
             )
 
         if hasattr(self, "epcm_costs"):
-            var_dict["Summation of EPCM Installation Costs"] = value(
-                self.epcm_costs
-            )
+            var_dict["Summation of EPCM Installation Costs"] = value(self.epcm_costs)
 
         if hasattr(self, "equipment_installation_costs"):
-            var_dict["Total Equipment Installation EPCM Installation Cost"] = (
-                value(self.equipment_installation_costs)
+            var_dict["Total Equipment Installation EPCM Installation Cost"] = value(
+                self.equipment_installation_costs
             )
 
         if hasattr(self, "field_expenses_costs"):
@@ -1202,9 +1196,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 self.annual_technical_labor_cost
             )
 
-            var_dict["Summation of Annual Labor Costs"] = value(
-                self.annual_labor_cost
-            )
+            var_dict["Summation of Annual Labor Costs"] = value(self.annual_labor_cost)
 
         if hasattr(self, "maintenance_and_material_cost"):
             var_dict["Total Maintenance and Material Cost"] = value(
@@ -1241,9 +1233,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
 
         if hasattr(self, "other_fixed_costs"):
-            var_dict["Total Other Fixed Costs"] = value(
-                self.other_fixed_costs
-            )
+            var_dict["Total Other Fixed Costs"] = value(self.other_fixed_costs)
 
         if hasattr(self, "variable_operating_costs"):
             var_dict["Total Variable Power Cost"] = value(
@@ -1268,9 +1258,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     + self.additional_chemicals_cost
                 )
 
-            var_dict["General Plant Overhead Cost"] = value(
-                self.plant_overhead_cost[0]
-            )
+            var_dict["General Plant Overhead Cost"] = value(self.plant_overhead_cost[0])
 
             var_dict[
                 "Total Plant Overhead Cost, Including Maintenance & Quality Assurance"
@@ -1292,9 +1280,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             var_dict["Total Transport Cost"] = value(self.transport_cost)
 
         if hasattr(self, "total_sales_revenue"):
-            var_dict["Total Sales Revenue Cost"] = value(
-                self.total_sales_revenue
-            )
+            var_dict["Total Sales Revenue Cost"] = value(self.total_sales_revenue)
 
         if hasattr(self, "npv"):
             var_dict["Net Present Value"] = value(self.npv)
@@ -2537,16 +2523,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 % value(b.total_overnight_capital)
             )
         if hasattr(b, "annualized_cost"):
-            print(
-                "Total annualized capital cost: %.3f"
-                % value(b.annualized_cost)
-            )
+            print("Total annualized capital cost: %.3f" % value(b.annualized_cost))
         print()
         if hasattr(b, "total_fixed_OM_cost"):
-            print(
-                "Total annual fixed O&M cost: %.3f"
-                % value(b.total_fixed_OM_cost)
-            )
+            print("Total annual fixed O&M cost: %.3f" % value(b.total_fixed_OM_cost))
         if hasattr(b, "total_variable_OM_cost"):
             print(
                 "Total annual variable O&M cost: %.3f"

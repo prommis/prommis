@@ -5,7 +5,7 @@ from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 import idaes.logger as idaeslog
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-from prommis.uky.costing.models.HD_CE import (
+from prommis.uky.costing.models.hd_ce import (
     REEEquipmentCostingData,
     REEEquipmentCosting,
 )

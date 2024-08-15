@@ -30,7 +30,7 @@ class CustomCostingData(FlowsheetCostingBlockData):
     def build_global_params(self):
 
         # Set the base year for all costs
-        self.base_currency = pyunits.USD_2021
+        self.base_currency = pyunits.USD_2022
         # Set a base period for all operating costs
         self.base_period = pyunits.year
 
@@ -41,11 +41,7 @@ class CustomCostingData(FlowsheetCostingBlockData):
         material="carbonsteel",
         water_injection_rate_per_unit=1 * pyunits.m**3 / pyunits.s,
         number_of_units=1,
-        CE_index_year="2021",
     ):
-
-        # alias for cost year units
-        CE_index_units = getattr(pyunits, "MUSD_" + CE_index_year)
 
         # make parameter for number of units
         blk.number_of_units = Param(initialize=number_of_units, mutable=False)
@@ -62,7 +58,7 @@ class CustomCostingData(FlowsheetCostingBlockData):
 
         blk.capital_cost_per_unit = Var(
             initialize=1000,
-            units=CE_index_units,
+            units=blk.costing_package.base_currency,
             domain=NonNegativeReals,
             bounds=(0, None),
         )
@@ -70,19 +66,19 @@ class CustomCostingData(FlowsheetCostingBlockData):
         @blk.Constraint()
         def capital_cost_per_unit_eq(blk):
             # cost equation CAPITAL_COST = REF_COST * (VOLUME / REF_VOLUME)**0.6
-            ref_cost = 10000 * pyunits.USD_custom
+            ref_cost = 10000 * pyunits.USD_custom  # reference cost is in reference currency units
             ref_volume = 1000 * pyunits.m**3
             return blk.capital_cost_per_unit == pyunits.convert(
                 material_factor_dict[material]
                 * ref_cost
                 * (volume_per_unit / ref_volume) ** 0.6,
-                to_units=CE_index_units,
+                to_units=blk.costing_package.base_currency,  # convert to costing block base currency
             )
 
         # create a variable capital_cost that the REE Costing Framework can look for
         blk.capital_cost = Var(
             initialize=1000,
-            units=CE_index_units,
+            units=blk.costing_package.base_currency,  # define in costing block base currency
             domain=NonNegativeReals,
             bounds=(0, None),
         )
@@ -95,7 +91,7 @@ class CustomCostingData(FlowsheetCostingBlockData):
 
         blk.fixed_operating_cost_per_unit = Var(
             initialize=1000,
-            units=CE_index_units,
+            units=blk.costing_package.base_currency,  # define in costing block base currency
             domain=NonNegativeReals,
             bounds=(0, None),
         )
@@ -108,13 +104,13 @@ class CustomCostingData(FlowsheetCostingBlockData):
         @blk.Constraint()
         def fixed_operating_cost_per_unit_eq(blk):
             return blk.fixed_operating_cost_per_unit == pyunits.convert(
-                blk.fixed_OPEX_coefficient * blk.capital_cost, to_units=CE_index_units
+                blk.fixed_OPEX_coefficient * blk.capital_cost, to_units=blk.costing_package.base_currency
             )
 
         # create a variable fixed_operating_cost that the REE Costing Framework can look for
         blk.fixed_operating_cost = Var(
             initialize=1000,
-            units=CE_index_units,
+            units=blk.costing_package.base_currency,  # define in costing block base currency
             domain=NonNegativeReals,
             bounds=(0, None),
         )
@@ -130,15 +126,15 @@ class CustomCostingData(FlowsheetCostingBlockData):
 
         blk.variable_operating_cost_per_unit = Var(
             initialize=1000,
-            units=CE_index_units / pyunits.year,
+            units=blk.costing_package.base_currency / blk.costing_package.base_period,  # define in costing block base currency / time
             domain=NonNegativeReals,
             bounds=(0, None),
         )
 
-        # set variable OPEX = $0.0019 per gallon of water injected
+        # set variable OPEX = $0.0019 per gallon of water injected using the reference year (USD_custom)
         # this is an arbitrary choice for this example, and not a general rule
         blk.variable_opex_price = Param(initialize=0.00190,
-                                        units = pyunits.USD_custom/pyunits.gal,
+                                        units = pyunits.USD_custom/pyunits.gal,  # define in reference currency units
                                         mutable=False
                                         )
 
@@ -147,13 +143,13 @@ class CustomCostingData(FlowsheetCostingBlockData):
             return blk.variable_operating_cost_per_unit == pyunits.convert(
                 blk.variable_opex_price
                 * water_injection_rate_per_unit,
-                to_units=CE_index_units / pyunits.year,
+                to_units=blk.costing_package.base_currency / blk.costing_package.base_period,  # define in costing block base currency / time
             )
 
         # create a variable variable_operating_cost that the REE Costing Framework can look for
         blk.variable_operating_cost = Var(
             initialize=1000,
-            units=CE_index_units / pyunits.year,
+            units=blk.costing_package.base_currency / blk.costing_package.base_period,  # define in costing block base currency / time
             domain=NonNegativeReals,
             bounds=(0, None),
         )

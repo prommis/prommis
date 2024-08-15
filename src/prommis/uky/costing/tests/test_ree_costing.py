@@ -2028,7 +2028,6 @@ class TestCustomCosting(object):
                 "material": "carbonsteel",
                 "water_injection_rate_per_unit": model.fs.custom_vessel.water_injection_rate,
                 "number_of_units": 3,
-                "CE_index_year": "2022",
             },
         )
 
@@ -2036,6 +2035,11 @@ class TestCustomCosting(object):
 
     @pytest.mark.unit
     def test_model(self, model):
+
+        # confirm that base units match the QGESS costing block
+        assert model.fs.custom_vessel.costing.costing_package.base_currency == pyunits.USD_2021
+        assert model.fs.custom_vessel.costing.costing_package.base_period == pyunits.year
+
         assert isinstance(model.fs.custom_vessel.costing.number_of_units, pyo.Param)
         assert isinstance(model.fs.custom_vessel.costing.capital_cost_per_unit, pyo.Var)
         assert isinstance(model.fs.custom_vessel.costing.capital_cost, pyo.Var)

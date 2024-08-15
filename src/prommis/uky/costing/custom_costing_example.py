@@ -5,23 +5,8 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-REE costing library
-This method leverages NETL costing capabilities.
-
-Other methods:
-
-    - get_fixed_OM_costs() to cost fixed O&M costs
-    - get_variable_OM_costs() to cost variable O&M costs
-    - costing_initialization() to initialize costing blocks
-    - display_total_plant_costs() to display total plant cost (TPC)
-    - display_bare_erected_costs() to display BEC costs
-    - get_total_BEC() to display the total BEC of the entire flowsheet
-    - display_flowsheet_cost() to display flowsheet cost
-    - calculate_REE_costing_bounds() to provide an estimate of costing bounds
+Example of a custom cost model compatible with the REE costing library.
 """
-# TODO: Missing docstrings
-# pylint: disable=missing-class-docstring
-# pylint: disable=missing-function-docstring
 
 __author__ = "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, and M. Zamarripa)"
 __version__ = "1.0.0"
@@ -53,7 +38,7 @@ class CustomCostingData(FlowsheetCostingBlockData):
     def cost_custom_vessel(
         blk,  # when the costing block is built, blk will be the costing block itself
         volume_per_unit=1000 * pyunits.m**3,
-        material="carbonsteel",  #
+        material="carbonsteel",
         water_injection_rate_per_unit=1 * pyunits.m**3 / pyunits.s,
         number_of_units=1,
         CE_index_year="2021",
@@ -115,10 +100,15 @@ class CustomCostingData(FlowsheetCostingBlockData):
             bounds=(0, None),
         )
 
+        # set fixed OPEX = 5% of CAPEX
+        # this is an arbitrary choice for this example, and not a general rule
+        # in practice users should create Param and Var as needed for their model
+        blk.fixed_OPEX_coefficient = Param(initialize=0.05, mutable=False)
+
         @blk.Constraint()
         def fixed_operating_cost_per_unit_eq(blk):
             return blk.fixed_operating_cost_per_unit == pyunits.convert(
-                0.05 * blk.capital_cost, to_units=CE_index_units
+                blk.fixed_OPEX_coefficient * blk.capital_cost, to_units=CE_index_units
             )
 
         # create a variable fixed_operating_cost that the REE Costing Framework can look for
@@ -145,12 +135,17 @@ class CustomCostingData(FlowsheetCostingBlockData):
             bounds=(0, None),
         )
 
+        # set variable OPEX = $0.0019 per gallon of water injected
+        # this is an arbitrary choice for this example, and not a general rule
+        blk.variable_opex_price = Param(initialize=0.00190,
+                                        units = pyunits.USD_custom/pyunits.gal,
+                                        mutable=False
+                                        )
+
         @blk.Constraint()
         def variable_operating_cost_per_unit_eq(blk):
             return blk.variable_operating_cost_per_unit == pyunits.convert(
-                0.00190
-                * pyunits.USD_custom
-                / pyunits.gal
+                blk.variable_opex_price
                 * water_injection_rate_per_unit,
                 to_units=CE_index_units / pyunits.year,
             )

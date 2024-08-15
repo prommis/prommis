@@ -955,7 +955,7 @@ class TestREECosting(object):
         model.fs.annual_operating_hours = pyo.Param(
             initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
             mutable=False,
-            units=pyunits.hours / pyunits.a,
+            units=pyunits.hours / pyunits.year,
         )
 
         model.fs.recovery_rate_per_year = pyo.Var(
@@ -996,7 +996,7 @@ class TestREECosting(object):
                 + 18684816  # Water Treatment
             )
             * pyunits.kg
-            / pyunits.a
+            / pyunits.year
         )
 
         model.fs.reagents = pyo.Var(
@@ -1215,7 +1215,7 @@ class TestREECosting(object):
             capacity=model.fs.feed_input
             * model.fs.annual_operating_hours
             * 20
-            * pyunits.a,
+            * pyunits.year,
             grade=model.fs.feed_grade,
             CE_index_year=CE_index_year,
         )
@@ -1284,7 +1284,7 @@ class TestREECosting(object):
             capacity=model.fs.feed_input
             * model.fs.annual_operating_hours
             * 20
-            * pyunits.a,
+            * pyunits.year,
             grade=model.fs.feed_grade,
             CE_index_year=CE_index_year,
             recalculate=False,
@@ -1334,7 +1334,7 @@ class TestREECosting(object):
             capacity=model.fs.feed_input
             * model.fs.annual_operating_hours
             * 20
-            * pyunits.a,
+            * pyunits.year,
             grade=model.fs.feed_grade,
             CE_index_year=CE_index_year,
             recalculate=True,
@@ -1717,7 +1717,7 @@ class TestWaterTAPCosting(object):
         model.fs.annual_operating_hours = pyo.Param(
             initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
             mutable=False,
-            units=pyunits.hours / pyunits.a,
+            units=pyunits.hours / pyunits.year,
         )
 
         model.fs.recovery_rate_per_year = pyo.Var(
@@ -1758,7 +1758,7 @@ class TestWaterTAPCosting(object):
                 + 18684816  # Water Treatment
             )
             * pyunits.kg
-            / pyunits.a
+            / pyunits.year
         )
 
         model.fs.reagents = pyo.Var(
@@ -2034,6 +2034,23 @@ class TestCustomCosting(object):
 
         return model
 
+    @pytest.mark.unit
+    def test_model(self, model):
+        assert isinstance(model.fs.custom_vessel.costing.number_of_units, pyo.Param)
+        assert isinstance(model.fs.custom_vessel.costing.capital_cost_per_unit, pyo.Var)
+        assert isinstance(model.fs.custom_vessel.costing.capital_cost, pyo.Var)
+        assert isinstance(model.fs.custom_vessel.costing.fixed_operating_cost_per_unit, pyo.Var)
+        assert isinstance(model.fs.custom_vessel.costing.fixed_operating_cost, pyo.Var)
+        assert isinstance(model.fs.custom_vessel.costing.variable_operating_cost_per_unit, pyo.Var)
+        assert isinstance(model.fs.custom_vessel.costing.variable_operating_cost, pyo.Var)
+        
+        assert isinstance(model.fs.custom_vessel.costing.capital_cost_per_unit_eq, pyo.Constraint)
+        assert isinstance(model.fs.custom_vessel.costing.capital_cost_constraint, pyo.Constraint)
+        assert isinstance(model.fs.custom_vessel.costing.fixed_operating_cost_per_unit_eq, pyo.Constraint)
+        assert isinstance(model.fs.custom_vessel.costing.fixed_operating_cost_constraint, pyo.Constraint)
+        assert isinstance(model.fs.custom_vessel.costing.variable_operating_cost_per_unit_eq, pyo.Constraint)
+        assert isinstance(model.fs.custom_vessel.costing.variable_operating_cost_constraint, pyo.Constraint)
+
     @pytest.mark.component
     def test_REE_custom_costing(self, model):
         # full smoke test with all components, O&M costs, and extra costs included
@@ -2056,7 +2073,7 @@ class TestCustomCosting(object):
         model.fs.annual_operating_hours = pyo.Param(
             initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
             mutable=False,
-            units=pyunits.hours / pyunits.a,
+            units=pyunits.hours / pyunits.year,
         )
 
         model.fs.recovery_rate_per_year = pyo.Var(
@@ -2097,7 +2114,7 @@ class TestCustomCosting(object):
                 + 18684816  # Water Treatment
             )
             * pyunits.kg
-            / pyunits.a
+            / pyunits.year
         )
 
         model.fs.reagents = pyo.Var(
@@ -2250,7 +2267,6 @@ class TestCustomCosting(object):
         assert_optimal_termination(results)
 
         # check model numerical diagnostics
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_numerical_warnings()
 
         assert model.fs.costing.total_BEC.value == pytest.approx(44.377, rel=1e-4)
@@ -4584,7 +4600,7 @@ def test_REE_costing_recovery_passedinmethodcall():
     m.fs.annual_operating_hours = pyo.Param(
         initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
         mutable=False,
-        units=pyunits.hours / pyunits.a,
+        units=pyunits.hours / pyunits.year,
     )
 
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)

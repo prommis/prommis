@@ -1954,7 +1954,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # sum of fixed O&M costs
 
-        # sum of fixed operating costs of membrane units
+        # sum of fixed operating costs of watertap units
         @b.Constraint()
         def sum_watertap_fixed_costs(c):
             if not hasattr(c, "watertap_fixed_costs_list"):
@@ -2221,7 +2221,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     + c.additional_waste_cost / pyunits.year
                 )
 
-        # sum of variable operating costs of membrane units
+        # sum of variable operating costs of watertap units
         @b.Constraint()
         def sum_watertap_variable_costs(c):
             if not hasattr(c, "watertap_variable_costs_list"):

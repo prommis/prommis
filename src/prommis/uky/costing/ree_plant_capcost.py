@@ -379,35 +379,35 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # ancillary cost variables
             self.ancillary_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Ancillary cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.piping_materials_and_labor_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Piping, materials and labor ancillary cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.electrical_materials_and_labor_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Electrical, materials and labor ancillary cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.instrumentation_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Ancillary cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.plant_services_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Ancillary cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
@@ -415,28 +415,28 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # buildings cost variables
             self.buildings_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Buildings cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.process_buildings_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Process buildings cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.auxiliary_buildings_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Auxiliary buildings cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.site_improvements_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Site improvements buildings cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
@@ -444,28 +444,28 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # engineering, procurement and construction management cost variables
             self.epcm_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="EPCM cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.equipment_installation_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Equipment installation EPCM cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.field_expenses_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Field expenses EPCM cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.project_management_and_construction_costs = Var(
                 initialize=self.total_BEC,
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Project management and construction EPCM cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
@@ -473,14 +473,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # contingency cost variables - generic to support more contingency cost types in the future
             self.contingency_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Contingency cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
 
             self.process_contingency_costs = Var(
                 initialize=value(self.total_BEC),
-                bounds=(0, 1e4),
+                bounds=(0, None),
                 doc="Contingency cost in $MM",
                 units=getattr(pyunits, "MUSD_" + CE_index_year),
             )
@@ -495,14 +495,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # total cost variables
         self.total_installation_cost = Var(
             initialize=self.total_BEC,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Total installation cost in $MM",
             units=getattr(pyunits, "MUSD_" + CE_index_year),
         )
 
         self.total_plant_cost = Var(
             initialize=self.total_BEC,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Total plant cost in $MM",
             units=getattr(pyunits, "MUSD_" + CE_index_year),
         )
@@ -510,7 +510,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # add other plant costs to catch non-equipment capital costs, e.g. reagent fills
         self.other_plant_costs = Var(
             initialize=0,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Additional plant costs in $MM",
             units=getattr(pyunits, "MUSD_" + CE_index_year),
         )
@@ -1539,7 +1539,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         blk.bare_erected_cost = Var(
             cost_accounts,
             initialize=reference_costs_init,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Scaled bare erected cost in $MM",
             units=getattr(pyunits, "MUSD_" + CE_index_year),
         )
@@ -1775,61 +1775,61 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # make vars
         b.annual_operating_labor_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Annual operating labor cost in $MM/yr",
             units=CE_index_units,
         )
         b.annual_technical_labor_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Annual technical labor cost in $MM/yr",
             units=CE_index_units,
         )
         b.annual_labor_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Annual labor cost in $MM/yr",
             units=CE_index_units,
         )
         b.maintenance_and_material_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Maintenance and material cost in $MM/yr",
             units=CE_index_units,
         )
         b.quality_assurance_and_control_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Quality assurance and control cost in $MM/yr",
             units=CE_index_units,
         )
         b.sales_patenting_and_research_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Sales, patenting and research cost in $MM/yr",
             units=CE_index_units,
         )
         b.admin_and_support_labor_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Admin and support labor cost in $MM/yr",
             units=CE_index_units,
         )
         b.property_taxes_and_insurance_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Property taxes and insurance cost in $MM/yr",
             units=CE_index_units,
         )
         b.total_fixed_OM_cost = Var(
             initialize=4,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Total fixed O&M costs in $MM/yr",
             units=CE_index_units,
         )
         b.total_sales_revenue = Var(
             initialize=4,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Total sales revenue in $MM/yr",
             units=CE_index_units,
         )
@@ -1838,7 +1838,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # fixed to 0 by default
         b.other_fixed_costs = Var(
             initialize=0,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Other fixed costs in $MM/yr",
             units=CE_index_units,
         )
@@ -1848,7 +1848,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # fixed to 0 by default
         b.watertap_fixed_costs = Var(
             initialize=0,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Watertap fixed costs in $MM/yr",
             units=CE_index_units,
         )
@@ -1857,7 +1857,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # constraint sets to sum of list, which is 0 for empty list
         b.custom_fixed_costs = Var(
             initialize=0,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Custom fixed costs in $MM/yr",
             units=CE_index_units,
         )
@@ -2120,7 +2120,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.other_variable_costs = Var(
             b.parent_block().time,
             initialize=0,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="A variable to include non-standard O&M costs in $MM/year",
             units=CE_index_units / pyunits.year,
         )
@@ -2132,7 +2132,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # constraint sets to sum of list, which is 0 for empty list
         b.watertap_variable_costs = Var(
             initialize=0,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Watertap variable costs in $MM/yr",
             units=CE_index_units / pyunits.year,
         )
@@ -2141,7 +2141,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # constraint sets to sum of list, which is 0 for empty list
         b.custom_variable_costs = Var(
             initialize=0,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Custom variable costs in $MM/yr",
             units=CE_index_units / pyunits.year,
         )
@@ -2459,7 +2459,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         b.total_BEC = Var(
             initialize=100,
-            bounds=(0, 1e4),
+            bounds=(0, None),
             doc="Total TPC in $MM",
             # assume that total_plant_cost is in millions of
             # USD_year, where year is the CE_index_year users set
@@ -2581,7 +2581,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if not hasattr(b, "capacity"):
             b.capacity = Var(
                 initialize=value(pyunits.convert(capacity, to_units=pyunits.tonnes)),
-                bounds=(0, 1e9),
+                bounds=(0, None),
                 doc="Feedstock capacity of site",
                 units=pyunits.tonnes,
             )
@@ -2599,7 +2599,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if not hasattr(b, "grade"):
             b.grade = Var(
                 initialize=value(pyunits.convert(grade, to_units=pyunits.percent)),
-                bounds=(0, 100),
+                bounds=(0, None),
                 doc="Grade percentage of site",
                 units=pyunits.percent,
             )
@@ -2632,7 +2632,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.costing_lower_bound = Var(
                 processes,
                 initialize=1,
-                bounds=(0, 100),
+                bounds=(0, None),
                 doc="Estimated lower bound on per unit production cost of site",
                 units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
             )
@@ -2652,7 +2652,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.costing_upper_bound = Var(
                 processes,
                 initialize=1,
-                bounds=(0, 100),
+                bounds=(0, None),
                 doc="Estimated upper bound on per unit production cost of site",
                 units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
             )

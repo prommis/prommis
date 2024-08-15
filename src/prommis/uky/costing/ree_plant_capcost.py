@@ -132,7 +132,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             description="Value for total capital cost (including equipment, "
             "installation, and other plant costs); ignored if no value is "
             "passed. Can be a Var, Param, or Expression with currency units, "
-            "or can specific a cost year in the cost_year argument.",
+            "or can specify a cost year in the cost_year argument.",
         ),
     )
     CONFIG.declare(
@@ -316,7 +316,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         electricity and cost of capture.
 
         If individual percentages are provided (defaults to values above), this
-        method creates constraints for the following plantwide costs ($MM/yr):
+        method creates constraints for the following plantwide costs:
         1. Total ancillary
         2. Piping materials and labor ancillary
         3. Electrical materials and labor ancillary
@@ -389,7 +389,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 percentage of the total plant cost. The value should be a
                 percentage, for example 10 for 10%. If Lang_factor is not None,
                 this value will not be used.
-            total_purchase_cost: The BEC in $MM that will be used to determine
+            total_purchase_cost: The BEC that will be used to determine
                 installation and fixed O&M costs. If the value is None, the
                 function will try to use the BEC calculated from the individual
                 units. This quantity should be a Pyomo Var or Param that will
@@ -540,109 +540,109 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 # ancillary cost variables
                 self.ancillary_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Ancillary cost in $MM",
+                    bounds=(0, None),
+                    doc="Ancillary cost",
                     units=CE_index_units,
                 )
 
                 self.piping_materials_and_labor_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Piping, materials and labor ancillary cost in $MM",
+                    bounds=(0, None),
+                    doc="Piping, materials and labor ancillary cost",
                     units=CE_index_units,
                 )
 
                 self.electrical_materials_and_labor_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Electrical, materials and labor ancillary cost in $MM",
+                    bounds=(0, None),
+                    doc="Electrical, materials and labor ancillary cost",
                     units=CE_index_units,
                 )
 
                 self.instrumentation_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Ancillary cost in $MM",
+                    bounds=(0, None),
+                    doc="Ancillary cost",
                     units=CE_index_units,
                 )
 
                 self.plant_services_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Ancillary cost in $MM",
+                    bounds=(0, None),
+                    doc="Ancillary cost",
                     units=CE_index_units,
                 )
 
                 # buildings cost variables
                 self.buildings_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Buildings cost in $MM",
+                    bounds=(0, None),
+                    doc="Buildings cost",
                     units=CE_index_units,
                 )
 
                 self.process_buildings_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Process buildings cost in $MM",
+                    bounds=(0, None),
+                    doc="Process buildings cost",
                     units=CE_index_units,
                 )
 
                 self.auxiliary_buildings_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Auxiliary buildings cost in $MM",
+                    bounds=(0, None),
+                    doc="Auxiliary buildings cost",
                     units=CE_index_units,
                 )
 
                 self.site_improvements_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Site improvements buildings cost in $MM",
+                    bounds=(0, None),
+                    doc="Site improvements buildings cost",
                     units=CE_index_units,
                 )
 
                 # engineering, procurement and construction management cost variables
                 self.epcm_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="EPCM cost in $MM",
+                    bounds=(0, None),
+                    doc="EPCM cost",
                     units=CE_index_units,
                 )
 
                 self.equipment_installation_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Equipment installation EPCM cost in $MM",
+                    bounds=(0, None),
+                    doc="Equipment installation EPCM cost",
                     units=CE_index_units,
                 )
 
                 self.field_expenses_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Field expenses EPCM cost in $MM",
+                    bounds=(0, None),
+                    doc="Field expenses EPCM cost",
                     units=CE_index_units,
                 )
 
                 self.project_management_and_construction_costs = Var(
                     initialize=self.total_BEC,
-                    bounds=(0, 1e4),
-                    doc="Project management and construction EPCM cost in $MM",
+                    bounds=(0, None),
+                    doc="Project management and construction EPCM cost",
                     units=CE_index_units,
                 )
 
                 # contingency cost variables - generic to support more contingency cost types in the future
                 self.contingency_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Contingency cost in $MM",
+                    bounds=(0, None),
+                    doc="Contingency cost",
                     units=CE_index_units,
                 )
 
                 self.process_contingency_costs = Var(
                     initialize=value(self.total_BEC),
-                    bounds=(0, 1e4),
-                    doc="Contingency cost in $MM",
+                    bounds=(0, None),
+                    doc="Contingency cost",
                     units=CE_index_units,
                 )
             else:
@@ -656,23 +656,23 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # total cost variables
             self.total_installation_cost = Var(
                 initialize=self.total_BEC,
-                bounds=(0, 1e4),
-                doc="Total installation cost in $MM",
+                bounds=(0, None),
+                doc="Total installation cost",
                 units=CE_index_units,
             )
 
             self.total_plant_cost = Var(
                 initialize=self.total_BEC,
-                bounds=(0, 1e4),
-                doc="Total plant cost in $MM",
+                bounds=(0, None),
+                doc="Total plant cost",
                 units=CE_index_units,
             )
 
             # add other plant costs to catch non-equipment capital costs, e.g. reagent fills
             self.other_plant_costs = Var(
                 initialize=0,
-                bounds=(0, 1e4),
-                doc="Additional plant costs in $MM",
+                bounds=(0, None),
+                doc="Additional plant costs",
                 units=CE_index_units,
             )
             self.other_plant_costs.fix(0)
@@ -1056,7 +1056,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             and pyunits.get_units(transport_cost_per_ton_product)
                             == pyunits.dimensionless
                         ) or isinstance(transport_cost_per_ton_product, (int, float)):
-                            # no units, assume $/ton
                             self.transport_cost = (
                                 transport_cost_per_ton_product
                                 * 1e-6
@@ -1096,162 +1095,163 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
     def report(self, export=False):
         var_dict = {}
+        var_dict["Plant Cost Units"] = pyunits.get_units(self.total_plant_cost)
 
         if hasattr(self, "total_plant_cost"):
-            var_dict["Total Plant Cost [$MM]"] = value(self.total_plant_cost)
+            var_dict["Total Plant Cost"] = value(self.total_plant_cost)
 
         if hasattr(self, "total_BEC"):
-            var_dict["Total Bare Erected Cost [$MM]"] = value(self.total_BEC)
+            var_dict["Total Bare Erected Cost"] = value(self.total_BEC)
 
         if hasattr(self, "total_installation_cost"):
-            var_dict["Total Installation Cost [$MM]"] = value(
+            var_dict["Total Installation Cost"] = value(
                 self.total_installation_cost
             )
 
         if hasattr(self, "other_plant_costs"):
-            var_dict["Total Other Plant Costs [$MM/year]"] = value(
+            var_dict["Total Other Plant Costs"] = value(
                 self.other_plant_costs
             )
 
         if hasattr(self, "ancillary_costs"):
-            var_dict["Summation of Ancillary Installation Costs [$MM]"] = value(
+            var_dict["Summation of Ancillary Installation Costs"] = value(
                 self.ancillary_costs
             )
 
         if hasattr(self, "piping_materials_and_labor_costs"):
             var_dict[
-                "Total Ancillary Piping, Materials and Labor Installation Cost [$MM]"
+                "Total Ancillary Piping, Materials and Labor Installation Cost"
             ] = value(self.piping_materials_and_labor_costs)
 
         if hasattr(self, "electrical_materials_and_labor_costs"):
             var_dict[
-                "Total Ancillary Electrical, Materials and Labor Installation Cost [$MM]"
+                "Total Ancillary Electrical, Materials and Labor Installation Cost"
             ] = value(self.electrical_materials_and_labor_costs)
 
         if hasattr(self, "instrumentation_costs"):
-            var_dict["Total Ancillary Instrumentation Installation Cost [$MM]"] = value(
+            var_dict["Total Ancillary Instrumentation Installation Cost"] = value(
                 self.instrumentation_costs
             )
 
         if hasattr(self, "plant_services_costs"):
-            var_dict["Total Ancillary Plant Services Installation Cost [$MM]"] = value(
+            var_dict["Total Ancillary Plant Services Installation Cost"] = value(
                 self.plant_services_costs
             )
 
         if hasattr(self, "buildings_costs"):
-            var_dict["Summation of Buildings Installation Costs [$MM]"] = value(
+            var_dict["Summation of Buildings Installation Costs"] = value(
                 self.buildings_costs
             )
 
         if hasattr(self, "process_buildings_costs"):
-            var_dict["Total Process Buildings Installation Cost [$MM]"] = value(
+            var_dict["Total Process Buildings Installation Cost"] = value(
                 self.process_buildings_costs
             )
 
         if hasattr(self, "auxiliary_buildings_costs"):
-            var_dict["Total Auxiliary Buildings Installation Cost [$MM]"] = value(
+            var_dict["Total Auxiliary Buildings Installation Cost"] = value(
                 self.auxiliary_buildings_costs
             )
 
         if hasattr(self, "site_improvements_costs"):
-            var_dict["Total Site Improvements Buildings Installation Cost [$MM]"] = (
+            var_dict["Total Site Improvements Buildings Installation Cost"] = (
                 value(self.site_improvements_costs)
             )
 
         if hasattr(self, "epcm_costs"):
-            var_dict["Summation of EPCM Installation Costs [$MM]"] = value(
+            var_dict["Summation of EPCM Installation Costs"] = value(
                 self.epcm_costs
             )
 
         if hasattr(self, "equipment_installation_costs"):
-            var_dict["Total Equipment Installation EPCM Installation Cost [$MM]"] = (
+            var_dict["Total Equipment Installation EPCM Installation Cost"] = (
                 value(self.equipment_installation_costs)
             )
 
         if hasattr(self, "field_expenses_costs"):
-            var_dict["Total Field Expenses EPCM Cost [$MM]"] = value(
+            var_dict["Total Field Expenses EPCM Cost"] = value(
                 self.field_expenses_costs
             )
 
         if hasattr(self, "project_management_and_construction_costs"):
             var_dict[
-                "Total Project Management and Construction EPCM Installation Cost [$MM]"
+                "Total Project Management and Construction EPCM Installation Cost"
             ] = value(self.project_management_and_construction_costs)
 
         if hasattr(self, "process_contingency_costs"):
-            var_dict["Total Process Contingency Installation Cost [$MM]"] = value(
+            var_dict["Total Process Contingency Installation Cost"] = value(
                 self.process_contingency_costs
             )
 
         if hasattr(self, "contingency_costs"):
-            var_dict["Summation of Contingency Installation Costs [$MM]"] = value(
+            var_dict["Summation of Contingency Installation Costs"] = value(
                 self.contingency_costs
             )
 
         if hasattr(self, "total_fixed_OM_cost"):
-            var_dict["Total Fixed Operating & Maintenance Cost [$MM/year]"] = value(
+            var_dict["Total Fixed Operating & Maintenance Cost"] = value(
                 self.total_fixed_OM_cost
             )
 
         if hasattr(self, "annual_operating_labor_cost"):
-            var_dict["Total Annual Operating Labor Cost [$MM/year]"] = value(
+            var_dict["Total Annual Operating Labor Cost"] = value(
                 self.annual_operating_labor_cost
             )
 
-            var_dict["Total Annual Technical Labor Cost [$MM/year]"] = value(
+            var_dict["Total Annual Technical Labor Cost"] = value(
                 self.annual_technical_labor_cost
             )
 
-            var_dict["Summation of Annual Labor Costs [$MM/year]"] = value(
+            var_dict["Summation of Annual Labor Costs"] = value(
                 self.annual_labor_cost
             )
 
         if hasattr(self, "maintenance_and_material_cost"):
-            var_dict["Total Maintenance and Material Cost [$MM/year]"] = value(
+            var_dict["Total Maintenance and Material Cost"] = value(
                 self.maintenance_and_material_cost
             )
 
         if hasattr(self, "quality_assurance_and_control_cost"):
-            var_dict["Total Quality Assurance and Control Cost [$MM/year]"] = value(
+            var_dict["Total Quality Assurance and Control Cost"] = value(
                 self.quality_assurance_and_control_cost
             )
 
         general_sales_and_admin = 0
 
         if hasattr(self, "sales_patenting_and_research_cost"):
-            var_dict["Total Sales, Patenting and Research Cost [$MM/year]"] = value(
+            var_dict["Total Sales, Patenting and Research Cost"] = value(
                 self.sales_patenting_and_research_cost
             )
             general_sales_and_admin += value(self.sales_patenting_and_research_cost)
 
         if hasattr(self, "admin_and_support_labor_cost"):
-            var_dict["Total Admin Support and Labor Cost [$MM/year]"] = value(
+            var_dict["Total Admin Support and Labor Cost"] = value(
                 self.admin_and_support_labor_cost
             )
             general_sales_and_admin += value(self.admin_and_support_labor_cost)
 
         if hasattr(self, "property_taxes_and_insurance_cost"):
-            var_dict["Total Property Taxes and Insurance Cost [$MM/year]"] = value(
+            var_dict["Total Property Taxes and Insurance Cost"] = value(
                 self.property_taxes_and_insurance_cost
             )
             general_sales_and_admin += value(self.property_taxes_and_insurance_cost)
 
-        var_dict["Summation of Sales, Admin and Insurance Cost [$MM/year]"] = value(
+        var_dict["Summation of Sales, Admin and Insurance Cost"] = value(
             general_sales_and_admin
         )
 
         if hasattr(self, "other_fixed_costs"):
-            var_dict["Total Other Fixed Costs [$MM/year]"] = value(
+            var_dict["Total Other Fixed Costs"] = value(
                 self.other_fixed_costs
             )
 
         if hasattr(self, "variable_operating_costs"):
-            var_dict["Total Variable Power Cost [$MM/year]"] = value(
+            var_dict["Total Variable Power Cost"] = value(
                 self.variable_operating_costs[0, "power"]
             )
 
             if hasattr(self, "additional_waste_cost"):
-                var_dict["Total Variable Waste Cost [$MM/year]"] = value(
+                var_dict["Total Variable Waste Cost"] = value(
                     sum(
                         self.variable_operating_costs[0, waste]
                         for waste in self.waste_list
@@ -1260,7 +1260,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
 
             if hasattr(self, "additional_chemicals_cost"):
-                var_dict["Total Variable Chemicals Cost [$MM/year]"] = value(
+                var_dict["Total Variable Chemicals Cost"] = value(
                     sum(
                         self.variable_operating_costs[0, chemical]
                         for chemical in self.chemicals_list
@@ -1268,12 +1268,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     + self.additional_chemicals_cost
                 )
 
-            var_dict["General Plant Overhead Cost [$MM/year]"] = value(
+            var_dict["General Plant Overhead Cost"] = value(
                 self.plant_overhead_cost[0]
             )
 
             var_dict[
-                "Total Plant Overhead Cost, Including Maintenance & Quality Assurance [$MM/year]"
+                "Total Plant Overhead Cost, Including Maintenance & Quality Assurance"
             ] = value(
                 self.plant_overhead_cost[0]
                 + self.maintenance_and_material_cost
@@ -1281,23 +1281,23 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         if hasattr(self, "total_variable_OM_cost"):
-            var_dict["Total Variable Operating & Maintenance Cost [$MM/year]"] = value(
+            var_dict["Total Variable Operating & Maintenance Cost"] = value(
                 self.total_variable_OM_cost[0]
             )
 
         if hasattr(self, "land_cost"):
-            var_dict["Total Land Cost [$MM/year]"] = value(self.land_cost)
+            var_dict["Total Land Cost"] = value(self.land_cost)
 
         if hasattr(self, "transport_cost"):
-            var_dict["Total Transport Cost [$MM/year]"] = value(self.transport_cost)
+            var_dict["Total Transport Cost"] = value(self.transport_cost)
 
         if hasattr(self, "total_sales_revenue"):
-            var_dict["Total Sales Revenue Cost [$MM/year]"] = value(
+            var_dict["Total Sales Revenue Cost"] = value(
                 self.total_sales_revenue
             )
 
         if hasattr(self, "npv"):
-            var_dict["Net Present Value [$MM]"] = value(self.npv)
+            var_dict["Net Present Value"] = value(self.npv)
 
         report_dir = {}
         report_dir["Value"] = {}
@@ -1365,9 +1365,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             use_additional_costing_params: Boolean flag to use additional
                 costing parameters when account names conflict with existing
                 accounts data
-
-
-        Cost is in M$
         """
         # check to see if a costing block already exists
         if (
@@ -1677,8 +1674,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         blk.bare_erected_cost = Var(
             cost_accounts,
             initialize=reference_costs_init,
-            bounds=(0, 1e4),
-            doc="Scaled bare erected cost in $MM",
+            bounds=(0, None),
+            doc="Scaled bare erected cost",
             units=CE_index_units,
         )
 
@@ -1698,9 +1695,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             ref_cost_units = ref_cost_units.split("$")
             if ref_cost_units[0] == "":  # no prefix
                 ref_cost_units = getattr(pyunits, "USD_" + ref_cost_units[1])
-            elif ref_cost_units[0] == "K":  # thousands of $
+            elif ref_cost_units[0] == "K":  # thousands of USD
                 ref_cost_units = getattr(pyunits, "kUSD_" + ref_cost_units[1])
-            elif ref_cost_units[0] == "M":  # millions of $
+            elif ref_cost_units[0] == "M":  # millions of USD
                 ref_cost_units = getattr(pyunits, "MUSD_" + ref_cost_units[1])
 
             # determine reference parameter scaler based on train scaling
@@ -1919,62 +1916,62 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # make vars
         b.annual_operating_labor_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
-            doc="Annual operating labor cost in $MM/yr",
+            bounds=(0, None),
+            doc="Annual operating labor cost",
             units=CE_index_units,
         )
         b.annual_technical_labor_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
-            doc="Annual technical labor cost in $MM/yr",
+            bounds=(0, None),
+            doc="Annual technical labor cost",
             units=CE_index_units,
         )
         b.annual_labor_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
-            doc="Annual labor cost in $MM/yr",
+            bounds=(0, None),
+            doc="Annual labor cost",
             units=CE_index_units,
         )
         b.maintenance_and_material_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
-            doc="Maintenance and material cost in $MM/yr",
+            bounds=(0, None),
+            doc="Maintenance and material cost",
             units=CE_index_units,
         )
         b.quality_assurance_and_control_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
-            doc="Quality assurance and control cost in $MM/yr",
+            bounds=(0, None),
+            doc="Quality assurance and control cost",
             units=CE_index_units,
         )
         b.sales_patenting_and_research_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
-            doc="Sales, patenting and research cost in $MM/yr",
+            bounds=(0, None),
+            doc="Sales, patenting and research cost",
             units=CE_index_units,
         )
         b.admin_and_support_labor_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
-            doc="Admin and support labor cost in $MM/yr",
+            bounds=(0, None),
+            doc="Admin and support labor cost",
             units=CE_index_units,
         )
         b.property_taxes_and_insurance_cost = Var(
             initialize=1,
-            bounds=(0, 1e4),
-            doc="Property taxes and insurance cost in $MM/yr",
+            bounds=(0, None),
+            doc="Property taxes and insurance cost",
             units=CE_index_units,
         )
         b.total_fixed_OM_cost = Var(
             initialize=4,
-            bounds=(0, 1e4),
-            doc="Total fixed O&M costs in $MM/yr",
+            bounds=(0, None),
+            doc="Total fixed O&M costs",
             units=CE_index_units,
         )
         b.total_sales_revenue = Var(
             initialize=4,
-            bounds=(0, 1e4),
-            doc="Total sales revenue in $MM/yr",
+            bounds=(0, None),
+            doc="Total sales revenue",
             units=CE_index_units,
         )
 
@@ -1982,8 +1979,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # fixed to 0 by default
         b.other_fixed_costs = Var(
             initialize=0,
-            bounds=(0, 1e4),
-            doc="Other fixed costs in $MM/yr",
+            bounds=(0, None),
+            doc="Other fixed costs",
             units=CE_index_units,
         )
         b.other_fixed_costs.fix(0)
@@ -1992,8 +1989,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # fixed to 0 by default
         b.watertap_fixed_costs = Var(
             initialize=0,
-            bounds=(0, 1e4),
-            doc="Watertap fixed costs in $MM/yr",
+            bounds=(0, None),
+            doc="Watertap fixed costs",
             units=CE_index_units,
         )
 
@@ -2243,15 +2240,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.parent_block().time,
             resources,
             initialize=2e-7,
-            doc="Variable operating costs in $MM/year",
+            doc="Variable operating costs",
             units=CE_index_units / pyunits.year,
         )
 
         b.other_variable_costs = Var(
             b.parent_block().time,
             initialize=0,
-            bounds=(0, 1e4),
-            doc="A variable to include non-standard O&M costs in $MM/year",
+            bounds=(0, None),
+            doc="A variable to include non-standard O&M costs",
             units=CE_index_units / pyunits.year,
         )
 
@@ -2261,7 +2258,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.total_variable_OM_cost = Var(
             b.parent_block().time,
             initialize=4e-6,
-            doc="Total variable operating and maintenance costs in $MM/year",
+            doc="Total variable operating and maintenance costs",
             units=CE_index_units / pyunits.year,
         )
 
@@ -2292,7 +2289,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.plant_overhead_cost = Var(
                 b.parent_block().time,
                 initialize=0,
-                doc="Plant overhead costs in $MM/year",
+                doc="Plant overhead costs",
                 units=CE_index_units / pyunits.year,
             )
 
@@ -2450,7 +2447,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 block.name for block in b._registered_unit_costing
             ] and hasattr(o, "total_plant_cost"):
                 print(
-                    "%s: $%.2f Million"
+                    "%s: %.2f"
                     % (
                         value(o.name),
                         value(
@@ -2467,7 +2464,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 block.name for block in b._registered_unit_costing
             ] and hasattr(o, "bare_erected_cost"):
                 print(
-                    "%s: $%.5f Million"
+                    "%s: %.5f"
                     % (
                         value(o.name),
                         value(
@@ -2519,8 +2516,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         b.total_BEC = Var(
             initialize=100,
-            bounds=(0, 1e4),
-            doc="Total TPC in $MM",
+            bounds=(0, None),
+            doc="Total TPC",
             # assume that total_plant_cost is in millions of
             # USD_year, where year is the CE_index_year users set
             units=CE_index_units,
@@ -2533,36 +2530,36 @@ class QGESSCostingData(FlowsheetCostingBlockData):
     def display_flowsheet_cost(b):
         # This method accepts a flowsheet-level costing block
         print("\n")
-        print("Total bare erected cost: $%.3f Million" % value(b.total_BEC))
+        print("Total bare erected cost: %.3f" % value(b.total_BEC))
         if hasattr(b, "total_overnight_capital"):
             print(
-                "Total overnight (installed) equipment cost: $%.3f Million"
+                "Total overnight (installed) equipment cost: %.3f"
                 % value(b.total_overnight_capital)
             )
         if hasattr(b, "annualized_cost"):
             print(
-                "Total annualized capital cost: $%.3f Million"
+                "Total annualized capital cost: %.3f"
                 % value(b.annualized_cost)
             )
         print()
         if hasattr(b, "total_fixed_OM_cost"):
             print(
-                "Total annual fixed O&M cost: $%.3f Million"
+                "Total annual fixed O&M cost: %.3f"
                 % value(b.total_fixed_OM_cost)
             )
         if hasattr(b, "total_variable_OM_cost"):
             print(
-                "Total annual variable O&M cost: $%.3f Million"
+                "Total annual variable O&M cost: %.3f"
                 % value(b.total_variable_OM_cost[0])
             )
         if hasattr(b, "total_fixed_OM_cost") and hasattr(b, "total_variable_OM_cost"):
             print(
-                "Total annual O&M cost: $%.3f Million"
+                "Total annual O&M cost: %.3f"
                 % value(b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
             )
             if hasattr(b, "feed_input_rate"):
                 print(
-                    "Total annual O&M cost: $%.3f per ton feed processed"
+                    "Total annual O&M cost per ton feed processed: %.3f"
                     % value(
                         (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
                         * 1e6
@@ -2578,7 +2575,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
             if hasattr(b, "recovery_rate_per_year"):
                 print(
-                    "Total annual O&M cost: $%.3f per kg REE recovered"
+                    "Total annual O&M cost per kg REE recovered: %.3f"
                     % value(
                         (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
                         * 1e6
@@ -2597,7 +2594,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             and hasattr(b, "total_variable_OM_cost")
         ):
             print(
-                "Total annualized plant cost: $%.3f Million"
+                "Total annualized plant cost: %.3f"
                 % value(
                     b.annualized_cost
                     + b.total_fixed_OM_cost
@@ -2615,13 +2612,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
         if hasattr(b, "cost_of_recovery"):
             print(
-                "Cost of recovery: $%.3f per kg REE recovered"
+                "Cost of recovery per kg REE recovered: %.3f"
                 % value(b.cost_of_recovery)
             )
         print()
 
         if hasattr(b, "npv"):
-            print("Net present value: $%.3f Million" % value(b.npv))
+            print("Net present value: %.3f" % value(b.npv))
         print("\n")
 
     def calculate_REE_costing_bounds(
@@ -2645,7 +2642,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if not hasattr(b, "capacity"):
             b.capacity = Var(
                 initialize=value(pyunits.convert(capacity, to_units=pyunits.tonnes)),
-                bounds=(0, 1e9),
+                bounds=(0, None),
                 doc="Feedstock capacity of site",
                 units=pyunits.tonnes,
             )
@@ -2663,7 +2660,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if not hasattr(b, "grade"):
             b.grade = Var(
                 initialize=value(pyunits.convert(grade, to_units=pyunits.percent)),
-                bounds=(0, 100),
+                bounds=(0, None),
                 doc="Grade percentage of site. The value should be a "
                 "percentage, for example 10 for 10%.",
                 units=pyunits.percent,
@@ -2697,7 +2694,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.costing_lower_bound = Var(
                 processes,
                 initialize=1,
-                bounds=(0, 100),
+                bounds=(0, None),
                 doc="Estimated lower bound on per unit production cost of site",
                 units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
             )
@@ -2717,7 +2714,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.costing_upper_bound = Var(
                 processes,
                 initialize=1,
-                bounds=(0, 100),
+                bounds=(0, None),
                 doc="Estimated upper bound on per unit production cost of site",
                 units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
             )
@@ -2976,22 +2973,22 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         b.pv_capital_cost = Var(
             initialize=-b.CAPEX,
-            bounds=(-1e4, 0),
-            doc="Present value of total lifetime capital costs in $MM; negative cash flow",
+            bounds=(None, 0),
+            doc="Present value of total lifetime capital costs; negative cash flow",
             units=b.cost_units,
         )
 
         b.pv_operating_cost = Var(
             initialize=-b.OPEX * b.config.plant_lifetime,
-            bounds=(-1e4, 0),
-            doc="Present value of total lifetime operating costs in $MM; negative cash flow",
+            bounds=(None, 0),
+            doc="Present value of total lifetime operating costs; negative cash flow",
             units=b.cost_units,
         )
 
         b.pv_revenue = Var(
             initialize=b.REVENUE[None] * b.config.plant_lifetime,
-            bounds=(0, 1e4),
-            doc="Present value of total lifetime sales revenue in $MM; positive cash flow",
+            bounds=(0, None),
+            doc="Present value of total lifetime sales revenue; positive cash flow",
             units=b.cost_units,
         )
 
@@ -3000,8 +2997,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             * b.config.plant_lifetime
             * b.config.royalty_charge_percentage_of_revenue
             / 100,
-            bounds=(-1e4, 0),
-            doc="Present value of total lifetime royalties in $MM; negative cash flow",
+            bounds=(None, 0),
+            doc="Present value of total lifetime royalties; negative cash flow",
             units=b.cost_units,
         )
 
@@ -3015,8 +3012,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
                 * b.config.plant_lifetime
             ),
-            bounds=(-1e4, 1e4),
-            doc="Present value of plant over entire capital and operation lifetime in $MM",
+            bounds=(None, None),
+            doc="Present value of plant over entire capital and operation lifetime",
             units=b.cost_units,
         )
 

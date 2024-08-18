@@ -25,9 +25,7 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-from idaes.core.util import to_json, from_json
-
+from idaes.core.util import to_json
 
 """
 Method of building a solvent extraction model with a specified number of stages
@@ -157,7 +155,6 @@ solver.options["bound_push"] = 1e-8
 solver.options["mu_init"] = 1e-8
 solver.solve(m, tee=True)
 
-to_json(m, fname="ex.json.gz", gz=True, human_read=True)
 
 # Final organic outlet display
 m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()
@@ -166,3 +163,5 @@ m.fs.solex.mscontactor.organic[0, 1].conc_mol_comp.display()
 # Final aqueous outlets display
 m.fs.solex.mscontactor.aqueous[0, number_of_stages].conc_mass_comp.display()
 m.fs.solex.mscontactor.aqueous[0, number_of_stages].conc_mol_comp.display()
+
+to_json(m, fname="solvent_extraction.json", human_read=True)

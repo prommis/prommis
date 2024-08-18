@@ -129,8 +129,6 @@ Initialization of the model, which gives a good starting point.
 initializer = SolventExtractionInitializer()
 initializer.initialize(m.fs.solex)
 
-dt = DiagnosticsToolbox(m)
-dt.report_structural_issues()
 
 """
 Solution of the model and display of the final results.

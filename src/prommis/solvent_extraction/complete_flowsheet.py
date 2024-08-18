@@ -30,7 +30,10 @@ from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction, SolventExtractionInitializer
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
 
 
 # Model development and flowsheet creation
@@ -164,7 +167,7 @@ m.fs.solex_rougher_scrub = SolventExtraction(
     aqueous_to_organic=False,
 )
 
-m.fs.acid_feed1 = Feed(property_package=m.fs.leach_soln)
+m.fs.acid_feed_to_rough_scrub = Feed(property_package=m.fs.leach_soln)
 
 m.fs.solex_rougher_scrub.partition_coefficient[1, "aqueous", "organic", "Al"] = (
     100 - 0.12
@@ -203,7 +206,7 @@ m.fs.solex_rougher_scrub.partition_coefficient[1, "aqueous", "organic", "Dy"] = 
     100 - 99.9
 ) / 100
 
-m.fs.acid_feed2 = Feed(property_package=m.fs.leach_soln)
+m.fs.acid_feed_to_rough_strip = Feed(property_package=m.fs.leach_soln)
 
 m.fs.solex_rougher_strip = SolventExtraction(
     number_of_finite_elements=2,
@@ -406,7 +409,7 @@ m.fs.cleaner_mixer = Mixer(
 )
 
 m.fs.cleaner_purge = Product(property_package=m.fs.prop_o)
-m.fs.acid_feed3 = Feed(property_package=m.fs.leach_soln)
+m.fs.acid_feed_to_clean_strip = Feed(property_package=m.fs.leach_soln)
 
 m.fs.leach_sx_mixer = Mixer(
     property_package=m.fs.leach_soln,
@@ -417,7 +420,7 @@ m.fs.leach_sx_mixer = Mixer(
     momentum_mixing_type=MomentumMixingType.none,
 )
 
-m.fs.acid_feed4 = Feed(property_package=m.fs.leach_soln)
+m.fs.acid_feed_to_leach_mixer = Feed(property_package=m.fs.leach_soln)
 
 m.fs.precip_sx_mixer = Mixer(
     property_package=m.fs.leach_soln,
@@ -461,7 +464,7 @@ m.fs.rough_org_mixer_to_load = Arc(
 )
 
 m.fs.rough_aq_feed_to_mixer = Arc(
-    source=m.fs.acid_feed4.outlet, destination=m.fs.leach_sx_mixer.leach
+    source=m.fs.acid_feed_to_leach_mixer.outlet, destination=m.fs.leach_sx_mixer.leach
 )
 m.fs.rough_aq_clean_to_mixer = Arc(
     source=m.fs.solex_cleaner_load.mscontactor.aqueous_outlet,
@@ -473,12 +476,12 @@ m.fs.rough_aq_mixer_to_load = Arc(
 )
 
 m.fs.rough_aq_feed_to_scrub = Arc(
-    source=m.fs.acid_feed1.outlet,
+    source=m.fs.acid_feed_to_rough_scrub.outlet,
     destination=m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet,
 )
 
 m.fs.rough_aq_feed_to_strip = Arc(
-    source=m.fs.acid_feed2.outlet,
+    source=m.fs.acid_feed_to_rough_strip.outlet,
     destination=m.fs.solex_rougher_strip.mscontactor.aqueous_inlet,
 )
 
@@ -517,7 +520,7 @@ m.fs.clean_org_mixer_to_load = Arc(
 )
 
 m.fs.clean_aq_feed_to_strip = Arc(
-    source=m.fs.acid_feed3.outlet,
+    source=m.fs.acid_feed_to_clean_strip.outlet,
     destination=m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet,
 )
 
@@ -541,59 +544,62 @@ m.fs.rougher_org_make_up.conc_mass_comp[0, "Sm"].fix(eps)
 m.fs.rougher_org_make_up.conc_mass_comp[0, "Gd"].fix(eps)
 m.fs.rougher_org_make_up.conc_mass_comp[0, "Dy"].fix(eps)
 
-m.fs.acid_feed1.flow_vol.fix(0.09)
-m.fs.acid_feed1.conc_mass_comp[0, "H2O"].fix(1000000)
-m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(10.36)
-m.fs.acid_feed1.conc_mass_comp[0, "SO4"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "HSO4"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "Al"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "Ca"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "Fe"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "Sc"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "Y"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "La"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "Ce"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "Pr"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "Nd"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "Sm"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "Gd"].fix(eps)
-m.fs.acid_feed1.conc_mass_comp[0, "Dy"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.flow_vol.fix(0.09)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "H2O"].fix(1000000)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "H"].fix(10.36)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "SO4"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "HSO4"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Al"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Ca"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Cl"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Fe"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Sc"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Y"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "La"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Ce"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Pr"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Nd"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Sm"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Gd"].fix(eps)
+m.fs.acid_feed_to_rough_scrub.conc_mass_comp[0, "Dy"].fix(eps)
 
-m.fs.acid_feed2.flow_vol.fix(0.09)
-m.fs.acid_feed2.conc_mass_comp[0, "H2O"].fix(1000000)
-m.fs.acid_feed2.conc_mass_comp[0, "H"].fix(10.36 * 4)
-m.fs.acid_feed2.conc_mass_comp[0, "SO4"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "HSO4"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "Al"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "Ca"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "Fe"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "Sc"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "Y"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "La"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "Ce"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "Pr"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "Nd"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "Sm"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "Gd"].fix(eps)
-m.fs.acid_feed2.conc_mass_comp[0, "Dy"].fix(eps)
+m.fs.acid_feed_to_rough_strip.flow_vol.fix(0.09)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "H2O"].fix(1000000)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "H"].fix(10.36 * 4)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "SO4"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "HSO4"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Al"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Ca"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Cl"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Fe"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Sc"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Y"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "La"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Ce"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Pr"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Nd"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Sm"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Gd"].fix(eps)
+m.fs.acid_feed_to_rough_strip.conc_mass_comp[0, "Dy"].fix(eps)
 
-m.fs.acid_feed3.flow_vol.fix(9)
-m.fs.acid_feed3.conc_mass_comp[0, "H2O"].fix(1000000)
-m.fs.acid_feed3.conc_mass_comp[0, "H"].fix(10.36 * 4)
-m.fs.acid_feed3.conc_mass_comp[0, "SO4"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "HSO4"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "Al"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "Ca"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "Fe"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "Sc"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "Y"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "La"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "Ce"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "Pr"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "Nd"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "Sm"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "Gd"].fix(eps)
-m.fs.acid_feed3.conc_mass_comp[0, "Dy"].fix(eps)
+m.fs.acid_feed_to_clean_strip.flow_vol.fix(9)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "H2O"].fix(1000000)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "H"].fix(10.36 * 4)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "SO4"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "HSO4"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Al"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Ca"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Cl"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Fe"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Sc"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Y"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "La"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Ce"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Pr"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Nd"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Sm"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Gd"].fix(eps)
+m.fs.acid_feed_to_clean_strip.conc_mass_comp[0, "Dy"].fix(eps)
 
 m.fs.cleaner_org_make_up.flow_vol.fix(6.201)
 m.fs.cleaner_org_make_up.conc_mass_comp[0, "Al"].fix(eps)
@@ -609,43 +615,24 @@ m.fs.cleaner_org_make_up.conc_mass_comp[0, "Sm"].fix(eps)
 m.fs.cleaner_org_make_up.conc_mass_comp[0, "Gd"].fix(eps)
 m.fs.cleaner_org_make_up.conc_mass_comp[0, "Dy"].fix(eps)
 
-m.fs.acid_feed4.flow_vol.fix(62.01 - 0.09 - 0.09)
-m.fs.acid_feed4.conc_mass_comp[0, "H2O"].fix(1000000)
-m.fs.acid_feed4.conc_mass_comp[0, "H"].fix(10.36 * 4)
-m.fs.acid_feed4.conc_mass_comp[0, "SO4"].fix(3999.818)
-m.fs.acid_feed4.conc_mass_comp[0, "HSO4"].fix(693.459)
-m.fs.acid_feed4.conc_mass_comp[0, "Al"].fix(422.375)
-m.fs.acid_feed4.conc_mass_comp[0, "Ca"].fix(109.542)
-m.fs.acid_feed4.conc_mass_comp[0, "Fe"].fix(688.266)
-m.fs.acid_feed4.conc_mass_comp[0, "Sc"].fix(0.032)
-m.fs.acid_feed4.conc_mass_comp[0, "Y"].fix(0.124)
-m.fs.acid_feed4.conc_mass_comp[0, "La"].fix(0.986)
-m.fs.acid_feed4.conc_mass_comp[0, "Ce"].fix(2.277)
-m.fs.acid_feed4.conc_mass_comp[0, "Pr"].fix(0.303)
-m.fs.acid_feed4.conc_mass_comp[0, "Nd"].fix(0.946)
-m.fs.acid_feed4.conc_mass_comp[0, "Sm"].fix(0.097)
-m.fs.acid_feed4.conc_mass_comp[0, "Gd"].fix(0.2584)
-m.fs.acid_feed4.conc_mass_comp[0, "Dy"].fix(0.047)
-
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e6)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1.755)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["SO4"].fix(3999.818)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["HSO4"].fix(693.459)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Al"].fix(422.375)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Ca"].fix(109.542)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Fe"].fix(688.266)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Sc"].fix(0.032)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Y"].fix(0.124)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["La"].fix(0.986)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Ce"].fix(2.277)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Pr"].fix(0.303)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Nd"].fix(0.946)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Sm"].fix(0.097)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Gd"].fix(0.2584)
-# m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Dy"].fix(0.047)
-
-initializer = SolventExtractionInitializer()
-initializer.initialize(m.fs.solex_cleaner_load)
+m.fs.acid_feed_to_leach_mixer.flow_vol.fix(62.01 - 0.09 - 0.09)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "H2O"].fix(1000000)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "H"].fix(10.36)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "SO4"].fix(3999.818)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "HSO4"].fix(693.459)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Al"].fix(422.375)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Ca"].fix(109.542)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Cl"].fix(1e-7)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Fe"].fix(688.266)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Sc"].fix(0.032)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Y"].fix(0.124)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "La"].fix(0.986)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Ce"].fix(2.277)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Pr"].fix(0.303)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Nd"].fix(0.946)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Sm"].fix(0.097)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Gd"].fix(0.2584)
+m.fs.acid_feed_to_leach_mixer.conc_mass_comp[0, "Dy"].fix(0.047)
 
 m.fs.precip_purge.flow_vol.fix(0.09)
 m.fs.precip_purge.conc_mass_comp[0, "H2O"].fix(1000000)
@@ -654,6 +641,7 @@ m.fs.precip_purge.conc_mass_comp[0, "SO4"].fix(eps)
 m.fs.precip_purge.conc_mass_comp[0, "HSO4"].fix(eps)
 m.fs.precip_purge.conc_mass_comp[0, "Al"].fix(eps)
 m.fs.precip_purge.conc_mass_comp[0, "Ca"].fix(eps)
+m.fs.precip_purge.conc_mass_comp[0, "Cl"].fix(eps)
 m.fs.precip_purge.conc_mass_comp[0, "Fe"].fix(eps)
 m.fs.precip_purge.conc_mass_comp[0, "Sc"].fix(eps)
 m.fs.precip_purge.conc_mass_comp[0, "Y"].fix(eps)
@@ -669,6 +657,55 @@ m.fs.rougher_sep.split_fraction[:, "recycle"].fix(0.9)
 m.fs.cleaner_sep.split_fraction[:, "recycle"].fix(0.9)
 
 print(dof(m))
+
+initializer_feed = FeedInitializer()
+feed_units = [
+    m.fs.rougher_org_make_up,
+    m.fs.acid_feed_to_rough_scrub,
+    m.fs.acid_feed_to_rough_strip,
+    m.fs.acid_feed_to_clean_strip,
+    m.fs.cleaner_org_make_up,
+    m.fs.acid_feed_to_leach_mixer,
+    m.fs.precip_purge,
+]
+
+initializer_product = ProductInitializer()
+product_units = [m.fs.sc_circuit_purge, m.fs.cleaner_purge]
+
+initializer_mixer = MixerInitializer()
+mixer_units = [
+    m.fs.rougher_mixer,
+    m.fs.cleaner_mixer,
+    m.fs.leach_sx_mixer,
+    m.fs.precip_sx_mixer,
+]
+
+initializer_sep = SeparatorInitializer()
+sep_units = [m.fs.rougher_sep, m.fs.cleaner_sep]
+
+initializer_sx = SolventExtractionInitializer()
+sx_units = [
+    m.fs.solex_rougher_load,
+    m.fs.solex_rougher_scrub,
+    m.fs.solex_rougher_strip,
+    m.fs.solex_cleaner_load,
+    m.fs.solex_cleaner_strip,
+]
+
+for feed in feed_units:
+    initializer_feed.initialize(feed)
+
+for product in product_units:
+    initializer_product.initialize(product)
+
+for mixer in mixer_units:
+    initializer_mixer.initialize(mixer)
+
+for sep in sep_units:
+    initializer_sep.initialize(sep)
+
+for sx in sx_units:
+    initializer_sx.initialize(sx)
 
 solver = SolverFactory("ipopt")
 results = solver.solve(m, tee=True)

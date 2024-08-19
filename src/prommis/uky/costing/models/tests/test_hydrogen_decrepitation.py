@@ -5,7 +5,7 @@ from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 import idaes.logger as idaeslog
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-from prommis.uky.costing.models.hd_ce import (
+from prommis.uky.costing.models.hydrogen_decrepitation import (
     REEEquipmentCostingData,
     REEEquipmentCosting,
 )
@@ -42,50 +42,77 @@ class TestREEEquipmentCosting:
             flowsheet_costing_block=model.fs.costing,
             costing_method=REEEquipmentCostingData.cost_hydrogen_decrepitation_furnace,
             costing_method_arguments={
-                "ramp_up_time": 300,  # (in seconds)
-                "operating_temperature": 443.15,  # in Kelvin
-                "decrepitation_duration": 10800,  # (in seconds)
-                "preparation_time": 3600,  # in seconds
-                "cool_down_time": 3600,  # in seconds
-                "sample_heat_capacity": 0.44,  # in kJ/(kg*K)
-                "sample_mass": None,  # kg
-                "sample_volume": 0.002,  # m**3
-                "sample_density": 7500,  # in kg/m**3
-                "chamber_to_sample_ratio": 2,
-                "length_insulation1": 7.62,  # in m
-                "width_insulation1": 0.6096,  # in m
-                "thickness_insulation1": 0.0254,  # in m
-                "price_insulation1": 183.81,  # in USD
-                "weight_insulation1": 15.42,  # in kg
-                "thermal_cond_insulation_material1": 0.33,  # W/(m*K)
-                "price_metal1": 3.14,  # USD/kg
-                "density_metal1": 7473.57,  # kg/m**3
-                "thermal_cond_metal_material1": 13.53,  # W/(m*K)
-                "length_insulation2": 1.19,  # in m
-                "width_insulation2": 0.381,  # in m
-                "thickness_insulation2": 0.0889,  # in m
-                "price_insulation2": 47.00,  # in USD
-                "weight_insulation2": 10.43,  # in kg
-                "thermal_cond_insulation_material2": 0.069,  # W/(m*K)
-                "price_metal2": 1.50,  # USD/kg
-                "density_metal2": 7861.09,  # kg/m**3
-                "thermal_cond_metal_material2": 45,  # W/(m*K)
-                "hours_per_shift": 8,  # hr
-                "shifts_per_day": 3,
-                "specific_heat_capacity_insulation1": 1.08,  # KJ/(kg*K)
-                "specific_heat_capacity_metal1": 0.468,  # KJ/(kg*K)
-                "specific_heat_capacity_insulation2": 0.9,  # KJ/(kg*K)
-                "specific_heat_capacity_metal2": 0.502416,  # KJ/(kg*K)
-                "operating_days_per_year": 336,  # days
-                "efficiency": 0.95,
-                "electricity_rate": 0.081,  # USD/kWhr
-                "labor_rate": 75,  # USD/hr
-                "temperature_controller_price": 129.00,  # USD
-                "number_of_units": 1,
-                "engineering_and_drafting": 1000,  # USD
+                "ramp_up_time": 300 * pyunits.s,
+                "operating_temperature": 443.15 * pyunits.K,
+                "decrepitation_duration": 10800 * pyunits.s,
+                "preparation_time": 3600 * pyunits.s,
+                "cool_down_time": 3600 * pyunits.s,
+                "sample_heat_capacity": 0.44 * pyunits.kJ / (pyunits.kg * pyunits.K),
+                "sample_mass": None,
+                "sample_volume": 0.002 * ((pyunits.m) ** 3),
+                "sample_density": 7500 * pyunits.kg / (pyunits.m**3),
+                "chamber_to_sample_ratio": 2 * pyunits.dimensionless,
+                "length_insulation1": 7.62 * pyunits.m,
+                "width_insulation1": 0.6096 * pyunits.m,
+                "thickness_insulation1": 0.0254 * pyunits.m,
+                "price_insulation1": 183.81 * pyunits.USD_Jan_2024,
+                "weight_insulation1": 15.42 * pyunits.kg,
+                "thermal_cond_insulation_material1": 0.33
+                * pyunits.W
+                / pyunits.m
+                / pyunits.K,
+                "price_metal1": 3.14 * pyunits.USD_Jan_2024 / pyunits.kg,
+                "density_metal1": 7473.57 * pyunits.kg / (pyunits.m**3),
+                "thermal_cond_metal_material1": 13.53
+                * pyunits.W
+                / pyunits.m
+                / pyunits.K,
+                "length_insulation2": 1.19 * pyunits.m,
+                "width_insulation2": 0.381 * pyunits.m,
+                "thickness_insulation2": 0.0889 * pyunits.m,
+                "price_insulation2": 47.00 * pyunits.USD_Jan_2024,
+                "weight_insulation2": 10.43 * pyunits.kg,
+                "thermal_cond_insulation_material2": 0.069
+                * pyunits.W
+                / pyunits.m
+                / pyunits.K,
+                "price_metal2": 1.50 * pyunits.USD_Jan_2024 / pyunits.kg,
+                "density_metal2": 7861.09 * pyunits.kg / (pyunits.m**3),
+                "thermal_cond_metal_material2": 45 * pyunits.W / pyunits.m / pyunits.K,
+                "hours_per_shift": 8 * pyunits.hr,
+                "shifts_per_day": 3 * (pyunits.day) ** (-1),
+                "specific_heat_capacity_insulation1": 1.08
+                * pyunits.kJ
+                / (pyunits.kg * pyunits.K),
+                "specific_heat_capacity_metal1": 0.468
+                * pyunits.kJ
+                / (pyunits.kg * pyunits.K),
+                "specific_heat_capacity_insulation2": 0.9
+                * pyunits.kJ
+                / (pyunits.kg * pyunits.K),
+                "specific_heat_capacity_metal2": 0.502416
+                * pyunits.kJ
+                / (pyunits.kg * pyunits.K),
+                "operating_days_per_year": 336 * pyunits.day / pyunits.year,
+                "efficiency": 0.95 * pyunits.dimensionless,
+                "electricity_rate": 0.081
+                * pyunits.USD_Jan_2024
+                / (pyunits.kW * pyunits.hr),
+                "labor_rate": 75 * pyunits.USD_Jan_2024 / pyunits.hr,
+                "temperature_controller_price": 129.00 * pyunits.USD_Jan_2024,
+                "number_of_units": 1 * pyunits.dimensionless,
+                "engineering_and_drafting": 1000 * pyunits.USD_Jan_2024,
             },
         )
 
+        assert (
+            model.fs.hydrogen_decrepitation_furnace.costing.costing_package.base_currency
+            == pyunits.USD_Jan_2024
+        )
+        assert (
+            model.fs.hydrogen_decrepitation_furnace.costing.costing_package.base_period
+            == pyunits.year
+        )
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.costing.furnace_chamber_volume,
             pyo.Var,
@@ -428,48 +455,76 @@ class TestREEEquipmentCosting:
             flowsheet_costing_block=model.fs.costing,
             costing_method=REEEquipmentCostingData.cost_hydrogen_decrepitation_furnace,
             costing_method_arguments={
-                "ramp_up_time": 300,  # (in seconds)
-                "operating_temperature": 443.15,  # in Kelvin
-                "decrepitation_duration": 10800,  # (in seconds)
-                "preparation_time": 3600,  # in seconds
-                "cool_down_time": 3600,  # in seconds
-                "sample_heat_capacity": 0.44,  # in kJ/(kg*K)
-                "sample_mass": 62.025,  # kg
+                "ramp_up_time": 300 * pyunits.s,
+                "operating_temperature": 443.15 * pyunits.K,
+                "decrepitation_duration": 10800 * pyunits.s,
+                "preparation_time": 3600 * pyunits.s,
+                "cool_down_time": 3600 * pyunits.s,
+                "sample_heat_capacity": 0.44 * pyunits.kJ / (pyunits.kg * pyunits.K),
+                "sample_mass": 62.025 * pyunits.kg,  # kg
                 "sample_volume": None,  # m**3
-                "sample_density": 7500,  # in kg/m**3
-                "chamber_to_sample_ratio": 2,
-                "length_insulation1": 7.62,  # in m
-                "width_insulation1": 0.6096,  # in m
-                "thickness_insulation1": 0.0254,  # in m
-                "price_insulation1": 183.81,  # in USD
-                "weight_insulation1": 15.42,  # in kg
-                "thermal_cond_insulation_material1": 0.33,  # W/(m*K)
-                "price_metal1": 3.14,  # USD/kg
-                "density_metal1": 7473.57,  # kg/m**3
-                "thermal_cond_metal_material1": 13.53,  # W/(m*K)
-                "length_insulation2": 1.19,  # in m
-                "width_insulation2": 0.381,  # in m
-                "thickness_insulation2": 0.0889,  # in m
-                "price_insulation2": 47.00,  # in USD
-                "weight_insulation2": 10.43,  # in kg
-                "thermal_cond_insulation_material2": 0.069,  # W/(m*K)
-                "price_metal2": 1.50,  # USD/kg
-                "density_metal2": 7861.09,  # kg/m**3
-                "thermal_cond_metal_material2": 45,  # W/(m*K)
-                "hours_per_shift": 8,  # hr
-                "shifts_per_day": 3,
-                "specific_heat_capacity_insulation1": 1.08,  # KJ/(kg*K)
-                "specific_heat_capacity_metal1": 0.468,  # KJ/(kg*K)
-                "specific_heat_capacity_insulation2": 0.9,  # KJ/(kg*K)
-                "specific_heat_capacity_metal2": 0.502416,  # KJ/(kg*K)
-                "operating_days_per_year": 336,  # days
-                "efficiency": 0.95,
-                "electricity_rate": 0.081,  # USD/kWhr
-                "labor_rate": 75,  # USD/hr
-                "temperature_controller_price": 129.00,  # USD
-                "number_of_units": 1,
-                "engineering_and_drafting": 1000,  # USD
+                "sample_density": 7500 * pyunits.kg / (pyunits.m**3),
+                "chamber_to_sample_ratio": 2 * pyunits.dimensionless,
+                "length_insulation1": 7.62 * pyunits.m,
+                "width_insulation1": 0.6096 * pyunits.m,
+                "thickness_insulation1": 0.0254 * pyunits.m,
+                "price_insulation1": 183.81 * pyunits.USD_Jan_2024,
+                "weight_insulation1": 15.42 * pyunits.kg,
+                "thermal_cond_insulation_material1": 0.33
+                * pyunits.W
+                / pyunits.m
+                / pyunits.K,
+                "price_metal1": 3.14 * pyunits.USD_Jan_2024 / pyunits.kg,
+                "density_metal1": 7473.57 * pyunits.kg / (pyunits.m**3),
+                "thermal_cond_metal_material1": 13.53
+                * pyunits.W
+                / pyunits.m
+                / pyunits.K,
+                "length_insulation2": 1.19 * pyunits.m,
+                "width_insulation2": 0.381 * pyunits.m,
+                "thickness_insulation2": 0.0889 * pyunits.m,
+                "price_insulation2": 47.00 * pyunits.USD_Jan_2024,
+                "weight_insulation2": 10.43 * pyunits.kg,
+                "thermal_cond_insulation_material2": 0.069
+                * pyunits.W
+                / pyunits.m
+                / pyunits.K,
+                "price_metal2": 1.50 * pyunits.USD_Jan_2024 / pyunits.kg,
+                "density_metal2": 7861.09 * pyunits.kg / (pyunits.m**3),
+                "thermal_cond_metal_material2": 45 * pyunits.W / pyunits.m / pyunits.K,
+                "hours_per_shift": 8 * pyunits.hr,
+                "shifts_per_day": 3 * (pyunits.day) ** (-1),
+                "specific_heat_capacity_insulation1": 1.08
+                * pyunits.kJ
+                / (pyunits.kg * pyunits.K),
+                "specific_heat_capacity_metal1": 0.468
+                * pyunits.kJ
+                / (pyunits.kg * pyunits.K),
+                "specific_heat_capacity_insulation2": 0.9
+                * pyunits.kJ
+                / (pyunits.kg * pyunits.K),
+                "specific_heat_capacity_metal2": 0.502416
+                * pyunits.kJ
+                / (pyunits.kg * pyunits.K),
+                "operating_days_per_year": 336 * pyunits.day / pyunits.year,
+                "efficiency": 0.95 * pyunits.dimensionless,
+                "electricity_rate": 0.081
+                * pyunits.USD_Jan_2024
+                / (pyunits.kW * pyunits.hr),
+                "labor_rate": 75 * pyunits.USD_Jan_2024 / pyunits.hr,
+                "temperature_controller_price": 129.00 * pyunits.USD_Jan_2024,
+                "number_of_units": 1 * pyunits.dimensionless,
+                "engineering_and_drafting": 1000 * pyunits.USD_Jan_2024,
             },
+        )
+
+        assert (
+            model.fs.hydrogen_decrepitation_furnace.costing.costing_package.base_currency
+            == pyunits.USD_Jan_2024
+        )
+        assert (
+            model.fs.hydrogen_decrepitation_furnace.costing.costing_package.base_period
+            == pyunits.year
         )
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.costing.furnace_chamber_volume,

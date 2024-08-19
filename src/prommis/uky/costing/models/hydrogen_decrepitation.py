@@ -54,47 +54,47 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
 
     def cost_hydrogen_decrepitation_furnace(
         blk,
-        ramp_up_time=300,  # (in seconds)
-        operating_temperature=443.15,  # in Kelvin
-        decrepitation_duration=10800,  # (in seconds)
-        preparation_time=3600,  # in seconds
-        cool_down_time=3600,  # in seconds
-        sample_heat_capacity=0.44,  # in kJ/(kg*K)
-        sample_mass=None,  # in kg
-        sample_volume=None,  # in m**3
-        sample_density=7500,  # in kg/m**3
-        chamber_to_sample_ratio=2,
-        length_insulation1=7.62,  # m
-        width_insulation1=0.6096,  # m
-        thickness_insulation1=0.0254,  # m
-        price_insulation1=183.81,  # USD
-        weight_insulation1=15.42,  # kg
-        thermal_cond_insulation_material1=0.33,  # W/(m*K)
-        price_metal1=3.14,  # USD/kg
-        density_metal1=7473.57,  # kg/m**3
-        thermal_cond_metal_material1=13.53,  # W/(m*K)
-        length_insulation2=1.19,  # m
-        width_insulation2=0.381,  # m
-        thickness_insulation2=0.0889,  # m
-        price_insulation2=47.00,  # USD
-        weight_insulation2=10.43,  # kg
-        thermal_cond_insulation_material2=0.069,  # W/(m*K)
-        price_metal2=1.50,  # USD/kg
-        density_metal2=7861.09,  # kg/m**3
-        thermal_cond_metal_material2=45,  # W/(m*K)
-        hours_per_shift=8,
-        shifts_per_day=3,
-        specific_heat_capacity_insulation1=1.08,  # KJ/(kg*K)
-        specific_heat_capacity_metal1=0.468,  # KJ/(kg*K)
-        specific_heat_capacity_insulation2=0.9,  # KJ/(kg*K)
-        specific_heat_capacity_metal2=0.502416,  # KJ/(kg*K)
-        operating_days_per_year=336,
-        efficiency=0.95,
-        electricity_rate=0.081,  # USD/Kwhr
-        labor_rate=75,  # USD
-        temperature_controller_price=129.00,  # USD
-        number_of_units=1,
-        engineering_and_drafting=1000,  # USD
+        ramp_up_time=300 * units.s,
+        operating_temperature=443.15 * units.K,
+        decrepitation_duration=10800 * units.s,
+        preparation_time=3600 * units.s,
+        cool_down_time=3600 * units.s,
+        sample_heat_capacity=0.44 * units.kJ / (units.kg * units.K),
+        sample_mass=None,
+        sample_volume=None,
+        sample_density=7500 * units.kg / (units.m**3),
+        chamber_to_sample_ratio=2 * units.dimensionless,
+        length_insulation1=7.62 * units.m,
+        width_insulation1=0.6096 * units.m,
+        thickness_insulation1=0.0254 * units.m,
+        price_insulation1=183.81 * units.USD_Jan_2024,
+        weight_insulation1=15.42 * units.kg,
+        thermal_cond_insulation_material1=0.33 * units.W / units.m / units.K,
+        price_metal1=3.14 * units.USD_Jan_2024 / units.kg,
+        density_metal1=7473.57 * units.kg / (units.m**3),
+        thermal_cond_metal_material1=13.53 * units.W / units.m / units.K,
+        length_insulation2=1.19 * units.m,
+        width_insulation2=0.381 * units.m,
+        thickness_insulation2=0.0889 * units.m,
+        price_insulation2=47.00 * units.USD_Jan_2024,
+        weight_insulation2=10.43 * units.kg,
+        thermal_cond_insulation_material2=0.069 * units.W / units.m / units.K,
+        price_metal2=1.50 * units.USD_Jan_2024 / units.kg,
+        density_metal2=7861.09 * units.kg / (units.m**3),
+        thermal_cond_metal_material2=45 * units.W / units.m / units.K,
+        hours_per_shift=8 * units.hr,
+        shifts_per_day=3 * (units.day) ** (-1),
+        specific_heat_capacity_insulation1=1.08 * units.kJ / (units.kg * units.K),
+        specific_heat_capacity_metal1=0.468 * units.kJ / (units.kg * units.K),
+        specific_heat_capacity_insulation2=0.9 * units.kJ / (units.kg * units.K),
+        specific_heat_capacity_metal2=0.502416 * units.kJ / (units.kg * units.K),
+        operating_days_per_year=336 * units.day / units.year,
+        efficiency=0.95 * units.dimensionless,
+        electricity_rate=0.081 * units.USD_Jan_2024 / (units.kW * units.hr),
+        labor_rate=75 * units.USD_Jan_2024 / units.hr,
+        temperature_controller_price=129.00 * units.USD_Jan_2024,
+        number_of_units=1 * units.dimensionless,
+        engineering_and_drafting=1000 * units.USD_Jan_2024,
     ):
         """
         Cost Estimation of an Hydrogen Decrepitation Furnace
@@ -107,7 +107,7 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
         ramp_up_time: Time required to reach operating temperature.
         operating_temperature: Optimum temperature at which decrepitation occurs.
         decrepitation_duration: Amount of time the furnace operates at its
-                                operating temperature(in hr).
+                                operating temperature (in hr).
         preparation_time: Time required to setup the furnace.
         cool_down_time: Time required for the decrepitated sample to cool down
                         to room temperature.
@@ -117,8 +117,8 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
         sample_density: Density of the sample; default is the density of sintered NdFeB magnet
         chamber_to_sample_ratio: ratio of the volume of furnace chamber to the volume of the sample.
                             Default is set as 2
-        length_insulation1: The length of a unit of the first insulation material,
-                            as specified by the vendor.
+        length_insulation1: The length of a unit of the first insulation material
+                            (default is ceramic fiber), as specified by the vendor.
         width_insulation1: The width of a unit of the first insulation material,
                            as specified by the vendor.
         thickness_insulation1: The thickness of a unit of the first insulation material,
@@ -133,8 +133,8 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
                       from https://mepsinternational.com/gb/en/products/world-stainless-steel-prices as of 01/01/2024
         density_metal1: Density of metal material 1 in kg/m**3 (default density is for stainless steel 304)
         thermal_cond_metal_material1: Thermal conductivity of metal material 1 (in W/(m*K))
-        length_insulation2: The length of a unit of the second insulation material,
-                            as specified by the vendor.
+        length_insulation2: The length of a unit of the second insulation material
+                            (default is fiberglass), as specified by the vendor.
         width_insulation2: The width of a unit of the second insulation material,
                            as specified by the vendor.
         thickness_insulation2: The thickness of a unit of the second insulation material,
@@ -174,29 +174,24 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
             units=units.m**3,
             doc="Internal volume of the furnace in cubic meter",
         )
-        blk.sample_volume = Param(
-            initialize=sample_volume, units=units.m**3, within=Any, mutable=True
-        )
-        blk.sample_density = Param(
-            initialize=sample_density, units=units.kg / (units.m**3), mutable=True
-        )
-        blk.chamber_to_sample_ratio = Param(
-            initialize=chamber_to_sample_ratio, units=units.dimensionless, mutable=True
-        )
+        blk.sample_volume = Param(units=units.m**3, within=Any, mutable=True)
+        blk.sample_volume.set_value(sample_volume)
+        blk.sample_density = Param(units=units.kg / (units.m**3), mutable=True)
+        blk.sample_density.set_value(sample_density)
+        blk.chamber_to_sample_ratio = Param(units=units.dimensionless, mutable=True)
+        blk.chamber_to_sample_ratio.set_value(chamber_to_sample_ratio)
 
         if sample_mass is None:
             blk.furnace_chamber_volume.fix(
                 blk.chamber_to_sample_ratio * blk.sample_volume
             )
             sample_mass = blk.sample_density * blk.sample_volume
-            blk.sample_mass = Param(
-                initialize=sample_mass, units=units.kg, mutable=True
-            )
+            blk.sample_mass = Param(units=units.kg, mutable=True)
+            blk.sample_mass.set_value(sample_mass)
 
         else:
-            blk.sample_mass = Param(
-                initialize=sample_mass, units=units.kg, mutable=True
-            )
+            blk.sample_mass = Param(units=units.kg, mutable=True)
+            blk.sample_mass.set_value(sample_mass)
             blk.furnace_chamber_volume.fix(
                 blk.chamber_to_sample_ratio * (blk.sample_mass / blk.sample_density)
             )
@@ -247,8 +242,10 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
         )
 
         blk.thermal_cond_insulation_material1 = Param(
-            initialize=thermal_cond_insulation_material1,
-            units=units.W / units.m / units.K,
+            mutable=True, units=units.W / units.m / units.K
+        )
+        blk.thermal_cond_insulation_material1.set_value(
+            thermal_cond_insulation_material1
         )
         blk.temperature_metal_material1 = Param(
             initialize=950.13,
@@ -292,9 +289,10 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
         )
 
         blk.thermal_cond_metal_material1 = Param(
-            initialize=thermal_cond_metal_material1,
+            mutable=True,
             units=units.W / units.m / units.K,
         )
+        blk.thermal_cond_metal_material1.set_value(thermal_cond_metal_material1)
         blk.temperature_insulation_material2 = Param(
             initialize=950.00,
             units=units.K,
@@ -344,8 +342,10 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
         )
 
         blk.thermal_cond_insulation_material2 = Param(
-            initialize=thermal_cond_insulation_material2,
-            units=units.W / units.m / units.K,
+            mutable=True, units=units.W / units.m / units.K
+        )
+        blk.thermal_cond_insulation_material2.set_value(
+            thermal_cond_insulation_material2
         )
         blk.temperature_metal_material2 = Param(
             initialize=333.18,
@@ -399,9 +399,9 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
         )
 
         blk.thermal_cond_metal_material2 = Param(
-            initialize=thermal_cond_metal_material2,
-            units=units.W / units.m / units.K,
+            mutable=True, units=units.W / units.m / units.K
         )
+        blk.thermal_cond_metal_material2.set_value(thermal_cond_metal_material2)
         blk.thickness_metal_material2 = Var(
             within=PositiveReals,
             initialize=4 * 1e-3,
@@ -492,16 +492,12 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
                 )
             )
 
-        blk.length_insulation1 = Param(
-            initialize=length_insulation1, units=units.m, mutable=True
-        )
-        blk.width_insulation1 = Param(
-            initialize=width_insulation1, units=units.m, mutable=True
-        )
-
-        blk.thickness_insulation1 = Param(
-            initialize=thickness_insulation1, units=units.m, mutable=True
-        )
+        blk.length_insulation1 = Param(units=units.m, mutable=True)
+        blk.length_insulation1.set_value(length_insulation1)
+        blk.width_insulation1 = Param(units=units.m, mutable=True)
+        blk.width_insulation1.set_value(width_insulation1)
+        blk.thickness_insulation1 = Param(units=units.m, mutable=True)
+        blk.thickness_insulation1.set_value(thickness_insulation1)
         blk.min_quantity = Param(
             initialize=1,
             units=units.dimensionless,
@@ -522,27 +518,26 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
                 ),
             )
 
-        blk.weight_insulation1 = Param(
-            initialize=weight_insulation1,
-            units=units.kg,
-            mutable=True,
-        )
+        blk.weight_insulation1 = Param(units=units.kg, mutable=True)
+        blk.weight_insulation1.set_value(weight_insulation1)
 
         @blk.Expression(doc="Total weight of insulation material 1")
         def total_weight_insulation1(blk):
             return blk.quantity_insulation1 * blk.weight_insulation1
 
         blk.price_insulation1 = Param(
-            initialize=price_insulation1, units=units.USD_Jan_2024, mutable=True
+            units=blk.costing_package.base_currency, mutable=True
         )
+        blk.price_insulation1.set_value(price_insulation1)
 
         @blk.Expression(doc="Total cost of insulation material 1")
         def material_cost_insulation1(blk):
             return blk.quantity_insulation1 * blk.price_insulation1
 
         blk.labor_rate = Param(
-            initialize=labor_rate, units=units.USD_Jan_2024 / units.hr, mutable=True
+            units=blk.costing_package.base_currency / units.hr, mutable=True
         )
+        blk.labor_rate.set_value(labor_rate)
 
         @blk.Expression(
             doc="Internal diameter of the structure formed after attaching metal 1"
@@ -573,10 +568,11 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
             return units.convert(vol, to_units=units.inches**3)
 
         blk.density_metal1 = Param(
-            initialize=density_metal1,
+            mutable=True,
             units=units.kg / (units.m**3),
             doc="Density of stainless steel 304",
         )
+        blk.density_metal1.set_value(density_metal1)
 
         @blk.Expression(doc="Weight of metal material 1")
         def weight_metal1(blk):
@@ -585,10 +581,11 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
             )
 
         blk.price_metal1 = Param(
-            initialize=price_metal1,
-            units=units.USD_Jan_2024 / units.kg,
+            mutable=True,
+            units=blk.costing_package.base_currency / units.kg,
             doc="Price of stainless steel 304 (in $/kg)",
         )
+        blk.price_metal1.set_value(price_metal1)
 
         @blk.Expression(doc="Cost of metal material 1")
         def material_cost_metal1(blk):
@@ -623,15 +620,12 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
                 )
             )
 
-        blk.length_insulation2 = Param(
-            initialize=length_insulation2, units=units.m, mutable=True
-        )
-        blk.width_insulation2 = Param(
-            initialize=width_insulation2, units=units.m, mutable=True
-        )
-        blk.thickness_insulation2 = Param(
-            initialize=thickness_insulation2, units=units.m, mutable=True
-        )
+        blk.length_insulation2 = Param(units=units.m, mutable=True)
+        blk.length_insulation2.set_value(length_insulation2)
+        blk.width_insulation2 = Param(units=units.m, mutable=True)
+        blk.width_insulation2.set_value(width_insulation2)
+        blk.thickness_insulation2 = Param(units=units.m, mutable=True)
+        blk.thickness_insulation2.set_value(thickness_insulation2)
 
         @blk.Expression(doc="Required quantity of insulation material 2")
         def quantity_insulation2(blk):
@@ -647,17 +641,17 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
                 ),
             )
 
-        blk.weight_insulation2 = Param(
-            initialize=weight_insulation2, units=units.kg, mutable=True
-        )
+        blk.weight_insulation2 = Param(units=units.kg, mutable=True)
+        blk.weight_insulation2.set_value(weight_insulation2)
 
         @blk.Expression(doc="Total weight of insulation material 2")
         def total_weight_insulation2(blk):
             return blk.quantity_insulation2 * blk.weight_insulation2
 
         blk.price_insulation2 = Param(
-            initialize=price_insulation2, units=units.USD_Jan_2024, mutable=True
+            units=blk.costing_package.base_currency, mutable=True
         )
+        blk.price_insulation2.set_value(price_insulation2)
 
         @blk.Expression(doc="Material cost for insulation material 2")
         def material_cost_insulation2(blk):
@@ -700,10 +694,11 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
             return units.convert(vol, to_units=units.inches**3)
 
         blk.density_metal2 = Param(
-            initialize=density_metal2,
+            mutable=True,
             units=units.kg / (units.m**3),
             doc="Density of carbon steel",
         )
+        blk.density_metal2.set_value(density_metal2)
 
         @blk.Expression(doc="Weight of metal material 2")
         def weight_metal2(blk):
@@ -712,10 +707,11 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
             )
 
         blk.price_metal2 = Param(
-            initialize=price_metal2,
-            units=units.USD_Jan_2024 / units.kg,
+            mutable=True,
+            units=blk.costing_package.base_currency / units.kg,
             doc="Price of carbon steel (in $/kg)",
         )
+        blk.price_metal2.set_value(price_metal2)
 
         @blk.Expression(doc="Cost of metal material 2")
         def material_cost_metal2(blk):
@@ -756,25 +752,29 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
             doc="Temperature change of metal 2 from reference temperature to steady operating condition",
         )
         blk.specific_heat_capacity_insulation1 = Param(
-            initialize=specific_heat_capacity_insulation1,
             units=units.kJ / (units.kg * units.K),
             mutable=True,
+        )
+        blk.specific_heat_capacity_insulation1.set_value(
+            specific_heat_capacity_insulation1
         )
         blk.specific_heat_capacity_metal1 = Param(
-            initialize=specific_heat_capacity_metal1,
             units=units.kJ / (units.kg * units.K),
             mutable=True,
         )
+        blk.specific_heat_capacity_metal1.set_value(specific_heat_capacity_metal1)
         blk.specific_heat_capacity_insulation2 = Param(
-            initialize=specific_heat_capacity_insulation2,
             units=units.kJ / (units.kg * units.K),
             mutable=True,
+        )
+        blk.specific_heat_capacity_insulation2.set_value(
+            specific_heat_capacity_insulation2
         )
         blk.specific_heat_capacity_metal2 = Param(
-            initialize=specific_heat_capacity_metal2,
             units=units.kJ / (units.kg * units.K),
             mutable=True,
         )
+        blk.specific_heat_capacity_metal2.set_value(specific_heat_capacity_metal2)
 
         @blk.Expression(
             doc="Energy required to raise the temperature of furnace material from room temperature to temperature at steady state"
@@ -803,13 +803,12 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
                 )
             )
 
-        blk.ramp_up_time = Param(initialize=ramp_up_time, units=units.s, mutable=True)
-        blk.efficiency = Param(
-            initialize=efficiency, units=units.dimensionless, mutable=True
-        )
-        blk.decrepitation_duration = Param(
-            initialize=decrepitation_duration, units=units.s, mutable=True
-        )
+        blk.ramp_up_time = Param(units=units.s, mutable=True)
+        blk.ramp_up_time.set_value(ramp_up_time)
+        blk.efficiency = Param(units=units.dimensionless, mutable=True)
+        blk.efficiency.set_value(efficiency)
+        blk.decrepitation_duration = Param(units=units.s, mutable=True)
+        blk.decrepitation_duration.set_value(decrepitation_duration)
 
         @blk.Expression(doc="Energy lost in the decrepitation duration")
         def energy_consumption(blk):
@@ -818,14 +817,13 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
                 to_units=units.kJ,
             )
 
-        blk.operating_temperature = Param(
-            initialize=operating_temperature, units=units.K, mutable=True
-        )
+        blk.operating_temperature = Param(units=units.K, mutable=True)
+        blk.operating_temperature.set_value(operating_temperature)
         blk.sample_heat_capacity = Param(
-            initialize=sample_heat_capacity,
             units=units.kJ / (units.kg * units.K),
             mutable=True,
         )
+        blk.sample_heat_capacity.set_value(sample_heat_capacity)
 
         @blk.Expression(
             doc="Energy required to raise the temperature of sample to operating temperature"
@@ -847,12 +845,10 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
         def total_heat_duty(blk):
             return blk.heat_duty1 + blk.energy_consumption + blk.heat_duty3
 
-        blk.preparation_time = Param(
-            initialize=preparation_time, units=units.s, mutable=True
-        )
-        blk.cool_down_time = Param(
-            initialize=cool_down_time, units=units.s, mutable=True
-        )
+        blk.preparation_time = Param(units=units.s, mutable=True)
+        blk.preparation_time.set_value(preparation_time)
+        blk.cool_down_time = Param(units=units.s, mutable=True)
+        blk.cool_down_time.set_value(cool_down_time)
 
         @blk.Expression(doc="Total duration of the decrepitation process")
         def processing_time(blk):
@@ -863,17 +859,15 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
                 + (units.convert(blk.cool_down_time, to_units=units.hr))
             )
 
-        blk.hours_per_shift = Param(
-            initialize=hours_per_shift, units=units.hr, mutable=True
-        )
-        blk.shifts_per_day = Param(
-            initialize=shifts_per_day, units=1 / units.day, mutable=True
-        )
+        blk.hours_per_shift = Param(units=units.hr, mutable=True)
+        blk.hours_per_shift.set_value(hours_per_shift)
+        blk.shifts_per_day = Param(units=1 / units.day, mutable=True)
+        blk.shifts_per_day.set_value(shifts_per_day)
         blk.operating_days_per_year = Param(
-            initialize=operating_days_per_year,
             units=units.day / units.year,
             mutable=True,
         )
+        blk.operating_days_per_year.set_value(operating_days_per_year)
 
         @blk.Expression(doc="Number of batches processed annually")
         def total_runs(blk):
@@ -886,22 +880,23 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
             return blk.total_heat_duty * blk.total_runs
 
         blk.electricity_rate = Param(
-            initialize=electricity_rate,
-            units=units.USD_Jan_2024 / (units.kW * units.hr),
+            units=blk.costing_package.base_currency / (units.kW * units.hr),
             mutable=True,
         )
+        blk.electricity_rate.set_value(electricity_rate)
 
         blk.OPEX = Var(
             within=PositiveReals,
             initialize=2e4,
-            units=units.USD_Jan_2024 / units.year,
+            units=blk.costing_package.base_currency / blk.costing_package.base_period,
             doc="Operating expenditure (in USD)",
         )
 
         @blk.Constraint()
         def operating_cost_eq(blk):
             return blk.OPEX == blk.annual_heat_duty * units.convert(
-                blk.electricity_rate, to_units=units.USD_Jan_2024 / units.kJ
+                blk.electricity_rate,
+                to_units=blk.costing_package.base_currency / units.kJ,
             )
 
         blk.eps = Param(
@@ -915,14 +910,17 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
         # https://hvacdirect.com/goodman-5-kilowatt-16-200-btu-package-unit-heater-coil-hkp-05c.html
         # as of 01/01/2024
         def cost_heating_coil(blk):
-            return smooth_max(
-                85 * units.USD_Jan_2024,
-                (
-                    15.50
-                    * ((units.USD_Jan_2024 * units.s) / units.kJ)
-                    * blk.furnace_power_rating
+            return units.convert(
+                smooth_max(
+                    85 * units.USD_Jan_2024,
+                    (
+                        15.50
+                        * ((units.USD_Jan_2024 * units.s) / units.kJ)
+                        * blk.furnace_power_rating
+                    ),
+                    eps=blk.eps,
                 ),
-                eps=blk.eps,
+                to_units=blk.costing_package.base_currency,
             )
 
         @blk.Expression(doc="Total weight of furnace")
@@ -941,6 +939,12 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
             ) / 4
             return units.convert(vol, to_units=units.ft**3)
 
+        blk.eps2 = Param(
+            initialize=1e-4,
+            units=blk.costing_package.base_currency,
+            doc="eps2 controls the smoothness of the smoothmax approximation.",
+        )
+
         @blk.Expression(doc="Total labor cost")
         def labor_cost(blk):
             return smooth_max(
@@ -953,18 +957,19 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
                     )
                     * blk.labor_rate
                 ),
-                eps=blk.eps,
+                eps=blk.eps2,
             )
 
         blk.temperature_controller_price = Param(
-            initialize=temperature_controller_price,
-            units=units.USD_Jan_2024,
+            units=blk.costing_package.base_currency,
             mutable=True,
         )
+        blk.temperature_controller_price.set_value(temperature_controller_price)
 
         blk.engineering_and_drafting = Param(
-            initialize=engineering_and_drafting, units=units.USD_Jan_2024, mutable=True
+            units=blk.costing_package.base_currency, mutable=True
         )
+        blk.engineering_and_drafting.set_value(engineering_and_drafting)
 
         @blk.Expression(doc="Overhead Cost")
         def overhead_cost(blk):
@@ -982,12 +987,11 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
         blk.base_cost_per_unit = Var(
             within=PositiveReals,
             initialize=5 * 1e4,
-            units=units.USD_Jan_2024,
+            units=blk.costing_package.base_currency,
             doc="Base cost per unit",
         )
-        blk.number_of_units = Param(
-            initialize=number_of_units, units=units.dimensionless, mutable=True
-        )
+        blk.number_of_units = Param(units=units.dimensionless, mutable=True)
+        blk.number_of_units.set_value(number_of_units)
 
         @blk.Constraint()
         def base_cost_per_unit_eq(blk):
@@ -1006,10 +1010,6 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
         @blk.Expression(doc="Base cost for all installed units")
         def base_cost(blk):
             return blk.base_cost_per_unit * blk.number_of_units
-
-        @blk.Expression(doc="capital expenditure in USD_Jan_2024")
-        def CAPEX(blk):
-            return blk.base_cost
 
         blk.capital_cost = Var(
             within=PositiveReals,
@@ -1038,10 +1038,6 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
                 / blk.costing_package.base_period,
             )
 
-        @blk.Expression(doc="Base cost for all installed units")
-        def var_operating_cost(blk):
-            return blk.variable_operating_cost_per_unit * blk.number_of_units
-
         blk.variable_operating_cost = Var(
             initialize=1e6,
             units=blk.costing_package.base_currency / blk.costing_package.base_period,
@@ -1050,4 +1046,7 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
 
         @blk.Constraint()
         def variable_operating_cost_eq(blk):
-            return blk.variable_operating_cost == blk.var_operating_cost
+            return (
+                blk.variable_operating_cost
+                == blk.variable_operating_cost_per_unit * blk.number_of_units
+            )

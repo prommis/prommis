@@ -9,9 +9,6 @@ import numpy as np
 
 from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.initialization import InitializationStatus
-from idaes.core.initialization.block_triangularization import (
-    BlockTriangularizationInitializer,
-)
 from idaes.core.util import DiagnosticsToolbox
 from idaes.core.solvers import get_solver
 

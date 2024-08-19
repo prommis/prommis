@@ -113,23 +113,6 @@ class SolventExtractionInitializer(ModularInitializerBase):
 
     CONFIG = ModularInitializerBase.CONFIG()
 
-    # CONFIG.declare(
-    #     "ssc_solver_options",
-    #     ConfigDict(
-    #         implicit=True,
-    #         description="Dict of arguments for solver calls by ssc_solver",
-    #     ),
-    # )
-    # CONFIG.declare(
-    #     "calculate_variable_options",
-    #     ConfigDict(
-    #         implicit=True,
-    #         description="Dict of options to pass to 1x1 block solver",
-    #         doc="Dict of options to pass to calc_var_kwds argument in "
-    #         "scc_solver method.",
-    #     ),
-    # )
-
     def initialize_main_model(
         self,
         model: Block,

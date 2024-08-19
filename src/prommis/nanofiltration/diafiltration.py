@@ -1,24 +1,35 @@
-#########################################################
-# MSContactor flowsheet code adapted from Andrew Lee.
-#########################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+"""
+Diafiltration cascade flowsheet for separating lithium and cobalt.
+"""
 
-import pyomo.environ as pyo
+from pyomo.environ import (
+    ConcreteModel,
+    Constraint,
+    Expression,
+    Objective,
+    Set,
+    TransformationFactory,
+    Var,
+    log,
+    units,
+    value,
+)
 from pyomo.network import Arc
 
 from idaes.core import (
-    Component,
     FlowsheetBlock,
     MaterialBalanceType,
-    MaterialFlowBasis,
-    Phase,
-    PhysicalParameterBlock,
-    StateBlock,
-    StateBlockData,
     UnitModelBlock,
     UnitModelCostingBlock,
-    declare_process_block_class,
 )
-from idaes.core.util.initialization import fix_state_vars, propagate_state
+from idaes.core.solvers import get_solver
+from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.unit_models import (
@@ -34,115 +45,44 @@ from prommis.nanofiltration.costing.diafiltration_cost_model import (
     DiafiltrationCosting,
     DiafiltrationCostingData,
 )
-
-
-class _StateBlock(StateBlock):
-    def fix_initialization_states(self):
-        """
-        Fixes state variables for state blocks.
-
-        Returns:
-            None
-        """
-        fix_state_vars(self)
-
-    def initialization_routine(self):
-        pass
-
-
-@declare_process_block_class("LiCoStateBlock", block_class=_StateBlock)
-class LiCoStateBlock1Data(StateBlockData):
-    def build(self):
-        super().build()
-
-        self.flow_vol = pyo.Var(
-            units=pyo.units.m**3 / pyo.units.hour,
-            bounds=(1e-8, None),
-        )
-        self.conc_mass_solute = pyo.Var(
-            ["Li", "Co"],
-            units=pyo.units.kg / pyo.units.m**3,
-            bounds=(1e-8, None),
-        )
-
-    def get_material_flow_terms(self, p, j):
-        if j == "solvent":
-            # Assume constant density of pure water
-            return self.flow_vol * self.params.dens_H2O
-        else:
-            return self.flow_vol * self.conc_mass_solute[j]
-
-    def get_material_flow_basis(self):
-        return MaterialFlowBasis.mass
-
-    def define_state_vars(self):
-        return {
-            "flow_vol": self.flow_vol,
-            "conc_mass_solute": self.conc_mass_solute,
-        }
-
-
-@declare_process_block_class("LiCoParameters")
-class LiCoParameterData(PhysicalParameterBlock):
-    def build(self):
-        super().build()
-
-        self.phase1 = Phase()
-
-        self.solvent = Component()
-        self.Li = Component()
-        self.Co = Component()
-
-        self.dens_H2O = pyo.Param(
-            default=1000,
-            units=pyo.units.kg / pyo.units.m**3,
-        )
-
-        self._state_block_class = LiCoStateBlock
-
-    @classmethod
-    def define_metadata(cls, obj):
-        obj.add_default_units(
-            {
-                "time": pyo.units.hour,
-                "length": pyo.units.m,
-                "mass": pyo.units.kg,
-                "amount": pyo.units.mol,
-                "temperature": pyo.units.K,
-            }
-        )
-
+from prommis.nanofiltration.diafiltration_properties import LiCoParameters
 
 # Global constants
-Jw = 0.1 * pyo.units.m / pyo.units.hour
-w = 1.5 * pyo.units.m
-diafiltrate_inlet_pressure = 101325 * pyo.units.Pa
-diafiltrate_outlet_pressure = 145 * pyo.units.psi
-Q_feed = 100 * pyo.units.m**3 / pyo.units.h
-C_Li_feed = 1.7 * pyo.units.kg / pyo.units.m**3
-C_Co_feed = 17 * pyo.units.kg / pyo.units.m**3
-Q_diaf = 30 * pyo.units.m**3 / pyo.units.h
-C_Li_diaf = 0.1 * pyo.units.kg / pyo.units.m**3
-C_Co_diaf = 0.2 * pyo.units.kg / pyo.units.m**3
+Jw = 0.1 * units.m / units.hour
+w = 1.5 * units.m
+diafiltrate_inlet_pressure = 101325 * units.Pa
+diafiltrate_outlet_pressure = 145 * units.psi
+Q_feed = 100 * units.m**3 / units.h
+C_Li_feed = 1.7 * units.kg / units.m**3
+C_Co_feed = 17 * units.kg / units.m**3
+Q_diaf = 30 * units.m**3 / units.h
+C_Li_diaf = 0.1 * units.kg / units.m**3
+C_Co_diaf = 0.2 * units.kg / units.m**3
 
 
 def main():
     m = build_and_init_model()
-    assert degrees_of_freedom(m) == 0
+    if degrees_of_freedom(m) != 0:
+        raise ValueError(
+            "Degrees of freedom were not equal to zero after building model"
+        )
 
-    dt = DiagnosticsToolbox(m)
-    dt.report_structural_issues()
+    # dt = DiagnosticsToolbox(m)
+    # dt.report_structural_issues()
     # dt.display_components_with_inconsistent_units()
     # dt.display_potential_evaluation_errors()
-    dt.report_numerical_issues()
+    # dt.report_numerical_issues()
 
     add_costing(m)
-    assert degrees_of_freedom(m) == 0
+    if degrees_of_freedom(m) != 0:
+        raise ValueError(
+            "Degrees of freedom were not equal to zero after building cost block"
+        )
 
-    dt.report_structural_issues()
+    # dt.report_structural_issues()
     # dt.display_components_with_inconsistent_units()
     # dt.display_potential_evaluation_errors()
-    dt.report_numerical_issues()
+    # dt.report_numerical_issues()
 
     unfix_variables(m)
     add_constraints(m)
@@ -153,7 +93,7 @@ def main():
 
 
 def build_and_init_model():
-    m = pyo.ConcreteModel()
+    m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties = LiCoParameters()
     m.fs.stage1, m.fs.stage2, m.fs.stage3 = build_stages(m)
@@ -184,8 +124,7 @@ def build_stages(m):
             },
         },
     )
-
-    m.fs.stage1.length = pyo.Var(units=pyo.units.m)
+    m.fs.stage1.length = Var(units=units.m)
     m.fs.stage1.length.fix(10)
     m.fs.stage1.retentate_inlet.flow_vol[0].fix(Q_feed)
     m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].fix(C_Li_feed)
@@ -207,8 +146,7 @@ def build_stages(m):
             },
         },
     )
-
-    m.fs.stage2.length = pyo.Var(units=pyo.units.m)
+    m.fs.stage2.length = Var(units=units.m)
     m.fs.stage2.length.fix(10)
 
     m.fs.stage3 = MSContactor(
@@ -228,8 +166,7 @@ def build_stages(m):
             },
         },
     )
-
-    m.fs.stage3.length = pyo.Var(units=pyo.units.m)
+    m.fs.stage3.length = Var(units=units.m)
     m.fs.stage3.length.fix(10)
 
     return m.fs.stage1, m.fs.stage2, m.fs.stage3
@@ -243,7 +180,6 @@ def build_mixers(m):
         energy_mixing_type=MixingType.none,
         momentum_mixing_type=MomentumMixingType.none,
     )
-
     m.fs.mix2 = Mixer(
         num_inlets=2,
         property_package=m.fs.properties,
@@ -251,7 +187,6 @@ def build_mixers(m):
         energy_mixing_type=MixingType.none,
         momentum_mixing_type=MomentumMixingType.none,
     )
-
     return m.fs.mix1, m.fs.mix2
 
 
@@ -268,7 +203,6 @@ def add_streams(m):
         source=m.fs.stage2.retentate_outlet,
         destination=m.fs.stage1.retentate_inlet,
     )
-
     m.fs.stage1.retentate_inlet.flow_vol[0].unfix()
     m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].unfix()
     m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].unfix()
@@ -289,7 +223,6 @@ def add_streams(m):
         source=m.fs.stage3.retentate_outlet,
         destination=m.fs.mix1.inlet_1,
     )
-
     # Unfix Feed to Mixer 1 inlet 1
     m.fs.mix1.inlet_1.flow_vol[0].unfix()
     m.fs.mix1.inlet_1.conc_mass_solute[0, "Li"].unfix()
@@ -305,9 +238,10 @@ def add_streams(m):
     m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].fix(C_Li_feed)
     m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(C_Co_feed)
 
-    pyo.TransformationFactory("network.expand_arcs").apply_to(m)
+    TransformationFactory("network.expand_arcs").apply_to(m)
 
 
+# TODO: move these checks to test file
 def check_model(m):
     assert isinstance(
         m.fs.stage3, MSContactor
@@ -384,48 +318,16 @@ def initialize(m):
 
 
 def add_transport_constraints(m):
-    # Add mass transfer variables and constraints
-    m.fs.solutes = pyo.Set(initialize=["Li", "Co"])
+    m.fs.solutes = Set(initialize=["Li", "Co"])
 
-    m.fs.sieving_coefficient = pyo.Var(
+    m.fs.sieving_coefficient = Var(
         m.fs.solutes,
-        units=pyo.units.dimensionless,
+        units=units.dimensionless,
     )
     m.fs.sieving_coefficient["Li"].fix(1.3)
     m.fs.sieving_coefficient["Co"].fix(0.5)
 
-    solvent_rule, solute_rule, stage3_solute_rule = create_rules(m)
-
-    m.fs.stage1.solvent_flux = pyo.Constraint(
-        m.fs.stage1.elements,
-        rule=solvent_rule,
-    )
-    m.fs.stage1.solute_sieving = pyo.Constraint(
-        m.fs.stage1.elements,
-        m.fs.solutes,
-        rule=solute_rule,
-    )
-    m.fs.stage2.solvent_flux = pyo.Constraint(
-        m.fs.stage2.elements,
-        rule=solvent_rule,
-    )
-    m.fs.stage2.solute_sieving = pyo.Constraint(
-        m.fs.stage2.elements,
-        m.fs.solutes,
-        rule=solute_rule,
-    )
-    m.fs.stage3.solvent_flux = pyo.Constraint(
-        m.fs.stage3.elements,
-        rule=solvent_rule,
-    )
-    m.fs.stage3.solute_sieving = pyo.Constraint(
-        m.fs.stage3.elements,
-        m.fs.solutes,
-        rule=stage3_solute_rule,
-    )
-
-
-def create_rules(m):
+    # TODO: update to @blk.Constraint() format
     def solvent_rule(b, s):
         return (
             b.material_transfer_term[0, s, "permeate", "retentate", "solvent"]
@@ -439,11 +341,11 @@ def create_rules(m):
             sp = b.elements.prev(s)
             in_state = b.retentate[0, sp]
 
-        return pyo.log(b.retentate[0, s].conc_mass_solute[j]) + (
+        return log(b.retentate[0, s].conc_mass_solute[j]) + (
             m.fs.sieving_coefficient[j] - 1
-        ) * pyo.log(in_state.flow_vol) == pyo.log(in_state.conc_mass_solute[j]) + (
+        ) * log(in_state.flow_vol) == log(in_state.conc_mass_solute[j]) + (
             m.fs.sieving_coefficient[j] - 1
-        ) * pyo.log(
+        ) * log(
             b.retentate[0, s].flow_vol
         )
 
@@ -467,24 +369,48 @@ def create_rules(m):
             q_in = b.retentate[0, sp].flow_vol
             c_in = b.retentate[0, sp].conc_mass_solute[j]
 
-        return pyo.log(b.retentate[0, s].conc_mass_solute[j]) + (
+        return log(b.retentate[0, s].conc_mass_solute[j]) + (
             m.fs.sieving_coefficient[j] - 1
-        ) * pyo.log(q_in) == pyo.log(c_in) + (
-            m.fs.sieving_coefficient[j] - 1
-        ) * pyo.log(
+        ) * log(q_in) == log(c_in) + (m.fs.sieving_coefficient[j] - 1) * log(
             b.retentate[0, s].flow_vol
         )
 
-    return (solvent_rule, solute_rule, stage3_solute_rule)
+    m.fs.stage1.solvent_flux = Constraint(
+        m.fs.stage1.elements,
+        rule=solvent_rule,
+    )
+    m.fs.stage1.solute_sieving = Constraint(
+        m.fs.stage1.elements,
+        m.fs.solutes,
+        rule=solute_rule,
+    )
+    m.fs.stage2.solvent_flux = Constraint(
+        m.fs.stage2.elements,
+        rule=solvent_rule,
+    )
+    m.fs.stage2.solute_sieving = Constraint(
+        m.fs.stage2.elements,
+        m.fs.solutes,
+        rule=solute_rule,
+    )
+    m.fs.stage3.solvent_flux = Constraint(
+        m.fs.stage3.elements,
+        rule=solvent_rule,
+    )
+    m.fs.stage3.solute_sieving = Constraint(
+        m.fs.stage3.elements,
+        m.fs.solutes,
+        rule=stage3_solute_rule,
+    )
 
 
 def solve_model(m):
-    solver = pyo.SolverFactory("ipopt")
+    solver = get_solver()
     solver.solve(m, tee=True)
 
 
 def add_expressions(m):
-    m.Li_recovery = pyo.Expression(
+    m.Li_recovery = Expression(
         expr=m.fs.stage3.permeate_outlet.flow_vol[0]
         * m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]
         / (
@@ -493,8 +419,7 @@ def add_expressions(m):
             * m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"]
         )
     )
-
-    m.Li_purity = pyo.Expression(
+    m.Li_purity = Expression(
         expr=m.fs.stage3.permeate_outlet.flow_vol[0]
         * m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]
         / (
@@ -508,8 +433,7 @@ def add_expressions(m):
             )
         )
     )
-
-    m.Co_recovery = pyo.Expression(
+    m.Co_recovery = Expression(
         expr=m.fs.stage1.retentate_outlet.flow_vol[0]
         * m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"]
         / (
@@ -518,8 +442,7 @@ def add_expressions(m):
             * m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"]
         )
     )
-
-    m.Co_purity = pyo.Expression(
+    m.Co_purity = Expression(
         expr=m.fs.stage1.retentate_outlet.flow_vol[0]
         * m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"]
         / (
@@ -536,43 +459,36 @@ def add_expressions(m):
 
 
 def get_expression_values(m):
-    R_Li = round(pyo.value(m.Li_recovery) * 100, 2)
-    R_Co = round(pyo.value(m.Co_recovery) * 100, 2)
+    R_Li = round(value(m.Li_recovery) * 100, 2)
+    R_Co = round(value(m.Co_recovery) * 100, 2)
 
-    P_Li = round(pyo.value(m.Li_purity) * 100, 2)
-    P_Co = round(pyo.value(m.Co_purity) * 100, 2)
+    P_Li = round(value(m.Li_purity) * 100, 2)
+    P_Co = round(value(m.Co_purity) * 100, 2)
 
     return R_Li, R_Co, P_Li, P_Co
 
 
 def get_model_values(m):
     membrane_length = (
-        pyo.value(m.fs.stage1.length)
-        + pyo.value(m.fs.stage2.length)
-        + pyo.value(m.fs.stage3.length)
-    ) * pyo.units.m
+        value(m.fs.stage1.length)
+        + value(m.fs.stage2.length)
+        + value(m.fs.stage3.length)
+    ) * units.m
 
     # the feed is the stream entering stage 3 in the last element
     feed_flow_rate = (
-        pyo.value(m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol)
-        * pyo.units.m**3
-        / pyo.units.hr
+        value(m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol)
+        * units.m**3
+        / units.hr
     )
-
     # the diafiltrate is the stream entering stage 3 in the first element
     diafiltrate_flow_rate = (
-        pyo.value(m.fs.stage3.retentate_inlet.flow_vol[0])
-        * pyo.units.m**3
-        / pyo.units.hr
+        value(m.fs.stage3.retentate_inlet.flow_vol[0]) * units.m**3 / units.hr
     )
-
     # the permeate is the stream exiting stage 3 in the last element
     permeate_flow_rate = (
-        pyo.value(m.fs.stage3.permeate_outlet.flow_vol[0])
-        * pyo.units.m**3
-        / pyo.units.hr
+        value(m.fs.stage3.permeate_outlet.flow_vol[0]) * units.m**3 / units.hr
     )
-
     return membrane_length, feed_flow_rate, diafiltrate_flow_rate, permeate_flow_rate
 
 
@@ -606,7 +522,6 @@ def add_costing(
             "vol_flow_perm": permeate_flow_rate,
         },
     )
-
     m.fs.pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_pump,
@@ -626,8 +541,8 @@ def unfix_variables(m):
 
 
 def add_constraints(m):
-    m.Co_recovery_constraint = pyo.Constraint(expr=m.Co_recovery >= 0.4)
-    m.Li_recovery_constraint = pyo.Constraint(expr=m.Li_recovery >= 0.95)
+    m.Co_recovery_constraint = Constraint(expr=m.Co_recovery >= 0.4)
+    m.Li_recovery_constraint = Constraint(expr=m.Li_recovery >= 0.95)
 
     # m.Li_purity_constraint = pyo.Constraint(expr=m.Li_purity >= 0.8)
     # m.Co_purity_constraint = pyo.Constraint(expr=m.Co_purity >= 0.5)
@@ -637,9 +552,10 @@ def add_objective(m):
     def cost_obj(m):
         return m.fs.costing.total_annualized_cost
 
-    m.cost_objecticve = pyo.Objective(rule=cost_obj)
+    m.cost_objecticve = Objective(rule=cost_obj)
 
 
+# TODO: update functionality to specify ann output stream
 def print_information(m):
     R_Li, R_Co, P_Li, P_Co = get_expression_values(m)
 
@@ -647,25 +563,25 @@ def print_information(m):
     print(f"The cobalt recovery is {R_Co}% at purity {P_Co}")
 
     print("\nmembrane area")
-    print(f"{pyo.value(m.fs.membrane.costing.membrane_area)} m2")
+    print(f"{value(m.fs.membrane.costing.membrane_area)} m2")
 
     print("\nmembrane capital cost")
-    print(f"${pyo.value(m.fs.membrane.costing.capital_cost)}")
+    print(f"${value(m.fs.membrane.costing.capital_cost)}")
 
     print("\npump capital cost")
-    print(f"${pyo.value(m.fs.pump.costing.capital_cost)}")
+    print(f"${value(m.fs.pump.costing.capital_cost)}")
 
     print("\naggregate capital cost")
-    print(f"${pyo.value(m.fs.costing.aggregate_capital_cost)}")
+    print(f"${value(m.fs.costing.aggregate_capital_cost)}")
 
     print("\ntotal capital cost")
-    print(f"${pyo.value(m.fs.costing.total_capital_cost)}")
+    print(f"${value(m.fs.costing.total_capital_cost)}")
 
     print("\ntotal operating cost")
-    print(f"${pyo.value(m.fs.costing.total_operating_cost)}")
+    print(f"${value(m.fs.costing.total_operating_cost)}")
 
     print("\ntotal annualized cost")
-    print(f"${pyo.value(m.fs.costing.total_annualized_cost)}")
+    print(f"${value(m.fs.costing.total_annualized_cost)}")
 
 
 if __name__ == "__main__":

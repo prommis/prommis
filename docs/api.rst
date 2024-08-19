@@ -72,3 +72,15 @@ Flowsheets
    :template: autosummary/module-with-contents.rst
 
    prommis.uky.uky_flowsheet
+
+Nanofiltration
+--------
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: autosummary/module-with-contents.rst
+
+   prommit.nanofiltration.diafiltration_properties
+   prommit.nanofiltration.diafiltration
+   prommis.nanofiltration.nf_brine_plot
+   prommis.nanofiltration.nf_brine

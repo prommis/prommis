@@ -1,11 +1,17 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """
 Class to build the costing model for diafiltration-precipitation flowsheet
-
-Reference: watertap > watertap > costing > costing_base.py
 """
 
-from idaes.core import FlowsheetCostingBlockData, declare_process_block_class
 from pyomo.environ import Expression, Var, units
+
+from idaes.core import FlowsheetCostingBlockData, declare_process_block_class
+
 from watertap.core.util.misc import is_constant_up_to_units
 
 

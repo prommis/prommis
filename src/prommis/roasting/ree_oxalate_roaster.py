@@ -135,6 +135,7 @@ import idaes.logger as idaeslog
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.solvers import get_solver
 from idaes.core.util.config import DefaultBool, is_physical_parameter_block
+from idaes.core.util.tables import create_stream_table_dataframe
 
 __author__ = "Jinliang Ma"
 __version__ = "1.0.0"
@@ -305,6 +306,9 @@ constructed,
     def build(self):
         # Call TranslatorData build to setup dynamics
         super(REEOxalateRoasterData, self).build()
+
+        # Attributed for storing contents of reporting output
+        self._stream_table_dict = {}
 
         # Build Holdup Block
         # gas phase inlet stream
@@ -915,3 +919,16 @@ constructed,
                     self.heat_duty[t], default=1e-6, warning=True
                 )
                 iscale.constraint_scaling_transform(c, sf, overwrite=False)
+
+    def _get_stream_table_contents(self, time_point=0):
+        return create_stream_table_dataframe(
+            self._stream_table_dict, time_point=time_point
+        )
+
+    def _get_performance_contents(self, time_point=0):
+        exprs = {}
+
+        for j in self.config.metal_list:
+            exprs[f"Product {j} Mass Fraction"] = self.mass_frac_comp_product[time_point, j]
+
+        return {"exprs": exprs}

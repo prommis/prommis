@@ -1902,7 +1902,7 @@ def display_results(m):
     Args:
         m: pyomo model
     """
-    m.fs.roaster.display()
+    m.fs.roaster.report()
 
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),

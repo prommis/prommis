@@ -929,6 +929,8 @@ constructed,
         exprs = {}
 
         for j in self.config.metal_list:
-            exprs[f"Product {j} Mass Fraction"] = self.mass_frac_comp_product[time_point, j]
+            exprs[f"Product {j} Mass Fraction"] = self.mass_frac_comp_product[
+                time_point, j
+            ]
 
         return {"exprs": exprs}

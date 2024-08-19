@@ -17,6 +17,7 @@ from pyomo.environ import ConcreteModel, SolverFactory
 import numpy as np
 
 from idaes.core import FlowDirection, FlowsheetBlock
+from idaes.core.util import to_json
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
@@ -25,7 +26,6 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 
-from idaes.core.util import to_json
 
 """
 Method of building a solvent extraction model with a specified number of stages

@@ -8,16 +8,14 @@ from pyomo.environ import (
 )
 
 from idaes.core.util import DiagnosticsToolbox
-
 from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )
+from idaes.core import FlowDirection, FlowsheetBlock
 
 import pytest
 
 import numpy as np
-
-from idaes.core import FlowDirection, FlowsheetBlock
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters

@@ -3230,7 +3230,7 @@ def add_costing(m):
 
     # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
     m.fs.costing.other_plant_costs.unfix()
-    m.fs.costing.other_plant_costs_rule = Constraint(
+    m.fs.costing.other_plant_costs_eq = Constraint(
         expr=(
             m.fs.costing.other_plant_costs
             == units.convert(

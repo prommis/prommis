@@ -2309,6 +2309,22 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
             )
 
+        # sum of variable operating costs of watertap units
+        @b.Constraint()
+        def sum_watertap_variable_costs(c):
+            if not hasattr(c, "watertap_variable_costs_list"):
+                return c.watertap_variable_costs == 0
+            else:
+                return c.watertap_variable_costs == sum(b.watertap_variable_costs_list)
+
+        # sum of variable operating costs of custom units
+        @b.Constraint()
+        def sum_custom_variable_costs(c):
+            if not hasattr(c, "custom_variable_costs_list"):
+                return c.custom_variable_costs == 0
+            else:
+                return c.custom_variable_costs == sum(b.custom_variable_costs_list)
+
         if hasattr(b, "total_fixed_OM_cost"):
             # define overhead cost
             # plant overhead, 20% of direct costs - fixed OM, power, water, lease/land, chemicals, waste
@@ -2336,6 +2352,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                     + c.additional_chemicals_cost / pyunits.year
                     + c.additional_waste_cost / pyunits.year
+                    + c.watertap_variable_costs
+                    + c.custom_variable_costs
                 )
 
         else:
@@ -2354,23 +2372,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                     + c.additional_chemicals_cost / pyunits.year
                     + c.additional_waste_cost / pyunits.year
+                    + c.watertap_variable_costs
+                    + c.custom_variable_costs
                 )
-
-        # sum of variable operating costs of watertap units
-        @b.Constraint()
-        def sum_watertap_variable_costs(c):
-            if not hasattr(c, "watertap_variable_costs_list"):
-                return c.watertap_variable_costs == 0
-            else:
-                return c.watertap_variable_costs == sum(b.watertap_variable_costs_list)
-
-        # sum of variable operating costs of custom units
-        @b.Constraint()
-        def sum_custom_variable_costs(c):
-            if not hasattr(c, "custom_variable_costs_list"):
-                return c.custom_variable_costs == 0
-            else:
-                return c.custom_variable_costs == sum(b.custom_variable_costs_list)
 
         @b.Constraint(b.parent_block().time)
         def total_variable_cost_eq(c, t):

@@ -2018,7 +2018,7 @@ class TestWaterTAPCosting(object):
         )
 
         assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-            533.42952, rel=1e-4
+            533.51170, rel=1e-4
         )
 
 
@@ -2357,7 +2357,7 @@ class TestCustomCosting(object):
         )
 
         assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-            537.04332, rel=1e-4
+            537.87082, rel=1e-4
         )
 
 

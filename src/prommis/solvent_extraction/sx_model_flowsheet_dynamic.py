@@ -129,7 +129,7 @@ from_json(m, fname="solvent_extraction.json")
 
 
 def copy_first_steady_state(m):
-    # Function that propogates initial steady state guess to future time points
+    # Function that propagates initial steady state guess to future time points
     # regular_vars
     regular_vars, time_vars = flatten_dae_components(m, m.fs.time, Var, active=True)
     # Copy initial conditions forward

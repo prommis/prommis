@@ -9,8 +9,8 @@
 /LICENSE.md @ksbeattie
 /copyright_header.txt @ksbeattie
 
-/docs/
-/README.md
+/docs/ @agarciadiego @lbianchi-lbl
+/README.md @agarciadiego @lbianchi-lbl
 
 /src/prommis/_sphinx_extensions/ @lbianchi-lbl
 /src/prommis/_testing_utils/ @lbianchi-lbl

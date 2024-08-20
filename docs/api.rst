@@ -80,7 +80,7 @@ Nanofiltration
    :toctree: _autosummary
    :template: autosummary/module-with-contents.rst
 
-   prommit.nanofiltration.diafiltration_properties
-   prommit.nanofiltration.diafiltration
+   prommis.nanofiltration.diafiltration_properties
+   prommis.nanofiltration.diafiltration
    prommis.nanofiltration.nf_brine_plot
    prommis.nanofiltration.nf_brine

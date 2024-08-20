@@ -86,7 +86,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         self,
     ):
         """
-        Builds the process-wide cositng
+        Builds the process-wide costing
         Using the same method as the reference file
 
         Arguments:
@@ -196,7 +196,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         capital cost assumes a constant cost per (total) area of $50/m2.
             Reference: https://doi.org/10.1016/j.ijggc.2019.03.018
             TODO: Update this price value for typical NF. This value is for CO2 (RO?) membranes
-        opereating costs assumes all membranes get replaced every 5 years (20% replaced every year)
+        operating costs assumes all membranes get replaced every 5 years (20% replaced every year)
         """
 
         blk.factor_membrane_replacement = Param(

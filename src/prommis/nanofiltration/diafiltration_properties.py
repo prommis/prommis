@@ -23,18 +23,23 @@ from idaes.core.util.initialization import fix_state_vars
 
 
 class _StateBlock(StateBlock):
+    """
+    Base class for state block
+    """
+
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
-
-        Returns:
-            None
         """
         fix_state_vars(self)
 
 
 @declare_process_block_class("LiCoStateBlock", block_class=_StateBlock)
 class LiCoStateBlock1Data(StateBlockData):
+    """
+    State block for the lithium cobalt property package
+    """
+
     def build(self):
         super().build()
 
@@ -67,6 +72,10 @@ class LiCoStateBlock1Data(StateBlockData):
 
 @declare_process_block_class("LiCoParameters")
 class LiCoParameterData(PhysicalParameterBlock):
+    """
+    Parameter block for the lithium cobalt property package
+    """
+
     def build(self):
         super().build()
 

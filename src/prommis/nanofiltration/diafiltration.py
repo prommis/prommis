@@ -5,7 +5,8 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Diafiltration cascade flowsheet for separating lithium and cobalt.
+Diafiltration cascade flowsheet for separating lithium and cobalt. Serves as an example of
+custom cost model.
 """
 
 from pyomo.environ import (
@@ -61,14 +62,17 @@ C_Co_diaf = 0.2 * units.kg / units.m**3
 
 
 def main():
+    """
+    Builds and solves the diafiltration flowsheet with cost
+    """
     m = build_and_init_model()
     if degrees_of_freedom(m) != 0:
         raise ValueError(
             "Degrees of freedom were not equal to zero after building model"
         )
 
-    # dt = DiagnosticsToolbox(m)
-    # dt.report_structural_issues()
+    dt = DiagnosticsToolbox(m)
+    dt.report_structural_issues()
     # dt.display_components_with_inconsistent_units()
     # dt.display_potential_evaluation_errors()
     # dt.report_numerical_issues()
@@ -79,9 +83,6 @@ def main():
             "Degrees of freedom were not equal to zero after building cost block"
         )
 
-    # dt.report_structural_issues()
-    # dt.display_components_with_inconsistent_units()
-    # dt.display_potential_evaluation_errors()
     # dt.report_numerical_issues()
 
     unfix_variables(m)
@@ -93,6 +94,12 @@ def main():
 
 
 def build_and_init_model():
+    """
+    Builds the diafiltration flowsheet
+
+    Returns:
+        m: Pyomo model
+    """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties = LiCoParameters()
@@ -108,6 +115,17 @@ def build_and_init_model():
 
 
 def build_stages(m):
+    """
+    Defines the cascade stages as individual unit model blocks
+
+    Args:
+        m: Pyomo model
+
+    Returns:
+        m.fs.stage1: first membrane stage
+        m.fs.stage2: second membrane stage
+        m.fs.stage3: third membrane stage
+    """
     m.fs.stage1 = MSContactor(
         number_of_finite_elements=10,
         streams={
@@ -173,6 +191,16 @@ def build_stages(m):
 
 
 def build_mixers(m):
+    """
+    Defines the mixers
+
+    Args:
+        m: Pyomo model
+
+    Returns:
+        m.fs.mix1: mixer for stage 1 permeate and recycle into stage 2
+        m.fs.mix2: mixer for stage 2 permeate and diafiltrate ito stage 3
+    """
     m.fs.mix1 = Mixer(
         num_inlets=2,
         property_package=m.fs.properties,
@@ -191,6 +219,12 @@ def build_mixers(m):
 
 
 def add_streams(m):
+    """
+    Defines and connects streams in the flowsheet
+
+    Args:
+        m: Pyomo model
+    """
     m.fs.stream1 = Arc(
         source=m.fs.stage1.permeate_outlet,
         destination=m.fs.mix1.inlet_2,
@@ -279,6 +313,12 @@ def check_model(m):
 
 
 def initialize(m):
+    """
+    Method to initialize the diafiltration flowhseet
+
+    Args:
+        m: Pyomo model
+    """
     initializer = MSContactorInitializer()
     initializer.initialize(m.fs.stage1)
 
@@ -318,6 +358,12 @@ def initialize(m):
 
 
 def add_transport_constraints(m):
+    """
+    Method to add the sieving coefficient mass balance constraints and solvent flux constraints to each stage
+
+    Args:
+        m: Pyomo model
+    """
     m.fs.solutes = Set(initialize=["Li", "Co"])
 
     m.fs.sieving_coefficient = Var(
@@ -405,11 +451,23 @@ def add_transport_constraints(m):
 
 
 def solve_model(m):
+    """
+    Method to solve the diafiltration flowsheet
+
+    Args:
+        m: Pyomo model
+    """
     solver = get_solver()
     solver.solve(m, tee=True)
 
 
 def add_expressions(m):
+    """
+    Method to add recovery and purity expressions for lithium and cobalt to the flowsheet
+
+    Args:
+        m: Pyomo model
+    """
     m.Li_recovery = Expression(
         expr=m.fs.stage3.permeate_outlet.flow_vol[0]
         * m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]
@@ -459,6 +517,18 @@ def add_expressions(m):
 
 
 def get_expression_values(m):
+    """
+    Method to extract the values of the lithium and cobalt recovery and purity from the flowsheet
+
+    Args:
+        m: Pyomo model
+
+    Returns:
+        R_Li: lithium recovery (in lithium product stream) (%)
+        R_Co: cobalt recovery (in cobalt product stream) (%)
+        P_Li: lithium purity (in lithium product stream) (%)
+        P_Co:cobalt purity (in cobalt product stream) (%)
+    """
     R_Li = round(value(m.Li_recovery) * 100, 2)
     R_Co = round(value(m.Co_recovery) * 100, 2)
 
@@ -469,6 +539,18 @@ def get_expression_values(m):
 
 
 def get_model_values(m):
+    """
+    Method to extract values of relevant model variables
+
+    Args:
+        m: Pyomo model
+
+    Returns:
+        membrane_length: total membrane length in the cascade (m)
+        feed_flow_rate: flow rate of cascade feed stream (m3/h)
+        diafiltrate_flow_rate: flow rate of cascade diafiltrate stream (m3/h)
+        permeate_flow_rate: flow rate of cascade permeate stream (m3/h)
+    """
     membrane_length = (
         value(m.fs.stage1.length)
         + value(m.fs.stage2.length)
@@ -499,6 +581,16 @@ def add_costing(
     inlet_pressure=diafiltrate_inlet_pressure,
     outlet_pressure=diafiltrate_outlet_pressure,
 ):
+    """
+    Method to add costing block to the flowsheet
+
+    Args:
+        m: Pyomo model
+        membrane_width: width of membranes in cascade (tube length) (m)
+        water_flux: flux of water across the membrane (m/h)
+        inlet_pressure: inlet pressure of the diafiltrate to pump (Pa)
+        outlet_pressure: outlet pressure of difiltrate from pump (psi)
+    """
     (
         membrane_length,
         feed_flow_rate,
@@ -535,12 +627,24 @@ def add_costing(
 
 
 def unfix_variables(m):
+    """
+    Method to unfix variables for performing optimization with DOF>0
+
+    Args:
+        m: Pyomo model
+    """
     m.fs.stage1.length.unfix()
     m.fs.stage2.length.unfix()
     m.fs.stage3.length.unfix()
 
 
 def add_constraints(m):
+    """
+    Method to add recovery/purity constraints to the flowsheet for performing optimization
+
+    Args:
+        m: Pyomo model
+    """
     m.Co_recovery_constraint = Constraint(expr=m.Co_recovery >= 0.4)
     m.Li_recovery_constraint = Constraint(expr=m.Li_recovery >= 0.95)
 
@@ -549,6 +653,13 @@ def add_constraints(m):
 
 
 def add_objective(m):
+    """
+    Method to add cost objective to flowsheet for performing optimization
+
+    Args:
+        m: Pyomo model
+    """
+
     def cost_obj(m):
         return m.fs.costing.total_annualized_cost
 
@@ -557,6 +668,12 @@ def add_objective(m):
 
 # TODO: update functionality to specify ann output stream
 def print_information(m):
+    """
+    Prints relevant information after solving the model
+
+    Args:
+        m: Pyomo model
+    """
     R_Li, R_Co, P_Li, P_Co = get_expression_values(m)
 
     print(f"The lithium recovery is {R_Li}% at purity {P_Li}")

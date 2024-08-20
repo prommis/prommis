@@ -24,7 +24,7 @@ from prommis.nanofiltration.costing.diafiltration_cost_block import (
 @declare_process_block_class("DiafiltrationCosting")
 class DiafiltrationCostingData(DiafiltrationCostingBlockData):
     """
-    Simplified costing block for the diafiltration flowsheet
+    Costing block for the diafiltration flowsheet
     """
 
     def build_global_params(self):

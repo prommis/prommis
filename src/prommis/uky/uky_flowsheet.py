@@ -245,9 +245,9 @@ def main():
     results = scaling.propagate_solution(scaled_model, m)
 
     display_results(m)
-    #
-    # add_costing(m)
-    # display_costing(m)
+
+    add_costing(m)
+    display_costing(m)
 
     return m, results
 

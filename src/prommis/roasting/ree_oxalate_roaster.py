@@ -22,14 +22,14 @@ one of the 18 rare earth elements and x is the number of water molecules associa
 gangue oxalate hydrates considered in the model are :ce:`Fe2(C2O4)3 \\cdot 2H2O`, :ce:`Al2(C2O4)3 \\cdot H2O`, and
 :ce:`CaC2O4 \\cdot H2O`, for `Fe`, `Al`, and `Ca` elements, respectively.
 
-The feed stream contain surface moisture. The amount of surface moisture entering the reactor is specified by
+The feed stream contains surface moisture. The amount of surface moisture entering the reactor is specified by
 a liquid inlet that contains a fraction of the liquid outlet of the precipitator.
 
 
 Physical Changes
 ----------------
 
-Moisture in the solid feed stream from liquid inlet is vaporized.
+Moisture in the solid feed stream from the liquid inlet is vaporized.
 
 
 Reactions
@@ -75,11 +75,11 @@ The gas phase properties are calculated based on user configured property packag
 Mass Balance
 ------------
 
-The content of the surface moisture specified by the liquid inlet stream is vaporized to enter the gas phase.
-The other species in the liquid solution including metal emelents in the liquid inlet stream is ignored.
+The content of the surface moisture specified by the liquid inlet stream is vaporized and enters the gas phase.
+The other species in the liquid solution, including metal elements in the liquid inlet stream, are ignored.
 
 The species mass balance is based on complete conversion of solid reactants such that the molar flow rates of
-individual metals (rare earth and gaugue elements) are conserved. For the species in the gas phase, the :ce:`O2`
+individual metals (rare earth and gangue elements) are conserved. For the species in the gas phase, the :ce:`O2`
 is consumed while :ce:`CO2` and :ce:`H2O` are produced. For any other species in the gas feed stream that does not
 participate in any reactions, its molar flow rate in the gas product stream is the same as that in the
 inlet stream. Note that the user needs to make sure that the gas feed stream contains enough :ce:`O2` to avoid

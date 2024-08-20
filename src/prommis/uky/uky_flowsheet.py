@@ -245,9 +245,9 @@ def main():
     results = scaling.propagate_solution(scaled_model, m)
 
     display_results(m)
-
-    add_costing(m)
-    display_costing(m)
+    #
+    # add_costing(m)
+    # display_costing(m)
 
     return m, results
 
@@ -471,15 +471,6 @@ def build():
 
     # --------------------------------------------------------------------------------------------------------------
     # Precipitation property and unit models
-
-    key_components = {
-        "H^+",
-        "Ce^3+",
-        "Al^3+",
-        "Fe^3+",
-        "Ca^2+",
-        "C2O4^2-",
-    }
 
     m.fs.properties_aq = AqueousParameter()
     m.fs.properties_solid = PrecipitateParameters()

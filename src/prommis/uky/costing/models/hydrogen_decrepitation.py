@@ -169,6 +169,9 @@ class REEEquipmentCostingData(FlowsheetCostingBlockData):
                         and project management.
         """
 
+        if sample_mass is None and sample_volume is None:
+            raise TypeError("Sample volume and/or sample mass is required")
+
         blk.furnace_chamber_volume = Var(
             initialize=0.0164,
             units=units.m**3,

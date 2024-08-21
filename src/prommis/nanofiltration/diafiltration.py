@@ -11,7 +11,6 @@ custom cost model.
 
 from pyomo.environ import (
     ConcreteModel,
-    Constraint,
     Expression,
     Objective,
     Set,

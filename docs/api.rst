@@ -74,7 +74,7 @@ Flowsheets
    prommis.uky.uky_flowsheet
 
 Nanofiltration
---------
+--------------
 
 .. autosummary::
    :toctree: _autosummary

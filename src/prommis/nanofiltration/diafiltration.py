@@ -65,7 +65,8 @@ def main():
     """
     Builds and solves the diafiltration flowsheet with cost
     """
-    m = build_and_init_model()
+    m = build_model()
+    initialize_model(m)
     if degrees_of_freedom(m) != 0:
         raise ValueError(
             "Degrees of freedom were not equal to zero after building model"
@@ -73,9 +74,6 @@ def main():
 
     dt = DiagnosticsToolbox(m)
     dt.report_structural_issues()
-    # dt.display_components_with_inconsistent_units()
-    # dt.display_potential_evaluation_errors()
-    # dt.report_numerical_issues()
 
     add_costing(m)
     if degrees_of_freedom(m) != 0:
@@ -83,17 +81,17 @@ def main():
             "Degrees of freedom were not equal to zero after building cost block"
         )
 
-    # dt.report_numerical_issues()
+    dt.report_numerical_issues()
 
-    unfix_variables(m)
-    add_constraints(m)
+    unfix_opt_variables(m)
+    add_product_constraints(m)
     add_objective(m)
     print(f"DOF = {degrees_of_freedom(m)}")
     solve_model(m)
     print_information(m)
 
 
-def build_and_init_model():
+def build_model():
     """
     Builds the diafiltration flowsheet
 
@@ -101,22 +99,31 @@ def build_and_init_model():
         m: Pyomo model
     """
     m = ConcreteModel()
+
     m.fs = FlowsheetBlock(dynamic=False)
+
     m.fs.properties = LiCoParameters()
-    m.fs.stage1, m.fs.stage2, m.fs.stage3 = build_stages(m)
-    m.fs.mix1, m.fs.mix2 = build_mixers(m)
+    m.fs.solutes = Set(initialize=["Li", "Co"])
+    m.fs.sieving_coefficient = Var(
+        m.fs.solutes,
+        units=units.dimensionless,
+    )
+    m.fs.sieving_coefficient["Li"].fix(1.3)
+    m.fs.sieving_coefficient["Co"].fix(0.5)
+
+    m.fs.stage1, m.fs.stage2, m.fs.stage3, m.fs.mix1, m.fs.mix2 = build_unit_models(m)
+
     add_streams(m)
+    fix_values(m)
     check_model(m)
-    add_transport_constraints(m)
-    initialize(m)
-    assert degrees_of_freedom(m) == 0
-    add_expressions(m)
+    add_useful_expressions(m)  # adds recovery, purity, and membrane length expressions
+
     return m
 
 
-def build_stages(m):
+def build_unit_models(m):
     """
-    Defines the cascade stages as individual unit model blocks
+    Adds the membrane stages and mixers to the flowsheet
 
     Args:
         m: Pyomo model
@@ -125,6 +132,8 @@ def build_stages(m):
         m.fs.stage1: first membrane stage
         m.fs.stage2: second membrane stage
         m.fs.stage3: third membrane stage
+        m.fs.mix1: mixer for stage 1 permeate and recycle into stage 2
+        m.fs.mix2: mixer for stage 2 permeate and diafiltrate ito stage 3
     """
     m.fs.stage1 = MSContactor(
         number_of_finite_elements=10,
@@ -143,10 +152,8 @@ def build_stages(m):
         },
     )
     m.fs.stage1.length = Var(units=units.m)
-    m.fs.stage1.length.fix(10)
-    m.fs.stage1.retentate_inlet.flow_vol[0].fix(Q_feed)
-    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].fix(C_Li_feed)
-    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].fix(C_Co_feed)
+    m.fs.stage1.length.fix(10)  # initialize
+    add_stage1_constraints(blk=m.fs.stage1, model=m)
 
     m.fs.stage2 = MSContactor(
         number_of_finite_elements=10,
@@ -165,7 +172,8 @@ def build_stages(m):
         },
     )
     m.fs.stage2.length = Var(units=units.m)
-    m.fs.stage2.length.fix(10)
+    m.fs.stage2.length.fix(10)  # initialize
+    add_stage2_constraints(blk=m.fs.stage2, model=m)
 
     m.fs.stage3 = MSContactor(
         number_of_finite_elements=10,
@@ -185,22 +193,9 @@ def build_stages(m):
         },
     )
     m.fs.stage3.length = Var(units=units.m)
-    m.fs.stage3.length.fix(10)
+    m.fs.stage3.length.fix(10)  # initialize
+    add_stage3_constraints(blk=m.fs.stage3, model=m)
 
-    return m.fs.stage1, m.fs.stage2, m.fs.stage3
-
-
-def build_mixers(m):
-    """
-    Defines the mixers
-
-    Args:
-        m: Pyomo model
-
-    Returns:
-        m.fs.mix1: mixer for stage 1 permeate and recycle into stage 2
-        m.fs.mix2: mixer for stage 2 permeate and diafiltrate ito stage 3
-    """
     m.fs.mix1 = Mixer(
         num_inlets=2,
         property_package=m.fs.properties,
@@ -215,7 +210,93 @@ def build_mixers(m):
         energy_mixing_type=MixingType.none,
         momentum_mixing_type=MomentumMixingType.none,
     )
-    return m.fs.mix1, m.fs.mix2
+    return m.fs.stage1, m.fs.stage2, m.fs.stage3, m.fs.mix1, m.fs.mix2
+
+
+def add_stage1_constraints(blk, model):
+    @blk.Constraint(blk.elements)
+    def stage_1_solvent_flux(blk, s):
+        return (
+            blk.material_transfer_term[0, s, "permeate", "retentate", "solvent"]
+            == Jw * blk.length * w * model.fs.properties.dens_H2O / 10
+        )
+
+    @blk.Constraint(blk.elements, model.fs.solutes)
+    def stage_1_solute_sieving(blk, s, j):
+        if s == 1:
+            in_state = blk.retentate_inlet_state[0]
+        else:
+            sp = blk.elements.prev(s)
+            in_state = blk.retentate[0, sp]
+
+        return log(blk.retentate[0, s].conc_mass_solute[j]) + (
+            model.fs.sieving_coefficient[j] - 1
+        ) * log(in_state.flow_vol) == log(in_state.conc_mass_solute[j]) + (
+            model.fs.sieving_coefficient[j] - 1
+        ) * log(
+            blk.retentate[0, s].flow_vol
+        )
+
+
+def add_stage2_constraints(blk, model):
+    @blk.Constraint(blk.elements)
+    def stage_2_solvent_flux(blk, s):
+        return (
+            blk.material_transfer_term[0, s, "permeate", "retentate", "solvent"]
+            == Jw * blk.length * w * model.fs.properties.dens_H2O / 10
+        )
+
+    @blk.Constraint(blk.elements, model.fs.solutes)
+    def stage_2_solute_sieving(blk, s, j):
+        if s == 1:
+            in_state = blk.retentate_inlet_state[0]
+        else:
+            sp = blk.elements.prev(s)
+            in_state = blk.retentate[0, sp]
+
+        return log(blk.retentate[0, s].conc_mass_solute[j]) + (
+            model.fs.sieving_coefficient[j] - 1
+        ) * log(in_state.flow_vol) == log(in_state.conc_mass_solute[j]) + (
+            model.fs.sieving_coefficient[j] - 1
+        ) * log(
+            blk.retentate[0, s].flow_vol
+        )
+
+
+def add_stage3_constraints(blk, model):
+    @blk.Constraint(blk.elements)
+    def stage_3_solvent_flux(blk, s):
+        return (
+            blk.material_transfer_term[0, s, "permeate", "retentate", "solvent"]
+            == Jw * blk.length * w * model.fs.properties.dens_H2O / 10
+        )
+
+    @blk.Constraint(blk.elements, model.fs.solutes)
+    def stage_3_solute_sieving(blk, s, j):
+        if s == 1:
+            q_in = blk.retentate_inlet_state[0].flow_vol
+            c_in = blk.retentate_inlet_state[0].conc_mass_solute[j]
+        elif s == 10:
+            sp = blk.elements.prev(s)
+            q_in = (
+                blk.retentate[0, sp].flow_vol
+                + blk.retentate_side_stream_state[0, 10].flow_vol
+            )
+            c_in = (
+                blk.retentate[0, sp].conc_mass_solute[j] * blk.retentate[0, sp].flow_vol
+                + blk.retentate_side_stream_state[0, 10].conc_mass_solute[j]
+                * blk.retentate_side_stream_state[0, 10].flow_vol
+            ) / q_in
+        else:
+            sp = blk.elements.prev(s)
+            q_in = blk.retentate[0, sp].flow_vol
+            c_in = blk.retentate[0, sp].conc_mass_solute[j]
+
+        return log(blk.retentate[0, s].conc_mass_solute[j]) + (
+            model.fs.sieving_coefficient[j] - 1
+        ) * log(q_in) == log(c_in) + (model.fs.sieving_coefficient[j] - 1) * log(
+            blk.retentate[0, s].flow_vol
+        )
 
 
 def add_streams(m):
@@ -237,14 +318,6 @@ def add_streams(m):
         source=m.fs.stage2.retentate_outlet,
         destination=m.fs.stage1.retentate_inlet,
     )
-    m.fs.stage1.retentate_inlet.flow_vol[0].unfix()
-    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].unfix()
-    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].unfix()
-
-    m.fs.mix1.inlet_1.flow_vol[0].fix(Q_feed)
-    m.fs.mix1.inlet_1.conc_mass_solute[0, "Li"].fix(C_Li_feed)
-    m.fs.mix1.inlet_1.conc_mass_solute[0, "Co"].fix(C_Co_feed)
-
     m.fs.stream4 = Arc(
         source=m.fs.stage2.permeate_outlet,
         destination=m.fs.mix2.inlet_2,
@@ -257,6 +330,28 @@ def add_streams(m):
         source=m.fs.stage3.retentate_outlet,
         destination=m.fs.mix1.inlet_1,
     )
+    TransformationFactory("network.expand_arcs").apply_to(m)
+
+
+def fix_values(m):
+    """
+    Fixes the volumetric flow and concentration of streams
+
+    Args:
+        m: Pyomo model
+    """
+    m.fs.stage1.retentate_inlet.flow_vol[0].fix(Q_feed)
+    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].fix(C_Li_feed)
+    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].fix(C_Co_feed)
+
+    m.fs.stage1.retentate_inlet.flow_vol[0].unfix()
+    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].unfix()
+    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].unfix()
+
+    m.fs.mix1.inlet_1.flow_vol[0].fix(Q_feed)
+    m.fs.mix1.inlet_1.conc_mass_solute[0, "Li"].fix(C_Li_feed)
+    m.fs.mix1.inlet_1.conc_mass_solute[0, "Co"].fix(C_Co_feed)
+
     # Unfix Feed to Mixer 1 inlet 1
     m.fs.mix1.inlet_1.flow_vol[0].unfix()
     m.fs.mix1.inlet_1.conc_mass_solute[0, "Li"].unfix()
@@ -271,8 +366,6 @@ def add_streams(m):
     m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.fix(Q_feed)
     m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].fix(C_Li_feed)
     m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(C_Co_feed)
-
-    TransformationFactory("network.expand_arcs").apply_to(m)
 
 
 # TODO: move these checks to test file
@@ -312,7 +405,7 @@ def check_model(m):
     )  # check that there are no pressure balances
 
 
-def initialize(m):
+def initialize_model(m):
     """
     Method to initialize the diafiltration flowhseet
 
@@ -357,114 +450,9 @@ def initialize(m):
     initializer.initialize(m.fs.stage3)
 
 
-def add_transport_constraints(m):
+def add_useful_expressions(m):
     """
-    Method to add the sieving coefficient mass balance constraints and solvent
-    flux constraints to each stage
-
-    Args:
-        m: Pyomo model
-    """
-    m.fs.solutes = Set(initialize=["Li", "Co"])
-
-    m.fs.sieving_coefficient = Var(
-        m.fs.solutes,
-        units=units.dimensionless,
-    )
-    m.fs.sieving_coefficient["Li"].fix(1.3)
-    m.fs.sieving_coefficient["Co"].fix(0.5)
-
-    # TODO: update to @blk.Constraint() format
-    def solvent_rule(b, s):
-        return (
-            b.material_transfer_term[0, s, "permeate", "retentate", "solvent"]
-            == Jw * b.length * w * m.fs.properties.dens_H2O / 10
-        )
-
-    def solute_rule(b, s, j):
-        if s == 1:
-            in_state = b.retentate_inlet_state[0]
-        else:
-            sp = b.elements.prev(s)
-            in_state = b.retentate[0, sp]
-
-        return log(b.retentate[0, s].conc_mass_solute[j]) + (
-            m.fs.sieving_coefficient[j] - 1
-        ) * log(in_state.flow_vol) == log(in_state.conc_mass_solute[j]) + (
-            m.fs.sieving_coefficient[j] - 1
-        ) * log(
-            b.retentate[0, s].flow_vol
-        )
-
-    def stage3_solute_rule(b, s, j):
-        if s == 1:
-            q_in = b.retentate_inlet_state[0].flow_vol
-            c_in = b.retentate_inlet_state[0].conc_mass_solute[j]
-        elif s == 10:
-            sp = b.elements.prev(s)
-            q_in = (
-                b.retentate[0, sp].flow_vol
-                + b.retentate_side_stream_state[0, 10].flow_vol
-            )
-            c_in = (
-                b.retentate[0, sp].conc_mass_solute[j] * b.retentate[0, sp].flow_vol
-                + b.retentate_side_stream_state[0, 10].conc_mass_solute[j]
-                * b.retentate_side_stream_state[0, 10].flow_vol
-            ) / q_in
-        else:
-            sp = b.elements.prev(s)
-            q_in = b.retentate[0, sp].flow_vol
-            c_in = b.retentate[0, sp].conc_mass_solute[j]
-
-        return log(b.retentate[0, s].conc_mass_solute[j]) + (
-            m.fs.sieving_coefficient[j] - 1
-        ) * log(q_in) == log(c_in) + (m.fs.sieving_coefficient[j] - 1) * log(
-            b.retentate[0, s].flow_vol
-        )
-
-    m.fs.stage1.solvent_flux = Constraint(
-        m.fs.stage1.elements,
-        rule=solvent_rule,
-    )
-    m.fs.stage1.solute_sieving = Constraint(
-        m.fs.stage1.elements,
-        m.fs.solutes,
-        rule=solute_rule,
-    )
-    m.fs.stage2.solvent_flux = Constraint(
-        m.fs.stage2.elements,
-        rule=solvent_rule,
-    )
-    m.fs.stage2.solute_sieving = Constraint(
-        m.fs.stage2.elements,
-        m.fs.solutes,
-        rule=solute_rule,
-    )
-    m.fs.stage3.solvent_flux = Constraint(
-        m.fs.stage3.elements,
-        rule=solvent_rule,
-    )
-    m.fs.stage3.solute_sieving = Constraint(
-        m.fs.stage3.elements,
-        m.fs.solutes,
-        rule=stage3_solute_rule,
-    )
-
-
-def solve_model(m):
-    """
-    Method to solve the diafiltration flowsheet
-
-    Args:
-        m: Pyomo model
-    """
-    solver = get_solver()
-    solver.solve(m, tee=True)
-
-
-def add_expressions(m):
-    """
-    Method to add recovery and purity expressions for lithium and cobalt to the flowsheet
+    Method to add recovery, purity, and membrane length expressions for convenience
 
     Args:
         m: Pyomo model
@@ -521,26 +509,15 @@ def add_expressions(m):
     )
 
 
-def get_expression_values(m):
+def solve_model(m):
     """
-    Method to extract the values of the lithium and cobalt recovery and purity from the flowsheet
+    Method to solve the diafiltration flowsheet
 
     Args:
         m: Pyomo model
-
-    Returns:
-        R_Li: lithium recovery (in lithium product stream) (%)
-        R_Co: cobalt recovery (in cobalt product stream) (%)
-        P_Li: lithium purity (in lithium product stream) (%)
-        P_Co:cobalt purity (in cobalt product stream) (%)
     """
-    R_Li = round(value(m.Li_recovery) * 100, 2)
-    R_Co = round(value(m.Co_recovery) * 100, 2)
-
-    P_Li = round(value(m.Li_purity) * 100, 2)
-    P_Co = round(value(m.Co_purity) * 100, 2)
-
-    return R_Li, R_Co, P_Li, P_Co
+    solver = get_solver()
+    solver.solve(m, tee=True)
 
 
 def add_costing(
@@ -590,7 +567,7 @@ def add_costing(
     m.fs.costing.cost_process()
 
 
-def unfix_variables(m):
+def unfix_opt_variables(m):
     """
     Method to unfix variables for performing optimization with DOF>0
 
@@ -602,18 +579,29 @@ def unfix_variables(m):
     m.fs.stage3.length.unfix()
 
 
-def add_constraints(m):
+def add_product_constraints(m):
     """
     Method to add recovery/purity constraints to the flowsheet for performing optimization
 
     Args:
         m: Pyomo model
     """
-    m.Co_recovery_constraint = Constraint(expr=m.Co_recovery >= 0.4)
-    m.Li_recovery_constraint = Constraint(expr=m.Li_recovery >= 0.95)
 
-    # m.Li_purity_constraint = pyo.Constraint(expr=m.Li_purity >= 0.8)
-    # m.Co_purity_constraint = pyo.Constraint(expr=m.Co_purity >= 0.5)
+    @m.Constraint()
+    def Co_recovery_constraint(m):
+        return m.Co_recovery >= 0.4
+
+    @m.Constraint()
+    def Li_recovery_constraint(m):
+        return m.Li_recovery >= 0.95
+
+    # @m.Constraint()
+    # def Li_purity_constraint(m):
+    #     return m.Li_purity >= 0.8
+
+    # @m.Constraint()
+    # def Co_purity_constraint(m):
+    #     return m.Co_purity >= 0.5
 
 
 def add_objective(m):
@@ -630,7 +618,7 @@ def add_objective(m):
     m.cost_objecticve = Objective(rule=cost_obj)
 
 
-# TODO: update functionality to specify ann output stream
+# TODO: update functionality to specify an output stream
 def print_information(m):
     """
     Prints relevant information after solving the model
@@ -638,10 +626,12 @@ def print_information(m):
     Args:
         m: Pyomo model
     """
-    R_Li, R_Co, P_Li, P_Co = get_expression_values(m)
-
-    print(f"The lithium recovery is {R_Li}% at purity {P_Li}")
-    print(f"The cobalt recovery is {R_Co}% at purity {P_Co}")
+    print(
+        f"The lithium recovery is {round(value(m.Li_recovery) * 100, 2)}% at purity {round(value(m.Li_purity) * 100, 2)}"
+    )
+    print(
+        f"The cobalt recovery is {round(value(m.Co_recovery) * 100, 2)}% at purity {round(value(m.Co_purity) * 100, 2)}"
+    )
 
     print("\nmembrane area")
     print(f"{value(m.fs.membrane.costing.membrane_area)} m2")

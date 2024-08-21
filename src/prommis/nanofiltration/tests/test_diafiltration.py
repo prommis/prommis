@@ -60,16 +60,16 @@ def test_main():
 
     test_dict = {
         "lithium_recovery": [value(m.Li_recovery) * 100, 95.00000000000107],
-        "lithium_purity": [value(m.Li_purity) * 100, 13.834757355108485],
+        "lithium_purity": [value(m.Li_purity) * 100, 13.834757355108488],
         "cobalt_recovery": [value(m.Co_recovery) * 100, 40.00000000000412],
         "cobalt_purity": [value(m.Co_purity) * 100, 98.74828160046346],
         "membrane_area": [
             value(m.fs.membrane.costing.membrane_area),
-            2102.394892403767,
+            2102.3948924037677,
         ],
         "total_annualized_cost": [
             value(m.fs.costing.total_annualized_cost),
-            174359.57689288884,
+            185317.20624200924,
         ],
     }
 

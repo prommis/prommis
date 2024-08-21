@@ -50,8 +50,8 @@ from prommis.nanofiltration.diafiltration_properties import LiCoParameters
 # Global constants
 Jw = 0.1 * units.m / units.hour
 w = 1.5 * units.m
-diafiltrate_inlet_pressure = 101325 * units.Pa
-diafiltrate_outlet_pressure = 145 * units.psi
+atmospheric_pressure = 101325 * units.Pa
+operating_pressure = 145 * units.psi
 Q_feed = 100 * units.m**3 / units.h
 C_Li_feed = 1.7 * units.kg / units.m**3
 C_Co_feed = 17 * units.kg / units.m**3
@@ -486,26 +486,17 @@ def solve_model(m):
     solver.solve(m, tee=True)
 
 
-def add_costing(
-    m,
-    membrane_width=w,
-    water_flux=Jw,
-    inlet_pressure=diafiltrate_inlet_pressure,
-    outlet_pressure=diafiltrate_outlet_pressure,
-):
+def add_costing(m):
     """
     Method to add costing block to the flowsheet
 
     Args:
         m: Pyomo model
-        membrane_width: width of membranes in cascade (tube length) (m)
-        water_flux: flux of water across the membrane (m/h)
-        inlet_pressure: inlet pressure of the diafiltrate to pump (Pa)
-        outlet_pressure: outlet pressure of difiltrate from pump (psi)
     """
     # creating dummy variables to store the UnitModelCostingBlocks
     m.fs.membrane = UnitModelBlock()
-    m.fs.pump = UnitModelBlock()
+    m.fs.feed_pump = UnitModelBlock()
+    m.fs.diafiltrate_pump = UnitModelBlock()
 
     m.fs.costing = DiafiltrationCosting()
     m.fs.membrane.costing = UnitModelCostingBlock(
@@ -513,20 +504,29 @@ def add_costing(
         costing_method=DiafiltrationCostingData.cost_membranes,
         costing_method_arguments={
             "membrane_length": m.membrane_length,  # total membrane length
-            "membrane_width": membrane_width,
-            "water_flux": water_flux,
+            "membrane_width": w,    # membrane width
+            "water_flux": Jw,   # water flux
             "vol_flow_feed": m.fs.stage3.retentate_side_stream_state[
                 0, 10
             ].flow_vol,  # feed
             "vol_flow_perm": m.fs.stage3.permeate_outlet.flow_vol[0],  # permeate
         },
     )
-    m.fs.pump.costing = UnitModelCostingBlock(
+    m.fs.feed_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_pump,
         costing_method_arguments={
-            "inlet_pressure": inlet_pressure,
-            "outlet_pressure": outlet_pressure,
+            "inlet_pressure": atmospheric_pressure,
+            "outlet_pressure": operating_pressure,
+            "inlet_vol_flow": m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol,  # feed
+        },
+    )
+    m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=DiafiltrationCostingData.cost_pump,
+        costing_method_arguments={
+            "inlet_pressure": atmospheric_pressure,
+            "outlet_pressure": operating_pressure,
             "inlet_vol_flow": m.fs.stage3.retentate_inlet.flow_vol[0],  # diafiltrate
         },
     )
@@ -605,8 +605,11 @@ def print_information(m):
     print("\nmembrane capital cost")
     print(f"${value(m.fs.membrane.costing.capital_cost)}")
 
-    print("\npump capital cost")
-    print(f"${value(m.fs.pump.costing.capital_cost)}")
+    print("\nfeed pump capital cost")
+    print(f"${value(m.fs.feed_pump.costing.capital_cost)}")
+
+    print("\ndiafiltrate pump capital cost")
+    print(f"${value(m.fs.diafiltrate_pump.costing.capital_cost)}")
 
     print("\naggregate capital cost")
     print(f"${value(m.fs.costing.aggregate_capital_cost)}")

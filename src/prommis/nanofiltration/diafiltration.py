@@ -63,6 +63,9 @@ C_Co_diaf = 0.2 * units.kg / units.m**3
 def main():
     """
     Builds and solves the diafiltration flowsheet with cost
+
+    Returns:
+        m: Pyomo model
     """
     m = build_model()
     initialize_model(m)
@@ -89,6 +92,8 @@ def main():
     solve_model(m)
     print_information(m)
 
+    return m
+
 
 def build_model():
     """
@@ -114,7 +119,6 @@ def build_model():
 
     add_streams(m)
     fix_values(m)
-    check_model(m)
     add_useful_expressions(m)  # adds recovery, purity, and membrane length expressions
 
     return m
@@ -367,43 +371,6 @@ def fix_values(m):
     m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(C_Co_feed)
 
 
-# TODO: move these checks to test file
-def check_model(m):
-    assert isinstance(
-        m.fs.stage3, MSContactor
-    )  # check that stage3 exists and is an MSContactor
-
-    # Retentate side checks
-    assert hasattr(
-        m.fs.stage3, "retentate_inlet_state"
-    )  # check that there is a retentate feed
-    assert hasattr(
-        m.fs.stage3, "retentate_side_stream_state"
-    )  # check that a side stream exists
-    for k in m.fs.stage3.retentate_side_stream_state:
-        assert k == (0, 10)  # check that the side stream only exists at element 10
-    assert not hasattr(
-        m.fs.stage3, "retentate_energy_balance"
-    )  # check that there are no energy balances
-    assert not hasattr(
-        m.fs.stage3, "retentate_pressure_balance"
-    )  # check that there are no pressure balances
-
-    # Permeate side checks
-    assert not hasattr(
-        m.fs.stage3, "permeate_inlet_state"
-    )  # check that there is no permeate feed
-    assert not hasattr(
-        m.fs.stage3, "permeate_side_stream_state"
-    )  # check that there are no side streams on permeate side
-    assert not hasattr(
-        m.fs.stage3, "permeate_energy_balance"
-    )  # check that there are no energy balances
-    assert not hasattr(
-        m.fs.stage3, "permeate_pressure_balance"
-    )  # check that there are no pressure balances
-
-
 def initialize_model(m):
     """
     Method to initialize the diafiltration flowhseet
@@ -626,10 +593,10 @@ def print_information(m):
         m: Pyomo model
     """
     print(
-        f"The lithium recovery is {round(value(m.Li_recovery) * 100, 2)}% at purity {round(value(m.Li_purity) * 100, 2)}"
+        f"The lithium recovery is {value(m.Li_recovery) * 100}% at purity {value(m.Li_purity) * 100}"
     )
     print(
-        f"The cobalt recovery is {round(value(m.Co_recovery) * 100, 2)}% at purity {round(value(m.Co_purity) * 100, 2)}"
+        f"The cobalt recovery is {value(m.Co_recovery) * 100}% at purity {value(m.Co_purity) * 100}"
     )
 
     print("\nmembrane area")

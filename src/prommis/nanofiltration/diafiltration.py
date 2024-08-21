@@ -359,7 +359,8 @@ def initialize(m):
 
 def add_transport_constraints(m):
     """
-    Method to add the sieving coefficient mass balance constraints and solvent flux constraints to each stage
+    Method to add the sieving coefficient mass balance constraints and solvent
+    flux constraints to each stage
 
     Args:
         m: Pyomo model
@@ -515,6 +516,10 @@ def add_expressions(m):
         )
     )
 
+    m.membrane_length = Expression(
+        expr=m.fs.stage1.length + m.fs.stage2.length + m.fs.stage3.length
+    )
+
 
 def get_expression_values(m):
     """
@@ -538,42 +543,6 @@ def get_expression_values(m):
     return R_Li, R_Co, P_Li, P_Co
 
 
-def get_model_values(m):
-    """
-    Method to extract values of relevant model variables
-
-    Args:
-        m: Pyomo model
-
-    Returns:
-        membrane_length: total membrane length in the cascade (m)
-        feed_flow_rate: flow rate of cascade feed stream (m3/h)
-        diafiltrate_flow_rate: flow rate of cascade diafiltrate stream (m3/h)
-        permeate_flow_rate: flow rate of cascade permeate stream (m3/h)
-    """
-    membrane_length = (
-        value(m.fs.stage1.length)
-        + value(m.fs.stage2.length)
-        + value(m.fs.stage3.length)
-    ) * units.m
-
-    # the feed is the stream entering stage 3 in the last element
-    feed_flow_rate = (
-        value(m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol)
-        * units.m**3
-        / units.hr
-    )
-    # the diafiltrate is the stream entering stage 3 in the first element
-    diafiltrate_flow_rate = (
-        value(m.fs.stage3.retentate_inlet.flow_vol[0]) * units.m**3 / units.hr
-    )
-    # the permeate is the stream exiting stage 3 in the last element
-    permeate_flow_rate = (
-        value(m.fs.stage3.permeate_outlet.flow_vol[0]) * units.m**3 / units.hr
-    )
-    return membrane_length, feed_flow_rate, diafiltrate_flow_rate, permeate_flow_rate
-
-
 def add_costing(
     m,
     membrane_width=w,
@@ -591,13 +560,6 @@ def add_costing(
         inlet_pressure: inlet pressure of the diafiltrate to pump (Pa)
         outlet_pressure: outlet pressure of difiltrate from pump (psi)
     """
-    (
-        membrane_length,
-        feed_flow_rate,
-        diafiltrate_flow_rate,
-        permeate_flow_rate,
-    ) = get_model_values(m)
-
     # creating dummy variables to store the UnitModelCostingBlocks
     m.fs.membrane = UnitModelBlock()
     m.fs.pump = UnitModelBlock()
@@ -607,11 +569,13 @@ def add_costing(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_membranes,
         costing_method_arguments={
-            "membrane_length": membrane_length,
+            "membrane_length": m.membrane_length,  # total membrane length
             "membrane_width": membrane_width,
             "water_flux": water_flux,
-            "vol_flow_feed": feed_flow_rate,
-            "vol_flow_perm": permeate_flow_rate,
+            "vol_flow_feed": m.fs.stage3.retentate_side_stream_state[
+                0, 10
+            ].flow_vol,  # feed
+            "vol_flow_perm": m.fs.stage3.permeate_outlet.flow_vol[0],  # permeate
         },
     )
     m.fs.pump.costing = UnitModelCostingBlock(
@@ -620,7 +584,7 @@ def add_costing(
         costing_method_arguments={
             "inlet_pressure": inlet_pressure,
             "outlet_pressure": outlet_pressure,
-            "inlet_vol_flow": diafiltrate_flow_rate,
+            "inlet_vol_flow": m.fs.stage3.retentate_inlet.flow_vol[0],  # diafiltrate
         },
     )
     m.fs.costing.cost_process()

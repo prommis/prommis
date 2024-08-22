@@ -91,6 +91,7 @@ def main():
     print(f"DOF = {degrees_of_freedom(m)}")
     solve_model(m)
     print_information(m)
+    print(value(m.fs.feed_pump.costing.fixed_operating_cost))
 
     return m
 
@@ -232,12 +233,16 @@ def add_stage1_constraints(blk, model):
             sp = blk.elements.prev(s)
             in_state = blk.retentate[0, sp]
 
-        return log(blk.retentate[0, s].conc_mass_solute[j]) + (
-            model.fs.sieving_coefficient[j] - 1
-        ) * log(in_state.flow_vol) == log(in_state.conc_mass_solute[j]) + (
+        return log(
+            blk.retentate[0, s].conc_mass_solute[j] * units.m**3 / units.kg
+        ) + (model.fs.sieving_coefficient[j] - 1) * log(
+            in_state.flow_vol * units.h / units.m**3
+        ) == log(
+            in_state.conc_mass_solute[j] * units.m**3 / units.kg
+        ) + (
             model.fs.sieving_coefficient[j] - 1
         ) * log(
-            blk.retentate[0, s].flow_vol
+            blk.retentate[0, s].flow_vol * units.h / units.m**3
         )
 
 
@@ -257,12 +262,16 @@ def add_stage2_constraints(blk, model):
             sp = blk.elements.prev(s)
             in_state = blk.retentate[0, sp]
 
-        return log(blk.retentate[0, s].conc_mass_solute[j]) + (
-            model.fs.sieving_coefficient[j] - 1
-        ) * log(in_state.flow_vol) == log(in_state.conc_mass_solute[j]) + (
+        return log(
+            blk.retentate[0, s].conc_mass_solute[j] * units.m**3 / units.kg
+        ) + (model.fs.sieving_coefficient[j] - 1) * log(
+            in_state.flow_vol * units.h / units.m**3
+        ) == log(
+            in_state.conc_mass_solute[j] * units.m**3 / units.kg
+        ) + (
             model.fs.sieving_coefficient[j] - 1
         ) * log(
-            blk.retentate[0, s].flow_vol
+            blk.retentate[0, s].flow_vol * units.h / units.m**3
         )
 
 
@@ -295,10 +304,16 @@ def add_stage3_constraints(blk, model):
             q_in = blk.retentate[0, sp].flow_vol
             c_in = blk.retentate[0, sp].conc_mass_solute[j]
 
-        return log(blk.retentate[0, s].conc_mass_solute[j]) + (
+        return log(
+            blk.retentate[0, s].conc_mass_solute[j] * units.m**3 / units.kg
+        ) + (model.fs.sieving_coefficient[j] - 1) * log(
+            q_in * units.h / units.m**3
+        ) == log(
+            c_in * units.m**3 / units.kg
+        ) + (
             model.fs.sieving_coefficient[j] - 1
-        ) * log(q_in) == log(c_in) + (model.fs.sieving_coefficient[j] - 1) * log(
-            blk.retentate[0, s].flow_vol
+        ) * log(
+            blk.retentate[0, s].flow_vol * units.h / units.m**3
         )
 
 
@@ -532,6 +547,7 @@ def add_costing(m):
             "inlet_pressure": atmospheric_pressure,
             "outlet_pressure": operating_pressure,
             "inlet_vol_flow": m.fs.stage3.retentate_inlet.flow_vol[0],  # diafiltrate
+            "OPEX": True,
         },
     )
     m.fs.costing.cost_process()

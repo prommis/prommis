@@ -348,6 +348,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 to_units=blk.costing_package.base_currency,
             )
 
+        # allow Boolean for pump OPEX for feed pump since the energy (SEC) is already accounted for
         if OPEX:
             # calculate the pump head: pump Ref [1] Eqn 1.1
             blk.pump_head = Var(
@@ -408,6 +409,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                     / blk.costing_package.base_period,
                 )
 
+        # TODO: update this so the constraint is not 0*[units container]
         else:
 
             @blk.Constraint()

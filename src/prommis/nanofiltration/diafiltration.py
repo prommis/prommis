@@ -69,29 +69,30 @@ def main():
     """
     m = build_model()
     initialize_model(m)
+    dt = DiagnosticsToolbox(m)
+    dt.report_structural_issues()
+    dt.display_potential_evaluation_errors()
     if degrees_of_freedom(m) != 0:
         raise ValueError(
             "Degrees of freedom were not equal to zero after building model"
         )
 
-    dt = DiagnosticsToolbox(m)
-    dt.report_structural_issues()
-
     add_costing(m)
+    dt.report_structural_issues()
+    dt.display_potential_evaluation_errors()
     if degrees_of_freedom(m) != 0:
         raise ValueError(
             "Degrees of freedom were not equal to zero after building cost block"
         )
 
-    dt.report_numerical_issues()
-
     unfix_opt_variables(m)
     add_product_constraints(m)
     add_objective(m)
-    print(f"DOF = {degrees_of_freedom(m)}")
     solve_model(m)
+    dt.report_numerical_issues()
+    dt.display_variables_at_or_outside_bounds()
+    dt.display_constraints_with_large_residuals()
     print_information(m)
-    print(value(m.fs.feed_pump.costing.fixed_operating_cost))
 
     return m
 
@@ -500,6 +501,16 @@ def solve_model(m):
     solver = get_solver()
     solver.solve(m, tee=True)
 
+    # TODO: add Boolean variable to calculate pump OPEX
+    # Verify the feed pump operating pressure workaround is valid
+    # assume this additional cost is less than half a cent
+    if value(m.fs.feed_pump.costing.fixed_operating_cost) >= 0.005:
+        raise ValueError(
+            "The fixed operating cost of the feed pump as calculated in the feed"
+            "pump costing block is not negligible. This operating cost is already"
+            "accounted for via the membrane presure drop specific energy consumption."
+        )
+
 
 def add_costing(m):
     """
@@ -533,11 +544,11 @@ def add_costing(m):
         costing_method_arguments={
             "inlet_pressure": atmospheric_pressure
             + units.convert(m.fs.membrane.costing.pressure_drop, to_units=units.Pa),
-            "outlet_pressure": operating_pressure,  # not used for CAPEX calc
+            "outlet_pressure": 1e-5 # assume numerically 0 since SEC accounts for feed pump OPEX
+            * units.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
             "inlet_vol_flow": m.fs.stage3.retentate_side_stream_state[
                 0, 10
             ].flow_vol,  # feed
-            "OPEX": False,  # already accounted for in membrane pressure drop SEC
         },
     )
     m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(
@@ -547,7 +558,6 @@ def add_costing(m):
             "inlet_pressure": atmospheric_pressure,
             "outlet_pressure": operating_pressure,
             "inlet_vol_flow": m.fs.stage3.retentate_inlet.flow_vol[0],  # diafiltrate
-            "OPEX": True,
         },
     )
     m.fs.costing.cost_process()

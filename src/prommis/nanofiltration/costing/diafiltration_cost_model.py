@@ -8,13 +8,11 @@
 Flowsheet costing block for diafiltration flowsheet model
 """
 
-from pyomo.environ import Constraint, Expression, Param, Var, units
+from pyomo.environ import Constraint, Expression, Param, Var, units, NonNegativeReals
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 from idaes.core import declare_process_block_class, register_idaes_currency_units
 from idaes.core.util.constants import Constants
-
-from watertap.costing.util import make_capital_cost_var, make_fixed_operating_cost_var
 
 from prommis.nanofiltration.costing.diafiltration_cost_block import (
     DiafiltrationCostingBlockData,
@@ -216,8 +214,18 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         )
 
         # create the capital and operating cost variables
-        make_capital_cost_var(blk)
-        make_fixed_operating_cost_var(blk)
+        blk.capital_cost = Var(
+            initialize=1e5,
+            domain=NonNegativeReals,
+            units=blk.costing_package.base_currency,
+            doc="Unit capital cost",
+        )
+        blk.fixed_operating_cost = Var(
+            initialize=1e5,
+            domain=NonNegativeReals,
+            units=blk.costing_package.base_currency / blk.costing_package.base_period,
+            doc="Unit fixed operating cost",
+        )
 
         # calculate membrane area
         blk.membrane_area = Var(
@@ -288,7 +296,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 / blk.costing_package.base_period,
             )
 
-    def cost_pump(blk, inlet_pressure, outlet_pressure, inlet_vol_flow, OPEX=True):
+    def cost_pump(blk, inlet_pressure, outlet_pressure, inlet_vol_flow):
         """
         pump:
         assume (for now) there is just one pump for the diafiltrate
@@ -337,8 +345,18 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         )
 
         # create the capital and operating cost variables
-        make_capital_cost_var(blk)
-        make_fixed_operating_cost_var(blk)
+        blk.capital_cost = Var(
+            initialize=1e5,
+            domain=NonNegativeReals,
+            units=blk.costing_package.base_currency,
+            doc="Unit capital cost",
+        )
+        blk.fixed_operating_cost = Var(
+            initialize=1e5,
+            domain=NonNegativeReals,
+            units=blk.costing_package.base_currency / blk.costing_package.base_period,
+            doc="Unit fixed operating cost",
+        )
 
         @blk.Constraint()
         def capital_cost_constraint(blk):
@@ -348,75 +366,73 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 to_units=blk.costing_package.base_currency,
             )
 
-        # allow Boolean for pump OPEX for feed pump since the energy (SEC) is already accounted for
-        if OPEX:
-            # calculate the pump head: pump Ref [1] Eqn 1.1
-            blk.pump_head = Var(
-                initialize=10,
-                doc="Pump head in meters",
-                units=units.m,
+        # calculate the pump head: pump Ref [1] Eqn 1.1
+        blk.pump_head = Var(
+            initialize=10,
+            doc="Pump head in meters",
+            units=units.m,
+        )
+
+        @blk.Constraint()
+        def pump_head_equation(blk):
+            return blk.pump_head == units.convert(
+                (
+                    outlet_pressure
+                    * blk.pump_head_factor
+                    / blk.costing_package.specific_gravity
+                ),
+                to_units=units.m,
             )
 
-            @blk.Constraint()
-            def pump_head_equation(blk):
-                return blk.pump_head == units.convert(
-                    (
-                        outlet_pressure
-                        * blk.pump_head_factor
-                        / blk.costing_package.specific_gravity
-                    ),
-                    to_units=units.m,
-                )
+        # calculate the pump power: pump Ref [2] Eqn 7
+        blk.pump_power = Var(
+            initialize=10,
+            doc="Pump power in kWh required for the operational period",
+            units=units.kWh,
+        )
 
-            # calculate the pump power: pump Ref [2] Eqn 7
-            blk.pump_power = Var(
-                initialize=10,
-                doc="Pump power in kWh required for the operational period",
-                units=units.kWh,
+        grav_constant = units.convert(
+            Constants.acceleration_gravity, to_units=units.m / units.hr**2
+        )
+
+        @blk.Constraint()
+        def pump_power_equation(blk):
+            return blk.pump_power == units.convert(
+                (
+                    units.convert(
+                        (
+                            inlet_vol_flow
+                            * blk.costing_package.density
+                            * grav_constant
+                            * blk.pump_head
+                            / blk.pump_power_factor
+                            / blk.pump_efficiency
+                        ),
+                        to_units=units.kW,
+                    )
+                    * blk.costing_package.operating_time  # per one year
+                ),
+                to_units=units.kWh,
             )
 
-            grav_constant = units.convert(
-                Constants.acceleration_gravity, to_units=units.m / units.hr**2
+        @blk.Constraint()
+        def fixed_operating_cost_constraint(blk):
+            return blk.fixed_operating_cost == units.convert(
+                blk.pump_power
+                * blk.costing_package.electricity_cost
+                / blk.costing_package.operating_time,  # per one year
+                to_units=blk.costing_package.base_currency
+                / blk.costing_package.base_period,
             )
 
-            @blk.Constraint()
-            def pump_power_equation(blk):
-                return blk.pump_power == units.convert(
-                    (
-                        units.convert(
-                            (
-                                inlet_vol_flow
-                                * blk.costing_package.density
-                                * grav_constant
-                                * blk.pump_head
-                                / blk.pump_power_factor
-                                / blk.pump_efficiency
-                            ),
-                            to_units=units.kW,
-                        )
-                        * blk.costing_package.operating_time  # per one year
-                    ),
-                    to_units=units.kWh,
-                )
-
-            @blk.Constraint()
-            def fixed_operating_cost_constraint(blk):
-                return blk.fixed_operating_cost == units.convert(
-                    blk.pump_power
-                    * blk.costing_package.electricity_cost
-                    / blk.costing_package.operating_time,  # per one year
-                    to_units=blk.costing_package.base_currency
-                    / blk.costing_package.base_period,
-                )
-
-        # TODO: update this so the constraint is not 0*[units container]
-        else:
-
-            @blk.Constraint()
-            def fixed_operating_cost_constraint(blk):
-                return (
-                    blk.fixed_operating_cost
-                    == 0
-                    * blk.costing_package.base_currency
-                    / blk.costing_package.base_period
-                )
+        # # TODO: update this so the constraint is not 0*[units container]
+        # else:
+        #     blk.fixed_operating_cost.fix(0)
+        #     @blk.Constraint()
+        #     def fixed_operating_cost_constraint(blk):
+        #         return (
+        #             blk.fixed_operating_cost
+        #             == 0
+        #             * blk.costing_package.base_currency
+        #             / blk.costing_package.base_period
+        #         )

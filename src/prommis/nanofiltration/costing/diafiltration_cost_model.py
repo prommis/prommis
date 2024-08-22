@@ -8,7 +8,7 @@
 Flowsheet costing block for diafiltration flowsheet model
 """
 
-from pyomo.environ import Constraint, Expression, Param, Var, units, NonNegativeReals
+from pyomo.environ import Constraint, Expression, NonNegativeReals, Param, Var, units
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 from idaes.core import declare_process_block_class, register_idaes_currency_units
@@ -85,10 +85,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
     ):
         """
         Builds the process-wide costing
-        Using the same method as the reference file
-
-        Arguments:
-
         """
 
         # add total_capital_cost and total_operating_cost
@@ -108,29 +104,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             == self.factor_maintenance_labor_chemical * self.total_capital_cost
         )
 
-        # if (
-        #     units.get_units(sum(self.aggregate_flow_costs.values()))
-        # ) == units.dimensionless:
-        #     self.total_operating_cost_constraint = Constraint(
-        #         expr=self.total_operating_cost
-        #         == self.maintenance_labor_chemical_operating_cost
-        #         + self.aggregate_fixed_operating_cost
-        #         + self.aggregate_variable_operating_cost
-        #         + sum(self.aggregate_flow_costs.values())
-        #         * self.base_currency
-        #         / self.base_period
-        #         * self.utilization_factor
-        #     )
-        # else:
-        #     self.total_operating_cost_constraint = Constraint(
-        #         expr=self.total_operating_cost
-        #         == self.maintenance_labor_chemical_operating_cost
-        #         + self.aggregate_fixed_operating_cost
-        #         + self.aggregate_variable_operating_cost
-        #         + sum(self.aggregate_flow_costs.values()) * self.utilization_factor
-        #     )
-
-        ##### from WaterTAPCostingBlockData
         self.total_fixed_operating_cost = Expression(
             expr=self.aggregate_fixed_operating_cost
             + self.maintenance_labor_chemical_operating_cost,
@@ -155,7 +128,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             == (self.total_fixed_operating_cost + self.total_variable_operating_cost),
             doc="Total operating cost of process per operating period",
         )
-        #####
 
         self.total_annualized_cost = Expression(
             expr=(
@@ -167,9 +139,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
     @staticmethod
     def initialize_build(self):
-        """
-        Same method as the reference file
-        """
         calculate_variable_from_constraint(
             self.total_capital_cost, self.total_capital_cost_constraint
         )
@@ -190,11 +159,17 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         vol_flow_perm,
     ):
         """
-        membrane:
-        capital cost assumes a constant cost per (total) area of $50/m2.
-            Reference: https://doi.org/10.1016/j.ijggc.2019.03.018
-            TODO: Update this price value for typical NF. This value is for CO2 (RO?) membranes
-        operating costs assumes all membranes get replaced every 5 years (20% replaced every year)
+        Costing method for membranes
+
+        Refereences:
+            https://doi.org/10.1016/j.ijggc.2019.03.018
+
+        Args:
+            membrane_length: total membrane length (m)
+            membrane_width: membrane width (m)
+            water_flux: water flux through membrane (m/h)
+            vol_flow_feed: volumetric flow rate of feed (m3/h)
+            vol_flow_perm: volumetric flow rate of permeate (m3/h)
         """
 
         blk.factor_membrane_replacement = Param(
@@ -298,25 +273,19 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
     def cost_pump(blk, inlet_pressure, outlet_pressure, inlet_vol_flow):
         """
-        pump:
-        assume (for now) there is just one pump for the diafiltrate
-        capital cost assumes centrifugal pump
-            The cost calculation is based on Perry's handbook.
-            The equation is (5) in https://doi.org/10.1016/j.memsci.2015.04.065
-        operating cost comes from the energy needed to power the pumps
-            Assumptions:
-                - centrifugal pumps
-                - average pressure of 10 bar (145 psi) for NF
-                - the fluid is dilute enough that the specific gravity and density are that of water
-                - the pump efficiency is 70%
-                - the unit cost of electricity is $0.168/kWh (from Ref [3] below)
-                - there are 8760 hours in a year
-                    TODO: update this for a reasonable operating time of the year
-            References:
-            [1] Volk, Michael. Pump characteristics and applications. CRC Press, 2013.
-            [2] Moran, Seán. "Pump Sizing: Bridging the Gap Between Theory and Practice."
+        Costing method for pumps.
+
+        References:
+            https://doi.org/10.1016/j.memsci.2015.04.065
+            Volk, Michael. Pump characteristics and applications. CRC Press, 2013.
+            Moran, Seán. "Pump Sizing: Bridging the Gap Between Theory and Practice."
                 The Best of Equipment Series (2016): 3.
-            [3] https://www.bls.gov/regions/midwest/data/averageenergyprices_selectedareas_table.htm
+            https://www.bls.gov/regions/midwest/data/averageenergyprices_selectedareas_table.htm
+
+        Args:
+            inlet_pressure: pressure of inlet stream to pump (Pa)
+            outlet_pressure: pressure of outlet stream from pump (psi)
+            inlet_vol_flow: volumetric flow rate of inlet stream to pump (m3/h)
         """
         blk.pump_correlation_factor = Param(
             initialize=622.59,
@@ -424,15 +393,3 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 to_units=blk.costing_package.base_currency
                 / blk.costing_package.base_period,
             )
-
-        # # TODO: update this so the constraint is not 0*[units container]
-        # else:
-        #     blk.fixed_operating_cost.fix(0)
-        #     @blk.Constraint()
-        #     def fixed_operating_cost_constraint(blk):
-        #         return (
-        #             blk.fixed_operating_cost
-        #             == 0
-        #             * blk.costing_package.base_currency
-        #             / blk.costing_package.base_period
-        #         )

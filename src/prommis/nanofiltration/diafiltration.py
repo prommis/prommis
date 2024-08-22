@@ -544,7 +544,7 @@ def add_costing(m):
         costing_method_arguments={
             "inlet_pressure": atmospheric_pressure
             + units.convert(m.fs.membrane.costing.pressure_drop, to_units=units.Pa),
-            "outlet_pressure": 1e-5 # assume numerically 0 since SEC accounts for feed pump OPEX
+            "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
             * units.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
             "inlet_vol_flow": m.fs.stage3.retentate_side_stream_state[
                 0, 10

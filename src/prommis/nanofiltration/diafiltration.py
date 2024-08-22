@@ -504,8 +504,8 @@ def add_costing(m):
         costing_method=DiafiltrationCostingData.cost_membranes,
         costing_method_arguments={
             "membrane_length": m.membrane_length,  # total membrane length
-            "membrane_width": w,    # membrane width
-            "water_flux": Jw,   # water flux
+            "membrane_width": w,  # membrane width
+            "water_flux": Jw,  # water flux
             "vol_flow_feed": m.fs.stage3.retentate_side_stream_state[
                 0, 10
             ].flow_vol,  # feed
@@ -516,9 +516,13 @@ def add_costing(m):
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_pump,
         costing_method_arguments={
-            "inlet_pressure": atmospheric_pressure,
-            "outlet_pressure": operating_pressure,
-            "inlet_vol_flow": m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol,  # feed
+            "inlet_pressure": atmospheric_pressure
+            + units.convert(m.fs.membrane.costing.pressure_drop, to_units=units.Pa),
+            "outlet_pressure": operating_pressure,  # not used for CAPEX calc
+            "inlet_vol_flow": m.fs.stage3.retentate_side_stream_state[
+                0, 10
+            ].flow_vol,  # feed
+            "OPEX": False,  # already accounted for in membrane pressure drop SEC
         },
     )
     m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(

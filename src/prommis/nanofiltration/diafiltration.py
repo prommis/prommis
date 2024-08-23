@@ -86,26 +86,26 @@ def main():
     _log.info("Initialization Okay")
 
     dt = DiagnosticsToolbox(m)
-    dt.report_structural_issues()
-    dt.display_potential_evaluation_errors()
+    dt.assert_no_structural_warnings(ignore_evaluation_errors=True)
 
     solve_model(m)
     _log.info("Solved Square Problem")
 
-    dt.report_numerical_issues()
+    dt.assert_no_numerical_warnings()
 
     unfix_opt_variables(m)
     add_product_constraints(m)
     add_objective(m)
 
     # Create a scaled version of the model to solve
+    set_scaling(m)
     scaling = TransformationFactory("core.scale_model")
     scaled_model = scaling.create_using(m, rename=False)
     solve_model(scaled_model)
     # Propagate results back to unscaled model
     scaling.propagate_solution(scaled_model, m)
 
-    dt.report_numerical_issues()
+    dt.assert_no_numerical_warnings()
     print_information(m)
 
     return m

@@ -10,6 +10,7 @@ Tests the diafiltration flowsheet
 
 from pyomo.environ import value
 
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.models.unit_models import MSContactor
 
 import pytest
@@ -25,6 +26,9 @@ def test_main():
     Tests the execution of the main function in diafiltration.py
     """
     m = main()
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings(ignore_evaluation_errors=True)
+    dt.assert_no_numerical_warnings()
 
     assert isinstance(
         m.fs.stage3, MSContactor

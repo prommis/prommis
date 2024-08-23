@@ -41,16 +41,19 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         # the following global parameters are from the reference file
         self.factor_total_investment = Var(
             initialize=2,  # TODO: verify
+            domain=NonNegativeReals,
             doc="Total investment factor [investment cost/equipment cost]",
             units=units.dimensionless,
         )
         self.factor_maintenance_labor_chemical = Var(
             initialize=0.03,  # TODO: verify
+            domain=NonNegativeReals,
             doc="Maintenance-labor-chemical factor [fraction of investment cost/year]",
             units=units.year**-1,
         )
         self.factor_capital_annualization = Var(
             initialize=0.1,  # TODO: verify
+            domain=NonNegativeReals,
             doc="Capital annualization factor [fraction of investment cost/year]",
             units=units.year**-1,
         )
@@ -68,11 +71,13 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         )
         self.operating_time = Var(
             initialize=8760,
+            domain=NonNegativeReals,
             doc="Operational hours in a year",
             units=units.hr,
         )
         self.electricity_cost = Var(
             initialize=0.141,
+            domain=NonNegativeReals,
             doc="Unit cost of electricity",
             units=units.USD_2021 / units.kWh,
         )
@@ -92,6 +97,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
         self.maintenance_labor_chemical_operating_cost = Var(
             initialize=1e3,
+            domain=NonNegativeReals,
             doc="Maintenance-labor-chemical operating cost",
             units=self.base_currency / self.base_period,
         )
@@ -205,6 +211,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         # calculate membrane area
         blk.membrane_area = Var(
             initialize=2700,
+            domain=NonNegativeReals,
             doc="Membrane area in square meters",
             units=units.m**2,
         )
@@ -218,6 +225,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         # calculate pressure drop
         blk.pressure_drop = Var(
             initialize=483,
+            domain=NonNegativeReals,  # we expect a positive value for pressure drop (Pin-Pout, where Pout<Pin)
             doc="Pressure drop over the membrane",
             units=units.psi,
         )
@@ -236,6 +244,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         # calculate specific energy consumption
         blk.SEC = Var(
             initialize=3,
+            domain=NonNegativeReals,
             doc="Specific energy consumption of feed pump",
             units=units.kWh / units.m**3,
         )
@@ -338,6 +347,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         # calculate the pump head: pump Ref [1] Eqn 1.1
         blk.pump_head = Var(
             initialize=10,
+            domain=NonNegativeReals,
             doc="Pump head in meters",
             units=units.m,
         )
@@ -356,6 +366,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         # calculate the pump power: pump Ref [2] Eqn 7
         blk.pump_power = Var(
             initialize=10,
+            domain=NonNegativeReals,
             doc="Pump power in kWh required for the operational period",
             units=units.kWh,
         )

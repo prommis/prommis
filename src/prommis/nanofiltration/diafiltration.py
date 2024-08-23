@@ -16,12 +16,15 @@ from pyomo.environ import (
     Set,
     TransformationFactory,
     Var,
+    floor,
     log,
+    log10,
     units,
     value,
 )
 from pyomo.network import Arc
 
+import idaes.logger as idaeslog
 from idaes.core import (
     FlowsheetBlock,
     MaterialBalanceType,
@@ -47,6 +50,8 @@ from prommis.nanofiltration.costing.diafiltration_cost_model import (
 )
 from prommis.nanofiltration.diafiltration_properties import LiCoParameters
 
+_log = idaeslog.getLogger(__name__)
+
 # Global constants
 Jw = 0.1 * units.m / units.hour
 w = 1.5 * units.m
@@ -68,30 +73,39 @@ def main():
         m: Pyomo model
     """
     m = build_model()
-    initialize_model(m)
-    dt = DiagnosticsToolbox(m)
-    dt.report_structural_issues()
-    dt.display_potential_evaluation_errors()
     if degrees_of_freedom(m) != 0:
         raise ValueError(
             "Degrees of freedom were not equal to zero after building model"
         )
-
     add_costing(m)
-    dt.report_structural_issues()
-    dt.display_potential_evaluation_errors()
     if degrees_of_freedom(m) != 0:
         raise ValueError(
             "Degrees of freedom were not equal to zero after building cost block"
         )
+    initialize_model(m)
+    _log.info("Initialization Okay")
+
+    dt = DiagnosticsToolbox(m)
+    dt.report_structural_issues()
+    dt.display_potential_evaluation_errors()
+
+    solve_model(m)
+    _log.info("Solved Square Problem")
+
+    dt.report_numerical_issues()
 
     unfix_opt_variables(m)
     add_product_constraints(m)
     add_objective(m)
-    solve_model(m)
+
+    # Create a scaled version of the model to solve
+    scaling = TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(m, rename=False)
+    solve_model(scaled_model)
+    # Propagate results back to unscaled model
+    scaling.propagate_solution(scaled_model, m)
+
     dt.report_numerical_issues()
-    dt.display_variables_at_or_outside_bounds()
-    dt.display_constraints_with_large_residuals()
     print_information(m)
 
     return m
@@ -499,7 +513,10 @@ def solve_model(m):
         m: Pyomo model
     """
     solver = get_solver()
-    solver.solve(m, tee=True)
+    solver.options = {"max_iter": 3000}
+    results = solver.solve(m, tee=True)
+    if results.solver.termination_condition != "optimal":
+        raise ValueError("The solver did not return optimal termination")
 
     # TODO: add Boolean variable to calculate pump OPEX
     # Verify the feed pump operating pressure workaround is valid
@@ -510,6 +527,8 @@ def solve_model(m):
             "pump costing block is not negligible. This operating cost is already"
             "accounted for via the membrane presure drop specific energy consumption."
         )
+
+    return results
 
 
 def add_costing(m):
@@ -612,6 +631,66 @@ def add_objective(m):
         return m.fs.costing.total_annualized_cost
 
     m.cost_objecticve = Objective(rule=cost_obj)
+
+
+def calculate_scale(value):
+    """
+    Calculates a default scaling value
+    """
+    return -1 * floor(log10(value))
+
+
+def set_scaling(m):
+    """
+    Method to set scaling factors to improve the solver performance
+
+    Args:
+        m: Pyomo model
+    """
+    # Calculate scaling factors for permeate flow rates
+    for i in range(1, 11):
+        scale = calculate_scale(m.fs.stage1.permeate[0.0, i].flow_vol.value)
+        print(f"Stage 1, element {i} permeate flow_vol scaling factor = {10**(scale)}")
+        m.fs.stage1.permeate[0.0, i].set_default_scaling(
+            "flow_vol",
+            10 ** (scale),
+        )
+    for i in range(1, 11):
+        scale = calculate_scale(m.fs.stage2.permeate[0.0, i].flow_vol.value)
+        print(f"Stage 2, element {i} permeate flow_vol scaling factor = {10**(scale)}")
+        m.fs.stage2.permeate[0.0, i].set_default_scaling(
+            "flow_vol",
+            10 ** (scale),
+        )
+    for i in range(1, 11):
+        scale = calculate_scale(m.fs.stage3.permeate[0.0, i].flow_vol.value)
+        print(f"Stage 3, element {i} permeate flow_vol scaling factor = {10**(scale)}")
+        m.fs.stage3.permeate[0.0, i].set_default_scaling(
+            "flow_vol",
+            10 ** (scale),
+        )
+    # Calculate scaling factors for retentate flow rates
+    for i in range(1, 11):
+        scale = calculate_scale(m.fs.stage1.retentate[0.0, i].flow_vol.value)
+        print(f"Stage 1, element {i} retentate flow_vol scaling factor = {10**(scale)}")
+        m.fs.stage1.retentate[0.0, i].set_default_scaling(
+            "flow_vol",
+            10 ** (scale),
+        )
+    for i in range(1, 11):
+        scale = calculate_scale(m.fs.stage2.retentate[0.0, i].flow_vol.value)
+        print(f"Stage 2, element {i} retentate flow_vol scaling factor = {10**(scale)}")
+        m.fs.stage2.retentate[0.0, i].set_default_scaling(
+            "flow_vol",
+            10 ** (scale),
+        )
+    for i in range(1, 11):
+        scale = calculate_scale(m.fs.stage3.retentate[0.0, i].flow_vol.value)
+        print(f"Stage 3, element {i} retentate flow_vol scaling factor = {10**(scale)}")
+        m.fs.stage3.retentate[0.0, i].set_default_scaling(
+            "flow_vol",
+            10 ** (scale),
+        )
 
 
 # TODO: update functionality to specify an output stream

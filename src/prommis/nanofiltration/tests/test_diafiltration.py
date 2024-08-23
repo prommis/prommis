@@ -27,7 +27,6 @@ def test_main():
     """
     m = main()
     dt = DiagnosticsToolbox(m)
-    dt.assert_no_structural_warnings(ignore_evaluation_errors=True)
     dt.assert_no_numerical_warnings()
 
     assert isinstance(

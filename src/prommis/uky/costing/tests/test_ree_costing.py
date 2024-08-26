@@ -2065,9 +2065,6 @@ class TestCustomCosting(object):
         assert isinstance(model.fs.custom_vessel.costing.number_of_units, pyo.Param)
         assert isinstance(model.fs.custom_vessel.costing.capital_cost_per_unit, pyo.Var)
         assert isinstance(model.fs.custom_vessel.costing.capital_cost, pyo.Var)
-        assert isinstance(
-            model.fs.custom_vessel.costing.fixed_operating_cost_per_unit, pyo.Var
-        )
         assert isinstance(model.fs.custom_vessel.costing.fixed_operating_cost, pyo.Var)
         assert isinstance(
             model.fs.custom_vessel.costing.variable_operating_cost_per_unit, pyo.Var
@@ -2081,10 +2078,6 @@ class TestCustomCosting(object):
         )
         assert isinstance(
             model.fs.custom_vessel.costing.capital_cost_constraint, pyo.Constraint
-        )
-        assert isinstance(
-            model.fs.custom_vessel.costing.fixed_operating_cost_per_unit_eq,
-            pyo.Constraint,
         )
         assert isinstance(
             model.fs.custom_vessel.costing.fixed_operating_cost_constraint,
@@ -2333,16 +2326,16 @@ class TestCustomCosting(object):
         assert pyo.value(
             pyunits.convert(
                 model.fs.custom_vessel.costing.fixed_operating_cost,
-                to_units=CE_index_units,
+                to_units=CE_index_units / pyunits.year,
             )
-        ) == pytest.approx(0.010291, rel=1e-4)
+        ) == pytest.approx(0.00343040, rel=1e-4)
 
         assert model.fs.costing.custom_fixed_costs.value == pytest.approx(
-            0.010291, rel=1e-4
+            0.00343040, rel=1e-4
         )
 
         assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
-            11.12100, rel=1e-4
+            11.11414, rel=1e-4
         )
 
         assert pyo.value(

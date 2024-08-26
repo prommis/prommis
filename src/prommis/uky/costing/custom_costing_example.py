@@ -91,9 +91,11 @@ class CustomCostingData(FlowsheetCostingBlockData):
 
         # define the fixed costs
 
-        blk.fixed_operating_cost_per_unit = Var(
+        # create a variable fixed_operating_cost that the REE Costing Framework can look for
+        blk.fixed_operating_cost = Var(
             initialize=1000,
-            units=blk.costing_package.base_currency,  # define in costing block base currency
+            units=blk.costing_package.base_currency
+            / blk.costing_package.base_period,  # define in costing block base currency
             domain=NonNegativeReals,
             bounds=(0, None),
         )
@@ -104,25 +106,11 @@ class CustomCostingData(FlowsheetCostingBlockData):
         blk.fixed_OPEX_coefficient = Param(initialize=0.05, mutable=False)
 
         @blk.Constraint()
-        def fixed_operating_cost_per_unit_eq(blk):
-            return blk.fixed_operating_cost_per_unit == pyunits.convert(
-                blk.fixed_OPEX_coefficient * blk.capital_cost,
-                to_units=blk.costing_package.base_currency,
-            )
-
-        # create a variable fixed_operating_cost that the REE Costing Framework can look for
-        blk.fixed_operating_cost = Var(
-            initialize=1000,
-            units=blk.costing_package.base_currency,  # define in costing block base currency
-            domain=NonNegativeReals,
-            bounds=(0, None),
-        )
-
-        @blk.Constraint()
         def fixed_operating_cost_constraint(blk):
-            return (
-                blk.fixed_operating_cost
-                == blk.fixed_operating_cost_per_unit * blk.number_of_units
+            return blk.fixed_operating_cost == pyunits.convert(
+                blk.fixed_OPEX_coefficient * blk.capital_cost / pyunits.year,
+                to_units=blk.costing_package.base_currency
+                / blk.costing_package.base_period,
             )
 
         # define the variable costs

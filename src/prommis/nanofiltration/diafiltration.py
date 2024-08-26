@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Diafiltration cascade flowsheet for separating lithium and cobalt. Serves as an example of
+Diafiltration cascade flowsheet for separating lithium and cobalt. Serves as an example of a
 custom cost model.
 """
 
@@ -594,29 +594,32 @@ def unfix_opt_variables(m):
     m.fs.stage3.length.unfix()
 
 
-def add_product_constraints(m):
+def add_product_constraints(m, recovery=True, purity=False):
     """
     Method to add recovery/purity constraints to the flowsheet for performing optimization
 
     Args:
         m: Pyomo model
     """
+    if recovery:
 
-    @m.Constraint()
-    def Co_recovery_constraint(m):
-        return m.Co_recovery >= 0.4
+        @m.Constraint()
+        def Co_recovery_constraint(m):
+            return m.Co_recovery >= 0.4
 
-    @m.Constraint()
-    def Li_recovery_constraint(m):
-        return m.Li_recovery >= 0.95
+        @m.Constraint()
+        def Li_recovery_constraint(m):
+            return m.Li_recovery >= 0.95
 
-    # @m.Constraint()
-    # def Li_purity_constraint(m):
-    #     return m.Li_purity >= 0.8
+    if purity:
 
-    # @m.Constraint()
-    # def Co_purity_constraint(m):
-    #     return m.Co_purity >= 0.5
+        @m.Constraint()
+        def Li_purity_constraint(m):
+            return m.Li_purity >= 0.8
+
+        @m.Constraint()
+        def Co_purity_constraint(m):
+            return m.Co_purity >= 0.5
 
 
 def add_objective(m):

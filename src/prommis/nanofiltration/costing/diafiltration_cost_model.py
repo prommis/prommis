@@ -40,19 +40,19 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
         # the following global parameters are from the reference file
         self.factor_total_investment = Var(
-            initialize=2,  # TODO: verify
+            initialize=2,
             domain=NonNegativeReals,
             doc="Total investment factor [investment cost/equipment cost]",
             units=units.dimensionless,
         )
         self.factor_maintenance_labor_chemical = Var(
-            initialize=0.03,  # TODO: verify
+            initialize=0.03,
             domain=NonNegativeReals,
             doc="Maintenance-labor-chemical factor [fraction of investment cost/year]",
             units=units.year**-1,
         )
         self.factor_capital_annualization = Var(
-            initialize=0.1,  # TODO: verify
+            initialize=0.1,
             domain=NonNegativeReals,
             doc="Capital annualization factor [fraction of investment cost/year]",
             units=units.year**-1,

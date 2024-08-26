@@ -1469,7 +1469,8 @@ def set_operating_conditions(m):
     m.fs.cleaner_sep.split_fraction[:, "recycle"].fix(0.9)
 
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
-    m.fs.sl_sep2.liquid_recovery.fix(0.7)
+    # TODO: Set sl_sep2 recovery to 0.95 and resolve resultant initialization issues
+    m.fs.sl_sep2.liquid_recovery.fix(0.88)
 
     m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
 

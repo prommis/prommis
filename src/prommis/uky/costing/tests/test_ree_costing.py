@@ -94,6 +94,8 @@ def base_model():
         capital_expenditure_percentages=[10, 60, 30],
         capital_escalation_percentage=3.6,
         capital_loan_interest_percentage=6,
+        capital_loan_repayment_period=10,
+        debt_percentage_of_CAPEX=50,
         operating_inflation_percentage=3,
         revenue_inflation_percentage=3,
         royalty_charge_percentage_of_revenue=6.5,
@@ -1202,6 +1204,9 @@ class TestREECosting(object):
         assert model.fs.costing.pv_capital_cost.value == pytest.approx(
             -272.25734, rel=1e-4
         )
+        assert model.fs.costing.pv_loan_interest.value == pytest.approx(
+            -23.892648, rel=1e-4
+        )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -4677.8978, rel=1e-4
         )
@@ -1209,7 +1214,7 @@ class TestREECosting(object):
             -36.434467, rel=1e-4
         )
         assert model.fs.costing.pv_revenue.value == pytest.approx(560.53027, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(-4426.0593, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(-4449.9520, rel=1e-4)
 
     @pytest.mark.unit
     def test_report(self, model):
@@ -2165,6 +2170,9 @@ class TestNPVCostingBlock(object):
     def test_NPV_costingblock_build(self, model):
         # check that some objects are built as expected
         assert isinstance(model.fs.costing.pv_capital_cost, pyo.Var)
+        assert isinstance(model.fs.costing.loan_debt, pyo.Var)
+        assert isinstance(model.fs.costing.loan_annual_payment, pyo.Var)
+        assert isinstance(model.fs.costing.pv_loan_interest, pyo.Var)
         assert isinstance(model.fs.costing.pv_operating_cost, pyo.Var)
         assert isinstance(model.fs.costing.pv_revenue, pyo.Var)
         assert isinstance(model.fs.costing.pv_royalties, pyo.Var)
@@ -2174,12 +2182,15 @@ class TestNPVCostingBlock(object):
         assert isinstance(model.fs.costing.capital_expenditure_percentages, pyo.Param)
         assert isinstance(model.fs.costing.capital_escalation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.capital_loan_interest_percentage, pyo.Param)
+        assert isinstance(model.fs.costing.capital_loan_repayment_period, pyo.Param)
+        assert isinstance(model.fs.costing.debt_percentage_of_CAPEX, pyo.Param)
         assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
-        assert isinstance(
-            model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param
-        )
+        assert isinstance(model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param)
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.loan_debt_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.loan_annual_payment_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.pv_loan_interest_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_royalties_constraint, pyo.Constraint)
@@ -2211,12 +2222,15 @@ class TestNPVCostingBlock(object):
         assert model.fs.costing.pv_capital_cost.value == pytest.approx(
             -15.24748, rel=1e-4
         )
+        assert model.fs.costing.pv_loan_interest.value == pytest.approx(
+            -1.3380851, rel=1e-4
+        )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -59.02935, rel=1e-4
         )
         assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
         assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(442.19540, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(440.85732, rel=1e-4)
 
 
 class TestNPVFixedInputs(object):
@@ -2247,6 +2261,9 @@ class TestNPVFixedInputs(object):
     def test_NPV_fixedinputs_build(self, model):
         # check that some objects are built as expected
         assert isinstance(model.fs.costing.pv_capital_cost, pyo.Var)
+        assert isinstance(model.fs.costing.loan_debt, pyo.Var)
+        assert isinstance(model.fs.costing.loan_annual_payment, pyo.Var)
+        assert isinstance(model.fs.costing.pv_loan_interest, pyo.Var)
         assert isinstance(model.fs.costing.pv_operating_cost, pyo.Var)
         assert isinstance(model.fs.costing.pv_revenue, pyo.Var)
         assert isinstance(model.fs.costing.pv_royalties, pyo.Var)
@@ -2256,12 +2273,15 @@ class TestNPVFixedInputs(object):
         assert isinstance(model.fs.costing.capital_expenditure_percentages, pyo.Param)
         assert isinstance(model.fs.costing.capital_escalation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.capital_loan_interest_percentage, pyo.Param)
+        assert isinstance(model.fs.costing.capital_loan_repayment_period, pyo.Param)
+        assert isinstance(model.fs.costing.debt_percentage_of_CAPEX, pyo.Param)
         assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
-        assert isinstance(
-            model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param
-        )
+        assert isinstance(model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param)
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.loan_debt_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.loan_annual_payment_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.pv_loan_interest_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_royalties_constraint, pyo.Constraint)
@@ -2286,23 +2306,18 @@ class TestNPVFixedInputs(object):
     @pytest.mark.component
     def test_NPV_fixedinputs_results(self, model):
         # check some NPV results
-        for i in [
-            "pv_capital_cost",
-            "pv_operating_cost",
-            "pv_royalties",
-            "pv_revenue",
-            "npv",
-        ]:
-            print(getattr(model.fs.costing, i).value)
         assert model.fs.costing.pv_capital_cost.value == pytest.approx(
             -15.24747, rel=1e-4
+        )
+        assert model.fs.costing.pv_loan_interest.value == pytest.approx(
+            -1.3380851, rel=1e-4
         )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -59.02935, rel=1e-4
         )
         assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
         assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(442.19540, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(440.85732, rel=1e-4)
 
 
 @pytest.mark.component
@@ -4676,6 +4691,9 @@ def test_REE_costing_config_defaults():
 
     assert m.fs.costing.config.capital_escalation_percentage == 3.6
     assert m.fs.costing.config.capital_loan_interest_percentage == 6
+    assert m.fs.costing.config.capital_loan_repayment_period == 10
+    assert m.fs.costing.config.debt_percentage_of_CAPEX == 50
+    assert m.fs.costing.config.debt_expression is None
     assert m.fs.costing.config.operating_inflation_percentage == 3
     assert m.fs.costing.config.revenue_inflation_percentage == 3
     assert m.fs.costing.config.royalty_charge_percentage_of_revenue == 6.5
@@ -4687,6 +4705,7 @@ def test_REE_costing_config_kwargs():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.royalty_expression = pyo.Var(initialize=1, units=pyunits.m)
+    m.fs.debt_expression = pyo.Var(initialize=1, units=pyunits.m)
     m.fs.costing = QGESSCosting(
         discount_percentage=10,
         plant_lifetime=20,
@@ -4698,6 +4717,9 @@ def test_REE_costing_config_kwargs():
         capital_expenditure_percentages=[10, 60, 30],
         capital_escalation_percentage=2,
         capital_loan_interest_percentage=2,
+        capital_loan_repayment_period=2,
+        debt_percentage_of_CAPEX=2,
+        debt_expression=m.fs.debt_expression,
         operating_inflation_percentage=2,
         revenue_inflation_percentage=2,
         royalty_charge_percentage_of_revenue=2,
@@ -4715,6 +4737,9 @@ def test_REE_costing_config_kwargs():
     assert m.fs.costing.config.capital_expenditure_percentages == [10, 60, 30]
     assert m.fs.costing.config.capital_escalation_percentage == 2
     assert m.fs.costing.config.capital_loan_interest_percentage == 2
+    assert m.fs.costing.config.capital_loan_repayment_period == 2
+    assert m.fs.costing.config.debt_percentage_of_CAPEX == 2
+    assert isinstance(m.fs.costing.config.debt_expression, pyo.Var)
     assert m.fs.costing.config.operating_inflation_percentage == 2
     assert m.fs.costing.config.revenue_inflation_percentage == 2
     assert m.fs.costing.config.royalty_charge_percentage_of_revenue == 2
@@ -5405,4 +5430,84 @@ def test_REE_costing_royalty_expression_solve():
 
     assert pyo.value(m.fs.costing.pv_royalties[None]) == pytest.approx(
         pyo.value(m.fs.royalty_formula), rel=1e-4
+    )
+
+@pytest.mark.unit
+def test_REE_costing_debt_expression():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+
+    m.fs.total_capital_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.annual_operating_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.annual_revenue = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.cost_year = "2021"
+
+    # suppose debt is 50% of CAPEX (default), plus 5% of OPEX
+    m.fs.debt_formula = pyo.Expression(
+        expr=50 / 100 * m.fs.total_capital_cost + 5 / 100 * m.fs.annual_operating_cost
+    )
+
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=m.fs.total_capital_cost,
+        annual_operating_cost=m.fs.annual_operating_cost,
+        annual_revenue=m.fs.annual_revenue,
+        cost_year=m.fs.cost_year,
+        debt_expression=m.fs.debt_formula,
+    )
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=False,
+        calculate_NPV=True,
+    )
+
+    assert isinstance(m.fs.costing.loan_debt[None], ScalarExpression)
+    assert not hasattr(m.fs.costing, "loan_debt_constraint")
+    assert m.fs.costing.loan_debt[None].expr == m.fs.debt_formula.expr
+
+
+@pytest.mark.component
+def test_REE_costing_debt_expression_solve():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+
+    m.fs.total_capital_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.total_capital_cost.fix()
+    m.fs.annual_operating_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.annual_operating_cost.fix()
+    m.fs.annual_revenue = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.annual_revenue.fix()
+    m.fs.cost_year = "2021"
+
+    # suppose debt is 50% of CAPEX (default), plus 5% of OPEX
+    m.fs.debt_formula = pyo.Expression(
+        expr=50 / 100 * m.fs.total_capital_cost + 5 / 100 * m.fs.annual_operating_cost
+    )
+
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=m.fs.total_capital_cost,
+        annual_operating_cost=m.fs.annual_operating_cost,
+        annual_revenue=m.fs.annual_revenue,
+        cost_year=m.fs.cost_year,
+        debt_expression=m.fs.debt_formula,
+    )
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=False,
+        calculate_NPV=True,
+    )
+
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt.assert_no_structural_warnings()
+
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    assert pyo.value(m.fs.costing.loan_debt[None]) == pytest.approx(
+        pyo.value(m.fs.debt_formula), rel=1e-4
     )

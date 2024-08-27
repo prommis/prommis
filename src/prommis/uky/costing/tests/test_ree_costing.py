@@ -5231,26 +5231,7 @@ def test_REE_costing_not_has_capital_expenditure_period_solve():
         """
         return (1 - ((1 + g) ** (N)) * ((1 + r) ** (-N))) / (r - g)
 
-    assert pyo.value(m.fs.costing.pv_capital_cost) == pytest.approx(
-        pyo.value(
-            -pyunits.convert(
-                m.fs.costing.CAPEX
-                * series_present_worth_factor(
-                    pyunits.convert(
-                        m.fs.costing.capital_loan_interest_percentage,
-                        to_units=pyunits.dimensionless,
-                    ),
-                    pyunits.convert(
-                        m.fs.costing.capital_escalation_percentage,
-                        to_units=pyunits.dimensionless,
-                    ),
-                    0,
-                ),  # formula gives P/A (r, g, 0) = 1
-                to_units=m.fs.costing.cost_units,
-            )
-        ),
-        rel=1e-4,
-    )
+    assert pyo.value(m.fs.costing.pv_capital_cost) == pytest.approx(-100, rel=1e-4)
 
 
 @pytest.mark.unit

@@ -3154,18 +3154,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 # PV_Capital_Cost = - CAPEX
 
                 return c.pv_capital_cost == -pyunits.convert(
-                    c.CAPEX
-                    * series_present_worth_factor(
-                        pyunits.convert(
-                            c.capital_loan_interest_percentage,
-                            to_units=pyunits.dimensionless,
-                        ),
-                        pyunits.convert(
-                            c.capital_escalation_percentage,
-                            to_units=pyunits.dimensionless,
-                        ),
-                        0,
-                    ),  # formula gives P/A (r, g, 0) = 1
+                    c.CAPEX,
                     to_units=c.cost_units,
                 )
 

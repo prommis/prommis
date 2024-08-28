@@ -13,12 +13,12 @@ from pyomo.environ import (
     ConcreteModel,
     Expression,
     Objective,
+    Param,
     Set,
+    Suffix,
     TransformationFactory,
     Var,
-    floor,
     log,
-    log10,
     units,
     value,
 )
@@ -52,18 +52,6 @@ from prommis.nanofiltration.diafiltration_properties import LiCoParameters
 
 _log = idaeslog.getLogger(__name__)
 
-# Global constants
-Jw = 0.1 * units.m / units.hour
-w = 1.5 * units.m
-atmospheric_pressure = 101325 * units.Pa
-operating_pressure = 145 * units.psi
-Q_feed = 100 * units.m**3 / units.h
-C_Li_feed = 1.7 * units.kg / units.m**3
-C_Co_feed = 17 * units.kg / units.m**3
-Q_diaf = 30 * units.m**3 / units.h
-C_Li_diaf = 0.1 * units.kg / units.m**3
-C_Co_diaf = 0.2 * units.kg / units.m**3
-
 
 def main():
     """
@@ -77,11 +65,13 @@ def main():
         raise ValueError(
             "Degrees of freedom were not equal to zero after building model"
         )
+
     add_costing(m)
     if degrees_of_freedom(m) != 0:
         raise ValueError(
             "Degrees of freedom were not equal to zero after building cost block"
         )
+
     initialize_model(m)
     _log.info("Initialization Okay")
 
@@ -119,6 +109,7 @@ def build_model():
         m: Pyomo model
     """
     m = ConcreteModel()
+    add_global_flowsheet_parameters(m)
 
     m.fs = FlowsheetBlock(dynamic=False)
 
@@ -134,10 +125,69 @@ def build_model():
     m.fs.stage1, m.fs.stage2, m.fs.stage3, m.fs.mix1, m.fs.mix2 = build_unit_models(m)
 
     add_streams(m)
-    fix_values(m)
+    fix_stream_values(m)
     add_useful_expressions(m)  # adds recovery, purity, and membrane length expressions
 
     return m
+
+
+def add_global_flowsheet_parameters(m):
+    """
+    Adds global parameters to the Pyomo model
+
+    Args:
+        m: Pyomo model
+    """
+    m.Jw = Param(
+        initialize=0.1,
+        doc="Water flux",
+        units=units.m**3 / units.m**2 / units.h,
+    )
+    m.w = Param(
+        initialize=1.5,
+        doc="Membrane module length",
+        units=units.m,
+    )
+    m.atmospheric_pressure = Param(
+        initialize=101325,
+        doc="Atmospheric pressure in Pascal",
+        units=units.Pa,
+    )
+    m.operating_pressure = Param(
+        initialize=145,
+        doc="Membrane operating pressure",
+        units=units.psi,
+    )
+    m.Q_feed = Param(
+        initialize=100,
+        doc="Cascade feed flow",
+        units=units.m**3 / units.h,
+    )
+    m.C_Li_feed = Param(
+        initialize=1.7,
+        doc="Lithium concentration in cascade feed",
+        units=units.kg / units.m**3,
+    )
+    m.C_Co_feed = Param(
+        initialize=17,
+        doc="Cobalt concentration in cascade feed",
+        units=units.kg / units.m**3,
+    )
+    m.Q_diaf = Param(
+        initialize=30,
+        doc="Cascade diafiltrate flow",
+        units=units.m**3 / units.h,
+    )
+    m.C_Li_diaf = Param(
+        initialize=0.1,
+        doc="Lithium concentration in diafiltrate",
+        units=units.kg / units.m**3,
+    )
+    m.C_Co_diaf = Param(
+        initialize=0.2,
+        doc="Cobalt concentration in diafiltrate",
+        units=units.kg / units.m**3,
+    )
 
 
 def build_unit_models(m):
@@ -237,7 +287,7 @@ def add_stage1_constraints(blk, model):
     def stage_1_solvent_flux(blk, s):
         return (
             blk.material_transfer_term[0, s, "permeate", "retentate", "solvent"]
-            == Jw * blk.length * w * model.fs.properties.dens_H2O / 10
+            == model.Jw * blk.length * model.w * model.fs.properties.dens_H2O / 10
         )
 
     @blk.Constraint(blk.elements, model.fs.solutes)
@@ -266,7 +316,7 @@ def add_stage2_constraints(blk, model):
     def stage_2_solvent_flux(blk, s):
         return (
             blk.material_transfer_term[0, s, "permeate", "retentate", "solvent"]
-            == Jw * blk.length * w * model.fs.properties.dens_H2O / 10
+            == model.Jw * blk.length * model.w * model.fs.properties.dens_H2O / 10
         )
 
     @blk.Constraint(blk.elements, model.fs.solutes)
@@ -295,7 +345,7 @@ def add_stage3_constraints(blk, model):
     def stage_3_solvent_flux(blk, s):
         return (
             blk.material_transfer_term[0, s, "permeate", "retentate", "solvent"]
-            == Jw * blk.length * w * model.fs.properties.dens_H2O / 10
+            == model.Jw * blk.length * model.w * model.fs.properties.dens_H2O / 10
         )
 
     @blk.Constraint(blk.elements, model.fs.solutes)
@@ -366,24 +416,24 @@ def add_streams(m):
     TransformationFactory("network.expand_arcs").apply_to(m)
 
 
-def fix_values(m):
+def fix_stream_values(m):
     """
     Fixes the volumetric flow and concentration of streams
 
     Args:
         m: Pyomo model
     """
-    m.fs.stage1.retentate_inlet.flow_vol[0].fix(Q_feed)
-    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].fix(C_Li_feed)
-    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].fix(C_Co_feed)
+    m.fs.stage1.retentate_inlet.flow_vol[0].fix(m.Q_feed)
+    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].fix(m.C_Li_feed)
+    m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].fix(m.C_Co_feed)
 
     m.fs.stage1.retentate_inlet.flow_vol[0].unfix()
     m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].unfix()
     m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].unfix()
 
-    m.fs.mix1.inlet_1.flow_vol[0].fix(Q_feed)
-    m.fs.mix1.inlet_1.conc_mass_solute[0, "Li"].fix(C_Li_feed)
-    m.fs.mix1.inlet_1.conc_mass_solute[0, "Co"].fix(C_Co_feed)
+    m.fs.mix1.inlet_1.flow_vol[0].fix(m.Q_feed)
+    m.fs.mix1.inlet_1.conc_mass_solute[0, "Li"].fix(m.C_Li_feed)
+    m.fs.mix1.inlet_1.conc_mass_solute[0, "Co"].fix(m.C_Co_feed)
 
     # Unfix Feed to Mixer 1 inlet 1
     m.fs.mix1.inlet_1.flow_vol[0].unfix()
@@ -396,9 +446,13 @@ def fix_values(m):
     m.fs.mix2.inlet_1.conc_mass_solute[0, "Co"].fix(0.2)
 
     # Fix Feed stream at element 10 of stage 3
-    m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.fix(Q_feed)
-    m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].fix(C_Li_feed)
-    m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(C_Co_feed)
+    m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.fix(m.Q_feed)
+    m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].fix(
+        m.C_Li_feed
+    )
+    m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(
+        m.C_Co_feed
+    )
 
 
 def initialize_model(m):
@@ -439,9 +493,9 @@ def initialize_model(m):
     # Lets try again
     # Initial feed guess is pure diafiltrate (no recycle)
     # Remember to only set the value, not fix the inlet
-    m.fs.stage3.retentate_inlet.flow_vol[0].set_value(Q_diaf)
-    m.fs.stage3.retentate_inlet.conc_mass_solute[0, "Li"].set_value(C_Li_diaf)
-    m.fs.stage3.retentate_inlet.conc_mass_solute[0, "Co"].set_value(C_Co_diaf)
+    m.fs.stage3.retentate_inlet.flow_vol[0].set_value(m.Q_diaf)
+    m.fs.stage3.retentate_inlet.conc_mass_solute[0, "Li"].set_value(m.C_Li_diaf)
+    m.fs.stage3.retentate_inlet.conc_mass_solute[0, "Co"].set_value(m.C_Co_diaf)
 
     initializer.initialize(m.fs.stage3)
 
@@ -521,7 +575,7 @@ def solve_model(m):
     # TODO: add Boolean variable to calculate pump OPEX
     # Verify the feed pump operating pressure workaround is valid
     # assume this additional cost is less than half a cent
-    if value(m.fs.feed_pump.costing.fixed_operating_cost) >= 0.005:
+    if value(m.fs.feed_pump.costing.variable_operating_cost) >= 0.005:
         raise ValueError(
             "The fixed operating cost of the feed pump as calculated in the feed"
             "pump costing block is not negligible. This operating cost is already"
@@ -539,30 +593,54 @@ def add_costing(m):
         m: Pyomo model
     """
     # creating dummy variables to store the UnitModelCostingBlocks
-    m.fs.membrane = UnitModelBlock()
-    m.fs.feed_pump = UnitModelBlock()
-    m.fs.diafiltrate_pump = UnitModelBlock()
+    m.fs.cascade = UnitModelBlock()  # to cost the presure drop
+    m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
+    m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
 
     m.fs.costing = DiafiltrationCosting()
-    m.fs.membrane.costing = UnitModelCostingBlock(
+    m.fs.stage1.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_membranes,
         costing_method_arguments={
-            "membrane_length": m.membrane_length,  # total membrane length
-            "membrane_width": w,  # membrane width
-            "water_flux": Jw,  # water flux
+            "membrane_length": m.fs.stage1.length,
+            "membrane_width": m.w,
+        },
+    )
+    m.fs.stage2.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=DiafiltrationCostingData.cost_membranes,
+        costing_method_arguments={
+            "membrane_length": m.fs.stage2.length,
+            "membrane_width": m.w,
+        },
+    )
+    m.fs.stage3.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=DiafiltrationCostingData.cost_membranes,
+        costing_method_arguments={
+            "membrane_length": m.fs.stage3.length,
+            "membrane_width": m.w,
+        },
+    )
+    m.fs.cascade.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
+        costing_method_arguments={
+            "water_flux": m.Jw,
             "vol_flow_feed": m.fs.stage3.retentate_side_stream_state[
                 0, 10
-            ].flow_vol,  # feed
-            "vol_flow_perm": m.fs.stage3.permeate_outlet.flow_vol[0],  # permeate
+            ].flow_vol,  # cascade feed
+            "vol_flow_perm": m.fs.stage3.permeate_outlet.flow_vol[
+                0
+            ],  # cascade permeate
         },
     )
     m.fs.feed_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_pump,
         costing_method_arguments={
-            "inlet_pressure": atmospheric_pressure
-            + units.convert(m.fs.membrane.costing.pressure_drop, to_units=units.Pa),
+            "inlet_pressure": m.atmospheric_pressure
+            + units.convert(m.fs.cascade.costing.pressure_drop, to_units=units.Pa),
             "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
             * units.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
             "inlet_vol_flow": m.fs.stage3.retentate_side_stream_state[
@@ -574,8 +652,8 @@ def add_costing(m):
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_pump,
         costing_method_arguments={
-            "inlet_pressure": atmospheric_pressure,
-            "outlet_pressure": operating_pressure,
+            "inlet_pressure": m.atmospheric_pressure,
+            "outlet_pressure": m.operating_pressure,
             "inlet_vol_flow": m.fs.stage3.retentate_inlet.flow_vol[0],  # diafiltrate
         },
     )
@@ -615,7 +693,7 @@ def add_product_constraints(m, recovery=True, purity=False):
 
         @m.Constraint()
         def Li_purity_constraint(m):
-            return m.Li_purity >= 0.8
+            return m.Li_purity >= 0.5
 
         @m.Constraint()
         def Co_purity_constraint(m):
@@ -636,67 +714,19 @@ def add_objective(m):
     m.cost_objecticve = Objective(rule=cost_obj)
 
 
-def calculate_scale(value):
-    """
-    Calculates a default scaling value
-    """
-    return -1 * floor(log10(value))
-
-
 def set_scaling(m):
     """
-    Method to set scaling factors to improve the solver performance
+    Apply scaling factors to certain constraints to improve solver performance
 
     Args:
         m: Pyomo model
     """
-    # Calculate scaling factors for permeate flow rates
-    for i in range(1, 11):
-        scale = calculate_scale(m.fs.stage1.permeate[0.0, i].flow_vol.value)
-        print(f"Stage 1, element {i} permeate flow_vol scaling factor = {10**(scale)}")
-        m.fs.stage1.permeate[0.0, i].set_default_scaling(
-            "flow_vol",
-            10 ** (scale),
-        )
-    for i in range(1, 11):
-        scale = calculate_scale(m.fs.stage2.permeate[0.0, i].flow_vol.value)
-        print(f"Stage 2, element {i} permeate flow_vol scaling factor = {10**(scale)}")
-        m.fs.stage2.permeate[0.0, i].set_default_scaling(
-            "flow_vol",
-            10 ** (scale),
-        )
-    for i in range(1, 11):
-        scale = calculate_scale(m.fs.stage3.permeate[0.0, i].flow_vol.value)
-        print(f"Stage 3, element {i} permeate flow_vol scaling factor = {10**(scale)}")
-        m.fs.stage3.permeate[0.0, i].set_default_scaling(
-            "flow_vol",
-            10 ** (scale),
-        )
-    # Calculate scaling factors for retentate flow rates
-    for i in range(1, 11):
-        scale = calculate_scale(m.fs.stage1.retentate[0.0, i].flow_vol.value)
-        print(f"Stage 1, element {i} retentate flow_vol scaling factor = {10**(scale)}")
-        m.fs.stage1.retentate[0.0, i].set_default_scaling(
-            "flow_vol",
-            10 ** (scale),
-        )
-    for i in range(1, 11):
-        scale = calculate_scale(m.fs.stage2.retentate[0.0, i].flow_vol.value)
-        print(f"Stage 2, element {i} retentate flow_vol scaling factor = {10**(scale)}")
-        m.fs.stage2.retentate[0.0, i].set_default_scaling(
-            "flow_vol",
-            10 ** (scale),
-        )
-    for i in range(1, 11):
-        scale = calculate_scale(m.fs.stage3.retentate[0.0, i].flow_vol.value)
-        print(f"Stage 3, element {i} retentate flow_vol scaling factor = {10**(scale)}")
-        m.fs.stage3.retentate[0.0, i].set_default_scaling(
-            "flow_vol",
-            10 ** (scale),
-        )
+    m.scaling_factor = Suffix(direction=Suffix.EXPORT)
+
+    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 9, "Co"]] = 1e-8
+    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 10, "Co"]] = 1e-8
 
 
-# TODO: update functionality to specify an output stream
 def print_information(m):
     """
     Prints relevant information after solving the model
@@ -711,26 +741,8 @@ def print_information(m):
         f"The cobalt recovery is {value(m.Co_recovery) * 100}% at purity {value(m.Co_purity) * 100}"
     )
 
-    print("\nmembrane area")
-    print(f"{value(m.fs.membrane.costing.membrane_area)} m2")
-
-    print("\nmembrane capital cost")
-    print(f"${value(m.fs.membrane.costing.capital_cost)}")
-
-    print("\nfeed pump capital cost")
-    print(f"${value(m.fs.feed_pump.costing.capital_cost)}")
-
-    print("\ndiafiltrate pump capital cost")
-    print(f"${value(m.fs.diafiltrate_pump.costing.capital_cost)}")
-
-    print("\naggregate capital cost")
-    print(f"${value(m.fs.costing.aggregate_capital_cost)}")
-
-    print("\ntotal capital cost")
-    print(f"${value(m.fs.costing.total_capital_cost)}")
-
-    print("\ntotal operating cost")
-    print(f"${value(m.fs.costing.total_operating_cost)}")
+    print("\ntotal membrane area")
+    print(f"{value(m.membrane_length)*value(m.w)} m2")
 
     print("\ntotal annualized cost")
     print(f"${value(m.fs.costing.total_annualized_cost)}")

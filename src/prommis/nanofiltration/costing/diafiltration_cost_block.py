@@ -17,19 +17,10 @@ from idaes.core import FlowsheetCostingBlockData, declare_process_block_class
 class DiafiltrationCostingBlockData(FlowsheetCostingBlockData):
     """
     The base class for costing diafiltration-precipitation flowsheets
-
-    methods that come directly from reference file:
-        build
-        _build_common_global_params
-        _get_costing_method_for
-        register_flow_type
     """
 
     def build(self):
         return super().build()
-
-    # TODO: can add other desired parameters/constraints to the costing block
-    # e.g., energy consumption, levelized cost
 
     def _build_common_process_costs(self):
         """
@@ -57,16 +48,15 @@ class DiafiltrationCostingBlockData(FlowsheetCostingBlockData):
 
         The derived class should define the capital_recovery_factor.
         """
-
-        # TODO: can add this variable to operating cost calculations
         self.utilization_factor = Var(
             initialize=0.9,
             doc="Plant capacity utilization [fraction of uptime]",
             units=units.dimensionless,
         )
+        self.utilization_factor.fix()
 
         self.capital_recovery_factor = Expression(
-            expr=0,  # TODO: verify
+            expr=0,
             doc="Capital annualization factor [fraction of investment cost/year]",
         )
 
@@ -75,11 +65,11 @@ class DiafiltrationCostingBlockData(FlowsheetCostingBlockData):
             doc="Total Purchased Equipment Cost (TPEC)",
             units=units.dimensionless,
         )
+        self.TPEC.fix()
 
         self.TIC = Var(
             initialize=1.65,  # TODO: verify
             doc="Total Installed Cost (TIC)",
             units=units.dimensionless,
         )
-
-        self.fix_all_vars()
+        self.TIC.fix()

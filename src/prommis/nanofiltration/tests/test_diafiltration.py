@@ -15,8 +15,6 @@ from idaes.models.unit_models import MSContactor
 
 import pytest
 
-pytest.importorskip("watertap", reason="WaterTAP dependency not available")
-# pylint: disable-next=wrong-import-position
 from prommis.nanofiltration.diafiltration import main
 
 

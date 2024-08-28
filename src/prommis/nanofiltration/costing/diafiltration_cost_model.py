@@ -8,7 +8,15 @@
 Flowsheet costing block for diafiltration flowsheet model
 """
 
-from pyomo.environ import Constraint, Expression, NonNegativeReals, Param, Var, units
+from pyomo.environ import (
+    Constraint,
+    Expression,
+    NonNegativeReals,
+    Param,
+    Var,
+    units,
+    value,
+)
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 from idaes.core import declare_process_block_class, register_idaes_currency_units
@@ -29,58 +37,11 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         # Register currency and conversion rates based on CE Index
         register_idaes_currency_units()
 
-        # initialize the common global parameters
-        self._build_common_global_params()
-
         # Set the base year for all costs
         self.base_currency = units.USD_2021
 
         # Set a base period for all operating costs
         self.base_period = units.year
-
-        # the following global parameters are from the reference file
-        self.factor_total_investment = Var(
-            initialize=2,
-            domain=NonNegativeReals,
-            doc="Total investment factor [investment cost/equipment cost]",
-            units=units.dimensionless,
-        )
-        self.factor_maintenance_labor_chemical = Var(
-            initialize=0.03,
-            domain=NonNegativeReals,
-            doc="Maintenance-labor-chemical factor [fraction of investment cost/year]",
-            units=units.year**-1,
-        )
-        self.factor_capital_annualization = Var(
-            initialize=0.1,
-            domain=NonNegativeReals,
-            doc="Capital annualization factor [fraction of investment cost/year]",
-            units=units.year**-1,
-        )
-        self.capital_recovery_factor.expr = self.factor_capital_annualization
-
-        self.density = Param(
-            initialize=1000,
-            doc="Operating fluid density",
-            units=units.kg / units.m**3,
-        )
-        self.specific_gravity = Param(
-            initialize=1,
-            doc="Operating fluid specific gravity",
-            units=units.dimensionless,
-        )
-        self.operating_time = Var(
-            initialize=8760,
-            domain=NonNegativeReals,
-            doc="Operational hours in a year",
-            units=units.hr,
-        )
-        self.electricity_cost = Var(
-            initialize=0.141,
-            domain=NonNegativeReals,
-            doc="Unit cost of electricity",
-            units=units.USD_2021 / units.kWh,
-        )
 
         # fix the parameters
         self.fix_all_vars()
@@ -91,9 +52,31 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         """
         Builds the process-wide costing
         """
+        # initialize the common global parameters
+        self._build_common_global_params()
 
         # add total_capital_cost and total_operating_cost
         self._build_common_process_costs()
+
+        self.factor_total_investment = Param(
+            initialize=2,
+            domain=NonNegativeReals,
+            doc="Total investment factor [investment cost/equipment cost]",
+            units=units.dimensionless,
+        )
+        self.factor_maintenance_labor_chemical = Param(
+            initialize=0.03,
+            domain=NonNegativeReals,
+            doc="Maintenance-labor-chemical factor [fraction of investment cost/year]",
+            units=units.year**-1,
+        )
+        self.factor_capital_annualization = Param(
+            initialize=0.1,
+            domain=NonNegativeReals,
+            doc="Capital annualization factor [fraction of investment cost/year]",
+            units=units.year**-1,
+        )
+        self.capital_recovery_factor.expr = self.factor_capital_annualization
 
         self.maintenance_labor_chemical_operating_cost = Var(
             initialize=1e3,
@@ -109,13 +92,11 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             expr=self.maintenance_labor_chemical_operating_cost
             == self.factor_maintenance_labor_chemical * self.total_capital_cost
         )
-
         self.total_fixed_operating_cost = Expression(
             expr=self.aggregate_fixed_operating_cost
             + self.maintenance_labor_chemical_operating_cost,
             doc="Total fixed operating costs",
         )
-
         self.total_variable_operating_cost = Expression(
             expr=(
                 (
@@ -128,13 +109,11 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             ),
             doc="Total variable operating cost of process per operating period",
         )
-
         self.total_operating_cost_constraint = Constraint(
             expr=self.total_operating_cost
             == (self.total_fixed_operating_cost + self.total_variable_operating_cost),
             doc="Total operating cost of process per operating period",
         )
-
         self.total_annualized_cost = Expression(
             expr=(
                 self.total_capital_cost * self.capital_recovery_factor
@@ -160,22 +139,16 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         blk,
         membrane_length,
         membrane_width,
-        water_flux,
-        vol_flow_feed,
-        vol_flow_perm,
     ):
         """
         Costing method for membranes
 
-        Refereences:
+        References:
             https://doi.org/10.1016/j.ijggc.2019.03.018
 
         Args:
             membrane_length: total membrane length (m)
             membrane_width: membrane width (m)
-            water_flux: water flux through membrane (m/h)
-            vol_flow_feed: volumetric flow rate of feed (m3/h)
-            vol_flow_perm: volumetric flow rate of permeate (m3/h)
         """
 
         blk.factor_membrane_replacement = Param(
@@ -187,11 +160,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             initialize=50,
             doc="Membrane cost",
             units=units.USD_2021 / (units.meter**2),  # TODO: validate reference year
-        )
-        blk.hydraulic_permeability = Param(
-            initialize=3,
-            doc="Hydraulic permeability (Lp) of the membrane",
-            units=units.L / units.m**2 / units.hr / units.bar,
         )
 
         # create the capital and operating cost variables
@@ -221,6 +189,69 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             return blk.membrane_area == units.convert(
                 (membrane_length * membrane_width), to_units=units.m**2
             )
+
+        @blk.Constraint()
+        def capital_cost_constraint(blk):
+            return blk.capital_cost == units.convert(
+                (blk.membrane_cost * blk.membrane_area),
+                to_units=blk.costing_package.base_currency,
+            )
+
+        @blk.Constraint()
+        def fixed_operating_cost_constraint(blk):
+            return blk.fixed_operating_cost == units.convert(
+                (
+                    blk.factor_membrane_replacement
+                    * blk.membrane_cost
+                    * blk.membrane_area
+                ),
+                to_units=blk.costing_package.base_currency
+                / blk.costing_package.base_period,
+            )
+
+    def cost_membrane_pressure_drop(
+        blk,
+        water_flux,
+        vol_flow_feed,
+        vol_flow_perm,
+    ):
+        """
+        Costing method for membrane pressure drop
+
+        Args:
+            water_flux: water flux through membrane (m/h)
+            vol_flow_feed: volumetric flow rate of feed (m3/h)
+            vol_flow_perm: volumetric flow rate of permeate (m3/h)
+        """
+        blk.hydraulic_permeability = Param(
+            initialize=3,
+            doc="Hydraulic permeability (Lp) of the membrane",
+            units=units.L / units.m**2 / units.hr / units.bar,
+        )
+
+        if not (hasattr(blk.costing_package, "electricity_cost")):
+            blk.electricity_cost = Var(
+                initialize=0.141,
+                domain=NonNegativeReals,
+                doc="Unit cost of electricity",
+                units=units.USD_2021 / units.kWh,
+            )
+
+        else:
+            blk.electricity_cost = Var(
+                initialize=value(blk.costing_package.electricity_cost),
+                domain=NonNegativeReals,
+                doc="Unit cost of electricity",
+                units=blk.costing_package.electricity_cost.units,
+            )
+        blk.electricity_cost.fix()
+
+        blk.variable_operating_cost = Var(
+            initialize=1e5,
+            domain=NonNegativeReals,
+            units=blk.costing_package.base_currency / blk.costing_package.base_period,
+            doc="Unit variable operating cost",
+        )
 
         # calculate pressure drop
         blk.pressure_drop = Var(
@@ -258,24 +289,9 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             )
 
         @blk.Constraint()
-        def capital_cost_constraint(blk):
-            return blk.capital_cost == units.convert(
-                (blk.membrane_cost * blk.membrane_area),
-                to_units=blk.costing_package.base_currency,
-            )
-
-        @blk.Constraint()
-        def fixed_operating_cost_constraint(blk):
-            return blk.fixed_operating_cost == units.convert(
-                (
-                    blk.factor_membrane_replacement
-                    * blk.membrane_cost
-                    * blk.membrane_area
-                ),
-                to_units=blk.costing_package.base_currency
-                / blk.costing_package.base_period,
-            ) + units.convert(
-                (blk.SEC * vol_flow_perm * blk.costing_package.electricity_cost),
+        def variable_operating_cost_constraint(blk):
+            return blk.variable_operating_cost == units.convert(
+                (blk.SEC * vol_flow_perm * blk.electricity_cost),
                 to_units=blk.costing_package.base_currency
                 / blk.costing_package.base_period,
             )
@@ -296,6 +312,16 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             outlet_pressure: pressure of outlet stream from pump (psi)
             inlet_vol_flow: volumetric flow rate of inlet stream to pump (m3/h)
         """
+        blk.density = Param(
+            initialize=1000,
+            doc="Operating fluid density",
+            units=units.kg / units.m**3,
+        )
+        blk.specific_gravity = Param(
+            initialize=1,
+            doc="Operating fluid specific gravity",
+            units=units.dimensionless,
+        )
         blk.pump_correlation_factor = Param(
             initialize=622.59,
             doc="Pump correlation factor (constant)",
@@ -321,6 +347,22 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             doc="Pump efficiency",
             units=units.dimensionless,
         )
+        if not (hasattr(blk.costing_package, "electricity_cost")):
+            blk.electricity_cost = Var(
+                initialize=0.141,
+                domain=NonNegativeReals,
+                doc="Unit cost of electricity",
+                units=units.USD_2021 / units.kWh,
+            )
+
+        else:
+            blk.electricity_cost = Var(
+                initialize=value(blk.costing_package.electricity_cost),
+                domain=NonNegativeReals,
+                doc="Unit cost of electricity",
+                units=blk.costing_package.electricity_cost.units,
+            )
+        blk.electricity_cost.fix()
 
         # create the capital and operating cost variables
         blk.capital_cost = Var(
@@ -329,11 +371,11 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             units=blk.costing_package.base_currency,
             doc="Unit capital cost",
         )
-        blk.fixed_operating_cost = Var(
+        blk.variable_operating_cost = Var(
             initialize=1e5,
             domain=NonNegativeReals,
             units=blk.costing_package.base_currency / blk.costing_package.base_period,
-            doc="Unit fixed operating cost",
+            doc="Unit variable operating cost",
         )
 
         @blk.Constraint()
@@ -355,11 +397,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         @blk.Constraint()
         def pump_head_equation(blk):
             return blk.pump_head == units.convert(
-                (
-                    outlet_pressure
-                    * blk.pump_head_factor
-                    / blk.costing_package.specific_gravity
-                ),
+                (outlet_pressure * blk.pump_head_factor / blk.specific_gravity),
                 to_units=units.m,
             )
 
@@ -382,7 +420,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                     units.convert(
                         (
                             inlet_vol_flow
-                            * blk.costing_package.density
+                            * blk.density
                             * grav_constant
                             * blk.pump_head
                             / blk.pump_power_factor
@@ -390,17 +428,17 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                         ),
                         to_units=units.kW,
                     )
-                    * blk.costing_package.operating_time  # per one year
+                    * blk.costing_package.base_period  # per one year
                 ),
                 to_units=units.kWh,
             )
 
         @blk.Constraint()
-        def fixed_operating_cost_constraint(blk):
-            return blk.fixed_operating_cost == units.convert(
+        def variable_operating_cost_constraint(blk):
+            return blk.variable_operating_cost == units.convert(
                 blk.pump_power
-                * blk.costing_package.electricity_cost
-                / blk.costing_package.operating_time,  # per one year
+                * blk.electricity_cost
+                / blk.costing_package.base_period,  # per one year
                 to_units=blk.costing_package.base_currency
                 / blk.costing_package.base_period,
             )

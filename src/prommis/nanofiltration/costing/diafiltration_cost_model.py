@@ -43,9 +43,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         # Set a base period for all operating costs
         self.base_period = units.year
 
-        # fix the parameters
-        self.fix_all_vars()
-
     def build_process_costs(
         self,
     ):

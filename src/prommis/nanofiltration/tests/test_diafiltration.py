@@ -65,7 +65,7 @@ def test_main():
         "cobalt_recovery": [value(m.Co_recovery) * 100, 39.99999900000385],
         "cobalt_purity": [value(m.Co_purity) * 100, 98.74828132235208],
         "membrane_area": [
-            value(m.fs.membrane.costing.membrane_area),
+            (value(m.membrane_length)*value(m.w)),
             2102.3947692843317,
         ],
         "total_annualized_cost": [

@@ -222,6 +222,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         """
         blk.hydraulic_permeability = Param(
             initialize=3,
+            mutable=True,
             doc="Hydraulic permeability (Lp) of the membrane",
             units=units.L / units.m**2 / units.hr / units.bar,
         )

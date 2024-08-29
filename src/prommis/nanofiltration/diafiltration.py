@@ -84,7 +84,7 @@ def main():
     dt.assert_no_numerical_warnings()
 
     unfix_opt_variables(m)
-    add_product_constraints(m)
+    add_product_constraints(m, Li_recovery_bound=0.95, Co_recovery_bound=0.4)
     add_objective(m)
 
     # Create a scaled version of the model to solve
@@ -140,11 +140,13 @@ def add_global_flowsheet_parameters(m):
     """
     m.Jw = Param(
         initialize=0.1,
+        mutable=True,
         doc="Water flux",
         units=units.m**3 / units.m**2 / units.h,
     )
     m.w = Param(
         initialize=1.5,
+        mutable=True,
         doc="Membrane module length",
         units=units.m,
     )
@@ -155,36 +157,43 @@ def add_global_flowsheet_parameters(m):
     )
     m.operating_pressure = Param(
         initialize=145,
+        mutable=True,
         doc="Membrane operating pressure",
         units=units.psi,
     )
     m.Q_feed = Param(
         initialize=100,
+        mutable=True,
         doc="Cascade feed flow",
         units=units.m**3 / units.h,
     )
     m.C_Li_feed = Param(
         initialize=1.7,
+        mutable=True,
         doc="Lithium concentration in cascade feed",
         units=units.kg / units.m**3,
     )
     m.C_Co_feed = Param(
         initialize=17,
+        mutable=True,
         doc="Cobalt concentration in cascade feed",
         units=units.kg / units.m**3,
     )
     m.Q_diaf = Param(
         initialize=30,
+        mutable=True,
         doc="Cascade diafiltrate flow",
         units=units.m**3 / units.h,
     )
     m.C_Li_diaf = Param(
         initialize=0.1,
+        mutable=True,
         doc="Lithium concentration in diafiltrate",
         units=units.kg / units.m**3,
     )
     m.C_Co_diaf = Param(
         initialize=0.2,
+        mutable=True,
         doc="Cobalt concentration in diafiltrate",
         units=units.kg / units.m**3,
     )
@@ -577,7 +586,7 @@ def solve_model(m):
     # assume this additional cost is less than half a cent
     if value(m.fs.feed_pump.costing.variable_operating_cost) >= 0.005:
         raise ValueError(
-            "The fixed operating cost of the feed pump as calculated in the feed"
+            "The variable   operating cost of the feed pump as calculated in the feed"
             "pump costing block is not negligible. This operating cost is already"
             "accounted for via the membrane presure drop specific energy consumption."
         )
@@ -672,7 +681,15 @@ def unfix_opt_variables(m):
     m.fs.stage3.length.unfix()
 
 
-def add_product_constraints(m, recovery=True, purity=False):
+def add_product_constraints(
+    m,
+    Li_recovery_bound,
+    Co_recovery_bound,
+    recovery=True,
+    Li_purity_bound=None,
+    Co_purity_bound=None,
+    purity=False,
+):
     """
     Method to add recovery/purity constraints to the flowsheet for performing optimization
 
@@ -682,22 +699,27 @@ def add_product_constraints(m, recovery=True, purity=False):
     if recovery:
 
         @m.Constraint()
-        def Co_recovery_constraint(m):
-            return m.Co_recovery >= 0.4
+        def Li_recovery_constraint(m):
+            return m.Li_recovery >= Li_recovery_bound
 
         @m.Constraint()
-        def Li_recovery_constraint(m):
-            return m.Li_recovery >= 0.95
+        def Co_recovery_constraint(m):
+            return m.Co_recovery >= Co_recovery_bound
 
     if purity:
+        if Li_purity_bound == None:
+            raise ValueError("A lithiunm product purity bound was not provided")
+
+        if Co_purity_bound == None:
+            raise ValueError("A cobalt product purity bound was not provided")
 
         @m.Constraint()
         def Li_purity_constraint(m):
-            return m.Li_purity >= 0.5
+            return m.Li_purity >= Li_purity_bound
 
         @m.Constraint()
         def Co_purity_constraint(m):
-            return m.Co_purity >= 0.5
+            return m.Co_purity >= Co_purity_bound
 
 
 def add_objective(m):

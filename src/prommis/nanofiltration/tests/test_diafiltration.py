@@ -8,7 +8,7 @@
 Tests the diafiltration flowsheet
 """
 
-from pyomo.environ import value
+from pyomo.environ import TransformationFactory, value
 
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.models.unit_models import MSContactor
@@ -17,19 +17,40 @@ import pytest
 
 from prommis.nanofiltration.diafiltration import (
     add_costing,
+    add_objective,
     add_product_constraints,
     build_model,
-    main,
+    initialize_model,
+    set_scaling,
+    solve_model,
+    unfix_opt_variables,
 )
 
 
 @pytest.mark.component
-def test_main():
+def test_build_model():
     """
     Tests the execution of the main function in diafiltration.py
     """
-    m = main()
+    m = build_model()
+    add_costing(m)
+    initialize_model(m)
+
     dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings(ignore_evaluation_errors=True)
+
+    solve_model(m)  # solves square problem
+
+    unfix_opt_variables(m)
+    add_product_constraints(m, Li_recovery_bound=0.95, Co_recovery_bound=0.4)
+    add_objective(m)
+    set_scaling(m)
+    scaling = TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(m, rename=False)
+
+    solve_model(scaled_model)
+    scaling.propagate_solution(scaled_model, m)
+
     dt.assert_no_numerical_warnings()
 
     assert isinstance(

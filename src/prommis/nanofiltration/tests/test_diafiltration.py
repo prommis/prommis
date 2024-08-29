@@ -15,7 +15,12 @@ from idaes.models.unit_models import MSContactor
 
 import pytest
 
-from prommis.nanofiltration.diafiltration import main
+from prommis.nanofiltration.diafiltration import (
+    add_costing,
+    add_product_constraints,
+    build_model,
+    main,
+)
 
 
 @pytest.mark.component
@@ -76,3 +81,39 @@ def test_main():
 
     for model_result, test_val in test_dict.values():
         assert pytest.approx(test_val, rel=1e-5) == value(model_result)
+
+
+@pytest.mark.component
+def test_Li_purity_constraint_exception():
+    m = build_model()
+    add_costing(m)
+
+    with pytest.raises(
+        ValueError, match="A lithiunm product purity bound was not provided"
+    ):
+        add_product_constraints(
+            m,
+            Li_recovery_bound=0.95,
+            Co_recovery_bound=0.4,
+            recovery=True,
+            Co_purity_bound=0.5,
+            purity=True,
+        )
+
+
+@pytest.mark.component
+def test_Co_purity_constraint_exception():
+    m = build_model()
+    add_costing(m)
+
+    with pytest.raises(
+        ValueError, match="A cobalt product purity bound was not provided"
+    ):
+        add_product_constraints(
+            m,
+            Li_recovery_bound=0.95,
+            Co_recovery_bound=0.4,
+            recovery=True,
+            Li_purity_bound=0.5,
+            purity=True,
+        )

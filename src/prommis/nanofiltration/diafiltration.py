@@ -588,7 +588,7 @@ def solve_model(m):
         raise ValueError(
             "The variable   operating cost of the feed pump as calculated in the feed"
             "pump costing block is not negligible. This operating cost is already"
-            "accounted for via the membrane presure drop specific energy consumption."
+            "accounted for via the membrane pressure drop specific energy consumption."
         )
 
     return results
@@ -602,7 +602,7 @@ def add_costing(m):
         m: Pyomo model
     """
     # creating dummy variables to store the UnitModelCostingBlocks
-    m.fs.cascade = UnitModelBlock()  # to cost the presure drop
+    m.fs.cascade = UnitModelBlock()  # to cost the pressure drop
     m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
     m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
 

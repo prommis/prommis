@@ -5,8 +5,11 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Diafiltration cascade flowsheet for separating lithium and cobalt. Serves as an example of a
-custom cost model.
+Diafiltration cascade flowsheet case study example for separating lithium and cobalt. This flowsheet
+models a specific system from literature [1] and serves as an example of implementing a custom cost 
+model.
+
+[1] https://pubs.acs.org/doi/full/10.1021/acssuschemeng.2c02862
 """
 
 from pyomo.environ import (
@@ -109,10 +112,12 @@ def build_model():
         m: Pyomo model
     """
     m = ConcreteModel()
+    # These parameters will change for different membranes or cascade configurations
     add_global_flowsheet_parameters(m)
 
     m.fs = FlowsheetBlock(dynamic=False)
 
+    # This membrane systems uses a constant sieving coefficient model
     m.fs.properties = LiCoParameters()
     m.fs.solutes = Set(initialize=["Li", "Co"])
     m.fs.sieving_coefficient = Var(
@@ -124,16 +129,19 @@ def build_model():
 
     m.fs.stage1, m.fs.stage2, m.fs.stage3, m.fs.mix1, m.fs.mix2 = build_unit_models(m)
 
+    # Connect the unit models
     add_streams(m)
+    # Set the desired values for this system
     fix_stream_values(m)
-    add_useful_expressions(m)  # adds recovery, purity, and membrane length expressions
+    # Add recovery, purity, and membrane length expressions
+    add_useful_expressions(m)
 
     return m
 
 
 def add_global_flowsheet_parameters(m):
     """
-    Adds global parameters to the Pyomo model
+    Adds global parameters to the Pyomo model. These values are system-dependent.
 
     Args:
         m: Pyomo model
@@ -141,7 +149,7 @@ def add_global_flowsheet_parameters(m):
     m.Jw = Param(
         initialize=0.1,
         mutable=True,
-        doc="Water flux",
+        doc="Water flux",  # assumed constant in this model
         units=units.m**3 / units.m**2 / units.h,
     )
     m.w = Param(
@@ -201,7 +209,7 @@ def add_global_flowsheet_parameters(m):
 
 def build_unit_models(m):
     """
-    Adds the membrane stages and mixers to the flowsheet
+    Adds the membrane stages and mixers to the flowsheet to build the cascade of interest
 
     Args:
         m: Pyomo model
@@ -211,10 +219,10 @@ def build_unit_models(m):
         m.fs.stage2: second membrane stage
         m.fs.stage3: third membrane stage
         m.fs.mix1: mixer for stage 1 permeate and recycle into stage 2
-        m.fs.mix2: mixer for stage 2 permeate and diafiltrate ito stage 3
+        m.fs.mix2: mixer for stage 2 permeate and diafiltrate into stage 3
     """
     m.fs.stage1 = MSContactor(
-        number_of_finite_elements=10,
+        number_of_finite_elements=10,  # assume 10 tubes per stage
         streams={
             "retentate": {
                 "property_package": m.fs.properties,
@@ -234,7 +242,7 @@ def build_unit_models(m):
     add_stage1_constraints(blk=m.fs.stage1, model=m)
 
     m.fs.stage2 = MSContactor(
-        number_of_finite_elements=10,
+        number_of_finite_elements=10,  # assume 10 tubes per stage
         streams={
             "retentate": {
                 "property_package": m.fs.properties,
@@ -254,11 +262,13 @@ def build_unit_models(m):
     add_stage2_constraints(blk=m.fs.stage2, model=m)
 
     m.fs.stage3 = MSContactor(
-        number_of_finite_elements=10,
+        number_of_finite_elements=10,  # assume 10 tubes per stage
         streams={
             "retentate": {
                 "property_package": m.fs.properties,
-                "side_streams": [10],
+                "side_streams": [
+                    10
+                ],  # the feed enters in the last element of this stage
                 "has_energy_balance": False,
                 "has_pressure_balance": False,
             },
@@ -274,6 +284,7 @@ def build_unit_models(m):
     m.fs.stage3.length.fix(10)  # initialize
     add_stage3_constraints(blk=m.fs.stage3, model=m)
 
+    # Add a mixer for the stage 1 permeate and recycle into stage 2
     m.fs.mix1 = Mixer(
         num_inlets=2,
         property_package=m.fs.properties,
@@ -281,6 +292,7 @@ def build_unit_models(m):
         energy_mixing_type=MixingType.none,
         momentum_mixing_type=MomentumMixingType.none,
     )
+    # Add a mixer for the stage 2 permeate and diafiltrate into stage 3
     m.fs.mix2 = Mixer(
         num_inlets=2,
         property_package=m.fs.properties,
@@ -292,6 +304,14 @@ def build_unit_models(m):
 
 
 def add_stage1_constraints(blk, model):
+    """
+    Adds the constraints for the sieving coefficient model to stage 1
+
+    Args:
+        blk: the MSContactor block (stage 1)
+        model: the Pyomo model (m)
+    """
+
     @blk.Constraint(blk.elements)
     def stage_1_solvent_flux(blk, s):
         return (
@@ -321,6 +341,14 @@ def add_stage1_constraints(blk, model):
 
 
 def add_stage2_constraints(blk, model):
+    """
+    Adds the constraints for the sieving coefficient model to stage 2
+
+    Args:
+        blk: the MSContactor block (stage 2)
+        model: the Pyomo model (m)
+    """
+
     @blk.Constraint(blk.elements)
     def stage_2_solvent_flux(blk, s):
         return (
@@ -350,6 +378,14 @@ def add_stage2_constraints(blk, model):
 
 
 def add_stage3_constraints(blk, model):
+    """
+    Adds the constraints for the sieving coefficient model to stage 3
+
+    Args:
+        blk: the MSContactor block (stage 3)
+        model: the Pyomo model (m)
+    """
+
     @blk.Constraint(blk.elements)
     def stage_3_solvent_flux(blk, s):
         return (
@@ -466,7 +502,7 @@ def fix_stream_values(m):
 
 def initialize_model(m):
     """
-    Method to initialize the diafiltration flowhseet
+    Method to initialize the diafiltration flowsheet
 
     Args:
         m: Pyomo model
@@ -601,7 +637,8 @@ def add_costing(m):
     Args:
         m: Pyomo model
     """
-    # creating dummy variables to store the UnitModelCostingBlocks
+    # Create dummy variables to store the UnitModelCostingBlocks
+    # These are needed because the sieving coefficient model does not account for pressure
     m.fs.cascade = UnitModelBlock()  # to cost the pressure drop
     m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
     m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
@@ -676,6 +713,7 @@ def unfix_opt_variables(m):
     Args:
         m: Pyomo model
     """
+    # For this example we will optimize over the membrane area
     m.fs.stage1.length.unfix()
     m.fs.stage2.length.unfix()
     m.fs.stage3.length.unfix()
@@ -706,9 +744,11 @@ def add_product_constraints(
         def Co_recovery_constraint(m):
             return m.Co_recovery >= Co_recovery_bound
 
+    # By default, these constraints are not added for this example
+    # Toggle the Boolean and add bound arguments to apply to flowsheet
     if purity:
         if Li_purity_bound == None:
-            raise ValueError("A lithiunm product purity bound was not provided")
+            raise ValueError("A lithium product purity bound was not provided")
 
         if Co_purity_bound == None:
             raise ValueError("A cobalt product purity bound was not provided")
@@ -745,6 +785,8 @@ def set_scaling(m):
     """
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
+    # Add scaling factors for poorly scaled constraints
+    # For this example, the feed and diafiltrate enter in stage 3, likely causing the poor scaling
     m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 9, "Co"]] = 1e-8
     m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 10, "Co"]] = 1e-8
 

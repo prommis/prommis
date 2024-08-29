@@ -110,7 +110,7 @@ def test_Li_purity_constraint_exception():
     add_costing(m)
 
     with pytest.raises(
-        ValueError, match="A lithiunm product purity bound was not provided"
+        ValueError, match="A lithium product purity bound was not provided"
     ):
         add_product_constraints(
             m,

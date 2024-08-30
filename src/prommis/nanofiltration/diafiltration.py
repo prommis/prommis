@@ -6,8 +6,8 @@
 #####################################################################################################
 """
 Diafiltration cascade flowsheet case study example for separating lithium and cobalt. This flowsheet
-models a specific system from literature [1] and serves as an example of implementing a custom cost 
-model.
+models a specific system from literature (cascade III in Figure 2 [1]) and serves as an example of
+implementing a custom cost model.
 
 [1] https://pubs.acs.org/doi/full/10.1021/acssuschemeng.2c02862
 """
@@ -87,7 +87,7 @@ def main():
     dt.assert_no_numerical_warnings()
 
     unfix_opt_variables(m)
-    add_product_constraints(m, Li_recovery_bound=0.95, Co_recovery_bound=0.4)
+    add_product_constraints(m, Li_recovery_bound=0.95, Co_recovery_bound=0.635)
     add_objective(m)
 
     # Create a scaled version of the model to solve

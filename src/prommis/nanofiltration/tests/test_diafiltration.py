@@ -65,17 +65,17 @@ def test_main():
     )  # check that there are no pressure balances
 
     test_dict = {
-        "lithium_recovery": [value(m.Li_recovery) * 100, 94.99999900000098],
-        "lithium_purity": [value(m.Li_purity) * 100, 13.834757030947628],
-        "cobalt_recovery": [value(m.Co_recovery) * 100, 39.99999900000385],
-        "cobalt_purity": [value(m.Co_purity) * 100, 98.74828132235208],
+        "lithium_recovery": [value(m.Li_recovery) * 100, 94.99999900000033],
+        "lithium_purity": [value(m.Li_purity) * 100, 20.8820384057719],
+        "cobalt_recovery": [value(m.Co_recovery) * 100, 63.49999900000085],
+        "cobalt_purity": [value(m.Co_purity) * 100, 99.20784627170993],
         "membrane_area": [
             (value(m.membrane_length) * value(m.w)),
-            2102.3947692843317,
+            3502.558324664463,
         ],
         "total_annualized_cost": [
             value(m.fs.costing.total_annualized_cost),
-            217658.9030634532,
+            251240.71142955605,
         ],
     }
 
@@ -94,7 +94,7 @@ def test_Li_purity_constraint_exception():
         add_product_constraints(
             m,
             Li_recovery_bound=0.95,
-            Co_recovery_bound=0.4,
+            Co_recovery_bound=0.635,
             recovery=True,
             Co_purity_bound=0.5,
             purity=True,
@@ -112,7 +112,7 @@ def test_Co_purity_constraint_exception():
         add_product_constraints(
             m,
             Li_recovery_bound=0.95,
-            Co_recovery_bound=0.4,
+            Co_recovery_bound=0.635,
             recovery=True,
             Li_purity_bound=0.5,
             purity=True,

@@ -787,8 +787,24 @@ def set_scaling(m):
 
     # Add scaling factors for poorly scaled constraints
     # For this example, the feed and diafiltrate enter in stage 3, likely causing the poor scaling
+    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 9, "solvent"]] = 1e-8
+    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 9, "Li"]] = 1e-8
     m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 9, "Co"]] = 1e-8
+    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 10, "solvent"]] = 1e-8
+    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 10, "Li"]] = 1e-8
     m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 10, "Co"]] = 1e-8
+
+    # Add scaling factors for poorly scaled variables
+    m.scaling_factor[m.fs.cascade.costing.variable_operating_cost] = 1e-5
+    m.scaling_factor[m.fs.feed_pump.costing.capital_cost] = 1e-5
+    m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e5
+    m.scaling_factor[m.fs.feed_pump.costing.pump_head] = 1e5
+    m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost] = 1e-5
+    m.scaling_factor[m.fs.costing.aggregate_capital_cost] = 1e-5
+    m.scaling_factor[m.fs.costing.aggregate_variable_operating_cost] = 1e-5
+    m.scaling_factor[m.fs.costing.total_capital_cost] = 1e-5
+    m.scaling_factor[m.fs.costing.total_operating_cost] = 1e-5
+    m.scaling_factor[m.fs.costing.maintenance_labor_chemical_operating_cost] = 1e-5
 
 
 def print_information(m):

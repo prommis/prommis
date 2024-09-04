@@ -78,6 +78,30 @@ m.discretizer = TransformationFactory("dae.collocation")
 m.discretizer.apply_to(m, nfe=3, ncp=2, wrt=m.fs.time, scheme="LAGRANGE-RADAU")
 
 """
+Initialization of the model, which gives a good starting point.
+
+"""
+
+from_json(m, fname="solvent_extraction.json")
+
+
+def copy_first_steady_state(m):
+    # Function that propagates initial steady state guess to future time points
+    # regular_vars
+    regular_vars, time_vars = flatten_dae_components(m, m.fs.time, Var, active=True)
+    # Copy initial conditions forward
+    for var in time_vars:
+        for t in m.fs.time:
+            if t == m.fs.time.first():
+                continue
+            else:
+                var[t].value = var[m.fs.time.first()].value
+                # var.pprint()
+
+
+copy_first_steady_state(m)
+
+"""
 Specifications of the partition coefficients, volume and volume fractions for all
 the stages.
 
@@ -119,30 +143,6 @@ for s in stage_number:
         m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Gd"] = 7.6 / 100
         m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Dy"] = 5 / 100
 
-
-"""
-Initialization of the model, which gives a good starting point.
-
-"""
-
-from_json(m, fname="solvent_extraction.json")
-
-
-def copy_first_steady_state(m):
-    # Function that propagates initial steady state guess to future time points
-    # regular_vars
-    regular_vars, time_vars = flatten_dae_components(m, m.fs.time, Var, active=True)
-    # Copy initial conditions forward
-    for var in time_vars:
-        for t in m.fs.time:
-            if t == m.fs.time.first():
-                continue
-            else:
-                var[t].value = var[m.fs.time.first()].value
-                # var.pprint()
-
-
-copy_first_steady_state(m)
 
 """
 Fixation of the inlet conditions and the initial state values for all the components.

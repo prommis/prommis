@@ -2357,6 +2357,7 @@ class TestCustomCosting(object):
             537.87082, rel=1e-4
         )
 
+
 class TestDiafiltrationCosting(object):
     @pytest.fixture(scope="class")
     def model(self):
@@ -2365,7 +2366,7 @@ class TestDiafiltrationCosting(object):
         # create dummy blocks to store the UnitModelCostingBlocks
         m.fs.stage1 = UnitModelBlock()
         m.fs.stage2 = UnitModelBlock()
-        m.fs.stage3 = UnitModelBlock()        
+        m.fs.stage3 = UnitModelBlock()
         m.fs.cascade = UnitModelBlock()  # to cost the presure drop
         m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
         m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
@@ -2374,9 +2375,13 @@ class TestDiafiltrationCosting(object):
         m.fs.stage2.length = pyo.Var(initialize=10, units=pyunits.m)
         m.fs.stage3.length = pyo.Var(initialize=10, units=pyunits.m)
         m.fs.w = pyo.Var(initialize=10, units=pyunits.m)
-        m.fs.Jw = pyo.Var(initialize=10, units=pyunits.m/pyunits.h)
-        m.fs.stage3.retentate_flow_vol = pyo.Var(initialize=10, units=pyunits.m**3/pyunits.h)
-        m.fs.stage3.permeate_flow_vol = pyo.Var(initialize=10, units=pyunits.m**3/pyunits.h)
+        m.fs.Jw = pyo.Var(initialize=10, units=pyunits.m / pyunits.h)
+        m.fs.stage3.retentate_flow_vol = pyo.Var(
+            initialize=10, units=pyunits.m**3 / pyunits.h
+        )
+        m.fs.stage3.permeate_flow_vol = pyo.Var(
+            initialize=10, units=pyunits.m**3 / pyunits.h
+        )
         m.fs.P_atm = pyo.Var(initialize=101325, units=pyunits.Pa)
         m.fs.P_op = pyo.Var(initialize=201325, units=pyunits.Pa)
 
@@ -2389,7 +2394,7 @@ class TestDiafiltrationCosting(object):
         m.fs.stage3.permeate_flow_vol.fix()
         m.fs.P_atm.fix()
         m.fs.P_op.fix()
-    
+
         # m.fs.costing = DiafiltrationCosting()
         m.fs.stage1.costing = UnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
@@ -2429,7 +2434,9 @@ class TestDiafiltrationCosting(object):
             costing_method=DiafiltrationCostingData.cost_pump,
             costing_method_arguments={
                 "inlet_pressure": m.fs.P_atm
-                + pyunits.convert(m.fs.cascade.costing.pressure_drop, to_units=pyunits.Pa),
+                + pyunits.convert(
+                    m.fs.cascade.costing.pressure_drop, to_units=pyunits.Pa
+                ),
                 "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
                 * pyunits.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
                 "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # feed
@@ -2452,57 +2459,93 @@ class TestDiafiltrationCosting(object):
 
         # confirm that base units match the QGESS costing block
         for blk in [
-                model.fs.stage1,
-                model.fs.stage2,
-                model.fs.stage3,
-                model.fs.cascade,
-                model.fs.feed_pump,
-                model.fs.diafiltrate_pump,
-                ]:
+            model.fs.stage1,
+            model.fs.stage2,
+            model.fs.stage3,
+            model.fs.cascade,
+            model.fs.feed_pump,
+            model.fs.diafiltrate_pump,
+        ]:
             assert blk.costing.costing_package.base_currency == pyunits.USD_2021
             assert blk.costing.costing_package.base_period == pyunits.year
 
         assert isinstance(model.fs.stage1.costing.capital_cost, pyo.Var)
         assert isinstance(model.fs.stage1.costing.fixed_operating_cost, pyo.Var)
         assert not hasattr(model.fs.stage1.costing, "variable_operating_cost")
-        assert isinstance(model.fs.stage1.costing.capital_cost_constraint, pyo.Constraint)
-        assert isinstance(model.fs.stage1.costing.fixed_operating_cost_constraint, pyo.Constraint)
-        assert not hasattr(model.fs.stage1.costing, "variable_operating_cost_constraint")
+        assert isinstance(
+            model.fs.stage1.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert isinstance(
+            model.fs.stage1.costing.fixed_operating_cost_constraint, pyo.Constraint
+        )
+        assert not hasattr(
+            model.fs.stage1.costing, "variable_operating_cost_constraint"
+        )
 
         assert isinstance(model.fs.stage2.costing.capital_cost, pyo.Var)
         assert isinstance(model.fs.stage2.costing.fixed_operating_cost, pyo.Var)
         assert not hasattr(model.fs.stage2.costing, "variable_operating_cost")
-        assert isinstance(model.fs.stage2.costing.capital_cost_constraint, pyo.Constraint)
-        assert isinstance(model.fs.stage2.costing.fixed_operating_cost_constraint, pyo.Constraint)
-        assert not hasattr(model.fs.stage2.costing, "variable_operating_cost_constraint")
+        assert isinstance(
+            model.fs.stage2.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert isinstance(
+            model.fs.stage2.costing.fixed_operating_cost_constraint, pyo.Constraint
+        )
+        assert not hasattr(
+            model.fs.stage2.costing, "variable_operating_cost_constraint"
+        )
 
         assert isinstance(model.fs.stage3.costing.capital_cost, pyo.Var)
         assert isinstance(model.fs.stage3.costing.fixed_operating_cost, pyo.Var)
         assert not hasattr(model.fs.stage3.costing, "variable_operating_cost")
-        assert isinstance(model.fs.stage3.costing.capital_cost_constraint, pyo.Constraint)
-        assert isinstance(model.fs.stage3.costing.fixed_operating_cost_constraint, pyo.Constraint)
-        assert not hasattr(model.fs.stage3.costing, "variable_operating_cost_constraint")
+        assert isinstance(
+            model.fs.stage3.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert isinstance(
+            model.fs.stage3.costing.fixed_operating_cost_constraint, pyo.Constraint
+        )
+        assert not hasattr(
+            model.fs.stage3.costing, "variable_operating_cost_constraint"
+        )
 
         assert not hasattr(model.fs.cascade.costing, "capital_cost")
         assert not hasattr(model.fs.cascade.costing, "fixed_operating_cost")
         assert isinstance(model.fs.cascade.costing.variable_operating_cost, pyo.Var)
         assert not hasattr(model.fs.cascade.costing, "capital_cost_constraint")
         assert not hasattr(model.fs.cascade.costing, "fixed_operating_cost_constraint")
-        assert isinstance(model.fs.cascade.costing.variable_operating_cost_constraint, pyo.Constraint)
+        assert isinstance(
+            model.fs.cascade.costing.variable_operating_cost_constraint, pyo.Constraint
+        )
 
         assert isinstance(model.fs.feed_pump.costing.capital_cost, pyo.Var)
         assert not hasattr(model.fs.feed_pump.costing, "fixed_operating_cost")
         assert isinstance(model.fs.feed_pump.costing.variable_operating_cost, pyo.Var)
-        assert isinstance(model.fs.feed_pump.costing.capital_cost_constraint, pyo.Constraint)
-        assert not hasattr(model.fs.feed_pump.costing, "fixed_operating_cost_constraint")
-        assert isinstance(model.fs.feed_pump.costing.variable_operating_cost_constraint, pyo.Constraint)
+        assert isinstance(
+            model.fs.feed_pump.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert not hasattr(
+            model.fs.feed_pump.costing, "fixed_operating_cost_constraint"
+        )
+        assert isinstance(
+            model.fs.feed_pump.costing.variable_operating_cost_constraint,
+            pyo.Constraint,
+        )
 
         assert isinstance(model.fs.diafiltrate_pump.costing.capital_cost, pyo.Var)
         assert not hasattr(model.fs.diafiltrate_pump.costing, "fixed_operating_cost")
-        assert isinstance(model.fs.diafiltrate_pump.costing.variable_operating_cost, pyo.Var)
-        assert isinstance(model.fs.diafiltrate_pump.costing.capital_cost_constraint, pyo.Constraint)
-        assert not hasattr(model.fs.diafiltrate_pump.costing, "fixed_operating_cost_constraint")
-        assert isinstance(model.fs.diafiltrate_pump.costing.variable_operating_cost_constraint, pyo.Constraint)
+        assert isinstance(
+            model.fs.diafiltrate_pump.costing.variable_operating_cost, pyo.Var
+        )
+        assert isinstance(
+            model.fs.diafiltrate_pump.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert not hasattr(
+            model.fs.diafiltrate_pump.costing, "fixed_operating_cost_constraint"
+        )
+        assert isinstance(
+            model.fs.diafiltrate_pump.costing.variable_operating_cost_constraint,
+            pyo.Constraint,
+        )
 
     @pytest.mark.component
     def test_REE_custom_costing(self, model):
@@ -2770,19 +2813,19 @@ class TestDiafiltrationCosting(object):
         assert pyo.value(
             pyunits.convert(
                 model.fs.stage1.costing.fixed_operating_cost,
-                to_units=CE_index_units/pyunits.year,
+                to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.00086087, rel=1e-4)
         assert pyo.value(
             pyunits.convert(
                 model.fs.stage2.costing.fixed_operating_cost,
-                to_units=CE_index_units/pyunits.year,
+                to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.00086087, rel=1e-4)
         assert pyo.value(
             pyunits.convert(
                 model.fs.stage3.costing.fixed_operating_cost,
-                to_units=CE_index_units/pyunits.year,
+                to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.00086087, rel=1e-4)
 

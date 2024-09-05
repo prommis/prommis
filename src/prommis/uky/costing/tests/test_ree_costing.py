@@ -34,6 +34,10 @@ from idaes.core.util.scaling import (
 
 import pytest
 
+from prommis.nanofiltration.costing.diafiltration_cost_model import (
+    DiafiltrationCosting,
+    DiafiltrationCostingData,
+)
 from prommis.uky.costing.custom_costing_example import CustomCostingData
 from prommis.uky.costing.ree_plant_capcost import (
     QGESSCosting,
@@ -2351,6 +2355,470 @@ class TestCustomCosting(object):
 
         assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
             537.87082, rel=1e-4
+        )
+
+class TestDiafiltrationCosting(object):
+    @pytest.fixture(scope="class")
+    def model(self):
+        m = base_model()
+
+        # create dummy blocks to store the UnitModelCostingBlocks
+        m.fs.stage1 = UnitModelBlock()
+        m.fs.stage2 = UnitModelBlock()
+        m.fs.stage3 = UnitModelBlock()        
+        m.fs.cascade = UnitModelBlock()  # to cost the presure drop
+        m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
+        m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
+
+        m.fs.stage1.length = pyo.Var(initialize=10, units=pyunits.m)
+        m.fs.stage2.length = pyo.Var(initialize=10, units=pyunits.m)
+        m.fs.stage3.length = pyo.Var(initialize=10, units=pyunits.m)
+        m.fs.w = pyo.Var(initialize=10, units=pyunits.m)
+        m.fs.Jw = pyo.Var(initialize=10, units=pyunits.m/pyunits.h)
+        m.fs.stage3.retentate_flow_vol = pyo.Var(initialize=10, units=pyunits.m**3/pyunits.h)
+        m.fs.stage3.permeate_flow_vol = pyo.Var(initialize=10, units=pyunits.m**3/pyunits.h)
+        m.fs.P_atm = pyo.Var(initialize=101325, units=pyunits.Pa)
+        m.fs.P_op = pyo.Var(initialize=201325, units=pyunits.Pa)
+
+        m.fs.stage1.length.fix()
+        m.fs.stage2.length.fix()
+        m.fs.stage3.length.fix()
+        m.fs.w.fix()
+        m.fs.Jw.fix()
+        m.fs.stage3.retentate_flow_vol.fix()
+        m.fs.stage3.permeate_flow_vol.fix()
+        m.fs.P_atm.fix()
+        m.fs.P_op.fix()
+    
+        # m.fs.costing = DiafiltrationCosting()
+        m.fs.stage1.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_membranes,
+            costing_method_arguments={
+                "membrane_length": m.fs.stage1.length,
+                "membrane_width": m.fs.w,
+            },
+        )
+        m.fs.stage2.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_membranes,
+            costing_method_arguments={
+                "membrane_length": m.fs.stage2.length,
+                "membrane_width": m.fs.w,
+            },
+        )
+        m.fs.stage3.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_membranes,
+            costing_method_arguments={
+                "membrane_length": m.fs.stage3.length,
+                "membrane_width": m.fs.w,
+            },
+        )
+        m.fs.cascade.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
+            costing_method_arguments={
+                "water_flux": m.fs.Jw,
+                "vol_flow_feed": m.fs.stage3.retentate_flow_vol,  # cascade feed
+                "vol_flow_perm": m.fs.stage3.permeate_flow_vol,  # cascade permeate
+            },
+        )
+        m.fs.feed_pump.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_pump,
+            costing_method_arguments={
+                "inlet_pressure": m.fs.P_atm
+                + pyunits.convert(m.fs.cascade.costing.pressure_drop, to_units=pyunits.Pa),
+                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
+                * pyunits.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
+                "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # feed
+            },
+        )
+        m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_pump,
+            costing_method_arguments={
+                "inlet_pressure": m.fs.P_atm,
+                "outlet_pressure": m.fs.P_op,
+                "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # diafiltrate
+            },
+        )
+
+        return m
+
+    @pytest.mark.unit
+    def test_model(self, model):
+
+        # confirm that base units match the QGESS costing block
+        for blk in [
+                model.fs.stage1,
+                model.fs.stage2,
+                model.fs.stage3,
+                model.fs.cascade,
+                model.fs.feed_pump,
+                model.fs.diafiltrate_pump,
+                ]:
+            assert blk.costing.costing_package.base_currency == pyunits.USD_2021
+            assert blk.costing.costing_package.base_period == pyunits.year
+
+        assert isinstance(model.fs.stage1.costing.capital_cost, pyo.Var)
+        assert isinstance(model.fs.stage1.costing.fixed_operating_cost, pyo.Var)
+        assert not hasattr(model.fs.stage1.costing, "variable_operating_cost")
+        assert isinstance(model.fs.stage1.costing.capital_cost_constraint, pyo.Constraint)
+        assert isinstance(model.fs.stage1.costing.fixed_operating_cost_constraint, pyo.Constraint)
+        assert not hasattr(model.fs.stage1.costing, "variable_operating_cost_constraint")
+
+        assert isinstance(model.fs.stage2.costing.capital_cost, pyo.Var)
+        assert isinstance(model.fs.stage2.costing.fixed_operating_cost, pyo.Var)
+        assert not hasattr(model.fs.stage2.costing, "variable_operating_cost")
+        assert isinstance(model.fs.stage2.costing.capital_cost_constraint, pyo.Constraint)
+        assert isinstance(model.fs.stage2.costing.fixed_operating_cost_constraint, pyo.Constraint)
+        assert not hasattr(model.fs.stage2.costing, "variable_operating_cost_constraint")
+
+        assert isinstance(model.fs.stage3.costing.capital_cost, pyo.Var)
+        assert isinstance(model.fs.stage3.costing.fixed_operating_cost, pyo.Var)
+        assert not hasattr(model.fs.stage3.costing, "variable_operating_cost")
+        assert isinstance(model.fs.stage3.costing.capital_cost_constraint, pyo.Constraint)
+        assert isinstance(model.fs.stage3.costing.fixed_operating_cost_constraint, pyo.Constraint)
+        assert not hasattr(model.fs.stage3.costing, "variable_operating_cost_constraint")
+
+        assert not hasattr(model.fs.cascade.costing, "capital_cost")
+        assert not hasattr(model.fs.cascade.costing, "fixed_operating_cost")
+        assert isinstance(model.fs.cascade.costing.variable_operating_cost, pyo.Var)
+        assert not hasattr(model.fs.cascade.costing, "capital_cost_constraint")
+        assert not hasattr(model.fs.cascade.costing, "fixed_operating_cost_constraint")
+        assert isinstance(model.fs.cascade.costing.variable_operating_cost_constraint, pyo.Constraint)
+
+        assert isinstance(model.fs.feed_pump.costing.capital_cost, pyo.Var)
+        assert not hasattr(model.fs.feed_pump.costing, "fixed_operating_cost")
+        assert isinstance(model.fs.feed_pump.costing.variable_operating_cost, pyo.Var)
+        assert isinstance(model.fs.feed_pump.costing.capital_cost_constraint, pyo.Constraint)
+        assert not hasattr(model.fs.feed_pump.costing, "fixed_operating_cost_constraint")
+        assert isinstance(model.fs.feed_pump.costing.variable_operating_cost_constraint, pyo.Constraint)
+
+        assert isinstance(model.fs.diafiltrate_pump.costing.capital_cost, pyo.Var)
+        assert not hasattr(model.fs.diafiltrate_pump.costing, "fixed_operating_cost")
+        assert isinstance(model.fs.diafiltrate_pump.costing.variable_operating_cost, pyo.Var)
+        assert isinstance(model.fs.diafiltrate_pump.costing.capital_cost_constraint, pyo.Constraint)
+        assert not hasattr(model.fs.diafiltrate_pump.costing, "fixed_operating_cost_constraint")
+        assert isinstance(model.fs.diafiltrate_pump.costing.variable_operating_cost_constraint, pyo.Constraint)
+
+    @pytest.mark.component
+    def test_REE_custom_costing(self, model):
+        # full smoke test with all components, O&M costs, and extra costs included
+        CE_index_year = "UKy_2019"
+
+        CE_index_units = getattr(
+            pyunits, "MUSD_" + CE_index_year
+        )  # millions of USD, for base year
+
+        # add plant-level cost constraints
+
+        model.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+        model.fs.feed_grade = pyo.Var(initialize=356.64, units=pyunits.ppm)
+
+        hours_per_shift = 8
+        shifts_per_day = 3
+        operating_days_per_year = 336
+
+        # for convenience
+        model.fs.annual_operating_hours = pyo.Param(
+            initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
+            mutable=False,
+            units=pyunits.hours / pyunits.year,
+        )
+
+        model.fs.recovery_rate_per_year = pyo.Var(
+            initialize=39.3
+            * pyunits.kg
+            / pyunits.hr
+            * 0.8025  # TREO (total rare earth oxide), 80.25% REE in REO
+            * model.fs.annual_operating_hours,
+            units=pyunits.kg / pyunits.yr,
+        )
+
+        # the land cost is the lease cost, or refining cost of REO produced
+        model.fs.land_cost = pyo.Expression(
+            expr=0.303736
+            * 1e-6
+            * getattr(pyunits, "MUSD_" + CE_index_year)
+            / pyunits.ton
+            * pyunits.convert(model.fs.feed_input, to_units=pyunits.ton / pyunits.hr)
+            * hours_per_shift
+            * pyunits.hr
+            * shifts_per_day
+            * pyunits.day**-1
+            * operating_days_per_year
+            * pyunits.day
+        )
+
+        # dummy reagent with cost of 1 USD/kg for each section
+        reagent_costs = (
+            (  # all USD/year
+                302962  # Crushing and Screening
+                + 0  # Dry Grinding
+                + 5767543  # Roasting
+                + 199053595  # Leaching
+                + 152303329  # Rougher Solvent Extraction
+                + 43702016  # Cleaner Solvent Extraction
+                + 7207168  # Solvent Extraction Wash and Saponification
+                + 1233763  # Rare Earth Element Precipiation
+                + 18684816  # Water Treatment
+            )
+            * pyunits.kg
+            / pyunits.year
+        )
+
+        model.fs.reagents = pyo.Var(
+            model.fs.time,
+            initialize=reagent_costs / (model.fs.annual_operating_hours),
+            units=pyunits.kg / pyunits.hr,
+        )
+
+        model.fs.solid_waste = pyo.Var(
+            model.fs.time, initialize=11136 / 24, units=pyunits.ton / pyunits.hr
+        )  # non-hazardous solid waste
+        model.fs.precipitate = pyo.Var(
+            model.fs.time, initialize=732 / 24, units=pyunits.ton / pyunits.hr
+        )  # non-hazardous precipitate
+        model.fs.dust_and_volatiles = pyo.Var(
+            model.fs.time, initialize=120 / 24, units=pyunits.ton / pyunits.hr
+        )  # dust and volatiles
+        model.fs.power = pyo.Var(model.fs.time, initialize=14716, units=pyunits.hp)
+
+        resources = [
+            "dummy",
+            "nonhazardous_solid_waste",
+            "nonhazardous_precipitate_waste",
+            "dust_and_volatiles",
+            "power",
+        ]
+
+        rates = [
+            model.fs.reagents,
+            model.fs.solid_waste,
+            model.fs.precipitate,
+            model.fs.dust_and_volatiles,
+            model.fs.power,
+        ]
+
+        # define product flowrates
+
+        pure_product_output_rates = {
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            "Dy2O3": 0.4 * pyunits.kg / pyunits.hr,
+            "Gd2O3": 0.5 * pyunits.kg / pyunits.hr,
+        }
+
+        mixed_product_output_rates = {
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            "Y2O3": 0.05418 * pyunits.kg / pyunits.hr,
+            "La2O3": 0.13770 * pyunits.kg / pyunits.hr,
+            "CeO2": 0.37383 * pyunits.kg / pyunits.hr,
+            "Pr6O11": 0.03941 * pyunits.kg / pyunits.hr,
+            "Nd2O3": 0.17289 * pyunits.kg / pyunits.hr,
+            "Sm2O3": 0.02358 * pyunits.kg / pyunits.hr,
+            "Eu2O3": 0.00199 * pyunits.kg / pyunits.hr,
+            "Gd2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Tb4O7": 0.00801 * pyunits.kg / pyunits.hr,
+            "Dy2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Ho2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Er2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Tm2O3": 0.00130 * pyunits.kg / pyunits.hr,
+            "Yb2O3": 0.00373 * pyunits.kg / pyunits.hr,
+            "Lu2O3": 0.00105 * pyunits.kg / pyunits.hr,
+        }
+
+        model.fs.costing.build_process_costs(
+            # arguments related to installation costs
+            piping_materials_and_labor_percentage=20,
+            electrical_materials_and_labor_percentage=20,
+            instrumentation_percentage=8,
+            plants_services_percentage=10,
+            process_buildings_percentage=40,
+            auxiliary_buildings_percentage=15,
+            site_improvements_percentage=10,
+            equipment_installation_percentage=17,
+            field_expenses_percentage=12,
+            project_management_and_construction_percentage=30,
+            process_contingency_percentage=15,
+            # argument related to Fixed OM costs
+            labor_types=[
+                "skilled",
+                "unskilled",
+                "supervisor",
+                "maintenance",
+                "technician",
+                "engineer",
+            ],
+            labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
+            labor_burden=25,  # % fringe benefits
+            operators_per_shift=[4, 9, 2, 2, 2, 3],
+            hours_per_shift=hours_per_shift,
+            shifts_per_day=shifts_per_day,
+            operating_days_per_year=operating_days_per_year,
+            pure_product_output_rates=pure_product_output_rates,
+            mixed_product_output_rates=mixed_product_output_rates,
+            mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
+            # arguments related to total owners costs
+            land_cost=model.fs.land_cost,
+            resources=resources,
+            rates=rates,
+            prices={
+                "dummy": 1 * getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
+            },
+            fixed_OM=True,
+            variable_OM=True,
+            feed_input=model.fs.feed_input,
+            efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
+            chemicals=["dummy"],
+            waste=[
+                "nonhazardous_solid_waste",
+                "nonhazardous_precipitate_waste",
+                "dust_and_volatiles",
+            ],
+            recovery_rate_per_year=model.fs.recovery_rate_per_year,
+            CE_index_year=CE_index_year,
+        )
+
+        # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
+        model.fs.costing.other_plant_costs.unfix()
+        model.fs.costing.other_plant_costs_rule = pyo.Constraint(
+            expr=(
+                model.fs.costing.other_plant_costs
+                == pyunits.convert(
+                    1218073 * pyunits.USD_2016  # Rougher Solvent Extraction
+                    + 48723 * pyunits.USD_2016  # Cleaner Solvent Extraction
+                    + 182711
+                    * pyunits.USD_2016,  # Solvent Extraction Wash and Saponification
+                    to_units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
+            )
+        )
+
+        # fix costing vars that shouldn't change
+        model.fs.feed_input.fix()
+        model.fs.feed_grade.fix()
+        model.fs.recovery_rate_per_year.fix()
+        model.fs.reagents.fix()
+        model.fs.solid_waste.fix()
+        model.fs.precipitate.fix()
+        model.fs.dust_and_volatiles.fix()
+        model.fs.power.fix()
+
+        # check model structural diagnostics
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt.assert_no_structural_warnings()
+
+        QGESSCostingData.costing_initialization(model.fs.costing)
+        QGESSCostingData.initialize_fixed_OM_costs(model.fs.costing)
+        QGESSCostingData.initialize_variable_OM_costs(model.fs.costing)
+
+        solver = get_solver()
+        results = solver.solve(model, tee=False)
+        assert_optimal_termination(results)
+
+        # check model numerical diagnostics
+        dt.assert_no_numerical_warnings()
+
+        assert model.fs.costing.total_BEC.value == pytest.approx(44.684, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage1.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.0043043, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage2.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.0043043, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage3.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.0043043, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.feed_pump.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.34788, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.diafiltrate_pump.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.014780, rel=1e-4)
+        assert pyo.value(
+            model.fs.costing.total_BEC
+            - pyunits.convert(
+                model.fs.stage1.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs.stage2.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs.stage3.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs.feed_pump.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs.diafiltrate_pump.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(44.308, rel=1e-4)
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage1.costing.fixed_operating_cost,
+                to_units=CE_index_units/pyunits.year,
+            )
+        ) == pytest.approx(0.00086087, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage2.costing.fixed_operating_cost,
+                to_units=CE_index_units/pyunits.year,
+            )
+        ) == pytest.approx(0.00086087, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage3.costing.fixed_operating_cost,
+                to_units=CE_index_units/pyunits.year,
+            )
+        ) == pytest.approx(0.00086087, rel=1e-4)
+
+        assert model.fs.costing.custom_fixed_costs.value == pytest.approx(
+            0.0025826, rel=1e-4
+        )
+
+        assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
+            11.14064, rel=1e-4
+        )
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.cascade.costing.variable_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.985221, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.feed_pump.costing.variable_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(8.09845e-17, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.diafiltrate_pump.costing.variable_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(2.36473e-10, rel=1e-4)
+
+        assert model.fs.costing.custom_variable_costs.value == pytest.approx(
+            2.36473e-10, rel=1e-4
+        )
+
+        assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+            532.90975, rel=1e-4
         )
 
 

@@ -35,7 +35,6 @@ from idaes.core.util.scaling import (
 import pytest
 
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
-    DiafiltrationCosting,
     DiafiltrationCostingData,
 )
 from prommis.uky.costing.custom_costing_example import CustomCostingData

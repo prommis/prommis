@@ -2367,7 +2367,7 @@ class TestDiafiltrationCosting(object):
         m.fs.stage1 = UnitModelBlock()
         m.fs.stage2 = UnitModelBlock()
         m.fs.stage3 = UnitModelBlock()
-        m.fs.cascade = UnitModelBlock()  # to cost the presure drop
+        m.fs.cascade = UnitModelBlock()  # to cost the pressure drop
         m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
         m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
 

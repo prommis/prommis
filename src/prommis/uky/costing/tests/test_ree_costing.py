@@ -1202,10 +1202,10 @@ class TestREECosting(object):
             65.333, rel=1e-4
         )
         assert model.fs.costing.pv_capital_cost.value == pytest.approx(
-            -272.25734, rel=1e-4
+            -112.78144, rel=1e-4
         )
         assert model.fs.costing.pv_loan_interest.value == pytest.approx(
-            -23.892648, rel=1e-4
+            -3.427269, rel=1e-4
         )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -4677.8978, rel=1e-4
@@ -1214,7 +1214,7 @@ class TestREECosting(object):
             -36.434467, rel=1e-4
         )
         assert model.fs.costing.pv_revenue.value == pytest.approx(560.53027, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(-4449.9520, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(-4270.0107, rel=1e-4)
 
     @pytest.mark.unit
     def test_report(self, model):
@@ -2220,17 +2220,17 @@ class TestNPVCostingBlock(object):
     def test_NPV_costingblock_results(self, model):
         # check some NPV results
         assert model.fs.costing.pv_capital_cost.value == pytest.approx(
-            -15.24748, rel=1e-4
+            -6.3162037, rel=1e-4
         )
         assert model.fs.costing.pv_loan_interest.value == pytest.approx(
-            -1.3380851, rel=1e-4
+            -0.19194052, rel=1e-4
         )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -59.02935, rel=1e-4
         )
         assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
         assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(440.85732, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(450.93474, rel=1e-4)
 
 
 class TestNPVFixedInputs(object):
@@ -2307,17 +2307,17 @@ class TestNPVFixedInputs(object):
     def test_NPV_fixedinputs_results(self, model):
         # check some NPV results
         assert model.fs.costing.pv_capital_cost.value == pytest.approx(
-            -15.24747, rel=1e-4
+            -6.3162037, rel=1e-4
         )
         assert model.fs.costing.pv_loan_interest.value == pytest.approx(
-            -1.3380851, rel=1e-4
+            -0.19194052, rel=1e-4
         )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -59.02935, rel=1e-4
         )
         assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
         assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(440.85732, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(450.93474, rel=1e-4)
 
 
 @pytest.mark.component
@@ -5055,7 +5055,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
         Returns expression for series present worth factor.
         """
         return (1 - ((1 + g) ** (N)) * ((1 + r) ** (-N))) / (r - g)
-
+    # TODO
     assert pyo.value(m.fs.costing.pv_capital_cost) == pytest.approx(
         pyo.value(
             -pyunits.convert(
@@ -5066,20 +5066,31 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
                         to_units=pyunits.dimensionless,
                     )
                     * m.fs.costing.CAPEX
-                    * series_present_worth_factor(
-                        pyunits.convert(
-                            m.fs.costing.capital_loan_interest_percentage,
-                            to_units=pyunits.dimensionless,
-                        ),
-                        pyunits.convert(
-                            m.fs.costing.capital_escalation_percentage,
-                            to_units=pyunits.dimensionless,
-                        ),
-                        idx + 1,
-                    )
-                    for idx in range(
-                        len(m.fs.costing.config.capital_expenditure_percentages)
-                    )
+                    * ( # P/A_year(i) - P/A_year(i-1))
+                        series_present_worth_factor(
+                            pyunits.convert(
+                                m.fs.costing.discount_percentage,
+                                to_units=pyunits.dimensionless,
+                                ),
+                            pyunits.convert(
+                                m.fs.costing.capital_escalation_percentage,
+                                to_units=pyunits.dimensionless,
+                                ),
+                            idx + 1,
+                            )
+                        - series_present_worth_factor(
+                            pyunits.convert(
+                                m.fs.costing.discount_percentage,
+                                to_units=pyunits.dimensionless,
+                                ),
+                            pyunits.convert(
+                                m.fs.costing.capital_escalation_percentage,
+                                to_units=pyunits.dimensionless,
+                                ),
+                            idx,
+                            )
+                        )
+                    for idx in range(len(m.fs.costing.config.capital_expenditure_percentages))
                 ),
                 to_units=m.fs.costing.cost_units,
             )
@@ -5137,7 +5148,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
     results = solver.solve(m, tee=True)
     assert_optimal_termination(results)
     dt.assert_no_numerical_warnings()
-
+    #TODO
     def series_present_worth_factor(r, g, N):
         """
         Returns expression for series present worth factor.
@@ -5154,20 +5165,31 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
                         to_units=pyunits.dimensionless,
                     )
                     * m.fs.costing.CAPEX
-                    * series_present_worth_factor(
-                        pyunits.convert(
-                            m.fs.costing.capital_loan_interest_percentage,
-                            to_units=pyunits.dimensionless,
-                        ),
-                        pyunits.convert(
-                            m.fs.costing.capital_escalation_percentage,
-                            to_units=pyunits.dimensionless,
-                        ),
-                        idx + 1,
-                    )
-                    for idx in range(
-                        len(m.fs.costing.config.capital_expenditure_percentages)
-                    )
+                    * ( # P/A_year(i) - P/A_year(i-1))
+                        series_present_worth_factor(
+                            pyunits.convert(
+                                m.fs.costing.discount_percentage,
+                                to_units=pyunits.dimensionless,
+                                ),
+                            pyunits.convert(
+                                m.fs.costing.capital_escalation_percentage,
+                                to_units=pyunits.dimensionless,
+                                ),
+                            idx + 1,
+                            )
+                        - series_present_worth_factor(
+                            pyunits.convert(
+                                m.fs.costing.discount_percentage,
+                                to_units=pyunits.dimensionless,
+                                ),
+                            pyunits.convert(
+                                m.fs.costing.capital_escalation_percentage,
+                                to_units=pyunits.dimensionless,
+                                ),
+                            idx,
+                            )
+                        )
+                    for idx in range(len(m.fs.costing.config.capital_expenditure_percentages))
                 ),
                 to_units=m.fs.costing.cost_units,
             )

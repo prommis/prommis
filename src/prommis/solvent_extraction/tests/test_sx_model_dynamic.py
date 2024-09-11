@@ -1,3 +1,5 @@
+import os
+
 from pyomo.environ import (
     SolverFactory,
     assert_optimal_termination,
@@ -9,7 +11,6 @@ from pyomo.environ import (
 )
 from pyomo.dae.flatten import flatten_dae_components
 
-import os
 
 from idaes.core.util import DiagnosticsToolbox
 from idaes.core import FlowDirection, FlowsheetBlock

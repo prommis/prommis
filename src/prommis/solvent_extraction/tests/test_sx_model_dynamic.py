@@ -10,9 +10,6 @@ from pyomo.environ import (
 from pyomo.dae.flatten import flatten_dae_components
 
 from idaes.core.util import DiagnosticsToolbox
-from idaes.core.initialization.block_triangularization import (
-    BlockTriangularizationInitializer,
-)
 from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.util import from_json
 

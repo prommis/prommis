@@ -2867,7 +2867,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         Often, uniform series of cash flows do not start in the first period
         (t=1), but in some later period, T, after a known delay. In this case
         the delay is accounted for using
-        
+
         PV_year1_cashflow = Cash_Flow_Value * P/A(r, N)
 
         PV_yearT_cashflow = Cash_Flow_Value * [P/A(r, N) - P/A(r, T-1)]
@@ -2908,7 +2908,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         expressed as a decimal. The capital costs spent in each year are handled
         separately to properly account for the value growth over time. Loan
         repayment and interest owed are calculated as
-        
+
         Annual_Loan_Payment = Debt * A/P(iLoan_%, 0, Nloan) = Debt / P/A(iLoan_%, 0, Nloan)
 
         PV_Loan_Interest_Owed = P/A(r, iLoan_%, Nloan) * Annual_Loan_Payment - Debt
@@ -3149,30 +3149,30 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             to_units=pyunits.dimensionless,
                         )
                         * c.CAPEX
-                        * ( # P/A_year(i) - P/A_year(i-1))
+                        * (  # P/A_year(i) - P/A_year(i-1))
                             series_present_worth_factor(
                                 pyunits.convert(
                                     c.discount_percentage,
                                     to_units=pyunits.dimensionless,
-                                    ),
+                                ),
                                 pyunits.convert(
                                     c.capital_escalation_percentage,
                                     to_units=pyunits.dimensionless,
-                                    ),
+                                ),
                                 idx + 1,
-                                )
+                            )
                             - series_present_worth_factor(
                                 pyunits.convert(
                                     c.discount_percentage,
                                     to_units=pyunits.dimensionless,
-                                    ),
+                                ),
                                 pyunits.convert(
                                     c.capital_escalation_percentage,
                                     to_units=pyunits.dimensionless,
-                                    ),
+                                ),
                                 idx,
-                                )
                             )
+                        )
                         for idx in range(len(c.config.capital_expenditure_percentages))
                     ),
                     to_units=c.cost_units,
@@ -3216,28 +3216,30 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             if c.config.debt_expression is None:
 
                 return c.loan_annual_payment == pyunits.convert(
-                    c.loan_debt / series_present_worth_factor(
+                    c.loan_debt
+                    / series_present_worth_factor(
                         pyunits.convert(
                             c.capital_loan_interest_percentage,  # payment value is discounted by loan interest rate
                             to_units=pyunits.dimensionless,
-                            ),
+                        ),
                         0,  # payments adjusted to present value are constant
                         c.capital_loan_repayment_period / pyunits.year,
-                        ),
+                    ),
                     to_units=c.cost_units,
                 )
 
             else:
 
                 return c.loan_annual_payment == pyunits.convert(
-                    c.loan_debt[None] / series_present_worth_factor(
+                    c.loan_debt[None]
+                    / series_present_worth_factor(
                         pyunits.convert(
                             c.capital_loan_interest_percentage,  # payment value is discounted by loan interest rate
                             to_units=pyunits.dimensionless,
-                            ),
+                        ),
                         0,  # payments adjusted to present value are constant
                         c.capital_loan_repayment_period / pyunits.year,
-                        ),
+                    ),
                     to_units=c.cost_units,
                 )
 
@@ -3253,13 +3255,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         pyunits.convert(
                             c.discount_percentage,  # loan balance is discounted by discount rate
                             to_units=pyunits.dimensionless,
-                            ),  
+                        ),
                         pyunits.convert(
                             c.capital_loan_interest_percentage,  # loan balance grows with loan interest rate
                             to_units=pyunits.dimensionless,
-                            ),
+                        ),
                         c.capital_loan_repayment_period / pyunits.year,
-                        ) * c.loan_annual_payment
+                    )
+                    * c.loan_annual_payment
                     - c.loan_debt,
                     to_units=c.cost_units,
                 )
@@ -3271,13 +3274,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         pyunits.convert(
                             c.discount_percentage,  # loan balance is discounted by discount rate
                             to_units=pyunits.dimensionless,
-                            ),
+                        ),
                         pyunits.convert(
                             c.capital_loan_interest_percentage,  # loan balance grows with loan interest rate
                             to_units=pyunits.dimensionless,
-                            ),
+                        ),
                         c.capital_loan_repayment_period / pyunits.year,
-                        ) * c.loan_annual_payment
+                    )
+                    * c.loan_annual_payment
                     - c.loan_debt[None],
                     to_units=c.cost_units,
                 )

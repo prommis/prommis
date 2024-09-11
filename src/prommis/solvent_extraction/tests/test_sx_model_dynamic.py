@@ -9,6 +9,8 @@ from pyomo.environ import (
 )
 from pyomo.dae.flatten import flatten_dae_components
 
+import os
+
 from idaes.core.util import DiagnosticsToolbox
 from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.util import from_json
@@ -67,8 +69,11 @@ def model():
     Initialization of the model, which gives a good starting point.
 
     """
+    current_dir = os.path.dirname(__file__)
+    parent_dir = os.path.dirname(current_dir)
+    steady_state_data = os.path.join(parent_dir, "solvent_extraction.json")
 
-    from_json(m, fname="solvent_extraction.json")
+    from_json(m, fname=steady_state_data)
 
     def copy_first_steady_state(m):
         # Function that propagates initial steady state guess to future time points

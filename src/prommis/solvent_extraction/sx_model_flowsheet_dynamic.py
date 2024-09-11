@@ -96,7 +96,6 @@ def copy_first_steady_state(m):
                 continue
             else:
                 var[t].value = var[m.fs.time.first()].value
-                # var.pprint()
 
 
 copy_first_steady_state(m)
@@ -106,7 +105,6 @@ Specifications of the partition coefficients, volume and volume fractions for al
 the stages.
 
 """
-
 
 m.fs.solex.mscontactor.volume[:].fix(0.4)
 
@@ -184,22 +182,21 @@ m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Dy"].fix(8.008e-6)
 
 m.fs.solex.mscontactor.organic_inlet_state[:].flow_vol.fix(62.01)
 
-
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["HSO4"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["SO4"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Al"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Ca"].fix(1e-7)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["SO4"].fix(3999.818)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["HSO4"].fix(693.459)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Al"].fix(422.375)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Ca"].fix(109.542)
 m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Cl"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Fe"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Sc"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Y"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["La"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Ce"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Pr"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Nd"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Sm"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Gd"].fix(1e-7)
-m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Dy"].fix(1e-7)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Fe"].fix(688.266)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Sc"].fix(0.032)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Y"].fix(0.124)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["La"].fix(0.986)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Ce"].fix(2.277)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Pr"].fix(0.303)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Nd"].fix(0.946)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Sm"].fix(0.097)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Gd"].fix(0.2584)
+m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Dy"].fix(0.047)
 
 m.fs.solex.mscontactor.aqueous_inherent_reaction_extent[0, :, "Ka2"].fix(0)
 m.fs.solex.mscontactor.aqueous[0, :].flow_vol.fix(62.01)

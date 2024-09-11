@@ -3,15 +3,18 @@ from pyomo.environ import (
     assert_optimal_termination,
     value,
     ConcreteModel,
+    Var,
     units,
     TransformationFactory,
 )
+from pyomo.dae.flatten import flatten_dae_components
 
 from idaes.core.util import DiagnosticsToolbox
 from idaes.core.initialization.block_triangularization import (
     BlockTriangularizationInitializer,
 )
 from idaes.core import FlowDirection, FlowsheetBlock
+from idaes.core.util import from_json
 
 import pytest
 
@@ -62,6 +65,27 @@ def model():
 
     m.discretizer = TransformationFactory("dae.collocation")
     m.discretizer.apply_to(m, nfe=3, ncp=2, wrt=m.fs.time, scheme="LAGRANGE-RADAU")
+
+    """
+    Initialization of the model, which gives a good starting point.
+
+    """
+
+    from_json(m, fname="solvent_extraction.json")
+
+    def copy_first_steady_state(m):
+        # Function that propagates initial steady state guess to future time points
+        # regular_vars
+        regular_vars, time_vars = flatten_dae_components(m, m.fs.time, Var, active=True)
+        # Copy initial conditions forward
+        for var in time_vars:
+            for t in m.fs.time:
+                if t == m.fs.time.first():
+                    continue
+                else:
+                    var[t].value = var[m.fs.time.first()].value
+
+    copy_first_steady_state(m)
 
     """
     Specifications of the partition coefficients, volume and volume fractions for all
@@ -160,6 +184,22 @@ def model():
     m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Gd"].fix(1e-7)
     m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Dy"].fix(1e-7)
 
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["SO4"].fix(3999.818)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["HSO4"].fix(693.459)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Al"].fix(422.375)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Ca"].fix(109.542)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Cl"].fix(1e-7)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Fe"].fix(688.266)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Sc"].fix(0.032)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Y"].fix(0.124)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["La"].fix(0.986)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Ce"].fix(2.277)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Pr"].fix(0.303)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Nd"].fix(0.946)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Sm"].fix(0.097)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Gd"].fix(0.2584)
+    m.fs.solex.mscontactor.aqueous[0, :].conc_mass_comp["Dy"].fix(0.047)
+
     m.fs.solex.mscontactor.aqueous_inherent_reaction_extent[0, :, "Ka2"].fix(0)
     m.fs.solex.mscontactor.aqueous[0, :].flow_vol.fix(62.01)
 
@@ -191,14 +231,6 @@ def test_structural_issues(model):
 @pytest.mark.component
 @pytest.mark.solver
 def test_solve(model):
-    initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
-    initializer.initialize(model.fs.solex)
-
-    try:
-        initializer.initialize(model.fs.solex)
-    except:
-        pass
-
     solver = SolverFactory("ipopt")
     results = solver.solve(model, tee=False)
 
@@ -219,36 +251,37 @@ def test_solution(model):
     number_of_stages = 3
     aqueous_outlet = {
         "H2O": 1000000,
-        "H": 1.85700,
-        "SO4": 3758.32573,
-        "HSO4": 689.13997,
-        "Al": 343.1403,
-        "Ca": 77.43828,
-        "Ce": 0.50865,
-        "Dy": 0.0013665,
-        "Fe": 430.23639,
-        "Gd": 0.06313,
-        "La": 0.37252,
-        "Nd": 1.1133e-07,
-        "Pr": 0.08650,
-        "Sc": 0.000189363,
-        "Sm": 2.70164e-10,
-        "Y": 2.95748e-10,
+        "H": 1.75564,
+        "SO4": 3999.8761,
+        "HSO4": 693.4001,
+        "Al": 363.321,
+        "Ca": 81.9851,
+        "Cl": 9.9999e-8,
+        "Ce": 0.57801,
+        "Dy": 3.4488e-03,
+        "Fe": 461.7292,
+        "Gd": 0.07428,
+        "La": 0.40433,
+        "Nd": 9.7359e-04,
+        "Pr": 0.09789,
+        "Sc": 1.3159e-03,
+        "Sm": 9.9817e-05,
+        "Y": 1.27602e-4,
     }
 
     organic_outlet = {
-        "Al": 57.8749,
-        "Ca": 26.354,
-        "Ce": 1.71612,
-        "Dy": 0.04555,
-        "Fe": 230.2726,
-        "Gd": 0.19107,
-        "La": 0.57677,
-        "Nd": 0.94441,
-        "Pr": 0.20955,
-        "Sc": 1.7673,
-        "Sm": 0.09701,
-        "Y": 0.12401,
+        "Al": 60.42,
+        "Ca": 27.923,
+        "Ce": 1.7771,
+        "Dy": 0.045844,
+        "Fe": 235.631,
+        "Gd": 0.19347,
+        "La": 0.6021,
+        "Nd": 0.9821,
+        "Pr": 0.21488,
+        "Sc": 1.76797,
+        "Sm": 0.10081,
+        "Y": 0.12888,
     }
 
     for k, v in model.fs.solex.mscontactor.organic[

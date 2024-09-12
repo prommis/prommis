@@ -21,6 +21,7 @@ from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 from idaes.core import declare_process_block_class, register_idaes_currency_units
 from idaes.core.util.constants import Constants
+from idaes.models.costing.SSLW import SSLWCostingData
 
 from prommis.nanofiltration.costing.diafiltration_cost_block import (
     DiafiltrationCostingBlockData,
@@ -440,3 +441,80 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 to_units=blk.costing_package.base_currency
                 / blk.costing_package.base_period,
             )
+
+    def cost_precipitator(
+        blk,
+        inlet_vol_flow,
+    ):
+        """
+        Costing method for precipitator unit. Assumes these are horizontal vessels
+        made from 1.25 in thick carbon steel, includes platforms and ladders, and each
+        instance is one unit (default args).
+
+        References:
+            residence time:
+                https://www.sciencedirect.com/science/article/pii/S0304386X19309806
+                https://onlinelibrary.wiley.com/doi/full/10.1002/ceat.201700667
+                https://pubs.acs.org/doi/full/10.1021/acs.iecr.1c04876
+                https://www.sciencedirect.com/science/article/pii/S0304386X01002134
+
+        Args:
+            inlet_vol_flow: inlet volumetric flow rate (m3/h)
+        """
+        blk.residence_time = Param(
+            initialize=0.5,
+            domain=NonNegativeReals,
+            mutable=True,
+            doc="Residence time for precipitator tank",
+            units=units.h,
+        )
+
+        # calculate the volume needed
+        blk.volume_capacity = Var(
+            initialize=500,
+            domain=NonNegativeReals,
+            doc="Volume requirement of precipitator vessel",
+            units=units.m**3,
+        )
+
+        @blk.Constraint()
+        def volume_capacity_equation(blk):
+            # include 20% of the volume as headspace
+            return blk.volume_capacity == units.convert(
+                (1.2 * inlet_vol_flow * blk.residence_time), to_units=units.m**3
+            )
+
+        # include a length and diameter constraint
+        blk.precipitator_diameter = Var(
+            initialize=6,
+            domain=NonNegativeReals,
+            doc="Diameter of the precipitator vessel",
+            units=units.ft,
+        )
+        blk.precipitator_length = Var(
+            initialize=8,
+            domain=NonNegativeReals,
+            doc="Length of the precipitator vessel",
+            units=units.ft,
+        )
+
+        # TODO: adjust this to debug DOF=1 error
+        @blk.Constraint()
+        def diameter_length_ratio_equation(blk):
+            return blk.volume_capacity == (
+                units.convert(
+                    (0.0034 * blk.precipitator_length * blk.precipitator_diameter**2),
+                    to_units=units.m**3,
+                )
+                + units.convert(
+                    (2 * 0.954 * (blk.precipitator_diameter / 12) ** 3),
+                    to_units=units.m**3,
+                )
+            )
+
+        SSLWCostingData.cost_vessel(
+            blk,
+            vertical=False,  # horizontal vessel
+            vessel_diameter=blk.precipitator_diameter,
+            vessel_length=blk.precipitator_length,
+        )

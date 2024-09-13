@@ -491,6 +491,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             doc="Diameter of the precipitator vessel",
             units=units.ft,
         )
+        blk.precipitator_diameter.fix()
         blk.precipitator_length = Var(
             initialize=8,
             domain=NonNegativeReals,
@@ -498,17 +499,21 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             units=units.ft,
         )
 
-        # TODO: adjust this to debug DOF=1 error
         @blk.Constraint()
         def diameter_length_ratio_equation(blk):
-            return blk.volume_capacity == (
+            return blk.precipitator_length == (
                 units.convert(
-                    (0.0034 * blk.precipitator_length * blk.precipitator_diameter**2),
-                    to_units=units.m**3,
-                )
-                + units.convert(
-                    (2 * 0.954 * (blk.precipitator_diameter / 12) ** 3),
-                    to_units=units.m**3,
+                    (
+                        blk.volume_capacity
+                        - units.convert(
+                            (2 * 0.954 * (blk.precipitator_diameter / 12) ** 3),
+                            to_units=units.m**3,
+                        )
+                    )
+                    / units.convert(
+                        (0.0034 * blk.precipitator_diameter**2), to_units=units.m**2
+                    ),
+                    to_units=units.m,
                 )
             )
 

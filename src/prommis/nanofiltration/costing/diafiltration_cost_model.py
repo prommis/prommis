@@ -444,7 +444,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
     def cost_precipitator(
         blk,
-        inlet_vol_flow,
+        precip_volume,
     ):
         """
         Costing method for precipitator unit. Assumes these are horizontal vessels
@@ -457,34 +457,30 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 https://onlinelibrary.wiley.com/doi/full/10.1002/ceat.201700667
                 https://pubs.acs.org/doi/full/10.1021/acs.iecr.1c04876
                 https://www.sciencedirect.com/science/article/pii/S0304386X01002134
+            vessel dimensions:
+                https://www.accessengineeringlibrary.com/content/book/9781260455410/back-matter/appendix1?implicit-login=true
 
         Args:
-            inlet_vol_flow: inlet volumetric flow rate (m3/h)
+            precip_volume: volume of the precipitator as calcuated by the unit model (m3)
         """
-        blk.residence_time = Param(
-            initialize=0.5,
-            domain=NonNegativeReals,
-            mutable=True,
-            doc="Residence time for precipitator tank",
-            units=units.h,
-        )
 
         # calculate the volume needed
         blk.volume_capacity = Var(
-            initialize=500,
+            initialize=120,
             domain=NonNegativeReals,
             doc="Volume requirement of precipitator vessel",
             units=units.m**3,
         )
 
+        # account for a 20% headspace
         @blk.Constraint()
         def volume_capacity_equation(blk):
-            # include 20% of the volume as headspace
             return blk.volume_capacity == units.convert(
-                (1.2 * inlet_vol_flow * blk.residence_time), to_units=units.m**3
+                (1.2 * precip_volume), to_units=units.m**3
             )
 
         # include a length and diameter constraint
+        # TODO: L and D should get bounded but gives init errors
         blk.precipitator_diameter = Var(
             initialize=6,
             domain=NonNegativeReals,

@@ -383,9 +383,9 @@ def build_flowsheet(build_options=None, **kwargs):
     m = build()
     set_partition_coefficients(m)
     set_operating_conditions(m)
-    scaled_model = set_scaling(m)
-    # assert_units_consistent(scaled_model)
-    # assert degrees_of_freedom(scaled_model) == 0
+    set_scaling(m)
+    scaling = pyo.TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(m, rename=False)
     initialize_system(scaled_model)
     _log.info(f"end/build-flowsheet build_options={build_options}")
     return scaled_model
@@ -404,12 +404,13 @@ def solve_flowsheet(flowsheet=None):
 
     set_operating_conditions(m)
 
-    scaled_model = set_scaling(m)
+    set_scaling(m)
+
+    scaling = pyo.TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(m, rename=False)
 
     initialize_system(scaled_model)
 
     results = solve_system(scaled_model)
 
     return results
-
-    # return solve(flowsheet)

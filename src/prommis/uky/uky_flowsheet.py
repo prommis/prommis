@@ -202,6 +202,9 @@ from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
 _log = idaeslog.getLogger(__name__)
 
+# Epsilon represents near-zero component concentrations
+eps = 1e-8 * units.mg / units.L
+
 
 def main():
     """
@@ -212,7 +215,10 @@ def main():
 
     set_operating_conditions(m)
 
-    scaled_model = set_scaling(m)
+    set_scaling(m)
+
+    scaling = TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(m, rename=False)
 
     if degrees_of_freedom(scaled_model) != 0:
         raise AssertionError(
@@ -236,7 +242,6 @@ def main():
             "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
         )
 
-    scaling = TransformationFactory("core.scale_model")
     results = scaling.propagate_solution(scaled_model, m)
 
     display_results(m)
@@ -467,15 +472,6 @@ def build():
     # --------------------------------------------------------------------------------------------------------------
     # Precipitation property and unit models
 
-    key_components = {
-        "H^+",
-        "Ce^3+",
-        "Al^3+",
-        "Fe^3+",
-        "Ca^2+",
-        "C2O4^2-",
-    }
-
     m.fs.properties_aq = AqueousParameter()
     m.fs.properties_solid = PrecipitateParameters()
 
@@ -520,13 +516,12 @@ def build():
         doc="gas property",
     )
 
-    m.fs.prop_solid = PrecipitateParameters(
-        key_components=key_components,
-    )
+    m.fs.prop_solid = PrecipitateParameters()
 
     m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
-        property_package_precipitate=m.fs.prop_solid,
+        property_package_precipitate_solid=m.fs.prop_solid,
+        property_package_precipitate_liquid=m.fs.properties_aq,
         has_holdup=False,
         has_heat_transfer=True,
         has_pressure_change=True,
@@ -534,139 +529,145 @@ def build():
 
     # -----------------------------------------------------------------------------------------------------------------
     # UKy flowsheet connections
-    m.fs.sol_feed = Arc(
+    m.fs.leaching_sol_feed = Arc(
         source=m.fs.leach_solid_feed.outlet, destination=m.fs.leach.solid_inlet
     )
-    m.fs.liq_feed = Arc(
+    m.fs.leaching_liq_feed = Arc(
         source=m.fs.leach_liquid_feed.outlet, destination=m.fs.leach_mixer.feed
     )
-    m.fs.feed_mixture = Arc(
+    m.fs.leaching_feed_mixture = Arc(
         source=m.fs.leach_mixer.outlet, destination=m.fs.leach.liquid_inlet
     )
-    m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.sl_sep1.solid_inlet)
-    m.fs.s02 = Arc(
+    m.fs.leaching_solid_outlet = Arc(
+        source=m.fs.leach.solid_outlet, destination=m.fs.sl_sep1.solid_inlet
+    )
+    m.fs.leaching_liquid_outlet = Arc(
         source=m.fs.leach.liquid_outlet, destination=m.fs.sl_sep1.liquid_inlet
     )
-    m.fs.sep1_solid = Arc(
+    m.fs.sl_sep1_solid_outlet = Arc(
         source=m.fs.sl_sep1.solid_outlet, destination=m.fs.leach_filter_cake.inlet
     )
-    m.fs.sep1_retained_liquid = Arc(
+    m.fs.sl_sep1_retained_liquid_outlet = Arc(
         source=m.fs.sl_sep1.retained_liquid_outlet,
         destination=m.fs.leach_filter_cake_liquid.inlet,
     )
-    m.fs.sep1_liquid = Arc(
+    m.fs.sl_sep1_liquid_outlet = Arc(
         source=m.fs.sl_sep1.recovered_liquid_outlet,
         destination=m.fs.leach_sx_mixer.leach,
     )
-    m.fs.mixed_aq_feed = Arc(
+    m.fs.sx_rougher_load_aq_feed = Arc(
         source=m.fs.leach_sx_mixer.outlet,
         destination=m.fs.solex_rougher_load.mscontactor.aqueous_inlet,
     )
-    m.fs.org_feed = Arc(
+    m.fs.sx_rougher_org_feed = Arc(
         source=m.fs.rougher_org_make_up.outlet, destination=m.fs.rougher_mixer.make_up
     )
-    m.fs.mixed_org_feed = Arc(
+    m.fs.sx_rougher_mixed_org_recycle = Arc(
         source=m.fs.rougher_mixer.outlet,
         destination=m.fs.solex_rougher_load.mscontactor.organic_inlet,
     )
-    m.fs.s03 = Arc(
+    m.fs.sx_rougher_load_aq_outlet = Arc(
         source=m.fs.solex_rougher_load.mscontactor.aqueous_outlet,
         destination=m.fs.load_sep.inlet,
     )
-    m.fs.load_recycle = Arc(
+    m.fs.sx_rougher_load_aq_recycle = Arc(
         source=m.fs.load_sep.recycle, destination=m.fs.leach_mixer.load_recycle
     )
-    m.fs.s04 = Arc(
+    m.fs.sx_rougher_load_org_outlet = Arc(
         source=m.fs.solex_rougher_load.mscontactor.organic_outlet,
         destination=m.fs.solex_rougher_scrub.mscontactor.organic_inlet,
     )
-    m.fs.s05 = Arc(
+    m.fs.sx_rougher_scrub_acid_feed = Arc(
         source=m.fs.acid_feed1.outlet,
         destination=m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet,
     )
-    m.fs.s06 = Arc(
+    m.fs.sx_rougher_scrub_aq_outlet = Arc(
         source=m.fs.solex_rougher_scrub.mscontactor.aqueous_outlet,
         destination=m.fs.scrub_sep.inlet,
     )
-    m.fs.scrub_recycle = Arc(
+    m.fs.sx_rougher_scrub_aq_recycle = Arc(
         source=m.fs.scrub_sep.recycle, destination=m.fs.leach_mixer.scrub_recycle
     )
-    m.fs.s07 = Arc(
+    m.fs.sx_rougher_scrub_org_outlet = Arc(
         source=m.fs.solex_rougher_scrub.mscontactor.organic_outlet,
         destination=m.fs.solex_rougher_strip.mscontactor.organic_inlet,
     )
-    m.fs.s08 = Arc(
+    m.fs.sx_rougher_strip_acid_feed = Arc(
         source=m.fs.acid_feed2.outlet,
         destination=m.fs.solex_rougher_strip.mscontactor.aqueous_inlet,
     )
-    m.fs.s09 = Arc(
+    m.fs.sx_rougher_strip_org_outlet = Arc(
         source=m.fs.solex_rougher_strip.mscontactor.organic_outlet,
         destination=m.fs.rougher_sep.inlet,
     )
-    m.fs.s10 = Arc(
+    m.fs.sx_rougher_strip_org_purge = Arc(
         source=m.fs.rougher_sep.purge, destination=m.fs.sc_circuit_purge.inlet
     )
-    m.fs.s11 = Arc(
+    m.fs.sx_rougher_strip_org_recycle = Arc(
         source=m.fs.rougher_sep.recycle, destination=m.fs.rougher_mixer.recycle
     )
-    m.fs.s12 = Arc(
+    m.fs.sx_rougher_strip_aq_outlet = Arc(
         source=m.fs.solex_rougher_strip.mscontactor.aqueous_outlet,
         destination=m.fs.precip_sx_mixer.rougher,
     )
-    m.fs.s13 = Arc(
+    m.fs.sx_cleaner_load_aq_feed = Arc(
         source=m.fs.precip_sx_mixer.outlet,
         destination=m.fs.solex_cleaner_load.mscontactor.aqueous_inlet,
     )
-    m.fs.org_feed2 = Arc(
+    m.fs.sx_cleaner_org_feed = Arc(
         source=m.fs.cleaner_org_make_up.outlet, destination=m.fs.cleaner_mixer.make_up
     )
-    m.fs.s14 = Arc(
+    m.fs.sx_cleaner_mixed_org_recycle = Arc(
         source=m.fs.cleaner_mixer.outlet,
         destination=m.fs.solex_cleaner_load.mscontactor.organic_inlet,
     )
-    m.fs.s15 = Arc(
+    m.fs.sx_cleaner_load_aq_outlet = Arc(
         source=m.fs.solex_cleaner_load.mscontactor.aqueous_outlet,
         destination=m.fs.leach_sx_mixer.cleaner,
     )
-    m.fs.s16 = Arc(
+    m.fs.sx_cleaner_strip_acid_feed = Arc(
         source=m.fs.acid_feed3.outlet,
         destination=m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet,
     )
-    m.fs.s17 = Arc(
+    m.fs.sx_cleaner_load_org_outlet = Arc(
         source=m.fs.solex_cleaner_load.mscontactor.organic_outlet,
         destination=m.fs.solex_cleaner_strip.mscontactor.organic_inlet,
     )
-    m.fs.s18 = Arc(
+    m.fs.sx_cleaner_strip_org_outlet = Arc(
         source=m.fs.solex_cleaner_strip.mscontactor.organic_outlet,
         destination=m.fs.cleaner_sep.inlet,
     )
-    m.fs.s19 = Arc(source=m.fs.cleaner_sep.purge, destination=m.fs.cleaner_purge.inlet)
-    m.fs.s20 = Arc(
+    m.fs.sx_cleaner_strip_org_purge = Arc(
+        source=m.fs.cleaner_sep.purge, destination=m.fs.cleaner_purge.inlet
+    )
+    m.fs.sx_cleaner_strip_org_recycle = Arc(
         source=m.fs.cleaner_sep.recycle, destination=m.fs.cleaner_mixer.recycle
     )
-    m.fs.s21 = Arc(
+    m.fs.sx_cleaner_strip_aq_outlet = Arc(
         source=m.fs.solex_cleaner_strip.mscontactor.aqueous_outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )
-    m.fs.s22 = Arc(
+    m.fs.precip_solid_outlet = Arc(
         source=m.fs.precipitator.precipitate_outlet,
         destination=m.fs.sl_sep2.solid_inlet,
     )
-    m.fs.s23 = Arc(
+    m.fs.precip_aq_outlet = Arc(
         source=m.fs.precipitator.aqueous_outlet, destination=m.fs.sl_sep2.liquid_inlet
     )
-    m.fs.sep2_solid = Arc(
+    m.fs.sl_sep2_solid_outlet = Arc(
         source=m.fs.sl_sep2.solid_outlet, destination=m.fs.roaster.solid_inlet
     )
-    # # TODO: roaster model cannot currently handle liquid inlets
-    # m.fs.sep2_retained_liquid = Arc(
-    #     source=m.fs.sl_sep2.retained_liquid_outlet, destination=m.fs.roaster.liquid_inlet
-    # )
-    m.fs.sep2_recovered_liquid = Arc(
+    m.fs.sl_sep2_retained_liquid_outlet = Arc(
+        source=m.fs.sl_sep2.retained_liquid_outlet,
+        destination=m.fs.roaster.liquid_inlet,
+    )
+    m.fs.sl_sep2_liquid_outlet = Arc(
         source=m.fs.sl_sep2.recovered_liquid_outlet, destination=m.fs.precip_sep.inlet
     )
-    m.fs.s24 = Arc(source=m.fs.precip_sep.purge, destination=m.fs.precip_purge.inlet)
-    m.fs.s25 = Arc(
+    m.fs.sl_sep2_aq_purge = Arc(
+        source=m.fs.precip_sep.purge, destination=m.fs.precip_purge.inlet
+    )
+    m.fs.sl_sep2_aq_recycle = Arc(
         source=m.fs.precip_sep.recycle,
         destination=m.fs.precip_sx_mixer.precip,
     )
@@ -1314,10 +1315,7 @@ def set_scaling(m):
     m.scaling_factor[m.fs.roaster.gas_out[0].pressure] = 1e-5
     m.scaling_factor[m.fs.roaster.solid_in[0].temperature] = 1e-2
 
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-
-    return scaled_model
+    return m
 
 
 def set_operating_conditions(m):
@@ -1327,8 +1325,6 @@ def set_operating_conditions(m):
     Args:
         m: pyomo model
     """
-    eps = 1e-8 * units.mg / units.L
-
     m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
     m.fs.leach_liquid_feed.conc_mass_comp.fix(1e-10 * units.mg / units.L)
     m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].fix(
@@ -1411,7 +1407,6 @@ def set_operating_conditions(m):
     m.fs.acid_feed1.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Dy"].fix(eps)
 
-    # TODO: flow rate and HCl concentration are not defined in REESim
     m.fs.acid_feed2.flow_vol.fix(0.09)
     m.fs.acid_feed2.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed2.conc_mass_comp[0, "H"].fix(
@@ -1435,7 +1430,6 @@ def set_operating_conditions(m):
 
     m.fs.rougher_sep.split_fraction[:, "recycle"].fix(0.9)
 
-    # TODO: flow rate and HCl concentration are not defined in REESim
     m.fs.acid_feed3.flow_vol.fix(9)
     m.fs.acid_feed3.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed3.conc_mass_comp[0, "H"].fix(
@@ -1475,7 +1469,8 @@ def set_operating_conditions(m):
     m.fs.cleaner_sep.split_fraction[:, "recycle"].fix(0.9)
 
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
-    m.fs.sl_sep2.liquid_recovery.fix(0.7)
+    # TODO: Set sl_sep2 recovery to 0.95 and resolve resultant initialization issues
+    m.fs.sl_sep2.liquid_recovery.fix(0.88)
 
     m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
 
@@ -1502,7 +1497,6 @@ def set_operating_conditions(m):
     m.fs.roaster.gas_outlet.temperature.fix(873.15)
 
     # Fix operating conditions
-    m.fs.roaster.flow_mol_moist_feed.fix(6.75e-4)
     m.fs.roaster.frac_comp_recovery.fix(0.95)
 
     # Touch properties that are used in the UI
@@ -1544,11 +1538,11 @@ def initialize_system(m):
     seq.options.tear_method = "Direct"
     seq.options.iterLim = 1
     seq.options.tear_set = [
-        m.fs.feed_mixture,
-        m.fs.mixed_aq_feed,
-        m.fs.mixed_org_feed,
-        m.fs.s13,
-        m.fs.s14,
+        m.fs.leaching_feed_mixture,
+        m.fs.sx_rougher_load_aq_feed,
+        m.fs.sx_rougher_mixed_org_recycle,
+        m.fs.sx_cleaner_load_aq_feed,
+        m.fs.sx_cleaner_mixed_org_recycle,
     ]
 
     G = seq.create_graph(m)
@@ -1695,7 +1689,6 @@ def initialize_system(m):
 
     initializer_sep = SeparatorInitializer()
     sep_units = [
-        m.fs.load_sep,
         m.fs.scrub_sep,
         m.fs.precip_sep,
         m.fs.cleaner_sep,
@@ -1901,7 +1894,7 @@ def display_results(m):
     Args:
         m: pyomo model
     """
-    m.fs.roaster.display()
+    m.fs.roaster.report()
 
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),
@@ -2826,7 +2819,6 @@ def add_costing(m):
         },
     )
 
-    # TODO: Add bounds to flow_mass_product by converting it to a variable in the roaster model
     # 3.2 is UKy Roasting - Conveyors
     R_conveyors_accounts = ["3.2"]
     m.fs.R_conveyors = UnitModelBlock()

@@ -68,12 +68,10 @@ Streams
 - **Gas Outlet Stream**: Gas product leaving the reactor.
 - **Solid Outlet Stream**: Recovered solid product leaving the reactor.
 
-
 Thermal Properties
 ------------------
 
 The standard heats of formation and heat capacities of solid components involved are defined as parameters in this model. The default values of those parameters are obtained from two sources as listed below:
-
 1. NIST Chemistry WebBook
 2. Wagman, D.D., W.H. Evans, V.B. Parker, R.H.Schumm, I. Halow, S.M. Bailey, K.L. Churney,
    R.L. Nuttall, "The NBS tables of chemical thermodynamic properties-Selected values for
@@ -586,7 +584,7 @@ constructed,
 
         # organic heat capacity, currently assuming constant
         self.cp_organic = Param(
-            initialize=1260, units=pyunits.J / pyunits.mol / pyunits.K
+            initialize=1260, units=pyunits.J / pyunits.kg / pyunits.K
         )
 
         # unit constants used for the expressions of HHV and heat of formation of organic material and liquid water enthalpy
@@ -1062,13 +1060,19 @@ constructed,
         def solid_outlet_comp_eqn(b, t, i):
             if i == "Al2O3" or i == "CaO" or i == "Fe2O3":
                 return (
-                    b.solid_out[t].mass_frac_comp[i] * b.solid_out[t].flow_mass
+                    b.solid_out[t].mass_frac_comp[i]
+                    * pyunits.convert(
+                        b.solid_out[t].flow_mass, to_units=pyunits.kg / pyunits.second
+                    )
                     == b.flow_mol_comp_product_recovered[t, i]
                     * b.config.solid_property_package.mw[i]
                 )
             elif i == "inerts":
                 return (
-                    b.solid_out[t].mass_frac_comp[i] * b.solid_out[t].flow_mass
+                    b.solid_out[t].mass_frac_comp[i]
+                    * pyunits.convert(
+                        b.solid_out[t].flow_mass, to_units=pyunits.kg / pyunits.second
+                    )
                     == b.flow_mol_comp_product_recovered[t, "Un2O3"] * b.mw_Un2O3
                     + b.flow_mol_comp_product_recovered[t, "SiO2"] * b.mw_SiO2
                     + b.flow_mol_comp_product_recovered[t, "CaCO3"] * b.mw_CaCO3

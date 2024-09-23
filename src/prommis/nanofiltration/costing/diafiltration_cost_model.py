@@ -497,17 +497,34 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
         @blk.Constraint()
         def diameter_length_ratio_equation(blk):
-            return blk.precipitator_length == (
+            return units.convert(blk.precipitator_length, to_units=units.inch) == (
                 units.convert(
                     (
                         blk.volume_capacity
                         - units.convert(
-                            (2 * 0.954 * (blk.precipitator_diameter / 12) ** 3),
+                            (
+                                2
+                                * 0.954
+                                * (
+                                    units.convert(
+                                        blk.precipitator_diameter, to_units=units.inch
+                                    )
+                                    / 12
+                                )
+                                ** 3
+                            ),
                             to_units=units.m**3,
                         )
                     )
                     / units.convert(
-                        (0.0034 * blk.precipitator_diameter**2), to_units=units.m**2
+                        (
+                            0.0034
+                            * units.convert(
+                                blk.precipitator_diameter, to_units=units.inch
+                            )
+                            ** 2
+                        ),
+                        to_units=units.m**2,
                     ),
                     to_units=units.m,
                 )

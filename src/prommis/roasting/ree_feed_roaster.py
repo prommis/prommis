@@ -79,10 +79,14 @@ The standard heats of formation and heat capacities of solid components involved
    R.L. Nuttall, "The NBS tables of chemical thermodynamic properties-Selected values for
    inorganic and C1 and C2 organic substances in SI units," Journal of Physical and Chemical
    Reference Data, 11(2), 1982
+3. Merrick, D., "Mathematical models of the thermal decomposition of coal, 2. Specific heats and heats of reaction,"
+   Fuel, 62, pp540-546, 1983
 
 The NIST WebBook data are used for the properties of :ce:`Al2O3`, :ce:`SiO2`, :ce:`CaO`, :ce:`Fe2O3`, and `pyrite`. Note that the heat capacity model is simplified as a linear function of temperature.
 The data of Wagman et al are used for the properties of :ce:`CaCO3` and `kaolinite`.
 The gas phase properties are calculated based on user configured property package.
+The heat capacity of organic part of the feed is usually a funtion of temperature and elemental composition of C, H, O, N, and S elements according to Merrick (1983).
+For simplicity, a constant heat capacity of 1260 J/kg-K in the range reported by Merrick is used in this model.
 
 Assumptions
 -----------
@@ -584,7 +588,7 @@ constructed,
         self.cp1_comp_product["SiO2"] = self.cp1_SiO2
         self.cp1_comp_product["Fe2O3"] = self.cp1_Fe2O3
 
-        # organic heat capacity, currently assuming constant
+        # organic heat capacity, currently assuming constant based on Merrick (1983)
         self.cp_organic = Param(
             initialize=1260, units=pyunits.J / pyunits.kg / pyunits.K
         )

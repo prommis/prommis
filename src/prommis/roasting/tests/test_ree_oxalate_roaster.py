@@ -177,6 +177,11 @@ def test_initialize_and_solve(model):
     solver = SolverFactory("ipopt")
     results = solver.solve(model, tee=False)
     assert_optimal_termination(results)
+
+
+@pytest.mark.component
+@pytest.mark.solver
+def test_numerical_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.assert_no_numerical_warnings()
 

@@ -85,7 +85,7 @@ The standard heats of formation and heat capacities of solid components involved
 The NIST WebBook data are used for the properties of :ce:`Al2O3`, :ce:`SiO2`, :ce:`CaO`, :ce:`Fe2O3`, and `pyrite`. Note that the heat capacity model is simplified as a linear function of temperature.
 The data of Wagman et al are used for the properties of :ce:`CaCO3` and `kaolinite`.
 The gas phase properties are calculated based on user configured property package.
-The heat capacity of organic part of the feed is usually a funtion of temperature and elemental composition of C, H, O, N, and S elements according to Merrick (1983).
+The heat capacity of organic part of the feed is usually a function of temperature and elemental composition of C, H, O, N, and S elements according to Merrick (1983).
 For simplicity, a constant heat capacity of 1260 J/kg-K in the range reported by Merrick is used in this model.
 
 Assumptions

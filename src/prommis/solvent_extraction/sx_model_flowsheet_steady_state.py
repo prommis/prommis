@@ -12,11 +12,12 @@ Authors: Arkoprabho Dasgupta
 
 """
 
-from pyomo.environ import ConcreteModel, SolverFactory
+from pyomo.environ import ConcreteModel
 
 import numpy as np
 
 from idaes.core import FlowDirection, FlowsheetBlock
+from idaes.core.solvers import get_solver
 from idaes.core.util import to_json
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
@@ -150,9 +151,9 @@ Solution of the model and display of the final results.
 
 """
 
-solver = SolverFactory("ipopt")
-solver.options["bound_push"] = 1e-8
-solver.options["mu_init"] = 1e-8
+solver = get_solver("ipopt")
+# solver.options["bound_push"] = 1e-8
+# solver.options["mu_init"] = 1e-8
 solver.solve(m, tee=True)
 
 

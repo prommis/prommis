@@ -1,12 +1,12 @@
 {
   "__metadata__": {
     "format_version": 4,
-    "date": "2024-09-11",
-    "time": "11:46:08.268037",
+    "date": "2024-09-30",
+    "time": "11:46:12.490755",
     "other": {},
     "__performance__": {
       "n_components": 837,
-      "etime_make_dict": 0.009003400802612305
+      "etime_make_dict": 0.0
     }
   },
   "unknown": {
@@ -704,7 +704,7 @@
                                                 "__id__": 120,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.7556369812546586,
+                                                "value": 1.755636981254659,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -731,7 +731,7 @@
                                                 "__id__": 123,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1e-08,
+                                                "value": 1.0000014991592364e-08,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -740,7 +740,7 @@
                                                 "__id__": 124,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.000287999999999997,
+                                                "value": 0.00029744090469714657,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -749,7 +749,7 @@
                                                 "__id__": 125,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.00012399999999999564,
+                                                "value": 0.00013857217638320318,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -758,7 +758,7 @@
                                                 "__id__": 126,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.6665359999999999,
+                                                "value": 0.6665651756645025,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -767,7 +767,7 @@
                                                 "__id__": 127,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.9517859999999997,
+                                                "value": 0.9518154313196825,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -776,7 +776,7 @@
                                                 "__id__": 128,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.126654,
+                                                "value": 0.1266835670805976,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -785,7 +785,7 @@
                                                 "__id__": 129,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.11730400000000006,
+                                                "value": 0.117334297546036,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -794,7 +794,7 @@
                                                 "__id__": 130,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 9.699999999998208e-05,
+                                                "value": 0.00012858309459462536,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -803,7 +803,7 @@
                                                 "__id__": 131,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.07803680000000003,
+                                                "value": 0.07806916926391194,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -812,7 +812,7 @@
                                                 "__id__": 132,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.001598000000000001,
+                                                "value": 0.0016321331151245844,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -821,7 +821,7 @@
                                                 "__id__": 133,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 400.41149999999993,
+                                                "value": 400.41150566726895,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -830,7 +830,7 @@
                                                 "__id__": 134,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 106.25574000000003,
+                                                "value": 106.25574841823625,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -839,7 +839,7 @@
                                                 "__id__": 135,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 518.2642979999999,
+                                                "value": 518.2643097295834,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -863,7 +863,7 @@
                                                 "__id__": 138,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0017556369812546583,
+                                                "value": 0.0017556369812670185,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -872,7 +872,7 @@
                                                 "__id__": 139,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.007148424874415442,
+                                                "value": 0.007148424874419718,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -881,7 +881,7 @@
                                                 "__id__": 140,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.041665407814587996,
+                                                "value": 0.04166540781458799,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -890,7 +890,7 @@
                                                 "__id__": 141,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.820635771302852e-13,
+                                                "value": 2.9705518448547273e-13,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -899,7 +899,7 @@
                                                 "__id__": 142,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 6.4076892270724175e-09,
+                                                "value": 6.617739169161737e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -908,7 +908,7 @@
                                                 "__id__": 143,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.3947472020695752e-09,
+                                                "value": 1.5586544781867956e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -917,7 +917,7 @@
                                                 "__id__": 144,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 4.798502573701449e-06,
+                                                "value": 4.798712614121179e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -926,7 +926,7 @@
                                                 "__id__": 145,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 6.792843072882467e-06,
+                                                "value": 6.7930531225533304e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -935,7 +935,7 @@
                                                 "__id__": 146,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 8.988481764568117e-07,
+                                                "value": 8.990580104650411e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -944,7 +944,7 @@
                                                 "__id__": 147,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 8.132444087020426e-07,
+                                                "value": 8.134544553322609e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -953,7 +953,7 @@
                                                 "__id__": 148,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 6.451183825484328e-10,
+                                                "value": 8.551682268863154e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -962,7 +962,7 @@
                                                 "__id__": 149,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 4.962594594594596e-07,
+                                                "value": 4.964653053348932e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -971,7 +971,7 @@
                                                 "__id__": 150,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 9.833846153846157e-09,
+                                                "value": 1.0043896093074416e-08,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -980,7 +980,7 @@
                                                 "__id__": 151,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.01483994885479208,
+                                                "value": 0.014839949064830956,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -989,7 +989,7 @@
                                                 "__id__": 152,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.002651223613952792,
+                                                "value": 0.002651223823999108,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -998,7 +998,7 @@
                                                 "__id__": 153,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.00928040644641418,
+                                                "value": 0.009280406656452382,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -1160,7 +1160,7 @@
                                                 "__id__": 181,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.7556369812546588,
+                                                "value": 1.755636981254659,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1187,7 +1187,7 @@
                                                 "__id__": 184,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1e-08,
+                                                "value": 1.0000014991592364e-08,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1196,7 +1196,7 @@
                                                 "__id__": 185,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.00023990399999999738,
+                                                "value": 0.00024934490468010717,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1205,7 +1205,7 @@
                                                 "__id__": 186,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.2400000000021769e-07,
+                                                "value": 1.8039539096251223e-05,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1214,7 +1214,7 @@
                                                 "__id__": 187,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.511899648,
+                                                "value": 0.511928824697683,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1223,7 +1223,7 @@
                                                 "__id__": 188,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.7147912859999997,
+                                                "value": 0.7148207172946722,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1232,7 +1232,7 @@
                                                 "__id__": 189,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.107529246,
+                                                "value": 0.10755904671064165,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1241,7 +1241,7 @@
                                                 "__id__": 190,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.00011730399999997912,
+                                                "value": 0.0001476016059903662,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1250,7 +1250,7 @@
                                                 "__id__": 191,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 9.700000000011783e-08,
+                                                "value": 3.16800438858178e-05,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1259,7 +1259,7 @@
                                                 "__id__": 192,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.07210600320000002,
+                                                "value": 0.07213888513697667,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1268,7 +1268,7 @@
                                                 "__id__": 193,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0015181000000000014,
+                                                "value": 0.0015522331176852089,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1277,7 +1277,7 @@
                                                 "__id__": 194,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 380.79133649999994,
+                                                "value": 380.79134216729835,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1286,7 +1286,7 @@
                                                 "__id__": 195,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 93.18628398000001,
+                                                "value": 93.18629239825582,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1295,7 +1295,7 @@
                                                 "__id__": 196,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 485.09538292799994,
+                                                "value": 485.0953946576331,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -1319,7 +1319,7 @@
                                                 "__id__": 199,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0017556369812546586,
+                                                "value": 0.0017556369812670185,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1328,7 +1328,7 @@
                                                 "__id__": 200,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.007148424874415442,
+                                                "value": 0.007148424874419718,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1346,7 +1346,7 @@
                                                 "__id__": 202,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.820635771302852e-13,
+                                                "value": 2.9705518448547273e-13,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1355,7 +1355,7 @@
                                                 "__id__": 203,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 5.337605126151318e-09,
+                                                "value": 5.547655067861484e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1364,7 +1364,7 @@
                                                 "__id__": 204,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.3947472020686057e-12,
+                                                "value": 2.0290803775075202e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1373,7 +1373,7 @@
                                                 "__id__": 205,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 3.685249976602713e-06,
+                                                "value": 3.6854600244604792e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1382,7 +1382,7 @@
                                                 "__id__": 206,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 5.101425147734732e-06,
+                                                "value": 5.101635197227099e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1391,7 +1391,7 @@
                                                 "__id__": 207,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 7.631221018118331e-07,
+                                                "value": 7.633335938643335e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1400,7 +1400,7 @@
                                                 "__id__": 208,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 8.132444087018976e-10,
+                                                "value": 1.0232914545720553e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1409,7 +1409,7 @@
                                                 "__id__": 209,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 6.451183825494022e-13,
+                                                "value": 2.106946254712068e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1418,7 +1418,7 @@
                                                 "__id__": 210,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 4.585437405405406e-07,
+                                                "value": 4.5875284665803936e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1427,7 +1427,7 @@
                                                 "__id__": 211,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 9.342153846153854e-09,
+                                                "value": 9.55220380113967e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1436,7 +1436,7 @@
                                                 "__id__": 212,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.014112791360907265,
+                                                "value": 0.014112791570947237,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1445,7 +1445,7 @@
                                                 "__id__": 213,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0023251231094365984,
+                                                "value": 0.002325123319483402,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1454,7 +1454,7 @@
                                                 "__id__": 214,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.008686460433843673,
+                                                "value": 0.008686460643882767,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -1616,7 +1616,7 @@
                                                 "__id__": 242,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.7556369812546586,
+                                                "value": 1.755636981254659,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1643,7 +1643,7 @@
                                                 "__id__": 245,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1e-08,
+                                                "value": 1.0000014991592364e-08,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1652,7 +1652,7 @@
                                                 "__id__": 246,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.00019984003199999777,
+                                                "value": 0.00019984003332346067,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1661,7 +1661,7 @@
                                                 "__id__": 247,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.2399999962676937e-10,
+                                                "value": 1.240929449619828e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1670,7 +1670,7 @@
                                                 "__id__": 248,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.393138929664,
+                                                "value": 0.39313892966414976,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1679,7 +1679,7 @@
                                                 "__id__": 249,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.5368082557859999,
+                                                "value": 0.5368082557869024,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1688,7 +1688,7 @@
                                                 "__id__": 250,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.09129232985399999,
+                                                "value": 0.09129232985409032,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1697,7 +1697,7 @@
                                                 "__id__": 251,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.1730399999953325e-07,
+                                                "value": 1.1730470919673324e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1706,7 +1706,7 @@
                                                 "__id__": 252,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 9.700000012340064e-11,
+                                                "value": 9.707275088469221e-11,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1715,7 +1715,7 @@
                                                 "__id__": 253,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.06662594695680002,
+                                                "value": 0.06662594695689386,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1724,7 +1724,7 @@
                                                 "__id__": 254,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0014421950000000014,
+                                                "value": 0.0014421950000128474,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1733,7 +1733,7 @@
                                                 "__id__": 255,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 362.1325610114999,
+                                                "value": 362.1325610112736,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1742,7 +1742,7 @@
                                                 "__id__": 256,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 81.72437105046002,
+                                                "value": 81.7243710504196,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1751,7 +1751,7 @@
                                                 "__id__": 257,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 454.04927842060783,
+                                                "value": 454.0492784204431,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -1775,7 +1775,7 @@
                                                 "__id__": 260,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0017556369812546583,
+                                                "value": 0.0017556369812670185,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1784,7 +1784,7 @@
                                                 "__id__": 261,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.007148424874415442,
+                                                "value": 0.007148424874419718,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1793,7 +1793,7 @@
                                                 "__id__": 262,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.041665407814587996,
+                                                "value": 0.04166540781458799,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1802,7 +1802,7 @@
                                                 "__id__": 263,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.820635771302852e-13,
+                                                "value": 2.9705518448547273e-13,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1811,7 +1811,7 @@
                                                 "__id__": 264,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 4.446225070084051e-09,
+                                                "value": 4.446240061684791e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1820,7 +1820,7 @@
                                                 "__id__": 265,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.394747197871541e-15,
+                                                "value": 1.638635433925379e-14,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1829,7 +1829,7 @@
                                                 "__id__": 266,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.8302719820308837e-06,
+                                                "value": 2.830271997018248e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1838,7 +1838,7 @@
                                                 "__id__": 267,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 3.831170285948785e-06,
+                                                "value": 3.83117030093465e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1847,7 +1847,7 @@
                                                 "__id__": 268,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 6.478906644382464e-07,
+                                                "value": 6.478906794288826e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1856,7 +1856,7 @@
                                                 "__id__": 269,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 8.132444086988063e-13,
+                                                "value": 8.282360158449304e-13,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1865,7 +1865,7 @@
                                                 "__id__": 270,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 6.451183833692518e-16,
+                                                "value": 1.5636725974410128e-14,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1874,7 +1874,7 @@
                                                 "__id__": 271,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 4.236944162594595e-07,
+                                                "value": 4.236944312504317e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1883,7 +1883,7 @@
                                                 "__id__": 272,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 8.87504615384616e-09,
+                                                "value": 8.875061145440313e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1892,7 +1892,7 @@
                                                 "__id__": 273,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.013421264584222808,
+                                                "value": 0.013421264584217682,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1901,7 +1901,7 @@
                                                 "__id__": 274,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.002039132966975897,
+                                                "value": 0.0020391329669878317,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1910,7 +1910,7 @@
                                                 "__id__": 275,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.008130526966077675,
+                                                "value": 0.008130526966080479,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -2238,7 +2238,7 @@
                                                 "__id__": 322,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0017549999999999996,
+                                                "value": 0.0017550000000123604,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2247,7 +2247,7 @@
                                                 "__id__": 323,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.007149061855670102,
+                                                "value": 0.007149061855674376,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2265,7 +2265,7 @@
                                                 "__id__": 325,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.820635771302852e-13,
+                                                "value": 2.9705518448547273e-13,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2274,7 +2274,7 @@
                                                 "__id__": 326,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 7.119654696747207e-07,
+                                                "value": 7.119654846652606e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2283,7 +2283,7 @@
                                                 "__id__": 327,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.3947472020696247e-06,
+                                                "value": 1.394747217059141e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2292,7 +2292,7 @@
                                                 "__id__": 328,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 7.098376588315753e-06,
+                                                "value": 7.0983766032967195e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2301,7 +2301,7 @@
                                                 "__id__": 329,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.6250820748522655e-05,
+                                                "value": 1.62508207634899e-05,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2310,7 +2310,7 @@
                                                 "__id__": 330,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.1503544891311285e-06,
+                                                "value": 2.150354504119512e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2319,7 +2319,7 @@
                                                 "__id__": 331,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 6.558422650822921e-06,
+                                                "value": 6.558422665804697e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2328,7 +2328,7 @@
                                                 "__id__": 332,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 6.451183825485501e-07,
+                                                "value": 6.451183975391904e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2337,7 +2337,7 @@
                                                 "__id__": 333,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.6432432432432431e-06,
+                                                "value": 1.643243258232387e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2346,7 +2346,7 @@
                                                 "__id__": 334,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.892307692307692e-07,
+                                                "value": 2.8923078422194295e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2364,7 +2364,7 @@
                                                 "__id__": 336,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.002733220220569888,
+                                                "value": 0.002733220220580782,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2494,7 +2494,7 @@
                                                 "__id__": 359,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 60.2424516585,
+                                                "value": 60.24245165872629,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2503,7 +2503,7 @@
                                                 "__id__": 360,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 27.81765578954,
+                                                "value": 27.817655789580417,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2512,7 +2512,7 @@
                                                 "__id__": 361,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 234.216724452392,
+                                                "value": 234.21672445255672,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2521,7 +2521,7 @@
                                                 "__id__": 362,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.7658001599679998,
+                                                "value": 1.7658001599666766,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2530,7 +2530,7 @@
                                                 "__id__": 363,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.12402178987600002,
+                                                "value": 0.12402178987590706,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2539,7 +2539,7 @@
                                                 "__id__": 364,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.592966070336,
+                                                "value": 0.5929660703358501,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2548,7 +2548,7 @@
                                                 "__id__": 365,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.740501744214,
+                                                "value": 1.7405017442130981,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2557,7 +2557,7 @@
                                                 "__id__": 366,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.21174478014600004,
+                                                "value": 0.21174478014590972,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2566,7 +2566,7 @@
                                                 "__id__": 367,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.946164882696,
+                                                "value": 0.946164882695291,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2575,7 +2575,7 @@
                                                 "__id__": 368,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.097017009903,
+                                                "value": 0.09701700990292723,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2584,7 +2584,7 @@
                                                 "__id__": 369,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.19180762304319998,
+                                                "value": 0.19180762304310614,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2593,7 +2593,7 @@
                                                 "__id__": 370,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.045565813000000004,
+                                                "value": 0.04556581299999007,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -2623,7 +2623,7 @@
                                                 "__id__": 374,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0022326903735267953,
+                                                "value": 0.0022326903735384396,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2632,7 +2632,7 @@
                                                 "__id__": 375,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0006940879232880882,
+                                                "value": 0.0006940879233020393,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2641,7 +2641,7 @@
                                                 "__id__": 376,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0041940500394375855,
+                                                "value": 0.004194050039446289,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2650,7 +2650,7 @@
                                                 "__id__": 377,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 3.928714813260356e-05,
+                                                "value": 3.928714814753627e-05,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2659,7 +2659,7 @@
                                                 "__id__": 378,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.3949922937517573e-06,
+                                                "value": 1.3949923087412737e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2668,7 +2668,7 @@
                                                 "__id__": 379,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 4.268860518599041e-06,
+                                                "value": 4.268860533584249e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2677,7 +2677,7 @@
                                                 "__id__": 380,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.2421862915113191e-05,
+                                                "value": 1.2421862930086181e-05,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2686,7 +2686,7 @@
                                                 "__id__": 381,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.5027271898912047e-06,
+                                                "value": 1.5027272048805592e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2695,7 +2695,7 @@
                                                 "__id__": 382,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 6.5595657485059824e-06,
+                                                "value": 6.5595657634877566e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2704,7 +2704,7 @@
                                                 "__id__": 383,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 6.452315103950519e-07,
+                                                "value": 6.452315253856916e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2713,7 +2713,7 @@
                                                 "__id__": 384,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.2197623087007946e-06,
+                                                "value": 1.2197623236905734e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2722,7 +2722,7 @@
                                                 "__id__": 385,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.8040500307692307e-07,
+                                                "value": 2.804050180681099e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -2811,7 +2811,7 @@
                                                 "__id__": 401,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 38.2789516585,
+                                                "value": 38.2789573259953,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2820,7 +2820,7 @@
                                                 "__id__": 402,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 24.531395789540003,
+                                                "value": 24.53140420781664,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2829,7 +2829,7 @@
                                                 "__id__": 403,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 64.21502245239199,
+                                                "value": 64.21503418214022,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2838,7 +2838,7 @@
                                                 "__id__": 404,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.7340881599680003,
+                                                "value": 1.7340976008713738,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2847,7 +2847,7 @@
                                                 "__id__": 405,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0001457898759999964,
+                                                "value": 0.00016036205229026657,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2856,7 +2856,7 @@
                                                 "__id__": 406,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.27350207033599994,
+                                                "value": 0.2735312460003526,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2865,7 +2865,7 @@
                                                 "__id__": 407,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.41528774421399994,
+                                                "value": 0.41531717553278025,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2874,7 +2874,7 @@
                                                 "__id__": 408,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.035398780146,
+                                                "value": 0.03542834722650731,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2883,7 +2883,7 @@
                                                 "__id__": 409,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.11746888269600007,
+                                                "value": 0.1174991802413268,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2892,7 +2892,7 @@
                                                 "__id__": 410,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.00011400990299998207,
+                                                "value": 0.0001455929975218706,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2901,7 +2901,7 @@
                                                 "__id__": 411,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.011444423043200005,
+                                                "value": 0.011476792307018147,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2910,7 +2910,7 @@
                                                 "__id__": 412,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.00016381299999999963,
+                                                "value": 0.0001979461151146722,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -2940,7 +2940,7 @@
                                                 "__id__": 416,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0014186847401415755,
+                                                "value": 0.0014186849501888407,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2949,7 +2949,7 @@
                                                 "__id__": 417,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0006120913166709916,
+                                                "value": 0.0006120915267183152,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2958,7 +2958,7 @@
                                                 "__id__": 418,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0011498795317824689,
+                                                "value": 0.0011498797418236226,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2967,7 +2967,7 @@
                                                 "__id__": 419,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 3.858159035215592e-05,
+                                                "value": 3.8581800402068567e-05,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2976,7 +2976,7 @@
                                                 "__id__": 420,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.6398388842022003e-09,
+                                                "value": 1.8037461592739174e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2985,7 +2985,7 @@
                                                 "__id__": 421,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.968986503984737e-06,
+                                                "value": 1.969196544403388e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2994,7 +2994,7 @@
                                                 "__id__": 422,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.963885239473008e-06,
+                                                "value": 2.96409528913743e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3003,7 +3003,7 @@
                                                 "__id__": 423,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.512208772168877e-07,
+                                                "value": 2.514307112244762e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3012,7 +3012,7 @@
                                                 "__id__": 424,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 8.143875063851032e-07,
+                                                "value": 8.145975530104049e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3021,7 +3021,7 @@
                                                 "__id__": 425,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 7.582462290501596e-10,
+                                                "value": 9.682960729041796e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3030,7 +3030,7 @@
                                                 "__id__": 426,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 7.277852491701114e-08,
+                                                "value": 7.298437079184836e-08,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3039,7 +3039,7 @@
                                                 "__id__": 427,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.0080799999999989e-09,
+                                                "value": 1.218129939167364e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -3128,7 +3128,7 @@
                                                 "__id__": 443,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 18.6587881585,
+                                                "value": 18.658793826024723,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3137,7 +3137,7 @@
                                                 "__id__": 444,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 11.461939769540002,
+                                                "value": 11.46194818783623,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3146,7 +3146,7 @@
                                                 "__id__": 445,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 31.046107380391994,
+                                                "value": 31.04611911018993,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3155,7 +3155,7 @@
                                                 "__id__": 446,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.734040063968,
+                                                "value": 1.7340495048713567,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3164,7 +3164,7 @@
                                                 "__id__": 447,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.1913876000000544e-05,
+                                                "value": 3.982941500328685e-05,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3173,7 +3173,7 @@
                                                 "__id__": 448,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.11886571833599999,
+                                                "value": 0.1188948950335332,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3182,7 +3182,7 @@
                                                 "__id__": 449,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.17829303021399995,
+                                                "value": 0.17832246150776984,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3191,7 +3191,7 @@
                                                 "__id__": 450,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.016274026145999997,
+                                                "value": 0.01630382685655138,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3200,7 +3200,7 @@
                                                 "__id__": 451,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.00028218669599997925,
+                                                "value": 0.00031248430128116844,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3209,7 +3209,7 @@
                                                 "__id__": 452,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.71069030000001e-05,
+                                                "value": 4.86899468130908e-05,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3218,7 +3218,7 @@
                                                 "__id__": 453,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.005513626243200002,
+                                                "value": 0.005546508180082815,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3227,7 +3227,7 @@
                                                 "__id__": 454,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 8.391300000000013e-05,
+                                                "value": 0.00011804611767529671,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -3257,7 +3257,7 @@
                                                 "__id__": 458,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0006915272462567635,
+                                                "value": 0.000691527456305119,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3266,7 +3266,7 @@
                                                 "__id__": 459,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.00028599081215479813,
+                                                "value": 0.00028599102220261055,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3275,7 +3275,7 @@
                                                 "__id__": 460,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 0.0005559335192119615,
+                                                "value": 0.0005559337292540054,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3284,7 +3284,7 @@
                                                 "__id__": 461,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 3.8580520268054997e-05,
+                                                "value": 3.858073031796726e-05,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3293,7 +3293,7 @@
                                                 "__id__": 462,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.4648642933469043e-10,
+                                                "value": 4.479997188378738e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3302,7 +3302,7 @@
                                                 "__id__": 463,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 8.557339068860009e-07,
+                                                "value": 8.559439547426886e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3311,7 +3311,7 @@
                                                 "__id__": 464,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.272467314325273e-06,
+                                                "value": 1.2726773638111982e-06,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3320,7 +3320,7 @@
                                                 "__id__": 465,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.154948025719091e-07,
+                                                "value": 1.1570629462376859e-07,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3329,7 +3329,7 @@
                                                 "__id__": 466,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.956342091762311e-09,
+                                                "value": 2.1663891327157717e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3338,7 +3338,7 @@
                                                 "__id__": 467,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.1377296488427783e-10,
+                                                "value": 3.2382247148907096e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3347,7 +3347,7 @@
                                                 "__id__": 468,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 3.506280599809221e-08,
+                                                "value": 3.527191211499412e-08,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3356,7 +3356,7 @@
                                                 "__id__": 469,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 5.163876923076908e-10,
+                                                "value": 7.264376472324066e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -3581,7 +3581,7 @@
                                                 "__id__": 501,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 4.695723074642354e-10,
+                                                "value": 4.69587299070887e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3590,7 +3590,7 @@
                                                 "__id__": 502,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 6.696940965118019e-10,
+                                                "value": 6.697090881181534e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3599,7 +3599,7 @@
                                                 "__id__": 503,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 5.1445966514459655e-11,
+                                                "value": 5.1460958121738154e-11,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3608,7 +3608,7 @@
                                                 "__id__": 504,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 3.8579628887998926e-05,
+                                                "value": 3.857962890293269e-05,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3617,7 +3617,7 @@
                                                 "__id__": 505,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.450930768798155e-10,
+                                                "value": 2.451080684868037e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3626,7 +3626,7 @@
                                                 "__id__": 506,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 7.55912314171556e-10,
+                                                "value": 7.559273057777784e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3635,7 +3635,7 @@
                                                 "__id__": 507,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.2124525393245598e-09,
+                                                "value": 2.212467530928598e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3644,7 +3644,7 @@
                                                 "__id__": 508,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.6336519832229766e-10,
+                                                "value": 2.6338018992925847e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3653,7 +3653,7 @@
                                                 "__id__": 509,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.1439109274691142e-09,
+                                                "value": 1.1439259190747549e-09,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3662,7 +3662,7 @@
                                                 "__id__": 510,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 1.1312849162011176e-10,
+                                                "value": 1.1314348322729777e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3671,7 +3671,7 @@
                                                 "__id__": 511,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 2.1348171701112873e-10,
+                                                "value": 2.134967086181643e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -3680,7 +3680,7 @@
                                                 "__id__": 512,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 4.927999999999999e-11,
+                                                "value": 4.929499160728174e-11,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               }
@@ -3766,7 +3766,7 @@
                                         "__id__": 527,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -4.375163796555867e-05,
+                                        "value": -4.373861276864971e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3775,7 +3775,7 @@
                                         "__id__": 528,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -8.64017857263371e-05,
+                                        "value": -8.639162183614507e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3784,7 +3784,7 @@
                                         "__id__": 529,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.00014261518764623304,
+                                        "value": -0.00014260216303980564,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3793,7 +3793,7 @@
                                         "__id__": 530,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.0005864891956664479,
+                                        "value": -0.0005864761704863578,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3802,7 +3802,7 @@
                                         "__id__": 531,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -7.760590644893441e-05,
+                                        "value": -7.75928946420841e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3811,7 +3811,7 @@
                                         "__id__": 532,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.0003562585027939157,
+                                        "value": -0.0003562454778023759,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3820,7 +3820,7 @@
                                         "__id__": 533,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -3.996378711093376e-05,
+                                        "value": -3.995076192008636e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3829,7 +3829,7 @@
                                         "__id__": 534,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -7.112446443243242e-05,
+                                        "value": -7.111169992969678e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3838,7 +3838,7 @@
                                         "__id__": 535,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -1.73254032e-05,
+                                        "value": -1.731237800326847e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3847,7 +3847,7 @@
                                         "__id__": 536,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.050476489326217476,
+                                        "value": -0.05047647630170662,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3856,7 +3856,7 @@
                                         "__id__": 537,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.005084609576326163,
+                                        "value": -0.005084596551354149,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3865,7 +3865,7 @@
                                         "__id__": 538,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.18876901317969375,
+                                        "value": -0.18876900015522477,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3874,7 +3874,7 @@
                                         "__id__": 539,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -6.635591509811717e-08,
+                                        "value": -6.635591512163855e-08,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3883,7 +3883,7 @@
                                         "__id__": 540,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -8.64017857263341e-08,
+                                        "value": -8.406983677145476e-08,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3892,7 +3892,7 @@
                                         "__id__": 541,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -6.903279354609263e-05,
+                                        "value": -6.903279308485996e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3901,7 +3901,7 @@
                                         "__id__": 542,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.00010488482553841101,
+                                        "value": -0.00010488482554947967,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3910,7 +3910,7 @@
                                         "__id__": 543,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -8.416373888735121e-06,
+                                        "value": -8.416271073409879e-06,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3919,7 +3919,7 @@
                                         "__id__": 544,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -5.037885649783006e-05,
+                                        "value": -5.0378856472055486e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3928,7 +3928,7 @@
                                         "__id__": 545,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -3.996378711092639e-08,
+                                        "value": -3.99638080237556e-08,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3937,7 +3937,7 @@
                                         "__id__": 546,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -2.338751730162163e-06,
+                                        "value": -2.3385495625517316e-06,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3946,7 +3946,7 @@
                                         "__id__": 547,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -3.048984000000001e-08,
+                                        "value": -3.04898390228699e-08,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3955,7 +3955,7 @@
                                         "__id__": 548,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.0450910361957972,
+                                        "value": -0.045091036195729586,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3964,7 +3964,7 @@
                                         "__id__": 549,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.020221492285049155,
+                                        "value": -0.020221492285018842,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3973,7 +3973,7 @@
                                         "__id__": 550,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.036830592239497174,
+                                        "value": -0.036830592239441975,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3982,7 +3982,7 @@
                                         "__id__": 551,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -5.5274477276731784e-08,
+                                        "value": -6.829967233626226e-08,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -3991,7 +3991,7 @@
                                         "__id__": 552,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -8.640178572673113e-11,
+                                        "value": -1.2582240867809445e-08,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4000,7 +4000,7 @@
                                         "__id__": 553,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -5.3017185443399146e-05,
+                                        "value": -5.303021051099237e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4009,7 +4009,7 @@
                                         "__id__": 554,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -7.876850397934666e-05,
+                                        "value": -7.87815291479689e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4018,7 +4018,7 @@
                                         "__id__": 555,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -7.145501431536118e-06,
+                                        "value": -7.158616053671931e-06,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4027,7 +4027,7 @@
                                         "__id__": 556,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -5.0378856497821206e-08,
+                                        "value": -6.340387350733977e-08,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4036,7 +4036,7 @@
                                         "__id__": 557,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -3.996378711099485e-11,
+                                        "value": -1.3065133691668018e-08,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4045,7 +4045,7 @@
                                         "__id__": 558,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -2.1610065986698385e-06,
+                                        "value": -2.1739732689789133e-06,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4054,7 +4054,7 @@
                                         "__id__": 559,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -2.8965347999999934e-08,
+                                        "value": -4.199054570487592e-08,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4063,7 +4063,7 @@
                                         "__id__": 560,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.04288157542220313,
+                                        "value": -0.042881588447301645,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4072,7 +4072,7 @@
                                         "__id__": 561,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.017734248733988107,
+                                        "value": -0.01773426175905296,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4081,7 +4081,7 @@
                                         "__id__": 562,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -0.034473434336169353,
+                                        "value": -0.034473447360876486,
                                         "lb": null,
                                         "ub": null
                                       }
@@ -4096,7 +4096,7 @@
                                         "__id__": 564,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": 3.949920760140819e-05,
+                                        "value": 3.949920760144124e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4105,7 +4105,7 @@
                                         "__id__": 565,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": 8.446199811056135e-18,
+                                        "value": 5.805751678631877e-18,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4114,7 +4114,7 @@
                                         "__id__": 566,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -8.446199811056135e-18,
+                                        "value": 4.64375059305351e-25,
                                         "lb": null,
                                         "ub": null
                                       }
@@ -4138,7 +4138,7 @@
                                         "__id__": 569,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": 3.949920760140819e-05,
+                                        "value": 3.949920760144124e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4147,7 +4147,7 @@
                                         "__id__": 570,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -3.949920760140819e-05,
+                                        "value": -3.949920760144124e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4156,7 +4156,7 @@
                                         "__id__": 571,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": 3.949920760140819e-05,
+                                        "value": 3.949920760144124e-05,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4291,7 +4291,7 @@
                                         "__id__": 586,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": 8.446199811056135e-18,
+                                        "value": 5.805751678631877e-18,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4300,7 +4300,7 @@
                                         "__id__": 587,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -8.446199811056135e-18,
+                                        "value": -5.805751678631877e-18,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4309,7 +4309,7 @@
                                         "__id__": 588,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": 8.446199811056135e-18,
+                                        "value": 5.805751678631877e-18,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4444,7 +4444,7 @@
                                         "__id__": 603,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -8.446199811056135e-18,
+                                        "value": 4.64375059305351e-25,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4453,7 +4453,7 @@
                                         "__id__": 604,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": 8.446199811056135e-18,
+                                        "value": -4.64375059305351e-25,
                                         "lb": null,
                                         "ub": null
                                       },
@@ -4462,7 +4462,7 @@
                                         "__id__": 605,
                                         "fixed": false,
                                         "stale": false,
-                                        "value": -8.446199811056135e-18,
+                                        "value": 4.64375059305351e-25,
                                         "lb": null,
                                         "ub": null
                                       },

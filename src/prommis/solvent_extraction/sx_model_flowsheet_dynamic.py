@@ -15,7 +15,6 @@ Authors: Arkoprabho Dasgupta
 
 from pyomo.environ import (
     ConcreteModel,
-    SolverFactory,
     units,
     TransformationFactory,
     Var,
@@ -25,6 +24,7 @@ from pyomo.dae.flatten import flatten_dae_components
 import numpy as np
 
 from idaes.core import FlowDirection, FlowsheetBlock
+from idaes.core.solvers import get_solver
 from idaes.core.util import from_json
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
@@ -222,7 +222,7 @@ Solution of the model and display of the final results.
 
 """
 
-solver = SolverFactory("ipopt")
+solver = get_solver("ipopt")
 solver.solve(m, tee=True)
 
 # Final organic outlet display

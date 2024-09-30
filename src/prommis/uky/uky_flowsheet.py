@@ -472,15 +472,6 @@ def build():
     # --------------------------------------------------------------------------------------------------------------
     # Precipitation property and unit models
 
-    key_components = {
-        "H^+",
-        "Ce^3+",
-        "Al^3+",
-        "Fe^3+",
-        "Ca^2+",
-        "C2O4^2-",
-    }
-
     m.fs.properties_aq = AqueousParameter()
     m.fs.properties_solid = PrecipitateParameters()
 
@@ -525,13 +516,12 @@ def build():
         doc="gas property",
     )
 
-    m.fs.prop_solid = PrecipitateParameters(
-        key_components=key_components,
-    )
+    m.fs.prop_solid = PrecipitateParameters()
 
     m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
-        property_package_precipitate=m.fs.prop_solid,
+        property_package_precipitate_solid=m.fs.prop_solid,
+        property_package_precipitate_liquid=m.fs.properties_aq,
         has_holdup=False,
         has_heat_transfer=True,
         has_pressure_change=True,
@@ -667,10 +657,10 @@ def build():
     m.fs.sl_sep2_solid_outlet = Arc(
         source=m.fs.sl_sep2.solid_outlet, destination=m.fs.roaster.solid_inlet
     )
-    # # TODO: roaster model cannot currently handle liquid inlets
-    # m.fs.sl_sep2_retained_liquid_outlet = Arc(
-    #     source=m.fs.sl_sep2.retained_liquid_outlet, destination=m.fs.roaster.liquid_inlet
-    # )
+    m.fs.sl_sep2_retained_liquid_outlet = Arc(
+        source=m.fs.sl_sep2.retained_liquid_outlet,
+        destination=m.fs.roaster.liquid_inlet,
+    )
     m.fs.sl_sep2_liquid_outlet = Arc(
         source=m.fs.sl_sep2.recovered_liquid_outlet, destination=m.fs.precip_sep.inlet
     )
@@ -1479,7 +1469,8 @@ def set_operating_conditions(m):
     m.fs.cleaner_sep.split_fraction[:, "recycle"].fix(0.9)
 
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
-    m.fs.sl_sep2.liquid_recovery.fix(0.7)
+    # TODO: Set sl_sep2 recovery to 0.95 and resolve resultant initialization issues
+    m.fs.sl_sep2.liquid_recovery.fix(0.88)
 
     m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
 
@@ -1506,7 +1497,6 @@ def set_operating_conditions(m):
     m.fs.roaster.gas_outlet.temperature.fix(873.15)
 
     # Fix operating conditions
-    m.fs.roaster.flow_mol_moist_feed.fix(6.75e-4)
     m.fs.roaster.frac_comp_recovery.fix(0.95)
 
     # Touch properties that are used in the UI
@@ -1904,7 +1894,7 @@ def display_results(m):
     Args:
         m: pyomo model
     """
-    m.fs.roaster.display()
+    m.fs.roaster.report()
 
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),
@@ -2829,7 +2819,6 @@ def add_costing(m):
         },
     )
 
-    # TODO: Add bounds to flow_mass_product by converting it to a variable in the roaster model
     # 3.2 is UKy Roasting - Conveyors
     R_conveyors_accounts = ["3.2"]
     m.fs.R_conveyors = UnitModelBlock()
@@ -3194,7 +3183,6 @@ def add_costing(m):
         project_management_and_construction_percentage=30,
         process_contingency_percentage=15,
         # argument related to Fixed OM costs
-        nameplate_capacity=500,  # short (US) ton/hr
         labor_types=[
             "skilled",
             "unskilled",
@@ -3231,7 +3219,7 @@ def add_costing(m):
 
     # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
     m.fs.costing.other_plant_costs.unfix()
-    m.fs.costing.other_plant_costs_rule = Constraint(
+    m.fs.costing.other_plant_costs_eq = Constraint(
         expr=(
             m.fs.costing.other_plant_costs
             == units.convert(

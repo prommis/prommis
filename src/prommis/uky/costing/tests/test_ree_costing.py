@@ -13,7 +13,9 @@ import os
 from contextlib import nullcontext as does_not_raise
 
 import pyomo.environ as pyo
+from pyomo.common.config import ConfigDict
 from pyomo.common.dependencies import attempt_import
+from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import UnitsError
 from pyomo.environ import assert_optimal_termination
 from pyomo.environ import units as pyunits
@@ -32,6 +34,10 @@ from idaes.core.util.scaling import (
 
 import pytest
 
+from prommis.nanofiltration.costing.diafiltration_cost_model import (
+    DiafiltrationCostingData,
+)
+from prommis.uky.costing.custom_costing_example import CustomCostingData
 from prommis.uky.costing.ree_plant_capcost import (
     QGESSCosting,
     QGESSCostingData,
@@ -43,29 +49,27 @@ if watertap_costing_available:
     import watertap.property_models.NaCl_prop_pack as props
     from watertap.core.solvers import get_solver as get_watertap_solver
     from watertap.core.util.initialization import check_dof
+    from watertap.core.wt_database import Database
+    from watertap.core.zero_order_properties import WaterParameterBlock
     from watertap.property_models.multicomp_aq_sol_prop_pack import (
         ActivityCoefficientModel,
         DensityCalculation,
         MCASParameterBlock,
     )
     from watertap.unit_models.ion_exchange_0D import IonExchange0D
-    from watertap.unit_models.nanofiltration_DSPMDE_0D import (
-        ConcentrationPolarizationType,
-        MassTransferCoefficient,
-        NanofiltrationDSPMDE0D,
-    )
+    from watertap.unit_models.nanofiltration_DSPMDE_0D import NanofiltrationDSPMDE0D
     from watertap.unit_models.reverse_osmosis_1D import (
         ConcentrationPolarizationType,
         MassTransferCoefficient,
         PressureChangeType,
         ReverseOsmosis1D,
     )
-    from watertap.core.solvers import get_solver as get_watertap_solver
+    from watertap.unit_models.zero_order import NanofiltrationZO
 
 _log = idaeslog.getLogger(__name__)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_register_REE_currency_units_twice(caplog):
     # check that units exist - they are registered when QGESSCosting imports
     assert hasattr(pyunits, "USD_UKy_2019")
@@ -89,7 +93,18 @@ def base_model():
 
     # Add a flowsheet object to the model
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
+    m.fs.costing = QGESSCosting(
+        # arguments for NPV
+        discount_percentage=10,  # percent
+        plant_lifetime=20,  # years
+        has_capital_expenditure_period=True,
+        capital_expenditure_percentages=[10, 60, 30],
+        capital_escalation_percentage=3.6,
+        capital_loan_interest_percentage=6,
+        operating_inflation_percentage=3,
+        revenue_inflation_percentage=3,
+        royalty_charge_percentage_of_revenue=6.5,
+    )
     CE_index_year = "UKy_2019"
 
     ###########################################################################
@@ -929,12 +944,12 @@ class TestREECosting(object):
         model = base_model()
         return model
 
-    @pytest.mark.component
+    @pytest.mark.unit
     def test_base_model_diagnostics(self, model):
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
-    @pytest.mark.component
+    @pytest.mark.unit
     def test_REE_costing(self, model):
         # full smoke test with all components, O&M costs, and extra costs included
         CE_index_year = "UKy_2019"
@@ -952,7 +967,7 @@ class TestREECosting(object):
         model.fs.annual_operating_hours = pyo.Param(
             initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
             mutable=False,
-            units=pyunits.hours / pyunits.a,
+            units=pyunits.hours / pyunits.year,
         )
 
         model.fs.recovery_rate_per_year = pyo.Var(
@@ -993,7 +1008,7 @@ class TestREECosting(object):
                 + 18684816  # Water Treatment
             )
             * pyunits.kg
-            / pyunits.a
+            / pyunits.year
         )
 
         model.fs.reagents = pyo.Var(
@@ -1070,7 +1085,6 @@ class TestREECosting(object):
             project_management_and_construction_percentage=30,
             process_contingency_percentage=15,
             # argument related to Fixed OM costs
-            nameplate_capacity=500,  # short (US) ton/hr
             labor_types=[
                 "skilled",
                 "unskilled",
@@ -1108,11 +1122,13 @@ class TestREECosting(object):
             recovery_rate_per_year=model.fs.recovery_rate_per_year,
             CE_index_year=CE_index_year,
             transport_cost_per_ton_product=0,
+            # arguments related to NPV calculation
+            calculate_NPV=True,
         )
 
         # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
         model.fs.costing.other_plant_costs.unfix()
-        model.fs.costing.other_plant_costs_rule = pyo.Constraint(
+        model.fs.costing.other_plant_costs_eq = pyo.Constraint(
             expr=(
                 model.fs.costing.other_plant_costs
                 == pyunits.convert(
@@ -1138,7 +1154,7 @@ class TestREECosting(object):
         # check that the model is set up properly and has 0 degrees of freedom
         assert degrees_of_freedom(model) == 0
 
-    @pytest.mark.component
+    @pytest.mark.unit
     def test_full_model_diagnostics(self, model):
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
@@ -1155,6 +1171,7 @@ class TestREECosting(object):
         # try solving
         solver = get_solver()
         results = solver.solve(model, tee=True)
+
         assert_optimal_termination(results)
 
     @pytest.mark.component
@@ -1188,8 +1205,19 @@ class TestREECosting(object):
         assert model.fs.costing.total_sales_revenue.value == pytest.approx(
             65.333, rel=1e-4
         )
+        assert model.fs.costing.pv_capital_cost.value == pytest.approx(
+            -272.25734, rel=1e-4
+        )
+        assert model.fs.costing.pv_operating_cost.value == pytest.approx(
+            -4677.8978, rel=1e-4
+        )
+        assert model.fs.costing.pv_royalties.value == pytest.approx(
+            -36.434467, rel=1e-4
+        )
+        assert model.fs.costing.pv_revenue.value == pytest.approx(560.53027, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(-4426.0593, rel=1e-4)
 
-    @pytest.mark.component
+    @pytest.mark.unit
     def test_report(self, model):
         # test report methods
         QGESSCostingData.report(model.fs.costing, export=True)
@@ -1199,12 +1227,11 @@ class TestREECosting(object):
         assert not os.path.exists(os.path.join(os.getcwd(), "costing_report.csv"))
 
         model.fs.costing.variable_operating_costs.display()  # results will be in t = 0
-        print()
         QGESSCostingData.display_total_plant_costs(model.fs.costing)
         QGESSCostingData.display_bare_erected_costs(model.fs.costing)
         QGESSCostingData.display_flowsheet_cost(model.fs.costing)
 
-    @pytest.mark.component
+    @pytest.mark.unit
     def test_costing_bounding_build_diagnostics(self, model):
         # test costing bounding method
         CE_index_year = "UKy_2019"
@@ -1213,7 +1240,7 @@ class TestREECosting(object):
             capacity=model.fs.feed_input
             * model.fs.annual_operating_hours
             * 20
-            * pyunits.a,
+            * pyunits.year,
             grade=model.fs.feed_grade,
             CE_index_year=CE_index_year,
         )
@@ -1282,7 +1309,7 @@ class TestREECosting(object):
             capacity=model.fs.feed_input
             * model.fs.annual_operating_hours
             * 20
-            * pyunits.a,
+            * pyunits.year,
             grade=model.fs.feed_grade,
             CE_index_year=CE_index_year,
             recalculate=False,
@@ -1332,7 +1359,7 @@ class TestREECosting(object):
             capacity=model.fs.feed_input
             * model.fs.annual_operating_hours
             * 20
-            * pyunits.a,
+            * pyunits.year,
             grade=model.fs.feed_grade,
             CE_index_year=CE_index_year,
             recalculate=True,
@@ -1375,11 +1402,6 @@ class TestREECosting(object):
 class TestWaterTAPCosting(object):
     @pytest.fixture(scope="class")
     def solver(self):
-        pytest.importorskip("watertap", reason="WaterTAP dependency not available")
-        return get_watertap_solver()
-
-    @pytest.fixture(scope="class")
-    def model(self, solver):
         pytest.importorskip("watertap", reason="WaterTAP dependency not available")
         return get_watertap_solver()
 
@@ -1667,6 +1689,30 @@ class TestWaterTAPCosting(object):
         # Check for optimal solution
         assert_optimal_termination(results)
 
+        # Nanofiltration Zero Order
+
+        model.fs_membrane.db = Database()
+        model.fs_membrane.nfzo_params = WaterParameterBlock(solute_list=["tds", "dye"])
+
+        model.fs_membrane.nfzounit = NanofiltrationZO(
+            property_package=model.fs_membrane.nfzo_params,
+            database=model.fs_membrane.db,
+            process_subtype="rHGO_dye_rejection",
+        )
+
+        model.fs_membrane.nfzounit.inlet.flow_mass_comp[0, "H2O"].fix(10000)
+        model.fs_membrane.nfzounit.inlet.flow_mass_comp[0, "tds"].fix(1)
+        model.fs_membrane.nfzounit.inlet.flow_mass_comp[0, "dye"].fix(2)
+
+        model.fs_membrane.nfzounit.load_parameters_from_database(
+            use_default_removal=True
+        )
+
+        results = solver.solve(model.fs_membrane, tee=True)
+
+        # # Check for optimal solution
+        assert_optimal_termination(results)
+
         return model
 
     @pytest.mark.component
@@ -1691,7 +1737,7 @@ class TestWaterTAPCosting(object):
         model.fs.annual_operating_hours = pyo.Param(
             initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
             mutable=False,
-            units=pyunits.hours / pyunits.a,
+            units=pyunits.hours / pyunits.year,
         )
 
         model.fs.recovery_rate_per_year = pyo.Var(
@@ -1732,7 +1778,7 @@ class TestWaterTAPCosting(object):
                 + 18684816  # Water Treatment
             )
             * pyunits.kg
-            / pyunits.a
+            / pyunits.year
         )
 
         model.fs.reagents = pyo.Var(
@@ -1809,7 +1855,6 @@ class TestWaterTAPCosting(object):
             project_management_and_construction_percentage=30,
             process_contingency_percentage=15,
             # argument related to Fixed OM costs
-            nameplate_capacity=500,  # short (US) ton/hr
             labor_types=[
                 "skilled",
                 "unskilled",
@@ -1850,12 +1895,13 @@ class TestWaterTAPCosting(object):
                 model.fs_membrane.nfunit,
                 model.fs_membrane.rounit,
                 model.fs_membrane.ixunit,
+                model.fs_membrane.nfzounit,
             ],
         )
 
         # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
         model.fs.costing.other_plant_costs.unfix()
-        model.fs.costing.other_plant_costs_rule = pyo.Constraint(
+        model.fs.costing.other_plant_costs_eq = pyo.Constraint(
             expr=(
                 model.fs.costing.other_plant_costs
                 == pyunits.convert(
@@ -1888,7 +1934,7 @@ class TestWaterTAPCosting(object):
         results = solver.solve(model, tee=True)
         assert_optimal_termination(results)
 
-        assert model.fs.costing.total_BEC.value == pytest.approx(48.347, rel=1e-4)
+        assert model.fs.costing.total_BEC.value == pytest.approx(50.401, rel=1e-4)
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.nfunit.costing.capital_cost, to_units=CE_index_units
@@ -1905,12 +1951,23 @@ class TestWaterTAPCosting(object):
             )
         ) == pytest.approx(4.0354, rel=1e-4)
         assert pyo.value(
+            pyunits.convert(
+                model.fs_membrane.nfzounit.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(2.0544, rel=1e-4)
+        assert pyo.value(
             model.fs.costing.total_BEC
             - pyunits.convert(
-                model.fs_membrane.nfunit.costing.capital_cost
-                + model.fs_membrane.rounit.costing.capital_cost
-                + model.fs_membrane.ixunit.costing.capital_cost,
-                to_units=CE_index_units,
+                model.fs_membrane.nfunit.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs_membrane.rounit.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs_membrane.ixunit.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs_membrane.nfzounit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(44.308, rel=1e-4)
 
@@ -1949,7 +2006,861 @@ class TestWaterTAPCosting(object):
         )
 
         assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
-            11.50202, rel=1e-4
+            11.68508, rel=1e-4
+        )
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs_membrane.nfzounit.costing.variable_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.410881, rel=1e-4)
+
+        assert model.fs.costing.watertap_variable_costs.value == pytest.approx(
+            0.410881, rel=1e-4
+        )
+
+        assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+            533.51170, rel=1e-4
+        )
+
+
+class TestCustomCosting(object):
+    @pytest.fixture(scope="class")
+    def model(self):
+        model = base_model()
+
+        # create model
+        model.fs.custom_vessel = UnitModelBlock()
+        model.fs.custom_vessel.volume = pyo.Var(initialize=5000, units=pyunits.m**3)
+        model.fs.custom_vessel.volume.fix()
+        model.fs.custom_vessel.water_injection_rate = pyo.Var(
+            initialize=0.1, units=pyunits.m**3 / pyunits.s
+        )
+        model.fs.custom_vessel.water_injection_rate.fix()
+
+        # add costing
+        model.fs.custom_vessel.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=model.fs.costing,
+            costing_method=CustomCostingData.cost_custom_vessel,
+            costing_method_arguments={
+                "volume_per_unit": model.fs.custom_vessel.volume,
+                "material": "carbonsteel",
+                "water_injection_rate_per_unit": model.fs.custom_vessel.water_injection_rate,
+                "number_of_units": 3,
+            },
+        )
+
+        return model
+
+    @pytest.mark.unit
+    def test_model(self, model):
+
+        # confirm that base units match the QGESS costing block
+        assert (
+            model.fs.custom_vessel.costing.costing_package.base_currency
+            == pyunits.USD_2021
+        )
+        assert (
+            model.fs.custom_vessel.costing.costing_package.base_period == pyunits.year
+        )
+
+        assert isinstance(model.fs.custom_vessel.costing.number_of_units, pyo.Param)
+        assert isinstance(model.fs.custom_vessel.costing.capital_cost_per_unit, pyo.Var)
+        assert isinstance(model.fs.custom_vessel.costing.capital_cost, pyo.Var)
+        assert isinstance(model.fs.custom_vessel.costing.fixed_operating_cost, pyo.Var)
+        assert isinstance(
+            model.fs.custom_vessel.costing.variable_operating_cost_per_unit, pyo.Var
+        )
+        assert isinstance(
+            model.fs.custom_vessel.costing.variable_operating_cost, pyo.Var
+        )
+
+        assert isinstance(
+            model.fs.custom_vessel.costing.capital_cost_per_unit_eq, pyo.Constraint
+        )
+        assert isinstance(
+            model.fs.custom_vessel.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert isinstance(
+            model.fs.custom_vessel.costing.fixed_operating_cost_constraint,
+            pyo.Constraint,
+        )
+        assert isinstance(
+            model.fs.custom_vessel.costing.variable_operating_cost_per_unit_eq,
+            pyo.Constraint,
+        )
+        assert isinstance(
+            model.fs.custom_vessel.costing.variable_operating_cost_constraint,
+            pyo.Constraint,
+        )
+
+    @pytest.mark.component
+    def test_REE_custom_costing(self, model):
+        # full smoke test with all components, O&M costs, and extra costs included
+        CE_index_year = "UKy_2019"
+
+        CE_index_units = getattr(
+            pyunits, "MUSD_" + CE_index_year
+        )  # millions of USD, for base year
+
+        # add plant-level cost constraints
+
+        model.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+        model.fs.feed_grade = pyo.Var(initialize=356.64, units=pyunits.ppm)
+
+        hours_per_shift = 8
+        shifts_per_day = 3
+        operating_days_per_year = 336
+
+        # for convenience
+        model.fs.annual_operating_hours = pyo.Param(
+            initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
+            mutable=False,
+            units=pyunits.hours / pyunits.year,
+        )
+
+        model.fs.recovery_rate_per_year = pyo.Var(
+            initialize=39.3
+            * pyunits.kg
+            / pyunits.hr
+            * 0.8025  # TREO (total rare earth oxide), 80.25% REE in REO
+            * model.fs.annual_operating_hours,
+            units=pyunits.kg / pyunits.yr,
+        )
+
+        # the land cost is the lease cost, or refining cost of REO produced
+        model.fs.land_cost = pyo.Expression(
+            expr=0.303736
+            * 1e-6
+            * getattr(pyunits, "MUSD_" + CE_index_year)
+            / pyunits.ton
+            * pyunits.convert(model.fs.feed_input, to_units=pyunits.ton / pyunits.hr)
+            * hours_per_shift
+            * pyunits.hr
+            * shifts_per_day
+            * pyunits.day**-1
+            * operating_days_per_year
+            * pyunits.day
+        )
+
+        # dummy reagent with cost of 1 USD/kg for each section
+        reagent_costs = (
+            (  # all USD/year
+                302962  # Crushing and Screening
+                + 0  # Dry Grinding
+                + 5767543  # Roasting
+                + 199053595  # Leaching
+                + 152303329  # Rougher Solvent Extraction
+                + 43702016  # Cleaner Solvent Extraction
+                + 7207168  # Solvent Extraction Wash and Saponification
+                + 1233763  # Rare Earth Element Precipiation
+                + 18684816  # Water Treatment
+            )
+            * pyunits.kg
+            / pyunits.year
+        )
+
+        model.fs.reagents = pyo.Var(
+            model.fs.time,
+            initialize=reagent_costs / (model.fs.annual_operating_hours),
+            units=pyunits.kg / pyunits.hr,
+        )
+
+        model.fs.solid_waste = pyo.Var(
+            model.fs.time, initialize=11136 / 24, units=pyunits.ton / pyunits.hr
+        )  # non-hazardous solid waste
+        model.fs.precipitate = pyo.Var(
+            model.fs.time, initialize=732 / 24, units=pyunits.ton / pyunits.hr
+        )  # non-hazardous precipitate
+        model.fs.dust_and_volatiles = pyo.Var(
+            model.fs.time, initialize=120 / 24, units=pyunits.ton / pyunits.hr
+        )  # dust and volatiles
+        model.fs.power = pyo.Var(model.fs.time, initialize=14716, units=pyunits.hp)
+
+        resources = [
+            "dummy",
+            "nonhazardous_solid_waste",
+            "nonhazardous_precipitate_waste",
+            "dust_and_volatiles",
+            "power",
+        ]
+
+        rates = [
+            model.fs.reagents,
+            model.fs.solid_waste,
+            model.fs.precipitate,
+            model.fs.dust_and_volatiles,
+            model.fs.power,
+        ]
+
+        # define product flowrates
+
+        pure_product_output_rates = {
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            "Dy2O3": 0.4 * pyunits.kg / pyunits.hr,
+            "Gd2O3": 0.5 * pyunits.kg / pyunits.hr,
+        }
+
+        mixed_product_output_rates = {
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            "Y2O3": 0.05418 * pyunits.kg / pyunits.hr,
+            "La2O3": 0.13770 * pyunits.kg / pyunits.hr,
+            "CeO2": 0.37383 * pyunits.kg / pyunits.hr,
+            "Pr6O11": 0.03941 * pyunits.kg / pyunits.hr,
+            "Nd2O3": 0.17289 * pyunits.kg / pyunits.hr,
+            "Sm2O3": 0.02358 * pyunits.kg / pyunits.hr,
+            "Eu2O3": 0.00199 * pyunits.kg / pyunits.hr,
+            "Gd2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Tb4O7": 0.00801 * pyunits.kg / pyunits.hr,
+            "Dy2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Ho2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Er2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Tm2O3": 0.00130 * pyunits.kg / pyunits.hr,
+            "Yb2O3": 0.00373 * pyunits.kg / pyunits.hr,
+            "Lu2O3": 0.00105 * pyunits.kg / pyunits.hr,
+        }
+
+        model.fs.costing.build_process_costs(
+            # arguments related to installation costs
+            piping_materials_and_labor_percentage=20,
+            electrical_materials_and_labor_percentage=20,
+            instrumentation_percentage=8,
+            plants_services_percentage=10,
+            process_buildings_percentage=40,
+            auxiliary_buildings_percentage=15,
+            site_improvements_percentage=10,
+            equipment_installation_percentage=17,
+            field_expenses_percentage=12,
+            project_management_and_construction_percentage=30,
+            process_contingency_percentage=15,
+            # argument related to Fixed OM costs
+            labor_types=[
+                "skilled",
+                "unskilled",
+                "supervisor",
+                "maintenance",
+                "technician",
+                "engineer",
+            ],
+            labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
+            labor_burden=25,  # % fringe benefits
+            operators_per_shift=[4, 9, 2, 2, 2, 3],
+            hours_per_shift=hours_per_shift,
+            shifts_per_day=shifts_per_day,
+            operating_days_per_year=operating_days_per_year,
+            pure_product_output_rates=pure_product_output_rates,
+            mixed_product_output_rates=mixed_product_output_rates,
+            mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
+            # arguments related to total owners costs
+            land_cost=model.fs.land_cost,
+            resources=resources,
+            rates=rates,
+            prices={
+                "dummy": 1 * getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
+            },
+            fixed_OM=True,
+            variable_OM=True,
+            feed_input=model.fs.feed_input,
+            efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
+            chemicals=["dummy"],
+            waste=[
+                "nonhazardous_solid_waste",
+                "nonhazardous_precipitate_waste",
+                "dust_and_volatiles",
+            ],
+            recovery_rate_per_year=model.fs.recovery_rate_per_year,
+            CE_index_year=CE_index_year,
+        )
+
+        # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
+        model.fs.costing.other_plant_costs.unfix()
+        model.fs.costing.other_plant_costs_rule = pyo.Constraint(
+            expr=(
+                model.fs.costing.other_plant_costs
+                == pyunits.convert(
+                    1218073 * pyunits.USD_2016  # Rougher Solvent Extraction
+                    + 48723 * pyunits.USD_2016  # Cleaner Solvent Extraction
+                    + 182711
+                    * pyunits.USD_2016,  # Solvent Extraction Wash and Saponification
+                    to_units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
+            )
+        )
+
+        # fix costing vars that shouldn't change
+        model.fs.feed_input.fix()
+        model.fs.feed_grade.fix()
+        model.fs.recovery_rate_per_year.fix()
+        model.fs.reagents.fix()
+        model.fs.solid_waste.fix()
+        model.fs.precipitate.fix()
+        model.fs.dust_and_volatiles.fix()
+        model.fs.power.fix()
+
+        # check model structural diagnostics
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt.assert_no_structural_warnings()
+
+        QGESSCostingData.costing_initialization(model.fs.costing)
+        QGESSCostingData.initialize_fixed_OM_costs(model.fs.costing)
+        QGESSCostingData.initialize_variable_OM_costs(model.fs.costing)
+
+        solver = get_solver()
+        results = solver.solve(model, tee=True)
+        assert_optimal_termination(results)
+
+        # check model numerical diagnostics
+        dt.assert_no_numerical_warnings()
+
+        assert model.fs.costing.total_BEC.value == pytest.approx(44.377, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.custom_vessel.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.0686081, rel=1e-4)
+        assert pyo.value(
+            model.fs.costing.total_BEC
+            - pyunits.convert(
+                model.fs.custom_vessel.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(44.308, rel=1e-4)
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.custom_vessel.costing.fixed_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.00343040, rel=1e-4)
+
+        assert model.fs.costing.custom_fixed_costs.value == pytest.approx(
+            0.00343040, rel=1e-4
+        )
+
+        assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
+            11.11414, rel=1e-4
+        )
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.custom_vessel.costing.variable_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(4.13750, rel=1e-4)
+
+        assert model.fs.costing.custom_variable_costs.value == pytest.approx(
+            4.13750, rel=1e-4
+        )
+
+        assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+            537.87082, rel=1e-4
+        )
+
+
+class TestDiafiltrationCosting(object):
+    @pytest.fixture(scope="class")
+    def model(self):
+        m = base_model()
+
+        # create dummy blocks to store the UnitModelCostingBlocks
+        m.fs.stage1 = UnitModelBlock()
+        m.fs.stage2 = UnitModelBlock()
+        m.fs.stage3 = UnitModelBlock()
+        m.fs.cascade = UnitModelBlock()  # to cost the pressure drop
+        m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
+        m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
+
+        m.fs.stage1.length = pyo.Var(initialize=10, units=pyunits.m)
+        m.fs.stage2.length = pyo.Var(initialize=10, units=pyunits.m)
+        m.fs.stage3.length = pyo.Var(initialize=10, units=pyunits.m)
+        m.fs.w = pyo.Var(initialize=10, units=pyunits.m)
+        m.fs.Jw = pyo.Var(initialize=10, units=pyunits.m / pyunits.h)
+        m.fs.stage3.retentate_flow_vol = pyo.Var(
+            initialize=10, units=pyunits.m**3 / pyunits.h
+        )
+        m.fs.stage3.permeate_flow_vol = pyo.Var(
+            initialize=10, units=pyunits.m**3 / pyunits.h
+        )
+        m.fs.P_atm = pyo.Var(initialize=101325, units=pyunits.Pa)
+        m.fs.P_op = pyo.Var(initialize=201325, units=pyunits.Pa)
+
+        m.fs.stage1.length.fix()
+        m.fs.stage2.length.fix()
+        m.fs.stage3.length.fix()
+        m.fs.w.fix()
+        m.fs.Jw.fix()
+        m.fs.stage3.retentate_flow_vol.fix()
+        m.fs.stage3.permeate_flow_vol.fix()
+        m.fs.P_atm.fix()
+        m.fs.P_op.fix()
+
+        # m.fs.costing = DiafiltrationCosting()
+        m.fs.stage1.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_membranes,
+            costing_method_arguments={
+                "membrane_length": m.fs.stage1.length,
+                "membrane_width": m.fs.w,
+            },
+        )
+        m.fs.stage2.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_membranes,
+            costing_method_arguments={
+                "membrane_length": m.fs.stage2.length,
+                "membrane_width": m.fs.w,
+            },
+        )
+        m.fs.stage3.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_membranes,
+            costing_method_arguments={
+                "membrane_length": m.fs.stage3.length,
+                "membrane_width": m.fs.w,
+            },
+        )
+        m.fs.cascade.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
+            costing_method_arguments={
+                "water_flux": m.fs.Jw,
+                "vol_flow_feed": m.fs.stage3.retentate_flow_vol,  # cascade feed
+                "vol_flow_perm": m.fs.stage3.permeate_flow_vol,  # cascade permeate
+            },
+        )
+        m.fs.feed_pump.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_pump,
+            costing_method_arguments={
+                "inlet_pressure": m.fs.P_atm
+                + pyunits.convert(
+                    m.fs.cascade.costing.pressure_drop, to_units=pyunits.Pa
+                ),
+                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
+                * pyunits.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
+                "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # feed
+            },
+        )
+        m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_pump,
+            costing_method_arguments={
+                "inlet_pressure": m.fs.P_atm,
+                "outlet_pressure": m.fs.P_op,
+                "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # diafiltrate
+            },
+        )
+
+        return m
+
+    @pytest.mark.unit
+    def test_model(self, model):
+
+        # confirm that base units match the QGESS costing block
+        for blk in [
+            model.fs.stage1,
+            model.fs.stage2,
+            model.fs.stage3,
+            model.fs.cascade,
+            model.fs.feed_pump,
+            model.fs.diafiltrate_pump,
+        ]:
+            assert blk.costing.costing_package.base_currency == pyunits.USD_2021
+            assert blk.costing.costing_package.base_period == pyunits.year
+
+        assert isinstance(model.fs.stage1.costing.capital_cost, pyo.Var)
+        assert isinstance(model.fs.stage1.costing.fixed_operating_cost, pyo.Var)
+        assert not hasattr(model.fs.stage1.costing, "variable_operating_cost")
+        assert isinstance(
+            model.fs.stage1.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert isinstance(
+            model.fs.stage1.costing.fixed_operating_cost_constraint, pyo.Constraint
+        )
+        assert not hasattr(
+            model.fs.stage1.costing, "variable_operating_cost_constraint"
+        )
+
+        assert isinstance(model.fs.stage2.costing.capital_cost, pyo.Var)
+        assert isinstance(model.fs.stage2.costing.fixed_operating_cost, pyo.Var)
+        assert not hasattr(model.fs.stage2.costing, "variable_operating_cost")
+        assert isinstance(
+            model.fs.stage2.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert isinstance(
+            model.fs.stage2.costing.fixed_operating_cost_constraint, pyo.Constraint
+        )
+        assert not hasattr(
+            model.fs.stage2.costing, "variable_operating_cost_constraint"
+        )
+
+        assert isinstance(model.fs.stage3.costing.capital_cost, pyo.Var)
+        assert isinstance(model.fs.stage3.costing.fixed_operating_cost, pyo.Var)
+        assert not hasattr(model.fs.stage3.costing, "variable_operating_cost")
+        assert isinstance(
+            model.fs.stage3.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert isinstance(
+            model.fs.stage3.costing.fixed_operating_cost_constraint, pyo.Constraint
+        )
+        assert not hasattr(
+            model.fs.stage3.costing, "variable_operating_cost_constraint"
+        )
+
+        assert not hasattr(model.fs.cascade.costing, "capital_cost")
+        assert not hasattr(model.fs.cascade.costing, "fixed_operating_cost")
+        assert isinstance(model.fs.cascade.costing.variable_operating_cost, pyo.Var)
+        assert not hasattr(model.fs.cascade.costing, "capital_cost_constraint")
+        assert not hasattr(model.fs.cascade.costing, "fixed_operating_cost_constraint")
+        assert isinstance(
+            model.fs.cascade.costing.variable_operating_cost_constraint, pyo.Constraint
+        )
+
+        assert isinstance(model.fs.feed_pump.costing.capital_cost, pyo.Var)
+        assert not hasattr(model.fs.feed_pump.costing, "fixed_operating_cost")
+        assert isinstance(model.fs.feed_pump.costing.variable_operating_cost, pyo.Var)
+        assert isinstance(
+            model.fs.feed_pump.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert not hasattr(
+            model.fs.feed_pump.costing, "fixed_operating_cost_constraint"
+        )
+        assert isinstance(
+            model.fs.feed_pump.costing.variable_operating_cost_constraint,
+            pyo.Constraint,
+        )
+
+        assert isinstance(model.fs.diafiltrate_pump.costing.capital_cost, pyo.Var)
+        assert not hasattr(model.fs.diafiltrate_pump.costing, "fixed_operating_cost")
+        assert isinstance(
+            model.fs.diafiltrate_pump.costing.variable_operating_cost, pyo.Var
+        )
+        assert isinstance(
+            model.fs.diafiltrate_pump.costing.capital_cost_constraint, pyo.Constraint
+        )
+        assert not hasattr(
+            model.fs.diafiltrate_pump.costing, "fixed_operating_cost_constraint"
+        )
+        assert isinstance(
+            model.fs.diafiltrate_pump.costing.variable_operating_cost_constraint,
+            pyo.Constraint,
+        )
+
+    @pytest.mark.component
+    def test_REE_custom_costing(self, model):
+        # full smoke test with all components, O&M costs, and extra costs included
+        CE_index_year = "UKy_2019"
+
+        CE_index_units = getattr(
+            pyunits, "MUSD_" + CE_index_year
+        )  # millions of USD, for base year
+
+        # add plant-level cost constraints
+
+        model.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+        model.fs.feed_grade = pyo.Var(initialize=356.64, units=pyunits.ppm)
+
+        hours_per_shift = 8
+        shifts_per_day = 3
+        operating_days_per_year = 336
+
+        # for convenience
+        model.fs.annual_operating_hours = pyo.Param(
+            initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
+            mutable=False,
+            units=pyunits.hours / pyunits.year,
+        )
+
+        model.fs.recovery_rate_per_year = pyo.Var(
+            initialize=39.3
+            * pyunits.kg
+            / pyunits.hr
+            * 0.8025  # TREO (total rare earth oxide), 80.25% REE in REO
+            * model.fs.annual_operating_hours,
+            units=pyunits.kg / pyunits.yr,
+        )
+
+        # the land cost is the lease cost, or refining cost of REO produced
+        model.fs.land_cost = pyo.Expression(
+            expr=0.303736
+            * 1e-6
+            * getattr(pyunits, "MUSD_" + CE_index_year)
+            / pyunits.ton
+            * pyunits.convert(model.fs.feed_input, to_units=pyunits.ton / pyunits.hr)
+            * hours_per_shift
+            * pyunits.hr
+            * shifts_per_day
+            * pyunits.day**-1
+            * operating_days_per_year
+            * pyunits.day
+        )
+
+        # dummy reagent with cost of 1 USD/kg for each section
+        reagent_costs = (
+            (  # all USD/year
+                302962  # Crushing and Screening
+                + 0  # Dry Grinding
+                + 5767543  # Roasting
+                + 199053595  # Leaching
+                + 152303329  # Rougher Solvent Extraction
+                + 43702016  # Cleaner Solvent Extraction
+                + 7207168  # Solvent Extraction Wash and Saponification
+                + 1233763  # Rare Earth Element Precipiation
+                + 18684816  # Water Treatment
+            )
+            * pyunits.kg
+            / pyunits.year
+        )
+
+        model.fs.reagents = pyo.Var(
+            model.fs.time,
+            initialize=reagent_costs / (model.fs.annual_operating_hours),
+            units=pyunits.kg / pyunits.hr,
+        )
+
+        model.fs.solid_waste = pyo.Var(
+            model.fs.time, initialize=11136 / 24, units=pyunits.ton / pyunits.hr
+        )  # non-hazardous solid waste
+        model.fs.precipitate = pyo.Var(
+            model.fs.time, initialize=732 / 24, units=pyunits.ton / pyunits.hr
+        )  # non-hazardous precipitate
+        model.fs.dust_and_volatiles = pyo.Var(
+            model.fs.time, initialize=120 / 24, units=pyunits.ton / pyunits.hr
+        )  # dust and volatiles
+        model.fs.power = pyo.Var(model.fs.time, initialize=14716, units=pyunits.hp)
+
+        resources = [
+            "dummy",
+            "nonhazardous_solid_waste",
+            "nonhazardous_precipitate_waste",
+            "dust_and_volatiles",
+            "power",
+        ]
+
+        rates = [
+            model.fs.reagents,
+            model.fs.solid_waste,
+            model.fs.precipitate,
+            model.fs.dust_and_volatiles,
+            model.fs.power,
+        ]
+
+        # define product flowrates
+
+        pure_product_output_rates = {
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            "Dy2O3": 0.4 * pyunits.kg / pyunits.hr,
+            "Gd2O3": 0.5 * pyunits.kg / pyunits.hr,
+        }
+
+        mixed_product_output_rates = {
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            "Y2O3": 0.05418 * pyunits.kg / pyunits.hr,
+            "La2O3": 0.13770 * pyunits.kg / pyunits.hr,
+            "CeO2": 0.37383 * pyunits.kg / pyunits.hr,
+            "Pr6O11": 0.03941 * pyunits.kg / pyunits.hr,
+            "Nd2O3": 0.17289 * pyunits.kg / pyunits.hr,
+            "Sm2O3": 0.02358 * pyunits.kg / pyunits.hr,
+            "Eu2O3": 0.00199 * pyunits.kg / pyunits.hr,
+            "Gd2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Tb4O7": 0.00801 * pyunits.kg / pyunits.hr,
+            "Dy2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Ho2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Er2O3": 0.00000 * pyunits.kg / pyunits.hr,
+            "Tm2O3": 0.00130 * pyunits.kg / pyunits.hr,
+            "Yb2O3": 0.00373 * pyunits.kg / pyunits.hr,
+            "Lu2O3": 0.00105 * pyunits.kg / pyunits.hr,
+        }
+
+        model.fs.costing.build_process_costs(
+            # arguments related to installation costs
+            piping_materials_and_labor_percentage=20,
+            electrical_materials_and_labor_percentage=20,
+            instrumentation_percentage=8,
+            plants_services_percentage=10,
+            process_buildings_percentage=40,
+            auxiliary_buildings_percentage=15,
+            site_improvements_percentage=10,
+            equipment_installation_percentage=17,
+            field_expenses_percentage=12,
+            project_management_and_construction_percentage=30,
+            process_contingency_percentage=15,
+            # argument related to Fixed OM costs
+            labor_types=[
+                "skilled",
+                "unskilled",
+                "supervisor",
+                "maintenance",
+                "technician",
+                "engineer",
+            ],
+            labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
+            labor_burden=25,  # % fringe benefits
+            operators_per_shift=[4, 9, 2, 2, 2, 3],
+            hours_per_shift=hours_per_shift,
+            shifts_per_day=shifts_per_day,
+            operating_days_per_year=operating_days_per_year,
+            pure_product_output_rates=pure_product_output_rates,
+            mixed_product_output_rates=mixed_product_output_rates,
+            mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
+            # arguments related to total owners costs
+            land_cost=model.fs.land_cost,
+            resources=resources,
+            rates=rates,
+            prices={
+                "dummy": 1 * getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
+            },
+            fixed_OM=True,
+            variable_OM=True,
+            feed_input=model.fs.feed_input,
+            efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
+            chemicals=["dummy"],
+            waste=[
+                "nonhazardous_solid_waste",
+                "nonhazardous_precipitate_waste",
+                "dust_and_volatiles",
+            ],
+            recovery_rate_per_year=model.fs.recovery_rate_per_year,
+            CE_index_year=CE_index_year,
+        )
+
+        # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
+        model.fs.costing.other_plant_costs.unfix()
+        model.fs.costing.other_plant_costs_rule = pyo.Constraint(
+            expr=(
+                model.fs.costing.other_plant_costs
+                == pyunits.convert(
+                    1218073 * pyunits.USD_2016  # Rougher Solvent Extraction
+                    + 48723 * pyunits.USD_2016  # Cleaner Solvent Extraction
+                    + 182711
+                    * pyunits.USD_2016,  # Solvent Extraction Wash and Saponification
+                    to_units=getattr(pyunits, "MUSD_" + CE_index_year),
+                )
+            )
+        )
+
+        # fix costing vars that shouldn't change
+        model.fs.feed_input.fix()
+        model.fs.feed_grade.fix()
+        model.fs.recovery_rate_per_year.fix()
+        model.fs.reagents.fix()
+        model.fs.solid_waste.fix()
+        model.fs.precipitate.fix()
+        model.fs.dust_and_volatiles.fix()
+        model.fs.power.fix()
+
+        # check model structural diagnostics
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt.assert_no_structural_warnings()
+
+        QGESSCostingData.costing_initialization(model.fs.costing)
+        QGESSCostingData.initialize_fixed_OM_costs(model.fs.costing)
+        QGESSCostingData.initialize_variable_OM_costs(model.fs.costing)
+
+        solver = get_solver()
+        results = solver.solve(model, tee=False)
+        assert_optimal_termination(results)
+
+        # check model numerical diagnostics
+        dt.assert_no_numerical_warnings()
+
+        assert model.fs.costing.total_BEC.value == pytest.approx(44.684, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage1.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.0043043, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage2.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.0043043, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage3.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.0043043, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.feed_pump.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.34788, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.diafiltrate_pump.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(0.014780, rel=1e-4)
+        assert pyo.value(
+            model.fs.costing.total_BEC
+            - pyunits.convert(
+                model.fs.stage1.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs.stage2.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs.stage3.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs.feed_pump.costing.capital_cost, to_units=CE_index_units
+            )
+            - pyunits.convert(
+                model.fs.diafiltrate_pump.costing.capital_cost, to_units=CE_index_units
+            )
+        ) == pytest.approx(44.308, rel=1e-4)
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage1.costing.fixed_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.00086087, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage2.costing.fixed_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.00086087, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.stage3.costing.fixed_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.00086087, rel=1e-4)
+
+        assert model.fs.costing.custom_fixed_costs.value == pytest.approx(
+            0.0025826, rel=1e-4
+        )
+
+        assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
+            11.14064, rel=1e-4
+        )
+
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.cascade.costing.variable_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.985221, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.feed_pump.costing.variable_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(8.09845e-17, rel=1e-4)
+        assert pyo.value(
+            pyunits.convert(
+                model.fs.diafiltrate_pump.costing.variable_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(2.36473e-10, rel=1e-4)
+
+        assert model.fs.costing.custom_variable_costs.value == pytest.approx(
+            2.36473e-10, rel=1e-4
+        )
+
+        assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+            532.90975, rel=1e-4
         )
 
 
@@ -2034,8 +2945,8 @@ class TestHDDRecyclingCosting(object):
 
         return m
 
-    @pytest.mark.component
-    def test_HDD_Recycling_costing_build_diagnostic(self, model):
+    @pytest.mark.unit
+    def test_HDD_Recycling_costing_build_diagnostics(self, model):
         CE_index_year = "2019"
         model.fs.costing.build_process_costs(
             CE_index_year=CE_index_year,
@@ -2087,6 +2998,206 @@ class TestHDDRecyclingCosting(object):
         assert model.fs.costing.total_plant_cost.value == pytest.approx(
             3.8220, rel=1e-4
         )
+
+
+class TestNPVCostingBlock(object):
+    @pytest.fixture(scope="class")
+    def model(self):
+        # Create a concrete model as the top level object
+        m = pyo.ConcreteModel()
+        m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+        m.fs.costing = QGESSCosting(
+            discount_percentage=10,  # percent
+            plant_lifetime=20,  # years
+            has_capital_expenditure_period=True,
+        )
+
+        # 1.3 is CS Jaw Crusher
+        CS_jaw_crusher_accounts = ["1.3"]
+        m.fs.CS_jaw_crusher = UnitModelBlock()
+        m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+        m.fs.CS_jaw_crusher.power.fix()
+        m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=QGESSCostingData.get_REE_costing,
+            costing_method_arguments={
+                "cost_accounts": CS_jaw_crusher_accounts,
+                "scaled_param": m.fs.CS_jaw_crusher.power,
+                "source": 1,
+            },
+        )
+
+        m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+        m.fs.feed_input.fix()
+
+        m.fs.water = pyo.Var(
+            m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr
+        )
+        m.fs.water.fix()
+
+        m.fs.costing.build_process_costs(
+            fixed_OM=True,
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
+            variable_OM=True,
+            feed_input=m.fs.feed_input,
+            resources=[
+                "water",
+            ],
+            rates=[
+                m.fs.water,
+            ],
+            calculate_NPV=True,
+        )
+
+        return m
+
+    @pytest.mark.unit
+    def test_NPV_costingblock_build(self, model):
+        # check that some objects are built as expected
+        assert isinstance(model.fs.costing.pv_capital_cost, pyo.Var)
+        assert isinstance(model.fs.costing.pv_operating_cost, pyo.Var)
+        assert isinstance(model.fs.costing.pv_revenue, pyo.Var)
+        assert isinstance(model.fs.costing.pv_royalties, pyo.Var)
+        assert isinstance(model.fs.costing.npv, pyo.Var)
+        assert isinstance(model.fs.costing.discount_percentage, pyo.Param)
+        assert isinstance(model.fs.costing.plant_lifetime, pyo.Param)
+        assert isinstance(model.fs.costing.capital_expenditure_percentages, pyo.Param)
+        assert isinstance(model.fs.costing.capital_escalation_percentage, pyo.Param)
+        assert isinstance(model.fs.costing.capital_loan_interest_percentage, pyo.Param)
+        assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
+        assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
+        assert isinstance(
+            model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param
+        )
+        assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.pv_royalties_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.npv_constraint, pyo.Constraint)
+
+    @pytest.mark.unit
+    def test_NPV_costingblock_build_diagnostics(self, model):
+        dt = DiagnosticsToolbox(model=model)
+        dt.assert_no_structural_warnings()
+
+    @pytest.mark.component
+    def test_NPV_costingblock_initialize(self, model):
+        QGESSCostingData.costing_initialization(model.fs.costing)
+
+    @pytest.mark.component
+    def test_NPV_costingblock_solve(self, model):
+        solver = get_solver()
+        results = solver.solve(model, tee=True)
+        assert_optimal_termination(results)
+
+    @pytest.mark.component
+    def test_NPV_costingblock_solve_diagnostics(self, model):
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt.assert_no_numerical_warnings()
+
+    @pytest.mark.component
+    def test_NPV_costingblock_results(self, model):
+        # check some NPV results
+        assert model.fs.costing.pv_capital_cost.value == pytest.approx(
+            -15.24748, rel=1e-4
+        )
+        assert model.fs.costing.pv_operating_cost.value == pytest.approx(
+            -59.02935, rel=1e-4
+        )
+        assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
+        assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(442.19540, rel=1e-4)
+
+
+class TestNPVFixedInputs(object):
+    @pytest.fixture(scope="class")
+    def model(self):
+        # Create a concrete model as the top level object
+        m = pyo.ConcreteModel()
+        m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+        m.fs.costing = QGESSCosting(
+            discount_percentage=10,
+            plant_lifetime=20,
+            # use CAPEX, OPEX, REVENUE from CostingBlock test to verify results are the same
+            total_capital_cost=7.461172417869669,
+            annual_operating_cost=6.880158261340908,
+            annual_revenue=64.38220104959998,
+            has_capital_expenditure_period=True,
+            cost_year="2021",
+        )
+
+        m.fs.costing.build_process_costs(
+            fixed_OM=False,
+            calculate_NPV=True,
+        )
+
+        return m
+
+    @pytest.mark.unit
+    def test_NPV_fixedinputs_build(self, model):
+        # check that some objects are built as expected
+        assert isinstance(model.fs.costing.pv_capital_cost, pyo.Var)
+        assert isinstance(model.fs.costing.pv_operating_cost, pyo.Var)
+        assert isinstance(model.fs.costing.pv_revenue, pyo.Var)
+        assert isinstance(model.fs.costing.pv_royalties, pyo.Var)
+        assert isinstance(model.fs.costing.npv, pyo.Var)
+        assert isinstance(model.fs.costing.discount_percentage, pyo.Param)
+        assert isinstance(model.fs.costing.plant_lifetime, pyo.Param)
+        assert isinstance(model.fs.costing.capital_expenditure_percentages, pyo.Param)
+        assert isinstance(model.fs.costing.capital_escalation_percentage, pyo.Param)
+        assert isinstance(model.fs.costing.capital_loan_interest_percentage, pyo.Param)
+        assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
+        assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
+        assert isinstance(
+            model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param
+        )
+        assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.pv_royalties_constraint, pyo.Constraint)
+        assert isinstance(model.fs.costing.npv_constraint, pyo.Constraint)
+
+    @pytest.mark.unit
+    def test_NPV_fixedinputs_build_diagnostics(self, model):
+        dt = DiagnosticsToolbox(model=model)
+        dt.assert_no_structural_warnings()
+
+    @pytest.mark.component
+    def test_NPV_fixedinputs_solve(self, model):
+        solver = get_solver()
+        results = solver.solve(model, tee=True)
+        assert_optimal_termination(results)
+
+    @pytest.mark.component
+    def test_NPV_fixedinputs_solve_diagnostics(self, model):
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt.assert_no_numerical_warnings()
+
+    @pytest.mark.component
+    def test_NPV_fixedinputs_results(self, model):
+        # check some NPV results
+        for i in [
+            "pv_capital_cost",
+            "pv_operating_cost",
+            "pv_royalties",
+            "pv_revenue",
+            "npv",
+        ]:
+            print(getattr(model.fs.costing, i).value)
+        assert model.fs.costing.pv_capital_cost.value == pytest.approx(
+            -15.24747, rel=1e-4
+        )
+        assert model.fs.costing.pv_operating_cost.value == pytest.approx(
+            -59.02935, rel=1e-4
+        )
+        assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
+        assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(442.19540, rel=1e-4)
 
 
 @pytest.mark.component
@@ -2227,7 +3338,7 @@ def test_REE_costing_CE_index_year():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_disallowedunitmodelcostunits():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -2256,7 +3367,7 @@ def test_REE_costing_disallowedunitmodelcostunits():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_nonexistentcostaccount():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -2358,7 +3469,7 @@ def test_REE_costing_multipleaccountssameparameter():
     )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_multipleaccountsdifferentparameters():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -2490,7 +3601,7 @@ def test_REE_costing_additionalcostingparams_overwrite():
     )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_additionalcostingparams_nooverwrite():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -2686,7 +3797,7 @@ def test_REE_costing_scaledownparallelequip():
     ].value == pytest.approx(5.0000, rel=1e-4)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_disallowedbuildprocesscostunits():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3065,7 +4176,7 @@ def test_REE_costing_fixedOM_defaults():
     assert m.fs.costing.total_sales_revenue.value == pytest.approx(64.382, rel=1e-4)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_twiceonsamemodel():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3113,7 +4224,7 @@ def test_REE_costing_fixedOM_twiceonsamemodel():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_pureproductnotpassed():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3141,7 +4252,7 @@ def test_REE_costing_fixedOM_pureproductnotpassed():
         m.fs.costing.build_process_costs()
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_pureproductnotadict():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3173,7 +4284,7 @@ def test_REE_costing_fixedOM_pureproductnotadict():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_mixedproductnotpassed():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3205,7 +4316,7 @@ def test_REE_costing_fixedOM_mixedproductnotpassed():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_mixedproductnotadict():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3240,7 +4351,7 @@ def test_REE_costing_fixedOM_mixedproductnotadict():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_salesprice():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3272,7 +4383,7 @@ def test_REE_costing_fixedOM_salesprice():
     )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_salespricenotadict():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3308,7 +4419,7 @@ def test_REE_costing_fixedOM_salespricenotadict():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_pureproductnoprice():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3348,7 +4459,7 @@ def test_REE_costing_fixedOM_pureproductnoprice():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_mixedproductnoprice():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3395,7 +4506,7 @@ def test_REE_costing_fixedOM_mixedproductnoprice():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_fixedOM_disallowedlabortype():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3493,7 +4604,7 @@ def test_REE_costing_variableOM_defaults():
     assert_optimal_termination(results)
     dt.assert_no_numerical_warnings()
 
-    # check that some objects builts as expected
+    # check that some objects are built as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
     assert hasattr(m.fs.costing, "total_fixed_OM_cost")
     assert hasattr(m.fs.costing, "total_variable_OM_cost")
@@ -3580,7 +4691,7 @@ def test_REE_costing_variableOM_steadystateflowsheet():
     assert_optimal_termination(results)
     dt.assert_no_numerical_warnings()
 
-    # check that some objects builts as expected
+    # check that some objects are built as expected
     assert hasattr(m.fs.costing, "feed_input_rate")
     assert hasattr(m.fs.costing, "total_fixed_OM_cost")
     assert hasattr(m.fs.costing, "total_variable_OM_cost")
@@ -3609,7 +4720,7 @@ def test_REE_costing_variableOM_steadystateflowsheet():
     )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_nofixedOM():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3653,7 +4764,7 @@ def test_REE_costing_variableOM_nofixedOM():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_nofeedinput():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3674,26 +4785,39 @@ def test_REE_costing_variableOM_nofeedinput():
         },
     )
 
-    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
-    m.fs.feed_input.fix()
-
     m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
-    with pytest.raises(
-        AttributeError,
-        match="No feed_input rate variable passed to main costing block.",
-    ):
-        m.fs.costing.build_process_costs(
-            fixed_OM=False,
-            variable_OM=True,
-            resources=[
-                "water",
-            ],
-            rates=[
-                m.fs.water,
-            ],
-        )
+    m.fs.costing.build_process_costs(
+        fixed_OM=True,
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
+        variable_OM=True,
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
+    )
+
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    # check some cost results
+    assert not hasattr(m.fs.costing, "feed_input_rate")
 
 
 @pytest.mark.component
@@ -3723,41 +4847,32 @@ def test_REE_costing_variableOM_feedinputnounits():
     m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.water.fix()
 
-    m.fs.costing.build_process_costs(
-        fixed_OM=True,
-        pure_product_output_rates={
-            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-        },
-        mixed_product_output_rates={
-            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
-        },
-        variable_OM=True,
-        feed_input=m.fs.feed_input,
-        resources=[
-            "water",
-        ],
-        rates=[
-            m.fs.water,
-        ],
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    # check some cost results
-    assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
-    assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
+    with pytest.raises(
+        UnitsError,
+        match="The argument feed_input was passed as a dimensionless quantity "
+        "with no units. Please ensure that the feed rate is passed in units "
+        "of mass / time.",
+    ):
+        m.fs.costing.build_process_costs(
+            fixed_OM=True,
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            mixed_product_output_rates={
+                "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+            },
+            variable_OM=True,
+            feed_input=m.fs.feed_input,
+            resources=[
+                "water",
+            ],
+            rates=[
+                m.fs.water,
+            ],
+        )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_resourcesnotalist():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3807,7 +4922,7 @@ def test_REE_costing_variableOM_resourcesnotalist():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_ratesnotalist():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3920,7 +5035,7 @@ def test_REE_costing_variableOM_customprices():
     )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_custompricesnotadict():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -3971,7 +5086,7 @@ def test_REE_costing_variableOM_custompricesnotadict():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_resourcesratesdifflengths():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -4019,7 +5134,7 @@ def test_REE_costing_variableOM_resourcesratesdifflengths():
         )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_variableOM_resourcenotinpricelist():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -4088,7 +5203,15 @@ recovery_rate_units_dict = {
     "recovery_rate_units, expectation",
     [
         ("base_case", does_not_raise()),
-        ("no_units", does_not_raise()),
+        (
+            "no_units",
+            pytest.raises(
+                UnitsError,
+                match="The argument recovery_rate_per_year was passed as a "
+                "dimensionless quantity with no units. Please ensure that the "
+                "feed rate is passed in units of mass / time.",
+            ),
+        ),
         (
             "not_mass_units",
             pytest.raises(
@@ -4179,7 +5302,7 @@ def test_REE_costing_recovery(recovery_rate_units, expectation):
         assert_optimal_termination(results)
         dt.assert_no_numerical_warnings()
 
-        # check that some objects builts as expected
+        # check that some objects are built as expected
         assert hasattr(m.fs.costing, "recovery_rate_per_year")
         assert hasattr(m.fs.costing, "additional_cost_of_recovery")
         assert hasattr(m.fs.costing, "cost_of_recovery")
@@ -4227,7 +5350,7 @@ def test_REE_costing_recovery_passedinmethodcall():
     m.fs.annual_operating_hours = pyo.Param(
         initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
         mutable=False,
-        units=pyunits.hours / pyunits.a,
+        units=pyunits.hours / pyunits.year,
     )
 
     m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
@@ -4252,7 +5375,11 @@ def test_REE_costing_recovery_passedinmethodcall():
         rates=[
             m.fs.water,
         ],
-        recovery_rate_per_year=39.3 * 0.8025 * pyo.value(m.fs.annual_operating_hours),
+        recovery_rate_per_year=39.3
+        * 0.8025
+        * pyo.value(m.fs.annual_operating_hours)
+        * pyunits.kg
+        / pyunits.year,
     )
 
     dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
@@ -4266,7 +5393,7 @@ def test_REE_costing_recovery_passedinmethodcall():
     assert_optimal_termination(results)
     dt.assert_no_numerical_warnings()
 
-    # check that some objects builts as expected
+    # check that some objects are built as expected
     assert hasattr(m.fs.costing, "recovery_rate_per_year")
     assert hasattr(m.fs.costing, "additional_cost_of_recovery")
     assert hasattr(m.fs.costing, "cost_of_recovery")
@@ -4367,7 +5494,7 @@ def test_REE_costing_recovery_transportcost(transport_cost_obj):
     assert_optimal_termination(results)
     dt.assert_no_numerical_warnings()
 
-    # check that some objects builts as expected
+    # check that some objects are built as expected
     assert hasattr(m.fs.costing, "recovery_rate_per_year")
     assert hasattr(m.fs.costing, "additional_cost_of_recovery")
     assert hasattr(m.fs.costing, "cost_of_recovery")
@@ -4384,7 +5511,7 @@ def test_REE_costing_recovery_transportcost(transport_cost_obj):
     assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_REE_costing_recovery_Nonewithtransportcost():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -4434,3 +5561,756 @@ def test_REE_costing_recovery_Nonewithtransportcost():
             ],
             transport_cost_per_ton_product=10,
         )
+
+
+@pytest.mark.unit
+def test_REE_costing_config_defaults():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting()
+
+    assert isinstance(m.fs.costing.config, ConfigDict)
+
+    assert m.fs.costing.config.discount_percentage is None
+    assert m.fs.costing.config.plant_lifetime is None
+
+    assert m.fs.costing.config.total_capital_cost is None
+    assert m.fs.costing.config.annual_operating_cost is None
+    assert m.fs.costing.config.annual_revenue is None
+    assert m.fs.costing.config.cost_year is None
+
+    assert m.fs.costing.config.has_capital_expenditure_period is False
+    assert m.fs.costing.config.capital_expenditure_percentages is None
+
+    assert m.fs.costing.config.capital_escalation_percentage == 3.6
+    assert m.fs.costing.config.capital_loan_interest_percentage == 6
+    assert m.fs.costing.config.operating_inflation_percentage == 3
+    assert m.fs.costing.config.revenue_inflation_percentage == 3
+    assert m.fs.costing.config.royalty_charge_percentage_of_revenue == 6.5
+    assert m.fs.costing.config.royalty_expression is None
+
+
+@pytest.mark.unit
+def test_REE_costing_config_kwargs():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.royalty_expression = pyo.Var(initialize=1, units=pyunits.m)
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=100,
+        annual_operating_cost=100,
+        annual_revenue=100,
+        cost_year="2021",
+        has_capital_expenditure_period=True,
+        capital_expenditure_percentages=[10, 60, 30],
+        capital_escalation_percentage=2,
+        capital_loan_interest_percentage=2,
+        operating_inflation_percentage=2,
+        revenue_inflation_percentage=2,
+        royalty_charge_percentage_of_revenue=2,
+        royalty_expression=m.fs.royalty_expression,
+    )
+
+    assert isinstance(m.fs.costing.config, ConfigDict)
+    assert m.fs.costing.config.discount_percentage == 10
+    assert m.fs.costing.config.plant_lifetime == 20
+    assert m.fs.costing.config.total_capital_cost == 100
+    assert m.fs.costing.config.annual_operating_cost == 100
+    assert m.fs.costing.config.annual_revenue == 100
+    assert m.fs.costing.config.cost_year == "2021"
+    assert m.fs.costing.config.has_capital_expenditure_period is True
+    assert m.fs.costing.config.capital_expenditure_percentages == [10, 60, 30]
+    assert m.fs.costing.config.capital_escalation_percentage == 2
+    assert m.fs.costing.config.capital_loan_interest_percentage == 2
+    assert m.fs.costing.config.operating_inflation_percentage == 2
+    assert m.fs.costing.config.revenue_inflation_percentage == 2
+    assert m.fs.costing.config.royalty_charge_percentage_of_revenue == 2
+    assert isinstance(m.fs.costing.config.royalty_expression, pyo.Var)
+
+
+@pytest.mark.unit
+def test_REE_costing_NPV_costing_block_success():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+    )
+
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=True,
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
+        variable_OM=True,
+        feed_input=m.fs.feed_input,
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
+        calculate_NPV=True,
+    )
+
+
+@pytest.mark.unit
+def test_REE_costing_verify_NPV_costing_block_failure():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting()
+
+    with pytest.raises(
+        AttributeError,
+        match="Expected FlowsheetCostingBlockData object "
+        "with attributes total_BEC, total_installation_cost, "
+        "total_fixed_OM_cost, total_variable_OM_cost, "
+        "other_plant_costs, land_cost, and total_sales_revenue. "
+        "Please confirm that b is a FlowsheetCostingBlockData object "
+        "and that all expected attributes exist.",
+    ):
+        QGESSCostingData.verify_calculate_from_costing_block(m.fs.costing)
+
+
+# npv cost objects
+npv_cost_obj_dict = {
+    "Expression_withunits": pyo.Expression(expr=100 * pyunits.MUSD_2021),
+    "Expression_nounits": pyo.Expression(expr=100),
+    "Param_withunits": pyo.Param(
+        initialize=100, units=pyunits.MUSD_2021, mutable=False
+    ),
+    "Param_nounits": pyo.Param(initialize=100, mutable=False),
+    "Var_withunits": pyo.Var(initialize=100, units=pyunits.MUSD_2021),
+    "Var_nounits": pyo.Var(initialize=100),
+    "Scalar": 100,
+}
+
+
+@pytest.mark.parametrize("npv_cost_obj", npv_cost_obj_dict.keys())
+@pytest.mark.unit
+def test_REE_costing_verify_NPV_fixed_inputs_success(npv_cost_obj):
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.obj = npv_cost_obj_dict[npv_cost_obj]
+
+    if npv_cost_obj == "Scalar":
+        # set directly
+        m.fs.total_capital_cost = m.fs.obj
+        m.fs.annual_operating_cost = m.fs.obj
+        m.fs.annual_revenue = m.fs.obj
+    else:
+        # need to make References to original object
+        m.fs.total_capital_cost = pyo.Reference(m.fs.obj)
+        m.fs.annual_operating_cost = pyo.Reference(m.fs.obj)
+        m.fs.annual_revenue = pyo.Reference(m.fs.obj)
+
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=m.fs.total_capital_cost,
+        annual_operating_cost=m.fs.annual_operating_cost,
+        annual_revenue=m.fs.annual_revenue,
+        cost_year="2021",
+    )
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=False,
+        calculate_NPV=True,
+    )
+
+
+@pytest.mark.unit
+def test_REE_costing_verify_NPV_fixed_inputs_failure():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting(
+        total_capital_cost=100,
+    )
+
+    with pytest.raises(
+        AttributeError,
+        match="If capital, fixed O&M, or variable O&M costs are not calculated, "
+        "then inputs for total_capital_cost, annual_operating_cost, and annual_revenue "
+        "must be passed, and cost_year must be passed as a string, e.g. '2021'.",
+    ):
+        m.fs.costing.build_process_costs(
+            fixed_OM=False,
+            calculate_NPV=True,
+        )
+
+
+@pytest.mark.unit
+def test_REE_costing_verify_NPV_no_OM_useful_exception():
+    # if users try to calculate NPV when fixed or variable OM don't exist,
+    # suggest that they set fixed inputs
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting()
+
+    with pytest.raises(
+        AttributeError,
+        match="If capital, fixed O&M, or variable O&M costs are not calculated, "
+        "then inputs for total_capital_cost, annual_operating_cost, and annual_revenue "
+        "must be passed, and cost_year must be passed as a string, e.g. '2021'."
+        "Alternatively, set fixed_OM and variable_OM to True to calculate O&M results.",
+    ):
+        m.fs.costing.build_process_costs(
+            fixed_OM=False,
+            calculate_NPV=True,
+        )
+
+
+@pytest.mark.parametrize(
+    "block_passed_as_None",
+    [
+        "total_capital_cost",
+        "annual_operating_cost",
+        "annual_revenue",
+        "cost_year",
+    ],
+)
+@pytest.mark.unit
+def test_REE_costing_verify_NPV_fixed_input_failure_input_not_set(block_passed_as_None):
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+
+    for i in ["total_capital_cost", "annual_operating_cost", "annual_revenue"]:
+        if i == block_passed_as_None:
+            setattr(m.fs, i, None)
+        else:
+            setattr(m.fs, i, 100)
+
+    if "cost_year" == block_passed_as_None:
+        setattr(m.fs, "cost_year", None)
+    else:
+        setattr(m.fs, "cost_year", "2021")
+
+    m.fs.costing = QGESSCosting(
+        total_capital_cost=m.fs.total_capital_cost,
+        annual_operating_cost=m.fs.annual_operating_cost,
+        annual_revenue=m.fs.annual_revenue,
+        cost_year=m.fs.cost_year,
+    )
+
+    with pytest.raises(
+        AttributeError,
+        match="If capital, fixed O&M, or variable O&M costs are not calculated, "
+        "then inputs for total_capital_cost, annual_operating_cost, and annual_revenue "
+        "must be passed, and cost_year must be passed as a string, e.g. '2021'.",
+    ):
+        m.fs.costing.build_process_costs(
+            fixed_OM=False,
+            calculate_NPV=True,
+        )
+
+
+@pytest.mark.unit
+def test_REE_costing_assert_has_config_argument_success():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting(discount_percentage=10)
+
+    QGESSCostingData.assert_config_argument_set(m.fs.costing, "discount_percentage")
+
+
+@pytest.mark.unit
+def test_REE_costing_assert_has_config_argument_failure_missing_argument():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting()
+
+    with pytest.raises(
+        AttributeError,
+        match="Required argument discount_percentage not set",
+    ):
+        QGESSCostingData.assert_config_argument_set(m.fs.costing, "discount_percentage")
+
+
+@pytest.mark.unit
+def test_REE_costing_assert_has_config_argument_failure_argument_not_set():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting(
+        total_capital_cost=100,
+        annual_operating_cost=100,
+        annual_revenue=100,
+        cost_year="2021",
+    )
+
+    with pytest.raises(
+        AttributeError,
+        match="Required argument discount_percentage not set",
+    ):
+
+        m.fs.costing.build_process_costs(
+            fixed_OM=False,
+            calculate_NPV=True,
+        )
+
+
+@pytest.mark.unit
+def test_REE_costing_has_capital_expenditure_period_percentagesset():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=100,
+        annual_operating_cost=100,
+        annual_revenue=100,
+        cost_year="2021",
+        has_capital_expenditure_period=True,
+        capital_expenditure_percentages=[
+            100,
+        ],
+    )
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=False,
+        calculate_NPV=True,
+    )
+
+    assert m.fs.costing.config.capital_expenditure_percentages == [
+        100,
+    ]
+    assert isinstance(m.fs.costing.capital_expenditure_percentages, pyo.Param)
+    assert m.fs.costing.capital_expenditure_percentages.index_set() == [
+        0,
+    ]
+
+
+@pytest.mark.component
+def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=100,
+        annual_operating_cost=100,
+        annual_revenue=100,
+        cost_year="2021",
+        has_capital_expenditure_period=True,
+        capital_expenditure_percentages=[
+            100,
+        ],
+    )
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=False,
+        calculate_NPV=True,
+    )
+
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt.assert_no_structural_warnings()
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    def series_present_worth_factor(r, g, N):
+        """
+        Returns expression for series present worth factor.
+        """
+        return (1 - ((1 + g) ** (N)) * ((1 + r) ** (-N))) / (r - g)
+
+    assert pyo.value(m.fs.costing.pv_capital_cost) == pytest.approx(
+        pyo.value(
+            -pyunits.convert(
+                sum(
+                    pyunits.convert(
+                        m.fs.costing.config.capital_expenditure_percentages[idx]
+                        * pyunits.percent,
+                        to_units=pyunits.dimensionless,
+                    )
+                    * m.fs.costing.CAPEX
+                    * series_present_worth_factor(
+                        pyunits.convert(
+                            m.fs.costing.capital_loan_interest_percentage,
+                            to_units=pyunits.dimensionless,
+                        ),
+                        pyunits.convert(
+                            m.fs.costing.capital_escalation_percentage,
+                            to_units=pyunits.dimensionless,
+                        ),
+                        idx + 1,
+                    )
+                    for idx in range(
+                        len(m.fs.costing.config.capital_expenditure_percentages)
+                    )
+                ),
+                to_units=m.fs.costing.cost_units,
+            )
+        ),
+        rel=1e-4,
+    )
+
+
+@pytest.mark.unit
+def test_REE_costing_has_capital_expenditure_period_percentagesnotset():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=100,
+        annual_operating_cost=100,
+        annual_revenue=100,
+        cost_year="2021",
+        has_capital_expenditure_period=True,
+    )
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=False,
+        calculate_NPV=True,
+    )
+
+    assert m.fs.costing.config.capital_expenditure_percentages == [10, 60, 30]
+    assert isinstance(m.fs.costing.capital_expenditure_percentages, pyo.Param)
+    assert m.fs.costing.capital_expenditure_percentages.index_set() == [0, 1, 2]
+
+
+@pytest.mark.component
+def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=100,
+        annual_operating_cost=100,
+        annual_revenue=100,
+        cost_year="2021",
+        has_capital_expenditure_period=True,
+    )
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=False,
+        calculate_NPV=True,
+    )
+
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt.assert_no_structural_warnings()
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    def series_present_worth_factor(r, g, N):
+        """
+        Returns expression for series present worth factor.
+        """
+        return (1 - ((1 + g) ** (N)) * ((1 + r) ** (-N))) / (r - g)
+
+    assert pyo.value(m.fs.costing.pv_capital_cost) == pytest.approx(
+        pyo.value(
+            -pyunits.convert(
+                sum(
+                    pyunits.convert(
+                        m.fs.costing.config.capital_expenditure_percentages[idx]
+                        * pyunits.percent,
+                        to_units=pyunits.dimensionless,
+                    )
+                    * m.fs.costing.CAPEX
+                    * series_present_worth_factor(
+                        pyunits.convert(
+                            m.fs.costing.capital_loan_interest_percentage,
+                            to_units=pyunits.dimensionless,
+                        ),
+                        pyunits.convert(
+                            m.fs.costing.capital_escalation_percentage,
+                            to_units=pyunits.dimensionless,
+                        ),
+                        idx + 1,
+                    )
+                    for idx in range(
+                        len(m.fs.costing.config.capital_expenditure_percentages)
+                    )
+                ),
+                to_units=m.fs.costing.cost_units,
+            )
+        ),
+        rel=1e-4,
+    )
+
+
+@pytest.mark.unit
+def test_REE_costing_not_has_capital_expenditure_period():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=100,
+        annual_operating_cost=100,
+        annual_revenue=100,
+        cost_year="2021",
+        has_capital_expenditure_period=False,
+    )
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=False,
+        calculate_NPV=True,
+    )
+
+    assert m.fs.costing.config.capital_expenditure_percentages == []
+    assert not hasattr(m.fs, "capital_expenditure_percentages")
+
+
+@pytest.mark.component
+def test_REE_costing_not_has_capital_expenditure_period_solve():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=100,
+        annual_operating_cost=100,
+        annual_revenue=100,
+        cost_year="2021",
+        has_capital_expenditure_period=False,
+    )
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=False,
+        calculate_NPV=True,
+    )
+
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt.assert_no_structural_warnings()
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    def series_present_worth_factor(r, g, N):
+        """
+        Returns expression for series present worth factor.
+        """
+        return (1 - ((1 + g) ** (N)) * ((1 + r) ** (-N))) / (r - g)
+
+    assert pyo.value(m.fs.costing.pv_capital_cost) == pytest.approx(
+        pyo.value(
+            -pyunits.convert(
+                m.fs.costing.CAPEX
+                * series_present_worth_factor(
+                    pyunits.convert(
+                        m.fs.costing.capital_loan_interest_percentage,
+                        to_units=pyunits.dimensionless,
+                    ),
+                    pyunits.convert(
+                        m.fs.costing.capital_escalation_percentage,
+                        to_units=pyunits.dimensionless,
+                    ),
+                    0,
+                ),  # formula gives P/A (r, g, 0) = 1
+                to_units=m.fs.costing.cost_units,
+            )
+        ),
+        rel=1e-4,
+    )
+
+
+@pytest.mark.unit
+def test_REE_costing_verify_percentages_list():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.capital_expenditure_percentages = [10, 60, 30]
+
+    QGESSCostingData.verify_percentages_list(m.fs, "capital_expenditure_percentages")
+
+
+@pytest.mark.unit
+def test_REE_costing_verify_percentages_list_notalist():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.capital_expenditure_percentages = 10
+
+    with pytest.raises(
+        TypeError,
+        match="10 is not a list. "
+        "Argument capital_expenditure_percentages must be passed as a list.",
+    ):
+        QGESSCostingData.verify_percentages_list(
+            m.fs, "capital_expenditure_percentages"
+        )
+
+
+@pytest.mark.unit
+def test_REE_costing_verify_percentages_list_zerolength():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.capital_expenditure_percentages = []
+
+    with pytest.raises(
+        AttributeError,
+        match="Argument capital_expenditure_percentages has a length of "
+        "zero. List must have a nonzero length.",
+    ):
+        QGESSCostingData.verify_percentages_list(
+            m.fs, "capital_expenditure_percentages"
+        )
+
+
+@pytest.mark.unit
+def test_REE_costing_verify_percentages_list_doesnotsumto100():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.capital_expenditure_percentages = [10, 60, 20]
+
+    with pytest.raises(
+        AttributeError,
+        match="Argument capital_expenditure_percentages has a sum of 90. "
+        "List must sum to 100 percent.",
+    ):
+        QGESSCostingData.verify_percentages_list(
+            m.fs, "capital_expenditure_percentages"
+        )
+
+
+# assert cost objects
+assert_cost_obj_dict = {
+    "Param": pyo.Param(initialize=100, units=pyunits.MUSD_2021, mutable=False),
+    "Var": pyo.Var(initialize=100, units=pyunits.MUSD_2021),
+    "Expression": pyo.Expression(expr=100 * pyunits.MUSD_2021),
+    "ScalarExpression": ScalarExpression(expr=100 * pyunits.MUSD_2021),
+    "Scalar": 100,
+    "None": None,
+}
+
+
+@pytest.mark.parametrize(
+    "assert_cost_obj, expectation",
+    [
+        ("Param", does_not_raise()),
+        ("Var", does_not_raise()),
+        ("Expression", does_not_raise()),
+        ("ScalarExpression", does_not_raise()),
+        (
+            "Scalar",
+            pytest.raises(
+                TypeError,
+                match="Argument 100 of type <class 'int'> is not a supported object type. "
+                "Ensure x is a Pyomo Param, Var, Expression, or ScalarExpression.",
+            ),
+        ),
+        (
+            "None",
+            does_not_raise(),  # method assumes argument was not passed, since None is the default
+        ),
+    ],
+)
+@pytest.mark.unit
+def test_REE_costing_assert_Pyomo_object(assert_cost_obj, expectation):
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.x = assert_cost_obj_dict[assert_cost_obj]
+
+    with expectation:
+        QGESSCostingData.assert_Pyomo_object(m.fs, "x")
+
+
+@pytest.mark.unit
+def test_REE_costing_royalty_expression():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+
+    m.fs.total_capital_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.annual_operating_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.annual_revenue = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.cost_year = "2021"
+
+    # suppose royalties are 6.5% of revenue (default), plus $100,000 flat fee
+    m.fs.royalty_formula = pyo.Expression(
+        expr=6.5 / 100 * m.fs.annual_revenue + 0.1 * pyunits.MUSD_2021
+    )
+
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=m.fs.total_capital_cost,
+        annual_operating_cost=m.fs.annual_operating_cost,
+        annual_revenue=m.fs.annual_revenue,
+        cost_year=m.fs.cost_year,
+        royalty_expression=m.fs.royalty_formula,
+    )
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=False,
+        calculate_NPV=True,
+    )
+
+    assert isinstance(m.fs.costing.pv_royalties[None], ScalarExpression)
+    assert not hasattr(m.fs.costing, "pv_royalties_constraint")
+    assert m.fs.costing.pv_royalties[None].expr == m.fs.royalty_formula.expr
+
+
+@pytest.mark.component
+def test_REE_costing_royalty_expression_solve():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+
+    m.fs.total_capital_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.total_capital_cost.fix()
+    m.fs.annual_operating_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.annual_operating_cost.fix()
+    m.fs.annual_revenue = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
+    m.fs.annual_revenue.fix()
+    m.fs.cost_year = "2021"
+
+    # suppose royalties are 6.5% of revenue (default), plus $100,000 flat fee
+    m.fs.royalty_formula = pyo.Expression(
+        expr=6.5 / 100 * m.fs.annual_revenue + 0.1 * pyunits.MUSD_2021
+    )
+
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=m.fs.total_capital_cost,
+        annual_operating_cost=m.fs.annual_operating_cost,
+        annual_revenue=m.fs.annual_revenue,
+        cost_year=m.fs.cost_year,
+        royalty_expression=m.fs.royalty_formula,
+    )
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=False,
+        calculate_NPV=True,
+    )
+
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt.assert_no_structural_warnings()
+
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    assert pyo.value(m.fs.costing.pv_royalties[None]) == pytest.approx(
+        pyo.value(m.fs.royalty_formula), rel=1e-4
+    )

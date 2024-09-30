@@ -12,9 +12,10 @@ Authors: Arkoprabho Dasgupta
 
 """
 
-from pyomo.environ import ConcreteModel, SolverFactory
+from pyomo.environ import ConcreteModel
 
 from idaes.core import FlowDirection, FlowsheetBlock
+from idaes.core.solvers import get_solver
 
 from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
@@ -132,9 +133,7 @@ Solution of the model and display of the final results.
 
 """
 
-solver = SolverFactory("ipopt")
-solver.options["bound_push"] = 1e-8
-solver.options["mu_init"] = 1e-8
+solver = get_solver("ipopt")
 solver.solve(m, tee=True)
 
 # Final organic outlet display

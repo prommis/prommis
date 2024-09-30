@@ -12,11 +12,12 @@ Authors: Arkoprabho Dasgupta
 
 """
 
-from pyomo.environ import ConcreteModel, SolverFactory
+from pyomo.environ import ConcreteModel
 
 import numpy as np
 
 from idaes.core import FlowDirection, FlowsheetBlock
+from idaes.core.solvers import get_solver
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
@@ -146,7 +147,7 @@ Solution of the model and display of the final results.
 
 """
 
-solver = SolverFactory("ipopt")
+solver = get_solver("ipopt")
 solver.solve(m, tee=True)
 
 # Final organic outlet display

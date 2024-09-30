@@ -128,7 +128,7 @@ class SolventExtractionInitializer(ModularInitializerBase):
         model.mscontactor.material_transfer_term.unfix()
 
         solver = self._get_solver()
-        results = solver.solve(model.mscontactor)
+        results = solver.solve(model)
 
         return results
 

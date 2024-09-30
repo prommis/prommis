@@ -3183,7 +3183,6 @@ def add_costing(m):
         project_management_and_construction_percentage=30,
         process_contingency_percentage=15,
         # argument related to Fixed OM costs
-        nameplate_capacity=500,  # short (US) ton/hr
         labor_types=[
             "skilled",
             "unskilled",
@@ -3220,7 +3219,7 @@ def add_costing(m):
 
     # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
     m.fs.costing.other_plant_costs.unfix()
-    m.fs.costing.other_plant_costs_rule = Constraint(
+    m.fs.costing.other_plant_costs_eq = Constraint(
         expr=(
             m.fs.costing.other_plant_costs
             == units.convert(

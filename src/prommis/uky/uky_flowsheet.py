@@ -197,7 +197,10 @@ from prommis.precipitate.precipitate_solids_properties import PrecipitateParamet
 from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction, SolventExtractionInitializer
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
 _log = idaeslog.getLogger(__name__)

@@ -98,6 +98,16 @@ def main():
     # Propagate results back to unscaled model
     scaling.propagate_solution(scaled_model, m)
 
+    # TODO: add Boolean variable to calculate pump OPEX
+    # Verify the feed pump operating pressure workaround is valid
+    # assume this additional cost is less than half a cent
+    if value(m.fs.feed_pump.costing.variable_operating_cost) >= 0.005:
+        raise ValueError(
+            "The variable   operating cost of the feed pump as calculated in the feed"
+            "pump costing block is not negligible. This operating cost is already"
+            "accounted for via the membrane pressure drop specific energy consumption."
+        )
+
     dt.assert_no_numerical_warnings()
     print_information(m)
 
@@ -617,16 +627,6 @@ def solve_model(m):
     if results.solver.termination_condition != "optimal":
         raise ValueError("The solver did not return optimal termination")
 
-    # TODO: add Boolean variable to calculate pump OPEX
-    # Verify the feed pump operating pressure workaround is valid
-    # assume this additional cost is less than half a cent
-    if value(m.fs.feed_pump.costing.variable_operating_cost) >= 0.005:
-        raise ValueError(
-            "The variable   operating cost of the feed pump as calculated in the feed"
-            "pump costing block is not negligible. This operating cost is already"
-            "accounted for via the membrane pressure drop specific energy consumption."
-        )
-
     return results
 
 
@@ -786,25 +786,30 @@ def set_scaling(m):
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
     # Add scaling factors for poorly scaled constraints
-    # For this example, the feed and diafiltrate enter in stage 3, likely causing the poor scaling
-    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 9, "solvent"]] = 1e-8
-    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 9, "Li"]] = 1e-8
-    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 9, "Co"]] = 1e-8
-    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 10, "solvent"]] = 1e-8
-    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 10, "Li"]] = 1e-8
-    m.scaling_factor[m.fs.stage3.retentate_material_balance[0.0, 10, "Co"]] = 1e-8
+    m.scaling_factor[m.fs.cascade.costing.variable_operating_cost_constraint] = 1e-4
+    m.scaling_factor[m.fs.feed_pump.costing.capital_cost_constraint] = 1e-5
+    m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost_constraint] = 1e-4
+    m.scaling_factor[m.fs.feed_pump.costing.pump_head_equation] = 1e6
+    m.scaling_factor[m.fs.feed_pump.costing.pump_power_equation] = 1e9
+    m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost_constraint] = 1e8
+    m.scaling_factor[m.fs.costing.aggregate_capital_cost_constraint] = 1e-5
+    m.scaling_factor[m.fs.costing.aggregate_variable_operating_cost_constraint] = 1e-5
+    m.scaling_factor[m.fs.costing.total_capital_cost_constraint] = 1e-5
+    m.scaling_factor[m.fs.costing.maintenance_labor_chemical_operating_cost_constraint] = 1e-4
+    m.scaling_factor[m.fs.costing.total_operating_cost_constraint] = 1e-5
 
     # Add scaling factors for poorly scaled variables
     m.scaling_factor[m.fs.cascade.costing.variable_operating_cost] = 1e-5
     m.scaling_factor[m.fs.feed_pump.costing.capital_cost] = 1e-5
-    m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e5
-    m.scaling_factor[m.fs.feed_pump.costing.pump_head] = 1e5
-    m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost] = 1e-5
+    m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e8
+    m.scaling_factor[m.fs.feed_pump.costing.pump_head] = 1e6
+    m.scaling_factor[m.fs.feed_pump.costing.pump_power] = 1e9
+    m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost] = 1e-4
     m.scaling_factor[m.fs.costing.aggregate_capital_cost] = 1e-5
     m.scaling_factor[m.fs.costing.aggregate_variable_operating_cost] = 1e-5
     m.scaling_factor[m.fs.costing.total_capital_cost] = 1e-5
     m.scaling_factor[m.fs.costing.total_operating_cost] = 1e-5
-    m.scaling_factor[m.fs.costing.maintenance_labor_chemical_operating_cost] = 1e-5
+    m.scaling_factor[m.fs.costing.maintenance_labor_chemical_operating_cost] = 1e-4
 
 
 def print_information(m):

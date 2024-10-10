@@ -9,13 +9,12 @@ import numpy as np
 
 from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.initialization import InitializationStatus
-from idaes.core.initialization.block_triangularization import (
-    BlockTriangularizationInitializer,
-)
-from idaes.core.solvers import get_solver
 from idaes.core.util import DiagnosticsToolbox
+from idaes.core.solvers import get_solver
 
 import pytest
+
+from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
@@ -179,7 +178,7 @@ class TestSXmodel:
     @pytest.mark.component
     def test_block_triangularization(self, SolEx_frame):
         model = SolEx_frame
-        initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
+        initializer = SolventExtractionInitializer()
         initializer.initialize(model.fs.solex)
 
         assert initializer.summary[model.fs.solex]["status"] == InitializationStatus.Ok
@@ -196,96 +195,57 @@ class TestSXmodel:
         assert check_optimal_termination(results)
 
     @pytest.mark.component
-    def test_solution(self, SolEx_frame):
-        m = SolEx_frame
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["H2O"]
-        ) == pytest.approx(1e6, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["H"]
-        ) == pytest.approx(1.755, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["SO4"]
-        ) == pytest.approx(3999.885, abs=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["HSO4"]
-        ) == pytest.approx(693.39, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Al"]
-        ) == pytest.approx(362.132, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Ca"]
-        ) == pytest.approx(81.724, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Fe"]
-        ) == pytest.approx(454.049, rel=1e-1)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Sc"]
-        ) == pytest.approx(0.000199, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Y"]
-        ) == pytest.approx(1.239e-10, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["La"]
-        ) == pytest.approx(0.393, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Ce"]
-        ) == pytest.approx(0.536, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Pr"]
-        ) == pytest.approx(0.091, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Nd"]
-        ) == pytest.approx(1.17e-7, rel=1e-1)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Sm"]
-        ) == pytest.approx(9.69e-11, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Gd"]
-        ) == pytest.approx(0.066, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp["Dy"]
-        ) == pytest.approx(0.00144, rel=1e-2)
-
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Al"]
-        ) == pytest.approx(60.242, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Ca"]
-        ) == pytest.approx(27.817, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Fe"]
-        ) == pytest.approx(234.216, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Sc"]
-        ) == pytest.approx(1.765, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Y"]
-        ) == pytest.approx(0.124, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["La"]
-        ) == pytest.approx(0.592, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Ce"]
-        ) == pytest.approx(1.7405, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Pr"]
-        ) == pytest.approx(0.211, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Nd"]
-        ) == pytest.approx(0.946, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Sm"]
-        ) == pytest.approx(0.097, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Gd"]
-        ) == pytest.approx(0.1918, rel=1e-2)
-        assert value(
-            m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp["Dy"]
-        ) == pytest.approx(0.0455, rel=1e-2)
+    @pytest.mark.solver
+    def test_numerical_issues(self, SolEx_frame):
+        model = SolEx_frame
+        dt = DiagnosticsToolbox(model)
+        dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
-    def test_numerical_issues(self, SolEx_frame):
-        m = SolEx_frame
-        dt = DiagnosticsToolbox(m)
-        dt.assert_no_numerical_warnings()
+    @pytest.mark.solver
+    def test_solution(self, SolEx_frame):
+
+        model = SolEx_frame
+        number_of_stages = 3
+        aqueous_outlet = {
+            "H2O": 1000000,
+            "H": 1.75563,
+            "SO4": 3999.885,
+            "HSO4": 693.3903,
+            "Al": 362.132,
+            "Ca": 81.724,
+            "Cl": 1e-8,
+            "Ce": 0.5368,
+            "Dy": 0.0014421,
+            "Fe": 454.049,
+            "Gd": 0.066625,
+            "La": 0.39313,
+            "Nd": 1.173e-07,
+            "Pr": 0.091292,
+            "Sc": 0.00019984,
+            "Sm": 9.6992e-11,
+            "Y": 1.239e-10,
+        }
+
+        organic_outlet = {
+            "Al": 60.242,
+            "Ca": 27.817,
+            "Ce": 1.7405,
+            "Dy": 0.045565,
+            "Fe": 234.216,
+            "Gd": 0.1918,
+            "La": 0.59296,
+            "Nd": 0.9461,
+            "Pr": 0.211744,
+            "Sc": 1.7658,
+            "Sm": 0.097017,
+            "Y": 0.12402,
+        }
+
+        for k, v in model.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.items():
+            assert value(v) == pytest.approx(organic_outlet[k], rel=1e-4)
+
+        for k, v in model.fs.solex.mscontactor.aqueous[
+            0, number_of_stages
+        ].conc_mass_comp.items():
+            assert value(v) == pytest.approx(aqueous_outlet[k], rel=1e-4)

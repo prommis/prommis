@@ -1720,6 +1720,7 @@ def initialize_system(m):
         m.fs.solex_cleaner_load,
         m.fs.solex_cleaner_strip,
     ]
+    
 
     initializer_bt = BlockTriangularizationInitializer()
 

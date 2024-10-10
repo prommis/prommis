@@ -795,7 +795,9 @@ def set_scaling(m):
     m.scaling_factor[m.fs.costing.aggregate_capital_cost_constraint] = 1e-5
     m.scaling_factor[m.fs.costing.aggregate_variable_operating_cost_constraint] = 1e-5
     m.scaling_factor[m.fs.costing.total_capital_cost_constraint] = 1e-5
-    m.scaling_factor[m.fs.costing.maintenance_labor_chemical_operating_cost_constraint] = 1e-4
+    m.scaling_factor[
+        m.fs.costing.maintenance_labor_chemical_operating_cost_constraint
+    ] = 1e-4
     m.scaling_factor[m.fs.costing.total_operating_cost_constraint] = 1e-5
 
     # Add scaling factors for poorly scaled variables

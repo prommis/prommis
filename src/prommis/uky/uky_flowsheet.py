@@ -1657,18 +1657,10 @@ def initialize_system(m):
 
     # Pass the tear_guess to the SD tool
     seq.set_guesses_for(m.fs.leach.liquid_inlet, tear_guesses1)
-    seq.set_guesses_for(
-        m.fs.solex_rougher_load.organic_inlet, tear_guesses2
-    )
-    seq.set_guesses_for(
-        m.fs.solex_rougher_load.aqueous_inlet, tear_guesses3
-    )
-    seq.set_guesses_for(
-        m.fs.solex_cleaner_load.organic_inlet, tear_guesses4
-    )
-    seq.set_guesses_for(
-        m.fs.solex_cleaner_load.aqueous_inlet, tear_guesses5
-    )
+    seq.set_guesses_for(m.fs.solex_rougher_load.organic_inlet, tear_guesses2)
+    seq.set_guesses_for(m.fs.solex_rougher_load.aqueous_inlet, tear_guesses3)
+    seq.set_guesses_for(m.fs.solex_cleaner_load.organic_inlet, tear_guesses4)
+    seq.set_guesses_for(m.fs.solex_cleaner_load.aqueous_inlet, tear_guesses5)
 
     initializer_feed = FeedInitializer()
     feed_units = [
@@ -1706,13 +1698,6 @@ def initialize_system(m):
     ]
 
     initializer_sx = SolventExtractionInitializer()
-    # sx_units = [
-    #     m.fs.solex_rougher_load.mscontactor,
-    #     m.fs.solex_rougher_scrub.mscontactor,
-    #     m.fs.solex_rougher_strip.mscontactor,
-    #     m.fs.solex_cleaner_load.mscontactor,
-    #     m.fs.solex_cleaner_strip.mscontactor,
-    # ]
     sx_units = [
         m.fs.solex_rougher_load,
         m.fs.solex_rougher_scrub,
@@ -1720,7 +1705,6 @@ def initialize_system(m):
         m.fs.solex_cleaner_load,
         m.fs.solex_cleaner_strip,
     ]
-
 
     initializer_bt = BlockTriangularizationInitializer()
 
@@ -1740,7 +1724,7 @@ def initialize_system(m):
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
-            print('this line is running')
+            print("this line is running")
         elif unit == m.fs.leach:
             _log.info(f"Initializing {unit}")
             # Fix feed states

@@ -103,9 +103,9 @@ def main():
     # assume this additional cost is less than half a cent
     if value(m.fs.feed_pump.costing.variable_operating_cost) >= 0.005:
         raise ValueError(
-            "The variable   operating cost of the feed pump as calculated in the feed"
+            "The variable  operating cost of the feed pump as calculated in the feed"
             "pump costing block is not negligible. This operating cost is already"
-            "accounted for via the membrane pressure drop specific energy consumption."
+            "accounted for via the membrane's pressure drop specific energy consumption."
         )
 
     dt.assert_no_numerical_warnings()

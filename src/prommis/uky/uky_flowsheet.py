@@ -560,47 +560,47 @@ def build():
     )
     m.fs.sx_rougher_load_aq_feed = Arc(
         source=m.fs.leach_sx_mixer.outlet,
-        destination=m.fs.solex_rougher_load.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_rougher_load.aqueous_inlet,
     )
     m.fs.sx_rougher_org_feed = Arc(
         source=m.fs.rougher_org_make_up.outlet, destination=m.fs.rougher_mixer.make_up
     )
     m.fs.sx_rougher_mixed_org_recycle = Arc(
         source=m.fs.rougher_mixer.outlet,
-        destination=m.fs.solex_rougher_load.mscontactor.organic_inlet,
+        destination=m.fs.solex_rougher_load.organic_inlet,
     )
     m.fs.sx_rougher_load_aq_outlet = Arc(
-        source=m.fs.solex_rougher_load.mscontactor.aqueous_outlet,
+        source=m.fs.solex_rougher_load.aqueous_outlet,
         destination=m.fs.load_sep.inlet,
     )
     m.fs.sx_rougher_load_aq_recycle = Arc(
         source=m.fs.load_sep.recycle, destination=m.fs.leach_mixer.load_recycle
     )
     m.fs.sx_rougher_load_org_outlet = Arc(
-        source=m.fs.solex_rougher_load.mscontactor.organic_outlet,
-        destination=m.fs.solex_rougher_scrub.mscontactor.organic_inlet,
+        source=m.fs.solex_rougher_load.organic_outlet,
+        destination=m.fs.solex_rougher_scrub.organic_inlet,
     )
     m.fs.sx_rougher_scrub_acid_feed = Arc(
         source=m.fs.acid_feed1.outlet,
-        destination=m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_rougher_scrub.aqueous_inlet,
     )
     m.fs.sx_rougher_scrub_aq_outlet = Arc(
-        source=m.fs.solex_rougher_scrub.mscontactor.aqueous_outlet,
+        source=m.fs.solex_rougher_scrub.aqueous_outlet,
         destination=m.fs.scrub_sep.inlet,
     )
     m.fs.sx_rougher_scrub_aq_recycle = Arc(
         source=m.fs.scrub_sep.recycle, destination=m.fs.leach_mixer.scrub_recycle
     )
     m.fs.sx_rougher_scrub_org_outlet = Arc(
-        source=m.fs.solex_rougher_scrub.mscontactor.organic_outlet,
-        destination=m.fs.solex_rougher_strip.mscontactor.organic_inlet,
+        source=m.fs.solex_rougher_scrub.organic_outlet,
+        destination=m.fs.solex_rougher_strip.organic_inlet,
     )
     m.fs.sx_rougher_strip_acid_feed = Arc(
         source=m.fs.acid_feed2.outlet,
-        destination=m.fs.solex_rougher_strip.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_rougher_strip.aqueous_inlet,
     )
     m.fs.sx_rougher_strip_org_outlet = Arc(
-        source=m.fs.solex_rougher_strip.mscontactor.organic_outlet,
+        source=m.fs.solex_rougher_strip.organic_outlet,
         destination=m.fs.rougher_sep.inlet,
     )
     m.fs.sx_rougher_strip_org_purge = Arc(
@@ -610,34 +610,34 @@ def build():
         source=m.fs.rougher_sep.recycle, destination=m.fs.rougher_mixer.recycle
     )
     m.fs.sx_rougher_strip_aq_outlet = Arc(
-        source=m.fs.solex_rougher_strip.mscontactor.aqueous_outlet,
+        source=m.fs.solex_rougher_strip.aqueous_outlet,
         destination=m.fs.precip_sx_mixer.rougher,
     )
     m.fs.sx_cleaner_load_aq_feed = Arc(
         source=m.fs.precip_sx_mixer.outlet,
-        destination=m.fs.solex_cleaner_load.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_cleaner_load.aqueous_inlet,
     )
     m.fs.sx_cleaner_org_feed = Arc(
         source=m.fs.cleaner_org_make_up.outlet, destination=m.fs.cleaner_mixer.make_up
     )
     m.fs.sx_cleaner_mixed_org_recycle = Arc(
         source=m.fs.cleaner_mixer.outlet,
-        destination=m.fs.solex_cleaner_load.mscontactor.organic_inlet,
+        destination=m.fs.solex_cleaner_load.organic_inlet,
     )
     m.fs.sx_cleaner_load_aq_outlet = Arc(
-        source=m.fs.solex_cleaner_load.mscontactor.aqueous_outlet,
+        source=m.fs.solex_cleaner_load.aqueous_outlet,
         destination=m.fs.leach_sx_mixer.cleaner,
     )
     m.fs.sx_cleaner_strip_acid_feed = Arc(
         source=m.fs.acid_feed3.outlet,
-        destination=m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_cleaner_strip.aqueous_inlet,
     )
     m.fs.sx_cleaner_load_org_outlet = Arc(
-        source=m.fs.solex_cleaner_load.mscontactor.organic_outlet,
-        destination=m.fs.solex_cleaner_strip.mscontactor.organic_inlet,
+        source=m.fs.solex_cleaner_load.organic_outlet,
+        destination=m.fs.solex_cleaner_strip.organic_inlet,
     )
     m.fs.sx_cleaner_strip_org_outlet = Arc(
-        source=m.fs.solex_cleaner_strip.mscontactor.organic_outlet,
+        source=m.fs.solex_cleaner_strip.organic_outlet,
         destination=m.fs.cleaner_sep.inlet,
     )
     m.fs.sx_cleaner_strip_org_purge = Arc(
@@ -647,7 +647,7 @@ def build():
         source=m.fs.cleaner_sep.recycle, destination=m.fs.cleaner_mixer.recycle
     )
     m.fs.sx_cleaner_strip_aq_outlet = Arc(
-        source=m.fs.solex_cleaner_strip.mscontactor.aqueous_outlet,
+        source=m.fs.solex_cleaner_strip.aqueous_outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )
     m.fs.precip_solid_outlet = Arc(
@@ -1658,16 +1658,16 @@ def initialize_system(m):
     # Pass the tear_guess to the SD tool
     seq.set_guesses_for(m.fs.leach.liquid_inlet, tear_guesses1)
     seq.set_guesses_for(
-        m.fs.solex_rougher_load.mscontactor.organic_inlet, tear_guesses2
+        m.fs.solex_rougher_load.organic_inlet, tear_guesses2
     )
     seq.set_guesses_for(
-        m.fs.solex_rougher_load.mscontactor.aqueous_inlet, tear_guesses3
+        m.fs.solex_rougher_load.aqueous_inlet, tear_guesses3
     )
     seq.set_guesses_for(
-        m.fs.solex_cleaner_load.mscontactor.organic_inlet, tear_guesses4
+        m.fs.solex_cleaner_load.organic_inlet, tear_guesses4
     )
     seq.set_guesses_for(
-        m.fs.solex_cleaner_load.mscontactor.aqueous_inlet, tear_guesses5
+        m.fs.solex_cleaner_load.aqueous_inlet, tear_guesses5
     )
 
     initializer_feed = FeedInitializer()
@@ -1720,7 +1720,7 @@ def initialize_system(m):
         m.fs.solex_cleaner_load,
         m.fs.solex_cleaner_strip,
     ]
-    
+
 
     initializer_bt = BlockTriangularizationInitializer()
 

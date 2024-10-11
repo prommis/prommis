@@ -88,7 +88,7 @@ from idaes.core import (
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.initialization import ModularInitializerBase
 from idaes.models.unit_models.mscontactor import MSContactor
-from idaes.core.util.model_statistics import degrees_of_freedom as dof
+
 
 class SolventExtractionInitializer(ModularInitializerBase):
     """
@@ -121,15 +121,12 @@ class SolventExtractionInitializer(ModularInitializerBase):
         """
 
         model.mscontactor.material_transfer_term.fix(1e-8)
-        print(dof(model.mscontactor))
 
         msc_init = self.get_submodel_initializer(model.mscontactor)
         msc_init.initialize(model.mscontactor)
-        
+
         model.mscontactor.material_transfer_term.unfix()
-        print(dof(model.mscontactor))
-        print(dof(model))
-        
+
         solver = self._get_solver()
         results = solver.solve(model)
 

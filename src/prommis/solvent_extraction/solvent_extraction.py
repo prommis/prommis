@@ -115,7 +115,7 @@ class SolventExtractionInitializer(ModularInitializerBase):
         """
         """
         This model adds an additional constraint of the material transfer term.
-        This constraint is present outside the main mscontactor model, so this term is 
+        This constraint is present outside the main MSContactor model, so this term is 
         fixed to give a square model to the MScontactor Initializer.
 
         """

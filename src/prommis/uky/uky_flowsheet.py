@@ -1724,7 +1724,6 @@ def initialize_system(m):
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
-            print("this line is running")
         elif unit == m.fs.leach:
             _log.info(f"Initializing {unit}")
             # Fix feed states
@@ -1740,121 +1739,6 @@ def initialize_system(m):
             m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
             m.fs.leach.solid_inlet.flow_mass.unfix()
             m.fs.leach.solid_inlet.mass_frac_comp.unfix()
-        # elif unit == m.fs.solex_rougher_load.mscontactor:
-        #     _log.info(f"Initializing {unit}")
-        #     # Fix feed states
-        #     m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.fix()
-        #     m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-        #     m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
-        #         0
-        #     ].conc_mass_comp.fix()
-        #     m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
-        #         0
-        #     ].conc_mass_comp.fix()
-        #     # Re-solve unit
-        #     solver = SolverFactory("ipopt")
-        #     solver.solve(m.fs.solex_rougher_load, tee=True)
-        #     # Unfix feed states
-        #     m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-        #     m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-        #     m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
-        #         0
-        #     ].conc_mass_comp.unfix()
-        #     m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
-        #         0
-        #     ].conc_mass_comp.unfix()
-        # elif unit == m.fs.solex_rougher_scrub.mscontactor:
-        #     _log.info(f"Initializing {unit}")
-        #     # Fix feed states
-        #     m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[0].flow_vol.fix()
-        #     m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-        #     m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
-        #         0
-        #     ].conc_mass_comp.fix()
-        #     m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
-        #         0
-        #     ].conc_mass_comp.fix()
-        #     # Re-solve unit
-        #     solver = SolverFactory("ipopt")
-        #     solver.solve(m.fs.solex_rougher_scrub, tee=True)
-        #     # Unfix feed states
-        #     m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-        #     m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-        #     m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
-        #         0
-        #     ].conc_mass_comp.unfix()
-        #     m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
-        #         0
-        #     ].conc_mass_comp.unfix()
-        # elif unit == m.fs.solex_rougher_strip.mscontactor:
-        #     _log.info(f"Initializing {unit}")
-        #     # Fix feed states
-        #     m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[0].flow_vol.fix()
-        #     m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-        #     m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
-        #         0
-        #     ].conc_mass_comp.fix()
-        #     m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
-        #         0
-        #     ].conc_mass_comp.fix()
-        #     # Re-solve unit
-        #     solver = SolverFactory("ipopt")
-        #     solver.solve(m.fs.solex_rougher_strip, tee=True)
-        #     # Unfix feed states
-        #     m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-        #     m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-        #     m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
-        #         0
-        #     ].conc_mass_comp.unfix()
-        #     m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
-        #         0
-        #     ].conc_mass_comp.unfix()
-        # elif unit == m.fs.solex_cleaner_load.mscontactor:
-        #     _log.info(f"Initializing {unit}")
-        #     # Fix feed states
-        #     m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].flow_vol.fix()
-        #     m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-        #     m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
-        #         0
-        #     ].conc_mass_comp.fix()
-        #     m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
-        #         0
-        #     ].conc_mass_comp.fix()
-        #     # Re-solve unit
-        #     solver = SolverFactory("ipopt")
-        #     solver.solve(m.fs.solex_cleaner_load, tee=True)
-        #     # Unfix feed states
-        #     m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-        #     m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-        #     m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
-        #         0
-        #     ].conc_mass_comp.unfix()
-        #     m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
-        #         0
-        #     ].conc_mass_comp.unfix()
-        # elif unit == m.fs.solex_cleaner_strip.mscontactor:
-        #     _log.info(f"Initializing {unit}")
-        #     # Fix feed states
-        #     m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].flow_vol.fix()
-        #     m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-        #     m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
-        #         0
-        #     ].conc_mass_comp.fix()
-        #     m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
-        #         0
-        #     ].conc_mass_comp.fix()
-        #     # Re-solve unit
-        #     solver = SolverFactory("ipopt")
-        #     solver.solve(m.fs.solex_cleaner_strip, tee=True)
-        #     # Unfix feed states
-        #     m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-        #     m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-        #     m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
-        #         0
-        #     ].conc_mass_comp.unfix()
-        #     m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
-        #         0
-        #     ].conc_mass_comp.unfix()
         else:
             _log.info(f"Initializing {unit}")
             initializer_bt.initialize(unit)

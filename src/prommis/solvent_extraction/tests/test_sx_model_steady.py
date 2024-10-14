@@ -172,7 +172,7 @@ class TestSXmodel:
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
-    def test_block_triangularization(self, SolEx_frame):
+    def test_initialization(self, SolEx_frame):
         model = SolEx_frame
         initializer = SolventExtractionInitializer()
         initializer.initialize(model.fs.solex)

@@ -12,18 +12,21 @@ Authors: Arkoprabho Dasgupta
 
 """
 
-from pyomo.environ import ConcreteModel, SolverFactory
+from pyomo.environ import ConcreteModel
 
 import numpy as np
 
 from idaes.core import FlowDirection, FlowsheetBlock
-from idaes.core.initialization.block_triangularization import (
-    BlockTriangularizationInitializer,
-)
+from idaes.core.solvers import get_solver
+from idaes.core.util import to_json
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
+
 
 """
 Method of building a solvent extraction model with a specified number of stages
@@ -33,7 +36,9 @@ This is a loading operation, so no additional argument has to be specified.
 """
 
 m = ConcreteModel()
+
 m.fs = FlowsheetBlock(dynamic=False)
+
 m.fs.prop_o = REESolExOgParameters()
 m.fs.leach_soln = LeachSolutionParameters()
 
@@ -58,10 +63,10 @@ m.fs.solex = SolventExtraction(
 
 """
 Specification of the values of the partition coefficients of the elements
-based on the values provided in the REESim file. 
+based on the values provided in the REESim file.
 
 """
-
+number_of_stages = 3
 stage_number = np.arange(1, number_of_stages + 1)
 
 for s in stage_number:
@@ -138,23 +143,26 @@ Initialization of the model, which gives a good starting point.
 
 """
 
-initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
+initializer = SolventExtractionInitializer()
 initializer.initialize(m.fs.solex)
 
-"""
+""" 
 Solution of the model and display of the final results.
 
 """
 
-solver = SolverFactory("ipopt")
-solver.options["bound_push"] = 1e-8
-solver.options["mu_init"] = 1e-8
+solver = get_solver("ipopt")
+# solver.options["bound_push"] = 1e-8
+# solver.options["mu_init"] = 1e-8
 solver.solve(m, tee=True)
+
 
 # Final organic outlet display
 m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()
 m.fs.solex.mscontactor.organic[0, 1].conc_mol_comp.display()
 
 # Final aqueous outlets display
-m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp.display()
-m.fs.solex.mscontactor.aqueous[0, 3].conc_mol_comp.display()
+m.fs.solex.mscontactor.aqueous[0, number_of_stages].conc_mass_comp.display()
+m.fs.solex.mscontactor.aqueous[0, number_of_stages].conc_mol_comp.display()
+
+to_json(m, fname="solvent_extraction.json", human_read=True)

@@ -12,17 +12,17 @@ Authors: Arkoprabho Dasgupta
 
 """
 
-from pyomo.environ import ConcreteModel, SolverFactory
+from pyomo.environ import ConcreteModel
 
 from idaes.core import FlowDirection, FlowsheetBlock
-from idaes.core.initialization.block_triangularization import (
-    BlockTriangularizationInitializer,
-)
-from idaes.core.util.model_statistics import degrees_of_freedom as dof
+from idaes.core.solvers import get_solver
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
 
 """
 Method of building a solvent extraction model with a specified number of stages
@@ -116,24 +116,22 @@ m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].fix(7.14)
 
 m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
 
-print(dof(m))
-
 """
 Initialization of the model, which gives a good starting point.
 
 """
-
-initializer = BlockTriangularizationInitializer()
+initializer = SolventExtractionInitializer()
 initializer.initialize(m.fs.solex)
+
 
 """
 Solution of the model and display of the final results.
 
 """
 
-solver = SolverFactory("ipopt")
-solver.options["bound_push"] = 1e-8
-solver.options["mu_init"] = 1e-8
+solver = get_solver("ipopt")
+# solver.options["bound_push"] = 1e-8
+# solver.options["mu_init"] = 1e-8
 solver.solve(m, tee=True)
 
 # Final organic outlet display

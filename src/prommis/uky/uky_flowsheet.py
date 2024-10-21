@@ -1701,7 +1701,6 @@ def initialize_system(m):
     sx_units = [
         m.fs.solex_rougher_load,
         m.fs.solex_rougher_scrub,
-        m.fs.solex_rougher_strip,
         m.fs.solex_cleaner_load,
         m.fs.solex_cleaner_strip,
     ]

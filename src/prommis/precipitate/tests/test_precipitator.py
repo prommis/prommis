@@ -129,8 +129,6 @@ class TestPrec(object):
 
         dt = DiagnosticsToolbox(model=prec)
         dt.report_structural_issues()
-        dt.display_underconstrained_set()
-        dt.display_overconstrained_set()
         assert degrees_of_freedom(prec) == 0
 
     @pytest.mark.unit
@@ -157,12 +155,12 @@ class TestPrec(object):
     @pytest.mark.component
     def test_solve(self, prec):
         solver = get_solver()
-        results = solver.solve(prec,tee=True)
+        results = solver.solve(prec)
         assert_optimal_termination(results)
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_numerical_issues(prec):
+    def test_numerical_issues(self, prec):
         dt = DiagnosticsToolbox(prec)
         dt.assert_no_numerical_warnings()
      

@@ -100,7 +100,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "HSO4": 1e-20,
                 "SO4": 1e-20,
             },
-            bounds=(1e-30, 100),
+            bounds=(1e-30, 1),
         )
 
         self.acid_flow = Var(
@@ -322,7 +322,7 @@ class AqueousStateBlockkData(StateBlockData):
                 == b.flow_mol_comp[j]
             )
 
-        iscale.set_scaling_factor(self.flow_vol, 1e1)
+        iscale.set_scaling_factor(self.flow_vol, 1e-2)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
         iscale.set_scaling_factor(self.conc_mol_comp, 1e5)

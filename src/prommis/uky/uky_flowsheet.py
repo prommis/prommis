@@ -1482,6 +1482,7 @@ def set_operating_conditions(m):
     m.fs.sl_sep2.liquid_recovery.fix(0.7)
 
     m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
+    m.fs.properties_aq.acid_flow.fix(6.4)
 
     m.fs.precip_sep.split_fraction[:, "recycle"].fix(0.9)
 

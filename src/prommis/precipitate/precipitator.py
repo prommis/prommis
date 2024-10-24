@@ -44,6 +44,7 @@ solved by a surrogate or a model equation.
 
 # Import Pyomo libraries
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
+from pyomo.environ import exp, log
 
 import idaes.logger as idaeslog
 
@@ -58,6 +59,7 @@ from idaes.core.util.config import (
     is_physical_parameter_block,
     is_reaction_parameter_block,
 )
+
 
 _log = idaeslog.getLogger(__name__)
 
@@ -255,6 +257,24 @@ see reaction package for documentation.}""",
                 / prop_s.stoich[comp]
             )
 
+        # # Concentration conversion constraint
+        # @self.Constraint(prop_aq.dissolved_elements)
+        # def element_split(b, j):
+        #     return (
+        #         exp(-(prop_aq.E_D[j]/prop_aq.acid_flow)**prop_aq.N_D[j]) * 100
+        #         == prop_aq.split[j]
+        #     )  
+
+        @self.Constraint(prop_aq.dissolved_elements)
+        def element_split(b, j):
+            if j in prop_aq.split_elements:
+                return (
+                    (-(prop_aq.E_D[j])**prop_aq.N_D[j]) 
+                    - (log(prop_aq.split[j]) * ((prop_aq.acid_flow)**prop_aq.N_D[j])) == 0
+                )  
+            else:
+                return (prop_aq.split[j] == 1e-8)
+
         @self.Constraint(
             self.flowsheet().time,
             prop_aq.dissolved_elements,
@@ -266,5 +286,5 @@ see reaction package for documentation.}""",
             ] * blk.cv_aqueous.properties_out[t].flow_vol == (
                 blk.cv_aqueous.properties_in[t].conc_mass_comp[comp]
                 * blk.cv_aqueous.properties_in[t].flow_vol
-                * (1 - prop_aq.split[comp] / 100)
+                * (1 - prop_aq.split[comp])
             )

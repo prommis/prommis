@@ -260,12 +260,11 @@ see reaction package for documentation.}""",
         @self.Constraint(prop_aq.dissolved_elements)
         def element_split(b, j):
             if j in prop_aq.split_elements:
-                return (
-                    (-(prop_aq.E_D[j])**prop_aq.N_D[j]) 
-                    - (log(prop_aq.split[j]) * ((prop_aq.acid_flow)**prop_aq.N_D[j])) == 0
-                )  
+                return (-((prop_aq.E_D[j]) ** prop_aq.N_D[j])) - (
+                    log(prop_aq.split[j]) * ((prop_aq.acid_flow) ** prop_aq.N_D[j])
+                ) == 0
             else:
-                return (prop_aq.split[j] == 1e-8)
+                return prop_aq.split[j] == 1e-8
 
         @self.Constraint(
             self.flowsheet().time,

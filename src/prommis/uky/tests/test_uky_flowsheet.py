@@ -508,7 +508,6 @@ def test_solution(system_frame):
         "Y"
     ].value == pytest.approx(1.2504487, 1e-4)
 
-
     assert model.fs.precipitator.precipitate_outlet.temperature[
         0
     ].value == pytest.approx(348.15, 1e-4)

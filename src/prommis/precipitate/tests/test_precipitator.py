@@ -163,7 +163,6 @@ class TestPrec(object):
     def test_numerical_issues(self, prec):
         dt = DiagnosticsToolbox(prec)
         dt.assert_no_numerical_warnings()
-     
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")

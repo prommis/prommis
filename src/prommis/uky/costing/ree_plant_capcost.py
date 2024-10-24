@@ -55,7 +55,9 @@ from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
 
 _, watertap_costing_available = attempt_import("watertap.costing")
 if watertap_costing_available:
+    from watertap.core import ZeroOrderBaseData
     from watertap.costing import WaterTAPCosting
+    from watertap.costing.zero_order_costing import ZeroOrderCosting
 
 _log = idaeslog.getLogger(__name__)
 
@@ -279,7 +281,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         project_management_and_construction_percentage=30,
         process_contingency_percentage=15,
         # arguments related to Fixed OM costs
-        nameplate_capacity=500,
         labor_types=None,
         labor_rate=None,
         labor_burden=25,
@@ -394,7 +395,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 function will try to use the BEC calculated from the individual
                 units. This quantity should be a Pyomo Var or Param that will
                 contain the BEC value.
-            nameplate_capacity: rated plant output in short (US) ton/hr
             labor_type: list of types of operators present in plant; assumed to
                 correspond with labor rate and operator per shift lists
             labor_rate: hourly rate of plant operators in project dollar year;
@@ -428,7 +428,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             transport_cost_per_ton_product: Expression, Var or Param to use for transport costs
                 per ton of product (note, this is not part of the TOC)
             CE_index_year: year for cost basis, e.g. "2021" to use 2021 dollars
-            watertap_block: list of unit model blocks corresponding to watertap models
+            watertap_blocks: list of unit model blocks corresponding to watertap models
             calculate_NPV: True/false flag for calculating net present value (NPV).
         """
 
@@ -1036,7 +1036,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             pyunits.convert(
                                 (
                                     self.annualized_cost / pyunits.year
-                                    + self.total_fixed_OM_cost / pyunits.year
+                                    + self.total_fixed_OM_cost
                                     + self.total_variable_OM_cost[0]
                                 )
                                 / (self.recovery_rate_per_year * recovery_units_factor),
@@ -1216,11 +1216,19 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
             general_sales_and_admin += value(self.sales_patenting_and_research_cost)
 
+            var_dict["Summation of Sales, Admin and Insurance Cost"] = value(
+                general_sales_and_admin
+            )
+
         if hasattr(self, "admin_and_support_labor_cost"):
             var_dict["Total Admin Support and Labor Cost"] = value(
                 self.admin_and_support_labor_cost
             )
             general_sales_and_admin += value(self.admin_and_support_labor_cost)
+
+            var_dict["Summation of Sales, Admin and Insurance Cost"] = value(
+                general_sales_and_admin
+            )
 
         if hasattr(self, "property_taxes_and_insurance_cost"):
             var_dict["Total Property Taxes and Insurance Cost"] = value(
@@ -1228,9 +1236,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
             general_sales_and_admin += value(self.property_taxes_and_insurance_cost)
 
-        var_dict["Summation of Sales, Admin and Insurance Cost"] = value(
-            general_sales_and_admin
-        )
+            var_dict["Summation of Sales, Admin and Insurance Cost"] = value(
+                general_sales_and_admin
+            )
 
         if hasattr(self, "other_fixed_costs"):
             var_dict["Total Other Fixed Costs"] = value(self.other_fixed_costs)
@@ -1891,7 +1899,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=shifts_per_day, mutable=True, units=pyunits.day**-1
         )
         b.operating_days_per_year = Param(
-            initialize=operating_days_per_year, mutable=True, units=pyunits.day
+            initialize=operating_days_per_year,
+            mutable=True,
+            units=pyunits.day / pyunits.year,
         )
         b.mixed_product_sale_price_realization_factor = Param(
             initialize=mixed_product_sale_price_realization_factor,
@@ -1904,61 +1914,61 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=1,
             bounds=(0, None),
             doc="Annual operating labor cost",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
         )
         b.annual_technical_labor_cost = Var(
             initialize=1,
             bounds=(0, None),
             doc="Annual technical labor cost",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
         )
         b.annual_labor_cost = Var(
             initialize=1,
             bounds=(0, None),
             doc="Annual labor cost",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
         )
         b.maintenance_and_material_cost = Var(
             initialize=1,
             bounds=(0, None),
             doc="Maintenance and material cost",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
         )
         b.quality_assurance_and_control_cost = Var(
             initialize=1,
             bounds=(0, None),
             doc="Quality assurance and control cost",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
         )
         b.sales_patenting_and_research_cost = Var(
             initialize=1,
             bounds=(0, None),
             doc="Sales, patenting and research cost",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
         )
         b.admin_and_support_labor_cost = Var(
             initialize=1,
             bounds=(0, None),
             doc="Admin and support labor cost",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
         )
         b.property_taxes_and_insurance_cost = Var(
             initialize=1,
             bounds=(0, None),
             doc="Property taxes and insurance cost",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
         )
         b.total_fixed_OM_cost = Var(
             initialize=4,
             bounds=(0, None),
             doc="Total fixed O&M costs",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
         )
         b.total_sales_revenue = Var(
             initialize=4,
             bounds=(0, None),
             doc="Total sales revenue",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
         )
 
         # variable for user to assign other fixed costs to,
@@ -1967,7 +1977,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=0,
             bounds=(0, None),
             doc="Other fixed costs",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
         )
         b.other_fixed_costs.fix(0)
 
@@ -1977,7 +1987,16 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=0,
             bounds=(0, None),
             doc="Watertap fixed costs",
-            units=CE_index_units,
+            units=CE_index_units / pyunits.year,
+        )
+
+        # variable for user to assign custom fixed costs to,
+        # constraint sets to sum of list, which is 0 for empty list
+        b.custom_fixed_costs = Var(
+            initialize=0,
+            bounds=(0, None),
+            doc="Custom fixed costs",
+            units=CE_index_units / pyunits.year,
         )
 
         # create constraints
@@ -2010,7 +2029,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     * c.shifts_per_day
                     * c.operating_days_per_year
                 ),
-                CE_index_units,
+                CE_index_units / pyunits.year,
             )
 
         @b.Constraint()
@@ -2026,27 +2045,27 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     * c.shifts_per_day
                     * c.operating_days_per_year
                 ),
-                CE_index_units,
+                CE_index_units / pyunits.year,
             )
 
         @b.Constraint()
         def annual_labor_cost_eq(c):
             return c.annual_labor_cost == pyunits.convert(
                 (c.annual_operating_labor_cost + c.annual_technical_labor_cost),
-                CE_index_units,
+                CE_index_units / pyunits.year,
             )
 
         # maintenance cost is 2% of TPC
         @b.Constraint()
         def maintenance_and_material_cost_eq(c):
-            return c.maintenance_and_material_cost == 0.02 * TPC
+            return c.maintenance_and_material_cost == 0.02 * TPC / pyunits.year
 
         # quality assurance cost is 10% of operating labor
         @b.Constraint()
         def quality_assurance_and_control_cost_eq(c):
             return c.quality_assurance_and_control_cost == 0.10 * pyunits.convert(
                 (c.annual_operating_labor_cost),
-                CE_index_units,
+                CE_index_units / pyunits.year,
             )
 
         # sales cost is 0.5% of total revenue
@@ -2054,7 +2073,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         def sales_patenting_and_research_cost_eq(c):
             return c.sales_patenting_and_research_cost == 0.005 * pyunits.convert(
                 (c.total_sales_revenue),
-                CE_index_units,
+                CE_index_units / pyunits.year,
             )
 
         # admin cost is 20% of direct labor
@@ -2062,23 +2081,31 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         def admin_and_support_labor_cost_eq(c):
             return c.admin_and_support_labor_cost == 0.20 * pyunits.convert(
                 (c.annual_operating_labor_cost),
-                CE_index_units,
+                CE_index_units / pyunits.year,
             )
 
         # taxes are 1% of TPC
         @b.Constraint()
         def taxes_and_insurance_cost_eq(c):
-            return c.property_taxes_and_insurance_cost == 0.01 * TPC
+            return c.property_taxes_and_insurance_cost == 0.01 * TPC / pyunits.year
 
         # sum of fixed O&M costs
 
-        # sum of fixed operating costs of membrane units
+        # sum of fixed operating costs of watertap units
         @b.Constraint()
-        def sum_watertap_fixed_cost(c):
+        def sum_watertap_fixed_costs(c):
             if not hasattr(c, "watertap_fixed_costs_list"):
                 return c.watertap_fixed_costs == 0
             else:
                 return c.watertap_fixed_costs == sum(b.watertap_fixed_costs_list)
+
+        # sum of fixed operating costs of custom units
+        @b.Constraint()
+        def sum_custom_fixed_costs(c):
+            if not hasattr(c, "custom_fixed_costs_list"):
+                return c.custom_fixed_costs == 0
+            else:
+                return c.custom_fixed_costs == sum(b.custom_fixed_costs_list)
 
         @b.Constraint()
         def total_fixed_OM_cost_eq(c):
@@ -2091,6 +2118,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 + c.property_taxes_and_insurance_cost
                 + c.other_fixed_costs
                 + c.watertap_fixed_costs
+                + c.custom_fixed_costs
             )
 
         @b.Constraint()
@@ -2112,7 +2140,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     * c.shifts_per_day
                     * c.operating_days_per_year
                 ),
-                CE_index_units,
+                CE_index_units / pyunits.year,
             )
 
     def get_variable_OM_costs(
@@ -2138,11 +2166,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             None.
 
         """
-        if feed_input_rate is None:
-            raise AttributeError(
-                "No feed_input rate variable passed to main costing block."
-            )
-        else:
+        if feed_input_rate is not None:
             b.feed_input_rate = value(feed_input_rate) * pyunits.get_units(
                 feed_input_rate
             )
@@ -2241,6 +2265,24 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # assume the user is not using this
         b.other_variable_costs.fix(0)
 
+        # variable for user to assign watertap variable costs to,
+        # constraint sets to sum of list, which is 0 for empty list
+        b.watertap_variable_costs = Var(
+            initialize=0,
+            bounds=(0, None),
+            doc="Watertap variable costs",
+            units=CE_index_units / pyunits.year,
+        )
+
+        # variable for user to assign custom variable costs to,
+        # constraint sets to sum of list, which is 0 for empty list
+        b.custom_variable_costs = Var(
+            initialize=0,
+            bounds=(0, None),
+            doc="Custom variable costs",
+            units=CE_index_units / pyunits.year,
+        )
+
         b.total_variable_OM_cost = Var(
             b.parent_block().time,
             initialize=4e-6,
@@ -2263,11 +2305,26 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     / efficiency_factor
                     * c.hours_per_shift
                     * c.shifts_per_day
-                    * c.operating_days_per_year
-                    * pyunits.year**-1,
+                    * c.operating_days_per_year,
                     to_units=CE_index_units / pyunits.year,
                 )
             )
+
+        # sum of variable operating costs of watertap units
+        @b.Constraint()
+        def sum_watertap_variable_costs(c):
+            if not hasattr(c, "watertap_variable_costs_list"):
+                return c.watertap_variable_costs == 0
+            else:
+                return c.watertap_variable_costs == sum(b.watertap_variable_costs_list)
+
+        # sum of variable operating costs of custom units
+        @b.Constraint()
+        def sum_custom_variable_costs(c):
+            if not hasattr(c, "custom_variable_costs_list"):
+                return c.custom_variable_costs == 0
+            else:
+                return c.custom_variable_costs == sum(b.custom_variable_costs_list)
 
         if hasattr(b, "total_fixed_OM_cost"):
             # define overhead cost
@@ -2284,7 +2341,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             @b.Constraint(b.parent_block().time)
             def plant_overhead_cost_eq(c, t):
                 return c.plant_overhead_cost[t] == 0.20 * (
-                    c.total_fixed_OM_cost / pyunits.year
+                    c.total_fixed_OM_cost
                     + c.variable_operating_costs[0, "power"]
                     + c.land_cost / pyunits.year
                     + sum(
@@ -2296,6 +2353,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                     + c.additional_chemicals_cost / pyunits.year
                     + c.additional_waste_cost / pyunits.year
+                    + c.watertap_variable_costs
+                    + c.custom_variable_costs
                 )
 
         else:
@@ -2303,7 +2362,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             @b.Constraint(b.parent_block().time)
             def plant_overhead_cost_eq(c, t):
                 return c.plant_overhead_cost[t] == 0.20 * (
-                    c.total_fixed_OM_cost / pyunits.year
+                    c.total_fixed_OM_cost
                     + c.land_cost / pyunits.year
                     + sum(
                         c.variable_operating_costs[0, chemical]
@@ -2314,6 +2373,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                     + c.additional_chemicals_cost / pyunits.year
                     + c.additional_waste_cost / pyunits.year
+                    + c.watertap_variable_costs
+                    + c.custom_variable_costs
                 )
 
         @b.Constraint(b.parent_block().time)
@@ -2326,6 +2387,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 + c.land_cost / pyunits.year
                 + c.additional_chemicals_cost / pyunits.year
                 + c.additional_waste_cost / pyunits.year
+                + c.watertap_variable_costs
+                + c.custom_variable_costs
             )
 
     def initialize_fixed_OM_costs(b):
@@ -2475,30 +2538,65 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         BEC_list = []
         b.watertap_fixed_costs_list = []
+        b.watertap_variable_costs_list = []
+        b.custom_fixed_costs_list = []
+        b.custom_variable_costs_list = []
 
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
-            if o.name in [
-                block.name for block in b._registered_unit_costing
-            ] and hasattr(o, "bare_erected_cost"):
-                for key in o.bare_erected_cost.keys():
-                    BEC_list.append(o.bare_erected_cost[key])
+            if o.name in [block.name for block in b._registered_unit_costing]:
+                if hasattr(o, "bare_erected_cost"):  # added from cost accounts
+                    for key in o.bare_erected_cost.keys():
+                        BEC_list.append(
+                            pyunits.convert(
+                                o.bare_erected_cost[key], to_units=CE_index_units
+                            )
+                        )
+                elif hasattr(o, "capital_cost"):  # added from custom model
+                    BEC_list.append(
+                        pyunits.convert(o.capital_cost, to_units=CE_index_units)
+                    )
+                    if hasattr(o, "fixed_operating_cost"):
+                        b.custom_fixed_costs_list.append(
+                            pyunits.convert(
+                                o.fixed_operating_cost,
+                                to_units=CE_index_units / pyunits.year,
+                            )
+                        )
+                    if hasattr(o, "variable_operating_cost"):
+                        b.custom_variable_costs_list.append(
+                            pyunits.convert(
+                                o.variable_operating_cost,
+                                to_units=CE_index_units / pyunits.year,
+                            )
+                        )
 
-        if watertap_blocks is not None:
+        if watertap_blocks is not None:  # added from WaterTAP
             for w in watertap_blocks:
                 m = ConcreteModel()
                 m.fs = FlowsheetBlock(dynamic=False)
-                m.fs.costing = WaterTAPCosting()
+                if issubclass(w._ComponentDataClass, ZeroOrderBaseData):
+                    m.fs.costing = ZeroOrderCosting()
+                else:
+                    m.fs.costing = WaterTAPCosting()
                 w.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
                 BEC_list.append(
                     pyunits.convert(w.costing.capital_cost, to_units=CE_index_units)
                 )
-                b.watertap_fixed_costs_list.append(
-                    pyunits.convert(
-                        w.costing.fixed_operating_cost * pyunits.year,
-                        to_units=CE_index_units,
+                if hasattr(w.costing, "fixed_operating_cost"):
+                    b.watertap_fixed_costs_list.append(
+                        pyunits.convert(
+                            w.costing.fixed_operating_cost,
+                            to_units=CE_index_units / pyunits.year,
+                        )
                     )
-                )
+                if hasattr(w.costing, "variable_operating_cost"):
+                    b.watertap_variable_costs_list.append(
+                        pyunits.convert(
+                            w.costing.variable_operating_cost,
+                            to_units=CE_index_units / pyunits.year,
+                        )
+                    )
 
         b.total_BEC = Var(
             initialize=100,
@@ -2577,8 +2675,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 "Total annualized plant cost: %.3f"
                 % value(
                     b.annualized_cost
-                    + b.total_fixed_OM_cost
-                    + b.total_variable_OM_cost[0]
+                    + (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
+                    * pyunits.year
                 )
             )
         if hasattr(b, "recovery_rate_per_year"):
@@ -2788,7 +2886,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 "for new inputs".format(b.name)
             )
 
-        _log.info("\nPrinting calculated costing bounds for processes:")
+        _log.info("\n\nPrinting calculated costing bounds for processes:")
         for p in processes:
             print(
                 p,
@@ -2966,14 +3064,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
 
         b.pv_revenue = Var(
-            initialize=b.REVENUE[None] * b.config.plant_lifetime,
+            initialize=b.REVENUE * b.config.plant_lifetime,
             bounds=(0, None),
             doc="Present value of total lifetime sales revenue; positive cash flow",
             units=b.cost_units,
         )
 
         b.pv_royalties = Var(
-            initialize=-b.REVENUE[None]
+            initialize=-b.REVENUE
             * b.config.plant_lifetime
             * b.config.royalty_charge_percentage_of_revenue
             / 100,
@@ -2986,7 +3084,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=(
                 -b.CAPEX
                 + (
-                    b.REVENUE[None]
+                    b.REVENUE
                     * (1 - b.config.royalty_charge_percentage_of_revenue / 100)
                     - b.OPEX
                 )
@@ -3139,7 +3237,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # PV_Revenue = REVENUE * [ P/A_OPEX+CAPEX_periods - P/A_CAPEX_period ]
 
             return c.pv_revenue == pyunits.convert(
-                c.REVENUE[None]
+                c.REVENUE
                 * (
                     series_present_worth_factor(
                         pyunits.convert(
@@ -3215,11 +3313,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         try:
             b.CAPEX = b.total_BEC + b.total_installation_cost + b.other_plant_costs
             b.OPEX = (
-                b.total_fixed_OM_cost
+                b.total_fixed_OM_cost * pyunits.year
                 + b.total_variable_OM_cost[0] * pyunits.year
                 + b.land_cost
             )
-            b.REVENUE = Reference(b.total_sales_revenue)
+            b.REVENUE = Reference(b.total_sales_revenue)[None] * pyunits.year
 
             b.cost_units = pyunits.get_units(b.CAPEX)
 

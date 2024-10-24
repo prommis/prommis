@@ -44,7 +44,7 @@ solved by a surrogate or a model equation.
 
 # Import Pyomo libraries
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
-from pyomo.environ import exp, log
+from pyomo.environ import log
 
 import idaes.logger as idaeslog
 
@@ -256,14 +256,6 @@ see reaction package for documentation.}""",
                 )
                 / prop_s.stoich[comp]
             )
-
-        # # Concentration conversion constraint
-        # @self.Constraint(prop_aq.dissolved_elements)
-        # def element_split(b, j):
-        #     return (
-        #         exp(-(prop_aq.E_D[j]/prop_aq.acid_flow)**prop_aq.N_D[j]) * 100
-        #         == prop_aq.split[j]
-        #     )  
 
         @self.Constraint(prop_aq.dissolved_elements)
         def element_split(b, j):

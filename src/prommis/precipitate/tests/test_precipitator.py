@@ -159,10 +159,12 @@ class TestPrec(object):
         solver = get_solver()
         results = solver.solve(prec,tee=True)
         assert_optimal_termination(results)
-        prec.display()
-        dt = DiagnosticsToolbox(model=prec)
-        dt.report_numerical_issues()
-        dt.display_constraints_with_large_residuals()
+
+    @pytest.mark.component
+    @pytest.mark.solver
+    def test_numerical_issues(prec):
+        dt = DiagnosticsToolbox(prec)
+        dt.assert_no_numerical_warnings()
      
 
     @pytest.mark.solver

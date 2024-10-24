@@ -10,7 +10,7 @@ Initial property package for precipitate.
 Authors: Alejandro Garciadiego
 """
 
-from pyomo.environ import Param, Set, Var, units, exp
+from pyomo.environ import Param, Set, Var, units
 
 import idaes.core.util.scaling as iscale
 from idaes.core import (

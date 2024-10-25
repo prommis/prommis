@@ -621,7 +621,6 @@ def test_solution(system_frame):
     assert model.fs.precip_purge.inlet.flow_vol[0].value == pytest.approx(0.63, 1e-4)
 
 
-
 @pytest.mark.component
 @pytest.mark.solver
 def test_conservation(system_frame):

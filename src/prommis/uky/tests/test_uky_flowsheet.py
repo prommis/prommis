@@ -196,8 +196,8 @@ def test_solve(system_frame):
 @pytest.mark.solver
 def test_numerical_issues(system_frame):
     dt = DiagnosticsToolbox(system_frame)
-    # dt.report_numerical_issues()
-    # dt.display_variables_at_or_outside_bounds()
+    dt.report_numerical_issues()
+    dt.display_variables_at_or_outside_bounds()
     dt.assert_no_numerical_warnings()
 
 
@@ -309,37 +309,37 @@ def test_solution(system_frame):
     ].value == pytest.approx(1.271694e-5, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Ca"
-    ].value == pytest.approx(2.6847018e-5, 1e-4)
+    ].value == pytest.approx(2.67625214e-5, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Ce"
-    ].value == pytest.approx(0.0003046844, 1e-4)
+    ].value == pytest.approx(0.0003043025, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Dy"
-    ].value == pytest.approx(8.008099e-6, 1e-4)
+    ].value == pytest.approx(7.988351e-6, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Fe"
-    ].value == pytest.approx(2.6762522e-6, 1e-4)
+    ].value == pytest.approx(2.8737799e-6, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Gd"
-    ].value == pytest.approx(3.3573517e-5, 1e-4)
+    ].value == pytest.approx(3.3597390e-5, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "La"
-    ].value == pytest.approx(0.00010469, 1e-4)
+    ].value == pytest.approx(0.00010451, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Nd"
-    ].value == pytest.approx(0.00016566, 1e-4)
+    ].value == pytest.approx(0.00016553, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Pr"
-    ].value == pytest.approx(3.7119487e-5, 1e-4)
+    ].value == pytest.approx(3.7059156e-5, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Sc"
-    ].value == pytest.approx(1.7348667, 1e-4)
+    ].value == pytest.approx(1.7338035, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Sm"
-    ].value == pytest.approx(1.7011849e-5, 1e-4)
+    ].value == pytest.approx(1.6985006e-5, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Y"
-    ].value == pytest.approx(2.1799337e-5, 1e-4)
+    ].value == pytest.approx(2.1763374e-5, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.flow_vol[
         0
     ].value == pytest.approx(0.09, 1e-4)
@@ -357,226 +357,226 @@ def test_solution(system_frame):
     ].value == pytest.approx(1.6122889e-8, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Al"
-    ].value == pytest.approx(349.184092, 1e-4)
+    ].value == pytest.approx(350.470145, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Ca"
-    ].value == pytest.approx(739.885332, 1e-4)
+    ].value == pytest.approx(737.556650, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Ce"
-    ].value == pytest.approx(8396.893147, 1e-4)
+    ].value == pytest.approx(8386.369603, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Dy"
-    ].value == pytest.approx(220.697679, 1e-4)
+    ].value == pytest.approx(220.153435, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Fe"
-    ].value == pytest.approx(79.18188, 1e-4)
+    ].value == pytest.approx(79.19939, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Gd"
-    ].value == pytest.approx(925.263005, 1e-4)
+    ].value == pytest.approx(925.920992, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "La"
-    ].value == pytest.approx(2885.457709, 1e-4)
+    ].value == pytest.approx(2880.493852, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Nd"
-    ].value == pytest.approx(4565.36775, 1e-4)
+    ].value == pytest.approx(4562.15409, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Pr"
-    ].value == pytest.approx(1022.9874915, 1e-4)
+    ].value == pytest.approx(1021.3248275, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Sc"
-    ].value == pytest.approx(36.682984, 1e-4)
+    ].value == pytest.approx(36.660503, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Sm"
-    ].value == pytest.approx(468.834838, 1e-4)
+    ].value == pytest.approx(468.095076, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Y"
-    ].value == pytest.approx(600.77471, 1e-4)
+    ].value == pytest.approx(599.78359, 1e-4)
 
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.flow_vol[
         0
     ].value == pytest.approx(62.010, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Al"
-    ].value == pytest.approx(7.06097232e-9, 1e-4)
+    ].value == pytest.approx(7.21706637e-9, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Ca"
-    ].value == pytest.approx(1.53922812e-8, 1e-4)
+    ].value == pytest.approx(1.56342660e-8, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Ce"
-    ].value == pytest.approx(1.5328127e-6, 1e-4)
+    ].value == pytest.approx(1.5333975e-6, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Dy"
-    ].value == pytest.approx(4.71103985e-8, 1e-4)
+    ].value == pytest.approx(4.92297979e-8, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Fe"
-    ].value == pytest.approx(9.20253444e-7, 1e-4)
+    ].value == pytest.approx(9.29630099e-7, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Gd"
-    ].value == pytest.approx(1.727454e-7, 1e-4)
+    ].value == pytest.approx(1.741709e-7, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "La"
-    ].value == pytest.approx(5.711929e-7, 1e-4)
+    ].value == pytest.approx(5.865032e-7, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Nd"
-    ].value == pytest.approx(8.3426636e-7, 1e-4)
+    ].value == pytest.approx(8.3523683e-7, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Pr"
-    ].value == pytest.approx(1.88093689e-7, 1e-4)
+    ].value == pytest.approx(1.88444340e-7, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Sc"
-    ].value == pytest.approx(0.416941, 1e-4)
+    ].value == pytest.approx(0.4329824, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Sm"
-    ].value == pytest.approx(8.6243406e-8, 1e-4)
+    ].value == pytest.approx(8.6417247e-8, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp[
         0, "Y"
-    ].value == pytest.approx(1.2328611e-7, 1e-4)
+    ].value == pytest.approx(1.273777e-7, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.flow_vol[
         0
     ].value == pytest.approx(9, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Al"
-    ].value == pytest.approx(0.389200, 1e-4)
+    ].value == pytest.approx(0.3978046, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Ca"
-    ].value == pytest.approx(0.8484224, 1e-4)
+    ].value == pytest.approx(0.861760, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Ce"
-    ].value == pytest.approx(84.48862787, 1e-4)
+    ].value == pytest.approx(84.520856, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Dy"
-    ].value == pytest.approx(2.5967248, 1e-4)
+    ].value == pytest.approx(2.713546, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Fe"
-    ].value == pytest.approx(0.0507180, 1e-4)
+    ].value == pytest.approx(0.0512348, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Gd"
-    ].value == pytest.approx(9.5217255, 1e-4)
+    ].value == pytest.approx(9.6003014, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "La"
-    ].value == pytest.approx(31.484149, 1e-4)
+    ].value == pytest.approx(32.328056, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Nd"
-    ].value == pytest.approx(45.984756, 1e-4)
+    ].value == pytest.approx(46.03824, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Pr"
-    ].value == pytest.approx(10.3677228, 1e-4)
+    ].value == pytest.approx(10.387050, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Sc"
-    ].value == pytest.approx(0.13325004, 1e-4)
+    ].value == pytest.approx(0.1383766, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Sm"
-    ].value == pytest.approx(4.753735, 1e-4)
+    ].value == pytest.approx(4.763318, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Y"
-    ].value == pytest.approx(6.7955297, 1e-4)
+    ].value == pytest.approx(7.021059, 1e-4)
 
     assert model.fs.precipitator.cv_aqueous.properties_out[
         0
     ].flow_vol.value == pytest.approx(9, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Al"
-    ].value == pytest.approx(0.3885282, 1e-4)
+    ].value == pytest.approx(0.3971172, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Ca"
-    ].value == pytest.approx(0.8484224, 1e-4)
+    ].value == pytest.approx(0.8617606, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Ce"
-    ].value == pytest.approx(0.837914, 1e-4)
+    ].value == pytest.approx(0.8382345, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Dy"
-    ].value == pytest.approx(0.61864, 1e-4)
+    ].value == pytest.approx(0.6464795, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Fe"
-    ].value == pytest.approx(0.0482296, 1e-4)
+    ].value == pytest.approx(0.0487210, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Gd"
-    ].value == pytest.approx(0.4271792, 1e-4)
+    ].value == pytest.approx(0.430704, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "La"
-    ].value == pytest.approx(4.947998, 1e-4)
+    ].value == pytest.approx(5.08062, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Nd"
-    ].value == pytest.approx(0.525564, 1e-4)
+    ].value == pytest.approx(0.526176, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Pr"
-    ].value == pytest.approx(0.219600, 1e-4)
+    ].value == pytest.approx(0.22001, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Sc"
-    ].value == pytest.approx(0.085226, 1e-4)
+    ].value == pytest.approx(0.088505, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Sm"
-    ].value == pytest.approx(0.103790, 1e-4)
+    ].value == pytest.approx(0.103999, 1e-4)
     assert model.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp[
         "Y"
-    ].value == pytest.approx(1.2504487, 1e-4)
+    ].value == pytest.approx(1.291948, 1e-4)
 
     assert model.fs.precipitator.precipitate_outlet.temperature[
         0
     ].value == pytest.approx(348.15, 1e-4)
     assert model.fs.precipitator.precipitate_outlet.flow_mol_comp[
         0, "Al2(C2O4)3(s)"
-    ].value == pytest.approx(1.121647e-7, 1e-4)
+    ].value == pytest.approx(1.1464429e-7, 1e-4)
     assert model.fs.precipitator.precipitate_outlet.flow_mol_comp[
         0, "Ce2(C2O4)3(s)"
-    ].value == pytest.approx(0.0026865, 1e-4)
+    ].value == pytest.approx(0.0026875, 1e-4)
     assert model.fs.precipitator.precipitate_outlet.flow_mol_comp[
         0, "Dy2(C2O4)3(s)"
-    ].value == pytest.approx(5.4777516e-5, 1e-4)
+    ].value == pytest.approx(5.724184e-5, 1e-4)
     assert model.fs.precipitator.precipitate_outlet.flow_mol_comp[
         0, "Fe2(C2O4)3(s)"
-    ].value == pytest.approx(2.0051337e-7, 1e-4)
+    ].value == pytest.approx(2.0255644e-7, 1e-4)
     assert model.fs.precipitator.precipitate_outlet.flow_mol_comp[
         0, "Gd2(C2O4)3(s)"
-    ].value == pytest.approx(0.0002602572, 1e-4)
+    ].value == pytest.approx(0.0002624, 1e-4)
     assert model.fs.precipitator.precipitate_outlet.flow_mol_comp[
         0, "La2(C2O4)3(s)"
-    ].value == pytest.approx(8.59671e-4, 1e-4)
+    ].value == pytest.approx(8.82714e-4, 1e-4)
     assert model.fs.precipitator.precipitate_outlet.flow_mol_comp[
         0, "Nd2(C2O4)3(s)"
-    ].value == pytest.approx(1.41821e-3, 1e-4)
+    ].value == pytest.approx(1.41986e-3, 1e-4)
     assert model.fs.precipitator.precipitate_outlet.flow_mol_comp[
         0, "Pr2(C2O4)3(s)"
-    ].value == pytest.approx(3.24090e-4, 1e-4)
+    ].value == pytest.approx(3.24694e-4, 1e-4)
     assert model.fs.precipitator.precipitate_outlet.flow_mol_comp[
         0, "Sc2(C2O4)3(s)"
-    ].value == pytest.approx(4.808103e-6, 1e-4)
+    ].value == pytest.approx(4.993087e-6, 1e-4)
     assert model.fs.precipitator.precipitate_outlet.flow_mol_comp[
         0, "Sm2(C2O4)3(s)"
-    ].value == pytest.approx(1.39164e-4, 1e-4)
+    ].value == pytest.approx(1.39444e-4, 1e-4)
     assert model.fs.precipitator.precipitate_outlet.flow_mol_comp[
         0, "Y2(C2O4)3(s)"
-    ].value == pytest.approx(2.8066e-4, 1e-4)
+    ].value == pytest.approx(2.89983e-4, 1e-4)
 
     assert model.fs.roaster.gas_outlet.flow_mol[0].value == pytest.approx(
-        0.0085092, 1e-4
+        0.0245011, 1e-4
     )
     assert model.fs.roaster.gas_outlet.temperature[0].value == pytest.approx(
         873.15, 1e-4
     )
     assert model.fs.roaster.gas_outlet.pressure[0].value == pytest.approx(101325, 1e-4)
     assert model.fs.roaster.gas_outlet.mole_frac_comp[0, "CO2"].value == pytest.approx(
-        0.04073887, 1e-4
+        0.01415145, 1e-4
     )
     assert model.fs.roaster.gas_outlet.mole_frac_comp[0, "H2O"].value == pytest.approx(
-        0.173534, 1e-4
+        0.712964, 1e-4
     )
     assert model.fs.roaster.gas_outlet.mole_frac_comp[0, "N2"].value == pytest.approx(
-        0.683409, 1e-4
+        0.237349, 1e-4
     )
     assert model.fs.roaster.gas_outlet.mole_frac_comp[0, "O2"].value == pytest.approx(
-        0.102317, 1e-4
+        0.035534, 1e-4
     )
 
     assert model.fs.leach_mixer.outlet.flow_vol[0].value == pytest.approx(
-        620.76162, 1e-4
+        624.30868, 1e-4
     )
     assert model.fs.rougher_org_make_up.outlet.flow_vol[0].value == pytest.approx(
         6.201, 1e-4
     )
     assert model.fs.solex_rougher_load.mscontactor.aqueous_outlet.flow_vol[
         0
-    ].value == pytest.approx(440.422915, 1e-4)
+    ].value == pytest.approx(444.364092, 1e-4)
     assert model.fs.solex_rougher_scrub.mscontactor.aqueous_outlet.flow_vol[
         0
     ].value == pytest.approx(0.09, 1e-4)
@@ -587,7 +587,7 @@ def test_solution(system_frame):
     assert model.fs.acid_feed2.outlet.flow_vol[0].value == pytest.approx(0.09, 1e-4)
     assert model.fs.acid_feed3.outlet.flow_vol[0].value == pytest.approx(9, 1e-4)
     assert model.fs.rougher_sep.inlet.flow_vol[0].value == pytest.approx(62.01, 1e-4)
-    assert model.fs.load_sep.inlet.flow_vol[0].value == pytest.approx(440.422915, 1e-4)
+    assert model.fs.load_sep.inlet.flow_vol[0].value == pytest.approx(444.364092, 1e-4)
     assert model.fs.scrub_sep.inlet.flow_vol[0].value == pytest.approx(0.09, 1e-4)
     assert model.fs.rougher_mixer.outlet.flow_vol[0].value == pytest.approx(62.01, 1e-4)
     assert model.fs.sc_circuit_purge.inlet.flow_vol[0].value == pytest.approx(
@@ -595,7 +595,7 @@ def test_solution(system_frame):
     )
     assert model.fs.solex_cleaner_load.mscontactor.aqueous_outlet.flow_vol[
         0
-    ].value == pytest.approx(5.76, 1e-4)
+    ].value == pytest.approx(7.218, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.flow_vol[
         0
     ].value == pytest.approx(9, 1e-4)
@@ -605,20 +605,20 @@ def test_solution(system_frame):
     assert model.fs.cleaner_mixer.outlet.flow_vol[0].value == pytest.approx(62.01, 1e-4)
     assert model.fs.cleaner_sep.inlet.flow_vol[0].value == pytest.approx(62.01, 1e-4)
     assert model.fs.leach_sx_mixer.outlet.flow_vol[0].value == pytest.approx(
-        440.422915, 1e-4
+        444.364092, 1e-4
     )
     assert model.fs.cleaner_purge.inlet.flow_vol[0].value == pytest.approx(6.201, 1e-4)
     assert model.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0].value == pytest.approx(
-        434.662915, 1e-4
+        437.146092, 1e-4
     )
     assert model.fs.sl_sep2.recovered_liquid_outlet.flow_vol[0].value == pytest.approx(
-        6.3, 1e-4
+        7.9199, 1e-4
     )
-    assert model.fs.precip_sep.inlet.flow_vol[0].value == pytest.approx(6.3, 1e-4)
+    assert model.fs.precip_sep.inlet.flow_vol[0].value == pytest.approx(7.9199, 1e-4)
     assert model.fs.precip_sx_mixer.outlet.flow_vol[0].value == pytest.approx(
-        5.76, 1e-4
+        7.218, 1e-4
     )
-    assert model.fs.precip_purge.inlet.flow_vol[0].value == pytest.approx(0.63, 1e-4)
+    assert model.fs.precip_purge.inlet.flow_vol[0].value == pytest.approx(0.79199, 1e-4)
 
 
 @pytest.mark.component

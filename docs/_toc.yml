@@ -1,6 +1,7 @@
 format: jb-book
 root: index
 chapters:
+  - file: get_started.md
   - file: tutorials/diafiltration
   - file: tutorials/diafiltration-solution
   - file: tutorials/uky_flowsheet-solution

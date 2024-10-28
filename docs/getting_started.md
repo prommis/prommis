@@ -33,9 +33,7 @@ Before you do any work you need to "activate" the environment:
 ```
 conda activate prommis
 ```
-:::
 
-:::
 ### Install PrOMMiS
 
 We will now install the PrOMMiS Python package into this environment.
@@ -118,6 +116,8 @@ From here, all you need to do is run Jupyter Lab using the notebook you download
  :::{tip}
  To hide the sidebar, and view just the notebook, hit "Control-B".
  :::
+
+### Run the notebook
 
 For those unfamiliar with Jupyter Notebooks, the main thing to do is type "Control-Enter" to run the current cell and advance to the next one. In this way you can sequentially run each section of the notebook, pausing as needed to read and examine output. For more information see the [JupyterLab documentation](https://jupyterlab.readthedocs.io/en/latest/).
 

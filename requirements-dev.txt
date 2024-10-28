@@ -7,5 +7,6 @@ jupyter-book==0.15.* ; python_version < '3.9'
 jupyter-book==1.0.* ; python_version >= '3.9'
 isort
 nbmake==1.4.6
+sphinx_design==0.6.0
 
 --editable .[watertap]

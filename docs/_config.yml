@@ -1,5 +1,7 @@
 title: PrOMMiS
 author: PrOMMiS Contributors
+logo: "images/PROMMIS Logo_Stacked Color_GreyText_TransparentBackground.png"
+copyright: "2024"
 
 execute:
   execute_notebooks: "off"

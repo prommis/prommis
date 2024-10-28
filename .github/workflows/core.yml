@@ -187,9 +187,3 @@ jobs:
       - name: Execute notebooks
         working-directory: docs/
         run: pytest --nbmake -m "solution" .
-      - name: Publish built docs
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.install-variant }}-py${{ matrix.python-version }}-${{ matrix.os }}-docs-html
-          path: docs/_build/html/
-          retention-days: 7

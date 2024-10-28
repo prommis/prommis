@@ -190,6 +190,6 @@ jobs:
       - name: Publish built docs
         uses: actions/upload-artifact@v4
         with:
-          name: prommis-docs-html
+          name: ${{ matrix.install-variant }}-py${{ matrix.python-version }}-${{ matrix.os }}-docs-html
           path: docs/_build/html/
           retention-days: 7

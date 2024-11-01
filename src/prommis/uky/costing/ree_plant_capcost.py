@@ -36,6 +36,7 @@ from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
 from pyomo.environ import ConcreteModel, Expression, Param, Reference, Var
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
+from pyomo.environ import log10
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 import idaes.core.util.scaling as iscale
@@ -3442,3 +3443,69 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     f"Argument {obj} of type {type(obj)} is not a supported object type. "
                     f"Ensure {name} is a Pyomo Param, Var, Expression, or ScalarExpression."
                 )
+
+    def economy_of_numbers(
+        blk, cum_num_units, cost_FOAK, CE_index_year, learning_rate=0.04
+    ):
+        """
+        Equations for Economy of Numbers (EoN) derived from NETL Quality Guidelines for Energy System Studies
+        report on Technology Learning Curve (FOAK to NOAK).
+
+        Economy of Number (EoN) estimates the future profitability of novel/First-of-A-Kind (FOAK) 
+        equipment. This is because the cost of manufacturing a piece of equipment tends to reduce 
+        as the cumulative production quantity rises, resulting from a consistent improvement in 
+        technical know-how.
+
+        Y = A(X^-b)
+
+        b = - log(1-R)/log(2)
+        where Y is the cost of the Nth-of-A-Kind (NOAK) of the equipment, A is the cost of the FOAK,
+        X is the cumulative number of units, b is the learning rate exponent, and R is the learning 
+        rate constant.
+
+        Args:
+            cum_num_units: The cumulative number of units.
+            cost_FOAK: The cost of manufacturing the First-of-A-Kind equipment.
+            CE_index_year: year for cost basis, e.g., "2021" to use 2021 dollars
+            learning_rate: ranges between 0.01 - 0.06, depending on the level of maturity 
+                           (i.e., experimental, growing, proven, etc.)
+            
+        """
+
+
+        blk.cum_num_units = Param(
+            initialize=cum_num_units,
+            mutable=True,
+            units=pyunits.dimensionless,
+            doc="Cumulative number of units produced",
+        )
+        blk.learning_rate = Param(
+            initialize=learning_rate,
+            mutable=True,
+            units=pyunits.dimensionless,
+            doc="The learning factor reflects the level of maturity of the unit/technology",
+        )
+        blk.cost_FOAK = Param(
+            initialize=cost_FOAK,
+            mutable=True,
+            doc="Cost of the First-of-A-Kind of the unit",
+            units=getattr(pyunits, "MUSD_" + CE_index_year),
+        )
+
+        blk.cost_NOAK = Var(
+            initialize=1e5,
+            bounds=(0, None),
+            doc="Cost of the Nth-of-A-Kind of the unit",
+            units=getattr(pyunits, "MUSD_" + CE_index_year),
+        )
+
+        @blk.Expression(doc="This measures the rate at which the cost is reduced as cumulative units increases")
+        def learning_rate_exponent(b):
+
+            return -log10(1 - b.learning_rate) / log10(2)
+
+        @blk.Constraint()
+        def cost_NOAK_eq(b):
+            return b.cost_NOAK == b.cost_FOAK * (
+                (b.cum_num_units) ** -(b.learning_rate_exponent)
+            )

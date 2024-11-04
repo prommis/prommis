@@ -6342,4 +6342,4 @@ def test_REE_costing_economy_of_numbers():
     assert_optimal_termination(results)
     dt.assert_no_numerical_warnings()
 
-    assert pyo.value(m.fs.costing.cost_NOAK[None]) == pytest.approx(36.574, rel=1e-4)
+    assert pyo.value(m.fs.costing.cost_NOAK) == pytest.approx(36.574, rel=1e-4)

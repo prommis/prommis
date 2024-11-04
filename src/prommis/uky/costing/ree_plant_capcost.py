@@ -3484,12 +3484,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             units=pyunits.dimensionless,
             doc="The learning factor reflects the level of maturity of the unit/technology",
         )
-        blk.cost_FOAK = Param(
-            initialize=cost_FOAK,
-            mutable=True,
-            doc="Cost of the First-of-A-Kind of the unit",
-            units=getattr(pyunits, "MUSD_" + CE_index_year),
-        )
 
         blk.cost_NOAK = Var(
             initialize=1e5,
@@ -3507,6 +3501,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         @blk.Constraint()
         def cost_NOAK_eq(b):
-            return b.cost_NOAK == b.cost_FOAK * (
-                (b.cum_num_units) ** -(b.learning_rate_exponent)
+            return b.cost_NOAK == pyunits.convert(
+                cost_FOAK * ((b.cum_num_units) ** -(b.learning_rate_exponent)),
+                to_units=getattr(pyunits, "MUSD_" + CE_index_year),
             )

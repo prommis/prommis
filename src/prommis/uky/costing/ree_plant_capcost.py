@@ -231,7 +231,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         "debt_expression",
         ConfigValue(
             default=None,
-            description="Set the value or expression to calculate total debt.",
+            description="Set the value or expression to calculate total debt. "
+            "Enter a Pyomo expression of flowsheet or cost model variables. "
+            "The expression should have currency units.",
         ),
     )
     CONFIG.declare(
@@ -2846,7 +2848,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         upfront at the start of the operating period and no capital or
         operating growth rate is
 
-        NPV = [(REVENUE - OPEX - ROYALTIES) * P/A(r, N)] - CAPEX - LOAN_INTEREST
+        NPV = [(REVENUE - OPEX - ROYALTIES) * P/A(r, N)] - CAPEX
 
         where P/A(r, N) is the series present worth factor; this factor scales
         a future cost to its present value from a known discount rate r and
@@ -2918,8 +2920,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         loan principal (typically a percentage of the CAPEX), Nloan is the loan
         repayment period, and iLoan_% is the capital equipment loan interest rate
         expressed as a decimal. Note that while the annual payment has growth of
-        0 and maintains a constant present value over time, the loan balance does
-        grow according to the interest rate and accounts for the resulting cash flow.
+        0 and maintains a constant present value over time, and the loan balance 
+        decreases as the principal is paid off, the present value of loan payments
+        grows according to the interest rate and accounts for the resulting cash flow.
 
         Revenue, operating costs and royalties based on revenue escalate with
         standard inflation. Notably, these cash flows occur after any capital

@@ -42,8 +42,8 @@ except ImportError as err:
     pyomo = None
     warnings.warn(f"Could not import pyomo: {err}")
 
-# For logging
-from prommis.conn.util.yoder import add_log_options, process_log_options
+# For logging, if present
+from prommis.conn.util.yoder import _add_log_options, _process_log_options
 
 # Constants
 AS_STRING = "-"
@@ -561,10 +561,45 @@ is either:
 
 """
 
+
+def _add_log_options(parser: argparse.ArgumentParser) -> None:
+    """Add logging-specific options to the argument parser
+
+    Args:
+        parser (argparse.ArgumentParser): Parser to modify
+    """
+    parser.add_argument("-q", "--quiet", action="store_true", help="Minimal logging")
+    parser.add_argument(
+        "-v",
+        action="count",
+        dest="vb",
+        default=0,
+        help="Increase verbosity (repeatable)",
+    )
+
+
+def _process_log_options(module_name: str, args: argparse.Namespace) -> logging.Logger:
+    log = logging.getLogger(module_name)
+    if not log.handlers:
+        h = logging.StreamHandler()
+        fmt = "[{levelname}] {asctime} ({name}) {message}"
+        h.setFormatter(logging.Formatter(fmt, style="{"))
+        log.addHandler(h)
+    if args.quiet:
+        log.setLevel(logging.CRITICAL)
+    else:
+        log.setLevel(
+            (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)[
+                min(args.vb, 3)
+            ]
+        )
+    return log
+
+
 if __name__ == "__main__":
     p_top = argparse.ArgumentParser()
     p_top.add_argument("--usage", action="store_true", help="Print detailed usage")
-    add_log_options(p_top)
+    _add_log_options(p_top)
     subp = p_top.add_subparsers()
     p = subp.add_parser("csv", help="Read from a CSV file and generate a graph")
     p.add_argument("input_file", help="Input CSV file")
@@ -604,5 +639,5 @@ if __name__ == "__main__":
     if args.usage:
         print(USAGE)
         sys.exit(0)
-    _log = process_log_options("idaes_ui.conn.connectivity", args)
+    _log = _process_log_options("idaes_ui.conn.connectivity", args)
     sys.exit(args.main_method(args))

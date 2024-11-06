@@ -1,6 +1,6 @@
 # Graph
 ```mermaid
-flowchart TD
+flowchart LR 
    Unit_B[leach_mixer]
    Unit_C[leach]
    Unit_D[leach_liquid_feed]

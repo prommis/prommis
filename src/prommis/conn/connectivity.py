@@ -75,29 +75,34 @@ class Mermaid:
             f = StringIO()
         else:
             f = open(output_file, "w")
-        match output_format:
-            case OutputFormats.markdown.value:
-                f.write("# Graph\n```mermaid\n")
-                self._body(f)
-                f.write("\n```\n")
-            case OutputFormats.mermaid.value:
-                self._body(f)
-            case OutputFormats.html.value:
-                f.write(
-                    "<!doctype html>\n<html lang='en'>\n<body>\n<pre class='mermaid'>\n"
-                )
-                self._body(f)
-                f.write("</pre>\n<script type='module'>\n")
-                f.write(
-                    "import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';\n"
-                )
-                f.write(
-                    "mermaid.initialize({securityLevel: 'loose', maxEdges: 2000});\n"
-                )
-                f.write("await mermaid.run();\n")
-                f.write("</script></body></html>")
-            case _:
-                raise ValueError(f"Bad output format: {output_format}")
+
+        try:
+            fmt = OutputFormats(output_format)
+        except ValueError:
+            raise ValueError(f"Bad output format: {output_format}")
+
+        if fmt == OutputFormats.markdown:
+            f.write("# Graph\n```mermaid\n")
+            self._body(f)
+            f.write("\n```\n")
+        elif fmt == OutputFormats.mermaid:
+            self._body(f)
+        elif fmt == OutputFormats.html:
+            f.write(
+                "<!doctype html>\n<html lang='en'>\n<body>\n<pre class='mermaid'>\n"
+            )
+            self._body(f)
+            f.write("</pre>\n<script type='module'>\n")
+            # XXX: May want to make this URL configurable
+            f.write(
+                "import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';\n"
+            )
+            f.write("mermaid.initialize({securityLevel: 'loose', maxEdges: 2000});\n")
+            f.write("await mermaid.run();\n")
+            f.write("</script></body></html>")
+        else:  # !! should not get here
+            raise RuntimeError(f"Output format unaccounted for: {output_format}")
+
         if output_file is None:
             return f.getvalue()
 
@@ -151,6 +156,11 @@ class ConnectivityFromFile:
     """Build connectivity information from input data."""
 
     def __init__(self, input_file: str | Path | TextIO):
+        """Constructor
+
+        Args:
+            input_file (str | Path | TextIO): Input CSV file
+        """
         if isinstance(input_file, str) or isinstance(input_file, Path):
             datafile = open(input_file, "r")
         else:
@@ -176,19 +186,23 @@ class ConnectivityFromFile:
         c1, c2 = 1, -1
         for s in self._header[1:]:
             abbr = "Unit_"
+            # Pick abbreviations that match spreadsheet column names,
+            # for easier comparison and debugging.
+            # i.e. A-Z then AA-ZZ. chr(x) returns ASCII character at x,
+            # and ord(x) is the reverse function. e.g., chr(ord("A") + 1) == "B"
             if c2 > -1:
                 abbr += chr(ord("A") + c2)
             abbr += chr(ord("A") + c1)
             units[s] = abbr
             c1 += 1
-            if c1 == 26:
+            if c1 == 26:  # after Z, start on AA..ZZ
                 c1 = 0
                 c2 += 1
         return units
 
     def _build_streams(self):
         streams = {}
-        n = 3
+        n = 3  # pick numbers that match spreadsheet row numbers
         for row in self._rows[1:]:
             s = row[0]
             abbr = f"Stream_{n}"
@@ -220,6 +234,15 @@ class ModelConnectivity:
     """Build connectivity information from a model."""
 
     def __init__(self, model):
+        """Constructor
+
+        Args:
+            model: Pyomo ConcreteModel instance with an attribute, ".fs"
+                   that is (or acts like) an IDAES flowsheet
+
+        Raises:
+            NotImplementedError: If Pyomo isn't installed
+        """
         if pyomo is None:
             raise NotImplementedError(
                 "Trying to build from a Pyomo model, but Pyomo is not installed"
@@ -275,10 +298,14 @@ class ModelConnectivity:
 
     @staticmethod
     def _arcs_sorted_by_name(fs):
+        """Try and make the output stable by looping through the Pyomo
+        Arcs in alphabetical order, by their name.
+        """
         arcs = fs.component_objects(Arc, descend_into=False)
         return sorted(arcs, key=lambda arc: arc.getname())
 
     def write(self, f: TextIO):
+        """Write the CSV file."""
         header = self._units.copy()
         header.insert(0, "Units")
         f.write(",".join(header))

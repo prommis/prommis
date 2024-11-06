@@ -1,14 +1,20 @@
 """
 Tests for `connectivity` module.
 """
+
 import re
-from idaes_ui.conn import connectivity
+from prommis.conn import connectivity
+from prommis.uky.uky_flowsheet import build
 import pytest
+
 
 def test_outputformats():
     ofmt = connectivity.OutputFormats
-    assert ofmt.get_ext(ofmt.markdown) == "md"
-    assert ofmt.get_ext(ofmt.html) == "html"
+    assert ofmt.markdown == ofmt("markdown")
+    assert ofmt.html == ofmt("html")
+    assert ofmt.mermaid == ofmt("mermaid")
+    assert ofmt.csv == ofmt("csv")
+
 
 @pytest.fixture
 def example_conn():
@@ -17,7 +23,7 @@ def example_conn():
     #
     # UnitA -- Stream1 --> UnitB ---+
     #  ^                            |
-    #  +----- Stream 2 -------------+
+    #  +----- Stream 2 -----<-------+
     #
     u = {"Unit A": "U-A", "Unit B": "U-B"}
     s = {"Stream 1": "S-1", "Stream2": "S-2"}
@@ -25,6 +31,8 @@ def example_conn():
     conn = connectivity.Connectivity(units=u, streams=s, connections=c)
     yield conn
 
+
+@pytest.mark.unit
 def test_mermaid(example_conn):
     mmd = connectivity.Mermaid(example_conn)
     s = mmd.write(None, output_format=connectivity.OutputFormats.mermaid.value)
@@ -55,3 +63,16 @@ def test_mermaid(example_conn):
     # everything was found
     assert len(unit_patterns) == 0
     assert len(connection_patterns) == 0
+
+
+@pytest.mark.unit
+def test_ordering():
+    # is the ordering consistent?
+    model = build()
+    conn1 = connectivity.create_from_model(model=model)
+    conn2 = connectivity.create_from_model(model=model)
+
+    for attribute in "units", "streams", "connections":
+        keys1 = getattr(conn1, attribute).keys()
+        keys2 = getattr(conn2, attribute).keys()
+        assert list(keys1) == list(keys2)

@@ -2,19 +2,8 @@
 Calculate and display model connectivity.
 
 The main thing this module does is create and process a connectivity
-matrix encoded as follows:
-
-    Units,Unit 1 name,Unit 2 Name, ..., Unit N Name
-    Arcs,,,,,,,	...,
-    Arc1 Name,	-1,	0, 0, ..., 0
-    Arc2 Name, 0 , 1, 0 ,... , 0
-
-Where each cell at the intersection of an Arc (row i) and Unit (column j)
-is either:
-  *  -1 meaning Arc(i) is an outlet of Unit(j), 
-  *  1 meaning Arc(i) is an inlet for Unit(j),
-  *  0 meaning there is no connection
-
+matrix, where each cell at the intersection of an Arc and Unit.
+See `USAGE` for details.
 
 This module can be run as a script or used programmatically, using the
 public functions `create_from_matrix` and `create_from_model`.
@@ -35,15 +24,13 @@ from traceback import format_stack
 from typing import TextIO
 import warnings
 
+# only external dependency -> Pyomo
 try:
     import pyomo
     from pyomo.network import Arc
 except ImportError as err:
     pyomo = None
     warnings.warn(f"Could not import pyomo: {err}")
-
-# For logging, if present
-from prommis.conn.util.yoder import _add_log_options, _process_log_options
 
 # Constants
 AS_STRING = "-"
@@ -66,13 +53,27 @@ class OutputFormats(enum.Enum):
 
 
 class Mermaid:
-    def __init__(self, connectivity, indent="   "):
+
+    # URL to load Mermaid from, for the HTML output
+    CDN_URL = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
+
+    def __init__(
+        self,
+        connectivity,
+        stream_labels: bool = False,
+        direction: str = "LR",
+        indent="   ",
+    ):
         self._conn = connectivity
         self.indent = indent
+        self._stream_labels = stream_labels
+        self._direction = direction
 
-    def write(self, output_file: str | None, output_format: str = None):
+    def write(self, output_file: str | TextIO | None, output_format: str = None):
         if output_file is None:
             f = StringIO()
+        elif hasattr(output_file, "write"):
+            f = output_file
         else:
             f = open(output_file, "w")
 
@@ -94,9 +95,8 @@ class Mermaid:
             self._body(f)
             f.write("</pre>\n<script type='module'>\n")
             # XXX: May want to make this URL configurable
-            f.write(
-                "import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';\n"
-            )
+            url = self.CDN_URL
+            f.write(f"import mermaid from '{url}';\n")
             f.write("mermaid.initialize({securityLevel: 'loose', maxEdges: 2000});\n")
             f.write("await mermaid.run();\n")
             f.write("</script></body></html>")
@@ -108,7 +108,7 @@ class Mermaid:
 
     def _body(self, outfile):
         i = self.indent
-        outfile.write("flowchart TD\n")
+        outfile.write(f"flowchart {self._direction}\n")
         # Get connections first, so we know which streams to show
         connections, show_streams = self._get_connections()
         # Units
@@ -133,9 +133,17 @@ class Mermaid:
     def _get_connections(self):
         connections = []
         show_streams = set()
+        # if we are going to label the streams,
+        # construct a mapping to get names from abbreviations
+        if self._stream_labels:
+            abbr_name = {v: k for k, v in self._conn.streams.items()}
         for stream_abbr, values in self._conn.connections.items():
             if values[0] is not None and values[1] is not None:
-                connections.append(f"{values[0]} --> {values[1]}")
+                if self._stream_labels:
+                    label = self._clean_stream_label(abbr_name[stream_abbr])
+                    connections.append(f"{values[0]} --|{label}| -->{values[1]}")
+                else:
+                    connections.append(f"{values[0]} --> {values[1]}")
             elif values[0] is not None:
                 connections.append(f"{values[0]} --> {stream_abbr}")
                 show_streams.add(stream_abbr)
@@ -143,6 +151,15 @@ class Mermaid:
                 connections.append(f" {stream_abbr} --> {values[1]}")
                 show_streams.add(stream_abbr)
         return connections, show_streams
+
+    @staticmethod
+    def _clean_stream_label(label):
+        if label.endswith("_outlet"):
+            label = label[:-7]
+        elif label.endswith("_feed"):
+            label = label[:-5]
+        label = label.replace("_", " ")
+        return label
 
 
 @dataclass
@@ -362,7 +379,7 @@ def _real_output_file(ifile: str, to_, input_file=None):
 
 
 def create_from_matrix(
-    ifile: str, ofile: str | None, to_format: str
+    ifile: str, ofile: str | None, to_format: str, mermaid_options: dict = None
 ) -> Connectivity | None:
     """Programmatic interface to create a graph of the model from a connectivity matrix.
 
@@ -382,7 +399,8 @@ def create_from_matrix(
         return conn_file.connectivity
 
     try:
-        mermaid = Mermaid(conn_file.connectivity)
+        mermaid_kw = mermaid_options or {}
+        mermaid = Mermaid(conn_file.connectivity, **mermaid_kw)
     except Exception as err:
         err_msg = f"Could not parse connectivity information: {err}. "
         err_msg += f"Stack trace:\n{format_stack()}"
@@ -397,8 +415,9 @@ def create_from_matrix(
 def create_from_model(
     model: object = None,
     module_name: str = None,
-    ofile: str = None,
+    ofile: str | TextIO = None,
     to_format: str = None,
+    mermaid_options: dict = None,
 ) -> Connectivity | None:
     """Programmatic interface to create the connectivity or mermaid output from a python model.
 
@@ -444,6 +463,9 @@ def create_from_model(
             if ofile == AS_STRING:
                 for line in tempfile:
                     print(line, end="")
+            elif hasattr(ofile, "write"):
+                for line in tempfile:
+                    ofile.write(line)
             else:
                 with open(output_file, "w") as ofile:
                     for line in tempfile:
@@ -451,7 +473,8 @@ def create_from_model(
         # for Mermaid, etc., process the temporary file
         else:
             conn_file = ConnectivityFromFile(tempfile)
-            mermaid = Mermaid(conn_file.connectivity)
+            mermaid_kw = mermaid_options or {}
+            mermaid = Mermaid(conn_file.connectivity, **mermaid_kw)
             if output_file == AS_STRING:
                 print(mermaid.write(None, output_format=to_format))
             else:
@@ -478,11 +501,15 @@ def csv_main(args) -> int:
         args.ofile = _real_output_file(args.input_file, args.to)
         print(f"Output in: {args.ofile}")
 
+    mermaid_options = {"stream_labels": args.labels, "direction": args.direction}
+
     try:
-        create_from_matrix(args.input_file, args.ofile, args.to)
+        create_from_matrix(
+            args.input_file, args.ofile, args.to, mermaid_options=mermaid_options
+        )
     except Exception as err:
         _log.info("[ end ] create from matrix (1)")
-        _log.error("{err}")
+        _log.error(f"{err}")
         return 1
     _log.info("[ end ] create from matrix")
 
@@ -503,13 +530,18 @@ def module_main(args) -> int:
     if args.ofile is None:
         args.ofile = AS_STRING
 
+    mermaid_options = {"stream_labels": args.labels, "direction": args.direction}
+
     try:
         create_from_model(
-            module_name=args.module_name, ofile=args.ofile, to_format=args.to
+            module_name=args.module_name,
+            ofile=args.ofile,
+            to_format=args.to,
+            mermaid_options=mermaid_options,
         )
     except RuntimeError as err:
         _log.info("[ end ] create from Python model (1)")
-        _log.error("{err}")
+        _log.error(f"{err}")
         return 1
     _log.info("[ end ] create from Python model")
 
@@ -616,6 +648,16 @@ if __name__ == "__main__":
         choices=("markdown", "mermaid", "html"),
         default="mermaid",
     )
+    p.add_argument(
+        "--labels", "-L", help="Add stream labels to diagram", action="store_true"
+    )
+    p.add_argument(
+        "--direction",
+        "-D",
+        help="Direction of diagram",
+        choices=("LR", "TD"),
+        default="LR",
+    )
     p.set_defaults(main_method=csv_main)
     p = subp.add_parser(
         "module", help="Read from a Python model and generate a CSV file or a graph"
@@ -633,6 +675,16 @@ if __name__ == "__main__":
         help="Output format for CSV or mermaid graph (default=csv)",
         choices=("csv", "markdown", "mermaid", "html"),
         default="csv",
+    )
+    p.add_argument(
+        "--direction",
+        "-D",
+        help="Direction of diagram",
+        choices=("LR", "TD"),
+        default="LR",
+    )
+    p.add_argument(
+        "--labels", "-L", help="Add stream labels to diagram", action="store_true"
     )
     p.set_defaults(main_method=module_main)
     args = p_top.parse_args()

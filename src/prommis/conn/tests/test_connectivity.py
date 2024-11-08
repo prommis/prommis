@@ -11,10 +11,10 @@ import pytest
 
 def test_outputformats():
     ofmt = connectivity.OutputFormats
-    assert ofmt.markdown == ofmt("markdown")
-    assert ofmt.html == ofmt("html")
-    assert ofmt.mermaid == ofmt("mermaid")
-    assert ofmt.csv == ofmt("csv")
+    assert ofmt.MARKDOWN == ofmt("markdown")
+    assert ofmt.HTML == ofmt("html")
+    assert ofmt.MERMAID == ofmt("mermaid")
+    assert ofmt.CSV == ofmt("csv")
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def example_conn():
 @pytest.mark.unit
 def test_mermaid(example_conn):
     mmd = connectivity.Mermaid(example_conn)
-    s = mmd.write(None, output_format=connectivity.OutputFormats.mermaid.value)
+    s = mmd.write(None, output_format=connectivity.OutputFormats.MERMAID.value)
     unit_patterns = [r"U-A..?Unit A..?", r"U-B..?Unit B..?"]
     connection_patterns = [r"UnitA\s*-->\s*UnitB", r"UnitB\s*-->\s*UnitA"]
 

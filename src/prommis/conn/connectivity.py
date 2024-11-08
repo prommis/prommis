@@ -17,7 +17,7 @@ import importlib
 from io import StringIO
 import logging
 from pathlib import Path
-import pprint
+import re
 import sys
 from tempfile import TemporaryFile
 from traceback import format_stack
@@ -46,10 +46,10 @@ _log = logging.getLogger(__name__)
 
 
 class OutputFormats(enum.Enum):
-    markdown = "markdown"
-    html = "html"
-    mermaid = "mermaid"
-    csv = "csv"
+    MARKDOWN = "markdown"
+    HTML = "html"
+    MERMAID = "mermaid"
+    CSV = "csv"
 
 
 class Mermaid:
@@ -82,13 +82,13 @@ class Mermaid:
         except ValueError:
             raise ValueError(f"Bad output format: {output_format}")
 
-        if fmt == OutputFormats.markdown:
+        if fmt == OutputFormats.MARKDOWN:
             f.write("# Graph\n```mermaid\n")
             self._body(f)
             f.write("\n```\n")
-        elif fmt == OutputFormats.mermaid:
+        elif fmt == OutputFormats.MERMAID:
             self._body(f)
-        elif fmt == OutputFormats.html:
+        elif fmt == OutputFormats.HTML:
             f.write(
                 "<!doctype html>\n<html lang='en'>\n<body>\n<pre class='mermaid'>\n"
             )
@@ -250,7 +250,7 @@ class ConnectivityFromFile:
 class ModelConnectivity:
     """Build connectivity information from a model."""
 
-    def __init__(self, model):
+    def __init__(self, model, flowsheet_attr: str = "fs"):
         """Constructor
 
         Args:
@@ -264,7 +264,8 @@ class ModelConnectivity:
             raise NotImplementedError(
                 "Trying to build from a Pyomo model, but Pyomo is not installed"
             )
-        self._fs = model.fs
+        fa = flowsheet_attr.strip("'").strip('"').strip()
+        self._fs = eval(f"model.{fa}")
         self._units = []
         self._streams = []
         self._build()
@@ -342,11 +343,11 @@ class ModelConnectivity:
 ############
 
 
-def _get_model(module_name):
+def _get_model(module_name, build_func):
     _log.info("[begin] load and build model")
     mod = importlib.import_module(module_name)
-    build_function = mod.build
-    _log.debug("[begin] build model")
+    build_function = getattr(mod, build_func)
+    _log.debug(f"[begin] build model function={build_func}")
     model = build_function()
     _log.debug("[ end ] build model")
     _log.info("[ end ] load and build model")
@@ -359,10 +360,10 @@ def _real_output_file(ifile: str, to_, input_file=None):
     except ValueError:
         raise ValueError(f"Bad format: {to_}")
     ext = {
-        OutputFormats.html: "html",
-        OutputFormats.markdown: "md",
-        OutputFormats.mermaid: "mmd",
-        OutputFormats.csv: "csv",
+        OutputFormats.HTML: "html",
+        OutputFormats.MARKDOWN: "md",
+        OutputFormats.MERMAID: "mmd",
+        OutputFormats.CSV: "csv",
     }[to_fmt]
     i = ifile.rfind(".")
     if i > 0:
@@ -417,6 +418,8 @@ def create_from_model(
     module_name: str = None,
     ofile: str | TextIO = None,
     to_format: str = None,
+    build_func: str = "build",
+    flowsheet_attr: str = "fs",
     mermaid_options: dict = None,
 ) -> Connectivity | None:
     """Programmatic interface to create the connectivity or mermaid output from a python model.
@@ -439,13 +442,13 @@ def create_from_model(
     """
     if model is None:
         try:
-            model = _get_model(module_name)
+            model = _get_model(module_name, build_func)
         except Exception as err:
             raise RuntimeError(f"Could not load model: {err}")
     else:
         pass  # assume it's already loaded into this variable
 
-    model_conn = ModelConnectivity(model)
+    model_conn = ModelConnectivity(model, flowsheet_attr=flowsheet_attr)
 
     output_file = ofile
     conn_file = None
@@ -498,14 +501,14 @@ def csv_main(args) -> int:
     _log.info("[begin] create from matrix")
 
     if args.ofile is None:
-        args.ofile = _real_output_file(args.input_file, args.to)
+        args.ofile = _real_output_file(args.source, args.to)
         print(f"Output in: {args.ofile}")
 
     mermaid_options = {"stream_labels": args.labels, "direction": args.direction}
 
     try:
         create_from_matrix(
-            args.input_file, args.ofile, args.to, mermaid_options=mermaid_options
+            args.source, args.ofile, args.to, mermaid_options=mermaid_options
         )
     except Exception as err:
         _log.info("[ end ] create from matrix (1)")
@@ -534,9 +537,11 @@ def module_main(args) -> int:
 
     try:
         create_from_model(
-            module_name=args.module_name,
+            module_name=args.source,
             ofile=args.ofile,
             to_format=args.to,
+            flowsheet_attr=args.fs,
+            build_func=args.build,
             mermaid_options=mermaid_options,
         )
     except RuntimeError as err:
@@ -563,18 +568,26 @@ build a model, then either (a) writes out the connectivity CSV for that model, o
 is a convenience and is equivalent to generating the CSV file then running again
 in 'csv' mode with that file as input, which will be shown below.
 
+You can explicitly indicate the mode with the --type/-t argument, though the
+program will try to infer it as well (anything ending in ".csv" will be assumed to
+be a CSV file, for example).
+
 Example command-lines (showing the two modes):
 
     # Generate the connectivity matrix in uky_conn.csv
-    python connectivity.py module prommis.uky.uky_flowsheet -O uky_conn.csv --to csv
+    python connectivity.py prommis.uky.uky_flowsheet -O uky_conn.csv --to csv
 
     # Generate the MermaidJS code wrapped in a HTML page that can be viewed in a
     # browser without any further installation (MermaidJS is fetched from the network)
     # The page will be called 'uky_conn.html' (since no filename was specified).
-    python connectivity.py csv uky_conn.csv --to html
+    python connectivity.py uky_conn.csv --to html
 
     # Print the 'raw' MermaidJS code to the console instead of to a file
-    python connectivity.py csv uky_conn.csv --to mermaid --output-file "-"
+    python connectivity.py  uky_conn.csv --to mermaid --output-file "-"
+
+    # Print mermaid info to default file, with streams labeled
+    python connectivity.py uky_conn.csv --to mermaid --labels
+    # (console)> Output in: uky_conn.mmd
 
 For more information about MermaidJS, see http://mermaid.js.org
 
@@ -629,12 +642,16 @@ def _process_log_options(module_name: str, args: argparse.Namespace) -> logging.
 
 
 if __name__ == "__main__":
-    p_top = argparse.ArgumentParser()
-    p_top.add_argument("--usage", action="store_true", help="Print detailed usage")
-    _add_log_options(p_top)
-    subp = p_top.add_subparsers()
-    p = subp.add_parser("csv", help="Read from a CSV file and generate a graph")
-    p.add_argument("input_file", help="Input CSV file")
+    p = argparse.ArgumentParser()
+    p.add_argument("--usage", action="store_true", help="Print detailed usage")
+    p.add_argument("source", help="Build source", metavar="FILE or MODULE")
+    p.add_argument(
+        "--type",
+        "-t",
+        choices=("csv", "module"),
+        help="Build source type: csv=CSV file, module=Python module",
+        default=None,
+    )
     p.add_argument(
         "-O",
         "--output-file",
@@ -644,52 +661,71 @@ if __name__ == "__main__":
     )
     p.add_argument(
         "--to",
-        help="Output format for mermaid graph (default=mermaid)",
-        choices=("markdown", "mermaid", "html"),
-        default="mermaid",
-    )
-    p.add_argument(
-        "--labels", "-L", help="Add stream labels to diagram", action="store_true"
-    )
-    p.add_argument(
-        "--direction",
-        "-D",
-        help="Direction of diagram",
-        choices=("LR", "TD"),
-        default="LR",
-    )
-    p.set_defaults(main_method=csv_main)
-    p = subp.add_parser(
-        "module", help="Read from a Python model and generate a CSV file or a graph"
-    )
-    p.add_argument(
-        "-O",
-        "--output-file",
-        dest="ofile",
-        help=f"Output file",
-        default=AS_STRING,
-    )
-    p.add_argument("module_name", help="A dotted Python module name")
-    p.add_argument(
-        "--to",
-        help="Output format for CSV or mermaid graph (default=csv)",
-        choices=("csv", "markdown", "mermaid", "html"),
+        help="Output format for mermaid graph (default=csv)",
+        choices=("markdown", "mermaid", "html", "csv"),
         default="csv",
     )
     p.add_argument(
+        "--fs",
+        help="Name of flowsheet attribute on model object (default=fs)",
+        default="fs",
+    )
+    p.add_argument(
+        "--build",
+        help="Name of build function in module (dafault=build)",
+        default="build",
+    )
+    p.add_argument(
+        "--labels", "-L", help="Add stream labels to diagram", action="store_true"
+    )
+    p.add_argument(
         "--direction",
         "-D",
         help="Direction of diagram",
         choices=("LR", "TD"),
         default="LR",
     )
-    p.add_argument(
-        "--labels", "-L", help="Add stream labels to diagram", action="store_true"
-    )
-    p.set_defaults(main_method=module_main)
-    args = p_top.parse_args()
+    _add_log_options(p)
+    args = p.parse_args()
     if args.usage:
         print(USAGE)
         sys.exit(0)
     _log = _process_log_options("idaes_ui.conn.connectivity", args)
-    sys.exit(args.main_method(args))
+    if args.type is None:
+        main_method = None
+        if args.source.lower().endswith(".csv"):
+            path = Path(args.source)
+            if not path.exists():
+                p.error(
+                    f"Source looks like a CSV file, but does not exist: {args.source}"
+                )
+            main_method = csv_main
+        elif "/" in args.source:
+            path = Path(args.source)
+            if path.exists():
+                _log.warning(
+                    "File path given, but suffix is not .csv; assuming CSV mode"
+                )
+                main_method = csv_main
+            else:
+                p.error(
+                    f"Source looks like file path, but does not exist: {args.source}"
+                )
+        else:
+            m = re.match(
+                r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", args.source
+            )
+            if m.span() != (0, len(args.source)):
+                p.error(
+                    "Source looks like a module name, but is not valid: {srgs.source}"
+                )
+            main_method = module_main
+    else:
+        if args.type == "csv":
+            if not Path(args.source).exists():
+                p.error(f"Source file path does not exist: {args.source}")
+            main_method = csv_main
+        elif args.type == "module":
+            main_method = module_main
+
+    sys.exit(main_method(args))

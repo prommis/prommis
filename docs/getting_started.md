@@ -77,9 +77,10 @@ cd prommis-work
 ::::{tab-set}
 
 :::{tab-item} Console (curl)
-Run the following command using the [curl](https://curl.se/) command-line tool.
+Run the following commands using the [curl](https://curl.se/) command-line tool.
 ```
 curl -o uky_flowsheet-solution.ipynb https://raw.githubusercontent.com/prommis/prommis/refs/heads/main/docs/tutorials/uky_flowsheet-solution.ipynb
+curl -o uky_flowsheet.png https://raw.githubusercontent.com/prommis/prommis/refs/heads/main/docs/tutorials/uky_flowsheet.png
 ```
 :::
 

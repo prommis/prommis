@@ -128,44 +128,40 @@ class TestSXmodel:
                     5 / 100
                 )
 
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e6)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1.755)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["SO4"].fix(
-            3999.818
-        )
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["HSO4"].fix(
-            693.459
-        )
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Al"].fix(422.375)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Ca"].fix(109.542)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Fe"].fix(688.266)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Sc"].fix(0.032)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Y"].fix(0.124)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["La"].fix(0.986)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Ce"].fix(2.277)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Pr"].fix(0.303)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Nd"].fix(0.946)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Sm"].fix(0.097)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Gd"].fix(0.2584)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Dy"].fix(0.047)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Cl"].fix(1e-8)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1e6)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "H"].fix(1.755)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "SO4"].fix(3999.818)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(693.459)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Al"].fix(422.375)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Ca"].fix(109.542)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Fe"].fix(688.266)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Sc"].fix(0.032)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Y"].fix(0.124)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "La"].fix(0.986)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Ce"].fix(2.277)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Pr"].fix(0.303)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Nd"].fix(0.946)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Sm"].fix(0.097)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Gd"].fix(0.2584)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Dy"].fix(0.047)
+        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Cl"].fix(1e-8)
 
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].flow_vol.fix(62.01)
+        m.fs.solex.aqueous_inlet.flow_vol.fix(62.01)
 
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Al"].fix(1.267e-5)
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Ca"].fix(2.684e-5)
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Fe"].fix(2.873e-6)
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Sc"].fix(1.734)
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Y"].fix(2.179e-5)
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["La"].fix(0.000105)
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Ce"].fix(0.00031)
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Pr"].fix(3.711e-5)
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Nd"].fix(0.000165)
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Sm"].fix(1.701e-5)
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Gd"].fix(3.357e-5)
-        m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].fix(8.008e-6)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "Al"].fix(1.267e-5)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "Ca"].fix(2.684e-5)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "Fe"].fix(2.873e-6)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "Sc"].fix(1.734)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "Y"].fix(2.179e-5)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "La"].fix(0.000105)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "Ce"].fix(0.00031)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "Pr"].fix(3.711e-5)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "Nd"].fix(0.000165)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "Sm"].fix(1.701e-5)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "Gd"].fix(3.357e-5)
+        m.fs.solex.organic_inlet.conc_mass_comp[0, "Dy"].fix(8.008e-6)
 
-        m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
+        m.fs.solex.organic_inlet.flow_vol.fix(62.01)
 
         return m
 
@@ -242,10 +238,8 @@ class TestSXmodel:
             "Y": 0.12402,
         }
 
-        for k, v in model.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.items():
-            assert value(v) == pytest.approx(organic_outlet[k], rel=1e-4)
+        for k, v in model.fs.solex.organic_outlet.conc_mass_comp.items():
+            assert value(v) == pytest.approx(organic_outlet[k[1]], rel=1e-4)
 
-        for k, v in model.fs.solex.mscontactor.aqueous[
-            0, number_of_stages
-        ].conc_mass_comp.items():
-            assert value(v) == pytest.approx(aqueous_outlet[k], rel=1e-4)
+        for k, v in model.fs.solex.aqueous_outlet.conc_mass_comp.items():
+            assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)

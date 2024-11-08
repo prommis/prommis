@@ -126,18 +126,26 @@ class SolventExtractionInitializer(ModularInitializerBase):
         Returns:
             None
         """
+        
+        """
+        This model adds an additional constraint of the material transfer term.
+        This constraint is present outside the main MSContactor model, so this term is 
+        fixed to give a square model to the MScontactor Initializer.
+
+        """
+
         model.mscontactor.material_transfer_term.fix(1e-8)
 
-        # Initialize MSContactor
-        msc_init = model.mscontactor.default_initializer()
+        msc_init = self.get_submodel_initializer(model.mscontactor)
         msc_init.initialize(model.mscontactor)
 
         model.mscontactor.material_transfer_term.unfix()
 
         solver = self._get_solver()
-        init_model = solver.solve(model.mscontactor)
 
-        return init_model
+        results = solver.solve(model)
+
+        return results
 
 
 Stream_Config = ConfigDict()

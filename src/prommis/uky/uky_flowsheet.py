@@ -197,7 +197,10 @@ from prommis.precipitate.precipitate_solids_properties import PrecipitateParamet
 from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
 _log = idaeslog.getLogger(__name__)
@@ -472,15 +475,6 @@ def build():
     # --------------------------------------------------------------------------------------------------------------
     # Precipitation property and unit models
 
-    key_components = {
-        "H^+",
-        "Ce^3+",
-        "Al^3+",
-        "Fe^3+",
-        "Ca^2+",
-        "C2O4^2-",
-    }
-
     m.fs.properties_aq = AqueousParameter()
     m.fs.properties_solid = PrecipitateParameters()
 
@@ -525,13 +519,12 @@ def build():
         doc="gas property",
     )
 
-    m.fs.prop_solid = PrecipitateParameters(
-        key_components=key_components,
-    )
+    m.fs.prop_solid = PrecipitateParameters()
 
     m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
-        property_package_precipitate=m.fs.prop_solid,
+        property_package_precipitate_solid=m.fs.prop_solid,
+        property_package_precipitate_liquid=m.fs.properties_aq,
         has_holdup=False,
         has_heat_transfer=True,
         has_pressure_change=True,
@@ -567,47 +560,47 @@ def build():
     )
     m.fs.sx_rougher_load_aq_feed = Arc(
         source=m.fs.leach_sx_mixer.outlet,
-        destination=m.fs.solex_rougher_load.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_rougher_load.aqueous_inlet,
     )
     m.fs.sx_rougher_org_feed = Arc(
         source=m.fs.rougher_org_make_up.outlet, destination=m.fs.rougher_mixer.make_up
     )
     m.fs.sx_rougher_mixed_org_recycle = Arc(
         source=m.fs.rougher_mixer.outlet,
-        destination=m.fs.solex_rougher_load.mscontactor.organic_inlet,
+        destination=m.fs.solex_rougher_load.organic_inlet,
     )
     m.fs.sx_rougher_load_aq_outlet = Arc(
-        source=m.fs.solex_rougher_load.mscontactor.aqueous_outlet,
+        source=m.fs.solex_rougher_load.aqueous_outlet,
         destination=m.fs.load_sep.inlet,
     )
     m.fs.sx_rougher_load_aq_recycle = Arc(
         source=m.fs.load_sep.recycle, destination=m.fs.leach_mixer.load_recycle
     )
     m.fs.sx_rougher_load_org_outlet = Arc(
-        source=m.fs.solex_rougher_load.mscontactor.organic_outlet,
-        destination=m.fs.solex_rougher_scrub.mscontactor.organic_inlet,
+        source=m.fs.solex_rougher_load.organic_outlet,
+        destination=m.fs.solex_rougher_scrub.organic_inlet,
     )
     m.fs.sx_rougher_scrub_acid_feed = Arc(
         source=m.fs.acid_feed1.outlet,
-        destination=m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_rougher_scrub.aqueous_inlet,
     )
     m.fs.sx_rougher_scrub_aq_outlet = Arc(
-        source=m.fs.solex_rougher_scrub.mscontactor.aqueous_outlet,
+        source=m.fs.solex_rougher_scrub.aqueous_outlet,
         destination=m.fs.scrub_sep.inlet,
     )
     m.fs.sx_rougher_scrub_aq_recycle = Arc(
         source=m.fs.scrub_sep.recycle, destination=m.fs.leach_mixer.scrub_recycle
     )
     m.fs.sx_rougher_scrub_org_outlet = Arc(
-        source=m.fs.solex_rougher_scrub.mscontactor.organic_outlet,
-        destination=m.fs.solex_rougher_strip.mscontactor.organic_inlet,
+        source=m.fs.solex_rougher_scrub.organic_outlet,
+        destination=m.fs.solex_rougher_strip.organic_inlet,
     )
     m.fs.sx_rougher_strip_acid_feed = Arc(
         source=m.fs.acid_feed2.outlet,
-        destination=m.fs.solex_rougher_strip.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_rougher_strip.aqueous_inlet,
     )
     m.fs.sx_rougher_strip_org_outlet = Arc(
-        source=m.fs.solex_rougher_strip.mscontactor.organic_outlet,
+        source=m.fs.solex_rougher_strip.organic_outlet,
         destination=m.fs.rougher_sep.inlet,
     )
     m.fs.sx_rougher_strip_org_purge = Arc(
@@ -617,34 +610,34 @@ def build():
         source=m.fs.rougher_sep.recycle, destination=m.fs.rougher_mixer.recycle
     )
     m.fs.sx_rougher_strip_aq_outlet = Arc(
-        source=m.fs.solex_rougher_strip.mscontactor.aqueous_outlet,
+        source=m.fs.solex_rougher_strip.aqueous_outlet,
         destination=m.fs.precip_sx_mixer.rougher,
     )
     m.fs.sx_cleaner_load_aq_feed = Arc(
         source=m.fs.precip_sx_mixer.outlet,
-        destination=m.fs.solex_cleaner_load.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_cleaner_load.aqueous_inlet,
     )
     m.fs.sx_cleaner_org_feed = Arc(
         source=m.fs.cleaner_org_make_up.outlet, destination=m.fs.cleaner_mixer.make_up
     )
     m.fs.sx_cleaner_mixed_org_recycle = Arc(
         source=m.fs.cleaner_mixer.outlet,
-        destination=m.fs.solex_cleaner_load.mscontactor.organic_inlet,
+        destination=m.fs.solex_cleaner_load.organic_inlet,
     )
     m.fs.sx_cleaner_load_aq_outlet = Arc(
-        source=m.fs.solex_cleaner_load.mscontactor.aqueous_outlet,
+        source=m.fs.solex_cleaner_load.aqueous_outlet,
         destination=m.fs.leach_sx_mixer.cleaner,
     )
     m.fs.sx_cleaner_strip_acid_feed = Arc(
         source=m.fs.acid_feed3.outlet,
-        destination=m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_cleaner_strip.aqueous_inlet,
     )
     m.fs.sx_cleaner_load_org_outlet = Arc(
-        source=m.fs.solex_cleaner_load.mscontactor.organic_outlet,
-        destination=m.fs.solex_cleaner_strip.mscontactor.organic_inlet,
+        source=m.fs.solex_cleaner_load.organic_outlet,
+        destination=m.fs.solex_cleaner_strip.organic_inlet,
     )
     m.fs.sx_cleaner_strip_org_outlet = Arc(
-        source=m.fs.solex_cleaner_strip.mscontactor.organic_outlet,
+        source=m.fs.solex_cleaner_strip.organic_outlet,
         destination=m.fs.cleaner_sep.inlet,
     )
     m.fs.sx_cleaner_strip_org_purge = Arc(
@@ -654,7 +647,7 @@ def build():
         source=m.fs.cleaner_sep.recycle, destination=m.fs.cleaner_mixer.recycle
     )
     m.fs.sx_cleaner_strip_aq_outlet = Arc(
-        source=m.fs.solex_cleaner_strip.mscontactor.aqueous_outlet,
+        source=m.fs.solex_cleaner_strip.aqueous_outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )
     m.fs.precip_solid_outlet = Arc(
@@ -667,10 +660,10 @@ def build():
     m.fs.sl_sep2_solid_outlet = Arc(
         source=m.fs.sl_sep2.solid_outlet, destination=m.fs.roaster.solid_inlet
     )
-    # # TODO: roaster model cannot currently handle liquid inlets
-    # m.fs.sl_sep2_retained_liquid_outlet = Arc(
-    #     source=m.fs.sl_sep2.retained_liquid_outlet, destination=m.fs.roaster.liquid_inlet
-    # )
+    m.fs.sl_sep2_retained_liquid_outlet = Arc(
+        source=m.fs.sl_sep2.retained_liquid_outlet,
+        destination=m.fs.roaster.liquid_inlet,
+    )
     m.fs.sl_sep2_liquid_outlet = Arc(
         source=m.fs.sl_sep2.recovered_liquid_outlet, destination=m.fs.precip_sep.inlet
     )
@@ -1479,7 +1472,8 @@ def set_operating_conditions(m):
     m.fs.cleaner_sep.split_fraction[:, "recycle"].fix(0.9)
 
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
-    m.fs.sl_sep2.liquid_recovery.fix(0.7)
+    # TODO: Set sl_sep2 recovery to 0.95 and resolve resultant initialization issues
+    m.fs.sl_sep2.liquid_recovery.fix(0.88)
 
     m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
 
@@ -1506,7 +1500,6 @@ def set_operating_conditions(m):
     m.fs.roaster.gas_outlet.temperature.fix(873.15)
 
     # Fix operating conditions
-    m.fs.roaster.flow_mol_moist_feed.fix(6.75e-4)
     m.fs.roaster.frac_comp_recovery.fix(0.95)
 
     # Touch properties that are used in the UI
@@ -1664,18 +1657,10 @@ def initialize_system(m):
 
     # Pass the tear_guess to the SD tool
     seq.set_guesses_for(m.fs.leach.liquid_inlet, tear_guesses1)
-    seq.set_guesses_for(
-        m.fs.solex_rougher_load.mscontactor.organic_inlet, tear_guesses2
-    )
-    seq.set_guesses_for(
-        m.fs.solex_rougher_load.mscontactor.aqueous_inlet, tear_guesses3
-    )
-    seq.set_guesses_for(
-        m.fs.solex_cleaner_load.mscontactor.organic_inlet, tear_guesses4
-    )
-    seq.set_guesses_for(
-        m.fs.solex_cleaner_load.mscontactor.aqueous_inlet, tear_guesses5
-    )
+    seq.set_guesses_for(m.fs.solex_rougher_load.organic_inlet, tear_guesses2)
+    seq.set_guesses_for(m.fs.solex_rougher_load.aqueous_inlet, tear_guesses3)
+    seq.set_guesses_for(m.fs.solex_cleaner_load.organic_inlet, tear_guesses4)
+    seq.set_guesses_for(m.fs.solex_cleaner_load.aqueous_inlet, tear_guesses5)
 
     initializer_feed = FeedInitializer()
     feed_units = [
@@ -1712,6 +1697,14 @@ def initialize_system(m):
         m.fs.rougher_mixer,
     ]
 
+    initializer_sx = SolventExtractionInitializer()
+    sx_units = [
+        m.fs.solex_rougher_load,
+        m.fs.solex_rougher_scrub,
+        m.fs.solex_cleaner_load,
+        m.fs.solex_cleaner_strip,
+    ]
+
     initializer_bt = BlockTriangularizationInitializer()
 
     def function(unit):
@@ -1727,6 +1720,9 @@ def initialize_system(m):
         elif unit in mix_units:
             _log.info(f"Initializing {unit}")
             initializer_mix.initialize(unit)
+        elif unit in sx_units:
+            _log.info(f"Initializing {unit}")
+            initializer_sx.initialize(unit)
         elif unit == m.fs.leach:
             _log.info(f"Initializing {unit}")
             # Fix feed states
@@ -1742,121 +1738,6 @@ def initialize_system(m):
             m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
             m.fs.leach.solid_inlet.flow_mass.unfix()
             m.fs.leach.solid_inlet.mass_frac_comp.unfix()
-        elif unit == m.fs.solex_rougher_load.mscontactor:
-            _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.solex_rougher_load, tee=True)
-            # Unfix feed states
-            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-        elif unit == m.fs.solex_rougher_scrub.mscontactor:
-            _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.solex_rougher_scrub, tee=True)
-            # Unfix feed states
-            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-        elif unit == m.fs.solex_rougher_strip.mscontactor:
-            _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.solex_rougher_strip, tee=True)
-            # Unfix feed states
-            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-        elif unit == m.fs.solex_cleaner_load.mscontactor:
-            _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].flow_vol.fix()
-            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.solex_cleaner_load, tee=True)
-            # Unfix feed states
-            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-        elif unit == m.fs.solex_cleaner_strip.mscontactor:
-            _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].flow_vol.fix()
-            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.solex_cleaner_strip, tee=True)
-            # Unfix feed states
-            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
         else:
             _log.info(f"Initializing {unit}")
             initializer_bt.initialize(unit)
@@ -1904,7 +1785,7 @@ def display_results(m):
     Args:
         m: pyomo model
     """
-    m.fs.roaster.display()
+    m.fs.roaster.report()
 
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),
@@ -2829,7 +2710,6 @@ def add_costing(m):
         },
     )
 
-    # TODO: Add bounds to flow_mass_product by converting it to a variable in the roaster model
     # 3.2 is UKy Roasting - Conveyors
     R_conveyors_accounts = ["3.2"]
     m.fs.R_conveyors = UnitModelBlock()
@@ -3194,7 +3074,6 @@ def add_costing(m):
         project_management_and_construction_percentage=30,
         process_contingency_percentage=15,
         # argument related to Fixed OM costs
-        nameplate_capacity=500,  # short (US) ton/hr
         labor_types=[
             "skilled",
             "unskilled",

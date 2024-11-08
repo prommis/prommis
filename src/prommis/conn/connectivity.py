@@ -551,7 +551,8 @@ def module_main(args) -> int:
     _log.info("[ end ] create from Python model")
 
 
-USAGE = """
+SCRIPT_NAME = "connectivity"
+USAGE = f"""
 This script generates connectivity information from models,
 or graphs of the model structure from connectivity information,
 or both together -- i.e. graphs of the model structure from the model.
@@ -575,18 +576,18 @@ be a CSV file, for example).
 Example command-lines (showing the two modes):
 
     # Generate the connectivity matrix in uky_conn.csv
-    python connectivity.py prommis.uky.uky_flowsheet -O uky_conn.csv --to csv
+    {SCRIPT_NAME} prommis.uky.uky_flowsheet -O uky_conn.csv --to csv
 
     # Generate the MermaidJS code wrapped in a HTML page that can be viewed in a
     # browser without any further installation (MermaidJS is fetched from the network)
     # The page will be called 'uky_conn.html' (since no filename was specified).
-    python connectivity.py uky_conn.csv --to html
+    {SCRIPT_NAME} uky_conn.csv --to html
 
     # Print the 'raw' MermaidJS code to the console instead of to a file
-    python connectivity.py  uky_conn.csv --to mermaid --output-file "-"
+    {SCRIPT_NAME}  uky_conn.csv --to mermaid --output-file "-"
 
     # Print mermaid info to default file, with streams labeled
-    python connectivity.py uky_conn.csv --to mermaid --labels
+    {SCRIPT_NAME} uky_conn.csv --to mermaid --labels
     # (console)> Output in: uky_conn.mmd
 
 For more information about MermaidJS, see http://mermaid.js.org
@@ -641,10 +642,12 @@ def _process_log_options(module_name: str, args: argparse.Namespace) -> logging.
     return log
 
 
-if __name__ == "__main__":
-    p = argparse.ArgumentParser()
-    p.add_argument("--usage", action="store_true", help="Print detailed usage")
-    p.add_argument("source", help="Build source", metavar="FILE or MODULE")
+def main():
+    p = argparse.ArgumentParser(description="Process and/or generate model connectivity information")
+    p.add_argument("--usage", action="store_true", help="Print usage with examples")
+    # set nargs=? so --usage works without any other argument; though
+    # this will require more checks later
+    p.add_argument("source", help="Build source", metavar="FILE or MODULE", nargs="?")
     p.add_argument(
         "--type",
         "-t",
@@ -689,7 +692,11 @@ if __name__ == "__main__":
     args = p.parse_args()
     if args.usage:
         print(USAGE)
-        sys.exit(0)
+        return 0
+    if args.source is None:
+        print("File or module source is required. Try --usage for details.\n")
+        p.print_help()
+        return 0
     _log = _process_log_options("idaes_ui.conn.connectivity", args)
     if args.type is None:
         main_method = None
@@ -728,4 +735,8 @@ if __name__ == "__main__":
         elif args.type == "module":
             main_method = module_main
 
-    sys.exit(main_method(args))
+    return main_method(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

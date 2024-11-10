@@ -672,7 +672,7 @@ if __name__ == "__main__":
     )
     p.add_argument(
         "--build",
-        help="Name of build function in module (dafault=build)",
+        help="Name of build function in module (default=build)",
         default="build",
     )
     p.add_argument(

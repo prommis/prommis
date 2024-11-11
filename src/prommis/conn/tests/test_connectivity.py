@@ -4,9 +4,10 @@ Tests for `connectivity` module.
 
 from io import StringIO
 import re
+import pytest
+
 from prommis.conn import connectivity
 from prommis.uky.uky_flowsheet import build
-import pytest
 
 
 def test_outputformats():

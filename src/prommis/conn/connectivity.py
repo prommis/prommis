@@ -21,7 +21,7 @@ import re
 import sys
 from tempfile import TemporaryFile
 from traceback import format_stack
-from typing import TextIO
+from typing import TextIO, Union, Optional
 import warnings
 
 # only external dependency -> Pyomo
@@ -69,7 +69,7 @@ class Mermaid:
         self._stream_labels = stream_labels
         self._direction = direction
 
-    def write(self, output_file: str | TextIO | None, output_format: str = None):
+    def write(self, output_file: Union[str, TextIO, None], output_format: str = None):
         if output_file is None:
             f = StringIO()
         elif hasattr(output_file, "write"):
@@ -172,7 +172,7 @@ class Connectivity:
 class ConnectivityFromFile:
     """Build connectivity information from input data."""
 
-    def __init__(self, input_file: str | Path | TextIO):
+    def __init__(self, input_file: Union[str, Path, TextIO]):
         """Constructor
 
         Args:
@@ -380,8 +380,8 @@ def _real_output_file(ifile: str, to_, input_file=None):
 
 
 def create_from_matrix(
-    ifile: str, ofile: str | None, to_format: str, mermaid_options: dict = None
-) -> Connectivity | None:
+    ifile: str, ofile: Optional[str], to_format: str, mermaid_options: dict = None
+) -> Union[Connectivity, None]:
     """Programmatic interface to create a graph of the model from a connectivity matrix.
 
     Args:
@@ -416,12 +416,12 @@ def create_from_matrix(
 def create_from_model(
     model: object = None,
     module_name: str = None,
-    ofile: str | TextIO = None,
+    ofile: Union[str, TextIO] = None,
     to_format: str = None,
     build_func: str = "build",
     flowsheet_attr: str = "fs",
     mermaid_options: dict = None,
-) -> Connectivity | None:
+) -> Union[Connectivity, None]:
     """Programmatic interface to create the connectivity or mermaid output from a python model.
 
     Arguments:
@@ -643,7 +643,9 @@ def _process_log_options(module_name: str, args: argparse.Namespace) -> logging.
 
 
 def main():
-    p = argparse.ArgumentParser(description="Process and/or generate model connectivity information")
+    p = argparse.ArgumentParser(
+        description="Process and/or generate model connectivity information"
+    )
     p.add_argument("--usage", action="store_true", help="Print usage with examples")
     # set nargs=? so --usage works without any other argument; though
     # this will require more checks later

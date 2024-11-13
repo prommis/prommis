@@ -1,9 +1,5 @@
 """
-Calculate and display model connectivity.
-
-The main thing this module does is create and process a connectivity
-matrix, where each cell at the intersection of an Arc and Unit.
-See `USAGE` for details.
+Create and process a connectivity matrix.
 
 This module can be run as a script or used programmatically, using the
 public functions `create_from_matrix` and `create_from_model`.
@@ -34,6 +30,8 @@ except ImportError as err:
 
 # Constants
 AS_STRING = "-"
+
+__author__ = "Dan Gunter (LBNL)"
 
 # Logging
 # This variable is reassigned if run as script
@@ -164,8 +162,22 @@ class Mermaid:
 
 @dataclass
 class Connectivity:
+    """Connectivity of a model."""
+
+    #: Dictionary with keys being the unit name (in the model instance) and
+    #: values being the unit abbreviation (for Mermaid, etc.)
     units: dict = field(default_factory=dict)
+    #: Dictionary with keys being the stream name (in the model instance) and
+    #: values being the stream abbreviation (for Mermaid, etc.)
     streams: dict = field(default_factory=dict)
+    #: Dictionary with keys being the stream abbreviation and values being a
+    #: list of length 2, each element of which can contain a unit abbreviation
+    #: or be empty. If the first item in the list has a unit abbreviation, then
+    #: this stream connects to the outlet of that unit; similarly, if the 2nd
+    #: item has a unit abbr then this stream connects to the inlet.
+    #: Thus each item in this dict desribes an arc, or a line in a diagram,
+    #: with a stream connecting two units (usual case) or coming into or out of
+    #: a unit as an unconnected feed or outlet for the flowsheet (possible).
     connections: dict = field(default_factory=dict)
 
 
@@ -220,7 +232,7 @@ class ConnectivityFromFile:
     def _build_streams(self):
         streams = {}
         n = 3  # pick numbers that match spreadsheet row numbers
-        for row in self._rows[1:]:
+        for row in self._rows:
             s = row[0]
             abbr = f"Stream_{n}"
             streams[s] = abbr
@@ -229,7 +241,7 @@ class ConnectivityFromFile:
 
     def _build_connections(self, units, streams):
         connections = {s: [None, None] for s in streams.values()}
-        for row in self._rows[1:]:
+        for row in self._rows:
             stream_name = row[0]
             col = 1
             for conn in row[1:]:
@@ -325,12 +337,8 @@ class ModelConnectivity:
     def write(self, f: TextIO):
         """Write the CSV file."""
         header = self._units.copy()
-        header.insert(0, "Units")
+        header.insert(0, "Arcs")
         f.write(",".join(header))
-        f.write("\n")
-        header_sep = ["" for _ in self._units]
-        header_sep.insert(0, "Arcs")
-        f.write(",".join(header_sep))
         f.write("\n")
         for row_idx, row in enumerate(self._rows):
             row.insert(0, self._streams[row_idx])
@@ -390,6 +398,9 @@ def create_from_matrix(
                The output will go to the console. If None, then no output will
                be created and the connectivity will be returned as an object.
         to_format: Output format, which should match one of the values in `OutputFormat`
+
+    Returns:
+        Connectivity instance, if ofile is None
 
     Raises:
         RuntimeError: For all errors captured during Mermaid processing
@@ -594,10 +605,12 @@ For more information about MermaidJS, see http://mermaid.js.org
 
 The connectivity matrix format is:
 
-    Units,Unit 1 name,Unit 2 Name, ..., Unit N Name
-    Arcs,,,	... ,
-    Arc1 Name,	-1,	0, 0, ..., 0
-    Arc2 Name, 0 , 1, 0 ,... , 0
+    |Arcs |Unit 1|Unit 2|...|Unit N|
+    |-----|------|------|---|------|
+    |Arc1 |-1    |0     |...|0     |
+    |Arc2 | 0    |1     |...|0     |
+    |...  | ...  |...   |...|...   |
+    |ArcN | 0    |1     |...|0     |
 
 Where each cell at the intersection of an Arc (row i) and Unit (column j)
 is either:

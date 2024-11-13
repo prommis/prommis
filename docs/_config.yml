@@ -9,6 +9,7 @@ sphinx:
   - sphinx.ext.napoleon
   - sphinx.ext.viewcode
   - sphinx.ext.autosummary
+  - sphinx.ext.autosectionlabel
   - prommis._sphinx_extensions.chem
   config:
     autosummary_generate: true
@@ -17,3 +18,4 @@ sphinx:
       - etoc.toctree
     templates_path:
       - _templates
+    autosectionlabel_prefix_document: true

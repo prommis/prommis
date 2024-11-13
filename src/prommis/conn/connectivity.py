@@ -15,7 +15,6 @@ import logging
 from pathlib import Path
 import re
 import sys
-from tempfile import TemporaryFile
 from traceback import format_stack
 from typing import TextIO, Union, Optional, List
 import warnings

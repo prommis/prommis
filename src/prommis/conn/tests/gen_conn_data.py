@@ -45,7 +45,7 @@ def write_list(fp, lines, name):
     fp.write(f"def uky_{name}():\n")
     fp.write(f"{TAB}return [\n")
     fp.write(",\n".join((f'{TAB}{TAB}"{x}"' for x in lines)))
-    fp.write(f"\n{TAB}]\n")
+    fp.write(f",\n{TAB}]\n")
 
 
 if __name__ == "__main__":

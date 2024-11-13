@@ -8,7 +8,7 @@ import pytest
 
 from prommis.conn import connectivity
 from prommis.uky.uky_flowsheet import build
-from prommis.conn.tests.connectivity_data import uky_csv, uky_mermaid
+from prommis.conn.tests import connectivity_data as cdata
 
 
 def test_outputformats():
@@ -81,10 +81,14 @@ def test_ordering():
         assert list(keys1) == list(keys2)
 
 
+# this roundabout method avoids pylint warnings
+uky_csv_data, uky_mermaid_data = cdata.uky_csv, cdata.uky_mermaid
+
+
 @pytest.mark.unit
-def test_uky_data(uky_csv, uky_mermaid):
+def test_uky_data(uky_csv_data, uky_mermaid_data):
     model = build()
-    for fmt, ref_lines in (("csv", uky_csv), ("mermaid", uky_mermaid)):
+    for fmt, ref_lines in (("csv", uky_csv_data), ("mermaid", uky_mermaid_data)):
         sio = StringIO()
         csv = connectivity.create_from_model(model=model, to_format=fmt, ofile=sio)
         data = sio.getvalue()

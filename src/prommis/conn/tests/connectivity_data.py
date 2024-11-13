@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.fixture
 def uky_csv():
     return [
@@ -43,7 +44,7 @@ def uky_csv():
         "sx_rougher_strip_aq_outlet,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,0",
         "sx_rougher_strip_org_outlet,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,1,0",
         "sx_rougher_strip_org_purge,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,1",
-        "sx_rougher_strip_org_recycle,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,-1,0"
+        "sx_rougher_strip_org_recycle,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,-1,0",
     ]
 
 
@@ -123,5 +124,5 @@ def uky_mermaid():
         "   Unit_AG --> Unit_AF",
         "   Unit_AF --> Unit_AG",
         "   Unit_AG --> Unit_Z",
-        ""
+        "",
     ]

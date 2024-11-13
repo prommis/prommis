@@ -17,7 +17,7 @@ import re
 import sys
 from tempfile import TemporaryFile
 from traceback import format_stack
-from typing import TextIO, Union, Optional
+from typing import TextIO, Union, Optional, List
 import warnings
 
 # only external dependency -> Pyomo
@@ -67,7 +67,23 @@ class Mermaid:
         self._stream_labels = stream_labels
         self._direction = direction
 
-    def write(self, output_file: Union[str, TextIO, None], output_format: str = None):
+    def write(
+        self,
+        output_file: Union[str, TextIO, None],
+        output_format: Union[OutputFormats, str] = None,
+    ) -> Optional[str]:
+        """Write Mermaid (plain or encapsulated) file
+
+        Args:
+            output_file (Union[str, TextIO, None]): Output file object, filename, or None meaning return a string
+            output_format (Union[OutputFormats, str], optional): _description_. Defaults to None.
+
+        Raises:
+            ValueError: This output format is not handled (e.g., CSV)
+
+        Returns:
+            str | None: If `output_file` was None then return output as a string, otherwise None
+        """
         if output_file is None:
             f = StringIO()
         elif hasattr(output_file, "write"):
@@ -75,18 +91,14 @@ class Mermaid:
         else:
             f = open(output_file, "w")
 
-        try:
-            fmt = OutputFormats(output_format)
-        except ValueError:
-            raise ValueError(f"Bad output format: {output_format}")
-
-        if fmt == OutputFormats.MARKDOWN:
+        output_format = _output_format(output_format)
+        if output_format == OutputFormats.MARKDOWN:
             f.write("# Graph\n```mermaid\n")
             self._body(f)
             f.write("\n```\n")
-        elif fmt == OutputFormats.MERMAID:
+        elif output_format == OutputFormats.MERMAID:
             self._body(f)
-        elif fmt == OutputFormats.HTML:
+        elif output_format == OutputFormats.HTML:
             f.write(
                 "<!doctype html>\n<html lang='en'>\n<body>\n<pre class='mermaid'>\n"
             )
@@ -99,7 +111,7 @@ class Mermaid:
             f.write("await mermaid.run();\n")
             f.write("</script></body></html>")
         else:  # !! should not get here
-            raise RuntimeError(f"Output format unaccounted for: {output_format}")
+            raise ValueError(f"Output format not handled: {output_format}")
 
         if output_file is None:
             return f.getvalue()
@@ -181,26 +193,42 @@ class Connectivity:
     connections: dict = field(default_factory=dict)
 
 
-class ConnectivityFromFile:
-    """Build connectivity information from input data."""
+class ConnectivityBuilder:
+    """Build connectivity information, as an instance of :class:`Connectivity`,
+    from input data."""
 
-    def __init__(self, input_file: Union[str, Path, TextIO]):
-        """Constructor
+    def __init__(
+        self,
+        input_file: Union[str, Path, TextIO] = None,
+        input_data: List[List[Union[str, int]]] = None,
+    ):
+        """Constructor.
+
+        One of the `input_*` arguments must not be None. They will be looked
+        at in the order `input_file` then `input_data` and the first one that is
+        not None will be used.
 
         Args:
-            input_file (str | Path | TextIO): Input CSV file
+            input_file: Input CSV file
+            input_data: List of input rows.
         """
-        if isinstance(input_file, str) or isinstance(input_file, Path):
-            datafile = open(input_file, "r")
+        if input_file is not None:
+            if isinstance(input_file, str) or isinstance(input_file, Path):
+                datafile = open(input_file, "r")
+            else:
+                datafile = input_file
+            reader = csv.reader(datafile)
+            self._header = next(reader)
+            self._rows = list(reader)
+        elif input_data is not None:
+            self._header = input_data[0]
+            self._rows = input_data[1:]
         else:
-            datafile = input_file
-        reader = csv.reader(datafile)
-        self._header = next(reader)
-        self._rows = list(reader)
+            raise ValueError("Either 'input_file' or 'input_data' must not be None")
         self._c = None
 
     @property
-    def connectivity(self):
+    def connectivity(self) -> Connectivity:
         if self._c is None:
             units = self._build_units()
             streams = self._build_streams()
@@ -260,7 +288,7 @@ class ConnectivityFromFile:
 
 
 class ModelConnectivity:
-    """Build connectivity information from a model."""
+    """Extract connectivity information from a model."""
 
     def __init__(self, model, flowsheet_attr: str = "fs"):
         """Constructor
@@ -345,6 +373,13 @@ class ModelConnectivity:
             f.write(",".join((str(value) for value in row)))
             f.write("\n")
 
+    def get_data(self):
+        """Get rows of CSV file as data."""
+        data = [["Arcs"] + self._units.copy()]
+        for row_idx, row in enumerate(self._rows):
+            data.append([self._streams[row_idx]] + row)
+        return data
+
 
 ############
 # Utility
@@ -388,7 +423,10 @@ def _real_output_file(ifile: str, to_, input_file=None):
 
 
 def create_from_matrix(
-    ifile: str, ofile: Optional[str], to_format: str, mermaid_options: dict = None
+    ifile: str,
+    ofile: Optional[str],
+    to_format: Union[OutputFormats, str],
+    mermaid_options: dict = None,
 ) -> Union[Connectivity, None]:
     """Programmatic interface to create a graph of the model from a connectivity matrix.
 
@@ -404,8 +442,10 @@ def create_from_matrix(
 
     Raises:
         RuntimeError: For all errors captured during Mermaid processing
+        ValueError: Bad output format
     """
-    conn_file = ConnectivityFromFile(ifile)
+    conn_file = ConnectivityBuilder(ifile)
+    output_format = _output_format(to_format)
 
     if ofile is None:
         return conn_file.connectivity
@@ -419,16 +459,16 @@ def create_from_matrix(
         raise RuntimeError(err_msg)
 
     if ofile == AS_STRING:
-        print(mermaid.write(None, output_format=to_format))
+        print(mermaid.write(None, output_format=output_format))
     else:
-        mermaid.write(ofile, output_format=to_format)
+        mermaid.write(ofile, output_format=output_format)
 
 
 def create_from_model(
     model: object = None,
     module_name: str = None,
     ofile: Union[str, TextIO] = None,
-    to_format: str = None,
+    to_format: Union[OutputFormats, str] = None,
     build_func: str = "build",
     flowsheet_attr: str = "fs",
     mermaid_options: dict = None,
@@ -443,56 +483,58 @@ def create_from_model(
         ofile: Output file name. If this is the special value defined by `AS_STRING`, then
                The output will go to the console. If None, then no output will
                be created and the connectivity will be returned as an object.
-        to_format: Output format, which should match one of the values in `OutputFormat`
+        to_format: Output format
 
     Returns:
         Connectivity instance, if ofile is None
 
     Raises:
-        RuntimeError: For all errors captured while building the model
+        RuntimeError: For all errors captured while building the model, or internal errors
+        ValueError: Bad output format
     """
+    output_format = _output_format(to_format)
+
     if model is None:
         try:
             model = _get_model(module_name, build_func)
         except Exception as err:
+            # XXX: create custom Exception subclass for this
             raise RuntimeError(f"Could not load model: {err}")
     else:
         pass  # assume it's already loaded into this variable
 
     model_conn = ModelConnectivity(model, flowsheet_attr=flowsheet_attr)
 
-    output_file = ofile
-    conn_file = None
-    with TemporaryFile(mode="w+t") as tempfile:
-        model_conn.write(tempfile)
-        tempfile.flush()  # make sure all data is written
-        tempfile.seek(0)  # reset to start of file for reading
-        # if no output, just parse the file and return the result
-        if ofile is None:
-            conn_file = ConnectivityFromFile(tempfile)
-            return conn_file.connectivity
-        # for CSV, just copy the temporary file
-        elif to_format == "csv":
-            tempfile.seek(0)
-            if ofile == AS_STRING:
-                for line in tempfile:
-                    print(line, end="")
-            elif hasattr(ofile, "write"):
-                for line in tempfile:
-                    ofile.write(line)
-            else:
-                with open(output_file, "w") as ofile:
-                    for line in tempfile:
-                        ofile.write(line)
-        # for Mermaid, etc., process the temporary file
-        else:
-            conn_file = ConnectivityFromFile(tempfile)
-            mermaid_kw = mermaid_options or {}
-            mermaid = Mermaid(conn_file.connectivity, **mermaid_kw)
-            if output_file == AS_STRING:
-                print(mermaid.write(None, output_format=to_format))
-            else:
-                mermaid.write(output_file, output_format=to_format)
+    output_stream = sys.stdout if ofile == AS_STRING else ofile
+    data = model_conn.get_data()
+    # No output: return connectivity
+    if ofile is None:
+        cb = ConnectivityBuilder(input_data=data)
+        return cb.connectivity
+    # CSV output
+    elif output_format == OutputFormats.CSV:
+        model_conn.write(output_stream)
+    # Mermaid output
+    elif output_format in (
+        OutputFormats.MERMAID,
+        OutputFormats.MARKDOWN,
+        OutputFormats.HTML,
+    ):
+        cb = ConnectivityBuilder(input_data=data)
+        mermaid_kw = mermaid_options or {}
+        mermaid = Mermaid(cb.connectivity, **mermaid_kw)
+        mermaid.write(output_stream, output_format=output_format)
+    else:
+        raise RuntimeError(f"No processing defined for output format: {to_format}")
+
+
+def _output_format(fmt):
+    if fmt is None or isinstance(fmt, OutputFormats):
+        return fmt
+    try:
+        return OutputFormats(fmt)
+    except ValueError:
+        raise ValueError(f"Bad output format: {fmt}")
 
 
 ###############

@@ -8,7 +8,7 @@ from io import StringIO
 from prommis.uky.uky_flowsheet import build
 from prommis.conn.connectivity import (
     ModelConnectivity,
-    ConnectivityFromFile,
+    ConnectivityBuilder,
     Mermaid,
     OutputFormats,
 )
@@ -18,19 +18,17 @@ TAB = "    "
 
 def csv_data(fs, filename):
     mc = ModelConnectivity(fs)
-    csv = StringIO()
-    mc.write(csv)
-    lines = csv.getvalue().split("\n")
+    data = mc.get_data()
     fp = open(filename, "w")
     write_header(fp)
+    lines = (",".join(map(str, values)) for values in data)
     write_list(fp, lines, "csv")
     fp.write("\n\n")
-    csv.seek(0)
-    return csv, fp
+    return data, fp
 
 
 def mermaid_data(csv, fp):
-    conn = ConnectivityFromFile(csv)
+    conn = ConnectivityBuilder(input_data=csv)
     mmd = Mermaid(conn.connectivity)
     mermaid = StringIO()
     mmd.write(mermaid, output_format=OutputFormats.MERMAID)
@@ -43,13 +41,11 @@ def write_header(fp):
 
 
 def write_list(fp, lines, name):
-    while lines[-1] == "":
-        lines = lines[:-1]
     fp.write("@pytest.fixture\n")
     fp.write(f"def uky_{name}():\n")
-    fp.write(f"{TAB}{TAB}return [\n")
-    fp.write(",\n".join((f'{TAB}{TAB}{TAB}"{x}"' for x in lines)))
-    fp.write(f"\n{TAB}{TAB}]\n")
+    fp.write(f"{TAB}return [\n")
+    fp.write(",\n".join((f'{TAB}{TAB}"{x}"' for x in lines)))
+    fp.write(f"\n{TAB}]\n")
 
 
 if __name__ == "__main__":

@@ -186,7 +186,7 @@ class Connectivity:
     #: or be empty. If the first item in the list has a unit abbreviation, then
     #: this stream connects to the outlet of that unit; similarly, if the 2nd
     #: item has a unit abbr then this stream connects to the inlet.
-    #: Thus each item in this dict desribes an arc, or a line in a diagram,
+    #: Thus each item in this dict describes an arc, or a line in a diagram,
     #: with a stream connecting two units (usual case) or coming into or out of
     #: a unit as an unconnected feed or outlet for the flowsheet (possible).
     connections: dict = field(default_factory=dict)

@@ -1,7 +1,7 @@
 # Display flowsheet connectivity
 
 This page describes a simple Python tool to calculate and display flowsheet (or model) connectivity.
-The tool is available as a single modile, `prommis.conn.connectivity`.
+The tool is available as a single module, `prommis.conn.connectivity`.
 This module can be run from the [command-line interface](#CLI) or used programmatically through
 its [Python API](#API).
 

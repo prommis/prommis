@@ -19,6 +19,12 @@ def test_outputformats():
     assert OF.CSV == OF("csv")
 
 
+def test__output_format():
+    assert connectivity._output_format(OF.CSV) == OF.CSV
+    with pytest.raises(ValueError):
+        connectivity._output_format("--bad--")
+
+
 @pytest.fixture
 def example_conn():
     #
@@ -156,6 +162,13 @@ def test_connectivity_builder(connectivity_info):
     else:
         with pytest.raises(expect_exc):
             _ = builder.connectivity
+    builder = connectivity.ConnectivityBuilder(input_file=csv.open())
+
+
+@pytest.mark.unit
+def test_connectivity_builder_args():
+    with pytest.raises(ValueError):
+        connectivity.ConnectivityBuilder(input_file=None, input_data=None)
 
 
 @pytest.mark.unit
@@ -178,11 +191,31 @@ def test_create_from_matrix(connectivity_info, output_format):
     [
         (["--usage"], 0),
         (["prommis.uky.uky_flowsheet", "-O", "{path}/uky_conn.csv", "--to", "csv"], 0),
+        (["prommis.uky.uky_flowsheet", "-O", "-", "--to", "csv"], 0),
+        (
+            [
+                "prommis.uky.uky_flowsheet",
+                "-tmodule",
+                "-O",
+                "{path}/uky_conn.csv",
+                "--to",
+                "csv",
+            ],
+            0,
+        ),
+        (["invalidmodule.1.name"], 2),
         (
             ["prommis.me.this"],
             1,
         ),
         (["{path}/uky_conn.csv", "--to", "html"], 0),
+        (["{path}/uky_conn.csv"], 0),
+        (["{path}/uky_conn.csv", "-v"], 0),
+        (["{path}/uky_conn.csv", "-vv"], 0),
+        (["{path}/uky_conn.csv", "-q"], 0),
+        (["{path}/uky_conn.csv", "-q", "-v"], 0),
+        (["{path}/uky_conn.txt"], 0),
+        (["{path}/uky_conn.csv", "-tcsv"], 0),
         (["{path}/uky_conn.csv", "--to", "mermaid", "--output-file", "-"], 0),
         (["{path}/uky_conn.csv", "--to", "mermaid", "--labels"], 0),
         (["{path}/nope.csv", "--to", "mermaid", "--labels"], 2),
@@ -197,6 +230,11 @@ def test_main(tmp_path, args, code, uky_csv_data):
     if not from_model:
         csv_file = tmp_path / "uky_conn.csv"
         with csv_file.open("w") as f:
+            for line in uky_csv_data:
+                f.write(line)
+                f.write("\n")
+        csv_txt_file = tmp_path / "uky_conn.txt"
+        with csv_txt_file.open("w") as f:
             for line in uky_csv_data:
                 f.write(line)
                 f.write("\n")

@@ -800,7 +800,7 @@ def main(command_line=None):
             )
             if m.span() != (0, len(args.source)):
                 print(
-                    "Source looks like a module name, but is not valid: {srgs.source}"
+                    "Source looks like a module name, but is not valid: {args.source}"
                 )
                 return 2
             main_method = module_main

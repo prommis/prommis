@@ -83,7 +83,7 @@ synopsis: Connectivity matrix for a flowsheet
 
 ### Functions
 
-The two entry points for the API are `create_from_matrix` and `create_from_model`.
+The two main entry points for the API are `create_from_matrix` and `create_from_model`.
 They both have similar behavior and inputs, and both will return an instance of the
 class {py:class}`Connectivity` if there is no output file.
 

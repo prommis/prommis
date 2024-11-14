@@ -5,6 +5,7 @@ This module can be run as a script or used programmatically, using the
 public functions `create_from_matrix` and `create_from_model`.
 """
 
+import abc
 import argparse
 import csv
 from dataclasses import dataclass, field
@@ -46,9 +47,27 @@ class OutputFormats(enum.Enum):
     HTML = "html"
     MERMAID = "mermaid"
     CSV = "csv"
+    D2 = "d2"
 
 
-class Mermaid:
+class Formatter(abc.ABC):
+    """Base class for formatters, which write out the matrix in a way that can be
+    more easily visualized or processed by other tools.
+    """
+
+    def __init__(self, connectivity):
+        self._conn = connectivity
+
+    @abc.abstractmethod
+    def write(
+        self,
+        output_file: Union[str, TextIO, None],
+        output_format: Union[OutputFormats, str] = None,
+    ) -> Optional[str]:
+        pass
+
+
+class Mermaid(Formatter):
 
     # URL to load Mermaid from, for the HTML output
     CDN_URL = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
@@ -59,8 +78,9 @@ class Mermaid:
         stream_labels: bool = False,
         direction: str = "LR",
         indent="   ",
+        **kwargs,
     ):
-        self._conn = connectivity
+        super().__init__(connectivity)
         self.indent = indent
         self._stream_labels = stream_labels
         self._direction = direction
@@ -169,6 +189,20 @@ class Mermaid:
             label = label[:-5]
         label = label.replace("_", " ")
         return label
+
+
+class D2(Formatter):
+    def __init__(self, connectivity, **kwargs):
+        super().__init__(connectivity)
+
+    def write(
+        self,
+        output_file: Union[str, TextIO, None],
+        output_format: Union[OutputFormats, str] = None,
+    ) -> Optional[str]:
+        print("Sorry, D2 output is not yet implemented")
+        if output_file is None:
+            return "Not implemented"
 
 
 @dataclass
@@ -412,6 +446,7 @@ def _real_output_file(ifile: str, to_, input_file=None):
         OutputFormats.MARKDOWN: "md",
         OutputFormats.MERMAID: "mmd",
         OutputFormats.CSV: "csv",
+        OutputFormats.D2: "d2",
     }[to_fmt]
     i = ifile.rfind(".")
     if i > 0:
@@ -431,7 +466,7 @@ def create_from_matrix(
     ifile: Union[str, TextIO],
     ofile: Optional[str] = None,
     to_format: Union[OutputFormats, str] = None,
-    mermaid_options: dict = None,
+    formatter_options: dict = None,
 ) -> Union[Connectivity, None]:
     """Programmatic interface to create a graph of the model from a connectivity matrix.
 
@@ -441,6 +476,7 @@ def create_from_matrix(
                The output will go to the console. If None, then no output will
                be created and the connectivity will be returned as an object.
         to_format: Output format, which should match one of the values in `OutputFormat`
+        formatter_options: Keyword arguments to pass to the output formatter
 
     Returns:
         Connectivity instance, if ofile is None
@@ -462,13 +498,23 @@ def create_from_matrix(
         # err_msg += f"Stack trace:\n{format_stack()}"
         raise RuntimeError(err_msg)
 
-    mermaid_kw = mermaid_options or {}
-    mermaid = Mermaid(conn_file.connectivity, **mermaid_kw)
+    formatter_kw = formatter_options or {}
+
+    if output_format in (
+        OutputFormats.MERMAID,
+        OutputFormats.MARKDOWN,
+        OutputFormats.HTML,
+    ):
+        formatter = Mermaid(conn_file.connectivity, **formatter_kw)
+    elif output_format == OutputFormats.D2:
+        formatter = D2(conn_file.connectivity, **formatter_kw)
+    else:
+        raise RuntimeError(f"No processing defined for output format: {output_format}")
 
     if ofile == AS_STRING:
-        print(mermaid.write(None, output_format=output_format))
+        print(formatter.write(None, output_format=output_format))
     else:
-        mermaid.write(ofile, output_format=output_format)
+        formatter.write(ofile, output_format=output_format)
 
 
 def create_from_model(
@@ -478,7 +524,7 @@ def create_from_model(
     to_format: Union[OutputFormats, str] = None,
     build_func: str = "build",
     flowsheet_attr: str = "fs",
-    mermaid_options: dict = None,
+    formatter_options: dict = None,
 ) -> Union[Connectivity, None]:
     """Programmatic interface to create the connectivity or mermaid output from a python model.
 
@@ -491,6 +537,7 @@ def create_from_model(
                The output will go to the console. If None, then no output will
                be created and the connectivity will be returned as an object.
         to_format: Output format
+        formatter_options: Keyword arguments to pass to the output formatter
 
     Returns:
         Connectivity instance, if ofile is None
@@ -526,18 +573,24 @@ def create_from_model(
         if isinstance(output_stream, str):
             output_stream = open(output_stream, "w")
         model_conn.write(output_stream)
-    # Mermaid output
-    elif output_format in (
-        OutputFormats.MERMAID,
-        OutputFormats.MARKDOWN,
-        OutputFormats.HTML,
-    ):
-        cb = ConnectivityBuilder(input_data=data)
-        mermaid_kw = mermaid_options or {}
-        mermaid = Mermaid(cb.connectivity, **mermaid_kw)
-        mermaid.write(output_stream, output_format=output_format)
     else:
-        raise RuntimeError(f"No processing defined for output format: {to_format}")
+        cb = ConnectivityBuilder(input_data=data)
+        formatter_kw = formatter_options or {}
+
+        # Mermaid output
+        if output_format in (
+            OutputFormats.MERMAID,
+            OutputFormats.MARKDOWN,
+            OutputFormats.HTML,
+        ):
+            formatter = Mermaid(cb.connectivity, **formatter_kw)
+        # D2 output
+        elif output_format == OutputFormats.D2:
+            formatter = D2(cb.connectivity, **formatter_kw)
+        else:
+            raise RuntimeError(f"No processing defined for output format: {to_format}")
+
+        formatter.write(output_stream, output_format=output_format)
 
 
 def _output_format(fmt):
@@ -573,7 +626,7 @@ def csv_main(args) -> int:
 
     try:
         create_from_matrix(
-            args.source, args.ofile, args.to, mermaid_options=mermaid_options
+            args.source, args.ofile, args.to, formatter_options=mermaid_options
         )
     except Exception as err:
         _log.info("[ end ] create from matrix (1)")
@@ -607,7 +660,7 @@ def module_main(args) -> int:
             to_format=args.to,
             flowsheet_attr=args.fs,
             build_func=args.build,
-            mermaid_options=mermaid_options,
+            formatter_options=mermaid_options,
         )
     except RuntimeError as err:
         _log.info("[ end ] create from Python model (1)")
@@ -735,10 +788,11 @@ def main(command_line=None):
         help=f"Output file",
         default=None,
     )
+    output_format_choices = sorted((f.value for f in OutputFormats))
     p.add_argument(
         "--to",
         help="Output format for mermaid graph (default=csv)",
-        choices=("markdown", "mermaid", "html", "csv"),
+        choices=output_format_choices,
         default=None,
     )
     p.add_argument(

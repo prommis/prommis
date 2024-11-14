@@ -1,6 +1,5 @@
 import pytest
 
-
 @pytest.fixture
 def uky_csv():
     return [

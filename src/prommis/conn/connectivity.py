@@ -142,22 +142,22 @@ class Mermaid:
     def _get_connections(self):
         connections = []
         show_streams = set()
-        # if we are going to label the streams,
-        # construct a mapping to get names from abbreviations
-        if self._stream_labels:
-            abbr_name = {v: k for k, v in self._conn.streams.items()}
+
+        stream_name_map = {v: k for k, v in self._conn.streams.items()}
         for stream_abbr, values in self._conn.connections.items():
+            stream_name = stream_name_map[stream_abbr]
+            src, tgt = values[0], values[1]
             if values[0] is not None and values[1] is not None:
                 if self._stream_labels:
-                    label = self._clean_stream_label(abbr_name[stream_abbr])
-                    connections.append(f"{values[0]} --|{label}| -->{values[1]}")
+                    label = self._clean_stream_label(stream_name)
+                    connections.append(f"{src} --|{label}| -->{tgt}")
                 else:
-                    connections.append(f"{values[0]} --> {values[1]}")
+                    connections.append(f"{src} --> {tgt}")
             elif values[0] is not None:
-                connections.append(f"{values[0]} --> {stream_abbr}")
+                connections.append(f"{src} --> {stream_abbr}")
                 show_streams.add(stream_abbr)
             elif values[1] is not None:
-                connections.append(f" {stream_abbr} --> {values[1]}")
+                connections.append(f" {stream_abbr} --> {tgt}")
                 show_streams.add(stream_abbr)
         return connections, show_streams
 
@@ -267,22 +267,26 @@ class ConnectivityBuilder:
         return streams
 
     def _build_connections(self, units, streams):
+        n_cols = len(self._header)
         connections = {s: [None, None] for s in streams.values()}
-        for row in self._rows:
+        for i, row in enumerate(self._rows):
             stream_name = row[0]
-            col = 1
-            for conn in row[1:]:
+            for col in range(1, n_cols):
+                conn = row[col]
                 if conn not in ("", "0"):
-                    conn = max(0, int(conn))  # -1 -> 0, 1 -> 1
+                    unit_name = self._header[col]
                     try:
-                        unit_name = self._header[col]
-                    except IndexError:
-                        print(f"col={col} :: header-len={len(self._header)}")
-                        raise
-                    unit_abbr = units[unit_name]
-                    stream_abbr = streams[stream_name]
-                    connections[stream_abbr][conn] = unit_abbr
-                col += 1
+                        conn_index = max(0, int(conn))  # -1 -> 0, 1 -> 1
+                        if conn_index not in (0, 1):
+                            raise ValueError(
+                                f"Bad connection value at [{i}, {col}]: {conn} not -1 or 1"
+                            )
+                    except ValueError:
+                        raise ValueError(
+                            f"Bad connection value at [{i}, {col}]: {conn} not -1 or 1"
+                        )
+                    stream_abbr, unit_abbr = streams[stream_name], units[unit_name]
+                    connections[stream_abbr][conn_index] = unit_abbr
         return connections
 
 
@@ -304,6 +308,8 @@ class ModelConnectivity:
                 "Trying to build from a Pyomo model, but Pyomo is not installed"
             )
         fa = flowsheet_attr.strip("'").strip('"').strip()
+        if not re.match(r"[a-zA-Z_]+", fa):
+            raise ValueError("Flowsheet attribute can only be letters and underscores")
         self._fs = eval(f"model.{fa}")
         self._units = []
         self._streams = []
@@ -422,15 +428,15 @@ def _real_output_file(ifile: str, to_, input_file=None):
 
 
 def create_from_matrix(
-    ifile: str,
-    ofile: Optional[str],
-    to_format: Union[OutputFormats, str],
+    ifile: Union[str, TextIO],
+    ofile: Optional[str] = None,
+    to_format: Union[OutputFormats, str] = None,
     mermaid_options: dict = None,
 ) -> Union[Connectivity, None]:
     """Programmatic interface to create a graph of the model from a connectivity matrix.
 
     Args:
-        ifile (str): Input filename
+        ifile: Input file (name or path)
         ofile: Output file name. If this is the special value defined by `AS_STRING`, then
                The output will go to the console. If None, then no output will
                be created and the connectivity will be returned as an object.
@@ -450,12 +456,14 @@ def create_from_matrix(
         return conn_file.connectivity
 
     try:
-        mermaid_kw = mermaid_options or {}
-        mermaid = Mermaid(conn_file.connectivity, **mermaid_kw)
+        conn = conn_file.connectivity
     except Exception as err:
         err_msg = f"Could not parse connectivity information: {err}. "
-        err_msg += f"Stack trace:\n{format_stack()}"
+        # err_msg += f"Stack trace:\n{format_stack()}"
         raise RuntimeError(err_msg)
+
+    mermaid_kw = mermaid_options or {}
+    mermaid = Mermaid(conn_file.connectivity, **mermaid_kw)
 
     if ofile == AS_STRING:
         print(mermaid.write(None, output_format=output_format))
@@ -475,7 +483,7 @@ def create_from_model(
     """Programmatic interface to create the connectivity or mermaid output from a python model.
 
     Arguments:
-        model: If present, the model touse
+        model: If present, the model to use
         module_name: Dotted Python module name (absolute, e.g. package.subpackage.module).
                      The protocol is to call the `build()` function in the module to get
                      back a model.
@@ -504,7 +512,10 @@ def create_from_model(
 
     model_conn = ModelConnectivity(model, flowsheet_attr=flowsheet_attr)
 
-    output_stream = sys.stdout if ofile == AS_STRING else ofile
+    if ofile == AS_STRING:
+        output_stream = sys.stdout
+    else:
+        output_stream = ofile
     data = model_conn.get_data()
     # No output: return connectivity
     if ofile is None:
@@ -512,6 +523,8 @@ def create_from_model(
         return cb.connectivity
     # CSV output
     elif output_format == OutputFormats.CSV:
+        if isinstance(output_stream, str):
+            output_stream = open(output_stream, "w")
         model_conn.write(output_stream)
     # Mermaid output
     elif output_format in (
@@ -601,6 +614,8 @@ def module_main(args) -> int:
         _log.error(f"{err}")
         return 1
     _log.info("[ end ] create from Python model")
+
+    return 0
 
 
 SCRIPT_NAME = "connectivity"
@@ -696,14 +711,16 @@ def _process_log_options(module_name: str, args: argparse.Namespace) -> logging.
     return log
 
 
-def main():
+def main(command_line=None):
     p = argparse.ArgumentParser(
         description="Process and/or generate model connectivity information"
     )
     p.add_argument("--usage", action="store_true", help="Print usage with examples")
     # set nargs=? so --usage works without any other argument; though
     # this will require more checks later
-    p.add_argument("source", help="Build source", metavar="FILE or MODULE", nargs="?")
+    p.add_argument(
+        "source", help="Source data or module", metavar="FILE or MODULE", nargs="?"
+    )
     p.add_argument(
         "--type",
         "-t",
@@ -722,7 +739,7 @@ def main():
         "--to",
         help="Output format for mermaid graph (default=csv)",
         choices=("markdown", "mermaid", "html", "csv"),
-        default="csv",
+        default=None,
     )
     p.add_argument(
         "--fs",
@@ -745,23 +762,27 @@ def main():
         default="LR",
     )
     _add_log_options(p)
-    args = p.parse_args()
+    if command_line:
+        args = p.parse_args(args=command_line)
+    else:
+        args = p.parse_args()
     if args.usage:
         print(USAGE)
         return 0
     if args.source is None:
         print("File or module source is required. Try --usage for details.\n")
         p.print_help()
-        return 0
+        return 2
     _log = _process_log_options("idaes_ui.conn.connectivity", args)
     if args.type is None:
         main_method = None
         if args.source.lower().endswith(".csv"):
             path = Path(args.source)
             if not path.exists():
-                p.error(
+                print(
                     f"Source looks like a CSV file, but does not exist: {args.source}"
                 )
+                return 2
             main_method = csv_main
         elif "/" in args.source:
             path = Path(args.source)
@@ -771,25 +792,32 @@ def main():
                 )
                 main_method = csv_main
             else:
-                p.error(
-                    f"Source looks like file path, but does not exist: {args.source}"
-                )
+                print(f"Source looks like file path, but does not exist: {args.source}")
+                return 2
         else:
             m = re.match(
                 r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", args.source
             )
             if m.span() != (0, len(args.source)):
-                p.error(
+                print(
                     "Source looks like a module name, but is not valid: {srgs.source}"
                 )
+                return 2
             main_method = module_main
     else:
         if args.type == "csv":
             if not Path(args.source).exists():
-                p.error(f"Source file path does not exist: {args.source}")
+                print(f"Source file path does not exist: {args.source}")
+                return 2
             main_method = csv_main
         elif args.type == "module":
             main_method = module_main
+
+    if args.to is None:
+        if main_method is csv_main:
+            args.to = OutputFormats.MERMAID.value
+        else:
+            args.to = OutputFormats.CSV.value
 
     return main_method(args)
 

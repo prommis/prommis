@@ -4,7 +4,6 @@ Tests for `connectivity` module.
 
 from io import StringIO
 import re
-import sys
 import pytest
 
 from prommis.conn import connectivity

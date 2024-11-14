@@ -15,7 +15,6 @@ import logging
 from pathlib import Path
 import re
 import sys
-from traceback import format_stack
 from typing import TextIO, Union, Optional, List
 import warnings
 
@@ -74,8 +73,9 @@ class Mermaid:
         """Write Mermaid (plain or encapsulated) file
 
         Args:
-            output_file (Union[str, TextIO, None]): Output file object, filename, or None meaning return a string
-            output_format (Union[OutputFormats, str], optional): _description_. Defaults to None.
+            output_file (Union[str, TextIO, None]): Output file object, filename,
+               or None meaning return a string
+            output_format (Union[OutputFormats, str], optional): Output format. Defaults to None.
 
         Raises:
             ValueError: This output format is not handled (e.g., CSV)

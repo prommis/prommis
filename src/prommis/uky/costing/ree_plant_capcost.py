@@ -3448,9 +3448,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         blk, cum_num_units, cost_FOAK, CE_index_year, learning_rate=0.04
     ):
         """
-        Equations for Economy of Numbers (EoN) derived from NETL Quality Guidelines for Energy System Studies
-        report on Technology Learning Curve (FOAK to NOAK).
-
         Economy of Numbers (EoN) estimates the future profitability of novel/First-of-A-Kind (FOAK)
         equipment. This is because the cost of manufacturing a piece of equipment tends to decline
         as the cumulative production quantity rises, resulting from a consistent improvement in
@@ -3469,12 +3466,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             CE_index_year: year for cost basis, e.g., "2021" to use 2021 dollars
             learning_rate: ranges between 0.01 - 0.1, depending on the level of maturity
                            (i.e., experimental, growing, proven, etc.)
-                           as described in Rubin, E. S., Mantripragada, H., and Zhai, H.,
-                           "An Assessment of the NETL Cost Estimation Methodology".
-                           Department of Engineering and Public Policy, Carnegie Mellon University,
-                           Pittsburgh, PA (2016). p. 31, Fig. 6-4.
-
-
+        Ref.:
+            Rubin, E. S., Mantripragada, H., and Zhai, H.,
+            "An Assessment of the NETL Cost Estimation Methodology".
+            Department of Engineering and Public Policy, Carnegie Mellon University,
+            Pittsburgh, PA (2016). p. 31, Fig. 6-4.
         """
 
         blk.cum_num_units = Param(

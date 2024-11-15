@@ -22,15 +22,14 @@ one of the 18 rare earth elements and x is the number of water molecules associa
 gangue oxalate hydrates considered in the model are :ce:`Fe2(C2O4)3 \\cdot 2H2O`, :ce:`Al2(C2O4)3 \\cdot H2O`, and
 :ce:`CaC2O4 \\cdot H2O`, for `Fe`, `Al`, and `Ca` elements, respectively.
 
-The feed stream could optionally contain surface moisture. The amount of surface moisture entering the
-reactor is specified by an input variable in the current model rather than a state variable in the property
-package of the solid feed stream.
+The feed stream contains surface moisture. The amount of surface moisture entering the reactor is specified by
+a liquid inlet that contains a fraction of the liquid outlet of the precipitator.
 
 
 Physical Changes
 ----------------
 
-Moisture in the solid feed stream is vaporized.
+Moisture in the solid feed stream from the liquid inlet is vaporized.
 
 
 Reactions
@@ -76,10 +75,11 @@ The gas phase properties are calculated based on user configured property packag
 Mass Balance
 ------------
 
-The content of the surface moisture in the solid feed stream is vaporized to enter the gas phase.
+The content of the surface moisture specified by the liquid inlet stream is vaporized and enters the gas phase.
+The other species in the liquid solution, including metal elements in the liquid inlet stream, are ignored.
 
 The species mass balance is based on complete conversion of solid reactants such that the molar flow rates of
-individual metals (rare earth and gaugue elements) are conserved. For the species in the gas phase, the :ce:`O2`
+individual metals (rare earth and gangue elements) are conserved. For the species in the gas phase, the :ce:`O2`
 is consumed while :ce:`CO2` and :ce:`H2O` are produced. For any other species in the gas feed stream that does not
 participate in any reactions, its molar flow rate in the gas product stream is the same as that in the
 inlet stream. Note that the user needs to make sure that the gas feed stream contains enough :ce:`O2` to avoid
@@ -114,6 +114,7 @@ Streams
 - **Gas Inlet Stream**: :ce:`O2`-containing hot flue gas.
 - **Gas Outlet Stream**: Gas product leaving the reactor.
 - **Solid Inlet Stream**: Solid feed of oxalate mixture entering the reactor.
+- **Liquid Inlet Stream**: Surface moisture in the solid feed as a liquid inlet entering the reactor.
 
 Note that the two solid product streams (fine solid carried by the gas stream and the recovered solid product stream)
 are not defined as outlet streams and their flow rates are defined as model variables.
@@ -134,6 +135,7 @@ import idaes.logger as idaeslog
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.solvers import get_solver
 from idaes.core.util.config import DefaultBool, is_physical_parameter_block
+from idaes.core.util.tables import create_stream_table_dataframe
 
 __author__ = "Jinliang Ma"
 __version__ = "1.0.0"
@@ -201,11 +203,11 @@ see property package for documentation.}""",
         ),
     )
     CONFIG.declare(
-        "property_package_precipitate",
+        "property_package_precipitate_solid",
         ConfigValue(
             default=useDefault,
             domain=is_physical_parameter_block,
-            description="Property package to use for precipitate control volume",
+            description="Solid precipitate property package to use for control volume",
             doc="""Property parameter object used to define property calculations,
 **default** - useDefault.
 **Valid values:** {
@@ -214,10 +216,35 @@ see property package for documentation.}""",
         ),
     )
     CONFIG.declare(
-        "property_package_args_precipitate",
+        "property_package_args_precipitate_solid",
         ConfigBlock(
             implicit=True,
-            description="Arguments to use for constructing precipitate property packages",
+            description="Arguments to use for constructing solid precipitate property packages",
+            doc="""A ConfigBlock with arguments to be passed to a property block(s)
+and used when constructing these,
+**default** - None.
+**Valid values:** {
+see property package for documentation.}""",
+        ),
+    )
+    CONFIG.declare(
+        "property_package_precipitate_liquid",
+        ConfigValue(
+            default=useDefault,
+            domain=is_physical_parameter_block,
+            description="Liquid precipitate property package to use for control volume",
+            doc="""Property parameter object used to define property calculations,
+**default** - useDefault.
+**Valid values:** {
+**useDefault** - use default package from parent model or flowsheet,
+**PropertyParameterObject** - a PropertyParameterBlock object.}""",
+        ),
+    )
+    CONFIG.declare(
+        "property_package_args_precipitate_liquid",
+        ConfigBlock(
+            implicit=True,
+            description="Arguments to use for constructing liquid precipitate property packages",
             doc="""A ConfigBlock with arguments to be passed to a property block(s)
 and used when constructing these,
 **default** - None.
@@ -280,6 +307,9 @@ constructed,
         # Call TranslatorData build to setup dynamics
         super(REEOxalateRoasterData, self).build()
 
+        # Attributed for storing contents of reporting output
+        self._stream_table_dict = {}
+
         # Build Holdup Block
         # gas phase inlet stream
         self.gas_in = self.config.property_package_gas.build_state_block(
@@ -292,12 +322,23 @@ constructed,
             self.flowsheet().time, **self.config.property_package_args_gas
         )
         # solid phase inlet stream from precipitator
-        self.solid_in = self.config.property_package_precipitate.build_state_block(
-            self.flowsheet().time, **self.config.property_package_args_precipitate
+        self.solid_in = (
+            self.config.property_package_precipitate_solid.build_state_block(
+                self.flowsheet().time,
+                **self.config.property_package_args_precipitate_solid,
+            )
+        )
+        # liquid phase inlet stream from precipitator
+        self.liquid_in = (
+            self.config.property_package_precipitate_liquid.build_state_block(
+                self.flowsheet().time,
+                **self.config.property_package_args_precipitate_liquid,
+            )
         )
         self.add_port("gas_inlet", self.gas_in)
         self.add_port("gas_outlet", self.gas_out)
         self.add_port("solid_inlet", self.solid_in)
+        self.add_port("liquid_inlet", self.liquid_in)
 
         # Add Geometry
         if self.config.has_holdup is True:
@@ -559,7 +600,7 @@ constructed,
         self.flow_mol_moist_feed = Var(
             self.flowsheet().config.time,
             units=pyunits.mol / pyunits.s,
-            doc="mole flow rate of liquid water in solid feed stream",
+            doc="mole flow rate of liquid water as surface moisture from liquid inlet",
         )
 
         self.frac_comp_recovery = Var(
@@ -583,6 +624,13 @@ constructed,
             doc="mole flow rate of oxide in dust stream",
         )
 
+        self.flow_mass_product = Var(
+            self.flowsheet().config.time,
+            bounds=(0.0, None),
+            units=pyunits.kg / pyunits.s,
+            doc="mass flow rate of total oxides in product stream",
+        )
+
         self.enth_mol_comp_feed = Var(
             self.flowsheet().config.time,
             self.metal_list,
@@ -603,7 +651,7 @@ constructed,
         # Currently the solid feed port contains anhydrous REE oxalate
         # Convert solid inlet port anhydrous oxalate mol flow to flow_mol_comp_feed
         reversed_react = dict(
-            map(reversed, self.config.property_package_precipitate.react.items())
+            map(reversed, self.config.property_package_precipitate_solid.react.items())
         )
 
         @self.Constraint(
@@ -614,6 +662,16 @@ constructed,
         def flow_mol_comp_feed_eqn(b, t, i):
             return b.flow_mol_comp_feed[t, i] == pyunits.convert(
                 b.solid_in[t].flow_mol_comp[reversed_react[i]],
+                to_units=pyunits.mol / pyunits.second,
+            )
+
+        @self.Constraint(
+            self.flowsheet().config.time,
+            doc="surface moisture molar flow rate",
+        )
+        def flow_mol_moist_feed_eqn(b, t):
+            return b.flow_mol_moist_feed[t] == pyunits.convert(
+                b.liquid_in[t].flow_mol_comp["H2O"],
                 to_units=pyunits.mol / pyunits.second,
             )
 
@@ -671,12 +729,12 @@ constructed,
                 1 - b.frac_comp_recovery[t, i]
             )
 
-        @self.Expression(
+        @self.Constraint(
             self.flowsheet().config.time,
             doc="total mass flow rate of recovered product",
         )
-        def flow_mass_product(b, t):
-            return sum(
+        def flow_mass_product_eqn(b, t):
+            return b.flow_mass_product[t] == sum(
                 b.flow_mol_comp_product[t, i] * b.mw_oxide_list_all[i]
                 for i in b.metal_list
             )
@@ -722,6 +780,7 @@ constructed,
             )
 
         # molar enthalpy of moisture in feed solid, liquid water at 25 C is 68.3174 kcal/mol
+        # since the liquid inlet does not contain temperature, use the solid inlet temperature
         @self.Expression(
             self.flowsheet().config.time,
             doc="molar enthalpy of moisture in solid feed stream",
@@ -860,3 +919,18 @@ constructed,
                     self.heat_duty[t], default=1e-6, warning=True
                 )
                 iscale.constraint_scaling_transform(c, sf, overwrite=False)
+
+    def _get_stream_table_contents(self, time_point=0):
+        return create_stream_table_dataframe(
+            self._stream_table_dict, time_point=time_point
+        )
+
+    def _get_performance_contents(self, time_point=0):
+        exprs = {}
+
+        for j in self.config.metal_list:
+            exprs[f"Product {j} Mass Fraction"] = self.mass_frac_comp_product[
+                time_point, j
+            ]
+
+        return {"exprs": exprs}

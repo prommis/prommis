@@ -66,8 +66,22 @@ class Formatter(abc.ABC):
     ) -> Optional[str]:
         pass
 
+    @staticmethod
+    def _get_output_stream(output_file):
+        if output_file is None:
+            f = StringIO()
+        elif hasattr(output_file, "write"):
+            f = output_file
+        else:
+            f = open(output_file, "w")
+        return f
+
 
 class Mermaid(Formatter):
+    """Create output in Mermaid syntax.
+
+    See https://mermaid.js.org/
+    """
 
     # URL to load Mermaid from, for the HTML output
     CDN_URL = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
@@ -103,12 +117,7 @@ class Mermaid(Formatter):
         Returns:
             str | None: If `output_file` was None then return output as a string, otherwise None
         """
-        if output_file is None:
-            f = StringIO()
-        elif hasattr(output_file, "write"):
-            f = output_file
-        else:
-            f = open(output_file, "w")
+        f = self._get_output_stream(output_file)
 
         output_format = _output_format(output_format)
         if output_format == OutputFormats.MARKDOWN:
@@ -192,17 +201,50 @@ class Mermaid(Formatter):
 
 
 class D2(Formatter):
-    def __init__(self, connectivity, **kwargs):
+    """Create output in Terraform D2 syntax.
+
+    See https://d2lang.com
+    """
+
+    def __init__(self, connectivity, stream_labels: bool = False, **kwargs):
         super().__init__(connectivity)
+        self._labels = stream_labels
 
     def write(
         self,
         output_file: Union[str, TextIO, None],
         output_format: Union[OutputFormats, str] = None,
     ) -> Optional[str]:
-        print("Sorry, D2 output is not yet implemented")
+        feed_num, sink_num = 1, 1
+        f = self._get_output_stream(output_file)
+        for unit_name, unit_abbr in self._conn.units.items():
+            f.write(f"{unit_abbr}: {unit_name}\n")
+        stream_rmap = {v: k for k, v in self._conn.streams.items()}
+        for stream_abbr, conns in self._conn.connections.items():
+            stream_name = stream_rmap[stream_abbr]
+            if conns[0] is None:
+                f.write(f"f{feed_num}: Feed {feed_num}\n")
+                f.write(f"f{feed_num} -> {conns[1]}")
+                if self._labels:
+                    f.write(f": {stream_name}")
+                f.write("\n")
+                feed_num += 1
+            elif conns[1] is None:
+                f.write(f"s{sink_num}: Sink {sink_num}\n")
+                f.write(f"f{sink_num} -> {conns[1]}")
+                if self._labels:
+                    f.write(f": {stream_name}")
+                f.write("\n")
+                sink_num += 1
+            else:
+                f.write(f"{conns[0]} -> {conns[1]}")
+                if self._labels:
+                    f.write(f": {stream_name}")
+                f.write("\n")
+
         if output_file is None:
-            return "Not implemented"
+            f.flush()
+            return f.getvalue()
 
 
 @dataclass

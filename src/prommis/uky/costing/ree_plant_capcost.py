@@ -2913,16 +2913,16 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         Annual_Loan_Payment = Debt * A/P(iLoan_%, 0, Nloan) = Debt / P/A(iLoan_%, 0, Nloan)
 
-        PV_Loan_Interest_Owed = P/A(r, iLoan_%, Nloan) * Annual_Loan_Payment - Debt
+        PV_Loan_Interest_Owed = Nloan * Annual_Loan_Payment - Debt
 
         where Annual_Loan_Payment is the required combined principal and interest
         that should be paid annually to pay off the loan on-time, Debt is the
         loan principal (typically a percentage of the CAPEX), Nloan is the loan
         repayment period, and iLoan_% is the capital equipment loan interest rate
-        expressed as a decimal. Note that while the annual payment has growth of
-        0 and maintains a constant present value over time, and the loan balance 
-        decreases as the principal is paid off, the present value of loan payments
-        grows according to the interest rate and accounts for the resulting cash flow.
+        expressed as a decimal. Note that the annual loan payment is a constant
+        amount in present day dollars, and the difference between the sum of all
+        loan payments and the original debt principal is the total annual interest
+        on the unpaid balance over all years.
 
         Revenue, operating costs and royalties based on revenue escalate with
         standard inflation. Notably, these cash flows occur after any capital
@@ -3248,24 +3248,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         @b.Constraint()
         def pv_loan_interest_constraint(c):
-            # PV_Loan_Interest_Owed = - (P/A(%discount, %interest, loan_length) * Annual_Loan_Payment - Debt)
-            # we assume that the loan payment series starts in year 1, so we don't need to account for a delay
+            # PV_Loan_Interest_Owed = - loan_length * Annual_Loan_Payment - Debt)
+            # we assume that the loan payments are in present day dollars, so we don't need to discount them
 
             if c.config.debt_expression is None:
 
                 return c.pv_loan_interest == -pyunits.convert(
-                    series_present_worth_factor(
-                        pyunits.convert(
-                            c.discount_percentage,  # loan balance is discounted by discount rate
-                            to_units=pyunits.dimensionless,
-                        ),
-                        pyunits.convert(
-                            c.capital_loan_interest_percentage,  # loan balance grows with loan interest rate
-                            to_units=pyunits.dimensionless,
-                        ),
-                        c.capital_loan_repayment_period / pyunits.year,
-                    )
-                    * c.loan_annual_payment
+                    c.capital_loan_repayment_period/pyunits.year * c.loan_annual_payment
                     - c.loan_debt,
                     to_units=c.cost_units,
                 )
@@ -3273,18 +3262,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             else:
 
                 return c.pv_loan_interest == -pyunits.convert(
-                    series_present_worth_factor(
-                        pyunits.convert(
-                            c.discount_percentage,  # loan balance is discounted by discount rate
-                            to_units=pyunits.dimensionless,
-                        ),
-                        pyunits.convert(
-                            c.capital_loan_interest_percentage,  # loan balance grows with loan interest rate
-                            to_units=pyunits.dimensionless,
-                        ),
-                        c.capital_loan_repayment_period / pyunits.year,
-                    )
-                    * c.loan_annual_payment
+                    c.capital_loan_repayment_period/pyunits.year * c.loan_annual_payment
                     - c.loan_debt[None],
                     to_units=c.cost_units,
                 )

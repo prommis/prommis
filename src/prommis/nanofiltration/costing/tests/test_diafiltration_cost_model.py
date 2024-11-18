@@ -10,24 +10,20 @@ Tests the diafiltration cost model
 
 from pyomo.environ import (
     ConcreteModel,
-    Expression,
-    Objective,
     Param,
-    Set,
-    Suffix,
-    TransformationFactory,
     Var,
-    log,
     units,
-    value,
 )
 
-from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
-from idaes.core.util.initialization import propagate_state
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+import pytest
+
+from idaes.core import (
+    FlowsheetBlock,
+    UnitModelBlock,
+    UnitModelCostingBlock,
+)
 from idaes.core.util.model_statistics import degrees_of_freedom
 
-import pytest
 
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
     DiafiltrationCosting,

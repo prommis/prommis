@@ -1,4 +1,5 @@
 """Utility functions."""
+
 # imports
 import pyomo.environ as pyo
 
@@ -22,7 +23,10 @@ def report_values(m, prec=True):
     print('Membrane outlet recoveries')
     m.rec_perc_co.display()
     m.rec_perc_li.display()
-    data['Membrane outlet recoveries'] = [pyo.value(m.rec_perc_co), pyo.value(m.rec_perc_li)]
+    data['Membrane outlet recoveries'] = [
+        pyo.value(m.rec_perc_co),
+        pyo.value(m.rec_perc_li),
+    ]
     print('Membrane Area')
     data['Membrane Area'] = []
     for i in m.fs.stages:
@@ -34,10 +38,9 @@ def report_values(m, prec=True):
         print(f'Stage {i}')
         for j in pyo.RangeSet(len(m.fs.tubes)):
             try:
-                flow = pyo.value(getattr(
-                    m.fs.split_feed,
-                    f'outlet_{(i-1)*NT+j}'
-                ).flow_vol[0])
+                flow = pyo.value(
+                    getattr(m.fs.split_feed, f'outlet_{(i-1)*NT+j}').flow_vol[0]
+                )
                 print(flow)
                 data['feed flows'].append(flow)
             except:
@@ -49,10 +52,9 @@ def report_values(m, prec=True):
         print(f'Stage {i}')
         for j in pyo.RangeSet(len(m.fs.tubes)):
             try:
-                flow = pyo.value(getattr(
-                    m.fs.split_diafiltrate,
-                    f'outlet_{(i-1)*NT+j}'
-                ).flow_vol[0])
+                flow = pyo.value(
+                    getattr(m.fs.split_diafiltrate, f'outlet_{(i-1)*NT+j}').flow_vol[0]
+                )
                 print(flow)
                 data['diaf flows'].append(flow)
             except:
@@ -65,10 +67,9 @@ def report_values(m, prec=True):
         print(f'Stage {i-1}')
         for j in pyo.RangeSet(len(m.fs.tubes)):
             try:
-                flow = pyo.value(getattr(
-                    m.fs.recycle_splitters[i],
-                    f'outlet_{j}'
-                ).flow_vol[0])
+                flow = pyo.value(
+                    getattr(m.fs.recycle_splitters[i], f'outlet_{j}').flow_vol[0]
+                )
                 print(flow)
                 data['recycle flows'].append(flow)
             except:
@@ -81,10 +82,7 @@ def report_values(m, prec=True):
         for i in m.fs.stages:
             print(f'Stage {i}')
             for j in m.fs.tubes:
-                flow = pyo.value(getattr(
-                    m.fs.splitters[i],
-                    f'outlet_{j}'
-                ).flow_vol[0])
+                flow = pyo.value(getattr(m.fs.splitters[i], f'outlet_{j}').flow_vol[0])
                 print(flow)
                 data['inlet splitter flows'].append(flow)
 
@@ -92,14 +90,16 @@ def report_values(m, prec=True):
     data['Co product flows'] = []
     for i in pyo.RangeSet(len(m.fs.stages)):
         try:
-            flow = pyo.value(
-                m.fs.split_retentate[i].product.flow_vol[0]
-            )
+            flow = pyo.value(m.fs.split_retentate[i].product.flow_vol[0])
             print(flow)
             data['Co product flows'].append(flow)
             for sol in m.fs.solutes:
-                print(f'    {pyo.value(m.fs.split_retentate[i].product.mass_solute[0, sol])}')
-                data['Co product flows'].append(pyo.value(m.fs.split_retentate[i].product.mass_solute[0, sol]))
+                print(
+                    f'    {pyo.value(m.fs.split_retentate[i].product.mass_solute[0, sol])}'
+                )
+                data['Co product flows'].append(
+                    pyo.value(m.fs.split_retentate[i].product.mass_solute[0, sol])
+                )
         except:
             print('no Co product here')
             data['Co product flows'].append(0)
@@ -108,14 +108,16 @@ def report_values(m, prec=True):
     data['Li product flows'] = []
     for i in pyo.RangeSet(len(m.fs.stages)):
         try:
-            flow = pyo.value(
-                m.fs.split_permeate[i].product.flow_vol[0]
-            )
+            flow = pyo.value(m.fs.split_permeate[i].product.flow_vol[0])
             print(flow)
             data['Li product flows'].append(flow)
             for sol in m.fs.solutes:
-                print(f'    {pyo.value(m.fs.split_permeate[i].product.mass_solute[0, sol])}')
-                data['Li product flows'].append(pyo.value(m.fs.split_permeate[i].product.mass_solute[0, sol]))
+                print(
+                    f'    {pyo.value(m.fs.split_permeate[i].product.mass_solute[0, sol])}'
+                )
+                data['Li product flows'].append(
+                    pyo.value(m.fs.split_permeate[i].product.mass_solute[0, sol])
+                )
         except:
             print('no Li product here')
             data['Li product flows'].append(0)
@@ -124,58 +126,96 @@ def report_values(m, prec=True):
         print('\ndiafiltrate inlet')
         data['diafiltrate inlet'] = []
         print(pyo.value(m.fs.split_diafiltrate.inlet.flow_vol[0]))
-        data['diafiltrate inlet'].append(pyo.value(m.fs.split_diafiltrate.inlet.flow_vol[0]))
+        data['diafiltrate inlet'].append(
+            pyo.value(m.fs.split_diafiltrate.inlet.flow_vol[0])
+        )
         for sol in m.fs.solutes:
             print(f'    {pyo.value(m.fs.split_diafiltrate.inlet.mass_solute[0, sol])}')
-            data['diafiltrate inlet'].append(pyo.value(m.fs.split_diafiltrate.inlet.mass_solute[0, sol]))
+            data['diafiltrate inlet'].append(
+                pyo.value(m.fs.split_diafiltrate.inlet.mass_solute[0, sol])
+            )
 
         print('\nprecipitate products')
         data['precipitate products retentate'] = []
         print(pyo.value(m.fs.precipitator['retentate'].solid.flow_vol[0]))
-        data['precipitate products retentate'].append(pyo.value(m.fs.precipitator['retentate'].solid.flow_vol[0]))
+        data['precipitate products retentate'].append(
+            pyo.value(m.fs.precipitator['retentate'].solid.flow_vol[0])
+        )
         for sol in m.fs.solutes:
-            print(f'    {pyo.value(m.fs.precipitator["retentate"].solid.mass_solute[0, sol])}')
-            data['precipitate products retentate'].append(pyo.value(m.fs.precipitator["retentate"].solid.mass_solute[0, sol]))
+            print(
+                f'    {pyo.value(m.fs.precipitator["retentate"].solid.mass_solute[0, sol])}'
+            )
+            data['precipitate products retentate'].append(
+                pyo.value(m.fs.precipitator["retentate"].solid.mass_solute[0, sol])
+            )
         print('^retentate vpermeate')
         data['precipitate products permeate'] = []
         print(pyo.value(m.fs.precipitator['permeate'].solid.flow_vol[0]))
-        data['precipitate products permeate'].append(pyo.value(m.fs.precipitator['permeate'].solid.flow_vol[0]))
+        data['precipitate products permeate'].append(
+            pyo.value(m.fs.precipitator['permeate'].solid.flow_vol[0])
+        )
         for sol in m.fs.solutes:
-            print(f'    {pyo.value(m.fs.precipitator["permeate"].solid.mass_solute[0, sol])}')
-            data['precipitate products permeate'].append(pyo.value(m.fs.precipitator["permeate"].solid.mass_solute[0, sol]))
+            print(
+                f'    {pyo.value(m.fs.precipitator["permeate"].solid.mass_solute[0, sol])}'
+            )
+            data['precipitate products permeate'].append(
+                pyo.value(m.fs.precipitator["permeate"].solid.mass_solute[0, sol])
+            )
         print('\nprecipitate recycle')
         data['precipitate recycle retentate'] = []
         print(pyo.value(m.fs.precipitator['retentate'].recycle.flow_vol[0]))
-        data['precipitate recycle retentate'].append(pyo.value(m.fs.precipitator['retentate'].recycle.flow_vol[0]))
+        data['precipitate recycle retentate'].append(
+            pyo.value(m.fs.precipitator['retentate'].recycle.flow_vol[0])
+        )
         for sol in m.fs.solutes:
-            print(f'    {pyo.value(m.fs.precipitator["retentate"].recycle.mass_solute[0, sol])}')
-            data['precipitate recycle retentate'].append(pyo.value(m.fs.precipitator["retentate"].recycle.mass_solute[0, sol]))
+            print(
+                f'    {pyo.value(m.fs.precipitator["retentate"].recycle.mass_solute[0, sol])}'
+            )
+            data['precipitate recycle retentate'].append(
+                pyo.value(m.fs.precipitator["retentate"].recycle.mass_solute[0, sol])
+            )
         print('^retentate vpermeate')
         data['precipitate recycle permeate'] = []
         print(pyo.value(m.fs.precipitator['permeate'].recycle.flow_vol[0]))
-        data['precipitate recycle permeate'].append(pyo.value(m.fs.precipitator['permeate'].recycle.flow_vol[0]))
+        data['precipitate recycle permeate'].append(
+            pyo.value(m.fs.precipitator['permeate'].recycle.flow_vol[0])
+        )
         for sol in m.fs.solutes:
-            print(f'    {pyo.value(m.fs.precipitator["permeate"].recycle.mass_solute[0, sol])}')
-            data['precipitate recycle permeate'].append(pyo.value(m.fs.precipitator["permeate"].recycle.mass_solute[0, sol]))
+            print(
+                f'    {pyo.value(m.fs.precipitator["permeate"].recycle.mass_solute[0, sol])}'
+            )
+            data['precipitate recycle permeate'].append(
+                pyo.value(m.fs.precipitator["permeate"].recycle.mass_solute[0, sol])
+            )
 
         print('\nwaste')
         data['waste'] = []
         print(pyo.value(m.fs.split_precipitate_recycle.waste.flow_vol[0]))
-        data['waste'].append(pyo.value(m.fs.split_precipitate_recycle.waste.flow_vol[0]))
+        data['waste'].append(
+            pyo.value(m.fs.split_precipitate_recycle.waste.flow_vol[0])
+        )
         for sol in m.fs.solutes:
-            print(f'    {pyo.value(m.fs.split_precipitate_recycle.waste.mass_solute[0, sol])}')
-            data['waste'].append(pyo.value(m.fs.split_precipitate_recycle.waste.mass_solute[0, sol]))
+            print(
+                f'    {pyo.value(m.fs.split_precipitate_recycle.waste.mass_solute[0, sol])}'
+            )
+            data['waste'].append(
+                pyo.value(m.fs.split_precipitate_recycle.waste.mass_solute[0, sol])
+            )
 
         print('\nsplit fractions for precipitator')
         data['prec sf retentate'] = []
         for sol in m.fs.solutes:
             print(m.fs.precipitator['retentate'].yields[sol, 'solid'].value)
-            data['prec sf retentate'].append(m.fs.precipitator['retentate'].yields[sol, 'solid'].value)
+            data['prec sf retentate'].append(
+                m.fs.precipitator['retentate'].yields[sol, 'solid'].value
+            )
         print('^retentate vpermeate')
         data['prec sf permeate'] = []
         for sol in m.fs.solutes:
             print(m.fs.precipitator['permeate'].yields[sol, 'solid'].value)
-            data['prec sf permeate'].append(m.fs.precipitator['permeate'].yields[sol, 'solid'].value)
+            data['prec sf permeate'].append(
+                m.fs.precipitator['permeate'].yields[sol, 'solid'].value
+            )
 
         print('\nactual Co/Li Recovery')
         print(pyo.value(m.prec_perc_co))
@@ -183,7 +223,10 @@ def report_values(m, prec=True):
         data['actual recovery'] = [pyo.value(m.prec_perc_co), pyo.value(m.prec_perc_li)]
         m.fs.precipitator['retentate'].V.pprint()
         m.fs.precipitator['permeate'].V.pprint()
-        data['prec volumes'] = [m.fs.precipitator['retentate'].V.value, m.fs.precipitator['permeate'].V.value]
+        data['prec volumes'] = [
+            m.fs.precipitator['retentate'].V.value,
+            m.fs.precipitator['permeate'].V.value,
+        ]
         # print(pyo.value(m.fs.precipitator[
         #     'retentate'].solid.mass_solute[0, 'Co'])/(feed['Co']+diaf['Co']))
         # print(pyo.value(m.fs.precipitator[

@@ -23,14 +23,14 @@ def main(args):
     flux = 0.1
     sieving_coefficient = {"Li": 1.3, "Co": 0.5}
     feed = {
-        'solvent': 100,    # m^3/hr of water
-        'Li': 1.7*100,     # kg/hr
-        'Co': 17*100,     # kg/hr
+        'solvent': 100,  # m^3/hr of water
+        'Li': 1.7 * 100,  # kg/hr
+        'Co': 17 * 100,  # kg/hr
     }
     diaf = {
-        'solvent': 30,     # m^3/hr of water
-        'Li': 0.1*30,      # kg/hr
-        'Co': 0.2*30,      # kg/hr
+        'solvent': 30,  # m^3/hr of water
+        'Li': 0.1 * 30,  # kg/hr
+        'Co': 0.2 * 30,  # kg/hr
     }
     prec = True
 
@@ -43,8 +43,10 @@ def main(args):
         feed=feed,
         diaf=diaf,
         precipitate=prec,
-        perc_precipitate={'permeate': {'Li': 0.81, 'Co': 0.01},
-                          'retentate': {'Li': 0.20, 'Co': 0.89}}
+        perc_precipitate={
+            'permeate': {'Li': 0.81, 'Co': 0.01},
+            'retentate': {'Li': 0.20, 'Co': 0.89},
+        },
     )
 
     mixing = mix_style

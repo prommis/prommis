@@ -38,17 +38,14 @@ class SoluteStateBlock1Data(StateBlockData):
         super().build()
 
         self.flow_vol = pyo.Var(
-            units=pyo.units.m**3 / pyo.units.hour,
-            bounds=(1e-8, None),
+            units=pyo.units.m**3 / pyo.units.hour, bounds=(1e-8, None)
         )
 
         # remove solvent from component list
         solutes = [i for i in self.component_list if i != 'solvent']
 
         self.mass_solute = pyo.Var(
-            solutes,
-            units=pyo.units.kg / pyo.units.hour,
-            bounds=(1e-8, None),
+            solutes, units=pyo.units.kg / pyo.units.hour, bounds=(1e-8, None)
         )
 
     def get_material_flow_terms(self, p, j):
@@ -71,10 +68,7 @@ class SoluteStateBlock1Data(StateBlockData):
         Returns: dict
             a dict of state variables
         """
-        return {
-            "flow_vol": self.flow_vol,
-            "mass_solute": self.mass_solute,
-        }
+        return {"flow_vol": self.flow_vol, "mass_solute": self.mass_solute}
 
 
 @declare_process_block_class("SoluteParameters")
@@ -85,10 +79,7 @@ class SoluteParameterData(PhysicalParameterBlock):
 
     CONFIG.declare(
         "solutes",
-        ConfigValue(
-            domain=list,
-            doc="List of solutes present in the membrane system"
-        )
+        ConfigValue(domain=list, doc="List of solutes present in the membrane system"),
     )
 
     def build(self):
@@ -97,8 +88,9 @@ class SoluteParameterData(PhysicalParameterBlock):
 
         # Check that list of solutes exists
         if self.config.solutes is None:
-            raise ConfigurationError("Solutes property package requires "
-                                     "a list of solutes.")
+            raise ConfigurationError(
+                "Solutes property package requires " "a list of solutes."
+            )
 
         self.phase1 = Phase()
 
@@ -108,10 +100,7 @@ class SoluteParameterData(PhysicalParameterBlock):
         for sol in self.config.solutes:
             setattr(self, f'{sol}', Component())
 
-        self.dens_H2O = pyo.Param(
-            default=1000,
-            units=pyo.units.kg / pyo.units.m**3,
-        )
+        self.dens_H2O = pyo.Param(default=1000, units=pyo.units.kg / pyo.units.m**3)
 
         self._state_block_class = SoluteStateBlock  # noqa
 

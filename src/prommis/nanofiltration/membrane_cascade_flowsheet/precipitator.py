@@ -23,11 +23,7 @@ class SplitterData(SeparatorData):
     CONFIG = SeparatorData.CONFIG()
 
     CONFIG.declare(
-        "yields",
-        ConfigValue(
-            domain=dict,
-            doc="Dictionary of precipitator yields"
-        )
+        "yields", ConfigValue(domain=dict, doc="Dictionary of precipitator yields")
     )
 
     def build(self):
@@ -67,31 +63,24 @@ class SplitterData(SeparatorData):
         self.yields['solvent', 'solid'].fix(0)
 
         # Sum of flows yields is 1
-        @self.Constraint(
-            solutes,
-            doc="Sum of yields equation"
-        )
+        @self.Constraint(solutes, doc="Sum of yields equation")
         def yields_eqn(b, sol):
-            return (
-                sum(b.yields[sol, i] for i in self.outlet_idx)
-                == 1
-            )
+            return sum(b.yields[sol, i] for i in self.outlet_idx) == 1
 
         @self.Constraint(
             self.flowsheet().time,
             self.outlet_idx,
             solutes,
-            doc="Precipitator outlet equations"
+            doc="Precipitator outlet equations",
         )
         def outlet_yield_eqn(b, t, o, sol):
             o_block = getattr(self, o + "_state")
             if sol == 'solvent':
                 return (
-                    b.yields[sol, o]*b.mixed_state[t].flow_vol
-                    == o_block[t].flow_vol
+                    b.yields[sol, o] * b.mixed_state[t].flow_vol == o_block[t].flow_vol
                 )
             return (
-                b.yields[sol, o]*b.mixed_state[t].mass_solute[sol]
+                b.yields[sol, o] * b.mixed_state[t].mass_solute[sol]
                 == o_block[t].mass_solute[sol]
             )
 
@@ -100,22 +89,18 @@ class SplitterData(SeparatorData):
         self.V = pyo.Var(units=pyo.units.m**3)
         self.V.fix(100)  # initial point m^3
         self.V.setub(1000)  # set UB to prevent ridiculous sizes
-        sol = [i for i in self.mixed_state.component_list
-               if i != 'solvent']
-        self.alpha = pyo.Param(sol,
-                               initialize=self.config.yields[self.index()])
-        self.beta = pyo.Param(sol, initialize={s: 4.6 for s in sol}, units=1/pyo.units.hour)
+        sol = [i for i in self.mixed_state.component_list if i != 'solvent']
+        self.alpha = pyo.Param(sol, initialize=self.config.yields[self.index()])
+        self.beta = pyo.Param(
+            sol, initialize={s: 4.6 for s in sol}, units=1 / pyo.units.hour
+        )
 
         @self.Constraint(sol)
         def prec_res_time(b, sol):
-            return (
-                b.yields[sol, 'solid']
-                == b.alpha[sol]
-                * (1 - pyo.exp(-b.beta[sol]*b.tau))
-             )
+            return b.yields[sol, 'solid'] == b.alpha[sol] * (
+                1 - pyo.exp(-b.beta[sol] * b.tau)
+            )
 
         @self.Constraint()
         def prec_vol(b):
-            return (
-                b.V == b.mixed_state[0].flow_vol*b.tau
-            )
+            return b.V == b.mixed_state[0].flow_vol * b.tau

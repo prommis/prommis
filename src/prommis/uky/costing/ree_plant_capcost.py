@@ -3254,7 +3254,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             if c.config.debt_expression is None:
 
                 return c.pv_loan_interest == -pyunits.convert(
-                    c.capital_loan_repayment_period/pyunits.year * c.loan_annual_payment
+                    c.capital_loan_repayment_period
+                    / pyunits.year
+                    * c.loan_annual_payment
                     - c.loan_debt,
                     to_units=c.cost_units,
                 )
@@ -3262,7 +3264,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             else:
 
                 return c.pv_loan_interest == -pyunits.convert(
-                    c.capital_loan_repayment_period/pyunits.year * c.loan_annual_payment
+                    c.capital_loan_repayment_period
+                    / pyunits.year
+                    * c.loan_annual_payment
                     - c.loan_debt[None],
                     to_units=c.cost_units,
                 )

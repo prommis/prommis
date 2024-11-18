@@ -3460,17 +3460,21 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         X is the cumulative number of units, b is the learning rate exponent, and R is the learning
         rate constant.
 
+        The equations above are derived from Faber G, Ruttinger A, Strunge T, Langhorst T, Zimmermann A,
+        van der Hulst M, Bensebaa F, Moni S and Tao L (2022) Adapting Technology Learning Curves for
+        Prospective Techno-Economic and Life Cycle Assessments of Emerging Carbon Capture and Utilization
+        Pathways. Front. Clim. 4:820261. doi: 10.3389/fclim.2022.820261
+
         Args:
             cum_num_units: The cumulative number of units.
             cost_FOAK: The cost of manufacturing the First-of-A-Kind equipment.
             CE_index_year: year for cost basis, e.g., "2021" to use 2021 dollars
             learning_rate: ranges between 0.01 - 0.1, depending on the level of maturity
                            (i.e., experimental, growing, proven, etc.)
-        Ref.:
-            Rubin, E. S., Mantripragada, H., and Zhai, H.,
-            "An Assessment of the NETL Cost Estimation Methodology".
-            Department of Engineering and Public Policy, Carnegie Mellon University,
-            Pittsburgh, PA (2016). p. 31, Fig. 6-4.
+                            as described in Rubin, E. S., Mantripragada, H., and Zhai, H.,
+                            "An Assessment of the NETL Cost Estimation Methodology".
+                            Department of Engineering and Public Policy, Carnegie Mellon University,
+                            Pittsburgh, PA (2016). p. 31, Fig. 6-4.
         """
 
         blk.cum_num_units = Param(

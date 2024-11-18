@@ -42,7 +42,7 @@ class SoluteStateBlock1Data(StateBlockData):
         )
 
         # remove solvent from component list
-        solutes = [i for i in self.component_list if i != 'solvent']
+        solutes = [i for i in self.component_list if i != "solvent"]
 
         self.mass_solute = pyo.Var(
             solutes, units=pyo.units.kg / pyo.units.hour, bounds=(1e-8, None)
@@ -98,7 +98,7 @@ class SoluteParameterData(PhysicalParameterBlock):
 
         # set solute components
         for sol in self.config.solutes:
-            setattr(self, f'{sol}', Component())
+            setattr(self, f"{sol}", Component())
 
         self.dens_H2O = pyo.Param(default=1000, units=pyo.units.kg / pyo.units.m**3)
 

@@ -60,7 +60,7 @@ class SplitterData(SeparatorData):
         self.yields = pyo.Var(solutes, self.outlet_idx)
 
         # set solvent product outlet to be 0
-        self.yields['solvent', 'solid'].fix(0)
+        self.yields["solvent", "solid"].fix(0)
 
         # Sum of flows yields is 1
         @self.Constraint(solutes, doc="Sum of yields equation")
@@ -75,7 +75,7 @@ class SplitterData(SeparatorData):
         )
         def outlet_yield_eqn(b, t, o, sol):
             o_block = getattr(self, o + "_state")
-            if sol == 'solvent':
+            if sol == "solvent":
                 return (
                     b.yields[sol, o] * b.mixed_state[t].flow_vol == o_block[t].flow_vol
                 )
@@ -89,7 +89,7 @@ class SplitterData(SeparatorData):
         self.V = pyo.Var(units=pyo.units.m**3)
         self.V.fix(100)  # initial point m^3
         self.V.setub(1000)  # set UB to prevent ridiculous sizes
-        sol = [i for i in self.mixed_state.component_list if i != 'solvent']
+        sol = [i for i in self.mixed_state.component_list if i != "solvent"]
         self.alpha = pyo.Param(sol, initialize=self.config.yields[self.index()])
         self.beta = pyo.Param(
             sol, initialize={s: 4.6 for s in sol}, units=1 / pyo.units.hour
@@ -97,7 +97,7 @@ class SplitterData(SeparatorData):
 
         @self.Constraint(sol)
         def prec_res_time(b, sol):
-            return b.yields[sol, 'solid'] == b.alpha[sol] * (
+            return b.yields[sol, "solid"] == b.alpha[sol] * (
                 1 - pyo.exp(-b.beta[sol] * b.tau)
             )
 

@@ -47,7 +47,7 @@ class MembraneData(MSContactorData):
         solutes = [
             i
             for i in self.config.streams.retentate.property_package.component_list
-            if i != 'solvent'
+            if i != "solvent"
         ]
 
         self._verify_sieving_coefficients(solutes)
@@ -70,7 +70,7 @@ class MembraneData(MSContactorData):
                 "Membrane model must be provided with a dictionary of "
                 "sieving coefficient values"
             )
-        required_streams = ['permeate', 'retentate']
+        required_streams = ["permeate", "retentate"]
         for stream in self.config.streams:
             if stream not in required_streams:
                 raise ConfigurationError(
@@ -138,16 +138,16 @@ class MembraneData(MSContactorData):
         # with this constraint, since depending on how much flow and membrane
         # length we initialize at (and how much membrane lux is set),
         # the stage cut LB/UB might be violated.
-        @self.Constraint(['permeate', 'retentate'])
+        @self.Constraint(["permeate", "retentate"])
         def flow_limits(b, loc):
             stage_cut_lb = 0.01
             stage_cut_ub = 0.99
-            if loc == 'permeate':
+            if loc == "permeate":
                 frac = stage_cut_lb
-            elif loc == 'retentate':
+            elif loc == "retentate":
                 frac = 1 - stage_cut_ub
             last_ele = self.elements.at(-1)
-            return getattr(b, f'{loc}')[0, last_ele].flow_vol >= frac * (
+            return getattr(b, f"{loc}")[0, last_ele].flow_vol >= frac * (
                 b.retentate_inlet_state[0].flow_vol
                 + sum(
                     b.retentate_side_stream_state[0, ele].flow_vol
@@ -156,20 +156,20 @@ class MembraneData(MSContactorData):
             )
 
         # also adding concentration upper bounds
-        @self.Constraint(solutes, ['permeate', 'retentate'])
+        @self.Constraint(solutes, ["permeate", "retentate"])
         def conc_limits(b, sol, loc):
             last_ele = self.elements.at(-1)
-            if sol == 'Li':
+            if sol == "Li":
                 conc_ub = 20 * pyo.units.kg / pyo.units.m**3  # kg/m^3
-            elif sol == 'Co':
+            elif sol == "Co":
                 conc_ub = 200 * pyo.units.kg / pyo.units.m**3  # kg/m^3
             else:
                 conc_ub = (
                     200 * pyo.units.kg / pyo.units.m**3
                 )  # generic UB set to 200 kg/m^3
             return (
-                conc_ub * getattr(b, f'{loc}')[0, last_ele].flow_vol
-                >= getattr(b, f'{loc}')[0, last_ele].mass_solute[sol]
+                conc_ub * getattr(b, f"{loc}")[0, last_ele].flow_vol
+                >= getattr(b, f"{loc}")[0, last_ele].mass_solute[sol]
             )
 
         @self.Constraint(self.elements)

@@ -187,7 +187,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             "period, for example an input of [100] means that 100% of capital "
             "expenses occur in the year preceding the operating period. Set "
             "to None to indicate no expenditure period, which means that all "
-            "capital expenses occur in the first operating year t=0.",
+            "capital expenses occur at the start of the plant lifetime t=0.",
         ),
     )
     CONFIG.declare(
@@ -209,6 +209,34 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             description="Interest rate for capital equipment loan repayment."
             "The value should be a percentage, for example 10 for a 10% "
             "interest rate.",
+        ),
+    )
+    CONFIG.declare(
+        "capital_loan_repayment_period",
+        ConfigValue(
+            default=10,
+            domain=float,
+            description="Length of loan repayment period in years.",
+        ),
+    )
+    CONFIG.declare(
+        "debt_percentage_of_CAPEX",
+        ConfigValue(
+            default=50,
+            domain=float,
+            description="Percentage of CAPEX financed by debt; ignored if "
+            "debt_expression is not None. The value should be a percentage, "
+            "for example 10 for a debt corresponding to 10% of the CAPEX. Set "
+            "to zero to indicate no loans are taken out on capital.",
+        ),
+    )
+    CONFIG.declare(
+        "debt_expression",
+        ConfigValue(
+            default=None,
+            description="Set the value or expression to calculate total debt. "
+            "Enter a Pyomo expression of flowsheet or cost model variables. "
+            "The expression should have currency units.",
         ),
     )
     CONFIG.declare(
@@ -2912,11 +2940,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         day" value of a chemical plant over the total lifetime, including all
         cash flows.
 
-        This method supports capital expenditure, inflation, and royalties.
-        The NPV formulation assumes that negative cash flows consists capital
-        and operating costs scaled to a constant present value. The general
-        NPV formula with 100% of capital expenditure upfront at the start of
-        the operating period and no capital or operating growth rate is
+        This method supports capital expenditure, loan repayment, inflation,
+        and royalties. The NPV formulation assumes that negative cash flows
+        consists capital and operating costs scaled to a constant present
+        value. The general NPV formula with 100% of capital expenditure
+        upfront at the start of the operating period and no capital or
+        operating growth rate is
 
         NPV = [(REVENUE - OPEX - ROYALTIES) * P/A(r, N)] - CAPEX
 
@@ -2936,6 +2965,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         growth to obtain the present value. These expressions are implemented
         if there is no capital expenditure period or additional growth rate.
 
+        Often, uniform series of cash flows do not start in the first period
+        (t=1), but in some later period, T, after a known delay. In this case
+        the delay is accounted for using
+
+        PV_year1_cashflow = Cash_Flow_Value * P/A(r, N)
+
+        PV_yearT_cashflow = Cash_Flow_Value * [P/A(r, N) - P/A(r, T-1)]
+
         ----------------------------------------------------------------------
 
         The general NPV formulation allows capital costs, operating costs,
@@ -2943,7 +2980,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         a constant proportional growth rate expressed as an escalation or
         inflation percentage. The general formulation is given by
 
-        NPV = PV_Revenue - PV_Operating_Cost - PV_Royalties - PV_Capital_Cost
+        NPV = PV_Revenue - PV_Operating_Cost - PV_Royalties
+              - PV_Capital_Cost - PV_Loan_Interest
 
         For costs escalating at a constant rate for the project lifetime, the
         series present worth factor is modified to account for escalation,
@@ -2961,17 +2999,29 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         example, if the capital expenditures are distributed across a 3-year
         capital escalation period, the PV from the capital costs are given as
 
-        PV_Capital_Cost = Y1_% * CAPEX * P/A(iLoan_%, gCap, 1)
-                          + Y2_% * CAPEX * P/A(iLoan_%, gCap, 2)
-                          + Y3_% * CAPEX * P/A(iLoan_%, gCap, 3)
+        PV_Capital_Cost = Y1_% * CAPEX * [P/A(r, gCap, 1) - P/A(r, gCap, 0)]
+                          + Y2_% * CAPEX * [P/A(r, gCap, 2) - P/A(r, gCap, 1)]
+                          + Y3_% * CAPEX * [P/A(r, gCap, 3) - P/A(r, gCap, 2)]
 
         where Y1_%, Y2_%, and Y3_% are the percentages of capital expenditure
         in each year expressed as decimals, CAPEX is the total capital cost from
         equipment purchasing, gCap is the capital escalation growth rate
-        expressed as a decimal, and iLoan_% is the capital equipment loan
-        interest rate expressed as a decimal. The capital costs spent in each
-        year are handled separately to properly account for the value growth
-        over time.
+        expressed as a decimal. The capital costs spent in each year are handled
+        separately to properly account for the value growth over time. Loan
+        repayment and interest owed are calculated as
+
+        Annual_Loan_Payment = Debt * A/P(iLoan_%, 0, Nloan) = Debt / P/A(iLoan_%, 0, Nloan)
+
+        PV_Loan_Interest_Owed = Nloan * Annual_Loan_Payment - Debt
+
+        where Annual_Loan_Payment is the required combined principal and interest
+        that should be paid annually to pay off the loan on-time, Debt is the
+        loan principal (typically a percentage of the CAPEX), Nloan is the loan
+        repayment period, and iLoan_% is the capital equipment loan interest rate
+        expressed as a decimal. Note that the annual loan payment is a constant
+        amount in present day dollars, and the difference between the sum of all
+        loan payments and the original debt principal is the total annual interest
+        on the unpaid balance over all years.
 
         Revenue, operating costs and royalties based on revenue escalate with
         standard inflation. Notably, these cash flows occur after any capital
@@ -3047,6 +3097,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # check optional expressions
         QGESSCostingData.assert_Pyomo_object(b.config, name="royalty_expression")
+        QGESSCostingData.assert_Pyomo_object(b.config, name="debt_expression")
 
         # build variables
 
@@ -3054,6 +3105,27 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=-b.CAPEX,
             bounds=(None, 0),
             doc="Present value of total lifetime capital costs; negative cash flow",
+            units=b.cost_units,
+        )
+
+        b.loan_debt = Var(
+            initialize=b.CAPEX,
+            bounds=(0, 1e4),
+            doc="total debt from loans in $MM",
+            units=b.cost_units,
+        )
+
+        b.loan_annual_payment = Var(
+            initialize=b.CAPEX,
+            bounds=(0, 1e4),
+            doc="amortized annual payment on loans in $MM",
+            units=b.cost_units,
+        )
+
+        b.pv_loan_interest = Var(
+            initialize=-b.CAPEX,
+            bounds=(-1e4, 0),
+            doc="present value of total lifetime loan interest in $MM; negative cash flow",
             units=b.cost_units,
         )
 
@@ -3124,6 +3196,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=b.config.capital_loan_interest_percentage, units=pyunits.percent
         )
 
+        b.capital_loan_repayment_period = Param(
+            initialize=b.config.capital_loan_repayment_period, units=pyunits.years
+        )
+
+        b.debt_percentage_of_CAPEX = Param(
+            initialize=b.config.debt_percentage_of_CAPEX, units=pyunits.percent
+        )
+
         b.operating_inflation_percentage = Param(
             initialize=b.config.operating_inflation_percentage, units=pyunits.percent
         )
@@ -3153,7 +3233,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             @b.Constraint()
             def pv_capital_cost_constraint(c):
-                # PV_Capital_Cost = - (%year1 * CAPEX * P/A_year1 + %year2 * CAPEX * P/A_year2 + ...)
+                # percentage of CAPEX is basis for each capital expenditure year
+                # since the expenditure series restarts in each year, we need to split
+                # the terms for each year out and subtract off the delayed years
+                # PV_Capital_Cost = - (
+                # %year1 * CAPEX * (P/A_year1 - P/A_year0)     change from year 1 only
+                # + %year2 * CAPEX * (P/A_year2 - P/A_year1)   change from year 2 only
+                # + %year3 * CAPEX * (P/A_year3 - P/A_year2)   change from year 2 only
+                # + ...)
+                # P/A_year0 = 0, which places each CAPEX expenditure at the end of each period
 
                 return c.pv_capital_cost == -pyunits.convert(
                     sum(
@@ -3163,16 +3251,29 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             to_units=pyunits.dimensionless,
                         )
                         * c.CAPEX
-                        * series_present_worth_factor(
-                            pyunits.convert(
-                                c.capital_loan_interest_percentage,
-                                to_units=pyunits.dimensionless,
-                            ),
-                            pyunits.convert(
-                                c.capital_escalation_percentage,
-                                to_units=pyunits.dimensionless,
-                            ),
-                            idx + 1,
+                        * (  # P/A_year(i) - P/A_year(i-1))
+                            series_present_worth_factor(
+                                pyunits.convert(
+                                    c.discount_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                pyunits.convert(
+                                    c.capital_escalation_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                idx + 1,
+                            )
+                            - series_present_worth_factor(
+                                pyunits.convert(
+                                    c.discount_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                pyunits.convert(
+                                    c.capital_escalation_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                idx,
+                            )
                         )
                         for idx in range(len(c.config.capital_expenditure_percentages))
                     ),
@@ -3183,27 +3284,96 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             @b.Constraint()
             def pv_capital_cost_constraint(c):
+                # no expenditure period, so cash flow occurs at t=0 (project year)
                 # PV_Capital_Cost = - CAPEX
 
                 return c.pv_capital_cost == -pyunits.convert(
-                    c.CAPEX
-                    * series_present_worth_factor(
+                    c.CAPEX,
+                    to_units=c.cost_units,
+                )
+
+        if b.config.debt_expression is None:
+
+            @b.Constraint()
+            def loan_debt_constraint(c):
+                # Debt  = %debt_charge_of_CAPEX * CAPEX
+
+                return c.loan_debt == pyunits.convert(
+                    pyunits.convert(
+                        c.debt_percentage_of_CAPEX, to_units=pyunits.dimensionless
+                    )
+                    * c.CAPEX,
+                    to_units=c.cost_units,
+                )
+
+        else:
+
+            b.loan_debt = Reference(b.config.debt_expression)
+
+        @b.Constraint()
+        def loan_annual_payment_constraint(c):
+            # Annual Loan Payment = Debt * A/P(%interest, 0, loan_length) = Debt / P/A(%interest, 0, loan_length)
+            # we assume that the loan payment series starts in year 1, so we don't need to account for a delay
+
+            if c.config.debt_expression is None:
+
+                return c.loan_annual_payment == pyunits.convert(
+                    c.loan_debt
+                    / series_present_worth_factor(
                         pyunits.convert(
-                            c.capital_loan_interest_percentage,
+                            c.capital_loan_interest_percentage,  # payment value is discounted by loan interest rate
                             to_units=pyunits.dimensionless,
                         ),
+                        0,  # payments adjusted to present value are constant
+                        c.capital_loan_repayment_period / pyunits.year,
+                    ),
+                    to_units=c.cost_units,
+                )
+
+            else:
+
+                return c.loan_annual_payment == pyunits.convert(
+                    c.loan_debt[None]
+                    / series_present_worth_factor(
                         pyunits.convert(
-                            c.capital_escalation_percentage,
+                            c.capital_loan_interest_percentage,  # payment value is discounted by loan interest rate
                             to_units=pyunits.dimensionless,
                         ),
-                        0,
-                    ),  # formula gives P/A (r, g, 0) = 1
+                        0,  # payments adjusted to present value are constant
+                        c.capital_loan_repayment_period / pyunits.year,
+                    ),
+                    to_units=c.cost_units,
+                )
+
+        @b.Constraint()
+        def pv_loan_interest_constraint(c):
+            # PV_Loan_Interest_Owed = - loan_length * Annual_Loan_Payment - Debt)
+            # we assume that the loan payments are in present day dollars, so we don't need to discount them
+
+            if c.config.debt_expression is None:
+
+                return c.pv_loan_interest == -pyunits.convert(
+                    c.capital_loan_repayment_period
+                    / pyunits.year
+                    * c.loan_annual_payment
+                    - c.loan_debt,
+                    to_units=c.cost_units,
+                )
+
+            else:
+
+                return c.pv_loan_interest == -pyunits.convert(
+                    c.capital_loan_repayment_period
+                    / pyunits.year
+                    * c.loan_annual_payment
+                    - c.loan_debt[None],
                     to_units=c.cost_units,
                 )
 
         @b.Constraint()
         def pv_operating_cost_constraint(c):
-            # PV_Operating_Cost = - OPEX * [ P/A_OPEX+CAPEX_periods - P/A_CAPEX_period ]
+            # OPEX starts after the capital expenditure period, so we need to account for a delay
+            # PV_Operating_Cost = - OPEX * [ P/A(r, g, OPEX_end_year) - P/A(r, g, CAPEX_end_year) ]
 
             return c.pv_operating_cost == -pyunits.convert(
                 c.OPEX
@@ -3235,7 +3405,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         @b.Constraint()
         def pv_revenue_constraint(c):
-            # PV_Revenue = REVENUE * [ P/A_OPEX+CAPEX_periods - P/A_CAPEX_period ]
+            # Revenue starts after the capital expenditure period, so we need to account for a delay
+            # PV_Revenue = - REVENUE * [ P/A(r, g, Revenue_end_year) - P/A(r, g, CAPEX_end_year) ]
 
             return c.pv_revenue == pyunits.convert(
                 c.REVENUE
@@ -3267,6 +3438,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         if b.config.royalty_expression is None:
             # PV_Royalties = - %royalty_charge_of_revenue * PV_REVENUE
+            # concurrent with revenue, so we can just use PV_REVENUE directly
 
             @b.Constraint()
             def pv_royalties_constraint(c):
@@ -3281,7 +3453,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
 
         else:
-
+            # expression is assumed to be for the total present value of all royalties
             b.pv_royalties = Reference(b.config.royalty_expression)
 
         @b.Constraint()
@@ -3292,6 +3464,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 return c.npv == pyunits.convert(
                     c.pv_revenue
                     + c.pv_capital_cost
+                    + c.pv_loan_interest
                     + c.pv_operating_cost
                     + c.pv_royalties,
                     to_units=c.cost_units,
@@ -3302,6 +3475,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 return c.npv == pyunits.convert(
                     c.pv_revenue
                     + c.pv_capital_cost
+                    + c.pv_loan_interest
                     + c.pv_operating_cost
                     + c.pv_royalties[None],
                     to_units=c.cost_units,

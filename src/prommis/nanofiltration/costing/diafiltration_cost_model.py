@@ -461,7 +461,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 https://www.accessengineeringlibrary.com/content/book/9781260455410/back-matter/appendix1?implicit-login=true
 
         Args:
-            precip_volume: volume of the precipitator as calcuated by the unit model (m3)
+            precip_volume: volume of the precipitator as calculated by the unit model (m3)
         """
 
         # calculate the volume needed

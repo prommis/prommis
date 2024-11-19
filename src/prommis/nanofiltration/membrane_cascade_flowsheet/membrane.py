@@ -126,17 +126,15 @@ class MembraneData(MSContactorData):
 
         self.length.setlb(0.1)
         self.length.setub(10000)
-        # flux and sieving coefficients are actually parameters...
-        # self.flux.setlb(1e-8)
-        # self.sieving_coefficient.setlb(1e-8)
+
 
     def add_membrane_constraints(self, solutes):
         """Add solute sieving, solvent flux, and LB/UB constraints."""
 
         # add flow lower bounds
-        # TODO we need to be careful of membrane length and initiialization
+        # TODO we need to be careful of membrane length and initialization
         # with this constraint, since depending on how much flow and membrane
-        # length we initialize at (and how much membrane lux is set),
+        # length we initialize at (and how much membrane flux is set),
         # the stage cut LB/UB might be violated.
         @self.Constraint(["permeate", "retentate"])
         def flow_limits(b, loc):
@@ -177,7 +175,6 @@ class MembraneData(MSContactorData):
             return (
                 b.material_transfer_term[0, ele, "permeate", "retentate", "solvent"]
                 == b.flux[ele] * b.length * b.width * pyo.units.kg / pyo.units.m**3
-                # * self.config.streams.retentate.property_package.dens_H2O
                 / self.config.number_of_finite_elements
             )
 

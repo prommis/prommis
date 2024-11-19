@@ -36,13 +36,11 @@ class SplitterData(SeparatorData):
         super().build()
         # TODO add input checking to prevent incorrect setup
         self.deactivate_all_cons()
-        # self.sum_split_frac[0].activate()    # activate sum sf == 1 constraint
         self.add_precipitator_constraints()
 
     def deactivate_all_cons(self):
         """Deactivate all current constraints."""
         for con in self.component_data_objects(pyo.Constraint):
-            # print(con)
             con.deactivate()
 
     def add_precipitator_constraints(self):

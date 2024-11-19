@@ -23,8 +23,6 @@ from idaes.core.util.initialization import propagate_state
 # Custom imports
 from solute_property import SoluteParameters
 from membrane import Membrane
-
-# from mass_splitter import MSplitter as Splitter
 from precipitator import Precipitator
 
 # other imports
@@ -252,14 +250,7 @@ class diafiltration_model:
                 momentum_balance_type=MomentumBalanceType.none,
                 energy_split_basis=EnergySplittingType.none,
             )
-            # m.fs.splitters = Splitter(
-            #     pyo.RangeSet(self.ns),
-            #     num_outlets=self.nt,
-            #     property_package=m.fs.properties,
-            #     material_balance_type=MaterialBalanceType.componentTotal,
-            #     momentum_balance_type=MomentumBalanceType.none,
-            #     energy_split_basis=EnergySplittingType.none
-            # )
+
             # connect each split stream to a stage side stream
             for i in pyo.RangeSet(self.ns):
                 m.fs.add_component(
@@ -274,10 +265,6 @@ class diafiltration_model:
                     m.fs.inlet_mixers[i].recycle.flow_vol[0].fix(1e-8)
                     for sol in self.solutes:
                         m.fs.inlet_mixers[i].recycle.mass_solute[0, sol].fix(1e-8)
-                    # m.fs.inlet_mixers[i].recycle.mass_solute[0, 'Co']\
-                    #                             .fix(1e-8)
-                    # m.fs.inlet_mixers[i].recycle.mass_solute[0, 'Li']\
-                    #                             .fix(1e-8)
 
                 for j in pyo.RangeSet(self.nt):
                     m.fs.add_component(
@@ -364,8 +351,6 @@ class diafiltration_model:
         m.fs.split_feed.inlet.flow_vol[0].fix(self.feed["solvent"])
         for sol in self.solutes:
             m.fs.split_feed.inlet.mass_solute[0, sol].fix(self.feed[sol])
-        # m.fs.split_feed.inlet.mass_solute[0, 'Co'].fix(self.feed['Co'])
-        # m.fs.split_feed.inlet.mass_solute[0, 'Li'].fix(self.feed['Li'])
 
         # connect feeds to inlet mixers
         for i in m.fs.inlet_mixers:
@@ -642,8 +627,6 @@ class diafiltration_model:
         m.fs.split_diafiltrate.inlet.flow_vol[0].unfix()
         for sol in self.solutes:
             m.fs.split_diafiltrate.inlet.mass_solute[0, sol].unfix()
-        # m.fs.split_diafiltrate.inlet.mass_solute[0, 'Co'].unfix()
-        # m.fs.split_diafiltrate.inlet.mass_solute[0, 'Li'].unfix()
 
         # This should be the same as the set diafiltrate UB
         m.fs.split_precipitate_recycle.split_fraction[0, "recycle"].fix(

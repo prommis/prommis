@@ -227,8 +227,4 @@ def report_values(m, prec=True):
             m.fs.precipitator["retentate"].V.value,
             m.fs.precipitator["permeate"].V.value,
         ]
-        # print(pyo.value(m.fs.precipitator[
-        #     'retentate'].solid.mass_solute[0, 'Co'])/(feed['Co']+diaf['Co']))
-        # print(pyo.value(m.fs.precipitator[
-        #     'permeate'].solid.mass_solute[0, 'Li'])/(feed['Li']+diaf['Li']))
     return data

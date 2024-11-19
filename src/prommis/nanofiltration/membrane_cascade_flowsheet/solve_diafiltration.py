@@ -17,8 +17,8 @@ def main(args):
     num_t = int(args[2])
 
     # set relevant parameter values
-    NS = num_s
-    NT = num_t
+    NS = num_s  # number of stages
+    NT = num_t  # number of tubes
     solutes = ["Li", "Co"]
     flux = 0.1
     sieving_coefficient = {"Li": 1.3, "Co": 0.5}

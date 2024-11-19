@@ -1,3 +1,9 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """
 Membrane unit model.
 
@@ -127,7 +133,6 @@ class MembraneData(MSContactorData):
         self.length.setlb(0.1)
         self.length.setub(10000)
 
-
     def add_membrane_constraints(self, solutes):
         """Add solute sieving, solvent flux, and LB/UB constraints."""
 
@@ -174,7 +179,11 @@ class MembraneData(MSContactorData):
         def solvent_rule(b, ele):
             return (
                 b.material_transfer_term[0, ele, "permeate", "retentate", "solvent"]
-                == b.flux[ele] * b.length * b.width * pyo.units.kg / pyo.units.m**3
+                == b.flux[ele]
+                * b.length
+                * b.width
+                * pyo.units.kg
+                / pyo.units.m**3
                 / self.config.number_of_finite_elements
             )
 

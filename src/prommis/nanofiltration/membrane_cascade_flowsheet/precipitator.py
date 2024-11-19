@@ -6,12 +6,12 @@ Modification of the IDAES Separator unit for yield based precipitation.
 
 # Pyomo import
 import pyomo.environ as pyo
+from pyomo.common.config import ConfigValue
+
+from idaes.core import declare_process_block_class
 
 # IDAES imports
 from idaes.models.unit_models.separator import SeparatorData
-from idaes.core import declare_process_block_class
-from pyomo.common.config import ConfigValue
-
 
 __author__ = "Jason Yao"
 

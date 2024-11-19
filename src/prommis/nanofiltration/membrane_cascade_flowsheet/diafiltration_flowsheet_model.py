@@ -1,36 +1,58 @@
 """Class for building the full IDAES diafiltration flowsheet."""
 
 # Pyomo imports
-import pyomo.environ as pyo
+import logging
+
+from pyomo.environ import (
+    ConcreteModel,
+    Constraint,
+    Objective,
+    Param,
+    RangeSet,
+    Set,
+    TransformationFactory,
+    Var,
+    maximize,
+    units,
+)
 from pyomo.network import Arc
 
+# other imports
+import idaes.logger as idaeslog
+
 # IDAES imports
-from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
-from idaes.models.unit_models import MSContactorInitializer
-from idaes.models.unit_models import (
-    Mixer,
-    MixingType,
-    MomentumMixingType,
-    MixerInitializer,
-)
-from idaes.models.unit_models import (
-    Separator as Splitter,
-    EnergySplittingType,
-    SeparatorInitializer,
+from idaes.core import (
+    FlowsheetBlock,
+    MaterialBalanceType,
+    MomentumBalanceType,
+    UnitModelBlock,
+    UnitModelCostingBlock,
 )
 from idaes.core.util.initialization import propagate_state
+from idaes.models.unit_models import (
+    EnergySplittingType,
+    Mixer,
+    MixerInitializer,
+    MixingType,
+    MomentumMixingType,
+    MSContactorInitializer,
+)
+from idaes.models.unit_models import Separator as Splitter
+from idaes.models.unit_models import SeparatorInitializer
 
-# Custom imports
-from solute_property import SoluteParameters
+import numpy as np
 from membrane import Membrane
 
 # from mass_splitter import MSplitter as Splitter
 from precipitator import Precipitator
 
-# other imports
-import idaes.logger as idaeslog
-import logging
-import numpy as np
+# Custom imports
+from solute_property import SoluteParameters
+
+from prommis.nanofiltration.costing.diafiltration_cost_model import (
+    DiafiltrationCosting,
+    DiafiltrationCostingData,
+)
 
 
 class diafiltration_model:
@@ -68,12 +90,14 @@ class diafiltration_model:
             "Co": 0.2 * 30,  # kg/hr
             "Ni": 1e-8,
         },
-        precipitate=False,
+        precipitate=True,
         # perc_precipitate={'permeate': 0.81, 'retentate': 0.99}
         perc_precipitate={
             "permeate": {"Li": 0.81, "Co": 0.05, "Ni": 0.05},
             "retentate": {"Li": 0.05, "Co": 0.99, "Ni": 0.81},
         },
+        atmospheric_pressure=101325,  # ambient pressure, Pa
+        operating_pressure=145,  # nanofiltration operating pressure, psi
     ):
         """Store model parameters."""
         self.ns = NS
@@ -85,15 +109,17 @@ class diafiltration_model:
         self.diaf = diaf
         self.precipitate = precipitate
         self.perc_precipitate = perc_precipitate
+        self.atmospheric_pressure = atmospheric_pressure
+        self.operating_pressure = operating_pressure
 
     def build_flowsheet(self, mixing="tube"):
         """Build the multi-stage diafiltration flowsheet."""
-        m = pyo.ConcreteModel()
+        m = ConcreteModel()
         m.fs = FlowsheetBlock(dynamic=False)
         m.fs.properties = SoluteParameters(solutes=self.solutes)
-        m.fs.stages = pyo.RangeSet(self.ns)
-        m.fs.tubes = pyo.RangeSet(self.nt)
-        m.fs.solutes = pyo.Set(initialize=self.solutes)
+        m.fs.stages = RangeSet(self.ns)
+        m.fs.tubes = RangeSet(self.nt)
+        m.fs.solutes = Set(initialize=self.solutes)
         self.add_stages(m)
         self.add_mixers(m, mixing=mixing)
         self.add_recycles(m, mixing=mixing)
@@ -108,9 +134,12 @@ class diafiltration_model:
             self.connect_diafiltrate(m)
             self.precipitate_objectives(m)
 
+        self.add_costing(m)
+        self.add_costing_objectives(m)
+
         # resolve solver tolerance issues by setting LB of all units outside of
         # membranes to 0
-        for i in m.component_data_objects(pyo.Var):
+        for i in m.component_data_objects(Var):
             # i.setlb(0)
             # if i.lb == 1e-8:
             #     i.setlb(0)
@@ -125,14 +154,14 @@ class diafiltration_model:
         """Add membrane stages."""
         # add membrane stages
         m.fs.stage = Membrane(
-            pyo.RangeSet(self.ns),
+            RangeSet(self.ns),
             number_of_finite_elements=self.nt,
             flux=self.flux,
             sieving_coefficient=self.sieving_coefficient,
             streams={
                 "retentate": {
                     "property_package": m.fs.properties,
-                    "side_streams": pyo.RangeSet(self.nt),
+                    "side_streams": RangeSet(self.nt),
                     "has_energy_balance": False,
                     "has_pressure_balance": False,
                 },
@@ -152,7 +181,7 @@ class diafiltration_model:
 
         # add retentate and permeate splitters for each stage
         m.fs.split_retentate = Splitter(
-            pyo.RangeSet(self.ns),
+            RangeSet(self.ns),
             outlet_list=["product", "recycle"],
             property_package=m.fs.properties,
             material_balance_type=MaterialBalanceType.componentTotal,
@@ -161,7 +190,7 @@ class diafiltration_model:
         )
 
         m.fs.split_permeate = Splitter(
-            pyo.RangeSet(self.ns),
+            RangeSet(self.ns),
             outlet_list=["product", "forward"],
             property_package=m.fs.properties,
             material_balance_type=MaterialBalanceType.componentTotal,
@@ -170,7 +199,7 @@ class diafiltration_model:
         )
 
         # set up stage connections
-        for i in pyo.RangeSet(self.ns):
+        for i in RangeSet(self.ns):
             # connect splitters to each stage
             m.fs.add_component(
                 f"connect_retentate_split_{i}",
@@ -197,14 +226,14 @@ class diafiltration_model:
                     ),
                 )
 
-        pyo.TransformationFactory("network.expand_arcs").apply_to(m)
+        TransformationFactory("network.expand_arcs").apply_to(m)
 
     def add_mixers(self, m, mixing="tube"):
         """Add side stream mixers."""
         if mixing == "tube":
             m.fs.inlet_mixers = Mixer(
-                pyo.RangeSet(self.ns),
-                pyo.RangeSet(self.nt),
+                RangeSet(self.ns),
+                RangeSet(self.nt),
                 inlet_list=["feed", "diafiltrate", "recycle"],
                 property_package=m.fs.properties,
                 material_balance_type=MaterialBalanceType.componentTotal,
@@ -213,8 +242,8 @@ class diafiltration_model:
             )
 
             # connect each mixer to a stage side stream
-            for i in pyo.RangeSet(self.ns):
-                for j in pyo.RangeSet(self.nt):
+            for i in RangeSet(self.ns):
+                for j in RangeSet(self.nt):
                     m.fs.add_component(
                         f"connect_stage_{i}_inlet_side_stream_{j}",
                         Arc(
@@ -235,7 +264,7 @@ class diafiltration_model:
 
         elif mixing == "stage":
             m.fs.inlet_mixers = Mixer(
-                pyo.RangeSet(self.ns),
+                RangeSet(self.ns),
                 inlet_list=["feed", "diafiltrate", "recycle"],
                 property_package=m.fs.properties,
                 material_balance_type=MaterialBalanceType.componentTotal,
@@ -245,7 +274,7 @@ class diafiltration_model:
 
             # split the stage mixer into each stage side stream with splitter
             m.fs.splitters = Splitter(
-                pyo.RangeSet(self.ns),
+                RangeSet(self.ns),
                 num_outlets=self.nt,
                 property_package=m.fs.properties,
                 material_balance_type=MaterialBalanceType.componentTotal,
@@ -253,7 +282,7 @@ class diafiltration_model:
                 energy_split_basis=EnergySplittingType.none,
             )
             # m.fs.splitters = Splitter(
-            #     pyo.RangeSet(self.ns),
+            #     RangeSet(self.ns),
             #     num_outlets=self.nt,
             #     property_package=m.fs.properties,
             #     material_balance_type=MaterialBalanceType.componentTotal,
@@ -261,7 +290,7 @@ class diafiltration_model:
             #     energy_split_basis=EnergySplittingType.none
             # )
             # connect each split stream to a stage side stream
-            for i in pyo.RangeSet(self.ns):
+            for i in RangeSet(self.ns):
                 m.fs.add_component(
                     f"connect_inlet_splitter_{i}",
                     Arc(
@@ -279,7 +308,7 @@ class diafiltration_model:
                     # m.fs.inlet_mixers[i].recycle.mass_solute[0, 'Li']\
                     #                             .fix(1e-8)
 
-                for j in pyo.RangeSet(self.nt):
+                for j in RangeSet(self.nt):
                     m.fs.add_component(
                         f"connect_stage_{i}_inlet_side_stream_{j}",
                         Arc(
@@ -295,14 +324,14 @@ class diafiltration_model:
                 "mixing superstructures."
             )
 
-        pyo.TransformationFactory("network.expand_arcs").apply_to(m)
+        TransformationFactory("network.expand_arcs").apply_to(m)
 
     def add_recycles(self, m, mixing="tube"):
         """Add recycle streams."""
         if self.ns > 1:
             if mixing == "tube":
                 m.fs.recycle_splitters = Splitter(
-                    pyo.RangeSet(2, self.ns),
+                    RangeSet(2, self.ns),
                     num_outlets=self.nt,
                     property_package=m.fs.properties,
                     material_balance_type=MaterialBalanceType.componentTotal,
@@ -311,7 +340,7 @@ class diafiltration_model:
                 )
 
                 # connect each recycle stream to the previous stage
-                for i in pyo.RangeSet(2, self.ns):
+                for i in RangeSet(2, self.ns):
                     m.fs.add_component(
                         f"connect_recycle_splitter_{i}",
                         Arc(
@@ -319,7 +348,7 @@ class diafiltration_model:
                             destination=m.fs.recycle_splitters[i].inlet,
                         ),
                     )
-                    for j in pyo.RangeSet(self.nt):
+                    for j in RangeSet(self.nt):
                         m.fs.add_component(
                             f"connect_recycle_{i}_split_{j}",
                             Arc(
@@ -332,7 +361,7 @@ class diafiltration_model:
 
             elif mixing == "stage":
                 # connect recycle stream directly to previous stage mixer
-                for i in pyo.RangeSet(2, self.ns):
+                for i in RangeSet(2, self.ns):
                     m.fs.add_component(
                         f"connect_recycle_{i}",
                         Arc(
@@ -346,7 +375,7 @@ class diafiltration_model:
                     "mixing superstructures."
                 )
 
-            pyo.TransformationFactory("network.expand_arcs").apply_to(m)
+            TransformationFactory("network.expand_arcs").apply_to(m)
 
     def add_feed(self, m):
         """Add feed streams."""
@@ -381,7 +410,7 @@ class diafiltration_model:
                 ),
             )
 
-        pyo.TransformationFactory("network.expand_arcs").apply_to(m)
+        TransformationFactory("network.expand_arcs").apply_to(m)
 
     def add_diafiltrate(self, m):
         """Add diafiltrate streams."""
@@ -412,12 +441,12 @@ class diafiltration_model:
                 ),
             )
 
-        pyo.TransformationFactory("network.expand_arcs").apply_to(m)
+        TransformationFactory("network.expand_arcs").apply_to(m)
 
     def add_isotropic_stage_length(self, m):
         """Add isotropic stage length rule."""
 
-        @m.fs.Constraint(pyo.RangeSet(2, self.ns))
+        @m.fs.Constraint(RangeSet(2, self.ns))
         def isotropic_rule(b, i):
             return b.stage[1].length == b.stage[i].length
 
@@ -429,37 +458,37 @@ class diafiltration_model:
         def rec_mass_co(b):
             return sum(
                 m.fs.split_retentate[i].product.mass_solute[0, "Co"]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
             )
 
         @m.Expression()
         def rec_mass_li(b):
             return sum(
                 m.fs.split_permeate[i].product.mass_solute[0, "Li"]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
             )
 
         # percent recovery of solutes
         @m.Expression()
         def rec_perc_co(b):
             return b.rec_mass_co / (
-                (self.feed["Co"] + self.diaf["Co"]) * pyo.units.kg / pyo.units.hour
+                (self.feed["Co"] + self.diaf["Co"]) * units.kg / units.hour
             )
 
         @m.Expression()
         def rec_perc_li(b):
             return b.rec_mass_li / (
-                (self.feed["Li"] + self.diaf["Li"]) * pyo.units.kg / pyo.units.hour
+                (self.feed["Li"] + self.diaf["Li"]) * units.kg / units.hour
             )
 
         # mass recovery objectives
-        m.co_obj = pyo.Objective(expr=m.rec_mass_co, sense=pyo.maximize)
+        m.co_obj = Objective(expr=m.rec_mass_co, sense=maximize)
 
-        m.li_obj = pyo.Objective(expr=m.rec_mass_li, sense=pyo.maximize)
+        m.li_obj = Objective(expr=m.rec_mass_li, sense=maximize)
         m.li_obj.deactivate()  # normally using Co as objective
 
         # percent recovery lower bound constraints
-        m.R = pyo.Param(initialize=0.95, mutable=True)
+        m.R = Param(initialize=0.95, mutable=True)
 
         @m.Constraint()
         def li_lb(b):
@@ -476,10 +505,10 @@ class diafiltration_model:
         def purity_co(b):
             return sum(
                 m.fs.split_retentate[i].product.mass_solute[0, "Co"]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
             ) / sum(
                 m.fs.split_retentate[i].product.mass_solute[0, j]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
                 for j in self.solutes
             )
 
@@ -487,23 +516,23 @@ class diafiltration_model:
         def purity_li(b):
             return sum(
                 m.fs.split_permeate[i].product.mass_solute[0, "Li"]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
             ) / sum(
                 m.fs.split_permeate[i].product.mass_solute[0, j]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
                 for j in self.solutes
             )
 
-        m.pure = pyo.Param(initialize=0.1, mutable=True)
+        m.pure = Param(initialize=0.1, mutable=True)
 
         @m.Constraint()
         def purity_co_lb(b):
             return sum(
                 m.fs.split_retentate[i].product.mass_solute[0, "Co"]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
             ) >= m.pure * sum(
                 m.fs.split_retentate[i].product.mass_solute[0, j]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
                 for j in self.solutes
             )
 
@@ -511,10 +540,10 @@ class diafiltration_model:
         def purity_li_lb(b):
             return sum(
                 m.fs.split_permeate[i].product.mass_solute[0, "Li"]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
             ) >= m.pure * sum(
                 m.fs.split_permeate[i].product.mass_solute[0, j]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
                 for j in self.solutes
             )
 
@@ -526,14 +555,14 @@ class diafiltration_model:
         def impurity_retentate(b):
             return sum(
                 m.fs.split_retentate[i].product.mass_solute[0, "Li"]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
             )
 
         @m.Expression()
         def impurity_permeate(b):
             return sum(
                 m.fs.split_permeate[i].product.mass_solute[0, "Co"]
-                for i in pyo.RangeSet(self.ns)
+                for i in RangeSet(self.ns)
             )
 
     def mix_products(self, m):
@@ -554,7 +583,7 @@ class diafiltration_model:
             momentum_mixing_type=MomentumMixingType.none,
         )
         # connect product streams to product mixer
-        for i in pyo.RangeSet(self.ns):
+        for i in RangeSet(self.ns):
             m.fs.add_component(
                 f"connect_prod_retentate_{i}",
                 Arc(
@@ -569,7 +598,7 @@ class diafiltration_model:
                     destination=getattr(m.fs.mix_product_permeate, f"inlet_{i}"),
                 ),
             )
-        pyo.TransformationFactory("network.expand_arcs").apply_to(m)
+        TransformationFactory("network.expand_arcs").apply_to(m)
 
     def add_precipitators(self, m):
         """Add precipitator units."""
@@ -598,7 +627,7 @@ class diafiltration_model:
             # m.fs.precipitator[prod].yields[sol, 'solid']\
             #                        .fix(self.perc_precipitate[prod][sol])
 
-        pyo.TransformationFactory("network.expand_arcs").apply_to(m)
+        TransformationFactory("network.expand_arcs").apply_to(m)
 
     def connect_diafiltrate(self, m):
         """Connect precipitator recycle to diafiltrate inlet."""
@@ -650,7 +679,7 @@ class diafiltration_model:
             self.diaf["solvent"] / (self.feed["solvent"] + self.diaf["solvent"])
         )
 
-        pyo.TransformationFactory("network.expand_arcs").apply_to(m)
+        TransformationFactory("network.expand_arcs").apply_to(m)
 
     def precipitate_objectives(self, m):
         """Set up objectives for flowsheet with precipitators."""
@@ -670,24 +699,24 @@ class diafiltration_model:
         def prec_perc_co(b):
             return b.prec_mass_co / (
                 (m.fs.split_feed.mixed_state[0].mass_solute["Co"])
-                * pyo.units.kg
-                / pyo.units.hour
+                * units.kg
+                / units.hour
             )
 
         @m.Expression()
         def prec_perc_li(b):
             return b.prec_mass_li / (
                 (m.fs.split_feed.mixed_state[0].mass_solute["Li"])
-                * pyo.units.kg
-                / pyo.units.hour
+                * units.kg
+                / units.hour
             )
 
-        m.prec_co_obj = pyo.Objective(expr=m.prec_mass_co, sense=pyo.maximize)
-        m.prec_li_obj = pyo.Objective(expr=m.prec_mass_li, sense=pyo.maximize)
+        m.prec_co_obj = Objective(expr=m.prec_mass_co, sense=maximize)
+        m.prec_li_obj = Objective(expr=m.prec_mass_li, sense=maximize)
         m.prec_li_obj.deactivate()
-        m.prec_li_lb = pyo.Constraint(expr=m.prec_perc_li >= m.R)
-        m.Rco = pyo.Param(initialize=0.95, mutable=True)
-        m.prec_co_lb = pyo.Constraint(expr=m.prec_perc_co >= m.Rco)
+        m.prec_li_lb = Constraint(expr=m.prec_perc_li >= m.R)
+        m.Rco = Param(initialize=0.95, mutable=True)
+        m.prec_co_lb = Constraint(expr=m.prec_perc_co >= m.Rco)
         m.prec_co_lb.deactivate()
 
     def initialize_stage_splitters(self, m, stage, mixing="tube"):
@@ -743,7 +772,7 @@ class diafiltration_model:
 
         # propagate side stream inlets
         i = stage
-        for j in pyo.RangeSet(self.nt):
+        for j in RangeSet(self.nt):
             m.fs.stage[i].retentate_side_stream_state[0, j].flow_vol.unfix()
             for sol in self.solutes:
                 m.fs.stage[i].retentate_side_stream_state[0, j].mass_solute[sol].unfix()
@@ -802,7 +831,7 @@ class diafiltration_model:
 
         # initialize precipitator related units
         if precipitate:
-            for i in pyo.RangeSet(self.ns):
+            for i in RangeSet(self.ns):
                 propagate_state(
                     source=m.fs.split_retentate[i].product,
                     destination=getattr(m.fs.mix_product_retentate, f"inlet_{i}"),
@@ -851,13 +880,13 @@ class diafiltration_model:
             inlets = self.ns * self.nt
         elif mixing == "stage":
             inlets = self.ns
-        for i in pyo.RangeSet(inlets - 1):
+        for i in RangeSet(inlets - 1):
             m.fs.split_feed.split_fraction[0, f"outlet_{i}"].fix(1 / inlets)
             m.fs.split_diafiltrate.split_fraction[0, f"outlet_{i}"].fix(1 / inlets)
         split_initializer = SeparatorInitializer()
         split_initializer.initialize(m.fs.split_feed)
 
-    def initialize(self, m, mixing="tube", precipitate=False):
+    def initialize(self, m, mixing="tube", precipitate=True):
         """Initialize all IDAES unit models."""
         # initialize feed and diafiltrate splitters
         # 1. we put a bit of the feed streams into all inlet locations
@@ -971,11 +1000,11 @@ class diafiltration_model:
             inlets = self.ns
         return inlets
 
-    def unfix_dof(self, m, mixing="tube", precipitate=False):
+    def unfix_dof(self, m, mixing="tube", precipitate=True):
         """Unfix model DoF."""
         inlets = self.num_inlets(mixing)
         # go through all split feed/diafiltrate streams and unfix them
-        for i in pyo.RangeSet(inlets - 1):
+        for i in RangeSet(inlets - 1):
             m.fs.split_feed.split_fraction[0, f"outlet_{i}"].unfix()
             m.fs.split_diafiltrate.split_fraction[0, f"outlet_{i}"].unfix()
 
@@ -986,12 +1015,12 @@ class diafiltration_model:
                 for sol in self.solutes:
                     m.fs.inlet_mixers[i].recycle.mass_solute[0, sol].unfix()
             if mixing == "stage":
-                for j in pyo.RangeSet(self.nt - 1):
+                for j in RangeSet(self.nt - 1):
                     m.fs.splitters[i].split_fraction[0, f"outlet_{j}"].unfix()
 
         # go through each stage and unfix relevant membrane units and splitters
-        for i in pyo.RangeSet(self.ns):
-            for j in pyo.RangeSet(self.nt):
+        for i in RangeSet(self.ns):
+            for j in RangeSet(self.nt):
                 m.fs.stage[i].retentate_side_stream_state[0, j].flow_vol.unfix()
                 for sol in self.solutes:
                     m.fs.stage[i].retentate_side_stream_state[0, j].mass_solute[
@@ -1003,7 +1032,7 @@ class diafiltration_model:
             # unfix recycle splitter
             if i != 1:
                 if mixing == "tube":
-                    for j in pyo.RangeSet(self.nt - 1):
+                    for j in RangeSet(self.nt - 1):
                         m.fs.recycle_splitters[i].split_fraction[
                             0, f"outlet_{j}"
                         ].unfix()
@@ -1024,3 +1053,91 @@ class diafiltration_model:
             m.fs.split_diafiltrate.inlet.flow_vol.setub(self.diaf["solvent"])
             m.fs.precipitator["retentate"].V.unfix()
             m.fs.precipitator["permeate"].V.unfix()
+
+    def add_costing(self, m):
+        """
+        Adds custom costing block to the flowsheet
+        """
+        m.fs.costing = DiafiltrationCosting()
+
+        # Create dummy variables to store the UnitModelCostingBlocks
+        # These are needed because the sieving coefficient model does not account for pressure
+        m.fs.cascade = UnitModelBlock()  # to cost the pressure drop
+        m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
+        m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
+
+        m.fs.cascade.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
+            costing_method_arguments={
+                "water_flux": self.flux * units.m**3 / units.m**2 / units.h,
+                "vol_flow_feed": self.feed["solvent"]
+                * units.m**3
+                / units.h,  # cascade feed
+                "vol_flow_perm": sum(
+                    m.fs.split_permeate[i].product.flow_vol[0]
+                    for i in RangeSet(self.ns)
+                ),  # cascade permeate
+            },
+        )
+        m.fs.feed_pump.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_pump,
+            costing_method_arguments={
+                "inlet_pressure": self.atmospheric_pressure * units.Pa
+                + units.convert(m.fs.cascade.costing.pressure_drop, to_units=units.Pa),
+                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
+                * units.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
+                "inlet_vol_flow": self.feed["solvent"] * units.m**3 / units.h,  # feed
+            },
+        )
+        m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_pump,
+            costing_method_arguments={
+                "inlet_pressure": self.atmospheric_pressure * units.Pa,
+                "outlet_pressure": self.operating_pressure * units.psi,
+                "inlet_vol_flow": self.diaf["solvent"]
+                * units.m**3
+                / units.h,  # diafiltrate
+            },
+        )
+        # membrane stage cost blocks
+        for n in range(1, self.ns + 1):
+            m.fs.stage[n].costing = UnitModelCostingBlock(
+                flowsheet_costing_block=m.fs.costing,
+                costing_method=DiafiltrationCostingData.cost_membranes,
+                costing_method_arguments={
+                    "membrane_length": m.fs.stage[n].length,
+                    "membrane_width": m.fs.stage[n].width,
+                },
+            )
+
+        if self.precipitate:
+            for prod in ["retentate", "permeate"]:
+                m.fs.precipitator[prod].costing = UnitModelCostingBlock(
+                    flowsheet_costing_block=m.fs.costing,
+                    costing_method=DiafiltrationCostingData.cost_precipitator,
+                    costing_method_arguments={
+                        "precip_volume": m.fs.precipitator[prod].V,
+                    },
+                )
+
+        m.fs.costing.cost_process()
+
+    def add_costing_objectives(self, m):
+        """
+        Method to add cost objective to flowsheet for performing optimization
+
+        Args:
+            m: Pyomo model
+        """
+        m.co_obj.deactivate()
+        m.li_lb.deactivate()
+        m.prec_co_obj.deactivate()
+        m.prec_co_lb.activate()
+
+        def cost_obj(m):
+            return m.fs.costing.total_annualized_cost
+
+        m.cost_objecticve = Objective(rule=cost_obj)

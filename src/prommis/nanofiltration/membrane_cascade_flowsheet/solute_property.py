@@ -1,18 +1,19 @@
 """Generic multi-solute property package for membrane filtration flowsheet."""
 
 import pyomo.environ as pyo
+from pyomo.common.config import ConfigValue
+
 from idaes.core import (
     Component,
-    declare_process_block_class,
     MaterialFlowBasis,
     Phase,
     PhysicalParameterBlock,
     StateBlock,
     StateBlockData,
+    declare_process_block_class,
 )
-from idaes.core.util.initialization import fix_state_vars
-from pyomo.common.config import ConfigValue
 from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.initialization import fix_state_vars
 
 
 class _StateBlock(StateBlock):

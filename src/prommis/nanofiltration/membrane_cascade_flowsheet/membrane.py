@@ -7,12 +7,13 @@ Modification of the IDAES Multi-stream contactor unit.
 
 # Pyomo import
 import pyomo.environ as pyo
+from pyomo.common.config import ConfigValue
+
+from idaes.core import declare_process_block_class
+from idaes.core.util.exceptions import ConfigurationError
 
 # IDAES imports
 from idaes.models.unit_models.mscontactor import MSContactorData
-from idaes.core import declare_process_block_class
-from pyomo.common.config import ConfigValue
-from idaes.core.util.exceptions import ConfigurationError
 
 __author__ = "Jason Yao"
 

@@ -172,7 +172,7 @@ class MembraneData(MSContactorData):
                 )  # generic UB set to 200 kg/m^3
             return (
                 conc_ub * getattr(b, f"{loc}")[0, last_ele].flow_vol
-                >= getattr(b, f"{loc}")[0, last_ele].mass_solute[sol]
+                >= getattr(b, f"{loc}")[0, last_ele].flow_mass_solute[sol]
             )
 
         @self.Constraint(self.elements)
@@ -182,8 +182,7 @@ class MembraneData(MSContactorData):
                 == b.flux[ele]
                 * b.length
                 * b.width
-                * pyo.units.kg
-                / pyo.units.m**3
+                * self.config.streams.retentate.property_package.dens_H2O
                 / self.config.number_of_finite_elements
             )
 
@@ -200,14 +199,14 @@ class MembraneData(MSContactorData):
         def LN_M_in_exp(b, sol, ele):
             if ele == 1:
                 m_in = (
-                    b.retentate_inlet_state[0].mass_solute[sol]
-                    + b.retentate_side_stream_state[0, ele].mass_solute[sol]
+                    b.retentate_inlet_state[0].flow_mass_solute[sol]
+                    + b.retentate_side_stream_state[0, ele].flow_mass_solute[sol]
                 )
             else:
                 ele_prev = b.elements.prev(ele)
                 m_in = (
-                    b.retentate[0, ele_prev].mass_solute[sol]
-                    + b.retentate_side_stream_state[0, ele].mass_solute[sol]
+                    b.retentate[0, ele_prev].flow_mass_solute[sol]
+                    + b.retentate_side_stream_state[0, ele].flow_mass_solute[sol]
                 )
             return (m_in * pyo.units.hour / pyo.units.kg) == pyo.exp(
                 b.LN_M_in[sol, ele]
@@ -219,7 +218,9 @@ class MembraneData(MSContactorData):
         @self.Constraint(solutes, self.elements)
         def LN_M_out_exp(b, sol, ele):
             return (
-                b.retentate[0, ele].mass_solute[sol] * pyo.units.hour / pyo.units.kg
+                b.retentate[0, ele].flow_mass_solute[sol]
+                * pyo.units.hour
+                / pyo.units.kg
             ) == pyo.exp(b.LN_M_out[sol, ele])
 
         #######################################################################

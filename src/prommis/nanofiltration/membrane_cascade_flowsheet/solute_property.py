@@ -50,7 +50,7 @@ class SoluteStateBlock1Data(StateBlockData):
         # remove solvent from component list
         solutes = [i for i in self.component_list if i != "solvent"]
 
-        self.mass_solute = pyo.Var(
+        self.flow_mass_solute = pyo.Var(
             solutes, units=pyo.units.kg / pyo.units.hour, bounds=(1e-8, None)
         )
 
@@ -58,10 +58,9 @@ class SoluteStateBlock1Data(StateBlockData):
         """Get mass flow rate."""
         if j == "solvent":
             # Assume constant density of pure water
-            # return self.flow_vol * self.params.dens_H2O
-            return self.flow_vol * pyo.units.kg / pyo.units.m**3
+            return self.flow_vol * self.params.dens_H2O
         else:
-            return self.mass_solute[j]
+            return self.flow_mass_solute[j]
 
     def get_material_flow_basis(self):
         """Get material flow basis."""
@@ -74,7 +73,7 @@ class SoluteStateBlock1Data(StateBlockData):
         Returns: dict
             a dict of state variables
         """
-        return {"flow_vol": self.flow_vol, "mass_solute": self.mass_solute}
+        return {"flow_vol": self.flow_vol, "flow_mass_solute": self.flow_mass_solute}
 
 
 @declare_process_block_class("SoluteParameters")

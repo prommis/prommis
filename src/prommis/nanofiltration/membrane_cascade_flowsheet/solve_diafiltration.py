@@ -7,7 +7,7 @@
 #####################################################################################################
 """Executable file for generating and solving diafiltration model."""
 
-from diafiltration_flowsheet_model import diafiltration_model
+from diafiltration_flowsheet_model import DiafiltrationModel
 from idaes.core.util.model_statistics import report_statistics
 import pyomo.environ as pyo
 import utils
@@ -40,7 +40,7 @@ def main(args):
     }
     prec = True
 
-    df = diafiltration_model(
+    df = DiafiltrationModel(
         NS=NS,
         NT=NT,
         solutes=solutes,

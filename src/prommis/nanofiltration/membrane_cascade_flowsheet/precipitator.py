@@ -84,8 +84,8 @@ class SplitterData(SeparatorData):
                     b.yields[sol, o] * b.mixed_state[t].flow_vol == o_block[t].flow_vol
                 )
             return (
-                b.yields[sol, o] * b.mixed_state[t].mass_solute[sol]
-                == o_block[t].mass_solute[sol]
+                b.yields[sol, o] * b.mixed_state[t].flow_mass_solute[sol]
+                == o_block[t].flow_mass_solute[sol]
             )
 
         # precipitator volume and residence time relations

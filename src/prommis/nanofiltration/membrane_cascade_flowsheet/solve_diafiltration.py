@@ -9,7 +9,7 @@
 
 from diafiltration_flowsheet_model import DiafiltrationModel
 from idaes.core.util.model_statistics import report_statistics
-import pyomo.environ as pyo
+from pyomo.environ import SolverFactory
 import utils
 import sys
 
@@ -67,12 +67,9 @@ def main(args):
     # R is used for the Li LB constraint.
     # This can be changed to any desired LB.
     m.R = 0.8
-    solver = pyo.SolverFactory("ipopt")
+    solver = SolverFactory("ipopt")
     result = solver.solve(m, tee=True)
 
-    # NOTE The below 2 percent recoveries are for use without precipitators
-    # m.rec_perc_co.display()
-    # m.rec_perc_li.display()
     # NOTE These percent recoveries are for precipitators
     m.prec_perc_co.display()
     m.prec_perc_li.display()

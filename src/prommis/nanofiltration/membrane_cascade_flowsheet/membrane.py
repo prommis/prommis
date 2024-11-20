@@ -12,7 +12,7 @@ Modification of the IDAES Multi-stream contactor unit.
 """
 
 # Pyomo import
-import pyomo.environ as pyo
+from pyomo.environ import Var, units, exp
 
 # IDAES imports
 from idaes.models.unit_models.mscontactor import MSContactorData
@@ -113,11 +113,11 @@ class MembraneData(MSContactorData):
 
     def add_membrane_performance_variables(self, solutes):
         """Add membrane length, flux, and sieving coefficients."""
-        self.length = pyo.Var(units=pyo.units.m)
-        self.width = pyo.Var(units=pyo.units.m)
-        self.flux = pyo.Var(self.elements, units=pyo.units.m / pyo.units.hour)
-        self.sieving_coefficient = pyo.Var(
-            solutes, self.elements, units=pyo.units.dimensionless
+        self.length = Var(units=units.m)
+        self.width = Var(units=units.m)
+        self.flux = Var(self.elements, units=units.m / units.hour)
+        self.sieving_coefficient = Var(
+            solutes, self.elements, units=units.dimensionless
         )
 
         # fix values and set lower/upper bounds
@@ -163,13 +163,11 @@ class MembraneData(MSContactorData):
         def conc_limits(b, sol, loc):
             last_ele = self.elements.at(-1)
             if sol == "Li":
-                conc_ub = 20 * pyo.units.kg / pyo.units.m**3  # kg/m^3
+                conc_ub = 20 * units.kg / units.m**3  # kg/m^3
             elif sol == "Co":
-                conc_ub = 200 * pyo.units.kg / pyo.units.m**3  # kg/m^3
+                conc_ub = 200 * units.kg / units.m**3  # kg/m^3
             else:
-                conc_ub = (
-                    200 * pyo.units.kg / pyo.units.m**3
-                )  # generic UB set to 200 kg/m^3
+                conc_ub = 200 * units.kg / units.m**3  # generic UB set to 200 kg/m^3
             return (
                 conc_ub * getattr(b, f"{loc}")[0, last_ele].flow_vol
                 >= getattr(b, f"{loc}")[0, last_ele].flow_mass_solute[sol]
@@ -188,10 +186,10 @@ class MembraneData(MSContactorData):
 
         # Isolate nonlinear LN into LB/UB to make original sieving eqn linear
         # add new variables for each substitution
-        self.LN_M_in = pyo.Var(solutes, self.elements)
-        self.LN_M_out = pyo.Var(solutes, self.elements)
-        self.LN_F_in = pyo.Var(self.elements)
-        self.LN_F_out = pyo.Var(self.elements)
+        self.LN_M_in = Var(solutes, self.elements)
+        self.LN_M_out = Var(solutes, self.elements)
+        self.LN_F_in = Var(self.elements)
+        self.LN_F_out = Var(self.elements)
 
         # set these as exponents to remove the logs
         #######################################################################
@@ -208,9 +206,7 @@ class MembraneData(MSContactorData):
                     b.retentate[0, ele_prev].flow_mass_solute[sol]
                     + b.retentate_side_stream_state[0, ele].flow_mass_solute[sol]
                 )
-            return (m_in * pyo.units.hour / pyo.units.kg) == pyo.exp(
-                b.LN_M_in[sol, ele]
-            )
+            return (m_in * units.hour / units.kg) == exp(b.LN_M_in[sol, ele])
 
         #######################################################################
 
@@ -218,10 +214,8 @@ class MembraneData(MSContactorData):
         @self.Constraint(solutes, self.elements)
         def LN_M_out_exp(b, sol, ele):
             return (
-                b.retentate[0, ele].flow_mass_solute[sol]
-                * pyo.units.hour
-                / pyo.units.kg
-            ) == pyo.exp(b.LN_M_out[sol, ele])
+                b.retentate[0, ele].flow_mass_solute[sol] * units.hour / units.kg
+            ) == exp(b.LN_M_out[sol, ele])
 
         #######################################################################
 
@@ -239,16 +233,16 @@ class MembraneData(MSContactorData):
                     b.retentate[0, ele_prev].flow_vol
                     + b.retentate_side_stream_state[0, ele].flow_vol
                 )
-            return (q_in * pyo.units.hour / pyo.units.m**3) == pyo.exp(b.LN_F_in[ele])
+            return (q_in * units.hour / units.m**3) == exp(b.LN_F_in[ele])
 
         #######################################################################
 
         #######################################################################
         @self.Constraint(self.elements)
         def LN_F_out_exp(b, ele):
-            return (
-                b.retentate[0, ele].flow_vol * pyo.units.hour / pyo.units.m**3
-            ) == pyo.exp(b.LN_F_out[ele])
+            return (b.retentate[0, ele].flow_vol * units.hour / units.m**3) == exp(
+                b.LN_F_out[ele]
+            )
 
         #######################################################################
 

@@ -6,7 +6,7 @@
 #####################################################################################################
 """Generic multi-solute property package for membrane filtration flowsheet."""
 
-import pyomo.environ as pyo
+from pyomo.environ import Var, Param, units
 from idaes.core import (
     Component,
     declare_process_block_class,
@@ -43,15 +43,13 @@ class SoluteStateBlock1Data(StateBlockData):
         """Construct model variables/expressions/constraints."""
         super().build()
 
-        self.flow_vol = pyo.Var(
-            units=pyo.units.m**3 / pyo.units.hour, bounds=(1e-8, None)
-        )
+        self.flow_vol = Var(units=units.m**3 / units.hour, bounds=(1e-8, None))
 
         # remove solvent from component list
         solutes = [i for i in self.component_list if i != "solvent"]
 
-        self.flow_mass_solute = pyo.Var(
-            solutes, units=pyo.units.kg / pyo.units.hour, bounds=(1e-8, None)
+        self.flow_mass_solute = Var(
+            solutes, units=units.kg / units.hour, bounds=(1e-8, None)
         )
 
     def get_material_flow_terms(self, p, j):
@@ -105,7 +103,7 @@ class SoluteParameterData(PhysicalParameterBlock):
         for sol in self.config.solutes:
             setattr(self, f"{sol}", Component())
 
-        self.dens_H2O = pyo.Param(default=1000, units=pyo.units.kg / pyo.units.m**3)
+        self.dens_H2O = Param(default=1000, units=units.kg / units.m**3)
 
         self._state_block_class = SoluteStateBlock  # noqa
 
@@ -114,10 +112,10 @@ class SoluteParameterData(PhysicalParameterBlock):
         """Define class metadata."""
         obj.add_default_units(
             {
-                "time": pyo.units.hour,
-                "length": pyo.units.m,
-                "mass": pyo.units.kg,
-                "amount": pyo.units.mol,
-                "temperature": pyo.units.K,
+                "time": units.hour,
+                "length": units.m,
+                "mass": units.kg,
+                "amount": units.mol,
+                "temperature": units.K,
             }
         )

@@ -1698,6 +1698,7 @@ def initialize_system(m):
     ]
 
     initializer_sx = SolventExtractionInitializer()
+    #TODO: Initialize m.fs.solex_rougher_strip with SolventExtractionInitializer
     sx_units = [
         m.fs.solex_rougher_load,
         m.fs.solex_rougher_scrub,

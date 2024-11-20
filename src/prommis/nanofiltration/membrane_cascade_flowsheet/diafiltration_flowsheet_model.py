@@ -68,26 +68,23 @@ class DiafiltrationModel:
         self,
         NS,
         NT,
-        solutes=["Li", "Co", "Ni"],
+        solutes=["Li", "Co"],
         flux=0.1,
-        sieving_coefficient={"Li": 1.3, "Co": 0.5, "Ni": 0.5},
+        sieving_coefficient={"Li": 1.3, "Co": 0.5},
         feed={
             "solvent": 100,  # m^3/hr of water
             "Li": 1.7 * 100,  # kg/hr
             "Co": 17 * 100,  # kg/hr
-            "Ni": 1e-8,
         },
-        diaf={
+        diafiltrate={
             "solvent": 30,  # m^3/hr of water
             "Li": 0.1 * 30,  # kg/hr
             "Co": 0.2 * 30,  # kg/hr
-            "Ni": 1e-8,
         },
         precipitate=False,
-        # perc_precipitate={'permeate': 0.81, 'retentate': 0.99}
-        perc_precipitate={
-            "permeate": {"Li": 0.81, "Co": 0.05, "Ni": 0.05},
-            "retentate": {"Li": 0.05, "Co": 0.99, "Ni": 0.81},
+        precipitate_yield={
+            "permeate": {"Li": 0.81, "Co": 0.05},
+            "retentate": {"Li": 0.05, "Co": 0.99},
         },
     ):
         """Store model parameters."""
@@ -97,9 +94,9 @@ class DiafiltrationModel:
         self.flux = flux
         self.sieving_coefficient = sieving_coefficient
         self.feed = feed
-        self.diaf = diaf
+        self.diaf = diafiltrate
         self.precipitate = precipitate
-        self.perc_precipitate = perc_precipitate
+        self.perc_precipitate = precipitate_yield
 
     def build_flowsheet(self, mixing="tube"):
         """Build the multi-stage diafiltration flowsheet."""

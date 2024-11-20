@@ -47,9 +47,9 @@ def main(args):
         flux=flux,
         sieving_coefficient=sieving_coefficient,
         feed=feed,
-        diaf=diaf,
+        diafiltrate=diaf,
         precipitate=prec,
-        perc_precipitate={
+        precipitate_yield={
             "permeate": {"Li": 0.81, "Co": 0.01},
             "retentate": {"Li": 0.20, "Co": 0.89},
         },

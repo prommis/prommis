@@ -349,20 +349,24 @@ class ConnectivityBuilder:
             stream_name = row[0]
             for col in range(1, n_cols):
                 conn = row[col]
-                if conn not in ("", "0"):
+                try:
+                    conn_index = int(conn)
+                except ValueError:
+                    conn_index = None
+                if conn_index in (1, -1):
                     unit_name = self._header[col]
                     try:
-                        conn_index = max(0, int(conn))  # -1 -> 0, 1 -> 1
-                        if conn_index not in (0, 1):
-                            raise ValueError(
-                                f"Bad connection value at [{i}, {col}]: {conn} not -1 or 1"
-                            )
+                        conn_index = 0 if conn_index == -1 else 1  # -1 -> 0, 1 -> 1
                     except ValueError:
                         raise ValueError(
                             f"Bad connection value at [{i}, {col}]: {conn} not -1 or 1"
                         )
+                    print(
+                        f"@@ conn='{conn}' direction={conn_index} stream={stream_name} unit={unit_name}"
+                    )
                     stream_abbr, unit_abbr = streams[stream_name], units[unit_name]
                     connections[stream_abbr][conn_index] = unit_abbr
+        print(f"@@ connections =  {connections}")
         return connections
 
 

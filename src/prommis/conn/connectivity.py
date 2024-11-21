@@ -361,12 +361,8 @@ class ConnectivityBuilder:
                         raise ValueError(
                             f"Bad connection value at [{i}, {col}]: {conn} not -1 or 1"
                         )
-                    print(
-                        f"@@ conn='{conn}' direction={conn_index} stream={stream_name} unit={unit_name}"
-                    )
                     stream_abbr, unit_abbr = streams[stream_name], units[unit_name]
                     connections[stream_abbr][conn_index] = unit_abbr
-        print(f"@@ connections =  {connections}")
         return connections
 
 

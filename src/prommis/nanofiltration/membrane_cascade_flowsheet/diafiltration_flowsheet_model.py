@@ -20,8 +20,11 @@ from pyomo.environ import (
     Constraint,
 )
 from pyomo.network import Arc
+from pyomo.core.expr import identify_components
+from pyomo.core.base.param import ScalarParam
 
 # IDAES imports
+from idaes.core.util.scaling import set_scaling_factor
 from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
 from idaes.models.unit_models import MSContactorInitializer
 from idaes.models.unit_models import (
@@ -966,6 +969,10 @@ class DiafiltrationModel:
             print(f"=>Recycle Error: {diaf_new - diaf_old}\n")
             itr += 1
 
+        # model scaling
+        print('scaling model')
+        self.model_scaling(m)
+
     def num_inlets(self, mixing):
         """Find the number of inlets."""
         if mixing == "tube":
@@ -1027,3 +1034,12 @@ class DiafiltrationModel:
             m.fs.split_diafiltrate.inlet.flow_vol.setub(self.diaf["solvent"])
             m.fs.precipitator["retentate"].V.unfix()
             m.fs.precipitator["permeate"].V.unfix()
+
+    def model_scaling(self, m):
+        """Apply model scaling."""
+        # scale constraints with water density
+        for con in m.component_data_objects(Constraint):
+            if m.fs.properties.dens_H2O.name in list(i.name for i in identify_components(con.body, [ScalarParam])):
+                set_scaling_factor(con, 1/1000)
+
+        TransformationFactory('core.scale_model').apply_to(m, rename=False)

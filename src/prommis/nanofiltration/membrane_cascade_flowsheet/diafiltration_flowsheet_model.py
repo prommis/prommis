@@ -799,7 +799,7 @@ class DiafiltrationModel:
 
         self.initialize_stage_splitters(m, stage, mixing)
 
-    def initialize_precipitators(self, m, mixing, precipitate):
+    def initialize_precipitators(self, m, precipitate):
         """Initialize precipitators."""
         mixer_initializer = MixerInitializer()
         split_initializer = SeparatorInitializer()
@@ -961,7 +961,7 @@ class DiafiltrationModel:
 
             print(f"Precipitator Iteration {itr}")
 
-            self.initialize_precipitators(m, mixing, precipitate)
+            self.initialize_precipitators(m, precipitate)
 
             diaf_new = (
                 m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute[check_sol].value
@@ -970,7 +970,7 @@ class DiafiltrationModel:
             itr += 1
 
         # model scaling
-        print('scaling model')
+        print("scaling model")
         self.model_scaling(m)
 
     def num_inlets(self, mixing):
@@ -1039,7 +1039,9 @@ class DiafiltrationModel:
         """Apply model scaling."""
         # scale constraints with water density
         for con in m.component_data_objects(Constraint):
-            if m.fs.properties.dens_H2O.name in list(i.name for i in identify_components(con.body, [ScalarParam])):
-                set_scaling_factor(con, 1/1000)
+            if m.fs.properties.dens_H2O.name in list(
+                i.name for i in identify_components(con.body, [ScalarParam])
+            ):
+                set_scaling_factor(con, 1 / 1000)
 
-        TransformationFactory('core.scale_model').apply_to(m, rename=False)
+        TransformationFactory("core.scale_model").apply_to(m, rename=False)

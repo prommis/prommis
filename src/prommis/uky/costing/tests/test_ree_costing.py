@@ -6314,3 +6314,32 @@ def test_REE_costing_royalty_expression_solve():
     assert pyo.value(m.fs.costing.pv_royalties[None]) == pytest.approx(
         pyo.value(m.fs.royalty_formula), rel=1e-4
     )
+
+
+@pytest.mark.component
+def test_REE_costing_economy_of_numbers():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+
+    m.fs.costing = QGESSCosting()
+
+    m.fs.base_cost = pyo.Var(initialize=41.2, units=pyunits.MUSD_2007)
+    m.fs.base_cost.fix()
+
+    QGESSCostingData.economy_of_numbers(
+        m.fs.costing,
+        cum_num_units=5,
+        cost_FOAK=m.fs.base_cost,
+        CE_index_year="2007",
+        learning_rate=0.05,
+    )
+
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt.assert_no_structural_warnings()
+
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    assert pyo.value(m.fs.costing.cost_NOAK) == pytest.approx(36.574, rel=1e-4)

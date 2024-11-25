@@ -143,7 +143,7 @@ for s in stage_number:
 
 
 """
-Fixation of the inlet conditions and the initial state values for all the components.
+Fixing the inlet conditions and the initial state values for all the components.
 
 """
 

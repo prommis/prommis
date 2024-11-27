@@ -7,7 +7,7 @@ It depends on the [IDAES](https://idaes-pse.readthedocs.io/en/stable/) and [Wate
 PrOMMiS is distributed as a Python package, so can be installed through Python's standard tool, `pip`. These instructions assume you can run commands from a Mac OSX, Linux, or Windows Powershell terminal.
 
 ### Create Python environment (optional)
-Before installing the PrOMMiS software, we recommend you set up "environment" that will let you install Python packages without affecting your default setup.
+Before installing the PrOMMiS software, we recommend you set up an "environment" that will let you install Python packages without affecting your default setup.
 Instructions are given below for doing this using Conda and Miniforge, but there are other methods such as [pyenv](https://github.com/pyenv/pyenv) and [virtualenv](https://virtualenv.pypa.io/en/latest/) that have similar effects.
 
 ### Create Conda / Miniforge environment
@@ -45,10 +45,8 @@ Once it is done, you can continue to try an example.
 
 ### Install IDAES "extensions"
 
-After installing PrOMMiS, you will need to install binary packages for the
-solvers. These are contained in the IDAES package and called "extensions".
-The following command can be used to automatically install the IDAES extensions:
-
+After installing PrOMMiS, you will need to install binary packages for the solvers. 
+These "extensions", as they are called, can be installed, after installing IDAES, using this command:
 ```
 idaes get-extensions
 ```
@@ -120,7 +118,7 @@ From here, all you need to do is run Jupyter Lab using the notebook you download
 
 ### Run the notebook
 
-For those unfamiliar with Jupyter Notebooks, the main thing to do is type "Control-Enter" to run the current cell and advance to the next one. In this way you can sequentially run each section of the notebook, pausing as needed to read and examine output. For more information see the [JupyterLab documentation](https://jupyterlab.readthedocs.io/en/latest/).
+For those unfamiliar with Jupyter Notebooks, the main thing to do is press Ctrl + Enter to run the current cell and advance to the next one. In this way you can sequentially run each section of the notebook, pausing as needed to read and examine output. For more information see the [JupyterLab documentation](https://jupyterlab.readthedocs.io/en/latest/).
 
 ## Next steps
 

@@ -118,10 +118,10 @@ From here, all you need to do is run Jupyter Lab using the notebook you download
 
 ### Run the notebook
 
-For those unfamiliar with Jupyter Notebooks, the main thing to do is press Ctrl + Enter to run the current cell and advance to the next one. In this way you can sequentially run each section of the notebook, pausing as needed to read and examine output. For more information see the [JupyterLab documentation](https://jupyterlab.readthedocs.io/en/latest/).
+For those unfamiliar with Jupyter Notebooks, the most common operation is to press Ctrl + Enter to execute the code in the current cell and advance to the next one. In this way you can execute a notebook step by step, pausing as needed to read and examine output. For more information see the [JupyterLab documentation](https://jupyterlab.readthedocs.io/en/latest/).
 
 ## Next steps
 
-To use PrOMMiS libraries in your own Python code, imitate the statements you see in the example notebooks.
+To use PrOMMiS libraries in your own Python code, you will need to create Python modules that create and build flowsheets, such as the module for the [UKy flowsheet](https://github.com/prommis/prommis/blob/main/src/prommis/uky/uky_flowsheet.py).
 
-Since PrOMMiS is built on IDAES, you will need to learn all the essential concepts of the [IDAES](https://idaes-pse.readthedocs.io/en/stable/) software.
+To understand how this and other examples work and start to create your own, please refer to documentation of the [IDAES](https://idaes-pse.readthedocs.io/en/stable/) process systems engineering toolkit software.

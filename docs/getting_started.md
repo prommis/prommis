@@ -3,8 +3,8 @@ This page gets you started with the PrOMMiS Python package.
 
 It depends on the [IDAES](https://idaes-pse.readthedocs.io/en/stable/) and [WaterTAP](https://watertap.readthedocs.io/en/stable/) Python packages, which means that these will be automatically installed as part of its installation.
 
-## Install Prommis
-ProMMiS is distributed as a Python package, so can be installed through Python's standard tool, `pip`. These instructions assume you can run commands from a Mac OSX, Linux, or Windows Powershell terminal.
+## Install PrOMMiS
+PrOMMiS is distributed as a Python package, so can be installed through Python's standard tool, `pip`. These instructions assume you can run commands from a Mac OSX, Linux, or Windows Powershell terminal.
 
 ### Create Python environment (optional)
 Before installing the PrOMMiS software, we recommend you set up "environment" that will let you install Python packages without affecting your default setup.
@@ -45,7 +45,7 @@ Once it is done, you can continue to try an example.
 
 ### Install IDAES "extensions"
 
-After installing ProMMiS, you will need to install binary packages for the
+After installing PrOMMiS, you will need to install binary packages for the
 solvers. These are contained in the IDAES package and called "extensions".
 The following command can be used to automatically install the IDAES extensions:
 
@@ -124,6 +124,6 @@ For those unfamiliar with Jupyter Notebooks, the main thing to do is type "Contr
 
 ## Next steps
 
-To use ProMMiS libraries in your own Python code, imitate the statements you see in the example notebooks.
+To use PrOMMiS libraries in your own Python code, imitate the statements you see in the example notebooks.
 
 Since PrOMMiS is built on IDAES, you will need to learn all the essential concepts of the [IDAES](https://idaes-pse.readthedocs.io/en/stable/) software.

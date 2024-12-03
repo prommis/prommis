@@ -10,7 +10,7 @@ This flowsheet provides the setup for a multi-stage diafiltration model with dow
 
 ## Contents Summary
 ### `solute_property.py`
-This is a generic property package for solutes used in the diafiltration flowsheet model that provides `flow_vol` and `mass_solute` variables for mass balance equations in the model. We note that the model has been formulated so that solute mass flow rates are used (instead of concentrations). This allows for most equations to be linear.
+This is a generic property package for solutes used in the diafiltration flowsheet model that provides `flow_vol` and `flow_mass_solute` variables for mass balance equations in the model. We note that the model has been formulated so that solute mass flow rates are used (instead of concentrations). This allows for most equations to be linear.
 
 ### `membrane.py`
 The `Membrane` unit model is built on top of the `MSContactor`unit model, which provides mass balances for retentate and permeate streams and `number_of_finite_elements` and `streams` arguments. The `Membrane` unit model adds required arguments of `flux` and `sieving_coefficient`, which are used in membrane transport constraints and additional side stream ports.

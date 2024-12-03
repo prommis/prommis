@@ -1,10 +1,17 @@
 #!/usr/bin/env python
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """Executable file for generating and solving diafiltration model."""
 
 from pyomo.environ import SolverFactory, Suffix, TransformationFactory
 
 import idaes.logger as idaeslog
 from idaes.core.util import from_json
+from diafiltration_flowsheet_model import DiafiltrationModel
 from idaes.core.util.model_statistics import report_statistics
 
 import utils
@@ -34,16 +41,16 @@ def main():
     precipitate = True
 
     # setup for diafiltration model
-    df = diafiltration_model(
+    df = DiafiltrationModel(
         NS=num_s,
         NT=num_t,
         solutes=solutes,
         flux=flux,
         sieving_coefficient=sieving_coefficient,
         feed=feed,
-        diaf=diaf,
+        diafiltrate=diaf,
         precipitate=precipitate,
-        perc_precipitate={
+        precipitate_yield={
             "permeate": {"Li": 0.81, "Co": 0.01},
             "retentate": {"Li": 0.20, "Co": 0.89},
         },
@@ -70,9 +77,6 @@ def main():
         except Exception:
             _log.info("Failure to solve scaled model")
 
-    # NOTE The below 2 percent recoveries are for use without precipitators
-    # m.rec_perc_co.display()
-    # m.rec_perc_li.display()
     # NOTE These percent recoveries are for precipitators
     m.prec_perc_co.display()
     m.prec_perc_li.display()

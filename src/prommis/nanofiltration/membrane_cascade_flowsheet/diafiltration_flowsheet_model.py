@@ -1,34 +1,32 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """Class for building the full IDAES diafiltration flowsheet."""
 
 # Pyomo imports
-import logging
-
 from pyomo.environ import (
     ConcreteModel,
-    Constraint,
-    Objective,
-    Param,
     RangeSet,
     Set,
-    TransformationFactory,
     Var,
-    maximize,
+    TransformationFactory,
     units,
+    Objective,
+    maximize,
+    Param,
+    Constraint,
 )
 from pyomo.network import Arc
-
-# other imports
-import idaes.logger as idaeslog
+from pyomo.core.expr import identify_components
+from pyomo.core.base.param import ScalarParam
 
 # IDAES imports
-from idaes.core import (
-    FlowsheetBlock,
-    MaterialBalanceType,
-    MomentumBalanceType,
-    UnitModelBlock,
-    UnitModelCostingBlock,
-)
-from idaes.core.util.initialization import propagate_state
+from idaes.core.util.scaling import set_scaling_factor
+from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
+from idaes.models.unit_models import MSContactorInitializer
 from idaes.models.unit_models import (
     EnergySplittingType,
     Mixer,
@@ -42,8 +40,6 @@ from idaes.models.unit_models import SeparatorInitializer
 
 import numpy as np
 from membrane import Membrane
-
-# from mass_splitter import MSplitter as Splitter
 from precipitator import Precipitator
 
 # Custom imports
@@ -55,7 +51,7 @@ from prommis.nanofiltration.costing.diafiltration_cost_model import (
 )
 
 
-class diafiltration_model:
+class DiafiltrationModel:
     """
     Multi-stage diafiltration model, built using custom IDAES units.
 
@@ -75,26 +71,23 @@ class diafiltration_model:
         self,
         NS,
         NT,
-        solutes=["Li", "Co", "Ni"],
+        solutes=["Li", "Co"],
         flux=0.1,
-        sieving_coefficient={"Li": 1.3, "Co": 0.5, "Ni": 0.5},
+        sieving_coefficient={"Li": 1.3, "Co": 0.5},
         feed={
             "solvent": 100,  # m^3/hr of water
             "Li": 1.7 * 100,  # kg/hr
             "Co": 17 * 100,  # kg/hr
-            "Ni": 1e-8,
         },
-        diaf={
+        diafiltrate={
             "solvent": 30,  # m^3/hr of water
             "Li": 0.1 * 30,  # kg/hr
             "Co": 0.2 * 30,  # kg/hr
-            "Ni": 1e-8,
         },
         precipitate=True,
-        # perc_precipitate={'permeate': 0.81, 'retentate': 0.99}
-        perc_precipitate={
-            "permeate": {"Li": 0.81, "Co": 0.05, "Ni": 0.05},
-            "retentate": {"Li": 0.05, "Co": 0.99, "Ni": 0.81},
+        precipitate_yield={
+            "permeate": {"Li": 0.81, "Co": 0.05},
+            "retentate": {"Li": 0.05, "Co": 0.99},
         },
         atmospheric_pressure=101325,  # ambient pressure, Pa
         operating_pressure=145,  # nanofiltration operating pressure, psi
@@ -106,9 +99,9 @@ class diafiltration_model:
         self.flux = flux
         self.sieving_coefficient = sieving_coefficient
         self.feed = feed
-        self.diaf = diaf
+        self.diaf = diafiltrate
         self.precipitate = precipitate
-        self.perc_precipitate = perc_precipitate
+        self.perc_precipitate = precipitate_yield
         self.atmospheric_pressure = atmospheric_pressure
         self.operating_pressure = operating_pressure
 
@@ -177,7 +170,7 @@ class diafiltration_model:
         # fix inlet of first stage to its LB 1e-8 (unused)
         m.fs.stage[1].retentate_inlet_state[0].flow_vol.fix(1e-8)
         for sol in self.solutes:
-            m.fs.stage[1].retentate_inlet_state[0].mass_solute[sol].fix(1e-8)
+            m.fs.stage[1].retentate_inlet_state[0].flow_mass_solute[sol].fix(1e-8)
 
         # add retentate and permeate splitters for each stage
         m.fs.split_retentate = Splitter(
@@ -258,9 +251,9 @@ class diafiltration_model:
                     if i == self.ns:
                         m.fs.inlet_mixers[i, j].recycle.flow_vol[0].fix(1e-8)
                         for sol in self.solutes:
-                            m.fs.inlet_mixers[i, j].recycle.mass_solute[0, sol].fix(
-                                1e-8
-                            )
+                            m.fs.inlet_mixers[i, j].recycle.flow_mass_solute[
+                                0, sol
+                            ].fix(1e-8)
 
         elif mixing == "stage":
             m.fs.inlet_mixers = Mixer(
@@ -281,14 +274,7 @@ class diafiltration_model:
                 momentum_balance_type=MomentumBalanceType.none,
                 energy_split_basis=EnergySplittingType.none,
             )
-            # m.fs.splitters = Splitter(
-            #     RangeSet(self.ns),
-            #     num_outlets=self.nt,
-            #     property_package=m.fs.properties,
-            #     material_balance_type=MaterialBalanceType.componentTotal,
-            #     momentum_balance_type=MomentumBalanceType.none,
-            #     energy_split_basis=EnergySplittingType.none
-            # )
+
             # connect each split stream to a stage side stream
             for i in RangeSet(self.ns):
                 m.fs.add_component(
@@ -302,11 +288,7 @@ class diafiltration_model:
                 if i == self.ns:
                     m.fs.inlet_mixers[i].recycle.flow_vol[0].fix(1e-8)
                     for sol in self.solutes:
-                        m.fs.inlet_mixers[i].recycle.mass_solute[0, sol].fix(1e-8)
-                    # m.fs.inlet_mixers[i].recycle.mass_solute[0, 'Co']\
-                    #                             .fix(1e-8)
-                    # m.fs.inlet_mixers[i].recycle.mass_solute[0, 'Li']\
-                    #                             .fix(1e-8)
+                        m.fs.inlet_mixers[i].recycle.flow_mass_solute[0, sol].fix(1e-8)
 
                 for j in RangeSet(self.nt):
                     m.fs.add_component(
@@ -392,9 +374,7 @@ class diafiltration_model:
         # set feed values
         m.fs.split_feed.inlet.flow_vol[0].fix(self.feed["solvent"])
         for sol in self.solutes:
-            m.fs.split_feed.inlet.mass_solute[0, sol].fix(self.feed[sol])
-        # m.fs.split_feed.inlet.mass_solute[0, 'Co'].fix(self.feed['Co'])
-        # m.fs.split_feed.inlet.mass_solute[0, 'Li'].fix(self.feed['Li'])
+            m.fs.split_feed.inlet.flow_mass_solute[0, sol].fix(self.feed[sol])
 
         # connect feeds to inlet mixers
         for i in m.fs.inlet_mixers:
@@ -425,7 +405,7 @@ class diafiltration_model:
         # set diafiltrate values
         m.fs.split_diafiltrate.inlet.flow_vol[0].fix(self.diaf["solvent"])
         for sol in self.solutes:
-            m.fs.split_diafiltrate.inlet.mass_solute[0, sol].fix(self.diaf[sol])
+            m.fs.split_diafiltrate.inlet.flow_mass_solute[0, sol].fix(self.diaf[sol])
 
         # connect diafiltrates to inlet mixers
         for i in m.fs.inlet_mixers:
@@ -457,14 +437,14 @@ class diafiltration_model:
         @m.Expression()
         def rec_mass_co(b):
             return sum(
-                m.fs.split_retentate[i].product.mass_solute[0, "Co"]
+                m.fs.split_retentate[i].product.flow_mass_solute[0, "Co"]
                 for i in RangeSet(self.ns)
             )
 
         @m.Expression()
         def rec_mass_li(b):
             return sum(
-                m.fs.split_permeate[i].product.mass_solute[0, "Li"]
+                m.fs.split_permeate[i].product.flow_mass_solute[0, "Li"]
                 for i in RangeSet(self.ns)
             )
 
@@ -504,10 +484,10 @@ class diafiltration_model:
         @m.Expression()
         def purity_co(b):
             return sum(
-                m.fs.split_retentate[i].product.mass_solute[0, "Co"]
+                m.fs.split_retentate[i].product.flow_mass_solute[0, "Co"]
                 for i in RangeSet(self.ns)
             ) / sum(
-                m.fs.split_retentate[i].product.mass_solute[0, j]
+                m.fs.split_retentate[i].product.flow_mass_solute[0, j]
                 for i in RangeSet(self.ns)
                 for j in self.solutes
             )
@@ -515,10 +495,10 @@ class diafiltration_model:
         @m.Expression()
         def purity_li(b):
             return sum(
-                m.fs.split_permeate[i].product.mass_solute[0, "Li"]
+                m.fs.split_permeate[i].product.flow_mass_solute[0, "Li"]
                 for i in RangeSet(self.ns)
             ) / sum(
-                m.fs.split_permeate[i].product.mass_solute[0, j]
+                m.fs.split_permeate[i].product.flow_mass_solute[0, j]
                 for i in RangeSet(self.ns)
                 for j in self.solutes
             )
@@ -528,10 +508,10 @@ class diafiltration_model:
         @m.Constraint()
         def purity_co_lb(b):
             return sum(
-                m.fs.split_retentate[i].product.mass_solute[0, "Co"]
+                m.fs.split_retentate[i].product.flow_mass_solute[0, "Co"]
                 for i in RangeSet(self.ns)
             ) >= m.pure * sum(
-                m.fs.split_retentate[i].product.mass_solute[0, j]
+                m.fs.split_retentate[i].product.flow_mass_solute[0, j]
                 for i in RangeSet(self.ns)
                 for j in self.solutes
             )
@@ -539,10 +519,10 @@ class diafiltration_model:
         @m.Constraint()
         def purity_li_lb(b):
             return sum(
-                m.fs.split_permeate[i].product.mass_solute[0, "Li"]
+                m.fs.split_permeate[i].product.flow_mass_solute[0, "Li"]
                 for i in RangeSet(self.ns)
             ) >= m.pure * sum(
-                m.fs.split_permeate[i].product.mass_solute[0, j]
+                m.fs.split_permeate[i].product.flow_mass_solute[0, j]
                 for i in RangeSet(self.ns)
                 for j in self.solutes
             )
@@ -554,14 +534,14 @@ class diafiltration_model:
         @m.Expression()
         def impurity_retentate(b):
             return sum(
-                m.fs.split_retentate[i].product.mass_solute[0, "Li"]
+                m.fs.split_retentate[i].product.flow_mass_solute[0, "Li"]
                 for i in RangeSet(self.ns)
             )
 
         @m.Expression()
         def impurity_permeate(b):
             return sum(
-                m.fs.split_permeate[i].product.mass_solute[0, "Co"]
+                m.fs.split_permeate[i].product.flow_mass_solute[0, "Co"]
                 for i in RangeSet(self.ns)
             )
 
@@ -670,9 +650,7 @@ class diafiltration_model:
         # unfix diafiltrate inlet
         m.fs.split_diafiltrate.inlet.flow_vol[0].unfix()
         for sol in self.solutes:
-            m.fs.split_diafiltrate.inlet.mass_solute[0, sol].unfix()
-        # m.fs.split_diafiltrate.inlet.mass_solute[0, 'Co'].unfix()
-        # m.fs.split_diafiltrate.inlet.mass_solute[0, 'Li'].unfix()
+            m.fs.split_diafiltrate.inlet.flow_mass_solute[0, sol].unfix()
 
         # This should be the same as the set diafiltrate UB
         m.fs.split_precipitate_recycle.split_fraction[0, "recycle"].fix(
@@ -688,17 +666,17 @@ class diafiltration_model:
 
         @m.Expression()
         def prec_mass_co(b):
-            return m.fs.precipitator["retentate"].solid.mass_solute[0, "Co"]
+            return m.fs.precipitator["retentate"].solid.flow_mass_solute[0, "Co"]
 
         @m.Expression()
         def prec_mass_li(b):
-            return m.fs.precipitator["permeate"].solid.mass_solute[0, "Li"]
+            return m.fs.precipitator["permeate"].solid.flow_mass_solute[0, "Li"]
 
         # percent recovery of solutes
         @m.Expression()
         def prec_perc_co(b):
             return b.prec_mass_co / (
-                (m.fs.split_feed.mixed_state[0].mass_solute["Co"])
+                (m.fs.split_feed.mixed_state[0].flow_mass_solute["Co"])
                 * units.kg
                 / units.hour
             )
@@ -706,7 +684,7 @@ class diafiltration_model:
         @m.Expression()
         def prec_perc_li(b):
             return b.prec_mass_li / (
-                (m.fs.split_feed.mixed_state[0].mass_solute["Li"])
+                (m.fs.split_feed.mixed_state[0].flow_mass_solute["Li"])
                 * units.kg
                 / units.hour
             )
@@ -743,17 +721,19 @@ class diafiltration_model:
                     source=m.fs.split_retentate[i].recycle,
                     destination=m.fs.recycle_splitters[i].inlet,
                 )
-                for j in pyo.RangeSet(self.nt - 1):
+                for j in RangeSet(self.nt - 1):
                     m.fs.recycle_splitters[i].split_fraction[0, f"outlet_{j}"].fix(
                         1 / self.nt
                     )
                 split_initializer.initialize(m.fs.recycle_splitters[i])
 
                 # propagate recycle to the previous stage
-                for j in pyo.RangeSet(self.nt):
+                for j in RangeSet(self.nt):
                     m.fs.inlet_mixers[i - 1, j].recycle.flow_vol[0].unfix()
                     for sol in self.solutes:
-                        m.fs.inlet_mixers[i - 1, j].recycle.mass_solute[0, sol].unfix()
+                        m.fs.inlet_mixers[i - 1, j].recycle.flow_mass_solute[
+                            0, sol
+                        ].unfix()
 
                     propagate_state(
                         source=getattr(m.fs.recycle_splitters[i], f"outlet_{j}"),
@@ -775,7 +755,9 @@ class diafiltration_model:
         for j in RangeSet(self.nt):
             m.fs.stage[i].retentate_side_stream_state[0, j].flow_vol.unfix()
             for sol in self.solutes:
-                m.fs.stage[i].retentate_side_stream_state[0, j].mass_solute[sol].unfix()
+                m.fs.stage[i].retentate_side_stream_state[0, j].flow_mass_solute[
+                    sol
+                ].unfix()
             if mixing == "tube":
                 propagate_state(
                     source=m.fs.inlet_mixers[i, j].outlet,
@@ -788,7 +770,9 @@ class diafiltration_model:
                 )
             m.fs.stage[i].retentate_side_stream_state[0, j].flow_vol.fix()
             for sol in self.solutes:
-                m.fs.stage[i].retentate_side_stream_state[0, j].mass_solute[sol].fix()
+                m.fs.stage[i].retentate_side_stream_state[0, j].flow_mass_solute[
+                    sol
+                ].fix()
 
             # the mscontactor initializer sets the initial value of the stream
             # to the sum of its inlets. Set material transfer to permeate to a
@@ -797,12 +781,10 @@ class diafiltration_model:
             m.fs.stage[i].material_transfer_term[
                 0, j, "permeate", "retentate", "solvent"
             ].set_value(1e-4)
-            # m.fs.stage[i].permeate[0.0, j].flow_vol.setlb(0)
             for sol in self.solutes:
                 m.fs.stage[i].material_transfer_term[
                     0, j, "permeate", "retentate", sol
                 ].set_value(1e-4)
-                # m.fs.stage[i].permeate[0.0, j].mass_solute[sol].setlb(0)
         # propagate retentate inlet if not first stage
         if i != 1:
             propagate_state(
@@ -824,7 +806,7 @@ class diafiltration_model:
 
         self.initialize_stage_splitters(m, stage, mixing)
 
-    def initialize_precipitators(self, m, mixing, precipitate):
+    def initialize_precipitators(self, m, precipitate):
         """Initialize precipitators."""
         mixer_initializer = MixerInitializer()
         split_initializer = SeparatorInitializer()
@@ -912,7 +894,7 @@ class diafiltration_model:
         check_sol = self.solutes[0]
         while not np.isclose(diaf_old, diaf_new) and itr < 100:
             diaf_old = (
-                m.fs.split_diafiltrate.mixed_state[0].mass_solute[check_sol].value
+                m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute[check_sol].value
             )
             split_initializer.initialize(m.fs.split_diafiltrate)
 
@@ -944,7 +926,9 @@ class diafiltration_model:
                         if m.fs.inlet_mixers[i].recycle.flow_vol[0].value != 1e-8:
                             m.fs.inlet_mixers[i].recycle.flow_vol[0].fix(0)
                             for sol in self.solutes:
-                                m.fs.inlet_mixers[i].recycle.mass_solute[0, sol].fix(0)
+                                m.fs.inlet_mixers[i].recycle.flow_mass_solute[
+                                    0, sol
+                                ].fix(0)
                     else:
                         if i == check_loc:
                             check_old = (
@@ -962,14 +946,14 @@ class diafiltration_model:
                             source=m.fs.inlet_mixers[i].outlet,
                             destination=m.fs.splitters[i].inlet,
                         )
-                        for j in pyo.RangeSet(self.nt - 1):
+                        for j in RangeSet(self.nt - 1):
                             m.fs.splitters[i].split_fraction[0, f"outlet_{j}"].fix(
                                 1 / self.nt
                             )
                         split_initializer.initialize(m.fs.splitters[i])
 
                 # initialize stages and relevant splitters
-                for i in pyo.RangeSet(self.ns):
+                for i in RangeSet(self.ns):
                     self.initialize_single_stage(m, stage=i, mixing=mixing)
 
                 print(f"  =>Recycle Error: {check_new - check_old}")
@@ -984,13 +968,17 @@ class diafiltration_model:
 
             print(f"Precipitator Iteration {itr}")
 
-            self.initialize_precipitators(m, mixing, precipitate)
+            self.initialize_precipitators(m, precipitate)
 
             diaf_new = (
-                m.fs.split_diafiltrate.mixed_state[0].mass_solute[check_sol].value
+                m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute[check_sol].value
             )
             print(f"=>Recycle Error: {diaf_new - diaf_old}\n")
             itr += 1
+
+        # model scaling
+        print("scaling model")
+        self.model_scaling(m)
 
     def num_inlets(self, mixing):
         """Find the number of inlets."""
@@ -1013,7 +1001,7 @@ class diafiltration_model:
             if m.fs.inlet_mixers[i].recycle.flow_vol[0].value != 1e-8:
                 m.fs.inlet_mixers[i].recycle.flow_vol[0].unfix()
                 for sol in self.solutes:
-                    m.fs.inlet_mixers[i].recycle.mass_solute[0, sol].unfix()
+                    m.fs.inlet_mixers[i].recycle.flow_mass_solute[0, sol].unfix()
             if mixing == "stage":
                 for j in RangeSet(self.nt - 1):
                     m.fs.splitters[i].split_fraction[0, f"outlet_{j}"].unfix()
@@ -1023,7 +1011,7 @@ class diafiltration_model:
             for j in RangeSet(self.nt):
                 m.fs.stage[i].retentate_side_stream_state[0, j].flow_vol.unfix()
                 for sol in self.solutes:
-                    m.fs.stage[i].retentate_side_stream_state[0, j].mass_solute[
+                    m.fs.stage[i].retentate_side_stream_state[0, j].flow_mass_solute[
                         sol
                     ].unfix()
             m.fs.split_retentate[i].split_fraction[0, "product"].unfix()
@@ -1053,6 +1041,17 @@ class diafiltration_model:
             m.fs.split_diafiltrate.inlet.flow_vol.setub(self.diaf["solvent"])
             m.fs.precipitator["retentate"].V.unfix()
             m.fs.precipitator["permeate"].V.unfix()
+
+    def model_scaling(self, m):
+        """Apply model scaling."""
+        # scale constraints with water density
+        for con in m.component_data_objects(Constraint):
+            if m.fs.properties.dens_H2O.name in list(
+                i.name for i in identify_components(con.body, [ScalarParam])
+            ):
+                set_scaling_factor(con, 1 / 1000)
+
+        TransformationFactory("core.scale_model").apply_to(m, rename=False)
 
     def add_costing(self, m):
         """

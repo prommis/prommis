@@ -1,3 +1,9 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """
 Precipitator unit model.
 
@@ -5,10 +11,7 @@ Modification of the IDAES Separator unit for yield based precipitation.
 """
 
 # Pyomo import
-import pyomo.environ as pyo
-from pyomo.common.config import ConfigValue
-
-from idaes.core import declare_process_block_class
+from pyomo.environ import Var, Param, Constraint, units, exp
 
 # IDAES imports
 from idaes.models.unit_models.separator import SeparatorData
@@ -36,13 +39,11 @@ class SplitterData(SeparatorData):
         super().build()
         # TODO add input checking to prevent incorrect setup
         self.deactivate_all_cons()
-        # self.sum_split_frac[0].activate()    # activate sum sf == 1 constraint
         self.add_precipitator_constraints()
 
     def deactivate_all_cons(self):
         """Deactivate all current constraints."""
-        for con in self.component_data_objects(pyo.Constraint):
-            # print(con)
+        for con in self.component_data_objects(Constraint):
             con.deactivate()
 
     def add_precipitator_constraints(self):
@@ -57,7 +58,7 @@ class SplitterData(SeparatorData):
         #            if i != 'solvent']
         # or include generalization for some water in precipitate
         solutes = self.mixed_state.component_list
-        self.yields = pyo.Var(solutes, self.outlet_idx)
+        self.yields = Var(solutes, self.outlet_idx)
 
         # set solvent product outlet to be 0
         self.yields["solvent", "solid"].fix(0)
@@ -80,25 +81,23 @@ class SplitterData(SeparatorData):
                     b.yields[sol, o] * b.mixed_state[t].flow_vol == o_block[t].flow_vol
                 )
             return (
-                b.yields[sol, o] * b.mixed_state[t].mass_solute[sol]
-                == o_block[t].mass_solute[sol]
+                b.yields[sol, o] * b.mixed_state[t].flow_mass_solute[sol]
+                == o_block[t].flow_mass_solute[sol]
             )
 
         # precipitator volume and residence time relations
-        self.tau = pyo.Var(units=pyo.units.hour)
-        self.V = pyo.Var(units=pyo.units.m**3)
+        self.tau = Var(units=units.hour)
+        self.V = Var(units=units.m**3)
         self.V.fix(100)  # initial point m^3
         self.V.setub(1000)  # set UB to prevent ridiculous sizes
         sol = [i for i in self.mixed_state.component_list if i != "solvent"]
-        self.alpha = pyo.Param(sol, initialize=self.config.yields[self.index()])
-        self.beta = pyo.Param(
-            sol, initialize={s: 4.6 for s in sol}, units=1 / pyo.units.hour
-        )
+        self.alpha = Param(sol, initialize=self.config.yields[self.index()])
+        self.beta = Param(sol, initialize={s: 4.6 for s in sol}, units=1 / units.hour)
 
         @self.Constraint(sol)
         def prec_res_time(b, sol):
             return b.yields[sol, "solid"] == b.alpha[sol] * (
-                1 - pyo.exp(-b.beta[sol] * b.tau)
+                1 - exp(-b.beta[sol] * b.tau)
             )
 
         @self.Constraint()

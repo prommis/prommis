@@ -36,6 +36,7 @@ from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
 from pyomo.environ import ConcreteModel, Expression, Param, Reference, Var
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
+from pyomo.environ import log10
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 import idaes.core.util.scaling as iscale
@@ -3442,3 +3443,70 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     f"Argument {obj} of type {type(obj)} is not a supported object type. "
                     f"Ensure {name} is a Pyomo Param, Var, Expression, or ScalarExpression."
                 )
+
+    def economy_of_numbers(
+        blk, cum_num_units, cost_FOAK, CE_index_year, learning_rate=0.04
+    ):
+        """
+        Economy of Numbers (EoN) estimates the future profitability of novel/First-of-A-Kind (FOAK)
+        equipment. This is because the cost of manufacturing a piece of equipment tends to decline
+        as the cumulative production quantity rises, resulting from a consistent improvement in
+        technical know-how.
+
+        Y = A(X^-b)
+
+        b = - log(1-R)/log(2)
+        where Y is the cost of the Nth-of-A-Kind (NOAK) of the equipment, A is the cost of the FOAK,
+        X is the cumulative number of units, b is the learning rate exponent, and R is the learning
+        rate constant.
+
+        The equations above are derived from Faber G, Ruttinger A, Strunge T, Langhorst T, Zimmermann A,
+        van der Hulst M, Bensebaa F, Moni S and Tao L (2022) Adapting Technology Learning Curves for
+        Prospective Techno-Economic and Life Cycle Assessments of Emerging Carbon Capture and Utilization
+        Pathways. Front. Clim. 4:820261. doi: 10.3389/fclim.2022.820261
+
+        Args:
+            cum_num_units: The cumulative number of units.
+            cost_FOAK: The cost of manufacturing the First-of-A-Kind equipment.
+            CE_index_year: year for cost basis, e.g., "2021" to use 2021 dollars
+            learning_rate: ranges between 0.01 - 0.1, depending on the level of maturity
+                           (i.e., experimental, growing, proven, etc.)
+                            as described in Rubin, E. S., Mantripragada, H., and Zhai, H.,
+                            "An Assessment of the NETL Cost Estimation Methodology".
+                            Department of Engineering and Public Policy, Carnegie Mellon University,
+                            Pittsburgh, PA (2016). p. 31, Fig. 6-4.
+        """
+
+        blk.cum_num_units = Param(
+            initialize=cum_num_units,
+            mutable=True,
+            units=pyunits.dimensionless,
+            doc="Cumulative number of units produced",
+        )
+        blk.learning_rate = Param(
+            initialize=learning_rate,
+            mutable=True,
+            units=pyunits.dimensionless,
+            doc="The learning factor reflects the level of maturity of the unit/technology",
+        )
+
+        blk.cost_NOAK = Var(
+            initialize=1e5,
+            bounds=(0, None),
+            doc="Cost of the Nth-of-A-Kind of the unit",
+            units=getattr(pyunits, "MUSD_" + CE_index_year),
+        )
+
+        @blk.Expression(
+            doc="This measures the rate at which the cost is reduced as cumulative units increases"
+        )
+        def learning_rate_exponent(b):
+
+            return -log10(1 - b.learning_rate) / log10(2)
+
+        @blk.Constraint()
+        def cost_NOAK_eq(b):
+            return b.cost_NOAK == pyunits.convert(
+                cost_FOAK * ((b.cum_num_units) ** -(b.learning_rate_exponent)),
+                to_units=getattr(pyunits, "MUSD_" + CE_index_year),
+            )

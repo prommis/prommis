@@ -38,6 +38,8 @@ watertap = [
     # TODO: update once watertap 1.1.0 is available
     "watertap >= 1.1.0rc0",
 ]
+[project.scripts]
+connectivity = "prommis.conn.connectivity:main"
 
 [tool.setuptools_scm]
 

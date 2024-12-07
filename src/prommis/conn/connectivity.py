@@ -50,13 +50,30 @@ class OutputFormats(enum.Enum):
     D2 = "d2"
 
 
+class Direction(enum.Enum):
+    RIGHT = 0
+    DOWN = 1
+
+
 class Formatter(abc.ABC):
     """Base class for formatters, which write out the matrix in a way that can be
     more easily visualized or processed by other tools.
     """
 
-    def __init__(self, connectivity):
+    def __init__(self, connectivity, direction: str = None, **kwargs):
         self._conn = connectivity
+        if direction is None:
+            self._direction = Direction.RIGHT
+        else:
+            self._parse_direction(direction)
+
+    def _parse_direction(self, d):
+        if d.lower() == "lr":
+            self._direction = Direction.RIGHT
+        elif d.lower() == "td":
+            self._direction = Direction.DOWN
+        else:
+            raise ValueError(f"Direction '{d}' not recognized")
 
     @abc.abstractmethod
     def write(
@@ -90,14 +107,18 @@ class Mermaid(Formatter):
         self,
         connectivity,
         stream_labels: bool = False,
-        direction: str = "LR",
         indent="   ",
         **kwargs,
     ):
-        super().__init__(connectivity)
+        super().__init__(connectivity, **kwargs)
         self.indent = indent
         self._stream_labels = stream_labels
-        self._direction = direction
+        if self._direction == Direction.RIGHT:
+            self._mm_dir = "LR"
+        elif self._direction == Direction.DOWN:
+            self._mm_dir = "TD"
+        else:
+            raise RuntimeError(f"Unknown parsed direction '{self._direction}'")
 
     def write(
         self,
@@ -146,7 +167,7 @@ class Mermaid(Formatter):
 
     def _body(self, outfile):
         i = self.indent
-        outfile.write(f"flowchart {self._direction}\n")
+        outfile.write(f"flowchart {self._mm_dir}\n")
         # Get connections first, so we know which streams to show
         connections, show_streams = self._get_connections()
         # Units
@@ -207,8 +228,14 @@ class D2(Formatter):
     """
 
     def __init__(self, connectivity, stream_labels: bool = False, **kwargs):
-        super().__init__(connectivity)
+        super().__init__(connectivity, **kwargs)
         self._labels = stream_labels
+        if self._direction == Direction.RIGHT:
+            self._d2_dir = "right"
+        elif self._direction == Direction.DOWN:
+            self._d2_dir = "down"
+        else:
+            raise RuntimeError(f"Unknown parsed direction '{self._direction}'")
 
     def write(
         self,
@@ -217,6 +244,7 @@ class D2(Formatter):
     ) -> Optional[str]:
         feed_num, sink_num = 1, 1
         f = self._get_output_stream(output_file)
+        f.write(f"direction: {self._d2_dir}\n")
         for unit_name, unit_abbr in self._conn.units.items():
             f.write(f"{unit_abbr}: {unit_name}\n")
         stream_rmap = {v: k for k, v in self._conn.streams.items()}

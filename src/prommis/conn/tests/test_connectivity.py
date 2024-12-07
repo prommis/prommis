@@ -129,6 +129,7 @@ def test_uky_data(uky_csv_data, uky_mermaid_data):
 matrix_list = [
     (None, [[1, 0], [-1, 1], [0, -1]]),  # (S1) -> U1 -(S2)-> U2 -> (S3)
     (None, [[1, 0], [-1, 1], [0, -1, 1]]),  # Bad rowlen / ignored
+    (None, [[1, 0], [-1, 1], [0, -1.0]]),  # Float OK
     (ValueError, [[1, 9], [-1, 1], [0, -1]]),  # Bad value
     (ValueError, [[1, "?"], [-1, 1], [0, -1]]),  # Bad value
 ]

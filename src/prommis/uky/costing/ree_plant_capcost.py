@@ -3010,18 +3010,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         separately to properly account for the value growth over time. Loan
         repayment and interest owed are calculated as
 
-        Annual_Loan_Payment = Debt * A/P(iLoan_%, 0, Nloan) = Debt / P/A(iLoan_%, 0, Nloan)
+        PV_Loan_Interest_Owed = Debt * [P/A(r, 0, Nloan) / P/A(iLoan_%, 0, Nloan) - 1]
 
-        PV_Loan_Interest_Owed = Nloan * Annual_Loan_Payment - Debt
-
-        where Annual_Loan_Payment is the required combined principal and interest
-        that should be paid annually to pay off the loan on-time, Debt is the
-        loan principal (typically a percentage of the CAPEX), Nloan is the loan
-        repayment period, and iLoan_% is the capital equipment loan interest rate
-        expressed as a decimal. Note that the annual loan payment is a constant
-        amount in present day dollars, and the difference between the sum of all
-        loan payments and the original debt principal is the total annual interest
-        on the unpaid balance over all years.
+        where Debt is the loan principal (typically a percentage of the CAPEX), Nloan
+        is the loan repayment period, and iLoan_% is the capital equipment loan interest
+        rate expressed as a decimal.
 
         Revenue, operating costs and royalties based on revenue escalate with
         standard inflation. Notably, these cash flows occur after any capital
@@ -3115,17 +3108,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             units=b.cost_units,
         )
 
-        b.loan_annual_payment = Var(
-            initialize=b.CAPEX,
-            bounds=(0, 1e4),
-            doc="amortized annual payment on loans in $MM",
-            units=b.cost_units,
-        )
-
         b.pv_loan_interest = Var(
             initialize=-b.CAPEX,
-            bounds=(-1e4, 0),
-            doc="present value of total lifetime loan interest in $MM; negative cash flow",
+            bounds=(-1e4, 1e4),
+            doc="present value of total lifetime loan interest in $MM; normally a negative cash flow, but can be positive depending on the discount and interest rates",
             units=b.cost_units,
         )
 
@@ -3311,62 +3297,62 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.loan_debt = Reference(b.config.debt_expression)
 
         @b.Constraint()
-        def loan_annual_payment_constraint(c):
-            # Annual Loan Payment = Debt * A/P(%interest, 0, loan_length) = Debt / P/A(%interest, 0, loan_length)
-            # we assume that the loan payment series starts in year 1, so we don't need to account for a delay
-
-            if c.config.debt_expression is None:
-
-                return c.loan_annual_payment == pyunits.convert(
-                    c.loan_debt
-                    / series_present_worth_factor(
-                        pyunits.convert(
-                            c.capital_loan_interest_percentage,  # payment value is discounted by loan interest rate
-                            to_units=pyunits.dimensionless,
-                        ),
-                        0,  # payments adjusted to present value are constant
-                        c.capital_loan_repayment_period / pyunits.year,
-                    ),
-                    to_units=c.cost_units,
-                )
-
-            else:
-
-                return c.loan_annual_payment == pyunits.convert(
-                    c.loan_debt[None]
-                    / series_present_worth_factor(
-                        pyunits.convert(
-                            c.capital_loan_interest_percentage,  # payment value is discounted by loan interest rate
-                            to_units=pyunits.dimensionless,
-                        ),
-                        0,  # payments adjusted to present value are constant
-                        c.capital_loan_repayment_period / pyunits.year,
-                    ),
-                    to_units=c.cost_units,
-                )
-
-        @b.Constraint()
         def pv_loan_interest_constraint(c):
-            # PV_Loan_Interest_Owed = - loan_length * Annual_Loan_Payment - Debt)
-            # we assume that the loan payments are in present day dollars, so we don't need to discount them
+            # PV_Loan_Interest_Owed = Debt * [P/A(r, 0, loan_length) / P/A(%interest, 0, loan_length) - 1]
+            # when r > %interest, this is a negative value; the loan amount borrowed devalues faster than
+            # the loan amount repaid
+            # when r < %interest, this is a positive value; the loan amount borrowed devalues slower than
+            # the loan amount repaid
 
             if c.config.debt_expression is None:
 
-                return c.pv_loan_interest == -pyunits.convert(
-                    c.capital_loan_repayment_period
-                    / pyunits.year
-                    * c.loan_annual_payment
-                    - c.loan_debt,
+                return c.pv_loan_interest == pyunits.convert(
+                    c.loan_debt
+                    * (
+                        series_present_worth_factor(
+                            pyunits.convert(
+                                c.discount_percentage,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            0,  # loan value does not grow over time
+                            c.capital_loan_repayment_period / pyunits.year,
+                        )
+                        / series_present_worth_factor(
+                            pyunits.convert(
+                                c.capital_loan_interest_percentage,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            0,  # loan payments do not grow over time
+                            c.capital_loan_repayment_period / pyunits.year,
+                        )
+                        - 1
+                    ),
                     to_units=c.cost_units,
                 )
 
             else:
 
-                return c.pv_loan_interest == -pyunits.convert(
-                    c.capital_loan_repayment_period
-                    / pyunits.year
-                    * c.loan_annual_payment
-                    - c.loan_debt[None],
+                return c.pv_loan_interest == pyunits.convert(
+                    c.loan_debt[None]
+                    * (
+                        series_present_worth_factor(
+                            pyunits.convert(
+                                c.discount_percentage,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            0,  # loan value does not grow over time
+                            c.capital_loan_repayment_period / pyunits.year,
+                        )
+                        / series_present_worth_factor(
+                            pyunits.convert(
+                                c.capital_loan_interest_percentage,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            0,  # loan payments do not grow over time
+                            c.capital_loan_repayment_period / pyunits.year,
+                        )
+                        - 1
+                    ),
                     to_units=c.cost_units,
                 )
 

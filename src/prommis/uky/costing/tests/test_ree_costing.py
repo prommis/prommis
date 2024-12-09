@@ -1211,7 +1211,7 @@ class TestREECosting(object):
             -112.78144, rel=1e-4
         )
         assert model.fs.costing.pv_loan_interest.value == pytest.approx(
-            -23.892703, rel=1e-4
+            -11.001142, rel=1e-4
         )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -4677.8978, rel=1e-4
@@ -1220,7 +1220,7 @@ class TestREECosting(object):
             -36.434467, rel=1e-4
         )
         assert model.fs.costing.pv_revenue.value == pytest.approx(560.53027, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(-4290.4761, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(-4277.58453, rel=1e-4)
 
     @pytest.mark.unit
     def test_report(self, model):
@@ -3066,7 +3066,6 @@ class TestNPVCostingBlock(object):
         # check that some objects are built as expected
         assert isinstance(model.fs.costing.pv_capital_cost, pyo.Var)
         assert isinstance(model.fs.costing.loan_debt, pyo.Var)
-        assert isinstance(model.fs.costing.loan_annual_payment, pyo.Var)
         assert isinstance(model.fs.costing.pv_loan_interest, pyo.Var)
         assert isinstance(model.fs.costing.pv_operating_cost, pyo.Var)
         assert isinstance(model.fs.costing.pv_revenue, pyo.Var)
@@ -3086,9 +3085,6 @@ class TestNPVCostingBlock(object):
         )
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.loan_debt_constraint, pyo.Constraint)
-        assert isinstance(
-            model.fs.costing.loan_annual_payment_constraint, pyo.Constraint
-        )
         assert isinstance(model.fs.costing.pv_loan_interest_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
@@ -3122,14 +3118,14 @@ class TestNPVCostingBlock(object):
             -6.3162037, rel=1e-4
         )
         assert model.fs.costing.pv_loan_interest.value == pytest.approx(
-            -1.3380851, rel=1e-4
+            -0.61610712, rel=1e-4
         )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -59.02935, rel=1e-4
         )
         assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
         assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(449.78860, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(450.51057, rel=1e-4)
 
 
 class TestNPVFixedInputs(object):
@@ -3161,7 +3157,6 @@ class TestNPVFixedInputs(object):
         # check that some objects are built as expected
         assert isinstance(model.fs.costing.pv_capital_cost, pyo.Var)
         assert isinstance(model.fs.costing.loan_debt, pyo.Var)
-        assert isinstance(model.fs.costing.loan_annual_payment, pyo.Var)
         assert isinstance(model.fs.costing.pv_loan_interest, pyo.Var)
         assert isinstance(model.fs.costing.pv_operating_cost, pyo.Var)
         assert isinstance(model.fs.costing.pv_revenue, pyo.Var)
@@ -3181,9 +3176,6 @@ class TestNPVFixedInputs(object):
         )
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.loan_debt_constraint, pyo.Constraint)
-        assert isinstance(
-            model.fs.costing.loan_annual_payment_constraint, pyo.Constraint
-        )
         assert isinstance(model.fs.costing.pv_loan_interest_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
@@ -3213,14 +3205,14 @@ class TestNPVFixedInputs(object):
             -6.3162037, rel=1e-4
         )
         assert model.fs.costing.pv_loan_interest.value == pytest.approx(
-            -1.3380851, rel=1e-4
+            -0.61610712, rel=1e-4
         )
         assert model.fs.costing.pv_operating_cost.value == pytest.approx(
             -59.02935, rel=1e-4
         )
         assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
         assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(449.78860, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(450.51057, rel=1e-4)
 
 
 @pytest.mark.component

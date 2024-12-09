@@ -82,6 +82,9 @@ inlinevar-naming-style = "any"
 [project.entry-points.pytest11]
 known_issues = "prommis._testing_utils.known_issues"
 
+[project.entry-points."prommis.flowsheets"]
+"UKy" = "prommis.uky.uky_flowsheet_ui"
+
 [tool.pytest.ini_options]
 addopts = """
 --pyargs prommis

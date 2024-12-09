@@ -5,78 +5,20 @@
 from __future__ import annotations
 
 import argparse
+from collections import namedtuple
 from io import IOBase
 import json
+import logging
+import random
 import re
 import sys
 import time
-from typing import Any, Dict, List, Optional
-from uuid import uuid3, NAMESPACE_URL
+from typing import Any, Dict, List
 import xml.etree.ElementTree as ET
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-
-class Roundness(BaseModel):
-    type: int
-
-
-class BoundElement(BaseModel):
-    id: str
-    type: str
-
-
-class StartBinding(BaseModel):
-    elementId: str
-    focus: float
-    gap: int
-    fixedPoint: None
-
-
-class EndBinding(BaseModel):
-    elementId: str
-    focus: float
-    gap: int
-    fixedPoint: None
-
-
-class Element(BaseModel):
-    id: str
-    type: str
-    x: int
-    y: int
-    width: int
-    height: int
-    angle: int
-    strokeColor: str
-    backgroundColor: str
-    fillStyle: str
-    strokeWidth: int
-    strokeStyle: str
-    roughness: int
-    opacity: int
-    groupIds: List
-    frameId: None
-    index: str
-    roundness: Roundness
-    #    seed: int
-    #    version: int
-    #    versionNonce: int
-    isDeleted: bool = False
-    boundElements: Optional[List[BoundElement]]
-    updated: int
-    link: None = None
-    locked: bool = False
-    points: Optional[List[List[int]]] = Field(default_factory=list)
-    # lastCommittedPoint: None = None
-    # startBinding: Optional[StartBinding] = None
-    # endBinding: Optional[EndBinding] = None
-    # startArrowhead: None = None
-    # endArrowhead: Optional[str] = None
-    # elbowed: Optional[bool] = None
-    originalText: str = None
-    autoResize: bool = True
-    lineHeight: float = 1.25
+_log = logging.getLogger(__name__)
 
 
 class AppState(BaseModel):
@@ -90,14 +32,12 @@ class Model(BaseModel):
     type: str
     version: int
     source: str
-    elements: List[Element]
+    elements: List[Dict]
     appState: AppState
     files: Dict[str, Any]
 
 
 class Diagram:
-    PROMMIS_NS = "https://github.com/prommis/prommis/connectivity"
-
     def __init__(self, model: Model):
         self._m = model
 
@@ -114,7 +54,7 @@ class Diagram:
         if svg is None:
             raise ValueError("Cannot find <svg> tag")
 
-        m = Model(
+        model = Model(
             type="excalidraw",
             version=2,
             source="idaes",
@@ -127,19 +67,24 @@ class Diagram:
             },
             files={},
         )
-        item_ids = {}
-        rect_count = 0
+        svg_xc_map = {}
+        Bounds = namedtuple("Bounds", "x y width height")
+        # Main loop
         for item in svg:
             # <g id="Unit_B">
             # <g class="shape" >
-            # <rect x="286.000000" y="120.000000" width="132.000000" height="66.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;" />
+            # <rect x="286.000000" y="120.000000" width="132.000000"
+            # height="66.000000" stroke="#0D32B2" fill="#F7F8FE"
+            # class=" stroke-B1 fill-B6" style="stroke-width:2;" />
             # </g>
-            # <text x="352.000000" y="158.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">leach_mixer</text></g>
+            # <text x="352.000000" y="158.500000" fill="#0A0F25" class="text-bold fill-N1"
+            # style="text-anchor:middle;font-size:16px">leach_mixer</text></g>
             g_tag = svg_ns + "g"
             if item.tag == g_tag:
                 item_id = item.get("id")
                 xc_id = cls._element_id(item_id)
-                item_ids[item_id] = xc_id
+                svg_xc_map[item_id] = xc_id
+                # Find node and text
                 shape, line, text = None, None, None
                 for subitem in item:
                     if subitem.tag == g_tag and subitem.get("class", "") == "shape":
@@ -147,74 +92,121 @@ class Diagram:
                         shape = subitem
                     elif subitem.tag == svg_ns + "text":
                         text = subitem
+                rect_elt, text_elt = None, None
+                now = int(time.time())
                 if shape is not None:
+                    rect_id = xc_id
                     rect_tag = svg_ns + "rect"
                     rect = shape.find(rect_tag)
                     if rect is None:
                         raise ValueError("Expected <rect> element for shape")
-                    now = int(time.time())
-                    rect_elt = Element(
-                        id=xc_id,
-                        type="rectangle",
-                        x=int(float(rect.get("x"))),
-                        y=int(float(rect.get("y"))),
-                        width=int(float(rect.get("width"))),
-                        height=int(float(rect.get("height"))),
-                        angle=0,
-                        strokeColor="#1e1e1e",
-                        backgroundColor="transparent",
-                        fillStyle="solid",
-                        strokeWidth=2,
-                        strokeStyle="solid",
-                        roughness=1,
-                        opacity=100,
-                        groupIds=[],
-                        frameId=None,
-                        index=f"a{rect_count}",
-                        roundness={"type": 3},
-                        boundElements=[],
-                        updated=now,
+                    rb = Bounds(
+                        *[
+                            int(float(rect.get(c)))
+                            for c in ("x", "y", "width", "height")
+                        ]
                     )
-                    m.elements.append(rect_elt)
-                    if text is not None:
-                        # <text x="352.000000" y="158.500000" fill="#0A0F25"
-                        # class="text-bold fill-N1"
-                        # style="text-anchor:middle;font-size:16px">leach_mixer</text>
-                        text_id = cls._element_id(item_id + "_label")
-                        text_value = text.text.strip()
-                        m = re.match(r"font-size:(\d+)px", text.get("style", ""))
-                        if m:
-                            h = int(m.group(1))
-                        else:
-                            h = 12
-                        w = 0.5 * h * len(text_value)
-                        text_elt = Element(
-                            id=text_id,
-                            type="arrow",
-                            x=int(float(text.get("x"))),
-                            y=int(float(text.get("y"))),
-                            width=w,
-                            height=h,
-                            angle=0,
-                            strokeWidth=2,
-                            strokeStyle="solid",
-                            roughness=0,
-                            opacity=100,
-                            groupIds=[],
-                            frameId=None,
-                            index=f"a{rect_count}",
-                            boundElements=[],
-                            updated=now,
-                            originalText=text_value,
-                        )
-                        m.elements.append(text_elt)
-                    rect_count += 1
-        return Diagram(m)
+                    rect_elt = {
+                        "id": rect_id,
+                        "type": "rectangle",
+                        "x": rb.x,
+                        "y": rb.y,
+                        "width": rb.width,
+                        "height": rb.height,
+                        "angle": 0,
+                        "strokeColor": "#000000",
+                        "backgroundColor": "transparent",
+                        "fillStyle": "solid",
+                        "strokeWidth": 2,
+                        "strokeStyle": "solid",
+                        "roughness": 1,
+                        "opacity": 100,
+                        "roundness": {"type": 3},
+                        "isDeleted": False,
+                        "updated": now,
+                        "locked": False,
+                        "points": [],
+                        "originalText": None,
+                        "autoResize": True,
+                        "lineHeight": 1.25,
+                        "groupIds": [],
+                        "frameId": None,
+                        "link": None,
+                        "boundElements": [],
+                    }
+                if text is not None:
+                    # <text x="352.000000" y="158.500000" fill="#0A0F25"
+                    # class="text-bold fill-N1"
+                    # style="text-anchor:middle;font-size:16px">leach_mixer</text>
+                    text_id = cls._element_id(item_id + "_label")
+                    tb = Bounds(*[int(float(text.get(c))) for c in ("x", "y")] + [0, 0])
+                    text_value = text.text.strip()
+                    # get font size
+                    text_style = text.get("style", "")
+                    match = re.search(r"font-size:\s*(\d+)px", text_style)
+                    if match:
+                        font_size = int(match.group(1))
+                    else:
+                        font_size = 12
+                    # calculate SVG margin from text to rectangle
+                    margin = 4  # (tb.x - rb.x) // 2
+                    # create element
+                    text_elt = {
+                        "id": text_id,
+                        "type": "text",
+                        "x": rb.x,
+                        # center vertically
+                        "y": rb.y + (rb.height / 2) - margin - (font_size / 2),
+                        "width": rb.width,
+                        "height": font_size * 1.5,
+                        "angle": 0,
+                        "strokeColor": "#000000",
+                        "backgroundColor": "transparent",
+                        "fillStyle": "solid",
+                        "strokeWidth": 2,
+                        "strokeStyle": "solid",
+                        "roughness": 1,
+                        "opacity": 100,
+                        "groupIds": [],
+                        "frameId": None,
+                        "roundness": None,
+                        "isDeleted": False,
+                        "boundElements": None,
+                        "updated": now,
+                        "link": None,
+                        "locked": False,
+                        "text": text_value,
+                        "fontSize": font_size,
+                        "fontFamily": 6,
+                        "textAlign": "center",
+                        "verticalAlign": "middle",
+                        "containerId": None,
+                        "originalText": text_value,
+                        "autoResize": True,
+                        "lineHeight": 1,
+                    }
+                if text_elt and rect_elt:
+                    rect_elt["boundElements"].append({"type": "text", "id": text_id})
+                    text_elt["containerId"] = rect_id
+                if rect_elt:
+                    model.elements.append(rect_elt)
+                if text_elt:
+                    model.elements.append(text_elt)
+        _log.debug(f"created {len(model.elements)} elements")
+        return Diagram(model)
+
+    # Alphabet for Excalidraw identifiers
+    IDCHARS = (
+        [chr(ord("A") + i) for i in range(26)]
+        + [chr(ord("a") + i) for i in range(26)]
+        + [chr(ord("0") + i) for i in range(10)]
+    )
 
     @classmethod
-    def _element_id(cls, item_id):
-        url = f"{cls.PROMMIS_NS}/item_id"
-        return str(uuid3(NAMESPACE_URL, url)).replace("-", "")[:21]
+    def _element_id(cls, item_id) -> str:
+        "Generate random identifier in the style used by Excalidraw"
+        items = random.choices(cls.IDCHARS, k=21)
+        return "".join(items)
 
 
 def main() -> int:
@@ -223,13 +215,21 @@ def main() -> int:
     p.add_argument("outfile", metavar="output-file")
     args = p.parse_args()
 
+    # set up logging
+    _log.setLevel(logging.DEBUG)  # XXX: for now
+    h = logging.StreamHandler()
+    h.setFormatter(logging.Formatter(fmt="{asctime} {levelname}: {message}", style="{"))
+    _log.addHandler(h)
+
     # read and parse input
+    _log.info(f"reading SVG from input file '{args.infile}'")
     with open(args.infile) as infile:
         diagram = Diagram.from_svg(infile)
 
     # write output
     with open(args.outfile, "w") as outfile:
         diagram.write(outfile, indent=2)
+    _log.info(f"wrote JSON to output file '{args.outfile}'")
 
     return 0
 

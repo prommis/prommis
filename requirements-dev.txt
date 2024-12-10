@@ -8,4 +8,4 @@ jupyter-book==1.0.* ; python_version >= '3.9'
 isort
 nbmake==1.4.6
 
---editable .[watertap]
+--editable .[watertap,flowsheet-processor]

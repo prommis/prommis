@@ -76,29 +76,88 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Gd = Component()
         self.Dy = Component()
 
-        # parameter based on pH 1.28
+        # parameter based on pH 1.5
         # TODO add surrogate model/equation
-        self.split = Param(
+        self.split = Var(
             self.component_list,
             units=units.kg / units.kg,
             initialize={
                 "H2O": 1e-20,
-                "Sc": 31.61,
-                "Y": 74.46,
-                "La": 51.51,
-                "Ce": 68.07,
-                "Pr": 78,
-                "Nd": 81.55,
-                "Sm": 87.35,
-                "Gd": 88.01,
-                "Dy": 87.16,
-                "Al": 0.9,
-                "Ca": 20.50,
-                "Fe": 2.44,
+                "Sc": 0.3161,
+                "Y": 0.7446,
+                "La": 0.5151,
+                "Ce": 0.6807,
+                "Pr": 0.78,
+                "Nd": 0.8155,
+                "Sm": 0.8735,
+                "Gd": 0.8801,
+                "Dy": 0.8716,
+                "Al": 0.009,
+                "Ca": 0.0001,
+                "Fe": 0.0244,
                 "H": 1e-20,
                 "Cl": 1e-20,
                 "HSO4": 1e-20,
                 "SO4": 1e-20,
+            },
+            bounds=(1e-30, 1),
+        )
+
+        self.acid_flow = Var(
+            units=units.dimensionless,
+            initialize=6.4,
+            bounds=(1e-6, 100),
+        )
+
+        # parameter based on pH 1.5
+        # TODO add surrogate model/equation
+        self.E_D = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "H2O": 100,
+                "Sc": 6.42030,
+                "Y": 4.551786,
+                "La": 4.3717,
+                "Ce": 1.18848,
+                "Pr": 2.09604,
+                "Nd": 1.01030,
+                "Sm": 2.296176,
+                "Gd": 3.07276,
+                "Dy": 4.8608,
+                "Al": 50,
+                "Ca": 14.49274,
+                "Fe": 8.659561,
+                "H": 100,
+                "Cl": 100,
+                "HSO4": 100,
+                "SO4": 100,
+            },
+        )
+
+        # parameter based on pH 1.5
+        # TODO add surrogate model/equation
+        self.N_D = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "H2O": 100,
+                "Sc": 6.42030,
+                "Y": 4.67403,
+                "La": 4.6340,
+                "Ce": 2.737238,
+                "Pr": 3.44364,
+                "Nd": 2.419137,
+                "Sm": 3.7201,
+                "Gd": 4.1995,
+                "Dy": 4.73106,
+                "Al": 0.9,
+                "Ca": 4.45302,
+                "Fe": 3.6495,
+                "H": 100,
+                "Cl": 100,
+                "HSO4": 100,
+                "SO4": 100,
             },
         )
 
@@ -145,6 +204,23 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "HSO4",
                 "SO4",
                 "H2O",
+            ]
+        )
+
+        self.split_elements = Set(
+            initialize=[
+                "Al",
+                # "Ca",
+                "Fe",
+                "Sc",
+                "Y",
+                "La",
+                "Ce",
+                "Pr",
+                "Nd",
+                "Sm",
+                "Gd",
+                "Dy",
             ]
         )
 
@@ -246,7 +322,7 @@ class AqueousStateBlockkData(StateBlockData):
                 == b.flow_mol_comp[j]
             )
 
-        iscale.set_scaling_factor(self.flow_vol, 1e1)
+        iscale.set_scaling_factor(self.flow_vol, 1e-2)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
         iscale.set_scaling_factor(self.conc_mol_comp, 1e5)

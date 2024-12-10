@@ -1994,34 +1994,38 @@ class TestWaterTAPCosting(object):
 
         assert pyo.value(
             pyunits.convert(
+                model.fs_membrane.nfzounit.costing.fixed_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.410881, rel=1e-4)
+
+        assert pyo.value(
+            pyunits.convert(
                 model.fs_membrane.nfunit.costing.fixed_operating_cost
                 + model.fs_membrane.rounit.costing.fixed_operating_cost
                 + model.fs_membrane.ixunit.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
-        ) == pytest.approx(0.037597, rel=1e-4)
+            + pyunits.convert(
+                model.fs_membrane.nfzounit.costing.fixed_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.448478, rel=1e-4)
 
         assert model.fs.costing.watertap_fixed_costs.value == pytest.approx(
-            0.037597, rel=1e-4
+            0.448478, rel=1e-4
         )
 
         assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
-            11.68508, rel=1e-4
+            12.09596, rel=1e-4
         )
-
-        assert pyo.value(
-            pyunits.convert(
-                model.fs_membrane.nfzounit.costing.variable_operating_cost,
-                to_units=CE_index_units / pyunits.year,
-            )
-        ) == pytest.approx(0.410881, rel=1e-4)
 
         assert model.fs.costing.watertap_variable_costs.value == pytest.approx(
-            0.410881, rel=1e-4
-        )
+            0, abs=1e-4
+        )  # TODO add a WaterTAP example that uses variable operating costs
 
         assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-            533.51170, rel=1e-4
+            533.10082, rel=1e-4
         )
 
 

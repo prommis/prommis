@@ -39,6 +39,9 @@ watertap = [
     # "watertap >= 1.2.0rc0",
     "watertap @ git+https://github.com/watertap-org/watertap@refs/pull/1534/merge",
 ]
+flowsheet-processor = [
+    "idaes-flowsheet-processor >=0.1.dev4",
+]
 
 [tool.setuptools_scm]
 # https://setuptools-scm.readthedocs.io/en/v8.1.0/extending/

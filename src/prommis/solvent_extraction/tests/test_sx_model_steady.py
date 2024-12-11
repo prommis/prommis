@@ -202,7 +202,6 @@ class TestSXmodel:
     def test_solution(self, SolEx_frame):
 
         model = SolEx_frame
-        number_of_stages = 3
         aqueous_outlet = {
             "H2O": 1000000,
             "H": 1.75563,

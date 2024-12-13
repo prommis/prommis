@@ -2013,7 +2013,7 @@ class TestWaterTAPCosting(object):
                 model.fs_membrane.nfzounit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(2.0544, rel=1e-4)
-        
+
     @pytest.mark.component
     def test_REE_watertap_costing_results_CAPEX6(self, model):
 
@@ -2038,7 +2038,6 @@ class TestWaterTAPCosting(object):
                 model.fs_membrane.nfzounit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(44.308, rel=1e-4)
-
 
     @pytest.mark.component
     def test_REE_watertap_costing_results_fixedOPEX(self, model):
@@ -2097,7 +2096,6 @@ class TestWaterTAPCosting(object):
         assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
             12.09596, rel=1e-4
         )
-
 
     @pytest.mark.component
     def test_REE_watertap_costing_variableOPEX(self, model):

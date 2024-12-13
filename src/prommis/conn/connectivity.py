@@ -36,7 +36,6 @@ __author__ = "Dan Gunter (LBNL)"
 # This variable is reassigned if run as script
 _log = logging.getLogger(__name__)
 
-
 ##############
 # Classes
 ##############
@@ -53,6 +52,83 @@ class OutputFormats(enum.Enum):
 class Direction(enum.Enum):
     RIGHT = 0
     DOWN = 1
+
+
+class Paths:
+    _shared_state = {}
+
+    def __new__(cls, *args, **kwargs):
+        obj = super(Paths, cls).__new__(cls, *args, **kwargs)
+        obj.__dict__ = cls._shared_state
+        return obj
+
+    def __init__(self):
+        if not hasattr(self, "idaes_home"):
+            self.idaes_home = None
+            idaes_home = Path("~/.idaes").expanduser()
+            if not idaes_home.exists():
+                warnings.warn("IDAES  directory '~/.idaes' not found")
+            elif not idaes_home.is_dir():
+                warnings.warn("IDAES path '~/.idaes' is not a directory")
+            else:
+                self.idaes_home = idaes_home
+
+    @property
+    def icons(self):
+        if self.idaes_home is None:
+            raise ValueError("Cannot get icon path, IDAES home not found")
+        return self.idaes_home / "icon_shapes"
+
+
+class UnitIcon:
+    _map = {
+        "name1": "compressor",
+        "name2": "cooler",
+        "name3": "default",
+        "name4": "expander",
+        "name5": "fan",
+        "name6": "feed",
+        "name7": "flash",
+        "name8": "heater_1_flipped",
+        "name9": "heater_1",
+        "namea": "heater_2",
+        "nameb": "heat_exchanger_1",
+        "namec": "heat_exchanger_3",
+        "named": "horizontal_flash",
+        "namee": "mixer_flipped",
+        "namef": "mixer",
+        "nameg": "packed_column_1",
+        "nameh": "packed_column_2",
+        "namei": "packed_column_3",
+        "namej": "packed_column_4",
+        "namek": "product",
+        "namel": "pump",
+        "namem": "reactor_c",
+        "namen": "reactor_e",
+        "nameo": "reactor_g",
+        "namep": "reactor_pfr",
+        "nameq": "reactor_s",
+        "namer": "splitter_flipped",
+        "names": "splitter",
+        "namet": "tray_column_1",
+        "nameu": "tray_column_2",
+        "namev": "tray_column_3",
+        "namew": "tray_column_4",
+    }
+
+    def __init__(self, icon_dir=None, ext="svg"):
+        self._path = icon_dir
+        self._ext = ext
+
+    def get_icon(self, unit_class_name: str, absolute=True) -> Optional[Path]:
+        name = self._map.get(unit_class_name, None)
+        if name is not None:
+            p = self._path / f"{name}.{self._ext}"
+            if absolute:
+                p = p.absolute()
+        else:
+            p = None
+        return p
 
 
 class Formatter(abc.ABC):
@@ -242,11 +318,22 @@ class D2(Formatter):
         output_file: Union[str, TextIO, None],
         output_format: Union[OutputFormats, str] = None,
     ) -> Optional[str]:
+        unit_icon = UnitIcon(Paths().icons)
         feed_num, sink_num = 1, 1
         f = self._get_output_stream(output_file)
         f.write(f"direction: {self._d2_dir}\n")
         for unit_name, unit_abbr in self._conn.units.items():
-            f.write(f"{unit_abbr}: {unit_name}\n")
+            unit_str, unit_type = self._split_unit_name(unit_name)
+            image_file = None if unit_type is None else unit_icon.get_icon(unit_type)
+            if image_file is None:
+                f.write(f"{unit_abbr}: {unit_str}\n")
+            else:
+                f.write(
+                    f"{unit_abbr}: {unit_str} {{\n"
+                    f"  shape: image\n"
+                    f"  icon: {image_file}\n"
+                    f"}}\n"
+                )
         stream_rmap = {v: k for k, v in self._conn.streams.items()}
         for stream_abbr, conns in self._conn.connections.items():
             stream_name = stream_rmap[stream_abbr]
@@ -273,6 +360,13 @@ class D2(Formatter):
         if output_file is None:
             f.flush()
             return f.getvalue()
+
+    @staticmethod
+    def _split_unit_name(n):
+        parts = n.split("::", 1)
+        if len(parts) == 1:
+            return None, n
+        return parts
 
 
 @dataclass
@@ -438,7 +532,7 @@ class ModelConnectivity:
         for comp in self._arcs_sorted_by_name(fs):
             stream_name = comp.getname()
             src, dst = comp.source.parent_block(), comp.dest.parent_block()
-            src_name, dst_name = src.getname(), dst.getname()
+            src_name, dst_name = self.unit_name(src), self.unit_name(dst)
 
             src_i, dst_i, stream_i = -1, -1, -1
 
@@ -473,6 +567,12 @@ class ModelConnectivity:
             rows[stream_i][dst_i] = 1
 
         self._rows = rows
+
+    @staticmethod
+    def unit_name(block):
+        name = block.getname()
+        type_ = "name1"  # str(block.ctype)
+        return f"{name}::{type_}"
 
     @staticmethod
     def _arcs_sorted_by_name(fs):

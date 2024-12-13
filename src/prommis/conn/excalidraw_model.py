@@ -68,6 +68,8 @@ class Diagram:
             files={},
         )
         svg_xc_map = {}
+        rect_bounds = {}
+        rect_elt_map = {}
         Bounds = namedtuple("Bounds", "x y width height")
         # Main loop
         for item in svg:
@@ -82,7 +84,7 @@ class Diagram:
             g_tag = svg_ns + "g"
             if item.tag == g_tag:
                 item_id = item.get("id")
-                xc_id = cls._element_id(item_id)
+                xc_id = cls._element_id()
                 svg_xc_map[item_id] = xc_id
                 # Find node and text
                 shape, line, text = None, None, None
@@ -92,7 +94,9 @@ class Diagram:
                         shape = subitem
                     elif subitem.tag == svg_ns + "text":
                         text = subitem
-                rect_elt, text_elt = None, None
+                    elif subitem.tag == svg_ns + "path":
+                        line = subitem
+                rect_elt, text_elt, line_elt = None, None, None
                 now = int(time.time())
                 if shape is not None:
                     rect_id = xc_id
@@ -134,11 +138,13 @@ class Diagram:
                         "link": None,
                         "boundElements": [],
                     }
+                    rect_bounds[rect_id] = rb
+                    rect_elt_map[rect_id] = rect_elt
                 if text is not None:
                     # <text x="352.000000" y="158.500000" fill="#0A0F25"
                     # class="text-bold fill-N1"
                     # style="text-anchor:middle;font-size:16px">leach_mixer</text>
-                    text_id = cls._element_id(item_id + "_label")
+                    text_id = cls._element_id()
                     tb = Bounds(*[int(float(text.get(c))) for c in ("x", "y")] + [0, 0])
                     text_value = text.text.strip()
                     # get font size
@@ -185,6 +191,86 @@ class Diagram:
                         "autoResize": True,
                         "lineHeight": 1,
                     }
+                if line is not None:
+                    # <g id="(Unit_B -&gt; Unit_C)[0]">...</g>
+                    # <path d="M 610.414213 155.085786 C 654.599976 110.900002 678.200012 110.900002 724.077373 153.769020"
+                    # svg_xc_map[item_id] = xc_id
+                    line_id = cls._element_id()
+                    # extract start/end rect id
+                    match = re.search(r"\((\S+)\s*->\s*(\S+)\).*", item_id)
+                    if match is None:
+                        raise ValueError(
+                            f"could not find line endpoints in id '{item_id}'"
+                        )
+                    unit = match.group(1)
+                    start_rect_id = svg_xc_map[unit]
+                    start_rb = rect_bounds[start_rect_id]
+                    unit = match.group(2)
+                    end_rect_id = svg_xc_map[unit]
+                    end_rb = rect_bounds[end_rect_id]
+                    # extract line points
+                    dx = end_rb.x - start_rb.x
+                    startx = start_rb.width if dx > 0 else 0
+                    dy = end_rb.y - start_rb.y
+                    starty = start_rb.height / 2
+                    point_list = [[startx, starty], [dx, dy]]
+                    # match = re.match(r"M ([\d.]+) ([\d.]+) C (.*)", line.get("d"))
+                    # path_x, path_y = float(match.group(1)), float(match.group(2))
+                    # points = [float(p) for p in match.group(3).split()]
+                    # point_list = [[0, 0]]
+                    # for i in range(0, len(points), 2):
+                    #     rel_x = points[i] - path_x
+                    #     rel_y = points[i + 1] - path_y
+                    #     point_list.append([rel_x, rel_y])
+                    # build element
+                    line_elt = {
+                        "id": line_id,
+                        "type": "arrow",
+                        "x": start_rb.x,
+                        "y": start_rb.y,
+                        "width": end_rb.x - start_rb.x,
+                        "height": 2,
+                        "angle": 0,
+                        "strokeColor": "#1e1e1e",
+                        "backgroundColor": "transparent",
+                        "fillStyle": "solid",
+                        "strokeWidth": 2,
+                        "strokeStyle": "solid",
+                        "roughness": 1,
+                        "opacity": 100,
+                        "groupIds": [],
+                        "frameId": None,
+                        "roundness": {"type": 2},
+                        "isDeleted": False,
+                        "boundElements": None,
+                        "updated": now,
+                        "link": None,
+                        "locked": False,
+                        "points": point_list,
+                        "lastCommittedPoint": None,
+                        "startBinding": {
+                            "elementId": start_rect_id,
+                            "focus": 0,
+                            "gap": 1,
+                            "fixedPoint": None,
+                        },
+                        "endBinding": {
+                            "elementId": end_rect_id,
+                            "focus": 0,
+                            "gap": 1,
+                            "fixedPoint": None,
+                        },
+                        "startArrowhead": None,
+                        "endArrowhead": "arrow",
+                        "elbowed": False,
+                    }
+                    # assume all rects go first
+                    rect_elt_map[start_rect_id]["boundElements"].append(
+                        {"type": "arrow", "id": line_id}
+                    )
+                    rect_elt_map[end_rect_id]["boundElements"].append(
+                        {"type": "arrow", "id": line_id}
+                    )
                 if text_elt and rect_elt:
                     rect_elt["boundElements"].append({"type": "text", "id": text_id})
                     text_elt["containerId"] = rect_id
@@ -192,6 +278,8 @@ class Diagram:
                     model.elements.append(rect_elt)
                 if text_elt:
                     model.elements.append(text_elt)
+                if line_elt:
+                    model.elements.append(line_elt)
         _log.debug(f"created {len(model.elements)} elements")
         return Diagram(model)
 
@@ -203,7 +291,7 @@ class Diagram:
     )
 
     @classmethod
-    def _element_id(cls, item_id) -> str:
+    def _element_id(cls) -> str:
         "Generate random identifier in the style used by Excalidraw"
         items = random.choices(cls.IDCHARS, k=21)
         return "".join(items)

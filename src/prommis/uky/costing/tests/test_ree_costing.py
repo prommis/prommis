@@ -1942,16 +1942,12 @@ class TestWaterTAPCosting(object):
         assert_optimal_termination(results)
 
     @pytest.mark.component
-    def test_REE_watertap_costing_results_CAPEX1(self, model):
+    def test_REE_watertap_costing_results_totalCAPEX(self, model):
 
-        CE_index_year = "UKy_2019"
-
-        print("Print statements to help with debugging")
-        print(model.fs.costing.total_BEC_eq.expr)
         assert model.fs.costing.total_BEC.value == pytest.approx(50.401, rel=1e-4)
 
     @pytest.mark.component
-    def test_REE_watertap_costing_results_CAPEX2(self, model):
+    def test_REE_watertap_costing_results_equipmentCAPEX(self, model):
 
         CE_index_year = "UKy_2019"
 
@@ -1959,69 +1955,29 @@ class TestWaterTAPCosting(object):
             pyunits, "MUSD_" + CE_index_year
         )  # millions of USD, for base year
 
-        print(model.fs_membrane.nfunit.costing.capital_cost_constraint.expr)
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.nfunit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.0015159, rel=1e-4)
 
-    @pytest.mark.component
-    def test_REE_watertap_costing_results_CAPEX3(self, model):
-
-        CE_index_year = "UKy_2019"
-
-        CE_index_units = getattr(
-            pyunits, "MUSD_" + CE_index_year
-        )  # millions of USD, for base year
-
-        print(model.fs_membrane.rounit.costing.capital_cost_constraint.expr)
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.rounit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.0016148, rel=1e-4)
 
-    @pytest.mark.component
-    def test_REE_watertap_costing_results_CAPEX4(self, model):
-
-        CE_index_year = "UKy_2019"
-
-        CE_index_units = getattr(
-            pyunits, "MUSD_" + CE_index_year
-        )  # millions of USD, for base year
-
-        print(model.fs_membrane.ixunit.costing.capital_cost_constraint.expr)
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.ixunit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(4.0354, rel=1e-4)
 
-    @pytest.mark.component
-    def test_REE_watertap_costing_results_CAPEX5(self, model):
-
-        CE_index_year = "UKy_2019"
-
-        CE_index_units = getattr(
-            pyunits, "MUSD_" + CE_index_year
-        )  # millions of USD, for base year
-
-        print(model.fs_membrane.nfzounit.costing.capital_cost_constraint.expr)
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.nfzounit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(2.0544, rel=1e-4)
-
-    @pytest.mark.component
-    def test_REE_watertap_costing_results_CAPEX6(self, model):
-
-        CE_index_year = "UKy_2019"
-
-        CE_index_units = getattr(
-            pyunits, "MUSD_" + CE_index_year
-        )  # millions of USD, for base year
 
         assert pyo.value(
             model.fs.costing.total_BEC

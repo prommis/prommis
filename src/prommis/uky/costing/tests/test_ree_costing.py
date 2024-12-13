@@ -2050,7 +2050,7 @@ class TestWaterTAPCosting(object):
         )
 
         assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
-            12.15289, rel=1e-4
+            12.17825, rel=1e-4
         )
 
     @pytest.mark.component

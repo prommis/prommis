@@ -27,6 +27,8 @@ except ImportError as err:
     pyomo = None
     warnings.warn(f"Could not import pyomo: {err}")
 
+from idaes.core import UnitModelBlockData
+
 # Constants
 AS_STRING = "-"
 
@@ -87,7 +89,7 @@ class UnitIcon:
         "name3": "default",
         "name4": "expander",
         "name5": "fan",
-        "name6": "feed",
+        "ScalarFeed": "feed",
         "name7": "flash",
         "name8": "heater_1_flipped",
         "name9": "heater_1",
@@ -96,12 +98,12 @@ class UnitIcon:
         "namec": "heat_exchanger_3",
         "named": "horizontal_flash",
         "namee": "mixer_flipped",
-        "namef": "mixer",
+        "ScalarMixer": "mixer",
         "nameg": "packed_column_1",
         "nameh": "packed_column_2",
         "namei": "packed_column_3",
         "namej": "packed_column_4",
-        "namek": "product",
+        "ScalarProduct": "product",
         "namel": "pump",
         "namem": "reactor_c",
         "namen": "reactor_e",
@@ -533,9 +535,8 @@ class ModelConnectivity:
             stream_name = comp.getname()
             src, dst = comp.source.parent_block(), comp.dest.parent_block()
             src_name, dst_name = self.unit_name(src), self.unit_name(dst)
-
+            # print(f"{src_name} , {dst_name}")
             src_i, dst_i, stream_i = -1, -1, -1
-
             try:
                 idx = streams_ord[stream_name]
             except KeyError:
@@ -571,8 +572,12 @@ class ModelConnectivity:
     @staticmethod
     def unit_name(block):
         name = block.getname()
-        type_ = "name1"  # str(block.ctype)
-        return f"{name}::{type_}"
+        class_name = block.__class__.__name__
+        m = re.search(r"[a-zA-Z]\w+$", class_name)
+        if m is None:
+            return name
+        block_type = class_name[m.start() : m.end()]
+        return f"{name}::{block_type}"
 
     @staticmethod
     def _arcs_sorted_by_name(fs):

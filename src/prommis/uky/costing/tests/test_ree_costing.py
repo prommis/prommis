@@ -1721,13 +1721,9 @@ class TestWaterTAPCosting(object):
         return model
 
     @pytest.mark.component
-    def test_REE_watertap_costing(self, model, solver):
+    def test_REE_watertap_costing(self, model):
         # full smoke test with all components, O&M costs, and extra costs included
         CE_index_year = "UKy_2019"
-
-        CE_index_units = getattr(
-            pyunits, "MUSD_" + CE_index_year
-        )  # millions of USD, for base year
 
         # add plant-level cost constraints
 
@@ -1929,6 +1925,9 @@ class TestWaterTAPCosting(object):
         model.fs.dust_and_volatiles.fix()
         model.fs.power.fix()
 
+    @pytest.mark.component
+    def test_REE_watertap_costing_initialize(self, model, solver):
+
         # check that the model is set up properly and has 0 degrees of freedom
         assert degrees_of_freedom(model) == 0
 
@@ -1936,30 +1935,50 @@ class TestWaterTAPCosting(object):
         QGESSCostingData.initialize_fixed_OM_costs(model.fs.costing)
         QGESSCostingData.initialize_variable_OM_costs(model.fs.costing)
 
+    @pytest.mark.component
+    def test_REE_watertap_costing_solve(self, model, solver):
+
         results = solver.solve(model, tee=True)
         assert_optimal_termination(results)
 
-        assert model.fs.costing.total_BEC.value == pytest.approx(50.401, rel=1e-4)
+    @pytest.mark.component
+    def test_REE_watertap_costing_results_totalCAPEX(self, model):
+
+        assert model.fs.costing.total_BEC.value == pytest.approx(50.686, rel=1e-4)
+
+    @pytest.mark.component
+    def test_REE_watertap_costing_results_equipmentCAPEX(self, model):
+
+        CE_index_year = "UKy_2019"
+
+        CE_index_units = getattr(
+            pyunits, "MUSD_" + CE_index_year
+        )  # millions of USD, for base year
+
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.nfunit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.0015159, rel=1e-4)
+
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.rounit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.0016148, rel=1e-4)
+
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.ixunit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(4.0354, rel=1e-4)
+
         assert pyo.value(
             pyunits.convert(
                 model.fs_membrane.nfzounit.costing.capital_cost, to_units=CE_index_units
             )
-        ) == pytest.approx(2.0544, rel=1e-4)
+        ) == pytest.approx(2.3391, rel=1e-4)
+
         assert pyo.value(
             model.fs.costing.total_BEC
             - pyunits.convert(
@@ -1975,6 +1994,15 @@ class TestWaterTAPCosting(object):
                 model.fs_membrane.nfzounit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(44.308, rel=1e-4)
+
+    @pytest.mark.component
+    def test_REE_watertap_costing_results_fixedOPEX(self, model):
+
+        CE_index_year = "UKy_2019"
+
+        CE_index_units = getattr(
+            pyunits, "MUSD_" + CE_index_year
+        )  # millions of USD, for base year
 
         assert pyo.value(
             pyunits.convert(
@@ -1999,34 +2027,41 @@ class TestWaterTAPCosting(object):
 
         assert pyo.value(
             pyunits.convert(
+                model.fs_membrane.nfzounit.costing.fixed_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.467810, rel=1e-4)
+
+        assert pyo.value(
+            pyunits.convert(
                 model.fs_membrane.nfunit.costing.fixed_operating_cost
                 + model.fs_membrane.rounit.costing.fixed_operating_cost
                 + model.fs_membrane.ixunit.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
-        ) == pytest.approx(0.037597, rel=1e-4)
+            + pyunits.convert(
+                model.fs_membrane.nfzounit.costing.fixed_operating_cost,
+                to_units=CE_index_units / pyunits.year,
+            )
+        ) == pytest.approx(0.505407, rel=1e-4)
 
         assert model.fs.costing.watertap_fixed_costs.value == pytest.approx(
-            0.037597, rel=1e-4
+            0.505407, rel=1e-4
         )
 
         assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
-            11.68508, rel=1e-4
+            12.17825, rel=1e-4
         )
 
-        assert pyo.value(
-            pyunits.convert(
-                model.fs_membrane.nfzounit.costing.variable_operating_cost,
-                to_units=CE_index_units / pyunits.year,
-            )
-        ) == pytest.approx(0.410881, rel=1e-4)
+    @pytest.mark.component
+    def test_REE_watertap_costing_variableOPEX(self, model):
 
         assert model.fs.costing.watertap_variable_costs.value == pytest.approx(
-            0.410881, rel=1e-4
-        )
+            0, abs=1e-4
+        )  # TODO add a WaterTAP example that uses variable operating costs
 
         assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-            533.51170, rel=1e-4
+            533.10082, rel=1e-4
         )
 
 

@@ -35,9 +35,7 @@ dependencies = [
 ]
 [project.optional-dependencies]
 watertap = [
-    # TODO: update once watertap 1.2.0 is available
-    # "watertap >= 1.2.0rc0",
-    "watertap @ git+https://github.com/watertap-org/watertap@refs/pull/1541/merge",
+    "watertap >=1.2.0rc0",
 ]
 flowsheet-processor = [
     "idaes-flowsheet-processor >=0.1.dev4",

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 from collections import namedtuple
+from hashlib import sha1
 from io import IOBase
 import json
 import logging
@@ -68,8 +69,8 @@ class Diagram:
             files={},
         )
         svg_xc_map = {}
-        rect_bounds = {}
-        rect_elt_map = {}
+        shape_bounds = {}
+        shape_elt_map = {}
         Bounds = namedtuple("Bounds", "x y width height")
         # Main loop
         for item in svg:
@@ -100,6 +101,7 @@ class Diagram:
                                 break
                             if elt.tag == svg_ns + "image":
                                 g_image = elt
+                                break
                         if g_rect is None and g_image is None:
                             raise ValueError(
                                 "shape element did not contain <rect> or <image>"
@@ -108,11 +110,11 @@ class Diagram:
                         g_text = subitem
                     elif subitem.tag == svg_ns + "path":
                         g_line = subitem
-                rect_elt, text_elt, line_elt = None, None, None
+                rect_elt, text_elt, line_elt, image_elt = None, None, None, None
                 now = int(time.time())
                 if g_rect is not None:
                     rect_id = xc_id
-                    rb = Bounds(
+                    bounds = Bounds(
                         *[
                             int(float(g_rect.get(c)))
                             for c in ("x", "y", "width", "height")
@@ -121,10 +123,10 @@ class Diagram:
                     rect_elt = {
                         "id": rect_id,
                         "type": "rectangle",
-                        "x": rb.x,
-                        "y": rb.y,
-                        "width": rb.width,
-                        "height": rb.height,
+                        "x": bounds.x,
+                        "y": bounds.y,
+                        "width": bounds.width,
+                        "height": bounds.height,
                         "angle": 0,
                         "strokeColor": "#000000",
                         "backgroundColor": "transparent",
@@ -146,56 +148,58 @@ class Diagram:
                         "link": None,
                         "boundElements": [],
                     }
-                    rect_bounds[rect_id] = rb
-                    rect_elt_map[rect_id] = rect_elt
+                    shape_bounds[rect_id] = bounds
+                    shape_elt_map[rect_id] = rect_elt
                 if g_image is not None:
-                    raise NotImplementedError(
-                        "Should process image here"
-                    )  # TODO: process image
-                    # {
-                    #     "id": "YCH3_3aT2RB-YmUyMuTwi",
-                    #     "type": "image",
-                    #     "x": 1059.3641938709072,
-                    #     "y": -422.3975960867744,
-                    #     "width": 83,
-                    #     "height": 282,
-                    #     "angle": 0,
-                    #     "strokeColor": "transparent",
-                    #     "backgroundColor": "transparent",
-                    #     "fillStyle": "solid",
-                    #     "strokeWidth": 2,
-                    #     "strokeStyle": "solid",
-                    #     "roughness": 1,
-                    #     "opacity": 100,
-                    #     "groupIds": [],
-                    #     "frameId": null,
-                    #     "index": "b0g",
-                    #     "roundness": null,
-                    #     "seed": 1182914594,
-                    #     "version": 33,
-                    #     "versionNonce": 1850420030,
-                    #     "isDeleted": false,
-                    #     "boundElements": null,
-                    #     "updated": 1734229003855,
-                    #     "link": null,
-                    #     "locked": false,
-                    #     "status": "saved",
-                    #     "fileId": "5586b0fcbe8e5348efd577e9ce4085a35597d7a8",
-                    #     "scale": [
-                    #         1,
-                    #         1
-                    #     ],
-                    #     "crop": null
-                    #     }
-                    #   "files": {
-                    #     "5586b0fcbe8e5348efd577e9ce4085a35597d7a8": {
-                    #     "mimeType": "image/svg+xml",
-                    #     "id": "5586b0fcbe8e5348efd577e9ce4085a35597d7a8",
-                    #     "dataURL": "data:image/svg+xml;base64,PHN...",
-                    #     "created": 1734228992875,
-                    #     "lastRetrieved": 1734228992875
-                    #     }
-                    # }
+                    image_id = xc_id
+                    bounds = Bounds(
+                        *[
+                            int(float(g_image.get(c)))
+                            for c in ("x", "y", "width", "height")
+                        ]
+                    )
+                    image_data = g_image.get("href")
+                    image_file_id = cls._image_id(image_data)
+                    image_file_elt = {
+                        "mimeType": "image/svg+xml",
+                        "id": image_file_id,
+                        "dataURL": image_data,
+                        "created": now,
+                        "lastRetrieved": now,
+                    }
+                    image_elt = {
+                        "id": image_id,
+                        "type": "image",
+                        "x": bounds.x,
+                        "y": bounds.y,
+                        "width": bounds.width,
+                        "height": bounds.height,
+                        "angle": 0,
+                        "strokeColor": "#000000",
+                        "backgroundColor": "transparent",
+                        "fillStyle": "solid",
+                        "strokeWidth": 2,
+                        "strokeStyle": "solid",
+                        "roughness": 1,
+                        "opacity": 100,
+                        "roundness": None,
+                        "isDeleted": False,
+                        "updated": now,
+                        "locked": False,
+                        "points": [],
+                        "originalText": None,
+                        "autoResize": True,
+                        "lineHeight": 1.25,
+                        "groupIds": [],
+                        "frameId": None,
+                        "link": None,
+                        "boundElements": [],
+                        "scale": [1, 1],
+                        "crop": None,
+                        "fileId": image_file_id,
+                    }
+                    shape_bounds[image_id] = bounds
+                    shape_elt_map[image_id] = image_elt
                 if g_text is not None:
                     # <text x="352.000000" y="158.500000" fill="#0A0F25"
                     # class="text-bold fill-N1"
@@ -218,10 +222,10 @@ class Diagram:
                     text_elt = {
                         "id": text_id,
                         "type": "text",
-                        "x": rb.x,
+                        "x": bounds.x,
                         # center vertically
-                        "y": rb.y + (rb.height / 2) - margin - (font_size / 2),
-                        "width": rb.width,
+                        "y": bounds.y + (bounds.height / 2) - margin - (font_size / 2),
+                        "width": bounds.width,
                         "height": font_size * 1.5,
                         "angle": 0,
                         "strokeColor": "#000000",
@@ -261,16 +265,16 @@ class Diagram:
                             f"could not find line endpoints in id '{item_id}'"
                         )
                     unit = match.group(1)
-                    start_rect_id = svg_xc_map[unit]
-                    start_rb = rect_bounds[start_rect_id]
+                    start_shape_id = svg_xc_map[unit]
+                    start_bounds = shape_bounds[start_shape_id]
                     unit = match.group(2)
-                    end_rect_id = svg_xc_map[unit]
-                    end_rb = rect_bounds[end_rect_id]
+                    end_shape_id = svg_xc_map[unit]
+                    end_bounds = shape_bounds[end_shape_id]
                     # extract line points
-                    dx = end_rb.x - start_rb.x
-                    startx = start_rb.width if dx > 0 else 0
-                    dy = end_rb.y - start_rb.y
-                    starty = start_rb.height / 2
+                    dx = end_bounds.x - start_bounds.x
+                    startx = start_bounds.width if dx > 0 else 0
+                    dy = end_bounds.y - start_bounds.y
+                    starty = start_bounds.height / 2
                     point_list = [[startx, starty], [dx, dy]]
                     # match = re.match(r"M ([\d.]+) ([\d.]+) C (.*)", line.get("d"))
                     # path_x, path_y = float(match.group(1)), float(match.group(2))
@@ -284,9 +288,9 @@ class Diagram:
                     line_elt = {
                         "id": line_id,
                         "type": "arrow",
-                        "x": start_rb.x,
-                        "y": start_rb.y,
-                        "width": end_rb.x - start_rb.x,
+                        "x": start_bounds.x,
+                        "y": start_bounds.y,
+                        "width": end_bounds.x - start_bounds.x,
                         "height": 2,
                         "angle": 0,
                         "strokeColor": "#1e1e1e",
@@ -307,13 +311,13 @@ class Diagram:
                         "points": point_list,
                         "lastCommittedPoint": None,
                         "startBinding": {
-                            "elementId": start_rect_id,
+                            "elementId": start_shape_id,
                             "focus": 0,
                             "gap": 1,
                             "fixedPoint": None,
                         },
                         "endBinding": {
-                            "elementId": end_rect_id,
+                            "elementId": end_shape_id,
                             "focus": 0,
                             "gap": 1,
                             "fixedPoint": None,
@@ -322,23 +326,36 @@ class Diagram:
                         "endArrowhead": "arrow",
                         "elbowed": False,
                     }
-                    # assume all rects go first
-                    rect_elt_map[start_rect_id]["boundElements"].append(
+                    # assume all shapes go first
+                    shape_elt_map[start_shape_id]["boundElements"].append(
                         {"type": "arrow", "id": line_id}
                     )
-                    rect_elt_map[end_rect_id]["boundElements"].append(
+                    shape_elt_map[end_shape_id]["boundElements"].append(
                         {"type": "arrow", "id": line_id}
                     )
                 if text_elt and rect_elt:
                     rect_elt["boundElements"].append({"type": "text", "id": text_id})
                     text_elt["containerId"] = rect_id
+                elif text_elt and image_elt:
+                    group_id = cls._element_id()
+                    image_elt["groupIds"] = [group_id]
+                    text_elt["groupIds"] = [group_id]
                 if rect_elt:
                     model.elements.append(rect_elt)
+                if image_elt:
+                    model.elements.append(image_elt)
+                    model.files[image_file_id] = image_file_elt
                 if text_elt:
                     model.elements.append(text_elt)
                 if line_elt:
                     model.elements.append(line_elt)
         _log.debug(f"created {len(model.elements)} elements")
+        if _log.isEnabledFor(logging.DEBUG):
+            count = 0
+            for e in model.elements:
+                if e["type"] == "image":
+                    count += 1
+            _log.debug(f"image elements: {count}")
         return Diagram(model)
 
     # Alphabet for Excalidraw identifiers
@@ -353,6 +370,11 @@ class Diagram:
         "Generate random identifier in the style used by Excalidraw"
         items = random.choices(cls.IDCHARS, k=21)
         return "".join(items)
+
+    @classmethod
+    def _image_id(cls, data: str) -> str:
+        "Generate random identifier for Excalidraw image"
+        return sha1(data.encode("utf-8")).hexdigest()
 
 
 def main() -> int:

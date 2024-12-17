@@ -78,6 +78,10 @@ class Diagram:
             # <rect x="286.000000" y="120.000000" width="132.000000"
             # height="66.000000" stroke="#0D32B2" fill="#F7F8FE"
             # class=" stroke-B1 fill-B6" style="stroke-width:2;" />
+            # OR
+            # <image href="data:image/svg+xml;base64,PD..."
+            # x="228.000000" y="166.000000" width="128.000000" height="128.000000" stroke="#0D32B2"
+            # fill="#FFFFFF" class=" stroke-B1 fill-N7" style="stroke-width:2;" />
             # </g>
             # <text x="352.000000" y="158.500000" fill="#0A0F25" class="text-bold fill-N1"
             # style="text-anchor:middle;font-size:16px">leach_mixer</text></g>
@@ -87,26 +91,30 @@ class Diagram:
                 xc_id = cls._element_id()
                 svg_xc_map[item_id] = xc_id
                 # Find node and text
-                shape, line, text = None, None, None
+                g_rect, g_line, g_text, g_image = None, None, None, None
                 for subitem in item:
                     if subitem.tag == g_tag and subitem.get("class", "") == "shape":
-                        is_shape = True
-                        shape = subitem
+                        for elt in subitem:
+                            if elt.tag == svg_ns + "rect":
+                                g_rect = elt
+                                break
+                            if elt.tag == svg_ns + "image":
+                                g_image = elt
+                        if g_rect is None and g_image is None:
+                            raise ValueError(
+                                "shape element did not contain <rect> or <image>"
+                            )
                     elif subitem.tag == svg_ns + "text":
-                        text = subitem
+                        g_text = subitem
                     elif subitem.tag == svg_ns + "path":
-                        line = subitem
+                        g_line = subitem
                 rect_elt, text_elt, line_elt = None, None, None
                 now = int(time.time())
-                if shape is not None:
+                if g_rect is not None:
                     rect_id = xc_id
-                    rect_tag = svg_ns + "rect"
-                    rect = shape.find(rect_tag)
-                    if rect is None:
-                        raise ValueError("Expected <rect> element for shape")
                     rb = Bounds(
                         *[
-                            int(float(rect.get(c)))
+                            int(float(g_rect.get(c)))
                             for c in ("x", "y", "width", "height")
                         ]
                     )
@@ -140,15 +148,65 @@ class Diagram:
                     }
                     rect_bounds[rect_id] = rb
                     rect_elt_map[rect_id] = rect_elt
-                if text is not None:
+                if g_image is not None:
+                    raise NotImplementedError(
+                        "Should process image here"
+                    )  # TODO: process image
+                    # {
+                    #     "id": "YCH3_3aT2RB-YmUyMuTwi",
+                    #     "type": "image",
+                    #     "x": 1059.3641938709072,
+                    #     "y": -422.3975960867744,
+                    #     "width": 83,
+                    #     "height": 282,
+                    #     "angle": 0,
+                    #     "strokeColor": "transparent",
+                    #     "backgroundColor": "transparent",
+                    #     "fillStyle": "solid",
+                    #     "strokeWidth": 2,
+                    #     "strokeStyle": "solid",
+                    #     "roughness": 1,
+                    #     "opacity": 100,
+                    #     "groupIds": [],
+                    #     "frameId": null,
+                    #     "index": "b0g",
+                    #     "roundness": null,
+                    #     "seed": 1182914594,
+                    #     "version": 33,
+                    #     "versionNonce": 1850420030,
+                    #     "isDeleted": false,
+                    #     "boundElements": null,
+                    #     "updated": 1734229003855,
+                    #     "link": null,
+                    #     "locked": false,
+                    #     "status": "saved",
+                    #     "fileId": "5586b0fcbe8e5348efd577e9ce4085a35597d7a8",
+                    #     "scale": [
+                    #         1,
+                    #         1
+                    #     ],
+                    #     "crop": null
+                    #     }
+                    #   "files": {
+                    #     "5586b0fcbe8e5348efd577e9ce4085a35597d7a8": {
+                    #     "mimeType": "image/svg+xml",
+                    #     "id": "5586b0fcbe8e5348efd577e9ce4085a35597d7a8",
+                    #     "dataURL": "data:image/svg+xml;base64,PHN...",
+                    #     "created": 1734228992875,
+                    #     "lastRetrieved": 1734228992875
+                    #     }
+                    # }
+                if g_text is not None:
                     # <text x="352.000000" y="158.500000" fill="#0A0F25"
                     # class="text-bold fill-N1"
                     # style="text-anchor:middle;font-size:16px">leach_mixer</text>
                     text_id = cls._element_id()
-                    tb = Bounds(*[int(float(text.get(c))) for c in ("x", "y")] + [0, 0])
-                    text_value = text.text.strip()
+                    tb = Bounds(
+                        *[int(float(g_text.get(c))) for c in ("x", "y")] + [0, 0]
+                    )
+                    text_value = g_text.text.strip()
                     # get font size
-                    text_style = text.get("style", "")
+                    text_style = g_text.get("style", "")
                     match = re.search(r"font-size:\s*(\d+)px", text_style)
                     if match:
                         font_size = int(match.group(1))
@@ -191,7 +249,7 @@ class Diagram:
                         "autoResize": True,
                         "lineHeight": 1,
                     }
-                if line is not None:
+                if g_line is not None:
                     # <g id="(Unit_B -&gt; Unit_C)[0]">...</g>
                     # <path d="M 610.414213 155.085786 C 654.599976 110.900002 678.200012 110.900002 724.077373 153.769020"
                     # svg_xc_map[item_id] = xc_id

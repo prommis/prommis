@@ -225,7 +225,7 @@ class Diagram:
                         "x": bounds.x,
                         # center vertically
                         "y": bounds.y + (bounds.height / 2) - margin - (font_size / 2),
-                        "width": bounds.width,
+                        "width": bounds.width + font_size,  # padding
                         "height": font_size * 1.5,
                         "angle": 0,
                         "strokeColor": "#000000",
@@ -364,6 +364,8 @@ class Diagram:
                     group_id = cls._element_id()
                     image_elt["groupIds"] = [group_id]
                     text_elt["groupIds"] = [group_id]
+                    # move text below image
+                    text_elt["y"] += image_elt["height"] / 2 + font_size / 2
                 if rect_elt:
                     model.elements.append(rect_elt)
                 if image_elt:

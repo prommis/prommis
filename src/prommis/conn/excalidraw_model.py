@@ -266,32 +266,56 @@ class Diagram:
                         )
                     unit = match.group(1)
                     start_shape_id = svg_xc_map[unit]
-                    start_bounds = shape_bounds[start_shape_id]
                     unit = match.group(2)
                     end_shape_id = svg_xc_map[unit]
-                    end_bounds = shape_bounds[end_shape_id]
-                    # extract line points
-                    dx = end_bounds.x - start_bounds.x
-                    startx = start_bounds.width if dx > 0 else 0
-                    dy = end_bounds.y - start_bounds.y
-                    starty = start_bounds.height / 2
-                    point_list = [[startx, starty], [dx, dy]]
-                    # match = re.match(r"M ([\d.]+) ([\d.]+) C (.*)", line.get("d"))
-                    # path_x, path_y = float(match.group(1)), float(match.group(2))
-                    # points = [float(p) for p in match.group(3).split()]
-                    # point_list = [[0, 0]]
-                    # for i in range(0, len(points), 2):
-                    #     rel_x = points[i] - path_x
-                    #     rel_y = points[i + 1] - path_y
-                    #     point_list.append([rel_x, rel_y])
+                    path_coords = g_line.get("d", None)
+                    if path_coords is None:
+                        # in absence of a path, just connect with straight line
+                        start_bounds = shape_bounds[start_shape_id]
+                        end_bounds = shape_bounds[end_shape_id]
+                        # extract line points
+                        dx = end_bounds.x - start_bounds.x
+                        startx = start_bounds.width if dx > 0 else 0
+                        dy = end_bounds.y - start_bounds.y
+                        starty = start_bounds.height / 2
+                        point_list = [[startx, starty], [dx, dy]]
+                    else:
+                        coord_items = re.split(r"[, ]+", path_coords)
+                        if len(coord_items) < 10:
+                            raise ValueError(
+                                f"Wrong number of items (got {len(coord_items)}, expected 10 or more) "
+                                f"for cubic path: {coord_items}"
+                            )
+                        if coord_items[0] != "M":
+                            raise ValueError(
+                                f"Expected 'M' as first item in path: {coord_items}"
+                            )
+                        if coord_items[3] != "C":
+                            raise ValueError(
+                                f"Expected 'C' as third item in path: {coord_items}"
+                            )
+                        # get start/end positions from path (ignore width/height)
+                        start_bounds = Bounds(
+                            float(coord_items[1]), float(coord_items[2]), 0, 0
+                        )
+                        end_bounds = Bounds(
+                            float(coord_items[8]), float(coord_items[9]), 0, 0
+                        )
+                        # put path in point list
+                        point_list = [[0, 0]]
+                        # for xi, yi in ((4, 5), (-4, -3), (-2, -1)):
+                        for xi, yi in ((4, 5), (-2, -1)):
+                            x, y = float(coord_items[xi]), float(coord_items[yi])
+                            point_list.append([x - start_bounds.x, y - start_bounds.y])
+                        _log.debug(f"Line points: {point_list}")
                     # build element
                     line_elt = {
                         "id": line_id,
                         "type": "arrow",
                         "x": start_bounds.x,
                         "y": start_bounds.y,
-                        "width": end_bounds.x - start_bounds.x,
-                        "height": 2,
+                        "width": abs(end_bounds.x - start_bounds.x),
+                        "height": abs(end_bounds.y - start_bounds.y),
                         "angle": 0,
                         "strokeColor": "#1e1e1e",
                         "backgroundColor": "transparent",

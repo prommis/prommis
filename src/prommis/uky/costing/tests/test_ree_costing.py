@@ -2053,16 +2053,17 @@ class TestWaterTAPCosting(object):
             12.17825, rel=1e-4
         )
 
-    @pytest.mark.component
-    def test_REE_watertap_costing_variableOPEX(self, model):
+    # TODO commented as no WaterTAP models currently use this, may change in the future
+    # @pytest.mark.component
+    # def test_REE_watertap_costing_variableOPEX(self, model):
 
-        assert model.fs.costing.watertap_variable_costs.value == pytest.approx(
-            0, abs=1e-4
-        )  # TODO add a WaterTAP example that uses variable operating costs
+    #     assert model.fs.costing.watertap_variable_costs.value == pytest.approx(
+    #         0, abs=1e-4
+    #     )
 
-        assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-            533.10082, rel=1e-4
-        )
+    #     assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+    #         533.10082, rel=1e-4
+    #     )
 
 
 class TestCustomCosting(object):

@@ -18,8 +18,8 @@ __author__ = "Dan Gunter"
 # third party
 import pyomo.environ as pyo
 from idaes import logger as idaeslog
-from watertap.ui.fsapi import FlowsheetInterface
-from watertap.ui.fsapi import FlowsheetCategory
+from idaes_flowsheet_processor.api import FlowsheetInterface
+from idaes_flowsheet_processor.api import FlowsheetCategory
 
 # package
 from prommis.uky.uky_flowsheet import (

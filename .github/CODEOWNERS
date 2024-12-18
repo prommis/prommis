@@ -1,0 +1,29 @@
+/.github/ @lbianchi-lbl
+/.readthedocs.yml @lbianchi-lbl
+/pyproject.toml @lbianchi-lbl
+/requirements-dev.txt @lbianchi-lbl
+/codecov.yml @lbianchi-lbl
+
+/.addheader.yml @ksbeattie
+/COPYRIGHT.md @ksbeattie
+/LICENSE.md @ksbeattie
+/copyright_header.txt @ksbeattie
+
+/docs/ @agarciadiego @lbianchi-lbl
+/README.md @agarciadiego @lbianchi-lbl
+
+/src/prommis/_sphinx_extensions/ @lbianchi-lbl
+/src/prommis/_testing_utils/ @lbianchi-lbl
+
+**/conftest.py @lbianchi-lbl
+
+/src/prommis/evaporation_pond/ @andrewlee94
+/src/prommis/leaching/ @andrewlee94
+/src/prommis/nanofiltration/ @mollydougher
+/src/prommis/precipitate/ @agarciadiego
+/src/prommis/roasting/ @jinliangma 
+/src/prommis/solid_handling/ @Lingyan90
+/src/prommis/solvent_extraction/ @ArkoprabhoDasgupta
+
+/src/prommis/uky/ @MarcusHolly
+/src/prommis/uky/costing/ @bpaul4

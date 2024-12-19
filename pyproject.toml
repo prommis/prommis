@@ -40,6 +40,8 @@ watertap = [
 flowsheet-processor = [
     "idaes-flowsheet-processor >=0.1.dev4",
 ]
+[project.scripts]
+connectivity = "prommis.conn.connectivity:main"
 
 [tool.setuptools_scm]
 # https://setuptools-scm.readthedocs.io/en/v8.1.0/extending/

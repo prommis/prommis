@@ -10,7 +10,6 @@
 from pyomo.environ import SolverFactory, Suffix, TransformationFactory
 
 import idaes.logger as idaeslog
-from idaes.core.util import from_json
 from idaes.core.util.model_statistics import report_statistics
 
 import utils
@@ -57,8 +56,7 @@ def main():
 
     # model initialization
     m = df.build_flowsheet(mixing=mix_style)
-    # load the initialized model to save time
-    from_json(m, fname="initialized_model_3stages_10tubes")
+    df.initialize(m, mixing=mix_style)
     df.unfix_dof(m, mixing=mix_style)
     report_statistics(m)
 

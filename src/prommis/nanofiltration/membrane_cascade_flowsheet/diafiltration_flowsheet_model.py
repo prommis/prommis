@@ -6,8 +6,6 @@
 #####################################################################################################
 """Class for building the full IDAES diafiltration flowsheet."""
 
-from pyomo.core.base.param import ScalarParam
-from pyomo.core.expr import identify_components
 
 # Pyomo imports
 from pyomo.environ import (
@@ -23,7 +21,12 @@ from pyomo.environ import (
     units,
 )
 from pyomo.network import Arc
+from pyomo.core.expr import identify_components
+from pyomo.core.base.param import ScalarParam
 
+# IDAES imports
+from idaes.core.util.scaling import set_scaling_factor
+from idaes.core.util.initialization import propagate_state
 from idaes.core import (
     FlowsheetBlock,
     MaterialBalanceType,
@@ -31,9 +34,6 @@ from idaes.core import (
     UnitModelBlock,
     UnitModelCostingBlock,
 )
-
-# IDAES imports
-from idaes.core.util.scaling import set_scaling_factor
 from idaes.models.unit_models import (
     EnergySplittingType,
     Mixer,
@@ -45,18 +45,20 @@ from idaes.models.unit_models import (
 from idaes.models.unit_models import Separator as Splitter
 from idaes.models.unit_models import SeparatorInitializer
 
-import numpy as np
-from membrane import Membrane
-from precipitator import Precipitator
-
 # Custom imports
 from solute_property import SoluteParameters
+from membrane import Membrane
+from precipitator import Precipitator
 
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
     DiafiltrationCosting,
     DiafiltrationCostingData,
 )
 
+# other imports
+import idaes.logger as idaeslog
+import logging
+import numpy as np
 
 class DiafiltrationModel:
     """

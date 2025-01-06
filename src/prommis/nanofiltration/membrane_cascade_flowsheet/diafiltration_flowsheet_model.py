@@ -792,6 +792,11 @@ class DiafiltrationModel:
                 destination=m.fs.stage[i].retentate_inlet,
             )
 
+        # set initial values of exponent terms
+        for sol in m.fs.stage[i].LN_M_in:
+            m.fs.stage[i].LN_M_in[sol].set_value(5)
+            m.fs.stage[i].LN_M_out[sol].set_value(5)
+
         # initialize membrane unit and associated product splitters
         stage_initializer.initialize(m.fs.stage[i])
 

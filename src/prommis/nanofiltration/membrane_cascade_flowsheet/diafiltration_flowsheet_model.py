@@ -6,27 +6,34 @@
 #####################################################################################################
 """Class for building the full IDAES diafiltration flowsheet."""
 
+from pyomo.core.base.param import ScalarParam
+from pyomo.core.expr import identify_components
+
 # Pyomo imports
 from pyomo.environ import (
     ConcreteModel,
+    Constraint,
+    Objective,
+    Param,
     RangeSet,
     Set,
-    Var,
     TransformationFactory,
-    units,
-    Objective,
+    Var,
     maximize,
-    Param,
-    Constraint,
+    units,
 )
 from pyomo.network import Arc
-from pyomo.core.expr import identify_components
-from pyomo.core.base.param import ScalarParam
+
+from idaes.core import (
+    FlowsheetBlock,
+    MaterialBalanceType,
+    MomentumBalanceType,
+    UnitModelBlock,
+    UnitModelCostingBlock,
+)
 
 # IDAES imports
 from idaes.core.util.scaling import set_scaling_factor
-from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
-from idaes.models.unit_models import MSContactorInitializer
 from idaes.models.unit_models import (
     EnergySplittingType,
     Mixer,

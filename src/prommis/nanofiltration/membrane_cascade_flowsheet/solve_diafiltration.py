@@ -11,11 +11,10 @@ from pyomo.environ import SolverFactory, Suffix, TransformationFactory
 
 import idaes.logger as idaeslog
 from idaes.core.util import from_json
-from diafiltration_flowsheet_model import DiafiltrationModel
 from idaes.core.util.model_statistics import report_statistics
 
 import utils
-from diafiltration_flowsheet_model import diafiltration_model
+from diafiltration_flowsheet_model import DiafiltrationModel
 
 _log = idaeslog.getLogger(__name__)
 
@@ -64,8 +63,8 @@ def main():
     report_statistics(m)
 
     # set recovery lower bounds
-    lithium_recovery = 0.1
-    cobalt_recovery = 0.1
+    lithium_recovery = 0.5
+    cobalt_recovery = 0.5
 
     # solve model
     try:

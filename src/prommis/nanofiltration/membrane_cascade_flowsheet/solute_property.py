@@ -6,7 +6,9 @@
 #####################################################################################################
 """Generic multi-solute property package for membrane filtration flowsheet."""
 
-from pyomo.environ import Var, Param, units
+from pyomo.common.config import ConfigValue
+from pyomo.environ import Param, Var, units
+
 from idaes.core import (
     Component,
     MaterialFlowBasis,

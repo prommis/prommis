@@ -60,6 +60,7 @@ import idaes.logger as idaeslog
 import logging
 import numpy as np
 
+
 class DiafiltrationModel:
     """
     Multi-stage diafiltration model, built using custom IDAES units.

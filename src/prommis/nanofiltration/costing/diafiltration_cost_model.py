@@ -527,11 +527,13 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
     def cost_precipitator(
         blk,
         precip_volume,
+        simple_costing=False,
     ):
         """
-        Costing method for precipitator unit. Assumes these are horizontal vessels
-        made from 1.25 in thick carbon steel, includes platforms and ladders, and each
-        instance is one unit (default args).
+        Costing method for precipitator unit. Default method assumes these are horizontal
+        vessels made from 1.25 in thick carbon steel, includes platforms and ladders, and
+        each instance is one unit (default args). The simple method uses a linear relationship
+        with volume to calculate capital costs and currently does not include operating costs.
 
         References:
             residence time:
@@ -544,77 +546,103 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
         Args:
             precip_volume: volume of the precipitator as calculated by the unit model (m3)
+            simple_costing: Boolean to determine which costing method is implemented
         """
 
-        # calculate the volume needed
-        blk.volume_capacity = Var(
-            initialize=120,
-            domain=NonNegativeReals,
-            doc="Volume requirement of precipitator vessel",
-            units=units.m**3,
-        )
-
-        # account for a 20% headspace
-        @blk.Constraint()
-        def volume_capacity_equation(blk):
-            return blk.volume_capacity == units.convert(
-                (1.2 * precip_volume), to_units=units.m**3
+        if simple_costing == False:
+            # calculate the volume needed
+            blk.volume_capacity = Var(
+                initialize=120,
+                domain=NonNegativeReals,
+                doc="Volume requirement of precipitator vessel",
+                units=units.m**3,
             )
 
-        # include a length and diameter constraint
-        # TODO: L and D should get bounded but gives init errors
-        blk.precipitator_diameter = Var(
-            initialize=6,
-            domain=NonNegativeReals,
-            doc="Diameter of the precipitator vessel",
-            units=units.ft,
-        )
-        blk.precipitator_diameter.fix()
-        blk.precipitator_length = Var(
-            initialize=8,
-            domain=NonNegativeReals,
-            doc="Length of the precipitator vessel",
-            units=units.ft,
-        )
-
-        @blk.Constraint()
-        def diameter_length_ratio_equation(blk):
-            return units.convert(blk.precipitator_length, to_units=units.inch) == (
-                units.convert(
-                    (
-                        blk.volume_capacity
-                        - units.convert(
-                            (
-                                2
-                                * 0.954
-                                * (
-                                    units.convert(
-                                        blk.precipitator_diameter, to_units=units.inch
-                                    )
-                                    / 12
-                                )
-                                ** 3
-                            ),
-                            to_units=units.m**3,
-                        )
-                    )
-                    / units.convert(
-                        (
-                            0.0034
-                            * units.convert(
-                                blk.precipitator_diameter, to_units=units.inch
-                            )
-                            ** 2
-                        ),
-                        to_units=units.m**2,
-                    ),
-                    to_units=units.m,
+            # account for a 20% headspace
+            @blk.Constraint()
+            def volume_capacity_equation(blk):
+                return blk.volume_capacity == units.convert(
+                    (1.2 * precip_volume), to_units=units.m**3
                 )
+
+            # include a length and diameter constraint
+            # TODO: L and D should get bounded but gives init errors
+            blk.precipitator_diameter = Var(
+                initialize=6,
+                domain=NonNegativeReals,
+                doc="Diameter of the precipitator vessel",
+                units=units.ft,
+            )
+            blk.precipitator_diameter.fix()
+            blk.precipitator_length = Var(
+                initialize=8,
+                domain=NonNegativeReals,
+                doc="Length of the precipitator vessel",
+                units=units.ft,
             )
 
-        SSLWCostingData.cost_vessel(
-            blk,
-            vertical=False,  # horizontal vessel
-            vessel_diameter=blk.precipitator_diameter,
-            vessel_length=blk.precipitator_length,
-        )
+            @blk.Constraint()
+            def diameter_length_ratio_equation(blk):
+                return units.convert(blk.precipitator_length, to_units=units.inch) == (
+                    units.convert(
+                        (
+                            blk.volume_capacity
+                            - units.convert(
+                                (
+                                    2
+                                    * 0.954
+                                    * (
+                                        units.convert(
+                                            blk.precipitator_diameter,
+                                            to_units=units.inch,
+                                        )
+                                        / 12
+                                    )
+                                    ** 3
+                                ),
+                                to_units=units.m**3,
+                            )
+                        )
+                        / units.convert(
+                            (
+                                0.0034
+                                * units.convert(
+                                    blk.precipitator_diameter, to_units=units.inch
+                                )
+                                ** 2
+                            ),
+                            to_units=units.m**2,
+                        ),
+                        to_units=units.m,
+                    )
+                )
+
+            SSLWCostingData.cost_vessel(
+                blk,
+                vertical=False,  # horizontal vessel
+                vessel_diameter=blk.precipitator_diameter,
+                vessel_length=blk.precipitator_length,
+            )
+
+        if simple_costing == True:
+            blk.precipitator_factor_capital = Param(
+                initialize=500,  # TODO: determine the reference for this value
+                doc="Precipitator factor (capital) for simple costing",
+                units=units.USD_2018
+                / units.m**3,  # TODO: verify the reference year for USD
+            )
+
+            # create the capital cost variable
+            blk.capital_cost = Var(
+                initialize=1e5,
+                domain=NonNegativeReals,
+                units=blk.costing_package.base_currency,
+                doc="Unit capital cost",
+            )
+
+            @blk.Constraint()
+            def capital_cost_constraint(blk):
+                return blk.capital_cost == units.convert(
+                    blk.precipitator_factor_capital * precip_volume,
+                    to_units=blk.costing_package.base_currency,
+                )

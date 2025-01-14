@@ -221,7 +221,10 @@ def test_simple_costing():
     m.fs.precipitator.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_precipitator,
-        costing_method_arguments={"precip_volume": m.fs.precipitator.V},
+        costing_method_arguments={
+            "precip_volume": m.fs.precipitator.V,
+            "simple_costing": True,
+        },
     )
     m.fs.costing.cost_process()
 

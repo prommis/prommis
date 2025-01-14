@@ -127,3 +127,102 @@ def test_diafiltration_costing():
     m.fs.costing.cost_process()
 
     assert degrees_of_freedom(m) == 0
+
+
+@pytest.mark.component
+def test_simple_costing():
+    # create a model
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.costing = DiafiltrationCosting()
+
+    # define global parameters
+    m.w = Param(
+        initialize=1.5,
+        mutable=True,
+        doc="Membrane module length",
+        units=units.m,
+    )
+    m.Jw = Param(
+        initialize=0.1,
+        mutable=True,
+        doc="Water flux",
+        units=units.m**3 / units.m**2 / units.h,
+    )
+    m.atmospheric_pressure = Param(
+        initialize=101325,
+        doc="Atmospheric pressure in Pascal",
+        units=units.Pa,
+    )
+    m.operating_pressure = Param(
+        initialize=145,
+        mutable=True,
+        doc="Membrane operating pressure",
+        units=units.psi,
+    )
+    m.Q_feed = Param(
+        initialize=100,
+        mutable=True,
+        doc="Cascade feed flow",
+        units=units.m**3 / units.h,
+    )
+    m.Q_perm = Param(
+        initialize=110,
+        mutable=True,
+        doc="Cascade permeate flow",
+        units=units.m**3 / units.h,
+    )
+
+    # create unit models to cost
+    m.fs.membrane = UnitModelBlock()
+    m.fs.membrane.length = Var(
+        initialize=2400,
+        doc="Total membrane wound length",
+        units=units.m,
+    )
+    m.fs.membrane.length.fix()
+    m.fs.cascade = UnitModelBlock()
+    m.fs.pump = UnitModelBlock()
+    m.fs.precipitator = UnitModelBlock()
+    m.fs.precipitator.V = Var(
+        initialize=50,
+        doc="Precipitator volume",
+        units=units.m**3,
+    )
+    m.fs.precipitator.V.fix()
+
+    m.fs.membrane.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=DiafiltrationCostingData.cost_membranes,
+        costing_method_arguments={
+            "membrane_length": m.fs.membrane.length,
+            "membrane_width": m.w,
+        },
+    )
+    m.fs.cascade.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
+        costing_method_arguments={
+            "water_flux": m.Jw,
+            "vol_flow_feed": m.Q_feed,
+            "vol_flow_perm": m.Q_perm,
+        },
+    )
+    m.fs.pump.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=DiafiltrationCostingData.cost_pump,
+        costing_method_arguments={
+            "inlet_pressure": m.atmospheric_pressure,
+            "outlet_pressure": m.operating_pressure,
+            "inlet_vol_flow": m.Q_feed,
+            "simple_costing": True,
+        },
+    )
+    m.fs.precipitator.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=DiafiltrationCostingData.cost_precipitator,
+        costing_method_arguments={"precip_volume": m.fs.precipitator.V},
+    )
+    m.fs.costing.cost_process()
+
+    assert degrees_of_freedom(m) == 0

@@ -1065,7 +1065,7 @@ class DiafiltrationModel:
 
         TransformationFactory("core.scale_model").apply_to(m, rename=False)
 
-    def add_costing(self, m):
+    def add_costing(self, m, simple_costing=False):
         """
         Adds custom costing block to the flowsheet
         """
@@ -1100,6 +1100,7 @@ class DiafiltrationModel:
                 "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
                 * units.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
                 "inlet_vol_flow": self.feed["solvent"] * units.m**3 / units.h,  # feed
+                "simple_costing": simple_costing,
             },
         )
         m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(
@@ -1111,6 +1112,7 @@ class DiafiltrationModel:
                 "inlet_vol_flow": self.diaf["solvent"]
                 * units.m**3
                 / units.h,  # diafiltrate
+                "simple_costing": simple_costing,
             },
         )
         # membrane stage cost blocks
@@ -1131,6 +1133,7 @@ class DiafiltrationModel:
                     costing_method=DiafiltrationCostingData.cost_precipitator,
                     costing_method_arguments={
                         "precip_volume": m.fs.precipitator[prod].V,
+                        "simple_costing": simple_costing,
                     },
                 )
 

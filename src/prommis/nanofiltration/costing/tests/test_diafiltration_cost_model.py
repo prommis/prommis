@@ -135,7 +135,7 @@ def test_diafiltration_costing():
     solver = SolverFactory("ipopt")
     solver.solve(m, tee=True)
 
-    assert degrees_of_freedom(m) == 0
+    dt.assert_no_numerical_warnings()
 
 
 @pytest.mark.component
@@ -235,6 +235,12 @@ def test_simple_costing():
             "simple_costing": True,
         },
     )
-    m.fs.costing.cost_process()
 
-    assert degrees_of_freedom(m) == 0
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
+    m.fs.costing.cost_process()
+    solver = SolverFactory("ipopt")
+    solver.solve(m, tee=True)
+
+    dt.assert_no_numerical_warnings()

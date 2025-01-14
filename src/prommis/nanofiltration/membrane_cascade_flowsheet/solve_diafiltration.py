@@ -106,7 +106,7 @@ def set_arguments(
     return (mix_style, num_s, num_t)
 
 
-def set_scaling(m):
+def set_scaling(m, precipitator_simple_costing=False):
     """
     Apply scaling factors to certain constraints to improve solver performance
 
@@ -116,8 +116,13 @@ def set_scaling(m):
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
     # Add scaling factors for poorly scaled variables
-    m.scaling_factor[m.fs.precipitator["retentate"].costing.precipitator_diameter] = 1e2
-    m.scaling_factor[m.fs.precipitator["permeate"].costing.precipitator_diameter] = 1e2
+    if precipitator_simple_costing == False:
+        m.scaling_factor[
+            m.fs.precipitator["retentate"].costing.precipitator_diameter
+        ] = 1e2
+        m.scaling_factor[
+            m.fs.precipitator["permeate"].costing.precipitator_diameter
+        ] = 1e2
     m.scaling_factor[m.fs.cascade.costing.SEC] = 1e3
 
 
@@ -137,14 +142,14 @@ def solve_model(m, L, C):
     return result
 
 
-def solve_scaled_model(m, L, C):
+def solve_scaled_model(m, L, C, precipitator_simple_costing=False):
     m.R = L
     m.Rco = C
 
     scaling = TransformationFactory("core.scale_model")
     solver = SolverFactory("ipopt")
 
-    set_scaling(m)
+    set_scaling(m, precipitator_simple_costing=precipitator_simple_costing)
     scaled_model = scaling.create_using(m, rename=False)
     result = solver.solve(scaled_model, tee=True)
     # Propagate results back to unscaled model

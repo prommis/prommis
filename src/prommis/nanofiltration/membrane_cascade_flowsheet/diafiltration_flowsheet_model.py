@@ -137,9 +137,6 @@ class DiafiltrationModel:
             self.connect_diafiltrate(m)
             self.precipitate_objectives(m)
 
-        self.add_costing(m)
-        self.add_costing_objectives(m)
-
         # resolve solver tolerance issues by setting LB of all units outside of
         # membranes to 0
         for i in m.component_data_objects(Var):

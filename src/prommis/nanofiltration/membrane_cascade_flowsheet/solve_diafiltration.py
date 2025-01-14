@@ -60,26 +60,38 @@ def main():
     df.unfix_dof(m, mixing=mix_style)
     report_statistics(m)
 
-    # set recovery lower bounds
-    lithium_recovery = 0.5
-    cobalt_recovery = 0.5
+    df.add_costing(m)
+    df.add_costing_objectives(m)
 
-    # solve model
-    try:
-        solve_model(m, L=lithium_recovery, C=cobalt_recovery)
-    except Exception:
-        _log.info("The solver did not return an optimal solution, trying scaling...")
-        try:
-            solve_scaled_model(m, L=lithium_recovery, C=cobalt_recovery)
-        except Exception:
-            _log.info("Failure to solve scaled model")
+    report_statistics(m)
+
+    # set recovery lower bounds
+    lithium_recovery = 0.8
+    cobalt_recovery = 0.8
+
+    m.fs.split_diafiltrate.inlet.flow_vol.setub(10000)
+
+    solve_scaled_model(m, L=lithium_recovery, C=cobalt_recovery)
+
+    # # solve model
+    # try:
+    #     solve_model(m, L=lithium_recovery, C=cobalt_recovery)
+    # except Exception:
+    #     _log.info("The solver did not return an optimal solution, trying scaling...")
+    #     try:
+    #         solve_scaled_model(m, L=lithium_recovery, C=cobalt_recovery)
+    #     except Exception:
+    #         _log.info("Failure to solve scaled model")
 
     # NOTE These percent recoveries are for precipitators
     m.prec_perc_co.display()
     m.prec_perc_li.display()
 
     # Print all relevant flow information
-    utils.report_values(m)
+    vals = utils.report_values(m)
+    utils.visualize_flows(
+        num_boxes=num_s, num_sub_boxes=num_t, conf=mix_style, model=vals
+    )
 
 
 def set_arguments(

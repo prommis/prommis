@@ -470,7 +470,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             blk.pump_factor_operating = Param(
                 initialize=560,  # TODO: verify reference
                 doc="Pump factor (operating) for simple costing",
-                units=units.USD_2018  # TODO: verify the refernce year for USD
+                units=units.USD_2018  # TODO: verify the reference year for USD
                 / units.kW
                 / units.yr,
             )

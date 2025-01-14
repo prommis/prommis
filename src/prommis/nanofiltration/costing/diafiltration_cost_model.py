@@ -581,41 +581,43 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 units=units.ft,
             )
 
-            @blk.Constraint()
-            def diameter_length_ratio_equation(blk):
-                return units.convert(blk.precipitator_length, to_units=units.inch) == (
-                    units.convert(
-                        (
-                            blk.volume_capacity
-                            - units.convert(
-                                (
-                                    2
-                                    * 0.954
-                                    * (
-                                        units.convert(
-                                            blk.precipitator_diameter,
-                                            to_units=units.inch,
-                                        )
-                                        / 12
-                                    )
-                                    ** 3
-                                ),
-                                to_units=units.m**3,
-                            )
-                        )
-                        / units.convert(
+        @blk.Constraint()
+        def diameter_length_ratio_equation(blk):
+            """
+            Coefficients come from literature source noted in above docstring
+            """
+            return units.convert(blk.precipitator_length, to_units=units.inch) == (
+                units.convert(
+                    (
+                        blk.volume_capacity
+                        - units.convert(
                             (
-                                0.0034
-                                * units.convert(
-                                    blk.precipitator_diameter, to_units=units.inch
+                                2
+                                * (0.954 * units.gal / units.ft**3)
+                                * (
+                                    units.convert(
+                                        blk.precipitator_diameter, to_units=units.inch
+                                    )
+                                    / (12 * units.inch / units.ft)
                                 )
-                                ** 2
+                                ** 3
                             ),
-                            to_units=units.m**2,
-                        ),
-                        to_units=units.m,
+                            to_units=units.m**3,
+                        )
                     )
+                    / units.convert(
+                        (
+                            (0.0034 * units.gal / units.inch**3)
+                            * units.convert(
+                                blk.precipitator_diameter, to_units=units.inch
+                            )
+                            ** 2
+                        ),
+                        to_units=units.m**2,
+                    ),
+                    to_units=units.inch,
                 )
+            )
 
             SSLWCostingData.cost_vessel(
                 blk,

@@ -11,6 +11,7 @@ Tests the diafiltration cost model
 from pyomo.environ import (
     ConcreteModel,
     Param,
+    SolverFactory,
     Var,
     units,
 )
@@ -22,8 +23,7 @@ from idaes.core import (
     UnitModelBlock,
     UnitModelCostingBlock,
 )
-from idaes.core.util.model_statistics import degrees_of_freedom
-
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
     DiafiltrationCosting,
@@ -124,7 +124,16 @@ def test_diafiltration_costing():
         costing_method=DiafiltrationCostingData.cost_precipitator,
         costing_method_arguments={"precip_volume": m.fs.precipitator.V},
     )
+
+    # set bound to numerically zero to avoid potential log(0)
+    m.fs.precipitator.costing.weight.setlb(10 ** (-4))
+
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
     m.fs.costing.cost_process()
+    solver = SolverFactory("ipopt")
+    solver.solve(m, tee=True)
 
     assert degrees_of_freedom(m) == 0
 

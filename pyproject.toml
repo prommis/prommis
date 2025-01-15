@@ -30,13 +30,15 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse >= 2.6.0rc0",
+    "idaes-pse >= 2.7.0rc0",
     "pyomo >= 6.7.0",
 ]
 [project.optional-dependencies]
 watertap = [
-    # TODO: update once watertap 1.1.0 is available
-    "watertap >= 1.1.0rc0",
+    "watertap >=1.2.0rc0",
+]
+flowsheet-processor = [
+    "idaes-flowsheet-processor >=0.1.dev4",
 ]
 
 [tool.setuptools_scm]
@@ -80,6 +82,9 @@ inlinevar-naming-style = "any"
 
 [project.entry-points.pytest11]
 known_issues = "prommis._testing_utils.known_issues"
+
+[project.entry-points."prommis.flowsheets"]
+"UKy" = "prommis.uky.uky_flowsheet_ui"
 
 [tool.pytest.ini_options]
 addopts = """

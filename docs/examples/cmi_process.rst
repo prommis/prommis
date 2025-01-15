@@ -16,7 +16,7 @@ Next, ammonium hydroxide is added to increase the pH of the solution, leading to
 into iron hydroxide. In stage 3, oxalic acid is added to the solution leading to the formation of soluble iron-ammonium oxalate and insoluble rare earth oxalate. 
 Finally, the rare earth oxalate is filtered from solution and calcined to produce the REO product. 
 
-.. figure:: CMI_Process_PFD.png
+.. figure:: cmi_process_pfd.png
     :width: 800
     :align: center
 

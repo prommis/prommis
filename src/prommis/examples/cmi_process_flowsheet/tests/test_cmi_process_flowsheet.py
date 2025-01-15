@@ -31,7 +31,7 @@ from idaes.models.unit_models import (
 
 import pytest
 
-from prommis.examples.CMI_Process_Flowsheet.CMI_Process_Flowsheet import (
+from prommis.examples.cmi_process_flowsheet.cmi_process_flowsheet import (
     build,
     initialize_system,
     main,

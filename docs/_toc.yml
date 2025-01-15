@@ -5,3 +5,4 @@ chapters:
   - file: tutorials/diafiltration-solution
   - file: tutorials/uky_flowsheet-solution
   - file: api.rst
+  - file: examples/cmi_process.rst

@@ -5,10 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 from pyomo.environ import (
-    SolverFactory,
-    TransformationFactory,
     assert_optimal_termination,
-    value,
 )
 from pyomo.network import Arc
 
@@ -24,7 +21,6 @@ from idaes.models.properties.modular_properties.base.generic_reaction import (
 from idaes.models.unit_models import (
     Feed,
     Mixer,
-    Product,
     Separator,
     StoichiometricReactor,
 )
@@ -34,7 +30,6 @@ import pytest
 from prommis.examples.cmi_process_flowsheet.cmi_process_flowsheet import (
     build,
     initialize_system,
-    main,
     set_operation_conditions,
     solve_system,
 )

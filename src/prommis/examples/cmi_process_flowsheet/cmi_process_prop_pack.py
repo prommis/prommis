@@ -22,14 +22,11 @@ from pyomo.environ import units as pyunits
 
 # Import IDAES cores
 from idaes.core import (
-    Anion,
     AqueousPhase,
-    Cation,
     Component,
     LiquidPhase,
     SolidPhase,
     Solute,
-    Solvent,
     VaporPhase,
 )
 from idaes.models.properties.modular_properties.eos.ideal import Ideal

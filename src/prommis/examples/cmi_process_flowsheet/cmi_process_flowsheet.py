@@ -22,17 +22,12 @@ from pyomo.environ import (
 )
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
-from pyomo.network import Arc, port
+from pyomo.network import Arc
 
-import idaes.logger as idaeslog
 from idaes.core import FlowsheetBlock
-from idaes.core.solvers import get_solver
-from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
-    report_statistics,
-    unfixed_variables_in_activated_equalities_set,
 )
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
@@ -43,7 +38,6 @@ from idaes.models.properties.modular_properties.base.generic_reaction import (
 from idaes.models.unit_models import (
     Feed,
     Mixer,
-    Product,
     Separator,
     StoichiometricReactor,
 )

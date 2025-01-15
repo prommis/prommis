@@ -194,7 +194,7 @@ def build():
     # Connect arc from Dissolution Stage to S101
     m.fs.Diss_S101 = Arc(source=m.fs.Dissolution.outlet, destination=m.fs.S101.inlet)
 
-    # Connect arc from S101 to pH ajustment stage
+    # Connect arc from S101 to pH adjustment stage
     m.fs.S101_AdjMixer = Arc(
         source=m.fs.S101.liq_outlet, destination=m.fs.AdjMixer.separator_stream
     )

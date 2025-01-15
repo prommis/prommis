@@ -12,53 +12,55 @@ Author: Chris Laliwala
 """
 
 from pyomo.environ import (
-    Constraint,
-    Var,
     ConcreteModel,
-    TransformationFactory,
-    units as pyunits,
-    value,
+    Constraint,
     SolverFactory,
-    check_optimal_termination,
+    TransformationFactory,
+    Var,
     assert_optimal_termination,
+    check_optimal_termination,
 )
+from pyomo.environ import units as pyunits
+from pyomo.environ import value
 from pyomo.network import Arc, port
 
+import idaes.logger as idaeslog
 from idaes.core import FlowsheetBlock
+from idaes.core.solvers import get_solver
+from idaes.core.util import DiagnosticsToolbox
+from idaes.core.util.initialization import propagate_state
+from idaes.core.util.model_statistics import (
+    degrees_of_freedom,
+    report_statistics,
+    unfixed_variables_in_activated_equalities_set,
+)
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
 from idaes.models.properties.modular_properties.base.generic_reaction import (
     GenericReactionParameterBlock,
 )
+from idaes.models.unit_models import (
+    Feed,
+    Mixer,
+    Product,
+    Separator,
+    StoichiometricReactor,
+)
+from idaes.models.unit_models.separator import SplittingType
 from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
     get_prop,
 )
-from idaes.models.unit_models import (
-    Feed, 
-    StoichiometricReactor, 
-    Separator,
-    Mixer,
-    Product)
-from idaes.models.unit_models.separator import SplittingType
 
-import idaes.logger as idaeslog
-from idaes.core.util import DiagnosticsToolbox
-
-
-from idaes.core.solvers import get_solver
-from idaes.core.util.model_statistics import degrees_of_freedom, report_statistics, unfixed_variables_in_activated_equalities_set, report_statistics
-from idaes.core.util.initialization import propagate_state
-
-from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+import prommis.examples.CMI_Process_Flowsheet.CMI_process_adjustment_rxn_prop_pack as adjustment_reaction_props
+import prommis.examples.CMI_Process_Flowsheet.CMI_process_dissolution_rxn_prop_pack as dissolution_reaction_props
+import prommis.examples.CMI_Process_Flowsheet.CMI_process_precipitation_rxn_prop_pack as precipitation_reaction_props
+import prommis.examples.CMI_Process_Flowsheet.CMI_process_prop_pack as thermo_props
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 
-import prommis.examples.CMI_Process_Flowsheet.CMI_process_prop_pack as thermo_props
-import prommis.examples.CMI_Process_Flowsheet.CMI_process_dissolution_rxn_prop_pack as dissolution_reaction_props
-import prommis.examples.CMI_Process_Flowsheet.CMI_process_adjustment_rxn_prop_pack as adjustment_reaction_props
-import prommis.examples.CMI_Process_Flowsheet.CMI_process_precipitation_rxn_prop_pack as precipitation_reaction_props
 
 def main():
     """

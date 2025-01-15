@@ -9,13 +9,13 @@ Tests for UKy flowsheet.
 
 """
 
-from pyomo.network import Arc
 from pyomo.environ import (
-    assert_optimal_termination,
-    value,
-    units,
     TransformationFactory,
+    assert_optimal_termination,
+    units,
+    value,
 )
+from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
@@ -30,10 +30,10 @@ from idaes.models.unit_models.solid_liquid import SLSeparator
 
 import pytest
 
-from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.leaching.leach_train import LeachingTrain
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitator import Precipitator
@@ -41,16 +41,16 @@ from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.uky_flowsheet import (
-    build,
-    set_partition_coefficients,
-    set_operating_conditions,
-    set_scaling,
-    initialize_system,
-    solve_system,
-    fix_organic_recycle,
-    display_results,
     add_costing,
+    build,
     display_costing,
+    display_results,
+    fix_organic_recycle,
+    initialize_system,
+    set_operating_conditions,
+    set_partition_coefficients,
+    set_scaling,
+    solve_system,
 )
 
 

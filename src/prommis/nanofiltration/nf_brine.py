@@ -32,11 +32,11 @@ from pyomo.environ import (
 from pyomo.network import Arc
 
 import idaes.core.util.scaling as iscale
+import idaes.logger as idaeslog
 from idaes.core import FlowsheetBlock
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.unit_models import Feed, Product
-import idaes.logger as idaeslog
 
 from watertap.core.solvers import get_solver
 from watertap.property_models.multicomp_aq_sol_prop_pack import (

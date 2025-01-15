@@ -139,7 +139,6 @@ using advanced separation processes", 2019
 """
 
 from pyomo.environ import (
-    check_optimal_termination,
     ConcreteModel,
     Constraint,
     Expression,
@@ -148,11 +147,13 @@ from pyomo.environ import (
     Suffix,
     TransformationFactory,
     Var,
-    value,
+    check_optimal_termination,
     units,
+    value,
 )
 from pyomo.network import Arc, SequentialDecomposition
 
+import idaes.logger as idaeslog
 from idaes.core import (
     FlowDirection,
     FlowsheetBlock,
@@ -161,8 +162,8 @@ from idaes.core import (
     UnitModelBlock,
     UnitModelCostingBlock,
 )
-from idaes.core.solvers import get_solver
 from idaes.core.initialization import BlockTriangularizationInitializer
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
@@ -170,28 +171,27 @@ from idaes.models.properties.modular_properties.base.generic_property import (
 from idaes.models.unit_models.feed import Feed, FeedInitializer
 from idaes.models.unit_models.mixer import (
     Mixer,
+    MixerInitializer,
     MixingType,
     MomentumMixingType,
-    MixerInitializer,
 )
 from idaes.models.unit_models.product import Product, ProductInitializer
 from idaes.models.unit_models.separator import (
     EnergySplittingType,
     Separator,
-    SplittingType,
     SeparatorInitializer,
+    SplittingType,
 )
 from idaes.models.unit_models.solid_liquid import SLSeparator
 from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
     get_prop,
 )
-import idaes.logger as idaeslog
 
-from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.leaching.leach_train import LeachingTrain
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitator import Precipitator

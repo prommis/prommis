@@ -12,7 +12,6 @@ from docutils import nodes
 from sphinx.application import Sphinx as SphinxApp
 from sphinx.directives.patches import MathDirective
 
-
 _logger = logging.getLogger(f"sphinx.ext.{Path(__file__).stem}")
 
 

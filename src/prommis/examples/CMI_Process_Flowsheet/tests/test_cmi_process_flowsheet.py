@@ -14,6 +14,7 @@ from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util import DiagnosticsToolbox
+from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
@@ -21,28 +22,25 @@ from idaes.models.properties.modular_properties.base.generic_reaction import (
     GenericReactionParameterBlock,
 )
 from idaes.models.unit_models import (
-    Feed, 
-    StoichiometricReactor, 
-    Separator,
+    Feed,
     Mixer,
     Product,
+    Separator,
+    StoichiometricReactor,
 )
-from idaes.core.util.model_statistics import degrees_of_freedom
-
 
 import pytest
 
-from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
-from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
-
 from prommis.examples.CMI_Process_Flowsheet.CMI_Process_Flowsheet import (
-    main,
     build,
-    set_operation_conditions,
     initialize_system,
+    main,
+    set_operation_conditions,
     solve_system,
 )
+from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 
 
 @pytest.fixture(scope="module")

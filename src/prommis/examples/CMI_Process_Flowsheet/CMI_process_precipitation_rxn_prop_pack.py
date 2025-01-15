@@ -52,11 +52,10 @@ config_dict = {
                 ("Sol", "Nd2Fe14B"): 0,
             },
             "heat_of_reaction": constant_dh_rxn,
-            "concentration_form": ConcentrationForm.molarity,  
-            "parameter_data": {  
-            "dh_rxn_ref": (-1, pyunits.J / pyunits.mol)}}, # Placeholder Value
-
-            "R2": {
+            "concentration_form": ConcentrationForm.molarity,
+            "parameter_data": {"dh_rxn_ref": (-1, pyunits.J / pyunits.mol)},
+        },  # Placeholder Value
+        "R2": {
             "stoichiometry": {
                 ("Sol", "Fe(OH)3"): 0,
                 ("Sol", "Nd(OH)3"): -2,
@@ -77,8 +76,8 @@ config_dict = {
                 ("Sol", "Nd2Fe14B"): 0,
             },
             "heat_of_reaction": constant_dh_rxn,
-            "concentration_form": ConcentrationForm.molarity,  
-            "parameter_data": {  
-            "dh_rxn_ref": (-1, pyunits.J / pyunits.mol)}}, # Placeholder Value
+            "concentration_form": ConcentrationForm.molarity,
+            "parameter_data": {"dh_rxn_ref": (-1, pyunits.J / pyunits.mol)},
+        },  # Placeholder Value
     },
 }

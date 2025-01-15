@@ -69,7 +69,7 @@ def main():
     m = build()
 
     set_operation_conditions(m)
-    
+
     initialize_system(m)
 
     if degrees_of_freedom(m) != 0:
@@ -85,11 +85,10 @@ def main():
         raise RuntimeError(
             "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
         )
-    
-    display_results(m)
-    
-    return m, res
 
+    display_results(m)
+
+    return m, res
 
 
 def build():
@@ -101,13 +100,13 @@ def build():
 
     m.fs.thermo_params = GenericParameterBlock(**thermo_props.config_dict)
     m.fs.dissolution_reaction_params = GenericReactionParameterBlock(
-        property_package=m.fs.thermo_params,**dissolution_reaction_props.config_dict
+        property_package=m.fs.thermo_params, **dissolution_reaction_props.config_dict
     )
     m.fs.adjustment_reaction_params = GenericReactionParameterBlock(
-        property_package=m.fs.thermo_params,**adjustment_reaction_props.config_dict
+        property_package=m.fs.thermo_params, **adjustment_reaction_props.config_dict
     )
     m.fs.precipitation_reaction_params = GenericReactionParameterBlock(
-        property_package=m.fs.thermo_params,**precipitation_reaction_props.config_dict
+        property_package=m.fs.thermo_params, **precipitation_reaction_props.config_dict
     )
     gas_species = {"O2", "H2O", "CO2", "N2"}
 
@@ -117,7 +116,6 @@ def build():
     )
     m.fs.prop_solid = PrecipitateParameters()
     m.fs.prop_liquid = AqueousParameter()
-
 
     ### Feed Stream (entering stage 1)
     m.fs.FEED = Feed(property_package=m.fs.thermo_params)
@@ -131,26 +129,23 @@ def build():
         has_pressure_change=False,
     )
 
-
     ### S/L Filter following dissolution (following stage 1)
     m.fs.S101 = Separator(
-        property_package=m.fs.thermo_params, 
-        split_basis = SplittingType.phaseFlow,
-        outlet_list = ["liq_outlet", "sol_outlet"],
-        ideal_separation = False,
+        property_package=m.fs.thermo_params,
+        split_basis=SplittingType.phaseFlow,
+        outlet_list=["liq_outlet", "sol_outlet"],
+        ideal_separation=False,
         has_phase_equilibrium=False,
-        )
-
+    )
 
     ### pH Adjustment Feed (entering stage 2)
     m.fs.AdjFeed = Feed(property_package=m.fs.thermo_params)
 
-
     ### pH Adjustment Mixer (stage 2)
     m.fs.AdjMixer = Mixer(
-        property_package=m.fs.thermo_params, inlet_list=["reactant_feed", "separator_stream"]
+        property_package=m.fs.thermo_params,
+        inlet_list=["reactant_feed", "separator_stream"],
     )
-
 
     ### pH Adjustment Stage Reactor (stage 2)
     m.fs.Adjustment = StoichiometricReactor(
@@ -161,16 +156,14 @@ def build():
         has_pressure_change=False,
     )
 
-
     ### Precipitation Reactant Feed Stream (stage 3)
     m.fs.PrecipFeed = Feed(property_package=m.fs.thermo_params)
 
-
     ### Precipitation Mixer (stage 3)
     m.fs.PrecipMixer = Mixer(
-        property_package=m.fs.thermo_params, inlet_list=["reactant_feed", "adjustment_stream"]
+        property_package=m.fs.thermo_params,
+        inlet_list=["reactant_feed", "adjustment_stream"],
     )
-
 
     ### Precipitation reactor (stage 3)
     m.fs.Precipitation = StoichiometricReactor(
@@ -181,28 +174,26 @@ def build():
         has_pressure_change=False,
     )
 
-
     ### S/L Filter (following stage 3)
     m.fs.S102 = Separator(
-        property_package=m.fs.thermo_params, 
-        split_basis = SplittingType.phaseFlow,
-        outlet_list = ["liq_outlet", "sol_outlet"],
-        ideal_separation = False,
+        property_package=m.fs.thermo_params,
+        split_basis=SplittingType.phaseFlow,
+        outlet_list=["liq_outlet", "sol_outlet"],
+        ideal_separation=False,
         has_phase_equilibrium=False,
-        )
-
+    )
 
     ### Calcination unit
     m.fs.Calcination = REEOxalateRoaster(
-            property_package_gas=m.fs.prop_gas,
-            property_package_precipitate_solid=m.fs.prop_solid,
-            property_package_precipitate_liquid=m.fs.prop_liquid,
-            has_holdup=False,
-            has_heat_transfer=True,
-            has_pressure_change=True,
-            metal_list=["Nd"]
-        )
-    
+        property_package_gas=m.fs.prop_gas,
+        property_package_precipitate_solid=m.fs.prop_solid,
+        property_package_precipitate_liquid=m.fs.prop_liquid,
+        has_holdup=False,
+        has_heat_transfer=True,
+        has_pressure_change=True,
+        metal_list=["Nd"],
+    )
+
     # Connect arc from Feed to Dissolution Stage
     m.fs.FEED_Diss = Arc(source=m.fs.FEED.outlet, destination=m.fs.Dissolution.inlet)
 
@@ -210,33 +201,49 @@ def build():
     m.fs.Diss_S101 = Arc(source=m.fs.Dissolution.outlet, destination=m.fs.S101.inlet)
 
     # Connect arc from S101 to pH ajustment stage
-    m.fs.S101_AdjMixer = Arc(source=m.fs.S101.liq_outlet, destination=m.fs.AdjMixer.separator_stream)
+    m.fs.S101_AdjMixer = Arc(
+        source=m.fs.S101.liq_outlet, destination=m.fs.AdjMixer.separator_stream
+    )
 
     # Connect arc from pH adjustment feed to mixer
-    m.fs.AdjFeed_AdjMixer = Arc(source=m.fs.AdjFeed.outlet, destination=m.fs.AdjMixer.reactant_feed)
+    m.fs.AdjFeed_AdjMixer = Arc(
+        source=m.fs.AdjFeed.outlet, destination=m.fs.AdjMixer.reactant_feed
+    )
 
     # Connect arc from pH adjustment mixer to reactor
-    m.fs.AdjMixer_Adjustment = Arc(source=m.fs.AdjMixer.outlet, destination=m.fs.Adjustment.inlet)
+    m.fs.AdjMixer_Adjustment = Arc(
+        source=m.fs.AdjMixer.outlet, destination=m.fs.Adjustment.inlet
+    )
 
     # Connect arc from pH adjustment reactor to precipitation stage mixer
-    m.fs.Adjustment_PrecipMixer = Arc(source=m.fs.Adjustment.outlet, destination=m.fs.PrecipMixer.adjustment_stream)
+    m.fs.Adjustment_PrecipMixer = Arc(
+        source=m.fs.Adjustment.outlet, destination=m.fs.PrecipMixer.adjustment_stream
+    )
 
     # Connect arc from precipitation feed to mixer
-    m.fs.PrecipFeed_PrecipMixer = Arc(source=m.fs.PrecipFeed.outlet, destination=m.fs.PrecipMixer.reactant_feed)
+    m.fs.PrecipFeed_PrecipMixer = Arc(
+        source=m.fs.PrecipFeed.outlet, destination=m.fs.PrecipMixer.reactant_feed
+    )
 
     # Connect arc from precipitation mixer to reactor
-    m.fs.PrecipMixer_Precipitation = Arc(source=m.fs.PrecipMixer.outlet, destination=m.fs.Precipitation.inlet)
+    m.fs.PrecipMixer_Precipitation = Arc(
+        source=m.fs.PrecipMixer.outlet, destination=m.fs.Precipitation.inlet
+    )
 
     # Connect arc from precipitation reactor to filter
-    m.fs.Precipitation_S102 = Arc(source=m.fs.Precipitation.outlet, destination=m.fs.S102.inlet)
+    m.fs.Precipitation_S102 = Arc(
+        source=m.fs.Precipitation.outlet, destination=m.fs.S102.inlet
+    )
 
     # Connect filter to Calcinator
-    m.Calc_feed_con = Constraint(expr= m.fs.Calcination.flow_mol_comp_feed[0, "Nd"] == m.fs.S102.sol_outlet.flow_mol_phase_comp[0, "Sol", "Nd2(C2O4)3 * 10H2O"])
-    
+    m.Calc_feed_con = Constraint(
+        expr=m.fs.Calcination.flow_mol_comp_feed[0, "Nd"]
+        == m.fs.S102.sol_outlet.flow_mol_phase_comp[0, "Sol", "Nd2(C2O4)3 * 10H2O"]
+    )
+
     TransformationFactory("network.expand_arcs").apply_to(m)
 
     return m
-
 
 
 def set_operation_conditions(m):
@@ -248,13 +255,17 @@ def set_operation_conditions(m):
     """
 
     # User-defined Input for Neodymium Magnet Feed
-    Nd_Magnet_Feed = 1 # (kg/s)
+    Nd_Magnet_Feed = 1  # (kg/s)
     Excess_Reactant_Ratio = 1
-    Copper_Nitrate_Feed = Nd_Magnet_Feed * Excess_Reactant_Ratio # (kg/s)
-    Oxygen_Feed = Nd_Magnet_Feed * Excess_Reactant_Ratio # (kg/s)
+    Copper_Nitrate_Feed = Nd_Magnet_Feed * Excess_Reactant_Ratio  # (kg/s)
+    Oxygen_Feed = Nd_Magnet_Feed * Excess_Reactant_Ratio  # (kg/s)
 
-    nd_magnet_mw, __ = thermo_props.config_dict["components"]["Nd2Fe14B"]["parameter_data"]["mw"]
-    copper_nitrate_mw, __ = thermo_props.config_dict["components"]["Cu(NO3)2"]["parameter_data"]["mw"]
+    nd_magnet_mw, __ = thermo_props.config_dict["components"]["Nd2Fe14B"][
+        "parameter_data"
+    ]["mw"]
+    copper_nitrate_mw, __ = thermo_props.config_dict["components"]["Cu(NO3)2"][
+        "parameter_data"
+    ]["mw"]
     oxygen_mw, __ = thermo_props.config_dict["components"]["O2"]["parameter_data"]["mw"]
 
     #########  FEED Specification (entering Stage 1)
@@ -264,9 +275,7 @@ def set_operation_conditions(m):
     m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Cu(NO3)2"].fix(
         100 * pyunits.mol / pyunits.s
     )
-    m.fs.FEED.flow_mol_phase_comp[0, "Vap", "O2"].fix(
-        100 * pyunits.mol / pyunits.s
-    )
+    m.fs.FEED.flow_mol_phase_comp[0, "Vap", "O2"].fix(100 * pyunits.mol / pyunits.s)
     m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Nd(NO3)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
@@ -276,13 +285,9 @@ def set_operation_conditions(m):
     m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Cu3(BO3)2"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Cu"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Liq", "H2O"].fix( # excess of H2O
+    m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Cu"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.FEED.flow_mol_phase_comp[0, "Liq", "H2O"].fix(  # excess of H2O
         100 * pyunits.mol / pyunits.s
     )
     m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Fe(NO3)3"].fix(
@@ -291,18 +296,12 @@ def set_operation_conditions(m):
     m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Fe(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NH4OH"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NH4OH"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Nd(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NH4NO3"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NH4NO3"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.FEED.flow_mol_phase_comp[0, "Aq", "(NH4)3[Fe(C2O4)3]"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
@@ -315,12 +314,10 @@ def set_operation_conditions(m):
     # set temperature of feed
     m.fs.FEED.temperature.fix(298.15 * pyunits.K)
 
-
-
     ######### Copper Nitrate Dissolution Stoichiometric Reactor Specifications (Stage 1)
     m.fs.Dissolution.Nd_magnet_conversion = Var(
         initialize=1, bounds=(0, 1), units=pyunits.dimensionless
-    )  
+    )
 
     m.fs.Dissolution.Nd_magnet_conv_constraint = Constraint(
         expr=m.fs.Dissolution.Nd_magnet_conversion
@@ -334,7 +331,7 @@ def set_operation_conditions(m):
 
     m.fs.Dissolution.Iron2_nitrate_conversion = Var(
         initialize=1, bounds=(0, 1), units=pyunits.dimensionless
-    )  
+    )
 
     m.fs.Dissolution.Iron2_nitrate_conv_constraint = Constraint(
         expr=m.fs.Dissolution.Iron2_nitrate_conversion
@@ -347,19 +344,15 @@ def set_operation_conditions(m):
     m.fs.Dissolution.Iron2_nitrate_conversion.fix(0.999999)
 
     # set temperature
-    m.fs.Dissolution.outlet.temperature.fix(343.15 * pyunits.K) 
-    # set upper bound 
+    m.fs.Dissolution.outlet.temperature.fix(343.15 * pyunits.K)
+    # set upper bound
     m.fs.Dissolution.control_volume.properties_in[0.0].temperature.setub(600)
 
-
-
     ######### S101 Filter Specifications (S/L filtration following Stage 1)
-    m.fs.S101.split_fraction[0,"liq_outlet","Liq"].fix(0.9999999)
-    m.fs.S101.split_fraction[0,"liq_outlet","Aq"].fix(0.9999999)
-    m.fs.S101.split_fraction[0,"sol_outlet","Sol"].fix(0.99999)
-    m.fs.S101.split_fraction[0,"sol_outlet","Vap"].fix(0.999999)
-
-
+    m.fs.S101.split_fraction[0, "liq_outlet", "Liq"].fix(0.9999999)
+    m.fs.S101.split_fraction[0, "liq_outlet", "Aq"].fix(0.9999999)
+    m.fs.S101.split_fraction[0, "sol_outlet", "Sol"].fix(0.99999)
+    m.fs.S101.split_fraction[0, "sol_outlet", "Vap"].fix(0.999999)
 
     ######### pH Adjustment stage FEED Specifications (entering Stage 2)
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "NH4OH"].fix(
@@ -371,9 +364,7 @@ def set_operation_conditions(m):
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "Cu(NO3)2"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Vap", "O2"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Vap", "O2"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "Nd(NO3)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
@@ -386,9 +377,7 @@ def set_operation_conditions(m):
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Liq", "H2O"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
@@ -416,20 +405,16 @@ def set_operation_conditions(m):
     m.fs.AdjFeed.temperature.fix(298.15 * pyunits.K)
     m.fs.AdjFeed.pressure.fix(1 * pyunits.atm)
 
-
-
     ######## pH Adjustment stage mixer specifications (Stage 2)
     # set upper bounds on temperature
     m.fs.AdjMixer.reactant_feed_state[0].temperature.setub(600)
     m.fs.AdjMixer.separator_stream_state[0].temperature.setub(600)
     m.fs.AdjMixer.mixed_state[0].temperature.setub(600)
 
-    
-
     ######### pH Adjustment stage reactor specifications (Stage 2)
     m.fs.Adjustment.Fe_nitrate_conversion = Var(
         initialize=1, bounds=(0, 1), units=pyunits.dimensionless
-    )  
+    )
 
     m.fs.Adjustment.Fe_nitrate_conv_constraint = Constraint(
         expr=m.fs.Adjustment.Fe_nitrate_conversion
@@ -443,7 +428,7 @@ def set_operation_conditions(m):
 
     m.fs.Adjustment.Nd_nitrate_conversion = Var(
         initialize=1, bounds=(0, 1), units=pyunits.dimensionless
-    )  
+    )
 
     m.fs.Adjustment.Nd_nitrate_conv_constraint = Constraint(
         expr=m.fs.Adjustment.Nd_nitrate_conversion
@@ -455,11 +440,9 @@ def set_operation_conditions(m):
     )
     m.fs.Adjustment.Nd_nitrate_conversion.fix(0.999999)
 
-    m.fs.Adjustment.outlet.temperature.fix(333.15 * pyunits.K) 
+    m.fs.Adjustment.outlet.temperature.fix(333.15 * pyunits.K)
     # set upper bound
     m.fs.Adjustment.control_volume.properties_in[0].temperature.setub(600)
-
-
 
     ######### Precipitator Feed specifications (Stage 3)
     m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "NH4OH"].fix(
@@ -516,19 +499,15 @@ def set_operation_conditions(m):
     m.fs.PrecipFeed.temperature.fix(298.15 * pyunits.K)
     m.fs.PrecipFeed.pressure.fix(1 * pyunits.atm)
 
-
-
     ######## Precipitator mixer (stage 3)
     m.fs.PrecipMixer.reactant_feed_state[0].temperature.setub(600)
     m.fs.PrecipMixer.adjustment_stream_state[0].temperature.setub(600)
     m.fs.PrecipMixer.mixed_state[0].temperature.setub(600)
 
-
-
     ######## Precipitator reactor (stage 3)
     m.fs.Precipitation.Fe_hydroxide_conversion = Var(
         initialize=1, bounds=(0, 1), units=pyunits.dimensionless
-    )  
+    )
 
     m.fs.Precipitation.Fe_hydroxide_conv_constraint = Constraint(
         expr=m.fs.Precipitation.Fe_hydroxide_conversion
@@ -542,7 +521,7 @@ def set_operation_conditions(m):
 
     m.fs.Precipitation.Nd_hydroxide_conversion = Var(
         initialize=1, bounds=(0, 1), units=pyunits.dimensionless
-    )  
+    )
 
     m.fs.Precipitation.Nd_hydroxide_conv_constraint = Constraint(
         expr=m.fs.Precipitation.Nd_hydroxide_conversion
@@ -554,19 +533,15 @@ def set_operation_conditions(m):
     )
     m.fs.Precipitation.Nd_hydroxide_conversion.fix(0.999999)
 
-    m.fs.Precipitation.outlet.temperature.fix(333.15 * pyunits.K) 
+    m.fs.Precipitation.outlet.temperature.fix(333.15 * pyunits.K)
     # set upper bound
     m.fs.Precipitation.control_volume.properties_in[0].temperature.setub(600)
 
-
-
     ######### S102 Filter Specifications (S/L Filtration following Stage 3)
-    m.fs.S102.split_fraction[0,"liq_outlet","Liq"].fix(0.9999999)
-    m.fs.S102.split_fraction[0,"liq_outlet","Aq"].fix(0.9999999)
-    m.fs.S102.split_fraction[0,"sol_outlet","Sol"].fix(0.99999)
-    m.fs.S102.split_fraction[0,"sol_outlet","Vap"].fix(0.9999)
-
-
+    m.fs.S102.split_fraction[0, "liq_outlet", "Liq"].fix(0.9999999)
+    m.fs.S102.split_fraction[0, "liq_outlet", "Aq"].fix(0.9999999)
+    m.fs.S102.split_fraction[0, "sol_outlet", "Sol"].fix(0.99999)
+    m.fs.S102.split_fraction[0, "sol_outlet", "Vap"].fix(0.9999)
 
     ######### Calcinator
     m.fs.Calcination.deltaP.fix(0)
@@ -592,7 +567,6 @@ def set_operation_conditions(m):
     # defined by the solid precipitate property package
     m.fs.Calcination.solid_in[0].temperature.fix(333.15)
 
-
     # no liquid entering calcinator. Set to lower bound.
     m.fs.Calcination.liquid_in[0].flow_vol.fix(1e-5)  # in L/hr
     m.fs.Calcination.liquid_in[0].conc_mass_comp.fix(1e-5)
@@ -600,7 +574,6 @@ def set_operation_conditions(m):
     m.fs.Calcination.frac_comp_recovery.fix(1)
 
     print(degrees_of_freedom(m))
-
 
 
 def initialize_system(m):
@@ -654,7 +627,6 @@ def initialize_system(m):
     m.fs.Calcination.initialize()
 
 
-
 def solve_system(m, tee=False):
     """
     Args:
@@ -664,23 +636,22 @@ def solve_system(m, tee=False):
     """
     # Solve flowsheet
     solver_obj = SolverFactory(
-            "ipopt",
-            options={
-                "nlp_scaling_method": "user-scaling",
-                "linear_solver": "ma57",
-                "OF_ma57_automatic_scaling": "yes",
-                "ma57_pivtol": 1e-5,
-                "ma57_pivtolmax": 0.1,
-                "tol": 1e-6,
-                "max_iter": 1000,
-            },
-        )
+        "ipopt",
+        options={
+            "nlp_scaling_method": "user-scaling",
+            "linear_solver": "ma57",
+            "OF_ma57_automatic_scaling": "yes",
+            "ma57_pivtol": 1e-5,
+            "ma57_pivtolmax": 0.1,
+            "tol": 1e-6,
+            "max_iter": 1000,
+        },
+    )
 
     results = solver_obj.solve(m, tee=tee)
     assert_optimal_termination(results)
 
     return results
-
 
 
 def display_results(m):
@@ -691,7 +662,11 @@ def display_results(m):
         m: pyomo model
     """
 
-    print('Molar flowrate of REPM entering process: {:0.2f} mol/s'.format(value(m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Nd2Fe14B"])))
+    print(
+        "Molar flowrate of REPM entering process: {:0.2f} mol/s".format(
+            value(m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Nd2Fe14B"])
+        )
+    )
 
     m.fs.FEED.report()
     m.fs.Dissolution.report()
@@ -704,7 +679,11 @@ def display_results(m):
     m.fs.Precipitation.report()
     m.fs.S102.report()
 
-    print('\nMolar Flowrate of product Nd2O3 recovered: {:0.5f} mol/s'.format(value(m.fs.Calcination.flow_mol_comp_product[0, "Nd"])))
+    print(
+        "\nMolar Flowrate of product Nd2O3 recovered: {:0.5f} mol/s".format(
+            value(m.fs.Calcination.flow_mol_comp_product[0, "Nd"])
+        )
+    )
 
 
 main()

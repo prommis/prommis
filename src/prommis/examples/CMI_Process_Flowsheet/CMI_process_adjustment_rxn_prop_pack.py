@@ -53,9 +53,8 @@ config_dict = {
             },
             "heat_of_reaction": constant_dh_rxn,
             "concentration_form": ConcentrationForm.molarity,
-            "parameter_data": {  
-                "dh_rxn_ref": (-1, pyunits.J / pyunits.mol)}}, # Placeholder Value
-
+            "parameter_data": {"dh_rxn_ref": (-1, pyunits.J / pyunits.mol)},
+        },  # Placeholder Value
         "R2": {
             "stoichiometry": {
                 ("Aq", "Fe(NO3)3"): 0,
@@ -78,7 +77,7 @@ config_dict = {
             },
             "heat_of_reaction": constant_dh_rxn,
             "concentration_form": ConcentrationForm.molarity,
-            "parameter_data": {  
-            "dh_rxn_ref": (-1, pyunits.J / pyunits.mol)}}, # Placeholder Value
+            "parameter_data": {"dh_rxn_ref": (-1, pyunits.J / pyunits.mol)},
+        },  # Placeholder Value
     },
 }

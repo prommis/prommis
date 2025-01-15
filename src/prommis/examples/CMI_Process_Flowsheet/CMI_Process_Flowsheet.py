@@ -230,7 +230,7 @@ def build():
 
     # Connect filter to Calcinator
     m.Calc_feed_con = Constraint(expr= m.fs.Calcination.flow_mol_comp_feed[0, "Nd"] == m.fs.S102.sol_outlet.flow_mol_phase_comp[0, "Sol", "Nd2(C2O4)3 * 10H2O"])
-
+    
     TransformationFactory("network.expand_arcs").apply_to(m)
 
     return m
@@ -566,7 +566,7 @@ def set_operation_conditions(m):
 
 
 
-    ######### Specifying Calcinator
+    ######### Calcinator
     m.fs.Calcination.deltaP.fix(0)
     m.fs.Calcination.gas_inlet.temperature.fix(873.15)
     m.fs.Calcination.gas_inlet.pressure.fix(101325)
@@ -702,10 +702,7 @@ def display_results(m):
     m.fs.Precipitation.report()
     m.fs.S102.report()
 
-    print('\nMolar Flowrate of product Nd2O3 recovered: {:0.2f} mol/s'.format(value(m.fs.Calcination.flow_mol_comp_product[0, "Nd"])))
-
-
-
+    print('\nMolar Flowrate of product Nd2O3 recovered: {:0.5f} mol/s'.format(value(m.fs.Calcination.flow_mol_comp_product[0, "Nd"])))
 
 
 main()

@@ -11,7 +11,7 @@
 # for full copyright and license information.
 #################################################################################
 """
-Property package for Acid-Free Dissolution Extraction of Neodymium Magnets.
+Property package for CMI Process for recovery of REEs from EOL Neodymium Magnets.
 """
 
 # Import Python libraries

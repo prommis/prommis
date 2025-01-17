@@ -315,9 +315,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             https://www.bls.gov/regions/midwest/data/averageenergyprices_selectedareas_table.htm
 
         References for simple method:
-            pump capital cost factor: https://pubs.acs.org/doi/10.1021/acsestengg.3c00537
-            pump operating cost factor:
-            pump power calculation factor:
+            pump factors: https://pubs.acs.org/doi/10.1021/acsestengg.3c00537
 
         Args:
             inlet_pressure: pressure of inlet stream to pump (Pa)
@@ -464,35 +462,66 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             blk.pump_factor_capital = Param(
                 initialize=700,
                 doc="Pump factor (capital) for simple costing",
-                units=units.USD_2018
-                / units.kW,  # USD reference year based on Amusat et al.'s SI
+                units=units.USD_2018 / units.kW,
             )
             blk.pump_factor_operating = Param(
-                initialize=560,  # TODO: verify reference
+                initialize=560,  # assumes electricity at $0.07/kWh and operating for 8000 hr/yr
                 doc="Pump factor (operating) for simple costing",
-                units=units.USD_2018  # TODO: verify the reference year for USD
-                / units.kW
-                / units.yr,
+                units=units.USD_2018 / units.kW / units.yr,
             )
-            blk.pump_power_factor_simple = Param(
-                initialize=898.415,  # TODO: verify reference
-                doc="Pump factor for linear power calculation",
+            blk.pump_power_factor_simple = Var(
+                initialize=898,  # for 145 psi operational pressure
                 units=units.kJ / units.m**3,
+                doc="Pump factor for linear power calculation",
             )
 
-            blk.pump_power_simple = Var(
-                initialize=1e5,
+            @blk.Constraint()
+            def pump_power_factor_equation(blk):
+                return blk.pump_power_factor_simple == units.convert(
+                    (
+                        (
+                            units.convert(outlet_pressure, to_units=units.Pa)
+                            - units.convert(inlet_pressure, to_units=units.Pa)
+                        )
+                        * units.m
+                        / units.m
+                    ),
+                    to_units=units.kJ / units.m**3,
+                )
+
+            # TODO: use an installation power for CAPEX
+            # blk.pump_installation_power_simple = Var(
+            #     initialize=10,
+            #     domain=NonNegativeReals,
+            #     units=units.kW,
+            #     doc="Pump installation power for simple capital costing",
+            # )
+
+            blk.pump_operating_power_simple = Var(
+                initialize=10,
                 domain=NonNegativeReals,
                 units=units.kW,
-                doc="Pump power for simple costing",
+                doc="Pump operating power for simple operational costing",
             )
 
             @blk.Constraint()
             def pump_power_simple_equation(blk):
-                return blk.pump_power_simple == units.convert(
+                return blk.pump_operating_power_simple == units.convert(
                     blk.pump_power_factor_simple * inlet_vol_flow,
                     to_units=units.kW,
                 )
+
+            calculate_variable_from_constraint(
+                blk.pump_operating_power_simple,
+                blk.pump_power_simple_equation,
+            )
+
+            # @blk.Constraint()  # TODO: determine why this constraint is not being enforced
+            # def pump_installation_power_constraint(blk):
+            #     return (
+            #         blk.pump_installation_power_simple
+            #         >= blk.pump_operating_power_simple
+            #     )
 
             # create the capital and operating cost variables
             blk.capital_cost = Var(
@@ -512,14 +541,14 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             @blk.Constraint()
             def capital_cost_constraint(blk):
                 return blk.capital_cost == units.convert(
-                    blk.pump_factor_capital * blk.pump_power_simple,
+                    blk.pump_factor_capital * blk.pump_operating_power_simple,
                     to_units=blk.costing_package.base_currency,
                 )
 
             @blk.Constraint()
             def vaariable_operaitng_cost_constraint(blk):
                 return blk.variable_operating_cost == units.convert(
-                    blk.pump_factor_operating * blk.pump_power_simple,
+                    blk.pump_factor_operating * blk.pump_operating_power_simple,
                     to_units=blk.costing_package.base_currency
                     / blk.costing_package.base_period,
                 )
@@ -535,7 +564,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         each instance is one unit (default args). The simple method uses a linear relationship
         with volume to calculate capital costs and currently does not include operating costs.
 
-        References:
+        References for default method:
             residence time:
                 https://www.sciencedirect.com/science/article/pii/S0304386X19309806
                 https://onlinelibrary.wiley.com/doi/full/10.1002/ceat.201700667
@@ -543,6 +572,10 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 https://www.sciencedirect.com/science/article/pii/S0304386X01002134
             vessel dimensions:
                 https://www.accessengineeringlibrary.com/content/book/9781260455410/back-matter/appendix1?implicit-login=true
+
+        Reference for simple method:
+            H.P. Loh, Jennifer Lyons, and Charles W. White, III. Process Equipment Cost
+                Estimation Final Report. DOE/NETL-2002/1169. January 2002.
 
         Args:
             precip_volume: volume of the precipitator as calculated by the unit model (m3)
@@ -629,10 +662,9 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
         if simple_costing == True:
             blk.precipitator_factor_capital = Param(
-                initialize=500,  # TODO: determine the reference for this value
+                initialize=1000,
                 doc="Precipitator factor (capital) for simple costing",
-                units=units.USD_2018
-                / units.m**3,  # TODO: verify the reference year for USD
+                units=units.USD_1998 / units.m**3,
             )
 
             # create the capital cost variable
@@ -646,6 +678,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             @blk.Constraint()
             def capital_cost_constraint(blk):
                 return blk.capital_cost == units.convert(
-                    blk.precipitator_factor_capital * precip_volume,
+                    blk.precipitator_factor_capital * precip_volume
+                    + 12000 * units.USD_1998,
                     to_units=blk.costing_package.base_currency,
                 )

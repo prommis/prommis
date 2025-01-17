@@ -37,6 +37,7 @@ def main():
         "Co": 0.2 * 30,  # kg/hr
     }
     precipitate = True
+    simple_costing = False
 
     # setup for diafiltration model
     df = DiafiltrationModel(
@@ -52,6 +53,7 @@ def main():
             "permeate": {"Li": 0.81, "Co": 0.01},
             "retentate": {"Li": 0.20, "Co": 0.89},
         },
+        simple_costing=simple_costing,
     )
 
     # model initialization
@@ -71,7 +73,12 @@ def main():
 
     m.fs.split_diafiltrate.inlet.flow_vol.setub(10000)
 
-    solve_scaled_model(m, L=lithium_recovery, C=cobalt_recovery)
+    solve_scaled_model(
+        m,
+        L=lithium_recovery,
+        C=cobalt_recovery,
+        precipitator_simple_costing=simple_costing,
+    )
 
     # # solve model
     # try:
@@ -86,6 +93,8 @@ def main():
     # NOTE These percent recoveries are for precipitators
     m.prec_perc_co.display()
     m.prec_perc_li.display()
+
+    m.fs.costing.total_annualized_cost.display()
 
     # Print all relevant flow information
     vals = utils.report_values(m)
@@ -106,7 +115,7 @@ def set_arguments(
     return (mix_style, num_s, num_t)
 
 
-def set_scaling(m, precipitator_simple_costing=False):
+def set_scaling(m, precipitator_simple_costing):
     """
     Apply scaling factors to certain constraints to improve solver performance
 
@@ -142,7 +151,7 @@ def solve_model(m, L, C):
     return result
 
 
-def solve_scaled_model(m, L, C, precipitator_simple_costing=False):
+def solve_scaled_model(m, L, C, precipitator_simple_costing):
     m.R = L
     m.Rco = C
 

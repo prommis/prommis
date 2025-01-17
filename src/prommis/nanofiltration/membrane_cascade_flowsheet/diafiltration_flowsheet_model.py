@@ -101,6 +101,7 @@ class DiafiltrationModel:
         },
         atmospheric_pressure=101325,  # ambient pressure, Pa
         operating_pressure=145,  # nanofiltration operating pressure, psi
+        simple_costing=False,
     ):
         """Store model parameters."""
         self.ns = NS
@@ -114,6 +115,7 @@ class DiafiltrationModel:
         self.perc_precipitate = precipitate_yield
         self.atmospheric_pressure = atmospheric_pressure
         self.operating_pressure = operating_pressure
+        self.simple_costing = simple_costing
 
     def build_flowsheet(self, mixing="tube"):
         """Build the multi-stage diafiltration flowsheet."""
@@ -1065,7 +1067,7 @@ class DiafiltrationModel:
 
         TransformationFactory("core.scale_model").apply_to(m, rename=False)
 
-    def add_costing(self, m, simple_costing=False):
+    def add_costing(self, m):
         """
         Adds custom costing block to the flowsheet
         """
@@ -1091,18 +1093,23 @@ class DiafiltrationModel:
                 ),  # cascade permeate
             },
         )
-        m.fs.feed_pump.costing = UnitModelCostingBlock(
-            flowsheet_costing_block=m.fs.costing,
-            costing_method=DiafiltrationCostingData.cost_pump,
-            costing_method_arguments={
-                "inlet_pressure": self.atmospheric_pressure * units.Pa
-                + units.convert(m.fs.cascade.costing.pressure_drop, to_units=units.Pa),
-                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
-                * units.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
-                "inlet_vol_flow": self.feed["solvent"] * units.m**3 / units.h,  # feed
-                "simple_costing": simple_costing,
-            },
-        )
+        if self.simple_costing == False:
+            m.fs.feed_pump.costing = UnitModelCostingBlock(
+                flowsheet_costing_block=m.fs.costing,
+                costing_method=DiafiltrationCostingData.cost_pump,
+                costing_method_arguments={
+                    "inlet_pressure": self.atmospheric_pressure * units.Pa
+                    + units.convert(
+                        m.fs.cascade.costing.pressure_drop, to_units=units.Pa
+                    ),
+                    "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
+                    * units.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
+                    "inlet_vol_flow": self.feed["solvent"]
+                    * units.m**3
+                    / units.h,  # feed
+                    "simple_costing": self.simple_costing,
+                },
+            )
         m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
             costing_method=DiafiltrationCostingData.cost_pump,
@@ -1112,7 +1119,7 @@ class DiafiltrationModel:
                 "inlet_vol_flow": self.diaf["solvent"]
                 * units.m**3
                 / units.h,  # diafiltrate
-                "simple_costing": simple_costing,
+                "simple_costing": self.simple_costing,
             },
         )
         # membrane stage cost blocks
@@ -1133,7 +1140,7 @@ class DiafiltrationModel:
                     costing_method=DiafiltrationCostingData.cost_precipitator,
                     costing_method_arguments={
                         "precip_volume": m.fs.precipitator[prod].V,
-                        "simple_costing": simple_costing,
+                        "simple_costing": self.simple_costing,
                     },
                 )
 

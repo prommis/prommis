@@ -2297,14 +2297,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # assume the user is not using this
         b.other_variable_costs.fix(0)
 
+        # TODO commented as no WaterTAP models currently use this, may change in the future
         # variable for user to assign watertap variable costs to,
         # constraint sets to sum of list, which is 0 for empty list
-        b.watertap_variable_costs = Var(
-            initialize=0,
-            bounds=(0, None),
-            doc="Watertap variable costs",
-            units=CE_index_units / pyunits.year,
-        )
+        # b.watertap_variable_costs = Var(
+        #     initialize=0,
+        #     bounds=(0, None),
+        #     doc="Watertap variable costs",
+        #     units=CE_index_units / pyunits.year,
+        # )
 
         # variable for user to assign custom variable costs to,
         # constraint sets to sum of list, which is 0 for empty list
@@ -2342,13 +2343,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
             )
 
+        # TODO commented as no WaterTAP models currently use this, may change in the future
         # sum of variable operating costs of watertap units
-        @b.Constraint()
-        def sum_watertap_variable_costs(c):
-            if not hasattr(c, "watertap_variable_costs_list"):
-                return c.watertap_variable_costs == 0
-            else:
-                return c.watertap_variable_costs == sum(b.watertap_variable_costs_list)
+        # @b.Constraint()
+        # def sum_watertap_variable_costs(c):
+        #     if not hasattr(c, "watertap_variable_costs_list"):
+        #         return c.watertap_variable_costs == 0
+        #     else:
+        #         return c.watertap_variable_costs == sum(b.watertap_variable_costs_list)
 
         # sum of variable operating costs of custom units
         @b.Constraint()
@@ -2385,7 +2387,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                     + c.additional_chemicals_cost / pyunits.year
                     + c.additional_waste_cost / pyunits.year
-                    + c.watertap_variable_costs
+                    # TODO commented as no WaterTAP models currently use this, may change in the future
+                    # + c.watertap_variable_costs
                     + c.custom_variable_costs
                 )
 
@@ -2405,7 +2408,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                     + c.additional_chemicals_cost / pyunits.year
                     + c.additional_waste_cost / pyunits.year
-                    + c.watertap_variable_costs
+                    # TODO commented as no WaterTAP models currently use this, may change in the future
+                    # + c.watertap_variable_costs
                     + c.custom_variable_costs
                 )
 
@@ -2419,7 +2423,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 + c.land_cost / pyunits.year
                 + c.additional_chemicals_cost / pyunits.year
                 + c.additional_waste_cost / pyunits.year
-                + c.watertap_variable_costs
+                # TODO commented as no WaterTAP models currently use this, may change in the future
+                # + c.watertap_variable_costs
                 + c.custom_variable_costs
             )
 
@@ -2570,7 +2575,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         BEC_list = []
         b.watertap_fixed_costs_list = []
-        b.watertap_variable_costs_list = []
+        # TODO commented as no WaterTAP models currently use this, may change in the future
+        # b.watertap_variable_costs_list = []
         b.custom_fixed_costs_list = []
         b.custom_variable_costs_list = []
 
@@ -2622,13 +2628,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             to_units=CE_index_units / pyunits.year,
                         )
                     )
-                if hasattr(w.costing, "variable_operating_cost"):
-                    b.watertap_variable_costs_list.append(
-                        pyunits.convert(
-                            w.costing.variable_operating_cost,
-                            to_units=CE_index_units / pyunits.year,
-                        )
-                    )
+                # # TODO commented as no WaterTAP models currently use this, may change in the future
+                # if hasattr(w.costing, "variable_operating_cost"):
+                #     b.watertap_variable_costs_list.append(
+                #         pyunits.convert(
+                #             w.costing.variable_operating_cost,
+                #             to_units=CE_index_units / pyunits.year,
+                #         )
+                #     )
 
         b.total_BEC = Var(
             initialize=100,

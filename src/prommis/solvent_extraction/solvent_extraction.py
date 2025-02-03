@@ -4,6 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+
 """
 Solvent Extraction Model
 
@@ -113,6 +114,7 @@ class SolventExtractionInitializer(ModularInitializerBase):
         Returns:
             None
         """
+
         """
         This model adds an additional constraint of the material transfer term.
         This constraint is present outside the main MSContactor model, so this term is 
@@ -128,6 +130,7 @@ class SolventExtractionInitializer(ModularInitializerBase):
         model.mscontactor.material_transfer_term.unfix()
 
         solver = self._get_solver()
+
         results = solver.solve(model)
 
         return results
@@ -194,6 +197,9 @@ Stream_Config.declare(
 
 @declare_process_block_class("SolventExtraction")
 class SolventExtractionData(UnitModelBlockData):
+
+    default_initializer = SolventExtractionInitializer
+
     CONFIG = UnitModelBlockData.CONFIG()
 
     CONFIG.declare(

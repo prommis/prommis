@@ -1,5 +1,7 @@
 title: PrOMMiS
 author: PrOMMiS Contributors
+logo: "images/PROMMIS Logo_Stacked Color_GreyText_TransparentBackground.png"
+copyright: "2024"
 
 execute:
   execute_notebooks: "off"
@@ -9,6 +11,7 @@ sphinx:
   - sphinx.ext.napoleon
   - sphinx.ext.viewcode
   - sphinx.ext.autosummary
+  - sphinx_design
   - prommis._sphinx_extensions.chem
   config:
     autosummary_generate: true
@@ -17,3 +20,15 @@ sphinx:
       - etoc.toctree
     templates_path:
       - _templates
+
+parse:
+  myst_enable_extensions:
+    - colon_fence
+    - deflist
+    - html_admonition
+    - linkify
+    - substitution
+    - tasklist
+  myst_url_schemes: [mailto, http, https] # URI schemes that will be recognised as external URLs in Markdown links
+  myst_dmath_double_inline: true  # Allow display math ($$) within an inline context
+  myst_heading_anchors: 2

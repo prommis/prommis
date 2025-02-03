@@ -33,10 +33,9 @@ from pyomo.common.config import ConfigValue, ListOf
 from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
-from pyomo.environ import ConcreteModel, Expression, Param, Reference, Var
+from pyomo.environ import ConcreteModel, Expression, Param, Reference, Var, log10
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
-from pyomo.environ import log10
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 import idaes.core.util.scaling as iscale
@@ -1124,10 +1123,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
     def report(self, export=False):
         var_dict = {}
-        var_dict["Plant Cost Units"] = str(pyunits.get_units(self.total_plant_cost))
 
         if hasattr(self, "total_plant_cost"):
+            var_dict["Plant Cost Units"] = str(pyunits.get_units(self.total_plant_cost))
             var_dict["Total Plant Cost"] = value(self.total_plant_cost)
+        elif hasattr(self, "npv"):
+            var_dict["Plant Cost Units"] = str(pyunits.get_units(self.npv))
 
         if hasattr(self, "total_BEC"):
             var_dict["Total Bare Erected Cost"] = value(self.total_BEC)
@@ -1273,9 +1274,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             var_dict["Total Other Fixed Costs"] = value(self.other_fixed_costs)
 
         if hasattr(self, "variable_operating_costs"):
-            var_dict["Total Variable Power Cost"] = value(
-                self.variable_operating_costs[0, "power"]
-            )
+            if (0, "power") in self.variable_operating_costs.index_set().value_list:
+                var_dict["Total Variable Power Cost"] = value(
+                    self.variable_operating_costs[0, "power"]
+                )
 
             if hasattr(self, "additional_waste_cost"):
                 var_dict["Total Variable Waste Cost"] = value(

@@ -18,7 +18,6 @@ from pyomo.environ import (
     TransformationFactory,
     Var,
     assert_optimal_termination,
-    check_optimal_termination,
 )
 from pyomo.environ import units as pyunits
 from pyomo.environ import value

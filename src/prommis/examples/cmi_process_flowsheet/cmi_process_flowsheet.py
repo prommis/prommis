@@ -625,10 +625,6 @@ def solve_system(m, tee=False):
         "ipopt",
         options={
             "nlp_scaling_method": "user-scaling",
-            "linear_solver": "ma57",
-            "OF_ma57_automatic_scaling": "yes",
-            "ma57_pivtol": 1e-5,
-            "ma57_pivtolmax": 0.1,
             "tol": 1e-6,
             "max_iter": 1000,
         },

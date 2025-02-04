@@ -66,7 +66,7 @@ def main():
 
     initialize_system(m)
 
-    assert (degrees_of_freedom(m) == 0)
+    assert degrees_of_freedom(m) == 0
 
     res = solve_system(m=m, tee=False)
 

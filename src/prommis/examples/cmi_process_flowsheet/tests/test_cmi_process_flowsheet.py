@@ -118,7 +118,7 @@ def test_build_flowsheet(system_frame):
 @pytest.mark.solver
 def test_degrees_of_freedom(system_frame):
     m = system_frame
-    assert (degrees_of_freedom(m) == 0)
+    assert degrees_of_freedom(m) == 0
 
 
 @pytest.mark.component

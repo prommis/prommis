@@ -2605,7 +2605,8 @@ def add_costing(m):
 
     # Precipitation costs
     # 9.2 is UKy Rare Earth Element Precipitation - Polyethylene Tanks
-    reep_pe_tanks_accounts = ["9.2"]
+    # 10.1 is UKy Oxalate Precipitation - Polyethylene Tanks
+    reep_pe_tanks_accounts = ["9.2", "10.1"]
     m.fs.reep_pe_tanks = UnitModelBlock()
     m.fs.reep_pe_tanks.capacity = Var(initialize=15.04, units=units.gal)
     m.fs.reep_pe_tanks.capacity.fix()
@@ -2623,7 +2624,8 @@ def add_costing(m):
     )
 
     # 9.3 is UKy Rare Earth Element Precipitation - Tank Mixer
-    reep_tank_mixer_accounts = ["9.3"]
+    # 10.2 is UKy Oxalate Precipitation - Tank Mixer
+    reep_tank_mixer_accounts = ["9.3", "10.2"]
     m.fs.reep_tank_mixers = UnitModelBlock()
     m.fs.reep_tank_mixers.power = Var(initialize=0.61, units=units.hp)
     m.fs.reep_tank_mixers.power.fix()
@@ -2641,7 +2643,8 @@ def add_costing(m):
     )
 
     # 9.4 is UKy Rare Earth Element Precipitation - Process Pump
-    reep_pump_accounts = ["9.4"]
+    # 10.3 is UKy Oxalate Precipitation - Process Pump
+    reep_pump_accounts = ["9.4", "10.3"]
     m.fs.reep_pump = UnitModelBlock()
     m.fs.reep_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2657,7 +2660,8 @@ def add_costing(m):
     )
 
     # 9.5 is UKy Rare Earth Element Precipitation - Filter Press
-    reep_filter_press_accounts = ["9.5"]
+    # 10.4 is UKy Oxalate Precipitation - Filter Press
+    reep_filter_press_accounts = ["9.5", "10.4"]
     m.fs.reep_filter_press = UnitModelBlock()
     m.fs.reep_filter_press.volume = Var(initialize=0.405, units=units.ft**3)
     m.fs.reep_filter_press.volume.fix()
@@ -2675,7 +2679,8 @@ def add_costing(m):
     )
 
     # 9.8 is UKy Rare Earth Element Precipitation - Roaster
-    reep_roaster_accounts = ["9.8"]
+    # 10.5 is UKy Oxalate Precipitation - Roaster
+    reep_roaster_accounts = ["9.8", "10.5"]
     m.fs.reep_roaster = UnitModelBlock()
     m.fs.reep_roaster.duty = Var(initialize=0.035, units=units.MBTU / units.hr)
     m.fs.reep_roaster.duty.fix()

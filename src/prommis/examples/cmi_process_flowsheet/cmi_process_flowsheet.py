@@ -66,19 +66,11 @@ def main():
 
     initialize_system(m)
 
-    if degrees_of_freedom(m) != 0:
-        raise AssertionError(
-            "The degrees of freedom are not equal to 0."
-            "Check that the expected variables are fixed and unfixed."
-            "For more guidance, run assert_no_structural_warnings from the IDAES DiagnosticToolbox "
-        )
+    assert (degrees_of_freedom(m) == 0)
 
     res = solve_system(m=m, tee=False)
 
-    if not check_optimal_termination(res):
-        raise RuntimeError(
-            "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
-        )
+    assert_optimal_termination(res)
 
     display_results(m)
 

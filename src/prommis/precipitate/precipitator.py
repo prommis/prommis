@@ -53,11 +53,9 @@ from idaes.core import (
     useDefault,
 )
 from idaes.core.util.config import is_physical_parameter_block
-from pyomo.common.config import Bool, ConfigDict, ConfigValue
-from idaes.models.unit_models.mscontactor import MSContactor
 import idaes.core.util.scaling as iscale
 
-import idaes.logger as idaeslog
+from pyomo.common.config import Bool, ConfigDict, ConfigValue
 
 from pyomo.environ import (
     Var,
@@ -69,11 +67,10 @@ from pyomo.environ import (
 
 from pyomo.network import Port
 
-__author__ = "Alejandro Garciadiego"
-
 from idaes.models.unit_models.mscontactor import MSContactor
 from idaes.core.initialization import ModularInitializerBase
 
+__author__ = "Alejandro Garciadiego"
 
 class OxalatePrecipitatorInitializer(ModularInitializerBase):
     """

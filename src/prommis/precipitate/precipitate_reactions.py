@@ -15,7 +15,6 @@ precipitation unit model.
 """
 
 from pyomo.common.config import ConfigValue
-from pyomo.environ import log
 from pyomo.environ import Constraint, Param, Set, Var, units
 
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class

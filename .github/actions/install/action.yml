@@ -35,6 +35,8 @@ runs:
     - name: Check out repository
       if: inputs.variant == 'dev'
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: Install using pip (requirements-dev.txt)
       if: inputs.variant == 'dev'
       shell: bash -l {0}

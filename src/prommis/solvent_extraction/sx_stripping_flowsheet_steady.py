@@ -120,9 +120,9 @@ m.fs.solex.organic_inlet.flow_vol.fix(62.01)
 Initialization of the model, which gives a good starting point.
 
 """
-
 initializer = SolventExtractionInitializer()
 initializer.initialize(m.fs.solex)
+
 
 """
 Solution of the model and display of the final results.

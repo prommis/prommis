@@ -70,9 +70,9 @@ from pyomo.network import Port
 from idaes.models.unit_models.mscontactor import MSContactor
 from idaes.core.initialization import ModularInitializerBase
 
-__author__ = "Alejandro Garciadiego"
 
-
+# -----------------------------------------------------------------------------
+# Precipitator unit model
 class OxalatePrecipitatorInitializer(ModularInitializerBase):
     """
     This is a general purpose Initializer  for the Oxalate Precipitator unit model.

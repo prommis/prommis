@@ -5,13 +5,13 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 from pyomo.environ import (
-    ConcreteModel, 
-    assert_optimal_termination, 
-    value, 
+    ConcreteModel,
+    assert_optimal_termination,
+    value,
     Suffix,
     SolverFactory,
     Suffix,
-    TransformationFactory
+    TransformationFactory,
 )
 
 from pyomo.util.check_units import assert_units_consistent
@@ -49,7 +49,6 @@ def test_config():
     m.fs.properties_solid = PrecipitateParameters()
     m.fs.prec_rxns = OxalatePrecipitationReactions()
 
-
     m.fs.unit = OxalatePrecipitator(
         number_of_tanks=1,
         liquid_phase={
@@ -72,6 +71,7 @@ def test_config():
     assert m.fs.unit.config.liquid_phase.property_package is m.fs.properties_aq
     assert m.fs.unit.config.solid_phase.property_package is m.fs.properties_solid
     assert m.fs.unit.config.reaction_package is m.fs.prec_rxns
+
 
 # -----------------------------------------------------------------------------
 class TestPrec(object):
@@ -166,11 +166,9 @@ class TestPrec(object):
     @pytest.mark.component
     def test_initialize(self, prec):
         prec.scaling_factor = Suffix(direction=Suffix.EXPORT)
+        prec.scaling_factor[prec.fs.unit.conversion["Ca(C2O4)(s)"]] = 1e8
         prec.scaling_factor[
-            prec.fs.unit.conversion['Ca(C2O4)(s)']
-        ] = 1e8
-        prec.scaling_factor[
-            prec.fs.unit.conversion_constraint[0.0,1,'Ca(C2O4)(s)']
+            prec.fs.unit.conversion_constraint[0.0, 1, "Ca(C2O4)(s)"]
         ] = 1e8
 
         scaling = TransformationFactory("core.scale_model")
@@ -200,7 +198,6 @@ class TestPrec(object):
     @pytest.mark.component
     @pytest.mark.solver
     def test_numerical_issues(self, prec):
-
         dt = DiagnosticsToolbox(prec)
         # dt.assert_no_numerical_warnings()
 

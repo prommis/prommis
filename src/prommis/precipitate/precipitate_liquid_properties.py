@@ -148,7 +148,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Cl": 35.453e-3,
                 "HSO4": 97.064e-3,
                 "SO4": 96.056e-3,
-                "H2C2O4":90.03e-3,
+                "H2C2O4": 90.03e-3,
             },
         )
 
@@ -267,7 +267,10 @@ class AqueousStateBlockkData(StateBlockData):
         def flow_mol_constraint(b, j):
             if j == "H2O":
                 # Assume constant density of 1 kg/L
-                return self.flow_vol * self.params.dens_mass / self.params.mw[j] == b.flow_mol_comp[j]
+                return (
+                    self.flow_vol * self.params.dens_mass / self.params.mw[j]
+                    == b.flow_mol_comp[j]
+                )
             else:
                 return (
                     units.convert(
@@ -296,7 +299,7 @@ class AqueousStateBlockkData(StateBlockData):
                 self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
                 to_units=units.mol / units.hour,
             )
-                
+
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar
 

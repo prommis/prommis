@@ -166,6 +166,7 @@ StreamCONFIG.declare(
     ),
 )
 
+
 @declare_process_block_class("OxalatePrecipitator")
 class OxalatePrecipitatorData(UnitModelBlockData):
     """
@@ -241,7 +242,6 @@ class OxalatePrecipitatorData(UnitModelBlockData):
         flow_basis = self.mscontactor.flow_basis
         uom = self.mscontactor.uom
 
-
         self.hydraulic_retention_time = Var(
             self.flowsheet().time,
             initialize=2,
@@ -278,57 +278,82 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             )
 
         @self.Constraint(
-                self.flowsheet().time, 
-                self.mscontactor.elements,
-                self.config.reaction_package.reaction_idx,
-                doc="Reaction extent constraint")
+            self.flowsheet().time,
+            self.mscontactor.elements,
+            self.config.reaction_package.reaction_idx,
+            doc="Reaction extent constraint",
+        )
         def heterogeneous_reaction_extent_constraint(blk, t, s, r):
-            return (
-                blk.mscontactor.heterogeneous_reaction_extent[t, s, r]
-                == (blk.mscontactor.heterogeneous_reactions[t, s].reaction_rate[r] - (self.conversion[r] * 
-                blk.mscontactor.liquid_inlet_state[t].flow_mol_comp[blk.mscontactor.config.streams.solid.property_package.react[r]])))
+            return blk.mscontactor.heterogeneous_reaction_extent[t, s, r] == (
+                blk.mscontactor.heterogeneous_reactions[t, s].reaction_rate[r]
+                - (
+                    self.conversion[r]
+                    * blk.mscontactor.liquid_inlet_state[t].flow_mol_comp[
+                        blk.mscontactor.config.streams.solid.property_package.react[r]
+                    ]
+                )
+            )
 
         @self.Constraint(
-                self.flowsheet().time, 
-                self.mscontactor.elements,
-                self.config.reaction_package.reaction_idx,
-                doc="conversion constraint")
+            self.flowsheet().time,
+            self.mscontactor.elements,
+            self.config.reaction_package.reaction_idx,
+            doc="conversion constraint",
+        )
         def conversion_constraint(blk, t, s, r):
-            return (
-                log(self.conversion[r]) == (-((blk.config.reaction_package.E_D[r]) ** blk.config.reaction_package.N_D[r])) /(
-                            (((blk.aqueous_inlet.conc_mass_comp[0, "H2C2O4"])/(1000 * pyunits.mg/ pyunits.l)) ** blk.config.reaction_package.N_D[r])
-                        )
+            return log(self.conversion[r]) == (
+                -(
+                    (blk.config.reaction_package.E_D[r])
+                    ** blk.config.reaction_package.N_D[r]
+                )
+            ) / (
+                (
+                    (
+                        (blk.aqueous_inlet.conc_mass_comp[0, "H2C2O4"])
+                        / (1000 * pyunits.mg / pyunits.l)
+                    )
+                    ** blk.config.reaction_package.N_D[r]
+                )
             )
 
         @self.Constraint(self.flowsheet().time, doc="temperature equation")
         def temp_constraint(blk, t):
             return (
-                blk.mscontactor.solid_inlet_state[t].temperature == blk.mscontactor.solid_outlet.temperature[t]
+                blk.mscontactor.solid_inlet_state[t].temperature
+                == blk.mscontactor.solid_outlet.temperature[t]
             )
 
         @self.Constraint(
-                self.flowsheet().time, 
-                self.mscontactor.elements,   
-                doc="water coservation equation")
+            self.flowsheet().time,
+            self.mscontactor.elements,
+            doc="water coservation equation",
+        )
         def water_constraint(blk, t, r):
             return (
-                blk.mscontactor.liquid_inlet_state[t].conc_mass_comp["H2O"] == blk.mscontactor.liquid[t, r].conc_mass_comp["H2O"]
+                blk.mscontactor.liquid_inlet_state[t].conc_mass_comp["H2O"]
+                == blk.mscontactor.liquid[t, r].conc_mass_comp["H2O"]
             )
 
         @self.Constraint(
-                self.flowsheet().time, 
-                self.config.solid_phase.property_package.component_list,
-                doc="Initial solids")
+            self.flowsheet().time,
+            self.config.solid_phase.property_package.component_list,
+            doc="Initial solids",
+        )
         def init_solid_constraint(blk, t, r):
             return (
-                blk.mscontactor.solid_inlet_state[t].flow_mol_comp[r] == 1e-6 * pyunits.mole / pyunits.hour
-            )      
+                blk.mscontactor.solid_inlet_state[t].flow_mol_comp[r]
+                == 1e-6 * pyunits.mole / pyunits.hour
+            )
 
         iscale.set_scaling_factor(self.hydraulic_retention_time, 1e0)
         iscale.set_scaling_factor(self.conversion, 1e1)
         iscale.set_scaling_factor(self.mscontactor.heterogeneous_reaction_extent, 1e3)
-        iscale.set_scaling_factor(self.mscontactor.liquid_heterogeneous_reactions_generation, 1e3)
-        iscale.set_scaling_factor(self.mscontactor.solid_heterogeneous_reactions_generation, 1e3)
+        iscale.set_scaling_factor(
+            self.mscontactor.liquid_heterogeneous_reactions_generation, 1e3
+        )
+        iscale.set_scaling_factor(
+            self.mscontactor.solid_heterogeneous_reactions_generation, 1e3
+        )
         iscale.set_scaling_factor(self.volume, 1e-3)
 
     def _get_performance_contents(self, time_point=0):

@@ -180,7 +180,7 @@ class OxalatePrecipitationLeachingReactionsData(
                 "with this reaction package. Please contact the developer of "
                 "the reaction package.".format(self.name)
             )
-        
+
     def build_reaction_block(self, *args, **kwargs):
         """
         Methods to construct a ReactionBlock associated with this
@@ -203,13 +203,15 @@ class OxalatePrecipitationLeachingReactionsData(
         return self.reaction_block_class(  # pylint: disable=not-callable
             *args, **kwargs, **default, initialize=initialize
         )
-    
+
+
 class _OxalatePrecipitationReactionsBlock(ProcessBlock):
     pass
 
 
 @declare_process_block_class(
-    "OxalatePrecipitationReactionsBlock", block_class=_OxalatePrecipitationReactionsBlock
+    "OxalatePrecipitationReactionsBlock",
+    block_class=_OxalatePrecipitationReactionsBlock,
 )
 class OxalatePrecipitationReactionsData(ProcessBlockData):
     # Create Class ConfigBlock
@@ -243,7 +245,7 @@ class OxalatePrecipitationReactionsData(ProcessBlockData):
             l_block = b.parent_block().liquid[b.index()]
             s_block = b.parent_block().solid[b.index()]
 
-            return b.reaction_rate[r] ==  s_block.flow_mol_comp[r]
+            return b.reaction_rate[r] == s_block.flow_mol_comp[r]
 
         self.reaction_rate_eq = Constraint(
             self.params.reaction_idx, rule=rule_reaction_rate_eq

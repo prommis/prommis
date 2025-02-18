@@ -99,25 +99,6 @@ class PrecipitateParametersData(PhysicalParameterBlock):
             "Fe2(C2O4)3(s)": "Fe",
         }
 
-        self.stoich = Param(
-            self.component_list,
-            units=units.mol / units.mol,
-            initialize={
-                "Sc2(C2O4)3(s)": 2,
-                "Y2(C2O4)3(s)": 2,
-                "La2(C2O4)3(s)": 2,
-                "Ce2(C2O4)3(s)": 2,
-                "Pr2(C2O4)3(s)": 2,
-                "Nd2(C2O4)3(s)": 2,
-                "Sm2(C2O4)3(s)": 2,
-                "Gd2(C2O4)3(s)": 2,
-                "Dy2(C2O4)3(s)": 2,
-                "Al2(C2O4)3(s)": 2,
-                "Ca(C2O4)(s)": 1,
-                "Fe2(C2O4)3(s)": 2,
-            },
-        )
-
         self.mw = Param(
             self.component_list,
             units=units.kg / units.mol,
@@ -196,6 +177,9 @@ class PrecipitateStateBlockData(StateBlockData):
 
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
         iscale.set_scaling_factor(self.temperature, 1e1)
+
+    def get_material_flow_terms(self, p, j):
+        return self.flow_mol_comp[j] 
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar

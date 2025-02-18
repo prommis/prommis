@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 r"""
-Preliminary Precipitator Unit Model
+Oxalate Precipitator Unit Model
 ===================================
 
 Author: Alejandro Garciadiego
@@ -42,240 +42,302 @@ solved by a surrogate or a model equation.
 
 """
 
-# Import Pyomo libraries
-from pyomo.common.config import Bool, ConfigBlock, ConfigValue
-from pyomo.environ import log
-
-import idaes.logger as idaeslog
-
 # Import IDAES cores
 from idaes.core import (
-    ControlVolume0DBlock,
+    declare_process_block_class,
+)
+
+from idaes.core import (
     UnitModelBlockData,
     declare_process_block_class,
     useDefault,
 )
-from idaes.core.util.config import (
-    is_physical_parameter_block,
-    is_reaction_parameter_block,
+from idaes.core.util.config import is_physical_parameter_block
+from pyomo.common.config import Bool, ConfigDict, ConfigValue
+from idaes.models.unit_models.mscontactor import MSContactor
+import idaes.core.util.scaling as iscale
+
+import idaes.logger as idaeslog
+
+from pyomo.environ import (
+    Var,
+    Block,
+    log,
+    NonNegativeReals,
+    units as pyunits,
 )
 
+from pyomo.network import Port
 
-_log = idaeslog.getLogger(__name__)
+__author__ = "Alejandro Garciadiego"
+
+from idaes.models.unit_models.mscontactor import MSContactor
+from idaes.core.initialization import ModularInitializerBase
 
 
-@declare_process_block_class("Precipitator")
-class PrecipitatorData(UnitModelBlockData):
-    """ """
+class OxalatePrecipitatorInitializer(ModularInitializerBase):
+    """
+    This is a general purpose Initializer  for the Oxalate Precipitator unit model.
+
+    This routine calls the initializer for the internal MSContactor model.
+
+    """
+
+    CONFIG = ModularInitializerBase.CONFIG()
+
+    CONFIG.declare(
+        "ssc_solver_options",
+        ConfigDict(
+            implicit=True,
+            description="Dict of arguments for solver calls by ssc_solver",
+        ),
+    )
+    CONFIG.declare(
+        "calculate_variable_options",
+        ConfigDict(
+            implicit=True,
+            description="Dict of options to pass to 1x1 block solver",
+            doc="Dict of options to pass to calc_var_kwds argument in "
+            "scc_solver method.",
+        ),
+    )
+
+    def initialization_routine(
+        self,
+        model: Block,
+    ):
+        """
+        Initialization routine for MSContactor Blocks.
+
+        Args:
+            model: model to be initialized
+
+        Returns:
+            None
+        """
+        # Initialize MSContactor
+        msc_init = model.mscontactor.default_initializer(
+            ssc_solver_options=self.config.ssc_solver_options,
+            calculate_variable_options=self.config.calculate_variable_options,
+        )
+        return msc_init.initialize(model.mscontactor)
+
+
+StreamCONFIG = ConfigDict()
+StreamCONFIG.declare(
+    "property_package",
+    ConfigValue(
+        default=useDefault,
+        domain=is_physical_parameter_block,
+        description="Property package to use for given stream",
+        doc="""Property parameter object used to define property calculations for given stream,
+**default** - useDefault.
+**Valid values:** {
+**useDefault** - use default package from parent model or flowsheet,
+**PhysicalParameterObject** - a PhysicalParameterBlock object.}""",
+    ),
+)
+StreamCONFIG.declare(
+    "property_package_args",
+    ConfigDict(
+        implicit=True,
+        description="Dict of arguments to use for constructing property package",
+        doc="""A ConfigDict with arguments to be passed to property block(s)
+and used when constructing these,
+**default** - None.
+**Valid values:** {
+see property package for documentation.}""",
+    ),
+)
+StreamCONFIG.declare(
+    "has_energy_balance",
+    ConfigValue(
+        default=False,
+        domain=Bool,
+        doc="Bool indicating whether to include energy balance for stream. Default=True.",
+    ),
+)
+StreamCONFIG.declare(
+    "has_pressure_balance",
+    ConfigValue(
+        default=True,
+        domain=Bool,
+        doc="Bool indicating whether to include pressure balance for stream. Default=True.",
+    ),
+)
+
+@declare_process_block_class("OxalatePrecipitator")
+class OxalatePrecipitatorData(UnitModelBlockData):
+    """
+    Oxalate Precipitator Unit Model Class
+    """
+
+    # Set default initializer
+    default_initializer = OxalatePrecipitatorInitializer
 
     CONFIG = UnitModelBlockData.CONFIG()
 
     CONFIG.declare(
-        "property_package_aqueous",
-        ConfigValue(
-            default=useDefault,
-            domain=is_physical_parameter_block,
-            description="Property package to use for aqueous control volume",
-            doc="""Property parameter object used to define property calculations,
-**default** - useDefault.
-**Valid values:** {
-**useDefault** - use default package from parent model or flowsheet,
-**PropertyParameterObject** - a PropertyParameterBlock object.}""",
+        "liquid_phase",
+        StreamCONFIG(
+            description="Liquid phase properties",
         ),
     )
     CONFIG.declare(
-        "property_package_args_aqueous",
-        ConfigBlock(
-            implicit=True,
-            description="Arguments to use for constructing aqueous property packages",
-            doc="""A ConfigBlock with arguments to be passed to a property block(s)
-and used when constructing these,
-**default** - None.
-**Valid values:** {
-see property package for documentation.}""",
-        ),
-    )
-    CONFIG.declare(
-        "property_package_precipitate",
-        ConfigValue(
-            default=useDefault,
-            domain=is_physical_parameter_block,
-            description="Property package to use for precipitate control volume",
-            doc="""Property parameter object used to define property calculations,
-**default** - useDefault.
-**Valid values:** {
-**useDefault** - use default package from parent model or flowsheet,
-**PropertyParameterObject** - a PropertyParameterBlock object.}""",
-        ),
-    )
-    CONFIG.declare(
-        "property_package_args_precipitate",
-        ConfigBlock(
-            implicit=True,
-            description="Arguments to use for constructing precipitate property packages",
-            doc="""A ConfigBlock with arguments to be passed to a property block(s)
-and used when constructing these,
-**default** - None.
-**Valid values:** {
-see property package for documentation.}""",
-        ),
-    )
-    CONFIG.declare(
-        "has_equilibrium_reactions",
-        ConfigValue(
-            default=False,
-            domain=Bool,
-            description="Equilibrium reaction construction flag",
-            doc="""Indicates whether terms for equilibrium controlled reactions
-should be constructed,
-**default** - True.
-**Valid values:** {
-**True** - include equilibrium reaction terms,
-**False** - exclude equilibrium reaction terms.}""",
-        ),
-    )
-    CONFIG.declare(
-        "has_phase_equilibrium",
-        ConfigValue(
-            default=False,
-            domain=Bool,
-            description="Phase equilibrium construction flag",
-            doc="""Indicates whether terms for phase equilibrium should be
-constructed,
-**default** = False.
-**Valid values:** {
-**True** - include phase equilibrium terms
-**False** - exclude phase equilibrium terms.}""",
-        ),
-    )
-    CONFIG.declare(
-        "has_heat_of_reaction",
-        ConfigValue(
-            default=False,
-            domain=Bool,
-            description="Heat of reaction term construction flag",
-            doc="""Indicates whether terms for heat of reaction terms should be
-constructed,
-**default** - False.
-**Valid values:** {
-**True** - include heat of reaction terms,
-**False** - exclude heat of reaction terms.}""",
+        "solid_phase",
+        StreamCONFIG(
+            description="Solid phase properties",
         ),
     )
     CONFIG.declare(
         "reaction_package",
         ConfigValue(
-            default=None,
-            domain=is_reaction_parameter_block,
-            description="Reaction package to use for control volume",
-            doc="""Reaction parameter object used to define reaction calculations,
-**default** - None.
-**Valid values:** {
-**None** - no reaction package,
-**ReactionParameterBlock** - a ReactionParameterBlock object.}""",
+            # TODO: Add a domain validator for this
+            description="Heterogeneous reaction package for precipitaction.",
         ),
     )
     CONFIG.declare(
         "reaction_package_args",
-        ConfigBlock(
-            implicit=True,
-            description="Arguments to use for constructing reaction packages",
-            doc="""A ConfigBlock with arguments to be passed to a reaction block(s)
-and used when constructing these,
-**default** - None.
-**Valid values:** {
-see reaction package for documentation.}""",
+        ConfigValue(
+            default=None,
+            domain=dict,
+            description="Arguments for heterogeneous reaction package for precipitaction.",
+        ),
+    )
+    CONFIG.declare(
+        "number_of_tanks",
+        ConfigValue(
+            default=1, domain=int, description="Number of tanks in precipitaction"
         ),
     )
 
     def build(self):
         """
-        Build method for precipitator unit model.
+        Build method for OxalatePrecipitator unit model.
         """
-        # Call UnitModel.build to setup dynamics
-        super(PrecipitatorData, self).build()
+        super().build()
 
-        # Add Control Volume
-        self.cv_aqueous = ControlVolume0DBlock(
-            dynamic=False,
-            has_holdup=False,
-            property_package=self.config.property_package_aqueous,
-            property_package_args=self.config.property_package_args_aqueous,
-        )
-        # Add inlet and outlet state blocks to control volume
-        self.cv_aqueous.add_state_blocks(has_phase_equilibrium=False)
-
-        # ---------------------------------------------------------------------
-        # Add single state block for vapor phase
-        tmp_dict = dict(**self.config.property_package_args_precipitate)
-        tmp_dict["has_phase_equilibrium"] = False
-        tmp_dict["defined_state"] = False
-        self.cv_precipitate = (
-            self.config.property_package_precipitate.build_state_block(
-                self.flowsheet().time, doc="Vapor phase properties", **tmp_dict
-            )
+        self.mscontactor = MSContactor(
+            number_of_finite_elements=self.config.number_of_tanks,
+            streams={
+                "liquid": {
+                    "property_package": self.config.liquid_phase.property_package,
+                    "property_package_args": self.config.liquid_phase.property_package_args,
+                    "has_energy_balance": self.config.liquid_phase.has_energy_balance,
+                    "has_pressure_balance": self.config.liquid_phase.has_pressure_balance,
+                },
+                "solid": {
+                    "property_package": self.config.solid_phase.property_package,
+                    "property_package_args": self.config.solid_phase.property_package_args,
+                    "has_energy_balance": self.config.solid_phase.has_energy_balance,
+                    "has_pressure_balance": self.config.solid_phase.has_pressure_balance,
+                },
+            },
+            heterogeneous_reactions=self.config.reaction_package,
+            heterogeneous_reactions_args=self.config.reaction_package_args,
         )
 
-        # ---------------------------------------------------------------------
-        # Check flow basis is compatible
-        # TODO : Could add code to convert flow bases, but not now
-        t_init = self.flowsheet().time.first()
-        if (
-            self.cv_precipitate[t_init].get_material_flow_basis()
-            != self.cv_aqueous.properties_out[t_init].get_material_flow_basis()
-        ):
-            raise ConfigurationError(
-                f"{self.name} Solid and aqueous property packages must use the "
-                f"same material flow basis."
-            )
+        # Get units of measurement from MSContactor
+        flow_basis = self.mscontactor.flow_basis
+        uom = self.mscontactor.uom
 
-        # add ports
-        self.add_inlet_port(block=self.cv_aqueous, name="aqueous_inlet")
-        self.add_outlet_port(block=self.cv_aqueous, name="aqueous_outlet")
-        self.add_outlet_port(block=self.cv_precipitate, name="precipitate_outlet")
 
-        prop_aq = self.config.property_package_aqueous
-        prop_s = self.config.property_package_precipitate
+        self.hydraulic_retention_time = Var(
+            self.flowsheet().time,
+            initialize=2,
+            domain=NonNegativeReals,
+            units=pyunits.h,
+            doc="Hydraulic retention time",
+        )
 
-        @self.Constraint(self.flowsheet().time, doc="volume balance equation.")
-        def vol_balance(blk, t):
-            return blk.cv_aqueous.properties_out[t].flow_vol == (
-                blk.cv_aqueous.properties_in[t].flow_vol
+        self.volume = Var(
+            self.flowsheet().time,
+            initialize=1800,
+            domain=NonNegativeReals,
+            units=pyunits.l,
+            doc="Volume of precipitator",
+        )
+
+        self.conversion = Var(
+            self.config.reaction_package.reaction_idx,
+            initialize=0.5,
+            units=pyunits.dimensionless,
+            bounds=(None, 0.999999),
+        )
+
+        # Create unit level Ports
+        self.aqueous_inlet = Port(extends=self.mscontactor.liquid_inlet)
+        self.aqueous_outlet = Port(extends=self.mscontactor.liquid_outlet)
+        self.precipitate_outlet = Port(extends=self.mscontactor.solid_outlet)
+
+        @self.Constraint(self.flowsheet().time, doc="Hydraulic retention time equation")
+        def eq_hydraulic_retention(blk, t):
+            return (
+                self.hydraulic_retention_time[t] * self.aqueous_inlet.flow_vol[t]
+                == self.volume[t]
             )
 
         @self.Constraint(
-            self.flowsheet().time,
-            prop_s.component_list,
-            doc="Mass balance equations precipitate.",
-        )
-        def precipitate_generation(blk, t, comp):
-            return blk.cv_precipitate[t].flow_mol_comp[comp] == (
-                (
-                    blk.cv_aqueous.properties_in[t].flow_mol_comp[prop_s.react[comp]]
-                    - blk.cv_aqueous.properties_out[t].flow_mol_comp[prop_s.react[comp]]
-                )
-                / prop_s.stoich[comp]
-            )
-
-        @self.Constraint(prop_aq.dissolved_elements)
-        def element_split(b, j):
-            if j in prop_aq.split_elements:
-                return (-((prop_aq.E_D[j]) ** prop_aq.N_D[j])) - (
-                    log(prop_aq.split[j]) * ((prop_aq.acid_flow) ** prop_aq.N_D[j])
-                ) == 0
-            else:
-                return prop_aq.split[j] == 1e-8
+                self.flowsheet().time, 
+                self.mscontactor.elements,
+                self.config.reaction_package.reaction_idx,
+                doc="Reaction extent constraint")
+        def heterogeneous_reaction_extent_constraint(blk, t, s, r):
+            return (
+                blk.mscontactor.heterogeneous_reaction_extent[t, s, r]
+                == (blk.mscontactor.heterogeneous_reactions[t, s].reaction_rate[r] - (self.conversion[r] * 
+                blk.mscontactor.liquid_inlet_state[t].flow_mol_comp[blk.mscontactor.config.streams.solid.property_package.react[r]])))
 
         @self.Constraint(
-            self.flowsheet().time,
-            prop_aq.dissolved_elements,
-            doc="Mass balance equations aqueous.",
-        )
-        def aqueous_depletion(blk, t, comp):
-            return blk.cv_aqueous.properties_out[t].conc_mass_comp[
-                comp
-            ] * blk.cv_aqueous.properties_out[t].flow_vol == (
-                blk.cv_aqueous.properties_in[t].conc_mass_comp[comp]
-                * blk.cv_aqueous.properties_in[t].flow_vol
-                * (1 - prop_aq.split[comp])
+                self.flowsheet().time, 
+                self.mscontactor.elements,
+                self.config.reaction_package.reaction_idx,
+                doc="conversion constraint")
+        def conversion_constraint(blk, t, s, r):
+            return (
+                log(self.conversion[r]) == (-((blk.config.reaction_package.E_D[r]) ** blk.config.reaction_package.N_D[r])) /(
+                            (((blk.aqueous_inlet.conc_mass_comp[0, "H2C2O4"])/(1000 * pyunits.mg/ pyunits.l)) ** blk.config.reaction_package.N_D[r])
+                        )
             )
+
+        @self.Constraint(self.flowsheet().time, doc="temperature equation")
+        def temp_constraint(blk, t):
+            return (
+                blk.mscontactor.solid_inlet_state[t].temperature == blk.mscontactor.solid_outlet.temperature[t]
+            )
+
+        @self.Constraint(
+                self.flowsheet().time, 
+                self.mscontactor.elements,   
+                doc="water coservation equation")
+        def water_constraint(blk, t, r):
+            return (
+                blk.mscontactor.liquid_inlet_state[t].conc_mass_comp["H2O"] == blk.mscontactor.liquid[t, r].conc_mass_comp["H2O"]
+            )
+
+        @self.Constraint(
+                self.flowsheet().time, 
+                self.config.solid_phase.property_package.component_list,
+                doc="Initial solids")
+        def init_solid_constraint(blk, t, r):
+            return (
+                blk.mscontactor.solid_inlet_state[t].flow_mol_comp[r] == 1e-6 * pyunits.mole / pyunits.hour
+            )      
+
+        iscale.set_scaling_factor(self.hydraulic_retention_time, 1e0)
+        iscale.set_scaling_factor(self.conversion, 1e1)
+        iscale.set_scaling_factor(self.mscontactor.heterogeneous_reaction_extent, 1e3)
+        iscale.set_scaling_factor(self.mscontactor.liquid_heterogeneous_reactions_generation, 1e3)
+        iscale.set_scaling_factor(self.mscontactor.solid_heterogeneous_reactions_generation, 1e3)
+        iscale.set_scaling_factor(self.volume, 1e-3)
+
+    def _get_performance_contents(self, time_point=0):
+        var_dict = {}
+        expr_dict = {}
+        param_dict = {}
+        var_dict["Unit Volume"] = self.volume[time_point]
+        var_dict["Hydraulic Retention Time"] = self.hydraulic_retention_time[time_point]
+        var_dict["Unit Height"] = self.height
+        var_dict["Unit Diameter"] = self.diameter
+        expr_dict["Surface Area"] = self.surface_area
+        return {"vars": var_dict, "params": param_dict, "exprs": expr_dict}

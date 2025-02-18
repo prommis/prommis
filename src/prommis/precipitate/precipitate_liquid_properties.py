@@ -64,6 +64,7 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Cl = Component()
         self.HSO4 = Component()
         self.SO4 = Component()
+        self.H2C2O4 = Component()
 
         # REEs
         self.Sc = Component()
@@ -77,40 +78,6 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Dy = Component()
 
         # parameter based on pH 1.5
-        # TODO add surrogate model/equation
-        self.split = Var(
-            self.component_list,
-            units=units.kg / units.kg,
-            initialize={
-                "H2O": 1e-20,
-                "Sc": 0.3161,
-                "Y": 0.7446,
-                "La": 0.5151,
-                "Ce": 0.6807,
-                "Pr": 0.78,
-                "Nd": 0.8155,
-                "Sm": 0.8735,
-                "Gd": 0.8801,
-                "Dy": 0.8716,
-                "Al": 0.009,
-                "Ca": 0.0001,
-                "Fe": 0.0244,
-                "H": 1e-20,
-                "Cl": 1e-20,
-                "HSO4": 1e-20,
-                "SO4": 1e-20,
-            },
-            bounds=(1e-30, 1),
-        )
-
-        self.acid_flow = Var(
-            units=units.dimensionless,
-            initialize=6.4,
-            bounds=(1e-6, 100),
-        )
-
-        # parameter based on pH 1.5
-        # TODO add surrogate model/equation
         self.E_D = Param(
             self.component_list,
             units=units.dimensionless,
@@ -136,7 +103,6 @@ class AqueousParameterData(PhysicalParameterBlock):
         )
 
         # parameter based on pH 1.5
-        # TODO add surrogate model/equation
         self.N_D = Param(
             self.component_list,
             units=units.dimensionless,
@@ -182,6 +148,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Cl": 35.453e-3,
                 "HSO4": 97.064e-3,
                 "SO4": 96.056e-3,
+                "H2C2O4":90.03e-3,
             },
         )
 
@@ -203,24 +170,8 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Cl",
                 "HSO4",
                 "SO4",
+                "H2C2O4",
                 "H2O",
-            ]
-        )
-
-        self.split_elements = Set(
-            initialize=[
-                "Al",
-                # "Ca",
-                "Fe",
-                "Sc",
-                "Y",
-                "La",
-                "Ce",
-                "Pr",
-                "Nd",
-                "Sm",
-                "Gd",
-                "Dy",
             ]
         )
 
@@ -314,13 +265,17 @@ class AqueousStateBlockkData(StateBlockData):
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)
         def flow_mol_constraint(b, j):
-            return (
-                units.convert(
-                    b.flow_vol * b.conc_mass_comp[j] / b.params.mw[j],
-                    to_units=units.mol / units.hour,
+            if j == "H2O":
+                # Assume constant density of 1 kg/L
+                return self.flow_vol * self.params.dens_mass / self.params.mw[j] == b.flow_mol_comp[j]
+            else:
+                return (
+                    units.convert(
+                        b.flow_vol * b.conc_mass_comp[j] / b.params.mw[j],
+                        to_units=units.mol / units.hour,
+                    )
+                    == b.flow_mol_comp[j]
                 )
-                == b.flow_mol_comp[j]
-            )
 
         iscale.set_scaling_factor(self.flow_vol, 1e-2)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
@@ -341,7 +296,7 @@ class AqueousStateBlockkData(StateBlockData):
                 self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
                 to_units=units.mol / units.hour,
             )
-
+                
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar
 

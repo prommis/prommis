@@ -155,8 +155,8 @@ def test_build(model):
     assert isinstance(model.fs.roaster.deltaP, Var)
     assert isinstance(model.fs.roaster.flow_mol_outlet_eqn, Constraint)
     assert len(model.fs.roaster.flow_mol_outlet_eqn) == 4
-    assert number_variables(model.fs.roaster) == 167
-    assert number_total_constraints(model.fs.roaster) == 115
+    assert number_variables(model.fs.roaster) == 170
+    assert number_total_constraints(model.fs.roaster) == 117
     assert number_unused_variables(model.fs.roaster) == 1
     assert_units_consistent(model.fs.roaster)
 

@@ -42,6 +42,18 @@ solved by a surrogate or a model equation.
 
 """
 
+from pyomo.common.config import Bool, ConfigDict, ConfigValue
+
+from pyomo.environ import (
+    Var,
+    Block,
+    log,
+    NonNegativeReals,
+    units as pyunits,
+)
+
+from pyomo.network import Port
+
 # Import IDAES cores
 from idaes.core import (
     declare_process_block_class,
@@ -54,18 +66,6 @@ from idaes.core import (
 )
 from idaes.core.util.config import is_physical_parameter_block
 import idaes.core.util.scaling as iscale
-
-from pyomo.common.config import Bool, ConfigDict, ConfigValue
-
-from pyomo.environ import (
-    Var,
-    Block,
-    log,
-    NonNegativeReals,
-    units as pyunits,
-)
-
-from pyomo.network import Port
 
 from idaes.models.unit_models.mscontactor import MSContactor
 from idaes.core.initialization import ModularInitializerBase

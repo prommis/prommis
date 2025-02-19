@@ -120,7 +120,7 @@ Solvent extraction rougher load recycle split fraction                0.9       
 Solvent extraction rougher scrub recycle split fraction               0.9          :math:`\text{dimensionless}`
 Solvent extraction rougher organic recycle split fraction             0.9          :math:`\text{dimensionless}`
 Solvent extraction cleaner organic recycle split fraction             0.9          :math:`\text{dimensionless}`
-Precipitator solid-liquid separator liquid recovery fraction          0.7          :math:`\text{dimensionless}`
+Precipitator solid-liquid separator liquid recovery fraction          0.95          :math:`\text{dimensionless}`
 Precipitator solid-liquid separator liquid recycle split fraction     0.9          :math:`\text{dimensionless}`
 ===================================================================== ============ ============================
 

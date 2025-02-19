@@ -120,7 +120,7 @@ class SolventExtractionInitializer(ModularInitializerBase):
 
         """
 
-        model.mscontactor.material_transfer_term.fix(1e-8)
+        model.mscontactor.material_transfer_term.fix(1e-10)
 
         msc_init = self.get_submodel_initializer(model.mscontactor)
         msc_init.initialize(model.mscontactor)

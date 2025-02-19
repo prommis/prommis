@@ -186,6 +186,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
     get_prop,
 )
+from idaes.core.scaling.scaling_base import ScalerBase
 import idaes.logger as idaeslog
 
 from prommis.leaching.leach_train import LeachingTrain
@@ -959,364 +960,15 @@ def set_scaling(m):
     # Scaling
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
-    aqueous_component_set = [
-        "H2O",
-        "H",
-        "HSO4",
-        "SO4",
-        "Cl",
-        "Sc",
-        "Y",
-        "La",
-        "Ce",
-        "Pr",
-        "Nd",
-        "Sm",
-        "Gd",
-        "Dy",
-        "Al",
-        "Ca",
-        "Fe",
-    ]
+    sb = ScalerBase()
 
-    organic_component_set = [
-        "Sc",
-        "Y",
-        "La",
-        "Ce",
-        "Pr",
-        "Nd",
-        "Sm",
-        "Gd",
-        "Dy",
-        "Al",
-        "Ca",
-        "Fe",
-    ]
-
-    for component in aqueous_component_set:
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_liquid_feed.properties[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep1.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep1.split.recovered_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep1.split.retained_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_filter_cake_liquid.properties[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_mixer.load_recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_mixer.scrub_recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.leach_mixer.feed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach_mixer.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_scrub.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.aqueous[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.aqueous[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[m.fs.acid_feed1.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_scrub.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[m.fs.acid_feed2.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.aqueous[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.aqueous[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.aqueous[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_sx_mixer.leach_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_sx_mixer.cleaner_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_sx_mixer.mixed_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep2.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep2.split.retained_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep2.split.recovered_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.load_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.load_sep.recycle_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.load_sep.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.scrub_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.scrub_sep.recycle_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.scrub_sep.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.precip_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.precip_sep.recycle_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[m.fs.precip_sep.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.precip_purge.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.precip_sx_mixer.precip_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.precip_sx_mixer.rougher_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.precip_sx_mixer.mixed_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.acid_feed3.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.precip_purge.properties[0].conc_mol_comp[component]] = 1
-        m.scaling_factor[
-            m.fs.precipitator.cv_aqueous.properties_in[0].conc_mol_comp[component]
-        ] = 1
-        m.scaling_factor[
-            m.fs.precipitator.cv_aqueous.properties_out[0].conc_mol_comp[component]
-        ] = 1
-
-    for component in organic_component_set:
-        m.scaling_factor[
-            m.fs.rougher_org_make_up.properties[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.organic[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.organic[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_scrub.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.organic[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_mixer.make_up_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_mixer.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.rougher_mixer.mixed_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[m.fs.rougher_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.rougher_sep.recycle_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[m.fs.rougher_sep.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_mixer.make_up_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_mixer.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.rougher_mixer.mixed_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[
-            m.fs.sc_circuit_purge.properties[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.cleaner_mixer.make_up_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.cleaner_mixer.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.cleaner_mixer.mixed_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[
-            m.fs.sc_circuit_purge.properties[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.organic[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.organic[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.cleaner_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.cleaner_sep.recycle_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[m.fs.cleaner_sep.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.cleaner_org_make_up.properties[0].conc_mol_comp[component]
-        ] = 1e5
-
-        m.scaling_factor[m.fs.cleaner_purge.properties[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.organic[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.organic[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-
-    m.scaling_factor[m.fs.solex_cleaner_load.mscontactor.aqueous[0, 1].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.solex_cleaner_load.mscontactor.organic[0, 1].flow_vol] = 1e-2
-
-    m.scaling_factor[m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 1].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 2].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 3].flow_vol] = 1e-2
-    m.scaling_factor[
-        m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].flow_vol
-    ] = 1e-2
-    m.scaling_factor[m.fs.solex_cleaner_strip.mscontactor.organic[0, 1].flow_vol] = 1e-2
-
-    m.scaling_factor[m.fs.sl_sep2.solid_state[0].temperature] = 1e-2
-    m.scaling_factor[m.fs.sl_sep2.liquid_inlet_state[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.sl_sep2.split.recovered_state[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.sl_sep2.split.retained_state[0].flow_vol] = 1e-2
-
-    m.scaling_factor[m.fs.precip_sep.mixed_state[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.precip_sep.recycle_state[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.precip_sep.purge_state[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.precip_purge.properties[0].flow_vol] = 1e-2
-
-    m.scaling_factor[m.fs.precipitator.cv_precipitate[0].temperature] = 1e2
-
-    m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol] = 1e-2
-
-    m.scaling_factor[m.fs.roaster.gas_in[0].flow_mol] = 1e-3
-    m.scaling_factor[m.fs.roaster.gas_in[0].flow_mol_phase["Vap"]] = 1e-3
-    m.scaling_factor[m.fs.roaster.gas_in[0].temperature] = 1e-2
-    m.scaling_factor[m.fs.roaster.gas_in[0].pressure] = 1e-5
-    m.scaling_factor[m.fs.roaster.gas_out[0].flow_mol_phase["Vap"]] = 1e-3
-    m.scaling_factor[m.fs.roaster.gas_out[0].flow_mol] = 1e-3
-    m.scaling_factor[m.fs.roaster.gas_out[0].temperature] = 1e-2
-    m.scaling_factor[m.fs.roaster.gas_out[0].pressure] = 1e-5
-    m.scaling_factor[m.fs.roaster.solid_in[0].temperature] = 1e-2
+    for var in m.fs.component_data_objects(Var, descend_into=True):
+        if "temperature" in var.name:
+            sb.set_variable_scaling_factor(var, 1e-2)
+        if "pressure" in var.name:
+            sb.set_variable_scaling_factor(var, 1e-5)
+        if "flow_mol" in var.name:
+            sb.set_variable_scaling_factor(var, 1e-3)
 
     return m
 
@@ -1472,8 +1124,7 @@ def set_operating_conditions(m):
     m.fs.cleaner_sep.split_fraction[:, "recycle"].fix(0.9)
 
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
-    # TODO: Set sl_sep2 recovery to 0.95 and resolve resultant initialization issues
-    m.fs.sl_sep2.liquid_recovery.fix(0.88)
+    m.fs.sl_sep2.liquid_recovery.fix(0.95)
 
     m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
     m.fs.properties_aq.acid_flow.fix(6.4)
@@ -1702,6 +1353,7 @@ def initialize_system(m):
     sx_units = [
         m.fs.solex_rougher_load,
         m.fs.solex_rougher_scrub,
+        m.fs.solex_rougher_strip,
         m.fs.solex_cleaner_load,
         m.fs.solex_cleaner_strip,
     ]

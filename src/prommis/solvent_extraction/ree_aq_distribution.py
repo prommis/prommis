@@ -56,6 +56,7 @@ class REESolExAqParameterData(PhysicalParameterBlock):
         self.H = Component()
         self.SO4 = Component()
         self.HSO4 = Component()
+        self.H2C2O4 = Component()
 
         # Contaminants
         self.Al = Component()
@@ -79,6 +80,7 @@ class REESolExAqParameterData(PhysicalParameterBlock):
                 "H",
                 "SO4",
                 "HSO4",
+                "H2C2O4",
                 "Al",
                 "Ca",
                 "Fe",
@@ -103,6 +105,7 @@ class REESolExAqParameterData(PhysicalParameterBlock):
                 "H": 1.008e-3,
                 "SO4": 96.06e-3,
                 "HSO4": 97.068e-3,
+                "H2C2O4": 90.03e-3,
                 "Sc": 44.946e-3,
                 "Y": 88.905e-3,
                 "La": 138.905e-3,

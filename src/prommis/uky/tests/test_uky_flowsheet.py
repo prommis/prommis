@@ -115,8 +115,9 @@ def test_build_flowsheet(system_frame):
     # Precipitation property packages and unit models
     assert isinstance(model.fs.properties_aq, AqueousParameter)
     assert isinstance(model.fs.properties_solid, PrecipitateParameters)
+    assert isinstance(model.fs.precip_rxns, OxalatePrecipitationReactions)
 
-    assert isinstance(model.fs.precipitator, Precipitator)
+    assert isinstance(model.fs.precipitator, OxalatePrecipitator)
     assert isinstance(model.fs.sl_sep2, SLSeparator)
     assert isinstance(model.fs.precip_sx_mixer, Mixer)
     assert isinstance(model.fs.precip_purge, Product)

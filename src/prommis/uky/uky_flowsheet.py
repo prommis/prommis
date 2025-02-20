@@ -188,6 +188,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 )
 from idaes.core.scaling.scaling_base import ScalerBase
 import idaes.logger as idaeslog
+from idaes.core.util import DiagnosticsToolbox
 
 from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
@@ -196,7 +197,10 @@ from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
-from prommis.precipitate.precipitator import OxalatePrecipitator, OxalatePrecipitatorInitializer
+from prommis.precipitate.precipitator import (
+    OxalatePrecipitator,
+    OxalatePrecipitatorInitializer,
+)
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import (
@@ -204,7 +208,6 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
-from idaes.core.util import DiagnosticsToolbox
 
 _log = idaeslog.getLogger(__name__)
 
@@ -224,6 +227,7 @@ def main():
     dt = DiagnosticsToolbox(m)
     print("---Structural Issues---")
     dt.report_structural_issues()
+    dt.display_underconstrained_set()
 
     set_scaling(m)
 
@@ -501,7 +505,7 @@ def build():
         reaction_package=m.fs.precip_rxns,
     )
 
-    m.fs.oxalic_acid_feed = Feed(property_package=m.fs.properties_aq)
+    m.fs.oxalic_acid_feed = Feed(property_package=m.fs.leach_soln)
 
     m.fs.sx_oxalic_mixer = Mixer(
         property_package=m.fs.leach_soln,
@@ -687,10 +691,6 @@ def build():
         source=m.fs.sx_oxalic_mixer.outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )
-    # m.fs.sx_cleaner_strip_aq_outlet = Arc(
-    #     source=m.fs.solex_cleaner_strip.aqueous_outlet,
-    #     destination=m.fs.precipitator.aqueous_inlet,
-    # )
     m.fs.precip_solid_outlet = Arc(
         source=m.fs.precipitator.precipitate_outlet,
         destination=m.fs.sl_sep2.solid_inlet,
@@ -1192,7 +1192,7 @@ def set_operating_conditions(m):
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "Dy"].fix(eps)
 
     m.fs.precipitator.precipitate_outlet.temperature.fix(348.15 * units.K)
-    m.fs.precipitator.hydraulic_retention_time[0.0].fix(2)
+    m.fs.precipitator.hydraulic_retention_time[0].fix(2)
 
     m.fs.precip_sep.split_fraction[:, "recycle"].fix(0.9)
 
@@ -1416,6 +1416,7 @@ def initialize_system(m):
         m.fs.precip_sx_mixer,
         m.fs.cleaner_mixer,
         m.fs.rougher_mixer,
+        m.fs.sx_oxalic_mixer,
     ]
 
     initializer_sx = SolventExtractionInitializer()

@@ -195,7 +195,8 @@ from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-from prommis.precipitate.precipitator import Precipitator
+from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
+from prommis.precipitate.precipitator import OxalatePrecipitator, OxalatePrecipitatorInitializer
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import (
@@ -203,6 +204,7 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
+from idaes.core.util import DiagnosticsToolbox
 
 _log = idaeslog.getLogger(__name__)
 
@@ -218,6 +220,10 @@ def main():
     set_partition_coefficients(m)
 
     set_operating_conditions(m)
+
+    dt = DiagnosticsToolbox(m)
+    print("---Structural Issues---")
+    dt.report_structural_issues()
 
     set_scaling(m)
 
@@ -474,14 +480,36 @@ def build():
     m.fs.cleaner_purge = Product(property_package=m.fs.prop_o)
 
     # --------------------------------------------------------------------------------------------------------------
-    # Precipitation property and unit models
+    # Precipitation reaction, property and unit models
 
     m.fs.properties_aq = AqueousParameter()
     m.fs.properties_solid = PrecipitateParameters()
+    m.fs.precip_rxns = OxalatePrecipitationReactions()
 
-    m.fs.precipitator = Precipitator(
-        property_package_aqueous=m.fs.properties_aq,
-        property_package_precipitate=m.fs.properties_solid,
+    m.fs.precipitator = OxalatePrecipitator(
+        number_of_tanks=1,
+        liquid_phase={
+            "property_package": m.fs.properties_aq,
+            "has_energy_balance": False,
+            "has_pressure_balance": False,
+        },
+        solid_phase={
+            "property_package": m.fs.properties_solid,
+            "has_energy_balance": False,
+            "has_pressure_balance": False,
+        },
+        reaction_package=m.fs.precip_rxns,
+    )
+
+    m.fs.oxalic_acid_feed = Feed(property_package=m.fs.properties_aq)
+
+    m.fs.sx_oxalic_mixer = Mixer(
+        property_package=m.fs.leach_soln,
+        num_inlets=2,
+        inlet_list=["cleaner", "oxalic_acid"],
+        material_balance_type=MaterialBalanceType.componentTotal,
+        energy_mixing_type=MixingType.none,
+        momentum_mixing_type=MomentumMixingType.none,
     )
 
     m.fs.sl_sep2 = SLSeparator(
@@ -649,8 +677,20 @@ def build():
     )
     m.fs.sx_cleaner_strip_aq_outlet = Arc(
         source=m.fs.solex_cleaner_strip.aqueous_outlet,
+        destination=m.fs.sx_oxalic_mixer.cleaner,
+    )
+    m.fs.oxalic_feed = Arc(
+        source=m.fs.oxalic_acid_feed.outlet,
+        destination=m.fs.sx_oxalic_mixer.oxalic_acid,
+    )
+    m.fs.precip_aq_feed = Arc(
+        source=m.fs.sx_oxalic_mixer.outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )
+    # m.fs.sx_cleaner_strip_aq_outlet = Arc(
+    #     source=m.fs.solex_cleaner_strip.aqueous_outlet,
+    #     destination=m.fs.precipitator.aqueous_inlet,
+    # )
     m.fs.precip_solid_outlet = Arc(
         source=m.fs.precipitator.precipitate_outlet,
         destination=m.fs.sl_sep2.solid_inlet,
@@ -1043,11 +1083,13 @@ def set_operating_conditions(m):
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Dy"].fix(eps)
 
+    # TODO: Simplify by fixing all conc_mass_comp to eps and fixing the ones that should change
     m.fs.acid_feed1.flow_vol.fix(0.09)
     m.fs.acid_feed1.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(10.36)
     m.fs.acid_feed1.conc_mass_comp[0, "SO4"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "HSO4"].fix(eps)
+    m.fs.acid_feed1.conc_mass_comp[0, "H2C2O4"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Cl"].fix(359.64)
     m.fs.acid_feed1.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Ca"].fix(eps)
@@ -1069,6 +1111,7 @@ def set_operating_conditions(m):
     )  # Arbitrarily choose 4x the dilute solution
     m.fs.acid_feed2.conc_mass_comp[0, "SO4"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "HSO4"].fix(eps)
+    m.fs.acid_feed2.conc_mass_comp[0, "H2C2O4"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Cl"].fix(359.64 * 4)
     m.fs.acid_feed2.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Ca"].fix(eps)
@@ -1092,6 +1135,7 @@ def set_operating_conditions(m):
     )  # Arbitrarily choose 4x the dilute solution
     m.fs.acid_feed3.conc_mass_comp[0, "SO4"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "HSO4"].fix(eps)
+    m.fs.acid_feed3.conc_mass_comp[0, "H2C2O4"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Cl"].fix(359.64 * 4)
     m.fs.acid_feed3.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Ca"].fix(eps)
@@ -1126,8 +1170,29 @@ def set_operating_conditions(m):
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
     m.fs.sl_sep2.liquid_recovery.fix(0.95)
 
-    m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
-    m.fs.properties_aq.acid_flow.fix(6.4)
+    # TODO: Are these oxalic acid feed conditions accurate?
+    m.fs.oxalic_acid_feed.flow_vol.fix(6.4)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2O"].fix(1000000)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "H"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "SO4"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "HSO4"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2C2O4"].fix(6400)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Cl"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Al"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Ca"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Fe"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Sc"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Y"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "La"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Ce"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Pr"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Nd"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Sm"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Gd"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Dy"].fix(eps)
+
+    m.fs.precipitator.precipitate_outlet.temperature.fix(348.15 * units.K)
+    m.fs.precipitator.hydraulic_retention_time[0.0].fix(2)
 
     m.fs.precip_sep.split_fraction[:, "recycle"].fix(0.9)
 
@@ -1175,11 +1240,11 @@ def set_operating_conditions(m):
     m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].conc_mass_comp
     m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].conc_mass_comp
 
-    m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol
-    m.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp
+    m.fs.precipitator.aqueous_outlet.flow_vol[0]
+    m.fs.precipitator.aqueous_outlet.conc_mass_comp
 
-    m.fs.precipitator.cv_precipitate[0].temperature
-    m.fs.precipitator.cv_precipitate[0].flow_mol_comp
+    m.fs.precipitator.precipitate_outlet.temperature[0]
+    m.fs.precipitator.precipitate_outlet.flow_mol_comp
 
 
 def initialize_system(m):
@@ -1218,6 +1283,7 @@ def initialize_system(m):
             (0, "H"): 20.06,
             (0, "H2O"): 1000000,
             (0, "HSO4"): 963.06,
+            (0, "H2C2O4"): 1e-8,
             (0, "Cl"): 1e-8,
             (0, "La"): 0.0037,
             (0, "Nd"): 1.81e-7,
@@ -1257,6 +1323,7 @@ def initialize_system(m):
             (0, "H"): 2,
             (0, "H2O"): 1000000,
             (0, "HSO4"): 900,
+            (0, "H2C2O4"): 1e-8,
             (0, "Cl"): 0.1,
             (0, "La"): 1,
             (0, "Nd"): 1,
@@ -1296,6 +1363,7 @@ def initialize_system(m):
             (0, "H"): 14,
             (0, "H2O"): 1000000,
             (0, "HSO4"): 1e-7,
+            (0, "H2C2O4"): 1e-8,
             (0, "Cl"): 1400,
             (0, "La"): 160,
             (0, "Nd"): 121,
@@ -1323,6 +1391,7 @@ def initialize_system(m):
         m.fs.acid_feed2,
         m.fs.acid_feed3,
         m.fs.cleaner_org_make_up,
+        m.fs.oxalic_acid_feed,
     ]
 
     initializer_product = ProductInitializer()
@@ -1358,6 +1427,11 @@ def initialize_system(m):
         m.fs.solex_cleaner_strip,
     ]
 
+    initializer_precip = OxalatePrecipitatorInitializer()
+    precip_units = [
+        m.fs.precipitator,
+    ]
+
     initializer_bt = BlockTriangularizationInitializer()
 
     def function(unit):
@@ -1376,6 +1450,9 @@ def initialize_system(m):
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
+        elif unit in precip_units:
+            _log.info(f"Initializing {unit}")
+            initializer_precip.initialize(unit)
         elif unit == m.fs.leach:
             _log.info(f"Initializing {unit}")
             # Fix feed states

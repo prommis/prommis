@@ -10,7 +10,7 @@ Initial property package for precipitate.
 Authors: Alejandro Garciadiego
 """
 
-from pyomo.environ import Param, Set, Var, units
+from pyomo.environ import Constraint, Param, Set, Var, units
 
 import idaes.core.util.scaling as iscale
 from idaes.core import (
@@ -216,9 +216,14 @@ class _AqueousStateBlock(StateBlock):
         # Fix state variables
         fix_state_vars(self)
 
+        # Deactivate inherent reactions
+        # for sbd in self.values():
+        #     if not sbd.config.defined_state:
+        #         sbd.h2o_concentration.deactivate()
+
 
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
-class AqueousStateBlockkData(StateBlockData):
+class AqueousStateBlockData(StateBlockData):
     """
     State block for aqueous solution generated in oxalate precipitator.
 
@@ -279,6 +284,12 @@ class AqueousStateBlockkData(StateBlockData):
                     )
                     == b.flow_mol_comp[j]
                 )
+
+        # if not self.config.defined_state:
+        #     # Concentration of H2O based on assumed density
+        #     self.h2o_concentration = Constraint(
+        #         expr=self.conc_mass_comp["H2O"] == 1e6 * units.mg / units.L
+        #     )
 
         iscale.set_scaling_factor(self.flow_vol, 1e-2)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)

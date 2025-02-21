@@ -227,6 +227,7 @@ def main():
     dt = DiagnosticsToolbox(m)
     print("---Structural Issues---")
     dt.report_structural_issues()
+    dt.display_underconstrained_set()
     dt.display_overconstrained_set()
 
     set_scaling(m)
@@ -505,6 +506,7 @@ def build():
         reaction_package=m.fs.precip_rxns,
     )
 
+    # TODO: Which property package should the unit models below use
     m.fs.oxalic_acid_feed = Feed(property_package=m.fs.leach_soln)
 
     m.fs.sx_oxalic_mixer = Mixer(
@@ -1444,15 +1446,28 @@ def initialize_system(m):
         elif unit in sep_units:
             _log.info(f"Initializing {unit}")
             initializer_sep.initialize(unit)
+        # TODO: Fix initialization issues
         elif unit in mix_units:
             _log.info(f"Initializing {unit}")
-            initializer_mix.initialize(unit)
+            try:
+                initializer_mix.initialize(unit)
+            except:
+                dt = DiagnosticsToolbox(m)
+                print("---Structural Issues after mixer initialization---")
+                dt.report_structural_issues()
+                dt.display_overconstrained_set()
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
         elif unit in precip_units:
             _log.info(f"Initializing {unit}")
-            initializer_precip.initialize(unit)
+            try:
+                initializer_precip.initialize(unit)
+            except:
+                dt = DiagnosticsToolbox(m)
+                print("---Structural Issues after precip initialization---")
+                dt.report_structural_issues()
+                dt.display_overconstrained_set()
         elif unit == m.fs.leach:
             _log.info(f"Initializing {unit}")
             # Fix feed states

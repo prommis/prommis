@@ -348,6 +348,17 @@ class OxalatePrecipitatorData(UnitModelBlockData):
                 == blk.mscontactor.liquid[t, r].conc_mass_comp["H2O"]
             )
 
+        # @self.Constraint(
+        #     self.flowsheet().time,
+        #     self.mscontactor.elements,
+        #     doc="water conservation equation2",
+        # )
+        # def water_constraint2(blk, t, r):
+        #     return (
+        #         blk.mscontactor.liquid_inlet_state[t].conc_mol_comp["H2O"]
+        #         == blk.mscontactor.liquid[t, r].conc_mol_comp["H2O"]
+        #     )
+
         @self.Constraint(
             self.flowsheet().time,
             self.config.solid_phase.property_package.component_list,

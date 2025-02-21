@@ -2255,9 +2255,8 @@ def add_costing(m):
     )
 
     # Precipitation costs
-    # 9.2 is UKy Rare Earth Element Precipitation - Polyethylene Tanks
     # 10.1 is UKy Oxalate Precipitation - Polyethylene Tanks
-    reep_pe_tanks_accounts = ["9.2", "10.1"]
+    reep_pe_tanks_accounts = ["10.1"]
     m.fs.reep_pe_tanks = UnitModelBlock()
     m.fs.reep_pe_tanks.capacity = Var(initialize=15.04, units=units.gal)
     m.fs.reep_pe_tanks.capacity.fix()
@@ -2274,9 +2273,8 @@ def add_costing(m):
         },
     )
 
-    # 9.3 is UKy Rare Earth Element Precipitation - Tank Mixer
     # 10.2 is UKy Oxalate Precipitation - Tank Mixer
-    reep_tank_mixer_accounts = ["9.3", "10.2"]
+    reep_tank_mixer_accounts = ["10.2"]
     m.fs.reep_tank_mixers = UnitModelBlock()
     m.fs.reep_tank_mixers.power = Var(initialize=0.61, units=units.hp)
     m.fs.reep_tank_mixers.power.fix()
@@ -2293,9 +2291,8 @@ def add_costing(m):
         },
     )
 
-    # 9.4 is UKy Rare Earth Element Precipitation - Process Pump
     # 10.3 is UKy Oxalate Precipitation - Process Pump
-    reep_pump_accounts = ["9.4", "10.3"]
+    reep_pump_accounts = ["10.3"]
     m.fs.reep_pump = UnitModelBlock()
     m.fs.reep_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2310,9 +2307,8 @@ def add_costing(m):
         },
     )
 
-    # 9.5 is UKy Rare Earth Element Precipitation - Filter Press
     # 10.4 is UKy Oxalate Precipitation - Filter Press
-    reep_filter_press_accounts = ["9.5", "10.4"]
+    reep_filter_press_accounts = ["10.4"]
     m.fs.reep_filter_press = UnitModelBlock()
     m.fs.reep_filter_press.volume = Var(initialize=0.405, units=units.ft**3)
     m.fs.reep_filter_press.volume.fix()
@@ -2329,9 +2325,8 @@ def add_costing(m):
         },
     )
 
-    # 9.8 is UKy Rare Earth Element Precipitation - Roaster
     # 10.5 is UKy Oxalate Precipitation - Roaster
-    reep_roaster_accounts = ["9.8", "10.5"]
+    reep_roaster_accounts = ["10.5"]
     m.fs.reep_roaster = UnitModelBlock()
     m.fs.reep_roaster.duty = Var(initialize=0.035, units=units.MBTU / units.hr)
     m.fs.reep_roaster.duty.fix()
@@ -2341,115 +2336,6 @@ def add_costing(m):
         costing_method_arguments={
             "cost_accounts": reep_roaster_accounts,
             "scaled_param": m.fs.reep_roaster.duty,
-            "source": 1,
-            "n_equip": 1,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # Roasting costs
-    # 3.1 is UKy Roasting - Storage Bins
-    R_storage_bins_accounts = ["3.1"]
-    m.fs.R_storage_bins = UnitModelBlock()
-    m.fs.R_storage_bins.capacity = Var(initialize=10.0, units=units.ton)
-    m.fs.R_storage_bins.capacity.fix()
-    m.fs.R_storage_bins.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_storage_bins_accounts,
-            "scaled_param": m.fs.R_storage_bins.capacity,
-            "source": 1,
-            "n_equip": 2,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 3.2 is UKy Roasting - Conveyors
-    R_conveyors_accounts = ["3.2"]
-    m.fs.R_conveyors = UnitModelBlock()
-    m.fs.R_conveyors.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_conveyors_accounts,
-            "scaled_param": m.fs.roaster.flow_mass_product[0],
-            "source": 1,
-            "n_equip": 1,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 3.3 is UKy Roasting - Roaster
-    R_roaster_accounts = ["3.3"]
-    m.fs.R_roaster = UnitModelBlock()
-    m.fs.R_roaster.duty = Var(initialize=73.7, units=units.MBTU / units.hr)
-    m.fs.R_roaster.duty.fix()
-    m.fs.R_roaster.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_roaster_accounts,
-            "scaled_param": m.fs.R_roaster.duty,
-            "source": 1,
-            "n_equip": 1,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 3.4 is UKy Roasting - Gas Scrubber
-    R_gas_scrubber_accounts = ["3.4"]
-    m.fs.R_gas_scrubber = UnitModelBlock()
-    m.fs.R_gas_scrubber.gas_rate = Var(initialize=11.500, units=units.ft**3 / units.min)
-    m.fs.R_gas_scrubber.gas_rate.fix()
-    m.fs.R_gas_scrubber.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_gas_scrubber_accounts,
-            "scaled_param": m.fs.R_gas_scrubber.gas_rate,
-            "source": 1,
-            "n_equip": 1,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 3.5 is UKy Roasting - Spray Chamber Quencher (7000-60000 ft**3/min)
-    R_spray_chamber_quencher_accounts = ["3.5"]
-    m.fs.R_spray_chamber_quencher = UnitModelBlock()
-    m.fs.R_spray_chamber_quencher.gas_rate = Var(
-        initialize=11.500, units=units.ft**3 / units.min
-    )
-    m.fs.R_spray_chamber_quencher.gas_rate.fix()
-    m.fs.R_spray_chamber_quencher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_spray_chamber_quencher_accounts,
-            "scaled_param": m.fs.R_spray_chamber_quencher.gas_rate,
-            "source": 1,
-            "n_equip": 3,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 3.7 is UKy Roasting - Chiller
-    R_chiller_accounts = ["3.7"]
-    m.fs.R_chiller = UnitModelBlock()
-    m.fs.R_chiller.duty = Var(initialize=13.1, units=units.MBTU / units.hr)
-    m.fs.R_chiller.duty.fix()
-    m.fs.R_chiller.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_chiller_accounts,
-            "scaled_param": m.fs.R_chiller.duty,
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,

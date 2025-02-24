@@ -35,7 +35,6 @@ from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
 from pyomo.environ import (
     ConcreteModel,
-    Constraint,
     Expression,
     Param,
     Reference,

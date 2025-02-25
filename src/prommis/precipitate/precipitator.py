@@ -115,26 +115,16 @@ class OxalatePrecipitatorInitializer(ModularInitializerBase):
         """
         # Initialize MSContactor
         model.mscontactor.heterogeneous_reaction_extent.fix()
-        # model.mscontactor.liquid_heterogeneous_reactions_generation.fix()
-        # model.mscontactor.solid_heterogeneous_reactions_generation.fix()
 
         msc_init = self.get_submodel_initializer(model.mscontactor)
         msc_init.initialize(model.mscontactor)
 
         model.mscontactor.heterogeneous_reaction_extent.unfix()
-        # model.mscontactor.liquid_heterogeneous_reactions_generation.unfix()
-        # model.mscontactor.solid_heterogeneous_reactions_generation.unfix()
 
         solver = self._get_solver()
         results = solver.solve(model)
 
         return results
-
-        # msc_init = model.mscontactor.default_initializer(
-        #     ssc_solver_options=self.config.ssc_solver_options,
-        #     calculate_variable_options=self.config.calculate_variable_options,
-        # )
-        # return msc_init.initialize(model.mscontactor)
 
 
 StreamCONFIG = ConfigDict()

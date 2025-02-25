@@ -33,14 +33,7 @@ from pyomo.common.config import ConfigValue, ListOf
 from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
-from pyomo.environ import (
-    ConcreteModel,
-    Expression,
-    Param,
-    Reference,
-    Var,
-    log10,
-)
+from pyomo.environ import ConcreteModel, Expression, Param, Reference, Var, log10
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
@@ -453,7 +446,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             mineral_depletion_percentage: tax deduction percentage for mineral depletion,
                 defaults to 14% as reported in the UKy report.
             production_incentive_percentage: tax deduction percentage for producing critical minerals,
-                defaults to 10% of total production cost.
+                defaults to 10% of total production cost (excludes cost of feedstock).
             royalty_charge_percentage_of_revenue: Percentage of revenue charged as royalties;
                 defaults to 6.5% as reported in the UKy report.
             transport_cost_per_ton_product: Expression, Var or Param to use for transport costs
@@ -1238,9 +1231,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                                     self.annualized_cost / pyunits.year
                                     + self.total_fixed_OM_cost
                                     + self.total_variable_OM_cost[0]
-                                    + self.net_tax_owed
-                                    if consider_taxes
-                                    else 0 * CE_index_units / pyunits.year
+                                    + (
+                                        self.net_tax_owed
+                                        if consider_taxes
+                                        else 0 * CE_index_units / pyunits.year
+                                    )
                                 )
                                 / (self.recovery_rate_per_year * recovery_units_factor),
                                 to_units=getattr(pyunits, "USD_" + CE_index_year)
@@ -1284,7 +1279,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         )
 
             if calculate_NPV:
-                self.calculate_NPV(fixed_OM, variable_OM)
+                self.calculate_NPV(fixed_OM, variable_OM, consider_taxes)
 
     @staticmethod
     def initialize_build(*args, **kwargs):
@@ -1447,9 +1442,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             var_dict["Total Other Fixed Costs"] = value(self.other_fixed_costs)
 
         if hasattr(self, "variable_operating_costs"):
-            var_dict["Total Variable Power Cost"] = value(
-                self.variable_operating_costs[0, "power"]
-            )
+            if (0, "power") in self.variable_operating_costs.id_index_map().values():
+                var_dict["Total Variable Power Cost"] = value(
+                    self.variable_operating_costs[0, "power"]
+                )
 
             if hasattr(self, "additional_waste_cost"):
                 var_dict["Total Variable Waste Cost"] = value(
@@ -1495,6 +1491,23 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         if hasattr(self, "npv"):
             var_dict["Net Present Value"] = value(self.npv)
+
+        if hasattr(self, "royalty_charge"):
+            var_dict["Royalty Charge"] = value(self.royalty_charge)
+
+        if hasattr(self, "mineral_depletion_charge"):
+            var_dict["Mineral Depletion Charge"] = value(self.mineral_depletion_charge)
+
+        if hasattr(self, "production_incentive_charge"):
+            var_dict["Production Incentive Charge"] = value(
+                self.production_incentive_charge
+            )
+
+        if hasattr(self, "income_tax"):
+            var_dict["Income Tax"] = value(self.income_tax)
+
+        if hasattr(self, "net_tax_owed"):
+            var_dict["Net Tax Owed"] = value(self.net_tax_owed)
 
         report_dir = {}
         report_dir["Value"] = {}
@@ -3112,7 +3125,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # method has finished building components
         b.components_already_built = True
 
-    def calculate_NPV(b, fixed_OM, variable_OM):
+    def calculate_NPV(b, fixed_OM, variable_OM, consider_taxes=False):
         """
         Equations for cash flow expressions derived from the textbook
         Engineering Economy: Applying Theory to Practice, 3rd Ed. by Ted. G. Eschenbach.
@@ -3308,6 +3321,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             doc="Present value of total lifetime sales revenue; positive cash flow",
             units=b.cost_units,
         )
+
+        if consider_taxes:
+            b.pv_taxes = Var(
+                initialize=-b.net_tax_owed * pyunits.year * b.config.plant_lifetime,
+                bounds=(None, 0),
+                doc="Present value of total lifetime tax owed; negative cash flow",
+                units=b.cost_units,
+            )
 
         b.npv = Var(
             initialize=(-b.CAPEX + (b.REVENUE - b.OPEX) * b.config.plant_lifetime),
@@ -3579,6 +3600,42 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 to_units=c.cost_units,
             )
 
+        if consider_taxes:
+
+            @b.Constraint()
+            def pv_taxes_constraint(c):
+                # Taxes start after the capital expenditure period, so we need to account for a delay
+                # PV_taxes = net_tax_owed * [ P/A(r, 0, Operating_end_year) - P/A(r, 0, CAPEX_end_year) ]
+
+                return c.pv_taxes == -pyunits.convert(
+                    c.net_tax_owed
+                    * pyunits.year
+                    * (
+                        series_present_worth_factor(
+                            pyunits.convert(
+                                c.discount_percentage, to_units=pyunits.dimensionless
+                            ),
+                            pyunits.convert(
+                                0,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            c.plant_lifetime / pyunits.year
+                            + len(c.config.capital_expenditure_percentages),
+                        )
+                        - series_present_worth_factor(
+                            pyunits.convert(
+                                c.discount_percentage, to_units=pyunits.dimensionless
+                            ),
+                            pyunits.convert(
+                                0,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            len(c.config.capital_expenditure_percentages),
+                        )
+                    ),
+                    to_units=c.cost_units,
+                )
+
         @b.Constraint()
         def npv_constraint(c):
 
@@ -3586,7 +3643,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 c.pv_revenue
                 + c.pv_capital_cost
                 + c.pv_loan_interest
-                + c.pv_operating_cost,
+                + c.pv_operating_cost
+                + (c.pv_taxes if consider_taxes else 0 * c.cost_units),
                 to_units=c.cost_units,
             )
 

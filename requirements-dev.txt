@@ -6,5 +6,6 @@ pytest-cov
 jupyter-book==1.0.*
 isort
 nbmake==1.4.6
+sphinx_design==0.6.0
 
 --editable .[watertap,flowsheet-processor]

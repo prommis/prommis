@@ -1,3 +1,15 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+"""
+Aqueous component property package for optimization-based precipitator model.
+
+Authors: Chris Laliwala
+"""
+
 from pyomo.environ import (
     Constraint,
     Var,
@@ -48,13 +60,20 @@ _log = idaeslog.getLogger(__name__)
 class AqueousParameterData(PhysicalParameterBlock):
     CONFIG = PhysicalParameterBlock.CONFIG()
     CONFIG.declare(
-        "aq_comp_list", ConfigValue(domain=list, description="List of aqueous components in process")
+        "aq_comp_list",
+        ConfigValue(domain=list, description="List of aqueous components in process"),
     )
     CONFIG.declare(
-        "eq_rxn_logkeq_dict", ConfigValue(domain=dict, description="Dictionary of equilibrium reaction constants")
+        "eq_rxn_logkeq_dict",
+        ConfigValue(
+            domain=dict, description="Dictionary of equilibrium reaction constants"
+        ),
     )
     CONFIG.declare(
-        "eq_rxn_stoich_dict", ConfigValue(domain=dict, description="Dictionary of equilibrium reaction stoichiometry")
+        "eq_rxn_stoich_dict",
+        ConfigValue(
+            domain=dict, description="Dictionary of equilibrium reaction stoichiometry"
+        ),
     )
 
     def build(self):
@@ -69,8 +88,10 @@ class AqueousParameterData(PhysicalParameterBlock):
 
         ## equilibrium reaction parameters
         # equilibrium reaction index
-        self.eq_rxn_set = Set(initialize=list(set(key for key in self.config.eq_rxn_logkeq_dict.keys())))
-        
+        self.eq_rxn_set = Set(
+            initialize=list(set(key for key in self.config.eq_rxn_logkeq_dict.keys()))
+        )
+
         # stoichiometry for each equilibrium reaction
         self.eq_rxn_stoich_dict = self.config.eq_rxn_stoich_dict
 
@@ -78,25 +99,24 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.eq_rxn_logkeq_dict = self.config.eq_rxn_logkeq_dict
 
         self._state_block_class = AqueousStateBlock
-        
 
-        @classmethod
-        def define_metadata(cls, obj):
-            """Define properties supported and units."""
-            obj.add_properties(
-                {
-                    "molality_aq_comp": {"method": None},
-                }
-            )
-            obj.add_default_units(
-                {
+    @classmethod
+    def define_metadata(cls, obj):
+        """Define properties supported and units."""
+        obj.define_custom_properties(
+            {
+                "molality_aq_comp": {"method": None},
+            }
+        )
+        obj.add_default_units(
+            {
                 "time": pyunits.hour,
                 "length": pyunits.m,
                 "mass": pyunits.kg,
                 "amount": pyunits.mol,
                 "temperature": pyunits.K,
-                }
-            )
+            }
+        )
 
 
 class _AqueousStateBlock(StateBlock):
@@ -109,15 +129,15 @@ class _AqueousStateBlock(StateBlock):
         """
         # Fix state variables
         return fix_state_vars(self)
-    
+
 
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
 class AqueousStateBlockData(StateBlockData):
     def build(self):
-        super().build()
+        # super().build()
 
         self.molality_aq_comp = Var(
-            self.params.component_list,
+            self.component_list,
             units=pyunits.mol / pyunits.kg,
             initialize=1e-20,
             bounds=(1e-20, None),
@@ -130,4 +150,3 @@ class AqueousStateBlockData(StateBlockData):
         return {
             "molality_aq_comp": self.molality_aq_comp,
         }
-

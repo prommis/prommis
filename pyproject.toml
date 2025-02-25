@@ -108,6 +108,8 @@ extend-exclude = [
 [tool.typos.default.extend-words]
 # Ignore IDAES
 IDAES = "IDAES"
+# ignore equil
+equil = "equil"
 # Atomic elements
 Nd = "Nd"
 [tool.typos.default]

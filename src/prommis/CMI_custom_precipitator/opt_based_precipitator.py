@@ -11,7 +11,7 @@
 # for full copyright and license information.
 #################################################################################
 """
-Precipitator model
+Optimization-based precipitator model.
 """
 
 # Import Pyomo libraries
@@ -31,10 +31,11 @@ from idaes.core.util.config import (
     is_physical_parameter_block,
     is_reaction_parameter_block,
 )
+from idaes.core.solvers import get_solver
 
 import idaes.core.util.scaling as iscale
 
-_log = idaeslog.getLogger(__name__)
+from idaes.core.scaling import CustomScalerBase
 
 
 @declare_process_block_class("Precipitator")
@@ -135,31 +136,6 @@ constructed,
 **False** - exclude heat of reaction terms.}""",
         ),
     )
-    CONFIG.declare(
-        "reaction_package",
-        ConfigValue(
-            default=None,
-            domain=is_reaction_parameter_block,
-            description="Reaction package to use for control volume",
-            doc="""Reaction parameter object used to define reaction calculations,
-**default** - None.
-**Valid values:** {
-**None** - no reaction package,
-**ReactionParameterBlock** - a ReactionParameterBlock object.}""",
-        ),
-    )
-    CONFIG.declare(
-        "reaction_package_args",
-        ConfigBlock(
-            implicit=True,
-            description="Arguments to use for constructing reaction packages",
-            doc="""A ConfigBlock with arguments to be passed to a reaction block(s)
-and used when constructing these,
-**default** - None.
-**Valid values:** {
-see reaction package for documentation.}""",
-        ),
-    )
 
     def build(self):
         """Building model
@@ -200,14 +176,17 @@ see reaction package for documentation.}""",
 
         # Params
         # create a set containing all reaction logkeq values
-        self.merged_logkeq_dict = prop_aq.eq_rxn_logkeq_dict | prop_precip.eq_rxn_logkeq_dict
+        self.merged_logkeq_dict = (
+            prop_aq.eq_rxn_logkeq_dict | prop_precip.eq_rxn_logkeq_dict
+        )
         # create a set containing all reactions
         self.merged_rxns = self.merged_logkeq_dict.keys()
 
         # make a param of all the logkeq values (precipitation and aqueous equilibrium)
         self.log_k = pyo.Param(
             self.merged_logkeq_dict.keys(),
-            initialize=lambda m, key: self.merged_logkeq_dict[key], within=pyo.Reals
+            initialize=lambda m, key: self.merged_logkeq_dict[key],
+            within=pyo.Reals,
         )
 
         # variables
@@ -225,7 +204,6 @@ see reaction package for documentation.}""",
             units=pyo.units.dimensionless,
         )
 
-
         # constraints
         @self.Constraint(
             self.flowsheet().time,
@@ -239,7 +217,7 @@ see reaction package for documentation.}""",
                 * pyo.log10(blk.cv_aqueous.properties_out[t].molality_aq_comp[c])
                 for c in prop_aq.eq_rxn_stoich_dict[r]
             )
-        
+
         @self.Constraint(
             self.flowsheet().time,
             prop_precip.eq_rxn_set,
@@ -252,18 +230,20 @@ see reaction package for documentation.}""",
                 * pyo.log10(blk.cv_aqueous.properties_out[t].molality_aq_comp[c])
                 for c in prop_aq.eq_rxn_stoich_dict[r]
             )
-        
+
         # log(q) must be <= log(k) for precipitating reactions
         @self.Constraint(
             prop_precip.eq_rxn_set,
-            doc="log(q) must be less than or equal to log(k) for precipitating reactions"
+            doc="log(q) must be less than or equal to log(k) for precipitating reactions",
         )
         def precip_rxns_log_cons(blk, r):
             return blk.log_q[r] <= self.log_k[r]
 
         # mole balance on all aqueous components
         @self.Constraint(
-            self.flowsheet().time, prop_aq.component_list, doc="Aqueous Components Mole balance equations."
+            self.flowsheet().time,
+            prop_aq.component_list,
+            doc="Aqueous Components Mole balance equations.",
         )
         def aq_mole_balance_eqns(blk, t, comp):
             return blk.cv_aqueous.properties_out[t].molality_aq_comp[
@@ -272,94 +252,35 @@ see reaction package for documentation.}""",
                 prop_aq.eq_rxn_stoich_dict[r][comp] * blk.rxn_extent[r]
                 for r in self.merged_rxns
             )
-        
+
         # mole balance on all precipitate components
         @self.Constraint(
-            self.flowsheet().time, prop_precip.component_list, doc="Precipitate Components Mole balance equations."
+            self.flowsheet().time,
+            prop_precip.component_list,
+            doc="Precipitate Components Mole balance equations.",
         )
         def precip_mole_balance_eqns(blk, t, comp):
-            return blk.cv_precipitate.properties_out[t].molality_precip_comp[comp] == blk.cv_precipitate.properties_in[t].molality_precip_comp[comp] + sum(
-                prop_precip.eq_rxn_stoich_dict[r][comp] * blk.rxn_extent[r] for r in prop_precip.eq_rxn_set
-            ) 
-        
+            return blk.cv_precipitate.properties_out[t].molality_precip_comp[
+                comp
+            ] == blk.cv_precipitate.properties_in[t].molality_precip_comp[comp] + sum(
+                prop_precip.eq_rxn_stoich_dict[r][comp] * blk.rxn_extent[r]
+                for r in prop_precip.eq_rxn_set
+            )
+
         # objective function to minimize difference between log(k) and log(q)
         @self.Objective(
-            doc="objective function minimize sdifference between log(k) and log(q)"
+            doc="objective function minimize difference between log(k) and log(q)"
         )
         def min_logs(blk, r):
-            return sum((self.log_k[r] - blk.log_q[r])**2 for r in prop_precip.eq_rxn_set)
-        
-
-
-        def solve_unit(self):
-            """solves unit"""
-
-            solver_obj = pyo.SolverFactory('ipopt', options={"max_iter": 10000, "nlp_scaling_method": "user-scaling", "tol": 1e-8,})
-
-            results = solver_obj.solve(self, tee=True)
-
-            return results
-
-        def _add_scaling_parameters(self):
-            """Add some mutable parameters to the model to control scaling."""
-
-            self.scale_factor_eq_rxn_log_con = pyo.Param(
-                initialize=1e6,
-                mutable=True,
-                doc="Log equilibrium constraint scaling parameter"
+            return sum(
+                (self.log_k[r] - blk.log_q[r]) ** 2 for r in prop_precip.eq_rxn_set
             )
 
-            self.scale_factor_precip_eq_rxn_log_con = pyo.Param(
-                initialize=1e6,
-                mutable=True,
-                doc="Precipitate log equilibrium constraint scaling parameter"
-            )
+    def solve_unit(self):
+        """solves unit"""
 
-            self.scale_factor_aq_mol_bal = pyo.Param(
-                initialize=1e5,
-                mutable=True,
-                doc="aqueous component balance scaling parameter"
-            )
+        solver_obj = get_solver(solver="ipopt_v2", writer_config={"scale_model": True})
 
-            self.scale_factor_precip_mol_bal = pyo.Param(
-                initialize=1e5,
-                mutable=True,
-                doc="precipitate component balance scaling parameter"
-            )
+        results = solver_obj.solve(self, tee=True)
 
-        def calculate_scaling_factors(self):
-            
-            for t in self.flowsheet().time:
-                for comp in prop_aq.component_list:
-                    iscale.constraint_scaling_transform(
-                            self.aq_mol_balance_eqns[t, comp],
-                            pyo.value(self.scale_factor_aq_mol_bal),
-                            overwrite=True,
-                        )
-                    
-                for comp in prop_precip.component_list:
-                    iscale.constraint_scaling_transform(
-                            self.precip_mol_balance_eqns[t, comp],
-                            pyo.value(self.scale_factor_precip_mol_bal),
-                            overwrite=True,
-                        )
-
-                # for r in prop_aq.eq_rxn_set:
-                #     try:
-                #         iscale.constraint_scaling_transform(
-                #             self.log_k_equil_rxn_eqns[t, r],
-                #             pyo.value(self.scale_factor_precip_rxn_log_con),
-                #             overwrite=True,
-                #         )
-                #     except:
-                #         print('Error scaling log_k_equil_rxn_eqns')
-
-                # for r in prop_precip.eq_rxn_set:
-                #     try:
-                #         iscale.constraint_scaling_transform(
-                #             self.log_q_precip_equil_rxn_eqns[t, r],
-                #             pyo.value(self.scale_factor_precip_eq_rxn_log_con),
-                #             overwrite=True,
-                #         )
-                #     except:
-                #         print('Error scaling log_q_precip_equil_rxn_eqns')
+        return results

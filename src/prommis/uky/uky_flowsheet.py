@@ -963,8 +963,6 @@ def set_scaling(m):
     sb = ScalerBase()
 
     for var in m.fs.component_data_objects(Var, descend_into=True):
-        if "conc_mol_comp" in var.name:
-            sb.set_variable_scaling_factor(var, 1e5)
         if "temperature" in var.name:
             sb.set_variable_scaling_factor(var, 1e-2)
         if "pressure" in var.name:
@@ -1356,10 +1354,10 @@ def initialize_system(m):
     ]
 
     initializer_sx = SolventExtractionInitializer()
-    # TODO: Initialize m.fs.solex_rougher_strip with SolventExtractionInitializer
     sx_units = [
         m.fs.solex_rougher_load,
         m.fs.solex_rougher_scrub,
+        m.fs.solex_rougher_strip,
         m.fs.solex_cleaner_load,
         m.fs.solex_cleaner_strip,
     ]

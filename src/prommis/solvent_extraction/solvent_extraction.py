@@ -194,6 +194,10 @@ Stream_Config.declare(
 
 @declare_process_block_class("SolventExtraction")
 class SolventExtractionData(UnitModelBlockData):
+
+    # Set default initializer
+    default_initializer = SolventExtractionInitializer
+
     CONFIG = UnitModelBlockData.CONFIG()
 
     CONFIG.declare(

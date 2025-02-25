@@ -139,6 +139,7 @@ class LeachingTrainInitializer(ModularInitializerBase):
 
         return results
 
+
 StreamCONFIG = ConfigDict()
 StreamCONFIG.declare(
     "property_package",

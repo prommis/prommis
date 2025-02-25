@@ -144,7 +144,6 @@ from pyomo.environ import (
     Constraint,
     Expression,
     Param,
-    SolverFactory,
     Suffix,
     TransformationFactory,
     Var,

@@ -28,8 +28,8 @@ from pyomo.environ import (
     Param,
     TransformationFactory,
     Var,
+    value,
 )
-from pyomo.environ import value
 
 # IDAES packages
 from idaes.core.util.model_statistics import degrees_of_freedom

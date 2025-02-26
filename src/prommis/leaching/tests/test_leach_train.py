@@ -322,10 +322,12 @@ def test_build_ub(model_ub):
     assert isinstance(model_ub.fs.leach.volume, Var)
     assert len(model_ub.fs.leach.volume) == 1
     assert isinstance(
-        model_ub.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint, Constraint
+        model_ub.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint,
+        Constraint,
     )
     assert (
-        len(model_ub.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint) == 12
+        len(model_ub.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint)
+        == 12
     )
 
     assert number_variables(model_ub.fs.leach) == 197
@@ -527,10 +529,12 @@ def test_build_lb(model_lb):
     assert isinstance(model_lb.fs.leach.volume, Var)
     assert len(model_lb.fs.leach.volume) == 1
     assert isinstance(
-        model_lb.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint, Constraint
+        model_lb.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint,
+        Constraint,
     )
     assert (
-        len(model_lb.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint) == 12
+        len(model_lb.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint)
+        == 12
     )
 
     assert number_variables(model_lb.fs.leach) == 197

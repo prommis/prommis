@@ -11,10 +11,7 @@ Authors: Chris Laliwala
 """
 
 from pyomo.common.config import ConfigValue
-from pyomo.environ import (
-    Set,
-    Var,
-)
+from pyomo.environ import Set, Var
 from pyomo.environ import units as pyunits
 
 import idaes.logger as idaeslog
@@ -29,7 +26,6 @@ from idaes.core import (
     declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
-
 
 # Set up logger
 _log = idaeslog.getLogger(__name__)

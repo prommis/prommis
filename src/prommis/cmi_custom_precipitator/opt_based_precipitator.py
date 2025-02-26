@@ -40,7 +40,7 @@ Additional Model Information
 
 This precipitator model seeks to model aqeuous systems involving precipitation and dissolution reactions as chemical equilibrium problems.
 The approach taken here is to solve a system of nonlinear equations involving equilibrium constants (the law of mass action approach, LMA) [1]. 
-Instead of utilizing saturation indices heuristics commonly used by LMA softwares [1], this model formulates an optimization problem where the
+Instead of utilizing saturation indices heuristics commonly used by LMA software [1], this model formulates an optimization problem where the
 objective function is to minimize the square difference between the ion product, :math:`Q_{r,sp}`, defined over the actual concentration in solution,
 and the solubility constant, :math:`K_{r,sp}`, defined over the equilibrium concentration in solution,
 
@@ -72,13 +72,15 @@ The set of restrictions is completed with the inclusion of mass and concentratio
 where :math:`C_i^0` is the initial concentration of species :math:`i`, :math:`N_{rxn,i}` is the set of all reactions involving species :math:`i`, :math:`X_r`
 is the extent of reaction :math:`r`, :math:`I_{aq}` is the set of all aqueous species, :math:`m_i^0` is the initial amount of solid species :math:`i`, 
 :math:`V` is the volumetric flowrate of solvent, and :math:`I_{sp}` is the set of all precipitates.
+
+[1] Allan M.M. Leal, Dmitrii A. Kulik, William R. Smith, and Martin O. Saar. An overview of computational methods for chemical equilibrium and kinetic calculations for
+geochemical and reactive transport modeling. *Pure Appl. Chem.*, 89:597-643, 2017.
 """
 
 # Import Pyomo libraries
 import pyomo.environ as pyo
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 from pyomo.environ import units as pyunits
-
 
 # Import IDAES cores
 from idaes.core import (
@@ -88,9 +90,7 @@ from idaes.core import (
     useDefault,
 )
 from idaes.core.solvers import get_solver
-from idaes.core.util.config import (
-    is_physical_parameter_block,
-)
+from idaes.core.util.config import is_physical_parameter_block
 
 
 @declare_process_block_class("Precipitator")

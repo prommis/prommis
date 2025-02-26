@@ -77,7 +77,9 @@ is the extent of reaction :math:`r`, :math:`I_{aq}` is the set of all aqueous sp
 # Import Pyomo libraries
 import pyomo.environ as pyo
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
+from pyomo.environ import units as pyunits
 
+import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
 
 # Import IDAES cores
@@ -87,17 +89,12 @@ from idaes.core import (
     declare_process_block_class,
     useDefault,
 )
+from idaes.core.scaling import CustomScalerBase
+from idaes.core.solvers import get_solver
 from idaes.core.util.config import (
     is_physical_parameter_block,
     is_reaction_parameter_block,
 )
-from idaes.core.solvers import get_solver
-
-import idaes.core.util.scaling as iscale
-
-from idaes.core.scaling import CustomScalerBase
-
-from pyomo.environ import units as pyunits
 
 
 @declare_process_block_class("Precipitator")

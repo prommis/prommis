@@ -10,47 +10,50 @@ Aqueous component property package for optimization-based precipitator model.
 Authors: Chris Laliwala
 """
 
+from pyomo.common.config import ConfigValue
 from pyomo.environ import (
     Constraint,
-    Var,
-    Param,
-    Set,
     Expression,
-    Reals,
     NonNegativeReals,
+    Param,
+    Reals,
+    Set,
     Suffix,
+    Var,
 )
 from pyomo.environ import units as pyunits
-from pyomo.common.config import ConfigValue
+
+import idaes.core.util.scaling as iscale
+import idaes.logger as idaeslog
 
 # Import IDAES cores
 from idaes.core import (
-    declare_process_block_class,
-    Phase,
-    MaterialFlowBasis,
-    PhysicalParameterBlock,
-    StateBlockData,
-    StateBlock,
-    MaterialBalanceType,
     EnergyBalanceType,
+    MaterialBalanceType,
+    MaterialFlowBasis,
     MomentumBalanceType,
+    Phase,
+    PhysicalParameterBlock,
+    StateBlock,
+    StateBlockData,
+    declare_process_block_class,
 )
 from idaes.core.base.components import Component, Solute, Solvent
-from idaes.core.base.phases import LiquidPhase, SolidPhase, PhaseType as PT
+from idaes.core.base.phases import LiquidPhase
+from idaes.core.base.phases import PhaseType as PT
+from idaes.core.base.phases import SolidPhase
+from idaes.core.solvers import get_solver
+from idaes.core.util.exceptions import PropertyPackageError
 from idaes.core.util.initialization import (
     fix_state_vars,
     revert_state_vars,
     solve_indexed_blocks,
 )
+from idaes.core.util.misc import extract_data
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
     number_unfixed_variables,
 )
-from idaes.core.util.exceptions import PropertyPackageError
-from idaes.core.util.misc import extract_data
-import idaes.core.util.scaling as iscale
-import idaes.logger as idaeslog
-from idaes.core.solvers import get_solver
 
 # Set up logger
 _log = idaeslog.getLogger(__name__)

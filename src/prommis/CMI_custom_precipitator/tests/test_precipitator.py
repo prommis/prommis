@@ -20,16 +20,15 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
-from idaes.core.util.scaling import unscaled_variables_generator, set_scaling_factor
+from idaes.core.util.scaling import set_scaling_factor, unscaled_variables_generator
 
+import pytest
 
 from prommis.CMI_custom_precipitator import AqueousProperties as aq_thermo_prop_pack
 from prommis.CMI_custom_precipitator import (
     PrecipitateProperties as precip_thermo_prop_pack,
 )
 from prommis.CMI_custom_precipitator.opt_based_precipitator import Precipitator
-
-import pytest
 
 
 class TestPrec(object):

@@ -4,13 +4,13 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-from pyomo.environ import ConcreteModel, Constraint, Var
+from pyomo.environ import ConcreteModel, Var
 
 from idaes.core import FlowsheetBlock
 
 import pytest
 
-from prommis.CMI_custom_precipitator import AqueousProperties as aq_thermo_prop_pack
+from prommis.cmi_custom_precipitator import aqueous_properties as aq_thermo_prop_pack
 
 
 @pytest.mark.unit

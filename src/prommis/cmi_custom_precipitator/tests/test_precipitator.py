@@ -8,27 +8,22 @@ from pyomo.environ import ConcreteModel, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.initialization import (
-    BlockTriangularizationInitializer,
-    InitializationStatus,
-)
-from idaes.core.solvers import get_solver
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
     number_total_constraints,
     number_unused_variables,
     number_variables,
 )
-from idaes.core.util.scaling import set_scaling_factor, unscaled_variables_generator
+from idaes.core.util.scaling import set_scaling_factor
 
 import pytest
 
-from prommis.CMI_custom_precipitator import AqueousProperties as aq_thermo_prop_pack
-from prommis.CMI_custom_precipitator import (
-    PrecipitateProperties as precip_thermo_prop_pack,
+from prommis.cmi_custom_precipitator import aqueous_properties as aq_thermo_prop_pack
+from prommis.cmi_custom_precipitator import (
+    precipitate_properties as precip_thermo_prop_pack,
 )
-from prommis.CMI_custom_precipitator.opt_based_precipitator import Precipitator
+from prommis.cmi_custom_precipitator.opt_based_precipitator import Precipitator
 
 
 class TestPrec(object):

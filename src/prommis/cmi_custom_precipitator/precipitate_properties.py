@@ -11,10 +11,9 @@ Authors: Chris Laliwala
 """
 
 from pyomo.common.config import ConfigValue
-from pyomo.environ import Param, Set, Var
+from pyomo.environ import Set, Var
 from pyomo.environ import units as pyunits
 
-import idaes.core.util.scaling as iscale
 from idaes.core import (
     MaterialFlowBasis,
     Phase,

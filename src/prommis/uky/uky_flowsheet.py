@@ -208,6 +208,8 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
+import idaes.core.util.scaling as iscale
+from idaes.core.util.model_diagnostics import ipopt_solve_halt_on_error
 
 _log = idaeslog.getLogger(__name__)
 
@@ -258,6 +260,14 @@ def main():
         )
 
     results = scaling.propagate_solution(scaled_model, m)
+
+    print("---Numerical Issues---")
+    dt.report_numerical_issues()
+
+    badly_scaled_var_list = iscale.badly_scaled_var_generator(m, large=1e2, small=1e-2)
+    print("----------------   badly_scaled_var_list   ----------------")
+    for x in badly_scaled_var_list:
+        print(f"{x[0].name}\t{x[0].value}\tsf: {iscale.get_scaling_factor(x[0])}")
 
     display_results(m)
 
@@ -1172,6 +1182,7 @@ def set_operating_conditions(m):
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
     m.fs.sl_sep2.liquid_recovery.fix(0.95)
 
+    # TODO: Should REE conc be eps or 10? If 10, update recovery calculations
     m.fs.oxalic_acid_feed.flow_vol.fix(100)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "H"].fix(eps)
@@ -1179,18 +1190,18 @@ def set_operating_conditions(m):
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "HSO4"].fix(eps)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2C2O4"].fix(6400)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "Cl"].fix(eps)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Al"].fix(10)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Ca"].fix(10)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Fe"].fix(10)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Sc"].fix(10)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Y"].fix(10)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "La"].fix(10)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Ce"].fix(10)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Pr"].fix(10)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Nd"].fix(10)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Sm"].fix(10)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Gd"].fix(10)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Dy"].fix(10)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Al"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Ca"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Fe"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Sc"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Y"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "La"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Ce"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Pr"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Nd"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Sm"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Gd"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Dy"].fix(eps)
 
     m.fs.precipitator.precipitate_outlet.temperature.fix(348.15 * units.K)
     m.fs.precipitator.hydraulic_retention_time[0].fix(2)
@@ -1429,10 +1440,10 @@ def initialize_system(m):
         m.fs.solex_cleaner_strip,
     ]
 
-    initializer_precip = OxalatePrecipitatorInitializer()
-    precip_units = [
-        m.fs.precipitator,
-    ]
+    # initializer_precip = OxalatePrecipitatorInitializer()
+    # precip_units = [
+    #     m.fs.precipitator,
+    # ]
 
     initializer_bt = BlockTriangularizationInitializer()
 
@@ -1446,28 +1457,21 @@ def initialize_system(m):
         elif unit in sep_units:
             _log.info(f"Initializing {unit}")
             initializer_sep.initialize(unit)
-        # TODO: Fix initialization issues
         elif unit in mix_units:
             _log.info(f"Initializing {unit}")
-            try:
-                initializer_mix.initialize(unit)
-            except:
-                dt = DiagnosticsToolbox(m)
-                print("---Structural Issues after mixer initialization---")
-                dt.report_structural_issues()
-                dt.display_overconstrained_set()
+            initializer_mix.initialize(unit)
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
-        elif unit in precip_units:
-            _log.info(f"Initializing {unit}")
-            try:
-                initializer_precip.initialize(unit)
-            except:
-                dt = DiagnosticsToolbox(m)
-                print("---Structural Issues after precip initialization---")
-                dt.report_structural_issues()
-                dt.display_overconstrained_set()
+        # elif unit in precip_units:
+        #     _log.info(f"Initializing {unit}")
+        #     try:
+        #         initializer_precip.initialize(unit)
+        #     except:
+        #         dt = DiagnosticsToolbox(m)
+        #         print("---Structural Issues after precip initialization---")
+        #         dt.report_structural_issues()
+        #         dt.display_overconstrained_set()
         elif unit == m.fs.leach:
             _log.info(f"Initializing {unit}")
             # Fix feed states
@@ -1483,6 +1487,30 @@ def initialize_system(m):
             m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
             m.fs.leach.solid_inlet.flow_mass.unfix()
             m.fs.leach.solid_inlet.mass_frac_comp.unfix()
+        elif unit == m.fs.precipitator:
+            _log.info(f"Initializing {unit}")
+            # Fix feed states
+            m.fs.precipitator.aqueous_inlet.flow_vol.fix()
+            m.fs.precipitator.aqueous_inlet.conc_mass_comp.fix()
+            m.fs.precipitator.precipitate_outlet.temperature.fix()
+            # Re-solve unit
+            solver = SolverFactory("ipopt")
+            solver.solve(m.fs.precipitator, tee=True)
+            # Unfix feed states
+            m.fs.precipitator.aqueous_inlet.flow_vol.unfix()
+            m.fs.precipitator.aqueous_inlet.conc_mass_comp.unfix()
+            m.fs.precipitator.precipitate_outlet.temperature.unfix()
+        # elif unit == m.fs.precip_purge:
+        #     _log.info(f"Initializing {unit}")
+        #     # Fix feed states
+        #     m.fs.precip_purge.inlet.flow_vol.fix()
+        #     m.fs.precip_purge.inlet.conc_mass_comp.fix()
+        #     # Re-solve unit
+        #     solver = SolverFactory("ipopt")
+        #     solver.solve(m.fs.precip_purge, tee=True)
+        #     # Unfix feed states
+        #     m.fs.precip_purge.inlet.flow_vol.unfix()
+        #     m.fs.precip_purge.inlet.conc_mass_comp.unfix()
         else:
             _log.info(f"Initializing {unit}")
             initializer_bt.initialize(unit)
@@ -2884,6 +2912,7 @@ def add_costing(m):
     # Solve costing
     solver = get_solver()
     solver.solve(m, tee=True)
+    # ipopt_solve_halt_on_error(m)
 
     return m
 
@@ -2903,3 +2932,4 @@ def display_costing(m):
 
 if __name__ == "__main__":
     m, results = main()
+    m.fs.leach.display()

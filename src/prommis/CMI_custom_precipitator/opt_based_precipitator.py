@@ -44,15 +44,34 @@ Instead of utilizing saturation indices heuristics commonly used by LMA software
 objective function is to minimize the square difference between the ion product, :math:`Q_{r,sp}`, defined over the actual concentration in solution,
 and the solubility constant, :math:`K_{r,sp}`, defined over the equilibrium concentration in solution,
 
-.. math:: z = \sum_{r \in N_{rxn,sp}} ( log(K_{r,sp}) - log(Q_{r,sp}) )^2
+.. math:: z = \sum_{r \in N_{rxn,sp}} ( log(K_{r,sp}) - log(Q_{r,sp}) )^2 \quad (1)
 
 where :math:`N_{rxn,sp}` is the set of precipitation/dissolution reactions. By adding in the following constraints, this objective function allows the
 identification of the species that should precipitate (i.e. :math:`Q_{r,sp} = K_{r,sp}`) and those that should not (i.e. :math:`Q_{r,sp} \leq K_{r,sp}`):
 
-.. math:: log(Q_{r,sp}) = \sum_{i \in I_{r, products}} \alpha_{i,r} log(C_i^f) \forall r \in N_{rxn,sp}
+.. math:: log(Q_{r,sp}) = \sum_{i \in I_{r, products}} \alpha_{i,r} log(C_i^f) \forall r \in N_{rxn,sp} \quad (2)
 
-.. math:: log(Q_{r,sp}) \leq log(K_{r,sp}) \forall r \in N_{rxn,sp}
+.. math:: log(Q_{r,sp}) \leq log(K_{r,sp}) \forall r \in N_{rxn,sp} \quad (3)
 
+where :math:`I_{r,products}` is the set of products formed in reaction :math:`r`. Eq. (2) computes the ionic product based on the actual concentrations in
+the solution; its upper bound is defined by the solubility product (Eq. 3).
+
+Equilibrium conditions are imposed in all reactions that do not involve solids' formation as shown in Eq. (4):
+
+.. math:: log(K_{r,aq}) = \sum_{i \in I_{r,products}} \alpha_{i,r} log(C_i^f) - \sum_{i \in I_{r, reactants}} \alpha_{i,r} log(C_i^f) \forall r \in N_{rxn,aq} \quad (4)
+
+where :math:`\alpha_{i,r}` is the stoichiometric coefficient of species :math:`i` in reaction :math:`r`, :math:`C_i^f` is the equilibrium concentration of 
+species :math:`i`, and :math:`N_{rxn,aq}` is the set of all aqueous reactions. The logartihmic form(s) in Eq. (2-4) to minimize numerical issues.
+
+The set of restrictions is completed with the inclusion of mass and concentration balances to calculate the final concentration/mass of species:
+
+.. math:: C_i^f = C_i^0 + \sum_{r \in N_{rxn,i}} \alpha_{i,r} X_r \forall i \in I_{aq} \quad (5)
+
+.. math:: m_i^f = m_i^0 + \sum_{r \in N_{rxn,i}} \alpha_{i,r} X_r V \forall i \in I_{sp} \quad (6)
+
+where :math:`C_i^0` is the initial concentration of species :math:`i`, :math:`N_{rxn,i}` is the set of all reactions involving species :math:`i`, :math:`X_r`
+is the extent of reaction :math:`r`, :math:`I_{aq}` is the set of all aqueous species, :math:`m_i^0` is the initial amount of solid species :math:`i`, 
+:math:`V` is the volumetric flowrate of solvent, and :math:`I_{sp}` is the set of all precipitates.
 """
 
 # Import Pyomo libraries

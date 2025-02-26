@@ -37,6 +37,8 @@ import idaes.core.util.scaling as iscale
 
 from idaes.core.scaling import CustomScalerBase
 
+from pyomo.environ import units as pyunits
+
 
 @declare_process_block_class("Precipitator")
 class PrecipitatorData(UnitModelBlockData):
@@ -203,6 +205,8 @@ constructed,
             doc="log(q) var for each reaction",
             units=pyo.units.dimensionless,
         )
+        # reference molality of 1 to make log(molalities) dimensionless
+        m_ref = 1 * pyunits.mol / pyunits.kg
 
         # constraints
         @self.Constraint(
@@ -214,7 +218,9 @@ constructed,
 
             return blk.log_k[r] == sum(
                 prop_aq.eq_rxn_stoich_dict[r][c]
-                * pyo.log10(blk.cv_aqueous.properties_out[t].molality_aq_comp[c])
+                * pyo.log10(
+                    blk.cv_aqueous.properties_out[t].molality_aq_comp[c] / m_ref
+                )
                 for c in prop_aq.eq_rxn_stoich_dict[r]
             )
 
@@ -227,7 +233,9 @@ constructed,
 
             return blk.log_q[r] == sum(
                 prop_aq.eq_rxn_stoich_dict[r][c]
-                * pyo.log10(blk.cv_aqueous.properties_out[t].molality_aq_comp[c])
+                * pyo.log10(
+                    blk.cv_aqueous.properties_out[t].molality_aq_comp[c] / m_ref
+                )
                 for c in prop_aq.eq_rxn_stoich_dict[r]
             )
 

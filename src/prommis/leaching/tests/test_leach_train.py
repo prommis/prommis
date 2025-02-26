@@ -268,11 +268,11 @@ def model_ub():
     m.fs.leach.liquid_inlet.conc_mass_comp.fix(1e-10 * units.mg / units.L)
 
     m.fs.leach.liquid_inlet.conc_mass_comp[0, "H"].fix(
-        2 * 2 * 0.05 * 1e3 * units.mg / units.L
+        2 * 0.1 * 1e3 * units.mg / units.L
     )
     m.fs.leach.liquid_inlet.conc_mass_comp[0, "HSO4"].fix(1e-8 * units.mg / units.L)
     m.fs.leach.liquid_inlet.conc_mass_comp[0, "SO4"].fix(
-        2 * 0.05 * 96e3 * units.mg / units.L
+        0.1 * 96e3 * units.mg / units.L
     )
 
     # Solid feed state
@@ -470,16 +470,16 @@ def model_lb():
         reaction_package=m.fs.leach_rxns,
     )
 
-    # Liquid feed state
+    # Liquid feed state - model cannot solve at an acid feed concentration of 0.01M, using 0.025M instead
     m.fs.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
     m.fs.leach.liquid_inlet.conc_mass_comp.fix(1e-10 * units.mg / units.L)
 
     m.fs.leach.liquid_inlet.conc_mass_comp[0, "H"].fix(
-        0.5 * 2 * 0.05 * 1e3 * units.mg / units.L
+        2 * 0.025 * 1e3 * units.mg / units.L
     )
     m.fs.leach.liquid_inlet.conc_mass_comp[0, "HSO4"].fix(1e-8 * units.mg / units.L)
     m.fs.leach.liquid_inlet.conc_mass_comp[0, "SO4"].fix(
-        0.5 * 0.05 * 96e3 * units.mg / units.L
+        0.025 * 96e3 * units.mg / units.L
     )
 
     # Solid feed state

@@ -10,8 +10,49 @@
 # All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
 # for full copyright and license information.
 #################################################################################
-"""
-Optimization-based precipitator model.
+r"""
+Optimization-based Precipitator for the Critical Materials Innovation Hub (CMI) Process
+===================================
+
+Author: Chris Laliwala
+
+This precipitator makes use of equilibrium constants and solubility constants to predict the final concentrations of aqueous species,
+and the amount of precipitates formed at equilibrium.
+
+Configuration Arguments
+-----------------------
+
+The model requires the user to define the aqueous species and precipitates present in the system. Additionally,
+equilibrium constants for aqueous reactions, and solubility constants for precipitation/dissolution reactions are needed.
+Reaction stoichiometry must also be provided by the user. The aqueous components, equilibrium constants, and a dictionary
+defining the aqueous reaction stoichiometry is stored in the aqeuous property package. The precipitates, solubility constants,
+and a dictionary defining the precipitation/dissolution reaction stoichiometry is stored in the precipitate property package.
+
+Model Structure
+---------------
+
+This unit model has an inlet for aqueous ('aqueous_inlet') and precipitates ('precipitate_inlet') entering the unit, and an outlet for 
+aqueous ('aqueous_outlet') and precipitates ('precipitate_outlet') leaving the unit.
+
+
+Additional Model Information
+----------------------------
+
+This precipitator model seeks to model aqeuous systems involving precipitation and dissolution reactions as chemical equilibrium problems.
+The approach taken here is to solve a system of nonlinear equations involving equilibrium constants (the law of mass action approach, LMA) [1]. 
+Instead of utilizing saturation indices heuristics commonly used by LMA softwares [1], this model formulates an optimization problem where the
+objective function is to minimize the square difference between the ion product, :math:`Q_{r,sp}`, defined over the actual concentration in solution,
+and the solubility constant, :math:`K_{r,sp}`, defined over the equilibrium concentration in solution,
+
+.. math:: z = \sum_{r \in N_{rxn,sp}} ( log(K_{r,sp}) - log(Q_{r,sp}) )^2
+
+where :math:`N_{rxn,sp}` is the set of precipitation/dissolution reactions. By adding in the following constraints, this objective function allows the
+identification of the species that should precipitate (i.e. :math:`Q_{r,sp} = K_{r,sp}`) and those that should not (i.e. :math:`Q_{r,sp} \leq K_{r,sp}`):
+
+.. math:: log(Q_{r,sp}) = \sum_{i \in I_{r, products}} \alpha_{i,r} log(C_i^f) \forall r \in N_{rxn,sp}
+
+.. math:: log(Q_{r,sp}) \leq log(K_{r,sp}) \forall r \in N_{rxn,sp}
+
 """
 
 # Import Pyomo libraries

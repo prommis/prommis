@@ -105,7 +105,6 @@ def base_model():
         debt_percentage_of_CAPEX=50,
         operating_inflation_percentage=3,
         revenue_inflation_percentage=3,
-        # royalty_charge_percentage_of_revenue=6.5,
     )
     CE_index_year = "UKy_2019"
 
@@ -948,7 +947,7 @@ class TestREECosting(object):
 
     @pytest.mark.unit
     def test_base_model_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model)
+        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.unit
@@ -1158,7 +1157,7 @@ class TestREECosting(object):
 
     @pytest.mark.unit
     def test_full_model_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model)
+        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -1247,7 +1246,7 @@ class TestREECosting(object):
             CE_index_year=CE_index_year,
         )
 
-        dt = DiagnosticsToolbox(model)
+        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -2993,7 +2992,7 @@ class TestHDDRecyclingCosting(object):
             fixed_OM=False,
         )
 
-        dt = DiagnosticsToolbox(model=model)
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -3103,6 +3102,7 @@ class TestNPVCostingBlock(object):
         assert isinstance(model.fs.costing.pv_operating_cost, pyo.Var)
         assert isinstance(model.fs.costing.pv_revenue, pyo.Var)
         assert isinstance(model.fs.costing.npv, pyo.Var)
+        assert not hasattr(model.fs.costing, "pv_taxes")
         assert isinstance(model.fs.costing.discount_percentage, pyo.Param)
         assert isinstance(model.fs.costing.plant_lifetime, pyo.Param)
         assert isinstance(model.fs.costing.capital_expenditure_percentages, pyo.Param)
@@ -3118,10 +3118,11 @@ class TestNPVCostingBlock(object):
         assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.npv_constraint, pyo.Constraint)
+        assert not hasattr(model.fs.costing, "pv_taxes_constraint")
 
     @pytest.mark.unit
     def test_NPV_costingblock_build_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model)
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -3188,6 +3189,7 @@ class TestNPVFixedInputs(object):
         assert isinstance(model.fs.costing.pv_operating_cost, pyo.Var)
         assert isinstance(model.fs.costing.pv_revenue, pyo.Var)
         assert isinstance(model.fs.costing.npv, pyo.Var)
+        assert not hasattr(model.fs.costing, "pv_taxes")
         assert isinstance(model.fs.costing.discount_percentage, pyo.Param)
         assert isinstance(model.fs.costing.plant_lifetime, pyo.Param)
         assert isinstance(model.fs.costing.capital_expenditure_percentages, pyo.Param)
@@ -3203,10 +3205,11 @@ class TestNPVFixedInputs(object):
         assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.npv_constraint, pyo.Constraint)
+        assert not hasattr(model.fs.costing, "pv_taxes_constraint")
 
     @pytest.mark.unit
     def test_NPV_fixedinputs_build_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model)
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component

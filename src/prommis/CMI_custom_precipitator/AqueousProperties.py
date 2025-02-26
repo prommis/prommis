@@ -106,6 +106,7 @@ class AqueousParameterData(PhysicalParameterBlock):
         obj.define_custom_properties(
             {
                 "molality_aq_comp": {"method": None},
+                "flow_vol": {"method": None},
             }
         )
         obj.add_default_units(
@@ -134,7 +135,13 @@ class _AqueousStateBlock(StateBlock):
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
 class AqueousStateBlockData(StateBlockData):
     def build(self):
-        # super().build()
+        super().build()
+
+        self.flow_vol = Var(
+            units=pyunits.kg / pyunits.hour,
+            initialize=1,
+            bounds=(1e-5, None),
+        )
 
         self.molality_aq_comp = Var(
             self.component_list,
@@ -148,5 +155,6 @@ class AqueousStateBlockData(StateBlockData):
 
     def define_state_vars(self):
         return {
+            "flow_vol": self.flow_vol,
             "molality_aq_comp": self.molality_aq_comp,
         }

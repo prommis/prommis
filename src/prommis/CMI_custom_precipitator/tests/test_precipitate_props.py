@@ -45,12 +45,12 @@ def test_build():
 
     assert len(m.fs.state) == 1
 
-    assert isinstance(m.fs.state[0].molality_precip_comp, Var)
+    assert isinstance(m.fs.state[0].moles_precip_comp, Var)
 
     for i in m.fs.precip_properties.component_list:
-        m.fs.state[0].molality_precip_comp[i].set_value(0.5)
+        m.fs.state[0].moles_precip_comp[i].set_value(0.5)
 
     m.fs.state.fix_initialization_states()
 
     for i in m.fs.precip_properties.component_list:
-        assert m.fs.state[0].molality_precip_comp[i].fixed
+        assert m.fs.state[0].moles_precip_comp[i].fixed

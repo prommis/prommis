@@ -321,6 +321,14 @@ constructed,
                 for r in self.merged_rxns
             )
 
+        # balance on volume coming in and out
+        @self.Constraint(self.flowsheet().time, doc="volume balance equation.")
+        def vol_balance(blk, t):
+            return (
+                blk.cv_aqueous.properties_out[t].flow_vol
+                == blk.cv_aqueous.properties_in[t].flow_vol
+            )
+
         # mole balance on all precipitate components
         @self.Constraint(
             self.flowsheet().time,
@@ -328,10 +336,12 @@ constructed,
             doc="Precipitate Components Mole balance equations.",
         )
         def precip_mole_balance_eqns(blk, t, comp):
-            return blk.cv_precipitate.properties_out[t].molality_precip_comp[
+            return blk.cv_precipitate.properties_out[t].moles_precip_comp[
                 comp
-            ] == blk.cv_precipitate.properties_in[t].molality_precip_comp[comp] + sum(
-                prop_precip.eq_rxn_stoich_dict[r][comp] * blk.rxn_extent[r]
+            ] == blk.cv_precipitate.properties_in[t].moles_precip_comp[comp] + sum(
+                prop_precip.eq_rxn_stoich_dict[r][comp]
+                * blk.rxn_extent[r]
+                * blk.cv_aqueous.properties_out[t].flow_vol
                 for r in prop_precip.eq_rxn_set
             )
 

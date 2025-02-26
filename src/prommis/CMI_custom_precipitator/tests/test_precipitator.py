@@ -95,12 +95,13 @@ class TestPrec(object):
         FeOH3_init = 1e-20
         Fe2O3_init = 1e-20
 
+        m.fs.unit.aqueous_inlet.flow_vol[0].fix(1)
         m.fs.unit.aqueous_inlet.molality_aq_comp[0, "HNO3"].fix(HNO3m_init)
         m.fs.unit.aqueous_inlet.molality_aq_comp[0, "H^+"].fix(Hp_init)
         m.fs.unit.aqueous_inlet.molality_aq_comp[0, "OH^-"].fix(OHm_init)
         m.fs.unit.aqueous_inlet.molality_aq_comp[0, "NO3^-"].fix(NO3m_init)
         m.fs.unit.aqueous_inlet.molality_aq_comp[0, "Fe^3+"].fix(Feppp_init)
-        m.fs.unit.precipitate_inlet.molality_precip_comp[0, "FeOH3"].fix(FeOH3_init)
+        m.fs.unit.precipitate_inlet.moles_precip_comp[0, "FeOH3"].fix(FeOH3_init)
 
         return m
 
@@ -124,25 +125,32 @@ class TestPrec(object):
     @pytest.mark.unit
     def test_build(self, prec):
         assert hasattr(prec.fs.unit, "aqueous_inlet")
-        assert len(prec.fs.unit.aqueous_inlet.vars) == 1
+        assert len(prec.fs.unit.aqueous_inlet.vars) == 2
+        assert hasattr(prec.fs.unit.aqueous_inlet, "flow_vol")
+        assert hasattr(prec.fs.unit.aqueous_inlet, "molality_aq_comp")
 
         assert hasattr(prec.fs.unit, "aqueous_outlet")
-        assert len(prec.fs.unit.aqueous_outlet.vars) == 1
+        assert len(prec.fs.unit.aqueous_outlet.vars) == 2
+        assert hasattr(prec.fs.unit.aqueous_outlet, "flow_vol")
+        assert hasattr(prec.fs.unit.aqueous_outlet, "molality_aq_comp")
 
         assert hasattr(prec.fs.unit, "precipitate_inlet")
         assert len(prec.fs.unit.precipitate_inlet.vars) == 1
+        assert hasattr(prec.fs.unit.precipitate_inlet, "moles_precip_comp")
 
         assert hasattr(prec.fs.unit, "precipitate_outlet")
         assert len(prec.fs.unit.precipitate_outlet.vars) == 1
+        assert hasattr(prec.fs.unit.precipitate_outlet, "moles_precip_comp")
 
         assert hasattr(prec.fs.unit, "log_q_precip_equil_rxn_eqns")
         assert hasattr(prec.fs.unit, "precip_rxns_log_cons")
         assert hasattr(prec.fs.unit, "aq_mole_balance_eqns")
         assert hasattr(prec.fs.unit, "precip_mole_balance_eqns")
         assert hasattr(prec.fs.unit, "min_logs")
+        assert hasattr(prec.fs.unit, "vol_balance")
 
-        assert number_variables(prec.fs.unit) == 16
-        assert number_total_constraints(prec.fs.unit) == 10
+        assert number_variables(prec.fs.unit) == 18
+        assert number_total_constraints(prec.fs.unit) == 11
         assert number_unused_variables(prec.fs.unit) == 0
 
     @pytest.mark.component
@@ -175,9 +183,7 @@ class TestPrec(object):
 
         # set scaling for precipitate final amount
         set_scaling_factor(
-            prec.fs.unit.cv_precipitate.properties_out[0.0].molality_precip_comp[
-                "FeOH3"
-            ],
+            prec.fs.unit.cv_precipitate.properties_out[0.0].moles_precip_comp["FeOH3"],
             1e4,
         )
 
@@ -205,6 +211,6 @@ class TestPrec(object):
         )
 
         # precipitate species final amounts
-        assert pytest.approx(0.0002338, abs=1e-5) == value(
-            prec.fs.unit.precipitate_outlet.molality_precip_comp[0, "FeOH3"]
+        assert pytest.approx(0.00023372, abs=1e-5) == value(
+            prec.fs.unit.precipitate_outlet.moles_precip_comp[0, "FeOH3"]
         )

@@ -115,9 +115,9 @@ class _PrecipitateStateBlock(StateBlock):
 class PrecipitateStateBlockData(StateBlockData):
     def build(self):
 
-        self.molality_precip_comp = Var(
+        self.moles_precip_comp = Var(
             self.component_list,
-            units=pyunits.mol / pyunits.kg,
+            units=pyunits.mol / pyunits.hour,
             initialize=1e-20,
             bounds=(1e-20, None),
         )
@@ -127,5 +127,5 @@ class PrecipitateStateBlockData(StateBlockData):
 
     def define_state_vars(self):
         return {
-            "molality_precip_comp": self.molality_precip_comp,
+            "moles_precip_comp": self.moles_precip_comp,
         }

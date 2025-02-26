@@ -44,7 +44,9 @@ def test_build():
     assert len(m.fs.state) == 1
 
     assert isinstance(m.fs.state[0].molality_aq_comp, Var)
+    assert isinstance(m.fs.state[0].flow_vol, Var)
 
+    m.fs.state[0].flow_vol.set_value(1)
     for i in m.fs.aq_properties.component_list:
         m.fs.state[0].molality_aq_comp[i].set_value(0.5)
 

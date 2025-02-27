@@ -332,7 +332,10 @@ def test_build_coal_fired(model_coal_fired):
     assert not model_coal_fired.fs.roaster.config.has_holdup
     assert model_coal_fired.fs.roaster.config.has_heat_transfer
     assert model_coal_fired.fs.roaster.config.has_pressure_change
-    assert model_coal_fired.fs.roaster.config.property_package_gas is model_coal_fired.fs.prop_gas
+    assert (
+        model_coal_fired.fs.roaster.config.property_package_gas
+        is model_coal_fired.fs.prop_gas
+    )
     assert (
         model_coal_fired.fs.roaster.config.property_package_precipitate_solid
         is model_coal_fired.fs.prop_solid
@@ -364,7 +367,10 @@ def test_structural_issues_coal_fired(model_coal_fired):
 def test_initialize_and_solve_coal_fired(model_coal_fired):
     initializer = BlockTriangularizationInitializer()
     initializer.initialize(model_coal_fired.fs.roaster)
-    assert initializer.summary[model_coal_fired.fs.roaster]["status"] == InitializationStatus.Ok
+    assert (
+        initializer.summary[model_coal_fired.fs.roaster]["status"]
+        == InitializationStatus.Ok
+    )
     # Solve model
     solver = SolverFactory("ipopt")
     results = solver.solve(model_coal_fired, tee=False)
@@ -408,9 +414,9 @@ def test_solution_coal_fired(model_coal_fired):
         "Dy": 0.12086738764265201,
     }
     for i in model_coal_fired.fs.roaster.metal_list:
-        assert value(model_coal_fired.fs.roaster.mass_frac_comp_product[0, i]) == pytest.approx(
-            mass_frac_comp_product[i], rel=1e-5, abs=1e-6
-        )
+        assert value(
+            model_coal_fired.fs.roaster.mass_frac_comp_product[0, i]
+        ) == pytest.approx(mass_frac_comp_product[i], rel=1e-5, abs=1e-6)
 
 
 @pytest.fixture(scope="module")
@@ -514,7 +520,10 @@ def test_build_gas_fired(model_gas_fired):
     assert not model_gas_fired.fs.roaster.config.has_holdup
     assert model_gas_fired.fs.roaster.config.has_heat_transfer
     assert model_gas_fired.fs.roaster.config.has_pressure_change
-    assert model_gas_fired.fs.roaster.config.property_package_gas is model_gas_fired.fs.prop_gas
+    assert (
+        model_gas_fired.fs.roaster.config.property_package_gas
+        is model_gas_fired.fs.prop_gas
+    )
     assert (
         model_gas_fired.fs.roaster.config.property_package_precipitate_solid
         is model_gas_fired.fs.prop_solid
@@ -546,7 +555,10 @@ def test_structural_issues_gas_fired(model_gas_fired):
 def test_initialize_and_solve_gas_fired(model_gas_fired):
     initializer = BlockTriangularizationInitializer()
     initializer.initialize(model_gas_fired.fs.roaster)
-    assert initializer.summary[model_gas_fired.fs.roaster]["status"] == InitializationStatus.Ok
+    assert (
+        initializer.summary[model_gas_fired.fs.roaster]["status"]
+        == InitializationStatus.Ok
+    )
     # Solve model
     solver = SolverFactory("ipopt")
     results = solver.solve(model_gas_fired, tee=False)
@@ -590,6 +602,6 @@ def test_solution_gas_fired(model_gas_fired):
         "Dy": 0.12086738764265201,
     }
     for i in model_gas_fired.fs.roaster.metal_list:
-        assert value(model_gas_fired.fs.roaster.mass_frac_comp_product[0, i]) == pytest.approx(
-            mass_frac_comp_product[i], rel=1e-5, abs=1e-6
-        )
+        assert value(
+            model_gas_fired.fs.roaster.mass_frac_comp_product[0, i]
+        ) == pytest.approx(mass_frac_comp_product[i], rel=1e-5, abs=1e-6)

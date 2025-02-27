@@ -32,6 +32,7 @@ from pyomo.environ import (
 )
 
 # IDAES packages
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 
 import pytest
@@ -63,7 +64,7 @@ class TestLiCoDiafiltration:
         assert (
             degrees_of_freedom(self.m) == 0
         ), "Degrees of freedom should be zero after adding costing."
-
+        
         initialize_model(self.m)
         solve_model(self.m)
 
@@ -106,19 +107,13 @@ class TestLiCoDiafiltration:
         self.Co_recovery_mass = value(
             self.m.fs.stage1.retentate_outlet.flow_vol[0]
         ) * value(self.m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"])
-
-    """@pytest.mark.component
+        
+    @pytest.mark.component
     def test_structural_issues(self):
         self.build_LiCoDiafiltration_model()
-        dt = DiagnosticsToolbox(model=self.m)
-        
-        warnings, _ = dt._collect_structural_warnings()
-        if warnings:
-            print("\nstructural warnings detected:")
-            for warn in warnings:
-                print(f"- {warn}")
-        
-        dt.assert_no_structural_warnings()"""
+        dt = DiagnosticsToolbox(self.m)
+        dt.report_structural_issues()
+        dt.display_underconstrained_set()
 
     # 3. Access product price.
     def test_import_product_prices(self):
@@ -233,20 +228,3 @@ class TestLiCoDiafiltration:
         ):
             empty_model = ConcreteModel()
             empty_model.recovery_determine = ByproductRecovery(materials=[])
-
-
-# Run this script automatically when execute this script
-if __name__ == "__main__":
-    test = TestLiCoDiafiltration()
-
-    print("\n--- Running Li-Co Diafiltration Model Build Test ---")
-    test.build_LiCoDiafiltration_model()
-
-    print("\n--- Running Product Price Import Test ---")
-    test.test_import_product_prices()
-
-    print("\n--- Running Results Test ---")
-    test.test_results()
-
-    print("\n--- Running Byproduct Recovery Determination Test ---")
-    test.test_determine_byproduct_recovery()

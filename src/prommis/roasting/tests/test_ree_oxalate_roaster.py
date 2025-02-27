@@ -41,6 +41,16 @@ from prommis.precipitate.precipitate_solids_properties import PrecipitateParamet
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 
+""""
+Reference:
+
+[1] Udara S. P. R. Arachchige, Muhammad Mohsin, Morten C. Melaaen,
+Optimization of post combustion carbon capture process solvent selection,
+International Journal of Energy and Environment. Volume 3, Issue 6, 861-870. 
+https://www.academia.edu/38249324/Optimization_of_post_combustion_carbon_capture_process_solvent_selection
+
+"""
+
 
 @pytest.fixture(scope="module")
 def model():
@@ -105,7 +115,7 @@ def model():
     m.fs.roaster.gas_inlet.pressure.fix(101325)
     # inlet flue gas mole flow rate
     fgas = 0.00781
-    # inlet flue gas composition, typical flue gas by burning CH4 with air with stoichiometric ratio 0f 2.3
+    # inlet flue gas composition, typical flue gas by burning CH4 with air with stoichiometric ratio of 2.3
     gas_comp = {
         "O2": 0.1118,
         "H2O": 0.1005,
@@ -223,6 +233,9 @@ def test_solution(model):
 
 @pytest.fixture(scope="module")
 def model_coal_fired():
+    """
+    Uses the flue gas composition from a typical coal-fired plant
+    """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
@@ -284,7 +297,7 @@ def model_coal_fired():
     m.fs.roaster.gas_inlet.pressure.fix(101325)
     # inlet flue gas mole flow rate
     fgas = 0.00781
-    # inlet flue gas composition, typical flue gas by burning CH4 with air with stoichiometric ratio 0f 2.3
+    # inlet flue gas composition from coal-fired plant
     gas_comp = {
         "O2": 0.05,
         "H2O": 0.08,
@@ -402,6 +415,9 @@ def test_solution_coal_fired(model_coal_fired):
 
 @pytest.fixture(scope="module")
 def model_gas_fired():
+    """
+    Uses the flue gas composition from a typical gas-fired plant
+    """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
@@ -463,7 +479,7 @@ def model_gas_fired():
     m.fs.roaster.gas_inlet.pressure.fix(101325)
     # inlet flue gas mole flow rate
     fgas = 0.00781
-    # inlet flue gas composition, typical flue gas by burning CH4 with air with stoichiometric ratio 0f 2.3
+    # inlet flue gas composition from gas-fired plant
     gas_comp = {
         "O2": 0.12,
         "H2O": 0.08,

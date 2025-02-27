@@ -33,12 +33,6 @@ from pyomo.environ import (
 
 # IDAES packages
 from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-from idaes.core.util.model_statistics import (
-    number_total_constraints,
-    number_unused_variables,
-    number_variables,
-)
 
 import pytest
 

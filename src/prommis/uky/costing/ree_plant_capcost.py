@@ -2202,7 +2202,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # dictionary of default prices
         # the currency units are millions of USD, so all prices need a 1e-6 multiplier to get USD
         default_prices = load_default_resource_prices()
-               
+
         # add entries from prices to default_prices
         for key in prices.keys():
             default_prices[key] = prices[key]

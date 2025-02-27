@@ -1,9 +1,10 @@
-#####################################################################################################
-# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
-# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
-# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
-#####################################################################################################
+####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals
+# Sustainability # (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners:
+# The Regents of the University of California, through Lawrence Berkeley National Laboratory, et al.
+# All rights reserved. Please see the files COPYRIGHT.md and LICENSE.md for full copyright and
+# license information.
+####################################################################################################
 """
 Python script to read costing components
 This script reads the library of costing components (scaled cost, reference
@@ -16,7 +17,9 @@ Python dictionaries that are loaded:
 
 """
 
-__author__ = "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, L. Deng, and M. Zamarripa)"
+__author__ = (
+    "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, L. Deng, and M. Zamarripa)"
+)
 __version__ = "1.0.0"
 
 import json
@@ -79,18 +82,18 @@ def load_default_sale_prices():
         "Cr": 11.13 * 1e-6 * CE_index_units / pyunits.kg,
         "Co": 34.13 * 1e-6 * CE_index_units / pyunits.kg,
         # Pure Dysprosium's (Dy) price is not available in USGS, but has Dy2O3's price.1kg price.
-        # Purity 99.99%. https://www.luciteria.com/elements-for-sale/dysprosium-metal-9999-dendritic.
+        # Purity 99.99%.https://www.luciteria.com/elements-for-sale/dysprosium-metal-9999-dendritic.
         "Dy": 1900 * 1e-6 * CE_index_units / pyunits.kg,
         # Pure Erbium's (Er) price is not available in USGS, nor its oxides' price.1kg price.
-        # Purity 99.99%. https://www.luciteria.com/elements-for-sale/erbium-metal-9999-dendritic. 
+        # Purity 99.99%. https://www.luciteria.com/elements-for-sale/erbium-metal-9999-dendritic.
         "Er": 39 * 1e-6 * CE_index_units / pyunits.kg,
         # Pure Europium (Eu) price is not available in USGS, but has Eu2O3's price.1kg price.
-        # Purity 99.9%. https://www.luciteria.com/elements-for-sale/buy-europium. 
+        # Purity 99.9%. https://www.luciteria.com/elements-for-sale/buy-europium.
         "Eu": 1550 * 1e-6 * CE_index_units / pyunits.kg,
         # Fluorspar, alternate Names: Fluorite, Calcium Fluoride.
         "CaF2": 0.296 * 1e-6 * CE_index_units / pyunits.kg,
         # Pure Gadolinium's (Gd) price is not available in USGS, nor its oxides' price. 1kg price.
-        # Purity 99.95%. https://www.luciteria.com/elements-for-sale/gadolinium-metal-9995-dendritic.
+        # Purity 99.95%. https://www.luciteria.com/elements-for-sale/gadolinium-metal-9995-dendritic
         "Gd": 850 * 1e-6 * CE_index_units / pyunits.kg,
         "Ga": 450 * 1e-6 * CE_index_units / pyunits.kg,
         "Ge": 1392 * 1e-6 * CE_index_units / pyunits.kg,
@@ -102,7 +105,7 @@ def load_default_sale_prices():
         "In": 244 * 1e-6 * CE_index_units / pyunits.kg,
         "Ir": 150233.37 * 1e-6 * CE_index_units / pyunits.kg,
         # Pure Lathanum's (La) price is not available in USGS, but has La2O3's price.1kg price.
-        #  https://www.luciteria.com/elements-for-sale/buy-lanthanum. Purity 99.5%. 
+        #  https://www.luciteria.com/elements-for-sale/buy-lanthanum. Purity 99.5%.
         "La": 110 * 1e-6 * CE_index_units / pyunits.kg,
         "Li": 41.3 * 1e-6 * CE_index_units / pyunits.kg,
         # Pure Lutetium's (Lu) price is not available in USGS, nor its oxides' price.
@@ -124,7 +127,7 @@ def load_default_sale_prices():
         "Rb": 121000 * 1e-6 * CE_index_units / pyunits.kg,
         "Ru": 14998 * 1e-6 * CE_index_units / pyunits.kg,
         # Pure Samarium's (Sm) price is not available in USGS, nor its oxides' price.1kg price.
-        # Purity 99.95%. https://www.luciteria.com/elements-for-sale/samarium-metal-999-dendritic. 
+        # Purity 99.95%. https://www.luciteria.com/elements-for-sale/samarium-metal-999-dendritic.
         "Sm": 140 * 1e-6 * CE_index_units / pyunits.kg,
         "Sc": 153000 * 1e-6 * CE_index_units / pyunits.kg,
         # Pure Tantalum's (Ta) price is not available in USGS, but has Ta2O3's price.
@@ -132,7 +135,7 @@ def load_default_sale_prices():
         "Ta": 810 * 1e-6 * CE_index_units / pyunits.kg,
         "Te": 79.09 * 1e-6 * CE_index_units / pyunits.kg,
         # Pure Terbium's (Tb) price is not available in USGS, but has Tb4O7's price.1kg price.
-        # Purity 99.9%. https://www.luciteria.com/elements-for-sale/terbium-metal-999-pieces. 
+        # Purity 99.9%. https://www.luciteria.com/elements-for-sale/terbium-metal-999-pieces.
         "Tb": 2850 * 1e-6 * CE_index_units / pyunits.kg,
         # Pure Thulium's (Tm) price is not available in USGS, nor its oxides' price.
         # Purity 99.95%. https://www.luciteria.com/elements-for-sale/buy-
@@ -147,13 +150,13 @@ def load_default_sale_prices():
         "W": 155 * 1e-6 * CE_index_units / pyunits.kg,
         "V": 16.53 * 1e-6 * CE_index_units / pyunits.kg,
         # Pure Ytterbium's (Yb) price is not available in USGS, nor its oxides' price.1kg price.
-        # Purity 99.99%. https://www.luciteria.com/elements-for-sale/buy-ytterbium. 
+        # Purity 99.99%. https://www.luciteria.com/elements-for-sale/buy-ytterbium.
         "Yb": 375 * 1e-6 * CE_index_units / pyunits.kg,
         "Y": 33 * 1e-6 * CE_index_units / pyunits.kg,
         "Zn": 3.34 * 1e-6 * CE_index_units / pyunits.kg,
         "Zr": 28 * 1e-6 * CE_index_units / pyunits.kg,
         # oxides. 11 oxides are cited from https://www.usgs.gov/centers/national
-        # -minerals-information-center/minerals-yearbook-metals-and-minerals 
+        # -minerals-information-center/minerals-yearbook-metals-and-minerals
         # year 2023, unless otherwise noticed.
         "CeO2": 1 * 1e-6 * CE_index_units / pyunits.kg,  # Purity 99.5%.
         "Dy2O3": 330 * 1e-6 * CE_index_units / pyunits.kg,  # Purity 99.5%.
@@ -199,7 +202,9 @@ def load_default_sale_prices():
 
 
 def convert_to_usd_2021(value_in_original_units, original_unit):
-    return pyunits.convert(value_in_original_units * original_unit, to_units=pyunits.USD_2021)
+    return pyunits.convert(
+        value_in_original_units * original_unit, to_units=pyunits.USD_2021
+    )
 
 
 def load_default_resource_prices():
@@ -213,12 +218,12 @@ def load_default_resource_prices():
     CE_index_units = convert_to_usd_2021(1, pyunits.USD_2019)
 
     default_resource_prices = {
-        # Average industrial electricity rates (2023). 
+        # Average industrial electricity rates (2023).
         # https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_3
         "power": convert_to_usd_2021(0.0804, pyunits.USD_2023) / pyunits.kWh,
         # Average industrial water rates (2021). https://www.osti.gov/servlets/purl/1975260.
         "water": 3.86e-3 * pyunits.USD_2021 / pyunits.gallon,
-        # https://www.eia.gov/dnav/pet/pet_pri_gnd_dcus_nus_a.htm. 
+        # https://www.eia.gov/dnav/pet/pet_pri_gnd_dcus_nus_a.htm.
         # Diesel price annual average in U.S (2023).
         "diesel": convert_to_usd_2021(4.214, pyunits.USD_2023) / pyunits.gallon,
         "bioleaching_solution": 0.008 * 1e-6 * CE_index_units / pyunits.L,
@@ -228,7 +233,7 @@ def load_default_resource_prices():
         # U.S. Annual Industrial price. https://www.eia.gov/dnav/ng/ng_pri_sum_dcu_nus_a.htm
         "natural_gas": convert_to_usd_2021(4.53e-3, pyunits.USD_2023) / pyunits.ft**3,
         "polymer": 33.61 * 1e-6 * CE_index_units / pyunits.kg,
-        # (price year 2020) https://www.intratec.us/chemical-markets/caustic-soda-price. 
+        # (price year 2020) https://www.intratec.us/chemical-markets/caustic-soda-price.
         # Accessed 1/16/2025
         "NAOH": convert_to_usd_2021(350.00, pyunits.USD_2020) / pyunits.tonne,
         # (price year 2020) https://www.intratec.us/chemical-markets/calcium-carbonate-price.

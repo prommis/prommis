@@ -7,10 +7,12 @@
 r"""
 Author: Lingyan Deng
 
-Figure 1 shows the byproduct recovery determine tree. The wast disposal cost, estimated cost of 
+Figure 1 shows the byproduct recovery determination tree, referenced from Chapter 8 of book by Towler, 
+Gavin, and Ray Sinnott. Chemical engineering design: principles, practice and economics of plant and 
+process design. Butterworth-Heinemann, 2021. The waste disposal cost, estimated cost of 
 conversion, and estimated added costs of by-product recovery should all be annualized cost. The
 estimate potential revenue is also annually based. 
-.. figure:: ../byproduct_recovery_determine_tree.png
+.. figure:: ../byproduct_recovery_determination_tree.png
     :width: 800
     :align: center
 
@@ -79,7 +81,7 @@ class ByproductRecoveryData(UnitModelBlockData):
             self.materials,
             initialize=5,
             units=pyunits.USD_2021 / pyunits.kg,
-            doc="Revenue credit from waste disposal",
+            doc="Saved cots from avoiding waste disposal",
         )
         self.conversion_possible = Var(
             self.materials,

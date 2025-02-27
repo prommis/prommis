@@ -33,6 +33,12 @@ from pyomo.environ import (
 
 # IDAES packages
 from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.model_statistics import (
+    number_total_constraints,
+    number_unused_variables,
+    number_variables,
+)
 
 import pytest
 
@@ -98,7 +104,6 @@ class TestLiCoDiafiltration:
 
         # Store results for later tests
         self.total_annualized_cost = value(self.m.fs.costing.total_annualized_cost)
-        # print(total_annualized_cost)
 
         # recovery mass flow rate kg/hr
         self.Li_recovery_mass = value(
@@ -107,6 +112,19 @@ class TestLiCoDiafiltration:
         self.Co_recovery_mass = value(
             self.m.fs.stage1.retentate_outlet.flow_vol[0]
         ) * value(self.m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"])
+
+    """@pytest.mark.component
+    def test_structural_issues(self):
+        self.build_LiCoDiafiltration_model()
+        dt = DiagnosticsToolbox(model=self.m)
+        
+        warnings, _ = dt._collect_structural_warnings()
+        if warnings:
+            print("\nstructural warnings detected:")
+            for warn in warnings:
+                print(f"- {warn}")
+        
+        dt.assert_no_structural_warnings()"""
 
     # 3. Access product price.
     def test_import_product_prices(self):
@@ -223,7 +241,7 @@ class TestLiCoDiafiltration:
             empty_model.recovery_determine = ByproductRecovery(materials=[])
 
 
-# Run this scrip automatically when execute this script
+# Run this script automatically when execute this script
 if __name__ == "__main__":
     test = TestLiCoDiafiltration()
 

@@ -64,7 +64,7 @@ class TestLiCoDiafiltration:
         assert (
             degrees_of_freedom(self.m) == 0
         ), "Degrees of freedom should be zero after adding costing."
-        
+
         initialize_model(self.m)
         solve_model(self.m)
 
@@ -107,7 +107,7 @@ class TestLiCoDiafiltration:
         self.Co_recovery_mass = value(
             self.m.fs.stage1.retentate_outlet.flow_vol[0]
         ) * value(self.m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"])
-        
+
     @pytest.mark.component
     def test_structural_issues(self):
         self.build_LiCoDiafiltration_model()

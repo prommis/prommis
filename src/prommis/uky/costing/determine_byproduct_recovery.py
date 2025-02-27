@@ -19,7 +19,7 @@ estimate potential revenue is also annually based.
 
 """
 from pyomo.common.config import ConfigDict, ConfigValue
-from pyomo.environ import ConcreteModel, Expression, NonNegativeReals, Set, Var
+from pyomo.environ import Expression, NonNegativeReals, Set, Var
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 

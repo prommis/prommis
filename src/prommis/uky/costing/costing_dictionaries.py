@@ -202,6 +202,16 @@ def load_default_sale_prices():
 
 
 def convert_to_usd_2021(value_in_original_units, original_unit):
+    """
+    Converts a given monetary value from its original year to 2021 USD.
+
+    Args:
+        value_in_original_units (float): The numerical value of the cost.
+        original_unit (pyunits object): The unit of the value, including the year.
+
+    Returns:
+        Converted value with 2021 USD as the unit.
+    """
     return pyunits.convert(
         value_in_original_units * original_unit, to_units=pyunits.USD_2021
     )

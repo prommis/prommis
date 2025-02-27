@@ -16,9 +16,7 @@ Python dictionaries that are loaded:
 
 """
 
-__author__ = (
-    "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, L. Deng, and M. Zamarripa)"
-)
+__author__ = "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, L. Deng, and M. Zamarripa)"
 __version__ = "1.0.0"
 
 import json
@@ -26,7 +24,6 @@ import os
 
 from pyomo.common.fileutils import this_file_dir
 from pyomo.environ import units as pyunits
-from pyomo.environ import value
 
 from idaes.core import register_idaes_currency_units
 
@@ -189,9 +186,7 @@ def load_default_sale_prices():
 
 
 def convert_to_usd_2021(value_in_original_units, original_unit):
-    return pyunits.convert(
-        value_in_original_units * original_unit, to_units=pyunits.USD_2021
-    )
+    return pyunits.convert(value_in_original_units * original_unit, to_units=pyunits.USD_2021)
 
 
 def load_default_resource_prices():

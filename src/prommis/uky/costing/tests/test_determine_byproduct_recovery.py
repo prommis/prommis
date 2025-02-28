@@ -50,7 +50,10 @@ from prommis.nanofiltration.diafiltration import (
     unfix_opt_variables,
 )
 from prommis.uky.costing.costing_dictionaries import load_default_sale_prices
-from prommis.uky.costing.determine_byproduct_recovery import ByproductRecovery
+from prommis.uky.costing.determine_byproduct_recovery import (
+    ByproductRecovery,
+    determine_example_usage,
+)
 
 # Byproduct recovery determine package
 
@@ -115,6 +118,7 @@ class TestLiCoDiafiltration:
         dt.assert_no_numerical_warnings()
         dt.display_underconstrained_set()
         dt.display_potential_evaluation_errors()
+
     # 3. Access product price.
     def test_import_product_prices(self):
         """Test case for importing and verifying product prices."""
@@ -203,8 +207,38 @@ class TestLiCoDiafiltration:
             determine_result, str
         ), f"Expected a string message, but got {type(determine_result)}"
 
+        # Check the output string for financial viability
+        net_benefit_value = value(model.recovery_determine.net_benefit)
+
+        if net_benefit_value > 0:
+            expected_message = f"✅ Byproduct recovery is financially viable. Net Benefit: ${net_benefit_value:.2f}"
+        else:
+            expected_message = f"❌ Byproduct recovery is NOT financially viable. Loss: ${-net_benefit_value:.2f}"
+
+        assert (
+            determine_result == expected_message
+        ), f"Unexpected output: {determine_result}"
+
         print("\n--- Byproduct Recovery Decision ---")
         print(determine_result)
+
+    def test_example_usage(self):
+        """
+        Ensure that the example usage from script A runs correctly.
+        """
+        determine_result = determine_example_usage()
+
+        # Ensure result is a string
+        assert isinstance(
+            determine_result, str
+        ), f"Expected a string message, but got {type(determine_result)}"
+
+        # Check that the result follows the expected pattern
+        assert determine_result.startswith(
+            "✅ Byproduct recovery is financially viable."
+        ) or determine_result.startswith(
+            "❌ Byproduct recovery is NOT financially viable."
+        ), f"Unexpected output: {determine_result}"
 
     def test_results(self):
         """Check expected numerical and string outputs."""

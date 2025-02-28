@@ -210,10 +210,13 @@ def determine_example_usage():
         model.recovery.added_process_steps[m].set_value(data.get("process_steps", 0))
         model.recovery.added_process_cost[m].set_value(data.get("process_cost", 0))
 
+    # Compute net benefit
+    net_benefit_value = value(model.recovery.net_benefit)
+    
     # Evaluate the financial viability
     result = model.recovery.determine_financial_viability()
 
-    return result
+    return result, net_benefit_value
 
 
 # Run the example only when executed as a script

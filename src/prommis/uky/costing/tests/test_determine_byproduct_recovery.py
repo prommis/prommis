@@ -59,12 +59,11 @@ class TestLiCoDiafiltration:
     # 2. Build the li-co diafiltration recovery flowsheet
     def build_LiCoDiafiltration_model(self):
         self.m = build_model()
-        add_costing(self.m)
 
         assert (
             degrees_of_freedom(self.m) == 0
         ), "Degrees of freedom should be zero after adding costing."
-
+        add_costing(self.m)
         initialize_model(self.m)
         solve_model(self.m)
 
@@ -113,8 +112,9 @@ class TestLiCoDiafiltration:
         self.build_LiCoDiafiltration_model()
         dt = DiagnosticsToolbox(self.m)
         dt.report_structural_issues()
+        dt.assert_no_numerical_warnings()
         dt.display_underconstrained_set()
-
+        dt.display_potential_evaluation_errors()
     # 3. Access product price.
     def test_import_product_prices(self):
         """Test case for importing and verifying product prices."""

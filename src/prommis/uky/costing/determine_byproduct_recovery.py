@@ -212,7 +212,7 @@ def determine_example_usage():
 
     # Compute net benefit
     net_benefit_value = value(model.recovery.net_benefit)
-    
+
     # Evaluate the financial viability
     result = model.recovery.determine_financial_viability()
 

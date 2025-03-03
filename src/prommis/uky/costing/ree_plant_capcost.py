@@ -1832,7 +1832,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # dictionary of default sale prices
         # the currency units are of USD
-        # Purity, purchase quantity, purchasing time, location, all affecting the cost.
+        # Purity, purchase quantity, purchasing time, and location, all affect the cost.
         default_sale_prices = load_default_sale_prices()
 
         if sale_prices is None:

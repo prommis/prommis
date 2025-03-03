@@ -88,7 +88,6 @@ class TestLiCoDiafiltration:
         print_information(self.m)
 
         # Check basic model properties
-        # print(f"Type of total_annualized_cost: {type(self.m.fs.costing.total_annualized_cost)}")
         assert isinstance(
             self.m.fs.costing.total_annualized_cost, Expression
         ), "total_annualized_cost should be a Pyomo Var."

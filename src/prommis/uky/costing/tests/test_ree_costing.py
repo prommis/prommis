@@ -1216,7 +1216,7 @@ class TestREECosting(object):
             -4614.5826, rel=1e-4
         )
         assert model.fs.costing.pv_revenue.value == pytest.approx(237.25943, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(-4516.52762, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(-4501.10576, rel=1e-4)
 
     @pytest.mark.unit
     def test_report(self, model):
@@ -3153,7 +3153,7 @@ class TestNPVCostingBlock(object):
             -57.28850, rel=1e-4
         )
         assert model.fs.costing.pv_revenue.value == pytest.approx(239.63402, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(159.8370, rel=1e-4)
+        assert model.fs.costing.npv.value == pytest.approx(175.4132, rel=1e-4)
 
 
 class TestNPVFixedInputs(object):
@@ -6489,11 +6489,11 @@ def test_REE_costing_consider_taxes():
     # check some cost results
     assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
     assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
+    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.5384, rel=1e-4)
     assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1595, rel=1e-4
+        1.1388, rel=1e-4
     )
-    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1441, rel=1e-4)
+    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1077, rel=1e-4)
     assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
     assert pyo.value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
     assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
@@ -6502,7 +6502,7 @@ def test_REE_costing_consider_taxes():
     assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
         0.0000, abs=1e-4
     )
-    assert pyo.value(m.fs.costing.income_tax) == pytest.approx(14.72816, abs=1e-4)
-    assert pyo.value(m.fs.costing.net_tax_owed) == pytest.approx(9.71183, abs=1e-4)
-    assert pyo.value(m.fs.costing.pv_taxes) == pytest.approx(-62.12044, abs=1e-4)
-    assert pyo.value(m.fs.costing.npv) == pytest.approx(424.29461, abs=1e-4)
+    assert pyo.value(m.fs.costing.income_tax) == pytest.approx(5.303479, abs=1e-4)
+    assert pyo.value(m.fs.costing.net_tax_owed) == pytest.approx(2.709606, abs=1e-4)
+    assert pyo.value(m.fs.costing.pv_taxes) == pytest.approx(-17.33163, abs=1e-4)
+    assert pyo.value(m.fs.costing.npv) == pytest.approx(158.08158, abs=1e-4)

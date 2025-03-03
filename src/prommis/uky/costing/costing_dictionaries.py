@@ -104,7 +104,7 @@ def load_default_sale_prices():
         "Ho": 1600 * 1e-6 * CE_index_units / pyunits.kg,
         "In": 244 * 1e-6 * CE_index_units / pyunits.kg,
         "Ir": 150233.37 * 1e-6 * CE_index_units / pyunits.kg,
-        # Pure Lathanum's (La) price is not available in USGS, but has La2O3's price.1kg price.
+        # Pure Lanthanum's (La) price is not available in USGS, but has La2O3's price.1kg price.
         #  https://www.luciteria.com/elements-for-sale/buy-lanthanum. Purity 99.5%.
         "La": 110 * 1e-6 * CE_index_units / pyunits.kg,
         "Li": 41.3 * 1e-6 * CE_index_units / pyunits.kg,

@@ -90,13 +90,13 @@ class TestLiCoDiafiltration:
         # Check basic model properties
         assert isinstance(
             self.m.fs.costing.total_annualized_cost, Expression
-        ), "total_annualized_cost should be a Pyomo Var."
+        ), "total_annualized_cost should be an Expression."
         assert isinstance(
             self.m.fs.stage3.permeate_outlet.flow_vol, (Var, Expression, Param)
-        ), "stage3 permeate flow_vol should be an Expression."
+        ), "stage3 permeate flow_vol should be an Var, Expression, or Param."
         assert isinstance(
             self.m.fs.stage1.retentate_outlet.flow_vol, (Var, Expression, Param)
-        ), "stage1 retentate flow_vol should be an Expression."
+        ), "stage1 retentate flow_vol should be an Var, Expression, or Param."
 
         # Store results for later tests
         self.total_annualized_cost = value(self.m.fs.costing.total_annualized_cost)

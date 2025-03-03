@@ -9,13 +9,13 @@ Tests for UKy flowsheet.
 
 """
 
-from pyomo.network import Arc
 from pyomo.environ import (
-    assert_optimal_termination,
-    value,
-    units,
     TransformationFactory,
+    assert_optimal_termination,
+    units,
+    value,
 )
+from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
@@ -30,10 +30,10 @@ from idaes.models.unit_models.solid_liquid import SLSeparator
 
 import pytest
 
-from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.leaching.leach_train import LeachingTrain
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitator import Precipitator
@@ -41,16 +41,16 @@ from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 from prommis.uky.uky_flowsheet import (
-    build,
-    set_partition_coefficients,
-    set_operating_conditions,
-    set_scaling,
-    initialize_system,
-    solve_system,
-    fix_organic_recycle,
-    display_results,
     add_costing,
+    build,
     display_costing,
+    display_results,
+    fix_organic_recycle,
+    initialize_system,
+    set_operating_conditions,
+    set_partition_coefficients,
+    set_scaling,
+    solve_system,
 )
 
 
@@ -838,11 +838,11 @@ def test_costing_solution(system_frame):
     )
     assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(7.2615, rel=1e-4)
     assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.4573, rel=1e-4
+        1.4565, rel=1e-4
     )
     assert value(model.fs.costing.land_cost) == pytest.approx(6.1234e-5, rel=1e-4)
     assert model.fs.costing.total_sales_revenue.value == pytest.approx(
-        0.00019047, rel=1e-4
+        0.00093407, rel=1e-4
     )
 
 

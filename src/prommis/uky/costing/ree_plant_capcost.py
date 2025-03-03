@@ -23,7 +23,9 @@ Other methods:
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 
-__author__ = "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, and M. Zamarripa)"
+__author__ = (
+    "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta,L. Deng, and M. Zamarripa)"
+)
 __version__ = "1.0.0"
 
 import textwrap
@@ -52,7 +54,11 @@ from idaes.core.util.tables import stream_table_dataframe_to_string
 
 from pandas import DataFrame
 
-from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
+from prommis.uky.costing.costing_dictionaries import (
+    load_default_resource_prices,
+    load_default_sale_prices,
+    load_REE_costing_dictionary,
+)
 
 _, watertap_costing_available = attempt_import("watertap.costing")
 if watertap_costing_available:
@@ -2013,43 +2019,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             raise TypeError("product_output_rates argument must be a dict")
 
         # dictionary of default sale prices
-        # the currency units are millions of USD, so all prices need a 1e-6 multiplier to get USD
-        default_sale_prices = {
-            # pure elements
-            "Sc": 6442 * 1e-6 * CE_index_units / pyunits.kg,
-            "Y": 8 * 1e-6 * CE_index_units / pyunits.kg,
-            "La": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "Ce": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "Pr": 63 * 1e-6 * CE_index_units / pyunits.kg,
-            "Nd": 49 * 1e-6 * CE_index_units / pyunits.kg,
-            "Sm": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "Eu": 174 * 1e-6 * CE_index_units / pyunits.kg,
-            "Gd": 37 * 1e-6 * CE_index_units / pyunits.kg,
-            "Tb": 471 * 1e-6 * CE_index_units / pyunits.kg,
-            "Dy": 264 * 1e-6 * CE_index_units / pyunits.kg,
-            "Ho": 61 * 1e-6 * CE_index_units / pyunits.kg,
-            "Er": 39 * 1e-6 * CE_index_units / pyunits.kg,
-            "Tm": 0 * 1e-6 * CE_index_units / pyunits.kg,  # price not available
-            "Yb": 33 * 1e-6 * CE_index_units / pyunits.kg,
-            "Lu": 906 * 1e-6 * CE_index_units / pyunits.kg,
-            # oxides
-            "Sc2O3": 4200 * 1e-6 * CE_index_units / pyunits.kg,
-            "Y2O3": 6 * 1e-6 * CE_index_units / pyunits.kg,
-            "La2O3": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "CeO2": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "Pr6O11": 52 * 1e-6 * CE_index_units / pyunits.kg,
-            "Nd2O3": 42 * 1e-6 * CE_index_units / pyunits.kg,
-            "Sm2O3": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "Eu2O3": 150 * 1e-6 * CE_index_units / pyunits.kg,
-            "Gd2O3": 32 * 1e-6 * CE_index_units / pyunits.kg,
-            "Tb4O7": 400 * 1e-6 * CE_index_units / pyunits.kg,
-            "Dy2O3": 230 * 1e-6 * CE_index_units / pyunits.kg,
-            "Ho2O3": 53 * 1e-6 * CE_index_units / pyunits.kg,
-            "Er2O3": 34 * 1e-6 * CE_index_units / pyunits.kg,
-            "Tm2O3": 0 * 1e-6 * CE_index_units / pyunits.kg,  # price not available
-            "Yb2O3": 29 * 1e-6 * CE_index_units / pyunits.kg,
-            "Lu2O3": 797 * 1e-6 * CE_index_units / pyunits.kg,
-        }
+        # the currency units are of USD
+        # Purity, purchase quantity, purchasing time, and location, all affect the cost.
+        default_sale_prices = load_default_sale_prices()
 
         if sale_prices is None:
             sale_prices = {}
@@ -2417,30 +2389,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # dictionary of default prices
         # the currency units are millions of USD, so all prices need a 1e-6 multiplier to get USD
-        default_prices = {
-            "power": 0.07 * 1e-6 * CE_index_units / pyunits.kWh,
-            "water": 1.90e-3 * 1e-6 * CE_index_units / pyunits.gallon,
-            "diesel": 2 * 1e-6 * CE_index_units / pyunits.gal,
-            "bioleaching_solution": 0.008 * 1e-6 * CE_index_units / pyunits.L,
-            "H2SO4": 200 * 1e-6 * CE_index_units / pyunits.tonne,
-            "natural_gas": 5.79 * 1e-3 * 1e-6 * CE_index_units / pyunits.ft**3,
-            "polymer": 33.61 * 1e-6 * CE_index_units / pyunits.kg,
-            "NAOH": 350.00 * 1e-6 * CE_index_units / pyunits.tonne,
-            "CACO3": 80.00 * 1e-6 * CE_index_units / pyunits.tonne,
-            "coal_calcite": 0.50 * 1e-6 * CE_index_units / pyunits.tonne,
-            "HCL": 250.00 * 1e-6 * CE_index_units / pyunits.tonne,
-            "oxalic_acid": 1.00 * 1e-6 * CE_index_units / pyunits.kg,
-            "ascorbic_acid": 2.00 * 1e-6 * CE_index_units / pyunits.kg,
-            "kerosene": 400.00 * 1e-6 * CE_index_units / pyunits.tonne,
-            "D2EHPA": 15.00 * 1e-6 * CE_index_units / pyunits.kg,
-            "NA2S": 360.00 * 1e-6 * CE_index_units / pyunits.tonne,
-            "nonhazardous_solid_waste": 1.00 * 1e-6 * CE_index_units / pyunits.ton,
-            "nonhazardous_precipitate_waste": 5.00
-            * 1e-6
-            * CE_index_units
-            / pyunits.ton,
-            "dust_and_volatiles": 1.00 * 1e-6 * CE_index_units / pyunits.ton,
-        }
+        default_prices = load_default_resource_prices()
 
         # add entries from prices to default_prices
         for key in prices.keys():

@@ -23,7 +23,9 @@ Other methods:
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 
-__author__ = "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, and M. Zamarripa)"
+__author__ = (
+    "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta,L. Deng, and M. Zamarripa)"
+)
 __version__ = "1.0.0"
 
 import textwrap
@@ -33,7 +35,7 @@ from pyomo.common.config import ConfigValue, ListOf
 from pyomo.common.dependencies import attempt_import
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
-from pyomo.environ import ConcreteModel, Expression, Param, Reference, Var
+from pyomo.environ import ConcreteModel, Expression, Param, Reference, Var, log10
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
@@ -47,11 +49,16 @@ from idaes.core import (
     declare_process_block_class,
     register_idaes_currency_units,
 )
+from idaes.core.util.math import smooth_max
 from idaes.core.util.tables import stream_table_dataframe_to_string
 
 from pandas import DataFrame
 
-from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
+from prommis.uky.costing.costing_dictionaries import (
+    load_default_resource_prices,
+    load_default_sale_prices,
+    load_REE_costing_dictionary,
+)
 
 _, watertap_costing_available = attempt_import("watertap.costing")
 if watertap_costing_available:
@@ -186,7 +193,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             "period, for example an input of [100] means that 100% of capital "
             "expenses occur in the year preceding the operating period. Set "
             "to None to indicate no expenditure period, which means that all "
-            "capital expenses occur in the first operating year t=0.",
+            "capital expenses occur at the start of the plant lifetime t=0.",
         ),
     )
     CONFIG.declare(
@@ -211,6 +218,34 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ),
     )
     CONFIG.declare(
+        "capital_loan_repayment_period",
+        ConfigValue(
+            default=10,
+            domain=float,
+            description="Length of loan repayment period in years.",
+        ),
+    )
+    CONFIG.declare(
+        "debt_percentage_of_CAPEX",
+        ConfigValue(
+            default=50,
+            domain=float,
+            description="Percentage of CAPEX financed by debt; ignored if "
+            "debt_expression is not None. The value should be a percentage, "
+            "for example 10 for a debt corresponding to 10% of the CAPEX. Set "
+            "to zero to indicate no loans are taken out on capital.",
+        ),
+    )
+    CONFIG.declare(
+        "debt_expression",
+        ConfigValue(
+            default=None,
+            description="Set the value or expression to calculate total debt. "
+            "Enter a Pyomo expression of flowsheet or cost model variables. "
+            "The expression should have currency units.",
+        ),
+    )
+    CONFIG.declare(
         "operating_inflation_percentage",
         ConfigValue(
             default=3,
@@ -228,25 +263,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             description="Inflation rate for revenue during the operating "
             "period. The value should be a percentage, for example 10 for a "
             "10% inflation rate. Set to 0 to indicate no inflation.",
-        ),
-    )
-    CONFIG.declare(
-        "royalty_charge_percentage_of_revenue",
-        ConfigValue(
-            default=6.5,
-            domain=float,
-            description="Percentage of revenue charged as royalties; ignored "
-            "if royalty_expression is not None. The value should be a "
-            "percentage, for example 10 for a 10% royalty charge rate. Set to "
-            "0 to indicate no royalties are charged.",
-        ),
-    )
-    CONFIG.declare(
-        "royalty_expression",
-        ConfigValue(
-            default=None,
-            description="Set the value or expression to calculate royalties. "
-            "If set, royalty_charge_percentage_of_revenue is ignored.",
         ),
     )
 
@@ -307,6 +323,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         additional_waste_cost=None,
         transport_cost_per_ton_product=None,
         recovery_rate_per_year=None,
+        consider_taxes=False,
+        income_tax_percentage=26,
+        mineral_depletion_percentage=14,
+        production_incentive_percentage=10,
+        royalty_charge_percentage_of_revenue=6.5,
         CE_index_year="2021",
         watertap_blocks=None,
         calculate_NPV=False,
@@ -425,6 +446,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             additional_waste_cost: Expression, Var or Param to calculate additional waste disposal costs.
             recovery_rate_per_year: Var or value to use for rate of REE recovered, in units
                 of mass/year
+            consider_taxes: True/False flag for calculating net tax owed. Defaults to False.
+            income_tax_percentage: combined federal and state income tax percentage,
+                usually between 26 - 40%. Here, it defaults to 26%.
+            mineral_depletion_percentage: tax deduction percentage for mineral depletion,
+                defaults to 14% as reported in the UKy report.
+            production_incentive_percentage: tax deduction percentage for producing critical minerals,
+                defaults to 10% of total production cost (excludes cost of feedstock).
+            royalty_charge_percentage_of_revenue: Percentage of revenue charged as royalties;
+                defaults to 6.5% as reported in the UKy report.
             transport_cost_per_ton_product: Expression, Var or Param to use for transport costs
                 per ton of product (note, this is not part of the TOC)
             CE_index_year: year for cost basis, e.g. "2021" to use 2021 dollars
@@ -475,66 +505,77 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     mutable=True,
                     initialize=piping_materials_and_labor_percentage,
                     doc="Percentage of BEC used to estimate piping, materials and labor installation costs",
+                    units=pyunits.percent,
                 )
 
                 self.electrical_materials_and_labor_percentage = Param(
                     mutable=True,
                     initialize=electrical_materials_and_labor_percentage,
                     doc="Percentage of BEC used to estimate electrical, materials and labor installation costs",
+                    units=pyunits.percent,
                 )
 
                 self.instrumentation_percentage = Param(
                     mutable=True,
                     initialize=instrumentation_percentage,
                     doc="Percentage of BEC used to estimate instrumentation installation costs",
+                    units=pyunits.percent,
                 )
 
                 self.plant_services_percentage = Param(
                     mutable=True,
                     initialize=plants_services_percentage,
                     doc="Percentage of BEC used to estimate plant services installation costs",
+                    units=pyunits.percent,
                 )
 
                 self.process_buildings_percentage = Param(
                     mutable=True,
                     initialize=process_buildings_percentage,
                     doc="Percentage of BEC used to estimate process buildings installation costs",
+                    units=pyunits.percent,
                 )
 
                 self.auxiliary_buildings_percentage = Param(
                     mutable=True,
                     initialize=auxiliary_buildings_percentage,
                     doc="Percentage of BEC used to estimate auxiliary buildings installation costs",
+                    units=pyunits.percent,
                 )
 
                 self.site_improvements_percentage = Param(
                     mutable=True,
                     initialize=site_improvements_percentage,
                     doc="Percentage of BEC used to estimate site improvements installation costs",
+                    units=pyunits.percent,
                 )
 
                 self.equipment_installation_percentage = Param(
                     mutable=True,
                     initialize=equipment_installation_percentage,
                     doc="Percentage of BEC used to estimate equipment installation costs",
+                    units=pyunits.percent,
                 )
 
                 self.field_expenses_percentage = Param(
                     mutable=True,
                     initialize=field_expenses_percentage,
                     doc="Percentage of BEC used to estimate field expenses installation costs",
+                    units=pyunits.percent,
                 )
 
                 self.project_management_and_construction_percentage = Param(
                     mutable=True,
                     initialize=project_management_and_construction_percentage,
                     doc="Percentage of BEC used to estimate project management and construction installation costs",
+                    units=pyunits.percent,
                 )
 
                 self.process_contingency_percentage = Param(
                     mutable=True,
                     initialize=process_contingency_percentage,
                     doc="Percentage of BEC used to estimate process contingency installation costs",
+                    units=pyunits.percent,
                 )
 
                 # ancillary cost variables
@@ -682,25 +723,39 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 @self.Constraint()
                 def piping_materials_and_labor_cost_eq(c):
                     return c.piping_materials_and_labor_costs == (
-                        c.total_BEC * c.piping_materials_and_labor_percentage / 100
+                        c.total_BEC
+                        * pyunits.convert(
+                            c.piping_materials_and_labor_percentage,
+                            to_units=pyunits.dimensionless,
+                        )
                     )
 
                 @self.Constraint()
                 def electrical_materials_and_labor_cost_eq(c):
                     return c.electrical_materials_and_labor_costs == (
-                        c.total_BEC * c.electrical_materials_and_labor_percentage / 100
+                        c.total_BEC
+                        * pyunits.convert(
+                            c.electrical_materials_and_labor_percentage,
+                            to_units=pyunits.dimensionless,
+                        )
                     )
 
                 @self.Constraint()
                 def instrumentation_cost_eq(c):
                     return c.instrumentation_costs == (
-                        c.total_BEC * c.instrumentation_percentage / 100
+                        c.total_BEC
+                        * pyunits.convert(
+                            c.instrumentation_percentage, to_units=pyunits.dimensionless
+                        )
                     )
 
                 @self.Constraint()
                 def plant_services_cost_eq(c):
                     return c.plant_services_costs == (
-                        c.total_BEC * c.plant_services_percentage / 100
+                        c.total_BEC
+                        * pyunits.convert(
+                            c.plant_services_percentage, to_units=pyunits.dimensionless
+                        )
                     )
 
                 @self.Constraint()
@@ -716,19 +771,31 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 @self.Constraint()
                 def process_buildings_cost_eq(c):
                     return c.process_buildings_costs == (
-                        c.total_BEC * c.process_buildings_percentage / 100
+                        c.total_BEC
+                        * pyunits.convert(
+                            c.process_buildings_percentage,
+                            to_units=pyunits.dimensionless,
+                        )
                     )
 
                 @self.Constraint()
                 def auxiliary_buildings_cost_eq(c):
                     return c.auxiliary_buildings_costs == (
-                        c.total_BEC * c.auxiliary_buildings_percentage / 100
+                        c.total_BEC
+                        * pyunits.convert(
+                            c.auxiliary_buildings_percentage,
+                            to_units=pyunits.dimensionless,
+                        )
                     )
 
                 @self.Constraint()
                 def site_improvements_cost_eq(c):
                     return c.site_improvements_costs == (
-                        c.total_BEC * c.site_improvements_percentage / 100
+                        c.total_BEC
+                        * pyunits.convert(
+                            c.site_improvements_percentage,
+                            to_units=pyunits.dimensionless,
+                        )
                     )
 
                 @self.Constraint()
@@ -743,21 +810,30 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 @self.Constraint()
                 def equipment_installation_cost_eq(c):
                     return c.equipment_installation_costs == (
-                        c.total_BEC * c.equipment_installation_percentage / 100
+                        c.total_BEC
+                        * pyunits.convert(
+                            c.equipment_installation_percentage,
+                            to_units=pyunits.dimensionless,
+                        )
                     )
 
                 @self.Constraint()
                 def field_expenses_cost_eq(c):
                     return c.field_expenses_costs == (
-                        c.total_BEC * c.field_expenses_percentage / 100
+                        c.total_BEC
+                        * pyunits.convert(
+                            c.field_expenses_percentage, to_units=pyunits.dimensionless
+                        )
                     )
 
                 @self.Constraint()
                 def project_management_and_construction_cost_eq(c):
                     return c.project_management_and_construction_costs == (
                         c.total_BEC
-                        * c.project_management_and_construction_percentage
-                        / 100
+                        * pyunits.convert(
+                            c.project_management_and_construction_percentage,
+                            to_units=pyunits.dimensionless,
+                        )
                     )
 
                 @self.Constraint()
@@ -772,7 +848,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 @self.Constraint()
                 def process_contingency_cost_eq(c):
                     return c.contingency_costs == (
-                        c.total_BEC * c.process_contingency_percentage / 100
+                        c.total_BEC
+                        * pyunits.convert(
+                            c.process_contingency_percentage,
+                            to_units=pyunits.dimensionless,
+                        )
                     )
 
                 @self.Constraint()
@@ -979,6 +1059,125 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
             if fixed_OM and variable_OM:
+                if consider_taxes:
+                    self.income_tax_percentage = Param(
+                        initialize=income_tax_percentage,
+                        mutable=True,
+                        doc="Combined federal and state income tax percentage"
+                        "usually between 26 - 40%",
+                        units=pyunits.percent,
+                    )
+                    self.mineral_depletion_percentage = Param(
+                        initialize=mineral_depletion_percentage,
+                        mutable=True,
+                        doc="tax deduction percentage for mineral depletion."
+                        "default value of 14% is used, as reported in the UKy report",
+                        units=pyunits.percent,
+                    )
+                    self.production_incentive_percentage = Param(
+                        initialize=production_incentive_percentage,
+                        mutable=True,
+                        doc="tax deduction percentage for producing critical minerals"
+                        "default value of 10% of total production cost",
+                        units=pyunits.percent,
+                    )
+                    self.royalty_charge_percentage_of_revenue = Param(
+                        initialize=royalty_charge_percentage_of_revenue,
+                        mutable=True,
+                        doc="Percentage of revenue charged as royalties",
+                        units=pyunits.percent,
+                    )
+                    self.min_net_tax_owed = Param(
+                        initialize=0,
+                        doc="Minimum net tax owed in millions USD",
+                        units=CE_index_units / pyunits.year,
+                    )
+                    self.eps = Param(
+                        initialize=1e-4,
+                        units=CE_index_units / pyunits.year,
+                    )
+                    self.net_tax_owed = Var(
+                        initialize=0.40 * self.total_sales_revenue,
+                        doc="Net tax owed in millions USD",
+                        units=CE_index_units / pyunits.year,
+                    )
+                    self.income_tax = Var(
+                        initialize=0.26 * self.total_sales_revenue,
+                        doc="Income tax in millions USD",
+                        units=CE_index_units / pyunits.year,
+                    )
+                    self.additional_tax_credit = Var(
+                        initialize=0,
+                        doc="Additional tax credit",
+                        units=CE_index_units / pyunits.year,
+                    )
+                    self.additional_tax_credit.fix(0)
+
+                    self.additional_tax_owed = Var(
+                        initialize=0,
+                        doc="Additional tax owed",
+                        units=CE_index_units / pyunits.year,
+                    )
+                    self.additional_tax_owed.fix(0)
+
+                    self.royalty_charge = Expression(
+                        expr=pyunits.convert(
+                            self.royalty_charge_percentage_of_revenue,
+                            to_units=pyunits.dimensionless,
+                        )
+                        * self.total_sales_revenue
+                    )
+                    self.mineral_depletion_charge = Expression(
+                        expr=pyunits.convert(
+                            self.mineral_depletion_percentage,
+                            to_units=pyunits.dimensionless,
+                        )
+                        * (self.total_sales_revenue - self.royalty_charge)
+                    )
+                    self.production_incentive_charge = Expression(
+                        expr=pyunits.convert(
+                            self.production_incentive_percentage,
+                            to_units=pyunits.dimensionless,
+                        )
+                        * (
+                            self.total_variable_OM_cost[0]
+                            + self.total_fixed_OM_cost
+                            + self.annualized_cost / pyunits.year
+                        )
+                    )
+
+                    @self.Constraint()
+                    def income_tax_eq(c):
+                        return c.income_tax == pyunits.convert(
+                            self.income_tax_percentage, to_units=pyunits.dimensionless
+                        ) * (
+                            self.total_sales_revenue
+                            - (
+                                self.total_variable_OM_cost[0]
+                                + self.total_fixed_OM_cost
+                                + self.annualized_cost / pyunits.year
+                            )
+                        )
+
+                    @self.Constraint()
+                    def net_tax_owed_eq(c):
+                        return c.net_tax_owed == smooth_max(
+                            self.min_net_tax_owed,
+                            (
+                                (
+                                    self.income_tax
+                                    + self.royalty_charge
+                                    + self.additional_tax_owed
+                                )
+                                - (
+                                    self.mineral_depletion_charge
+                                    + self.production_incentive_charge
+                                    + self.additional_tax_credit
+                                )
+                            ),
+                            eps=self.eps,
+                        )
+
                 # build cost of recovery (COR)
                 if recovery_rate_per_year is not None:
                     self.additional_cost_of_recovery = Var(
@@ -1038,6 +1237,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                                     self.annualized_cost / pyunits.year
                                     + self.total_fixed_OM_cost
                                     + self.total_variable_OM_cost[0]
+                                    + (
+                                        self.net_tax_owed
+                                        if consider_taxes
+                                        else 0 * CE_index_units / pyunits.year
+                                    )
                                 )
                                 / (self.recovery_rate_per_year * recovery_units_factor),
                                 to_units=getattr(pyunits, "USD_" + CE_index_year)
@@ -1081,7 +1285,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         )
 
             if calculate_NPV:
-                self.calculate_NPV(fixed_OM, variable_OM)
+                self.calculate_NPV(fixed_OM, variable_OM, consider_taxes)
 
     @staticmethod
     def initialize_build(*args, **kwargs):
@@ -1244,9 +1448,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             var_dict["Total Other Fixed Costs"] = value(self.other_fixed_costs)
 
         if hasattr(self, "variable_operating_costs"):
-            var_dict["Total Variable Power Cost"] = value(
-                self.variable_operating_costs[0, "power"]
-            )
+            if (0, "power") in self.variable_operating_costs.id_index_map().values():
+                var_dict["Total Variable Power Cost"] = value(
+                    self.variable_operating_costs[0, "power"]
+                )
 
             if hasattr(self, "additional_waste_cost"):
                 var_dict["Total Variable Waste Cost"] = value(
@@ -1292,6 +1497,23 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         if hasattr(self, "npv"):
             var_dict["Net Present Value"] = value(self.npv)
+
+        if hasattr(self, "royalty_charge"):
+            var_dict["Royalty Charge"] = value(self.royalty_charge)
+
+        if hasattr(self, "mineral_depletion_charge"):
+            var_dict["Mineral Depletion Charge"] = value(self.mineral_depletion_charge)
+
+        if hasattr(self, "production_incentive_charge"):
+            var_dict["Production Incentive Charge"] = value(
+                self.production_incentive_charge
+            )
+
+        if hasattr(self, "income_tax"):
+            var_dict["Income Tax"] = value(self.income_tax)
+
+        if hasattr(self, "net_tax_owed"):
+            var_dict["Net Tax Owed"] = value(self.net_tax_owed)
 
         report_dir = {}
         report_dir["Value"] = {}
@@ -1797,43 +2019,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             raise TypeError("product_output_rates argument must be a dict")
 
         # dictionary of default sale prices
-        # the currency units are millions of USD, so all prices need a 1e-6 multiplier to get USD
-        default_sale_prices = {
-            # pure elements
-            "Sc": 6442 * 1e-6 * CE_index_units / pyunits.kg,
-            "Y": 8 * 1e-6 * CE_index_units / pyunits.kg,
-            "La": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "Ce": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "Pr": 63 * 1e-6 * CE_index_units / pyunits.kg,
-            "Nd": 49 * 1e-6 * CE_index_units / pyunits.kg,
-            "Sm": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "Eu": 174 * 1e-6 * CE_index_units / pyunits.kg,
-            "Gd": 37 * 1e-6 * CE_index_units / pyunits.kg,
-            "Tb": 471 * 1e-6 * CE_index_units / pyunits.kg,
-            "Dy": 264 * 1e-6 * CE_index_units / pyunits.kg,
-            "Ho": 61 * 1e-6 * CE_index_units / pyunits.kg,
-            "Er": 39 * 1e-6 * CE_index_units / pyunits.kg,
-            "Tm": 0 * 1e-6 * CE_index_units / pyunits.kg,  # price not available
-            "Yb": 33 * 1e-6 * CE_index_units / pyunits.kg,
-            "Lu": 906 * 1e-6 * CE_index_units / pyunits.kg,
-            # oxides
-            "Sc2O3": 4200 * 1e-6 * CE_index_units / pyunits.kg,
-            "Y2O3": 6 * 1e-6 * CE_index_units / pyunits.kg,
-            "La2O3": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "CeO2": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "Pr6O11": 52 * 1e-6 * CE_index_units / pyunits.kg,
-            "Nd2O3": 42 * 1e-6 * CE_index_units / pyunits.kg,
-            "Sm2O3": 2 * 1e-6 * CE_index_units / pyunits.kg,
-            "Eu2O3": 150 * 1e-6 * CE_index_units / pyunits.kg,
-            "Gd2O3": 32 * 1e-6 * CE_index_units / pyunits.kg,
-            "Tb4O7": 400 * 1e-6 * CE_index_units / pyunits.kg,
-            "Dy2O3": 230 * 1e-6 * CE_index_units / pyunits.kg,
-            "Ho2O3": 53 * 1e-6 * CE_index_units / pyunits.kg,
-            "Er2O3": 34 * 1e-6 * CE_index_units / pyunits.kg,
-            "Tm2O3": 0 * 1e-6 * CE_index_units / pyunits.kg,  # price not available
-            "Yb2O3": 29 * 1e-6 * CE_index_units / pyunits.kg,
-            "Lu2O3": 797 * 1e-6 * CE_index_units / pyunits.kg,
-        }
+        # the currency units are of USD
+        # Purity, purchase quantity, purchasing time, and location, all affect the cost.
+        default_sale_prices = load_default_sale_prices()
 
         if sale_prices is None:
             sale_prices = {}
@@ -2201,30 +2389,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # dictionary of default prices
         # the currency units are millions of USD, so all prices need a 1e-6 multiplier to get USD
-        default_prices = {
-            "power": 0.07 * 1e-6 * CE_index_units / pyunits.kWh,
-            "water": 1.90e-3 * 1e-6 * CE_index_units / pyunits.gallon,
-            "diesel": 2 * 1e-6 * CE_index_units / pyunits.gal,
-            "bioleaching_solution": 0.008 * 1e-6 * CE_index_units / pyunits.L,
-            "H2SO4": 200 * 1e-6 * CE_index_units / pyunits.tonne,
-            "natural_gas": 5.79 * 1e-3 * 1e-6 * CE_index_units / pyunits.ft**3,
-            "polymer": 33.61 * 1e-6 * CE_index_units / pyunits.kg,
-            "NAOH": 350.00 * 1e-6 * CE_index_units / pyunits.tonne,
-            "CACO3": 80.00 * 1e-6 * CE_index_units / pyunits.tonne,
-            "coal_calcite": 0.50 * 1e-6 * CE_index_units / pyunits.tonne,
-            "HCL": 250.00 * 1e-6 * CE_index_units / pyunits.tonne,
-            "oxalic_acid": 1.00 * 1e-6 * CE_index_units / pyunits.kg,
-            "ascorbic_acid": 2.00 * 1e-6 * CE_index_units / pyunits.kg,
-            "kerosene": 400.00 * 1e-6 * CE_index_units / pyunits.tonne,
-            "D2EHPA": 15.00 * 1e-6 * CE_index_units / pyunits.kg,
-            "NA2S": 360.00 * 1e-6 * CE_index_units / pyunits.tonne,
-            "nonhazardous_solid_waste": 1.00 * 1e-6 * CE_index_units / pyunits.ton,
-            "nonhazardous_precipitate_waste": 5.00
-            * 1e-6
-            * CE_index_units
-            / pyunits.ton,
-            "dust_and_volatiles": 1.00 * 1e-6 * CE_index_units / pyunits.ton,
-        }
+        default_prices = load_default_resource_prices()
 
         # add entries from prices to default_prices
         for key in prices.keys():
@@ -2265,14 +2430,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # assume the user is not using this
         b.other_variable_costs.fix(0)
 
+        # TODO commented as no WaterTAP models currently use this, may change in the future
         # variable for user to assign watertap variable costs to,
         # constraint sets to sum of list, which is 0 for empty list
-        b.watertap_variable_costs = Var(
-            initialize=0,
-            bounds=(0, None),
-            doc="Watertap variable costs",
-            units=CE_index_units / pyunits.year,
-        )
+        # b.watertap_variable_costs = Var(
+        #     initialize=0,
+        #     bounds=(0, None),
+        #     doc="Watertap variable costs",
+        #     units=CE_index_units / pyunits.year,
+        # )
 
         # variable for user to assign custom variable costs to,
         # constraint sets to sum of list, which is 0 for empty list
@@ -2310,13 +2476,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
             )
 
+        # TODO commented as no WaterTAP models currently use this, may change in the future
         # sum of variable operating costs of watertap units
-        @b.Constraint()
-        def sum_watertap_variable_costs(c):
-            if not hasattr(c, "watertap_variable_costs_list"):
-                return c.watertap_variable_costs == 0
-            else:
-                return c.watertap_variable_costs == sum(b.watertap_variable_costs_list)
+        # @b.Constraint()
+        # def sum_watertap_variable_costs(c):
+        #     if not hasattr(c, "watertap_variable_costs_list"):
+        #         return c.watertap_variable_costs == 0
+        #     else:
+        #         return c.watertap_variable_costs == sum(b.watertap_variable_costs_list)
 
         # sum of variable operating costs of custom units
         @b.Constraint()
@@ -2353,7 +2520,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                     + c.additional_chemicals_cost / pyunits.year
                     + c.additional_waste_cost / pyunits.year
-                    + c.watertap_variable_costs
+                    # TODO commented as no WaterTAP models currently use this, may change in the future
+                    # + c.watertap_variable_costs
                     + c.custom_variable_costs
                 )
 
@@ -2373,7 +2541,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                     + c.additional_chemicals_cost / pyunits.year
                     + c.additional_waste_cost / pyunits.year
-                    + c.watertap_variable_costs
+                    # TODO commented as no WaterTAP models currently use this, may change in the future
+                    # + c.watertap_variable_costs
                     + c.custom_variable_costs
                 )
 
@@ -2387,7 +2556,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 + c.land_cost / pyunits.year
                 + c.additional_chemicals_cost / pyunits.year
                 + c.additional_waste_cost / pyunits.year
-                + c.watertap_variable_costs
+                # TODO commented as no WaterTAP models currently use this, may change in the future
+                # + c.watertap_variable_costs
                 + c.custom_variable_costs
             )
 
@@ -2538,7 +2708,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         BEC_list = []
         b.watertap_fixed_costs_list = []
-        b.watertap_variable_costs_list = []
+        # TODO commented as no WaterTAP models currently use this, may change in the future
+        # b.watertap_variable_costs_list = []
         b.custom_fixed_costs_list = []
         b.custom_variable_costs_list = []
 
@@ -2590,13 +2761,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             to_units=CE_index_units / pyunits.year,
                         )
                     )
-                if hasattr(w.costing, "variable_operating_cost"):
-                    b.watertap_variable_costs_list.append(
-                        pyunits.convert(
-                            w.costing.variable_operating_cost,
-                            to_units=CE_index_units / pyunits.year,
-                        )
-                    )
+                # # TODO commented as no WaterTAP models currently use this, may change in the future
+                # if hasattr(w.costing, "variable_operating_cost"):
+                #     b.watertap_variable_costs_list.append(
+                #         pyunits.convert(
+                #             w.costing.variable_operating_cost,
+                #             to_units=CE_index_units / pyunits.year,
+                #         )
+                #     )
 
         b.total_BEC = Var(
             initialize=100,
@@ -2902,7 +3074,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # method has finished building components
         b.components_already_built = True
 
-    def calculate_NPV(b, fixed_OM, variable_OM):
+    def calculate_NPV(b, fixed_OM, variable_OM, consider_taxes=False):
         """
         Equations for cash flow expressions derived from the textbook
         Engineering Economy: Applying Theory to Practice, 3rd Ed. by Ted. G. Eschenbach.
@@ -2911,11 +3083,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         day" value of a chemical plant over the total lifetime, including all
         cash flows.
 
-        This method supports capital expenditure, inflation, and royalties.
-        The NPV formulation assumes that negative cash flows consists capital
-        and operating costs scaled to a constant present value. The general
-        NPV formula with 100% of capital expenditure upfront at the start of
-        the operating period and no capital or operating growth rate is
+        This method supports capital expenditure, loan repayment, inflation,
+        and royalties. The NPV formulation assumes that negative cash flows
+        consists capital and operating costs scaled to a constant present
+        value. The general NPV formula with 100% of capital expenditure
+        upfront at the start of the operating period and no capital or
+        operating growth rate is
 
         NPV = [(REVENUE - OPEX - ROYALTIES) * P/A(r, N)] - CAPEX
 
@@ -2935,6 +3108,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         growth to obtain the present value. These expressions are implemented
         if there is no capital expenditure period or additional growth rate.
 
+        Often, uniform series of cash flows do not start in the first period
+        (t=1), but in some later period, T, after a known delay. In this case
+        the delay is accounted for using
+
+        PV_year1_cashflow = Cash_Flow_Value * P/A(r, N)
+
+        PV_yearT_cashflow = Cash_Flow_Value * [P/A(r, N) - P/A(r, T-1)]
+
         ----------------------------------------------------------------------
 
         The general NPV formulation allows capital costs, operating costs,
@@ -2942,7 +3123,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         a constant proportional growth rate expressed as an escalation or
         inflation percentage. The general formulation is given by
 
-        NPV = PV_Revenue - PV_Operating_Cost - PV_Royalties - PV_Capital_Cost
+        NPV = PV_Revenue - PV_Operating_Cost - PV_Royalties
+              - PV_Capital_Cost - PV_Loan_Interest
 
         For costs escalating at a constant rate for the project lifetime, the
         series present worth factor is modified to account for escalation,
@@ -2960,17 +3142,22 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         example, if the capital expenditures are distributed across a 3-year
         capital escalation period, the PV from the capital costs are given as
 
-        PV_Capital_Cost = Y1_% * CAPEX * P/A(iLoan_%, gCap, 1)
-                          + Y2_% * CAPEX * P/A(iLoan_%, gCap, 2)
-                          + Y3_% * CAPEX * P/A(iLoan_%, gCap, 3)
+        PV_Capital_Cost = Y1_% * CAPEX * [P/A(r, gCap, 1) - P/A(r, gCap, 0)]
+                          + Y2_% * CAPEX * [P/A(r, gCap, 2) - P/A(r, gCap, 1)]
+                          + Y3_% * CAPEX * [P/A(r, gCap, 3) - P/A(r, gCap, 2)]
 
         where Y1_%, Y2_%, and Y3_% are the percentages of capital expenditure
         in each year expressed as decimals, CAPEX is the total capital cost from
         equipment purchasing, gCap is the capital escalation growth rate
-        expressed as a decimal, and iLoan_% is the capital equipment loan
-        interest rate expressed as a decimal. The capital costs spent in each
-        year are handled separately to properly account for the value growth
-        over time.
+        expressed as a decimal. The capital costs spent in each year are handled
+        separately to properly account for the value growth over time. Loan
+        repayment and interest owed are calculated as
+
+        PV_Loan_Interest_Owed = Debt * [P/A(r, 0, Nloan) / P/A(iLoan_%, 0, Nloan) - 1]
+
+        where Debt is the loan principal (typically a percentage of the CAPEX), Nloan
+        is the loan repayment period, and iLoan_% is the capital equipment loan interest
+        rate expressed as a decimal.
 
         Revenue, operating costs and royalties based on revenue escalate with
         standard inflation. Notably, these cash flows occur after any capital
@@ -3045,7 +3232,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         # check optional expressions
-        QGESSCostingData.assert_Pyomo_object(b.config, name="royalty_expression")
+        QGESSCostingData.assert_Pyomo_object(b.config, name="debt_expression")
 
         # build variables
 
@@ -3053,6 +3240,20 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=-b.CAPEX,
             bounds=(None, 0),
             doc="Present value of total lifetime capital costs; negative cash flow",
+            units=b.cost_units,
+        )
+
+        b.loan_debt = Var(
+            initialize=b.CAPEX,
+            bounds=(0, 1e4),
+            doc="total debt from loans in $MM",
+            units=b.cost_units,
+        )
+
+        b.pv_loan_interest = Var(
+            initialize=-b.CAPEX,
+            bounds=(-1e4, 1e4),
+            doc="present value of total lifetime loan interest in $MM; normally a negative cash flow, but can be positive depending on the discount and interest rates",
             units=b.cost_units,
         )
 
@@ -3070,26 +3271,16 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             units=b.cost_units,
         )
 
-        b.pv_royalties = Var(
-            initialize=-b.REVENUE
-            * b.config.plant_lifetime
-            * b.config.royalty_charge_percentage_of_revenue
-            / 100,
-            bounds=(None, 0),
-            doc="Present value of total lifetime royalties; negative cash flow",
-            units=b.cost_units,
-        )
+        if consider_taxes:
+            b.pv_taxes = Var(
+                initialize=-b.net_tax_owed * pyunits.year * b.config.plant_lifetime,
+                bounds=(None, 0),
+                doc="Present value of total lifetime tax owed; negative cash flow",
+                units=b.cost_units,
+            )
 
         b.npv = Var(
-            initialize=(
-                -b.CAPEX
-                + (
-                    b.REVENUE
-                    * (1 - b.config.royalty_charge_percentage_of_revenue / 100)
-                    - b.OPEX
-                )
-                * b.config.plant_lifetime
-            ),
+            initialize=(-b.CAPEX + (b.REVENUE - b.OPEX) * b.config.plant_lifetime),
             bounds=(None, None),
             doc="Present value of plant over entire capital and operation lifetime",
             units=b.cost_units,
@@ -3123,17 +3314,20 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=b.config.capital_loan_interest_percentage, units=pyunits.percent
         )
 
+        b.capital_loan_repayment_period = Param(
+            initialize=b.config.capital_loan_repayment_period, units=pyunits.years
+        )
+
+        b.debt_percentage_of_CAPEX = Param(
+            initialize=b.config.debt_percentage_of_CAPEX, units=pyunits.percent
+        )
+
         b.operating_inflation_percentage = Param(
             initialize=b.config.operating_inflation_percentage, units=pyunits.percent
         )
 
         b.revenue_inflation_percentage = Param(
             initialize=b.config.revenue_inflation_percentage, units=pyunits.percent
-        )
-
-        b.royalty_charge_percentage_of_revenue = Param(
-            initialize=b.config.royalty_charge_percentage_of_revenue,
-            units=pyunits.percent,
         )
 
         # define series present worth factor as an method so it can be called
@@ -3152,7 +3346,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             @b.Constraint()
             def pv_capital_cost_constraint(c):
-                # PV_Capital_Cost = - (%year1 * CAPEX * P/A_year1 + %year2 * CAPEX * P/A_year2 + ...)
+                # percentage of CAPEX is basis for each capital expenditure year
+                # since the expenditure series restarts in each year, we need to split
+                # the terms for each year out and subtract off the delayed years
+                # PV_Capital_Cost = - (
+                # %year1 * CAPEX * (P/A_year1 - P/A_year0)     change from year 1 only
+                # + %year2 * CAPEX * (P/A_year2 - P/A_year1)   change from year 2 only
+                # + %year3 * CAPEX * (P/A_year3 - P/A_year2)   change from year 2 only
+                # + ...)
+                # P/A_year0 = 0, which places each CAPEX expenditure at the end of each period
 
                 return c.pv_capital_cost == -pyunits.convert(
                     sum(
@@ -3162,16 +3364,29 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             to_units=pyunits.dimensionless,
                         )
                         * c.CAPEX
-                        * series_present_worth_factor(
-                            pyunits.convert(
-                                c.capital_loan_interest_percentage,
-                                to_units=pyunits.dimensionless,
-                            ),
-                            pyunits.convert(
-                                c.capital_escalation_percentage,
-                                to_units=pyunits.dimensionless,
-                            ),
-                            idx + 1,
+                        * (  # P/A_year(i) - P/A_year(i-1))
+                            series_present_worth_factor(
+                                pyunits.convert(
+                                    c.discount_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                pyunits.convert(
+                                    c.capital_escalation_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                idx + 1,
+                            )
+                            - series_present_worth_factor(
+                                pyunits.convert(
+                                    c.discount_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                pyunits.convert(
+                                    c.capital_escalation_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                idx,
+                            )
                         )
                         for idx in range(len(c.config.capital_expenditure_percentages))
                     ),
@@ -3182,27 +3397,96 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             @b.Constraint()
             def pv_capital_cost_constraint(c):
+                # no expenditure period, so cash flow occurs at t=0 (project year)
                 # PV_Capital_Cost = - CAPEX
 
                 return c.pv_capital_cost == -pyunits.convert(
-                    c.CAPEX
-                    * series_present_worth_factor(
-                        pyunits.convert(
-                            c.capital_loan_interest_percentage,
-                            to_units=pyunits.dimensionless,
-                        ),
-                        pyunits.convert(
-                            c.capital_escalation_percentage,
-                            to_units=pyunits.dimensionless,
-                        ),
-                        0,
-                    ),  # formula gives P/A (r, g, 0) = 1
+                    c.CAPEX,
+                    to_units=c.cost_units,
+                )
+
+        if b.config.debt_expression is None:
+
+            @b.Constraint()
+            def loan_debt_constraint(c):
+                # Debt  = %debt_charge_of_CAPEX * CAPEX
+
+                return c.loan_debt == pyunits.convert(
+                    pyunits.convert(
+                        c.debt_percentage_of_CAPEX, to_units=pyunits.dimensionless
+                    )
+                    * c.CAPEX,
+                    to_units=c.cost_units,
+                )
+
+        else:
+
+            b.loan_debt = Reference(b.config.debt_expression)
+
+        @b.Constraint()
+        def pv_loan_interest_constraint(c):
+            # PV_Loan_Interest_Owed = Debt * [P/A(r, 0, loan_length) / P/A(%interest, 0, loan_length) - 1]
+            # when r > %interest, this is a negative value; the loan amount borrowed devalues faster than
+            # the loan amount repaid
+            # when r < %interest, this is a positive value; the loan amount borrowed devalues slower than
+            # the loan amount repaid
+
+            if c.config.debt_expression is None:
+
+                return c.pv_loan_interest == pyunits.convert(
+                    c.loan_debt
+                    * (
+                        series_present_worth_factor(
+                            pyunits.convert(
+                                c.discount_percentage,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            0,  # loan value does not grow over time
+                            c.capital_loan_repayment_period / pyunits.year,
+                        )
+                        / series_present_worth_factor(
+                            pyunits.convert(
+                                c.capital_loan_interest_percentage,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            0,  # loan payments do not grow over time
+                            c.capital_loan_repayment_period / pyunits.year,
+                        )
+                        - 1
+                    ),
+                    to_units=c.cost_units,
+                )
+
+            else:
+
+                return c.pv_loan_interest == pyunits.convert(
+                    c.loan_debt[None]
+                    * (
+                        series_present_worth_factor(
+                            pyunits.convert(
+                                c.discount_percentage,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            0,  # loan value does not grow over time
+                            c.capital_loan_repayment_period / pyunits.year,
+                        )
+                        / series_present_worth_factor(
+                            pyunits.convert(
+                                c.capital_loan_interest_percentage,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            0,  # loan payments do not grow over time
+                            c.capital_loan_repayment_period / pyunits.year,
+                        )
+                        - 1
+                    ),
                     to_units=c.cost_units,
                 )
 
         @b.Constraint()
         def pv_operating_cost_constraint(c):
-            # PV_Operating_Cost = - OPEX * [ P/A_OPEX+CAPEX_periods - P/A_CAPEX_period ]
+            # OPEX starts after the capital expenditure period, so we need to account for a delay
+            # PV_Operating_Cost = - OPEX * [ P/A(r, g, OPEX_end_year) - P/A(r, g, CAPEX_end_year) ]
 
             return c.pv_operating_cost == -pyunits.convert(
                 c.OPEX
@@ -3234,7 +3518,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         @b.Constraint()
         def pv_revenue_constraint(c):
-            # PV_Revenue = REVENUE * [ P/A_OPEX+CAPEX_periods - P/A_CAPEX_period ]
+            # Revenue starts after the capital expenditure period, so we need to account for a delay
+            # PV_Revenue = - REVENUE * [ P/A(r, g, Revenue_end_year) - P/A(r, g, CAPEX_end_year) ]
 
             return c.pv_revenue == pyunits.convert(
                 c.REVENUE
@@ -3264,47 +3549,53 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 to_units=c.cost_units,
             )
 
-        if b.config.royalty_expression is None:
-            # PV_Royalties = - %royalty_charge_of_revenue * PV_REVENUE
+        if consider_taxes:
 
             @b.Constraint()
-            def pv_royalties_constraint(c):
+            def pv_taxes_constraint(c):
+                # Taxes start after the capital expenditure period, so we need to account for a delay
+                # PV_taxes = net_tax_owed * [ P/A(r, 0, Operating_end_year) - P/A(r, 0, CAPEX_end_year) ]
 
-                return c.pv_royalties == -pyunits.convert(
-                    pyunits.convert(
-                        c.royalty_charge_percentage_of_revenue,
-                        to_units=pyunits.dimensionless,
-                    )
-                    * c.pv_revenue,
+                return c.pv_taxes == -pyunits.convert(
+                    c.net_tax_owed
+                    * pyunits.year
+                    * (
+                        series_present_worth_factor(
+                            pyunits.convert(
+                                c.discount_percentage, to_units=pyunits.dimensionless
+                            ),
+                            pyunits.convert(
+                                0,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            c.plant_lifetime / pyunits.year
+                            + len(c.config.capital_expenditure_percentages),
+                        )
+                        - series_present_worth_factor(
+                            pyunits.convert(
+                                c.discount_percentage, to_units=pyunits.dimensionless
+                            ),
+                            pyunits.convert(
+                                0,
+                                to_units=pyunits.dimensionless,
+                            ),
+                            len(c.config.capital_expenditure_percentages),
+                        )
+                    ),
                     to_units=c.cost_units,
                 )
-
-        else:
-
-            b.pv_royalties = Reference(b.config.royalty_expression)
 
         @b.Constraint()
         def npv_constraint(c):
 
-            if c.config.royalty_expression is None:
-
-                return c.npv == pyunits.convert(
-                    c.pv_revenue
-                    + c.pv_capital_cost
-                    + c.pv_operating_cost
-                    + c.pv_royalties,
-                    to_units=c.cost_units,
-                )
-
-            else:
-
-                return c.npv == pyunits.convert(
-                    c.pv_revenue
-                    + c.pv_capital_cost
-                    + c.pv_operating_cost
-                    + c.pv_royalties[None],
-                    to_units=c.cost_units,
-                )
+            return c.npv == pyunits.convert(
+                c.pv_revenue
+                + c.pv_capital_cost
+                + c.pv_loan_interest
+                + c.pv_operating_cost
+                + (c.pv_taxes if consider_taxes else 0 * c.cost_units),
+                to_units=c.cost_units,
+            )
 
     def verify_calculate_from_costing_block(b):
         """
@@ -3442,3 +3733,70 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     f"Argument {obj} of type {type(obj)} is not a supported object type. "
                     f"Ensure {name} is a Pyomo Param, Var, Expression, or ScalarExpression."
                 )
+
+    def economy_of_numbers(
+        blk, cum_num_units, cost_FOAK, CE_index_year, learning_rate=0.04
+    ):
+        """
+        Economy of Numbers (EoN) estimates the future profitability of novel/First-of-A-Kind (FOAK)
+        equipment. This is because the cost of manufacturing a piece of equipment tends to decline
+        as the cumulative production quantity rises, resulting from a consistent improvement in
+        technical know-how.
+
+        Y = A(X^-b)
+
+        b = - log(1-R)/log(2)
+        where Y is the cost of the Nth-of-A-Kind (NOAK) of the equipment, A is the cost of the FOAK,
+        X is the cumulative number of units, b is the learning rate exponent, and R is the learning
+        rate constant.
+
+        The equations above are derived from Faber G, Ruttinger A, Strunge T, Langhorst T, Zimmermann A,
+        van der Hulst M, Bensebaa F, Moni S and Tao L (2022) Adapting Technology Learning Curves for
+        Prospective Techno-Economic and Life Cycle Assessments of Emerging Carbon Capture and Utilization
+        Pathways. Front. Clim. 4:820261. doi: 10.3389/fclim.2022.820261
+
+        Args:
+            cum_num_units: The cumulative number of units.
+            cost_FOAK: The cost of manufacturing the First-of-A-Kind equipment.
+            CE_index_year: year for cost basis, e.g., "2021" to use 2021 dollars
+            learning_rate: ranges between 0.01 - 0.1, depending on the level of maturity
+                           (i.e., experimental, growing, proven, etc.)
+                            as described in Rubin, E. S., Mantripragada, H., and Zhai, H.,
+                            "An Assessment of the NETL Cost Estimation Methodology".
+                            Department of Engineering and Public Policy, Carnegie Mellon University,
+                            Pittsburgh, PA (2016). p. 31, Fig. 6-4.
+        """
+
+        blk.cum_num_units = Param(
+            initialize=cum_num_units,
+            mutable=True,
+            units=pyunits.dimensionless,
+            doc="Cumulative number of units produced",
+        )
+        blk.learning_rate = Param(
+            initialize=learning_rate,
+            mutable=True,
+            units=pyunits.dimensionless,
+            doc="The learning factor reflects the level of maturity of the unit/technology",
+        )
+
+        blk.cost_NOAK = Var(
+            initialize=1e5,
+            bounds=(0, None),
+            doc="Cost of the Nth-of-A-Kind of the unit",
+            units=getattr(pyunits, "MUSD_" + CE_index_year),
+        )
+
+        @blk.Expression(
+            doc="This measures the rate at which the cost is reduced as cumulative units increases"
+        )
+        def learning_rate_exponent(b):
+
+            return -log10(1 - b.learning_rate) / log10(2)
+
+        @blk.Constraint()
+        def cost_NOAK_eq(b):
+            return b.cost_NOAK == pyunits.convert(
+                cost_FOAK * ((b.cum_num_units) ** -(b.learning_rate_exponent)),
+                to_units=getattr(pyunits, "MUSD_" + CE_index_year),
+            )

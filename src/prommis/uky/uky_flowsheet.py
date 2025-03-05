@@ -190,7 +190,7 @@ from idaes.core.scaling.scaling_base import ScalerBase
 import idaes.logger as idaeslog
 from idaes.core.util import DiagnosticsToolbox
 
-from prommis.leaching.leach_train import LeachingTrain
+from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
@@ -516,7 +516,6 @@ def build():
         reaction_package=m.fs.precip_rxns,
     )
 
-    # TODO: Which property package should the unit models below use
     m.fs.oxalic_acid_feed = Feed(property_package=m.fs.leach_soln)
 
     m.fs.sx_oxalic_mixer = Mixer(
@@ -1095,7 +1094,6 @@ def set_operating_conditions(m):
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Dy"].fix(eps)
 
-    # TODO: Simplify by fixing all conc_mass_comp to eps and fixing the ones that should change
     m.fs.acid_feed1.flow_vol.fix(0.09)
     m.fs.acid_feed1.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(10.36)
@@ -1182,13 +1180,14 @@ def set_operating_conditions(m):
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
     m.fs.sl_sep2.liquid_recovery.fix(0.95)
 
-    # TODO: Should REE conc be eps or 10? If 10, update recovery calculations
-    m.fs.oxalic_acid_feed.flow_vol.fix(100)
+    # Assuming pH is 1.5, oxalic acid molarity is 0.0316M -> 2844.95 mgH2C2O4/L
+    # Since pH of 1.5, cannot solve, assume a pH of 1.16 -> 8000 mgH2C2O4/L
+    m.fs.oxalic_acid_feed.flow_vol.fix(31)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "H"].fix(eps)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "SO4"].fix(eps)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "HSO4"].fix(eps)
-    m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2C2O4"].fix(6400)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2C2O4"].fix(8000)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "Cl"].fix(eps)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "Ca"].fix(eps)
@@ -1431,6 +1430,11 @@ def initialize_system(m):
         m.fs.sx_oxalic_mixer,
     ]
 
+    initializer_leach = LeachingTrainInitializer()
+    leach_units = [
+        m.fs.leach,
+    ]
+
     initializer_sx = SolventExtractionInitializer()
     sx_units = [
         m.fs.solex_rougher_load,
@@ -1460,6 +1464,9 @@ def initialize_system(m):
         elif unit in mix_units:
             _log.info(f"Initializing {unit}")
             initializer_mix.initialize(unit)
+        elif unit in leach_units:
+            _log.info(f"Initializing {unit}")
+            initializer_leach.initialize(unit)
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
@@ -1472,21 +1479,21 @@ def initialize_system(m):
         #         print("---Structural Issues after precip initialization---")
         #         dt.report_structural_issues()
         #         dt.display_overconstrained_set()
-        elif unit == m.fs.leach:
-            _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.leach.liquid_inlet.flow_vol.fix()
-            m.fs.leach.liquid_inlet.conc_mass_comp.fix()
-            m.fs.leach.solid_inlet.flow_mass.fix()
-            m.fs.leach.solid_inlet.mass_frac_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.leach, tee=True)
-            # Unfix feed states
-            m.fs.leach.liquid_inlet.flow_vol.unfix()
-            m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
-            m.fs.leach.solid_inlet.flow_mass.unfix()
-            m.fs.leach.solid_inlet.mass_frac_comp.unfix()
+        # elif unit == m.fs.leach:
+        #     _log.info(f"Initializing {unit}")
+        #     # Fix feed states
+        #     m.fs.leach.liquid_inlet.flow_vol.fix()
+        #     m.fs.leach.liquid_inlet.conc_mass_comp.fix()
+        #     m.fs.leach.solid_inlet.flow_mass.fix()
+        #     m.fs.leach.solid_inlet.mass_frac_comp.fix()
+        #     # Re-solve unit
+        #     solver = SolverFactory("ipopt")
+        #     solver.solve(m.fs.leach, tee=True)
+        #     # Unfix feed states
+        #     m.fs.leach.liquid_inlet.flow_vol.unfix()
+        #     m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
+        #     m.fs.leach.solid_inlet.flow_mass.unfix()
+        #     m.fs.leach.solid_inlet.mass_frac_comp.unfix()
         elif unit == m.fs.precipitator:
             _log.info(f"Initializing {unit}")
             # Fix feed states
@@ -1496,6 +1503,7 @@ def initialize_system(m):
             # Re-solve unit
             solver = SolverFactory("ipopt")
             solver.solve(m.fs.precipitator, tee=True)
+            # ipopt_solve_halt_on_error(m.fs.precipitator)
             # Unfix feed states
             m.fs.precipitator.aqueous_inlet.flow_vol.unfix()
             m.fs.precipitator.aqueous_inlet.conc_mass_comp.unfix()
@@ -1532,6 +1540,7 @@ def solve_system(m, solver=None, tee=False):
     else:
         solver = get_solver()
     results = solver.solve(m, tee=tee)
+    # ipopt_solve_halt_on_error(m)
 
     return results
 

@@ -68,6 +68,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sc",
         "Sm",
         "Y",
+        "H2C2O4",
     }
 
     # Chemical components - oxides
@@ -155,6 +156,21 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         rounding=3,
         ui_units=pyo.units.kg / pyo.units.hour,
         display_units="kg/hr",
+        is_input=True,
+        is_output=False,
+        input_category=category,
+    )
+
+    # Export the oxalic acid feed volumetric flow as an input
+    category = "Oxalic acid"
+    oaf = flowsheet.oxalic_acid_feed
+    exports.add(
+        obj=oaf.flow_vol[0],
+        name="Oxalic acid liquid feed rate",
+        ui_units=pyo.units.l / pyo.units.hour,
+        display_units="L/h",
+        rounding=2,
+        description="Oxalic acid feed volumetric flow rate",
         is_input=True,
         is_output=False,
         input_category=category,

@@ -1766,6 +1766,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Al"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -1781,6 +1786,11 @@ def display_results(m):
                 metal_mass_frac["CaO"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "CaO"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Ca"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )
@@ -1800,6 +1810,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Ce"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -1815,6 +1830,11 @@ def display_results(m):
                 metal_mass_frac["Dy2O3"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Dy2O3"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Dy"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )
@@ -1834,6 +1854,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Fe"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -1849,6 +1874,11 @@ def display_results(m):
                 metal_mass_frac["Gd2O3"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Gd2O3"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Gd"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )
@@ -1868,6 +1898,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["La"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -1883,6 +1918,11 @@ def display_results(m):
                 metal_mass_frac["Nd2O3"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Nd2O3"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Nd"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )
@@ -1902,6 +1942,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Pr"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -1917,6 +1962,11 @@ def display_results(m):
                 metal_mass_frac["Sc2O3"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Sc2O3"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Sc"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )
@@ -1936,6 +1986,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Sm"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -1951,6 +2006,11 @@ def display_results(m):
                 metal_mass_frac["Y2O3"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Y2O3"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Y"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )

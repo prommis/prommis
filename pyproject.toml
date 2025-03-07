@@ -110,6 +110,7 @@ extend-exclude = [
 IDAES = "IDAES"
 # Atomic elements
 Nd = "Nd"
+Ba = "Ba"
 [tool.typos.default]
 extend-ignore-re = [
     # Jupyter notebooks: ignore hexadecimal values in "id" cell metadata field

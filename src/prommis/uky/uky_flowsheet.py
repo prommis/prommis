@@ -144,7 +144,6 @@ from pyomo.environ import (
     Constraint,
     Expression,
     Param,
-    SolverFactory,
     Suffix,
     TransformationFactory,
     Var,
@@ -189,7 +188,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 from idaes.core.scaling.scaling_base import ScalerBase
 import idaes.logger as idaeslog
 
-from prommis.leaching.leach_train import LeachingTrain
+from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
@@ -1348,6 +1347,11 @@ def initialize_system(m):
         m.fs.rougher_mixer,
     ]
 
+    initializer_leach = LeachingTrainInitializer()
+    leach_units = [
+        m.fs.leach,
+    ]
+
     initializer_sx = SolventExtractionInitializer()
     sx_units = [
         m.fs.solex_rougher_load,
@@ -1372,24 +1376,12 @@ def initialize_system(m):
         elif unit in mix_units:
             _log.info(f"Initializing {unit}")
             initializer_mix.initialize(unit)
+        elif unit in leach_units:
+            _log.info(f"Initializing {unit}")
+            initializer_leach.initialize(unit)
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
-        elif unit == m.fs.leach:
-            _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.leach.liquid_inlet.flow_vol.fix()
-            m.fs.leach.liquid_inlet.conc_mass_comp.fix()
-            m.fs.leach.solid_inlet.flow_mass.fix()
-            m.fs.leach.solid_inlet.mass_frac_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.leach, tee=True)
-            # Unfix feed states
-            m.fs.leach.liquid_inlet.flow_vol.unfix()
-            m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
-            m.fs.leach.solid_inlet.flow_mass.unfix()
-            m.fs.leach.solid_inlet.mass_frac_comp.unfix()
         else:
             _log.info(f"Initializing {unit}")
             initializer_bt.initialize(unit)

@@ -133,7 +133,6 @@ class LeachingTrainInitializer(ModularInitializerBase):
         )
 
         msc_init.initialize(model.mscontactor)
-
         solver = self._get_solver()
         results = solver.solve(model)
 

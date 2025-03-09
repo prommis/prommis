@@ -41,9 +41,9 @@ from idaes.models.unit_models import (
 from idaes.core.util.initialization import propagate_state
 
 # Custom imports
-from solute_property import SoluteParameters
-from membrane import Membrane
-from precipitator import Precipitator
+from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import SoluteParameters
+from prommis.nanofiltration.membrane_cascade_flowsheet.membrane import Membrane
+from prommis.nanofiltration.membrane_cascade_flowsheet.precipitator import Precipitator
 
 # other imports
 import idaes.logger as idaeslog

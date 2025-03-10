@@ -141,7 +141,7 @@ class TestMembrane(object):
         assert hasattr(membrane.fs.unit.permeate_outlet, "flow_vol")
         assert hasattr(membrane.fs.unit.permeate_outlet, "flow_mass_solute")
 
-        # auxilliary variables for exponential reformulation
+        # auxiliary variables for exponential reformulation
         assert hasattr(membrane.fs.unit, "LN_F_in")
         assert hasattr(membrane.fs.unit, "LN_F_out")
         assert hasattr(membrane.fs.unit, "LN_M_in")

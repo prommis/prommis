@@ -187,11 +187,10 @@ class MembraneData(MSContactorData):
         # Isolate nonlinear LN into LB/UB to make original sieving eqn linear
         # add new variables for each substitution
         # set initial value of variables to be reasonable small
-        self.LN_M_in = Var(solutes, self.elements, initialize=5)
-        self.LN_M_out = Var(solutes, self.elements, initialize=5)
-        self.LN_F_in = Var(self.elements, initialize=5)
-        self.LN_F_out = Var(self.elements, initialize=5)
-
+        self.LN_M_in = Var(solutes, self.elements, initialize=5, bounds=(-20, 15))
+        self.LN_M_out = Var(solutes, self.elements, initialize=5, bounds=(-20, 15))
+        self.LN_F_in = Var(self.elements, initialize=5, bounds=(-20, 15))
+        self.LN_F_out = Var(self.elements, initialize=5, bounds=(-20, 15))
 
         # set these as exponents to remove the logs
         #######################################################################

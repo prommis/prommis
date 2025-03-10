@@ -984,7 +984,7 @@ class DiafiltrationModel:
             itr += 1
 
         # model scaling
-        flowsheet_logger.info("scaling model")
+        flowsheet_logger.info("***scaling model***")
         self.model_scaling(m)
 
         # remove logging handler

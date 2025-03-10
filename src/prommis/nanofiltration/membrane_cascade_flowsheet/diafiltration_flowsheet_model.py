@@ -861,21 +861,31 @@ class DiafiltrationModel:
         split_initializer = SeparatorInitializer()
         split_initializer.initialize(m.fs.split_feed)
 
-    def initialize(self, m, mixing="tube", precipitate=False):
+    def initialize(self, m, mixing="tube", precipitate=False, info=True):
         """Initialize all IDAES unit models."""
         # initialize feed and diafiltrate splitters
         # 1. we put a bit of the feed streams into all inlet locations
         # 2. then we use fixed-point iteration to converge recycles
 
-        # print initialization header
-        # TODO could incorporate initialization info into idaes logger
-        print("*" * 50)
-        print("* Diafiltration Flowsheet Initialization")
-        print("*" * 50)
+        # loggers
+        # turn off IDAES INFO logs
+        idaes_logger = logging.getLogger("idaes.init")
+        idaes_logger.setLevel(idaeslog.WARNING)
+
+        # add flowsheet logger
+        flowsheet_logger = logging.getLogger(__name__)
+        flowsheet_logger.setLevel("INFO")
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        if info:
+            flowsheet_logger.addHandler(ch)
+
+        # initialization header
+        flowsheet_logger.info("*" * 50)
+        flowsheet_logger.info("* Diafiltration Flowsheet Initialization")
+        flowsheet_logger.info("*" * 50)
 
         # Change logger level to avoid flood of initialization INFO
-        logger = logging.getLogger("idaes.init")
-        logger.setLevel(idaeslog.WARNING)
 
         self.initialize_feeds(m, mixing)
         split_initializer = SeparatorInitializer()
@@ -898,7 +908,7 @@ class DiafiltrationModel:
             # check first mixer
             check_loc = m.fs.inlet_mixers.index_set().first()
             while not np.isclose(check_old, check_new) and iteration < 100:
-                print(f"  Membranes Iteration: {iteration}")
+                flowsheet_logger.info(f"  Membranes Iteration: {iteration}")
                 # propagate feed and diafiltrate state to mixers
                 for i in m.fs.inlet_mixers:
                     if type(i) is tuple:
@@ -949,7 +959,7 @@ class DiafiltrationModel:
                 for i in RangeSet(self.ns):
                     self.initialize_single_stage(m, stage=i, mixing=mixing)
 
-                print(f"  =>Recycle Error: {check_new - check_old}")
+                flowsheet_logger.info(f"  =>Recycle Error: {check_new - check_old}")
                 iteration += 1
 
             ###############################################################
@@ -959,19 +969,24 @@ class DiafiltrationModel:
             if not precipitate:
                 break
 
-            print(f"Precipitator Iteration {itr}")
+            flowsheet_logger.info(f"Precipitator Iteration {itr}")
 
             self.initialize_precipitators(m, precipitate)
 
             diaf_new = (
                 m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute[check_sol].value
             )
-            print(f"=>Recycle Error: {diaf_new - diaf_old}\n")
+            flowsheet_logger.info(f"=>Recycle Error: {diaf_new - diaf_old}\n")
             itr += 1
 
         # model scaling
-        print("scaling model")
+        flowsheet_logger.info("scaling model")
         self.model_scaling(m)
+
+        # remove logging handler
+        if info:
+            flowsheet_logger.removeHandler(ch)
+
 
     def num_inlets(self, mixing):
         """Find the number of inlets."""

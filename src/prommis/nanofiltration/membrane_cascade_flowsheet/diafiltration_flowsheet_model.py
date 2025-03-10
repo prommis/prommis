@@ -362,8 +362,6 @@ class DiafiltrationModel:
             energy_split_basis=EnergySplittingType.none,
         )
 
-        # TODO change this to directly use state block instead of reference
-        # TODO look for other instances with this issue.
         # set feed values
         m.fs.split_feed.inlet.flow_vol[0].fix(self.feed["solvent"])
         for sol in self.solutes:
@@ -445,13 +443,15 @@ class DiafiltrationModel:
         @m.Expression()
         def rec_perc_co(b):
             return b.rec_mass_co / (
-                (self.feed["Co"] + self.diaf["Co"]) * units.kg / units.hour
+                m.fs.split_feed.mixed_state[0].flow_mass_solute["Co"]
+                + m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute["Co"]
             )
 
         @m.Expression()
         def rec_perc_li(b):
             return b.rec_mass_li / (
-                (self.feed["Li"] + self.diaf["Li"]) * units.kg / units.hour
+                m.fs.split_feed.mixed_state[0].flow_mass_solute["Co"]
+                + m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute["Co"]
             )
 
         # mass recovery objectives
@@ -670,16 +670,12 @@ class DiafiltrationModel:
         def prec_perc_co(b):
             return b.prec_mass_co / (
                 (m.fs.split_feed.mixed_state[0].flow_mass_solute["Co"])
-                * units.kg
-                / units.hour
             )
 
         @m.Expression()
         def prec_perc_li(b):
             return b.prec_mass_li / (
                 (m.fs.split_feed.mixed_state[0].flow_mass_solute["Li"])
-                * units.kg
-                / units.hour
             )
 
         m.prec_co_obj = Objective(expr=m.prec_mass_co, sense=maximize)

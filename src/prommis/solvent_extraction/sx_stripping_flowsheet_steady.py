@@ -98,6 +98,7 @@ m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Sm"].fix(64.22)
 m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Gd"].fix(30.39)
 m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Dy"].fix(17.63)
 m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Cl"].fix(1e-8)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "H2C2O4"].fix(1e-8)
 
 m.fs.solex.aqueous_inlet.flow_vol.fix(62.01)
 

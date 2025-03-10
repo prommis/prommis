@@ -120,7 +120,7 @@ Solvent extraction rougher load recycle split fraction                0.9       
 Solvent extraction rougher scrub recycle split fraction               0.9          :math:`\text{dimensionless}`
 Solvent extraction rougher organic recycle split fraction             0.9          :math:`\text{dimensionless}`
 Solvent extraction cleaner organic recycle split fraction             0.9          :math:`\text{dimensionless}`
-Precipitator solid-liquid separator liquid recovery fraction          0.7          :math:`\text{dimensionless}`
+Precipitator solid-liquid separator liquid recovery fraction          0.95          :math:`\text{dimensionless}`
 Precipitator solid-liquid separator liquid recycle split fraction     0.9          :math:`\text{dimensionless}`
 ===================================================================== ============ ============================
 
@@ -138,6 +138,7 @@ using advanced separation processes", 2019
 
 """
 
+from typing import Dict
 from pyomo.environ import (
     check_optimal_termination,
     ConcreteModel,
@@ -145,6 +146,7 @@ from pyomo.environ import (
     Expression,
     Param,
     Suffix,
+    SolverFactory,
     TransformationFactory,
     Var,
     value,
@@ -187,6 +189,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 )
 from idaes.core.scaling.scaling_base import ScalerBase
 import idaes.logger as idaeslog
+from idaes.core.util import DiagnosticsToolbox
 
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
@@ -194,7 +197,11 @@ from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-from prommis.precipitate.precipitator import Precipitator
+from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
+from prommis.precipitate.precipitator import (
+    OxalatePrecipitator,
+    OxalatePrecipitatorInitializer,
+)
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import (
@@ -202,6 +209,8 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
+import idaes.core.util.scaling as iscale
+from idaes.core.util.model_diagnostics import ipopt_solve_halt_on_error
 
 _log = idaeslog.getLogger(__name__)
 
@@ -217,6 +226,12 @@ def main():
     set_partition_coefficients(m)
 
     set_operating_conditions(m)
+
+    dt = DiagnosticsToolbox(m)
+    print("---Structural Issues---")
+    dt.report_structural_issues()
+    dt.display_underconstrained_set()
+    dt.display_overconstrained_set()
 
     set_scaling(m)
 
@@ -246,6 +261,14 @@ def main():
         )
 
     results = scaling.propagate_solution(scaled_model, m)
+
+    print("---Numerical Issues---")
+    dt.report_numerical_issues()
+
+    badly_scaled_var_list = iscale.badly_scaled_var_generator(m, large=1e2, small=1e-2)
+    print("----------------   badly_scaled_var_list   ----------------")
+    for x in badly_scaled_var_list:
+        print(f"{x[0].name}\t{x[0].value}\tsf: {iscale.get_scaling_factor(x[0])}")
 
     display_results(m)
 
@@ -473,14 +496,36 @@ def build():
     m.fs.cleaner_purge = Product(property_package=m.fs.prop_o)
 
     # --------------------------------------------------------------------------------------------------------------
-    # Precipitation property and unit models
+    # Precipitation reaction, property and unit models
 
     m.fs.properties_aq = AqueousParameter()
     m.fs.properties_solid = PrecipitateParameters()
+    m.fs.precip_rxns = OxalatePrecipitationReactions()
 
-    m.fs.precipitator = Precipitator(
-        property_package_aqueous=m.fs.properties_aq,
-        property_package_precipitate=m.fs.properties_solid,
+    m.fs.precipitator = OxalatePrecipitator(
+        number_of_tanks=1,
+        liquid_phase={
+            "property_package": m.fs.properties_aq,
+            "has_energy_balance": False,
+            "has_pressure_balance": False,
+        },
+        solid_phase={
+            "property_package": m.fs.properties_solid,
+            "has_energy_balance": False,
+            "has_pressure_balance": False,
+        },
+        reaction_package=m.fs.precip_rxns,
+    )
+
+    m.fs.oxalic_acid_feed = Feed(property_package=m.fs.leach_soln)
+
+    m.fs.sx_oxalic_mixer = Mixer(
+        property_package=m.fs.leach_soln,
+        num_inlets=2,
+        inlet_list=["cleaner", "oxalic_acid"],
+        material_balance_type=MaterialBalanceType.componentTotal,
+        energy_mixing_type=MixingType.none,
+        momentum_mixing_type=MomentumMixingType.none,
     )
 
     m.fs.sl_sep2 = SLSeparator(
@@ -648,6 +693,14 @@ def build():
     )
     m.fs.sx_cleaner_strip_aq_outlet = Arc(
         source=m.fs.solex_cleaner_strip.aqueous_outlet,
+        destination=m.fs.sx_oxalic_mixer.cleaner,
+    )
+    m.fs.oxalic_feed = Arc(
+        source=m.fs.oxalic_acid_feed.outlet,
+        destination=m.fs.sx_oxalic_mixer.oxalic_acid,
+    )
+    m.fs.precip_aq_feed = Arc(
+        source=m.fs.sx_oxalic_mixer.outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )
     m.fs.precip_solid_outlet = Arc(
@@ -1047,6 +1100,7 @@ def set_operating_conditions(m):
     m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(10.36)
     m.fs.acid_feed1.conc_mass_comp[0, "SO4"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "HSO4"].fix(eps)
+    m.fs.acid_feed1.conc_mass_comp[0, "H2C2O4"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Cl"].fix(359.64)
     m.fs.acid_feed1.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Ca"].fix(eps)
@@ -1068,6 +1122,7 @@ def set_operating_conditions(m):
     )  # Arbitrarily choose 4x the dilute solution
     m.fs.acid_feed2.conc_mass_comp[0, "SO4"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "HSO4"].fix(eps)
+    m.fs.acid_feed2.conc_mass_comp[0, "H2C2O4"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Cl"].fix(359.64 * 4)
     m.fs.acid_feed2.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Ca"].fix(eps)
@@ -1091,6 +1146,7 @@ def set_operating_conditions(m):
     )  # Arbitrarily choose 4x the dilute solution
     m.fs.acid_feed3.conc_mass_comp[0, "SO4"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "HSO4"].fix(eps)
+    m.fs.acid_feed3.conc_mass_comp[0, "H2C2O4"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Cl"].fix(359.64 * 4)
     m.fs.acid_feed3.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Ca"].fix(eps)
@@ -1125,7 +1181,30 @@ def set_operating_conditions(m):
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
     m.fs.sl_sep2.liquid_recovery.fix(0.95)
 
-    m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
+    # Assuming pH is 1.5, oxalic acid molarity is 0.0316M -> 2844.95 mgH2C2O4/L
+    # Since pH of 1.5, cannot solve, assume a pH of 1.16 -> 8000 mgH2C2O4/L
+    m.fs.oxalic_acid_feed.flow_vol.fix(31)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2O"].fix(1000000)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "H"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "SO4"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "HSO4"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2C2O4"].fix(8000)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Cl"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Al"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Ca"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Fe"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Sc"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Y"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "La"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Ce"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Pr"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Nd"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Sm"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Gd"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Dy"].fix(eps)
+
+    m.fs.precipitator.precipitate_outlet.temperature.fix(348.15 * units.K)
+    m.fs.precipitator.hydraulic_retention_time[0].fix(2)
 
     m.fs.precip_sep.split_fraction[:, "recycle"].fix(0.9)
 
@@ -1173,11 +1252,11 @@ def set_operating_conditions(m):
     m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].conc_mass_comp
     m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].conc_mass_comp
 
-    m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol
-    m.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp
+    m.fs.precipitator.aqueous_outlet.flow_vol[0]
+    m.fs.precipitator.aqueous_outlet.conc_mass_comp
 
-    m.fs.precipitator.cv_precipitate[0].temperature
-    m.fs.precipitator.cv_precipitate[0].flow_mol_comp
+    m.fs.precipitator.precipitate_outlet.temperature[0]
+    m.fs.precipitator.precipitate_outlet.flow_mol_comp
 
 
 def initialize_system(m):
@@ -1216,6 +1295,7 @@ def initialize_system(m):
             (0, "H"): 20.06,
             (0, "H2O"): 1000000,
             (0, "HSO4"): 963.06,
+            (0, "H2C2O4"): 1e-8,
             (0, "Cl"): 1e-8,
             (0, "La"): 0.0037,
             (0, "Nd"): 1.81e-7,
@@ -1255,6 +1335,7 @@ def initialize_system(m):
             (0, "H"): 2,
             (0, "H2O"): 1000000,
             (0, "HSO4"): 900,
+            (0, "H2C2O4"): 1e-8,
             (0, "Cl"): 0.1,
             (0, "La"): 1,
             (0, "Nd"): 1,
@@ -1294,6 +1375,7 @@ def initialize_system(m):
             (0, "H"): 14,
             (0, "H2O"): 1000000,
             (0, "HSO4"): 1e-7,
+            (0, "H2C2O4"): 1e-8,
             (0, "Cl"): 1400,
             (0, "La"): 160,
             (0, "Nd"): 121,
@@ -1321,6 +1403,7 @@ def initialize_system(m):
         m.fs.acid_feed2,
         m.fs.acid_feed3,
         m.fs.cleaner_org_make_up,
+        m.fs.oxalic_acid_feed,
     ]
 
     initializer_product = ProductInitializer()
@@ -1345,6 +1428,7 @@ def initialize_system(m):
         m.fs.precip_sx_mixer,
         m.fs.cleaner_mixer,
         m.fs.rougher_mixer,
+        m.fs.sx_oxalic_mixer,
     ]
 
     initializer_leach = LeachingTrainInitializer()
@@ -1360,6 +1444,11 @@ def initialize_system(m):
         m.fs.solex_cleaner_load,
         m.fs.solex_cleaner_strip,
     ]
+
+    # initializer_precip = OxalatePrecipitatorInitializer()
+    # precip_units = [
+    #     m.fs.precipitator,
+    # ]
 
     initializer_bt = BlockTriangularizationInitializer()
 
@@ -1382,6 +1471,40 @@ def initialize_system(m):
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
+        # elif unit in precip_units:
+        #     _log.info(f"Initializing {unit}")
+        #     try:
+        #         initializer_precip.initialize(unit)
+        #     except:
+        #         dt = DiagnosticsToolbox(m)
+        #         print("---Structural Issues after precip initialization---")
+        #         dt.report_structural_issues()
+        #         dt.display_overconstrained_set()
+        elif unit == m.fs.precipitator:
+            _log.info(f"Initializing {unit}")
+            # Fix feed states
+            m.fs.precipitator.aqueous_inlet.flow_vol.fix()
+            m.fs.precipitator.aqueous_inlet.conc_mass_comp.fix()
+            m.fs.precipitator.precipitate_outlet.temperature.fix()
+            # Re-solve unit
+            solver = SolverFactory("ipopt")
+            solver.solve(m.fs.precipitator, tee=True)
+            # ipopt_solve_halt_on_error(m.fs.precipitator)
+            # Unfix feed states
+            m.fs.precipitator.aqueous_inlet.flow_vol.unfix()
+            m.fs.precipitator.aqueous_inlet.conc_mass_comp.unfix()
+            m.fs.precipitator.precipitate_outlet.temperature.unfix()
+        # elif unit == m.fs.precip_purge:
+        #     _log.info(f"Initializing {unit}")
+        #     # Fix feed states
+        #     m.fs.precip_purge.inlet.flow_vol.fix()
+        #     m.fs.precip_purge.inlet.conc_mass_comp.fix()
+        #     # Re-solve unit
+        #     solver = SolverFactory("ipopt")
+        #     solver.solve(m.fs.precip_purge, tee=True)
+        #     # Unfix feed states
+        #     m.fs.precip_purge.inlet.flow_vol.unfix()
+        #     m.fs.precip_purge.inlet.conc_mass_comp.unfix()
         else:
             _log.info(f"Initializing {unit}")
             initializer_bt.initialize(unit)
@@ -1403,6 +1526,7 @@ def solve_system(m, solver=None, tee=False):
     else:
         solver = get_solver()
     results = solver.solve(m, tee=tee)
+    # ipopt_solve_halt_on_error(m)
 
     return results
 
@@ -1422,15 +1546,7 @@ def fix_organic_recycle(m):
     m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
 
 
-def display_results(m):
-    """
-    Print key flowsheet outputs.
-
-    Args:
-        m: pyomo model
-    """
-    m.fs.roaster.report()
-
+class MassConstants:
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),
         "Fe2O3": 55.845 * 2 / (55.845 * 2 + 16 * 3),
@@ -1472,575 +1588,164 @@ def display_results(m):
         "Dy2O3": 162.5 * 2 / (162.5 * 2 + 16 * 3),
     }
 
-    # Total mass basis yield calculation
-    product = value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Y"]
-            * molar_mass["Y2O3"]
-            * REE_mass_frac["Y2O3"],
-            to_units=units.kg / units.hr,
-        )
-        + units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "La"]
-            * molar_mass["La2O3"]
-            * REE_mass_frac["La2O3"],
-            to_units=units.kg / units.hr,
-        )
-        + units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Ce"]
-            * molar_mass["Ce2O3"]
-            * REE_mass_frac["Ce2O3"],
-            to_units=units.kg / units.hr,
-        )
-        + units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Pr"]
-            * molar_mass["Pr2O3"]
-            * REE_mass_frac["Pr2O3"],
-            to_units=units.kg / units.hr,
-        )
-        + units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Nd"]
-            * molar_mass["Nd2O3"]
-            * REE_mass_frac["Nd2O3"],
-            to_units=units.kg / units.hr,
-        )
-        + units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Sm"]
-            * molar_mass["Sm2O3"]
-            * REE_mass_frac["Sm2O3"],
-            to_units=units.kg / units.hr,
-        )
-        + units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Gd"]
-            * molar_mass["Gd2O3"]
-            * REE_mass_frac["Gd2O3"],
-            to_units=units.kg / units.hr,
-        )
-        + units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Dy"]
-            * molar_mass["Dy2O3"]
-            * REE_mass_frac["Dy2O3"],
-            to_units=units.kg / units.hr,
-        )
-    )
-    print(f"REE product mass flow is {product} kg/hr")
-    feed_REE = sum(
-        value(
-            m.fs.leach_solid_feed.flow_mass[0]
-            * m.fs.leach_solid_feed.mass_frac_comp[0, molecule]
-        )
-        * REE_frac
-        for molecule, REE_frac in REE_mass_frac.items()
-    )
-    print(f"REE feed mass flow is {feed_REE} kg/hr")
 
-    REE_recovery = 100 * product / feed_REE
-    print(f"Total REE recovery is {REE_recovery} %")
+class FlowsheetResults:
 
-    product_purity = (
-        100
-        * product
-        / value(
-            units.convert(
-                m.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr
+    # keys for values for each element in recoveries dictionary
+    TOTAL, LEACHING = "total", "leaching"
+
+    # name, symbol, compound
+    elements = (
+        ("aluminum", "Al", "Al2O3"),
+        ("calcium", "Ca", "CaO"),
+        ("cerium", "Ce", "Ce2O3"),
+        ("dysprosium", "Dy", "Dy2O3"),
+        ("iron", "Fe", "Fe2O3"),
+        ("gadolinium", "Gd", "Gd2O3"),
+        ("lanthanum", "La", "La2O3"),
+        ("neodymium", "Nd", "Nd2O3"),
+        ("praseodymium", "Pr", "Pr2O3"),
+        ("scandium", "Sc", "Sc2O3"),
+        ("samarium", "Sm", "Sm2O3"),
+        ("yttrium", "Y", "Y2O3"),
+    )
+
+    def __init__(self, m):
+        self._recov_el, self._recov_name = {}, {}
+        self._calculate(m)
+
+    def recoveries(self, by: str = "name") -> Dict[str, Dict[str, float]]:
+        """Element recoveries, by element name or symbol in periodic table.
+
+        Args:
+            by: Either 'name' or 'element'
+
+        Returns:
+            Dictionary keyed by full name or symbol (e.g., "iron" or "Fe"),
+            with each value being dictionary with two keys corresponding to
+            the `TOTAL` and `LEACHING` constants defined in this class.
+        """
+        if by == "name":
+            return self._recov_name.copy()
+        elif by == "element":
+            return self._recov_el.copy()
+        else:
+            raise ValueError(f"Argument 'by' must be 'name' or 'element', got: {by}")
+
+    def _calculate(self, m):
+        metal_mass_frac, molar_mass, REE_mass_frac = (
+            MassConstants.metal_mass_frac,
+            MassConstants.molar_mass,
+            MassConstants.REE_mass_frac,
+        )
+
+        # Products
+
+        # Total mass basis yield calculation
+        prod_el = ("Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy")
+        product_sum = sum(
+            (
+                units.convert(
+                    m.fs.roaster.flow_mol_comp_product[0, el]
+                    * molar_mass[frm]
+                    * REE_mass_frac[frm],
+                    to_units=units.kg / units.hr,
+                )
+                for _, el, frm in self.elements
+                if el in prod_el
             )
         )
-    )
-    print(f"Product purity is {product_purity} % REE")
+        self.product = value(product_sum)
 
-    # Individual elemental recoveries
-    total_al_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Al"]
-            * molar_mass["Al2O3"]
-            * metal_mass_frac["Al2O3"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
+        self.feed_REE = sum(
+            value(
                 m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "Al2O3"]
-                * metal_mass_frac["Al2O3"],
-                to_units=units.kg / units.hr,
+                * m.fs.leach_solid_feed.mass_frac_comp[0, molecule]
             )
+            * REE_frac
+            for molecule, REE_frac in REE_mass_frac.items()
         )
-    )
 
-    total_fe_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Fe"]
-            * molar_mass["Fe2O3"]
-            * metal_mass_frac["Fe2O3"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "Fe2O3"]
-                * metal_mass_frac["Fe2O3"],
-                to_units=units.kg / units.hr,
-            )
-        )
-    )
+        self.REE_recovery = 100 * self.product / self.feed_REE
 
-    total_ca_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Ca"]
-            * molar_mass["CaO"]
-            * metal_mass_frac["CaO"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "CaO"]
-                * metal_mass_frac["CaO"],
-                to_units=units.kg / units.hr,
+        self.product_purity = (
+            100
+            * self.product
+            / value(
+                units.convert(
+                    m.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr
+                )
             )
         )
-    )
 
-    total_sc_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Sc"]
-            * molar_mass["Sc2O3"]
-            * metal_mass_frac["Sc2O3"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "Sc2O3"]
-                * metal_mass_frac["Sc2O3"],
-                to_units=units.kg / units.hr,
-            )
-        )
-    )
+        # Total and elemental recoveries
 
-    total_yt_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Y"]
-            * molar_mass["Y2O3"]
-            * metal_mass_frac["Y2O3"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "Y2O3"]
-                * metal_mass_frac["Y2O3"],
-                to_units=units.kg / units.hr,
-            )
-        )
-    )
+        for name, el, frm in self.elements:
+            item = {
+                self.TOTAL: 100
+                * value(
+                    units.convert(
+                        m.fs.roaster.flow_mol_comp_product[0, el]
+                        * molar_mass[frm]
+                        * metal_mass_frac[frm],
+                        to_units=units.kg / units.hr,
+                    )
+                    / (
+                        units.convert(
+                            m.fs.leach_solid_feed.flow_mass[0]
+                            * m.fs.leach_solid_feed.mass_frac_comp[0, frm]
+                            * metal_mass_frac[frm],
+                            to_units=units.kg / units.hr,
+                        )
+                    )
+                ),
+                self.LEACHING: 100
+                * value(
+                    units.convert(
+                        m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, el]
+                        * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
+                        to_units=units.kg / units.hr,
+                    )
+                    / (
+                        units.convert(
+                            metal_mass_frac[frm]
+                            * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, frm]
+                            * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                            to_units=units.kg / units.hr,
+                        )
+                        + units.convert(
+                            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp[el]
+                            * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                            to_units=units.kg / units.hr,
+                        )
+                    )
+                ),
+            }
+            self._recov_el[el], self._recov_name[name] = item, item
 
-    total_la_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "La"]
-            * molar_mass["La2O3"]
-            * metal_mass_frac["La2O3"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "La2O3"]
-                * metal_mass_frac["La2O3"],
-                to_units=units.kg / units.hr,
-            )
-        )
-    )
 
-    total_ce_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Ce"]
-            * molar_mass["Ce2O3"]
-            * metal_mass_frac["Ce2O3"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "Ce2O3"]
-                * metal_mass_frac["Ce2O3"],
-                to_units=units.kg / units.hr,
-            )
-        )
-    )
+def display_results(m: FlowsheetBlock) -> FlowsheetResults:
+    """
+    Print key flowsheet outputs.
 
-    total_pr_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Pr"]
-            * molar_mass["Pr2O3"]
-            * metal_mass_frac["Pr2O3"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "Pr2O3"]
-                * metal_mass_frac["Pr2O3"],
-                to_units=units.kg / units.hr,
-            )
-        )
-    )
+    Args:
+        m: pyomo model
+    """
+    m.fs.roaster.report()
 
-    total_nd_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Nd"]
-            * molar_mass["Nd2O3"]
-            * metal_mass_frac["Nd2O3"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "Nd2O3"]
-                * metal_mass_frac["Nd2O3"],
-                to_units=units.kg / units.hr,
-            )
-        )
-    )
+    r = FlowsheetResults(m)
 
-    total_sm_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Sm"]
-            * molar_mass["Sm2O3"]
-            * metal_mass_frac["Sm2O3"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "Sm2O3"]
-                * metal_mass_frac["Sm2O3"],
-                to_units=units.kg / units.hr,
-            )
-        )
-    )
+    print(f"REE product mass flow is {r.product} kg/hr")
+    print(f"REE feed mass flow is {r.feed_REE} kg/hr")
+    print(f"Total REE recovery is {r.REE_recovery} %")
+    print(f"Product purity is {r.product_purity} % REE")
 
-    total_gd_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Gd"]
-            * molar_mass["Gd2O3"]
-            * metal_mass_frac["Gd2O3"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "Gd2O3"]
-                * metal_mass_frac["Gd2O3"],
-                to_units=units.kg / units.hr,
-            )
-        )
-    )
-
-    total_dy_recovery = 100 * value(
-        units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Dy"]
-            * molar_mass["Dy2O3"]
-            * metal_mass_frac["Dy2O3"],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                m.fs.leach_solid_feed.flow_mass[0]
-                * m.fs.leach_solid_feed.mass_frac_comp[0, "Dy2O3"]
-                * metal_mass_frac["Dy2O3"],
-                to_units=units.kg / units.hr,
-            )
-        )
-    )
-
-    al_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Al"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["Al2O3"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Al2O3"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Al"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    ca_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Ca"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["CaO"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "CaO"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Ca"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    ce_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Ce"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["Ce2O3"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Ce2O3"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Ce"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    dy_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Dy"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["Dy2O3"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Dy2O3"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Dy"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    fe_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Fe"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["Fe2O3"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Fe2O3"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Fe"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    gd_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Gd"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["Gd2O3"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Gd2O3"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Gd"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    la_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "La"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["La2O3"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "La2O3"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["La"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    nd_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Nd"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["Nd2O3"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Nd2O3"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Nd"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    pr_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Pr"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["Pr2O3"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Pr2O3"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Pr"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    sc_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Sc"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["Sc2O3"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Sc2O3"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Sc"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    sm_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Sm"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["Sm2O3"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Sm2O3"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Sm"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    yt_recovery = value(
-        units.convert(
-            m.fs.sl_sep1.recovered_liquid_outlet.conc_mass_comp[0, "Y"]
-            * m.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0],
-            to_units=units.kg / units.hr,
-        )
-        / (
-            units.convert(
-                metal_mass_frac["Y2O3"]
-                * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Y2O3"]
-                * m.fs.leach_solid_feed.outlet.flow_mass[0],
-                to_units=units.kg / units.hr,
-            )
-            + units.convert(
-                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Y"]
-                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
-                to_units=units.kg / units.hr,
-            )
-        )
-        * 100
-    )
-
-    print(f"\nLeaching Aluminum recovery is {al_recovery} %")
-    print(f"Total aluminum recovery is {total_al_recovery} %")
-    print(f"\nLeaching Calcium recovery is {ca_recovery} %")
-    print(f"Total Calcium recovery is {total_ca_recovery} %")
-    print(f"\nLeaching Cerium recovery is {ce_recovery} %")
-    print(f"Total Cerium recovery is {total_ce_recovery} %")
-    print(f"\nLeaching Dysprosium recovery is {dy_recovery} %")
-    print(f"Total Dysprosium recovery is {total_dy_recovery} %")
-    print(f"\nLeaching Iron recovery is {fe_recovery} %")
-    print(f"Total Iron recovery is {total_fe_recovery} %")
-    print(f"\nLeaching Gadolinium recovery is {gd_recovery} %")
-    print(f"Total Gadolinium recovery is {total_gd_recovery} %")
-    print(f"\nLeaching Lanthanum recovery is {la_recovery} %")
-    print(f"Total Lanthanum recovery is {total_la_recovery} %")
-    print(f"\nLeaching Neodymium recovery is {nd_recovery} %")
-    print(f"Total Neodymium recovery is {total_nd_recovery} %")
-    print(f"\nLeaching Praseodymium recovery is {pr_recovery} %")
-    print(f"Total Praseodymium recovery is {total_pr_recovery} %")
-    print(f"\nLeaching Scandium recovery is {sc_recovery} %")
-    print(f"Total Scandium recovery is {total_sc_recovery} %")
-    print(f"\nLeaching Samarium recovery is {sm_recovery} %")
-    print(f"Total Samarium recovery is {total_sm_recovery} %")
-    print(f"\nLeaching Yttrium recovery is {yt_recovery} %")
-    print(f"Total Yttrium recovery is {total_yt_recovery} %")
+    recoveries = r.recoveries(by="name")
+    for key in sorted(recoveries.keys()):
+        print()
+        for value_type in r.LEACHING, r.TOTAL:
+            value = recoveries[key][value_type]
+            print(f"{value_type.title()} {key.title()} recovery is {value} %")
 
 
 def add_costing(m):
@@ -2843,6 +2548,7 @@ def add_costing(m):
     # Solve costing
     solver = get_solver()
     solver.solve(m, tee=True)
+    # ipopt_solve_halt_on_error(m)
 
     return m
 

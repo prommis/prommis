@@ -7,12 +7,12 @@
 from pyomo.environ import ConcreteModel, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
+from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,
     InitializationStatus,
 )
 from idaes.core.solvers import get_solver
-from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
@@ -24,8 +24,9 @@ from idaes.core.util.model_statistics import (
 import pytest
 
 from prommis.nanofiltration.membrane_cascade_flowsheet.membrane import Membrane
-from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import SoluteParameters
-
+from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import (
+    SoluteParameters,
+)
 
 # -----------------------------------------------------------------------------
 # Test settings

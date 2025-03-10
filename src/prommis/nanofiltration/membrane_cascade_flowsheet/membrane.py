@@ -11,14 +11,16 @@ Modification of the IDAES Multi-stream contactor unit.
 (Addition of ports and membrane performance constraints)
 """
 
+from pyomo.common.config import ConfigValue
+
 # Pyomo import
-from pyomo.environ import Var, units, exp
+from pyomo.environ import Var, exp, units
+
+from idaes.core import declare_process_block_class
+from idaes.core.util.exceptions import ConfigurationError
 
 # IDAES imports
 from idaes.models.unit_models.mscontactor import MSContactorData
-from idaes.core import declare_process_block_class
-from pyomo.common.config import ConfigValue
-from idaes.core.util.exceptions import ConfigurationError
 
 __author__ = "Jason Yao"
 

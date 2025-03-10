@@ -7,11 +7,17 @@
 #####################################################################################################
 """Executable file for generating and solving diafiltration model."""
 
-from prommis.nanofiltration.membrane_cascade_flowsheet.diafiltration_flowsheet_model import DiafiltrationModel
-from idaes.core.util.model_statistics import report_statistics
-from pyomo.environ import SolverFactory
-import utils
 import sys
+
+from pyomo.environ import SolverFactory
+
+from idaes.core.util.model_statistics import report_statistics
+
+import utils
+
+from prommis.nanofiltration.membrane_cascade_flowsheet.diafiltration_flowsheet_model import (
+    DiafiltrationModel,
+)
 
 
 def main(args):

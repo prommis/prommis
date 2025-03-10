@@ -10,7 +10,9 @@ from idaes.core import FlowsheetBlock
 
 import pytest
 
-from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import SoluteParameters
+from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import (
+    SoluteParameters,
+)
 
 # -----------------------------------------------------------------------------
 # Test settings

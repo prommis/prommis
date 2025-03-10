@@ -6,49 +6,53 @@
 #####################################################################################################
 """Class for building the full IDAES diafiltration flowsheet."""
 
+import logging
+
+from pyomo.core.base.param import ScalarParam
+from pyomo.core.expr import identify_components
+
 # Pyomo imports
 from pyomo.environ import (
     ConcreteModel,
+    Constraint,
+    Objective,
+    Param,
     RangeSet,
     Set,
-    Var,
     TransformationFactory,
-    units,
-    Objective,
+    Var,
     maximize,
-    Param,
-    Constraint,
+    units,
 )
 from pyomo.network import Arc
-from pyomo.core.expr import identify_components
-from pyomo.core.base.param import ScalarParam
-
-# IDAES imports
-from idaes.core.util.scaling import set_scaling_factor
-from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
-from idaes.models.unit_models import MSContactorInitializer
-from idaes.models.unit_models import (
-    Mixer,
-    MixingType,
-    MomentumMixingType,
-    MixerInitializer,
-)
-from idaes.models.unit_models import (
-    Separator as Splitter,
-    EnergySplittingType,
-    SeparatorInitializer,
-)
-from idaes.core.util.initialization import propagate_state
-
-# Custom imports
-from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import SoluteParameters
-from prommis.nanofiltration.membrane_cascade_flowsheet.membrane import Membrane
-from prommis.nanofiltration.membrane_cascade_flowsheet.precipitator import Precipitator
 
 # other imports
 import idaes.logger as idaeslog
-import logging
+from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
+from idaes.core.util.initialization import propagate_state
+
+# IDAES imports
+from idaes.core.util.scaling import set_scaling_factor
+from idaes.models.unit_models import (
+    EnergySplittingType,
+    Mixer,
+    MixerInitializer,
+    MixingType,
+    MomentumMixingType,
+    MSContactorInitializer,
+)
+from idaes.models.unit_models import Separator as Splitter
+from idaes.models.unit_models import SeparatorInitializer
+
 import numpy as np
+
+from prommis.nanofiltration.membrane_cascade_flowsheet.membrane import Membrane
+from prommis.nanofiltration.membrane_cascade_flowsheet.precipitator import Precipitator
+
+# Custom imports
+from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import (
+    SoluteParameters,
+)
 
 
 class DiafiltrationModel:

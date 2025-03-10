@@ -8,9 +8,11 @@
 
 # imports
 import pyomo.environ as pyo
-from matplotlib import pyplot as plt
+
 import matplotlib.patches as patches
+from matplotlib import pyplot as plt
 from matplotlib.colors import to_rgba
+
 
 ##############################################################################
 # Model Information Utility functions

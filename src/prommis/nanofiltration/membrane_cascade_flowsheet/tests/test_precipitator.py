@@ -8,7 +8,6 @@ from pyomo.environ import ConcreteModel, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
-from idaes.models.unit_models import EnergySplittingType
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,
     InitializationStatus,
@@ -21,12 +20,14 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
+from idaes.models.unit_models import EnergySplittingType
 
 import pytest
 
 from prommis.nanofiltration.membrane_cascade_flowsheet.precipitator import Precipitator
-from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import SoluteParameters
-
+from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import (
+    SoluteParameters,
+)
 
 # -----------------------------------------------------------------------------
 # Test settings

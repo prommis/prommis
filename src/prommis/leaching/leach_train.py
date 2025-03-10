@@ -131,7 +131,12 @@ class LeachingTrainInitializer(ModularInitializerBase):
             ssc_solver_options=self.config.ssc_solver_options,
             calculate_variable_options=self.config.calculate_variable_options,
         )
-        return msc_init.initialize(model.mscontactor)
+        msc_init.initialize(model.mscontactor)
+
+        solver = self._get_solver()
+        results = solver.solve(model)
+
+        return results
 
 
 StreamCONFIG = ConfigDict()

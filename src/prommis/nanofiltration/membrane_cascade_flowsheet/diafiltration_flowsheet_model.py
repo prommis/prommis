@@ -733,10 +733,9 @@ class DiafiltrationModel:
                         destination=m.fs.inlet_mixers[i - 1, j].recycle,
                     )
             elif mixing == "stage":
-                m.fs.inlet_mixers[i-1].recycle.flow_vol[0].unfix()
+                m.fs.inlet_mixers[i - 1].recycle.flow_vol[0].unfix()
                 for sol in self.solutes:
-                    m.fs.inlet_mixers[i-1].recycle.flow_mass_solute[0, sol]\
-                                                .unfix()
+                    m.fs.inlet_mixers[i - 1].recycle.flow_mass_solute[0, sol].unfix()
                 propagate_state(
                     source=m.fs.split_retentate[i].recycle,
                     destination=m.fs.inlet_mixers[i - 1].recycle,
@@ -990,7 +989,6 @@ class DiafiltrationModel:
         # remove logging handler
         if info:
             flowsheet_logger.removeHandler(ch)
-
 
     def num_inlets(self, mixing):
         """Find the number of inlets."""

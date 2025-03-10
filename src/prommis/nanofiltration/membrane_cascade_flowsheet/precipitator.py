@@ -84,8 +84,6 @@ class SplitterData(SeparatorData):
                     f" inlet solutes are: {sol}"
                 )
 
-
-
     def add_precipitator_constraints(self):
         """
         Add Precipitator constraints.

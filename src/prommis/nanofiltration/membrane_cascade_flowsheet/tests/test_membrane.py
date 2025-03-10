@@ -35,7 +35,7 @@ from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import (
 solver = get_solver()
 
 # solutes
-solutes = ['Li', 'Co']
+solutes = ["Li", "Co"]
 
 # membrane performance
 flux = 0.1
@@ -97,16 +97,23 @@ def test_config(membrane):
     assert not membrane.fs.unit.config.interacting_streams
     assert not membrane.fs.unit.config.heterogeneous_reactions
     for stream in membrane.fs.unit.config.streams:
-        assert membrane.fs.unit.config.streams[stream]['property_package'] is membrane.fs.properties
-        assert not membrane.fs.unit.config.streams[stream]['reaction_package']
-        assert membrane.fs.unit.config.streams[stream]['flow_direction'] is FlowDirection.forward
-        assert not membrane.fs.unit.config.streams[stream]['has_rate_reactions']
-        assert not membrane.fs.unit.config.streams[stream]['has_equilibrium_reactions']
-        assert not membrane.fs.unit.config.streams[stream]['has_energy_balance']
-        assert not membrane.fs.unit.config.streams[stream]['has_heat_transfer']
-        assert not membrane.fs.unit.config.streams[stream]['has_heat_of_reaction']
-        assert not membrane.fs.unit.config.streams[stream]['has_pressure_balance']
-        assert not membrane.fs.unit.config.streams[stream]['has_pressure_change']
+        assert (
+            membrane.fs.unit.config.streams[stream]["property_package"]
+            is membrane.fs.properties
+        )
+        assert not membrane.fs.unit.config.streams[stream]["reaction_package"]
+        assert (
+            membrane.fs.unit.config.streams[stream]["flow_direction"]
+            is FlowDirection.forward
+        )
+        assert not membrane.fs.unit.config.streams[stream]["has_rate_reactions"]
+        assert not membrane.fs.unit.config.streams[stream]["has_equilibrium_reactions"]
+        assert not membrane.fs.unit.config.streams[stream]["has_energy_balance"]
+        assert not membrane.fs.unit.config.streams[stream]["has_heat_transfer"]
+        assert not membrane.fs.unit.config.streams[stream]["has_heat_of_reaction"]
+        assert not membrane.fs.unit.config.streams[stream]["has_pressure_balance"]
+        assert not membrane.fs.unit.config.streams[stream]["has_pressure_change"]
+
 
 # -----------------------------------------------------------------------------
 class TestMembrane(object):
@@ -180,7 +187,9 @@ class TestMembrane(object):
     def test_initialize(self, membrane):
         initializer = BlockTriangularizationInitializer(constraint_tolerance=2e-5)
         initializer.initialize(membrane.fs.unit)
-        assert initializer.summary[membrane.fs.unit]["status"] == InitializationStatus.Ok
+        assert (
+            initializer.summary[membrane.fs.unit]["status"] == InitializationStatus.Ok
+        )
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
@@ -226,14 +235,15 @@ class TestMembrane(object):
             (
                 membrane.fs.unit.retentate_inlet.flow_vol[0]
                 + membrane.fs.unit.retentate_side_stream_1.flow_vol[0]
-            ) * membrane.fs.properties.dens_H2O
-
+            )
+            * membrane.fs.properties.dens_H2O
         ) == pytest.approx(
             value(
                 (
                     membrane.fs.unit.retentate_outlet.flow_vol[0]
                     + membrane.fs.unit.permeate_outlet.flow_vol[0]
-                ) * membrane.fs.properties.dens_H2O
+                )
+                * membrane.fs.properties.dens_H2O
             ),
             rel=1e-6,
             abs=1e-6,

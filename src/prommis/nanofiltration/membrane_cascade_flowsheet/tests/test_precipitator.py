@@ -36,10 +36,10 @@ from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import (
 solver = get_solver()
 
 # solutes
-solutes = ['Li', 'Co']
+solutes = ["Li", "Co"]
 
 # yields
-yields = {'Li': 0.81, 'Co': 0.05}
+yields = {"Li": 0.81, "Co": 0.05}
 
 
 @pytest.fixture(scope="module")
@@ -80,7 +80,10 @@ def test_config(precip):
     assert not precip.fs.unit.config.has_holdup
     assert not precip.fs.unit.config.has_phase_equilibrium
     assert precip.fs.unit.config.property_package is precip.fs.properties
-    assert precip.fs.unit.config.material_balance_type is MaterialBalanceType.componentTotal
+    assert (
+        precip.fs.unit.config.material_balance_type
+        is MaterialBalanceType.componentTotal
+    )
     assert precip.fs.unit.config.momentum_balance_type is MomentumBalanceType.none
     assert precip.fs.unit.config.energy_split_basis is EnergySplittingType.none
 
@@ -152,9 +155,7 @@ class TestPrecip(object):
     def test_solution(self, precip):
         # note that the maximum yield is not reached as the volume is not extremely large
         # aqueous outlet
-        assert pytest.approx(100, abs=1e-6) == value(
-            precip.fs.unit.recycle.flow_vol[0]
-        )
+        assert pytest.approx(100, abs=1e-6) == value(precip.fs.unit.recycle.flow_vol[0])
         assert pytest.approx(95.05, abs=1e-3) == value(
             precip.fs.unit.recycle.flow_mass_solute[0, "Co"]
         )
@@ -162,9 +163,7 @@ class TestPrecip(object):
             precip.fs.unit.recycle.flow_mass_solute[0, "Li"]
         )
         # solid outlet
-        assert pytest.approx(0, abs=1e-6) == value(
-            precip.fs.unit.solid.flow_vol[0]
-        )
+        assert pytest.approx(0, abs=1e-6) == value(precip.fs.unit.solid.flow_vol[0])
         assert pytest.approx(4.949, abs=1e-3) == value(
             precip.fs.unit.solid.flow_mass_solute[0, "Co"]
         )
@@ -181,10 +180,7 @@ class TestPrecip(object):
         assert value(
             precip.fs.unit.inlet.flow_vol[0] * precip.fs.properties.dens_H2O
         ) == pytest.approx(
-            value(
-                precip.fs.unit.recycle.flow_vol[0]
-                * precip.fs.properties.dens_H2O
-            ),
+            value(precip.fs.unit.recycle.flow_vol[0] * precip.fs.properties.dens_H2O),
             rel=1e-6,
             abs=1e-6,
         )
@@ -201,4 +197,3 @@ class TestPrecip(object):
                 rel=1e-6,
                 abs=1e-6,
             )
-

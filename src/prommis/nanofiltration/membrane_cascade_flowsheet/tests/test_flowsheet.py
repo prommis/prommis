@@ -35,7 +35,7 @@ from prommis.nanofiltration.membrane_cascade_flowsheet.diafiltration_flowsheet_m
 solver = get_solver()
 
 # solutes
-solutes = ['Li', 'Co']
+solutes = ["Li", "Co"]
 
 # yields
 yields = {
@@ -66,7 +66,8 @@ use_precipitators = True
 sizes = [(1, 3), (2, 5), (3, 10)]
 
 # superstructure configuration
-mixing = ['stage', 'tube']
+mixing = ["stage", "tube"]
+
 
 @pytest.fixture(scope="module")
 def flowsheet():
@@ -80,7 +81,7 @@ def flowsheet():
         feed=feed,
         diafiltrate=diaf,
         precipitate=use_precipitators,
-        precipitate_yield=yields
+        precipitate_yield=yields,
     )
 
     return flowsheet_setup
@@ -93,7 +94,10 @@ class TestFlowsheet(object):
     def test_build(self, flowsheet):
         # check all units are constructed across model sizes
         # and superstructure configuration
-        for stages, tubes, in sizes:
+        for (
+            stages,
+            tubes,
+        ) in sizes:
             for mix in mixing:
                 flowsheet.ns = stages
                 flowsheet.nt = tubes
@@ -116,14 +120,14 @@ class TestFlowsheet(object):
                 # 2 splitters (retentate/permeate) per stage
                 assert len(m.fs.split_retentate) == stages
                 assert len(m.fs.split_permeate) == stages
-                if mix == 'tube':
+                if mix == "tube":
                     # mixers into all tubes in all stages
-                    assert len(m.fs.inlet_mixers) == stages*tubes
+                    assert len(m.fs.inlet_mixers) == stages * tubes
                     # recycle splitters into every previous tube inlet
                     # for every stage after the first
                     if stages != 1:
                         assert len(m.fs.recycle_splitters) == stages - 1
-                if mix == 'stage':
+                if mix == "stage":
                     # mixers only into each stage
                     assert len(m.fs.inlet_mixers) == stages
                     # splitters for mixed inlet for every tube
@@ -140,15 +144,17 @@ class TestFlowsheet(object):
                 assert len(m.fs.split_precipitate_recycle) == 1
 
         # recovery lower bounds
-        assert hasattr(m, "R")           # Li recovery LB parameter
-        assert hasattr(m, "Rco")         # Co recovery LB parameter
-        assert hasattr(m, "li_lb")       # Li recovery LB constraint
-        assert hasattr(m, "co_lb")       # Co recovery LB constraint
+        assert hasattr(m, "R")  # Li recovery LB parameter
+        assert hasattr(m, "Rco")  # Co recovery LB parameter
+        assert hasattr(m, "li_lb")  # Li recovery LB constraint
+        assert hasattr(m, "co_lb")  # Co recovery LB constraint
         assert hasattr(m, "prec_li_lb")  # LB constraint for precipitators
         assert hasattr(m, "prec_co_lb")  # LB constraint for precipitators
 
         # objective
-        assert len([obj for obj in m.component_data_objects(Objective, active=True)]) == 1
+        assert (
+            len([obj for obj in m.component_data_objects(Objective, active=True)]) == 1
+        )
         # contains alternative objectives for flowsheet with/without precipitators
         assert hasattr(m, "co_obj")
         assert hasattr(m, "li_obj")
@@ -165,7 +171,10 @@ class TestFlowsheet(object):
     @pytest.mark.unit
     def test_dof(self, flowsheet):
         # check dof across model sizes and superstructure configuration
-        for stages, tubes, in sizes:
+        for (
+            stages,
+            tubes,
+        ) in sizes:
             for mix in mixing:
                 flowsheet.ns = stages
                 flowsheet.nt = tubes
@@ -177,12 +186,14 @@ class TestFlowsheet(object):
                 m.fs.precipitator["retentate"].V.fix(500)
                 m.fs.precipitator["permeate"].V.fix(500)
 
-                if mix == 'tube':
+                if mix == "tube":
                     # DOF = 3*NS*NT + NS - NT - 2
-                    assert degrees_of_freedom(m) == 3*stages*tubes + stages - tubes - 2
-                if mix == 'stage':
+                    assert (
+                        degrees_of_freedom(m) == 3 * stages * tubes + stages - tubes - 2
+                    )
+                if mix == "stage":
                     # DOF = NS*(NT + 3) - 3
-                    assert degrees_of_freedom(m) == stages*(tubes + 3) - 3
+                    assert degrees_of_freedom(m) == stages * (tubes + 3) - 3
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
@@ -206,9 +217,7 @@ class TestFlowsheet(object):
                 assert value(
                     m.fs.inlet_mixers[i].recycle_state[0].flow_vol
                 ) == pytest.approx(
-                    value(
-                        m.fs.split_retentate[i+1].recycle_state[0].flow_vol
-                    ),
+                    value(m.fs.split_retentate[i + 1].recycle_state[0].flow_vol),
                     rel=1e-6,
                     abs=1e-6,
                 )
@@ -217,18 +226,16 @@ class TestFlowsheet(object):
                         m.fs.inlet_mixers[i].recycle_state[0].flow_mass_solute[sol]
                     ) == pytest.approx(
                         value(
-                            m.fs.split_retentate[i+1].recycle_state[0].flow_mass_solute[sol]
+                            m.fs.split_retentate[i + 1]
+                            .recycle_state[0]
+                            .flow_mass_solute[sol]
                         ),
                         rel=1e-6,
                         abs=1e-6,
                     )
         # check diafiltrate recycle
-        assert value(
-            m.fs.split_diafiltrate.mixed_state[0].flow_vol
-        ) == pytest.approx(
-            value(
-                m.fs.split_precipitate_recycle.recycle_state[0].flow_vol
-            ),
+        assert value(m.fs.split_diafiltrate.mixed_state[0].flow_vol) == pytest.approx(
+            value(m.fs.split_precipitate_recycle.recycle_state[0].flow_vol),
             rel=1e-6,
             abs=1e-6,
         )
@@ -237,7 +244,9 @@ class TestFlowsheet(object):
                 m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute[sol]
             ) == pytest.approx(
                 value(
-                    m.fs.split_precipitate_recycle.recycle_state[0].flow_mass_solute[sol]
+                    m.fs.split_precipitate_recycle.recycle_state[0].flow_mass_solute[
+                        sol
+                    ]
                 ),
                 rel=1e-6,
                 abs=1e-6,
@@ -291,22 +300,22 @@ class TestFlowsheet(object):
 
         # precipitator outlets
         assert pytest.approx(0, abs=1e-6) == value(
-            m.fs.precipitator['retentate'].solid.flow_vol[0]
+            m.fs.precipitator["retentate"].solid.flow_vol[0]
         )
         assert pytest.approx(893.679, abs=1e-3) == value(
-            m.fs.precipitator['retentate'].solid.flow_mass_solute[0, "Co"]
+            m.fs.precipitator["retentate"].solid.flow_mass_solute[0, "Co"]
         )
         assert pytest.approx(2.320, abs=1e-3) == value(
-            m.fs.precipitator['retentate'].solid.flow_mass_solute[0, "Li"]
+            m.fs.precipitator["retentate"].solid.flow_mass_solute[0, "Li"]
         )
         assert pytest.approx(0, abs=1e-6) == value(
-            m.fs.precipitator['permeate'].solid.flow_vol[0]
+            m.fs.precipitator["permeate"].solid.flow_vol[0]
         )
         assert pytest.approx(9.349, abs=1e-3) == value(
-            m.fs.precipitator['permeate'].solid.flow_mass_solute[0, "Co"]
+            m.fs.precipitator["permeate"].solid.flow_mass_solute[0, "Co"]
         )
         assert pytest.approx(135.999, abs=1e-3) == value(
-            m.fs.precipitator['permeate'].solid.flow_mass_solute[0, "Li"]
+            m.fs.precipitator["permeate"].solid.flow_mass_solute[0, "Li"]
         )
 
         # solvent exit outlet
@@ -321,26 +330,18 @@ class TestFlowsheet(object):
         )
 
         # system recoveries
-        assert pytest.approx(0.525, abs=1e-3) == value(
-            value(m.prec_perc_co)
-        )
-        assert pytest.approx(0.799, abs=1e-3) == value(
-            value(m.prec_perc_li)
-        )
+        assert pytest.approx(0.525, abs=1e-3) == value(value(m.prec_perc_co))
+        assert pytest.approx(0.799, abs=1e-3) == value(value(m.prec_perc_li))
 
         # membrane length
-        assert pytest.approx(1105.388, abs=1e-3) == value(
-            value(m.fs.stage[1].length)
-        )
+        assert pytest.approx(1105.388, abs=1e-3) == value(value(m.fs.stage[1].length))
 
         # objective
-        assert pytest.approx(893.679, abs=1e-3) == value(
-            value(m.prec_co_obj)
-        )
+        assert pytest.approx(893.679, abs=1e-3) == value(value(m.prec_co_obj))
 
         # flows all greater than 0
         for i in m.component_data_objects(Var):
-            if 'flow_vol' in i.name or 'flow_mass_solute' in i.name:
+            if "flow_vol" in i.name or "flow_mass_solute" in i.name:
                 assert value(i) >= 0
 
     @pytest.mark.solver
@@ -373,10 +374,11 @@ class TestFlowsheet(object):
         ) == pytest.approx(
             value(
                 (
-                    m.fs.precipitator['permeate'].solid_state[0].flow_vol
-                    + m.fs.precipitator['retentate'].solid_state[0].flow_vol
+                    m.fs.precipitator["permeate"].solid_state[0].flow_vol
+                    + m.fs.precipitator["retentate"].solid_state[0].flow_vol
                     + m.fs.split_precipitate_recycle.waste_state[0].flow_vol
-                ) * m.fs.properties.dens_H2O
+                )
+                * m.fs.properties.dens_H2O
             ),
             rel=1e-6,
             abs=1e-6,
@@ -388,11 +390,14 @@ class TestFlowsheet(object):
                 m.fs.split_feed.mixed_state[0].flow_mass_solute[sol]
             ) == pytest.approx(
                 value(
-                    m.fs.precipitator['permeate'].solid_state[0].flow_mass_solute[sol]
-                    + m.fs.precipitator['retentate'].solid_state[0].flow_mass_solute[sol]
-                    + m.fs.split_precipitate_recycle.waste_state[0].flow_mass_solute[sol]
+                    m.fs.precipitator["permeate"].solid_state[0].flow_mass_solute[sol]
+                    + m.fs.precipitator["retentate"]
+                    .solid_state[0]
+                    .flow_mass_solute[sol]
+                    + m.fs.split_precipitate_recycle.waste_state[0].flow_mass_solute[
+                        sol
+                    ]
                 ),
                 rel=1e-6,
                 abs=1e-6,
             )
-

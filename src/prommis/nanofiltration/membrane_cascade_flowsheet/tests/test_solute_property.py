@@ -18,9 +18,10 @@ from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import (
 # Test settings
 
 # solutes
-solutes = ['Li', 'Co']
+solutes = ["Li", "Co"]
 
 # -----------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_build():
@@ -42,7 +43,7 @@ def test_build():
     m.fs.state.fix_initialization_states()
 
     for j in m.fs.properties.component_list:
-        if j == 'solvent':
+        if j == "solvent":
             assert m.fs.state[0].flow_vol.fixed
         else:
             assert m.fs.state[0].flow_mass_solute[j].fixed

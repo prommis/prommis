@@ -24,7 +24,9 @@ The `Precipitator` unit model is built on top of the `Separator` unit model. Thi
 The diafiltration flowsheet provides a `diafiltration_model` class that initializes with all required model parameter settings. This class contains methods to build the multi-stage membrane cascade flowsheet with various superstructures and objectives, as well as an initialization scheme that sets up the model for optimization at a feasible point with appropriate degrees of freedom unfixed.
 
 ### `solve_diafiltration.py`
-This is an example file for setting up and optimizing the diafiltration flowsheet with appropriate arguments.
+This is an example file for setting up and optimizing the diafiltration flowsheet with appropriate arguments. This file also provides utility for running the diafiltration flowsheet model through the command line.
 
 ### `utils.py`
 This file contains methods for reporting model results.
+- `report_values` prints out relevant membrane area, flow rates, recoveries, precipitator volumes.
+- `visualize_flows` takes in flowsheet settings and data from report_values and visualizes the membrane cascade using matplotlib.

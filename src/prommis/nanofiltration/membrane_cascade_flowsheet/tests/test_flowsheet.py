@@ -8,9 +8,7 @@ from pyomo.environ import Objective, Var, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core.solvers import get_solver
-from idaes.core.util.model_statistics import (
-    degrees_of_freedom,
-)
+from idaes.core.util.model_statistics import degrees_of_freedom
 
 import pytest
 

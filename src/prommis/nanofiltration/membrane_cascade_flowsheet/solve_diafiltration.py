@@ -13,7 +13,7 @@ from pyomo.environ import SolverFactory
 
 from idaes.core.util.model_statistics import report_statistics
 
-import utils
+from prommis.nanofiltration.membrane_cascade_flowsheet import utils
 
 from prommis.nanofiltration.membrane_cascade_flowsheet.diafiltration_flowsheet_model import (
     DiafiltrationModel,

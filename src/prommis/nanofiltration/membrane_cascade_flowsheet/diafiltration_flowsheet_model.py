@@ -22,7 +22,6 @@ from pyomo.environ import (
     TransformationFactory,
     Var,
     maximize,
-    units,
 )
 from pyomo.network import Arc
 
@@ -69,30 +68,40 @@ class DiafiltrationModel:
     sieving coefficient
     feed
     diafiltrate
+
+    Example input:
+    solutes=["Li", "Co"],
+    flux=0.1,
+    sieving_coefficient={"Li": 1.3, "Co": 0.5},
+    feed={
+        "solvent": 100,  # m^3/hr of water
+        "Li": 1.7 * 100,  # kg/hr
+        "Co": 17 * 100,  # kg/hr
+    },
+    diafiltrate={
+        "solvent": 30,  # m^3/hr of water
+        "Li": 0.1 * 30,  # kg/hr
+        "Co": 0.2 * 30,  # kg/hr
+    },
+    precipitate_yield={
+        "permeate": {"Li": 0.81, "Co": 0.05},
+        "retentate": {"Li": 0.05, "Co": 0.99},
+    },
+    precipitate=True,
+
     """
 
     def __init__(
         self,
         NS,
         NT,
-        solutes=["Li", "Co"],
-        flux=0.1,
-        sieving_coefficient={"Li": 1.3, "Co": 0.5},
-        feed={
-            "solvent": 100,  # m^3/hr of water
-            "Li": 1.7 * 100,  # kg/hr
-            "Co": 17 * 100,  # kg/hr
-        },
-        diafiltrate={
-            "solvent": 30,  # m^3/hr of water
-            "Li": 0.1 * 30,  # kg/hr
-            "Co": 0.2 * 30,  # kg/hr
-        },
-        precipitate=False,
-        precipitate_yield={
-            "permeate": {"Li": 0.81, "Co": 0.05},
-            "retentate": {"Li": 0.05, "Co": 0.99},
-        },
+        solutes,
+        flux,
+        sieving_coefficient,
+        feed,
+        diafiltrate,
+        precipitate_yield,
+        precipitate=True,
     ):
         """Store model parameters."""
         self.ns = NS
@@ -421,7 +430,6 @@ class DiafiltrationModel:
 
     def add_objectives(self, m):
         """Add recovery objectives."""
-
         # mass recovery of solutes
         @m.Expression()
         def rec_mass_co(b):

@@ -71,19 +71,20 @@ class MembraneData(MSContactorData):
             )
         if self.config.flux is None:
             raise ConfigurationError(
-                "Membrane model must be provided with a " "flux [m^3 / m^2 h] value"
+                "Membrane model must be provided with a "
+                + "flux [m^3 / m^2 h] value"
             )
         if self.config.sieving_coefficient is None:
             raise ConfigurationError(
                 "Membrane model must be provided with a dictionary of "
-                "sieving coefficient values"
+                + "sieving coefficient values"
             )
         required_streams = ["permeate", "retentate"]
         for stream in self.config.streams:
             if stream not in required_streams:
                 raise ConfigurationError(
                     "Membrane model must be provided with only permeate "
-                    "and retentate streams"
+                    + "and retentate streams"
                 )
 
     def _verify_sieving_coefficients(self, solutes):
@@ -97,7 +98,8 @@ class MembraneData(MSContactorData):
         for sol in self.config.sieving_coefficient:
             if sol not in solutes:
                 raise ConfigurationError(
-                    "Sieving coefficient must match solutes " "in property package"
+                    "Sieving coefficient must match solutes "
+                    + "in property package"
                 )
 
     def add_side_stream_ports(self):

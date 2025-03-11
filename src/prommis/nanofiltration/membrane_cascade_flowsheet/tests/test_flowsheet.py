@@ -7,20 +7,10 @@
 from pyomo.environ import Objective, Var, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
-from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
-from idaes.core.initialization import (
-    BlockTriangularizationInitializer,
-    InitializationStatus,
-)
 from idaes.core.solvers import get_solver
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
-    number_total_constraints,
-    number_unused_variables,
-    number_variables,
 )
-from idaes.models.unit_models import EnergySplittingType
 
 import pytest
 

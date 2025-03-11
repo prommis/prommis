@@ -60,8 +60,8 @@ class DiafiltrationModel:
     Multi-stage diafiltration model, built using custom IDAES units.
 
     Model specifications:
-    NS stages
-    NT tubes
+    NS Number of Stages
+    NT Number of Tubes
 
     Parameters:
     solutes
@@ -127,16 +127,10 @@ class DiafiltrationModel:
             self.connect_diafiltrate(m)
             self.precipitate_objectives(m)
 
-        # resolve solver tolerance issues by setting LB of all units outside of
-        # membranes to 0
+        # set LB of all units outside of membranes to 0
         for i in m.component_data_objects(Var):
-            # i.setlb(0)
-            # if i.lb == 1e-8:
-            #     i.setlb(0)
-            if i.lb == 1e-8 and i.name.split(".")[1].split("[")[0] != "stage":
+            if i.lb == 1e-8 and "stage" not in i.name:
                 i.setlb(0)
-        #     elif i.lb == 1e-8:
-        #         i.setlb(1e-2)
 
         return m
 
@@ -598,11 +592,6 @@ class DiafiltrationModel:
                     destination=m.fs.precipitator[prod].inlet,
                 ),
             )
-
-            # set split fraction
-            # for sol in self.solutes:
-            # m.fs.precipitator[prod].yields[sol, 'solid']\
-            #                        .fix(self.perc_precipitate[prod][sol])
 
         TransformationFactory("network.expand_arcs").apply_to(m)
 

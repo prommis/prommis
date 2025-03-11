@@ -430,6 +430,7 @@ class DiafiltrationModel:
 
     def add_objectives(self, m):
         """Add recovery objectives."""
+
         # mass recovery of solutes
         @m.Expression()
         def rec_mass_co(b):

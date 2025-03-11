@@ -93,8 +93,7 @@ class SoluteParameterData(PhysicalParameterBlock):
         # Check that list of solutes exists
         if self.config.solutes is None:
             raise ConfigurationError(
-                "Solutes property package requires "
-                + "a list of solutes."
+                "Solutes property package requires " + "a list of solutes."
             )
 
         self.phase1 = Phase()

@@ -1,6 +1,8 @@
 # Multi-Stage Diafiltration Flowsheet
 This flowsheet provides the setup for a multi-stage diafiltration model with downstream precipitators. The model is based on the diafiltration cascades published in [literature](https://pubs.acs.org/doi/full/10.1021/acssuschemeng.2c02862) and built in IDAES.
 
+![flowsheet](flowsheet.png "Multi-stage diafiltration cascade with downstream precipitators")
+
 ## Model Features
 - Specifiable number of membrane stages and tube elements. 
 - Lumped parameter membrane model with sieving and flux parameters.

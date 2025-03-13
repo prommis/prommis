@@ -123,21 +123,16 @@ class TestPrecip(object):
     def test_units(self, precip):
         assert_units_consistent(precip.fs.unit)
 
-        dt = DiagnosticsToolbox(model=precip)
-        dt.report_structural_issues()
-        dt.display_underconstrained_set()
-        dt.display_overconstrained_set()
-        assert degrees_of_freedom(precip) == 0
-
-    @pytest.mark.unit
+    @pytest.mark.component
     def test_dof(self, precip):
-        assert degrees_of_freedom(precip) == 0
+        dt = DiagnosticsToolbox(model=precip)
+        dt.assert_no_structural_warnings()
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
     def test_initialize(self, precip):
-        initializer = BlockTriangularizationInitializer(constraint_tolerance=2e-5)
+        initializer = BlockTriangularizationInitializer()
         initializer.initialize(precip.fs.unit)
         assert initializer.summary[precip.fs.unit]["status"] == InitializationStatus.Ok
 
@@ -148,6 +143,11 @@ class TestPrecip(object):
         solver = get_solver()
         results = solver.solve(precip)
         assert_optimal_termination(results)
+
+    @pytest.mark.component
+    def test_numerical_issues(self, precip):
+        dt = DiagnosticsToolbox(model=precip)
+        dt.assert_no_numerical_warnings()
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")

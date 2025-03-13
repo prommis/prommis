@@ -171,21 +171,16 @@ class TestMembrane(object):
     def test_units(self, membrane):
         assert_units_consistent(membrane.fs.unit)
 
-        dt = DiagnosticsToolbox(model=membrane)
-        dt.report_structural_issues()
-        dt.display_underconstrained_set()
-        dt.display_overconstrained_set()
-        assert degrees_of_freedom(membrane) == 0
-
-    @pytest.mark.unit
+    @pytest.mark.component
     def test_dof(self, membrane):
-        assert degrees_of_freedom(membrane) == 0
+        dt = DiagnosticsToolbox(model=membrane)
+        dt.assert_no_structural_warnings()
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
     def test_initialize(self, membrane):
-        initializer = BlockTriangularizationInitializer(constraint_tolerance=2e-5)
+        initializer = BlockTriangularizationInitializer()
         initializer.initialize(membrane.fs.unit)
         assert (
             initializer.summary[membrane.fs.unit]["status"] == InitializationStatus.Ok
@@ -198,6 +193,11 @@ class TestMembrane(object):
         solver = get_solver()
         results = solver.solve(membrane)
         assert_optimal_termination(results)
+
+    @pytest.mark.component
+    def test_numerical_issues(self, membrane):
+        dt = DiagnosticsToolbox(model=membrane)
+        dt.assert_no_numerical_warnings()
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")

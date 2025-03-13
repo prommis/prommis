@@ -71,7 +71,7 @@ def main(args):
     # solve model
     # R is used for the Li LB constraint.
     # This can be changed to any desired LB.
-    m.R = 0.8
+    m.recovery_li = 0.8
     solver = SolverFactory("ipopt")
     result = solver.solve(m, tee=True)
 

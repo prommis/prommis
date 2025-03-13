@@ -476,15 +476,16 @@ class DiafiltrationModel:
             m.co_obj.deactivate()
 
         # percent recovery lower bound constraints
-        m.R = Param(initialize=0.95, mutable=True)
+        m.recovery_li = Param(initialize=0.95, mutable=True)
+        m.recovery_co = Param(initialize=0.95, mutable=True)
 
         @m.Constraint()
         def li_lb(b):
-            return b.rec_perc_li >= m.R
+            return b.rec_perc_li >= m.recovery_li
 
         @m.Constraint()
         def co_lb(b):
-            return b.rec_perc_co >= m.R
+            return b.rec_perc_co >= m.recovery_co
 
         # select appropriate lower bound
         if self.solute_obj == 'Co':
@@ -704,9 +705,8 @@ class DiafiltrationModel:
         if self.solute_obj == 'Li':
             m.prec_co_obj.deactivate()
 
-        m.prec_li_lb = Constraint(expr=m.prec_perc_li >= m.R)
-        m.Rco = Param(initialize=0.95, mutable=True)
-        m.prec_co_lb = Constraint(expr=m.prec_perc_co >= m.Rco)
+        m.prec_li_lb = Constraint(expr=m.prec_perc_li >= m.recovery_li)
+        m.prec_co_lb = Constraint(expr=m.prec_perc_co >= m.recovery_co)
         # select appropriate lower bound
         if self.solute_obj == 'Co':
             m.prec_co_lb.deactivate()

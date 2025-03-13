@@ -132,8 +132,8 @@ class TestFlowsheet(object):
                 assert len(m.fs.split_precipitate_recycle) == 1
 
         # recovery lower bounds
-        assert hasattr(m, "R")  # Li recovery LB parameter
-        assert hasattr(m, "Rco")  # Co recovery LB parameter
+        assert hasattr(m, "recovery_li")  # Li recovery LB parameter
+        assert hasattr(m, "recovery_co")  # Co recovery LB parameter
         assert hasattr(m, "li_lb")  # Li recovery LB constraint
         assert hasattr(m, "co_lb")  # Co recovery LB constraint
         assert hasattr(m, "prec_li_lb")  # LB constraint for precipitators
@@ -257,7 +257,7 @@ class TestFlowsheet(object):
         m.fs.precipitator["permeate"].volume.fix(500)
 
         # set lower bound
-        m.R = 0.8
+        m.recovery_li = 0.8
 
         solver = get_solver()
         results = solver.solve(m)
@@ -281,7 +281,7 @@ class TestFlowsheet(object):
         m.fs.precipitator["permeate"].volume.fix(500)
 
         # set lower bound
-        m.R = 0.8
+        m.recovery_li = 0.8
 
         solver = get_solver()
         solver.solve(m)
@@ -350,7 +350,7 @@ class TestFlowsheet(object):
         m.fs.precipitator["permeate"].volume.fix(500)
 
         # set lower bound
-        m.R = 0.8
+        m.recovery_li = 0.8
 
         solver = get_solver()
         solver.solve(m)

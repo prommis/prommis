@@ -115,29 +115,29 @@ class MembraneData(MSContactorData):
 
     def add_membrane_performance_variables(self, solutes):
         """Add membrane length, flux, and sieving coefficients."""
-        self.length = Var(units=units.m)
-        self.width = Var(units=units.m)
-        self.flux = Var(self.elements, units=units.m / units.hour)
+        # set small initial length for initialization
+        self.length = Var(units=units.m, bounds=(0.1, 10000), initialize=100)
+        # set width as 1m
+        self.width = Var(units=units.m, initialize=1)
+        self.flux = Var(self.elements, units=units.m / units.hour, initialize=self.config.flux)
         self.sieving_coefficient = Var(
-            solutes, self.elements, units=units.dimensionless
+            solutes, self.elements, units=units.dimensionless,
+            initialize={(sol, ele): self.config.sieving_coefficient[sol]
+                        for sol in solutes
+                        for ele in self.elements}
         )
 
-        # fix values and set lower/upper bounds
-        self.length.fix(100)  # set small initial length for initialization
-        self.width.fix(1)  # set width as 1m
-        self.flux.fix(self.config.flux)
-        for sol in solutes:
-            for ele in self.elements:
-                self.sieving_coefficient[sol, ele].fix(
-                    self.config.sieving_coefficient[sol]
-                )
+        # fix values
+        self.length.fixed = True
+        self.width.fixed = True
 
-        self.length.setlb(0.1)
-        self.length.setub(10000)
+        for idx in self.flux:
+            self.flux[idx].fixed = True
+        for idx in self.sieving_coefficient:
+            self.sieving_coefficient[idx].fixed = True
 
     def add_membrane_constraints(self, solutes):
         """Add solute sieving, solvent flux, and LB/UB constraints."""
-
         # add flow lower bounds
         # TODO we need to be careful of membrane length and initialization
         # with this constraint, since depending on how much flow and membrane

@@ -15,7 +15,6 @@ from idaes.core.initialization import (
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
-    degrees_of_freedom,
     number_total_constraints,
     number_unused_variables,
     number_variables,

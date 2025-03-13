@@ -103,7 +103,7 @@ class DiafiltrationModel:
         diafiltrate,
         precipitate_yield,
         precipitate=True,
-        solute_obj='Co'
+        solute_obj="Co",
     ):
         """Store model parameters."""
         self.ns = NS
@@ -470,9 +470,9 @@ class DiafiltrationModel:
         m.li_obj = Objective(expr=m.rec_mass_li, sense=maximize)
 
         # select specified objective
-        if self.solute_obj == 'Co':
+        if self.solute_obj == "Co":
             m.li_obj.deactivate()
-        if self.solute_obj == 'Li':
+        if self.solute_obj == "Li":
             m.co_obj.deactivate()
 
         # percent recovery lower bound constraints
@@ -488,9 +488,9 @@ class DiafiltrationModel:
             return b.rec_perc_co >= m.recovery_co
 
         # select appropriate lower bound
-        if self.solute_obj == 'Co':
+        if self.solute_obj == "Co":
             m.co_lb.deactivate()
-        if self.solute_obj == 'Li':
+        if self.solute_obj == "Li":
             m.li_lb.deactivate()
 
         # product stream purities
@@ -700,17 +700,17 @@ class DiafiltrationModel:
         m.prec_li_obj = Objective(expr=m.prec_mass_li, sense=maximize)
 
         # select specified objective
-        if self.solute_obj == 'Co':
+        if self.solute_obj == "Co":
             m.prec_li_obj.deactivate()
-        if self.solute_obj == 'Li':
+        if self.solute_obj == "Li":
             m.prec_co_obj.deactivate()
 
         m.prec_li_lb = Constraint(expr=m.prec_perc_li >= m.recovery_li)
         m.prec_co_lb = Constraint(expr=m.prec_perc_co >= m.recovery_co)
         # select appropriate lower bound
-        if self.solute_obj == 'Co':
+        if self.solute_obj == "Co":
             m.prec_co_lb.deactivate()
-        if self.solute_obj == 'Li':
+        if self.solute_obj == "Li":
             m.prec_li_lb.deactivate()
 
     def initialize_stage_splitters(self, m, stage, mixing="tube"):

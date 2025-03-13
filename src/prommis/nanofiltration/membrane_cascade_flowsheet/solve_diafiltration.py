@@ -24,9 +24,9 @@ def main(args):
     # collect arguments
     # check if arguments are given. Use default if not
     if len(args) == 1:
-        print('No args provided')
+        print("No args provided")
         print('Using default "stage" 3 10')
-        mix_style = 'stage'
+        mix_style = "stage"
         num_s = 3
         num_t = 10
     else:

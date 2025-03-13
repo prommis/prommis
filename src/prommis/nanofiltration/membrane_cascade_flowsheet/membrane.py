@@ -119,12 +119,18 @@ class MembraneData(MSContactorData):
         self.length = Var(units=units.m, bounds=(0.1, 10000), initialize=100)
         # set width as 1m
         self.width = Var(units=units.m, initialize=1)
-        self.flux = Var(self.elements, units=units.m / units.hour, initialize=self.config.flux)
+        self.flux = Var(
+            self.elements, units=units.m / units.hour, initialize=self.config.flux
+        )
         self.sieving_coefficient = Var(
-            solutes, self.elements, units=units.dimensionless,
-            initialize={(sol, ele): self.config.sieving_coefficient[sol]
-                        for sol in solutes
-                        for ele in self.elements}
+            solutes,
+            self.elements,
+            units=units.dimensionless,
+            initialize={
+                (sol, ele): self.config.sieving_coefficient[sol]
+                for sol in solutes
+                for ele in self.elements
+            },
         )
 
         # fix values
@@ -138,6 +144,7 @@ class MembraneData(MSContactorData):
 
     def add_membrane_constraints(self, solutes):
         """Add solute sieving, solvent flux, and LB/UB constraints."""
+
         # add flow lower bounds
         # TODO we need to be careful of membrane length and initialization
         # with this constraint, since depending on how much flow and membrane

@@ -22,10 +22,23 @@ from prommis.nanofiltration.membrane_cascade_flowsheet.diafiltration_flowsheet_m
 def main(args):
     """Driver for creating diafiltration model."""
     # collect arguments
-    args = args[1:]
-    mix_style = args[0]
-    num_s = int(args[1])
-    num_t = int(args[2])
+    # check if arguments are given. Use default if not
+    if len(args) == 1:
+        print('No args provided')
+        print('Using default "stage" 3 10')
+        mix_style = 'stage'
+        num_s = 3
+        num_t = 10
+    else:
+        if args != 3:
+            raise ValueError(
+                'Must provide args for "mixing" "number stages" "number tubes" '
+                'e.g. "stage" 3 10'
+            )
+        args = args[1:]
+        mix_style = args[0]
+        num_s = int(args[1])
+        num_t = int(args[2])
 
     # set relevant parameter values
     NS = num_s  # number of stages

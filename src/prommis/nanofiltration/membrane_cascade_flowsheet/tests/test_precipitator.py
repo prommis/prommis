@@ -64,7 +64,7 @@ def precip():
         m.fs.unit.inlet.flow_mass_solute[0, sol].fix(100)
 
     # precipitator volume [m^3]
-    m.fs.unit.V.fix(100)
+    m.fs.unit.volume.fix(100)
 
     return m
 

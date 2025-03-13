@@ -42,7 +42,6 @@ class SplitterData(SeparatorData):
         specific constraints.
         """
         super().build()
-        # TODO add input checking to prevent incorrect setup
         self.deactivate_all_cons()
         self._verify_precipitator_inputs()
         self.add_precipitator_constraints()
@@ -125,9 +124,9 @@ class SplitterData(SeparatorData):
 
         # precipitator volume and residence time relations
         self.tau = Var(units=units.hour)
-        self.V = Var(units=units.m**3)
-        self.V.fix(100)  # initial point m^3
-        self.V.setub(1000)  # set UB to prevent ridiculous sizes
+        # initial point 100 m^3
+        self.volume = Var(units=units.m**3, bounds=(0, 1000), initialize=100)
+        self.volume.fixed = True
         sol = [i for i in self.mixed_state.component_list if i != "solvent"]
 
         # alpha controls maximum yield of precipitator
@@ -146,4 +145,4 @@ class SplitterData(SeparatorData):
 
         @self.Constraint()
         def prec_vol(b):
-            return b.V == b.mixed_state[0].flow_vol * b.tau
+            return b.volume == b.mixed_state[0].flow_vol * b.tau

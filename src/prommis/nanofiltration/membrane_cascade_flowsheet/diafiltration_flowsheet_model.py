@@ -1047,8 +1047,8 @@ class DiafiltrationModel:
         if precipitate:
             m.fs.split_precipitate_recycle.split_fraction[0, "recycle"].unfix()
             m.fs.split_diafiltrate.inlet.flow_vol.setub(self.diaf["solvent"])
-            m.fs.precipitator["retentate"].V.unfix()
-            m.fs.precipitator["permeate"].V.unfix()
+            m.fs.precipitator["retentate"].volume.unfix()
+            m.fs.precipitator["permeate"].volume.unfix()
 
     def model_scaling(self, m):
         """Apply model scaling."""

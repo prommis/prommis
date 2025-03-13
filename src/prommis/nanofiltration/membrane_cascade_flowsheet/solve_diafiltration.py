@@ -64,8 +64,8 @@ def main(args):
     m = df.build_flowsheet(mixing=mixing)
     df.initialize(m, mixing=mixing, precipitate=prec)
     df.unfix_dof(m, mixing=mixing, precipitate=prec)
-    m.fs.precipitator["retentate"].V.fix(500)
-    m.fs.precipitator["permeate"].V.fix(500)
+    m.fs.precipitator["retentate"].volume.fix(500)
+    m.fs.precipitator["permeate"].volume.fix(500)
     report_statistics(m)
 
     # solve model

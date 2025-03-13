@@ -237,11 +237,11 @@ def report_values(m, prec=True):
         print(pyo.value(m.prec_perc_co))
         print(pyo.value(m.prec_perc_li))
         data["actual recovery"] = [pyo.value(m.prec_perc_co), pyo.value(m.prec_perc_li)]
-        m.fs.precipitator["retentate"].V.pprint()
-        m.fs.precipitator["permeate"].V.pprint()
+        m.fs.precipitator["retentate"].volume.pprint()
+        m.fs.precipitator["permeate"].volume.pprint()
         data["prec volumes"] = [
-            m.fs.precipitator["retentate"].V.value,
-            m.fs.precipitator["permeate"].V.value,
+            m.fs.precipitator["retentate"].volume.value,
+            m.fs.precipitator["permeate"].volume.value,
         ]
         # print(pyo.value(m.fs.precipitator[
         #     'retentate'].solid.flow_mass_solute[0, 'Co'])/(feed['Co']+diaf['Co']))

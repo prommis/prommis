@@ -171,8 +171,8 @@ class TestFlowsheet(object):
 
                 # assume fixed diafiltrate flow, precipitator volumes
                 m.fs.split_diafiltrate.mixed_state[0].flow_vol.fix(30)
-                m.fs.precipitator["retentate"].V.fix(500)
-                m.fs.precipitator["permeate"].V.fix(500)
+                m.fs.precipitator["retentate"].volume.fix(500)
+                m.fs.precipitator["permeate"].volume.fix(500)
 
                 if mix == "tube":
                     # DOF = 3*NS*NT + NS - NT - 2
@@ -253,8 +253,8 @@ class TestFlowsheet(object):
 
         # assume fixed diafiltrate flow, precipitator volumes
         m.fs.split_diafiltrate.mixed_state[0].flow_vol.fix(30)
-        m.fs.precipitator["retentate"].V.fix(500)
-        m.fs.precipitator["permeate"].V.fix(500)
+        m.fs.precipitator["retentate"].volume.fix(500)
+        m.fs.precipitator["permeate"].volume.fix(500)
 
         # set lower bound
         m.R = 0.8
@@ -277,8 +277,8 @@ class TestFlowsheet(object):
 
         # assume fixed diafiltrate flow, precipitator volumes
         m.fs.split_diafiltrate.mixed_state[0].flow_vol.fix(30)
-        m.fs.precipitator["retentate"].V.fix(500)
-        m.fs.precipitator["permeate"].V.fix(500)
+        m.fs.precipitator["retentate"].volume.fix(500)
+        m.fs.precipitator["permeate"].volume.fix(500)
 
         # set lower bound
         m.R = 0.8
@@ -346,8 +346,8 @@ class TestFlowsheet(object):
 
         # assume fixed diafiltrate flow, precipitator volumes
         m.fs.split_diafiltrate.mixed_state[0].flow_vol.fix(30)
-        m.fs.precipitator["retentate"].V.fix(500)
-        m.fs.precipitator["permeate"].V.fix(500)
+        m.fs.precipitator["retentate"].volume.fix(500)
+        m.fs.precipitator["permeate"].volume.fix(500)
 
         # set lower bound
         m.R = 0.8

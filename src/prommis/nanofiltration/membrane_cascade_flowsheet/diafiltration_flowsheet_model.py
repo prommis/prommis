@@ -88,6 +88,7 @@ class DiafiltrationModel:
         "retentate": {"Li": 0.05, "Co": 0.99},
     },
     precipitate=True,
+    solute_obj='Co' (or 'Li')
 
     """
 
@@ -102,6 +103,7 @@ class DiafiltrationModel:
         diafiltrate,
         precipitate_yield,
         precipitate=True,
+        solute_obj='Co'
     ):
         """Store model parameters."""
         self.ns = NS
@@ -113,6 +115,7 @@ class DiafiltrationModel:
         self.diaf = diafiltrate
         self.precipitate = precipitate
         self.perc_precipitate = precipitate_yield
+        self.solute_obj = solute_obj
 
     def build_flowsheet(self, mixing="tube"):
         """Build the multi-stage diafiltration flowsheet."""
@@ -465,7 +468,12 @@ class DiafiltrationModel:
         m.co_obj = Objective(expr=m.rec_mass_co, sense=maximize)
 
         m.li_obj = Objective(expr=m.rec_mass_li, sense=maximize)
-        m.li_obj.deactivate()  # normally using Co as objective
+
+        # select specified objective
+        if self.solute_obj == 'Co':
+            m.li_obj.deactivate()
+        if self.solute_obj == 'Li':
+            m.co_obj.deactivate()
 
         # percent recovery lower bound constraints
         m.R = Param(initialize=0.95, mutable=True)
@@ -478,7 +486,11 @@ class DiafiltrationModel:
         def co_lb(b):
             return b.rec_perc_co >= m.R
 
-        m.co_lb.deactivate()  # normally use Co as objective
+        # select appropriate lower bound
+        if self.solute_obj == 'Co':
+            m.co_lb.deactivate()
+        if self.solute_obj == 'Li':
+            m.li_lb.deactivate()
 
         # product stream purities
         @m.Expression()
@@ -656,7 +668,10 @@ class DiafiltrationModel:
 
     def precipitate_objectives(self, m):
         """Set up objectives for flowsheet with precipitators."""
+        # deactivate objectives, bounds for flowsheet without precipitators
         m.co_obj.deactivate()
+        m.li_obj.deactivate()
+        m.co_lb.deactivate()
         m.li_lb.deactivate()
 
         @m.Expression()
@@ -682,11 +697,21 @@ class DiafiltrationModel:
 
         m.prec_co_obj = Objective(expr=m.prec_mass_co, sense=maximize)
         m.prec_li_obj = Objective(expr=m.prec_mass_li, sense=maximize)
-        m.prec_li_obj.deactivate()
+
+        # select specified objective
+        if self.solute_obj == 'Co':
+            m.prec_li_obj.deactivate()
+        if self.solute_obj == 'Li':
+            m.prec_co_obj.deactivate()
+
         m.prec_li_lb = Constraint(expr=m.prec_perc_li >= m.R)
         m.Rco = Param(initialize=0.95, mutable=True)
         m.prec_co_lb = Constraint(expr=m.prec_perc_co >= m.Rco)
-        m.prec_co_lb.deactivate()
+        # select appropriate lower bound
+        if self.solute_obj == 'Co':
+            m.prec_co_lb.deactivate()
+        if self.solute_obj == 'Li':
+            m.prec_li_lb.deactivate()
 
     def initialize_stage_splitters(self, m, stage, mixing="tube"):
         """Initialize splitters of a stage."""

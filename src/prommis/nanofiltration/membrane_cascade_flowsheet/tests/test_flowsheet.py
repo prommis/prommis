@@ -4,10 +4,13 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+import re
+
 from pyomo.environ import Objective, Var, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core.solvers import get_solver
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 
 import pytest
@@ -262,6 +265,33 @@ class TestFlowsheet(object):
         solver = get_solver()
         results = solver.solve(m)
         assert_optimal_termination(results)
+
+    @pytest.mark.component
+    def test_numerical_issues(self, flowsheet):
+        flowsheet.ns = 2
+        flowsheet.nt = 5
+        mix = "stage"
+        m = flowsheet.build_flowsheet(mixing=mix)
+        flowsheet.unfix_dof(m, mixing=mix, precipitate=use_precipitators)
+
+        # assume fixed diafiltrate flow, precipitator volumes
+        m.fs.split_diafiltrate.mixed_state[0].flow_vol.fix(30)
+        m.fs.precipitator["retentate"].volume.fix(500)
+        m.fs.precipitator["permeate"].volume.fix(500)
+
+        # set lower bound
+        m.recovery_li = 0.8
+
+        solver = get_solver()
+        solver.solve(m)
+
+        # expecting one warning: variables at or outside bounds
+        # this is due to some unused flows being fixed to their lower bound of 0
+        dt = DiagnosticsToolbox(model=m)
+        with pytest.raises(
+            AssertionError, match=re.escape("Numerical issues found (1).")
+        ):
+            dt.assert_no_numerical_warnings()
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")

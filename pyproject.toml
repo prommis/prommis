@@ -35,7 +35,7 @@ dependencies = [
 ]
 [project.optional-dependencies]
 watertap = [
-    "watertap @ git+https://github.com/watertap-org/watertap@refs/pull/1558/merge",
+    "watertap @ git+https://github.com/watertap-org/watertap@main",
 ]
 flowsheet-processor = [
     "idaes-flowsheet-processor >=0.1.dev4",

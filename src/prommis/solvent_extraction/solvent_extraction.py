@@ -84,7 +84,7 @@ pressure of the phases.
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Param, Block, Var, units
+from pyomo.environ import Constraint, Param, Block, units
 from pyomo.network import Port
 
 from idaes.core import (

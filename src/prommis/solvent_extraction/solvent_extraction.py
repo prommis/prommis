@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -18,65 +18,73 @@ phases are passed, and the desired components are extracted subsequently.
 Configuration Arguments
 -----------------------
 
-The user must specify the following configurations in a solvent extraction model to be able to 
+The user must specify the following configurations in a solvent extraction model to be able to
 use it.
 
-The user must specify the aqueous feed input in the ``aqueous_stream`` configuration, with a 
+The user must specify the aqueous feed input in the ``aqueous_stream`` configuration, with a
 configuration that describes the aqueous feed's properties.
 
-The user must specify the organic feed input in the ``organic_stream`` configuration, with a 
+The user must specify the organic feed input in the ``organic_stream`` configuration, with a
 configuration that describes the organic feed's properties.
 
-The number of stages in the solvent extraction process has to be specified by the user through 
+The number of stages in the solvent extraction process has to be specified by the user through
 the ``number_of_finite_elements`` configuration. It takes an integer value.
 
-The material transfer can happen from either of the phases to the other. To specify the direction 
-of the transfer, the ``aqueous_to_organic`` configuration is to be used by the user. This is a boolean 
-configuration. The default value is True, which means the material transfer is happening from the 
-aqueous phase to the organic phase, like in the loading operation. For scrubbing and stripping, the 
-reverse happens, so the value of the configuration will be False.
+The amount of material transferred for each of the rare earth elements can be quantified by
+the use of distribution coefficient for each of the elements. The distribution coefficient is
+a function of the pH of the system and the dosage of the extractant. This correlation has been
+developed in a reaction package, and the package has to be given as an argument to the model by
+the user through the ``reaction_package`` configuration, with an additional configuration of
+``reaction_package_args`` defining any special kind of arguments for the package.
 
 Stream configurations
 ---------------------
 
-Each of the feed streams has to have a dictionary that specifies the property packages and other 
+Each of the feed streams has to have a dictionary that specifies the property packages and other
 details as mentioned below.
 
-The ``property_package`` configuration is the property package that describes the state conditions 
+The ``property_package`` configuration is the property package that describes the state conditions
 and properties of a particular stream.
 
-The ``property_package_args`` configuration is any specific set of arguments that has to be passed to 
-the property block for the unit operation.
+The ``property_package_args`` configuration is any specific set of arguments that has to be passed
+to the property block for the unit operation.
 
-The user can specify the direction of the flow of the stream through the stages through the 
+The user can specify the direction of the flow of the stream through the stages through the
 configuration ``flow_direction``. This is a configuration, that uses FlowDirection Enum, which
 can have two possible values.
 
-Degrees of freedom 
+Degrees of freedom
 ------------------
 
 When the solvent extraction model is operated in steady state, the number of degrees of freedom of
-the model is equal to the number of partition coefficients of the total components involved in the
-mass transfer operation, for all the stages.
+the model is equal to the sum of the number of distribution coefficients of the total components
+involved in the mass transfer operation and the volumes and volume fractions, for all the stages.
 
 If the model is operated in dynamic state, the number of degrees of freedom is equal to the sum
-of the partition coefficient of all components involved in the mass transfer operation, 
-values of the state block variables of all the components of the system at the start of the
-operation, the volumes and the volume fractions, for all the stages.
+of the distribution coefficient of all components involved in the mass transfer operation, values
+of the state block variables of all the components of the system at the start of the operation, the
+volumes and the volume fractions, for all the stages.
 
 Model structure
 ---------------
 
-The core model consists of a MSContactor model, with stream names hard coded as 'aqueous' and 
+The core model consists of a MSContactor model, with stream names hard coded as 'aqueous' and
 'organic', and the stream dictionaries and number of finite elements are the same as those provided
 by the user.
 
-This model defines the material transfer term defined in the MSContactor and expresses it as a
-function of the parameter of partition coefficient defined by the user.
+This model uses the heterogeneous reaction term defined in the MSContactor, to quantify the amount of
+material transferred between the phases for each of the rare earth elements. The distribution coefficients
+used for this quantification are defined in the reaction package, and the constraint pertaining to the
+distribution coefficient is defined in the solvent extraction model.
+
+The pressure buildup in each of the stages has been defined in the model. For defining the pressure, we
+need the volume of the phases, so the configuration ``has_holdup`` has to be set to True to obtain the
+pressure of the phases.
+
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Param, Block
+from pyomo.environ import Constraint, Param, Block, Var, units
 from pyomo.network import Port
 
 from idaes.core import (
@@ -87,6 +95,7 @@ from idaes.core import (
 )
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.initialization import ModularInitializerBase
+
 from idaes.models.unit_models.mscontactor import MSContactor
 
 
@@ -99,6 +108,23 @@ class SolventExtractionInitializer(ModularInitializerBase):
     """
 
     CONFIG = ModularInitializerBase.CONFIG()
+
+    CONFIG.declare(
+        "ssc_solver_options",
+        ConfigDict(
+            implicit=True,
+            description="Dict of arguments for solver calls by ssc_solver",
+        ),
+    )
+    CONFIG.declare(
+        "calculate_variable_options",
+        ConfigDict(
+            implicit=True,
+            description="Dict of options to pass to 1x1 block solver",
+            doc="Dict of options to pass to calc_var_kwds argument in "
+            "scc_solver method.",
+        ),
+    )
 
     def initialize_main_model(
         self,
@@ -113,24 +139,24 @@ class SolventExtractionInitializer(ModularInitializerBase):
         Returns:
             None
         """
-        """
-        This model adds an additional constraint of the material transfer term.
-        This constraint is present outside the main MSContactor model, so this term is 
-        fixed to give a square model to the MScontactor Initializer.
 
-        """
+        model.mscontactor.heterogeneous_reaction_extent.fix(1e-8)
+        model.mscontactor.volume.fix(1)
+        model.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
 
-        model.mscontactor.material_transfer_term.fix(1e-10)
-
-        msc_init = self.get_submodel_initializer(model.mscontactor)
+        # Initialize MSContactor
+        msc_init = model.mscontactor.default_initializer(
+            ssc_solver_options=self.config.ssc_solver_options,
+            calculate_variable_options=self.config.calculate_variable_options,
+        )
         msc_init.initialize(model.mscontactor)
 
-        model.mscontactor.material_transfer_term.unfix()
+        model.mscontactor.heterogeneous_reaction_extent.unfix()
 
         solver = self._get_solver()
-        results = solver.solve(model)
+        init_model = solver.solve(model)
 
-        return results
+        return init_model
 
 
 Stream_Config = ConfigDict()
@@ -194,6 +220,9 @@ Stream_Config.declare(
 
 @declare_process_block_class("SolventExtraction")
 class SolventExtractionData(UnitModelBlockData):
+
+    default_initializer = SolventExtractionInitializer
+
     CONFIG = UnitModelBlockData.CONFIG()
 
     CONFIG.declare(
@@ -216,11 +245,18 @@ class SolventExtractionData(UnitModelBlockData):
     )
 
     CONFIG.declare(
-        "aqueous_to_organic",
+        "reaction_package",
         ConfigValue(
-            default=True,
-            domain=Bool,
-            description="Direction of the transfer between two phases",
+            # TODO: Add a domain validator for this
+            description="Heterogeneous reaction package for leaching.",
+        ),
+    )
+    CONFIG.declare(
+        "reaction_package_args",
+        ConfigValue(
+            default=None,
+            domain=dict,
+            description="Arguments for heterogeneous reaction package for leaching.",
         ),
     )
 
@@ -234,54 +270,129 @@ class SolventExtractionData(UnitModelBlockData):
         self.mscontactor = MSContactor(
             streams=streams_dict,
             number_of_finite_elements=self.config.number_of_finite_elements,
+            heterogeneous_reactions=self.config.reaction_package,
+            heterogeneous_reactions_args=self.config.reaction_package_args,
+            has_holdup=self.config.has_holdup,
         )
 
-        self.partition_coefficient = Param(
+        distribution_set = [
+            ("Al", "Al_o"),
+            ("Ca", "Ca_o"),
+            ("Fe", "Fe_o"),
+            ("Sc", "Sc_o"),
+            ("Y", "Y_o"),
+            ("Gd", "Gd_o"),
+            ("Dy", "Dy_o"),
+            ("Sm", "Sm_o"),
+            ("La", "La_o"),
+            ("Pr", "Pr_o"),
+            ("Ce", "Ce_o"),
+            ("Nd", "Nd_o"),
+        ]
+
+        def distribution_ratio_rule(b, t, s, e, f):
+            return (
+                b.mscontactor.organic[t, s].conc_mol_comp[f]
+                == b.mscontactor.heterogeneous_reactions[t, s].distribution_coefficient[
+                    e
+                ]
+                * b.mscontactor.aqueous[t, s].conc_mol_comp[e]
+            )
+
+        self.distribution_extent_constraint = Constraint(
+            self.flowsheet().time,
             self.mscontactor.elements,
-            self.mscontactor.stream_component_interactions,
+            distribution_set,
+            rule=distribution_ratio_rule,
+        )
+
+        self.cross_sec_area = Param(
+            self.mscontactor.elements,
+            units=units.m**2,
+            doc="Cross sectional area stage",
             initialize=1,
             mutable=True,
-            doc="The fraction of component that goes from aqueous to organic phase",
+        )
+
+        self.elevation = Param(
+            self.mscontactor.elements,
+            units=units.m,
+            doc="Elevation of each stage",
+            initialize=1,
+            mutable=True,
+        )
+
+        def aqueous_pressure_calculation(b, t, s):
+            g = 9.8 * (units.m) / units.sec**2
+            P_atm = 101325 * units.Pa
+
+            rho_aq = sum(
+                b.mscontactor.aqueous[t, s].conc_mass_comp[p]
+                for p in getattr(b.mscontactor, "aqueous").component_list
+            )
+            rho_og = sum(
+                b.mscontactor.organic[t, s].conc_mass_comp[p]
+                for p in getattr(b.mscontactor, "organic").component_list
+            )
+            P_aq = units.convert(
+                (
+                    rho_aq
+                    * g
+                    * (
+                        b.mscontactor.volume[s]
+                        * b.mscontactor.volume_frac_stream[t, s, "aqueous"]
+                        / b.cross_sec_area[s]
+                        + b.elevation[s]
+                    )
+                ),
+                to_units=units.Pa,
+            )
+            P_org = units.convert(
+                (
+                    rho_og
+                    * g
+                    * b.mscontactor.volume[s]
+                    * b.mscontactor.volume_frac_stream[t, s, "organic"]
+                    / b.cross_sec_area[s]
+                ),
+                to_units=units.Pa,
+            )
+            return b.mscontactor.aqueous[t, s].pressure == P_aq + P_org + P_atm
+
+        self.aqueous_pressure_constraint = Constraint(
+            self.flowsheet().time,
+            self.mscontactor.elements,
+            rule=aqueous_pressure_calculation,
+        )
+
+        def organic_pressure_calculation(b, t, s):
+            g = 9.8 * (units.m) / units.sec**2
+            P_atm = 101325 * units.Pa
+
+            rho_og = sum(
+                b.mscontactor.organic[t, s].conc_mass_comp[p]
+                for p in getattr(b.mscontactor, "organic").component_list
+            )
+
+            P_org = units.convert(
+                (
+                    rho_og
+                    * g
+                    * b.mscontactor.volume[s]
+                    * b.mscontactor.volume_frac_stream[t, s, "organic"]
+                    / b.cross_sec_area[s]
+                ),
+                to_units=units.Pa,
+            )
+            return b.mscontactor.organic[t, s].pressure == P_org + P_atm
+
+        self.organic_pressure_constraint = Constraint(
+            self.flowsheet().time,
+            self.mscontactor.elements,
+            rule=organic_pressure_calculation,
         )
 
         self.aqueous_inlet = Port(extends=self.mscontactor.aqueous_inlet)
         self.aqueous_outlet = Port(extends=self.mscontactor.aqueous_outlet)
         self.organic_inlet = Port(extends=self.mscontactor.organic_inlet)
         self.organic_outlet = Port(extends=self.mscontactor.organic_outlet)
-
-        def mass_transfer_term(b, t, s, k, l, m):
-            if self.config.aqueous_to_organic:
-                stream_state = b.mscontactor.aqueous
-                in_state = b.mscontactor.aqueous_inlet_state
-                stream_name = self.config.aqueous_stream
-                sign = -1
-            else:
-                stream_state = b.mscontactor.organic
-                in_state = b.mscontactor.organic_inlet_state
-                stream_name = self.config.organic_stream
-                sign = 1
-
-            if stream_name.flow_direction == FlowDirection.forward:
-                if s == b.mscontactor.elements.first():
-                    state = in_state[t]
-                else:
-                    state = stream_state[t, b.mscontactor.elements.prev(s)]
-            else:
-                if s == b.mscontactor.elements.last():
-                    state = in_state[t]
-                else:
-                    state = stream_state[t, b.mscontactor.elements.next(s)]
-
-            return (
-                b.mscontactor.material_transfer_term[t, s, (k, l, m)]
-                == sign
-                * state.get_material_flow_terms(stream_state.phase_list, m)
-                * b.partition_coefficient[s, (k, l, m)]
-            )
-
-        self.mass_transfer_constraint = Constraint(
-            self.flowsheet().time,
-            self.mscontactor.elements,
-            self.mscontactor.stream_component_interactions,
-            rule=mass_transfer_term,
-        )

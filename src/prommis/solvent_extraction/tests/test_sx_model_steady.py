@@ -1,10 +1,10 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-from pyomo.environ import ConcreteModel, check_optimal_termination, value
+from pyomo.environ import ConcreteModel, check_optimal_termination, value, units
 import numpy as np
 
 from idaes.core import FlowDirection, FlowsheetBlock
@@ -19,6 +19,9 @@ from prommis.solvent_extraction.solvent_extraction import SolventExtractionIniti
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.solvent_extraction.solvent_extraction_reaction_package import (
+    SolventExtractionReactions,
+)
 
 solver = get_solver()
 
@@ -27,15 +30,21 @@ class TestSXmodel:
     @pytest.fixture(scope="class")
     def SolEx_frame(self):
         m = ConcreteModel()
+
         m.fs = FlowsheetBlock(dynamic=False)
-        m.fs.leach_soln = LeachSolutionParameters()
+
         m.fs.prop_o = REESolExOgParameters()
+        m.fs.leach_soln = LeachSolutionParameters()
+        m.fs.reaxn = SolventExtractionReactions()
 
         number_of_stages = 3
+        stage_number = np.arange(1, number_of_stages + 1)
+        dosage = 5
+
+        m.fs.reaxn.extractant_dosage = dosage
 
         m.fs.solex = SolventExtraction(
             number_of_finite_elements=number_of_stages,
-            dynamic=False,
             aqueous_stream={
                 "property_package": m.fs.leach_soln,
                 "flow_direction": FlowDirection.forward,
@@ -48,120 +57,82 @@ class TestSXmodel:
                 "has_energy_balance": False,
                 "has_pressure_balance": False,
             },
+            reaction_package=m.fs.reaxn,
+            has_holdup=True,
         )
 
-        stage_number = np.arange(1, number_of_stages + 1)
+        m.fs.solex.mscontactor.volume[:].fix(0.4 * units.m**3)
+        m.fs.solex.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
+        m.fs.solex.cross_sec_area[:] = 1
+        m.fs.solex.elevation[:] = 0
 
-        for s in stage_number:
-            if s == 1:
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Al"] = (
-                    5.2 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ca"] = (
-                    3 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Fe"] = (
-                    24.7 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sc"] = (
-                    99.1 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Y"] = (
-                    99.9 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "La"] = (
-                    32.4 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ce"] = (
-                    58.2 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Pr"] = (
-                    58.2 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Nd"] = (
-                    87.6 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sm"] = (
-                    99.9 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Gd"] = (
-                    69.8 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Dy"] = (
-                    96.6 / 100
-                )
-            else:
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Al"] = (
-                    4.9 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ca"] = (
-                    12.3 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Fe"] = (
-                    6.4 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sc"] = (
-                    16.7 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Y"] = (
-                    99.9 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "La"] = (
-                    23.2 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Ce"] = (
-                    24.9 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Pr"] = (
-                    15.1 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Nd"] = (
-                    99.9 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Sm"] = (
-                    99.9 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Gd"] = (
-                    7.6 / 100
-                )
-                m.fs.solex.partition_coefficient[s, "aqueous", "organic", "Dy"] = (
-                    5 / 100
-                )
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H2O"].fix(1e6)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H"].fix(10.75)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["SO4"].fix(100)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["HSO4"].fix(1e4)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Al"].fix(422.375)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Ca"].fix(109.542)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Cl"].fix(1e-7)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Fe"].fix(688.266)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Sc"].fix(0.032)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Y"].fix(0.124)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["La"].fix(0.986)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Ce"].fix(2.277)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Pr"].fix(0.303)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Nd"].fix(0.946)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Sm"].fix(0.097)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Gd"].fix(0.2584)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Dy"].fix(0.047)
 
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1e6)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "H"].fix(1.755)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "SO4"].fix(3999.818)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(693.459)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Al"].fix(422.375)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Ca"].fix(109.542)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Fe"].fix(688.266)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Sc"].fix(0.032)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Y"].fix(0.124)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "La"].fix(0.986)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Ce"].fix(2.277)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Pr"].fix(0.303)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Nd"].fix(0.946)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Sm"].fix(0.097)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Gd"].fix(0.2584)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Dy"].fix(0.047)
-        m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Cl"].fix(1e-8)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].flow_vol.fix(62.01)
 
-        m.fs.solex.aqueous_inlet.flow_vol.fix(62.01)
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Kerosene"].fix(
+            820e3
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["DEHPA"].fix(
+            975.8e3 * dosage / 100
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Al_o"].fix(
+            1.267e-5
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Ca_o"].fix(
+            2.684e-5
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Fe_o"].fix(
+            2.873e-6
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Sc_o"].fix(1.734)
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Y_o"].fix(
+            2.179e-5
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["La_o"].fix(
+            0.000105
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Ce_o"].fix(
+            0.00031
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Pr_o"].fix(
+            3.711e-5
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Nd_o"].fix(
+            0.000165
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Sm_o"].fix(
+            1.701e-5
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Gd_o"].fix(
+            3.357e-5
+        )
+        m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Dy_o"].fix(
+            8.008e-6
+        )
 
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "Al"].fix(1.267e-5)
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "Ca"].fix(2.684e-5)
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "Fe"].fix(2.873e-6)
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "Sc"].fix(1.734)
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "Y"].fix(2.179e-5)
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "La"].fix(0.000105)
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "Ce"].fix(0.00031)
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "Pr"].fix(3.711e-5)
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "Nd"].fix(0.000165)
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "Sm"].fix(1.701e-5)
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "Gd"].fix(3.357e-5)
-        m.fs.solex.organic_inlet.conc_mass_comp[0, "Dy"].fix(8.008e-6)
+        m.fs.solex.mscontactor.organic_inlet_state[:].flow_vol.fix(62.01)
 
-        m.fs.solex.organic_inlet.flow_vol.fix(62.01)
+        m.fs.solex.mscontactor.aqueous[:, :].temperature.fix(305.15 * units.K)
+        m.fs.solex.mscontactor.aqueous_inlet_state[:].temperature.fix(305.15 * units.K)
+        m.fs.solex.mscontactor.organic[:, :].temperature.fix(305.15 * units.K)
+        m.fs.solex.mscontactor.organic_inlet_state[:].temperature.fix(305.15 * units.K)
 
         return m
 
@@ -185,7 +156,6 @@ class TestSXmodel:
     def test_solve(self, SolEx_frame):
         m = SolEx_frame
         results = solver.solve(m, tee=True)
-        m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mol_comp["H2O"].pprint()
 
         # Check for optimal solution
         assert check_optimal_termination(results)
@@ -202,40 +172,41 @@ class TestSXmodel:
     def test_solution(self, SolEx_frame):
 
         model = SolEx_frame
-        number_of_stages = 3
         aqueous_outlet = {
             "H2O": 1000000,
-            "H": 1.75563,
-            "SO4": 3999.885,
-            "HSO4": 693.3903,
-            "Al": 362.132,
-            "Ca": 81.724,
-            "Cl": 1e-8,
-            "Ce": 0.5368,
-            "Dy": 0.0014421,
-            "Fe": 454.049,
-            "Gd": 0.066625,
-            "La": 0.39313,
-            "Nd": 1.173e-07,
-            "Pr": 0.091292,
-            "Sc": 0.00019984,
-            "Sm": 9.6992e-11,
-            "Y": 1.239e-10,
+            "H": 42.3638,
+            "SO4": 1945.036,
+            "HSO4": 8135.841,
+            "Al": 399.2865,
+            "Ca": 105.7483,
+            "Cl": 9.9999e-8,
+            "Ce": 2.1173,
+            "Dy": 0.001774,
+            "Fe": 509.07864,
+            "Gd": 0.19972,
+            "La": 0.91903,
+            "Nd": 0.8842,
+            "Pr": 0.27728,
+            "Sc": 0.026568,
+            "Sm": 0.08757,
+            "Y": 8.3131e-06,
         }
 
         organic_outlet = {
-            "Al": 60.242,
-            "Ca": 27.817,
-            "Ce": 1.7405,
-            "Dy": 0.045565,
-            "Fe": 234.216,
-            "Gd": 0.1918,
-            "La": 0.59296,
-            "Nd": 0.9461,
-            "Pr": 0.211744,
-            "Sc": 1.7658,
-            "Sm": 0.097017,
-            "Y": 0.12402,
+            "Al_o": 23.0673,
+            "Ca_o": 3.7901,
+            "Ce_o": 0.15997,
+            "DEHPA": 44793.2243,
+            "Dy_o": 0.045233,
+            "Fe_o": 179.1681,
+            "Gd_o": 0.058708,
+            "Kerosene": 820000,
+            "La_o": 0.067067,
+            "Nd_o": 0.061947,
+            "Pr_o": 0.02575,
+            "Sc_o": 1.73943,
+            "Sm_o": 0.009440,
+            "Y_o": 0.12401,
         }
 
         for k, v in model.fs.solex.organic_outlet.conc_mass_comp.items():

@@ -449,8 +449,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             consider_taxes: True/False flag for calculating net tax owed. Defaults to False.
             income_tax_percentage: combined federal and state income tax percentage,
                 usually between 26 - 40%. Here, it defaults to 26%.
-            mineral_depletion_percentage: tax deduction percentage for mineral depletion,
-                defaults to 14% as reported in the UKy report.
+            mineral_depletion_percentage: fixed tax deduction percentage for mineral depletion based on
+                the type of mineral recovered, defaults to 14% of gross income excluding royalties
+                as reported in the UKy report.
             production_incentive_percentage: tax deduction percentage for producing critical minerals,
                 defaults to 10% of total production cost (excludes cost of feedstock).
             royalty_charge_percentage_of_revenue: Percentage of revenue charged as royalties;

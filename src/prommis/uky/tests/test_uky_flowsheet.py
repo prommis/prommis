@@ -18,6 +18,7 @@ from pyomo.environ import (
 from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
@@ -40,6 +41,7 @@ from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.uky.costing.ree_plant_capcost import QGESSCostingData
 from prommis.uky.uky_flowsheet import (
     add_costing,
     build,
@@ -52,8 +54,6 @@ from prommis.uky.uky_flowsheet import (
     set_scaling,
     solve_system,
 )
-from idaes.core.solvers import get_solver
-from prommis.uky.costing.ree_plant_capcost import QGESSCostingData
 
 
 @pytest.fixture(scope="module")
@@ -875,7 +875,7 @@ def test_costing_solution(system_frame):
 @pytest.mark.component
 @pytest.mark.solver
 def test_costing_solution_diagnostics(system_frame):
-    
+
     model = system_frame
     dt = DiagnosticsToolbox(model)
     dt.assert_no_numerical_warnings()

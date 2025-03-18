@@ -2087,7 +2087,7 @@ def add_costing(m):
 
     # 4.3 is UKy Leaching - Tank Mixer
     L_tank_mixer_accounts = ["4.3"]
-    m.fs.leach_mixer.power = Var(initialize=4.74, units=units.hp)
+    m.fs.leach_mixer.power = Var(initialize=4.74, units=units.hp, bounds=(0, None))
 
     @m.fs.leach_mixer.Constraint(L_tank_mixer_accounts)
     def power_scaling_constraint(c, k):
@@ -2131,7 +2131,7 @@ def add_costing(m):
 
     # 4.5 is UKy Leaching - Thickener
     L_thickener_accounts = ["4.5"]
-    m.fs.leach_sx_mixer.area = Var(initialize=225.90, units=units.ft**2)
+    m.fs.leach_sx_mixer.area = Var(initialize=225.90, units=units.ft**2, bounds=(0, None))
 
     @m.fs.leach_sx_mixer.Constraint(L_thickener_accounts)
     def area_scaling_constraint(c, k):
@@ -2159,7 +2159,7 @@ def add_costing(m):
 
     # 4.6 is UKy Leaching - Solid Waste Filter Press
     L_filter_press_accounts = ["4.6"]
-    m.fs.sl_sep1.volume = Var(initialize=36.00, units=units.ft**3)
+    m.fs.sl_sep1.volume = Var(initialize=36.00, units=units.ft**3, bounds=(0, None))
 
     @m.fs.sl_sep1.Constraint(L_filter_press_accounts)
     def volume_scaling_constraint(c, k):
@@ -2188,7 +2188,7 @@ def add_costing(m):
     # 4.8 is UKy Leaching - Solution Heater
     L_solution_heater_accounts = ["4.8"]
     m.fs.leach_solution_heater = UnitModelBlock()
-    m.fs.leach_solution_heater.duty = Var(initialize=0.24, units=units.MBTU / units.hr)
+    m.fs.leach_solution_heater.duty = Var(initialize=0.24, units=units.MBTU / units.hr, bounds=(0, None))
 
     @m.fs.leach_solution_heater.Constraint(L_solution_heater_accounts)
     def duty_scaling_constraint(c, k):
@@ -2217,7 +2217,7 @@ def add_costing(m):
     # Solvent extraction costs
     # 5.1 is UKy Rougher Solvent Extraction - Polyethylene Tanks
     RSX_pe_tanks_accounts = ["5.1"]
-    m.fs.solex_rougher_load.volume = Var(initialize=35.136, units=units.gal)
+    m.fs.solex_rougher_load.volume = Var(initialize=35.136, units=units.gal, bounds=(0, None))
 
     @m.fs.solex_rougher_load.Constraint(RSX_pe_tanks_accounts)
     def volume_scaling_constraint(c, k):
@@ -2245,7 +2245,7 @@ def add_costing(m):
 
     # 5.2 is UKy Rougher Solvent Extraction - Tank Mixer
     RSX_tank_mixer_accounts = ["5.2"]
-    m.fs.rougher_mixer.power = Var(initialize=2.0, units=units.hp)
+    m.fs.rougher_mixer.power = Var(initialize=2.0, units=units.hp, bounds=(0, None))
 
     @m.fs.rougher_mixer.Constraint(RSX_tank_mixer_accounts)
     def power_scaling_constraint(c, k):
@@ -2291,7 +2291,7 @@ def add_costing(m):
 
     # 5.4 is UKy Rougher Solvent Extraction - Mixer Settler
     RSX_mixer_settler_accounts = ["5.4"]
-    m.fs.solex_rougher_strip.volume = Var(initialize=61.107, units=units.gal)
+    m.fs.solex_rougher_strip.volume = Var(initialize=61.107, units=units.gal, bounds=(0, None))
 
     @m.fs.solex_rougher_strip.Constraint(RSX_mixer_settler_accounts)
     def volume_scaling_constraint(c, k):
@@ -2319,7 +2319,7 @@ def add_costing(m):
 
     # 6.1 is UKy Cleaner Solvent Extraction - Polyethylene Tanks
     CSX_pe_tanks_accounts = ["6.1"]
-    m.fs.solex_cleaner_load.volume = Var(initialize=14.05, units=units.gal)
+    m.fs.solex_cleaner_load.volume = Var(initialize=14.05, units=units.gal, bounds=(0, None))
 
     @m.fs.solex_cleaner_load.Constraint(CSX_pe_tanks_accounts)
     def volume_scaling_constraint(c, k):
@@ -2347,7 +2347,7 @@ def add_costing(m):
 
     # 6.2 is UKy Cleaner Solvent Extraction - Tank Mixer
     CSX_tank_mixer_accounts = ["6.2"]
-    m.fs.cleaner_mixer.power = Var(initialize=0.08, units=units.hp)
+    m.fs.cleaner_mixer.power = Var(initialize=0.08, units=units.hp, bounds=(0, None))
 
     @m.fs.cleaner_mixer.Constraint(CSX_tank_mixer_accounts)
     def power_scaling_constraint(c, k):
@@ -2393,7 +2393,7 @@ def add_costing(m):
 
     # 6.4 is UKy Cleaner Solvent Extraction - Mixer Settler
     CSX_mixer_settler_accounts = ["6.4"]
-    m.fs.solex_cleaner_strip.volume = Var(initialize=24.44, units=units.gal)
+    m.fs.solex_cleaner_strip.volume = Var(initialize=24.44, units=units.gal, bounds=(0, None))
 
     @m.fs.solex_cleaner_strip.Constraint(CSX_mixer_settler_accounts)
     def volume_scaling_constraint(c, k):
@@ -2422,7 +2422,7 @@ def add_costing(m):
     # Precipitation costs
     # 10.1 is UKy Oxalate Precipitation - Polyethylene Tanks
     reep_pe_tanks_accounts = ["10.1"]
-    m.fs.precipitator.volume = Var(initialize=15.04, units=units.gal)
+    m.fs.precipitator.volume = Var(initialize=15.04, units=units.gal, bounds=(0, None))
 
     @m.fs.precipitator.Constraint(reep_pe_tanks_accounts)
     def volume_scaling_constraint(c, k):
@@ -2451,7 +2451,7 @@ def add_costing(m):
     # 10.2 is UKy Oxalate Precipitation - Tank Mixer # TODO here
     reep_tank_mixer_accounts = ["10.2"]
     m.fs.precipitator_mixer = UnitModelBlock()
-    m.fs.precipitator_mixer.power = Var(initialize=0.61, units=units.hp)
+    m.fs.precipitator_mixer.power = Var(initialize=0.61, units=units.hp, bounds=(0, None))
 
     @m.fs.precipitator_mixer.Constraint(reep_tank_mixer_accounts)
     def power_scaling_constraint(c, k):
@@ -2495,7 +2495,7 @@ def add_costing(m):
 
     # 10.4 is UKy Oxalate Precipitation - Filter Press
     reep_filter_press_accounts = ["10.4"]
-    m.fs.sl_sep2.volume = Var(initialize=0.405, units=units.ft**3)
+    m.fs.sl_sep2.volume = Var(initialize=0.405, units=units.ft**3, bounds=(0, None))
 
     @m.fs.sl_sep2.Constraint(reep_filter_press_accounts)
     def volume_scaling_constraint(c, k):
@@ -2554,7 +2554,7 @@ def add_costing(m):
         for molecule, REE_frac in REE_mass_frac.items()
     )
 
-    m.fs.feed_input = Var(initialize=0.025, units=units.ton / units.hr)
+    m.fs.feed_input = Var(initialize=0.025, units=units.ton / units.hr, bounds=(0, None))
     m.fs.feed_input_constraint = Constraint(
         expr=m.fs.feed_input
         == units.convert(
@@ -2562,7 +2562,7 @@ def add_costing(m):
         )
     )
 
-    m.fs.feed_grade = Var(initialize=318.015, units=units.ppm)
+    m.fs.feed_grade = Var(initialize=318.015, units=units.ppm, bounds=(0, None))
     m.fs.feed_grade_constraint = Constraint(
         expr=m.fs.feed_grade
         == units.convert(
@@ -2581,7 +2581,7 @@ def add_costing(m):
         units=units.hours / units.a,
     )
 
-    m.fs.recovery_rate_per_year = Var(initialize=13.306, units=units.kg / units.yr)
+    m.fs.recovery_rate_per_year = Var(initialize=13.306, units=units.kg / units.yr, bounds=(0, None))
     m.fs.recovery_rate_per_year_constraint = Constraint(
         expr=m.fs.recovery_rate_per_year
         == units.convert(
@@ -2605,7 +2605,7 @@ def add_costing(m):
         * units.day
     )
 
-    m.fs.solid_waste = Var(m.fs.time, initialize=0.0245, units=units.ton / units.hr)
+    m.fs.solid_waste = Var(m.fs.time, initialize=0.0245, units=units.ton / units.hr, bounds=(0, None))
     m.fs.solid_waste_constraint = Constraint(
         expr=m.fs.solid_waste[0]
         == units.convert(
@@ -2614,18 +2614,18 @@ def add_costing(m):
     )
 
     m.fs.precipitate = Var(
-        m.fs.time, initialize=0, units=units.ton / units.hr
+        m.fs.time, initialize=1e-8, units=units.ton / units.hr, bounds=(0, None)
     )  # non-hazardous precipitate
 
     m.fs.dust_and_volatiles = Var(
-        m.fs.time, initialize=9.5e-8, units=units.ton / units.hr
+        m.fs.time, initialize=9.5e-8, units=units.ton / units.hr, bounds=(0, None)
     )
     m.fs.dust_and_volatiles_constraint = Constraint(
         expr=m.fs.dust_and_volatiles[0]
         == units.convert(m.fs.roaster.flow_mass_dust[0], to_units=units.ton / units.hr)
     )
 
-    m.fs.power = Var(m.fs.time, initialize=7, units=units.hp)
+    m.fs.power = Var(m.fs.time, initialize=7, units=units.hp, bounds=(0, None))
     m.fs.power_constraint = Constraint(
         expr=m.fs.power[0]
         == units.convert(
@@ -2872,15 +2872,6 @@ def add_costing(m):
 
     # fix costing vars that shouldn't change
     m.fs.precipitate.fix()
-
-    # Initialize costing
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-
-    # Solve costing
-    solver = get_solver()
-    solver.solve(m, tee=True)
 
     return m
 

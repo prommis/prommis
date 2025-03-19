@@ -5,11 +5,19 @@ import pyomo.environ as pyo
 # for throwing errors
 import sys
 
-from prommis.superstructures.version2.superstructure_v2 import run_model
+from prommis.superstructures.version2.superstructure_v2 import build_model, solve_model
 
-### cost of purchased equipment for iron valorization processes.
-jarosite_capex = 300000 # considered.
-iron_hydroxide_capex = 250000 # considered.
+# model statistics
+from idaes.core.util.model_statistics import (
+    number_total_constraints,
+    number_variables,
+    number_unused_variables,
+    degrees_of_freedom,
+)
+
+from idaes.core.util import DiagnosticsToolbox
+
+
 
 ### OPEX parameters for iron valorization
 # 10 $/kg of jarosite processed
@@ -156,14 +164,14 @@ Discretized_CAPEX = {
         },
         "Costs": {
             "0": 0.0,
-            "1": 343228.652 + jarosite_capex,
-            "2": 482425.4684 + jarosite_capex,
-            "3": 618182.0594 + jarosite_capex,
-            "4": 743750.2902 + jarosite_capex,
-            "5": 844443.0443 + jarosite_capex,
-            "6": 978479.5225 + jarosite_capex,
-            "7": 1183834.522 + jarosite_capex,
-            "8": 1440660.587 + jarosite_capex,
+            "1": 643228.652,
+            "2": 782425.4684,
+            "3": 918182.0594,
+            "4": 1043750.2902,
+            "5": 1144443.0443,
+            "6": 1278479.5225,
+            "7": 1483834.522,
+            "8": 1740660.587,
         },
     },
     "(3, 3)": {
@@ -228,14 +236,14 @@ Discretized_CAPEX = {
         },
         "Costs": {
             "0": 0.0,
-            "1": 226790.0 + iron_hydroxide_capex,
-            "2": 446435.0 + iron_hydroxide_capex,
-            "3": 713714.0 + iron_hydroxide_capex,
-            "4": 1270105.0 + iron_hydroxide_capex,
-            "5": 1541353.0 + iron_hydroxide_capex,
-            "6": 2920751.0 + iron_hydroxide_capex,
-            "7": 3652064.0 + iron_hydroxide_capex,
-            "8": 5323087.0 + iron_hydroxide_capex,
+            "1": 476790.0,
+            "2": 696435.0,
+            "3": 963714.0,
+            "4": 1520105.0,
+            "5": 1791353.0,
+            "6": 3170751.0,
+            "7": 3902064.0,
+            "8": 5573087.0,
         },
     },
     "(3, 6)": {
@@ -468,19 +476,19 @@ Discretized_CAPEX = {
         },
         "Costs": {
             "0": 0.0,
-            "1": 154685.0 + iron_hydroxide_capex,
-            "2": 858157.0 + iron_hydroxide_capex,
-            "3": 1400520.0 + iron_hydroxide_capex,
-            "4": 1751956.0 + iron_hydroxide_capex,
-            "5": 2253973.0 + iron_hydroxide_capex,
-            "6": 3416384.0 + iron_hydroxide_capex,
-            "7": 4357340.0 + iron_hydroxide_capex,
-            "8": 5557458.0 + iron_hydroxide_capex,
+            "1": 404685.0,
+            "2": 1108157.0,
+            "3": 1650520.0,
+            "4": 2001956.0,
+            "5": 2503973.0,
+            "6": 3666384.0,
+            "7": 4607340.0,
+            "8": 5807458.0,
         },
     },
 }
 
-m = run_model(
+m = build_model(
     ###################################################################################################
     ### Plant Lifetime Parameters
     plant_start=2024, # start of plant production
@@ -600,10 +608,10 @@ m = run_model(
         (2, 4): {"a": 0.0117, "b": 0}, 
         # level 3
         (3, 1): {"a": 15.594, "b": 4e6},
-        (3, 2): {"a": 15.594 + jaro_opex_param, "b": 4e6},
+        (3, 2): {"a": 35.58463, "b": 4e6},
         (3, 3): {"a": 1.8359, "b": 0},
         (3, 4): {"a": 3.7414, "b": 2378.6}, 
-        (3, 5): {"a": 3.7414 + Sel_Leach_iron_hydrox_opex_param, "b": 2378.6},
+        (3, 5): {"a": 10.35427, "b": 2378.6},
         (3, 6): {"a": 1.58, "b": 0},  
         # level 4
         (4, 1): {"a": 0, "b": 0}, 
@@ -615,7 +623,7 @@ m = run_model(
         (5, 2): {"a": 9.8127, "b": 964921}, 
         (5, 3): {"a": 9.8127, "b": 964921},  
         (5, 4): {"a": 2.17, "b": 0},  
-        (5, 5): {"a": 2.17 + AFDE_iron_hydrox_opex_param, "b": 0},  
+        (5, 5): {"a": 6.7063559004, "b": 0},  
     },
     # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
     num_workers={
@@ -678,7 +686,7 @@ m = run_model(
     ###################################################################################################
     ### Consideration of environmental impacts parameters
     # boolean to decide whether or not to consider environmental impacts
-    consider_environ_impacts=True,
+    consider_environ_impacts=False,
     # environmental impacts matrix (kg CO2e per kg incoming flowrate)
     environ_impacts={
         (1, 1): 0,
@@ -712,7 +720,7 @@ m = run_model(
     ###################################################################################################
     ### Byproduct valorization
     # boolean to decide whether or not to consider the valorization of byproducts
-    consider_byprod_val=True,
+    consider_byprod_val=False,
     # list of byproducts
     byprods=["Jarosite", "Iron oxide", "Residue", "Iron hydroxide"],
     # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
@@ -755,4 +763,29 @@ m = run_model(
 
 m.obj.display()
 m.binOpt.display()
-m.GWP.display()
+# m.GWP.display()
+
+m.display()
+
+print(number_variables(m))
+print(number_total_constraints(m))
+print(number_unused_variables(m))
+print(degrees_of_freedom(m))
+
+# dt = DiagnosticsToolbox(m)
+
+# dt.report_structural_issues()
+# dt.display_underconstrained_set()
+
+# dt.display_unused_variables()
+
+results = solve_model(m)
+
+print(results)
+
+# pyo.assert_optimal_termination(results)
+# results.display()
+for t in pyo.RangeSet(2025, 2038):
+    m.plantYear[t].P_entering.display()
+
+m.obj.display()

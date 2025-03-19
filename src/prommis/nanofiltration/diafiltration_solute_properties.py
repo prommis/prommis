@@ -29,7 +29,7 @@ from idaes.core.util.initialization import fix_state_vars
 @declare_process_block_class("SoluteParameter")
 class SoluteParameterData(PhysicalParameterBlock):
     """
-    Propery Package for the diafiltration cascade.
+    Property Package for the diafiltration cascade.
 
     Currently includes the following solutes:
         Li+ (lithium ion)

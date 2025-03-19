@@ -1,7 +1,18 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+"""
+Sample flowsheet for the diafiltration cascade.
+
+Author: Molly Dougher
+"""
+
 from pyomo.environ import (
     ConcreteModel,
     Param,
-    Set,
     SolverFactory,
     Suffix,
     TransformationFactory,
@@ -49,7 +60,7 @@ def main():
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 
-    solve_model(m)  # TODO: debug numerical scaling
+    solve_model(m)  # TODO: debug numerical scaling for higher NFE
     dt.report_numerical_issues()
 
     plot_results(m)

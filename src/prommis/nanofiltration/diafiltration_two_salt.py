@@ -36,28 +36,20 @@ from pyomo.dae import (
     ContinuousSet,
     DerivativeVar,
 )
-
 from pyomo.environ import (
     Constraint,
     NonNegativeReals,
-    Set,
     TransformationFactory,
     units,
     Var,
 )
-
-# import idaes.logger as idaeslog
-
 from idaes.core import (
     declare_process_block_class,
     UnitModelBlockData,
     useDefault,
 )
-
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.constants import Constants
-
-# _log = idaeslog.getLogger(__name__)
 
 
 @declare_process_block_class("TwoSaltDiafiltration")
@@ -88,64 +80,90 @@ class TwoSaltDiafiltrationData(UnitModelBlockData):
             implicit=True,
             description="Arguments to use for constructing property packages",
             doc="""A ConfigBlock with arguments to be passed to a property block(s)
-and used when contructing these,
+and used when constructing these,
  **default** - None.
 **Valid values:** {
-see property package for documentaiton}
+see property package for documentation}
 """,
         ),
     )
     CONFIG.declare(
         "membrane_length",
-        ConfigValue(),
+        ConfigValue(
+            doc="Length of the membrane, wound radially (m)",
+        ),
     )
     CONFIG.declare(
         "membrane_width",
-        ConfigValue(),
+        ConfigValue(
+            doc="Width of the membrane, parallel to the surface (m)",
+        ),
     )
     CONFIG.declare(
         "membrane_thickness",
-        ConfigValue(),
+        ConfigValue(
+            doc="Thickness of membrane (m)",
+        ),
     )
     CONFIG.declare(
         "membrane_permeability",
-        ConfigValue(),
+        ConfigValue(
+            doc="Hydraulic permeability coefficient (m/h/bar)",
+        ),
     )
     CONFIG.declare(
         "applied_pressure",
-        ConfigValue(),
+        ConfigValue(
+            doc="Pressure applied to membrane (bar)",
+        ),
     )
     CONFIG.declare(
         "feed_flow_volume",
-        ConfigValue(),
+        ConfigValue(
+            doc="Volumetric flow rate of the feed (m3/h)",
+        ),
     )
     CONFIG.declare(
         "feed_conc_mass_lithium",
-        ConfigValue(),
+        ConfigValue(
+            doc="Mass concentration of lithium in the feed (kg/m3)",
+        ),
     )
     CONFIG.declare(
         "feed_conc_mass_cobalt",
-        ConfigValue(),
+        ConfigValue(
+            doc="Mass concentration of cobalt in the feed (kg/m3)",
+        ),
     )
     CONFIG.declare(
         "diafiltrate_flow_volume",
-        ConfigValue(),
+        ConfigValue(
+            doc="Volumetric flow rate of the diafiltrate (m3/h)",
+        ),
     )
     CONFIG.declare(
         "diafiltrate_conc_mass_lithium",
-        ConfigValue(),
+        ConfigValue(
+            doc="Mass concentration of lithium in the diafiltrate (kg/m3)",
+        ),
     )
     CONFIG.declare(
         "diafiltrate_conc_mass_cobalt",
-        ConfigValue(),
+        ConfigValue(
+            doc="Mass concentration of cobalt in the diafiltrate (kg/m3)",
+        ),
     )
     CONFIG.declare(
         "NFEx",
-        ConfigValue(),
+        ConfigValue(
+            doc="Number of discretization points in the x-direction",
+        ),
     )
     CONFIG.declare(
         "NFEz",
-        ConfigValue(),
+        ConfigValue(
+            doc="Number of discretization points in the z-direction",
+        ),
     )
 
     def build(self):
@@ -154,9 +172,7 @@ see property package for documentaiton}
         """
         super().build()
 
-        self.solutes = Set(
-            initialize=["lithium", "cobalt", "chlorine"]
-        )  # TODO: generalize solutes
+        # TODO: generalize to any 2 cations and 1 anion
 
         self.add_variables()
         self.add_constraints()
@@ -180,21 +196,21 @@ see property package for documentaiton}
         )
         self.mass_flux_lithium = Var(
             self.x_bar,
-            initialize=0.05,  # TODO: verify good value
+            initialize=0.05,
             units=units.kg / units.m**2 / units.h,
             domain=NonNegativeReals,
             doc="Mass flux of lithium across the membrane (z-direction, x-dependent)",
         )
         self.mass_flux_cobalt = Var(
             self.x_bar,
-            initialize=0.05,  # TODO: verify good value
+            initialize=0.05,
             units=units.kg / units.m**2 / units.h,
             domain=NonNegativeReals,
             doc="Mass flux of cobalt across the membrane (z-direction, x-dependent)",
         )
         self.mass_flux_chlorine = Var(
             self.x_bar,
-            initialize=0.05,  # TODO: verify good value
+            initialize=0.05,
             units=units.kg / units.m**2 / units.h,
             domain=NonNegativeReals,
             doc="Mass flux of chlorine across the membrane (z-direction, x-dependent)",
@@ -293,28 +309,28 @@ see property package for documentaiton}
             self.z_bar,
             initialize=-1e-9,
             units=units.m**2 / units.h,
-            doc="Linearized cross diffusion coefficent for lithium-lithium",
+            doc="Linearized cross diffusion coefficient for lithium-lithium",
         )
         self.D_lithium_cobalt = Var(
             self.x_bar,
             self.z_bar,
             initialize=-1e-11,
             units=units.m**2 / units.h,
-            doc="Linearized cross diffusion coefficent for lithium-cobalt",
+            doc="Linearized cross diffusion coefficient for lithium-cobalt",
         )
         self.D_cobalt_lithium = Var(
             self.x_bar,
             self.z_bar,
             initialize=-1e-10,
             units=units.m**2 / units.h,
-            doc="Linearized cross diffusion coefficent for cobalt-lithium",
+            doc="Linearized cross diffusion coefficient for cobalt-lithium",
         )
         self.D_cobalt_cobalt = Var(
             self.x_bar,
             self.z_bar,
             initialize=-1e-9,
             units=units.m**2 / units.h,
-            doc="Linearized cross diffusion coefficent for cobalt-cobalt",
+            doc="Linearized cross diffusion coefficient for cobalt-cobalt",
         )
 
         # define the (partial) derivative variables
@@ -603,7 +619,7 @@ see property package for documentaiton}
             self.x_bar, rule=_chlorine_flux_membrane
         )
 
-        # other physical constaints
+        # other physical constraints
         def _osmotic_pressure_calculation(self, x):
             return self.osmotic_pressure[x] == units.convert(
                 (
@@ -637,7 +653,7 @@ see property package for documentaiton}
                 to_units=units.bar,
             )
 
-        self.osmotic_pressure_calcualation = Constraint(
+        self.osmotic_pressure_calculation = Constraint(
             self.x_bar, rule=_osmotic_pressure_calculation
         )
 
@@ -857,3 +873,5 @@ see property package for documentaiton}
         discretizer.apply_to(
             self, wrt=self.z_bar, nfe=self.config.NFEz, scheme="FORWARD"
         )
+
+    # TODO: add ports

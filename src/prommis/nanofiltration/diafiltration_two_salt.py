@@ -578,12 +578,24 @@ see property package for documentaiton}
 
         def _chlorine_flux_membrane(self, x):
             return self.mass_flux_chlorine[x] == -(
-                (self.config.property_package.charge["Li"] / self.config.property_package.charge["Cl"])
-                * (self.config.property_package.molar_mass["Cl"] / self.config.property_package.molar_mass["Li"])
+                (
+                    self.config.property_package.charge["Li"]
+                    / self.config.property_package.charge["Cl"]
+                )
+                * (
+                    self.config.property_package.molar_mass["Cl"]
+                    / self.config.property_package.molar_mass["Li"]
+                )
                 * self.mass_flux_lithium[x]
             ) - (
-                (self.config.property_package.charge["Co"] / self.config.property_package.charge["Cl"])
-                * (self.config.property_package.molar_mass["Cl"] / self.config.property_package.molar_mass["Co"])
+                (
+                    self.config.property_package.charge["Co"]
+                    / self.config.property_package.charge["Cl"]
+                )
+                * (
+                    self.config.property_package.molar_mass["Cl"]
+                    / self.config.property_package.molar_mass["Co"]
+                )
                 * self.mass_flux_cobalt[x]
             )
 

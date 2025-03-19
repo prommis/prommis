@@ -34,16 +34,6 @@ def main():
         membrane_thickness=m.membrane_thickness,
         membrane_permeability=m.Lp,
         applied_pressure=m.dP,
-        charge_lithium=m.z_lithium,
-        charge_cobalt=m.z_cobalt,
-        charge_chlorine=m.z_chlorine,
-        molar_mass_lithium=m.molar_mass_lithium,
-        molar_mass_cobalt=m.molar_mass_cobalt,
-        molar_mass_chlorine=m.molar_mass_chlorine,
-        sigma_lithium=m.sigma_lithium,
-        sigma_cobalt=m.sigma_cobalt,
-        sigma_chlorine=m.sigma_chlorine,
-        num_ions=m.num_solutes,
         feed_flow_volume=m.feed_flow_volume,
         feed_conc_mass_lithium=m.feed_conc_mass_lithium,
         feed_conc_mass_cobalt=m.feed_conc_mass_cobalt,
@@ -65,11 +55,6 @@ def main():
 
 def build_membrane_parameters(m):
 
-    m.num_solutes = Param(
-        initialize=5,
-        units=units.dimensionless,
-        doc="Number of dissociated ions in solution",
-    )
     m.membrane_thickness = Param(
         initialize=1e-7,
         units=units.m,
@@ -90,70 +75,10 @@ def build_membrane_parameters(m):
         units=units.bar,
         doc="Pressure applied to membrane",
     )
-    m.z_lithium = Param(
-        initialize=1,
-        units=units.dimensionless,
-        doc="Charge of lithium ion",
-    )
-    m.z_cobalt = Param(
-        initialize=2,
-        units=units.dimensionless,
-        doc="Charge of cobalt ion",
-    )
-    m.z_chlorine = Param(
-        initialize=-1,
-        units=units.dimensionless,
-        doc="Charge of coblat ion",
-    )
-    m.molar_mass_lithium = Param(
-        initialize=0.006941,
-        units=units.kg / units.mol,
-        doc="Molar mass of lithium",
-    )
-    m.molar_mass_cobalt = Param(
-        initialize=0.05893,
-        units=units.kg / units.mol,
-        doc="Molar mass of cobalt",
-    )
-    m.molar_mass_chlorine = Param(
-        initialize=0.03545,
-        units=units.kg / units.mol,
-        doc="Molar mass of chlorine",
-    )
-    m.D_lithium = Param(
-        initialize=3.7e-6,
-        units=units.m**2 / units.h,
-        doc="Diffusion coefficient for lithium ion in water",
-    )
-    m.D_cobalt = Param(
-        initialize=2.64e-6,
-        units=units.m**2 / units.h,
-        doc="Diffusion coefficient for cobalt ion in water",
-    )
-    m.D_chlorine = Param(
-        initialize=7.3e-6,
-        units=units.m**2 / units.h,
-        doc="Diffusion coefficient for chlorine ion in water",
-    )
     m.Lp = Param(
         initialize=0.01,
         units=units.m / units.h / units.bar,
         doc="Hydraulic permeability coefficient",
-    )
-    m.sigma_lithium = Param(
-        initialize=1,
-        units=units.dimensionless,
-        doc="Thermodynamic reflection coefficient for lithium ion",
-    )
-    m.sigma_cobalt = Param(
-        initialize=1,
-        units=units.dimensionless,
-        doc="Thermodynamic reflection coefficient for cobalt ion",
-    )
-    m.sigma_chlorine = Param(
-        initialize=1,
-        units=units.dimensionless,
-        doc="Thermodynamic reflection coefficient for chlorine ion",
     )
     m.feed_flow_volume = Param(
         initialize=100,
@@ -170,11 +95,6 @@ def build_membrane_parameters(m):
         units=units.kg / units.m**3,
         doc="Mass concentration of cobalt in the feed",
     )
-    m.feed_conc_mass_chlorine = Param(
-        initialize=29,
-        units=units.kg / units.m**3,
-        doc="Mass concentration of chlorine in the feed",
-    )
     m.diafiltrate_flow_volume = Param(
         initialize=30,
         units=units.m**3 / units.h,
@@ -189,11 +109,6 @@ def build_membrane_parameters(m):
         initialize=0.2,
         units=units.kg / units.m**3,
         doc="Mass concentration of cobalt in the diafiltrate",
-    )
-    m.diafiltrate_conc_mass_chlorine = Param(
-        initialize=0.7,
-        units=units.kg / units.m**3,
-        doc="Mass concentration of chlorine in the diafiltrate",
     )
 
 

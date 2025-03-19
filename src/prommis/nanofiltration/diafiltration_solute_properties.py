@@ -80,6 +80,12 @@ class SoluteParameterData(PhysicalParameterBlock):
             },
         )
 
+        self.num_solutes = Param(
+            initialize=5,
+            units=units.dimensionless,
+            doc="Number of dissociated ions in solution",
+        )
+
         self._state_block_class = SoluteStateBlockData
 
     @classmethod

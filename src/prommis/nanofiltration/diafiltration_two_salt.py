@@ -116,46 +116,6 @@ see property package for documentaiton}
         ConfigValue(),
     )
     CONFIG.declare(
-        "charge_lithium",
-        ConfigValue(),
-    )
-    CONFIG.declare(
-        "charge_cobalt",
-        ConfigValue(),
-    )
-    CONFIG.declare(
-        "charge_chlorine",
-        ConfigValue(),
-    )
-    CONFIG.declare(
-        "molar_mass_lithium",
-        ConfigValue(),
-    )
-    CONFIG.declare(
-        "molar_mass_cobalt",
-        ConfigValue(),
-    )
-    CONFIG.declare(
-        "molar_mass_chlorine",
-        ConfigValue(),
-    )
-    CONFIG.declare(
-        "sigma_lithium",
-        ConfigValue(),
-    )
-    CONFIG.declare(
-        "sigma_cobalt",
-        ConfigValue(),
-    )
-    CONFIG.declare(
-        "sigma_chlorine",
-        ConfigValue(),
-    )
-    CONFIG.declare(
-        "num_ions",
-        ConfigValue(),
-    )
-    CONFIG.declare(
         "feed_flow_volume",
         ConfigValue(),
     )
@@ -618,12 +578,12 @@ see property package for documentaiton}
 
         def _chlorine_flux_membrane(self, x):
             return self.mass_flux_chlorine[x] == -(
-                (self.config.charge_lithium / self.config.charge_chlorine)
-                * (self.config.molar_mass_chlorine / self.config.molar_mass_lithium)
+                (self.config.property_package.charge["Li"] / self.config.property_package.charge["Cl"])
+                * (self.config.property_package.molar_mass["Cl"] / self.config.property_package.molar_mass["Li"])
                 * self.mass_flux_lithium[x]
             ) - (
-                (self.config.charge_cobalt / self.config.charge_chlorine)
-                * (self.config.molar_mass_chlorine / self.config.molar_mass_cobalt)
+                (self.config.property_package.charge["Co"] / self.config.property_package.charge["Cl"])
+                * (self.config.property_package.molar_mass["Cl"] / self.config.property_package.molar_mass["Co"])
                 * self.mass_flux_cobalt[x]
             )
 
@@ -636,26 +596,26 @@ see property package for documentaiton}
             return self.osmotic_pressure[x] == units.convert(
                 (
                     (
-                        self.config.num_ions
+                        self.config.property_package.num_solutes
                         * Constants.gas_constant  # J / mol / K
                         * 298
                         * units.K  # assume room temp
                     )
                     * (
-                        self.config.sigma_lithium
-                        / self.config.molar_mass_lithium
+                        self.config.property_package.sigma["Li"]
+                        / self.config.property_package.molar_mass["Li"]
                         * (
                             self.retentate_conc_mass_lithium[x]
                             - self.permeate_conc_mass_lithium[x]
                         )
-                        + self.config.sigma_cobalt
-                        / self.config.molar_mass_cobalt
+                        + self.config.property_package.sigma["Co"]
+                        / self.config.property_package.molar_mass["Co"]
                         * (
                             self.retentate_conc_mass_cobalt[x]
                             - self.permeate_conc_mass_cobalt[x]
                         )
-                        + self.config.sigma_chlorine
-                        / self.config.molar_mass_chlorine
+                        + self.config.property_package.sigma["Cl"]
+                        / self.config.property_package.molar_mass["Cl"]
                         * (
                             self.retentate_conc_mass_chlorine[x]
                             - self.permeate_conc_mass_chlorine[x]
@@ -671,15 +631,15 @@ see property package for documentaiton}
 
         def _electroneutrality_retentate(self, x):
             return 0 == (
-                self.config.charge_lithium
+                self.config.property_package.charge["Li"]
                 * self.retentate_conc_mass_lithium[x]
-                / self.config.molar_mass_lithium
-                + self.config.charge_cobalt
+                / self.config.property_package.molar_mass["Li"]
+                + self.config.property_package.charge["Co"]
                 * self.retentate_conc_mass_cobalt[x]
-                / self.config.molar_mass_cobalt
-                + self.config.charge_chlorine
+                / self.config.property_package.molar_mass["Co"]
+                + self.config.property_package.charge["Cl"]
                 * self.retentate_conc_mass_chlorine[x]
-                / self.config.molar_mass_chlorine
+                / self.config.property_package.molar_mass["Cl"]
             )
 
         self.electroneutrality_retentate = Constraint(
@@ -690,15 +650,15 @@ see property package for documentaiton}
             if z == 0:
                 return Constraint.Skip
             return 0 == (
-                self.config.charge_lithium
+                self.config.property_package.charge["Li"]
                 * self.membrane_conc_mass_lithium[x, z]
-                / self.config.molar_mass_lithium
-                + self.config.charge_cobalt
+                / self.config.property_package.molar_mass["Li"]
+                + self.config.property_package.charge["Co"]
                 * self.membrane_conc_mass_cobalt[x, z]
-                / self.config.molar_mass_cobalt
-                + self.config.charge_chlorine
+                / self.config.property_package.molar_mass["Co"]
+                + self.config.property_package.charge["Cl"]
                 * self.membrane_conc_mass_chlorine[x, z]
-                / self.config.molar_mass_chlorine
+                / self.config.property_package.molar_mass["Cl"]
             )
 
         self.electroneutrality_membrane = Constraint(

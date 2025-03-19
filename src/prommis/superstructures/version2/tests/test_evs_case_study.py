@@ -120,7 +120,7 @@ def get_common_params():
                 "Nd": 1,
                 "Dy": 1,
                 "Fe": 0,
-            },  # grouped together with hydrom. extrac.
+            }, 
             (5, 2): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
             (5, 3): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
             (5, 4): {

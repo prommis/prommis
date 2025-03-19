@@ -571,7 +571,7 @@ m = build_model(
         (4, 3): {"Nd": 1, "Dy": 1, "Fe": 1},
         (4, 4): {"Nd": 1, "Dy": 1, "Fe": 1},
         # level 5 yields
-        (5, 1): {"Nd": 1, "Dy": 1, "Fe": 0},  # grouped together with hydrom. extrac.
+        (5, 1): {"Nd": 1, "Dy": 1, "Fe": 0}, 
         (5, 2): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
         (5, 3): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
         (5, 4): {

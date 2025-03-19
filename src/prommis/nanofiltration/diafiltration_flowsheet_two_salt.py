@@ -12,17 +12,17 @@ from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 from diafiltration_two_salt import TwoSaltDiafiltration
-from membrane_cascade_flowsheet.solute_property import SoluteParameterData
+from diafiltration_solute_properties import SoluteParameter
 
 
 def main():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    # use Jason's property package as a placeholder
-    # TODO: create/modify property package
-    m.fs.solutes = Set(["lithium", "cobalt", "chlorine"])
-    m.fs.properties = SoluteParameterData(m.fs.solutes)
+    # m.fs.solutes = Set(["lithium", "cobalt", "chlorine"])
+    m.fs.properties = (
+        SoluteParameter()
+    )  # TODO: call relevent parameters from property package
 
     # parameter inputs
     build_membrane_parameters(m)
@@ -66,7 +66,7 @@ def main():
 def build_membrane_parameters(m):
 
     m.num_solutes = Param(
-        initialize=3,  # TODO: update to 5
+        initialize=5,
         units=units.dimensionless,
         doc="Number of dissociated ions in solution",
     )

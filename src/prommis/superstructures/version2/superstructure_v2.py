@@ -1,33 +1,46 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+"""
+Superstructure Code version 2
+=============================
+
+Author: Chris Laliwala
+"""
+
+
 import pyomo.environ as pyo
-# for throwing errors
 import sys
 import copy
 import math
 
 
-def run_model(
+def build_model(
     ###################################################################################################
     ### Plant Lifetime Parameters
-    plant_start: int, # start of plant production
+    plant_start: int,  # start of plant production
     plant_lifetime: int,  # lifetime of plant
     ###################################################################################################
     ###################################################################################################
     ### Feed parameters
-    # Total feedstock available for recycling each year 
+    # Total feedstock available for recycling each year
     # of the form -> year: amount, ...
     Available_feed: dict,
     # collection rate for how much of the available feed is processed by the plant each year (fraction)
-    CR: float, 
-    # list of tracked components (this is assumed to be the elemental rare earths and other elemental contaminants. 
+    CR: float,
+    # list of tracked components (this is assumed to be the elemental rare earths and other elemental contaminants.
     # Refer to examples)
-    Tracked_comps: list, 
+    Tracked_comps: list,
     # mass of tracked component per EOL Product (kg component / EOL product)
     # of the form -> component: amount, ...
-    Prod_comp_mass: dict, 
+    Prod_comp_mass: dict,
     ###################################################################################################
     ###################################################################################################
     ### Superstructure formulation parameters
-    numStages: int, # number of total stages
+    numStages: int,  # number of total stages
     # number of options in each stage. Of the form -> stage number: number of options
     Options_in_stage: dict,
     # set of options k' in stage j+1 connected to option k in stage j
@@ -41,18 +54,22 @@ def run_model(
     ### Operating Parameters
     # profit per kg of product in terms of tracked components
     # of the form -> (j, k): {"comp1": price1, "comp2": price2, ...}, ...
-    Profit: dict, 
+    Profit: dict,
+    # conversion of kg REE/Fe to kg REO/Fe2O3
+    # of the form -> "REE": conv_factor1, ...
+    # see examples for more detail
+    REE_to_REO_Conversion: dict,
     # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
     # OPEX = a*F_in + b*y
     # of the form -> (j, k): {"a": val1, "b": val2}, ...
     N_OC_var: dict,
     # number of workers needed by option (for disassembly stage, its operators per unit)
     # of the form -> (j, k): val1, ...
-    num_workers: dict, 
+    num_workers: dict,
     labor_rate: float,  # yearly wage per worker
     # yearly operating costs per unit ($/unit*yr) for disassembly stage
     # of the form -> (j,k): cost1, ...
-    YCU: dict, 
+    YCU: dict,
     # cost per disassembly stage unit for each disassembly option
     # of the form -> (j,k): cost1, ...
     CU: dict,
@@ -63,7 +80,7 @@ def run_model(
     ###################################################################################################
     ### Costing Parameters
     LF: float,  # Lang Factor
-    TOC_factor: float, # Overnight costs factor
+    TOC_factor: float,  # Overnight costs factor
     ATWACC: float,  # discount rate
     i_OC_esc: float,  # opex, revenue (default of 3%)
     i_CAP_esc: float,  # capex escalation rate (default of 3.6%)
@@ -73,15 +90,11 @@ def run_model(
     f_exp: list,
     # Define Python Dictionary with discretized cost by flows for each option.
     # see example for form
-    Discretized_CAPEX: dict, 
+    Discretized_CAPEX: dict,
     ###################################################################################################
     ###################################################################################################
-    # Choice of objective function. Options are 'NPV' or 'COR'
+    ### Choice of objective function. Options are 'NPV' or 'COR'
     obj_func: str,
-    # conversion of kg REE/Fe to kg REO/Fe2O3
-    # of the form -> "REE": conv_factor1, ...
-    # see examples for more detail
-    REE_to_REO_Conversion: dict,
     ###################################################################################################
     ###################################################################################################
     ### Consideration of environmental impacts parameters
@@ -90,7 +103,7 @@ def run_model(
     # environmental impacts matrix (kg CO2e per incoming flowrate)
     # of the form -> (j, k): factor1, ...
     environ_impacts: dict,
-    epsilon: float, # epsilon factor for generating Pareto front
+    epsilon: float,  # epsilon factor for generating Pareto front
     ###################################################################################################
     ###################################################################################################
     ### Byproduct valorization
@@ -122,9 +135,7 @@ def run_model(
     plant_end = plant_start + plant_lifetime - 1  # final year plant is in production
     plant_life_range = pyo.RangeSet(plant_start, plant_end)  # lifetime of the plant
     # operational lifetime of the plant
-    operational_range = pyo.RangeSet(
-        prod_start, plant_end
-    ) 
+    operational_range = pyo.RangeSet(prod_start, plant_end)
     ###################################################################################################
     ###################################################################################################
     ### Calculate other feed parameters
@@ -132,19 +143,21 @@ def run_model(
     Feed_entering = copy.deepcopy(Available_feed)
     for key in Feed_entering:
         Feed_entering[key] = Available_feed[key] * CR
-    maxFeedEntering = max(Feed_entering.values()) # max feed entering plant over production period
-    maxFeedEnteringYear = max(Feed_entering, key=Feed_entering.get) # year in which max feed enters plant
+    maxFeedEntering = max(
+        Feed_entering.values()
+    )  # max feed entering plant over production period
+    maxFeedEnteringYear = max(
+        Feed_entering, key=Feed_entering.get
+    )  # year in which max feed enters plant
     ###################################################################################################
     ###################################################################################################
     ### Calculate other superstructure formulation parameters
     maxOptions = max(Options_in_stage.values())  # max options in any of the stages
     # make a list of the options in the final stage
-    final_opt_list = [
-        (numStages, j) for j in pyo.RangeSet(Options_in_stage[numStages])
-    ]
+    final_opt_list = [(numStages, j) for j in pyo.RangeSet(Options_in_stage[numStages])]
     ###################################################################################################
     ###################################################################################################
-    ### Calculate other operating Parameters
+    ### Calculate other operating parameters
     # calculate max disassembly units possible for each option
     max_dis_by_option = copy.deepcopy(Dis_Rate)
     for key in max_dis_by_option.keys():
@@ -236,7 +249,7 @@ def run_model(
 
         ### Calculation of yearly byproducts produced
         # only if user specifies this
-        if consider_byprod_val==True:
+        if consider_byprod_val == True:
             b.Byprods = pyo.Set(initialize=byprods)  # byproducts
             b.total_yearly_byprod = pyo.Var(
                 b.Byprods
@@ -258,7 +271,7 @@ def run_model(
 
         ### consideration of yearly environmental impacts
         # only if user species this
-        if consider_environ_impacts==True:
+        if consider_environ_impacts == True:
             b.total_yearly_GWP = pyo.Var(domain=pyo.NonNegativeReals)
             b.yearly_GWP = pyo.Var(b.OptSet, domain=pyo.NonNegativeReals)
             b.GWP_cons = pyo.ConstraintList()
@@ -269,7 +282,8 @@ def run_model(
                 for k in num_options:
                     b.GWP_cons.add(
                         expr=b.yearly_GWP[j, k]
-                        == sum(b.F_in[j, k, c] for c in b.KeyComps) * environ_impacts[j, k]
+                        == sum(b.F_in[j, k, c] for c in b.KeyComps)
+                        * environ_impacts[j, k]
                     )
 
             # calculate the total GWP for the year
@@ -285,16 +299,17 @@ def run_model(
     m.J = pyo.RangeSet(numStages)  # number of stages
     m.K = pyo.RangeSet(maxOptions)  # max options in a stage
     m.KeyComps = pyo.Set(initialize=Tracked_comps)  # key components
-    jk = []  # for declaring bin vars
-    jkc = []  # for declaring flow vars
+    jk_dis = []  # set of options
+    jk_no_dis = []  # set of options (excluding disassembly)
     for j in m.J:
         for k in pyo.RangeSet(Options_in_stage[j]):
-            jk.append((j, k))
-            for c in m.KeyComps:
-                jkc.append((j, k, c))
+            jk_dis.append((j, k))
+            if j != 1:
+                jk_no_dis.append((j, k))
+    m.OptSet = pyo.Set(within=m.J * m.K, initialize=jk_dis)  # set of options
+    m.OptSet_no_dis = pyo.Set(within=m.J * m.K, initialize=jk_no_dis)  # set of options
 
     ### declare binary variables
-    m.OptSet = pyo.Set(within=m.J * m.K, initialize=jk)
     m.binOpt = pyo.Var(m.OptSet, domain=pyo.Binary)
 
     ### Logical Constraints
@@ -455,7 +470,7 @@ def run_model(
 
         ## Calculate profit generated from byproduct valorization
         # only if specified by user
-        if consider_byprod_val==True:
+        if consider_byprod_val == True:
             m.plantYear[t].Byprod_Profit = pyo.Var(domain=pyo.Reals)
             m.plantYear[t].byprod_profit_con = pyo.Constraint(
                 expr=m.plantYear[t].Byprod_Profit
@@ -465,10 +480,8 @@ def run_model(
                 )
             )
 
-
     ################################################ OC_fixed Constraints ################################################
     # calculate the cost of labor
-    m.COL = pyo.Var(m.OptSet, domain=pyo.Reals)
     m.workers = pyo.Var(m.OptSet, domain=pyo.Reals)
     m.worker_cons = pyo.ConstraintList()
     m.COL_cons = pyo.ConstraintList()
@@ -491,8 +504,7 @@ def run_model(
 
             else:
                 m.worker_cons.add(
-                    expr=m.workers[j, k]
-                    == m.binOpt[j, k] * num_workers[elem]
+                    expr=m.workers[j, k] == m.binOpt[j, k] * num_workers[elem]
                 )
 
     m.workers_range = pyo.RangeSet(0, max_workers)
@@ -511,12 +523,12 @@ def run_model(
 
     # calculate total COL
     m.COL_Total = pyo.Var(domain=pyo.NonNegativeReals)
-    m.COL_Total_con = pyo.Constraint(
-        expr=m.COL_Total == m.total_workers * labor_rate
-    )
+    m.COL_Total_con = pyo.Constraint(expr=m.COL_Total == m.total_workers * labor_rate)
 
     ################################################ CAPEX Constraints ################################################
     t_max = maxFeedEnteringYear
+
+    # set of non-disassembly options
 
     # TPC = BEC * LF
     m.BEC = pyo.Var(m.OptSet, domain=pyo.NonNegativeReals)
@@ -524,7 +536,7 @@ def run_model(
 
     # make a var for the max flow entering each option. Used to calculate capex
     maxFlowUB = maxFeedEntering * sum(Prod_comp_mass[c] for c in Tracked_comps)
-    m.BEC_max_flow = pyo.Var(m.OptSet, bounds=(0, maxFlowUB))
+    m.BEC_max_flow = pyo.Var(m.OptSet_no_dis, bounds=(0, maxFlowUB))
     m.BEC_max_flow_cons = pyo.ConstraintList()
 
     # Calculate disassembly BEC (disassembly stage is always the first stage)
@@ -592,9 +604,7 @@ def run_model(
 
     # calculate TOC
     m.TOC = pyo.Var(domain=pyo.NonNegativeReals)
-    m.TOC_con = pyo.Constraint(
-        expr=m.TOC == m.Total_TPC * TOC_factor
-    )
+    m.TOC_con = pyo.Constraint(expr=m.TOC == m.Total_TPC * TOC_factor)
 
     # calculate node TOCs
     m.node_TOC = pyo.Var(m.OptSet, domain=pyo.NonNegativeReals)
@@ -620,8 +630,6 @@ def run_model(
 
     ## OPEX cons
     # net earnings
-    m.NE = pyo.Var(plant_life_range, domain=pyo.Reals)
-    m.NE_cons = pyo.ConstraintList()
     # gross earnings
     m.GE = pyo.Var(plant_life_range, domain=pyo.Reals)
     m.GE_cons = pyo.ConstraintList()
@@ -670,11 +678,12 @@ def run_model(
 
             ## revenue
             # consider byproduct valorization if specified by user
-            if consider_byprod_val==True:
+            if consider_byprod_val == True:
                 m.Rev_cons.add(
-                    expr=m.Rev[t] == m.plantYear[t].Profit + m.plantYear[t].Byprod_Profit
+                    expr=m.Rev[t]
+                    == m.plantYear[t].Profit + m.plantYear[t].Byprod_Profit
                 )
-            else: # otherwise don't
+            else:  # otherwise don't
                 m.Rev_cons.add(expr=m.Rev[t] == m.plantYear[t].Profit)
 
         else:
@@ -700,14 +709,15 @@ def run_model(
 
     ### environmental impacts
     # only consider if option is enabled by user
-    if consider_environ_impacts==True:
+    if consider_environ_impacts == True:
         m.GWP = pyo.Var(domain=pyo.NonNegativeReals)
         m.GWP_cons = pyo.ConstraintList()
 
         m.GWP_cons.add(
             expr=m.GWP
             == sum(
-                m.plantYear[t].total_yearly_GWP for t in pyo.RangeSet(prod_start, plant_end)
+                m.plantYear[t].total_yearly_GWP
+                for t in pyo.RangeSet(prod_start, plant_end)
             )
         )
         # add in epsilon constraint
@@ -735,14 +745,23 @@ def run_model(
     else:
         sys.exit("no objective function was specified")
 
+    # solver = pyo.SolverFactory("gurobi")
+    # solver.options["NumericFocus"] = 2
+
+    # # Enable the solution pool
+    # solver.options["PoolSearchMode"] = 2  # final all solutions within the gap
+    # solver.options["PoolSolutions"] = 10  # store up to 10 solutions in the pool
+    # solver.options["PoolGap"] = 0  # look for multiple solutions
+
+    # m.results = pyo.SolverFactory("gurobi").solve(m, tee=True)
+
+    return m
+
+
+def solve_model(m):
     solver = pyo.SolverFactory("gurobi")
     solver.options["NumericFocus"] = 2
 
-    # Enable the solution pool
-    solver.options["PoolSearchMode"] = 2  # final all solutions within the gap
-    solver.options["PoolSolutions"] = 10  # store up to 10 solutions in the pool
-    solver.options["PoolGap"] = 0  # look for multiple solutions
+    res = pyo.SolverFactory("gurobi").solve(m, tee=False)
 
-    m.results = pyo.SolverFactory("gurobi").solve(m, tee=True)
-
-    return m
+    return res

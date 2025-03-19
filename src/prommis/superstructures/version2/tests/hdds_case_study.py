@@ -8,17 +8,16 @@ import sys
 from prommis.superstructures.version2.superstructure_v2 import run_model
 
 ### cost of purchased equipment for iron valorization processes (k$).
-jarosite_capex = 300000 / 1000 # considered.
-iron_hydroxide_capex = 250000 / 1000 # considered.
+jarosite_capex = 300000 / 1000  # considered.
+iron_hydroxide_capex = 250000 / 1000  # considered.
 
 ### OPEX parameters for iron valorization
 # 10 k$/metric tonnes of jarosite processed
 jaro_opex_param = 0.7 * 2.893 * 10
 
 # 5 k$/metric tonnes of iron hydroxide processed
-AFDE_iron_hydrox_opex_param = 0.4846246349 * 1.914 * 5 # AFDE Process
-Sel_Leach_iron_hydrox_opex_param = 0.7 * 1.914 * 5 # Selective Leaching Process
-
+AFDE_iron_hydrox_opex_param = 0.4846246349 * 1.914 * 5  # AFDE Process
+Sel_Leach_iron_hydrox_opex_param = 0.7 * 1.914 * 5  # Selective Leaching Process
 
 
 # costs in terms of metric tons of incoming flow vs. thousands of US dollars
@@ -33,7 +32,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -44,8 +43,8 @@ Discretized_CAPEX = {
             "5": 77.063,
             "6": 117.215,
             "7": 151.018,
-            "8": 195.699
-        }
+            "8": 195.699,
+        },
     },
     "(2, 2)": {
         "Flowrates": {
@@ -57,7 +56,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -68,8 +67,8 @@ Discretized_CAPEX = {
             "5": 100.113,
             "6": 154.793,
             "7": 201.326,
-            "8": 263.375
-        }
+            "8": 263.375,
+        },
     },
     "(2, 3)": {
         "Flowrates": {
@@ -81,7 +80,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -92,8 +91,8 @@ Discretized_CAPEX = {
             "5": 599.667,
             "6": 842.665,
             "7": 1028.482,
-            "8": 1255.541
-        }
+            "8": 1255.541,
+        },
     },
     "(2, 4)": {
         "Flowrates": {
@@ -105,7 +104,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -116,8 +115,8 @@ Discretized_CAPEX = {
             "5": 1081.651,
             "6": 1522.296,
             "7": 1859.74,
-            "8": 2272.553
-        }
+            "8": 2272.553,
+        },
     },
     "(3, 1)": {
         "Flowrates": {
@@ -129,7 +128,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -140,8 +139,8 @@ Discretized_CAPEX = {
             "5": 844.443,
             "6": 978.48,
             "7": 1183.835,
-            "8": 1440.661
-        }
+            "8": 1440.661,
+        },
     },
     "(3, 2)": {
         "Flowrates": {
@@ -153,7 +152,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -164,8 +163,8 @@ Discretized_CAPEX = {
             "5": 844.443 + jarosite_capex,
             "6": 978.48 + jarosite_capex,
             "7": 1183.835 + jarosite_capex,
-            "8": 1440.661 + jarosite_capex
-        }
+            "8": 1440.661 + jarosite_capex,
+        },
     },
     "(3, 3)": {
         "Flowrates": {
@@ -177,7 +176,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -188,8 +187,8 @@ Discretized_CAPEX = {
             "5": 9251.003,
             "6": 14933.803,
             "7": 19762.045,
-            "8": 26151.303
-        }
+            "8": 26151.303,
+        },
     },
     "(3, 4)": {
         "Flowrates": {
@@ -201,7 +200,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -212,8 +211,8 @@ Discretized_CAPEX = {
             "5": 1541.353,
             "6": 2920.751,
             "7": 3652.064,
-            "8": 5323.087
-        }
+            "8": 5323.087,
+        },
     },
     "(3, 5)": {
         "Flowrates": {
@@ -225,7 +224,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -236,8 +235,8 @@ Discretized_CAPEX = {
             "5": 1541.353 + iron_hydroxide_capex,
             "6": 2920.751 + iron_hydroxide_capex,
             "7": 3652.064 + iron_hydroxide_capex,
-            "8": 5323.087 + iron_hydroxide_capex
-        }
+            "8": 5323.087 + iron_hydroxide_capex,
+        },
     },
     "(3, 6)": {
         "Flowrates": {
@@ -249,7 +248,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -260,8 +259,8 @@ Discretized_CAPEX = {
             "5": 2469.724,
             "6": 3743.401,
             "7": 4774.426,
-            "8": 6089.42
-        }
+            "8": 6089.42,
+        },
     },
     "(4, 1)": {
         "Flowrates": {
@@ -273,7 +272,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -284,8 +283,8 @@ Discretized_CAPEX = {
             "5": 655.614,
             "6": 800.184,
             "7": 974.416,
-            "8": 1114.535
-        }
+            "8": 1114.535,
+        },
     },
     "(4, 2)": {
         "Flowrates": {
@@ -297,7 +296,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -308,8 +307,8 @@ Discretized_CAPEX = {
             "5": 679.397,
             "6": 912.244,
             "7": 1097.498,
-            "8": 1297.052
-        }
+            "8": 1297.052,
+        },
     },
     "(4, 3)": {
         "Flowrates": {
@@ -321,7 +320,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -332,8 +331,8 @@ Discretized_CAPEX = {
             "5": 679.397,
             "6": 912.244,
             "7": 1097.498,
-            "8": 1297.052
-        }
+            "8": 1297.052,
+        },
     },
     "(4, 4)": {
         "Flowrates": {
@@ -345,7 +344,7 @@ Discretized_CAPEX = {
             "5": 3171.2,
             "6": 6342.4,
             "7": 9513.6,
-            "8": 14270.4
+            "8": 14270.4,
         },
         "Costs": {
             "0": 0.0,
@@ -356,9 +355,9 @@ Discretized_CAPEX = {
             "5": 679.397 + iron_hydroxide_capex,
             "6": 912.244 + iron_hydroxide_capex,
             "7": 1097.498 + iron_hydroxide_capex,
-            "8": 1297.052 + iron_hydroxide_capex
-        }
-    }
+            "8": 1297.052 + iron_hydroxide_capex,
+        },
+    },
 }
 
 # number of EOL Desktops with HDDs
@@ -406,7 +405,7 @@ for key in HDD_input_flow:
 m = run_model(
     ###################################################################################################
     ### Plant Lifetime Parameters
-    plant_start=2024, # start of plant production
+    plant_start=2024,  # start of plant production
     plant_lifetime=15,  # lifetime of plant
     ###################################################################################################
     ###################################################################################################
@@ -414,15 +413,15 @@ m = run_model(
     # Total feedstock available for recycling each year
     Available_feed=HDD_input_flow,
     # collection rate for how much of the available feed is processed by the plant each year
-    CR=0.6, 
+    CR=0.6,
     Tracked_comps=["Nd", "Fe"],  # tracked components
     # mass of tracked component per EOL Product (metric tonnes of component / 1000 EOL product)
     Prod_comp_mass={"Nd": 7.5e-4, "Fe": 0.00175},
     ###################################################################################################
     ###################################################################################################
     ### Superstructure formulation parameters
-    numStages=4, # number of total stages
-    Options_in_stage={1: 4, 2: 4, 3: 6, 4: 4}, # number of options in each stage
+    numStages=4,  # number of total stages
+    Options_in_stage={1: 4, 2: 4, 3: 6, 4: 4},  # number of options in each stage
     # set of options k' in stage j+1 connected to option k in stage j
     Option_outlets={
         # level 1
@@ -444,7 +443,7 @@ m = run_model(
         (3, 6): [3, 4],
     },
     # dictionary of tracked component retention efficiency for each option
-    Option_Eff = {
+    Option_Eff={
         # Level 1 yields
         (1, 1): {"Nd": 1, "Fe": 1},
         (1, 2): {"Nd": 1, "Fe": 1},
@@ -477,30 +476,30 @@ m = run_model(
         (4, 2): {"Nd": 69.888, "Fe": 0},
         (4, 3): {"Nd": 69.888, "Fe": 0},
         (4, 4): {"Nd": 69.888, "Fe": 0},
-    }, 
+    },
     # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it (metric tonnes).
     # OPEX (k$) = a*F_in + b*y
     N_OC_var={
         # level 2
-        (2, 1): {"a": 0.0053, "b": 7929.7 / 1000}, 
+        (2, 1): {"a": 0.0053, "b": 7929.7 / 1000},
         (2, 2): {"a": 0.0015, "b": 2233.16 / 1000},
-        (2, 3): {"a": 0.0034, "b": 0}, 
+        (2, 3): {"a": 0.0034, "b": 0},
         (2, 4): {"a": 0.0117, "b": 0},
         # level 3
-        (3, 1): {"a": 15.594, "b": 4e6 / 1000},  
-        (3, 2): {"a": 15.594 + jaro_opex_param, "b": 4e6 / 1000}, 
-        (3, 3): {"a": 1.8359, "b": 0}, 
-        (3, 4): {"a": 3.7414, "b": 3476.7 / 1000},  
+        (3, 1): {"a": 15.594, "b": 4e6 / 1000},
+        (3, 2): {"a": 15.594 + jaro_opex_param, "b": 4e6 / 1000},
+        (3, 3): {"a": 1.8359, "b": 0},
+        (3, 4): {"a": 3.7414, "b": 3476.7 / 1000},
         (3, 5): {"a": 3.7414 + Sel_Leach_iron_hydrox_opex_param, "b": 3476.7 / 1000},
-        (3, 6): {"a": 1.58, "b": 0},  
+        (3, 6): {"a": 1.58, "b": 0},
         # level 4
-        (4, 1): {"a": 0.4997, "b": 898320 / 1000},  
-        (4, 2): {"a": 9.8352, "b": 677751 / 1000}, 
-        (4, 3): {"a": 2.17, "b": 0}, 
-        (4, 4): {"a": 2.17 + AFDE_iron_hydrox_opex_param, "b": 0}, 
+        (4, 1): {"a": 0.4997, "b": 898320 / 1000},
+        (4, 2): {"a": 9.8352, "b": 677751 / 1000},
+        (4, 3): {"a": 2.17, "b": 0},
+        (4, 4): {"a": 2.17 + AFDE_iron_hydrox_opex_param, "b": 0},
     },
     # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
-    num_workers = {
+    num_workers={
         ##############################################
         # for disassembly stage, its operators per unit
         (1, 1): 1,
@@ -522,7 +521,7 @@ m = run_model(
         (4, 2): 0.75,
         (4, 3): 1.15,
         (4, 4): 1.15,
-    }, 
+    },
     labor_rate=8000 * 38.20 / 1000,  # yearly wage per type of labor (k$/operator/yr)
     # yearly operating costs per unit (k$/unit/yr)
     YCU={
@@ -530,7 +529,7 @@ m = run_model(
         (1, 2): 280 / 1000,
         (1, 3): 0,
         (1, 4): 10367.608 / 1000,
-    }, 
+    },
     # cost per disassembly stage unit for each disassembly option (k$/unit)
     CU={
         (1, 1): 0,
@@ -538,7 +537,7 @@ m = run_model(
         (1, 3): 0,
         (1, 4): 50000 / 1000,
     },
-    # disassembly rate (thousands of EOL HDDs/yr/unit) 
+    # disassembly rate (thousands of EOL HDDs/yr/unit)
     # for each disassembly option (in terms of EOL products disassembled per year per unit)
     Dis_Rate={
         (1, 1): 181132 / 1000,
@@ -550,17 +549,17 @@ m = run_model(
     ###################################################################################################
     ### Costing Parameters
     LF=2.97,  # Lang Factor
-    TOC_factor=1.177, # Overnight costs factor
+    TOC_factor=1.177,  # Overnight costs factor
     ATWACC=0.0577,  # discount rate. (default of 5.77%)
     i_OC_esc=0.03,  # opex, revenue (default of 3%)
     i_CAP_esc=0.036,  # capex escalation rate (default of 3.6%)
     f_exp=[0.1, 0.6, 0.3],  # capital expenditure schedule (default of 10%, 60%, 30%)
     # Define Python Dictionary with discretized cost by flows for each option.
-    Discretized_CAPEX=Discretized_CAPEX, 
+    Discretized_CAPEX=Discretized_CAPEX,
     ###################################################################################################
     ###################################################################################################
     # Choice of objective function. Options are 'NPV' or 'COR'.capitalize
-    obj_func='NPV',
+    obj_func="NPV",
     # conversion of metric tonnes REE/Fe to metric tonnes REO/Fe2O3
     REE_to_REO_Conversion={"Nd": 1.664, "Fe": 1.43},
     ###################################################################################################
@@ -570,30 +569,27 @@ m = run_model(
     consider_environ_impacts=True,
     # environmental impacts matrix (kg CO2e per metric tonne of incoming flowrate)
     # Environmental Impacts Matrix
-    environ_impacts = {
+    environ_impacts={
         (1, 1): 0,
         (1, 2): 600,
         (1, 3): 800,
         (1, 4): 1000,
-
         (2, 1): 0,
         (2, 2): 1000,
         (2, 3): 800,
         (2, 4): 600,
-
         (3, 1): 1000,
         (3, 2): 0,
         (3, 3): 800,
         (3, 4): 600,
         (3, 5): 600,
         (3, 6): 1200,
-
         (4, 1): 0,
         (4, 2): 800,
         (4, 3): 1200,
         (4, 4): 1000,
     },
-    epsilon=1e16, # epsilon factor for generating Pareto front
+    epsilon=1e16,  # epsilon factor for generating Pareto front
     ###################################################################################################
     ###################################################################################################
     ### Byproduct valorization

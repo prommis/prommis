@@ -18,15 +18,13 @@ from idaes.core.util.model_statistics import (
 from idaes.core.util import DiagnosticsToolbox
 
 
-
 ### OPEX parameters for iron valorization
 # 10 $/kg of jarosite processed
 jaro_opex_param = 0.691 * 2.893 * 10
 
 # 5 $/kg of iron hydroxide processed
-AFDE_iron_hydrox_opex_param = 0.4740183804 * 1.914 * 5 # AFDE Process
-Sel_Leach_iron_hydrox_opex_param = 0.691 * 1.914 * 5 # Selective Leaching Process
-
+AFDE_iron_hydrox_opex_param = 0.4740183804 * 1.914 * 5  # AFDE Process
+Sel_Leach_iron_hydrox_opex_param = 0.691 * 1.914 * 5  # Selective Leaching Process
 
 
 Discretized_CAPEX = {
@@ -491,7 +489,7 @@ Discretized_CAPEX = {
 m = build_model(
     ###################################################################################################
     ### Plant Lifetime Parameters
-    plant_start=2024, # start of plant production
+    plant_start=2024,  # start of plant production
     plant_lifetime=15,  # lifetime of plant
     ###################################################################################################
     ###################################################################################################
@@ -514,19 +512,19 @@ m = build_model(
         2038: 1697805,
     },
     # collection rate for how much of the available feed is processed by the plant each year
-    CR=0.1, 
+    CR=0.1,
     Tracked_comps=["Nd", "Dy", "Fe"],  # tracked components
     # mass of tracked component per EOL Product (kg component / EOL product)
     Prod_comp_mass={
         "Nd": 0.206 * 3,
         "Dy": 0.103 * 3,
         "Fe": 0.691 * 3,
-    }, 
+    },
     ###################################################################################################
     ###################################################################################################
     ### Superstructure formulation parameters
-    numStages=5, # number of total stages
-    Options_in_stage={1: 2, 2: 4, 3: 6, 4: 4, 5: 5}, # number of options in each stage
+    numStages=5,  # number of total stages
+    Options_in_stage={1: 2, 2: 4, 3: 6, 4: 4, 5: 5},  # number of options in each stage
     # set of options k' in stage j+1 connected to option k in stage j
     Option_outlets={
         # level 1
@@ -597,33 +595,33 @@ m = build_model(
         (5, 3): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
         (5, 4): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
         (5, 5): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
-    }, 
+    },
     # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
     # OPEX = a*F_in + b*y
-    N_OC_var={ 
+    N_OC_var={
         # level 2
-        (2, 1): {"a": 0.0053, "b": 7929.7}, 
-        (2, 2): {"a": 0.0015, "b": 2233.16}, 
-        (2, 3): {"a": 0.0034, "b": 0}, 
-        (2, 4): {"a": 0.0117, "b": 0}, 
+        (2, 1): {"a": 0.0053, "b": 7929.7},
+        (2, 2): {"a": 0.0015, "b": 2233.16},
+        (2, 3): {"a": 0.0034, "b": 0},
+        (2, 4): {"a": 0.0117, "b": 0},
         # level 3
         (3, 1): {"a": 15.594, "b": 4e6},
         (3, 2): {"a": 35.58463, "b": 4e6},
         (3, 3): {"a": 1.8359, "b": 0},
-        (3, 4): {"a": 3.7414, "b": 2378.6}, 
+        (3, 4): {"a": 3.7414, "b": 2378.6},
         (3, 5): {"a": 10.35427, "b": 2378.6},
-        (3, 6): {"a": 1.58, "b": 0},  
+        (3, 6): {"a": 1.58, "b": 0},
         # level 4
-        (4, 1): {"a": 0, "b": 0}, 
-        (4, 2): {"a": 111.09, "b": 254606},  
-        (4, 3): {"a": 0, "b": 0},  
-        (4, 4): {"a": 0, "b": 0},  
+        (4, 1): {"a": 0, "b": 0},
+        (4, 2): {"a": 111.09, "b": 254606},
+        (4, 3): {"a": 0, "b": 0},
+        (4, 4): {"a": 0, "b": 0},
         # level 5
         (5, 1): {"a": 0.4997, "b": 89832},
-        (5, 2): {"a": 9.8127, "b": 964921}, 
-        (5, 3): {"a": 9.8127, "b": 964921},  
-        (5, 4): {"a": 2.17, "b": 0},  
-        (5, 5): {"a": 6.7063559004, "b": 0},  
+        (5, 2): {"a": 9.8127, "b": 964921},
+        (5, 3): {"a": 9.8127, "b": 964921},
+        (5, 4): {"a": 2.17, "b": 0},
+        (5, 5): {"a": 6.7063559004, "b": 0},
     },
     # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
     num_workers={
@@ -648,13 +646,13 @@ m = build_model(
         (5, 3): 0.75,
         (5, 4): 1.15,
         (5, 5): 1.15,
-    }, 
+    },
     labor_rate=8000 * 38.20,  # yearly wage per type of labor
     # yearly operating costs per unit ($/unit*yr)
     YCU={
         (1, 1): 0,
         (1, 2): 280,
-    }, 
+    },
     # cost per disassembly stage unit for each disassembly option
     CU={
         (1, 1): 0,
@@ -669,17 +667,17 @@ m = build_model(
     ###################################################################################################
     ### Costing Parameters
     LF=2.97,  # Lang Factor
-    TOC_factor=1.177, # Overnight costs factor
+    TOC_factor=1.177,  # Overnight costs factor
     ATWACC=0.0577,  # discount rate. (default of 5.77%)
     i_OC_esc=0.03,  # opex, revenue (default of 3%)
     i_CAP_esc=0.036,  # capex escalation rate (default of 3.6%)
     f_exp=[0.1, 0.6, 0.3],  # capital expenditure schedule (default of 10%, 60%, 30%)
     # Define Python Dictionary with discretized cost by flows for each option.
-    Discretized_CAPEX=Discretized_CAPEX, 
+    Discretized_CAPEX=Discretized_CAPEX,
     ###################################################################################################
     ###################################################################################################
     # Choice of objective function. Options are 'NPV' or 'COR'.capitalize
-    obj_func='NPV',
+    obj_func="NPV",
     # conversion of kg REE/Fe to kg REO/Fe2O3
     REE_to_REO_Conversion={"Nd": 1.664, "Dy": 1.147, "Fe": 1.43},
     ###################################################################################################
@@ -691,31 +689,27 @@ m = build_model(
     environ_impacts={
         (1, 1): 0,
         (1, 2): 1000,
-
         (2, 1): 0,
         (2, 2): 1000,
         (2, 3): 600,
         (2, 4): 800,
-
         (3, 1): 600,
         (3, 2): 0,
         (3, 3): 600,
         (3, 4): 800,
         (3, 5): 800,
         (3, 6): 1000,
-
         (4, 1): 0,
         (4, 2): 800,
         (4, 3): 600,
         (4, 4): 1000,
-
         (5, 1): 0,
         (5, 2): 800,
         (5, 3): 600,
         (5, 4): 800,
         (5, 5): 1000,
     },
-    epsilon=1, # epsilon factor for generating Pareto front
+    epsilon=1,  # epsilon factor for generating Pareto front
     ###################################################################################################
     ###################################################################################################
     ### Byproduct valorization

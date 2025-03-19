@@ -6,12 +6,7 @@
 #####################################################################################################
 import copy
 import math
-from pyomo.environ import (
-    assert_optimal_termination, 
-    ConcreteModel, 
-    RangeSet,
-    value
-)
+from pyomo.environ import assert_optimal_termination, ConcreteModel, RangeSet, value
 
 import sys
 
@@ -27,13 +22,14 @@ from idaes.core.util.model_statistics import (
 
 from prommis.superstructures.version2.superstructure_v2 import build_model, solve_model
 
+
 @pytest.fixture(scope="module")
 def get_common_params():
     return {
         ###################################################################################################
         ### Plant Lifetime Parameters
-        "plant_start": 2024, # start of plant production
-        "plant_lifetime": 15, # lifetime of plant
+        "plant_start": 2024,  # start of plant production
+        "plant_lifetime": 15,  # lifetime of plant
         ###################################################################################################
         ###################################################################################################
         ### Feed parameters
@@ -56,18 +52,24 @@ def get_common_params():
         },
         # collection rate for how much of the available feed is processed by the plant each year
         "CR": 0.1,
-        "Tracked_comps": ["Nd", "Dy", "Fe"], # tracked components
+        "Tracked_comps": ["Nd", "Dy", "Fe"],  # tracked components
         # mass of tracked component per EOL Product (kg component / EOL product)
         "Prod_comp_mass": {
             "Nd": 0.206 * 3,
             "Dy": 0.103 * 3,
             "Fe": 0.691 * 3,
-        }, 
+        },
         ###################################################################################################
         ###################################################################################################
         ### Superstructure formulation parameters
-        "numStages": 5, # number of total stages
-        "Options_in_stage": {1: 2, 2: 4, 3: 6, 4: 4, 5: 5}, # number of options in each stage
+        "numStages": 5,  # number of total stages
+        "Options_in_stage": {
+            1: 2,
+            2: 4,
+            3: 6,
+            4: 4,
+            5: 5,
+        },  # number of options in each stage
         # set of options k' in stage j+1 connected to option k in stage j
         "Option_outlets": {
             # level 1
@@ -114,7 +116,11 @@ def get_common_params():
             (4, 3): {"Nd": 1, "Dy": 1, "Fe": 1},
             (4, 4): {"Nd": 1, "Dy": 1, "Fe": 1},
             # level 5 yields
-            (5, 1): {"Nd": 1, "Dy": 1, "Fe": 0},  # grouped together with hydrom. extrac.
+            (5, 1): {
+                "Nd": 1,
+                "Dy": 1,
+                "Fe": 0,
+            },  # grouped together with hydrom. extrac.
             (5, 2): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
             (5, 3): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
             (5, 4): {
@@ -143,30 +149,30 @@ def get_common_params():
         "REE_to_REO_Conversion": {"Nd": 1.664, "Dy": 1.147, "Fe": 1.43},
         # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
         # OPEX = a*F_in + b*y
-        "N_OC_var": { 
+        "N_OC_var": {
             # level 2
-            (2, 1): {"a": 0.0053, "b": 7929.7}, 
-            (2, 2): {"a": 0.0015, "b": 2233.16}, 
-            (2, 3): {"a": 0.0034, "b": 0}, 
-            (2, 4): {"a": 0.0117, "b": 0}, 
+            (2, 1): {"a": 0.0053, "b": 7929.7},
+            (2, 2): {"a": 0.0015, "b": 2233.16},
+            (2, 3): {"a": 0.0034, "b": 0},
+            (2, 4): {"a": 0.0117, "b": 0},
             # level 3
             (3, 1): {"a": 15.594, "b": 4e6},
             (3, 2): {"a": 35.58463, "b": 4e6},
             (3, 3): {"a": 1.8359, "b": 0},
-            (3, 4): {"a": 3.7414, "b": 2378.6}, 
+            (3, 4): {"a": 3.7414, "b": 2378.6},
             (3, 5): {"a": 10.35427, "b": 2378.6},
-            (3, 6): {"a": 1.58, "b": 0},  
+            (3, 6): {"a": 1.58, "b": 0},
             # level 4
-            (4, 1): {"a": 0, "b": 0}, 
-            (4, 2): {"a": 111.09, "b": 254606},  
-            (4, 3): {"a": 0, "b": 0},  
-            (4, 4): {"a": 0, "b": 0},  
+            (4, 1): {"a": 0, "b": 0},
+            (4, 2): {"a": 111.09, "b": 254606},
+            (4, 3): {"a": 0, "b": 0},
+            (4, 4): {"a": 0, "b": 0},
             # level 5
             (5, 1): {"a": 0.4997, "b": 89832},
-            (5, 2): {"a": 9.8127, "b": 964921}, 
-            (5, 3): {"a": 9.8127, "b": 964921},  
-            (5, 4): {"a": 2.17, "b": 0},  
-            (5, 5): {"a": 6.7063559004, "b": 0},  
+            (5, 2): {"a": 9.8127, "b": 964921},
+            (5, 3): {"a": 9.8127, "b": 964921},
+            (5, 4): {"a": 2.17, "b": 0},
+            (5, 5): {"a": 6.7063559004, "b": 0},
         },
         # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
         "num_workers": {
@@ -192,12 +198,12 @@ def get_common_params():
             (5, 4): 1.15,
             (5, 5): 1.15,
         },
-        "labor_rate": 8000 * 38.20, # yearly wage per type of labor
+        "labor_rate": 8000 * 38.20,  # yearly wage per type of labor
         # yearly operating costs per unit ($/unit*yr)
         "YCU": {
             (1, 1): 0,
             (1, 2): 280,
-        }, 
+        },
         # cost per disassembly stage unit for each disassembly option
         "CU": {
             (1, 1): 0,
@@ -211,12 +217,16 @@ def get_common_params():
         ###################################################################################################
         ###################################################################################################
         ### Costing Parameters
-        "LF": 2.97, # Lang Factor
-        "TOC_factor": 1.177, # Overnight costs factor
-        "ATWACC": 0.0577, # discount rate. (default of 5.77%)
-        "i_OC_esc": 0.03, # opex, revenue (default of 3%)
-        "i_CAP_esc": 0.036, # capex escalation rate (default of 3.6%)
-        "f_exp": [0.1, 0.6, 0.3], # capital expenditure schedule (default of 10%, 60%, 30%)
+        "LF": 2.97,  # Lang Factor
+        "TOC_factor": 1.177,  # Overnight costs factor
+        "ATWACC": 0.0577,  # discount rate. (default of 5.77%)
+        "i_OC_esc": 0.03,  # opex, revenue (default of 3%)
+        "i_CAP_esc": 0.036,  # capex escalation rate (default of 3.6%)
+        "f_exp": [
+            0.1,
+            0.6,
+            0.3,
+        ],  # capital expenditure schedule (default of 10%, 60%, 30%)
         # Define Python Dictionary with discretized cost by flows for each option.
         "Discretized_CAPEX": {
             "(2, 1)": {
@@ -682,31 +692,27 @@ def get_common_params():
         "environ_impacts": {
             (1, 1): 0,
             (1, 2): 1000,
-
             (2, 1): 0,
             (2, 2): 1000,
             (2, 3): 600,
             (2, 4): 800,
-
             (3, 1): 600,
             (3, 2): 0,
             (3, 3): 600,
             (3, 4): 800,
             (3, 5): 800,
             (3, 6): 1000,
-
             (4, 1): 0,
             (4, 2): 800,
             (4, 3): 600,
             (4, 4): 1000,
-
             (5, 1): 0,
             (5, 2): 800,
             (5, 3): 600,
             (5, 4): 800,
             (5, 5): 1000,
         },
-        "epsilon": 1, # epsilon factor for generating Pareto front
+        "epsilon": 1,  # epsilon factor for generating Pareto front
         ###################################################################################################
         ###################################################################################################
         ### Byproduct valorization
@@ -746,7 +752,7 @@ def get_common_params():
             "Iron oxide": 1.430,
             "Residue": 1,
             "Iron hydroxide": 1.914,
-        }
+        },
     }
 
 
@@ -757,7 +763,7 @@ class TestNPV(object):
         m = build_model(
             ###################################################################################################
             ### Plant Lifetime Parameters
-            plant_start=common_params["plant_start"], # start of plant production
+            plant_start=common_params["plant_start"],  # start of plant production
             plant_lifetime=common_params["plant_lifetime"],  # lifetime of plant
             ###################################################################################################
             ###################################################################################################
@@ -765,34 +771,38 @@ class TestNPV(object):
             # Total feedstock available for recycling each year
             Available_feed=common_params["Available_feed"],
             # collection rate for how much of the available feed is processed by the plant each year
-            CR=common_params["CR"], 
+            CR=common_params["CR"],
             Tracked_comps=common_params["Tracked_comps"],  # tracked components
             # mass of tracked component per EOL Product (kg component / EOL product)
             Prod_comp_mass=common_params["Prod_comp_mass"],
             ###################################################################################################
             ###################################################################################################
             ### Superstructure formulation parameters
-            numStages=common_params["numStages"], # number of total stages
-            Options_in_stage=common_params["Options_in_stage"], # number of options in each stage
+            numStages=common_params["numStages"],  # number of total stages
+            Options_in_stage=common_params[
+                "Options_in_stage"
+            ],  # number of options in each stage
             # set of options k' in stage j+1 connected to option k in stage j
-            Option_outlets=common_params["Option_outlets"],  # set of options k' in stage j+1 connected to option k in stage j
+            Option_outlets=common_params[
+                "Option_outlets"
+            ],  # set of options k' in stage j+1 connected to option k in stage j
             # dictionary of tracked component retention efficiency for each option
             Option_Eff=common_params["Option_Eff"],
             ###################################################################################################
             ###################################################################################################
             ### Operating Parameters
             # profit per kg of product in terms of tracked components
-            Profit=common_params["Profit"], 
+            Profit=common_params["Profit"],
             # conversion of kg REE/Fe to kg REO/Fe2O3
             REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
             # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
             # OPEX = a*F_in + b*y
             N_OC_var=common_params["N_OC_var"],
             # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
-            num_workers=common_params["num_workers"], 
+            num_workers=common_params["num_workers"],
             labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
             # yearly operating costs per unit ($/unit*yr)
-            YCU=common_params["YCU"], 
+            YCU=common_params["YCU"],
             # cost per disassembly stage unit for each disassembly option
             CU=common_params["CU"],
             # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
@@ -801,17 +811,21 @@ class TestNPV(object):
             ###################################################################################################
             ### Costing Parameters
             LF=common_params["LF"],  # Lang Factor
-            TOC_factor=common_params["TOC_factor"], # Overnight costs factor
+            TOC_factor=common_params["TOC_factor"],  # Overnight costs factor
             ATWACC=common_params["ATWACC"],  # discount rate. (default of 5.77%)
             i_OC_esc=common_params["i_OC_esc"],  # opex, revenue (default of 3%)
-            i_CAP_esc=common_params["i_CAP_esc"],  # capex escalation rate (default of 3.6%)
-            f_exp=common_params["f_exp"],  # capital expenditure schedule (default of 10%, 60%, 30%)
+            i_CAP_esc=common_params[
+                "i_CAP_esc"
+            ],  # capex escalation rate (default of 3.6%)
+            f_exp=common_params[
+                "f_exp"
+            ],  # capital expenditure schedule (default of 10%, 60%, 30%)
             # Define Python Dictionary with discretized cost by flows for each option.
-            Discretized_CAPEX=common_params["Discretized_CAPEX"], 
+            Discretized_CAPEX=common_params["Discretized_CAPEX"],
             ###################################################################################################
             ###################################################################################################
             ### Choice of objective function. Options are 'NPV' or 'COR'.capitalize
-            obj_func='NPV',
+            obj_func="NPV",
             ###################################################################################################
             ###################################################################################################
             ### Consideration of environmental impacts parameters
@@ -819,7 +833,9 @@ class TestNPV(object):
             consider_environ_impacts=False,
             # environmental impacts matrix (kg CO2e per kg incoming flowrate)
             environ_impacts=common_params["environ_impacts"],
-            epsilon=common_params["epsilon"], # epsilon factor for generating Pareto front
+            epsilon=common_params[
+                "epsilon"
+            ],  # epsilon factor for generating Pareto front
             ###################################################################################################
             ###################################################################################################
             ### Byproduct valorization
@@ -856,7 +872,9 @@ class TestNPV(object):
         # start of plant production
         prod_start = get_common_params["plant_start"] + 1
         # final year plant is in production
-        plant_end = get_common_params["plant_start"] + get_common_params["plant_lifetime"] - 1 
+        plant_end = (
+            get_common_params["plant_start"] + get_common_params["plant_lifetime"] - 1
+        )
         # plant operational period
         operational_range = RangeSet(prod_start, plant_end)
 
@@ -868,9 +886,3 @@ class TestNPV(object):
             assert pytest.approx(Available_feed[t] * CR, abs=1e-8) == value(
                 NPV_model.plantYear[t].P_entering
             )
-
-        
-
-        
-
-

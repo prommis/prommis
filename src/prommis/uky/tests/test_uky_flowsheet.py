@@ -18,7 +18,6 @@ from pyomo.environ import (
 from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
-from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
@@ -843,8 +842,8 @@ def test_costing_initialize(system_frame):
 @pytest.mark.solver
 def test_costing_solve(system_frame):
     model = system_frame
-    solver = get_solver()
-    solver.solve(model, tee=True)
+    results = solve_system(model)
+    assert_optimal_termination(results)
 
 
 @pytest.mark.component

@@ -164,6 +164,7 @@ from idaes.core import (
 from idaes.core.initialization import BlockTriangularizationInitializer
 from idaes.core.scaling.scaling_base import ScalerBase
 from idaes.core.solvers import get_solver
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
@@ -251,6 +252,20 @@ def main():
     display_results(m)
 
     add_costing(m)
+
+    # diagnostics, initialize, and solve
+
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+
+    solve_system(m)
+
+    dt.assert_no_numerical_warnings()
+
     display_costing(m)
 
     return m, results

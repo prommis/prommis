@@ -245,7 +245,9 @@ def build_model(
             for k in num_options:
                 for c in b.KeyComps:
                     a = Option_Eff[(j, k)][c]
-                    b.intermediate_flow_cons.add(expr=b.F_in[j, k, c] * a == b.F_out[j, k, c])
+                    b.intermediate_flow_cons.add(
+                        expr=b.F_in[j, k, c] * a == b.F_out[j, k, c]
+                    )
 
         ### Calculation of yearly byproducts produced
         # only if user specifies this

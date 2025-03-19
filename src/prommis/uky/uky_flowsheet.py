@@ -2555,7 +2555,7 @@ def add_costing(m):
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": reep_roaster_accounts,
-            "scaled_param": m.fs.roaster.heat_duty[0],
+            "scaled_param": abs(m.fs.roaster.heat_duty[0]),
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,

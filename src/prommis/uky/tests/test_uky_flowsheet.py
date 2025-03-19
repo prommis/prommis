@@ -827,8 +827,6 @@ def test_costing(system_frame):
 def test_costing_diagnostics(system_frame):
     model = system_frame
     dt = DiagnosticsToolbox(model)
-    dt.report_structural_issues()
-    dt.display_potential_evaluation_errors()
     dt.assert_no_structural_warnings()
 
 

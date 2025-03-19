@@ -310,7 +310,7 @@ class SolventExtractionReactionsData(ProcessBlockData):
 
     def build(self):
         """
-        Reaction block for leaching of West Kentucky No. 13 coal refuse in H2SO4.
+        Reaction block for solvent extraction of rare earth elements.
 
         """
         super().build()

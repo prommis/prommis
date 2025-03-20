@@ -126,9 +126,9 @@ Precipitator solid-liquid separator liquid recycle split fraction     0.9       
 
 Costing
 -------
-Unit model costing in this flowsheet is preliminary and is based on the commercial scale unit model parameters provided in Table 4-28 :math:`^1`.
-However, this flowsheet is at the pilot scale, so while some of the unit model costing parameters have been scaled down
-accordingly, a more robust scale-down procedure of the costing parameters is necessary to accurately approximate the cost of this pilot scale system.
+Unit model costing in this flowsheet is based on the commercial scale unit model parameters provided in Table 4-28 :math:`^1`.
+The reference cost and capacity parameter data from [1] are at commericial scale. As this flowsheet is at the pilot scale, some
+of the unit model capacity parameters have been scaled down accordingly by unit feed rate.
 
 
 References:
@@ -2240,13 +2240,14 @@ def add_costing(m):
     # Solvent extraction costs
     # 5.1 is UKy Rougher Solvent Extraction - Polyethylene Tanks
     RSX_pe_tanks_accounts = ["5.1"]
-    m.fs.solex_rougher_load.volume = Var(
+    m.fs.rougher_solex_tank = UnitModelBlock()
+    m.fs.rougher_solex_tank.volume = Var(
         initialize=35.136, units=units.gal, bounds=(0, None)
     )
 
-    @m.fs.solex_rougher_load.Constraint(RSX_pe_tanks_accounts)
+    @m.fs.rougher_solex_tank.Constraint(RSX_pe_tanks_accounts)
     def volume_scaling_constraint(c, k):
-        return m.fs.solex_rougher_load.volume == units.convert(
+        return m.fs.rougher_solex_tank.volume == units.convert(
             REE_costing_params["1"][k]["RP Value"]
             * units.gal
             * (
@@ -2256,12 +2257,12 @@ def add_costing(m):
             to_units=units.gal,
         )
 
-    m.fs.solex_rougher_load.costing = UnitModelCostingBlock(
+    m.fs.rougher_solex_tank.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": RSX_pe_tanks_accounts,
-            "scaled_param": m.fs.solex_rougher_load.volume,
+            "scaled_param": m.fs.rougher_solex_tank.volume,
             "source": 1,
             "n_equip": 6,
             "scale_down_parallel_equip": False,
@@ -2318,13 +2319,14 @@ def add_costing(m):
 
     # 5.4 is UKy Rougher Solvent Extraction - Mixer Settler
     RSX_mixer_settler_accounts = ["5.4"]
-    m.fs.solex_rougher_strip.volume = Var(
+    m.fs.rougher_solex_settler = UnitModelBlock()
+    m.fs.rougher_solex_settler.volume = Var(
         initialize=61.107, units=units.gal, bounds=(0, None)
     )
 
-    @m.fs.solex_rougher_strip.Constraint(RSX_mixer_settler_accounts)
+    @m.fs.rougher_solex_settler.Constraint(RSX_mixer_settler_accounts)
     def volume_scaling_constraint(c, k):
-        return m.fs.solex_rougher_strip.volume == units.convert(
+        return m.fs.rougher_solex_settler.volume == units.convert(
             REE_costing_params["1"][k]["RP Value"]
             * units.gal
             * (
@@ -2334,12 +2336,12 @@ def add_costing(m):
             to_units=units.gal,
         )
 
-    m.fs.solex_rougher_strip.costing = UnitModelCostingBlock(
+    m.fs.rougher_solex_settler.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": RSX_mixer_settler_accounts,
-            "scaled_param": m.fs.solex_rougher_strip.volume,
+            "scaled_param": m.fs.rougher_solex_settler.volume,
             "source": 1,
             "n_equip": 6,
             "scale_down_parallel_equip": False,
@@ -2349,13 +2351,14 @@ def add_costing(m):
 
     # 6.1 is UKy Cleaner Solvent Extraction - Polyethylene Tanks
     CSX_pe_tanks_accounts = ["6.1"]
-    m.fs.solex_cleaner_load.volume = Var(
+    m.fs.cleaner_solex_tank = UnitModelBlock()
+    m.fs.cleaner_solex_tank.volume = Var(
         initialize=14.05, units=units.gal, bounds=(0, None)
     )
 
-    @m.fs.solex_cleaner_load.Constraint(CSX_pe_tanks_accounts)
+    @m.fs.cleaner_solex_tank.Constraint(CSX_pe_tanks_accounts)
     def volume_scaling_constraint(c, k):
-        return m.fs.solex_cleaner_load.volume == units.convert(
+        return m.fs.cleaner_solex_tank.volume == units.convert(
             REE_costing_params["1"][k]["RP Value"]
             * units.gal
             * (
@@ -2365,12 +2368,12 @@ def add_costing(m):
             to_units=units.gal,
         )
 
-    m.fs.solex_cleaner_load.costing = UnitModelCostingBlock(
+    m.fs.cleaner_solex_tank.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": CSX_pe_tanks_accounts,
-            "scaled_param": m.fs.solex_cleaner_load.volume,
+            "scaled_param": m.fs.cleaner_solex_tank.volume,
             "source": 1,
             "n_equip": 5,
             "scale_down_parallel_equip": False,
@@ -2427,13 +2430,14 @@ def add_costing(m):
 
     # 6.4 is UKy Cleaner Solvent Extraction - Mixer Settler
     CSX_mixer_settler_accounts = ["6.4"]
-    m.fs.solex_cleaner_strip.volume = Var(
+    m.fs.cleaner_solex_settler = UnitModelBlock()
+    m.fs.cleaner_solex_settler.volume = Var(
         initialize=24.44, units=units.gal, bounds=(0, None)
     )
 
-    @m.fs.solex_cleaner_strip.Constraint(CSX_mixer_settler_accounts)
+    @m.fs.cleaner_solex_settler.Constraint(CSX_mixer_settler_accounts)
     def volume_scaling_constraint(c, k):
-        return m.fs.solex_cleaner_strip.volume == units.convert(
+        return m.fs.cleaner_solex_settler.volume == units.convert(
             REE_costing_params["1"][k]["RP Value"]
             * units.gal
             * (
@@ -2443,12 +2447,12 @@ def add_costing(m):
             to_units=units.gal,
         )
 
-    m.fs.solex_cleaner_strip.costing = UnitModelCostingBlock(
+    m.fs.cleaner_solex_settler.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": CSX_mixer_settler_accounts,
-            "scaled_param": m.fs.solex_cleaner_strip.volume,
+            "scaled_param": m.fs.cleaner_solex_settler.volume,
             "source": 1,
             "n_equip": 6,
             "scale_down_parallel_equip": False,
@@ -2486,7 +2490,7 @@ def add_costing(m):
         },
     )
 
-    # 10.2 is UKy Oxalate Precipitation - Tank Mixer # TODO here
+    # 10.2 is UKy Oxalate Precipitation - Tank Mixer
     reep_tank_mixer_accounts = ["10.2"]
     m.fs.precipitator_mixer = UnitModelBlock()
     m.fs.precipitator_mixer.power = Var(

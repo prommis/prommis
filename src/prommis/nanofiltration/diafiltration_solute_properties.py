@@ -10,18 +10,15 @@ Property package for the diafiltration cascade.
 Author: Molly Dougher
 """
 
-from pyomo.environ import (
-    Param,
-    units,
-    Var,
-)
+from pyomo.environ import Param, Var, units
+
 from idaes.core import (
     Component,
-    declare_process_block_class,
     MaterialFlowBasis,
     PhysicalParameterBlock,
     StateBlock,
     StateBlockData,
+    declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
 

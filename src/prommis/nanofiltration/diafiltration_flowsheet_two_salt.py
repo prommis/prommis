@@ -24,15 +24,17 @@ from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pandas import DataFrame
+from seaborn import heatmap
 
-
-from diafiltration_two_salt import TwoSaltDiafiltration
-from diafiltration_solute_properties import SoluteParameter
+from prommis.nanofiltration.diafiltration_solute_properties import SoluteParameter
+from prommis.nanofiltration.diafiltration_two_salt import TwoSaltDiafiltration
 
 
 def main():
+    """
+    Builds and solves flowsheet with two-salt diafiltration unit model.
+    """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties = SoluteParameter()
@@ -68,6 +70,12 @@ def main():
 
 
 def build_membrane_parameters(m):
+    """
+    Adds paramenters needed to build two salt diafiltration unit model.
+
+    Args:
+        m: Pyomo model
+    """
 
     m.membrane_thickness = Param(
         initialize=1e-7,
@@ -127,6 +135,12 @@ def build_membrane_parameters(m):
 
 
 def solve_model(m):
+    """
+    Solves scaled model.
+
+    Args:
+        m: Pyomo model
+    """
     set_scaling(m)
     scaling = TransformationFactory("core.scale_model")
     scaled_model = scaling.create_using(m, rename=False)
@@ -176,6 +190,12 @@ def set_scaling(m):
 
 
 def plot_results(m):
+    """
+    Plots concentration and flux variables across the length of the membrane module.
+
+    Args:
+        m: Pyomo model
+    """
     x_plot = []
     conc_ret_lith = []
     conc_perm_lith = []
@@ -239,6 +259,12 @@ def plot_results(m):
 
 
 def plot_membrane_results(m):
+    """
+    Plots concentrations within the membrane.
+
+    Args:
+        m: Pyomo model
+    """
     x_vals = []
     z_vals = []
 
@@ -279,7 +305,7 @@ def plot_membrane_results(m):
     c_chl_mem_df = DataFrame(index=x_vals, data=c_chl_mem_dict)
 
     figs, (ax1, ax2, ax3) = plt.subplots(1, 3, dpi=125, figsize=(15, 7))
-    sns.heatmap(
+    heatmap(
         ax=ax1,
         data=c_lith_mem_df,
         cmap="mako",
@@ -293,7 +319,7 @@ def plot_membrane_results(m):
     )
     ax1.tick_params(direction="in", labelsize=10)
 
-    sns.heatmap(
+    heatmap(
         ax=ax2,
         data=c_cob_mem_df,
         cmap="mako",
@@ -307,7 +333,7 @@ def plot_membrane_results(m):
     )
     ax2.tick_params(direction="in", labelsize=10)
 
-    sns.heatmap(
+    heatmap(
         ax=ax3,
         data=c_chl_mem_df,
         cmap="mako",

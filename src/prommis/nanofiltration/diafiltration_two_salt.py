@@ -31,23 +31,16 @@ Variables
 """
 
 from pyomo.common.config import ConfigBlock, ConfigValue
-
-from pyomo.dae import (
-    ContinuousSet,
-    DerivativeVar,
-)
+from pyomo.dae import ContinuousSet, DerivativeVar
 from pyomo.environ import (
     Constraint,
     NonNegativeReals,
     TransformationFactory,
-    units,
     Var,
+    units,
 )
-from idaes.core import (
-    declare_process_block_class,
-    UnitModelBlockData,
-    useDefault,
-)
+
+from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.constants import Constants
 

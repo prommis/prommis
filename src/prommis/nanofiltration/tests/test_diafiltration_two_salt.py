@@ -16,7 +16,6 @@ from pyomo.environ import (
     TransformationFactory,
     assert_optimal_termination,
     units,
-    value,
 )
 from pyomo.util.check_units import assert_units_consistent
 
@@ -122,7 +121,7 @@ def test_config(diafiltration_two_salt):
     assert not diafiltration_two_salt.fs.unit.config.dynamic
     assert not diafiltration_two_salt.fs.unit.config.has_holdup
 
-    # TODO: add additional relevent assertions
+    # TODO: add additional relevant assertions
 
 
 class TestDiafiltrationTwoSalt(object):
@@ -130,7 +129,7 @@ class TestDiafiltrationTwoSalt(object):
     @pytest.mark.unit
     def test_build(self, diafiltration_two_salt):
         assert hasattr(diafiltration_two_salt.fs.unit, "volume_flux_water")
-        # TODO: add additional relevent assertions
+        # TODO: add additional relevant assertions
 
     @pytest.mark.component
     def test_diagnostics(self, diafiltration_two_salt):

@@ -25,7 +25,8 @@ from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 import matplotlib.pyplot as plt
 from pandas import DataFrame
-from seaborn import heatmap
+
+# from seaborn import heatmap
 
 from prommis.nanofiltration.diafiltration_solute_properties import SoluteParameter
 from prommis.nanofiltration.diafiltration_two_salt import TwoSaltDiafiltration
@@ -71,7 +72,7 @@ def main():
 
 def build_membrane_parameters(m):
     """
-    Adds paramenters needed to build two salt diafiltration unit model.
+    Adds parameters needed to build two salt diafiltration unit model.
 
     Args:
         m: Pyomo model
@@ -304,48 +305,31 @@ def plot_membrane_results(m):
     c_cob_mem_df = DataFrame(index=x_vals, data=c_cob_mem_dict)
     c_chl_mem_df = DataFrame(index=x_vals, data=c_chl_mem_dict)
 
-    figs, (ax1, ax2, ax3) = plt.subplots(1, 3, dpi=125, figsize=(15, 7))
-    heatmap(
-        ax=ax1,
-        data=c_lith_mem_df,
-        cmap="mako",
-    )
-    ax1.tick_params(axis="x", labelrotation=45)
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, dpi=125, figsize=(15, 7))
+    lithium_plot = ax1.pcolor(c_lith_mem_df, cmap="viridis")
     ax1.set_xlabel("z (dimensionless)", fontsize=10, fontweight="bold")
     ax1.set_ylabel("x (dimensionless)", fontsize=10, fontweight="bold")
-    ax1.invert_yaxis()
     ax1.set_title(
         "Lithium Concentration\n in Membrane (kg/m3)", fontsize=10, fontweight="bold"
     )
     ax1.tick_params(direction="in", labelsize=10)
+    fig.colorbar(lithium_plot, ax=ax1)
 
-    heatmap(
-        ax=ax2,
-        data=c_cob_mem_df,
-        cmap="mako",
-    )
-    ax2.tick_params(axis="x", labelrotation=45)
+    cobalt_plot = ax2.pcolor(c_cob_mem_df, cmap="viridis")
     ax2.set_xlabel("z (dimensionless)", fontsize=10, fontweight="bold")
-    # ax2.set_ylabel("x (dimensionless)", fontsize=10, fontweight="bold")
-    ax2.invert_yaxis()
     ax2.set_title(
         "Cobalt Concentration\n in Membrane (kg/m3)", fontsize=10, fontweight="bold"
     )
     ax2.tick_params(direction="in", labelsize=10)
+    fig.colorbar(cobalt_plot, ax=ax2)
 
-    heatmap(
-        ax=ax3,
-        data=c_chl_mem_df,
-        cmap="mako",
-    )
-    ax3.tick_params(axis="x", labelrotation=45)
+    chlorine_plot = ax3.pcolor(c_chl_mem_df, cmap="viridis")
     ax3.set_xlabel("z (dimensionless)", fontsize=10, fontweight="bold")
-    # ax3.set_ylabel("x (dimensionless)", fontsize=10, fontweight="bold")
-    ax3.invert_yaxis()
     ax3.set_title(
         "Chlorine Concentration\n in Membrane (kg/m3)", fontsize=10, fontweight="bold"
     )
     ax3.tick_params(direction="in", labelsize=10)
+    fig.colorbar(chlorine_plot, ax=ax3)
 
     plt.show()
 

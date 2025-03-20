@@ -127,7 +127,7 @@ Precipitator solid-liquid separator liquid recycle split fraction     0.9       
 Costing
 -------
 Unit model costing in this flowsheet is based on the commercial scale unit model parameters provided in Table 4-28 :math:`^1`.
-The reference cost and capacity parameter data from [1] are at commericial scale. As this flowsheet is at the pilot scale, some
+The reference cost and capacity parameter data from [1] are at commercial scale. As this flowsheet is at the pilot scale, some
 of the unit model capacity parameters have been scaled down accordingly by unit feed rate.
 
 

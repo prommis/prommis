@@ -5,6 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 import pytest
+
 # import copy
 import math
 from pyomo.environ import (
@@ -1116,5 +1117,3 @@ class TestNPV(object):
                                 ),
                                 abs=1e-8,
                             ) == value(NPV_model.plantYear[t].F_out[j, k, c])
-
-        

@@ -1,12 +1,8 @@
-import copy
+# import copy
 import math
-import pyomo.environ as pyo
-from pyomo.core.base.var import IndexedVar
-
 # for throwing errors
-import sys
-
-from prommis.superstructures.version2.superstructure_v2 import build_model, solve_model
+# import sys
+import pyomo.environ as pyo
 
 # model statistics
 from idaes.core.util.model_statistics import (
@@ -16,7 +12,9 @@ from idaes.core.util.model_statistics import (
     degrees_of_freedom,
 )
 
-from idaes.core.util import DiagnosticsToolbox
+# from idaes.core.util import DiagnosticsToolbox
+
+from prommis.superstructures.version2.superstructure_v2 import build_model
 
 
 ### OPEX parameters for iron valorization

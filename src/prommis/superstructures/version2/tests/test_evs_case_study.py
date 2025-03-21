@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 import pytest
-import copy
+# import copy
 import math
 from pyomo.environ import (
     assert_optimal_termination,
@@ -19,7 +19,7 @@ from pyomo.environ import (
     Objective,
 )
 
-import sys
+# import sys
 
 # model statistics
 from idaes.core.util.model_statistics import (
@@ -29,7 +29,7 @@ from idaes.core.util.model_statistics import (
     degrees_of_freedom,
 )
 
-from prommis.superstructures.version2.superstructure_v2 import build_model, solve_model
+from prommis.superstructures.version2.superstructure_v2 import build_model
 
 
 solver = SolverFactory("gurobi")
@@ -1116,3 +1116,5 @@ class TestNPV(object):
                                 ),
                                 abs=1e-8,
                             ) == value(NPV_model.plantYear[t].F_out[j, k, c])
+
+        

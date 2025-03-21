@@ -12,10 +12,11 @@ Author: Chris Laliwala
 """
 
 
-import pyomo.environ as pyo
-import sys
 import copy
 import math
+import sys
+
+import pyomo.environ as pyo
 
 
 def build_model(
@@ -760,10 +761,3 @@ def build_model(
     return m
 
 
-def solve_model(m):
-    solver = pyo.SolverFactory("gurobi")
-    solver.options["NumericFocus"] = 2
-
-    res = pyo.SolverFactory("gurobi").solve(m, tee=False)
-
-    return res

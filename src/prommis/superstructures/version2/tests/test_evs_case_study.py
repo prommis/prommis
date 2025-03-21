@@ -1055,18 +1055,22 @@ class TestNPV(object):
                     for c in Tracked_comps:
                         # flow is zero for all stages that aren't part of the optimal process
                         if (j, k) not in opt_stages:
-                            assert pytest.approx(value(NPV_model.plantYear[t].F_in[j, k, c]), abs=1e-8) == 0
+                            assert (
+                                pytest.approx(
+                                    value(NPV_model.plantYear[t].F_in[j, k, c]),
+                                    abs=1e-8,
+                                )
+                                == 0
+                            )
 
                         else:
                             if j == 1:
                                 assert pytest.approx(
-                                    CR
-                                    * Available_feed[t]
-                                    * Prod_comp_mass[c],
+                                    CR * Available_feed[t] * Prod_comp_mass[c],
                                     abs=1e-8,
                                 ) == value(NPV_model.plantYear[t].F_in[j, k, c])
 
-                            else: 
+                            else:
                                 assert pytest.approx(
                                     CR
                                     * Available_feed[t]
@@ -1084,7 +1088,13 @@ class TestNPV(object):
                     for c in Tracked_comps:
                         # flow is zero for all stages that aren't part of the optimal process
                         if (j, k) not in opt_stages:
-                            assert pytest.approx(value(NPV_model.plantYear[t].F_out[j, k, c]), abs=1e-8) == 0
+                            assert (
+                                pytest.approx(
+                                    value(NPV_model.plantYear[t].F_out[j, k, c]),
+                                    abs=1e-8,
+                                )
+                                == 0
+                            )
 
                         # else:
                         #     if j == 1:
@@ -1095,7 +1105,7 @@ class TestNPV(object):
                         #             abs=1e-8,
                         #         ) == value(NPV_model.plantYear[t].F_in[j, k, c])
 
-                        else: 
+                        else:
                             assert pytest.approx(
                                 CR
                                 * Available_feed[t]
@@ -1106,8 +1116,3 @@ class TestNPV(object):
                                 ),
                                 abs=1e-8,
                             ) == value(NPV_model.plantYear[t].F_out[j, k, c])
-
-
-
-
-            

@@ -812,7 +812,7 @@ Options_in_stage = {
 
 # m.plantYear[2038].F.display()
 
-Available_feed={
+Available_feed = {
     2025: 290273,
     2026: 274648,
     2027: 286512,
@@ -832,7 +832,7 @@ Available_feed={
 
 # for t in pyo.RangeSet(2025, 2038):
 for t in pyo.RangeSet(2025, 2026):
-    print('\n Year: ', t)
+    print("\n Year: ", t)
     # m.plantYear[t].P_entering.display()
     # for j in m.J:
     #     if j != 1 and j != 5:
@@ -846,7 +846,7 @@ for t in pyo.RangeSet(2025, 2026):
 
 # m.obj.display()
 CR = 0.1
-Option_Eff={
+Option_Eff = {
     # Level 1 yields
     (1, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
     (1, 2): {"Nd": 1, "Dy": 1, "Fe": 1},
@@ -883,29 +883,35 @@ Option_Eff={
     },
 }
 
-Prod_comp_mass={
+Prod_comp_mass = {
     "Nd": 0.206 * 3,
     "Dy": 0.103 * 3,
     "Fe": 0.691 * 3,
 }
 
 
-
-Tracked_comps=["Nd", "Dy", "Fe"]
+Tracked_comps = ["Nd", "Dy", "Fe"]
 numStages = 5
 opt_stages = [(1, 2), (2, 2), (3, 6), (4, 4), (5, 4)]
 t = 2025
 
 for t in pyo.RangeSet(2025, 2026):
     print(t)
-    for j in pyo.RangeSet(numStages-1):
+    for j in pyo.RangeSet(numStages - 1):
         print(j)
         for c in Tracked_comps:
             print(c)
             # print(math.prod(Option_Eff[opt_stages[stage]][c] for stage in pyo.RangeSet(0, j - 1)))
-            test = CR * Available_feed[t] * Prod_comp_mass[c] * math.prod(Option_Eff[opt_stages[stage]][c] for stage in pyo.RangeSet(0, j-1))
+            test = (
+                CR
+                * Available_feed[t]
+                * Prod_comp_mass[c]
+                * math.prod(
+                    Option_Eff[opt_stages[stage]][c] for stage in pyo.RangeSet(0, j - 1)
+                )
+            )
             print(test)
-            print(pyo.value(m.plantYear[t].F[j,c]))
+            print(pyo.value(m.plantYear[t].F[j, c]))
 
 
 # j = 5

@@ -1,6 +1,7 @@
 import copy
 import math
 import pyomo.environ as pyo
+from pyomo.core.base.var import IndexedVar
 
 # for throwing errors
 import sys
@@ -773,13 +774,143 @@ print(degrees_of_freedom(m))
 
 # dt.display_unused_variables()
 
-results = solve_model(m)
+solver = pyo.SolverFactory("gurobi")
+solver.options["NumericFocus"] = 2
 
-print(results)
+results = pyo.SolverFactory("gurobi").solve(m, tee=False)
 
-# pyo.assert_optimal_termination(results)
-# results.display()
-for t in pyo.RangeSet(2025, 2038):
-    m.plantYear[t].P_entering.display()
+# print(type(m.plantYear[2038].F))
 
-m.obj.display()
+print(type(m.plantYear))
+
+print(type(m.plantYear[2038].P_entering))
+print(type(m.plantYear[2038].init_flow_cons))
+
+print(isinstance(m.plantYear[2038].P_entering, pyo.Var))
+
+print(isinstance(m.plantYear[2038].F, pyo.Var))
+
+print(isinstance(m.plantYear, pyo.Block))
+
+print(isinstance(m.plantYear[2038].init_flow_cons, pyo.Constraint))
+
+# print(isinstance())
+
+# print(results)
+
+# # pyo.assert_optimal_termination(results)
+# # results.display()
+
+
+Options_in_stage = {
+    1: 2,
+    2: 4,
+    3: 6,
+    4: 4,
+    5: 5,
+}
+
+# m.plantYear[2038].F.display()
+
+Available_feed={
+    2025: 290273,
+    2026: 274648,
+    2027: 286512,
+    2028: 487819,
+    2029: 592637,
+    2030: 571054,
+    2031: 498472,
+    2032: 506565,
+    2033: 566355,
+    2034: 669094,
+    2035: 719057,
+    2036: 762656,
+    2037: 1434637,
+    2038: 1697805,
+}
+
+
+# for t in pyo.RangeSet(2025, 2038):
+for t in pyo.RangeSet(2025, 2026):
+    print('\n Year: ', t)
+    # m.plantYear[t].P_entering.display()
+    # for j in m.J:
+    #     if j != 1 and j != 5:
+    #         num_options = pyo.RangeSet(Options_in_stage[j])
+
+    #         print('\n for j = ', j)
+    m.plantYear[t].F.display()
+
+# m.binOpt.display()
+
+
+# m.obj.display()
+CR = 0.1
+Option_Eff={
+    # Level 1 yields
+    (1, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
+    (1, 2): {"Nd": 1, "Dy": 1, "Fe": 1},
+    # level 2 yields
+    (2, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
+    (2, 2): {"Nd": 1, "Dy": 1, "Fe": 1},
+    (2, 3): {"Nd": 1, "Dy": 1, "Fe": 1},
+    (2, 4): {"Nd": 1, "Dy": 1, "Fe": 1},
+    # level 3 yields
+    (3, 1): {"Nd": 0.985, "Dy": 0.985, "Fe": 0},
+    (3, 2): {"Nd": 0.985, "Dy": 0.985, "Fe": 0},
+    (3, 3): {"Nd": 0.925, "Dy": 0.98, "Fe": 0},
+    (3, 4): {"Nd": 1, "Dy": 1, "Fe": 0},
+    (3, 5): {"Nd": 1, "Dy": 1, "Fe": 0},
+    (3, 6): {"Nd": 1, "Dy": 1, "Fe": 0.403},
+    # level 4 yields
+    (4, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
+    (4, 2): {"Nd": 1, "Dy": 0.899, "Fe": 0},
+    (4, 3): {"Nd": 1, "Dy": 1, "Fe": 1},
+    (4, 4): {"Nd": 1, "Dy": 1, "Fe": 1},
+    # level 5 yields
+    (5, 1): {"Nd": 1, "Dy": 1, "Fe": 0},
+    (5, 2): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
+    (5, 3): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
+    (5, 4): {
+        "Nd": 0.98,
+        "Dy": 0.98,
+        "Fe": 0,
+    },
+    (5, 5): {
+        "Nd": 0.98,
+        "Dy": 0.98,
+        "Fe": 0,
+    },
+}
+
+Prod_comp_mass={
+    "Nd": 0.206 * 3,
+    "Dy": 0.103 * 3,
+    "Fe": 0.691 * 3,
+}
+
+
+
+Tracked_comps=["Nd", "Dy", "Fe"]
+numStages = 5
+opt_stages = [(1, 2), (2, 2), (3, 6), (4, 4), (5, 4)]
+t = 2025
+
+for t in pyo.RangeSet(2025, 2026):
+    print(t)
+    for j in pyo.RangeSet(numStages-1):
+        print(j)
+        for c in Tracked_comps:
+            print(c)
+            # print(math.prod(Option_Eff[opt_stages[stage]][c] for stage in pyo.RangeSet(0, j - 1)))
+            test = CR * Available_feed[t] * Prod_comp_mass[c] * math.prod(Option_Eff[opt_stages[stage]][c] for stage in pyo.RangeSet(0, j-1))
+            print(test)
+            print(pyo.value(m.plantYear[t].F[j,c]))
+
+
+# j = 5
+# print(math.prod(Option_Eff[opt_stages[stage]][c] for stage in pyo.RangeSet(0, j - 1)))
+
+# print(opt_stages[4])
+
+m.plantYear[2025].F_in.display()

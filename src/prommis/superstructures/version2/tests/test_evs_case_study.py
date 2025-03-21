@@ -4,13 +4,22 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+import pytest
 import copy
 import math
-from pyomo.environ import assert_optimal_termination, ConcreteModel, RangeSet, value
+from pyomo.environ import (
+    assert_optimal_termination,
+    ConcreteModel,
+    RangeSet,
+    value,
+    SolverFactory,
+    Var,
+    Block,
+    Constraint,
+    Objective,
+)
 
 import sys
-
-import pytest
 
 # model statistics
 from idaes.core.util.model_statistics import (
@@ -21,6 +30,9 @@ from idaes.core.util.model_statistics import (
 )
 
 from prommis.superstructures.version2.superstructure_v2 import build_model, solve_model
+
+
+solver = SolverFactory("gurobi")
 
 
 @pytest.fixture(scope="module")
@@ -63,13 +75,14 @@ def get_common_params():
         ###################################################################################################
         ### Superstructure formulation parameters
         "numStages": 5,  # number of total stages
+        # number of options in each stage
         "Options_in_stage": {
             1: 2,
             2: 4,
             3: 6,
             4: 4,
             5: 5,
-        },  # number of options in each stage
+        },
         # set of options k' in stage j+1 connected to option k in stage j
         "Option_outlets": {
             # level 1
@@ -857,17 +870,132 @@ class TestNPV(object):
 
         return m
 
-    def test_build(self, NPV_model):
+    def test_build(self, NPV_model, get_common_params):
+        # start of plant production
+        prod_start = get_common_params["plant_start"] + 1
+        # final year plant is in production
+        plant_end = (
+            get_common_params["plant_start"] + get_common_params["plant_lifetime"] - 1
+        )
+        # plant operational period
+        operational_range = RangeSet(prod_start, plant_end)
+
+        assert isinstance(NPV_model, ConcreteModel)
+
+        assert isinstance(NPV_model.plantYear, Block)
+
+        for t in operational_range:
+            assert isinstance(NPV_model.plantYear[t].P_entering, Var)
+            assert isinstance(NPV_model.plantYear[t].F_in, Var)
+            assert isinstance(NPV_model.plantYear[t].F_out, Var)
+
+            assert isinstance(NPV_model.plantYear[t].init_flow_cons, Constraint)
+            assert isinstance(NPV_model.plantYear[t].inlet_flow_cons, Constraint)
+            assert isinstance(NPV_model.plantYear[t].intermediate_flow_cons, Constraint)
+            assert isinstance(NPV_model.plantYear[t].outlet_flow_cons, Constraint)
+
+        assert isinstance(NPV_model.binOpt, Var)
+
+        assert isinstance(NPV_model.stage_bin_cons, Constraint)
+        assert isinstance(NPV_model.connect_bin_cons, Constraint)
+        assert isinstance(NPV_model.big_M_cons, Constraint)
+
+        assert isinstance(NPV_model.DisOptWorkers, Var)
+
+        assert isinstance(NPV_model.OC_var_cons, Constraint)
+        assert isinstance(NPV_model.DisWorkerCons, Constraint)
+        assert isinstance(NPV_model.profit_opt_cons, Constraint)
+
+        for t in operational_range:
+            assert isinstance(NPV_model.plantYear[t].OC_var, Var)
+            assert isinstance(NPV_model.plantYear[t].OC_var_total, Var)
+            assert isinstance(NPV_model.plantYear[t].ProfitOpt, Var)
+            assert isinstance(NPV_model.plantYear[t].Profit, Var)
+
+            assert isinstance(NPV_model.plantYear[t].profit_con, Constraint)
+
+        assert isinstance(NPV_model.workers, Var)
+
+        assert isinstance(NPV_model.worker_cons, Constraint)
+        assert isinstance(NPV_model.COL_cons, Constraint)
+
+        assert isinstance(NPV_model.bin_workers, Var)
+        assert isinstance(NPV_model.total_workers, Var)
+        assert isinstance(NPV_model.COL_Total, Var)
+
+        assert isinstance(NPV_model.COL_Total_con, Constraint)
+
+        assert isinstance(NPV_model.BEC, Var)
+
+        assert isinstance(NPV_model.BEC_cons, Constraint)
+
+        assert isinstance(NPV_model.BEC_max_flow, Var)
+
+        assert isinstance(NPV_model.BEC_max_flow_cons, Constraint)
+
+        assert isinstance(NPV_model.TPC, Var)
+
+        assert isinstance(NPV_model.TPC_cons, Constraint)
+
+        assert isinstance(NPV_model.Total_TPC, Var)
+
+        assert isinstance(NPV_model.Total_TPC_con, Constraint)
+
+        assert isinstance(NPV_model.TOC, Var)
+
+        assert isinstance(NPV_model.TOC_con, Constraint)
+
+        assert isinstance(NPV_model.node_TOC, Var)
+
+        assert isinstance(NPV_model.node_TOC_cons, Constraint)
+
+        assert isinstance(NPV_model.CF, Var)
+
+        assert isinstance(NPV_model.CF_cons, Constraint)
+
+        assert isinstance(NPV_model.TOC_exp, Var)
+
+        assert isinstance(NPV_model.TOC_exp_cons, Constraint)
+
+        assert isinstance(NPV_model.GE, Var)
+
+        assert isinstance(NPV_model.GE_cons, Constraint)
+
+        assert isinstance(NPV_model.Rev, Var)
+
+        assert isinstance(NPV_model.Rev_cons, Constraint)
+
+        assert isinstance(NPV_model.OC_fixed, Var)
+
+        assert isinstance(NPV_model.OC_fixed_cons, Constraint)
+
+        assert isinstance(NPV_model.OC_var, Var)
+
+        assert isinstance(NPV_model.OH, Var)
+
+        assert isinstance(NPV_model.OH_cons, Constraint)
+
+        assert isinstance(NPV_model.bin_test_cons, Constraint)
+
+        assert isinstance(NPV_model.obj, Objective)
+
         assert number_variables(NPV_model) == 2851
         assert number_total_constraints(NPV_model) == 4020
         assert number_unused_variables(NPV_model) == 0
         assert degrees_of_freedom(NPV_model) == 920
-        assert isinstance(NPV_model, ConcreteModel)
 
+    @pytest.mark.solver
+    @pytest.mark.skipif(solver is None, reason="Solver not available")
+    @pytest.mark.component
     def test_solve(self, NPV_model):
-        results = solve_model(NPV_model)
+        solver.options["NumericFocus"] = 2
+
+        results = solver.solve(NPV_model)
         assert_optimal_termination(results)
 
+    @pytest.mark.solver
+    @pytest.mark.skipif(solver is None, reason="Solver not available")
+    @pytest.mark.component
     def test_solution(self, NPV_model, get_common_params):
         # start of plant production
         prod_start = get_common_params["plant_start"] + 1
@@ -882,7 +1010,104 @@ class TestNPV(object):
         Available_feed = get_common_params["Available_feed"]
         # collection rate of available feed processed by plant
         CR = get_common_params["CR"]
+
+        # total number of stages in superstructure
+        numStages = get_common_params["numStages"]
+
+        # tracked components in superstructure
+        Tracked_comps = get_common_params["Tracked_comps"]
+
+        # mass of tracked component per EOL Product (kg component / EOL product)
+        Prod_comp_mass = get_common_params["Prod_comp_mass"]
+
+        # number of options in each stage
+        Options_in_stage = get_common_params["Options_in_stage"]
+
+        # dictionary of tracked component retention efficiency for each option
+        Option_Eff = get_common_params["Option_Eff"]
+
+        # list of stages that should be chosen for optimal process
+        opt_stages = [(1, 2), (2, 2), (3, 6), (4, 4), (5, 4)]
+
         for t in operational_range:
+            # test P_entering for each year
             assert pytest.approx(Available_feed[t] * CR, abs=1e-8) == value(
                 NPV_model.plantYear[t].P_entering
             )
+
+            # test all F for each year
+            for j in RangeSet(numStages - 1):
+                for c in Tracked_comps:
+                    assert pytest.approx(
+                        CR
+                        * Available_feed[t]
+                        * Prod_comp_mass[c]
+                        * math.prod(
+                            Option_Eff[opt_stages[stage]][c]
+                            for stage in RangeSet(0, j - 1)
+                        ),
+                        abs=1e-8,
+                    ) == value(NPV_model.plantYear[t].F[j, c])
+
+            # test all F_in for each year
+            for j in RangeSet(numStages):
+                for k in RangeSet(Options_in_stage[j]):
+                    for c in Tracked_comps:
+                        # flow is zero for all stages that aren't part of the optimal process
+                        if (j, k) not in opt_stages:
+                            assert pytest.approx(value(NPV_model.plantYear[t].F_in[j, k, c]), abs=1e-8) == 0
+
+                        else:
+                            if j == 1:
+                                assert pytest.approx(
+                                    CR
+                                    * Available_feed[t]
+                                    * Prod_comp_mass[c],
+                                    abs=1e-8,
+                                ) == value(NPV_model.plantYear[t].F_in[j, k, c])
+
+                            else: 
+                                assert pytest.approx(
+                                    CR
+                                    * Available_feed[t]
+                                    * Prod_comp_mass[c]
+                                    * math.prod(
+                                        Option_Eff[opt_stages[stage]][c]
+                                        for stage in RangeSet(0, j - 2)
+                                    ),
+                                    abs=1e-8,
+                                ) == value(NPV_model.plantYear[t].F_in[j, k, c])
+
+            # test all F_out for each year
+            for j in RangeSet(numStages):
+                for k in RangeSet(Options_in_stage[j]):
+                    for c in Tracked_comps:
+                        # flow is zero for all stages that aren't part of the optimal process
+                        if (j, k) not in opt_stages:
+                            assert pytest.approx(value(NPV_model.plantYear[t].F_out[j, k, c]), abs=1e-8) == 0
+
+                        # else:
+                        #     if j == 1:
+                        #         assert pytest.approx(
+                        #             CR
+                        #             * Available_feed[t]
+                        #             * Prod_comp_mass[c],
+                        #             abs=1e-8,
+                        #         ) == value(NPV_model.plantYear[t].F_in[j, k, c])
+
+                        else: 
+                            assert pytest.approx(
+                                CR
+                                * Available_feed[t]
+                                * Prod_comp_mass[c]
+                                * math.prod(
+                                    Option_Eff[opt_stages[stage]][c]
+                                    for stage in RangeSet(0, j - 1)
+                                ),
+                                abs=1e-8,
+                            ) == value(NPV_model.plantYear[t].F_out[j, k, c])
+
+
+
+
+            

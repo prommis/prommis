@@ -920,10 +920,44 @@ for t in pyo.RangeSet(2025, 2026):
 
 # print(opt_stages[4])
 
-m.plantYear[2025].F_in.display()
+# m.plantYear[2025].F_in.display()
 
 
 try:
+    got_solver = True
     solver = get_solver("test")
 except KeyError:
+    got_solver = False
     print("failed")
+
+print(got_solver)
+
+# m.binOpt.display()
+
+# m.DisOptWorkers.display()
+
+# numWorkers = {
+#     (1, 1): 1,
+#     (1, 2): 0,
+#     (2, 1): 0.65,
+#     (2, 2): 0.65,
+#     (2, 3): 0.65,
+#     (2, 4): 0.65,
+#     (3, 1): 1.6,
+#     (3, 2): 1.6,
+#     (3, 3): 1.3,
+#     (3, 4): 0.45,
+#     (3, 5): 0.45,
+#     (3, 6): 1.15,
+#     (4, 1): 0,
+#     (4, 2): 1.3,
+#     (4, 3): 0,
+#     (4, 4): 0,
+#     (5, 1): 1.05,
+#     (5, 2): 0.75,
+#     (5, 3): 0.75,
+#     (5, 4): 1.15,
+#     (5, 5): 1.15,
+# }
+
+# print(math.ceil(max(numWorkers.values())))

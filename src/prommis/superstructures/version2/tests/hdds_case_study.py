@@ -2,9 +2,9 @@ import copy
 
 # import math
 # import sys
-# import pyomo.environ as pyo
+import pyomo.environ as pyo
 
-from prommis.superstructures.version2.superstructure_v2 import run_model
+from prommis.superstructures.version2.superstructure_v2 import build_model
 
 ### cost of purchased equipment for iron valorization processes (k$).
 jarosite_capex = 300000 / 1000  # considered.
@@ -401,7 +401,7 @@ for key in HDD_input_flow:
     # flow in terms of thousands of EOL products
     HDD_input_flow[key] = (EOLDesktops[key] + EOLLaptops[key]) / 1000
 
-m = run_model(
+m = build_model(
     ###################################################################################################
     ### Plant Lifetime Parameters
     plant_start=2024,  # start of plant production
@@ -632,6 +632,11 @@ m = run_model(
         "Iron hydroxide": 1.914,
     },
 )
+
+solver = pyo.SolverFactory("gurobi")
+solver.options["NumericFocus"] = 2
+
+results = pyo.SolverFactory("gurobi").solve(m, tee=False)
 
 m.obj.display()
 m.binOpt.display()

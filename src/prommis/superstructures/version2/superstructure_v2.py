@@ -163,9 +163,10 @@ def build_model(
     max_dis_by_option = copy.deepcopy(Dis_Rate)
     for key in max_dis_by_option.keys():
         max_dis_by_option[key] = math.ceil(maxFeedEntering / Dis_Rate[key])
-    max_dis_workers = max(max_dis_by_option.values()) + 10
+    # max_dis_workers = max(max_dis_by_option.values()) + 10
+    max_dis_workers = max(max_dis_by_option.values())
     # calculate max possible workers for process
-    max_workers = max_dis_workers + 10
+    max_workers = max_dis_workers + numStages * math.ceil(max(num_workers.values()))
     ###################################################################################################
 
     m = pyo.ConcreteModel()
@@ -343,8 +344,8 @@ def build_model(
     M = {"Nd": 0, "Dy": 0, "Fe": 0}
     val = 0
     for c in m.KeyComps:
-        val = maxFeedEntering * Prod_comp_mass[c]
-        M[c] = val * 10
+        val = math.ceil(maxFeedEntering * Prod_comp_mass[c])
+        M[c] = val
 
     for t in pyo.RangeSet(prod_start, plant_end):
         for j in m.J:
@@ -360,16 +361,16 @@ def build_model(
                     )  # eqn. 8
 
     # define disassembly works set
-    m.J_dis = pyo.RangeSet(1)  # number of stages
-    m.K_dis = pyo.RangeSet(maxOptions)  # max options in a stage
+    j_dis = 1
+    m.J_dis = pyo.RangeSet(j_dis)
+    m.K_dis = pyo.RangeSet(Options_in_stage[j_dis])  # options in disassembly stage
     dis_workers_range = pyo.RangeSet(0, max_dis_workers)
     jk_dis = []
     jkw_dis = []  # for declaring bin vars
-    for j_dis in m.J_dis:
-        for k_dis in pyo.RangeSet(Options_in_stage[j_dis]):
-            jk_dis.append((j_dis, k_dis))
-            for w_dis in dis_workers_range:
-                jkw_dis.append((j_dis, k_dis, w_dis))
+    for k_dis in m.K_dis:
+        jk_dis.append((j_dis, k_dis))
+        for w_dis in pyo.RangeSet(0, max_dis_by_option[j_dis, k_dis]):
+            jkw_dis.append((j_dis, k_dis, w_dis))
 
     m.disOpts = pyo.Set(within=m.J_dis * m.K_dis, initialize=jk_dis)
     m.DisOptWorkersSet = pyo.Set(
@@ -395,7 +396,10 @@ def build_model(
             expr=m.plantYear[t].P_entering
             <= sum(
                 Dis_Rate[elem]
-                * sum(i * m.DisOptWorkers[elem + (i,)] for i in dis_workers_range)
+                * sum(
+                    i * m.DisOptWorkers[elem + (i,)]
+                    for i in pyo.RangeSet(0, max_dis_by_option[elem])
+                )
                 for elem in m.disOpts
             )
         )
@@ -403,7 +407,11 @@ def build_model(
         for elem in m.disOpts:
             # only 1 'amount' of workers can be chosen.
             m.DisWorkerCons.add(
-                expr=sum(m.DisOptWorkers[elem + (i,)] for i in dis_workers_range) == 1
+                expr=sum(
+                    m.DisOptWorkers[elem + (i,)]
+                    for i in pyo.RangeSet(0, max_dis_by_option[elem])
+                )
+                == 1
             )
 
             # if a disassembly option is not chosen, then that 'amount' must be 0
@@ -416,7 +424,10 @@ def build_model(
             option = (j, k)
             m.OC_var_cons.add(
                 expr=m.plantYear[t].OC_var[option]
-                == sum(m.DisOptWorkers[option + (i,)] * i for i in dis_workers_range)
+                == sum(
+                    m.DisOptWorkers[option + (i,)] * i
+                    for i in pyo.RangeSet(0, max_dis_by_option[elem])
+                )
                 * YCU[option]
             )
 
@@ -501,7 +512,10 @@ def build_model(
             if j == 1:
                 m.worker_cons.add(
                     expr=m.workers[j, k]
-                    == sum(i * m.DisOptWorkers[j, k, i] for i in dis_workers_range)
+                    == sum(
+                        i * m.DisOptWorkers[j, k, i]
+                        for i in pyo.RangeSet(0, max_dis_by_option[elem])
+                    )
                     * num_workers[elem]
                 )
 
@@ -547,7 +561,11 @@ def build_model(
     for k in pyo.RangeSet(Options_in_stage[1]):
         m.BEC_cons.add(
             expr=m.BEC[1, k]
-            == sum(i * m.DisOptWorkers[1, k, i] for i in dis_workers_range) * CU[1, k]
+            == sum(
+                i * m.DisOptWorkers[1, k, i]
+                for i in pyo.RangeSet(0, max_dis_by_option[1, k])
+            )
+            * CU[1, k]
         )
 
     # calculate BEC for rest of stages

@@ -759,5 +759,3 @@ def build_model(
     # m.results = pyo.SolverFactory("gurobi").solve(m, tee=True)
 
     return m
-
-

@@ -18,17 +18,17 @@ from pyomo.environ import (
     Block,
     Constraint,
     Objective,
-    Set,
+    # Set,
 )
 
 # import sys
 
 # model statistics
 from idaes.core.util.model_statistics import (
-    number_total_constraints,
-    number_variables,
-    number_unused_variables,
-    degrees_of_freedom,
+    # number_total_constraints,
+    # number_variables,
+    # number_unused_variables,
+    # degrees_of_freedom,
 )
 
 from idaes.core.solvers import get_solver

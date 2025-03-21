@@ -15,6 +15,8 @@ from idaes.core.util.model_statistics import (
 
 # from idaes.core.util import DiagnosticsToolbox
 
+from idaes.core.solvers import get_solver
+
 from prommis.superstructures.version2.superstructure_v2 import build_model
 
 
@@ -919,3 +921,9 @@ for t in pyo.RangeSet(2025, 2026):
 # print(opt_stages[4])
 
 m.plantYear[2025].F_in.display()
+
+
+try:
+    solver = get_solver("test")
+except KeyError:
+    print("failed")

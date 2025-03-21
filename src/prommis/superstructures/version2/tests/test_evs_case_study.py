@@ -32,8 +32,11 @@ from idaes.core.util.model_statistics import (
 
 from prommis.superstructures.version2.superstructure_v2 import build_model
 
-
-solver = SolverFactory("gurobi")
+try:
+    solver = SolverFactory("gurobi")
+    gurobi_available = True
+except KeyError:
+    gurobi_available = False
 
 
 @pytest.fixture(scope="module")
@@ -986,7 +989,7 @@ class TestNPV(object):
         assert degrees_of_freedom(NPV_model) == 920
 
     @pytest.mark.solver
-    @pytest.mark.skipif(solver is None, reason="Solver not available")
+    @pytest.mark.skipif(gurobi_available is False, reason="Gurobi solver not available")
     @pytest.mark.component
     def test_solve(self, NPV_model):
         solver.options["NumericFocus"] = 2
@@ -995,7 +998,7 @@ class TestNPV(object):
         assert_optimal_termination(results)
 
     @pytest.mark.solver
-    @pytest.mark.skipif(solver is None, reason="Solver not available")
+    @pytest.mark.skipif(gurobi_available is False, reason="Gurobi solver not available")
     @pytest.mark.component
     def test_solution(self, NPV_model, get_common_params):
         # start of plant production

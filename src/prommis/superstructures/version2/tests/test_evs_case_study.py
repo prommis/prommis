@@ -4,10 +4,10 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+import math
 import pytest
 
 # import copy
-import math
 from pyomo.environ import (
     assert_optimal_termination,
     ConcreteModel,

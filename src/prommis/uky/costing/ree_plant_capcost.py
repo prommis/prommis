@@ -1204,10 +1204,17 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
                     # check that units are compatible
                     try:
-                        conversion = value(pyunits.convert(
-                            rec_rate_units,
-                            to_units=pyunits.kg / pyunits.year,
-                        )) * pyunits.kg / pyunits.year / rec_rate_units
+                        conversion = (
+                            value(
+                                pyunits.convert(
+                                    rec_rate_units,
+                                    to_units=pyunits.kg / pyunits.year,
+                                )
+                            )
+                            * pyunits.kg
+                            / pyunits.year
+                            / rec_rate_units
+                        )
                     except InconsistentUnitsError:
                         raise UnitsError(
                             f"The argument recovery_rate_per_year was passed with units of "
@@ -1216,7 +1223,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             f"of mass per year (mass/a)."
                         )
 
-                    self.recovery_rate_per_year.expr = recovery_rate_per_year * conversion
+                    self.recovery_rate_per_year.expr = (
+                        recovery_rate_per_year * conversion
+                    )
 
                     self.cost_of_recovery = Expression(
                         expr=(

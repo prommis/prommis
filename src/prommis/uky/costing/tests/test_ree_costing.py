@@ -5297,11 +5297,6 @@ def test_REE_costing_recovery(recovery_rate_units, expectation):
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        # initialize=39.3
-        # * 0.8025
-        # * 8
-        # * 3
-        # * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
         initialize=recovery_rate_value_dict[recovery_rate_units],
         units=recovery_rate_units_dict[recovery_rate_units],
     )

@@ -266,3 +266,22 @@ def load_default_resource_prices():
         "dust_and_volatiles": 1.00 * 1e-6 * CE_index_units / pyunits.ton,
     }
     return default_resource_prices
+
+def load_loacation_factor():
+    """
+    When consider global market, one can use location factor to estimate a same plant's cost built in different location using location factor. 
+    Reference: Seider, Warren D., et al. Product and process design principles: synthesis, analysis and evaluation. John Wiley & Sons, 2016.
+    Location factor is used to account for different costs in different localities based on the availability of labor, the efficiency o the workforce,
+    local rules and customs, union status, and other impacts.
+    The conversion equaiton: 
+    .. math:: C_{TPI, corrected} = F_{ISF} * C_{TPI}
+    where C repreesnt cost, F represent factor, TPI represent total production investment, ISF represent investment site factor (i.e. location factor).
+    
+    The 139 country's location factor cited here are referenced from Compass International in 2017 (https://www.compassinternational.net/wp-content/uploads/2017/01/Worldwide-Industrial.pdf).
+    The data source have multiple cities's location factor for some of the countries.
+    
+    The benchmarket value is at Washington DC, USA.
+    """
+    with open(os.path.join(directory, "location_factors.json"), "r") as file:
+        location_factors = json.load(file)
+    return location_factors

@@ -11,14 +11,16 @@ Modification of the IDAES Multi-stream contactor unit.
 (Addition of ports and membrane performance constraints)
 """
 
+from pyomo.common.config import ConfigValue
+
 # Pyomo import
-from pyomo.environ import Var, units, exp
+from pyomo.environ import Var, exp, units
+
+from idaes.core import declare_process_block_class
+from idaes.core.util.exceptions import ConfigurationError
 
 # IDAES imports
 from idaes.models.unit_models.mscontactor import MSContactorData
-from idaes.core import declare_process_block_class
-from pyomo.common.config import ConfigValue
-from idaes.core.util.exceptions import ConfigurationError
 
 __author__ = "Jason Yao"
 
@@ -69,19 +71,19 @@ class MembraneData(MSContactorData):
             )
         if self.config.flux is None:
             raise ConfigurationError(
-                "Membrane model must be provided with a " "flux [m^3 / m^2 h] value"
+                "Membrane model must be provided with a " + "flux [m^3 / m^2 h] value"
             )
         if self.config.sieving_coefficient is None:
             raise ConfigurationError(
                 "Membrane model must be provided with a dictionary of "
-                "sieving coefficient values"
+                + "sieving coefficient values"
             )
         required_streams = ["permeate", "retentate"]
         for stream in self.config.streams:
             if stream not in required_streams:
                 raise ConfigurationError(
                     "Membrane model must be provided with only permeate "
-                    "and retentate streams"
+                    + "and retentate streams"
                 )
 
     def _verify_sieving_coefficients(self, solutes):
@@ -95,7 +97,7 @@ class MembraneData(MSContactorData):
         for sol in self.config.sieving_coefficient:
             if sol not in solutes:
                 raise ConfigurationError(
-                    "Sieving coefficient must match solutes " "in property package"
+                    "Sieving coefficient must match solutes " + "in property package"
                 )
 
     def add_side_stream_ports(self):
@@ -113,25 +115,32 @@ class MembraneData(MSContactorData):
 
     def add_membrane_performance_variables(self, solutes):
         """Add membrane length, flux, and sieving coefficients."""
-        self.length = Var(units=units.m)
-        self.width = Var(units=units.m)
-        self.flux = Var(self.elements, units=units.m / units.hour)
+        # set small initial length for initialization
+        self.length = Var(units=units.m, bounds=(0.1, 10000), initialize=100)
+        # set width as 1m
+        self.width = Var(units=units.m, initialize=1)
+        self.flux = Var(
+            self.elements, units=units.m / units.hour, initialize=self.config.flux
+        )
         self.sieving_coefficient = Var(
-            solutes, self.elements, units=units.dimensionless
+            solutes,
+            self.elements,
+            units=units.dimensionless,
+            initialize={
+                (sol, ele): self.config.sieving_coefficient[sol]
+                for sol in solutes
+                for ele in self.elements
+            },
         )
 
-        # fix values and set lower/upper bounds
-        self.length.fix(100)  # set small initial length for initialization
-        self.width.fix(1)  # set width as 1m
-        self.flux.fix(self.config.flux)
-        for sol in solutes:
-            for ele in self.elements:
-                self.sieving_coefficient[sol, ele].fix(
-                    self.config.sieving_coefficient[sol]
-                )
+        # fix values
+        self.length.fixed = True
+        self.width.fixed = True
 
-        self.length.setlb(0.1)
-        self.length.setub(10000)
+        for idx in self.flux:
+            self.flux[idx].fixed = True
+        for idx in self.sieving_coefficient:
+            self.sieving_coefficient[idx].fixed = True
 
     def add_membrane_constraints(self, solutes):
         """Add solute sieving, solvent flux, and LB/UB constraints."""
@@ -186,10 +195,11 @@ class MembraneData(MSContactorData):
 
         # Isolate nonlinear LN into LB/UB to make original sieving eqn linear
         # add new variables for each substitution
-        self.LN_M_in = Var(solutes, self.elements)
-        self.LN_M_out = Var(solutes, self.elements)
-        self.LN_F_in = Var(self.elements)
-        self.LN_F_out = Var(self.elements)
+        # set initial value of variables to be reasonable small
+        self.LN_M_in = Var(solutes, self.elements, initialize=5, bounds=(-20, 15))
+        self.LN_M_out = Var(solutes, self.elements, initialize=5, bounds=(-20, 15))
+        self.LN_F_in = Var(self.elements, initialize=5, bounds=(-20, 15))
+        self.LN_F_out = Var(self.elements, initialize=5, bounds=(-20, 15))
 
         # set these as exponents to remove the logs
         #######################################################################

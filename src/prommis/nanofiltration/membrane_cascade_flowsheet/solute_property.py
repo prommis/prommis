@@ -6,19 +6,20 @@
 #####################################################################################################
 """Generic multi-solute property package for membrane filtration flowsheet."""
 
-from pyomo.environ import Var, Param, units
+from pyomo.common.config import ConfigValue
+from pyomo.environ import Param, Var, units
+
 from idaes.core import (
     Component,
-    declare_process_block_class,
     MaterialFlowBasis,
     Phase,
     PhysicalParameterBlock,
     StateBlock,
     StateBlockData,
+    declare_process_block_class,
 )
-from idaes.core.util.initialization import fix_state_vars
-from pyomo.common.config import ConfigValue
 from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.initialization import fix_state_vars
 
 
 class _StateBlock(StateBlock):
@@ -92,7 +93,7 @@ class SoluteParameterData(PhysicalParameterBlock):
         # Check that list of solutes exists
         if self.config.solutes is None:
             raise ConfigurationError(
-                "Solutes property package requires " "a list of solutes."
+                "Solutes property package requires " + "a list of solutes."
             )
 
         self.phase1 = Phase()

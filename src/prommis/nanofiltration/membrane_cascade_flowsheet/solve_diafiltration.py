@@ -7,20 +7,38 @@
 #####################################################################################################
 """Executable file for generating and solving diafiltration model."""
 
-from diafiltration_flowsheet_model import DiafiltrationModel
-from idaes.core.util.model_statistics import report_statistics
-from pyomo.environ import SolverFactory
-import utils
 import sys
+
+from pyomo.environ import SolverFactory
+
+from idaes.core.util.model_statistics import report_statistics
+
+from prommis.nanofiltration.membrane_cascade_flowsheet import utils
+from prommis.nanofiltration.membrane_cascade_flowsheet.diafiltration_flowsheet_model import (
+    DiafiltrationModel,
+)
 
 
 def main(args):
     """Driver for creating diafiltration model."""
     # collect arguments
-    args = args[1:]
-    mix_style = args[0]
-    num_s = int(args[1])
-    num_t = int(args[2])
+    # check if arguments are given. Use default if not
+    if len(args) == 1:
+        print("No args provided")
+        print('Using default "stage" 3 10')
+        mix_style = "stage"
+        num_s = 3
+        num_t = 10
+    else:
+        if args != 3:
+            raise ValueError(
+                'Must provide args for "mixing" "number stages" "number tubes" '
+                'e.g. "stage" 3 10'
+            )
+        args = args[1:]
+        mix_style = args[0]
+        num_s = int(args[1])
+        num_t = int(args[2])
 
     # set relevant parameter values
     NS = num_s  # number of stages
@@ -59,14 +77,14 @@ def main(args):
     m = df.build_flowsheet(mixing=mixing)
     df.initialize(m, mixing=mixing, precipitate=prec)
     df.unfix_dof(m, mixing=mixing, precipitate=prec)
-    m.fs.precipitator["retentate"].V.fix(500)
-    m.fs.precipitator["permeate"].V.fix(500)
+    m.fs.precipitator["retentate"].volume.fix(500)
+    m.fs.precipitator["permeate"].volume.fix(500)
     report_statistics(m)
 
     # solve model
     # R is used for the Li LB constraint.
     # This can be changed to any desired LB.
-    m.R = 0.8
+    m.recovery_li = 0.8
     solver = SolverFactory("ipopt")
     result = solver.solve(m, tee=True)
 

@@ -445,6 +445,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
     def cost_precipitator(
         blk,
         precip_volume,
+        precip_headspace=1.2,
     ):
         """
         Costing method for precipitator unit. Assumes these are horizontal vessels
@@ -462,6 +463,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
         Args:
             precip_volume: volume of the precipitator as calculated by the unit model (m3)
+            precip_headaspace: precipitator headspace percentage; default value is 20%
         """
 
         # calculate the volume needed
@@ -472,11 +474,10 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             units=units.m**3,
         )
 
-        # account for a 20% headspace
         @blk.Constraint()
         def volume_capacity_equation(blk):
             return blk.volume_capacity == units.convert(
-                (1.2 * precip_volume), to_units=units.m**3
+                (precip_headspace * precip_volume), to_units=units.m**3
             )
 
         # include a length and diameter constraint

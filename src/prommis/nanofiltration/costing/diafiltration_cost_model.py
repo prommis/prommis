@@ -480,17 +480,16 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             )
 
         # include a length and diameter constraint
-        # TODO: L and D should get bounded but gives init errors
         blk.precipitator_diameter = Var(
             initialize=6,
-            domain=NonNegativeReals,
+            bounds=(1, 12),
             doc="Diameter of the precipitator vessel",
             units=units.ft,
         )
         blk.precipitator_diameter.fix()
         blk.precipitator_length = Var(
             initialize=8,
-            domain=NonNegativeReals,
+            bounds=(3, 10),
             doc="Length of the precipitator vessel",
             units=units.ft,
         )

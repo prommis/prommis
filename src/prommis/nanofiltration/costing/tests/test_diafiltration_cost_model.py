@@ -87,7 +87,7 @@ def test_diafiltration_costing():
     m.fs.pump = UnitModelBlock()
     m.fs.precipitator = UnitModelBlock()
     m.fs.precipitator.V = Var(
-        initialize=50,
+        initialize=20,
         doc="Precipitator volume",
         units=units.m**3,
     )
@@ -132,6 +132,10 @@ def test_diafiltration_costing():
     dt.assert_no_structural_warnings()
 
     m.fs.costing.cost_process()
+
+    # unfix the precipitator diameter such that both L and D are manipulated to satisfy V
+    m.fs.precipitator.costing.precipitator_diameter.unfix()
+
     solver = SolverFactory("ipopt")
     solver.solve(m, tee=True)
 

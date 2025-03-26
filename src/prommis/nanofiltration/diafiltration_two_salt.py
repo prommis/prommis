@@ -36,6 +36,7 @@ from pyomo.environ import (
     Constraint,
     NonNegativeReals,
     Param,
+    Suffix,
     TransformationFactory,
     Var,
     units,
@@ -106,6 +107,7 @@ see property package for documentation}
         self.add_variables()
         self.add_constraints()
         self.discretize_model()
+        self.add_scaling_factors()
 
     def add_mutable_parameters(self):
         """
@@ -875,5 +877,44 @@ see property package for documentation}
         discretizer.apply_to(
             self, wrt=self.z_bar, nfe=self.config.NFEz, scheme="FORWARD"
         )
+
+    def add_scaling_factors(self):
+        """
+        Apply scaling factors to certain constraints to improve solver performance
+
+        Args:
+            m: Pyomo model
+        """
+        self.scaling_factor = Suffix(direction=Suffix.EXPORT)
+
+        # Add scaling factors for poorly scaled variables
+        for x in self.x_bar:
+            self.scaling_factor[self.retentate_flow_volume[x]] = 1e-2
+            self.scaling_factor[self.retentate_conc_mass_cobalt[x]] = 1e-1
+            self.scaling_factor[self.retentate_conc_mass_chlorine[x]] = 1e-1
+
+            for z in self.z_bar:
+                self.scaling_factor[self.D_lithium_lithium[x, z]] = 1e8
+                self.scaling_factor[self.D_lithium_cobalt[x, z]] = 1e8
+                self.scaling_factor[self.D_cobalt_lithium[x, z]] = 1e8
+                self.scaling_factor[self.D_cobalt_cobalt[x, z]] = 1e8
+
+                self.scaling_factor[self.volume_flux_water[x]] = 1e2
+                self.scaling_factor[self.mass_flux_lithium[x]] = 1e2
+                self.scaling_factor[self.mass_flux_cobalt[x]] = 1e2
+                self.scaling_factor[self.mass_flux_chlorine[x]] = 1e2
+
+        # Add scaling factors for poorly scaled constraints
+        for x in self.x_bar:
+
+            for z in self.z_bar:
+                self.scaling_factor[self.D_lithium_lithium_calculation[x, z]] = 1e12
+                self.scaling_factor[self.D_lithium_cobalt_calculation[x, z]] = 1e12
+                self.scaling_factor[self.D_cobalt_lithium_calculation[x, z]] = 1e12
+                self.scaling_factor[self.D_cobalt_cobalt_calculation[x, z]] = 1e12
+
+                if z != 0:
+                    self.scaling_factor[self.lithium_flux_membrane[x, z]] = 1e8
+                    self.scaling_factor[self.cobalt_flux_membrane[x, z]] = 1e8
 
     # TODO: add ports

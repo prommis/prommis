@@ -13,7 +13,6 @@ Author: Molly Dougher
 from pyomo.environ import (
     ConcreteModel,
     SolverFactory,
-    Suffix,
     TransformationFactory,
     assert_optimal_termination,
     value,
@@ -73,7 +72,6 @@ def solve_model(m):
     Args:
         m: Pyomo model
     """
-    set_scaling(m)
     scaling = TransformationFactory("core.scale_model")
     scaled_model = scaling.create_using(m, rename=False)
 
@@ -82,44 +80,6 @@ def solve_model(m):
     assert_optimal_termination(results)
 
     scaling.propagate_solution(scaled_model, m)
-
-
-def set_scaling(m):
-    """
-    Apply scaling factors to certain constraints to improve solver performance
-
-    Args:
-        m: Pyomo model
-    """
-    m.scaling_factor = Suffix(direction=Suffix.EXPORT)
-
-    # Add scaling factors for poorly scaled variables
-    for x in m.fs.membrane.x_bar:
-        m.scaling_factor[m.fs.membrane.retentate_flow_volume[x]] = 1e-2
-        m.scaling_factor[m.fs.membrane.retentate_conc_mass_cobalt[x]] = 1e-1
-        m.scaling_factor[m.fs.membrane.retentate_conc_mass_chlorine[x]] = 1e-1
-        for z in m.fs.membrane.z_bar:
-            m.scaling_factor[m.fs.membrane.D_lithium_lithium[x, z]] = 1e8
-            m.scaling_factor[m.fs.membrane.D_lithium_cobalt[x, z]] = 1e8
-            m.scaling_factor[m.fs.membrane.D_cobalt_lithium[x, z]] = 1e8
-            m.scaling_factor[m.fs.membrane.D_cobalt_cobalt[x, z]] = 1e8
-
-            m.scaling_factor[m.fs.membrane.volume_flux_water[x]] = 1e2
-            m.scaling_factor[m.fs.membrane.mass_flux_lithium[x]] = 1e2
-            m.scaling_factor[m.fs.membrane.mass_flux_cobalt[x]] = 1e2
-            m.scaling_factor[m.fs.membrane.mass_flux_chlorine[x]] = 1e2
-
-    # Add scaling factors for poorly scaled constraints
-    for x in m.fs.membrane.x_bar:
-        for z in m.fs.membrane.z_bar:
-            m.scaling_factor[m.fs.membrane.D_lithium_lithium_calculation[x, z]] = 1e12
-            m.scaling_factor[m.fs.membrane.D_lithium_cobalt_calculation[x, z]] = 1e12
-            m.scaling_factor[m.fs.membrane.D_cobalt_lithium_calculation[x, z]] = 1e12
-            m.scaling_factor[m.fs.membrane.D_cobalt_cobalt_calculation[x, z]] = 1e12
-
-            if z != 0:
-                m.scaling_factor[m.fs.membrane.lithium_flux_membrane[x, z]] = 1e8
-                m.scaling_factor[m.fs.membrane.cobalt_flux_membrane[x, z]] = 1e8
 
 
 def plot_results(m):

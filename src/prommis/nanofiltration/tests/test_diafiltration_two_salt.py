@@ -13,7 +13,6 @@ from pyomo.environ import (
     Constraint,
     Param,
     SolverFactory,
-    Suffix,
     TransformationFactory,
     Var,
     assert_optimal_termination,
@@ -270,69 +269,6 @@ class TestDiafiltrationTwoSalt(object):
     @pytest.mark.solver
     @pytest.mark.component
     def test_solve(self, diafiltration_two_salt):
-        diafiltration_two_salt.scaling_factor = Suffix(direction=Suffix.EXPORT)
-
-        # Add scaling factors for poorly scaled variables
-        for x in diafiltration_two_salt.fs.unit.x_bar:
-            diafiltration_two_salt.scaling_factor[
-                diafiltration_two_salt.fs.unit.retentate_flow_volume[x]
-            ] = 1e-2
-            diafiltration_two_salt.scaling_factor[
-                diafiltration_two_salt.fs.unit.retentate_conc_mass_cobalt[x]
-            ] = 1e-1
-            diafiltration_two_salt.scaling_factor[
-                diafiltration_two_salt.fs.unit.retentate_conc_mass_chlorine[x]
-            ] = 1e-1
-            for z in diafiltration_two_salt.fs.unit.z_bar:
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.D_lithium_lithium[x, z]
-                ] = 1e8
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.D_lithium_cobalt[x, z]
-                ] = 1e8
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.D_cobalt_lithium[x, z]
-                ] = 1e8
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.D_cobalt_cobalt[x, z]
-                ] = 1e8
-
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.volume_flux_water[x]
-                ] = 1e2
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.mass_flux_lithium[x]
-                ] = 1e2
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.mass_flux_cobalt[x]
-                ] = 1e2
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.mass_flux_chlorine[x]
-                ] = 1e2
-
-        # Add scaling factors for poorly scaled constraints
-        for x in diafiltration_two_salt.fs.unit.x_bar:
-            for z in diafiltration_two_salt.fs.unit.z_bar:
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.D_lithium_lithium_calculation[x, z]
-                ] = 1e12
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.D_lithium_cobalt_calculation[x, z]
-                ] = 1e12
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.D_cobalt_lithium_calculation[x, z]
-                ] = 1e12
-                diafiltration_two_salt.scaling_factor[
-                    diafiltration_two_salt.fs.unit.D_cobalt_cobalt_calculation[x, z]
-                ] = 1e12
-
-                if z != 0:
-                    diafiltration_two_salt.scaling_factor[
-                        diafiltration_two_salt.fs.unit.lithium_flux_membrane[x, z]
-                    ] = 1e8
-                    diafiltration_two_salt.scaling_factor[
-                        diafiltration_two_salt.fs.unit.cobalt_flux_membrane[x, z]
-                    ] = 1e8
 
         scaling = TransformationFactory("core.scale_model")
         scaled_model = scaling.create_using(diafiltration_two_salt, rename=False)

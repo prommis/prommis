@@ -30,7 +30,7 @@ class SolventExtractionReactionsData(
 ):
     """
     Reaction package for the solvent extraction of rare earth elements from acidic leachate
-    solution using organic extractant DEHPA.
+    solution using organic extractant DEHPA and TBP as phase modifier.
 
     Rare earth elements : La, Pr, Ce, Dy, Nd, Sm, Gd, Y
     Impurities : Al, Ca, Fe, Sc
@@ -58,10 +58,13 @@ class SolventExtractionReactionsData(
     Phase 1'.
 
     The parameters for each of the components m[i],B[i] can be expressed as an empirical function
-    of the extractant dosage (%v/v) of the system.
+    of the extractant dosage (volume percentage) of the system.
 
     m[i] = m0[i] + m1[i]*dosage
     B[i] = B0[i] + B1[i]*log(dosage)
+
+    If a system has x% DEHPA, then set `blk.extractant_dosage`=x, for example for 5% DEHPA system,
+    set `blk.extractant_dosage`=5
 
     The data points for these empirical correlations have been taken from the phase 1 report.
     Certain rare earth elements do not have adequate data, hence certain functionalities could
@@ -198,28 +201,10 @@ class SolventExtractionReactionsData(
                 "Nd": 0,
                 "La": 0,
                 "Pr": 0,
-                "Sc": 6130.944,
-                "Al": 0.0548,
-                "Ca": 0.0309,
-                "Fe": 0.3280,
-            },
-        )
-
-        self.K2 = Param(
-            self.element_list,
-            initialize={
-                "Ce": 0,
-                "Y": 0,
-                "Gd": 0,
-                "Dy": 0,
-                "Sm": 0,
-                "Nd": 0,
-                "La": 0,
-                "Pr": 0,
-                "Sc": 65.2515,
-                "Al": 0.0515,
-                "Ca": 0.1402,
-                "Fe": 0.0683,
+                "Sc": 632.4976,
+                "Al": 0.0531,
+                "Ca": 0.0658,
+                "Fe": 0.1496,
             },
         )
 
@@ -323,28 +308,13 @@ class SolventExtractionReactionsData(ProcessBlockData):
         )
 
         def distribution_eq(b, e):
-            t, s = b.index()
-            aq_block = b.parent_block().aqueous[t, s]
+            aq_block = b.parent_block().aqueous[b.index()]
 
             pH = aq_block.pH_phase["liquid"]
-
-            if s == 1:
-                return (b.distribution_coefficient[e]) == 10 ** (
-                    (b.params.m0[e] + b.params.extractant_dosage * b.params.m1[e]) * pH
-                    + (
-                        b.params.B0[e]
-                        + b.params.B1[e] * log10(b.params.extractant_dosage)
-                    )
-                ) * (1 - b.params.K_corr[e]) + b.params.K_corr[e] * b.params.K1[e]
-
-            else:
-                return (b.distribution_coefficient[e]) == 10 ** (
-                    (b.params.m0[e] + b.params.extractant_dosage * b.params.m1[e]) * pH
-                    + (
-                        b.params.B0[e]
-                        + b.params.B1[e] * log10(b.params.extractant_dosage)
-                    )
-                ) * (1 - b.params.K_corr[e]) + b.params.K_corr[e] * b.params.K2[e]
+            return (b.distribution_coefficient[e]) == 10 ** (
+                (b.params.m0[e] + b.params.extractant_dosage * b.params.m1[e]) * pH
+                + (b.params.B0[e] + b.params.B1[e] * log10(b.params.extractant_dosage))
+            ) * (1 - b.params.K_corr[e]) + b.params.K_corr[e] * b.params.K1[e]
 
         self.distribution_constraint = Constraint(
             self.params.element_list, rule=distribution_eq

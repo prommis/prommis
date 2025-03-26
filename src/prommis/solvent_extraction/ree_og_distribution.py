@@ -199,7 +199,7 @@ class REESolExOgStateBlockData(StateBlockData):
         if not self.config.defined_state:
             # Concentration of kerosene based on assumed density
             self.kerosene_concentration = Constraint(
-                expr=self.conc_mass_comp["Kerosene"] == 820e3 * units.mg / units.L
+                expr=self.conc_mass_comp["Kerosene"] == 8.2e5 * units.mg / units.L
             )
 
     def get_material_flow_basis(self):
@@ -209,16 +209,25 @@ class REESolExOgStateBlockData(StateBlockData):
         add_object_reference(self, "dens_mass", self.params.dens_mass)
 
     def get_material_flow_terms(self, p, j):
-        return units.convert(
-            self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
-            to_units=units.mol / units.hour,
-        )
+        if j == "Kerosene":
+            return self.flow_vol * self.params.dens_mass / self.params.mw[j]
+        else:
+            return units.convert(
+                self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
+                to_units=units.mol / units.hour,
+            )
 
     def get_material_density_terms(self, p, j):
-        return units.convert(
-            self.conc_mass_comp[j] / self.params.mw[j],
-            to_units=units.mol / units.m**3,
-        )
+        if j == "Kerosene":
+            return units.convert(
+                self.params.dens_mass / self.params.mw[j],
+                to_units=units.mol / units.m**3,
+            )
+        else:
+            return units.convert(
+                self.conc_mass_comp[j] / self.params.mw[j],
+                to_units=units.mol / units.m**3,
+            )
 
     def get_enthalpy_flow_terms(b, p):
         return (
@@ -229,11 +238,9 @@ class REESolExOgStateBlockData(StateBlockData):
         )
 
     def get_energy_density_terms(b, p):
-        return (
-            (b.params.dens_mass / b.params.mw["Kerosene"])
-            * b.params.cp_mol
-            * (b.temperature - b.params.temperature_ref)
-        )
+        return (b.params.dens_mass / b.params.mw["Kerosene"]) * b.params.cp_mol * (
+            b.temperature - b.params.temperature_ref
+        ) - b.pressure * b.params.mw["H2O"] / b.params.dens_mass
 
     def default_energy_balance_type(self):
         return EnergyBalanceType.enthalpyTotal

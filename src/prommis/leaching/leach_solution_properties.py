@@ -251,7 +251,7 @@ class LeachSolutionStateBlockData(StateBlockData):
 
         @self.Constraint(self.phase_list)
         def pH_constraint(b, p):
-            return b.pH_phase[p] == -log10(b.conc_mol_comp["H"] * units.L / units.mol)
+            return 10 ** (-b.pH_phase[p]) == b.conc_mol_comp["H"] * units.L / units.mol
 
         # Concentration conversion constraint
         @self.Constraint(self.params.component_list)
@@ -279,10 +279,27 @@ class LeachSolutionStateBlockData(StateBlockData):
 
     def get_material_flow_terms(self, p, j):
         # Note conversion to mol/hour
-        return units.convert(
-            self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
-            to_units=units.mol / units.hour,
-        )
+        if j == "H2O":
+            # Assume constant density of 1 kg/L
+            return self.flow_vol * self.params.dens_mass / self.params.mw[j]
+        else:
+            # Need to convert from moles to mass
+            return units.convert(
+                self.flow_vol * self.conc_mass_comp[j] / self.params.mw[j],
+                to_units=units.mol / units.hour,
+            )
+
+    def get_material_density_terms(self, p, j):
+        if j == "H2O":
+            return units.convert(
+                self.params.dens_mass / self.params.mw[j],
+                to_units=units.mol / units.m**3,
+            )
+        else:
+            return units.convert(
+                self.conc_mass_comp[j] / self.params.mw[j],
+                to_units=units.mol / units.m**3,
+            )
 
     def get_enthalpy_flow_terms(b, p):
         return (
@@ -292,18 +309,10 @@ class LeachSolutionStateBlockData(StateBlockData):
             * (b.temperature - b.params.temperature_ref)
         )
 
-    def get_material_density_terms(self, p, j):
-        return units.convert(
-            self.conc_mass_comp[j] / self.params.mw[j],
-            to_units=units.mol / units.m**3,
-        )
-
     def get_energy_density_terms(b, p):
-        return (
-            (b.params.dens_mass / b.params.mw["H2O"])
-            * b.params.cp_mol
-            * (b.temperature - b.params.temperature_ref)
-        )
+        return (b.params.dens_mass / b.params.mw["H2O"]) * b.params.cp_mol * (
+            b.temperature - b.params.temperature_ref
+        ) - b.pressure * b.params.mw["H2O"] / b.params.dens_mass
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar

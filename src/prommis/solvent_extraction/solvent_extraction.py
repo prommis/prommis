@@ -66,7 +66,7 @@ The core model consists of a MSContactor model, with stream names hard coded as 
 'organic', and the stream dictionaries and number of finite elements are the same as those provided
 by the user.
 
-This model uses the heterogeneous reaction term defined in the MSContactor, to quantify the amount of
+This model uses the heterogeneous reaction term defined in the MSContactor, to calculate the amount of
 material transferred between the phases for each of the rare earth elements. The distribution coefficients
 used for this quantification are defined in the reaction package, and the constraint pertaining to the
 distribution coefficient is defined in the solvent extraction model.
@@ -88,6 +88,7 @@ from idaes.core import (
     useDefault,
 )
 from idaes.core.util.config import is_physical_parameter_block
+from idaes.core.util.constants import Constants
 from idaes.core.initialization import ModularInitializerBase
 
 from idaes.models.unit_models.mscontactor import MSContactor
@@ -300,7 +301,7 @@ class SolventExtractionData(UnitModelBlockData):
             rule=distribution_ratio_rule,
         )
 
-        self.cross_sec_area = Param(
+        self.area_cross_stage = Param(
             self.mscontactor.elements,
             units=units.m**2,
             doc="Cross sectional area stage",
@@ -317,7 +318,8 @@ class SolventExtractionData(UnitModelBlockData):
         )
 
         def aqueous_pressure_calculation(b, t, s):
-            g = 9.8 * (units.m) / units.sec**2
+            # g = 9.8 * (units.m) / units.sec**2
+            g = Constants.acceleration_gravity
             P_atm = 101325 * units.Pa
 
             rho_aq = sum(
@@ -335,7 +337,7 @@ class SolventExtractionData(UnitModelBlockData):
                     * (
                         b.mscontactor.volume[s]
                         * b.mscontactor.volume_frac_stream[t, s, "aqueous"]
-                        / b.cross_sec_area[s]
+                        / b.area_cross_stage[s]
                         + b.elevation[s]
                     )
                 ),
@@ -347,7 +349,7 @@ class SolventExtractionData(UnitModelBlockData):
                     * g
                     * b.mscontactor.volume[s]
                     * b.mscontactor.volume_frac_stream[t, s, "organic"]
-                    / b.cross_sec_area[s]
+                    / b.area_cross_stage[s]
                 ),
                 to_units=units.Pa,
             )
@@ -374,7 +376,7 @@ class SolventExtractionData(UnitModelBlockData):
                     * g
                     * b.mscontactor.volume[s]
                     * b.mscontactor.volume_frac_stream[t, s, "organic"]
-                    / b.cross_sec_area[s]
+                    / b.area_cross_stage[s]
                 ),
                 to_units=units.Pa,
             )

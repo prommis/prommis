@@ -12,12 +12,10 @@ Author: Molly Dougher
 
 from pyomo.environ import (
     ConcreteModel,
-    Param,
     SolverFactory,
     Suffix,
     TransformationFactory,
     assert_optimal_termination,
-    units,
     value,
 )
 

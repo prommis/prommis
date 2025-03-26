@@ -259,7 +259,7 @@ class TestDiafiltrationTwoSalt(object):
         assert isinstance(
             diafiltration_two_salt.fs.unit.electroneutrality_membrane, Constraint
         )
-    
+
         # TODO: add additional relevant assertions
 
     @pytest.mark.component

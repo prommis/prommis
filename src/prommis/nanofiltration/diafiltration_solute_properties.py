@@ -66,7 +66,7 @@ class SoluteParameterData(PhysicalParameterBlock):
             },
         )
 
-        # add sigma
+        # add thermal reflection coefficient, where 1 represents ideal behavior
         self.sigma = Param(
             self.component_list,
             units=units.dimensionless,

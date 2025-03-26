@@ -10,7 +10,7 @@ Two Salt Diafiltration Unit Model
 
 Author: Molly Dougher
 
-This multi-component model for the diafiltration membrane model a two salt system with a common
+This multi-component model for the diafiltration membrane model is a two salt system with a common
 anion. The membrane is designed for use in the diafiltration cascade, i.e., is a spiral-wound
 membrane module.
 
@@ -35,6 +35,7 @@ from pyomo.dae import ContinuousSet, DerivativeVar
 from pyomo.environ import (
     Constraint,
     NonNegativeReals,
+    Param,
     TransformationFactory,
     Var,
     units,
@@ -81,72 +82,6 @@ see property package for documentation}
         ),
     )
     CONFIG.declare(
-        "membrane_length",
-        ConfigValue(
-            doc="Length of the membrane, wound radially (m)",
-        ),
-    )
-    CONFIG.declare(
-        "membrane_width",
-        ConfigValue(
-            doc="Width of the membrane, parallel to the surface (m)",
-        ),
-    )
-    CONFIG.declare(
-        "membrane_thickness",
-        ConfigValue(
-            doc="Thickness of membrane (m)",
-        ),
-    )
-    CONFIG.declare(
-        "membrane_permeability",
-        ConfigValue(
-            doc="Hydraulic permeability coefficient (m/h/bar)",
-        ),
-    )
-    CONFIG.declare(
-        "applied_pressure",
-        ConfigValue(
-            doc="Pressure applied to membrane (bar)",
-        ),
-    )
-    CONFIG.declare(
-        "feed_flow_volume",
-        ConfigValue(
-            doc="Volumetric flow rate of the feed (m3/h)",
-        ),
-    )
-    CONFIG.declare(
-        "feed_conc_mass_lithium",
-        ConfigValue(
-            doc="Mass concentration of lithium in the feed (kg/m3)",
-        ),
-    )
-    CONFIG.declare(
-        "feed_conc_mass_cobalt",
-        ConfigValue(
-            doc="Mass concentration of cobalt in the feed (kg/m3)",
-        ),
-    )
-    CONFIG.declare(
-        "diafiltrate_flow_volume",
-        ConfigValue(
-            doc="Volumetric flow rate of the diafiltrate (m3/h)",
-        ),
-    )
-    CONFIG.declare(
-        "diafiltrate_conc_mass_lithium",
-        ConfigValue(
-            doc="Mass concentration of lithium in the diafiltrate (kg/m3)",
-        ),
-    )
-    CONFIG.declare(
-        "diafiltrate_conc_mass_cobalt",
-        ConfigValue(
-            doc="Mass concentration of cobalt in the diafiltrate (kg/m3)",
-        ),
-    )
-    CONFIG.declare(
         "NFEx",
         ConfigValue(
             doc="Number of discretization points in the x-direction",
@@ -167,9 +102,89 @@ see property package for documentation}
 
         # TODO: generalize to any 2 cations and 1 anion
 
+        self.add_mutable_parameters()
         self.add_variables()
         self.add_constraints()
         self.discretize_model()
+
+    def add_mutable_parameters(self):
+        """
+        Adds parameters for the two salt diafiltration unit model
+
+        Assigns default values that can be changed by the user during implementation
+        """
+        self.membrane_thickness = Param(
+            initialize=1e-7,
+            mutable=True,
+            units=units.m,
+            doc="Thickness of membrane (z-direction)",
+        )
+        self.membrane_width = Param(
+            initialize=1,
+            mutable=True,
+            units=units.m,
+            doc="Width of the membrane (x-direction)",
+        )
+        self.membrane_length = Param(
+            initialize=100,
+            mutable=True,
+            units=units.m,
+            doc="Length of the membrane, wound radially",
+        )
+        self.applied_pressure = Param(
+            initialize=10,
+            mutable=True,
+            units=units.bar,
+            doc="Pressure applied to membrane",
+        )
+        self.membrane_permeability = Param(
+            initialize=0.01,
+            mutable=True,
+            units=units.m / units.h / units.bar,
+            doc="Hydraulic permeability coefficient",
+        )
+        self.feed_flow_volume = Param(
+            initialize=100,
+            mutable=True,
+            units=units.m**3 / units.h,
+            doc="Volumetric flow rate of the feed",
+        )
+        self.feed_conc_mass_lithium = Param(
+            initialize=1.7,
+            mutable=True,
+            units=units.kg / units.m**3,
+            doc="Mass concentration of lithium in the feed",
+        )
+        self.feed_conc_mass_cobalt = Param(
+            initialize=17,
+            mutable=True,
+            units=units.kg / units.m**3,
+            doc="Mass concentration of cobalt in the feed",
+        )
+        self.diafiltrate_flow_volume = Param(
+            initialize=30,
+            mutable=True,
+            units=units.m**3 / units.h,
+            doc="Volumetric flow rate of the diafiltrate",
+        )
+        self.diafiltrate_conc_mass_lithium = Param(
+            initialize=0.1,
+            mutable=True,
+            units=units.kg / units.m**3,
+            doc="Mass concentration of lithium in the diafiltrate",
+        )
+        self.diafiltrate_conc_mass_cobalt = Param(
+            initialize=0.2,
+            mutable=True,
+            units=units.kg / units.m**3,
+            doc="Mass concentration of cobalt in the diafiltrate",
+        )
+        self.temperature = Param(
+            initialize=298,
+            mutable=True,
+            units=units.K,
+            doc="System temperature",
+        )
 
     def add_variables(self):
         """
@@ -238,28 +253,28 @@ see property package for documentation}
         )
         self.permeate_flow_volume = Var(
             self.x_bar,
-            initialize=0,
+            initialize=1e-4,
             units=units.m**3 / units.h,
             domain=NonNegativeReals,
             doc="Volumetric flow rate of the permeate, x-dependent",
         )
         self.permeate_conc_mass_lithium = Var(
             self.x_bar,
-            initialize=0,
+            initialize=1e-4,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
             doc="Mass concentration of lithium in the permeate, x-dependent",
         )
         self.permeate_conc_mass_cobalt = Var(
             self.x_bar,
-            initialize=0,
+            initialize=1e-4,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
             doc="Mass concentration of cobalt in the permeate, x-dependent",
         )
         self.permeate_conc_mass_chlorine = Var(
             self.x_bar,
-            initialize=0,
+            initialize=1e-4,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
             doc="Mass concentration of chlorine in the retentate, x-dependent",
@@ -357,9 +372,7 @@ see property package for documentation}
         # mass balance constraints
         def _overall_mass_balance(self, x):
             return self.d_retentate_flow_volume_dx[x] == (
-                -self.volume_flux_water[x]
-                * self.config.membrane_length
-                * self.config.membrane_width
+                -self.volume_flux_water[x] * self.membrane_length * self.membrane_width
             )
 
         self.overall_mass_balance = Constraint(self.x_bar, rule=_overall_mass_balance)
@@ -372,8 +385,8 @@ see property package for documentation}
                     self.volume_flux_water[x] * self.retentate_conc_mass_lithium[x]
                     - self.mass_flux_lithium[x]
                 )
-                * self.config.membrane_length
-                * self.config.membrane_width
+                * self.membrane_length
+                * self.membrane_width
             )
 
         self.lithium_mass_balance = Constraint(self.x_bar, rule=_lithium_mass_balance)
@@ -386,8 +399,8 @@ see property package for documentation}
                     self.volume_flux_water[x] * self.retentate_conc_mass_cobalt[x]
                     - self.mass_flux_cobalt[x]
                 )
-                * self.config.membrane_length
-                * self.config.membrane_width
+                * self.membrane_length
+                * self.membrane_width
             )
 
         self.cobalt_mass_balance = Constraint(self.x_bar, rule=_cobalt_mass_balance)
@@ -399,9 +412,8 @@ see property package for documentation}
                 self.retentate_conc_mass_lithium[x] * self.retentate_flow_volume[x]
                 + self.permeate_conc_mass_lithium[x] * self.permeate_flow_volume[x]
             ) == (
-                self.config.feed_flow_volume * self.config.feed_conc_mass_lithium
-                + self.config.diafiltrate_flow_volume
-                * self.config.diafiltrate_conc_mass_lithium
+                self.feed_flow_volume * self.feed_conc_mass_lithium
+                + self.diafiltrate_flow_volume * self.diafiltrate_conc_mass_lithium
             )
 
         self.general_mass_balance_lithium = Constraint(
@@ -415,9 +427,8 @@ see property package for documentation}
                 self.retentate_conc_mass_cobalt[x] * self.retentate_flow_volume[x]
                 + self.permeate_conc_mass_cobalt[x] * self.permeate_flow_volume[x]
             ) == (
-                self.config.feed_flow_volume * self.config.feed_conc_mass_cobalt
-                + self.config.diafiltrate_flow_volume
-                * self.config.diafiltrate_conc_mass_cobalt
+                self.feed_flow_volume * self.feed_conc_mass_cobalt
+                + self.diafiltrate_flow_volume * self.diafiltrate_conc_mass_cobalt
             )
 
         self.general_mass_balance_cobalt = Constraint(
@@ -432,8 +443,8 @@ see property package for documentation}
                 self.permeate_flow_volume[x]
                 == self.volume_flux_water[x]
                 * x
-                * self.config.membrane_length
-                * self.config.membrane_width
+                * self.membrane_length
+                * self.membrane_width
             )
 
         self.geometric_flux_equation_overall = Constraint(
@@ -467,8 +478,8 @@ see property package for documentation}
             if x == 0:
                 return Constraint.Skip
             return self.volume_flux_water[x] == (
-                self.config.membrane_permeability
-                * (self.config.applied_pressure - self.osmotic_pressure[x])
+                self.membrane_permeability
+                * (self.applied_pressure - self.osmotic_pressure[x])
             )
 
         self.lumped_water_flux = Constraint(self.x_bar, rule=_lumped_water_flux)
@@ -549,12 +560,12 @@ see property package for documentation}
                 self.membrane_conc_mass_lithium[x, z] * self.volume_flux_water[x]
                 + (
                     self.D_lithium_lithium[x, z]
-                    / self.config.membrane_thickness
+                    / self.membrane_thickness
                     * self.d_membrane_conc_mass_lithium_dz[x, z]
                 )
                 + (
                     self.D_lithium_cobalt[x, z]
-                    / self.config.membrane_thickness
+                    / self.membrane_thickness
                     * self.d_membrane_conc_mass_cobalt_dz[x, z]
                 )
             )
@@ -571,12 +582,12 @@ see property package for documentation}
                 self.membrane_conc_mass_cobalt[x, z] * self.volume_flux_water[x]
                 + (
                     self.D_cobalt_lithium[x, z]
-                    / self.config.membrane_thickness
+                    / self.membrane_thickness
                     * self.d_membrane_conc_mass_lithium_dz[x, z]
                 )
                 + (
                     self.D_cobalt_cobalt[x, z]
-                    / self.config.membrane_thickness
+                    / self.membrane_thickness
                     * self.d_membrane_conc_mass_cobalt_dz[x, z]
                 )
             )
@@ -619,8 +630,7 @@ see property package for documentation}
                     (
                         self.config.property_package.num_solutes
                         * Constants.gas_constant  # J / mol / K
-                        * 298
-                        * units.K  # assume room temp
+                        * self.temperature
                     )
                     * (
                         self.config.property_package.sigma["Li"]
@@ -756,7 +766,7 @@ see property package for documentation}
         # initial conditions
         def _initial_retentate_flow_volume(self):
             return self.retentate_flow_volume[0] == (
-                self.config.feed_flow_volume + self.config.diafiltrate_flow_volume
+                self.feed_flow_volume + self.diafiltrate_flow_volume
             )
 
         self.initial_retentate_flow_volume = Constraint(
@@ -773,11 +783,10 @@ see property package for documentation}
         def _initial_retentate_conc_mass_lithium(self):
             return self.retentate_conc_mass_lithium[0] == (
                 (
-                    self.config.feed_flow_volume * self.config.feed_conc_mass_lithium
-                    + self.config.diafiltrate_flow_volume
-                    * self.config.diafiltrate_conc_mass_lithium
+                    self.feed_flow_volume * self.feed_conc_mass_lithium
+                    + self.diafiltrate_flow_volume * self.diafiltrate_conc_mass_lithium
                 )
-                / (self.config.feed_flow_volume + self.config.diafiltrate_flow_volume)
+                / (self.feed_flow_volume + self.diafiltrate_flow_volume)
             )
 
         self.initial_retentate_conc_mass_lithium = Constraint(
@@ -787,17 +796,17 @@ see property package for documentation}
         def _initial_retentate_conc_mass_cobalt(self):
             return self.retentate_conc_mass_cobalt[0] == (
                 (
-                    self.config.feed_flow_volume * self.config.feed_conc_mass_cobalt
-                    + self.config.diafiltrate_flow_volume
-                    * self.config.diafiltrate_conc_mass_cobalt
+                    self.feed_flow_volume * self.feed_conc_mass_cobalt
+                    + self.diafiltrate_flow_volume * self.diafiltrate_conc_mass_cobalt
                 )
-                / (self.config.feed_flow_volume + self.config.diafiltrate_flow_volume)
+                / (self.feed_flow_volume + self.diafiltrate_flow_volume)
             )
 
         self.initial_retentate_conc_mass_cobalt = Constraint(
             rule=_initial_retentate_conc_mass_cobalt
         )
 
+        # TODO: set these initial values to numerically 0; requires revisiting scaling
         def _initial_membrane_interface_lithium(self):
             return self.membrane_conc_mass_lithium[0, 0] == (0 * units.kg / units.m**3)
 

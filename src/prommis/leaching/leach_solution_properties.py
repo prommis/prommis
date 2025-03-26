@@ -10,7 +10,16 @@ Initial property package for REE leach solutions from coal refuse.
 Authors: Andrew Lee
 """
 
-from pyomo.environ import Constraint, Param, Set, Var, units, PositiveReals, Reals
+from pyomo.environ import (
+    Constraint,
+    Param,
+    Set,
+    Var,
+    units,
+    PositiveReals,
+    Reals,
+    log10,
+)
 
 from idaes.core import (
     Component,
@@ -242,7 +251,7 @@ class LeachSolutionStateBlockData(StateBlockData):
 
         @self.Constraint(self.phase_list)
         def pH_constraint(b, p):
-            return 10 ** (-b.pH_phase[p]) == b.conc_mol_comp["H"] * units.L / units.mol
+            return b.pH_phase[p] == -log10(b.conc_mol_comp["H"] * units.L / units.mol)
 
         # Concentration conversion constraint
         @self.Constraint(self.params.component_list)

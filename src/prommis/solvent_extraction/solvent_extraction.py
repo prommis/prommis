@@ -30,12 +30,6 @@ configuration that describes the organic feed's properties.
 The number of stages in the solvent extraction process has to be specified by the user through
 the ``number_of_finite_elements`` configuration. It takes an integer value.
 
-The amount of material transferred for each of the rare earth elements can be quantified by
-the use of distribution coefficient for each of the elements. The distribution coefficient is
-a function of the pH of the system and the dosage of the extractant. This correlation has been
-developed in a reaction package, and the package has to be given as an argument to the model by
-the user through the ``reaction_package`` configuration, with an additional configuration of
-``reaction_package_args`` defining any special kind of arguments for the package.
 
 Stream configurations
 ---------------------

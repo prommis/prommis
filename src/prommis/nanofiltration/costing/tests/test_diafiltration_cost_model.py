@@ -42,7 +42,7 @@ def test_diafiltration_costing():
     m.w = Param(
         initialize=1.5,
         mutable=True,
-        doc="Membrane module length",
+        doc="Membrane width (module/tube length)",
         units=units.m,
     )
     m.Jw = Param(

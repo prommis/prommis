@@ -255,28 +255,28 @@ see property package for documentation}
         )
         self.permeate_flow_volume = Var(
             self.x_bar,
-            initialize=1e-4,
+            initialize=1e-8,
             units=units.m**3 / units.h,
             domain=NonNegativeReals,
             doc="Volumetric flow rate of the permeate, x-dependent",
         )
         self.permeate_conc_mass_lithium = Var(
             self.x_bar,
-            initialize=1e-4,
+            initialize=1e-10,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
             doc="Mass concentration of lithium in the permeate, x-dependent",
         )
         self.permeate_conc_mass_cobalt = Var(
             self.x_bar,
-            initialize=1e-4,
+            initialize=1e-10,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
             doc="Mass concentration of cobalt in the permeate, x-dependent",
         )
         self.permeate_conc_mass_chlorine = Var(
             self.x_bar,
-            initialize=1e-4,
+            initialize=1e-10,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
             doc="Mass concentration of chlorine in the retentate, x-dependent",
@@ -775,13 +775,6 @@ see property package for documentation}
             rule=_initial_retentate_flow_volume
         )
 
-        def _initial_permeate_flow_volume(self):
-            return self.permeate_flow_volume[0] == (0 * units.m**3 / units.h)
-
-        self.initial_permeate_flow_volume = Constraint(
-            rule=_initial_permeate_flow_volume
-        )
-
         def _initial_retentate_conc_mass_lithium(self):
             return self.retentate_conc_mass_lithium[0] == (
                 (
@@ -808,37 +801,53 @@ see property package for documentation}
             rule=_initial_retentate_conc_mass_cobalt
         )
 
-        # TODO: set these initial values to numerically 0; requires revisiting scaling
+        # set "zero" initial values to a sufficiently small value
+        # flow rates: 1e-8
+        # concentrations: 1e-10
+        # derivatives: 1e-15
+        def _initial_permeate_flow_volume(self):
+            return self.permeate_flow_volume[0] == (1e-8 * units.m**3 / units.h)
+
+        self.initial_permeate_flow_volume = Constraint(
+            rule=_initial_permeate_flow_volume
+        )
+
         def _initial_membrane_interface_lithium(self):
-            return self.membrane_conc_mass_lithium[0, 0] == (0 * units.kg / units.m**3)
+            return self.membrane_conc_mass_lithium[0, 0] == (
+                1e-10 * units.kg / units.m**3
+            )
 
         self.initial_membrane_interface_lithium = Constraint(
             rule=_initial_membrane_interface_lithium
         )
 
         def _initial_membrane_interface_cobalt(self):
-            return self.membrane_conc_mass_cobalt[0, 0] == (0 * units.kg / units.m**3)
+            return self.membrane_conc_mass_cobalt[0, 0] == (
+                1e-10 * units.kg / units.m**3
+            )
 
         self.initial_membrane_interface_cobalt = Constraint(
             rule=_initial_membrane_interface_cobalt
         )
 
         def _initial_membrane_interface_chlorine(self):
-            return self.membrane_conc_mass_chlorine[0, 0] == (0 * units.kg / units.m**3)
+            return self.membrane_conc_mass_chlorine[0, 0] == (
+                1e-10 * units.kg / units.m**3
+            )
 
         self.initial_membrane_interface_chlorine = Constraint(
             rule=_initial_membrane_interface_chlorine
         )
 
         def _initial_permeate_conc_mass_lithium(self):
-            return self.permeate_conc_mass_lithium[0] == (0 * units.kg / units.m**3)
+            return self.permeate_conc_mass_lithium[0] == (1e-10 * units.kg / units.m**3)
 
         self.initial_permeate_conc_mass_lithium = Constraint(
             rule=_initial_permeate_conc_mass_lithium
         )
 
         def _initial_permeate_conc_mass_cobalt(self):
-            return self.permeate_conc_mass_cobalt[0] == (0 * units.kg / units.m**3)
+            return self.permeate_conc_mass_cobalt[0] == (1e-10 * units.kg / units.m**3)
 
         self.initial_permeate_conc_mass_cobalt = Constraint(
             rule=_initial_permeate_conc_mass_cobalt
@@ -846,7 +855,7 @@ see property package for documentation}
 
         def _initial_d_retentate_conc_mass_lithium_dx(self):
             return self.d_retentate_conc_mass_lithium_dx[0] == (
-                0 * units.kg / units.m**3
+                1e-15 * units.kg / units.m**3
             )
 
         self.initial_d_retentate_conc_mass_lithium_dx = Constraint(
@@ -855,7 +864,7 @@ see property package for documentation}
 
         def _initial_d_retentate_conc_mass_cobalt_dx(self):
             return self.d_retentate_conc_mass_cobalt_dx[0] == (
-                0 * units.kg / units.m**3
+                1e-15 * units.kg / units.m**3
             )
 
         self.initial_d_retentate_conc_mass_cobalt_dx = Constraint(
@@ -863,7 +872,7 @@ see property package for documentation}
         )
 
         def _initial_d_retentate_flow_volume_dx(self):
-            return self.d_retentate_flow_volume_dx[0] == (0 * units.m**3 / units.h)
+            return self.d_retentate_flow_volume_dx[0] == (1e-15 * units.m**3 / units.h)
 
         self._initial_d_retentate_flow_volume_dx = Constraint(
             rule=_initial_d_retentate_flow_volume_dx
@@ -890,8 +899,6 @@ see property package for documentation}
         # Add scaling factors for poorly scaled variables
         for x in self.x_bar:
             self.scaling_factor[self.retentate_flow_volume[x]] = 1e-2
-            self.scaling_factor[self.retentate_conc_mass_cobalt[x]] = 1e-1
-            self.scaling_factor[self.retentate_conc_mass_chlorine[x]] = 1e-1
 
             for z in self.z_bar:
                 self.scaling_factor[self.D_lithium_lithium[x, z]] = 1e8
@@ -899,22 +906,17 @@ see property package for documentation}
                 self.scaling_factor[self.D_cobalt_lithium[x, z]] = 1e8
                 self.scaling_factor[self.D_cobalt_cobalt[x, z]] = 1e8
 
-                self.scaling_factor[self.volume_flux_water[x]] = 1e2
-                self.scaling_factor[self.mass_flux_lithium[x]] = 1e2
-                self.scaling_factor[self.mass_flux_cobalt[x]] = 1e2
-                self.scaling_factor[self.mass_flux_chlorine[x]] = 1e2
-
         # Add scaling factors for poorly scaled constraints
         for x in self.x_bar:
 
             for z in self.z_bar:
-                self.scaling_factor[self.D_lithium_lithium_calculation[x, z]] = 1e12
-                self.scaling_factor[self.D_lithium_cobalt_calculation[x, z]] = 1e12
-                self.scaling_factor[self.D_cobalt_lithium_calculation[x, z]] = 1e12
-                self.scaling_factor[self.D_cobalt_cobalt_calculation[x, z]] = 1e12
+                self.scaling_factor[self.D_lithium_lithium_calculation[x, z]] = 1e15
+                self.scaling_factor[self.D_lithium_cobalt_calculation[x, z]] = 1e15
+                self.scaling_factor[self.D_cobalt_lithium_calculation[x, z]] = 1e15
+                self.scaling_factor[self.D_cobalt_cobalt_calculation[x, z]] = 1e15
 
                 if z != 0:
-                    self.scaling_factor[self.lithium_flux_membrane[x, z]] = 1e8
-                    self.scaling_factor[self.cobalt_flux_membrane[x, z]] = 1e8
+                    self.scaling_factor[self.lithium_flux_membrane[x, z]] = 1e10
+                    self.scaling_factor[self.cobalt_flux_membrane[x, z]] = 1e10
 
     # TODO: add ports

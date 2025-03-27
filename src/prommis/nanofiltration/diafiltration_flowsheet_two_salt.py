@@ -49,7 +49,7 @@ def main():
     dt.assert_no_structural_warnings()
 
     solve_model(m)  # TODO: debug numerical scaling for higher NFE
-    dt.report_numerical_issues()
+    dt.assert_no_numerical_warnings()
 
     plot_results(m)
     plot_membrane_results(m)
@@ -208,7 +208,7 @@ def plot_membrane_results(m):
     c_chl_mem_df = DataFrame(index=x_vals, data=c_chl_mem_dict)
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, dpi=125, figsize=(15, 7))
-    lithium_plot = ax1.pcolor(c_lith_mem_df, cmap="viridis")
+    lithium_plot = ax1.pcolor(c_lith_mem_df, cmap="Blues")
     ax1.set_xlabel("z (dimensionless)", fontsize=10, fontweight="bold")
     ax1.set_ylabel("x (dimensionless)", fontsize=10, fontweight="bold")
     ax1.set_title(
@@ -217,7 +217,7 @@ def plot_membrane_results(m):
     ax1.tick_params(direction="in", labelsize=10)
     fig.colorbar(lithium_plot, ax=ax1)
 
-    cobalt_plot = ax2.pcolor(c_cob_mem_df, cmap="viridis")
+    cobalt_plot = ax2.pcolor(c_cob_mem_df, cmap="Blues")
     ax2.set_xlabel("z (dimensionless)", fontsize=10, fontweight="bold")
     ax2.set_title(
         "Cobalt Concentration\n in Membrane (kg/m$^3$)", fontsize=10, fontweight="bold"
@@ -225,7 +225,7 @@ def plot_membrane_results(m):
     ax2.tick_params(direction="in", labelsize=10)
     fig.colorbar(cobalt_plot, ax=ax2)
 
-    chlorine_plot = ax3.pcolor(c_chl_mem_df, cmap="viridis")
+    chlorine_plot = ax3.pcolor(c_chl_mem_df, cmap="Blues")
     ax3.set_xlabel("z (dimensionless)", fontsize=10, fontweight="bold")
     ax3.set_title(
         "Chlorine Concentration\n in Membrane (kg/m$^3$)",

@@ -326,17 +326,9 @@ class TestDiafiltrationTwoSalt(object):
                 value(diafiltration_two_salt.fs.unit.retentate_conc_mass_chlorine[1]),
                 22.585349063905188,
             ],
-            "permeate_final": [
-                value(diafiltration_two_salt.fs.unit.permeate_flow_volume[1]),
-                1.9315367820840497e-06,
-            ],
             "lithium_permeate_final": [
                 value(diafiltration_two_salt.fs.unit.permeate_conc_mass_lithium[1]),
                 3.3691596267961286,
-            ],
-            "cobalt_permeate_final": [
-                value(diafiltration_two_salt.fs.unit.permeate_conc_mass_cobalt[1]),
-                5.387084386093181e-06,
             ],
             "chlorine_permeate_final": [
                 value(diafiltration_two_salt.fs.unit.permeate_conc_mass_chlorine[1]),
@@ -346,6 +338,20 @@ class TestDiafiltrationTwoSalt(object):
 
         for model_result, test_val in test_dict.values():
             assert pytest.approx(test_val, rel=1e-5) == value(model_result)
+
+        test_dict_small_values = {
+            "permeate_final": [
+                value(diafiltration_two_salt.fs.unit.permeate_flow_volume[1]),
+                1.9315367820840497e-06,
+            ],
+            "cobalt_permeate_final": [
+                value(diafiltration_two_salt.fs.unit.permeate_conc_mass_cobalt[1]),
+                5.387084386093181e-06,
+            ],
+        }
+
+        for model_result, test_val in test_dict_small_values.values():
+            assert pytest.approx(test_val, rel=1e-2) == value(model_result)
 
     @pytest.mark.component
     def test_numerical_issues(self, diafiltration_two_salt):

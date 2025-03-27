@@ -17,17 +17,86 @@ membrane module.
 Configuration Arguments
 -----------------------
 
+The two-salt diafiltration model requires a property package that includes the moles of dissociated
+ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in 
+solution. 
+
+Additionally, there are two required arguments, ``NFEx`` and ``NFEz``, to specfiy the desired number 
+of finite elements across the width and thickness of the membrane, respectively.
+
 Model Structure
 ---------------
 
-Additional Constraints
-----------------------
+There are three phases in the two-salt diafiltration model: the retentate, the membrane, and the
+permeate. The retentate and the permeate are only discretized with respect to ``x``, while the
+membrane is discretized with respect to both ``x`` and ``z``. The resulting system of partial
+differential algebraic equations is solved by discretizing with the forward finite element method.
 
 Assumptions
 -----------
 
+The partition coefficients of all ions in solution are equal to 1, meaning the concentration of an 
+ion ``i`` just outside the membrane is equal to the concentration of ion ``i`` just inside the 
+membrane. We also assume that the membrane has no surface charged, which is a valid assumption for
+NF90 membranes.
+    
+The formation of a boundary layer at the membrane surface due to concentration polarization is 
+neglected for mathematical simplicity.
+
+The dominating transport mechanism within the bulk/retentate solution is convection in the 
+``x``-direction (parallel to the membrane surface). The dominating transport mechanism within the 
+permeate solution is convection in the ``z``-direction (perpendicular to the membrane surface).
+
+The transport mechanisms modeled within the membrane are convection, diffusion, and electromigration.
+Diffusion within the membrane that is normal to the pore walls is ignored, meaning the concentration 
+gradient of ion ``i`` within the membrane only has a ``z``-component (perpendicular to the membrane 
+surface).
+
+Sets
+----
+
+The two-salt diafiltration model defines the following discrete sets for ions in the system.
+
+.. math:: \mathcal{I}=\{\mathrm{Li^+,Co^{2+},Cl^-}\}
+
+There are 2 continuous sets for each of length dimension: the ``x``-direction parallel to the membrane
+surface and the ``z``-direction perpendicular to the membrane surface. ``x`` and ``z`` are non-
+dimensionalized with the membrane width (``w``) and thickness (``l``), respectively, to improve numerics.
+
+.. math:: \bar{x} \in \mathbb{R} \; | \; 0 \leq \bar{x} \geq 1
+
+.. math:: \bar{z} \in \mathbb{R} \; | \; 0 \leq \bar{z} \geq 1
+
+Parameters
+----------
+
+============================== ============================================= =============== ==========================
+Parameter                    Name                                             Default Value   Units
+============================== ============================================= =============== ==========================
+:math:`c_{\mathrm{Co^{2+}},d}` concentration of cobalt in the diafiltrate     0.2            :math:`kg m^{-3}` 
+:math:`c_{\mathrm{Li^+},d}`    concentration of lithium in the diafiltrate    0.1            :math:`kg m^{-3}` 
+:math:`c_{\mathrm{Co^{2+}},f}` concentration of cobalt in the feed            17             :math:`kg m^{-3}` 
+:math:`c_{\mathrm{Li^+},f}`    concentration of lithium in the feed           1.7            :math:`kg m^{-3}` 
+:math:`l`                      thickness of the membrane                      1e-07          :math:`m`
+:math:`L`                      length of the membrane                         100            :math:`m`
+:math:`L_p`                    hydraulic permeability of the membrane         0.01           :math:`m h^{-1} bar^{-1}`
+:math:`\delta P`               applied pressure to the membrane               10             :math:`bar`
+:math:`q_d`                    volumetic flow rate of the diafiltrate         30             :math:`m^3 h^{-1}`
+:math:`q_f`                    volumetic flow rate of the feed                100            :math:`m^3 h^{-1}`
+:math:`T`                      temperature of the system                      298            :math:`K`
+:math:`w`                      width of the membrane                          1              :math:`m`
+============================== ============================================= =============== ==========================
+
 Variables
 ---------
+
+
+
+Additional Constraints
+----------------------
+
+
+
 """
 
 from pyomo.common.config import ConfigBlock, ConfigValue

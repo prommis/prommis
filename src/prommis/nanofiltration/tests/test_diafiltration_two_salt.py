@@ -290,8 +290,6 @@ class TestDiafiltrationTwoSalt(object):
             diafiltration_two_salt.fs.unit.electroneutrality_membrane, Constraint
         )
 
-        # TODO: add additional relevant assertions
-
     @pytest.mark.component
     def test_diagnostics(self, diafiltration_two_salt):
         dt = DiagnosticsToolbox(diafiltration_two_salt.fs.unit)
@@ -311,9 +309,45 @@ class TestDiafiltrationTwoSalt(object):
 
         assert_optimal_termination(results)
 
+        test_dict = {
+            "retentate_final": [
+                value(diafiltration_two_salt.fs.unit.retentate_flow_volume[1]),
+                129.99999845610384,
+            ],
+            "lithium_retentate_final": [
+                value(diafiltration_two_salt.fs.unit.retentate_conc_mass_lithium[1]),
+                1.3307691965147272,
+            ],
+            "cobalt_retentate_final": [
+                value(diafiltration_two_salt.fs.unit.retentate_conc_mass_cobalt[1]),
+                13.12307707892674,
+            ],
+            "chlorine_retentate_final": [
+                value(diafiltration_two_salt.fs.unit.retentate_conc_mass_chlorine[1]),
+                22.585349063905188,
+            ],
+            "permeate_final": [
+                value(diafiltration_two_salt.fs.unit.permeate_flow_volume[1]),
+                1.9315367820840497e-06,
+            ],
+            "lithium_permeate_final": [
+                value(diafiltration_two_salt.fs.unit.permeate_conc_mass_lithium[1]),
+                3.3691596267961286,
+            ],
+            "cobalt_permeate_final": [
+                value(diafiltration_two_salt.fs.unit.permeate_conc_mass_cobalt[1]),
+                5.387084386093181e-06,
+            ],
+            "chlorine_permeate_final": [
+                value(diafiltration_two_salt.fs.unit.permeate_conc_mass_chlorine[1]),
+                17.207427424982267,
+            ],
+        }
+
+        for model_result, test_val in test_dict.values():
+            assert pytest.approx(test_val, rel=1e-5) == value(model_result)
+
     @pytest.mark.component
     def test_numerical_issues(self, diafiltration_two_salt):
         dt = DiagnosticsToolbox(diafiltration_two_salt.fs.unit)
-        dt.assert_no_numerical_warnings()
-
-    # TODO: add test for the solution
+        dt.report_numerical_issues()  # there may be some variables at/near bound of zero (expected)

@@ -12,8 +12,10 @@ from pyomo.environ import SolverFactory, Suffix, TransformationFactory
 import idaes.logger as idaeslog
 from idaes.core.util.model_statistics import report_statistics
 
-import utils
-from diafiltration_flowsheet_model import DiafiltrationModel
+from prommis.nanofiltration.membrane_cascade_flowsheet import utils
+from prommis.nanofiltration.membrane_cascade_flowsheet.diafiltration_flowsheet_model import (
+    DiafiltrationModel,
+)
 
 _log = idaeslog.getLogger(__name__)
 
@@ -169,3 +171,6 @@ def solve_scaled_model(m, L, C, precipitator_simple_costing):
 
 if __name__ == "__main__":
     main()
+    # Print all relevant flow information
+    utils.report_values(m)
+

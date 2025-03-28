@@ -6,6 +6,10 @@
 #####################################################################################################
 """Class for building the full IDAES diafiltration flowsheet."""
 
+import logging
+
+from pyomo.core.base.param import ScalarParam
+from pyomo.core.expr import identify_components
 
 # Pyomo imports
 from pyomo.environ import (
@@ -34,6 +38,16 @@ from idaes.core import (
     UnitModelBlock,
     UnitModelCostingBlock,
 )
+
+from pyomo.network import Arc
+
+# other imports
+import idaes.logger as idaeslog
+from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
+from idaes.core.util.initialization import propagate_state
+
+# IDAES imports
+from idaes.core.util.scaling import set_scaling_factor
 from idaes.models.unit_models import (
     EnergySplittingType,
     Mixer,
@@ -46,10 +60,6 @@ from idaes.models.unit_models import Separator as Splitter
 from idaes.models.unit_models import SeparatorInitializer
 
 # Custom imports
-from solute_property import SoluteParameters
-from membrane import Membrane
-from precipitator import Precipitator
-
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
     DiafiltrationCosting,
     DiafiltrationCostingData,
@@ -60,14 +70,22 @@ import idaes.logger as idaeslog
 import logging
 import numpy as np
 
+from prommis.nanofiltration.membrane_cascade_flowsheet.membrane import Membrane
+from prommis.nanofiltration.membrane_cascade_flowsheet.precipitator import Precipitator
+
+# Custom imports
+from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import (
+    SoluteParameters,
+)
+
 
 class DiafiltrationModel:
     """
     Multi-stage diafiltration model, built using custom IDAES units.
 
     Model specifications:
-    NS stages
-    NT tubes
+    NS Number of Stages
+    NT Number of Tubes
 
     Parameters:
     solutes
@@ -75,6 +93,28 @@ class DiafiltrationModel:
     sieving coefficient
     feed
     diafiltrate
+
+    Example input:
+    solutes=["Li", "Co"],
+    flux=0.1,
+    sieving_coefficient={"Li": 1.3, "Co": 0.5},
+    feed={
+        "solvent": 100,  # m^3/hr of water
+        "Li": 1.7 * 100,  # kg/hr
+        "Co": 17 * 100,  # kg/hr
+    },
+    diafiltrate={
+        "solvent": 30,  # m^3/hr of water
+        "Li": 0.1 * 30,  # kg/hr
+        "Co": 0.2 * 30,  # kg/hr
+    },
+    precipitate_yield={
+        "permeate": {"Li": 0.81, "Co": 0.05},
+        "retentate": {"Li": 0.05, "Co": 0.99},
+    },
+    precipitate=True,
+    solute_obj='Co' (or 'Li')
+
     """
 
     def __init__(
@@ -102,6 +142,7 @@ class DiafiltrationModel:
         atmospheric_pressure=101325,  # ambient pressure, Pa
         operating_pressure=145,  # nanofiltration operating pressure, psi
         simple_costing=False,
+        solute_obj="Co",
     ):
         """Store model parameters."""
         self.ns = NS
@@ -116,6 +157,7 @@ class DiafiltrationModel:
         self.atmospheric_pressure = atmospheric_pressure
         self.operating_pressure = operating_pressure
         self.simple_costing = simple_costing
+        self.solute_obj = solute_obj
 
     def build_flowsheet(self, mixing="tube"):
         """Build the multi-stage diafiltration flowsheet."""
@@ -139,16 +181,10 @@ class DiafiltrationModel:
             self.connect_diafiltrate(m)
             self.precipitate_objectives(m)
 
-        # resolve solver tolerance issues by setting LB of all units outside of
-        # membranes to 0
+        # set LB of all units outside of membranes to 0
         for i in m.component_data_objects(Var):
-            # i.setlb(0)
-            # if i.lb == 1e-8:
-            #     i.setlb(0)
-            if i.lb == 1e-8 and i.name.split(".")[1].split("[")[0] != "stage":
+            if i.lb == 1e-8 and "stage" not in i.name:
                 i.setlb(0)
-        #     elif i.lb == 1e-8:
-        #         i.setlb(1e-2)
 
         return m
 
@@ -378,8 +414,6 @@ class DiafiltrationModel:
             energy_split_basis=EnergySplittingType.none,
         )
 
-        # TODO change this to directly use state block instead of reference
-        # TODO look for other instances with this issue.
         # set feed values
         m.fs.split_feed.inlet.flow_vol[0].fix(self.feed["solvent"])
         for sol in self.solutes:
@@ -461,33 +495,45 @@ class DiafiltrationModel:
         @m.Expression()
         def rec_perc_co(b):
             return b.rec_mass_co / (
-                (self.feed["Co"] + self.diaf["Co"]) * units.kg / units.hour
+                m.fs.split_feed.mixed_state[0].flow_mass_solute["Co"]
+                + m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute["Co"]
             )
 
         @m.Expression()
         def rec_perc_li(b):
             return b.rec_mass_li / (
-                (self.feed["Li"] + self.diaf["Li"]) * units.kg / units.hour
+                m.fs.split_feed.mixed_state[0].flow_mass_solute["Co"]
+                + m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute["Co"]
             )
 
         # mass recovery objectives
         m.co_obj = Objective(expr=m.rec_mass_co, sense=maximize)
 
         m.li_obj = Objective(expr=m.rec_mass_li, sense=maximize)
-        m.li_obj.deactivate()  # normally using Co as objective
+
+        # select specified objective
+        if self.solute_obj == "Co":
+            m.li_obj.deactivate()
+        if self.solute_obj == "Li":
+            m.co_obj.deactivate()
 
         # percent recovery lower bound constraints
-        m.R = Param(initialize=0.95, mutable=True)
+        m.recovery_li = Param(initialize=0.95, mutable=True)
+        m.recovery_co = Param(initialize=0.95, mutable=True)
 
         @m.Constraint()
         def li_lb(b):
-            return b.rec_perc_li >= m.R
+            return b.rec_perc_li >= m.recovery_li
 
         @m.Constraint()
         def co_lb(b):
-            return b.rec_perc_co >= m.R
+            return b.rec_perc_co >= m.recovery_co
 
-        m.co_lb.deactivate()  # normally use Co as objective
+        # select appropriate lower bound
+        if self.solute_obj == "Co":
+            m.co_lb.deactivate()
+        if self.solute_obj == "Li":
+            m.li_lb.deactivate()
 
         # product stream purities
         @m.Expression()
@@ -611,11 +657,6 @@ class DiafiltrationModel:
                 ),
             )
 
-            # set split fraction
-            # for sol in self.solutes:
-            # m.fs.precipitator[prod].yields[sol, 'solid']\
-            #                        .fix(self.perc_precipitate[prod][sol])
-
         TransformationFactory("network.expand_arcs").apply_to(m)
 
     def connect_diafiltrate(self, m):
@@ -670,7 +711,10 @@ class DiafiltrationModel:
 
     def precipitate_objectives(self, m):
         """Set up objectives for flowsheet with precipitators."""
+        # deactivate objectives, bounds for flowsheet without precipitators
         m.co_obj.deactivate()
+        m.li_obj.deactivate()
+        m.co_lb.deactivate()
         m.li_lb.deactivate()
 
         @m.Expression()
@@ -686,25 +730,30 @@ class DiafiltrationModel:
         def prec_perc_co(b):
             return b.prec_mass_co / (
                 (m.fs.split_feed.mixed_state[0].flow_mass_solute["Co"])
-                * units.kg
-                / units.hour
             )
 
         @m.Expression()
         def prec_perc_li(b):
             return b.prec_mass_li / (
                 (m.fs.split_feed.mixed_state[0].flow_mass_solute["Li"])
-                * units.kg
-                / units.hour
             )
 
         m.prec_co_obj = Objective(expr=m.prec_mass_co, sense=maximize)
         m.prec_li_obj = Objective(expr=m.prec_mass_li, sense=maximize)
-        m.prec_li_obj.deactivate()
-        m.prec_li_lb = Constraint(expr=m.prec_perc_li >= m.R)
-        m.Rco = Param(initialize=0.95, mutable=True)
-        m.prec_co_lb = Constraint(expr=m.prec_perc_co >= m.Rco)
-        m.prec_co_lb.deactivate()
+
+        # select specified objective
+        if self.solute_obj == "Co":
+            m.prec_li_obj.deactivate()
+        if self.solute_obj == "Li":
+            m.prec_co_obj.deactivate()
+
+        m.prec_li_lb = Constraint(expr=m.prec_perc_li >= m.recovery_li)
+        m.prec_co_lb = Constraint(expr=m.prec_perc_co >= m.recovery_co)
+        # select appropriate lower bound
+        if self.solute_obj == "Co":
+            m.prec_co_lb.deactivate()
+        if self.solute_obj == "Li":
+            m.prec_li_lb.deactivate()
 
     def initialize_stage_splitters(self, m, stage, mixing="tube"):
         """Initialize splitters of a stage."""
@@ -749,6 +798,9 @@ class DiafiltrationModel:
                         destination=m.fs.inlet_mixers[i - 1, j].recycle,
                     )
             elif mixing == "stage":
+                m.fs.inlet_mixers[i - 1].recycle.flow_vol[0].unfix()
+                for sol in self.solutes:
+                    m.fs.inlet_mixers[i - 1].recycle.flow_mass_solute[0, sol].unfix()
                 propagate_state(
                     source=m.fs.split_retentate[i].recycle,
                     destination=m.fs.inlet_mixers[i - 1].recycle,
@@ -800,11 +852,6 @@ class DiafiltrationModel:
                 source=m.fs.split_permeate[i - 1].forward,
                 destination=m.fs.stage[i].retentate_inlet,
             )
-
-        # set initial values of exponent terms
-        for sol in m.fs.stage[i].LN_M_in:
-            m.fs.stage[i].LN_M_in[sol].set_value(5)
-            m.fs.stage[i].LN_M_out[sol].set_value(5)
 
         # initialize membrane unit and associated product splitters
         stage_initializer.initialize(m.fs.stage[i])
@@ -882,21 +929,31 @@ class DiafiltrationModel:
         split_initializer = SeparatorInitializer()
         split_initializer.initialize(m.fs.split_feed)
 
-    def initialize(self, m, mixing="tube", precipitate=True):
+    def initialize(self, m, mixing="tube", precipitate=False, info=True):
         """Initialize all IDAES unit models."""
         # initialize feed and diafiltrate splitters
         # 1. we put a bit of the feed streams into all inlet locations
         # 2. then we use fixed-point iteration to converge recycles
 
-        # print initialization header
-        # TODO could incorporate initialization info into idaes logger
-        print("*" * 50)
-        print("* Diafiltration Flowsheet Initialization")
-        print("*" * 50)
+        # loggers
+        # turn off IDAES INFO logs
+        idaes_logger = logging.getLogger("idaes.init")
+        idaes_logger.setLevel(idaeslog.WARNING)
+
+        # add flowsheet logger
+        flowsheet_logger = logging.getLogger(__name__)
+        flowsheet_logger.setLevel("INFO")
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        if info:
+            flowsheet_logger.addHandler(ch)
+
+        # initialization header
+        flowsheet_logger.info("*" * 50)
+        flowsheet_logger.info("* Diafiltration Flowsheet Initialization")
+        flowsheet_logger.info("*" * 50)
 
         # Change logger level to avoid flood of initialization INFO
-        logger = logging.getLogger("idaes.init")
-        logger.setLevel(idaeslog.WARNING)
 
         self.initialize_feeds(m, mixing)
         split_initializer = SeparatorInitializer()
@@ -919,7 +976,7 @@ class DiafiltrationModel:
             # check first mixer
             check_loc = m.fs.inlet_mixers.index_set().first()
             while not np.isclose(check_old, check_new) and iteration < 100:
-                print(f"  Membranes Iteration: {iteration}")
+                flowsheet_logger.info(f"  Membranes Iteration: {iteration}")
                 # propagate feed and diafiltrate state to mixers
                 for i in m.fs.inlet_mixers:
                     if type(i) is tuple:
@@ -970,7 +1027,7 @@ class DiafiltrationModel:
                 for i in RangeSet(self.ns):
                     self.initialize_single_stage(m, stage=i, mixing=mixing)
 
-                print(f"  =>Recycle Error: {check_new - check_old}")
+                flowsheet_logger.info(f"  =>Recycle Error: {check_new - check_old}")
                 iteration += 1
 
             ###############################################################
@@ -980,19 +1037,23 @@ class DiafiltrationModel:
             if not precipitate:
                 break
 
-            print(f"Precipitator Iteration {itr}")
+            flowsheet_logger.info(f"Precipitator Iteration {itr}")
 
             self.initialize_precipitators(m, precipitate)
 
             diaf_new = (
                 m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute[check_sol].value
             )
-            print(f"=>Recycle Error: {diaf_new - diaf_old}\n")
+            flowsheet_logger.info(f"=>Recycle Error: {diaf_new - diaf_old}\n")
             itr += 1
 
         # model scaling
-        print("scaling model")
+        flowsheet_logger.info("***scaling model***")
         self.model_scaling(m)
+
+        # remove logging handler
+        if info:
+            flowsheet_logger.removeHandler(ch)
 
     def num_inlets(self, mixing):
         """Find the number of inlets."""
@@ -1002,7 +1063,7 @@ class DiafiltrationModel:
             inlets = self.ns
         return inlets
 
-    def unfix_dof(self, m, mixing="tube", precipitate=True):
+    def unfix_dof(self, m, mixing="tube", precipitate=False):
         """Unfix model DoF."""
         inlets = self.num_inlets(mixing)
         # go through all split feed/diafiltrate streams and unfix them
@@ -1053,8 +1114,8 @@ class DiafiltrationModel:
         if precipitate:
             m.fs.split_precipitate_recycle.split_fraction[0, "recycle"].unfix()
             m.fs.split_diafiltrate.inlet.flow_vol.setub(self.diaf["solvent"])
-            m.fs.precipitator["retentate"].V.unfix()
-            m.fs.precipitator["permeate"].V.unfix()
+            m.fs.precipitator["retentate"].volume.unfix()
+            m.fs.precipitator["permeate"].volume.unfix()
 
     def model_scaling(self, m):
         """Apply model scaling."""

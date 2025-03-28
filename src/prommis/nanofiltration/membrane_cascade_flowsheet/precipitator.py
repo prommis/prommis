@@ -10,12 +10,15 @@ Precipitator unit model.
 Modification of the IDAES Separator unit for yield based precipitation.
 """
 
-# Pyomo import
 from pyomo.common.config import ConfigValue
+
+# Pyomo import
 from pyomo.environ import Constraint, Param, Var, exp, units
 
-# IDAES imports
 from idaes.core import declare_process_block_class
+from idaes.core.util.exceptions import ConfigurationError
+
+# IDAES imports
 from idaes.models.unit_models.separator import SeparatorData
 
 __author__ = "Jason Yao"
@@ -39,14 +42,46 @@ class SplitterData(SeparatorData):
         specific constraints.
         """
         super().build()
-        # TODO add input checking to prevent incorrect setup
         self.deactivate_all_cons()
+        self._verify_precipitator_inputs()
         self.add_precipitator_constraints()
 
     def deactivate_all_cons(self):
         """Deactivate all current constraints."""
         for con in self.component_data_objects(Constraint):
             con.deactivate()
+
+    def _verify_precipitator_inputs(self):
+        """Check that precipitator inputs are correct."""
+        # check outlets
+        if not self.config.outlet_list:
+            raise ConfigurationError(
+                "Precipitator unit must be provided with `outlet_list` arg."
+            )
+        if len(self.config.outlet_list) != 2:
+            raise ConfigurationError(
+                "Precipitator unit must be provided with two outlets."
+            )
+
+        # check yields
+        sol = [i for i in self.mixed_state.component_list if i != "solvent"]
+        if self.index():
+            check_yields = self.config.yields[self.index()]
+        else:
+            check_yields = self.config.yields
+
+        if len(check_yields) != len(sol):
+            raise ConfigurationError(
+                "Precipitator yields must have same number of solutes as inlet flow."
+                f" inlet solutes are: {sol}"
+            )
+
+        for i in check_yields:
+            if i not in sol:
+                raise ConfigurationError(
+                    "Precipitator yields must have same solutes as inlet flow."
+                    f" inlet solutes are: {sol}"
+                )
 
     def add_precipitator_constraints(self):
         """
@@ -89,11 +124,17 @@ class SplitterData(SeparatorData):
 
         # precipitator volume and residence time relations
         self.tau = Var(units=units.hour)
-        self.V = Var(units=units.m**3)
-        self.V.fix(100)  # initial point m^3
-        self.V.setub(1000)  # set UB to prevent ridiculous sizes
+        # initial point 100 m^3
+        self.volume = Var(units=units.m**3, bounds=(0, 1000), initialize=100)
+        self.volume.fixed = True
         sol = [i for i in self.mixed_state.component_list if i != "solvent"]
-        self.alpha = Param(sol, initialize=self.config.yields[self.index()])
+
+        # alpha controls maximum yield of precipitator
+        # if precipitator is indexed, access appropriate yield values by index
+        if self.index():
+            self.alpha = Param(sol, initialize=self.config.yields[self.index()])
+        else:
+            self.alpha = Param(sol, initialize=self.config.yields)
         self.beta = Param(sol, initialize={s: 4.6 for s in sol}, units=1 / units.hour)
 
         @self.Constraint(sol)
@@ -104,4 +145,4 @@ class SplitterData(SeparatorData):
 
         @self.Constraint()
         def prec_vol(b):
-            return b.V == b.mixed_state[0].flow_vol * b.tau
+            return b.volume == b.mixed_state[0].flow_vol * b.tau

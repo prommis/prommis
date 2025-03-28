@@ -8,8 +8,9 @@
 
 # imports
 import pyomo.environ as pyo
-from matplotlib import pyplot as plt
+
 import matplotlib.patches as patches
+from matplotlib import pyplot as plt
 from matplotlib.colors import to_rgba
 
 
@@ -236,16 +237,12 @@ def report_values(m, prec=True):
         print(pyo.value(m.prec_perc_co))
         print(pyo.value(m.prec_perc_li))
         data["actual recovery"] = [pyo.value(m.prec_perc_co), pyo.value(m.prec_perc_li)]
-        m.fs.precipitator["retentate"].V.pprint()
-        m.fs.precipitator["permeate"].V.pprint()
+        m.fs.precipitator["retentate"].volume.pprint()
+        m.fs.precipitator["permeate"].volume.pprint()
         data["prec volumes"] = [
-            m.fs.precipitator["retentate"].V.value,
-            m.fs.precipitator["permeate"].V.value,
+            m.fs.precipitator["retentate"].volume.value,
+            m.fs.precipitator["permeate"].volume.value,
         ]
-        # print(pyo.value(m.fs.precipitator[
-        #     'retentate'].solid.flow_mass_solute[0, 'Co'])/(feed['Co']+diaf['Co']))
-        # print(pyo.value(m.fs.precipitator[
-        #     'permeate'].solid.flow_mass_solute[0, 'Li'])/(feed['Li']+diaf['Li']))
     return data
 
 
@@ -271,8 +268,8 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
             "diaf flows": [1] * num_boxes * num_sub_boxes,
             "recycle flows": [1] * num_boxes * num_sub_boxes,
             "inlet splitter flows": [1] * num_boxes * num_sub_boxes,
-            "Co product flows": [1] * num_boxes * num_sub_boxes,
-            "Li product flows": [1] * num_boxes * num_sub_boxes,
+            "Co product flows": [1] * num_boxes * 3,
+            "Li product flows": [1] * num_boxes * 3,
             "diafiltrate inlet": [1] * num_boxes * num_sub_boxes,
             "precipitate products retentate": [1] * num_boxes * num_sub_boxes,
             "precipitate products permeate": [1] * num_boxes * num_sub_boxes,
@@ -476,11 +473,6 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
                         label="Recycle" if legflagrec else "",
                     )
                     legflagrec = False
-                # connect tops of the arrows
-                # if j != num_sub_boxes - 1 and model['recycle flows'][(num_sub_boxes)*i + j] > tol:
-                #     ax.plot([xloc - sub_box_width/2+sub_box_width/8,
-                #             xloc - sub_box_width/2+sub_box_width/8 + sub_box_width],
-                #             [yloc + 0.23 + i*0.1, yloc + 0.23 + i*0.1], c=to_rgba('darkcyan'))
                 if model["recycle flows"][(num_sub_boxes) * i + j] > tol:
                     ax.plot(
                         [
@@ -628,11 +620,6 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
                         label="Recycle" if legflagrec else "",
                     )
                     legflagrec = False
-                # connect tops of the arrows
-                # if j != num_sub_boxes - 1:
-                #     ax.plot([xloc - sub_box_width/2+sub_box_width/8,
-                #             xloc - sub_box_width/2+sub_box_width/8 + sub_box_width],
-                #             [yloc + 0.23 + i*0.1, yloc + 0.23 + i*0.1], c=to_rgba('darkcyan'))
                 if model["recycle flows"][i] > tol:
                     ax.plot(
                         [
@@ -673,9 +660,6 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
                         [yloc + (num_boxes + 1) * 0.1, yloc + (num_boxes + 1) * 0.1],
                         c=to_rgba("red"),
                     )
-            # else:
-            #     if i != num_boxes - 1:
-            #         ax.plot([xloc, xloc - sub_box_width], [yloc + (num_boxes+1)*0.1, yloc + (num_boxes+1)*0.1], c=to_rgba('red'))
 
             # Add diafiltrate
             if j == 0 and model["diaf flows"][i] > tol:
@@ -714,9 +698,6 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
                         ],
                         c=to_rgba("darkviolet"),
                     )
-            # else:
-            #     if i != num_boxes - 1 and model['feed flows'][i] > tol:
-            #         ax.plot([xloc+ sub_box_width/2-sub_box_width/8, 0], [yloc + 0.06 + (num_boxes+1)*0.1, yloc + 0.06 + (num_boxes+1)*0.1], c=to_rgba('darkviolet'))
         if conf == "classic":
             # Add a vertical arrow at the top of the box
             if j == 0 and model["inlet splitter flows"][(num_sub_boxes) * i + j] > tol:
@@ -764,11 +745,6 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
                         label="Recycle" if legflagrec else "",
                     )
                     legflagrec = False
-                # connect tops of the arrows
-                # if j != num_sub_boxes - 1:
-                #     ax.plot([xloc - sub_box_width/2+sub_box_width/8,
-                #             xloc - sub_box_width/2+sub_box_width/8 + sub_box_width],
-                #             [yloc + 0.23 + i*0.1, yloc + 0.23 + i*0.1], c=to_rgba('darkcyan'))
                 if model["recycle flows"][i] > tol:
                     ax.plot(
                         [
@@ -809,9 +785,6 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
                         [yloc + (num_boxes + 1) * 0.1, yloc + (num_boxes + 1) * 0.1],
                         c=to_rgba("red"),
                     )
-            # else:
-            #     if i != num_boxes - 1:
-            #         ax.plot([xloc, xloc - sub_box_width], [yloc + (num_boxes+1)*0.1, yloc + (num_boxes+1)*0.1], c=to_rgba('red'))
 
             # Add diafiltrate
             if j == 0 and model["diaf flows"][i] > tol:
@@ -850,9 +823,6 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
                         ],
                         c=to_rgba("darkviolet"),
                     )
-            # else:
-            #     if i != num_boxes - 1 and model['feed flows'][i] > tol:
-            #         ax.plot([xloc+ sub_box_width/2-sub_box_width/8, 0], [yloc + 0.06 + (num_boxes+1)*0.1, yloc + 0.06 + (num_boxes+1)*0.1], c=to_rgba('darkviolet'))
 
         # Add a vertical arrow through the middle rectangle
         ax.arrow(

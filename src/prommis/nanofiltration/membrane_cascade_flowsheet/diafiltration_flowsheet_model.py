@@ -10,8 +10,6 @@ import logging
 
 from pyomo.core.base.param import ScalarParam
 from pyomo.core.expr import identify_components
-
-# Pyomo imports
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
@@ -25,12 +23,8 @@ from pyomo.environ import (
     units,
 )
 from pyomo.network import Arc
-from pyomo.core.expr import identify_components
-from pyomo.core.base.param import ScalarParam
 
-# IDAES imports
-from idaes.core.util.scaling import set_scaling_factor
-from idaes.core.util.initialization import propagate_state
+import idaes.logger as idaeslog
 from idaes.core import (
     FlowsheetBlock,
     MaterialBalanceType,
@@ -38,15 +32,7 @@ from idaes.core import (
     UnitModelBlock,
     UnitModelCostingBlock,
 )
-
-from pyomo.network import Arc
-
-# other imports
-import idaes.logger as idaeslog
-from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
 from idaes.core.util.initialization import propagate_state
-
-# IDAES imports
 from idaes.core.util.scaling import set_scaling_factor
 from idaes.models.unit_models import (
     EnergySplittingType,
@@ -59,21 +45,14 @@ from idaes.models.unit_models import (
 from idaes.models.unit_models import Separator as Splitter
 from idaes.models.unit_models import SeparatorInitializer
 
-# Custom imports
+import numpy as np
+
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
     DiafiltrationCosting,
     DiafiltrationCostingData,
 )
-
-# other imports
-import idaes.logger as idaeslog
-import logging
-import numpy as np
-
 from prommis.nanofiltration.membrane_cascade_flowsheet.membrane import Membrane
 from prommis.nanofiltration.membrane_cascade_flowsheet.precipitator import Precipitator
-
-# Custom imports
 from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import (
     SoluteParameters,
 )

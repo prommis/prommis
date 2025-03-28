@@ -630,7 +630,8 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                                     * (0.954 * units.gal / units.ft**3)
                                     * (
                                         units.convert(
-                                            blk.precipitator_diameter, to_units=units.inch
+                                            blk.precipitator_diameter,
+                                            to_units=units.inch,
                                         )
                                         / (12 * units.inch / units.ft)
                                     )

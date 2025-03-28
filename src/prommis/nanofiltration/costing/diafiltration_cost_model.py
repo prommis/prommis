@@ -556,6 +556,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
     def cost_precipitator(
         blk,
         precip_volume,
+        precip_headspace=1.2,
         simple_costing=False,
     ):
         """
@@ -579,10 +580,12 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
         Args:
             precip_volume: volume of the precipitator as calculated by the unit model (m3)
+            precip_headaspace: precipitator headspace percentage; default value is 20%
             simple_costing: Boolean to determine which costing method is implemented
         """
 
         if simple_costing == False:
+
             # calculate the volume needed
             blk.volume_capacity = Var(
                 initialize=120,
@@ -591,25 +594,23 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 units=units.m**3,
             )
 
-            # account for a 20% headspace
             @blk.Constraint()
             def volume_capacity_equation(blk):
                 return blk.volume_capacity == units.convert(
-                    (1.2 * precip_volume), to_units=units.m**3
+                    (precip_headspace * precip_volume), to_units=units.m**3
                 )
 
             # include a length and diameter constraint
-            # TODO: L and D should get bounded but gives init errors
             blk.precipitator_diameter = Var(
                 initialize=6,
-                domain=NonNegativeReals,
+                bounds=(1, 12),
                 doc="Diameter of the precipitator vessel",
                 units=units.ft,
             )
             blk.precipitator_diameter.fix()
             blk.precipitator_length = Var(
                 initialize=8,
-                domain=NonNegativeReals,
+                bounds=(3, 10),
                 doc="Length of the precipitator vessel",
                 units=units.ft,
             )
@@ -629,8 +630,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                                     * (0.954 * units.gal / units.ft**3)
                                     * (
                                         units.convert(
-                                            blk.precipitator_diameter,
-                                            to_units=units.inch,
+                                            blk.precipitator_diameter, to_units=units.inch
                                         )
                                         / (12 * units.inch / units.ft)
                                     )

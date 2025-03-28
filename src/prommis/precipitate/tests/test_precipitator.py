@@ -344,6 +344,7 @@ class TestPrec(object):
                     abs=1e-5,
                 )
 
+
 # -----------------------------------------------------------------------------
 class TestPrecRob(object):
     @pytest.fixture(scope="class")

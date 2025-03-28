@@ -70,32 +70,69 @@ dimensionalized with the membrane width (``w``) and thickness (``l``), respectiv
 Parameters
 ----------
 
-============================== ============================================= =============== ==========================
-Parameter                    Name                                             Default Value   Units
-============================== ============================================= =============== ==========================
-:math:`c_{\mathrm{Co^{2+}},d}` concentration of cobalt in the diafiltrate     0.2            :math:`kg m^{-3}` 
-:math:`c_{\mathrm{Li^+},d}`    concentration of lithium in the diafiltrate    0.1            :math:`kg m^{-3}` 
-:math:`c_{\mathrm{Co^{2+}},f}` concentration of cobalt in the feed            17             :math:`kg m^{-3}` 
-:math:`c_{\mathrm{Li^+},f}`    concentration of lithium in the feed           1.7            :math:`kg m^{-3}` 
-:math:`l`                      thickness of the membrane                      1e-07          :math:`m`
-:math:`L`                      length of the membrane                         100            :math:`m`
-:math:`L_p`                    hydraulic permeability of the membrane         0.01           :math:`m h^{-1} bar^{-1}`
-:math:`\delta P`               applied pressure to the membrane               10             :math:`bar`
-:math:`q_d`                    volumetic flow rate of the diafiltrate         30             :math:`m^3 h^{-1}`
-:math:`q_f`                    volumetic flow rate of the feed                100            :math:`m^3 h^{-1}`
-:math:`T`                      temperature of the system                      298            :math:`K`
-:math:`w`                      width of the membrane                          1              :math:`m`
-============================== ============================================= =============== ==========================
+============================== ============================================= ================================= ============== =========================
+Parameter                      Description                                    Name                             Default Value  Units
+============================== ============================================= ================================= ============== =========================
+:math:`c_{\mathrm{Co^{2+}},d}` concentration of cobalt in the diafiltrate    ``diafiltrate_conc_mass_cobalt``   0.2           :math:`kg m^{-3}` 
+:math:`c_{\mathrm{Li^+},d}`    concentration of lithium in the diafiltrate   ``diafiltrate_conc_mass_lithium``  0.1           :math:`kg m^{-3}` 
+:math:`c_{\mathrm{Co^{2+}},f}` concentration of cobalt in the feed           ``feed_conc_mass_cobalt``          17            :math:`kg m^{-3}` 
+:math:`c_{\mathrm{Li^+},f}`    concentration of lithium in the feed          ``feed_conc_mass_lithium``         1.7           :math:`kg m^{-3}` 
+:math:`l`                      thickness of the membrane                     ``membrane_thickness``             1e-07         :math:`m`
+:math:`L`                      length of the membrane                        ``membrane_length``                100           :math:`m`
+:math:`L_p`                    hydraulic permeability of the membrane        ``membrane_permeability``          0.01          :math:`m h^{-1} bar^{-1}`
+:math:`\delta P`               applied pressure to the membrane              ``applied_pressure``               10            :math:`bar`
+:math:`q_d`                    volumetic flow rate of the diafiltrate        ``diafiltrate_flow_volume``        30            :math:`m^3 h^{-1}`
+:math:`q_f`                    volumetic flow rate of the feed               ``feed_flow_volume``               100           :math:`m^3 h^{-1}`
+:math:`T`                      temperature of the system                     ``temperature``                    298           :math:`K`
+:math:`w`                      width of the membrane                         ``membrane_width``                 1             :math:`m`
+============================== ============================================= ================================= ============== =========================
 
 Variables
 ---------
 
+==================================== =========================================== =============================== ======================== ================================
+Variable                             Description                                 Name                            Units                    Notes
+==================================== =========================================== =============================== ======================== ================================
+:math:`c_{\mathrm{Cl^-},m}`          concentration of chlorine in the membrane   ``membrane_conc_mass_chlorine`` :math:`kg m^{-3}`        discretized over ``x`` and ``z``
+:math:`c_{\mathrm{Co^{2+}},m}`       concentration of cobalt in the membrane     ``membrane_conc_mass_cobalt``   :math:`kg m^{-3}`        discretized over ``x`` and ``z``
+:math:`c_{\mathrm{Li^+},m}`          concentration of lithium in the membrane    ``membrane_conc_mass_lithium``  :math:`kg m^{-3}`        discretized over ``x`` and ``z``
+:math:`c_{\mathrm{Cl^-},p}`          concentration of chlorine in the membrane   ``permeate_conc_mass_chlorine`` :math:`kg m^{-3}`        discretized over ``x``
+:math:`c_{\mathrm{Co^{2+}},p}`       concentration of cobalt in the permeate     ``permeate_conc_mass_cobalt``   :math:`kg m^{-3}`        discretized over ``x``
+:math:`c_{\mathrm{Li^+},p}`          concentration of lithium in the permeate    ``permeate_conc_mass_lithium``  :math:`kg m^{-3}`        discretized over ``x``
+:math:`c_{\mathrm{Cl^-},r}`          concentration of chlorine in the retentate  ``retentate_conc_mass_chlorine``:math:`kg m^{-3}`        discretized over ``x``
+:math:`c_{\mathrm{Co^{2+}},r}`       concentration of cobalt in the retentate    ``retentate_conc_mass_cobalt``  :math:`kg m^{-3}`        discretized over ``x``
+:math:`c_{\mathrm{Li^+},r}`          concentration of lithium in the retentate   ``retentate_conc_mass_lithium`` :math:`kg m^{-3}`        discretized over ``x``
+:math:`D_{\mathrm{Li^+,Li^+}}`       cross-diffusion coefficient (Li,Li)         ``D_lithium_lithium``           :math:`m^2 h^{-1}`       discretized over ``x`` and ``z``
+:math:`D_{\mathrm{Li^+,Co^{2+}}}`    cross-diffusion coefficient (Li,Co)         ``D_lithium_cobalt``            :math:`m^2 h^{-1}`       discretized over ``x`` and ``z``
+:math:`D_{\mathrm{Co^{2+},Li^+}}`    cross-diffusion coefficient (Co,Li)         ``D_cobalt_lithium``            :math:`m^2 h^{-1}`       discretized over ``x`` and ``z``
+:math:`D_{\mathrm{Co^{2+},Co^{2+}}}` cross-diffusion coefficient (Co,Co)         ``D_cobalt_cobalt``             :math:`m^2 h^{-1}`       discretized over ``x`` and ``z``
+:math:`j_{\mathrm{Cl^-}}`            mass flux of chlorine across the membrane   ``mass_flux_chlorine``          :math:`kg m^{-2} h^{-1}` discretized over ``x``
+:math:`j_{\mathrm{Co^{2+}}}`         mass flux of cobalt across the membrane     ``mass_flux_cobalt``            :math:`kg m^{-2} h^{-1}` discretized over ``x``
+:math:`j_{\mathrm{Li^+}}`            mass flux of lithium across the membrane    ``mass_flux_lithium``           :math:`kg m^{-2} h^{-1}` discretized over ``x``
+:math:`J_w`                          water flux across the membrane `            ``volume_flux_water``           :math:`m^3 m^{-2} h^{-1}`discretized over ``x``
+:math:`\delta \pi`                   osmotic pressure of feed-side fluid         ``osmotic_pressure``            :math:`bar`              discretized over ``x``
+:math:`q_p`                          volumetic flow rate of the permeate         ``permeate_flow_volume``        :math:`m^3 h^{-1}`       discretized over ``x``
+:math:`q_r`                          volumetic flow rate of the retentate        ``retentate_flow_volume``       :math:`m^3 h^{-1}`       discretized over ``x``
+==================================== =========================================== =============================== ======================== ================================
 
+Derivative Variables
+--------------------
 
-Additional Constraints
-----------------------
+================================================================== =========================================== ==================================== ================== ================================
+Variable                                                           Description                                 Name                                 Units              Notes
+================================================================== =========================================== ==================================== ================== ================================
+:math:`\frac{\mathrm{d}c_{\mathrm{Co^{2+}},r}}{\mathrm{d}\bar{x}}` cobalt concentration gradient in retentate  ``d_retentate_conc_mass_cobalt_dx``  :math:`kg m^{-3}`  discretized over ``x``
+:math:`\frac{\mathrm{d}c_{\mathrm{Li^+},r}}{\mathrm{d}\bar{x}}`    lithium concentration gradient in retentate ``d_retentate_conc_mass_lithium_dx`` :math:`kg m^{-3}`  discretized over ``x``
+:math:`\frac{\mathrm{d}q_r}{\mathrm{d}\bar{x}}`                    retentate flow rate gradient                ``d_retentate_flow_volume_dx``       :math:`m^3 h^{-1}` discretized over ``x``
+:math:`\frac{\partial c_{\mathrm{Co^{2+}},m}}{\partial \bar{z}}`   cobalt concentration gradient in membrane   ``d_membrane_conc_mass_cobalt_dz``   :math:`kg m^{-3}`  discretized over ``x`` and ``z``
+:math:`\frac{\partial c_{\mathrm{Li^+},m}}{\partial \bar{z}}`      lithium concentration gradient in membrane  ``d_membrane_conc_mass_lithium_dz``  :math:`kg m^{-3}`  discretized over ``x`` and ``z``
+================================================================== =========================================== ==================================== ================== ================================
 
+Constraints
+-----------
 
+Will be added pending finalization of model and developing automated workflow of converting latex
+document to sphinx format
 
 """
 

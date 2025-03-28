@@ -36,7 +36,8 @@ from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.leaching.leach_train import LeachingTrain
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-from prommis.precipitate.precipitator import Precipitator
+from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
+from prommis.precipitate.precipitator import OxalatePrecipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
@@ -114,8 +115,9 @@ def test_build_flowsheet(system_frame):
     # Precipitation property packages and unit models
     assert isinstance(model.fs.properties_aq, AqueousParameter)
     assert isinstance(model.fs.properties_solid, PrecipitateParameters)
+    assert isinstance(model.fs.precip_rxns, OxalatePrecipitationReactions)
 
-    assert isinstance(model.fs.precipitator, Precipitator)
+    assert isinstance(model.fs.precipitator, OxalatePrecipitator)
     assert isinstance(model.fs.sl_sep2, SLSeparator)
     assert isinstance(model.fs.precip_sx_mixer, Mixer)
     assert isinstance(model.fs.precip_purge, Product)
@@ -196,6 +198,8 @@ def test_solve(system_frame):
 @pytest.mark.solver
 def test_numerical_issues(system_frame):
     dt = DiagnosticsToolbox(system_frame)
+    dt.report_numerical_issues()
+    dt.display_variables_at_or_outside_bounds()
     dt.assert_no_numerical_warnings()
 
 
@@ -209,7 +213,7 @@ def test_solution(system_frame):
     )
     assert model.fs.leach.solid_outlet.mass_frac_comp[
         0, "Al2O3"
-    ].value == pytest.approx(0.233476, 1e-4)
+    ].value == pytest.approx(0.23347629, 1e-4)
     assert model.fs.leach.solid_outlet.mass_frac_comp[0, "CaO"].value == pytest.approx(
         0.0017995, 1e-4
     )

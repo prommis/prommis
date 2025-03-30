@@ -18,7 +18,6 @@ from pyomo.environ import (
     units,
     PositiveReals,
     Reals,
-    log10,
 )
 
 from idaes.core import (

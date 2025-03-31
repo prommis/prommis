@@ -449,8 +449,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             consider_taxes: True/False flag for calculating net tax owed. Defaults to False.
             income_tax_percentage: combined federal and state income tax percentage,
                 usually between 26 - 40%. Here, it defaults to 26%.
-            mineral_depletion_percentage: tax deduction percentage for mineral depletion,
-                defaults to 14% as reported in the UKy report.
+            mineral_depletion_percentage: fixed tax deduction percentage for mineral depletion based on
+                the type of mineral recovered, defaults to 14% of gross income excluding royalties
+                as reported in the UKy report.
             production_incentive_percentage: tax deduction percentage for producing critical minerals,
                 defaults to 10% of total production cost (excludes cost of feedstock).
             royalty_charge_percentage_of_revenue: Percentage of revenue charged as royalties;
@@ -488,6 +489,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             self.calculate_NPV(fixed_OM, variable_OM)
 
         else:  # continue on with building the plant costs
+
+            self.BEC_list = []
+            self.watertap_fixed_costs_list = []
+            # TODO commented as no WaterTAP models currently use this, may change in the future
+            # self.watertap_variable_costs_list = []
+            self.custom_fixed_costs_list = []
+            self.custom_variable_costs_list = []
 
             if total_purchase_cost is None:
                 self.get_total_BEC(CE_index_year, watertap_blocks)
@@ -716,7 +724,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 doc="Additional plant costs",
                 units=CE_index_units,
             )
-            self.other_plant_costs.fix(0)
+            self.other_plant_costs.fix(1e-12)
 
             if Lang_factor is None:
                 # constraints for calculating Ancillary costs
@@ -1111,14 +1119,14 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         doc="Additional tax credit",
                         units=CE_index_units / pyunits.year,
                     )
-                    self.additional_tax_credit.fix(0)
+                    self.additional_tax_credit.fix(1e-12)
 
                     self.additional_tax_owed = Var(
                         initialize=0,
                         doc="Additional tax owed",
                         units=CE_index_units / pyunits.year,
                     )
-                    self.additional_tax_owed.fix(0)
+                    self.additional_tax_owed.fix(1e-12)
 
                     self.royalty_charge = Expression(
                         expr=pyunits.convert(
@@ -2164,7 +2172,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             doc="Other fixed costs",
             units=CE_index_units / pyunits.year,
         )
-        b.other_fixed_costs.fix(0)
+        b.other_fixed_costs.fix(1e-12)
 
         # variable for user to assign watertap fixed costs to,
         # fixed to 0 by default
@@ -2279,16 +2287,16 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # sum of fixed operating costs of watertap units
         @b.Constraint()
         def sum_watertap_fixed_costs(c):
-            if not hasattr(c, "watertap_fixed_costs_list"):
-                return c.watertap_fixed_costs == 0
+            if len(c.watertap_fixed_costs_list) == 0:
+                return c.watertap_fixed_costs == 1e-12 * CE_index_units / pyunits.year
             else:
                 return c.watertap_fixed_costs == sum(b.watertap_fixed_costs_list)
 
         # sum of fixed operating costs of custom units
         @b.Constraint()
         def sum_custom_fixed_costs(c):
-            if not hasattr(c, "custom_fixed_costs_list"):
-                return c.custom_fixed_costs == 0
+            if len(c.custom_fixed_costs_list) == 0:
+                return c.custom_fixed_costs == 1e-12 * CE_index_units / pyunits.year
             else:
                 return c.custom_fixed_costs == sum(b.custom_fixed_costs_list)
 
@@ -2425,7 +2433,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
 
         # assume the user is not using this
-        b.other_variable_costs.fix(0)
+        b.other_variable_costs.fix(1e-12)
 
         # TODO commented as no WaterTAP models currently use this, may change in the future
         # variable for user to assign watertap variable costs to,
@@ -2477,16 +2485,16 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # sum of variable operating costs of watertap units
         # @b.Constraint()
         # def sum_watertap_variable_costs(c):
-        #     if not hasattr(c, "watertap_variable_costs_list"):
-        #         return c.watertap_variable_costs == 0
+        #     if len(c.watertap_variable_costs_list) == 0:
+        #         return c.watertap_variable_costs == 1e-12 * CE_index_units / pyunits.year
         #     else:
         #         return c.watertap_variable_costs == sum(b.watertap_variable_costs_list)
 
         # sum of variable operating costs of custom units
         @b.Constraint()
         def sum_custom_variable_costs(c):
-            if not hasattr(c, "custom_variable_costs_list"):
-                return c.custom_variable_costs == 0
+            if len(c.custom_variable_costs_list) == 0:
+                return c.custom_variable_costs == 1e-12 * CE_index_units / pyunits.year
             else:
                 return c.custom_variable_costs == sum(b.custom_variable_costs_list)
 
@@ -2703,25 +2711,18 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"1990 to 2020."
             )
 
-        BEC_list = []
-        b.watertap_fixed_costs_list = []
-        # TODO commented as no WaterTAP models currently use this, may change in the future
-        # b.watertap_variable_costs_list = []
-        b.custom_fixed_costs_list = []
-        b.custom_variable_costs_list = []
-
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
             if o.name in [block.name for block in b._registered_unit_costing]:
                 if hasattr(o, "bare_erected_cost"):  # added from cost accounts
                     for key in o.bare_erected_cost.keys():
-                        BEC_list.append(
+                        b.BEC_list.append(
                             pyunits.convert(
                                 o.bare_erected_cost[key], to_units=CE_index_units
                             )
                         )
                 elif hasattr(o, "capital_cost"):  # added from custom model
-                    BEC_list.append(
+                    b.BEC_list.append(
                         pyunits.convert(o.capital_cost, to_units=CE_index_units)
                     )
                     if hasattr(o, "fixed_operating_cost"):
@@ -2748,7 +2749,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 else:
                     m.fs.costing = WaterTAPCosting()
                 w.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
-                BEC_list.append(
+                b.BEC_list.append(
                     pyunits.convert(w.costing.capital_cost, to_units=CE_index_units)
                 )
                 if hasattr(w.costing, "fixed_operating_cost"):
@@ -2778,7 +2779,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         @b.Constraint()
         def total_BEC_eq(c):
-            return c.total_BEC == sum(BEC_list)
+            return c.total_BEC == sum(b.BEC_list)
 
     def display_flowsheet_cost(b):
         # This method accepts a flowsheet-level costing block

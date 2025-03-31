@@ -17,18 +17,19 @@ __author__ = "Dan Gunter"
 
 # third party
 import pyomo.environ as pyo
+
 from idaes import logger as idaeslog
-from idaes_flowsheet_processor.api import FlowsheetInterface
-from idaes_flowsheet_processor.api import FlowsheetCategory
+
+from idaes_flowsheet_processor.api import FlowsheetCategory, FlowsheetInterface
 
 # package
 from prommis.uky.uky_flowsheet import (
     build,
-    set_partition_coefficients,
+    initialize_system,
     set_operating_conditions,
+    set_partition_coefficients,
     set_scaling,
     solve_system,
-    initialize_system,
 )
 
 _log = idaeslog.getLogger(__name__)

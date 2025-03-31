@@ -30,8 +30,8 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse >= 2.8.0",
-    "pyomo >= 6.7.0",
+    "idaes-pse >=2.8.0",
+    "pyomo >=6.7.0",
 ]
 [project.optional-dependencies]
 watertap = [

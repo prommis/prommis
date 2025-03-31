@@ -5230,6 +5230,19 @@ recovery_rate_units_dict = {
 }
 
 
+recovery_rate_value_dict = {
+    "base_case": 254324.44799999997,
+    "no_units": 254324.44799999997,
+    "not_mass_units": 254324.44799999997,
+    "not_per_year_units": value(
+        pyunits.convert(
+            254324.44799999997 * pyunits.kg / pyunits.year,
+            to_units=pyunits.kg / pyunits.h,
+        )
+    ),
+}
+
+
 @pytest.mark.parametrize(
     "recovery_rate_units, expectation",
     [
@@ -5250,19 +5263,10 @@ recovery_rate_units_dict = {
                 match="The argument recovery_rate_per_year was passed with units of "
                 "mol/a which cannot be converted to units of mass per year. Please "
                 "ensure that recovery_rate_per_year is passed with rate units "
-                "of mass per year \\(mass/a\\) or dimensionless.",
+                "of mass per year \\(mass/a\\).",
             ),
         ),
-        (
-            "not_per_year_units",
-            pytest.raises(
-                UnitsError,
-                match="The argument recovery_rate_per_year was passed with units of "
-                "kg/h and must be on an anuual basis. Please "
-                "ensure that recovery_rate_per_year is passed with rate units "
-                "of mass per year \\(mass/a\\) or dimensionless.",
-            ),
-        ),
+        ("not_per_year_units", does_not_raise()),
     ],
 )
 @pytest.mark.component
@@ -5293,11 +5297,7 @@ def test_REE_costing_recovery(recovery_rate_units, expectation):
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3
-        * 0.8025
-        * 8
-        * 3
-        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
+        initialize=recovery_rate_value_dict[recovery_rate_units],
         units=recovery_rate_units_dict[recovery_rate_units],
     )
     m.fs.recovery_rate_per_year.fix()
@@ -5340,7 +5340,7 @@ def test_REE_costing_recovery(recovery_rate_units, expectation):
 
         # check some cost results
         assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-        assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(
+        assert value(m.fs.costing.recovery_rate_per_year) == pytest.approx(
             254324, rel=1e-4
         )
         assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
@@ -5431,7 +5431,7 @@ def test_REE_costing_recovery_passedinmethodcall():
 
     # check some cost results
     assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-    assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
+    assert value(m.fs.costing.recovery_rate_per_year) == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
     assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(29.6178, rel=1e-4)
     assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
@@ -5533,7 +5533,7 @@ def test_REE_costing_recovery_transportcost(transport_cost_obj):
 
     # check some cost results
     assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-    assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
+    assert value(m.fs.costing.recovery_rate_per_year) == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
     assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(29.6178, rel=1e-4)
     assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(

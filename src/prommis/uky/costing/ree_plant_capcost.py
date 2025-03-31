@@ -1195,48 +1195,45 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
                     )
 
-                    if not hasattr(self, "recovery_rate_per_year"):
-                        if (
-                            pyunits.get_units(recovery_rate_per_year)
-                            == pyunits.dimensionless
-                        ):
-                            raise UnitsError(
-                                "The argument recovery_rate_per_year was passed as a dimensionless "
-                                "quantity with no units. Please ensure that the feed "
-                                "rate is passed in units of mass / time."
-                            )
-                        else:  # use source units
-                            self.recovery_rate_per_year = Param(
-                                initialize=recovery_rate_per_year,
-                                mutable=True,
-                                units=pyunits.get_units(recovery_rate_per_year),
-                            )
-                        recovery_units_factor = 1
+                    if (
+                        pyunits.get_units(recovery_rate_per_year)
+                        == pyunits.dimensionless
+                    ):
+                        raise UnitsError(
+                            "The argument recovery_rate_per_year was passed as a dimensionless "
+                            "quantity with no units. Please ensure that the feed "
+                            "rate is passed in units of mass / time."
+                        )
 
-                    rec_rate_units = pyunits.get_units(self.recovery_rate_per_year)
+                    if not hasattr(self, "recovery_rate_per_year"):
+                        self.recovery_rate_per_year = Expression()
+
+                    rec_rate_units = pyunits.get_units(recovery_rate_per_year)
 
                     # check that units are compatible
                     try:
-                        pyunits.convert(
-                            self.recovery_rate_per_year * recovery_units_factor,
-                            to_units=pyunits.kg / pyunits.year,
+                        conversion = (
+                            value(
+                                pyunits.convert(
+                                    rec_rate_units,
+                                    to_units=pyunits.kg / pyunits.year,
+                                )
+                            )
+                            * pyunits.kg
+                            / pyunits.year
+                            / rec_rate_units
                         )
                     except InconsistentUnitsError:
                         raise UnitsError(
                             f"The argument recovery_rate_per_year was passed with units of "
                             f"{rec_rate_units} which cannot be converted to units of mass per year. "
                             f"Please ensure that recovery_rate_per_year is passed with rate units "
-                            f"of mass per year (mass/a) or dimensionless."
+                            f"of mass per year (mass/a)."
                         )
 
-                    # check that units are on an annual basis
-                    if str(rec_rate_units).split("/")[1] not in ["a", "year"]:
-                        raise UnitsError(
-                            f"The argument recovery_rate_per_year was passed with units of "
-                            f"{rec_rate_units} and must be on an anuual basis. Please "
-                            f"ensure that recovery_rate_per_year is passed with rate units "
-                            f"of mass per year (mass/a) or dimensionless."
-                        )
+                    self.recovery_rate_per_year.expr = (
+                        recovery_rate_per_year * conversion
+                    )
 
                     self.cost_of_recovery = Expression(
                         expr=(
@@ -1251,7 +1248,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                                         else 0 * CE_index_units / pyunits.year
                                     )
                                 )
-                                / (self.recovery_rate_per_year * recovery_units_factor),
+                                / (self.recovery_rate_per_year),
                                 to_units=getattr(pyunits, "USD_" + CE_index_year)
                                 / pyunits.kg,
                             )

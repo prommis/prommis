@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -371,7 +371,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             is_output=True,
             output_category=category,
         )
-    _log.debug(f"exports:\n{exports.json()}")
+    _log.debug(f"exports:\n{exports.model_dump_json()}")
     _log.info(f"end/setup-UI-exports build_options={build_options}")
 
 

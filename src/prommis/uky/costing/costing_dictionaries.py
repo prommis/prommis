@@ -272,7 +272,7 @@ def load_location_factor():
     """
     Estimate the cost of constructing the same plant in different global locations using location factors.
 
-    This method uses a location (or investment site) factor to adjust the total plant investment (TPI)
+    This method uses a location (or investment site) factor to adjust the total permanent investment (TPI)
     based on regional differences in labor costs, workforce efficiency, local regulations and customs,
     union status, and other local economic conditions.
 

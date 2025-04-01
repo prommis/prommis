@@ -58,6 +58,7 @@ from prommis.uky.costing.costing_dictionaries import (
     load_default_resource_prices,
     load_default_sale_prices,
     load_REE_costing_dictionary,
+    load_location_factor,
 )
 
 _, watertap_costing_available = attempt_import("watertap.costing")
@@ -2777,9 +2778,37 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             units=CE_index_units,
         )
 
+        # Load the location factor list
+        location_factor_list = load_location_factor()
+        
+        # User-provide the location as a single (country, city) tuple
+        # Example of user-provided locations: list of (country, city) tuple
+        # e.g., [("USA", "Houston"), ("Albania", None)]
+        location = [("United States", "Washington DC")] 
+        
+        # Build dictionary keyed by (country, city)
+        location_factor_dict = {
+            (entry["country"], entry["city"]): entry["location_factor"]
+            for entry in location_factor_list
+        }
+        
+        # First tries to match (country, city) exactly.
+        # If not found, automatically falls back to (country, None).
+        # Raises an error only if neither exists.
+        if location in location_factor_dict:
+            location_factor = location_factor_dict[location]["average"]
+        elif (location[0], None) in location_factor_dict:
+            fallback_location = (location[0], None)
+            location_factor = location_factor_dict[fallback_location]["average"]
+        else:
+            raise AttributeError(
+                f"No location factor found for {location}, and no fallback for country '{location[0]}'. "
+                f"Available locations are: {list(location_factor_dict.keys())}"
+            )
+        # Apply the `average` location factor to compute adjusted cost
         @b.Constraint()
         def total_BEC_eq(c):
-            return c.total_BEC == sum(b.BEC_list)
+            return c.total_BEC == sum(b.BEC_list) * location_factor
 
     def display_flowsheet_cost(b):
         # This method accepts a flowsheet-level costing block

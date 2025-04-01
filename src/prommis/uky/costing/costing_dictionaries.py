@@ -14,6 +14,7 @@ power_plant_capcost.py
 
 Python dictionaries that are loaded:
 * REE_costing_params
+* location_factors
 
 """
 
@@ -267,20 +268,35 @@ def load_default_resource_prices():
     }
     return default_resource_prices
 
-def load_loacation_factor():
+
+def load_location_factor():
     """
-    When consider global market, one can use location factor to estimate a same plant's cost built in different location using location factor. 
-    Reference: Seider, Warren D., et al. Product and process design principles: synthesis, analysis and evaluation. John Wiley & Sons, 2016.
-    Location factor is used to account for different costs in different localities based on the availability of labor, the efficiency o the workforce,
-    local rules and customs, union status, and other impacts.
-    The conversion equaiton: 
-    .. math:: C_{TPI, corrected} = F_{ISF} * C_{TPI}
-    where C repreesnt cost, F represent factor, TPI represent total production investment, ISF represent investment site factor (i.e. location factor).
-    
-    The 139 country's location factor cited here are referenced from Compass International in 2017 (https://www.compassinternational.net/wp-content/uploads/2017/01/Worldwide-Industrial.pdf).
-    The data source have multiple cities's location factor for some of the countries.
-    
-    The benchmarket value is at Washington DC, USA.
+    Estimate the cost of constructing the same plant in different global locations using location factors.
+
+    This method uses a location (or investment site) factor to adjust the total plant investment (TPI)
+    based on regional differences in labor costs, workforce efficiency, local regulations and customs,
+    union status, and other local economic conditions.
+
+    Reference:
+    Seider, Warren D., et al. *Product and Process Design Principles: Synthesis, Analysis, and Evaluation.*
+    John Wiley & Sons, 2016.
+
+    The conversion equation is given by:
+
+    .. math::
+        C_{TPI, corrected} = F_{ISF} \times C_{TPI}
+
+    where:
+    - :math:`C` represents cost,
+    - :math:`F` represents a factor,
+    - :math:`TPI` is the total plant investment, and
+    - :math:`ISF` is the investment site factor (i.e., location factor).
+
+    Location factors for 139 countries are sourced from Compass International (2017):
+    https://www.compassinternational.net/wp-content/uploads/2017/01/Worldwide-Industrial.pdf
+
+    Note: For some countries, multiple city-specific location factors are provided.
+    The benchmark location is Washington, D.C., USA.
     """
     with open(os.path.join(directory, "location_factors.json"), "r") as file:
         location_factors = json.load(file)

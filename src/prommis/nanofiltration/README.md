@@ -14,7 +14,7 @@ This file uses the nf_brine.py flowsheet to perform a sensitivity analysis on th
 
 2. Mg:Li Ratio versus Volume Recovery: The ratio of Mg:Li in the feed is constant, which is represented by the red line. All results tested show that the permeate stream has smaller Mg:Li ratios than the feed, which is desirable as the end goal is purifying lithium. There is a local minima at a volume recovery of ~55%.
 
-3. Membrane Area (m$^2$) versus Volume Recovery: The membrane area increases as the system capacity (volume recovery) increases.
+3. Membrane Area (m2) versus Volume Recovery: The membrane area increases as the system capacity (volume recovery) increases.
 
 4. Feed Pressure (bar) versus Volume Recovery: The optimal feed pressure increases as the system capacity increases and the membrane area reaches its upper bound.
 
@@ -22,7 +22,7 @@ This file uses the nf_brine.py flowsheet to perform a sensitivity analysis on th
 This contains the property package for the sieving coefficient model used for separating lithium and cobalt ions via diafiltration.
 
 ## diafiltration.py
-A fixed configuration nanofiltration membrane system with an additional, dilute inlet stream (the diafiltrate) is used to simulate a diafiltration cascade for recovering lithium and cobalt from spent lithium-ion battery leachate. The membrane model originates from Wamble et al. (https://pubs.acs.org/doi/full/10.1021/acssuschemeng.2c02862) and was initially implemented in Pyomo by Andrew Lee.
+A fixed configuration nanofiltration membrane system with an additional, dilute inlet stream (the diafiltrate) is used to simulate a diafiltration cascade for recovering lithium and cobalt from spent lithium-ion battery leachate. The membrane model originates from [Wamble et al.](https://pubs.acs.org/doi/full/10.1021/acssuschemeng.2c02862) and was initially implemented in Pyomo by Andrew Lee.
 
 A custom costing class is added to the flowsheet to minimize the annualized operating cost, subject to lithium and cobalt recovery bounds, the transport model, and mass balances. There are 3 degrees of freedom (the membrane length in each of the 3 stages).
 

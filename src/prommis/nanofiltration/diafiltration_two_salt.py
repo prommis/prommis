@@ -5,12 +5,12 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 r"""
-Two Salt Diafiltration Unit Model
+Two-Salt Diafiltration Unit Model
 =================================
 
 Author: Molly Dougher
 
-This multi-component model for the diafiltration membrane model is a two salt system with a common
+This multi-component model for the diafiltration membrane model is a two-salt system with a common
 anion. The membrane is designed for use in the diafiltration cascade, i.e., is a spiral-wound
 membrane module.
 

@@ -27,7 +27,9 @@ A fixed configuration nanofiltration membrane system with an additional, dilute 
 A custom costing class is added to the flowsheet to minimize the annualized operating cost, subject to lithium and cobalt recovery bounds, the transport model, and mass balances. There are 3 degrees of freedom (the membrane length in each of the 3 stages).
 
 ## diafiltration_two_salt.py
-Multi-component (two-salt, common anion) unit model for diafiltration. The membrane is designed for use in the diafiltration cascade, i.e., is a spiral-wound membrane module. See [source code](https://github.com/prommis/prommis/blob/main/src/prommis/nanofiltration/diafiltration_two_salt.py) for detailed documentation.
+Multi-component (two-salt, common anion) unit model for diafiltration. The membrane is designed for use in the diafiltration cascade, i.e., is a spiral-wound membrane module. See [source code](https://github.com/prommis/prommis/blob/main/src/prommis/nanofiltration/diafiltration_two_salt.py) for detailed documentation. See below figure for the membrane system schematic.
+
+![membrane-schematic](membrane-schematic.png "Membrane system schematic for multi-component diafiltration")
 
 ## diafiltration_solute_properties.py
 This contains the property package for the multi-component model for diafiltration.

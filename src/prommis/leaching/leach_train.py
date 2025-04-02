@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -131,7 +131,12 @@ class LeachingTrainInitializer(ModularInitializerBase):
             ssc_solver_options=self.config.ssc_solver_options,
             calculate_variable_options=self.config.calculate_variable_options,
         )
-        return msc_init.initialize(model.mscontactor)
+        msc_init.initialize(model.mscontactor)
+
+        solver = self._get_solver()
+        results = solver.solve(model)
+
+        return results
 
 
 StreamCONFIG = ConfigDict()

@@ -30,12 +30,12 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse >= 2.7.0rc0",
-    "pyomo >= 6.7.0",
+    "idaes-pse >=2.8.0",
+    "pyomo >=6.7.0",
 ]
 [project.optional-dependencies]
 watertap = [
-    "watertap >=1.2.0rc0",
+    "watertap >= 1.3.0rc0",
 ]
 flowsheet-processor = [
     "idaes-flowsheet-processor >=0.1.dev4",
@@ -110,6 +110,7 @@ extend-exclude = [
 IDAES = "IDAES"
 # Atomic elements
 Nd = "Nd"
+Ba = "Ba"
 [tool.typos.default]
 extend-ignore-re = [
     # Jupyter notebooks: ignore hexadecimal values in "id" cell metadata field

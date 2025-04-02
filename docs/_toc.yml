@@ -1,6 +1,7 @@
 format: jb-book
 root: index
 chapters:
+  - file: getting_started.md
   - file: tutorials/diafiltration
   - file: tutorials/diafiltration-solution
   - file: tutorials/ree_costing_framework_basic_features

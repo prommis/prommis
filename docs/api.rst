@@ -80,7 +80,10 @@ Nanofiltration
    :toctree: _autosummary
    :template: autosummary/module-with-contents.rst
 
+   prommis.nanofiltration.diafiltration_flowsheet_two_salt
    prommis.nanofiltration.diafiltration_properties
+   prommis.nanofiltration.diafiltration_solute_properties
+   prommis.nanofiltration.diafiltration_two_salt
    prommis.nanofiltration.diafiltration
    prommis.nanofiltration.nf_brine_plot
    prommis.nanofiltration.nf_brine

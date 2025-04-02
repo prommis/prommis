@@ -356,4 +356,4 @@ class TestDiafiltrationTwoSalt(object):
     @pytest.mark.component
     def test_numerical_issues(self, diafiltration_two_salt):
         dt = DiagnosticsToolbox(diafiltration_two_salt.fs.unit)
-        dt.report_numerical_issues()  # there may be some variables at/near bound of zero (expected)
+        dt.assert_no_numerical_warnings()

@@ -2784,30 +2784,50 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # User-provide the location as a single (country, city) tuple
         # Example of user-provided locations: list of (country, city) tuple
         # e.g., [("USA", "Houston"), ("Albania", None)]
-        location = [("United States", "Washington DC")] 
+        location = ("United States", "Washington DC")
         
         # Build dictionary keyed by (country, city)
         location_factor_dict = {
             (entry["country"], entry["city"]): entry["location_factor"]
             for entry in location_factor_list
         }
-        
+
         # First tries to match (country, city) exactly.
-        # If not found, automatically falls back to (country, None).
-        # Raises an error only if neither exists.
         if location in location_factor_dict:
             location_factor = location_factor_dict[location]["average"]
+        # If country matches but city doesn't, suggest cities
+        elif any(loc[0] == location[0] for loc in location_factor_dict.keys()):
+            # Find all available cities for this country (excluding None)
+            available_cities = sorted({
+                loc[1] for loc in location_factor_dict.keys()
+                if loc[0] == location[0] and loc[1] is not None
+            })
+
+            available_city_list = ', '.join(available_cities) if available_cities else "None"
+            raise AttributeError(
+                f"No location factor found for {location}. "
+                f"Available cities for '{location[0]}' are: {available_city_list}. "
+                f"Did you mean one of those?"
+            )
+        # Fall back to (country, None)
         elif (location[0], None) in location_factor_dict:
             fallback_location = (location[0], None)
             location_factor = location_factor_dict[fallback_location]["average"]
+        # No country match
         else:
+            available_countries = sorted({loc[0] for loc in location_factor_dict.keys()})
             raise AttributeError(
-                f"No location factor found for {location}, and no fallback for country '{location[0]}'. "
-                f"Available locations are: {list(location_factor_dict.keys())}"
+                f"No location factor found for country '{location[0]}'. "
+                f"Available countries are: {', '.join(available_countries)}"
             )
+
         # Apply the `average` location factor to compute adjusted cost
+        # Store base BEC and location factor to be used in test file
+        b.base_BEC = Expression(expr=value(sum(b.BEC_list)))
+        b.location_factor_used = Param(initialize=location_factor, mutable=False)
+        
         @b.Constraint()
-        def total_BEC_eq(c):
+        def total_BEC_eq(c):        
             return c.total_BEC == sum(b.BEC_list) * location_factor
 
     def display_flowsheet_cost(b):

@@ -1399,7 +1399,6 @@ class TestREECosting(object):
                 expected_costing_upper_bound[key], rel=1e-4
             )
 
-
 class TestWaterTAPCosting(object):
     @pytest.fixture(scope="class")
     def solver(self):

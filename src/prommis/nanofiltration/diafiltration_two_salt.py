@@ -39,7 +39,7 @@ The partition coefficients of all ions in solution are equal to 1, meaning the c
 ion ``i`` just outside the membrane is equal to the concentration of ion ``i`` just inside the 
 membrane. We also assume that the membrane has no surface charge, which is a valid assumption for
 NF90 membranes.
-    
+
 The formation of a boundary layer at the membrane surface due to concentration polarization is 
 neglected for mathematical simplicity.
 
@@ -61,8 +61,8 @@ The two-salt diafiltration model defines the following discrete sets for ions in
 
 There are 2 continuous sets for each length dimension: the ``x``-direction parallel to the membrane
 surface (width) and the ``z``-direction perpendicular to the membrane surface. (thickness) ``x`` and
- ``z`` are non-dimensionalized with the membrane width (``w``) and thickness (``l``), respectively,
- to improve numerics.
+``z`` are non-dimensionalized with the membrane width (``w``) and thickness (``l``), respectively,
+to improve numerics.
 
 .. math:: \bar{x} \in \mathbb{R} \; | \; 0 \leq \bar{x} \geq 1
 
@@ -167,8 +167,8 @@ with linearized cross-diffusion coefficients:
 .. math:: D_{\mathrm{Co^{2+},Li^+}} = \beta_6 + \beta_7 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_8 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
 
 .. math:: D_{\mathrm{Co^{2+},Co^{2+}}} = \beta_9 + \beta_{10} c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_{11} c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
- 
- where:
+
+where:
 
 ================== ========= ================
 Parameter          Value     Units

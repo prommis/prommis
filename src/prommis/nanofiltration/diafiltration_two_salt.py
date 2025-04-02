@@ -132,8 +132,105 @@ Variable                                                           Description  
 Constraints
 -----------
 
-Will be added pending finalization of model and developing automated workflow of converting latex
-document to sphinx format
+Differential mass balances in the retentate:
+.. math:: \frac{\mathrm{d}q_r(\bar{x})}{\mathrm{d}\bar{x}} = - J_w(\bar{x}) wL
+
+.. math:: \frac{\mathrm{d}c_{\mathrm{Li^+},r}(\bar{x})}{\mathrm{d}\bar{x}} = \left( J_w(\bar{x}) c_{\mathrm{Li^+},r}(\bar{x}) - j_{\mathrm{Li^+}}(\bar{x}) \right) \frac{Lw}{q_r(\bar{x})}
+
+.. math:: \frac{\mathrm{d}c_{\mathrm{Co^{2+}},r}(\bar{x})}{\mathrm{d}\bar{x}} = \left( J_w(\bar{x}) c_{\mathrm{Co^{2+}},r}(\bar{x}) - j_{\mathrm{Co^{2+}}}(\bar{x}) \right) \frac{Lw}{q_r(\bar{x})}
+
+Overall component mass balances:
+.. math:: q_r(\bar{x})c_{\mathrm{Li^+},r}(\bar{x}) + q_p(\bar{x})c_{\mathrm{Li^+},p}(\bar{x}) = q_f c_{\mathrm{Li^+},f}+q_d c_{\mathrm{Li^+},d} \quad\quad \forall \; \bar{x} \neq 0
+
+.. math:: q_r(\bar{x})c_{\mathrm{Co^{2+}},r}(\bar{x}) + q_p(\bar{x})c_{\mathrm{Co^{2+}},p}(\bar{x}) = q_f c_{\mathrm{Li^+},f}+q_d c_{\mathrm{Li^+},d} \quad\quad \forall \; \bar{x} \neq 0
+\end{equation}
+
+Electroneutrality in the retentate:
+.. math:: c_{\mathrm{Cl^-},r}(\bar{x}) = - \frac{z_{\mathrm{Li^+}}}{z_{\mathrm{Cl^-}}} \frac{MW_{\mathrm{Cl^-}}}{MW_{\mathrm{Li^+}}} c_{\mathrm{Li^+},r}(\bar{x}) - \frac{z_{\mathrm{Co^{2+}}}}{z_{\mathrm{Cl^-}}} \frac{MW_{\mathrm{Cl^-}}}{MW_{\mathrm{Co^{2+}}}} c_{\mathrm{Co^{2+}},r}(\bar{x})
+
+Overall water flux through the membrane:
+.. math:: J_w (\bar{x}) = L_p (\Delta P - \Delta \pi (\bar{x})) \quad\quad \forall \; \bar{x} \neq 0
+
+Osmotic pressure:
+.. math:: \Delta \pi (\bar{x}) =  n \mathrm{R} \mathrm{T} \sum_{i \in \mathcal{I}} \frac{\sigma_i}{MW_i} (c_{i,r}(\bar{x})-c_{i,p}(\bar{x}))
+
+Nernst-Plank equations for the ion flux through the membrane:
+.. math:: j_{\mathrm{Li^+}}(\bar{x}) = c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) J_w(\bar{x}) + \frac{D_{\mathrm{Li^+,Li^+}}}{l} \frac{\partial c_{\mathrm{Li^+},m}(\bar{x},\bar{z})}{\partial \bar{z}} + \frac{D_{\mathrm{Li^+,Co^{2+}}}}{l} \frac{\partial c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})}{\partial \bar{z}} \quad\quad \forall \; \bar{z} \neq 0
+
+.. math:: j_{\mathrm{Co^{2+}}}(\bar{x}) = c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}) J_w(\bar{x}) + \frac{D_{\mathrm{Co^{2+},Li^+}}}{l} \frac{\partial c_{\mathrm{Li^+},m}(\bar{x},\bar{z})}{\partial \bar{z}} + \frac{D_{\mathrm{Co^{2+},Co^{2+}}}}{l} \frac{\partial c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})}{\partial \bar{z}} \quad\quad \forall \; \bar{z} \neq 0
+
+with linearized cross-diffusion coefficients: 
+.. math:: D_{\mathrm{Li^+,Li^+}} = \beta_0 + \beta_1 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_2 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
+
+.. math:: D_{\mathrm{Li^+,Co^{2+}}} = \beta_3 + \beta_4 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_5 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
+
+.. math:: D_{\mathrm{Co^{2+},Li^+}} = \beta_6 + \beta_7 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_8 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
+
+.. math:: D_{\mathrm{Co^{2+},Co^{2+}}} = \beta_9 + \beta_{10} c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_{11} c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
+ 
+ where:
+
+================== ========= ================
+Parameter          Value     Units
+================== ========= ================
+:math:`\beta_0`    -3.87e-06 :math:`m^2/h`
+:math:`\beta_1`    -6.56e-08 :math:`m^5/kg/h`
+:math:`\beta_2`    2.58e-08  :math:`m^5/kg/h`
+:math:`\beta_3`    -4.50e-07 :math:`m^2/h`
+:math:`\beta_4`    -1.70e-07 :math:`m^5/kg/h`
+:math:`\beta_5`    6.67e-08  :math:`m^5/kg/h`
+:math:`\beta_6`    -6.47e-07 :math:`m^2/h`
+:math:`\beta_7`    4.10e-08  :math:`m^5/kg/h`
+:math:`\beta_8`    -1.61e-08 :math:`m^5/kg/h`
+:math:`\beta_9`    -3.56e-06 :math:`m^2/h`
+:math:`\beta_{10}` 3.91e-07  :math:`m^5/kg/h`
+:math:`\beta_{11}` -1.53e-07 :math:`m^5/kg/h`
+================== ========= ================
+
+No applied potential on the system:
+.. math:: j_{\mathrm{Cl^-}}(\bar{x}) = - \frac{z_{\mathrm{Li^+}}}{z_{\mathrm{Cl^-}}} \frac{MW_{\mathrm{Cl^-}}}{MW_{\mathrm{Li^+}}} j_{\mathrm{Li^+}}(\bar{x}) - \frac{z_{\mathrm{Co^{2+}}}}{z_{\mathrm{Cl^-}}} \frac{MW_{\mathrm{Cl^-}}}{MW_{\mathrm{Co^{2+}}}} j_{\mathrm{Co^{2+}}}(\bar{x})
+
+Electroneutrality in the membrane:
+.. math:: c_{\mathrm{Cl^-},m}(\bar{x},\bar{z}) = -\frac{z_{\mathrm{Li^+}}}{z_{\mathrm{Cl^-}}} \frac{MW_{\mathrm{Cl^-}}}{MW_{\mathrm{Li^+}}} c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) -\frac{z_{\mathrm{Co^{2+}}}}{z_{\mathrm{Cl^-}}} \frac{MW_{\mathrm{Cl^-}}}{MW_{\mathrm{Co^{2+}}}} c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}) \quad\quad \forall \; \bar{z} \neq 0
+
+Mass balance (via convection) on the permeate outlet:
+.. math:: q_p(\bar{x}) = \bar{x} wL J_w(\bar{x}) \quad\quad \forall \; \bar{x} \neq 0
+
+.. math:: c_{\mathrm{Li^+},p}(\bar{x}) = \frac{j_{\mathrm{Li^+}}(\bar{x})}{J_w(\bar{x})}  \quad\quad \forall \; \bar{x} \neq 0
+
+.. math:: c_{\mathrm{Co^{2+}},p}(\bar{x}) = \frac{j_{\mathrm{Co^{2+}}}(\bar{x})}{J_w(\bar{x})}  \quad\quad \forall \; \bar{x} \neq 0
+
+Relate the concentrations at each phase interface:
+.. math:: c_{\mathrm{Li^+},r}(\bar{x})=c_{\mathrm{Li^+},m}(\bar{x},\bar{z}=0)
+
+.. math:: c_{\mathrm{Co^{2+}},r}(\bar{x})=c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}=0)
+
+.. math:: c_{\mathrm{Cl^-},r}(\bar{x})=c_{\mathrm{Cl^-},m}(\bar{x},\bar{z}=0)
+
+.. math:: c_{\mathrm{Li^+},m}(\bar{x},\bar{z}=1)=c_{\mathrm{Li^+},p}(\bar{x})
+
+.. math:: c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}=1)=c_{\mathrm{Co^{2+}},p}(\bar{x})
+
+.. math:: c_{\mathrm{Cl^-},m}(\bar{x},\bar{z}=1)=c_{\mathrm{Cl^-},p}(\bar{x})
+
+Initial and boundary conditions:
+.. math:: q_r(\bar{x}=0)=q_f+q_d
+
+.. math:: q_r(\bar{x}=0) c_{\mathrm{Li^+},r}(\bar{x}=0)=q_f c_{\mathrm{Li^+},f} + q_d c_{\mathrm{Li^+},d}
+
+.. math:: q_r(\bar{x}=0) c_{\mathrm{Co^{2+}},r}(\bar{x}=0)=q_f c_{\mathrm{Co^{2+}},f} + q_d c_{\mathrm{Co^{2+}},d}
+
+.. math:: q_p(\bar{x}=0) = 0
+
+.. math:: c_{\mathrm{Li^+},p} (\bar{x}=0) = 0
+
+.. math:: c_{\mathrm{Co^{2+}},p} (\bar{x}=0) = 0
+
+.. math:: \frac{\mathrm{d}q_r(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=0
+
+.. math:: \frac{\mathrm{d}c_{\mathrm{Li^+},r}(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=0
+
+.. math:: \frac{\mathrm{d}c_{\mathrm{Co^{2+}},r}(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=0
 
 """
 

@@ -5,7 +5,7 @@ This is an example flowsheet for the separation of lithium and magnesium ions us
 
 The objective of the Pyomo model is to limit the amount of lithium lost in the retentate stream, with 2 degrees of freedom (pressure, area). Operating at this extreme end of the tradeoff between the selectivity and permeability, combined with the low solvent flux for this example, the magnesium rejection is low (~14%). An additional constraint is enacted on the model to limit the feed pressure to 70 bar, per typical experimental capabilities.
 
-good references: https://doi.org/10.1021/acs.est.2c08584 ; https://doi.org/10.1016/j.memsci.2020.118809
+Good references for details on the NF model, i.e., the DSPM-DE model: https://doi.org/10.1021/acs.est.2c08584 ; https://doi.org/10.1016/j.memsci.2020.118809
 
 ## nf_brine_plot.py
 This file uses the nf_brine.py flowsheet to perform a sensitivity analysis on the volume recovery of the nanofiltration system. The file outputs four subplots:

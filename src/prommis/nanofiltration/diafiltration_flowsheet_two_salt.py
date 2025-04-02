@@ -84,22 +84,30 @@ def solve_model(m):
 
 def plot_results(m):
     """
-    Plots concentration and flux variables across the length of the membrane module.
+    Plots concentration and flux variables across the width of the membrane module.
 
     Args:
         m: Pyomo model
     """
-    x_plot = []
+    # store values for x-coordinate
+    x_axis_values = []
+
+    # store values for concentration of lithium in the retentate
     conc_ret_lith = []
+    # store values for concentration of lithium in the permeate
     conc_perm_lith = []
+    # store values for concentration of cobalt in the retentate
     conc_ret_cob = []
+    # store values for concentration of cobalt in the permeate
     conc_perm_cob = []
 
+    # store values for water flux across membrane
     water_flux = []
+    # store values for mass flux of lithium across membrane
     lithium_flux = []
 
     for x_val in m.fs.membrane.x_bar:
-        x_plot.append(x_val * value(m.fs.membrane.membrane_width))
+        x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
         conc_ret_lith.append(value(m.fs.membrane.retentate_conc_mass_lithium[x_val]))
         conc_perm_lith.append(value(m.fs.membrane.permeate_conc_mass_lithium[x_val]))
         conc_ret_cob.append(value(m.fs.membrane.retentate_conc_mass_cobalt[x_val]))
@@ -112,7 +120,7 @@ def plot_results(m):
         3, 2, dpi=125, figsize=(10, 7)
     )
 
-    ax1.plot(x_plot, conc_ret_lith, linewidth=2)
+    ax1.plot(x_axis_values, conc_ret_lith, linewidth=2)
     ax1.set_ylim(1.3, 1.4)
     ax1.set_ylabel(
         "Retentate-side Lithium\n Concentration (kg/m$^3$)",
@@ -121,7 +129,7 @@ def plot_results(m):
     )
     ax1.tick_params(direction="in", labelsize=10)
 
-    ax2.plot(x_plot, conc_perm_lith, linewidth=2)
+    ax2.plot(x_axis_values, conc_perm_lith, linewidth=2)
     ax2.set_ylabel(
         "Permeate-side Lithium\n Concentration (kg/m$^3$)",
         fontsize=10,
@@ -129,7 +137,7 @@ def plot_results(m):
     )
     ax2.tick_params(direction="in", labelsize=10)
 
-    ax3.plot(x_plot, conc_ret_cob, linewidth=2)
+    ax3.plot(x_axis_values, conc_ret_cob, linewidth=2)
     ax3.set_ylim(13, 13.5)
     ax3.set_ylabel(
         "Retentate-side Cobalt\n Concentration (kg/m$^3$)",
@@ -138,7 +146,7 @@ def plot_results(m):
     )
     ax3.tick_params(direction="in", labelsize=10)
 
-    ax4.plot(x_plot, conc_perm_cob, linewidth=2)
+    ax4.plot(x_axis_values, conc_perm_cob, linewidth=2)
     ax4.set_ylabel(
         "Permeate-side Cobalt\n Concentration (kg/m$^3$)",
         fontsize=10,
@@ -146,13 +154,13 @@ def plot_results(m):
     )
     ax4.tick_params(direction="in", labelsize=10)
 
-    ax5.plot(x_plot, water_flux, linewidth=2)
-    ax5.set_xlabel("Membrane Length (m)", fontsize=10, fontweight="bold")
+    ax5.plot(x_axis_values, water_flux, linewidth=2)
+    ax5.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
     ax5.set_ylabel("Water Flux (m$^3$/m$^2$/h)", fontsize=10, fontweight="bold")
     ax5.tick_params(direction="in", labelsize=10)
 
-    ax6.plot(x_plot, lithium_flux, linewidth=2)
-    ax6.set_xlabel("Membrane Length (m)", fontsize=10, fontweight="bold")
+    ax6.plot(x_axis_values, lithium_flux, linewidth=2)
+    ax6.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
     ax6.set_ylabel(
         "Mass Flux of Lithium\n (kg/m$^2$/h)", fontsize=10, fontweight="bold"
     )
@@ -168,65 +176,73 @@ def plot_membrane_results(m):
     Args:
         m: Pyomo model
     """
-    x_vals = []
-    z_vals = []
+    x_axis_values = []
+    z_axis_values = []
 
     for x_val in m.fs.membrane.x_bar:
-        x_vals.append(x_val)
+        x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
     for z_val in m.fs.membrane.z_bar:
-        z_vals.append(z_val)
+        z_axis_values.append(z_val * value(m.fs.membrane.membrane_thickness) * 1e9)
 
-    c_lith_mem = []
-    c_cob_mem = []
-    c_chl_mem = []
-
-    c_lith_mem_dict = {}
-    c_cob_mem_dict = {}
-    c_chl_mem_dict = {}
+    # store values for concentration of lithium in the membrane
+    conc_mem_lith = []
+    conc_mem_lith_dict = {}
+    # store values for concentration of cobalt in the membrane
+    conc_mem_cob = []
+    conc_mem_cob_dict = {}
+    # store values for concentration of chlorine in the membrane
+    conc_mem_chl = []
+    conc_mem_chl_dict = {}
 
     for z_val in m.fs.membrane.z_bar:
         for x_val in m.fs.membrane.x_bar:
-            c_lith_mem.append(
+            conc_mem_lith.append(
                 value(m.fs.membrane.membrane_conc_mass_lithium[x_val, z_val])
             )
-            c_cob_mem.append(
+            conc_mem_cob.append(
                 value(m.fs.membrane.membrane_conc_mass_cobalt[x_val, z_val])
             )
-            c_chl_mem.append(
+            conc_mem_chl.append(
                 value(m.fs.membrane.membrane_conc_mass_chlorine[x_val, z_val])
             )
 
-        c_lith_mem_dict[f"{z_val}"] = c_lith_mem
-        c_cob_mem_dict[f"{z_val}"] = c_cob_mem
-        c_chl_mem_dict[f"{z_val}"] = c_chl_mem
-        c_lith_mem = []
-        c_cob_mem = []
-        c_chl_mem = []
+        conc_mem_lith_dict[f"{z_val}"] = conc_mem_lith
+        conc_mem_cob_dict[f"{z_val}"] = conc_mem_cob
+        conc_mem_chl_dict[f"{z_val}"] = conc_mem_chl
+        conc_mem_lith = []
+        conc_mem_cob = []
+        conc_mem_chl = []
 
-    c_lith_mem_df = DataFrame(index=x_vals, data=c_lith_mem_dict)
-    c_cob_mem_df = DataFrame(index=x_vals, data=c_cob_mem_dict)
-    c_chl_mem_df = DataFrame(index=x_vals, data=c_chl_mem_dict)
+    conc_mem_lith_df = DataFrame(index=x_axis_values, data=conc_mem_lith_dict)
+    conc_mem_cob_df = DataFrame(index=x_axis_values, data=conc_mem_cob_dict)
+    conc_mem_chl_df = DataFrame(index=x_axis_values, data=conc_mem_chl_dict)
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, dpi=125, figsize=(15, 7))
-    lithium_plot = ax1.pcolor(c_lith_mem_df, cmap="Blues")
-    ax1.set_xlabel("z (dimensionless)", fontsize=10, fontweight="bold")
-    ax1.set_ylabel("x (dimensionless)", fontsize=10, fontweight="bold")
+    lithium_plot = ax1.pcolor(
+        z_axis_values, x_axis_values, conc_mem_lith_df, cmap="Blues"
+    )
+    ax1.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
+    ax1.set_ylabel("Membrane Width (m)", fontsize=10, fontweight="bold")
     ax1.set_title(
         "Lithium Concentration\n in Membrane (kg/m$^3$)", fontsize=10, fontweight="bold"
     )
     ax1.tick_params(direction="in", labelsize=10)
     fig.colorbar(lithium_plot, ax=ax1)
 
-    cobalt_plot = ax2.pcolor(c_cob_mem_df, cmap="Blues")
-    ax2.set_xlabel("z (dimensionless)", fontsize=10, fontweight="bold")
+    cobalt_plot = ax2.pcolor(
+        z_axis_values, x_axis_values, conc_mem_cob_df, cmap="Blues"
+    )
+    ax2.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
     ax2.set_title(
         "Cobalt Concentration\n in Membrane (kg/m$^3$)", fontsize=10, fontweight="bold"
     )
     ax2.tick_params(direction="in", labelsize=10)
     fig.colorbar(cobalt_plot, ax=ax2)
 
-    chlorine_plot = ax3.pcolor(c_chl_mem_df, cmap="Blues")
-    ax3.set_xlabel("z (dimensionless)", fontsize=10, fontweight="bold")
+    chlorine_plot = ax3.pcolor(
+        z_axis_values, x_axis_values, conc_mem_chl_df, cmap="Blues"
+    )
+    ax3.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
     ax3.set_title(
         "Chlorine Concentration\n in Membrane (kg/m$^3$)",
         fontsize=10,

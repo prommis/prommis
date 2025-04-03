@@ -17,11 +17,6 @@ Neodymium Magnets.
 
 from pyomo.environ import units as pyunits
 
-from idaes.models.properties.modular_properties.base.generic_reaction import (
-    ConcentrationForm,
-)
-
-
 config_dict = {
     "base_units": {
         "time": pyunits.s,

@@ -28,7 +28,6 @@ from idaes.core import (  # Cation,; Anion,; Apparent,
     VaporPhase,
 )
 from idaes.models.properties.modular_properties.eos.ideal import Ideal
-from idaes.models.properties.modular_properties.phase_equil.forms import fugacity
 from idaes.models.properties.modular_properties.pure.ConstantProperties import Constant
 from idaes.models.properties.modular_properties.pure.NIST import NIST
 from idaes.models.properties.modular_properties.pure.Perrys import Perrys

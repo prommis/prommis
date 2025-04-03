@@ -11,11 +11,8 @@
 # for full copyright and license information.
 #################################################################################
 """
-Property package for CMI Process for recovery of REEs from EOL Neodymium Magnets.
+Test property package. Based on WaterTap documentation.
 """
-
-# Import Python libraries
-import logging
 
 # Import Pyomo units
 from pyomo.environ import units as pyunits
@@ -28,6 +25,10 @@ from idaes.core import (
     SolidPhase,
     Solute,
     VaporPhase,
+    # Cation,
+    # Anion,
+    # Apparent,
+    Solvent,
 )
 from idaes.models.properties.modular_properties.eos.ideal import Ideal
 from idaes.models.properties.modular_properties.phase_equil.forms import fugacity
@@ -37,9 +38,7 @@ from idaes.models.properties.modular_properties.pure.Perrys import Perrys
 from idaes.models.properties.modular_properties.pure.RPP4 import RPP4
 from idaes.models.properties.modular_properties.state_definitions import FpcTP
 
-# Set up logger
-_log = logging.getLogger(__name__)
-
+# all solutes heat capacities approximates as 75000 kJ/kmol/K.
 
 # ---------------------------------------------------------------------
 
@@ -57,45 +56,277 @@ _log = logging.getLogger(__name__)
 #     (1991); https:// doi.org/10.1063/1.555899
 # [7] https://www.sciencedirect.com/science/article/pii/S0040603120301696
 # [8] https://e-magnetsuk.com/introduction-to-neodymium-magnets/characteristics-of-ndfeb-magnets/
+# [9] https://ecampusontario.pressbooks.pub/genchemforgeegees/chapter/appendix-g-standard-enthalpies-of-formation-for-selected-substances/
+# [10] https://sistemas.eel.usp.br/docentes/arquivos/5817712/TDQ%20I/R-standard_enthalpy_of_formation.pdf
+# [11] https://www.engineeringtoolbox.com/standard-state-enthalpy-formation-definition-value-Gibbs-free-energy-entropy-molar-heat-capacity-d_1978.html
+# [12] https://www.osti.gov/servlets/purl/
+# [13] https://en.wikipedia.org/wiki/Copper(II)_borate
+# [14] https://en.wikipedia.org/wiki/Table_of_specific_heat_capacities
+# [15] https://www.americanelements.com/copper-i-oxide-1317-39-1
+# [16] https://www.boyiprototyping.com/materials-guide/density-of-copper/
+# [17] https://winter.group.shef.ac.uk/webelements/copper/thermochemistry.html
+# [18] https://chemister.ru/Databases/Chemdatabase/properties-en.php?dbid=1&id=450
+# [19] https://srd.nist.gov/jpcrdreprint/1.555964.pdf
+# [20] https://www.osti.gov/servlets/purl/1530415
+# [21] https://www.chemicalbook.com/ChemicalProductProperty_EN_CB0323998.htm
+# [22] https://pubmed.ncbi.nlm.nih.gov/30901227/
+# [23] https://www.chemicalbook.com/ChemicalProductProperty_US_CB9262164.aspx
+# [24] https://deepblue.lib.umich.edu/bitstream/handle/2027.42/23403/0000348.pdf;sequence=1
+# [25] https://www.osti.gov/servlets/purl/10111965
 
-config_dict = {
-    # Specifying components
+
+thermo_config = {
     "components": {
-        "Nd2Fe14B": {
-            "type": Component,
-            "valid_phase_types": [3],  # Solid
-            "dens_mol_sol_comp": Constant,
-            "cp_mol_sol_comp": Constant,
-            "enth_mol_sol_comp": Constant,
+        ### Liquids
+        "H2O": {
+            "type": Solvent,
+            "valid_phase_types": [1],  # Liquid
+            # Define the methods used to calculate the following properties
+            "dens_mol_liq_comp": Perrys,
+            "enth_mol_liq_comp": Perrys,
+            "cp_mol_liq_comp": Perrys,
+            "entr_mol_liq_comp": Perrys,
+            # Parameter data is always associated with the methods defined above
             "parameter_data": {
-                "mw": (1.08112, pyunits.kg / pyunits.mol),
-                "dens_mol_sol_comp_coeff": (6.84, pyunits.kmol * pyunits.m**-3),
-                "cp_mol_sol_comp_coeff": (
-                    542.2,
-                    pyunits.J / pyunits.mol / pyunits.K,
-                ),  # [8]
-                "enth_mol_form_sol_comp_ref": (-93.39e3, pyunits.J / pyunits.mol),
+                "mw": (18.0153, pyunits.g / pyunits.mol),
+                # Parameters here come from Perry's Handbook:  p. 2-98
+                "dens_mol_liq_comp_coeff": {
+                    "eqn_type": 1,
+                    "1": (5.459, pyunits.kmol * pyunits.m**-3),
+                    "2": (0.30542, pyunits.dimensionless),
+                    "3": (647.13, pyunits.K),
+                    "4": (0.081, pyunits.dimensionless),
+                },
+                "enth_mol_form_liq_comp_ref": (-285.830, pyunits.kJ / pyunits.mol),
+                "enth_mol_form_vap_comp_ref": (0, pyunits.kJ / pyunits.mol),
+                # Parameters here come Perry's Handbook:  p. 2-174
+                "cp_mol_liq_comp_coeff": {
+                    "1": (2.7637e5, pyunits.J / pyunits.kmol / pyunits.K),
+                    "2": (-2.0901e3, pyunits.J / pyunits.kmol / pyunits.K**2),
+                    "3": (8.125, pyunits.J / pyunits.kmol / pyunits.K**3),
+                    "4": (-1.4116e-2, pyunits.J / pyunits.kmol / pyunits.K**4),
+                    "5": (9.3701e-6, pyunits.J / pyunits.kmol / pyunits.K**5),
+                },
+                "cp_mol_ig_comp_coeff": {
+                    "A": (30.09200, pyunits.J / pyunits.mol / pyunits.K),
+                    "B": (
+                        6.832514,
+                        pyunits.J * pyunits.mol**-1 * pyunits.K**-1 * pyunits.kiloK**-1,
+                    ),
+                    "C": (
+                        6.793435,
+                        pyunits.J * pyunits.mol**-1 * pyunits.K**-1 * pyunits.kiloK**-2,
+                    ),
+                    "D": (
+                        -2.534480,
+                        pyunits.J * pyunits.mol**-1 * pyunits.K**-1 * pyunits.kiloK**-3,
+                    ),
+                    "E": (
+                        0.082139,
+                        pyunits.J * pyunits.mol**-1 * pyunits.K**-1 * pyunits.kiloK**2,
+                    ),
+                    "F": (-250.8810, pyunits.kJ / pyunits.mol),
+                    "G": (223.3967, pyunits.J / pyunits.mol / pyunits.K),
+                    "H": (0, pyunits.kJ / pyunits.mol),
+                },
+                "entr_mol_form_liq_comp_ref": (
+                    69.95,
+                    pyunits.J / pyunits.K / pyunits.mol,
+                ),
             },
-        },  # [7]
-        "Cu(NO3)2": {
+        },
+        ### Aqueous
+        "H2C2O4": {
             "type": Solute,
             "valid_phase_types": [4],  # Aqueous
             "dens_mol_liq_comp": Constant,
             "cp_mol_liq_comp": Constant,
             "enth_mol_liq_comp": Constant,
             "parameter_data": {
-                "mw": (0.18756, pyunits.kg / pyunits.mol),
+                "mw": (0.09003, pyunits.kg / pyunits.mol),
                 "dens_mol_liq_comp_coeff": (
-                    1,
+                    11,
                     pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
+                ),  # [21]
                 "cp_mol_liq_comp_coeff": (
-                    1,
+                    146.0,
                     pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_liq_comp_ref": (-1, pyunits.J / pyunits.mol),
+                ),  # [3]
+                "enth_mol_form_liq_comp_ref": (-829.7e3, pyunits.J / pyunits.mol),
+            },  # [22]
+        },
+        # "H_+": {
+        #     # "type": Cation, "charge": 1,
+        #     "type": Solute,
+        #     "valid_phase_types": [4],  # Aqueous
+        #     "dens_mol_liq_comp": Constant,
+        #     "enth_mol_liq_comp": Constant,
+        #     "cp_mol_liq_comp": Constant,
+        #     "entr_mol_liq_comp": Constant,
+        #     "parameter_data": {
+        #         "mw": (1.00784, pyunits.g / pyunits.mol),
+        #         "dens_mol_liq_comp_coeff": (55, pyunits.kmol * pyunits.m**-3),
+        #         "enth_mol_form_liq_comp_ref": (0, pyunits.kJ / pyunits.mol),
+        #         "cp_mol_liq_comp_coeff": (75000, pyunits.J / pyunits.kmol / pyunits.K),
+        #         "entr_mol_form_liq_comp_ref": (0, pyunits.J / pyunits.K / pyunits.mol),
+        #     },
+        # },
+        "OH_-": {
+            # "type": Anion, "charge": -1,
+            "type": Solute,
+            "valid_phase_types": [4],  # Aqueous
+            "dens_mol_liq_comp": Constant,
+            "enth_mol_liq_comp": Constant,
+            "cp_mol_liq_comp": Constant,
+            "entr_mol_liq_comp": Constant,
+            "parameter_data": {
+                "mw": (17.008, pyunits.g / pyunits.mol),
+                "dens_mol_liq_comp_coeff": (55, pyunits.kmol * pyunits.m**-3),
+                "enth_mol_form_liq_comp_ref": (-230.000, pyunits.kJ / pyunits.mol),
+                "cp_mol_liq_comp_coeff": (75000, pyunits.J / pyunits.kmol / pyunits.K),
+                "entr_mol_form_liq_comp_ref": (
+                    -10.75,
+                    pyunits.J / pyunits.K / pyunits.mol,
+                ),
             },
-        },  # PLACEHOLDER
+        },
+        "Cu_2+": {
+            # "type": Cation, "charge": 2,
+            "type": Solute,
+            "valid_phase_types": [4],  # Aqueous
+            "dens_mol_liq_comp": Constant,
+            "enth_mol_liq_comp": Constant,
+            "cp_mol_liq_comp": Constant,
+            "entr_mol_liq_comp": Constant,
+            "parameter_data": {
+                "mw": (0.06355, pyunits.kg / pyunits.mol),
+                "dens_mol_liq_comp_coeff": (55, pyunits.kmol * pyunits.m**-3),
+                "enth_mol_form_liq_comp_ref": (64.4, pyunits.kJ / pyunits.mol),  # [10]
+                "cp_mol_liq_comp_coeff": (75000, pyunits.J / pyunits.kmol / pyunits.K),
+                "entr_mol_form_liq_comp_ref": (
+                    -98.7,
+                    pyunits.J / pyunits.K / pyunits.mol,
+                ),  # [11]
+            },
+        },
+        "NO3_-": {
+            # "type": Anion, "charge": -1,
+            "type": Solute,
+            "valid_phase_types": [4],  # Aqueous
+            "dens_mol_liq_comp": Constant,
+            "enth_mol_liq_comp": Constant,
+            "cp_mol_liq_comp": Constant,
+            "entr_mol_liq_comp": Constant,
+            "parameter_data": {
+                "mw": (0.06201, pyunits.kg / pyunits.mol),
+                "dens_mol_liq_comp_coeff": (55, pyunits.kmol * pyunits.m**-3),
+                "enth_mol_form_liq_comp_ref": (-207.4, pyunits.kJ / pyunits.mol),  # [3]
+                "cp_mol_liq_comp_coeff": (75000, pyunits.J / pyunits.kmol / pyunits.K),
+                "entr_mol_form_liq_comp_ref": (
+                    146.4,
+                    pyunits.J / pyunits.K / pyunits.mol,
+                ),  # [3]
+            },
+        },
+        "Nd_3+": {
+            # "type": Cation, "charge": 3,
+            "type": Solute,
+            "valid_phase_types": [4],  # Aqueous
+            "dens_mol_liq_comp": Constant,
+            "enth_mol_liq_comp": Constant,
+            "cp_mol_liq_comp": Constant,
+            "entr_mol_liq_comp": Constant,
+            "parameter_data": {
+                "mw": (0.14424, pyunits.kg / pyunits.mol),
+                "dens_mol_liq_comp_coeff": (55, pyunits.kmol * pyunits.m**-3),
+                "enth_mol_form_liq_comp_ref": (-672, pyunits.kJ / pyunits.mol),  # [12]
+                "cp_mol_liq_comp_coeff": (75000, pyunits.J / pyunits.kmol / pyunits.K),
+                "entr_mol_form_liq_comp_ref": (
+                    -315,
+                    pyunits.J / pyunits.K / pyunits.mol,
+                ),  # [12]
+            },
+        },
+        "Fe_2+": {
+            # "type": Cation, "charge": 2,
+            "type": Solute,
+            "valid_phase_types": [4],  # Aqueous
+            "dens_mol_liq_comp": Constant,
+            "enth_mol_liq_comp": Constant,
+            "cp_mol_liq_comp": Constant,
+            "entr_mol_liq_comp": Constant,
+            "parameter_data": {
+                "mw": (0.05585, pyunits.kg / pyunits.mol),
+                "dens_mol_liq_comp_coeff": (55, pyunits.kmol * pyunits.m**-3),
+                "enth_mol_form_liq_comp_ref": (-87.9, pyunits.kJ / pyunits.mol),  # [3]
+                "cp_mol_liq_comp_coeff": (75000, pyunits.J / pyunits.kmol / pyunits.K),
+                "entr_mol_form_liq_comp_ref": (
+                    -137.7,
+                    pyunits.J / pyunits.K / pyunits.mol,
+                ),  # [3]
+            },
+        },
+        "Fe_3+": {
+            # "type": Cation, "charge": 3,
+            "type": Solute,
+            "valid_phase_types": [4],  # Aqueous
+            "dens_mol_liq_comp": Constant,
+            "enth_mol_liq_comp": Constant,
+            "cp_mol_liq_comp": Constant,
+            "entr_mol_liq_comp": Constant,
+            "parameter_data": {
+                "mw": (0.05585, pyunits.kg / pyunits.mol),
+                "dens_mol_liq_comp_coeff": (55, pyunits.kmol * pyunits.m**-3),
+                "enth_mol_form_liq_comp_ref": (-49, pyunits.kJ / pyunits.mol),  # [19]
+                "cp_mol_liq_comp_coeff": (75000, pyunits.J / pyunits.kmol / pyunits.K),
+                "entr_mol_form_liq_comp_ref": (
+                    -278.4,
+                    pyunits.J / pyunits.K / pyunits.mol,
+                ),  # [3]
+            },
+        },
+        "NH4_+": {
+            # "type": Cation, "charge": 1,
+            "type": Solute,
+            "valid_phase_types": [4],  # Aqueous
+            "dens_mol_liq_comp": Constant,
+            "enth_mol_liq_comp": Constant,
+            "cp_mol_liq_comp": Constant,
+            "entr_mol_liq_comp": Constant,
+            "parameter_data": {
+                "mw": (0.018039, pyunits.kg / pyunits.mol),
+                "dens_mol_liq_comp_coeff": (55, pyunits.kmol * pyunits.m**-3),
+                "enth_mol_form_liq_comp_ref": (-132.5, pyunits.kJ / pyunits.mol),  # [5]
+                "cp_mol_liq_comp_coeff": (75000, pyunits.J / pyunits.kmol / pyunits.K),
+                "entr_mol_form_liq_comp_ref": (
+                    -113.4,
+                    pyunits.J / pyunits.K / pyunits.mol,
+                ),  # [5]
+            },
+        },
+        "C2O4_2-": {
+            # "type": Anion, "charge": -2,
+            "type": Solute,
+            "valid_phase_types": [4],  # Aqueous
+            "dens_mol_liq_comp": Constant,
+            "enth_mol_liq_comp": Constant,
+            "cp_mol_liq_comp": Constant,
+            "entr_mol_liq_comp": Constant,
+            "parameter_data": {
+                "mw": (0.08802, pyunits.kg / pyunits.mol),
+                "dens_mol_liq_comp_coeff": (55, pyunits.kmol * pyunits.m**-3),
+                "enth_mol_form_liq_comp_ref": (
+                    -825.1,
+                    pyunits.kJ / pyunits.mol,
+                ),  # [20]
+                "cp_mol_liq_comp_coeff": (75000, pyunits.J / pyunits.kmol / pyunits.K),
+                "entr_mol_form_liq_comp_ref": (
+                    146.4,
+                    pyunits.J / pyunits.K / pyunits.mol,
+                ),  # [3]
+            },
+        },
+        ### Gases
         "O2": {
             "type": Component,
             "valid_phase_types": [2],  # Vapor
@@ -125,43 +356,23 @@ config_dict = {
                 },
             },
         },
-        "Nd(NO3)3": {
-            "type": Solute,
-            "valid_phase_types": [4],  # Aqueous
-            "dens_mol_liq_comp": Constant,
-            "cp_mol_liq_comp": Constant,
-            "enth_mol_liq_comp": Constant,
+        ### Solids
+        "Nd2Fe14B": {
+            "type": Component,
+            "valid_phase_types": [3],  # Solid
+            "dens_mol_sol_comp": Constant,
+            "cp_mol_sol_comp": Constant,
+            "enth_mol_sol_comp": Constant,
             "parameter_data": {
-                "mw": (0.33025, pyunits.kg / pyunits.mol),
-                "dens_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
-                "cp_mol_liq_comp_coeff": (
-                    1,
+                "mw": (1.08112, pyunits.kg / pyunits.mol),
+                "dens_mol_sol_comp_coeff": (6.84, pyunits.kmol * pyunits.m**-3),
+                "cp_mol_sol_comp_coeff": (
+                    542.2,
                     pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_liq_comp_ref": (1, pyunits.J / pyunits.mol),
+                ),  # [8]
+                "enth_mol_form_sol_comp_ref": (-93.39e3, pyunits.J / pyunits.mol),
             },
-        },  # PLACEHOLDER
-        "Fe(NO3)2": {
-            "type": Solute,
-            "valid_phase_types": [4],  # Aqueous
-            "dens_mol_liq_comp": Constant,
-            "cp_mol_liq_comp": Constant,
-            "enth_mol_liq_comp": Constant,
-            "parameter_data": {
-                "dens_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
-                "cp_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_liq_comp_ref": (-1, pyunits.J / pyunits.mol),
-            },
-        },  # PLACEHOLDER
+        },  # [7]
         "Cu3(BO3)2": {
             "type": Component,
             "valid_phase_types": [3],  # Solid
@@ -169,18 +380,18 @@ config_dict = {
             "cp_mol_sol_comp": Constant,
             "enth_mol_sol_comp": Constant,
             "parameter_data": {
-                "mw": (0.29134, pyunits.kg / pyunits.mol),
+                "mw": (0.3083, pyunits.kg / pyunits.mol),
                 "dens_mol_sol_comp_coeff": (
-                    6.84,
+                    14.72,
                     pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
+                ),  # [13]
                 "cp_mol_sol_comp_coeff": (
-                    542.2,
+                    24.47,
                     pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_sol_comp_ref": (0, pyunits.J / pyunits.mol),
-            },
-        },  # PLACEHOLDER
+                ),  # approximated as Cu [14]
+                "enth_mol_form_sol_comp_ref": (-170, pyunits.kJ / pyunits.mol),
+            },  # approximated as Cu2O [15]
+        },
         "Cu2O": {
             "type": Component,
             "valid_phase_types": [3],  # Solid
@@ -190,16 +401,16 @@ config_dict = {
             "parameter_data": {
                 "mw": (0.14309, pyunits.kg / pyunits.mol),
                 "dens_mol_sol_comp_coeff": (
-                    6.84,
+                    41.93,
                     pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
+                ),  # [15]
                 "cp_mol_sol_comp_coeff": (
-                    542.2,
+                    24.47,
                     pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_sol_comp_ref": (-180e3, pyunits.J / pyunits.mol),
-            },
-        },  # PLACEHOLDER
+                ),  # approximated as Cu [14]
+                "enth_mol_form_sol_comp_ref": (-170, pyunits.kJ / pyunits.mol),
+            },  # [15]
+        },
         "Cu": {
             "type": Component,
             "valid_phase_types": [3],  # Solid
@@ -209,83 +420,16 @@ config_dict = {
             "parameter_data": {
                 "mw": (0.063546, pyunits.kg / pyunits.mol),
                 "dens_mol_sol_comp_coeff": (
-                    6.84,
+                    141,
                     pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
+                ),  # [16]
                 "cp_mol_sol_comp_coeff": (
-                    542.2,
+                    23.43,
                     pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
+                ),  # [17]
                 "enth_mol_form_sol_comp_ref": (0, pyunits.J / pyunits.mol),
-            },
-        },  # PLACEHOLDER
-        "H2O": {
-            "type": Component,
-            "valid_phase_types": [1],  # Liquid
-            "dens_mol_liq_comp": Perrys,
-            "enth_mol_liq_comp": Perrys,
-            "enth_mol_ig_comp": RPP4,
-            "pressure_sat_comp": RPP4,
-            "phase_equilibrium_form": {("Vap", "Liq"): fugacity},
-            "parameter_data": {
-                "mw": (18.015e-3, pyunits.kg / pyunits.mol),  # [1] pg. 667
-                "pressure_crit": (221.2e5, pyunits.Pa),  # [1] pg. 667
-                "temperature_crit": (647.3, pyunits.K),  # [1] pg. 667
-                "dens_mol_liq_comp_coeff": {  # [2] pg. 2-98
-                    "eqn_type": 1,
-                    "1": (5.459, pyunits.kmol * pyunits.m**-3),
-                    "2": (0.30542, None),
-                    "3": (647.13, pyunits.K),
-                    "4": (0.081, None),
-                },
-                "cp_mol_ig_comp_coeff": {  # [1] pg. 668
-                    "A": (3.224e1, pyunits.J / pyunits.mol / pyunits.K),
-                    "B": (1.924e-3, pyunits.J / pyunits.mol / pyunits.K**2),
-                    "C": (1.055e-5, pyunits.J / pyunits.mol / pyunits.K**3),
-                    "D": (-3.596e-9, pyunits.J / pyunits.mol / pyunits.K**4),
-                },
-                "cp_mol_liq_comp_coeff": {  # [2] pg. 2-174
-                    "1": (2.7637e5, pyunits.J / pyunits.kmol / pyunits.K),
-                    "2": (-2.0901e3, pyunits.J / pyunits.kmol / pyunits.K**2),
-                    "3": (8.1250, pyunits.J / pyunits.kmol / pyunits.K**3),
-                    "4": (-1.4116e-2, pyunits.J / pyunits.kmol / pyunits.K**4),
-                    "5": (9.3701e-6, pyunits.J / pyunits.kmol / pyunits.K**5),
-                },
-                "enth_mol_form_liq_comp_ref": (
-                    -285.830e3,
-                    pyunits.J / pyunits.mol,
-                ),  # [3] updated 5/10/24
-                "enth_mol_form_vap_comp_ref": (
-                    -241.826e3,
-                    pyunits.J / pyunits.mol,
-                ),  # [3] updated 5/10/24
-                "pressure_sat_comp_coeff": {
-                    "A": (-7.76451, None),  # [1] pg. 669
-                    "B": (1.45838, None),
-                    "C": (-2.77580, None),
-                    "D": (-1.23303, None),
-                },
-            },
+            },  # [17]
         },
-        "Fe(NO3)3": {
-            "type": Solute,
-            "valid_phase_types": [4],  # Aqueous
-            "dens_mol_liq_comp": Constant,
-            "cp_mol_liq_comp": Constant,
-            "enth_mol_liq_comp": Constant,
-            "parameter_data": {
-                "mw": (0.24186, pyunits.kg / pyunits.mol),
-                "dens_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
-                "cp_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_liq_comp_ref": (-1, pyunits.J / pyunits.mol),
-            },
-        },  # PLACEHOLDER
         "Fe(OH)3": {
             "type": Component,
             "valid_phase_types": [3],  # Solid
@@ -295,35 +439,16 @@ config_dict = {
             "parameter_data": {
                 "mw": (0.10687, pyunits.kg / pyunits.mol),
                 "dens_mol_sol_comp_coeff": (
-                    6.84,
+                    34.6,
                     pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
+                ),  # [18]
                 "cp_mol_sol_comp_coeff": (
-                    542.2,
+                    101.7,
                     pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_sol_comp_ref": (-826e3, pyunits.J / pyunits.mol),
-            },
-        },  # PLACEHOLDER
-        "NH4OH": {
-            "type": Solute,
-            "valid_phase_types": [4],  # Aqueous
-            "dens_mol_liq_comp": Constant,
-            "cp_mol_liq_comp": Constant,
-            "enth_mol_liq_comp": Constant,
-            "parameter_data": {
-                "mw": (0.03505, pyunits.kg / pyunits.mol),
-                "dens_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
-                "cp_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_liq_comp_ref": (-1, pyunits.J / pyunits.mol),
-            },
-        },  # PLACEHOLDER
+                ),  # [18]
+                "enth_mol_form_sol_comp_ref": (-826, pyunits.kJ / pyunits.mol),
+            },  # [18]
+        },
         "Nd(OH)3": {
             "type": Component,
             "valid_phase_types": [3],  # Solid
@@ -333,73 +458,16 @@ config_dict = {
             "parameter_data": {
                 "mw": (0.19526, pyunits.kg / pyunits.mol),
                 "dens_mol_sol_comp_coeff": (
-                    6.84,
+                    23.88,
                     pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
+                ),  # [23]
                 "cp_mol_sol_comp_coeff": (
                     542.2,
                     pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_sol_comp_ref": (-1400e3, pyunits.J / pyunits.mol),
-            },
-        },  # PLACEHOLDER
-        "NH4NO3": {
-            "type": Solute,
-            "valid_phase_types": [4],  # Aqueous
-            "dens_mol_liq_comp": Constant,
-            "cp_mol_liq_comp": Constant,
-            "enth_mol_liq_comp": Constant,
-            "parameter_data": {
-                "mw": (0.080043, pyunits.kg / pyunits.mol),
-                "dens_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
-                "cp_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_liq_comp_ref": (-1, pyunits.J / pyunits.mol),
-            },
-        },  # PLACEHOLDER
-        "H2C2O4": {
-            "type": Solute,
-            "valid_phase_types": [4],  # Aqueous
-            "dens_mol_liq_comp": Constant,
-            "cp_mol_liq_comp": Constant,
-            "enth_mol_liq_comp": Constant,
-            "parameter_data": {
-                "mw": (0.09003, pyunits.kg / pyunits.mol),
-                "dens_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
-                "cp_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_liq_comp_ref": (-1, pyunits.J / pyunits.mol),
-            },
-        },  # PLACEHOLDER
-        "(NH4)3[Fe(C2O4)3]": {
-            "type": Solute,
-            "valid_phase_types": [4],  # Aqueous
-            "dens_mol_liq_comp": Constant,
-            "cp_mol_liq_comp": Constant,
-            "enth_mol_liq_comp": Constant,
-            "parameter_data": {
-                "mw": (0.197983, pyunits.kg / pyunits.mol),
-                "dens_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
-                "cp_mol_liq_comp_coeff": (
-                    1,
-                    pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_liq_comp_ref": (-1, pyunits.J / pyunits.mol),
-            },
-        },  # PLACEHOLDER
+                ),  # [24]
+                "enth_mol_form_sol_comp_ref": (-1400, pyunits.kJ / pyunits.mol),
+            },  # [25]
+        },
         "Nd2(C2O4)3 * 10H2O": {
             "type": Component,
             "valid_phase_types": [3],  # Solid
@@ -409,25 +477,25 @@ config_dict = {
             "parameter_data": {
                 "mw": (0.7326938, pyunits.kg / pyunits.mol),
                 "dens_mol_sol_comp_coeff": (
-                    6.84,
+                    23.88,
                     pyunits.kmol * pyunits.m**-3,
-                ),  # PLACEHOLDER
+                ),  # Estimated as Nd(OH)3 [23]
                 "cp_mol_sol_comp_coeff": (
                     542.2,
                     pyunits.J / pyunits.mol / pyunits.K,
-                ),  # PLACEHOLDER
-                "enth_mol_form_sol_comp_ref": (0, pyunits.J / pyunits.mol),
-            },
+                ),  # Estimated as Nd(OH)3 [24]
+                "enth_mol_form_sol_comp_ref": (-1400, pyunits.kJ / pyunits.mol),
+            },  # Estimated as Nd(OH)3 [25]
         },
-    },  # PLACEHOLDER
-    # Specifying phases
+    },
+    ### Specifying phases
     "phases": {
         "Liq": {"type": LiquidPhase, "equation_of_state": Ideal},
         "Sol": {"type": SolidPhase, "equation_of_state": Ideal},
         "Aq": {"type": AqueousPhase, "equation_of_state": Ideal},
         "Vap": {"type": VaporPhase, "equation_of_state": Ideal},
     },
-    # Set base units of measurement
+    ### Set base units of measurement
     "base_units": {
         "time": pyunits.s,
         "length": pyunits.m,
@@ -435,7 +503,7 @@ config_dict = {
         "amount": pyunits.mol,
         "temperature": pyunits.K,
     },
-    # Specifying state definition
+    ### Specifying state definition
     "state_definition": FpcTP,
     "state_bounds": {
         "flow_mol_phase_comp": (0, 100, 100000, pyunits.mol / pyunits.s),

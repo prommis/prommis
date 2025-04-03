@@ -1442,7 +1442,7 @@ class TestREECosting(object):
                 model.fs.costing.get_total_BEC(
                     CE_index_year="UKy_2019", location=invalid_country
                 )
-        # Test 3. Fallback to (country, None) when city is unknown but country exist
+        # Test 3. Fallback to (country, None) when city is not provided in databank but country exist
         fallback_location = ("Austria", None)
         test_location = ("Austria", "Vienna")
 
@@ -1465,7 +1465,7 @@ class TestREECosting(object):
             assert actual_factor == pytest.approx(
                 fallback_factor, rel=1e-6
             ), f"Fallback for {test_location} did not use {fallback_location}'s factor"
-        # Test 4. Known country, but unknown city. should raise with city suggestions
+        # Test 4. Country exist, but city not match, no fallback available, raise AttributeError with city suggestions
         bad_city_location = ("United States", "Boston")
         if (
             any(loc[0] == bad_city_location[0] for loc in valid_locations)

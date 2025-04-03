@@ -65,6 +65,8 @@ if watertap_costing_available:
         ReverseOsmosis1D,
     )
     from watertap.unit_models.zero_order import NanofiltrationZO
+    
+    from prommis.uky.costing.costing_dictionaries import load_location_factor
 
 _log = idaeslog.getLogger(__name__)
 
@@ -1398,6 +1400,33 @@ class TestREECosting(object):
             assert model.fs.costing.costing_upper_bound[key].value == pytest.approx(
                 expected_costing_upper_bound[key], rel=1e-4
             )
+
+    @pytest.mark.unit		
+    def test_location_factor(self):
+        location_data = load_location_factor()
+   
+        for entry in location_data:
+            location = (entry["country"], entry["city"])            
+            location_factor = entry["location_factor"]["average"]
+            
+            model = base_model()
+            model.fs.costing.get_total_BEC(CE_index_year = "UKy_2019", location=location)
+            
+            # Solve the model before extracting values from Var
+            solver = get_solver()
+            results = solver.solve(model, tee=False)
+            assert results.solver.termination_condition == pyo.TerminationCondition.optimal
+            # Check base BEC and calculate expected
+            base_BEC = pyo.value(model.fs.costing.base_BEC)
+            expected_total_BEC = base_BEC * location_factor
+            actual_total_BEC = pyo.value(model.fs.costing.total_BEC)
+
+            print(f"\nTesting location: {location}")
+            print(f"  Base BEC: {base_BEC:,.2f}")
+            print(f"  Location Factor: {location_factor}")
+            print(f"  Expected Total BEC: {expected_total_BEC:,.2f}")
+            print(f"  Actual Total BEC: {actual_total_BEC:,.2f}")
+            assert actual_total_BEC == pytest.approx(expected_total_BEC, rel=1e-4)		
 
 class TestWaterTAPCosting(object):
     @pytest.fixture(scope="class")

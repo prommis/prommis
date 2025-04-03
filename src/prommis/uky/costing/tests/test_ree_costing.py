@@ -6443,6 +6443,10 @@ def test_REE_costing_consider_taxes():
             m.fs.water,
         ],
         consider_taxes=True,
+        income_tax_percentage=26,
+        mineral_depletion_percentage=14,
+        production_incentive_percentage=10,
+        royalty_charge_percentage_of_revenue=6.5,
         calculate_NPV=True,
     )
 
@@ -6471,6 +6475,7 @@ def test_REE_costing_consider_taxes():
     assert hasattr(m.fs.costing, "income_tax_percentage")
     assert hasattr(m.fs.costing, "mineral_depletion_percentage")
     assert hasattr(m.fs.costing, "production_incentive_percentage")
+    assert hasattr(m.fs.costing, "royalty_charge_percentage_of_revenue")
     assert hasattr(m.fs.costing, "min_net_tax_owed")
     assert hasattr(m.fs.costing, "net_tax_owed")
     assert hasattr(m.fs.costing, "income_tax")
@@ -6482,6 +6487,7 @@ def test_REE_costing_consider_taxes():
     assert isinstance(m.fs.costing.mineral_depletion_charge, pyo.Expression)
     assert isinstance(m.fs.costing.production_incentive_charge, pyo.Expression)
     assert isinstance(m.fs.costing.income_tax_eq, pyo.Constraint)
+    assert isinstance(m.fs.costing.royalty_charge, pyo.Expression)
     assert isinstance(m.fs.costing.net_tax_owed_eq, pyo.Constraint)
     assert isinstance(m.fs.costing.pv_taxes_constraint, pyo.Constraint)
     assert isinstance(m.fs.costing.npv_constraint, pyo.Constraint)

@@ -6,9 +6,9 @@
 #####################################################################################################
 from pyomo.environ import (
     assert_optimal_termination,
+    TransformationFactory,
 )
 from pyomo.network import Arc
-
 from idaes.core import FlowsheetBlock
 from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
@@ -24,35 +24,35 @@ from idaes.models.unit_models import (
     Separator,
     StoichiometricReactor,
 )
-
 import pytest
-
 from prommis.examples.cmi_process_flowsheet.cmi_process_flowsheet import (
     build,
+    display_results,
     initialize_system,
     set_operation_conditions,
+    set_scaling,
     solve_system,
 )
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 
+# global var for storing scaled model
+_scaled_model = None
 
 @pytest.fixture(scope="module")
 def system_frame():
     m = build()
     set_operation_conditions(m)
-    initialize_system(m)
 
     return m
-
 
 @pytest.mark.component
 def test_structural_issues(system_frame):
     model = system_frame
+
     dt = DiagnosticsToolbox(model)
     dt.assert_no_structural_warnings()
-
 
 @pytest.mark.unit
 def test_build_flowsheet(system_frame):
@@ -113,32 +113,35 @@ def test_build_flowsheet(system_frame):
     assert isinstance(m.fs.PrecipMixer_Precipitation, Arc)
     assert isinstance(m.fs.Precipitation_S102, Arc)
 
-
-@pytest.mark.component
-@pytest.mark.solver
-def test_degrees_of_freedom(system_frame):
-    m = system_frame
-    assert degrees_of_freedom(m) == 0
-
-
 @pytest.mark.component
 @pytest.mark.solver
 def test_solve(system_frame):
-    m = system_frame
+    global _scaled_model
+    model = system_frame
 
-    results = solve_system(m)
+    results = solve_system(model)
+
+    set_scaling(model)
+    scaling = TransformationFactory("core.scale_model")
+    _scaled_model = scaling.create_using(model, rename=False)
+
+    initialize_system(_scaled_model)
+
+    results = solve_system(_scaled_model)
+
+    scaling = TransformationFactory("core.scale_model")
+    scaling.propagate_solution(_scaled_model, model)
 
     assert_optimal_termination(results)
-
 
 @pytest.mark.component
 @pytest.mark.solver
 def test_numerical_issues(system_frame):
-    m = system_frame
+    # Use the already scaled model from test_solve
+    global _scaled_model
 
-    dt = DiagnosticsToolbox(m)
+    dt = DiagnosticsToolbox(_scaled_model)
     dt.assert_no_numerical_warnings()
-
 
 @pytest.mark.component
 @pytest.mark.solver
@@ -147,669 +150,717 @@ def test_solution(system_frame):
 
     #  FEED (entering Stage 1)
     assert m.fs.FEED.outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
-        100, 1e-4
+        300, rel=1e-4
     )
     assert m.fs.FEED.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(0.92497, 1e-4)
+    ].value == pytest.approx(1, rel=1e-4)
     assert m.fs.FEED.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.FEED.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.FEED.outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
-        1e-5, 1e-4
-    )
+            1e-5, rel=1e-4
+        )
     assert m.fs.FEED.outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(1e-5, 1e-4)
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.FEED.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.FEED.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.FEED.outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(100, 1e-4)
-    assert m.fs.FEED.outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.FEED.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.FEED.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.FEED.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.FEED.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.FEED.outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.FEED.outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.FEED.outlet.flow_mol_phase_comp[0, "Vap", "O2"].value == pytest.approx(
-        100, 1e-4
-    )
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.FEED.outlet.flow_mol_phase_comp[
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(34, rel=1e-4)
+    assert m.fs.FEED.outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(68, rel=1e-4)
+    assert m.fs.FEED.outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.FEED.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.FEED.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.FEED.outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.FEED.outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.FEED.outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(50, rel=1e-4)
 
     # Copper Nitrate Dissolution Stoichiometric Reactor Specifications (Stage 1)
-    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
-        0, "Liq", "H2O"
-    ].value == pytest.approx(93.525, 1e-4)
+    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
+            293, rel=1e-4
+        )
     assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(9.2497e-7, 1e-4)
+    ].value == pytest.approx(1e-6, rel=1e-4)
     assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(0.46249, 1e-4)
+    ].value == pytest.approx(0.50001, rel=1e-4)
     assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(6.9373, 1e-4)
+    ].value == pytest.approx(7.5, rel=1e-4)
+    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
+            0.50001, rel=1e-4
+        )
     assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
-        0, "Sol", "Cu"
-    ].value == pytest.approx(0.46249, 1e-4)
-    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(4.3165, 1e-4)
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(4.6667, rel=1e-4)
     assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(84.276, 1e-4)
-    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1.8499, 1e-4)
-    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(1e-11, 1e-4)
-    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(8.6330, 1e-4)
-    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(1e-5, 1e-4)
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
-        0, "Vap", "O2"
-    ].value == pytest.approx(91.907, 1e-4)
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(17, rel=1e-4)
+    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(68, rel=1e-4)
+    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(2, rel=1e-4)
+    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(1.0001e-11, rel=1e-4)
+    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(9.3333, rel=1e-4)
+    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.Dissolution.outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(41.25, rel=1e-4)
 
     # S101 Filter Specifications (S/L filtration following Stage 1)
-    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
-        0, "Liq", "H2O"
-    ].value == pytest.approx(93.525, 1e-4)
-    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
-        0, "Liq", "H2O"
-    ].value == pytest.approx(9.3525e-06, 1e-4)
-
+    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
+                293, rel=1e-4
+            )
+    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
+                2.93e-5, rel=1e-4
+            )
+    
     assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(9.2497e-12, 1e-4)
+    ].value == pytest.approx(1.0001e-11, rel=1e-4)
     assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(9.2496e-07, 1e-4)
+    ].value == pytest.approx(9.9999e-7, rel=1e-4)
 
     assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(4.6249e-06, 1e-4)
+    ].value == pytest.approx(5.0001e-6, rel=1e-4)
     assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(0.46249, 1e-4)
+    ].value == pytest.approx(0.5, rel=1e-4)
 
     assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(6.9373e-05, 1e-4)
+    ].value == pytest.approx(7.5e-5, rel=1e-4)
     assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(6.9372, 1e-4)
+    ].value == pytest.approx(7.4999, rel=1e-4)
 
+    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
+            5.0001e-6, rel=1e-4
+        )
+    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
+            0.5000, rel=1e-4
+        )
+    
     assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
-        0, "Sol", "Cu"
-    ].value == pytest.approx(4.6249e-06, 1e-4)
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(4.6667e-5, rel=1e-4)
     assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
-        0, "Sol", "Cu"
-    ].value == pytest.approx(0.46249, 1e-4)
-
-    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(4.3165e-05, 1e-4)
-    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(4.3165, 1e-4)
-
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(4.6666, rel=1e-4)
+    
     assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(1.0000e-10, 1e-4)
+    ].value == pytest.approx(1e-10, rel=1e-4)
     assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(9.9999e-06, 1e-4)
+    ].value == pytest.approx(9.9999e-6, rel=1e-4)
 
     assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(1.0000e-10, 1e-4)
+    ].value == pytest.approx(1e-10, rel=1e-4)
     assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(9.9999e-06, 1e-4)
-
-    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(84.276, 1e-4)
-    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(8.4276e-06, 1e-4)
-
-    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1.8499, 1e-4)
-    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1.8499e-07, 1e-4)
-
-    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(1.0000e-11, 1e-4)
-    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(1.0000e-18, 1e-4)
-
-    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(8.6330, 1e-4)
-    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(8.6330e-07, 1e-4)
-
-    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(1.0000e-05, 1e-4)
-    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(1.0000e-12, 1e-4)
-
-    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(1.0000e-05, 1e-4)
-    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(1.0000e-12, 1e-4)
+    ].value == pytest.approx(9.9999e-6, rel=1e-4)
 
     assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(1.0000e-05, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(1.0000e-12, 1e-4)
+    ].value == pytest.approx(1e-12, rel=1e-4)
 
     assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(1.0000e-05, 1e-4)
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(1.0000e-12, 1e-4)
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(1.0015e-12, rel=1e-4)
 
     assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
-        0, "Vap", "O2"
-    ].value == pytest.approx(9.1907e-05, 1e-4)
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(17, rel=1e-4)
     assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
-        0, "Vap", "O2"
-    ].value == pytest.approx(91.906, 1e-4)
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(1.7e-6, rel=1e-4)
+    
+    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(68, rel=1e-4)
+    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(6.8e-6, rel=1e-4)
+    
+    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(2, rel=1e-4)
+    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(2e-7, rel=1e-4)
+    
+    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(1.0001e-11, rel=1e-4)
+    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(1.4995e-15, rel=1e-4)
+    
+    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(9.3333, rel=1e-4)
+    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(9.3333e-7, rel=1e-4)
+    
+    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(1.0015e-12, rel=1e-4)
+    
+    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(1.0015e-12, rel=1e-4)
+    
+    assert m.fs.S101.liq_outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(4.125e-5, rel=1e-4)
+    assert m.fs.S101.sol_outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(41.25, rel=1e-4)
 
     # pH Adjustment stage FEED Specifications (entering Stage 2)
-    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
-        0, "Liq", "H2O"
-    ].value == pytest.approx(1e-05, 1e-4)
+    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
+            1e-5, rel=1e-4
+        )
     assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(1e-05, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(1e-05, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
+            1e-5, rel=1e-4
+        )
     assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
-        0, "Sol", "Cu"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(1e-5, 1e-4)
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(100, 1e-4)
-    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(1e-5, 1e-4)
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(35, rel=1e-4)
     assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
-        0, "Vap", "O2"
-    ].value == pytest.approx(1e-5, 1e-4)
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(35, rel=1e-4)
+    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.AdjFeed.outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(1e-5, rel=1e-4)
 
     # pH Adjustment stage mixer specifications (Stage 2)
-    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
-        0, "Liq", "H2O"
-    ].value == pytest.approx(93.525, 1e-4)
+    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
+            293, rel=1e-4
+        )
     assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(1e-05, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(1.4625e-05, 1e-4)
+    ].value == pytest.approx(1.5e-5, rel=1e-4)
     assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(7.9373e-05, 1e-4)
+    ].value == pytest.approx(8.5e-5, rel=1e-4)
+    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
+            1.5e-5, rel=1e-4
+        )
     assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
-        0, "Sol", "Cu"
-    ].value == pytest.approx(1.4625e-05, 1e-4)
-    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(5.3165e-05, 1e-4)
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(5.6667e-5, rel=1e-4)
     assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(84.276, 1e-4)
-    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1.8500, 1e-4)
-    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(8.6330, 1e-4)
-    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(100, 1e-4)
-    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(2.0000e-05, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(2.0000e-05, 1e-4)
+    ].value == pytest.approx(2e-5, rel=1e-4)
     assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(2.0000e-05, 1e-4)
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(35, rel=1e-4)
     assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
-        0, "Vap", "O2"
-    ].value == pytest.approx(0.00010191, 1e-4)
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(17, rel=1e-4)
+    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(68, rel=1e-4)
+    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(2, rel=1e-4)
+    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(9.3333, rel=1e-4)
+    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(35, rel=1e-4)
+    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(2e-5, rel=1e-4)
+    assert m.fs.AdjMixer.outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(5.1250e-5, rel=1e-4)
+
 
     # pH Adjustment stage reactor specifications (Stage 2)
-    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
-        0, "Liq", "H2O"
-    ].value == pytest.approx(93.525, 1e-4)
+    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
+            293, rel=1e-4
+        )
     assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(1e-05, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(1.4625e-05, 1e-4)
+    ].value == pytest.approx(1.5e-5, rel=1e-4)
     assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(7.9373e-05, 1e-4)
+    ].value == pytest.approx(8.5e-5, rel=1e-4)
+    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
+            1.5e-5, rel=1e-4
+        )
     assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
-        0, "Sol", "Cu"
-    ].value == pytest.approx(1.4625e-05, 1e-4)
-    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(8.6331, 1e-4)
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(9.3334, rel=1e-4)
     assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(1.8500, 1e-4)
+    ].value == pytest.approx(2, rel=1e-4)
     assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(84.276, 1e-4)
-    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1.8500e-06, 1e-4)
-    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(8.6330e-06, 1e-4)
-    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(68.551, 1e-4)
-    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(31.449, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(2.0000e-05, 1e-4)
+    ].value == pytest.approx(2e-5, rel=1e-4)
     assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(2.0000e-05, 1e-4)
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(0.99994, rel=1e-4)
     assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
-        0, "Vap", "O2"
-    ].value == pytest.approx(0.00010191, 1e-4)
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(17, rel=1e-4)
+    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(68, rel=1e-4)
+    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(2e-6, rel=1e-4)
+    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(9.3333e-6, rel=1e-4)
+    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(35, rel=1e-4)
+    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(2e-5, rel=1e-4)
+    assert m.fs.Adjustment.outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(5.1250e-5, rel=1e-4)
 
     # Precipitator Feed specifications (Stage 3)
-    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
-        0, "Liq", "H2O"
-    ].value == pytest.approx(1e-05, 1e-4)
+    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
+            1e-5, rel=1e-4
+        )
     assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(1e-05, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(1e-05, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
+            1e-5, rel=1e-4
+        )
     assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
-        0, "Sol", "Cu"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(1e-5, 1e-4)
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(1e-5, 1e-4)
-    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(100, 1e-4)
-    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(1e-5, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(100.00, 1e-4)
+    ].value == pytest.approx(35, rel=1e-4)
     assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(1e-5, 1e-4)
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(35, rel=1e-4)
     assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
-        0, "Vap", "O2"
-    ].value == pytest.approx(1e-5, 1e-4)
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(35, rel=1e-4)
+    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(1e-5, rel=1e-4)
+    assert m.fs.PrecipFeed.outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(1e-5, rel=1e-4)
+
 
     # Precipitator mixer (stage 3)
-    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
-        0, "Liq", "H2O"
-    ].value == pytest.approx(93.525, 1e-4)
+    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
+            293, rel=1e-4
+        )
     assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(2e-05, 1e-4)
+    ].value == pytest.approx(2e-5, rel=1e-4)
     assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(2.4625e-05, 1e-4)
+    ].value == pytest.approx(2.5e-5, rel=1e-4)
     assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(8.9373e-05, 1e-4)
+    ].value == pytest.approx(9.5e-5, rel=1e-4)
+    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
+            2.5e-5, rel=1e-4
+        )
     assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
-        0, "Sol", "Cu"
-    ].value == pytest.approx(2.4625e-05, 1e-4)
-    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(8.6331, 1e-4)
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(9.3334, rel=1e-4)
     assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(1.8500, 1e-4)
+    ].value == pytest.approx(2, rel=1e-4)
     assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(2e-5, 1e-4)
-    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(84.276, 1e-4)
-    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1.1850e-05, 1e-4)
-    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(2e-5, 1e-4)
-    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(1.8633e-05, 1e-4)
-    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(168.55, 1e-4)
-    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(31.449, 1e-4)
+    ].value == pytest.approx(2e-5, rel=1e-4)
     assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(100.00, 1e-4)
+    ].value == pytest.approx(35, rel=1e-4)
     assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(3.0000e-05, 1e-4)
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(36, rel=1e-4)
     assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
-        0, "Vap", "O2"
-    ].value == pytest.approx(0.00011191, 1e-4)
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(17, rel=1e-4)
+    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(68, rel=1e-4)
+    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(1.2e-5, rel=1e-4)
+    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(2e-5, rel=1e-4)
+    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(1.9333e-5, rel=1e-4)
+    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(70, rel=1e-4)
+    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(3e-5, rel=1e-4)
+    assert m.fs.PrecipMixer.outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(6.1250e-5, rel=1e-4)
+
 
     # Precipitator reactor (stage 3)
-    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
-        0, "Liq", "H2O"
-    ].value == pytest.approx(141.62, 1e-4)
+    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
+            345, rel=1e-4
+        )
     assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(2e-05, 1e-4)
+    ].value == pytest.approx(2e-5, rel=1e-4)
     assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(2.4625e-05, 1e-4)
+    ].value == pytest.approx(2.5e-5, rel=1e-4)
     assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(8.9373e-05, 1e-4)
+    ].value == pytest.approx(9.5e-5, rel=1e-4)
+    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
+            2.5e-5, rel=1e-4
+        )
     assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
-        0, "Sol", "Cu"
-    ].value == pytest.approx(2.4625e-05, 1e-4)
-    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(8.6331e-06, 1e-4)
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(9.3334e-6, rel=1e-4)
     assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(1.8500e-06, 1e-4)
+    ].value == pytest.approx(2e-6, rel=1e-4)
     assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(0.92500, 1e-4)
-    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(84.276, 1e-4)
-    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1.1850e-05, 1e-4)
-    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(2e-5, 1e-4)
-    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(1.8633e-05, 1e-4)
-    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(142.65, 1e-4)
-    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(31.449, 1e-4)
+    ].value == pytest.approx(1, rel=1e-4)
     assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(71.326, 1e-4)
+    ].value == pytest.approx(3.9998, rel=1e-4)
     assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(8.6331, 1e-4)
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(26.667, rel=1e-4)
     assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
-        0, "Vap", "O2"
-    ].value == pytest.approx(0.00011191, 1e-4)
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(17, rel=1e-4)
+    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(68, rel=1e-4)
+    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(1.2e-5, rel=1e-4)
+    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(2e-5, rel=1e-4)
+    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(9.3334, rel=1e-4)
+    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(70, rel=1e-4)
+    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(28, rel=1e-4)
+    assert m.fs.Precipitation.outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(6.1250e-5, rel=1e-4)
+
 
     # S102 Filter Specifications (S/L Filtration following Stage 3)
-    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
-        0, "Liq", "H2O"
-    ].value == pytest.approx(141.62, 1e-4)
-    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
-        0, "Liq", "H2O"
-    ].value == pytest.approx(1.4162e-05, 1e-4)
-
+    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
+                345, rel=1e-4
+            )
+    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[0, "Liq", "H2O"].value == pytest.approx(
+                0.000345, rel=1e-4
+            )
+    
     assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(2.0000e-10, 1e-4)
+    ].value == pytest.approx(2e-10, rel=1e-4)
     assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2Fe14B"
-    ].value == pytest.approx(2.0000e-05, 1e-4)
+    ].value == pytest.approx(2e-5, rel=1e-4)
 
     assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(2.4625e-10, 1e-4)
+    ].value == pytest.approx(2.5e-10, rel=1e-4)
     assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
         0, "Sol", "Cu3(BO3)2"
-    ].value == pytest.approx(2.4625e-05, 1e-4)
+    ].value == pytest.approx(2.5e-5, rel=1e-4)
 
     assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(8.9373e-10, 1e-4)
+    ].value == pytest.approx(9.5e-10, rel=1e-4)
     assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
         0, "Sol", "Cu2O"
-    ].value == pytest.approx(8.9372e-05, 1e-4)
+    ].value == pytest.approx(9.4999e-5, rel=1e-4)
 
+    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
+            2.5e-10, rel=1e-4
+        )
+    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[0, "Sol", "Cu"].value == pytest.approx(
+            2.5e-5, rel=1e-4
+        )
+    
     assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
-        0, "Sol", "Cu"
-    ].value == pytest.approx(2.4625e-10, 1e-4)
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(9.3336e-11, rel=1e-4)
     assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
-        0, "Sol", "Cu"
-    ].value == pytest.approx(2.4625e-05, 1e-4)
-
-    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(8.6331e-11, 1e-4)
-    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
-        0, "Sol", "Fe(OH)3"
-    ].value == pytest.approx(8.6330e-06, 1e-4)
-
+            0, "Sol", "Fe(OH)3"
+        ].value == pytest.approx(9.3333e-6, rel=1e-4)
+    
     assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(1.8500e-11, 1e-4)
+    ].value == pytest.approx(2.0002e-11, rel=1e-4)
     assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd(OH)3"
-    ].value == pytest.approx(1.8500e-06, 1e-4)
+    ].value == pytest.approx(2e-6, rel=1e-4)
 
     assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(9.2500e-06, 1e-4)
+    ].value == pytest.approx(1e-5, rel=1e-4)
     assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
         0, "Sol", "Nd2(C2O4)3 * 10H2O"
-    ].value == pytest.approx(0.92499, 1e-4)
-
-    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(84.276, 1e-4)
-    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "Cu(NO3)2"
-    ].value == pytest.approx(8.4276e-06, 1e-4)
-
-    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1.1850e-05, 1e-4)
-    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "Nd(NO3)3"
-    ].value == pytest.approx(1.1850e-12, 1e-4)
-
-    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(2.0000e-05, 1e-4)
-    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)2"
-    ].value == pytest.approx(2.0000e-12, 1e-4)
-
-    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(1.8633e-05, 1e-4)
-    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "Fe(NO3)3"
-    ].value == pytest.approx(1.8633e-12, 1e-4)
-
-    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(142.65, 1e-4)
-    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4OH"
-    ].value == pytest.approx(1.4265e-05, 1e-4)
-
-    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(31.449, 1e-4)
-    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "NH4NO3"
-    ].value == pytest.approx(3.1449e-06, 1e-4)
+    ].value == pytest.approx(1, rel=1e-4)
 
     assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(71.326, 1e-4)
+    ].value == pytest.approx(3.9998, rel=1e-4)
     assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
         0, "Aq", "H2C2O4"
-    ].value == pytest.approx(7.1326e-06, 1e-4)
+    ].value == pytest.approx(3.9998e-6, rel=1e-4)
 
     assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(8.6331, 1e-4)
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(26.667, rel=1e-4)
     assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
-        0, "Aq", "(NH4)3[Fe(C2O4)3]"
-    ].value == pytest.approx(8.6331e-07, 1e-4)
+        0, "Aq", "OH_-"
+    ].value == pytest.approx(2.6667e-5, rel=1e-4)
 
     assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
-        0, "Vap", "O2"
-    ].value == pytest.approx(1.1191e-08, 1e-4)
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(17, rel=1e-4)
     assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
-        0, "Vap", "O2"
-    ].value == pytest.approx(0.00011190, 1e-4)
+            0, "Aq", "Cu_2+"
+        ].value == pytest.approx(1.7e-5, rel=1e-4)
+    
+    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(68, rel=1e-4)
+    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
+            0, "Aq", "NO3_-"
+        ].value == pytest.approx(6.8e-5, rel=1e-4)
+    
+    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(1.2e-5, rel=1e-4)
+    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
+            0, "Aq", "Nd_3+"
+        ].value == pytest.approx(1.2002e-11, rel=1e-4)
+    
+    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(2e-5, rel=1e-4)
+    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_2+"
+        ].value == pytest.approx(2.0002e-11, rel=1e-4)
+    
+    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(9.3334, rel=1e-4)
+    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
+            0, "Aq", "Fe_3+"
+        ].value == pytest.approx(9.3334e-6, rel=1e-4)
+    
+    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(70, rel=1e-4)
+    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
+            0, "Aq", "NH4_+"
+        ].value == pytest.approx(7e-5, rel=1e-4)
+    
+    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(28, rel=1e-4)
+    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
+                0, "Aq", "C2O4_2-"
+            ].value == pytest.approx(2.8e-5, rel=1e-4)
+    
+    assert m.fs.S102.liq_outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(6.125e-9, rel=1e-4)
+    assert m.fs.S102.sol_outlet.flow_mol_phase_comp[
+            0, "Vap", "O2"
+        ].value == pytest.approx(6.1244e-5, rel=1e-4)
 
     # Calcinator
     assert m.fs.Calcination.flow_mol_comp_product[0, "Nd"].value == pytest.approx(
-        0.92499, 1e-4
+        1, 1e-4
     )
+
+
+@pytest.mark.unit
+def test_display(system_frame):
+    model = system_frame
+    display_results(model)

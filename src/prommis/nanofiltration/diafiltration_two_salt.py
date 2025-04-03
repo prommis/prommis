@@ -114,7 +114,7 @@ Variable                             Description                                
 :math:`\delta \pi`                   osmotic pressure of feed-side fluid            ``osmotic_pressure``             :math:`bar`               discretized over :math:`x`
 :math:`q_p`                          volumetic flow rate of the permeate            ``permeate_flow_volume``         :math:`m^3 h^{-1}`        discretized over :math:`x`
 :math:`q_r`                          volumetic flow rate of the retentate           ``retentate_flow_volume``        :math:`m^3 h^{-1}`        discretized over :math:`x`
-==================================== ============================================== ================================ ========================== ========================================
+==================================== ============================================== ================================ ========================= ========================================
 
 Derivative Variables
 --------------------

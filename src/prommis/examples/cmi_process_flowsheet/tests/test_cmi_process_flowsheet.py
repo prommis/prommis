@@ -46,17 +46,8 @@ _scaled_model = None
 @pytest.fixture(scope="module")
 def system_frame():
     m = build()
-    set_operation_conditions(m)
 
     return m
-
-
-@pytest.mark.component
-def test_structural_issues(system_frame):
-    model = system_frame
-
-    dt = DiagnosticsToolbox(model)
-    dt.assert_no_structural_warnings()
 
 
 @pytest.mark.unit
@@ -120,34 +111,53 @@ def test_build_flowsheet(system_frame):
 
 
 @pytest.mark.component
-@pytest.mark.solver
-def test_solve(system_frame):
+def test_structural_issues(system_frame):
     global _scaled_model
     model = system_frame
+    set_operation_conditions(model)
 
-    results = solve_system(model)
+    dt = DiagnosticsToolbox(model)
+    dt.assert_no_structural_warnings()
 
+@pytest.fixture(scope="module")
+def scaled_model(system_frame):
+    model = system_frame
+    set_operation_conditions(model)
     set_scaling(model)
+
+    # Apply scaling transformation
     scaling = TransformationFactory("core.scale_model")
-    _scaled_model = scaling.create_using(model, rename=False)
+    scaled_model = scaling.create_using(model, rename=False)
 
-    initialize_system(_scaled_model)
+    # Initialize the scaled model
+    initialize_system(scaled_model)
 
-    results = solve_system(_scaled_model)
+    return scaled_model
+
+
+@pytest.mark.component
+def test_initialized_system(scaled_model):
+    initialize_system(scaled_model)
+
+
+@pytest.mark.component
+@pytest.mark.solver
+def test_solve(scaled_model, system_frame):
+    model = system_frame
+
+    results = solve_system(scaled_model)
 
     scaling = TransformationFactory("core.scale_model")
-    scaling.propagate_solution(_scaled_model, model)
+    scaling.propagate_solution(scaled_model, model)
 
     assert_optimal_termination(results)
 
 
 @pytest.mark.component
 @pytest.mark.solver
-def test_numerical_issues(system_frame):
+def test_numerical_issues(scaled_model):
     # Use the already scaled model from test_solve
-    global _scaled_model
-
-    dt = DiagnosticsToolbox(_scaled_model)
+    dt = DiagnosticsToolbox(scaled_model)
     dt.assert_no_numerical_warnings()
 
 

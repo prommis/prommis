@@ -119,6 +119,7 @@ def test_structural_issues(system_frame):
     dt = DiagnosticsToolbox(model)
     dt.assert_no_structural_warnings()
 
+
 @pytest.fixture(scope="module")
 def scaled_model(system_frame):
     model = system_frame

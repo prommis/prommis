@@ -18,7 +18,7 @@ Configuration Arguments
 -----------------------
 
 The two-salt diafiltration model requires a property package that includes the moles of dissociated
-ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in 
+ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in
 solution. 
 
 Additionally, there are two required arguments, ``NFEx`` and ``NFEz``, to specfiy the desired
@@ -48,7 +48,7 @@ The dominating transport mechanism within the bulk/retentate solution is convect
 permeate solution is convection in the :math:`z`-direction (perpendicular to the membrane surface).
 
 The transport mechanisms modeled within the membrane are convection, diffusion, and electromigration.
-Diffusion within the membrane that is normal to the pore walls is ignored, meaning the concentration 
+Diffusion within the membrane that is normal to the pore walls is ignored, meaning the concentration
 gradient of ion :math:`i` within the membrane only has a :math:`z`-component (perpendicular to the
 membrane surface).
 
@@ -81,7 +81,7 @@ Parameter                      Description                                      
 :math:`l`                      thickness of the membrane                       ``membrane_thickness``            1e-07         :math:`m`
 :math:`L`                      length of the membrane                          ``membrane_length``               100           :math:`m`
 :math:`L_p`                    hydraulic permeability of the membrane          ``membrane_permeability``         0.01          :math:`m h^{-1} bar^{-1}`
-:math:`\delta P`               applied pressure to the membrane                ``applied_pressure``              10            :math:`bar`
+:math:`\Delta P`               applied pressure to the membrane                ``applied_pressure``              10            :math:`bar`
 :math:`q_d`                    volumetic flow rate of the diafiltrate          ``diafiltrate_flow_volume``       30            :math:`m^3 h^{-1}`
 :math:`q_f`                    volumetic flow rate of the feed                 ``feed_flow_volume``              100           :math:`m^3 h^{-1}`
 :math:`T`                      temperature of the system                       ``temperature``                   298           :math:`K`
@@ -111,7 +111,7 @@ Variable                             Description                                
 :math:`j_{\mathrm{Co^{2+}}}`         mass flux of cobalt ion across the membrane    ``mass_flux_cobalt``             :math:`kg m^{-2} h^{-1}`  discretized over :math:`x`
 :math:`j_{\mathrm{Li^+}}`            mass flux of lithium ion across the membrane   ``mass_flux_lithium``            :math:`kg m^{-2} h^{-1}`  discretized over :math:`x`
 :math:`J_w`                          water flux across the membrane `               ``volume_flux_water``            :math:`m^3 m^{-2} h^{-1}` discretized over :math:`x`
-:math:`\delta \pi`                   osmotic pressure of feed-side fluid            ``osmotic_pressure``             :math:`bar`               discretized over :math:`x`
+:math:`\Delta \pi`                   osmotic pressure of feed-side fluid            ``osmotic_pressure``             :math:`bar`               discretized over :math:`x`
 :math:`q_p`                          volumetic flow rate of the permeate            ``permeate_flow_volume``         :math:`m^3 h^{-1}`        discretized over :math:`x`
 :math:`q_r`                          volumetic flow rate of the retentate           ``retentate_flow_volume``        :math:`m^3 h^{-1}`        discretized over :math:`x`
 ==================================== ============================================== ================================ ========================= ========================================
@@ -289,9 +289,8 @@ class TwoSaltDiafiltrationData(UnitModelBlockData):
             description="Arguments to use for constructing property packages",
             doc="""A ConfigBlock with arguments to be passed to a property block(s)
 and used when constructing these,
- **default** - None.
-**Valid values:** {
-see property package for documentation}
+**default** - None.
+**Valid values:** {see property package for documentation}
 """,
         ),
     )

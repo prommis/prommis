@@ -10,47 +10,30 @@ Two-Salt Diafiltration Unit Model
 
 Author: Molly Dougher
 
-This multi-component model for the diafiltration membrane model is a two-salt system with a common
-anion. The membrane is designed for use in the diafiltration cascade, i.e., is a spiral-wound
-membrane module.
+This multi-component model for the diafiltration membrane model is a two-salt system with a common anion. The membrane is designed for use in the diafiltration cascade, i.e., is a spiral-wound membrane module.
 
 Configuration Arguments
 -----------------------
 
-The two-salt diafiltration model requires a property package that includes the moles of dissociated
-ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in
-solution. 
+The two-salt diafiltration model requires a property package that includes the moles of dissociated ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in solution. 
 
-Additionally, there are two required arguments, ``NFEx`` and ``NFEz``, to specfiy the desired
-number of finite elements across the width and thickness of the membrane, respectively.
+Additionally, there are two required arguments, ``NFEx`` and ``NFEz``, to specfiy the desired number of finite elements across the width and thickness of the membrane, respectively.
 
 Model Structure
 ---------------
 
-There are three phases in the two-salt diafiltration model: the retentate, the membrane, and the
-permeate. The retentate and the permeate are only discretized with respect to :math:`x`, while the
-membrane is discretized with respect to both :math:`x` and :math:`z`. The resulting system of partial
-differential algebraic equations is solved by discretizing with the forward finite element method.
+There are three phases in the two-salt diafiltration model: the retentate, the membrane, and the permeate. The retentate and the permeate are only discretized with respect to :math:`x`, while the membrane is discretized with respect to both :math:`x` and :math:`z`. The resulting system of partial differential algebraic equations is solved by discretizing with the forward finite element method.
 
 Assumptions
 -----------
 
-The partition coefficients of all ions in solution are equal to 1, meaning the concentration of an
-ion :math:`i` just outside the membrane is equal to the concentration of ion :math:`i` just inside the
-membrane. We also assume that the membrane has no surface charge, which is a valid assumption for
-NF90 membranes.
+The partition coefficients of all ions in solution are equal to 1, meaning the concentration of an ion :math:`i` just outside the membrane is equal to the concentration of ion :math:`i` just inside the membrane. We also assume that the membrane has no surface charge, which is a valid assumption for NF90 membranes.
 
-The formation of a boundary layer at the membrane surface due to concentration polarization is
-neglected for mathematical simplicity.
+The formation of a boundary layer at the membrane surface due to concentration polarization is neglected for mathematical simplicity.
 
-The dominating transport mechanism within the bulk/retentate solution is convection in the
-:math:`x`-direction (parallel to the membrane surface). The dominating transport mechanism within the
-permeate solution is convection in the :math:`z`-direction (perpendicular to the membrane surface).
+The dominating transport mechanism within the bulk/retentate solution is convection in the :math:`x`-direction (parallel to the membrane surface). The dominating transport mechanism within the permeate solution is convection in the :math:`z`-direction (perpendicular to the membrane surface).
 
-The transport mechanisms modeled within the membrane are convection, diffusion, and electromigration.
-Diffusion within the membrane that is normal to the pore walls is ignored, meaning the concentration
-gradient of ion :math:`i` within the membrane only has a :math:`z`-component (perpendicular to the
-membrane surface).
+The transport mechanisms modeled within the membrane are convection, diffusion, and electromigration. Diffusion within the membrane that is normal to the pore walls is ignored, meaning the concentration gradient of ion :math:`i` within the membrane only has a :math:`z`-component (perpendicular to the membrane surface).
 
 Sets
 ----
@@ -59,13 +42,9 @@ The two-salt diafiltration model defines the following discrete sets for ions in
 
 .. math:: \mathcal{I}=\{\mathrm{Li^+,Co^{2+},Cl^-}\}
 
-There are 2 continuous sets for each length dimension: the :math:`x`-direction parallel to the membrane
-surface (width) and the :math:`z`-direction perpendicular to the membrane surface. (thickness) :math:`x`
-and :math:`z` are non-dimensionalized with the membrane width (:math:`w`) and thickness (:math:`l`),
-respectively, to improve numerics.
+There are 2 continuous sets for each length dimension: the :math:`x`-direction parallel to the membrane surface (width) and the :math:`z`-direction perpendicular to the membrane surface (thickness). :math:`x` and :math:`z` are non-dimensionalized with the membrane width (:math:`w`) and thickness (:math:`l`), respectively, to improve numerics.
 
 .. math:: \bar{x} \in \mathbb{R} \| 0 \leq \bar{x} \leq 1
-
 .. math:: \bar{z} \in \mathbb{R} \| 0 \leq \bar{z} \leq 1
 
 Parameters
@@ -114,7 +93,7 @@ Variable                             Description                                
 :math:`j_{\mathrm{Cl^-}}`            mass flux of chlorine ion across the membrane  ``mass_flux_chlorine``           :math:`kg m^{-2} h^{-1}`  discretized over :math:`x`
 :math:`j_{\mathrm{Co^{2+}}}`         mass flux of cobalt ion across the membrane    ``mass_flux_cobalt``             :math:`kg m^{-2} h^{-1}`  discretized over :math:`x`
 :math:`j_{\mathrm{Li^+}}`            mass flux of lithium ion across the membrane   ``mass_flux_lithium``            :math:`kg m^{-2} h^{-1}`  discretized over :math:`x`
-:math:`J_w`                          water flux across the membrane `               ``volume_flux_water``            :math:`m^3 m^{-2} h^{-1}` discretized over :math:`x`
+:math:`J_w`                          water flux across the membrane                 ``volume_flux_water``            :math:`m^3 m^{-2} h^{-1}` discretized over :math:`x`
 :math:`\Delta \pi`                   osmotic pressure of feed-side fluid            ``osmotic_pressure``             :math:`bar`               discretized over :math:`x`
 :math:`q_p`                          volumetic flow rate of the permeate            ``permeate_flow_volume``         :math:`m^3 h^{-1}`        discretized over :math:`x`
 :math:`q_r`                          volumetic flow rate of the retentate           ``retentate_flow_volume``        :math:`m^3 h^{-1}`        discretized over :math:`x`
@@ -141,15 +120,12 @@ Constraints
 Differential mass balances in the retentate:
 
 .. math:: \frac{\mathrm{d}q_r(\bar{x})}{\mathrm{d}\bar{x}} = - J_w(\bar{x}) wL
-
 .. math:: \frac{\mathrm{d}c_{\mathrm{Li^+},r}(\bar{x})}{\mathrm{d}\bar{x}} = \left( J_w(\bar{x}) c_{\mathrm{Li^+},r}(\bar{x}) - j_{\mathrm{Li^+}}(\bar{x}) \right) \frac{Lw}{q_r(\bar{x})}
-
 .. math:: \frac{\mathrm{d}c_{\mathrm{Co^{2+}},r}(\bar{x})}{\mathrm{d}\bar{x}} = \left( J_w(\bar{x}) c_{\mathrm{Co^{2+}},r}(\bar{x}) - j_{\mathrm{Co^{2+}}}(\bar{x}) \right) \frac{Lw}{q_r(\bar{x})}
 
 Overall component mass balances:
 
 .. math:: q_r(\bar{x})c_{\mathrm{Li^+},r}(\bar{x}) + q_p(\bar{x})c_{\mathrm{Li^+},p}(\bar{x}) = q_f c_{\mathrm{Li^+},f}+q_d c_{\mathrm{Li^+},d} \forall \bar{x} \neq 0
-
 .. math:: q_r(\bar{x})c_{\mathrm{Co^{2+}},r}(\bar{x}) + q_p(\bar{x})c_{\mathrm{Co^{2+}},p}(\bar{x}) = q_f c_{\mathrm{Li^+},f}+q_d c_{\mathrm{Li^+},d} \forall \bar{x} \neq 0
 
 Electroneutrality in the retentate:
@@ -167,17 +143,13 @@ Osmotic pressure:
 Nernst-Plank equations for the ion flux through the membrane:
 
 .. math:: j_{\mathrm{Li^+}}(\bar{x}) = c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) J_w(\bar{x}) + \frac{D_{\mathrm{Li^+,Li^+}}}{l} \frac{\partial c_{\mathrm{Li^+},m}(\bar{x},\bar{z})}{\partial \bar{z}} + \frac{D_{\mathrm{Li^+,Co^{2+}}}}{l} \frac{\partial c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})}{\partial \bar{z}} \forall \bar{z} \neq 0
-
 .. math:: j_{\mathrm{Co^{2+}}}(\bar{x}) = c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}) J_w(\bar{x}) + \frac{D_{\mathrm{Co^{2+},Li^+}}}{l} \frac{\partial c_{\mathrm{Li^+},m}(\bar{x},\bar{z})}{\partial \bar{z}} + \frac{D_{\mathrm{Co^{2+},Co^{2+}}}}{l} \frac{\partial c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})}{\partial \bar{z}} \forall \bar{z} \neq 0
 
 with linearized cross-diffusion coefficients: 
 
 .. math:: D_{\mathrm{Li^+,Li^+}} = \beta_0 + \beta_1 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_2 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
-
 .. math:: D_{\mathrm{Li^+,Co^{2+}}} = \beta_3 + \beta_4 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_5 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
-
 .. math:: D_{\mathrm{Co^{2+},Li^+}} = \beta_6 + \beta_7 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_8 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
-
 .. math:: D_{\mathrm{Co^{2+},Co^{2+}}} = \beta_9 + \beta_{10} c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_{11} c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
 
 that have the following regressed parameter values:
@@ -210,43 +182,28 @@ Electroneutrality in the membrane:
 Mass balance (via convection) on the permeate outlet:
 
 .. math:: q_p(\bar{x}) = \bar{x} wL J_w(\bar{x}) \forall \bar{x} \neq 0
-
 .. math:: c_{\mathrm{Li^+},p}(\bar{x}) = \frac{j_{\mathrm{Li^+}}(\bar{x})}{J_w(\bar{x})} \forall \bar{x} \neq 0
-
 .. math:: c_{\mathrm{Co^{2+}},p}(\bar{x}) = \frac{j_{\mathrm{Co^{2+}}}(\bar{x})}{J_w(\bar{x})} \forall \bar{x} \neq 0
 
 Relate the concentrations at each phase interface:
 
 .. math:: c_{\mathrm{Li^+},r}(\bar{x})=c_{\mathrm{Li^+},m}(\bar{x},\bar{z}=0)
-
 .. math:: c_{\mathrm{Co^{2+}},r}(\bar{x})=c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}=0)
-
 .. math:: c_{\mathrm{Cl^-},r}(\bar{x})=c_{\mathrm{Cl^-},m}(\bar{x},\bar{z}=0)
-
 .. math:: c_{\mathrm{Li^+},m}(\bar{x},\bar{z}=1)=c_{\mathrm{Li^+},p}(\bar{x})
-
 .. math:: c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}=1)=c_{\mathrm{Co^{2+}},p}(\bar{x})
-
 .. math:: c_{\mathrm{Cl^-},m}(\bar{x},\bar{z}=1)=c_{\mathrm{Cl^-},p}(\bar{x})
 
 Initial and boundary conditions:
 
 .. math:: q_r(\bar{x}=0)=q_f+q_d
-
 .. math:: q_r(\bar{x}=0) c_{\mathrm{Li^+},r}(\bar{x}=0)=q_f c_{\mathrm{Li^+},f} + q_d c_{\mathrm{Li^+},d}
-
 .. math:: q_r(\bar{x}=0) c_{\mathrm{Co^{2+}},r}(\bar{x}=0)=q_f c_{\mathrm{Co^{2+}},f} + q_d c_{\mathrm{Co^{2+}},d}
-
 .. math:: q_p(\bar{x}=0) = 0
-
 .. math:: c_{\mathrm{Li^+},p} (\bar{x}=0) = 0
-
 .. math:: c_{\mathrm{Co^{2+}},p} (\bar{x}=0) = 0
-
 .. math:: \frac{\mathrm{d}q_r(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=0
-
 .. math:: \frac{\mathrm{d}c_{\mathrm{Li^+},r}(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=0
-
 .. math:: \frac{\mathrm{d}c_{\mathrm{Co^{2+}},r}(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=0
 
 """

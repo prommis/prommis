@@ -1,23 +1,12 @@
-#####################################################################################################
-# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
-# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
-# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
-#####################################################################################################
-"""
-CMI Process Flowsheet
-=====================
-
-Author: Chris Laliwala
-"""
-
 from pyomo.environ import (
+    check_optimal_termination,
     ConcreteModel,
     Constraint,
     SolverFactory,
     TransformationFactory,
     Var,
     assert_optimal_termination,
+    Suffix,
 )
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
@@ -50,9 +39,18 @@ import prommis.examples.cmi_process_flowsheet.cmi_process_adjustment_rxn_prop_pa
 import prommis.examples.cmi_process_flowsheet.cmi_process_dissolution_rxn_prop_pack as dissolution_reaction_props
 import prommis.examples.cmi_process_flowsheet.cmi_process_precipitation_rxn_prop_pack as precipitation_reaction_props
 import prommis.examples.cmi_process_flowsheet.cmi_process_prop_pack as thermo_props
+
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
+
+from idaes.core.util import DiagnosticsToolbox
+
+import idaes.logger as idaeslog
+
+from idaes.core.util.scaling import set_scaling_factor, constraint_scaling_transform
+
 
 
 def main():
@@ -63,17 +61,40 @@ def main():
 
     set_operation_conditions(m)
 
-    initialize_system(m)
+    set_scaling(m)
 
-    assert degrees_of_freedom(m) == 0
+    scaling = TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(m, rename=False)
 
-    res = solve_system(m=m, tee=False)
+    if degrees_of_freedom(scaled_model) != 0:
+        raise AssertionError(
+            "The degrees of freedom are not equal to 0."
+            "Check that the expected variables are fixed and unfixed."
+            "For more guidance, run assert_no_structural_warnings from the IDAES DiagnosticToolbox "
+        )
+    
+    # structural diagnostics check
+    dt = DiagnosticsToolbox(scaled_model)
+    dt.assert_no_structural_warnings()
 
-    assert_optimal_termination(res)
+    initialize_system(scaled_model)
+
+    scaled_results = solve_system(scaled_model, False)
+
+    if not check_optimal_termination(scaled_results):
+        raise RuntimeError(
+            "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
+        )
+    
+    # numerical diagnostics test
+    dt.assert_no_numerical_warnings()
+
+    res = scaling.propagate_solution(scaled_model, m)
 
     display_results(m)
 
     return m, res
+
 
 
 def build():
@@ -83,7 +104,7 @@ def build():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.thermo_params = GenericParameterBlock(**thermo_props.config_dict)
+    m.fs.thermo_params = GenericParameterBlock(**thermo_props.thermo_config)
     m.fs.dissolution_reaction_params = GenericReactionParameterBlock(
         property_package=m.fs.thermo_params, **dissolution_reaction_props.config_dict
     )
@@ -93,8 +114,8 @@ def build():
     m.fs.precipitation_reaction_params = GenericReactionParameterBlock(
         property_package=m.fs.thermo_params, **precipitation_reaction_props.config_dict
     )
-    gas_species = {"O2", "H2O", "CO2", "N2"}
 
+    gas_species = {"O2", "H2O", "CO2", "N2"}
     m.fs.prop_gas = GenericParameterBlock(
         **get_prop(gas_species, ["Vap"], EosType.IDEAL),
         doc="gas property",
@@ -179,6 +200,10 @@ def build():
         metal_list=["Nd"],
     )
 
+
+
+
+
     # Connect arc from Feed to Dissolution Stage
     m.fs.FEED_Diss = Arc(source=m.fs.FEED.outlet, destination=m.fs.Dissolution.inlet)
 
@@ -230,7 +255,6 @@ def build():
 
     return m
 
-
 def set_operation_conditions(m):
     """
     Set the operating conditions of the flowsheet such that the degrees of freedom are zero.
@@ -239,66 +263,62 @@ def set_operation_conditions(m):
         m: pyomo model
     """
 
-    # User-defined Input for Neodymium Magnet Feed
-    Nd_Magnet_Feed = 1  # (kg/s)
-    Excess_Reactant_Ratio = 1
-    Copper_Nitrate_Feed = Nd_Magnet_Feed * Excess_Reactant_Ratio  # (kg/s)
-    Oxygen_Feed = Nd_Magnet_Feed * Excess_Reactant_Ratio  # (kg/s)
-
-    nd_magnet_mw, __ = thermo_props.config_dict["components"]["Nd2Fe14B"][
-        "parameter_data"
-    ]["mw"]
-    copper_nitrate_mw, __ = thermo_props.config_dict["components"]["Cu(NO3)2"][
-        "parameter_data"
-    ]["mw"]
-    oxygen_mw, __ = thermo_props.config_dict["components"]["O2"]["parameter_data"]["mw"]
-
     #########  FEED Specification (entering Stage 1)
     m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Nd2Fe14B"].fix(
-        (Nd_Magnet_Feed / nd_magnet_mw) * pyunits.mol / pyunits.s
+        1 * pyunits.mol / pyunits.s
     )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Cu(NO3)2"].fix(
-        100 * pyunits.mol / pyunits.s
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Cu_2+"].fix(
+        34 * pyunits.mol / pyunits.s
     )
-    m.fs.FEED.flow_mol_phase_comp[0, "Vap", "O2"].fix(100 * pyunits.mol / pyunits.s)
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Nd(NO3)3"].fix(
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NO3_-"].fix(
+        68 * pyunits.mol / pyunits.s
+    )
+    m.fs.FEED.flow_mol_phase_comp[0, "Vap", "O2"].fix( 
+        50 * pyunits.mol / pyunits.s
+    )
+    m.fs.FEED.flow_mol_phase_comp[0, "Liq", "H2O"].fix(
+        300 * pyunits.mol / pyunits.s
+    )
+
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Nd_3+"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Fe(NO3)2"].fix(
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Fe_2+"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Fe_3+"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NH4_+"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "OH_-"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+
     m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Cu3(BO3)2"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
     m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Cu"].fix(1e-5 * pyunits.mol / pyunits.s)
-    m.fs.FEED.flow_mol_phase_comp[0, "Liq", "H2O"].fix(  # excess of H2O
-        100 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Fe(NO3)3"].fix(
+    m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Nd(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
     m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Fe(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NH4OH"].fix(1e-5 * pyunits.mol / pyunits.s)
-    m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Nd(OH)3"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NH4NO3"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.FEED.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(1e-5 * pyunits.mol / pyunits.s)
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "(NH4)3[Fe(C2O4)3]"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "C2O4_2-"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Nd2(C2O4)3 * 10H2O"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
+
     # set pressure of feed
     m.fs.FEED.pressure.fix(1 * pyunits.atm)
 
     # set temperature of feed
     m.fs.FEED.temperature.fix(298.15 * pyunits.K)
-
     ######### Copper Nitrate Dissolution Stoichiometric Reactor Specifications (Stage 1)
     m.fs.Dissolution.Nd_magnet_conversion = Var(
         initialize=1, bounds=(0, 1), units=pyunits.dimensionless
@@ -314,19 +334,19 @@ def set_operation_conditions(m):
     )
     m.fs.Dissolution.Nd_magnet_conversion.fix(0.999999)
 
-    m.fs.Dissolution.Iron2_nitrate_conversion = Var(
+    m.fs.Dissolution.Iron2_conversion = Var(
         initialize=1, bounds=(0, 1), units=pyunits.dimensionless
     )
 
-    m.fs.Dissolution.Iron2_nitrate_conv_constraint = Constraint(
-        expr=m.fs.Dissolution.Iron2_nitrate_conversion
-        * m.fs.Dissolution.inlet.flow_mol_phase_comp[0, "Aq", "Fe(NO3)2"]
+    m.fs.Dissolution.Iron2_conv_constraint = Constraint(
+        expr=m.fs.Dissolution.Iron2_conversion
+        * m.fs.Dissolution.inlet.flow_mol_phase_comp[0, "Aq", "Fe_2+"]
         == (
-            m.fs.Dissolution.inlet.flow_mol_phase_comp[0, "Aq", "Fe(NO3)2"]
-            - m.fs.Dissolution.outlet.flow_mol_phase_comp[0, "Aq", "Fe(NO3)2"]
+            m.fs.Dissolution.inlet.flow_mol_phase_comp[0, "Aq", "Fe_2+"]
+            - m.fs.Dissolution.outlet.flow_mol_phase_comp[0, "Aq", "Fe_2+"]
         )
     )
-    m.fs.Dissolution.Iron2_nitrate_conversion.fix(0.999999)
+    m.fs.Dissolution.Iron2_conversion.fix(0.999999)
 
     # set temperature
     m.fs.Dissolution.outlet.temperature.fix(343.15 * pyunits.K)
@@ -340,50 +360,52 @@ def set_operation_conditions(m):
     m.fs.S101.split_fraction[0, "sol_outlet", "Vap"].fix(0.999999)
 
     ######### pH Adjustment stage FEED Specifications (entering Stage 2)
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "NH4OH"].fix(
-        100 * pyunits.mol / pyunits.s
-    )
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Nd2Fe14B"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "Cu(NO3)2"].fix(
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "Cu_2+"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Vap", "O2"].fix(1e-5 * pyunits.mol / pyunits.s)
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "Nd(NO3)3"].fix(
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "NO3_-"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "Fe(NO3)2"].fix(
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Vap", "O2"].fix( 
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu3(BO3)2"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Liq", "H2O"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "Fe(NO3)3"].fix(
+
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "Nd_3+"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "Fe_2+"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "Fe_3+"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "NH4_+"].fix(
+        35 * pyunits.mol / pyunits.s
+    )
+
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "OH_-"].fix(
+        35 * pyunits.mol / pyunits.s
+    )
+
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu3(BO3)2"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Nd(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Fe(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Nd(OH)3"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "NH4NO3"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "(NH4)3[Fe(C2O4)3]"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "C2O4_2-"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Nd2(C2O4)3 * 10H2O"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
@@ -403,10 +425,10 @@ def set_operation_conditions(m):
 
     m.fs.Adjustment.Fe_nitrate_conv_constraint = Constraint(
         expr=m.fs.Adjustment.Fe_nitrate_conversion
-        * m.fs.Adjustment.inlet.flow_mol_phase_comp[0, "Aq", "Fe(NO3)3"]
+        * m.fs.Adjustment.inlet.flow_mol_phase_comp[0, "Aq", "Fe_3+"]
         == (
-            m.fs.Adjustment.inlet.flow_mol_phase_comp[0, "Aq", "Fe(NO3)3"]
-            - m.fs.Adjustment.outlet.flow_mol_phase_comp[0, "Aq", "Fe(NO3)3"]
+            m.fs.Adjustment.inlet.flow_mol_phase_comp[0, "Aq", "Fe_3+"]
+            - m.fs.Adjustment.outlet.flow_mol_phase_comp[0, "Aq", "Fe_3+"]
         )
     )
     m.fs.Adjustment.Fe_nitrate_conversion.fix(0.999999)
@@ -417,10 +439,10 @@ def set_operation_conditions(m):
 
     m.fs.Adjustment.Nd_nitrate_conv_constraint = Constraint(
         expr=m.fs.Adjustment.Nd_nitrate_conversion
-        * m.fs.Adjustment.inlet.flow_mol_phase_comp[0, "Aq", "Nd(NO3)3"]
+        * m.fs.Adjustment.inlet.flow_mol_phase_comp[0, "Aq", "Nd_3+"]
         == (
-            m.fs.Adjustment.inlet.flow_mol_phase_comp[0, "Aq", "Nd(NO3)3"]
-            - m.fs.Adjustment.outlet.flow_mol_phase_comp[0, "Aq", "Nd(NO3)3"]
+            m.fs.Adjustment.inlet.flow_mol_phase_comp[0, "Aq", "Nd_3+"]
+            - m.fs.Adjustment.outlet.flow_mol_phase_comp[0, "Aq", "Nd_3+"]
         )
     )
     m.fs.Adjustment.Nd_nitrate_conversion.fix(0.999999)
@@ -430,57 +452,53 @@ def set_operation_conditions(m):
     m.fs.Adjustment.control_volume.properties_in[0].temperature.setub(600)
 
     ######### Precipitator Feed specifications (Stage 3)
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "NH4OH"].fix(
-        100 * pyunits.mol / pyunits.s
-    )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(
-        100 * pyunits.mol / pyunits.s
-    )
     m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Nd2Fe14B"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "Cu(NO3)2"].fix(
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "Cu_2+"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Vap", "O2"].fix(
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "NO3_-"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "Nd(NO3)3"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "Fe(NO3)2"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Cu3(BO3)2"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Cu"].fix(
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Vap", "O2"].fix( 
         1e-5 * pyunits.mol / pyunits.s
     )
     m.fs.PrecipFeed.flow_mol_phase_comp[0, "Liq", "H2O"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "Fe(NO3)3"].fix(
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "Nd_3+"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "Fe_2+"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "Fe_3+"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "NH4_+"].fix(
+        35 * pyunits.mol / pyunits.s
+    )
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "OH_-"].fix(
+        35 * pyunits.mol / pyunits.s
+    )
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Cu3(BO3)2"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Cu"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Nd(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
     m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Fe(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Nd(OH)3"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "NH4NO3"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "(NH4)3[Fe(C2O4)3]"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(35 * pyunits.mol / pyunits.s)
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "C2O4_2-"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Nd2(C2O4)3 * 10H2O"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
+
     m.fs.PrecipFeed.temperature.fix(298.15 * pyunits.K)
     m.fs.PrecipFeed.pressure.fix(1 * pyunits.atm)
 
@@ -523,8 +541,8 @@ def set_operation_conditions(m):
     m.fs.Precipitation.control_volume.properties_in[0].temperature.setub(600)
 
     ######### S102 Filter Specifications (S/L Filtration following Stage 3)
-    m.fs.S102.split_fraction[0, "liq_outlet", "Liq"].fix(0.9999999)
-    m.fs.S102.split_fraction[0, "liq_outlet", "Aq"].fix(0.9999999)
+    m.fs.S102.split_fraction[0, "liq_outlet", "Liq"].fix(0.999999)
+    m.fs.S102.split_fraction[0, "liq_outlet", "Aq"].fix(0.999999)
     m.fs.S102.split_fraction[0, "sol_outlet", "Sol"].fix(0.99999)
     m.fs.S102.split_fraction[0, "sol_outlet", "Vap"].fix(0.9999)
 
@@ -558,7 +576,45 @@ def set_operation_conditions(m):
     m.fs.Calcination.liquid_in[0].conc_mass_comp["H2O"].fix(1e-5)  # mg/L
     m.fs.Calcination.frac_comp_recovery.fix(1)
 
-    print(degrees_of_freedom(m))
+
+
+def set_scaling(m):
+    """
+    Set the scaling factors to improve solver performance.
+
+    Args:
+        m: pyomo model
+    """
+    set_scaling_factor(m.fs.PrecipMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4)
+    set_scaling_factor(m.fs.PrecipMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4)
+    set_scaling_factor(m.fs.PrecipMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4) 
+
+    constraint_scaling_transform(m.fs.Dissolution.control_volume.enthalpy_balances[0.0], 1e-6)
+    constraint_scaling_transform(m.fs.Adjustment.control_volume.enthalpy_balances[0.0], 1e-6)
+    constraint_scaling_transform(m.fs.AdjMixer.enthalpy_mixing_equations[0.0], 1e-6)
+    constraint_scaling_transform(m.fs.PrecipMixer.enthalpy_mixing_equations[0.0], 1e-6)
+    constraint_scaling_transform(m.fs.Precipitation.control_volume.enthalpy_balances[0.0], 1e-6)
+
+    set_scaling_factor(m.fs.AdjMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4)
+    set_scaling_factor(m.fs.AdjMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4)
+    set_scaling_factor(m.fs.AdjMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4)
+
+    set_scaling_factor(m.fs.Adjustment.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4)
+    set_scaling_factor(m.fs.Adjustment.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4)
+    set_scaling_factor(m.fs.Adjustment.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4)
+
+    set_scaling_factor(m.fs.Precipitation.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4)
+    set_scaling_factor(m.fs.Precipitation.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4)
+    set_scaling_factor(m.fs.Precipitation.control_volume.properties_out[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4)
+    set_scaling_factor(m.fs.Precipitation.control_volume.properties_out[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4)
+    set_scaling_factor(m.fs.Precipitation.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4)
+    set_scaling_factor(m.fs.Precipitation.control_volume.properties_out[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4)
+
+    set_scaling_factor(m.fs.S102.liq_outlet_state[0.0].mole_frac_phase_comp_apparent["Vap", "O2"], 1e-4)
+
+
+
+
 
 
 def initialize_system(m):
@@ -581,15 +637,15 @@ def initialize_system(m):
     m.fs.S101.initialize()
     propagate_state(arc=m.fs.S101_AdjMixer)
 
-    # Initialize pH Adjustment feed and propagate state to mixer
+    # # Initialize pH Adjustment feed and propagate state to mixer
     m.fs.AdjFeed.initialize()
     propagate_state(arc=m.fs.AdjFeed_AdjMixer)
 
-    # Initialize pH Adjustment mixer and propagate state to reactor
+    # # Initialize pH Adjustment mixer and propagate state to reactor
     m.fs.AdjMixer.initialize()
     propagate_state(arc=m.fs.AdjMixer_Adjustment)
 
-    # Initialize pH Adjustment reactor and propagate state to precipitation stage mixer
+    # # Initialize pH Adjustment reactor and propagate state to precipitation stage mixer
     m.fs.Adjustment.initialize()
     propagate_state(arc=m.fs.Adjustment_PrecipMixer)
 
@@ -611,7 +667,6 @@ def initialize_system(m):
     # Initialize precipitation stage calcinator
     m.fs.Calcination.initialize()
 
-
 def solve_system(m, tee=False):
     """
     Args:
@@ -630,10 +685,8 @@ def solve_system(m, tee=False):
     )
 
     results = solver_obj.solve(m, tee=tee)
-    assert_optimal_termination(results)
 
     return results
-
 
 def display_results(m):
     """
@@ -661,10 +714,10 @@ def display_results(m):
     m.fs.S102.report()
 
     print(
-        "\nMolar Flowrate of product Nd2O3 recovered: {:0.5f} mol/s".format(
+        "\nMolar Flowrate of product Nd2O3 recovered: {:0.4f} mol/s".format(
             value(m.fs.Calcination.flow_mol_comp_product[0, "Nd"])
         )
     )
 
-
-main()
+if __name__=="__main__":
+    main()

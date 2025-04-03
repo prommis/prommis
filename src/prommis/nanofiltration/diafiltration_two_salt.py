@@ -71,6 +71,8 @@ respectively, to improve numerics.
 Parameters
 ----------
 
+The Two-Salt Diafiltration model has the following parameters.
+
 ============================== =============================================== ================================= ============= =========================
 Parameter                      Description                                      Name                             Default Value  Units
 ============================== =============================================== ================================= ============= =========================
@@ -90,6 +92,8 @@ Parameter                      Description                                      
 
 Variables
 ---------
+
+The Two-Salt Diafiltration model adds the following variables.
 
 ==================================== ============================================== ================================ ========================= ========================================
 Variable                             Description                                    Name                             Units                     Notes
@@ -118,6 +122,8 @@ Variable                             Description                                
 
 Derivative Variables
 --------------------
+
+The Two-Salt Diafiltration model adds the following derivative variables.
 
 ================================================================== =============================================== ==================================== ================== ========================================
 Variable                                                           Description                                     Name                                 Units              Notes
@@ -174,7 +180,7 @@ with linearized cross-diffusion coefficients:
 
 .. math:: D_{\mathrm{Co^{2+},Co^{2+}}} = \beta_9 + \beta_{10} c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_{11} c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
 
-where:
+that have the following regressed parameter values:
 
 ================== ========= ================
 Parameter          Value     Units

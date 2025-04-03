@@ -8,5 +8,5 @@ chapters:
   - file: tutorials/ree_costing_framework_basic_features-solution
   - file: tutorials/ree_costing_framework_advanced_features-solution
   - file: tutorials/uky_flowsheet-solution
-  - file: tutorials/ree_costing_framework_uky_flowsheet_demo_solution
+  - file: tutorials/ree_costing_framework_uky_flowsheet_demo-solution
   - file: api.rst

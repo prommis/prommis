@@ -2804,6 +2804,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # First tries to match (country, city) exactly.
         if location in location_factor_dict:
             location_factor = location_factor_dict[location]["average"]
+        # If no city been provided in location_factors.json, fall back to (country, None)
+        elif (location[0], None) in location_factor_dict:
+            fallback_location = (location[0], None)
+            location_factor = location_factor_dict[fallback_location]["average"]
         # If country matches but city doesn't, suggest cities
         elif any(loc[0] == location[0] for loc in location_factor_dict.keys()):
             # Find all available cities for this country (excluding None)
@@ -2823,10 +2827,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"Available cities for '{location[0]}' are: {available_city_list}. "
                 f"Did you mean one of those?"
             )
-        # Fall back to (country, None)
-        elif (location[0], None) in location_factor_dict:
-            fallback_location = (location[0], None)
-            location_factor = location_factor_dict[fallback_location]["average"]
+
         # No country match
         else:
             available_countries = sorted(

@@ -1404,7 +1404,9 @@ class TestREECosting(object):
     @pytest.mark.unit
     def test_location_factor(self):
         location_data = load_location_factor()
+        valid_locations = {(entry["country"], entry["city"]) for entry in location_data}
 
+        # Test 1. Test all valid (country, city) combinations
         for entry in location_data:
             location = (entry["country"], entry["city"])
             location_factor = entry["location_factor"]["average"]
@@ -1429,6 +1431,56 @@ class TestREECosting(object):
             print(f"  Expected Total BEC: {expected_total_BEC:,.2f}")
             print(f"  Actual Total BEC: {actual_total_BEC:,.2f}")
             assert actual_total_BEC == pytest.approx(expected_total_BEC, rel=1e-4)
+
+        # Test 2. Invalid country should raise AttributeError
+        invalid_country = ("Brunei", None)
+        if invalid_country not in valid_locations:
+            model = base_model()
+            with pytest.raises(
+                AttributeError, match="No location factor found for country 'Brunei'"
+            ):
+                model.fs.costing.get_total_BEC(
+                    CE_index_year="UKy_2019", location=invalid_country
+                )
+        # Test 3. Fallback to (country, None) when city is unknown but country exist
+        fallback_location = ("Austria", None)
+        test_location = ("Austria", "Vienna")
+
+        if (
+            fallback_location in valid_locations
+            and test_location not in valid_locations
+        ):
+            model = base_model()
+            model.fs.costing.get_total_BEC(
+                CE_index_year="UKy_2019", location=test_location
+            )
+
+            fallback_factor = next(
+                entry["location_factor"]["average"]
+                for entry in location_data
+                if (entry["country"], entry["city"]) == fallback_location
+            )
+            actual_factor = pyo.value(model.fs.costing.location_factor_used)
+
+            assert actual_factor == pytest.approx(
+                fallback_factor, rel=1e-6
+            ), f"Fallback for {test_location} did not use {fallback_location}'s factor"
+        # Test 4. Known country, but unknown city. should raise with city suggestions
+        bad_city_location = ("United States", "Boston")
+        if (
+            any(loc[0] == bad_city_location[0] for loc in valid_locations)
+            and bad_city_location not in valid_locations
+            and (bad_city_location[0], None)
+            not in valid_locations  # ensure no fallback masks it
+        ):
+            model = base_model()
+            with pytest.raises(
+                AttributeError,
+                match=r"No location factor found for \('United States', 'Boston'\)",
+            ):
+                model.fs.costing.get_total_BEC(
+                    CE_index_year="UKy_2019", location=bad_city_location
+                )
 
 
 class TestWaterTAPCosting(object):

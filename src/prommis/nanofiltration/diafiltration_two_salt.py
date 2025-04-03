@@ -53,7 +53,7 @@ Parameters
 The Two-Salt Diafiltration model has the following parameters.
 
 ============================== =============================================== ================================= ============= =========================
-Parameter                      Description                                      Name                             Default Value  Units
+Parameter                      Description                                     Name                              Default Value Units
 ============================== =============================================== ================================= ============= =========================
 :math:`c_{\mathrm{Co^{2+}},d}` concentration of cobalt ion in the diafiltrate  ``diafiltrate_conc_mass_cobalt``  0.2           :math:`kg m^{-3}` 
 :math:`c_{\mathrm{Li^+},d}`    concentration of lithium ion in the diafiltrate ``diafiltrate_conc_mass_lithium`` 0.1           :math:`kg m^{-3}` 

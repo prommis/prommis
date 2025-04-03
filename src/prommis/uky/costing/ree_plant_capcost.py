@@ -2698,7 +2698,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                 )
 
-    def get_total_BEC(b, CE_index_year,  watertap_blocks=None, location = ("United States", "Washington DC")):
+    def get_total_BEC(
+        b,
+        CE_index_year,
+        watertap_blocks=None,
+        location=("United States", "Washington DC"),
+    ):
         # This method accepts a flowsheet-level costing block
 
         try:
@@ -2711,12 +2716,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"Valid CE index options include CE500, CE394 and years from "
                 f"1990 to 2020."
             )
-        # Define the lists to ensure hit no errors during testing  
+        # Define the lists to ensure hit no errors during testing
         b.BEC_list = []
         b.custom_fixed_costs_list = []
         b.custom_variable_costs_list = []
         b.watertap_fixed_costs_list = []
-    
+
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
             if o.name in [block.name for block in b._registered_unit_costing]:
@@ -2784,12 +2789,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         )
 
         # Load the location factor list
-        b.location_factor_list = load_location_factor()
-        
         # User-provide the location as a single (country, city) tuple
-        # Example of user-provided locations: list of (country, city) tuple
-        # e.g., [("USA", "Houston"), ("Albania", None)]
-        
+        # Default location: ("United States", "Washington DC")
+        b.location_factor_list = load_location_factor()
+
         # Build dictionary keyed by (country, city)
         location_factor_dict = {
             (entry["country"], entry["city"]): entry["location_factor"]
@@ -2797,19 +2800,24 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         }
         # Store location factor list for test access
         b.location_factor_dict = location_factor_dict
-        
+
         # First tries to match (country, city) exactly.
         if location in location_factor_dict:
             location_factor = location_factor_dict[location]["average"]
         # If country matches but city doesn't, suggest cities
         elif any(loc[0] == location[0] for loc in location_factor_dict.keys()):
             # Find all available cities for this country (excluding None)
-            available_cities = sorted({
-                loc[1] for loc in location_factor_dict.keys()
-                if loc[0] == location[0] and loc[1] is not None
-            })
+            available_cities = sorted(
+                {
+                    loc[1]
+                    for loc in location_factor_dict.keys()
+                    if loc[0] == location[0] and loc[1] is not None
+                }
+            )
 
-            available_city_list = ', '.join(available_cities) if available_cities else "None"
+            available_city_list = (
+                ", ".join(available_cities) if available_cities else "None"
+            )
             raise AttributeError(
                 f"No location factor found for {location}. "
                 f"Available cities for '{location[0]}' are: {available_city_list}. "
@@ -2821,7 +2829,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             location_factor = location_factor_dict[fallback_location]["average"]
         # No country match
         else:
-            available_countries = sorted({loc[0] for loc in location_factor_dict.keys()})
+            available_countries = sorted(
+                {loc[0] for loc in location_factor_dict.keys()}
+            )
             raise AttributeError(
                 f"No location factor found for country '{location[0]}'. "
                 f"Available countries are: {', '.join(available_countries)}"
@@ -2831,11 +2841,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # Store base BEC and location factor to be used in test file
         b.base_BEC = Expression(expr=sum(b.BEC_list))
         b.location_factor_used = Param(initialize=location_factor, mutable=True)
-        
-        b.total_BEC = Var(initialize=100, bounds=(0, None), units=CE_index_units)
-        
+
         @b.Constraint()
-        def total_BEC_eq(c):        
+        def total_BEC_eq(c):
             return c.total_BEC == sum(b.BEC_list) * b.location_factor_used
 
     def display_flowsheet_cost(b):

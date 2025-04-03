@@ -64,9 +64,9 @@ surface (width) and the :math:`z`-direction perpendicular to the membrane surfac
 and :math:`z` are non-dimensionalized with the membrane width (:math:`w`) and thickness (:math:`l`),
 respectively, to improve numerics.
 
-.. math:: \bar{x} \in \mathbb{R} \| 0 \leq \bar{x} \geq 1
+.. math:: \bar{x} \in \mathbb{R} \| 0 \leq \bar{x} \leq 1
 
-.. math:: \bar{z} \in \mathbb{R} \| 0 \leq \bar{z} \geq 1
+.. math:: \bar{z} \in \mathbb{R} \| 0 \leq \bar{z} \leq 1
 
 Parameters
 ----------

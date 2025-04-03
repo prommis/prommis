@@ -18,17 +18,14 @@ Test property package. Based on WaterTap documentation.
 from pyomo.environ import units as pyunits
 
 # Import IDAES cores
-from idaes.core import (
+from idaes.core import (  # Cation,; Anion,; Apparent,
     AqueousPhase,
     Component,
     LiquidPhase,
     SolidPhase,
     Solute,
-    VaporPhase,
-    # Cation,
-    # Anion,
-    # Apparent,
     Solvent,
+    VaporPhase,
 )
 from idaes.models.properties.modular_properties.eos.ideal import Ideal
 from idaes.models.properties.modular_properties.phase_equil.forms import fugacity
@@ -155,24 +152,7 @@ thermo_config = {
                 "enth_mol_form_liq_comp_ref": (-829.7e3, pyunits.J / pyunits.mol),
             },  # [22]
         },
-        # "H_+": {
-        #     # "type": Cation, "charge": 1,
-        #     "type": Solute,
-        #     "valid_phase_types": [4],  # Aqueous
-        #     "dens_mol_liq_comp": Constant,
-        #     "enth_mol_liq_comp": Constant,
-        #     "cp_mol_liq_comp": Constant,
-        #     "entr_mol_liq_comp": Constant,
-        #     "parameter_data": {
-        #         "mw": (1.00784, pyunits.g / pyunits.mol),
-        #         "dens_mol_liq_comp_coeff": (55, pyunits.kmol * pyunits.m**-3),
-        #         "enth_mol_form_liq_comp_ref": (0, pyunits.kJ / pyunits.mol),
-        #         "cp_mol_liq_comp_coeff": (75000, pyunits.J / pyunits.kmol / pyunits.K),
-        #         "entr_mol_form_liq_comp_ref": (0, pyunits.J / pyunits.K / pyunits.mol),
-        #     },
-        # },
         "OH_-": {
-            # "type": Anion, "charge": -1,
             "type": Solute,
             "valid_phase_types": [4],  # Aqueous
             "dens_mol_liq_comp": Constant,
@@ -191,7 +171,6 @@ thermo_config = {
             },
         },
         "Cu_2+": {
-            # "type": Cation, "charge": 2,
             "type": Solute,
             "valid_phase_types": [4],  # Aqueous
             "dens_mol_liq_comp": Constant,
@@ -210,7 +189,6 @@ thermo_config = {
             },
         },
         "NO3_-": {
-            # "type": Anion, "charge": -1,
             "type": Solute,
             "valid_phase_types": [4],  # Aqueous
             "dens_mol_liq_comp": Constant,
@@ -229,7 +207,6 @@ thermo_config = {
             },
         },
         "Nd_3+": {
-            # "type": Cation, "charge": 3,
             "type": Solute,
             "valid_phase_types": [4],  # Aqueous
             "dens_mol_liq_comp": Constant,
@@ -248,7 +225,6 @@ thermo_config = {
             },
         },
         "Fe_2+": {
-            # "type": Cation, "charge": 2,
             "type": Solute,
             "valid_phase_types": [4],  # Aqueous
             "dens_mol_liq_comp": Constant,
@@ -267,7 +243,6 @@ thermo_config = {
             },
         },
         "Fe_3+": {
-            # "type": Cation, "charge": 3,
             "type": Solute,
             "valid_phase_types": [4],  # Aqueous
             "dens_mol_liq_comp": Constant,
@@ -286,7 +261,6 @@ thermo_config = {
             },
         },
         "NH4_+": {
-            # "type": Cation, "charge": 1,
             "type": Solute,
             "valid_phase_types": [4],  # Aqueous
             "dens_mol_liq_comp": Constant,
@@ -305,7 +279,6 @@ thermo_config = {
             },
         },
         "C2O4_2-": {
-            # "type": Anion, "charge": -2,
             "type": Solute,
             "valid_phase_types": [4],  # Aqueous
             "dens_mol_liq_comp": Constant,

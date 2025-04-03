@@ -11,15 +11,11 @@
 # for full copyright and license information.
 #################################################################################
 """
-Reaction package for Precipitation in the Acid-Free Dissolution Process of 
+Reaction package for Precipitation in the Acid-Free Dissolution Process of
 Neodymium Magnets.
 """
 
 from pyomo.environ import units as pyunits
-
-from idaes.models.properties.modular_properties.base.generic_reaction import (
-    ConcentrationForm,
-)
 
 config_dict = {
     "base_units": {
@@ -51,7 +47,7 @@ config_dict = {
                 ("Sol", "Nd(OH)3"): 0,
                 ("Sol", "Nd2(C2O4)3 * 10H2O"): 0,
             },
-        }, 
+        },
         "R2": {
             "stoichiometry": {
                 ("Sol", "Nd2Fe14B"): 0,
@@ -73,6 +69,6 @@ config_dict = {
                 ("Sol", "Nd(OH)3"): -2,
                 ("Sol", "Nd2(C2O4)3 * 10H2O"): 1,
             },
-        },  
+        },
     },
 }

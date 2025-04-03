@@ -1,22 +1,24 @@
 from pyomo.environ import (
-    check_optimal_termination,
     ConcreteModel,
     Constraint,
     SolverFactory,
     TransformationFactory,
     Var,
-    assert_optimal_termination,
-    Suffix,
+    check_optimal_termination,
 )
 from pyomo.environ import units as pyunits
-from pyomo.environ import value
+from pyomo.environ import (
+    value,
+)
 from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
+from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
 )
+from idaes.core.util.scaling import constraint_scaling_transform, set_scaling_factor
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
@@ -39,18 +41,9 @@ import prommis.examples.cmi_process_flowsheet.cmi_process_adjustment_rxn_prop_pa
 import prommis.examples.cmi_process_flowsheet.cmi_process_dissolution_rxn_prop_pack as dissolution_reaction_props
 import prommis.examples.cmi_process_flowsheet.cmi_process_precipitation_rxn_prop_pack as precipitation_reaction_props
 import prommis.examples.cmi_process_flowsheet.cmi_process_prop_pack as thermo_props
-
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
-
-from idaes.core.util import DiagnosticsToolbox
-
-import idaes.logger as idaeslog
-
-from idaes.core.util.scaling import set_scaling_factor, constraint_scaling_transform
-
 
 
 def main():
@@ -72,7 +65,7 @@ def main():
             "Check that the expected variables are fixed and unfixed."
             "For more guidance, run assert_no_structural_warnings from the IDAES DiagnosticToolbox "
         )
-    
+
     # structural diagnostics check
     dt = DiagnosticsToolbox(scaled_model)
     dt.assert_no_structural_warnings()
@@ -85,7 +78,7 @@ def main():
         raise RuntimeError(
             "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
         )
-    
+
     # numerical diagnostics test
     dt.assert_no_numerical_warnings()
 
@@ -94,7 +87,6 @@ def main():
     display_results(m)
 
     return m, res
-
 
 
 def build():
@@ -200,10 +192,6 @@ def build():
         metal_list=["Nd"],
     )
 
-
-
-
-
     # Connect arc from Feed to Dissolution Stage
     m.fs.FEED_Diss = Arc(source=m.fs.FEED.outlet, destination=m.fs.Dissolution.inlet)
 
@@ -255,6 +243,7 @@ def build():
 
     return m
 
+
 def set_operation_conditions(m):
     """
     Set the operating conditions of the flowsheet such that the degrees of freedom are zero.
@@ -264,38 +253,18 @@ def set_operation_conditions(m):
     """
 
     #########  FEED Specification (entering Stage 1)
-    m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Nd2Fe14B"].fix(
-        1 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Cu_2+"].fix(
-        34 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NO3_-"].fix(
-        68 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Vap", "O2"].fix( 
-        50 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Liq", "H2O"].fix(
-        300 * pyunits.mol / pyunits.s
-    )
+    m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Nd2Fe14B"].fix(1 * pyunits.mol / pyunits.s)
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Cu_2+"].fix(34 * pyunits.mol / pyunits.s)
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NO3_-"].fix(68 * pyunits.mol / pyunits.s)
+    m.fs.FEED.flow_mol_phase_comp[0, "Vap", "O2"].fix(50 * pyunits.mol / pyunits.s)
+    m.fs.FEED.flow_mol_phase_comp[0, "Liq", "H2O"].fix(300 * pyunits.mol / pyunits.s)
 
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Nd_3+"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Fe_2+"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Fe_3+"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NH4_+"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Nd_3+"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Fe_2+"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "Fe_3+"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "NH4_+"].fix(1e-5 * pyunits.mol / pyunits.s)
 
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "OH_-"].fix(
-        1e-5 * pyunits.mol / pyunits.s
-    )
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "OH_-"].fix(1e-5 * pyunits.mol / pyunits.s)
 
     m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Cu3(BO3)2"].fix(
         1e-5 * pyunits.mol / pyunits.s
@@ -309,7 +278,9 @@ def set_operation_conditions(m):
         1e-5 * pyunits.mol / pyunits.s
     )
     m.fs.FEED.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(1e-5 * pyunits.mol / pyunits.s)
-    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "C2O4_2-"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.FEED.flow_mol_phase_comp[0, "Aq", "C2O4_2-"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
     m.fs.FEED.flow_mol_phase_comp[0, "Sol", "Nd2(C2O4)3 * 10H2O"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
@@ -369,9 +340,7 @@ def set_operation_conditions(m):
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "NO3_-"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Vap", "O2"].fix( 
-        1e-5 * pyunits.mol / pyunits.s
-    )
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Vap", "O2"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Liq", "H2O"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
@@ -385,18 +354,16 @@ def set_operation_conditions(m):
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "Fe_3+"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "NH4_+"].fix(
-        35 * pyunits.mol / pyunits.s
-    )
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "NH4_+"].fix(35 * pyunits.mol / pyunits.s)
 
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "OH_-"].fix(
-        35 * pyunits.mol / pyunits.s
-    )
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "OH_-"].fix(35 * pyunits.mol / pyunits.s)
 
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu3(BO3)2"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Cu"].fix(1e-5 * pyunits.mol / pyunits.s)
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Nd(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
@@ -404,8 +371,12 @@ def set_operation_conditions(m):
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Fe(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(1e-5 * pyunits.mol / pyunits.s)
-    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "C2O4_2-"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+    m.fs.AdjFeed.flow_mol_phase_comp[0, "Aq", "C2O4_2-"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
     m.fs.AdjFeed.flow_mol_phase_comp[0, "Sol", "Nd2(C2O4)3 * 10H2O"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
@@ -461,7 +432,7 @@ def set_operation_conditions(m):
     m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "NO3_-"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Vap", "O2"].fix( 
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Vap", "O2"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
     m.fs.PrecipFeed.flow_mol_phase_comp[0, "Liq", "H2O"].fix(
@@ -485,16 +456,24 @@ def set_operation_conditions(m):
     m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Cu3(BO3)2"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(1e-5 * pyunits.mol / pyunits.s)
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Cu"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Cu2O"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Cu"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
     m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Nd(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
     m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Fe(OH)3"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(35 * pyunits.mol / pyunits.s)
-    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "C2O4_2-"].fix(1e-5 * pyunits.mol / pyunits.s)
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "H2C2O4"].fix(
+        35 * pyunits.mol / pyunits.s
+    )
+    m.fs.PrecipFeed.flow_mol_phase_comp[0, "Aq", "C2O4_2-"].fix(
+        1e-5 * pyunits.mol / pyunits.s
+    )
     m.fs.PrecipFeed.flow_mol_phase_comp[0, "Sol", "Nd2(C2O4)3 * 10H2O"].fix(
         1e-5 * pyunits.mol / pyunits.s
     )
@@ -577,7 +556,6 @@ def set_operation_conditions(m):
     m.fs.Calcination.frac_comp_recovery.fix(1)
 
 
-
 def set_scaling(m):
     """
     Set the scaling factors to improve solver performance.
@@ -585,36 +563,97 @@ def set_scaling(m):
     Args:
         m: pyomo model
     """
-    set_scaling_factor(m.fs.PrecipMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4)
-    set_scaling_factor(m.fs.PrecipMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4)
-    set_scaling_factor(m.fs.PrecipMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4) 
+    set_scaling_factor(
+        m.fs.PrecipMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4
+    )
+    set_scaling_factor(
+        m.fs.PrecipMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4
+    )
+    set_scaling_factor(
+        m.fs.PrecipMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4
+    )
 
-    constraint_scaling_transform(m.fs.Dissolution.control_volume.enthalpy_balances[0.0], 1e-6)
-    constraint_scaling_transform(m.fs.Adjustment.control_volume.enthalpy_balances[0.0], 1e-6)
+    constraint_scaling_transform(
+        m.fs.Dissolution.control_volume.enthalpy_balances[0.0], 1e-6
+    )
+    constraint_scaling_transform(
+        m.fs.Adjustment.control_volume.enthalpy_balances[0.0], 1e-6
+    )
     constraint_scaling_transform(m.fs.AdjMixer.enthalpy_mixing_equations[0.0], 1e-6)
     constraint_scaling_transform(m.fs.PrecipMixer.enthalpy_mixing_equations[0.0], 1e-6)
-    constraint_scaling_transform(m.fs.Precipitation.control_volume.enthalpy_balances[0.0], 1e-6)
+    constraint_scaling_transform(
+        m.fs.Precipitation.control_volume.enthalpy_balances[0.0], 1e-6
+    )
 
-    set_scaling_factor(m.fs.AdjMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4)
-    set_scaling_factor(m.fs.AdjMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4)
-    set_scaling_factor(m.fs.AdjMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4)
+    set_scaling_factor(
+        m.fs.AdjMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4
+    )
+    set_scaling_factor(
+        m.fs.AdjMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4
+    )
+    set_scaling_factor(
+        m.fs.AdjMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4
+    )
 
-    set_scaling_factor(m.fs.Adjustment.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4)
-    set_scaling_factor(m.fs.Adjustment.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4)
-    set_scaling_factor(m.fs.Adjustment.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4)
+    set_scaling_factor(
+        m.fs.Adjustment.control_volume.properties_in[0.0].mole_frac_phase_comp[
+            "Aq", "H2C2O4"
+        ],
+        1e4,
+    )
+    set_scaling_factor(
+        m.fs.Adjustment.control_volume.properties_in[0.0].mole_frac_phase_comp[
+            "Aq", "C2O4_2-"
+        ],
+        1e4,
+    )
+    set_scaling_factor(
+        m.fs.Adjustment.control_volume.properties_in[0.0].mole_frac_phase_comp[
+            "Aq", "Nd_3+"
+        ],
+        1e4,
+    )
 
-    set_scaling_factor(m.fs.Precipitation.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4)
-    set_scaling_factor(m.fs.Precipitation.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4)
-    set_scaling_factor(m.fs.Precipitation.control_volume.properties_out[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4)
-    set_scaling_factor(m.fs.Precipitation.control_volume.properties_out[0.0].mole_frac_phase_comp["Aq", "C2O4_2-"], 1e4)
-    set_scaling_factor(m.fs.Precipitation.control_volume.properties_in[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4)
-    set_scaling_factor(m.fs.Precipitation.control_volume.properties_out[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4)
+    set_scaling_factor(
+        m.fs.Precipitation.control_volume.properties_in[0.0].mole_frac_phase_comp[
+            "Aq", "H2C2O4"
+        ],
+        1e4,
+    )
+    set_scaling_factor(
+        m.fs.Precipitation.control_volume.properties_in[0.0].mole_frac_phase_comp[
+            "Aq", "C2O4_2-"
+        ],
+        1e4,
+    )
+    set_scaling_factor(
+        m.fs.Precipitation.control_volume.properties_out[0.0].mole_frac_phase_comp[
+            "Aq", "H2C2O4"
+        ],
+        1e4,
+    )
+    set_scaling_factor(
+        m.fs.Precipitation.control_volume.properties_out[0.0].mole_frac_phase_comp[
+            "Aq", "C2O4_2-"
+        ],
+        1e4,
+    )
+    set_scaling_factor(
+        m.fs.Precipitation.control_volume.properties_in[0.0].mole_frac_phase_comp[
+            "Aq", "Nd_3+"
+        ],
+        1e4,
+    )
+    set_scaling_factor(
+        m.fs.Precipitation.control_volume.properties_out[0.0].mole_frac_phase_comp[
+            "Aq", "Nd_3+"
+        ],
+        1e4,
+    )
 
-    set_scaling_factor(m.fs.S102.liq_outlet_state[0.0].mole_frac_phase_comp_apparent["Vap", "O2"], 1e-4)
-
-
-
-
+    set_scaling_factor(
+        m.fs.S102.liq_outlet_state[0.0].mole_frac_phase_comp_apparent["Vap", "O2"], 1e-4
+    )
 
 
 def initialize_system(m):
@@ -667,6 +706,7 @@ def initialize_system(m):
     # Initialize precipitation stage calcinator
     m.fs.Calcination.initialize()
 
+
 def solve_system(m, tee=False):
     """
     Args:
@@ -687,6 +727,7 @@ def solve_system(m, tee=False):
     results = solver_obj.solve(m, tee=tee)
 
     return results
+
 
 def display_results(m):
     """
@@ -719,5 +760,6 @@ def display_results(m):
         )
     )
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main()

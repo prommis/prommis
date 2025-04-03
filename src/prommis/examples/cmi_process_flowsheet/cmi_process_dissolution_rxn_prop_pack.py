@@ -11,16 +11,11 @@
 # for full copyright and license information.
 #################################################################################
 """
-Reaction package for Copper(II) Nitrate Dissolution in the Acid-Free Dissolution 
+Reaction package for Copper(II) Nitrate Dissolution in the Acid-Free Dissolution
 Process of Neodymium Magnets.
 """
 
 from pyomo.environ import units as pyunits
-
-from idaes.models.properties.modular_properties.base.generic_reaction import (
-    ConcentrationForm,
-)
-# from idaes.models.properties.modular_properties.reactions.dh_rxn import constant_dh_rxn
 
 config_dict = {
     "base_units": {
@@ -52,10 +47,7 @@ config_dict = {
                 ("Sol", "Nd(OH)3"): 0,
                 ("Sol", "Nd2(C2O4)3 * 10H2O"): 0,
             },
-            # "heat_of_reaction": constant_dh_rxn,
-            # "concentration_form": ConcentrationForm.molarity,
-            # "parameter_data": {"dh_rxn_ref": (-9.87e6, pyunits.J / pyunits.mol)},
-        }, 
+        },
         "R2": {
             "stoichiometry": {
                 ("Sol", "Nd2Fe14B"): 0,
@@ -77,9 +69,6 @@ config_dict = {
                 ("Sol", "Nd(OH)3"): 0,
                 ("Sol", "Nd2(C2O4)3 * 10H2O"): 0,
             },
-            # "heat_of_reaction": constant_dh_rxn,
-            # "concentration_form": ConcentrationForm.molarity,
-            # "parameter_data": {"dh_rxn_ref": (-9.26e5, pyunits.J / pyunits.mol)},
         },
     },
 }

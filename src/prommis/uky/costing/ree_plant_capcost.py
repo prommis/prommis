@@ -2790,7 +2790,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # Load the location factor list
         # User-provide the location as a single (country, city) tuple
-        # Default location: ("United States", "Washington DC")
+        # Benchmark location: ("United States", "Washington DC")
         b.location_factor_list = load_location_factor()
 
         # Build dictionary keyed by (country, city)
@@ -2838,7 +2838,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"Available countries are: {', '.join(available_countries)}"
             )
 
-        # Apply the `average` location factor to compute adjusted cost
         # Store base BEC and location factor to be used in test file
         b.base_BEC = Expression(expr=sum(b.BEC_list))
         b.location_factor_used = Param(initialize=location_factor, mutable=True)

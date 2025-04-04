@@ -43,6 +43,7 @@ from prommis.uky.costing.ree_plant_capcost import (
     QGESSCostingData,
     custom_REE_plant_currency_units,
 )
+from prommis.uky.costing.costing_dictionaries import load_location_factor
 
 _, watertap_costing_available = attempt_import("watertap.costing")
 if watertap_costing_available:
@@ -65,8 +66,6 @@ if watertap_costing_available:
         ReverseOsmosis1D,
     )
     from watertap.unit_models.zero_order import NanofiltrationZO
-
-    from prommis.uky.costing.costing_dictionaries import load_location_factor
 
 _log = idaeslog.getLogger(__name__)
 

@@ -47,8 +47,8 @@ There are 2 continuous sets for each length dimension: the :math:`x`-direction p
 .. math:: \bar{x} \in \mathbb{R} \| 0 \leq \bar{x} \leq 1
 .. math:: \bar{z} \in \mathbb{R} \| 0 \leq \bar{z} \leq 1
 
-Parameters
-----------
+Default Model Parameters
+------------------------
 
 The Two-Salt Diafiltration model has the following parameters.
 
@@ -145,7 +145,7 @@ Nernst-Plank equations for the ion flux through the membrane:
 .. math:: j_{\mathrm{Li^+}}(\bar{x}) = c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) J_w(\bar{x}) + \frac{D_{\mathrm{Li^+,Li^+}}}{l} \frac{\partial c_{\mathrm{Li^+},m}(\bar{x},\bar{z})}{\partial \bar{z}} + \frac{D_{\mathrm{Li^+,Co^{2+}}}}{l} \frac{\partial c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})}{\partial \bar{z}} \forall \bar{z} \neq 0
 .. math:: j_{\mathrm{Co^{2+}}}(\bar{x}) = c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}) J_w(\bar{x}) + \frac{D_{\mathrm{Co^{2+},Li^+}}}{l} \frac{\partial c_{\mathrm{Li^+},m}(\bar{x},\bar{z})}{\partial \bar{z}} + \frac{D_{\mathrm{Co^{2+},Co^{2+}}}}{l} \frac{\partial c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})}{\partial \bar{z}} \forall \bar{z} \neq 0
 
-with linearized cross-diffusion coefficients: 
+with linearized cross-diffusion coefficients:
 
 .. math:: D_{\mathrm{Li^+,Li^+}} = \beta_0 + \beta_1 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_2 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
 .. math:: D_{\mathrm{Li^+,Co^{2+}}} = \beta_3 + \beta_4 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_5 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})

@@ -227,7 +227,9 @@ from idaes.core.util.constants import Constants
 
 @declare_process_block_class("TwoSaltDiafiltration")
 class TwoSaltDiafiltrationData(UnitModelBlockData):
-    """Two-Salt Diafiltration Unit Model Class."""
+    """
+    Two-Salt Diafiltration Unit Model Class.
+    """
 
     CONFIG = UnitModelBlockData.CONFIG()
 
@@ -523,29 +525,38 @@ and used when constructing these,
             self.retentate_conc_mass_lithium,
             wrt=self.x_bar,
             units=units.kg / units.m**3,
+            doc="Lithium concentration gradient in the retentate",
         )
         self.d_retentate_conc_mass_cobalt_dx = DerivativeVar(
             self.retentate_conc_mass_cobalt,
             wrt=self.x_bar,
             units=units.kg / units.m**3,
+            doc="Cobalt concentration gradient in the retentate",
         )
         self.d_retentate_flow_volume_dx = DerivativeVar(
             self.retentate_flow_volume,
             wrt=self.x_bar,
             units=units.m**3 / units.h,
+            doc="Volume flow gradient in the retentate",
         )
         self.d_membrane_conc_mass_lithium_dz = DerivativeVar(
             self.membrane_conc_mass_lithium,
             wrt=self.z_bar,
             units=units.kg / units.m**3,
+            doc="Lithium concentration gradient wrt z in the membrane",
         )
         self.d_membrane_conc_mass_cobalt_dz = DerivativeVar(
             self.membrane_conc_mass_cobalt,
             wrt=self.z_bar,
             units=units.kg / units.m**3,
+            doc="Cobalt concentration gradient wrt z in the membrane",
         )
 
     def add_constraints(self):
+        """
+        Adds model constraints for the two salt diafiltration unit model.
+        """
+
         # mass balance constraints
         def _overall_mass_balance(self, x):
             return self.d_retentate_flow_volume_dx[x] == (
@@ -1064,10 +1075,8 @@ and used when constructing these,
 
     def add_scaling_factors(self):
         """
-        Apply scaling factors to certain constraints to improve solver performance
-
-        Args:
-            m: Pyomo model
+        Assigns scaling factors to certain variables and constraints to
+        improve solver performance.
         """
         self.scaling_factor = Suffix(direction=Suffix.EXPORT)
 

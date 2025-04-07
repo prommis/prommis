@@ -55,7 +55,7 @@
     },
     {
         "country": "Australia",
-        "city": "Melborne",
+        "city": "Melbourne",
         "location_factor": {
             "min": 1.02,
             "max": 1.02,
@@ -171,7 +171,7 @@
         }
     },
     {
-        "country": "Bosnia",
+        "country": "Bosnia and Herzegovina",
         "city": null,
         "location_factor": {
             "min": 0.9,
@@ -189,7 +189,7 @@
         }
     },
     {
-        "country": "Brasil",
+        "country": "Brazil",
         "city": null,
         "location_factor": {
             "min": 0.88,
@@ -244,7 +244,7 @@
     },
     {
         "country": "Canada",
-        "city": "Cagary AL",
+        "city": "Calgary AB",
         "location_factor": {
             "min": 1.05,
             "max": 1.1,
@@ -262,7 +262,7 @@
     },
     {
         "country": "Canada",
-        "city": "Edmonton AL",
+        "city": "Edmonton AB",
         "location_factor": {
             "min": 1.04,
             "max": 1.13,
@@ -271,7 +271,7 @@
     },
     {
         "country": "Canada",
-        "city": "Fort McMurray AL",
+        "city": "Fort McMurray AB",
         "location_factor": {
             "min": 1.4,
             "max": 1.55,
@@ -280,7 +280,7 @@
     },
     {
         "country": "Canada",
-        "city": "Hatifax NS",
+        "city": "Halifax NS",
         "location_factor": {
             "min": 0.96,
             "max": 0.99,
@@ -289,7 +289,7 @@
     },
     {
         "country": "Canada",
-        "city": "Hamilton ONT",
+        "city": "Hamilton ON",
         "location_factor": {
             "min": 0.95,
             "max": 0.98,
@@ -298,7 +298,7 @@
     },
     {
         "country": "Canada",
-        "city": "Laval QUE",
+        "city": "Laval QC",
         "location_factor": {
             "min": 0.95,
             "max": 0.97,
@@ -307,7 +307,7 @@
     },
     {
         "country": "Canada",
-        "city": "Lethbridge AL",
+        "city": "Lethbridge AB",
         "location_factor": {
             "min": 0.97,
             "max": 0.99,
@@ -334,7 +334,7 @@
     },
     {
         "country": "Canada",
-        "city": "Montreal QUE",
+        "city": "Montreal QC",
         "location_factor": {
             "min": 0.96,
             "max": 0.98,
@@ -343,7 +343,7 @@
     },
     {
         "country": "Canada",
-        "city": "Quebec City QUE",
+        "city": "Québec City QC",
         "location_factor": {
             "min": 0.96,
             "max": 0.98,
@@ -352,7 +352,7 @@
     },
     {
         "country": "Canada",
-        "city": "Regina SASK",
+        "city": "Regina SK",
         "location_factor": {
             "min": 0.96,
             "max": 0.98,
@@ -361,7 +361,7 @@
     },
     {
         "country": "Canada",
-        "city": "Sarnia ONT",
+        "city": "Sarnia ON",
         "location_factor": {
             "min": 0.95,
             "max": 0.98,
@@ -370,7 +370,7 @@
     },
     {
         "country": "Canada",
-        "city": "St Johns NFL",
+        "city": "St John's NL",
         "location_factor": {
             "min": 0.96,
             "max": 0.98,
@@ -378,8 +378,8 @@
         }
     },
     {
-        "country": "Canada Canada",
-        "city": "Toronto ONT Whitehorse YUK",
+        "country": "Canada",
+        "city": "Toronto ON",
         "location_factor": {
             "min": 0.97,
             "max": 0.99,
@@ -387,8 +387,8 @@
         }
     },
     {
-        "country": "Canada Canada",
-        "city": "Whitehorse YUK",
+        "country": "Canada",
+        "city": "Whitehorse YT",
         "location_factor": {
             "min": 0.98,
             "max": 1.00,
@@ -397,7 +397,7 @@
     },
     {
         "country": "Canada",
-        "city": "Winnipeg MAN",
+        "city": "Winnipeg MB",
         "location_factor": {
             "min": 0.95,
             "max": 0.97,
@@ -406,7 +406,7 @@
     },
     {
         "country": "Canada",
-        "city": "Windsor ONT",
+        "city": "Windsor ON",
         "location_factor": {
             "min": 0.95,
             "max": 0.98,
@@ -513,7 +513,7 @@
         }
     },
     {
-        "country": "Congo Democratic Republic",
+        "country": "Democratic Republic of the Congo",
         "city": null,
         "location_factor": {
             "min": 0.9,
@@ -531,7 +531,7 @@
         }
     },
     {
-        "country": "Cote D'lvory",
+        "country": "Côte d'Ivoire",
         "city": null,
         "location_factor": {
             "min": 0.9,
@@ -1179,7 +1179,7 @@
         }
     },
     {
-        "country": "Netherlands",
+        "country": "The Netherlands",
         "city": null,
         "location_factor": {
             "min": 1.0,
@@ -1260,7 +1260,7 @@
         }
     },
     {
-        "country": "Panarna",
+        "country": "Panama",
         "city": null,
         "location_factor": {
             "min": 0.89,

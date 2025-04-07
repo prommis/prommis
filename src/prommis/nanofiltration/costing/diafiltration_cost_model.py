@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -21,6 +21,7 @@ from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 from idaes.core import declare_process_block_class, register_idaes_currency_units
 from idaes.core.util.constants import Constants
+from idaes.models.costing.SSLW import SSLWCostingData
 
 from prommis.nanofiltration.costing.diafiltration_cost_block import (
     DiafiltrationCostingBlockData,
@@ -440,3 +441,101 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 to_units=blk.costing_package.base_currency
                 / blk.costing_package.base_period,
             )
+
+    def cost_precipitator(
+        blk,
+        precip_volume,
+        precip_headspace=1.2,
+    ):
+        """
+        Costing method for precipitator unit. Assumes these are horizontal vessels
+        made from 1.25 in thick carbon steel, includes platforms and ladders, and each
+        instance is one unit (default args).
+
+        References:
+            residence time:
+                https://www.sciencedirect.com/science/article/pii/S0304386X19309806
+                https://onlinelibrary.wiley.com/doi/full/10.1002/ceat.201700667
+                https://pubs.acs.org/doi/full/10.1021/acs.iecr.1c04876
+                https://www.sciencedirect.com/science/article/pii/S0304386X01002134
+            vessel dimensions:
+                https://www.accessengineeringlibrary.com/content/book/9781260455410/back-matter/appendix1?implicit-login=true
+
+        Args:
+            precip_volume: volume of the precipitator as calculated by the unit model (m3)
+            precip_headaspace: precipitator headspace percentage; default value is 20%
+        """
+
+        # calculate the volume needed
+        blk.volume_capacity = Var(
+            initialize=120,
+            domain=NonNegativeReals,
+            doc="Volume requirement of precipitator vessel",
+            units=units.m**3,
+        )
+
+        @blk.Constraint()
+        def volume_capacity_equation(blk):
+            return blk.volume_capacity == units.convert(
+                (precip_headspace * precip_volume), to_units=units.m**3
+            )
+
+        # include a length and diameter constraint
+        blk.precipitator_diameter = Var(
+            initialize=6,
+            bounds=(1, 12),
+            doc="Diameter of the precipitator vessel",
+            units=units.ft,
+        )
+        blk.precipitator_diameter.fix()
+        blk.precipitator_length = Var(
+            initialize=8,
+            bounds=(3, 10),
+            doc="Length of the precipitator vessel",
+            units=units.ft,
+        )
+
+        @blk.Constraint()
+        def diameter_length_ratio_equation(blk):
+            """
+            Coefficients come from literature source noted in above docstring
+            """
+            return units.convert(blk.precipitator_length, to_units=units.inch) == (
+                units.convert(
+                    (
+                        blk.volume_capacity
+                        - units.convert(
+                            (
+                                2
+                                * (0.954 * units.gal / units.ft**3)
+                                * (
+                                    units.convert(
+                                        blk.precipitator_diameter, to_units=units.inch
+                                    )
+                                    / (12 * units.inch / units.ft)
+                                )
+                                ** 3
+                            ),
+                            to_units=units.m**3,
+                        )
+                    )
+                    / units.convert(
+                        (
+                            (0.0034 * units.gal / units.inch**3)
+                            * units.convert(
+                                blk.precipitator_diameter, to_units=units.inch
+                            )
+                            ** 2
+                        ),
+                        to_units=units.m**2,
+                    ),
+                    to_units=units.inch,
+                )
+            )
+
+        SSLWCostingData.cost_vessel(
+            blk,
+            vertical=False,  # horizontal vessel
+            vessel_diameter=blk.precipitator_diameter,
+            vessel_length=blk.precipitator_length,
+        )

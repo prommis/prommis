@@ -18,18 +18,18 @@ from pyomo.environ import (
     Block,
     Constraint,
     Objective,
-    # Set,
+    Set,
 )
 
 # import sys
 
 # model statistics
-# from idaes.core.util.model_statistics import (
-#     # number_total_constraints,
-#     # number_variables,
-#     # number_unused_variables,
-#     # degrees_of_freedom,
-# )
+from idaes.core.util.model_statistics import (
+    number_total_constraints,
+    number_variables,
+    number_unused_variables,
+    degrees_of_freedom,
+)
 
 from idaes.core.solvers import get_solver
 
@@ -41,7 +41,7 @@ from prommis.superstructures.version2.superstructure_v2 import build_model
 # except KeyError:
 #     gurobi_available = False
 
-solver_available = SolverFactory("conopt").available()
+solver_available = SolverFactory("gurobi").available()
 if solver_available:
     solver = get_solver(solver="gurobi")
 else:
@@ -992,10 +992,10 @@ class TestNPV(object):
 
         assert isinstance(NPV_model.obj, Objective)
 
-        # assert number_variables(NPV_model) == 2821
-        # assert number_total_constraints(NPV_model) == 4020
-        # assert number_unused_variables(NPV_model) == 0
-        # assert degrees_of_freedom(NPV_model) == 890
+        assert number_variables(NPV_model) == 2803
+        assert number_total_constraints(NPV_model) == 4020
+        assert number_unused_variables(NPV_model) == 0
+        assert degrees_of_freedom(NPV_model) == 872
 
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
@@ -1036,6 +1036,12 @@ class TestNPV(object):
         # number of options in each stage
         Options_in_stage = get_common_params["Options_in_stage"]
 
+        # make a list of all options
+        all_opts_list = []
+        for j in RangeSet(numStages):
+            for k in RangeSet(Options_in_stage[j]):
+                all_opts_list.append((j, k))
+
         # dictionary of tracked component retention efficiency for each option
         Option_Eff = get_common_params["Option_Eff"]
 
@@ -1057,94 +1063,214 @@ class TestNPV(object):
         max_dis_by_option = copy.deepcopy(Dis_Rate)
         for key in max_dis_by_option.keys():
             max_dis_by_option[key] = math.ceil(maxFeedEntering / Dis_Rate[key])
+        max_dis_workers = max(max_dis_by_option.values())
 
-        # # disassembly stage is the first stage
-        # J_dis = RangeSet(1)
-        # # set of options in the disassembly stage
-        # K_dis = RangeSet(Options_in_stage[J_dis])
-        # # set of possible disassembly workers
-        # dis_workers_range = pyo.RangeSet()
+        # yearly operating costs per unit ($/unit*yr)
+        YCU = get_common_params["YCU"]
+
+        # variable costing parameters
+        N_OC_var = get_common_params["N_OC_var"]
+
+        # Profit parameters
+        Profit = get_common_params["Profit"]
+
+        # create dictionary to hold flow values (needed for other tests)
+        yearly_F_vals = {
+            key1: {
+                key2: {key3: None for key3 in Tracked_comps}
+                for key2 in RangeSet(numStages - 1)
+            }
+            for key1 in operational_range
+        }
+        yearly_F_in_vals = {
+            key1: {
+                key2: {key3: None for key3 in Tracked_comps} for key2 in all_opts_list
+            }
+            for key1 in operational_range
+        }
+        yearly_F_out_vals = {
+            key1: {
+                key2: {key3: None for key3 in Tracked_comps} for key2 in all_opts_list
+            }
+            for key1 in operational_range
+        }
 
         for t in operational_range:
             # test P_entering for each year
-            assert pytest.approx(Feed_entering[t], abs=1e-8) == value(
-                NPV_model.plantYear[t].P_entering
+            assert value(NPV_model.plantYear[t].P_entering) == pytest.approx(
+                Feed_entering[t], rel=1e-8
             )
 
             # test all F for each year
             for j in RangeSet(numStages - 1):
                 for c in Tracked_comps:
-                    assert pytest.approx(
+                    F_val = (
                         Feed_entering[t]
                         * Prod_comp_mass[c]
                         * math.prod(
                             Option_Eff[opt_stages[stage]][c]
                             for stage in RangeSet(0, j - 1)
-                        ),
-                        abs=1e-8,
-                    ) == value(NPV_model.plantYear[t].F[j, c])
+                        )
+                    )
+                    assert value(NPV_model.plantYear[t].F[j, c]) == pytest.approx(
+                        F_val,
+                        rel=1e-8,
+                    )
+                    yearly_F_vals[t][j][c] = F_val
 
             # test all F_in for each year
             for j in RangeSet(numStages):
                 for k in RangeSet(Options_in_stage[j]):
                     for c in Tracked_comps:
+                        F_in_val = 0
                         # flow is zero for all stages that aren't part of the optimal process
                         if (j, k) not in opt_stages:
-                            assert (
-                                pytest.approx(
-                                    value(NPV_model.plantYear[t].F_in[j, k, c]),
-                                    abs=1e-8,
-                                )
-                                == 0
-                            )
+                            F_in_val = 0
+                            assert value(
+                                NPV_model.plantYear[t].F_in[j, k, c]
+                            ) == pytest.approx(F_in_val, rel=1e-8)
+                            yearly_F_in_vals[t][(j, k)][c] = F_in_val
 
                         else:
                             if j == 1:
-                                assert pytest.approx(
-                                    Feed_entering[t] * Prod_comp_mass[c],
-                                    abs=1e-8,
-                                ) == value(NPV_model.plantYear[t].F_in[j, k, c])
+                                F_in_val = Feed_entering[t] * Prod_comp_mass[c]
+                                assert value(
+                                    NPV_model.plantYear[t].F_in[j, k, c]
+                                ) == pytest.approx(F_in_val, rel=1e-8)
+                                yearly_F_in_vals[t][(j, k)][c] = F_in_val
 
                             else:
-                                assert pytest.approx(
+                                F_in_val = (
                                     Feed_entering[t]
                                     * Prod_comp_mass[c]
                                     * math.prod(
                                         Option_Eff[opt_stages[stage]][c]
                                         for stage in RangeSet(0, j - 2)
-                                    ),
-                                    abs=1e-8,
-                                ) == value(NPV_model.plantYear[t].F_in[j, k, c])
+                                    )
+                                )
+                                assert value(
+                                    NPV_model.plantYear[t].F_in[j, k, c]
+                                ) == pytest.approx(F_in_val, rel=1e-8)
+                                yearly_F_in_vals[t][(j, k)][c] = F_in_val
 
             # test all F_out for each year
             for j in RangeSet(numStages):
                 for k in RangeSet(Options_in_stage[j]):
                     for c in Tracked_comps:
+                        F_out_val = 0
                         # flow is zero for all stages that aren't part of the optimal process
                         if (j, k) not in opt_stages:
-                            assert (
-                                pytest.approx(
-                                    value(NPV_model.plantYear[t].F_out[j, k, c]),
-                                    abs=1e-8,
-                                )
-                                == 0
-                            )
+                            F_out_val = 0
+                            assert value(
+                                NPV_model.plantYear[t].F_out[j, k, c]
+                            ) == pytest.approx(F_out_val, rel=1e-8)
+                            yearly_F_out_vals[t][(j, k)][c] = F_out_val
 
                         else:
-                            assert pytest.approx(
+                            F_out_val = (
                                 Feed_entering[t]
                                 * Prod_comp_mass[c]
                                 * math.prod(
                                     Option_Eff[opt_stages[stage]][c]
                                     for stage in RangeSet(0, j - 1)
-                                ),
-                                abs=1e-8,
-                            ) == value(NPV_model.plantYear[t].F_out[j, k, c])
+                                )
+                            )
+                            assert value(
+                                NPV_model.plantYear[t].F_out[j, k, c]
+                            ) == pytest.approx(F_out_val, rel=1e-8)
+                            yearly_F_out_vals[t][(j, k)][c] = F_out_val
 
         # test binary variables
         for j in RangeSet(numStages):
             for k in RangeSet(Options_in_stage[j]):
                 if (j, k) in opt_stages:
-                    assert pytest.approx(value(NPV_model.binOpt[j, k]), abs=1e-8) == 1
+                    assert value(NPV_model.binOpt[j, k]) == pytest.approx(1, rel=1e-8)
                 else:
-                    assert pytest.approx(value(NPV_model.binOpt[j, k]), abs=1e-8) == 0
+                    assert value(NPV_model.binOpt[j, k]) == pytest.approx(0, rel=1e-8)
+
+        # test number of disassembly workers
+        j_dis = 1
+        for k_dis in RangeSet(Options_in_stage[j_dis]):
+            for num_worker in RangeSet(max_dis_by_option[j_dis, k_dis]):
+                if (j_dis, k_dis, num_worker) in [(1, 1, 0), (1, 2, 4)]:
+                    assert value(
+                        NPV_model.DisOptWorkers[j_dis, k_dis, num_worker]
+                    ) == pytest.approx(1, rel=1e-8)
+
+                else:
+                    assert value(
+                        NPV_model.DisOptWorkers[j_dis, k_dis, num_worker]
+                    ) == pytest.approx(0, rel=1e-8)
+
+        # test variable cost for each option
+        yearly_tot_OC_var = {
+            key: None for key in operational_range
+        }  # track total operating costs for the next test
+        for t in operational_range:
+            tot_OC_var = 0
+            for j in RangeSet(numStages):
+                for k in RangeSet(Options_in_stage[j]):
+                    elem_OC_var = 0
+                    # checking disassembly stages
+                    if (j, k) == (1, 1):
+                        elem_OC_var = 0
+                        assert value(
+                            NPV_model.plantYear[t].OC_var[(j, k)]
+                        ) == pytest.approx(elem_OC_var, rel=1e-8)
+
+                    elif (j, k) == (1, 2):
+                        elem_OC_var = 4 * YCU[(j, k)]
+                        assert value(
+                            NPV_model.plantYear[t].OC_var[(j, k)]
+                        ) == pytest.approx(elem_OC_var, rel=1e-8)
+                        tot_OC_var += elem_OC_var
+
+                    # checking rest
+                    if j != 1:
+                        if (j, k) not in opt_stages:
+                            elem_OC_var = 0
+                            assert value(
+                                NPV_model.plantYear[t].OC_var[(j, k)]
+                            ) == pytest.approx(elem_OC_var, rel=1e-8)
+
+                        else:
+                            elem_OC_var = (
+                                N_OC_var[(j, k)]["a"]
+                                * Feed_entering[t]
+                                * sum(
+                                    Prod_comp_mass[c]
+                                    * math.prod(
+                                        Option_Eff[opt_stages[stage]][c]
+                                        for stage in RangeSet(0, j - 2)
+                                    )
+                                    for c in Tracked_comps
+                                )
+                                + N_OC_var[(j, k)]["b"]
+                            )
+                            assert value(
+                                NPV_model.plantYear[t].OC_var[(j, k)]
+                            ) == pytest.approx(elem_OC_var, rel=1e-8)
+                            tot_OC_var += elem_OC_var
+
+            yearly_tot_OC_var[t] = tot_OC_var
+
+        # test total yearly variable operating costs
+        for t in operational_range:
+            assert value(NPV_model.plantYear[t].OC_var_total) == pytest.approx(
+                yearly_tot_OC_var[t], rel=1e-8
+            )
+
+        # test profit from each opt in final stage
+        yearly_total_profit = {
+            key: 0 for key in operational_range
+        } # track yearly total profit for next test
+        for t in operational_range:
+            j = 5
+            for k in RangeSet(Options_in_stage[j]):
+                total_profit = sum(yearly_F_out_vals[t][(j, k)][c] * Profit[(j, k)][c] for c in Tracked_comps)
+                assert value(NPV_model.plantYear[t].ProfitOpt[(j, k)]) == pytest.approx(total_profit, rel=1e-8)
+                yearly_total_profit[t] += total_profit
+
+        # test total yearly profit
+        for t in operational_range:
+            assert value(NPV_model.plantYear[t].Profit) == pytest.approx(yearly_total_profit[t])

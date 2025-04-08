@@ -1,4 +1,4 @@
-# import copy
+import copy
 import math
 
 # for throwing errors
@@ -13,7 +13,7 @@ from idaes.core.util.model_statistics import (
     degrees_of_freedom,
 )
 
-# from idaes.core.util import DiagnosticsToolbox
+from idaes.core.util import DiagnosticsToolbox
 
 from idaes.core.solvers import get_solver
 
@@ -763,17 +763,12 @@ m.binOpt.display()
 
 m.display()
 
-print(number_variables(m))
-print(number_total_constraints(m))
-print(number_unused_variables(m))
-print(degrees_of_freedom(m))
-
-# dt = DiagnosticsToolbox(m)
+dt = DiagnosticsToolbox(m)
 
 # dt.report_structural_issues()
 # dt.display_underconstrained_set()
 
-# dt.display_unused_variables()
+dt.display_unused_variables()
 
 solver = pyo.SolverFactory("gurobi")
 solver.options["NumericFocus"] = 2
@@ -934,7 +929,7 @@ print(got_solver)
 
 # m.binOpt.display()
 
-# m.DisOptWorkers.display()
+m.DisOptWorkers.display()
 
 # numWorkers = {
 #     (1, 1): 1,
@@ -961,3 +956,55 @@ print(got_solver)
 # }
 
 # print(math.ceil(max(numWorkers.values())))
+
+# print(number_variables(m))
+# print(number_total_constraints(m))
+# print(number_unused_variables(m))
+# print(degrees_of_freedom(m))
+
+
+
+# calculate feed entering parameter based on yearly available feedstock and collection rate
+Feed_entering = copy.deepcopy(Available_feed)
+for key in Feed_entering:
+    Feed_entering[key] = Available_feed[key] * CR
+
+# calculate max feed that can enter the plant
+maxFeedEntering = max(Feed_entering.values())
+
+
+Dis_Rate = {
+    (1, 1): 7868,
+    (1, 2): 52453,
+}
+
+# calculate max disassembly units possible for each option
+max_dis_by_option = copy.deepcopy(Dis_Rate)
+for key in max_dis_by_option.keys():
+    max_dis_by_option[key] = math.ceil(maxFeedEntering / Dis_Rate[key])
+max_dis_workers = max(max_dis_by_option.values())
+
+# disassembly stage is the first stage
+j_dis = 1
+J_dis = pyo.RangeSet(j_dis)
+
+# set of options in the disassembly stage
+K_dis = pyo.RangeSet(Options_in_stage[j_dis])
+
+# set of max possible disassembly workers
+dis_workers_range = pyo.RangeSet(0, max_dis_workers)
+jkw_dis = []  # for declaring bin vars
+for k_dis in K_dis:
+    for w_dis in pyo.RangeSet(0, max_dis_by_option[j_dis, k_dis]):
+        jkw_dis.append((j_dis, k_dis, w_dis))
+DisOptWorkersSet = pyo.Set(
+    within=J_dis * K_dis * dis_workers_range, initialize=jkw_dis
+)
+
+DisOptWorkersSet.display()
+
+# for dis_opt_worker in DisOptWorkersSet:
+#     print(dis_opt_worker)
+
+for t in pyo.RangeSet(2025, 2038):
+    print(pyo.value(m.plantYear[t].OC_var_total))

@@ -1,24 +1,18 @@
-#################################################################################
-# The Institute for the Design of Advanced Energy Systems Integrated Platform
-# Framework (IDAES IP) was produced under the DOE Institute for the
-# Design of Advanced Energy Systems (IDAES).
-#
-# Copyright (c) 2018-2023 by the software owners: The Regents of the
-# University of California, through Lawrence Berkeley National Laboratory,
-# National Technology & Engineering Solutions of Sandia, LLC, Carnegie Mellon
-# University, West Virginia University Research Corporation, et al.
-# All rights reserved.  Please see the files COPYRIGHT.md and LICENSE.md
-# for full copyright and license information.
-#################################################################################
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
 """
-Test property package. Based on WaterTap documentation.
+Property package for the Critical Minerals Innovation Hub process.
 """
 
 # Import Pyomo units
 from pyomo.environ import units as pyunits
 
 # Import IDAES cores
-from idaes.core import (  # Cation,; Anion,; Apparent,
+from idaes.core import (
     AqueousPhase,
     Component,
     LiquidPhase,
@@ -34,7 +28,7 @@ from idaes.models.properties.modular_properties.pure.Perrys import Perrys
 from idaes.models.properties.modular_properties.pure.RPP4 import RPP4
 from idaes.models.properties.modular_properties.state_definitions import FpcTP
 
-# all solutes heat capacities approximates as 75000 kJ/kmol/K.
+# all ion heat capacities approximated as 75000 kJ/kmol/K.
 
 # ---------------------------------------------------------------------
 

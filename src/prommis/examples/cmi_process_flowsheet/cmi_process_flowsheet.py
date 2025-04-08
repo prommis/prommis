@@ -717,7 +717,6 @@ def solve_system(m, tee=False):
     """
     Args:
         m: pyomo model
-        solver: optimization solver
         tee: boolean indicator to stream IPOPT solution
     """
     # Solve flowsheet

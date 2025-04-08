@@ -719,7 +719,7 @@ def build_model(
         m.GE_cons.add(
             expr=m.GE[t]
             == (m.Rev[t] - m.OC_fixed[t] - m.OC_var[t] - m.OH[t])
-            * (1 + i_OC_esc) ** (t - 2023)
+            * (1 + i_OC_esc) ** (t - 2024)
         )
 
         # calculate the cash flow

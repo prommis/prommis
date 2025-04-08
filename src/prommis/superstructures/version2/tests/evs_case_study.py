@@ -757,38 +757,24 @@ m = build_model(
     },
 )
 
-m.obj.display()
-m.binOpt.display()
+# m.obj.display()
+# m.binOpt.display()
 # m.GWP.display()
 
-m.display()
+# m.display()
 
-dt = DiagnosticsToolbox(m)
+# dt = DiagnosticsToolbox(m)
 
 # dt.report_structural_issues()
 # dt.display_underconstrained_set()
 
-dt.display_unused_variables()
+# dt.display_unused_variables()
 
-solver = pyo.SolverFactory("gurobi")
+# solver = pyo.SolverFactory("gurobi")
+solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2
 
-results = pyo.SolverFactory("gurobi").solve(m, tee=False)
-
-# print(type(m.plantYear[2038].F))
-
-print(type(m.plantYear))
-
-print(type(m.plantYear[2038].P_entering))
-print(type(m.plantYear[2038].init_flow_cons))
-
-print(isinstance(m.plantYear[2038].P_entering, pyo.Var))
-
-print(isinstance(m.plantYear[2038].F, pyo.Var))
-
-print(isinstance(m.plantYear, pyo.Block))
-
-print(isinstance(m.plantYear[2038].init_flow_cons, pyo.Constraint))
+results = solver.solve(m, tee=False)
 
 # print(isinstance())
 
@@ -1008,3 +994,15 @@ DisOptWorkersSet.display()
 
 for t in pyo.RangeSet(2025, 2038):
     print(pyo.value(m.plantYear[t].OC_var_total))
+
+# m.bin_workers.display()
+# m.total_workers.display()
+# m.COL_Total.display()
+# m.BEC_max_flow.display()
+m.BEC.display()
+# m.TPC.display()
+# m.Total_TPC.display()
+# m.TOC.display()
+# m.node_TOC.display()
+# m.CF.display()
+# m.TOC_exp.display()

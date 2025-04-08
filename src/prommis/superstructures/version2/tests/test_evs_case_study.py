@@ -1011,11 +1011,15 @@ class TestNPV(object):
     @pytest.mark.component
     def test_solution(self, NPV_model, get_common_params):
         # start of plant production
-        prod_start = get_common_params["plant_start"] + 1
+        plant_start = get_common_params["plant_start"]
+        prod_start = plant_start + 1
         # final year plant is in production
+        plant_lifetime = get_common_params["plant_lifetime"]
         plant_end = (
-            get_common_params["plant_start"] + get_common_params["plant_lifetime"] - 1
+            plant_start + plant_lifetime - 1
         )
+        # total plant lifetime
+        plant_life_range = RangeSet(plant_start, plant_end)
         # plant operational period
         operational_range = RangeSet(prod_start, plant_end)
 
@@ -1059,11 +1063,16 @@ class TestNPV(object):
         # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
         Dis_Rate = get_common_params["Dis_Rate"]
 
+        # number of workers
+        num_workers = get_common_params["num_workers"]
+
         # calculate max disassembly units possible for each option
         max_dis_by_option = copy.deepcopy(Dis_Rate)
         for key in max_dis_by_option.keys():
             max_dis_by_option[key] = math.ceil(maxFeedEntering / Dis_Rate[key])
         max_dis_workers = max(max_dis_by_option.values())
+        # calculate max possible workers for the process
+        max_workers = max_dis_workers + numStages * math.ceil(max(num_workers.values()))
 
         # yearly operating costs per unit ($/unit*yr)
         YCU = get_common_params["YCU"]
@@ -1073,6 +1082,13 @@ class TestNPV(object):
 
         # Profit parameters
         Profit = get_common_params["Profit"]
+
+        # cost escalation params
+        i_OC_esc = get_common_params["i_OC_esc"] # for operating costs
+        i_CAP_esc = get_common_params["i_CAP_esc"] # for capital costs
+        TOC_factor = get_common_params["TOC_factor"] # factor for calculating TOC from TPC
+        f_exp = get_common_params["f_exp"] # capital expenditure breakdown by year
+        ATWACC = get_common_params["ATWACC"] # discount rate
 
         # create dictionary to hold flow values (needed for other tests)
         yearly_F_vals = {
@@ -1203,9 +1219,11 @@ class TestNPV(object):
                     ) == pytest.approx(0, rel=1e-8)
 
         # test variable cost for each option
-        yearly_tot_OC_var = {
-            key: None for key in operational_range
+        OC_var = {
+            key: None for key in plant_life_range
         }  # track total operating costs for the next test
+        OC_var[plant_start] = 0 # operations don't start until second year
+        
         for t in operational_range:
             tot_OC_var = 0
             for j in RangeSet(numStages):
@@ -1252,25 +1270,221 @@ class TestNPV(object):
                             ) == pytest.approx(elem_OC_var, rel=1e-8)
                             tot_OC_var += elem_OC_var
 
-            yearly_tot_OC_var[t] = tot_OC_var
+            OC_var[t] = tot_OC_var
 
         # test total yearly variable operating costs
         for t in operational_range:
             assert value(NPV_model.plantYear[t].OC_var_total) == pytest.approx(
-                yearly_tot_OC_var[t], rel=1e-8
+                OC_var[t], rel=1e-8
             )
 
         # test profit from each opt in final stage
-        yearly_total_profit = {
-            key: 0 for key in operational_range
-        } # track yearly total profit for next test
+        revenue = {
+            key: 0 for key in plant_life_range
+        }  # track yearly total profit for next test
+        revenue[2024] = 0 # operation doesn't start until second year
         for t in operational_range:
             j = 5
             for k in RangeSet(Options_in_stage[j]):
-                total_profit = sum(yearly_F_out_vals[t][(j, k)][c] * Profit[(j, k)][c] for c in Tracked_comps)
-                assert value(NPV_model.plantYear[t].ProfitOpt[(j, k)]) == pytest.approx(total_profit, rel=1e-8)
-                yearly_total_profit[t] += total_profit
+                total_profit = sum(
+                    yearly_F_out_vals[t][(j, k)][c] * Profit[(j, k)][c]
+                    for c in Tracked_comps
+                )
+                assert value(NPV_model.plantYear[t].ProfitOpt[(j, k)]) == pytest.approx(
+                    total_profit, rel=1e-8
+                )
+                revenue[t] += total_profit
 
         # test total yearly profit
         for t in operational_range:
-            assert value(NPV_model.plantYear[t].Profit) == pytest.approx(yearly_total_profit[t])
+            assert value(NPV_model.plantYear[t].Profit) == pytest.approx(
+                revenue[t]
+            )
+
+        # test number of workers for each option
+        for j in RangeSet(numStages):
+            for k in RangeSet(Options_in_stage[j]):
+                elem = (j, k)
+
+                if elem not in opt_stages:
+                    assert value(NPV_model.workers[elem]) == pytest.approx(
+                        0, rel=1e-8
+                    )
+
+                elif elem == (1, 2):
+                    assert value(NPV_model.workers[elem]) == pytest.approx(0, rel=1e-8)
+
+                elif elem == (2, 2):
+                    assert value(NPV_model.workers[elem]) == pytest.approx(
+                        num_workers[elem], rel=1e-8
+                    )
+
+                elif elem == (3, 6):
+                    assert value(NPV_model.workers[elem]) == pytest.approx(
+                        num_workers[elem], rel=1e-8
+                    )
+
+                elif elem == (4, 4):
+                    assert value(NPV_model.workers[elem]) == pytest.approx(
+                        num_workers[elem], rel=1e-8
+                    )
+
+                elif elem == (5, 4):
+                    assert value(NPV_model.workers[elem]) == pytest.approx(
+                        num_workers[elem], rel=1e-8
+                    )
+
+        # test number of workers
+        for i in RangeSet(0, max_workers):
+            if i == 3:
+                assert value(NPV_model.bin_workers[i]) == pytest.approx(1, rel=1e-8)
+
+            else:
+                assert value(NPV_model.bin_workers[i]) == pytest.approx(0, rel=1e-8)
+
+        # test total workers
+        assert value(NPV_model.total_workers) == pytest.approx(3, rel=1e-8)
+
+        # test cost of labor (COL)
+        COL_total = 916800
+        assert value(NPV_model.COL_Total) == pytest.approx(COL_total, rel=1e-8)
+
+        # test max flow vars and BECs
+        for j in RangeSet(1, numStages):
+            for k in RangeSet(Options_in_stage[j]):
+                elem = (j, k)
+
+                if j == 1:
+                    if elem == (1, 1):
+                        assert value(NPV_model.BEC[elem]) == pytest.approx(0, rel=1e-8)
+                    else:
+                        assert value(NPV_model.BEC[elem]) == pytest.approx(800000, rel=1e-8)
+
+                else:
+                    if elem not in opt_stages:
+                        assert value(NPV_model.BEC_max_flow[elem]) == pytest.approx(0, rel=1e-8)
+                        assert value(NPV_model.BEC[elem]) == pytest.approx(0, rel=1e-8)
+
+                    elif elem == (2, 2):
+                        assert value(NPV_model.BEC_max_flow[elem]) == pytest.approx(509341.5, rel=1e-8)
+                        assert value(NPV_model.BEC[elem]) == pytest.approx(33314.620108, rel=1e-8)
+
+                    elif elem == (3, 6):
+                        assert value(NPV_model.BEC_max_flow[elem]) == pytest.approx(509341.5, rel=1e-8)
+                        assert value(NPV_model.BEC[elem]) == pytest.approx(779243.910789, rel=1e-8)
+
+                    elif elem == (4, 4):
+                        assert value(NPV_model.BEC_max_flow[elem]) == pytest.approx(299224.3790295013, rel=1e-8)
+                        assert value(NPV_model.BEC[elem]) == pytest.approx(0, rel=1e-8)
+
+                    elif elem == (5, 4):
+                        assert value(NPV_model.BEC_max_flow[elem]) == pytest.approx(299224.3790295013, rel=1e-8)
+                        assert value(NPV_model.BEC[elem]) == pytest.approx(463894.9067, rel=1e-8)
+
+        # test TPC
+        for j in RangeSet(numStages):
+            for k in RangeSet(Options_in_stage[j]):
+                elem = (j, k)
+
+                if elem not in opt_stages:
+                    assert value(NPV_model.TPC[elem]) == pytest.approx(0, rel=1e-8)
+
+                elif elem == (1, 2):
+                    assert value(NPV_model.TPC[elem]) == pytest.approx(800000, rel=1e-8)
+
+                elif elem == (2, 2):
+                    assert value(NPV_model.TPC[elem]) == pytest.approx(98944.4217, rel=1e-8)
+
+                elif elem == (3, 6):
+                    assert value(NPV_model.TPC[elem]) == pytest.approx(2314354.415, rel=1e-8)
+
+                elif elem == (4, 4):
+                    assert value(NPV_model.TPC[elem]) == pytest.approx(0, rel=1e-8)
+
+                elif elem == (5, 4):
+                    assert value(NPV_model.TPC[elem]) == pytest.approx(1377767.8727, rel=1e-8)
+
+        # test total TPC
+        Total_TPC = 4591066.70954
+        assert value(NPV_model.Total_TPC) == pytest.approx(Total_TPC, rel=1e-8)
+
+        # test TOC
+        TOC = Total_TPC * TOC_factor
+        assert value(NPV_model.TOC) == pytest.approx(TOC, rel=1e-8)
+
+        # test node TOCs
+        for j in RangeSet(numStages):
+            for k in RangeSet(Options_in_stage[j]):
+                elem = (j, k)
+
+                if elem not in opt_stages:
+                    assert value(NPV_model.node_TOC[elem]) == pytest.approx(0, rel=1e-8)
+
+                elif elem == (1, 2):
+                    assert value(NPV_model.node_TOC[elem]) == pytest.approx(941600, rel=1e-8)
+
+                elif elem == (2, 2):
+                    assert value(NPV_model.node_TOC[elem]) == pytest.approx(116457.58436, rel=1e-8)
+
+                elif elem == (3, 6):
+                    assert value(NPV_model.node_TOC[elem]) == pytest.approx(2723995.1465, rel=1e-8)
+
+                elif elem == (4, 4):
+                    assert value(NPV_model.node_TOC[elem]) == pytest.approx(0, rel=1e-8)
+
+                elif elem == (5, 4):
+                    assert value(NPV_model.node_TOC[elem]) == pytest.approx(1621632.7863, rel=1e-8)
+
+        # test TOC expenditure
+        TOC_exp = { # track yearly TOC_expenditure
+            key: None for key in plant_life_range
+        }
+        for t in plant_life_range:
+            if t < plant_start + 3: # capital expended over first three years
+                TOC_exp[t] = ((1 + i_CAP_esc) ** (t - plant_start)) * f_exp[t - plant_start] * TOC
+            else:
+                TOC_exp[t] = 0
+            
+            assert value(NPV_model.TOC_exp[t]) == pytest.approx(TOC_exp[t], rel=1e-8)
+                
+        # test fixed and variable operating costs, revenue
+        OC_fixed = { # track yearly fixed operating costs
+            key: None for key in plant_life_range
+        }
+        for t in plant_life_range:
+            if t == plant_start:
+                OC_fixed[t] = 0
+                assert value(NPV_model.OC_fixed[t]) == pytest.approx(OC_fixed[t], rel=1e-8)
+                assert value(NPV_model.OC_var[t]) == pytest.approx(OC_var[t], rel=1e-8)
+                assert value(NPV_model.Rev[t]) == pytest.approx(revenue[t], rel=1e-8)
+            else:
+                OC_fixed[t] = 1.55 * COL_total + 0.03 * Total_TPC + 0.01 * revenue[t]
+                assert value(NPV_model.OC_fixed[t]) == pytest.approx(OC_fixed[t], rel=1e-8)
+                assert value(NPV_model.OC_var[t]) == pytest.approx(OC_var[t], rel=1e-8)
+                assert value(NPV_model.Rev[t]) == pytest.approx(revenue[t], rel=1e-8)
+
+        # test plant overhead, gross earnings, and cash flows
+        OH = { # track yearly plant overhead
+            key: None for key in plant_life_range
+        }
+        GE = { # track yearly gross earnings
+            key: None for key in plant_life_range
+        }
+        CF = { # track yearly cash flows
+            key: None for key in plant_life_range
+        }
+
+        for t in plant_life_range:
+            OH[t] = 0.2 * (OC_fixed[t] + OC_var[t])
+            GE[t] = (revenue[t] - OC_fixed[t] - OC_var[t] - OH[t]) * (1 + i_OC_esc) ** (t - 2024)
+            CF[t] = GE[t] - TOC_exp[t]
+
+            assert value(NPV_model.OH[t]) == pytest.approx(OH[t], rel=1e-8)
+            assert value(NPV_model.GE[t]) == pytest.approx(GE[t], rel=1e-8)
+            assert value(NPV_model.CF[t]) == pytest.approx(CF[t], rel=1e-8)
+
+        # test NPV objective
+        NPV = sum(CF[t] / ((1 + ATWACC) ** (t - plant_start)) for t in plant_life_range)
+        assert value(NPV_model.obj) == pytest.approx(NPV, rel=1e-8)
+
+

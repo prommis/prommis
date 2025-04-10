@@ -28,6 +28,7 @@ from pyomo.environ import (
     TransformationFactory,
     floor,
     log10,
+    value,
 )
 from pyomo.network import Arc
 
@@ -74,29 +75,29 @@ def main():
     add_pressure_constraint(m)
     solve_model(m, solver)
     m.fs.unit.report()
-    print("Optimal NF feed pressure (Bar)", m.fs.pump.outlet.pressure[0].value / 1e5)
-    print("Optimal area (m2)", m.fs.unit.area.value)
+    print("Optimal NF feed pressure (Bar)", value(m.fs.pump.outlet.pressure[0]) / 1e5)
+    print("Optimal area (m2)", value(m.fs.unit.area))
     print(
         "Optimal NF vol recovery (%)",
-        m.fs.unit.recovery_vol_phase[0.0, "Liq"].value * 100,
+        value(m.fs.unit.recovery_vol_phase[0.0, "Liq"]) * 100,
     )
     print(
         "Optimal Li rejection (%)",
-        m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"].value * 100,
+        value(m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"]) * 100,
     )
     print(
         "Optimal Mg rejection (%)",
-        m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Mg_2+"].value * 100,
+        value(m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Mg_2+"]) * 100,
     )
     print(
         "Feed Mg:Li ratio (mass)",
-        (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
-        / (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
+        (value(m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"]) / 0.024)
+        / (value(m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"]) / 0.0069),
     )
     print(
         "Permeate Mg:Li ratio (mass)",
-        (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
-        / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
+        (value(m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"]) / 0.024)
+        / (value(m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"]) / 0.0069),
     )
 
     return m
@@ -380,7 +381,7 @@ def set_nf_feed_scaling(blk):
     """
     _add = 0
     for i in blk.feed.properties[0].flow_mol_phase_comp:
-        scale = calculate_scale(blk.feed.properties[0].flow_mol_phase_comp[i].value)
+        scale = calculate_scale(value(blk.feed.properties[0].flow_mol_phase_comp[i]))
         print(f"{i} flow_mol_phase_comp scaling factor = {10**(scale+_add)}")
         blk.properties.set_default_scaling(
             "flow_mol_phase_comp", 10 ** (scale + _add), index=i

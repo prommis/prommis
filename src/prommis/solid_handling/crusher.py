@@ -62,7 +62,7 @@ Variable         Name   Notes
 """
 
 from functools import partial
-from pyomo.environ import Var, log, Constraint, units as pyunits
+from pyomo.environ import Var, log, Constraint, units as pyunits, value
 from pyomo.common.config import ConfigValue, ConfigDict, In
 from idaes.core import (
     declare_process_block_class,
@@ -214,7 +214,7 @@ see property package for documentation.}""",
     def _get_performance_contents(self, time_point=0):
         # Report
         var_dict = {
-            "Work Required (W)": self.work[time_point].value,
+            "Work Required (W)": value(self.work[time_point]),
         }
         return {"vars": var_dict}
 

@@ -6,7 +6,6 @@
 #####################################################################################################
 import pytest
 
-
 try:
     # NOTE attempting to import watertap here ensures that watertap has been imported
     # (if available) before any test file is run

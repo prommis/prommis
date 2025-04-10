@@ -3500,9 +3500,9 @@ def test_REE_costing_multipleaccountssameparameter():
     assert value(m.fs.CS_crusher.costing.bare_erected_cost["1.3"]) == pytest.approx(
         2.5122, rel=1e-4
     )
-    assert value(m.fs.CS_roll_crusher.costing.bare_erected_cost["1.5"]) == pytest.approx(
-        0.32769, rel=1e-4
-    )
+    assert value(
+        m.fs.CS_roll_crusher.costing.bare_erected_cost["1.5"]
+    ) == pytest.approx(0.32769, rel=1e-4)
     assert value(m.fs.CS_crusher.costing.bare_erected_cost["1.5"]) == pytest.approx(
         0.32769, rel=1e-4
     )
@@ -3582,9 +3582,9 @@ def test_REE_costing_additionalcostingparams_newaccount():
     dt.assert_no_numerical_warnings()
 
     # adding a check just to make sure everything works as expected
-    assert value(m.fs.CS_jaw_crusher.costing.bare_erected_cost[
-        "1.3new"
-    ]) == pytest.approx(2.5122, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3new"]
+    ) == pytest.approx(2.5122, rel=1e-4)
 
 
 @pytest.mark.component
@@ -3806,34 +3806,34 @@ def test_REE_costing_scaledownparallelequip():
     dt.assert_no_numerical_warnings()
 
     # base case
-    assert value(m.fs.CS_jaw_crusher_1.costing.bare_erected_cost[
-        "1.3"
-    ]) == pytest.approx(1.0000, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_1.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(1.0000, rel=1e-4)
 
     # only one unit, parallel doesn't change result
-    assert value(m.fs.CS_jaw_crusher_2.costing.bare_erected_cost[
-        "1.3"
-    ]) == pytest.approx(1.0000, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_2.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(1.0000, rel=1e-4)
 
     # same capacity over two units should be slightly less expensive than one unit
-    assert value(m.fs.CS_jaw_crusher_3.costing.bare_erected_cost[
-        "1.3"
-    ]) == pytest.approx(0.84095, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_3.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(0.84095, rel=1e-4)
 
     # two units with base case capacity should be double the cost
-    assert value(m.fs.CS_jaw_crusher_4.costing.bare_erected_cost[
-        "1.3"
-    ]) == pytest.approx(2.0000, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_4.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(2.0000, rel=1e-4)
 
     # same capacity over five units should be much less expensive than one unit
-    assert value(m.fs.CS_jaw_crusher_5.costing.bare_erected_cost[
-        "1.3"
-    ]) == pytest.approx(0.66878, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_5.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(0.66878, rel=1e-4)
 
     # five units with base case capacity should be five times the cost
-    assert value(m.fs.CS_jaw_crusher_6.costing.bare_erected_cost[
-        "1.3"
-    ]) == pytest.approx(5.0000, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_6.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(5.0000, rel=1e-4)
 
 
 @pytest.mark.unit
@@ -4654,14 +4654,14 @@ def test_REE_costing_variableOM_defaults():
         1.1388, rel=1e-4
     )
     assert value(m.fs.costing.plant_overhead_cost[0]) == pytest.approx(1.1077, rel=1e-4)
-    assert value(m.fs.costing.other_variable_costs[0]) == pytest.approx(0.0000, abs=1e-4)
+    assert value(m.fs.costing.other_variable_costs[0]) == pytest.approx(
+        0.0000, abs=1e-4
+    )
     assert value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
     assert value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
         0.0000, abs=1e-4
     )
-    assert value(m.fs.costing.additional_waste_cost) == pytest.approx(
-        0.0000, abs=1e-4
-    )
+    assert value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
 
 
 @pytest.mark.component
@@ -4741,14 +4741,14 @@ def test_REE_costing_variableOM_steadystateflowsheet():
         1.1388, rel=1e-4
     )
     assert value(m.fs.costing.plant_overhead_cost[0]) == pytest.approx(1.1077, rel=1e-4)
-    assert value(m.fs.costing.other_variable_costs[0]) == pytest.approx(0.0000, abs=1e-4)
+    assert value(m.fs.costing.other_variable_costs[0]) == pytest.approx(
+        0.0000, abs=1e-4
+    )
     assert value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
     assert value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
         0.0000, abs=1e-4
     )
-    assert value(m.fs.costing.additional_waste_cost) == pytest.approx(
-        0.0000, abs=1e-4
-    )
+    assert value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
 
 
 @pytest.mark.unit
@@ -5344,9 +5344,7 @@ def test_REE_costing_recovery(recovery_rate_units, expectation):
             254324, rel=1e-4
         )
         assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-        assert value(m.fs.costing.cost_of_recovery) == pytest.approx(
-            29.6178, rel=1e-4
-        )
+        assert value(m.fs.costing.cost_of_recovery) == pytest.approx(29.6178, rel=1e-4)
         assert value(m.fs.costing.additional_cost_of_recovery) == pytest.approx(
             0.0000, abs=1e-4
         )
@@ -6494,14 +6492,14 @@ def test_REE_costing_consider_taxes():
         1.1388, rel=1e-4
     )
     assert value(m.fs.costing.plant_overhead_cost[0]) == pytest.approx(1.1077, rel=1e-4)
-    assert value(m.fs.costing.other_variable_costs[0]) == pytest.approx(0.0000, abs=1e-4)
+    assert value(m.fs.costing.other_variable_costs[0]) == pytest.approx(
+        0.0000, abs=1e-4
+    )
     assert value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
     assert value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
         0.0000, abs=1e-4
     )
-    assert value(m.fs.costing.additional_waste_cost) == pytest.approx(
-        0.0000, abs=1e-4
-    )
+    assert value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
     assert value(m.fs.costing.income_tax) == pytest.approx(5.303479, abs=1e-4)
     assert value(m.fs.costing.net_tax_owed) == pytest.approx(2.709606, abs=1e-4)
     assert value(m.fs.costing.pv_taxes) == pytest.approx(-17.33163, abs=1e-4)

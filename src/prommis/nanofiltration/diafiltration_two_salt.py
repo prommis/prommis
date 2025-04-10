@@ -17,6 +17,8 @@ Configuration Arguments
 
 The Two-Salt Diafiltration model requires a property package that includes the moles of dissociated ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in solution. 
 
+There are three arguments with default values: the membrane width (``membrane_width``), the membrane length (``membrane_length``), and the applied pressure (`applied_pressure``). To run a simulation (with zero degrees of freedom), these variables must be fixed. Default values of :math:`1 m`, :math:`100 m`, and :math:`10 bar`, respectively, are provided if not specified by the user.
+
 Additionally, there are two required arguments, ``NFEx`` and ``NFEz``, to specfiy the desired number of finite elements across the width and thickness of the membrane, respectively.
 
 Degrees of Freedom

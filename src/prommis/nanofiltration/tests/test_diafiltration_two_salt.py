@@ -22,6 +22,7 @@ from pyomo.dae import ContinuousSet, DerivativeVar
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.model_statistics import degrees_of_freedom
 
 import pytest
 
@@ -44,12 +45,20 @@ def diafiltration_two_salt():
         NFEz=5,
     )
 
+    assert degrees_of_freedom(m.fs.unit) == 3
+
+    m.fs.unit.membrane_width.fix(1)
+    m.fs.unit.membrane_length.fix(100)
+    m.fs.unit.applied_pressure.fix(10)
+
+    assert degrees_of_freedom(m.fs.unit) == 0
+
     return m
 
 
 @pytest.mark.unit
 def test_config(diafiltration_two_salt):
-    assert len(diafiltration_two_salt.fs.unit.config) == 6
+    assert len(diafiltration_two_salt.fs.unit.config) == 9
 
     assert not diafiltration_two_salt.fs.unit.config.dynamic
     assert not diafiltration_two_salt.fs.unit.config.has_holdup
@@ -58,6 +67,9 @@ def test_config(diafiltration_two_salt):
         diafiltration_two_salt.fs.unit.config.property_package
         is diafiltration_two_salt.fs.properties
     )
+    assert diafiltration_two_salt.fs.unit.config.membrane_width is 1
+    assert diafiltration_two_salt.fs.unit.config.membrane_length is 100
+    assert diafiltration_two_salt.fs.unit.config.applied_pressure is 10
     assert diafiltration_two_salt.fs.unit.config.NFEx is 5
     assert diafiltration_two_salt.fs.unit.config.NFEz is 5
 
@@ -68,15 +80,6 @@ class TestDiafiltrationTwoSalt(object):
     def test_build(self, diafiltration_two_salt):
         assert isinstance(diafiltration_two_salt.fs.unit.membrane_thickness, Param)
         assert value(diafiltration_two_salt.fs.unit.membrane_thickness) == 1e-7
-
-        assert isinstance(diafiltration_two_salt.fs.unit.membrane_width, Param)
-        assert value(diafiltration_two_salt.fs.unit.membrane_width) == 1
-
-        assert isinstance(diafiltration_two_salt.fs.unit.membrane_length, Param)
-        assert value(diafiltration_two_salt.fs.unit.membrane_length) == 100
-
-        assert isinstance(diafiltration_two_salt.fs.unit.applied_pressure, Param)
-        assert value(diafiltration_two_salt.fs.unit.applied_pressure) == 10
 
         assert isinstance(diafiltration_two_salt.fs.unit.membrane_permeability, Param)
         assert value(diafiltration_two_salt.fs.unit.membrane_permeability) == 0.01
@@ -156,6 +159,9 @@ class TestDiafiltrationTwoSalt(object):
             Constraint,
         )
 
+        assert isinstance(diafiltration_two_salt.fs.unit.membrane_width, Var)
+        assert isinstance(diafiltration_two_salt.fs.unit.membrane_length, Var)
+        assert isinstance(diafiltration_two_salt.fs.unit.applied_pressure, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.volume_flux_water, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.mass_flux_lithium, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.mass_flux_cobalt, Var)

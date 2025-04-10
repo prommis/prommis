@@ -15,14 +15,19 @@ This multi-component model for the diafiltration membrane model is a two-salt sy
 Configuration Arguments
 -----------------------
 
-The two-salt diafiltration model requires a property package that includes the moles of dissociated ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in solution. 
+The Two-Salt Diafiltration model requires a property package that includes the moles of dissociated ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in solution. 
 
 Additionally, there are two required arguments, ``NFEx`` and ``NFEz``, to specfiy the desired number of finite elements across the width and thickness of the membrane, respectively.
+
+Degrees of Freedom
+------------------
+
+The Two-Salt Diafiltration unit model has three degrees of freedom: the width of the membrane (i.e., the length of the membrane module), the length of the membrane, and the pressure applied to the membrane system.
 
 Model Structure
 ---------------
 
-There are three phases in the two-salt diafiltration model: the retentate, the membrane, and the permeate. The retentate and the permeate are only discretized with respect to :math:`x`, while the membrane is discretized with respect to both :math:`x` and :math:`z`. The resulting system of partial differential algebraic equations is solved by discretizing with the forward finite element method.
+There are three phases in the Two-Salt Diafiltration model: the retentate, the membrane, and the permeate. The retentate and the permeate are only discretized with respect to :math:`x`, while the membrane is discretized with respect to both :math:`x` and :math:`z`. The resulting system of partial differential algebraic equations is solved by discretizing with the forward finite element method.
 
 Assumptions
 -----------
@@ -38,7 +43,7 @@ The transport mechanisms modeled within the membrane are convection, diffusion, 
 Sets
 ----
 
-The two-salt diafiltration model defines the following discrete sets for ions in the system.
+The Two-Salt Diafiltration model defines the following discrete sets for ions in the system.
 
 .. math:: \mathcal{I}=\{\mathrm{Li^+,Co^{2+},Cl^-}\}
 
@@ -60,13 +65,10 @@ Parameter                      Description                                     N
 :math:`c_{\mathrm{Co^{2+}},f}` concentration of cobalt ion in the feed         ``feed_conc_mass_cobalt``         17            :math:`kg m^{-3}` 
 :math:`c_{\mathrm{Li^+},f}`    concentration of lithium ion in the feed        ``feed_conc_mass_lithium``        1.7           :math:`kg m^{-3}` 
 :math:`l`                      thickness of the membrane                       ``membrane_thickness``            1e-07         :math:`m`
-:math:`L`                      length of the membrane                          ``membrane_length``               100           :math:`m`
 :math:`L_p`                    hydraulic permeability of the membrane          ``membrane_permeability``         0.01          :math:`m h^{-1} bar^{-1}`
-:math:`\Delta P`               applied pressure to the membrane                ``applied_pressure``              10            :math:`bar`
 :math:`q_d`                    volumetic flow rate of the diafiltrate          ``diafiltrate_flow_volume``       30            :math:`m^3 h^{-1}`
 :math:`q_f`                    volumetic flow rate of the feed                 ``feed_flow_volume``              100           :math:`m^3 h^{-1}`
 :math:`T`                      temperature of the system                       ``temperature``                   298           :math:`K`
-:math:`w`                      width of the membrane                           ``membrane_width``                1             :math:`m`
 ============================== =============================================== ================================= ============= =========================
 
 Variables
@@ -94,9 +96,12 @@ Variable                             Description                                
 :math:`j_{\mathrm{Co^{2+}}}`         mass flux of cobalt ion across the membrane    ``mass_flux_cobalt``             :math:`kg m^{-2} h^{-1}`  discretized over :math:`x`
 :math:`j_{\mathrm{Li^+}}`            mass flux of lithium ion across the membrane   ``mass_flux_lithium``            :math:`kg m^{-2} h^{-1}`  discretized over :math:`x`
 :math:`J_w`                          water flux across the membrane                 ``volume_flux_water``            :math:`m^3 m^{-2} h^{-1}` discretized over :math:`x`
+:math:`L`                            length of the membrane                         ``membrane_length``              :math:`m`
 :math:`\Delta \pi`                   osmotic pressure of feed-side fluid            ``osmotic_pressure``             :math:`bar`               discretized over :math:`x`
+:math:`\Delta P`                     applied pressure to the membrane               ``applied_pressure``             :math:`bar`
 :math:`q_p`                          volumetic flow rate of the permeate            ``permeate_flow_volume``         :math:`m^3 h^{-1}`        discretized over :math:`x`
 :math:`q_r`                          volumetic flow rate of the retentate           ``retentate_flow_volume``        :math:`m^3 h^{-1}`        discretized over :math:`x`
+:math:`w`                            width of the membrane                          ``membrane_width``               :math:`m`
 ==================================== ============================================== ================================ ========================= ========================================
 
 Derivative Variables
@@ -260,6 +265,27 @@ and used when constructing these,
         ),
     )
     CONFIG.declare(
+        "membrane_width",
+        ConfigValue(
+            default=1,
+            doc="Width of the membrane (x-direction) in meters",
+        ),
+    )
+    CONFIG.declare(
+        "membrane_length",
+        ConfigValue(
+            default=100,
+            doc="Length of the membrane, wound radially in meters",
+        ),
+    )
+    CONFIG.declare(
+        "applied_pressure",
+        ConfigValue(
+            default=10,
+            doc="Pressure applied to membrane in bar",
+        ),
+    )
+    CONFIG.declare(
         "NFEx",
         ConfigValue(
             doc="Number of discretization points in the x-direction",
@@ -297,24 +323,6 @@ and used when constructing these,
             mutable=True,
             units=units.m,
             doc="Thickness of membrane (z-direction)",
-        )
-        self.membrane_width = Param(
-            initialize=1,
-            mutable=True,
-            units=units.m,
-            doc="Width of the membrane (x-direction)",
-        )
-        self.membrane_length = Param(
-            initialize=100,
-            mutable=True,
-            units=units.m,
-            doc="Length of the membrane, wound radially",
-        )
-        self.applied_pressure = Param(
-            initialize=10,
-            mutable=True,
-            units=units.bar,
-            doc="Pressure applied to membrane",
         )
         self.membrane_permeability = Param(
             initialize=0.01,
@@ -372,6 +380,25 @@ and used when constructing these,
         # define length scales
         self.x_bar = ContinuousSet(bounds=(0, 1))
         self.z_bar = ContinuousSet(bounds=(0, 1))
+
+        self.membrane_width = Var(
+            initialize=self.config.membrane_width,
+            units=units.m,
+            domain=NonNegativeReals,
+            doc="Width of the membrane (x-direction)",
+        )
+        self.membrane_length = Var(
+            initialize=self.config.membrane_length,
+            units=units.m,
+            domain=NonNegativeReals,
+            doc="Length of the membrane, wound radially",
+        )
+        self.applied_pressure = Var(
+            initialize=self.config.applied_pressure,
+            units=units.bar,
+            domain=NonNegativeReals,
+            doc="Pressure applied to membrane",
+        )
 
         ## dependent on x_bar
         self.volume_flux_water = Var(

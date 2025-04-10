@@ -45,6 +45,11 @@ def main():
         NFEz=5,
     )
 
+    # fix the degrees of freedom to their default values
+    m.fs.membrane.membrane_width.fix()
+    m.fs.membrane.membrane_length.fix()
+    m.fs.membrane.applied_pressure.fix()
+
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 

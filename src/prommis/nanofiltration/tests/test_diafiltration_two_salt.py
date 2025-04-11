@@ -45,11 +45,19 @@ def diafiltration_two_salt():
         NFEz=5,
     )
 
-    assert degrees_of_freedom(m.fs.unit) == 3
+    assert degrees_of_freedom(m.fs.unit) == 9
 
     m.fs.unit.membrane_width.fix(1)
     m.fs.unit.membrane_length.fix(100)
     m.fs.unit.applied_pressure.fix(10)
+
+    m.fs.unit.feed_flow_volume.fix(100)
+    m.fs.unit.feed_conc_mass_lithium.fix(1.7)
+    m.fs.unit.feed_conc_mass_cobalt.fix(17)
+
+    m.fs.unit.diafiltrate_flow_volume.fix(30)
+    m.fs.unit.diafiltrate_conc_mass_lithium.fix(0.1)
+    m.fs.unit.diafiltrate_conc_mass_cobalt.fix(0.2)
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -80,30 +88,6 @@ class TestDiafiltrationTwoSalt(object):
 
         assert isinstance(diafiltration_two_salt.fs.unit.membrane_permeability, Param)
         assert value(diafiltration_two_salt.fs.unit.membrane_permeability) == 0.01
-
-        assert isinstance(diafiltration_two_salt.fs.unit.feed_flow_volume, Param)
-        assert value(diafiltration_two_salt.fs.unit.feed_flow_volume) == 100
-
-        assert isinstance(diafiltration_two_salt.fs.unit.feed_conc_mass_lithium, Param)
-        assert value(diafiltration_two_salt.fs.unit.feed_conc_mass_lithium) == 1.7
-
-        assert isinstance(diafiltration_two_salt.fs.unit.feed_conc_mass_cobalt, Param)
-        assert value(diafiltration_two_salt.fs.unit.feed_conc_mass_cobalt) == 17
-
-        assert isinstance(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume, Param)
-        assert value(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume) == 30
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.diafiltrate_conc_mass_lithium, Param
-        )
-        assert (
-            value(diafiltration_two_salt.fs.unit.diafiltrate_conc_mass_lithium) == 0.1
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.diafiltrate_conc_mass_cobalt, Param
-        )
-        assert value(diafiltration_two_salt.fs.unit.diafiltrate_conc_mass_cobalt) == 0.2
 
         assert isinstance(diafiltration_two_salt.fs.unit.temperature, Param)
         assert value(diafiltration_two_salt.fs.unit.temperature) == 298
@@ -159,6 +143,16 @@ class TestDiafiltrationTwoSalt(object):
         assert isinstance(diafiltration_two_salt.fs.unit.membrane_width, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.membrane_length, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.applied_pressure, Var)
+        assert isinstance(diafiltration_two_salt.fs.unit.feed_flow_volume, Var)
+        assert isinstance(diafiltration_two_salt.fs.unit.feed_conc_mass_lithium, Var)
+        assert isinstance(diafiltration_two_salt.fs.unit.feed_conc_mass_cobalt, Var)
+        assert isinstance(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume, Var)
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diafiltrate_conc_mass_lithium, Var
+        )
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diafiltrate_conc_mass_cobalt, Var
+        )
         assert isinstance(diafiltration_two_salt.fs.unit.volume_flux_water, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.mass_flux_lithium, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.mass_flux_cobalt, Var)

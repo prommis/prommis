@@ -50,6 +50,16 @@ def main():
     m.fs.membrane.membrane_length.fix()
     m.fs.membrane.applied_pressure.fix()
 
+    m.fs.membrane.feed_flow_volume.fix()
+    m.fs.membrane.feed_conc_mass_lithium.fix()
+    m.fs.membrane.feed_conc_mass_cobalt.fix()
+
+    m.fs.membrane.diafiltrate_flow_volume.fix()
+    m.fs.membrane.diafiltrate_conc_mass_lithium.fix()
+    m.fs.membrane.diafiltrate_conc_mass_cobalt.fix()
+
+    # TODO: add and connect streams
+
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 

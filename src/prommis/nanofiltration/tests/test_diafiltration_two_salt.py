@@ -58,7 +58,7 @@ def diafiltration_two_salt():
 
 @pytest.mark.unit
 def test_config(diafiltration_two_salt):
-    assert len(diafiltration_two_salt.fs.unit.config) == 9
+    assert len(diafiltration_two_salt.fs.unit.config) == 6
 
     assert not diafiltration_two_salt.fs.unit.config.dynamic
     assert not diafiltration_two_salt.fs.unit.config.has_holdup
@@ -67,9 +67,6 @@ def test_config(diafiltration_two_salt):
         diafiltration_two_salt.fs.unit.config.property_package
         is diafiltration_two_salt.fs.properties
     )
-    assert diafiltration_two_salt.fs.unit.config.membrane_width is 1
-    assert diafiltration_two_salt.fs.unit.config.membrane_length is 100
-    assert diafiltration_two_salt.fs.unit.config.applied_pressure is 10
     assert diafiltration_two_salt.fs.unit.config.NFEx is 5
     assert diafiltration_two_salt.fs.unit.config.NFEz is 5
 

@@ -267,27 +267,6 @@ and used when constructing these,
         ),
     )
     CONFIG.declare(
-        "membrane_width",
-        ConfigValue(
-            default=1,
-            doc="Width of the membrane (x-direction) in meters",
-        ),
-    )
-    CONFIG.declare(
-        "membrane_length",
-        ConfigValue(
-            default=100,
-            doc="Length of the membrane, wound radially in meters",
-        ),
-    )
-    CONFIG.declare(
-        "applied_pressure",
-        ConfigValue(
-            default=10,
-            doc="Pressure applied to membrane in bar",
-        ),
-    )
-    CONFIG.declare(
         "NFEx",
         ConfigValue(
             doc="Number of discretization points in the x-direction",
@@ -384,19 +363,19 @@ and used when constructing these,
         self.z_bar = ContinuousSet(bounds=(0, 1))
 
         self.membrane_width = Var(
-            initialize=self.config.membrane_width,
+            initialize=1,
             units=units.m,
             domain=NonNegativeReals,
             doc="Width of the membrane (x-direction)",
         )
         self.membrane_length = Var(
-            initialize=self.config.membrane_length,
+            initialize=100,
             units=units.m,
             domain=NonNegativeReals,
             doc="Length of the membrane, wound radially",
         )
         self.applied_pressure = Var(
-            initialize=self.config.applied_pressure,
+            initialize=10,
             units=units.bar,
             domain=NonNegativeReals,
             doc="Pressure applied to membrane",

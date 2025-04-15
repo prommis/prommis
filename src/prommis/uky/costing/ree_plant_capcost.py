@@ -285,6 +285,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         self,
         # arguments related to installation costs
         total_purchase_cost=None,
+        location=("United States", "Washington DC"),
         Lang_factor=None,  # default percentages are effective Lang_factor of 2.97
         piping_materials_and_labor_percentage=20,
         electrical_materials_and_labor_percentage=20,
@@ -365,6 +366,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 purchase cost (not including installation or other plant costs).
                 To use as the total plant cost, including installation, set the
                 Lang_factor to 1.
+            location: location factor; default to Unitest States, Washington DC,
+                which is the benchmarch and with value 1. 
             Lang_factor: single multiplicative factor to estimate installation
                 costs; defaults to None and method will use percentages. The
                 default percentages yield an effective Lang factor of 2.97.
@@ -499,7 +502,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             self.custom_variable_costs_list = []
 
             if total_purchase_cost is None:
-                self.get_total_BEC(CE_index_year, watertap_blocks)
+                self.get_total_BEC(CE_index_year, watertap_blocks, location=location)
             else:
                 self.total_BEC = Var(
                     initialize=total_purchase_cost,
@@ -2716,12 +2719,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"Valid CE index options include CE500, CE394 and years from "
                 f"1990 to 2020."
             )
-        # Define the lists to ensure hit no errors during testing
-        b.BEC_list = []
-        b.custom_fixed_costs_list = []
-        b.custom_variable_costs_list = []
-        b.watertap_fixed_costs_list = []
-
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
             if o.name in [block.name for block in b._registered_unit_costing]:

@@ -1127,19 +1127,18 @@ and used when constructing these,
     def add_ports(self):
         self.feed_port = Port()
         self.feed_flow_volume_ref = Reference(self.feed_flow_volume)
-        self.feed_port.add(self.feed_flow_volume_ref, "Feed Volumetric Flow Rate")
+        self.feed_port.add(self.feed_flow_volume_ref, "flow_vol")
         self.feed_conc_mass_lithium_ref = Reference(self.feed_conc_mass_lithium)
         self.feed_port.add(
-            self.feed_conc_mass_lithium_ref, "Feed Lithium Concentration"
+            self.feed_conc_mass_lithium_ref,
+            "conc_mass_comp",  # TODO: fix the reference to each component
         )
         self.feed_conc_mass_cobalt_ref = Reference(self.feed_conc_mass_cobalt)
         self.feed_port.add(self.feed_conc_mass_cobalt_ref, "Feed Cobalt Concentration")
 
         self.diafiltrate_port = Port()
         self.diafiltrate_flow_volume_ref = Reference(self.diafiltrate_flow_volume)
-        self.diafiltrate_port.add(
-            self.diafiltrate_flow_volume_ref, "Diafiltrate Volumetric Flow Rate"
-        )
+        self.diafiltrate_port.add(self.diafiltrate_flow_volume_ref, "flow_vol")
         self.diafiltrate_conc_mass_lithium_ref = Reference(
             self.diafiltrate_conc_mass_lithium
         )
@@ -1155,9 +1154,7 @@ and used when constructing these,
 
         self.retentate_port = Port()
         self.retentate_flow_volume_ref = Reference(self.retentate_flow_volume)
-        self.retentate_port.add(
-            self.retentate_flow_volume_ref, "Retentate Volumetric Flow Rate"
-        )
+        self.retentate_port.add(self.retentate_flow_volume_ref, "flow_vol")
         self.retentate_conc_mass_lithium_ref = Reference(
             self.retentate_conc_mass_lithium
         )
@@ -1177,9 +1174,7 @@ and used when constructing these,
 
         self.permeate_port = Port()
         self.permeate_flow_volume_ref = Reference(self.permeate_flow_volume)
-        self.permeate_port.add(
-            self.permeate_flow_volume_ref, "Permeate Volumetric Flow Rate"
-        )
+        self.permeate_port.add(self.permeate_flow_volume_ref, "flow_vol")
         self.permeate_conc_mass_lithium_ref = Reference(self.permeate_conc_mass_lithium)
         self.permeate_port.add(
             self.permeate_conc_mass_lithium_ref, "Permeate Lithium Concentration"

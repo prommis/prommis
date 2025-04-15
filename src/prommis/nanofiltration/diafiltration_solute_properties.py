@@ -15,6 +15,7 @@ from pyomo.environ import Param, Var, units
 from idaes.core import (
     Component,
     MaterialFlowBasis,
+    Phase,
     PhysicalParameterBlock,
     StateBlock,
     StateBlockData,
@@ -36,6 +37,8 @@ class SoluteParameterData(PhysicalParameterBlock):
 
     def build(self):
         super().build()
+
+        self.liquid = Phase()
 
         # add cations
         self.Li = Component()
@@ -83,7 +86,7 @@ class SoluteParameterData(PhysicalParameterBlock):
             doc="Number of dissociated ions in solution",
         )
 
-        self._state_block_class = SoluteStateBlockData
+        self._state_block_class = SoluteStateBlock
 
     @classmethod
     def define_metadata(cls, obj):
@@ -138,7 +141,7 @@ class SoluteStateBlockData(StateBlockData):
         )
 
     def get_material_flow_terms(self, p, j):
-        return self.flow_mass_solute[j]
+        return self.flow_vol * self.conc_mass_comp[j]
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.mass

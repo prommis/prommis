@@ -17,9 +17,17 @@ from pyomo.environ import (
     assert_optimal_termination,
     value,
 )
+from pyomo.network import Arc
 
-from idaes.core import FlowsheetBlock
+from idaes.core import FlowsheetBlock, MaterialBalanceType
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.models.unit_models import (
+    Feed,
+    Mixer,
+    MixingType,
+    MomentumMixingType,
+    Product,
+)
 
 import matplotlib.pyplot as plt
 from pandas import DataFrame
@@ -39,27 +47,26 @@ def main():
     # update parameter inputs
     build_membrane_parameters(m)
 
+    # add the membrane unit model
     m.fs.membrane = TwoSaltDiafiltration(
         property_package=m.fs.properties,
         NFEx=5,
         NFEz=5,
     )
 
+    # add a mixer for the feed and diafiltrate
+    m.fs.mixer = Mixer(
+        num_inlets=2,
+        property_package=m.fs.properties,
+        material_balance_type=MaterialBalanceType.componentTotal,
+        energy_mixing_type=MixingType.none,
+        momentum_mixing_type=MomentumMixingType.none,
+    )
+
     # fix the degrees of freedom to their default values
-    m.fs.membrane.membrane_width.fix()
-    m.fs.membrane.membrane_length.fix()
-    m.fs.membrane.applied_pressure.fix()
+    fix_variables(m)
 
-    m.fs.membrane.feed_flow_volume.fix()
-    m.fs.membrane.feed_conc_mass_lithium.fix()
-    m.fs.membrane.feed_conc_mass_cobalt.fix()
-
-    m.fs.membrane.diafiltrate_flow_volume.fix()
-    m.fs.membrane.diafiltrate_conc_mass_lithium.fix()
-    m.fs.membrane.diafiltrate_conc_mass_cobalt.fix()
-
-    # TODO: add and connect streams
-
+    add_and_connect_streams(m)
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 
@@ -78,6 +85,46 @@ def build_membrane_parameters(m):
         m: Pyomo model
     """
     pass
+
+
+def fix_variables(m):
+    m.fs.membrane.membrane_width.fix()
+    m.fs.membrane.membrane_length.fix()
+    m.fs.membrane.applied_pressure.fix()
+
+    m.fs.membrane.feed_flow_volume.fix()
+    m.fs.membrane.feed_conc_mass_lithium.fix()
+    m.fs.membrane.feed_conc_mass_cobalt.fix()
+
+    m.fs.membrane.diafiltrate_flow_volume.fix()
+    m.fs.membrane.diafiltrate_conc_mass_lithium.fix()
+    m.fs.membrane.diafiltrate_conc_mass_cobalt.fix()
+
+
+def add_and_connect_streams(m):
+    m.fs.feed_block = Feed(property_package=m.fs.properties)
+    m.fs.diafiltrate_block = Feed(property_package=m.fs.properties)
+    m.fs.retentate_block = Product(property_package=m.fs.properties)
+    m.fs.permeate_block = Product(property_package=m.fs.properties)
+
+    m.fs.feed_stream = Arc(
+        source=m.fs.feed_block.outlet,
+        destination=m.fs.membrane.feed_port,
+    )
+    m.fs.diafiltrate_stream = Arc(
+        source=m.fs.diafiltrate_block.outlet,
+        destination=m.fs.membrane.feed_port,
+    )
+    m.fs.retentate_stream = Arc(
+        source=m.fs.membrane.retentate_port,
+        destination=m.fs.retentate_block.inlet,
+    )
+    m.fs.permeate_stream = Arc(
+        source=m.fs.membrane.permeate_port,
+        destination=m.fs.permeate_block.inlet,
+    )
+
+    TransformationFactory("network.expand_arcs").apply_to(m)
 
 
 def solve_model(m):

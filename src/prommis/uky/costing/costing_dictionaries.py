@@ -13,6 +13,7 @@ power_plant_capcost.py
 
 Python dictionaries that are loaded:
 * REE_costing_params
+* location_factors
 
 """
 
@@ -265,3 +266,37 @@ def load_default_resource_prices():
         "dust_and_volatiles": 1.00 * 1e-6 * CE_index_units / pyunits.ton,
     }
     return default_resource_prices
+
+
+def load_location_factor():
+    """
+    Estimate the cost of constructing the same plant in different global locations using location factors.
+
+    This method uses a location (or investment site) factor to adjust the total permanent investment (TPI)
+    based on regional differences in labor costs, workforce efficiency, local regulations and customs,
+    union status, and other local economic conditions.
+
+    Reference:
+    Seider, Warren D., et al. *Product and Process Design Principles: Synthesis, Analysis, and Evaluation.*
+    John Wiley & Sons, 2016.
+
+    The conversion equation is given by:
+
+    .. math::
+        C_{TPI, corrected} = F_{ISF} \times C_{TPI}
+
+    where:
+    - :math:`C` represents cost,
+    - :math:`F` represents a factor,
+    - :math:`TPI` is the total plant investment, and
+    - :math:`ISF` is the investment site factor (i.e., location factor).
+
+    Location factors for 139 countries are sourced from Compass International (2017):
+    https://www.compassinternational.net/wp-content/uploads/2017/01/Worldwide-Industrial.pdf
+
+    Note: For some countries, multiple city-specific location factors are provided.
+    The benchmark location is Washington, D.C., USA.
+    """
+    with open(os.path.join(directory, "location_factors.json"), "r") as file:
+        location_factors = json.load(file)
+    return location_factors

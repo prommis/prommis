@@ -37,13 +37,13 @@ import pytest
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
     DiafiltrationCostingData,
 )
+from prommis.uky.costing.costing_dictionaries import load_location_factor
 from prommis.uky.costing.custom_costing_example import CustomCostingData
 from prommis.uky.costing.ree_plant_capcost import (
     QGESSCosting,
     QGESSCostingData,
     custom_REE_plant_currency_units,
 )
-from prommis.uky.costing.costing_dictionaries import load_location_factor
 
 _, watertap_costing_available = attempt_import("watertap.costing")
 if watertap_costing_available:
@@ -1418,7 +1418,9 @@ class TestREECosting(object):
                 fixed_OM=False,
             )
 
-            dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+            dt = DiagnosticsToolbox(
+                model=model, variable_bounds_violation_tolerance=1e-4
+            )
             dt.assert_no_structural_warnings()
             # Solve the model before extracting values from Var
             QGESSCostingData.costing_initialization(model.fs.costing)
@@ -1426,7 +1428,7 @@ class TestREECosting(object):
             results = solver.solve(model, tee=True)
             assert_optimal_termination(results)
             dt.assert_no_numerical_warnings()
-            
+
             assert (
                 results.solver.termination_condition == pyo.TerminationCondition.optimal
             )
@@ -1455,10 +1457,11 @@ class TestREECosting(object):
                 AttributeError, match="No location factor found for country 'Brunei'"
             ):
                 model.fs.costing.build_process_costs(
-                location=invalid_country,
-                Lang_factor=2.97,
-                fixed_OM=False,
-            )
+                    location=invalid_country,
+                    Lang_factor=2.97,
+                    fixed_OM=False,
+                )
+
     def test_location_factor_nocityprovided(self):
         location_data = load_location_factor()
         valid_locations = {(entry["country"], entry["city"]) for entry in location_data}
@@ -1474,7 +1477,7 @@ class TestREECosting(object):
             model = pyo.ConcreteModel()
             model.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
             model.fs.costing = QGESSCosting()
-            
+
             model.fs.costing.build_process_costs(
                 location=test_location,
                 Lang_factor=2.97,
@@ -1491,6 +1494,7 @@ class TestREECosting(object):
             assert actual_factor == pytest.approx(
                 fallback_factor, rel=1e-6
             ), f"Fallback for {test_location} did not use {fallback_location}'s factor"
+
     def test_location_factor_invalidcity(self):
         location_data = load_location_factor()
         valid_locations = {(entry["country"], entry["city"]) for entry in location_data}
@@ -1510,10 +1514,10 @@ class TestREECosting(object):
                 match=r"No location factor found for \('United States', 'Boston'\)",
             ):
                 model.fs.costing.build_process_costs(
-                location=bad_city_location,
-                Lang_factor=2.97,
-                fixed_OM=False,
-            )
+                    location=bad_city_location,
+                    Lang_factor=2.97,
+                    fixed_OM=False,
+                )
 
 
 class TestWaterTAPCosting(object):

@@ -367,7 +367,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 To use as the total plant cost, including installation, set the
                 Lang_factor to 1.
             location: location factor; default to Unitest States, Washington DC,
-                which is the benchmarch and with value 1. 
+                which is the benchmarch and with value 1.
             Lang_factor: single multiplicative factor to estimate installation
                 costs; defaults to None and method will use percentages. The
                 default percentages yield an effective Lang factor of 2.97.

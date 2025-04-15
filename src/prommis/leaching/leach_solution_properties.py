@@ -10,7 +10,15 @@ Initial property package for REE leach solutions from coal refuse.
 Authors: Andrew Lee
 """
 
-from pyomo.environ import Constraint, Param, Set, Var, units
+from pyomo.environ import (
+    Constraint,
+    Param,
+    Set,
+    Var,
+    units,
+    PositiveReals,
+    Reals,
+)
 
 from idaes.core import (
     Component,
@@ -20,6 +28,7 @@ from idaes.core import (
     StateBlock,
     StateBlockData,
     declare_process_block_class,
+    EnergyBalanceType,
 )
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
@@ -133,6 +142,22 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
             mutable=True,
         )
 
+        # Heat capacity of water
+        self.cp_mol = Param(
+            mutable=True,
+            initialize=75.327,
+            doc="Molar heat capacity of water [J/mol.K]",
+            units=units.J / units.mol / units.K,
+        )
+
+        self.temperature_ref = Param(
+            within=PositiveReals,
+            mutable=True,
+            default=298.15,
+            doc="Reference temperature [K]",
+            units=units.K,
+        )
+
         self._state_block_class = LeachSolutionStateBlock
 
     @classmethod
@@ -203,6 +228,30 @@ class LeachSolutionStateBlockData(StateBlockData):
             bounds=(1e-20, None),
         )
 
+        self.temperature = Var(
+            domain=Reals,
+            initialize=298.15,
+            bounds=(298.15, None),
+            doc="State temperature [K]",
+            units=units.K,
+        )
+
+        self.pressure = Var(
+            domain=Reals,
+            initialize=101325.0,
+            bounds=(1e3, 1e6),
+            doc="State pressure [Pa]",
+            units=units.Pa,
+        )
+
+        self.pH_phase = Var(
+            self.params.phase_list, domain=Reals, initialize=2, doc="pH of the solution"
+        )
+
+        @self.Constraint(self.phase_list)
+        def pH_constraint(b, p):
+            return 10 ** (-b.pH_phase[p]) == b.conc_mol_comp["H"] * units.L / units.mol
+
         # Concentration conversion constraint
         @self.Constraint(self.params.component_list)
         def molar_concentration_constraint(b, j):
@@ -251,11 +300,29 @@ class LeachSolutionStateBlockData(StateBlockData):
                 to_units=units.mol / units.m**3,
             )
 
+    def get_enthalpy_flow_terms(b, p):
+        return (
+            b.flow_vol
+            * (b.params.dens_mass / b.params.mw["H2O"])
+            * b.params.cp_mol
+            * (b.temperature - b.params.temperature_ref)
+        )
+
+    def get_energy_density_terms(b, p):
+        return (b.params.dens_mass / b.params.mw["H2O"]) * b.params.cp_mol * (
+            b.temperature - b.params.temperature_ref
+        ) - b.pressure * b.params.mw["H2O"] / b.params.dens_mass
+
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar
+
+    def default_energy_balance_type(self):
+        return EnergyBalanceType.enthalpyTotal
 
     def define_state_vars(self):
         return {
             "flow_vol": self.flow_vol,
             "conc_mass_comp": self.conc_mass_comp,
+            "temperature": self.temperature,
+            "pressure": self.pressure,
         }

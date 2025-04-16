@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Property package for the diafiltration cascade.
+Property package for the diafiltration cascade feeds.
 
 Author: Molly Dougher
 """
@@ -24,8 +24,8 @@ from idaes.core import (
 from idaes.core.util.initialization import fix_state_vars
 
 
-@declare_process_block_class("SoluteParameter")
-class SoluteParameterData(PhysicalParameterBlock):
+@declare_process_block_class("SoluteFeedParameter")
+class SoluteFeedParameterData(PhysicalParameterBlock):
     """
     Property Package for the diafiltration cascade.
 
@@ -86,7 +86,7 @@ class SoluteParameterData(PhysicalParameterBlock):
             doc="Number of dissociated ions in solution",
         )
 
-        self._state_block_class = SoluteStateBlock
+        self._state_block_class = SoluteFeedStateBlock
 
     @classmethod
     def define_metadata(cls, obj):
@@ -108,7 +108,7 @@ class SoluteParameterData(PhysicalParameterBlock):
         )
 
 
-class _SoluteStateBlock(StateBlock):
+class _SoluteFeedStateBlock(StateBlock):
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -119,8 +119,8 @@ class _SoluteStateBlock(StateBlock):
         fix_state_vars(self)
 
 
-@declare_process_block_class("SoluteStateBlock", block_class=_SoluteStateBlock)
-class SoluteStateBlockData(StateBlockData):
+@declare_process_block_class("SoluteFeedStateBlock", block_class=_SoluteFeedStateBlock)
+class SoluteFeedStateBlockData(StateBlockData):
     """
     State block for diafiltration cascade
     """

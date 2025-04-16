@@ -19,20 +19,19 @@ from pyomo.environ import (
 )
 from pyomo.network import Arc
 
-from idaes.core import FlowsheetBlock, MaterialBalanceType
+from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-from idaes.models.unit_models import (
-    Feed,
-    Mixer,
-    MixingType,
-    MomentumMixingType,
-    Product,
-)
+from idaes.models.unit_models import Feed, Product
 
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 
-from prommis.nanofiltration.diafiltration_solute_properties import SoluteParameter
+from prommis.nanofiltration.diafiltration_solute_feed_properties import (
+    SoluteFeedParameter,
+)
+from prommis.nanofiltration.diafiltration_solute_product_properties import (
+    SoluteProductParameter,
+)
 from prommis.nanofiltration.diafiltration_two_salt import TwoSaltDiafiltration
 
 
@@ -42,14 +41,15 @@ def main():
     """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.properties = SoluteParameter()
+    m.fs.feed_properties = SoluteFeedParameter()
+    m.fs.product_properties = SoluteProductParameter()
 
     # update parameter inputs
     build_membrane_parameters(m)
 
     # add the membrane unit model
     m.fs.membrane = TwoSaltDiafiltration(
-        property_package=m.fs.properties,
+        property_package=m.fs.feed_properties,
         NFEx=5,
         NFEz=5,
     )
@@ -86,25 +86,21 @@ def fix_variables(m):
     m.fs.membrane.applied_pressure.fix()
 
     m.fs.membrane.feed_flow_volume.fix()
-    m.fs.membrane.feed_conc_mass_comp[0, "Li"].fix(1.7)
-    m.fs.membrane.feed_conc_mass_comp[0, "Co"].fix(17)
-    m.fs.membrane.feed_conc_mass_comp[0, "Cl"].fix(
-        0
-    )  # not used in the model but appears in port from property package
+    m.fs.membrane.feed_conc_mass_comp[0, "Li"].fix()
+    m.fs.membrane.feed_conc_mass_comp[0, "Co"].fix()
+    m.fs.membrane.feed_conc_mass_comp[0, "Cl"].fix()
 
     m.fs.membrane.diafiltrate_flow_volume.fix()
-    m.fs.membrane.diafiltrate_conc_mass_comp[0, "Li"].fix(0.1)
-    m.fs.membrane.diafiltrate_conc_mass_comp[0, "Co"].fix(0.2)
-    m.fs.membrane.diafiltrate_conc_mass_comp[0, "Cl"].fix(
-        0
-    )  # not used in the model but appears in port from property package
+    m.fs.membrane.diafiltrate_conc_mass_comp[0, "Li"].fix()
+    m.fs.membrane.diafiltrate_conc_mass_comp[0, "Co"].fix()
+    m.fs.membrane.diafiltrate_conc_mass_comp[0, "Cl"].fix()
 
 
 def add_and_connect_streams(m):
-    m.fs.feed_block = Feed(property_package=m.fs.properties)
-    m.fs.diafiltrate_block = Feed(property_package=m.fs.properties)
-    m.fs.retentate_block = Product(property_package=m.fs.properties)
-    m.fs.permeate_block = Product(property_package=m.fs.properties)
+    m.fs.feed_block = Feed(property_package=m.fs.feed_properties)
+    m.fs.diafiltrate_block = Feed(property_package=m.fs.feed_properties)
+    m.fs.retentate_block = Product(property_package=m.fs.product_properties)
+    m.fs.permeate_block = Product(property_package=m.fs.product_properties)
 
     m.fs.feed_stream = Arc(
         source=m.fs.feed_block.outlet,
@@ -114,15 +110,14 @@ def add_and_connect_streams(m):
         source=m.fs.diafiltrate_block.outlet,
         destination=m.fs.membrane.diafiltrate_inlet,
     )
-    # TODO: uncomment the following lines after indexing remaining variables over solutes
-    # m.fs.retentate_stream = Arc(
-    #     source=m.fs.membrane.retentate_oulet,
-    #     destination=m.fs.retentate_block.inlet,
-    # )
-    # m.fs.permeate_stream = Arc(
-    #     source=m.fs.membrane.permeate_outlet,
-    #     destination=m.fs.permeate_block.inlet,
-    # )
+    m.fs.retentate_stream = Arc(
+        source=m.fs.membrane.retentate_oulet,
+        destination=m.fs.retentate_block.inlet,
+    )
+    m.fs.permeate_stream = Arc(
+        source=m.fs.membrane.permeate_outlet,
+        destination=m.fs.permeate_block.inlet,
+    )
 
     TransformationFactory("network.expand_arcs").apply_to(m)
 

@@ -345,7 +345,6 @@ and used when constructing these,
 
         # add components
         self.solutes = Set(initialize=["Li", "Co", "Cl"])
-        # TODO: index remaining concentration variables over solutes
 
         self.membrane_width = Var(
             initialize=1,
@@ -372,9 +371,17 @@ and used when constructing these,
             domain=NonNegativeReals,
             doc="Volumetric flow rate of the feed",
         )
+
+        def initialize_feed_conc_mass_comp(m, t, j):
+            # TODO: update chlorine concentration
+            # not used in the model but appears in port from property package
+            vals = {"Li": 1.7, "Co": 17, "Cl": 0}
+            return vals[j]
+
         self.feed_conc_mass_comp = Var(
             self.time,
             self.solutes,
+            initialize=initialize_feed_conc_mass_comp,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
             doc="Mass concentration of solutes in the feed",
@@ -386,9 +393,17 @@ and used when constructing these,
             domain=NonNegativeReals,
             doc="Volumetric flow rate of the diafiltrate",
         )
+
+        def initialize_diafiltrate_conc_mass_comp(m, t, j):
+            # TODO: update chlorine concentration
+            # not used in the model but appears in port from property package
+            vals = {"Li": 0.1, "Co": 0.2, "Cl": 0}
+            return vals[j]
+
         self.diafiltrate_conc_mass_comp = Var(
             self.time,
             self.solutes,
+            initialize=initialize_diafiltrate_conc_mass_comp,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
             doc="Mass concentration of solutes in the diafiltrate",
@@ -424,60 +439,48 @@ and used when constructing these,
             doc="Mass flux of chlorine across the membrane (z-direction, x-dependent)",
         )
         self.retentate_flow_volume = Var(
+            self.time,
             self.x_bar,
             initialize=130,
             units=units.m**3 / units.h,
             domain=NonNegativeReals,
             doc="Volumetric flow rate of the retentate, x-dependent",
         )
-        self.retentate_conc_mass_lithium = Var(
+
+        def initialize_retentate_conc_mass_comp(m, t, j, p):
+            vals = {"Li": 1.33, "Co": 13.1, "Cl": 22.5}
+            return vals[j]
+
+        self.retentate_conc_mass_comp = Var(
+            self.time,
+            self.solutes,
             self.x_bar,
-            initialize=1.33,
+            initialize=initialize_retentate_conc_mass_comp,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
-            doc="Mass concentration of lithium in the retentate, x-dependent",
-        )
-        self.retentate_conc_mass_cobalt = Var(
-            self.x_bar,
-            initialize=13.1,
-            units=units.kg / units.m**3,
-            domain=NonNegativeReals,
-            doc="Mass concentration of cobalt in the retentate, x-dependent",
-        )
-        self.retentate_conc_mass_chlorine = Var(
-            self.x_bar,
-            initialize=22.5,
-            units=units.kg / units.m**3,
-            domain=NonNegativeReals,
-            doc="Mass concentration of chlorine in the retentate, x-dependent",
+            doc="Mass concentration of solutes in the retentate, x-dependent",
         )
         self.permeate_flow_volume = Var(
+            self.time,
             self.x_bar,
             initialize=1e-8,
             units=units.m**3 / units.h,
             domain=NonNegativeReals,
             doc="Volumetric flow rate of the permeate, x-dependent",
         )
-        self.permeate_conc_mass_lithium = Var(
+
+        def initialize_permeate_conc_mass_comp(m, t, j, p):
+            vals = {"Li": 1e-10, "Co": 1e-10, "Cl": 1e-10}
+            return vals[j]
+
+        self.permeate_conc_mass_comp = Var(
+            self.time,
+            self.solutes,
             self.x_bar,
-            initialize=1e-10,
+            initialize=initialize_permeate_conc_mass_comp,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
-            doc="Mass concentration of lithium in the permeate, x-dependent",
-        )
-        self.permeate_conc_mass_cobalt = Var(
-            self.x_bar,
-            initialize=1e-10,
-            units=units.kg / units.m**3,
-            domain=NonNegativeReals,
-            doc="Mass concentration of cobalt in the permeate, x-dependent",
-        )
-        self.permeate_conc_mass_chlorine = Var(
-            self.x_bar,
-            initialize=1e-10,
-            units=units.kg / units.m**3,
-            domain=NonNegativeReals,
-            doc="Mass concentration of chlorine in the retentate, x-dependent",
+            doc="Mass concentration of solutes in the permeate, x-dependent",
         )
         self.osmotic_pressure = Var(
             self.x_bar,
@@ -542,17 +545,11 @@ and used when constructing these,
         )
 
         # define the (partial) derivative variables
-        self.d_retentate_conc_mass_lithium_dx = DerivativeVar(
-            self.retentate_conc_mass_lithium,
+        self.d_retentate_conc_mass_comp_dx = DerivativeVar(
+            self.retentate_conc_mass_comp,
             wrt=self.x_bar,
             units=units.kg / units.m**3,
-            doc="Lithium concentration gradient in the retentate",
-        )
-        self.d_retentate_conc_mass_cobalt_dx = DerivativeVar(
-            self.retentate_conc_mass_cobalt,
-            wrt=self.x_bar,
-            units=units.kg / units.m**3,
-            doc="Cobalt concentration gradient in the retentate",
+            doc="Solute concentration gradient in the retentate",
         )
         self.d_retentate_flow_volume_dx = DerivativeVar(
             self.retentate_flow_volume,
@@ -580,7 +577,7 @@ and used when constructing these,
 
         # mass balance constraints
         def _overall_mass_balance(self, x):
-            return self.d_retentate_flow_volume_dx[x] == (
+            return self.d_retentate_flow_volume_dx[0, x] == (
                 -self.volume_flux_water[x] * self.membrane_length * self.membrane_width
             )
 
@@ -588,10 +585,12 @@ and used when constructing these,
 
         def _lithium_mass_balance(self, x):
             return (
-                self.retentate_flow_volume[x] * self.d_retentate_conc_mass_lithium_dx[x]
+                self.retentate_flow_volume[0, x]
+                * self.d_retentate_conc_mass_comp_dx[0, "Li", x]
             ) == (
                 (
-                    self.volume_flux_water[x] * self.retentate_conc_mass_lithium[x]
+                    self.volume_flux_water[x]
+                    * self.retentate_conc_mass_comp[0, "Li", x]
                     - self.mass_flux_lithium[x]
                 )
                 * self.membrane_length
@@ -602,10 +601,12 @@ and used when constructing these,
 
         def _cobalt_mass_balance(self, x):
             return (
-                self.retentate_flow_volume[x] * self.d_retentate_conc_mass_cobalt_dx[x]
+                self.retentate_flow_volume[0, x]
+                * self.d_retentate_conc_mass_comp_dx[0, "Co", x]
             ) == (
                 (
-                    self.volume_flux_water[x] * self.retentate_conc_mass_cobalt[x]
+                    self.volume_flux_water[x]
+                    * self.retentate_conc_mass_comp[0, "Co", x]
                     - self.mass_flux_cobalt[x]
                 )
                 * self.membrane_length
@@ -618,8 +619,10 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                self.retentate_conc_mass_lithium[x] * self.retentate_flow_volume[x]
-                + self.permeate_conc_mass_lithium[x] * self.permeate_flow_volume[x]
+                self.retentate_conc_mass_comp[0, "Li", x]
+                * self.retentate_flow_volume[0, x]
+                + self.permeate_conc_mass_comp[0, "Li", x]
+                * self.permeate_flow_volume[0, x]
             ) == (
                 self.feed_flow_volume[0] * self.feed_conc_mass_comp[0, "Li"]
                 + self.diafiltrate_flow_volume[0]
@@ -634,8 +637,10 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                self.retentate_conc_mass_cobalt[x] * self.retentate_flow_volume[x]
-                + self.permeate_conc_mass_cobalt[x] * self.permeate_flow_volume[x]
+                self.retentate_conc_mass_comp[0, "Co", x]
+                * self.retentate_flow_volume[0, x]
+                + self.permeate_conc_mass_comp[0, "Co", x]
+                * self.permeate_flow_volume[0, x]
             ) == (
                 self.feed_flow_volume[0] * self.feed_conc_mass_comp[0, "Co"]
                 + self.diafiltrate_flow_volume[0]
@@ -651,7 +656,7 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                self.permeate_flow_volume[x]
+                self.permeate_flow_volume[0, x]
                 == self.volume_flux_water[x]
                 * x
                 * self.membrane_length
@@ -666,7 +671,7 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return self.mass_flux_lithium[x] == (
-                self.permeate_conc_mass_lithium[x] * self.volume_flux_water[x]
+                self.permeate_conc_mass_comp[0, "Li", x] * self.volume_flux_water[x]
             )
 
         self.geometric_flux_equation_lithium = Constraint(
@@ -677,7 +682,7 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return self.mass_flux_cobalt[x] == (
-                self.permeate_conc_mass_cobalt[x] * self.volume_flux_water[x]
+                self.permeate_conc_mass_comp[0, "Co", x] * self.volume_flux_water[x]
             )
 
         self.geometric_flux_equation_cobalt = Constraint(
@@ -847,20 +852,20 @@ and used when constructing these,
                         self.config.property_package.sigma["Li"]
                         / self.config.property_package.molar_mass["Li"]
                         * (
-                            self.retentate_conc_mass_lithium[x]
-                            - self.permeate_conc_mass_lithium[x]
+                            self.retentate_conc_mass_comp[0, "Li", x]
+                            - self.permeate_conc_mass_comp[0, "Li", x]
                         )
                         + self.config.property_package.sigma["Co"]
                         / self.config.property_package.molar_mass["Co"]
                         * (
-                            self.retentate_conc_mass_cobalt[x]
-                            - self.permeate_conc_mass_cobalt[x]
+                            self.retentate_conc_mass_comp[0, "Co", x]
+                            - self.permeate_conc_mass_comp[0, "Co", x]
                         )
                         + self.config.property_package.sigma["Cl"]
                         / self.config.property_package.molar_mass["Cl"]
                         * (
-                            self.retentate_conc_mass_chlorine[x]
-                            - self.permeate_conc_mass_chlorine[x]
+                            self.retentate_conc_mass_comp[0, "Cl", x]
+                            - self.permeate_conc_mass_comp[0, "Cl", x]
                         )
                     )
                 ),
@@ -874,13 +879,13 @@ and used when constructing these,
         def _electroneutrality_retentate(self, x):
             return 0 == (
                 self.config.property_package.charge["Li"]
-                * self.retentate_conc_mass_lithium[x]
+                * self.retentate_conc_mass_comp[0, "Li", x]
                 / self.config.property_package.molar_mass["Li"]
                 + self.config.property_package.charge["Co"]
-                * self.retentate_conc_mass_cobalt[x]
+                * self.retentate_conc_mass_comp[0, "Co", x]
                 / self.config.property_package.molar_mass["Co"]
                 + self.config.property_package.charge["Cl"]
-                * self.retentate_conc_mass_chlorine[x]
+                * self.retentate_conc_mass_comp[0, "Cl", x]
                 / self.config.property_package.molar_mass["Cl"]
             )
 
@@ -912,7 +917,7 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                self.retentate_conc_mass_lithium[x]
+                self.retentate_conc_mass_comp[0, "Li", x]
                 == self.membrane_conc_mass_lithium[x, 0]
             )
 
@@ -924,7 +929,7 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                self.retentate_conc_mass_cobalt[x]
+                self.retentate_conc_mass_comp[0, "Co", x]
                 == self.membrane_conc_mass_cobalt[x, 0]
             )
 
@@ -936,7 +941,7 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                self.retentate_conc_mass_chlorine[x]
+                self.retentate_conc_mass_comp[0, "Cl", x]
                 == self.membrane_conc_mass_chlorine[x, 0]
             )
 
@@ -946,7 +951,7 @@ and used when constructing these,
 
         def _membrane_permeate_interface_lithium(self, x):
             return (
-                self.permeate_conc_mass_lithium[x]
+                self.permeate_conc_mass_comp[0, "Li", x]
                 == self.membrane_conc_mass_lithium[x, 1]
             )
 
@@ -956,7 +961,7 @@ and used when constructing these,
 
         def _membrane_permeate_interface_cobalt(self, x):
             return (
-                self.permeate_conc_mass_cobalt[x]
+                self.permeate_conc_mass_comp[0, "Co", x]
                 == self.membrane_conc_mass_cobalt[x, 1]
             )
 
@@ -966,7 +971,7 @@ and used when constructing these,
 
         def _membrane_permeate_interface_chlorine(self, x):
             return (
-                self.permeate_conc_mass_chlorine[x]
+                self.permeate_conc_mass_comp[0, "Cl", x]
                 == self.membrane_conc_mass_chlorine[x, 1]
             )
 
@@ -976,7 +981,7 @@ and used when constructing these,
 
         # initial conditions
         def _initial_retentate_flow_volume(self):
-            return self.retentate_flow_volume[0] == (
+            return self.retentate_flow_volume[0, 0] == (
                 self.feed_flow_volume[0] + self.diafiltrate_flow_volume[0]
             )
 
@@ -985,7 +990,7 @@ and used when constructing these,
         )
 
         def _initial_retentate_conc_mass_lithium(self):
-            return self.retentate_conc_mass_lithium[0] == (
+            return self.retentate_conc_mass_comp[0, "Li", 0] == (
                 (
                     self.feed_flow_volume[0] * self.feed_conc_mass_comp[0, "Li"]
                     + self.diafiltrate_flow_volume[0]
@@ -999,7 +1004,7 @@ and used when constructing these,
         )
 
         def _initial_retentate_conc_mass_cobalt(self):
-            return self.retentate_conc_mass_cobalt[0] == (
+            return self.retentate_conc_mass_comp[0, "Co", 0] == (
                 (
                     self.feed_flow_volume[0] * self.feed_conc_mass_comp[0, "Co"]
                     + self.diafiltrate_flow_volume[0]
@@ -1017,7 +1022,7 @@ and used when constructing these,
         # concentrations: 1e-10
         # derivatives: 1e-15
         def _initial_permeate_flow_volume(self):
-            return self.permeate_flow_volume[0] == (1e-8 * units.m**3 / units.h)
+            return self.permeate_flow_volume[0, 0] == (1e-8 * units.m**3 / units.h)
 
         self.initial_permeate_flow_volume = Constraint(
             rule=_initial_permeate_flow_volume
@@ -1051,21 +1056,25 @@ and used when constructing these,
         )
 
         def _initial_permeate_conc_mass_lithium(self):
-            return self.permeate_conc_mass_lithium[0] == (1e-10 * units.kg / units.m**3)
+            return self.permeate_conc_mass_comp[0, "Li", 0] == (
+                1e-10 * units.kg / units.m**3
+            )
 
         self.initial_permeate_conc_mass_lithium = Constraint(
             rule=_initial_permeate_conc_mass_lithium
         )
 
         def _initial_permeate_conc_mass_cobalt(self):
-            return self.permeate_conc_mass_cobalt[0] == (1e-10 * units.kg / units.m**3)
+            return self.permeate_conc_mass_comp[0, "Co", 0] == (
+                1e-10 * units.kg / units.m**3
+            )
 
         self.initial_permeate_conc_mass_cobalt = Constraint(
             rule=_initial_permeate_conc_mass_cobalt
         )
 
         def _initial_d_retentate_conc_mass_lithium_dx(self):
-            return self.d_retentate_conc_mass_lithium_dx[0] == (
+            return self.d_retentate_conc_mass_comp_dx[0, "Li", 0] == (
                 1e-15 * units.kg / units.m**3
             )
 
@@ -1074,7 +1083,7 @@ and used when constructing these,
         )
 
         def _initial_d_retentate_conc_mass_cobalt_dx(self):
-            return self.d_retentate_conc_mass_cobalt_dx[0] == (
+            return self.d_retentate_conc_mass_comp_dx[0, "Co", 0] == (
                 1e-15 * units.kg / units.m**3
             )
 
@@ -1083,7 +1092,9 @@ and used when constructing these,
         )
 
         def _initial_d_retentate_flow_volume_dx(self):
-            return self.d_retentate_flow_volume_dx[0] == (1e-15 * units.m**3 / units.h)
+            return self.d_retentate_flow_volume_dx[0, 0] == (
+                1e-15 * units.m**3 / units.h
+            )
 
         self._initial_d_retentate_flow_volume_dx = Constraint(
             rule=_initial_d_retentate_flow_volume_dx
@@ -1107,7 +1118,7 @@ and used when constructing these,
 
         # Add scaling factors for poorly scaled variables
         for x in self.x_bar:
-            self.scaling_factor[self.retentate_flow_volume[x]] = 1e-2
+            self.scaling_factor[self.retentate_flow_volume[0, x]] = 1e-2
 
             for z in self.z_bar:
                 self.scaling_factor[self.D_lithium_lithium[x, z]] = 1e8
@@ -1142,16 +1153,15 @@ and used when constructing these,
         self.diafiltrate_inlet.add(
             self.diafiltrate_conc_mass_comp_ref, "conc_mass_comp"
         )
-        # TODO: uncomment the following lines after indexing remaining variables over solutes
-        # self.retentate_oulet = Port(doc="Retentate Outlet Port")
-        # self.retentate_flow_volume_ref = Reference(self.retentate_flow_volume)
-        # self.retentate_oulet.add(self.retentate_flow_volume_ref, "flow_vol")
-        # self.retentate_conc_mass_comp_ref = Reference(self.retentate_conc_mass_comp)
-        # self.retentate_oulet.add(self.retentate_conc_mass_comp_ref, "conc_mass_comp")
 
-        # self.permeate_outlet = Port(doc="Permeate Outlet Port")
-        # self.permeate_flow_volume_ref = Reference(self.permeate_flow_volume)
-        # self.permeate_outlet.add(self.permeate_flow_volume_ref, "flow_vol")
-        # self.permeate_conc_mass_comp_ref = Reference(self.permeate_conc_mass_comp)
-        # self.permeate_outlet.add(self.permeate_conc_mass_comp_ref, "conc_mass_comp")
-        # self.permeate_conc_mass_cobalt_ref = Reference(self.permeate_conc_mass_cobalt)
+        self.retentate_oulet = Port(doc="Retentate Outlet Port")
+        self.retentate_flow_volume_ref = Reference(self.retentate_flow_volume)
+        self.retentate_oulet.add(self.retentate_flow_volume_ref, "flow_vol")
+        self.retentate_conc_mass_comp_ref = Reference(self.retentate_conc_mass_comp)
+        self.retentate_oulet.add(self.retentate_conc_mass_comp_ref, "conc_mass_comp")
+
+        self.permeate_outlet = Port(doc="Permeate Outlet Port")
+        self.permeate_flow_volume_ref = Reference(self.permeate_flow_volume)
+        self.permeate_outlet.add(self.permeate_flow_volume_ref, "flow_vol")
+        self.permeate_conc_mass_comp_ref = Reference(self.permeate_conc_mass_comp)
+        self.permeate_outlet.add(self.permeate_conc_mass_comp_ref, "conc_mass_comp")

@@ -26,7 +26,9 @@ from idaes.core.util.model_statistics import degrees_of_freedom
 
 import pytest
 
-from prommis.nanofiltration.diafiltration_solute_properties import SoluteParameter
+from prommis.nanofiltration.diafiltration_solute_feed_properties import (
+    SoluteFeedParameter,
+)
 from prommis.nanofiltration.diafiltration_two_salt import TwoSaltDiafiltration
 
 
@@ -37,7 +39,7 @@ def diafiltration_two_salt():
     """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.properties = SoluteParameter()
+    m.fs.properties = SoluteFeedParameter()
 
     m.fs.unit = TwoSaltDiafiltration(
         property_package=m.fs.properties,
@@ -150,37 +152,19 @@ class TestDiafiltrationTwoSalt(object):
         assert isinstance(diafiltration_two_salt.fs.unit.membrane_length, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.applied_pressure, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.feed_flow_volume, Var)
-        assert isinstance(diafiltration_two_salt.fs.unit.feed_conc_mass_lithium, Var)
-        assert isinstance(diafiltration_two_salt.fs.unit.feed_conc_mass_cobalt, Var)
+        assert isinstance(diafiltration_two_salt.fs.unit.feed_conc_mass_comp, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume, Var)
         assert isinstance(
-            diafiltration_two_salt.fs.unit.diafiltrate_conc_mass_lithium, Var
-        )
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.diafiltrate_conc_mass_cobalt, Var
+            diafiltration_two_salt.fs.unit.diafiltrate_conc_mass_comp, Var
         )
         assert isinstance(diafiltration_two_salt.fs.unit.volume_flux_water, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.mass_flux_lithium, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.mass_flux_cobalt, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.mass_flux_chlorine, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.retentate_flow_volume, Var)
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.retentate_conc_mass_lithium, Var
-        )
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.retentate_conc_mass_cobalt, Var
-        )
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.retentate_conc_mass_chlorine, Var
-        )
+        assert isinstance(diafiltration_two_salt.fs.unit.retentate_conc_mass_comp, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.permeate_flow_volume, Var)
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.permeate_conc_mass_lithium, Var
-        )
-        assert isinstance(diafiltration_two_salt.fs.unit.permeate_conc_mass_cobalt, Var)
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.permeate_conc_mass_chlorine, Var
-        )
+        assert isinstance(diafiltration_two_salt.fs.unit.permeate_conc_mass_comp, Var)
         assert isinstance(diafiltration_two_salt.fs.unit.osmotic_pressure, Var)
         assert isinstance(
             diafiltration_two_salt.fs.unit.membrane_conc_mass_lithium, Var
@@ -195,11 +179,7 @@ class TestDiafiltrationTwoSalt(object):
         assert isinstance(diafiltration_two_salt.fs.unit.D_cobalt_cobalt, Var)
 
         assert isinstance(
-            diafiltration_two_salt.fs.unit.d_retentate_conc_mass_lithium_dx,
-            DerivativeVar,
-        )
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.d_retentate_conc_mass_cobalt_dx,
+            diafiltration_two_salt.fs.unit.d_retentate_conc_mass_comp_dx,
             DerivativeVar,
         )
         assert isinstance(
@@ -293,6 +273,8 @@ class TestDiafiltrationTwoSalt(object):
             diafiltration_two_salt.fs.unit.electroneutrality_membrane, Constraint
         )
 
+        # TODO: check dimensions of indexed variables
+
     @pytest.mark.component
     def test_diagnostics(self, diafiltration_two_salt):
         dt = DiagnosticsToolbox(diafiltration_two_salt.fs.unit)
@@ -314,27 +296,37 @@ class TestDiafiltrationTwoSalt(object):
 
         test_dict = {
             "retentate_final": [
-                value(diafiltration_two_salt.fs.unit.retentate_flow_volume[1]),
+                value(diafiltration_two_salt.fs.unit.retentate_flow_volume[0, 1]),
                 129.99999845610384,
             ],
             "lithium_retentate_final": [
-                value(diafiltration_two_salt.fs.unit.retentate_conc_mass_lithium[1]),
+                value(
+                    diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Li", 1]
+                ),
                 1.3307691965147272,
             ],
             "cobalt_retentate_final": [
-                value(diafiltration_two_salt.fs.unit.retentate_conc_mass_cobalt[1]),
+                value(
+                    diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Co", 1]
+                ),
                 13.12307707892674,
             ],
             "chlorine_retentate_final": [
-                value(diafiltration_two_salt.fs.unit.retentate_conc_mass_chlorine[1]),
+                value(
+                    diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Cl", 1]
+                ),
                 22.585349063905188,
             ],
             "lithium_permeate_final": [
-                value(diafiltration_two_salt.fs.unit.permeate_conc_mass_lithium[1]),
+                value(
+                    diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Li", 1]
+                ),
                 3.3691596267961286,
             ],
             "chlorine_permeate_final": [
-                value(diafiltration_two_salt.fs.unit.permeate_conc_mass_chlorine[1]),
+                value(
+                    diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Cl", 1]
+                ),
                 17.207427424982267,
             ],
         }
@@ -344,11 +336,13 @@ class TestDiafiltrationTwoSalt(object):
 
         test_dict_small_values = {
             "permeate_final": [
-                value(diafiltration_two_salt.fs.unit.permeate_flow_volume[1]),
+                value(diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 1]),
                 1.9315367820840497e-06,
             ],
             "cobalt_permeate_final": [
-                value(diafiltration_two_salt.fs.unit.permeate_conc_mass_cobalt[1]),
+                value(
+                    diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Co", 1]
+                ),
                 5.387084386093181e-06,
             ],
         }

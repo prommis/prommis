@@ -232,6 +232,7 @@ from pyomo.environ import (
     NonNegativeReals,
     Param,
     Reference,
+    Set,
     Suffix,
     TransformationFactory,
     Var,
@@ -339,6 +340,13 @@ and used when constructing these,
         self.x_bar = ContinuousSet(bounds=(0, 1))
         self.z_bar = ContinuousSet(bounds=(0, 1))
 
+        # add a time index since the property package variables are indexed over time
+        self.time = Set(initialize=[0])
+
+        # add components
+        self.solutes = Set(initialize=["Li", "Co", "Cl"])
+        # TODO: index remaining concentration variables over solutes
+
         self.membrane_width = Var(
             initialize=1,
             units=units.m,
@@ -358,40 +366,32 @@ and used when constructing these,
             doc="Pressure applied to membrane",
         )
         self.feed_flow_volume = Var(
+            self.time,
             initialize=100,
             units=units.m**3 / units.h,
             domain=NonNegativeReals,
             doc="Volumetric flow rate of the feed",
         )
-        self.feed_conc_mass_lithium = Var(
-            initialize=1.7,
+        self.feed_conc_mass_comp = Var(
+            self.time,
+            self.solutes,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
-            doc="Mass concentration of lithium in the feed",
-        )
-        self.feed_conc_mass_cobalt = Var(
-            initialize=17,
-            units=units.kg / units.m**3,
-            domain=NonNegativeReals,
-            doc="Mass concentration of cobalt in the feed",
+            doc="Mass concentration of solutes in the feed",
         )
         self.diafiltrate_flow_volume = Var(
+            self.time,
             initialize=30,
             units=units.m**3 / units.h,
             domain=NonNegativeReals,
             doc="Volumetric flow rate of the diafiltrate",
         )
-        self.diafiltrate_conc_mass_lithium = Var(
-            initialize=0.1,
+        self.diafiltrate_conc_mass_comp = Var(
+            self.time,
+            self.solutes,
             units=units.kg / units.m**3,
             domain=NonNegativeReals,
-            doc="Mass concentration of lithium in the diafiltrate",
-        )
-        self.diafiltrate_conc_mass_cobalt = Var(
-            initialize=0.2,
-            units=units.kg / units.m**3,
-            domain=NonNegativeReals,
-            doc="Mass concentration of cobalt in the diafiltrate",
+            doc="Mass concentration of solutes in the diafiltrate",
         )
 
         ## dependent on x_bar
@@ -621,8 +621,9 @@ and used when constructing these,
                 self.retentate_conc_mass_lithium[x] * self.retentate_flow_volume[x]
                 + self.permeate_conc_mass_lithium[x] * self.permeate_flow_volume[x]
             ) == (
-                self.feed_flow_volume * self.feed_conc_mass_lithium
-                + self.diafiltrate_flow_volume * self.diafiltrate_conc_mass_lithium
+                self.feed_flow_volume[0] * self.feed_conc_mass_comp[0, "Li"]
+                + self.diafiltrate_flow_volume[0]
+                * self.diafiltrate_conc_mass_comp[0, "Co"]
             )
 
         self.general_mass_balance_lithium = Constraint(
@@ -636,8 +637,9 @@ and used when constructing these,
                 self.retentate_conc_mass_cobalt[x] * self.retentate_flow_volume[x]
                 + self.permeate_conc_mass_cobalt[x] * self.permeate_flow_volume[x]
             ) == (
-                self.feed_flow_volume * self.feed_conc_mass_cobalt
-                + self.diafiltrate_flow_volume * self.diafiltrate_conc_mass_cobalt
+                self.feed_flow_volume[0] * self.feed_conc_mass_comp[0, "Co"]
+                + self.diafiltrate_flow_volume[0]
+                * self.diafiltrate_conc_mass_comp[0, "Co"]
             )
 
         self.general_mass_balance_cobalt = Constraint(
@@ -975,7 +977,7 @@ and used when constructing these,
         # initial conditions
         def _initial_retentate_flow_volume(self):
             return self.retentate_flow_volume[0] == (
-                self.feed_flow_volume + self.diafiltrate_flow_volume
+                self.feed_flow_volume[0] + self.diafiltrate_flow_volume[0]
             )
 
         self.initial_retentate_flow_volume = Constraint(
@@ -985,10 +987,11 @@ and used when constructing these,
         def _initial_retentate_conc_mass_lithium(self):
             return self.retentate_conc_mass_lithium[0] == (
                 (
-                    self.feed_flow_volume * self.feed_conc_mass_lithium
-                    + self.diafiltrate_flow_volume * self.diafiltrate_conc_mass_lithium
+                    self.feed_flow_volume[0] * self.feed_conc_mass_comp[0, "Li"]
+                    + self.diafiltrate_flow_volume[0]
+                    * self.diafiltrate_conc_mass_comp[0, "Li"]
                 )
-                / (self.feed_flow_volume + self.diafiltrate_flow_volume)
+                / (self.feed_flow_volume[0] + self.diafiltrate_flow_volume[0])
             )
 
         self.initial_retentate_conc_mass_lithium = Constraint(
@@ -998,10 +1001,11 @@ and used when constructing these,
         def _initial_retentate_conc_mass_cobalt(self):
             return self.retentate_conc_mass_cobalt[0] == (
                 (
-                    self.feed_flow_volume * self.feed_conc_mass_cobalt
-                    + self.diafiltrate_flow_volume * self.diafiltrate_conc_mass_cobalt
+                    self.feed_flow_volume[0] * self.feed_conc_mass_comp[0, "Co"]
+                    + self.diafiltrate_flow_volume[0]
+                    * self.diafiltrate_conc_mass_comp[0, "Co"]
                 )
-                / (self.feed_flow_volume + self.diafiltrate_flow_volume)
+                / (self.feed_flow_volume[0] + self.diafiltrate_flow_volume[0])
             )
 
         self.initial_retentate_conc_mass_cobalt = Constraint(
@@ -1125,67 +1129,29 @@ and used when constructing these,
                     self.scaling_factor[self.cobalt_flux_membrane[x, z]] = 1e10
 
     def add_ports(self):
-        self.feed_port = Port()
+        self.feed_inlet = Port(doc="Feed Inlet Port")
         self.feed_flow_volume_ref = Reference(self.feed_flow_volume)
-        self.feed_port.add(self.feed_flow_volume_ref, "flow_vol")
-        self.feed_conc_mass_lithium_ref = Reference(self.feed_conc_mass_lithium)
-        self.feed_port.add(
-            self.feed_conc_mass_lithium_ref,
-            "conc_mass_comp",  # TODO: fix the reference to each component
-        )
-        self.feed_conc_mass_cobalt_ref = Reference(self.feed_conc_mass_cobalt)
-        self.feed_port.add(self.feed_conc_mass_cobalt_ref, "Feed Cobalt Concentration")
+        self.feed_inlet.add(self.feed_flow_volume_ref, "flow_vol")
+        self.feed_conc_mass_comp_ref = Reference(self.feed_conc_mass_comp)
+        self.feed_inlet.add(self.feed_conc_mass_comp_ref, "conc_mass_comp")
 
-        self.diafiltrate_port = Port()
+        self.diafiltrate_inlet = Port(doc="Diafiltrate Inlet Port")
         self.diafiltrate_flow_volume_ref = Reference(self.diafiltrate_flow_volume)
-        self.diafiltrate_port.add(self.diafiltrate_flow_volume_ref, "flow_vol")
-        self.diafiltrate_conc_mass_lithium_ref = Reference(
-            self.diafiltrate_conc_mass_lithium
+        self.diafiltrate_inlet.add(self.diafiltrate_flow_volume_ref, "flow_vol")
+        self.diafiltrate_conc_mass_comp_ref = Reference(self.diafiltrate_conc_mass_comp)
+        self.diafiltrate_inlet.add(
+            self.diafiltrate_conc_mass_comp_ref, "conc_mass_comp"
         )
-        self.diafiltrate_port.add(
-            self.diafiltrate_conc_mass_lithium_ref, "Diafiltrate Lithium Concentration"
-        )
-        self.diafiltrate_conc_mass_cobalt_ref = Reference(
-            self.diafiltrate_conc_mass_cobalt
-        )
-        self.diafiltrate_port.add(
-            self.diafiltrate_conc_mass_cobalt_ref, "Diafiltrate Cobalt Concentration"
-        )
+        # TODO: uncomment the following lines after indexing remaining variables over solutes
+        # self.retentate_oulet = Port(doc="Retentate Outlet Port")
+        # self.retentate_flow_volume_ref = Reference(self.retentate_flow_volume)
+        # self.retentate_oulet.add(self.retentate_flow_volume_ref, "flow_vol")
+        # self.retentate_conc_mass_comp_ref = Reference(self.retentate_conc_mass_comp)
+        # self.retentate_oulet.add(self.retentate_conc_mass_comp_ref, "conc_mass_comp")
 
-        self.retentate_port = Port()
-        self.retentate_flow_volume_ref = Reference(self.retentate_flow_volume)
-        self.retentate_port.add(self.retentate_flow_volume_ref, "flow_vol")
-        self.retentate_conc_mass_lithium_ref = Reference(
-            self.retentate_conc_mass_lithium
-        )
-        self.retentate_port.add(
-            self.retentate_conc_mass_lithium_ref, "Retentate Lithium Concentration"
-        )
-        self.retentate_conc_mass_cobalt_ref = Reference(self.retentate_conc_mass_cobalt)
-        self.retentate_port.add(
-            self.retentate_conc_mass_cobalt_ref, "Retentate Cobalt Concentration"
-        )
-        self.retentate_conc_mass_chlorine_ref = Reference(
-            self.retentate_conc_mass_chlorine
-        )
-        self.retentate_port.add(
-            self.retentate_conc_mass_chlorine_ref, "Retentate Chlorine Concentration"
-        )
-
-        self.permeate_port = Port()
-        self.permeate_flow_volume_ref = Reference(self.permeate_flow_volume)
-        self.permeate_port.add(self.permeate_flow_volume_ref, "flow_vol")
-        self.permeate_conc_mass_lithium_ref = Reference(self.permeate_conc_mass_lithium)
-        self.permeate_port.add(
-            self.permeate_conc_mass_lithium_ref, "Permeate Lithium Concentration"
-        )
-        self.permeate_conc_mass_cobalt_ref = Reference(self.permeate_conc_mass_cobalt)
-        self.permeate_port.add(
-            self.permeate_conc_mass_cobalt_ref, "Permeate Cobalt Concentration"
-        )
-        self.permeate_conc_mass_chlorine_ref = Reference(
-            self.permeate_conc_mass_chlorine
-        )
-        self.permeate_port.add(
-            self.permeate_conc_mass_chlorine_ref, "Permeate Chlorine Concentration"
-        )
+        # self.permeate_outlet = Port(doc="Permeate Outlet Port")
+        # self.permeate_flow_volume_ref = Reference(self.permeate_flow_volume)
+        # self.permeate_outlet.add(self.permeate_flow_volume_ref, "flow_vol")
+        # self.permeate_conc_mass_comp_ref = Reference(self.permeate_conc_mass_comp)
+        # self.permeate_outlet.add(self.permeate_conc_mass_comp_ref, "conc_mass_comp")
+        # self.permeate_conc_mass_cobalt_ref = Reference(self.permeate_conc_mass_cobalt)

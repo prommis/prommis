@@ -21,10 +21,10 @@ from pyomo.environ import (
 
 from idaes.core import FlowsheetBlock
 
-from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 
 
 def build_model():

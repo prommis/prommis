@@ -15,14 +15,13 @@ from pyomo.environ import Param, Set, units
 
 # Import IDAES cores
 from idaes.core import (
-    declare_process_block_class,
-    ReactionParameterBlock,
-    ReactionBlockDataBase,
-    ReactionBlockBase,
     MaterialFlowBasis,
+    ReactionBlockBase,
+    ReactionBlockDataBase,
+    ReactionParameterBlock,
+    declare_process_block_class,
 )
 from idaes.core.util.misc import add_object_reference
-
 
 # Some more information about this module
 __author__ = "Andrew Lee"

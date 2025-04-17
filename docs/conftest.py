@@ -8,7 +8,6 @@ from typing import List
 
 import pytest
 
-
 NOTEBOOK_MARKERS = {
     "tutorial": "Notebook implementing a tutorial",
     "solution": "Notebook for the solution part of a tutorial",

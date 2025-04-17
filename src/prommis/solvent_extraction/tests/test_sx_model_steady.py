@@ -5,20 +5,21 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 from pyomo.environ import ConcreteModel, check_optimal_termination, value
-import numpy as np
 
 from idaes.core import FlowDirection, FlowsheetBlock
 from idaes.core.initialization import InitializationStatus
-from idaes.core.util import DiagnosticsToolbox
 from idaes.core.solvers import get_solver
+from idaes.core.util import DiagnosticsToolbox
 
+import numpy as np
 import pytest
-
-from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
 
 solver = get_solver()
 

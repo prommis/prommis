@@ -1095,11 +1095,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         doc="Percentage of revenue charged as royalties",
                         units=pyunits.percent,
                     )
-                    self.min_net_tax_owed = Param(
-                        initialize=0,
-                        doc="Minimum net tax owed in millions USD",
-                        units=CE_index_units / pyunits.year,
-                    )
+
                     self.eps = Param(
                         initialize=1e-4,
                         units=CE_index_units / pyunits.year,
@@ -1127,6 +1123,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         units=CE_index_units / pyunits.year,
                     )
                     self.additional_tax_owed.fix(1e-12)
+
+                    self.min_net_tax_owed = Var(
+                        initialize=0,
+                        doc="Minimum net tax owed in millions USD",
+                        units=CE_index_units / pyunits.year,
+                    )
+                    self.min_net_tax_owed.fix(1e-12)
 
                     self.royalty_charge = Expression(
                         expr=pyunits.convert(
@@ -1305,10 +1308,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
     def report(self, export=False):
         var_dict = {}
-        var_dict["Plant Cost Units"] = str(pyunits.get_units(self.total_plant_cost))
 
         if hasattr(self, "total_plant_cost"):
+            var_dict["Plant Cost Units"] = str(pyunits.get_units(self.total_plant_cost))
             var_dict["Total Plant Cost"] = value(self.total_plant_cost)
+        elif hasattr(self, "npv"):
+            var_dict["Plant Cost Units"] = str(pyunits.get_units(self.npv))
 
         if hasattr(self, "total_BEC"):
             var_dict["Total Bare Erected Cost"] = value(self.total_BEC)
@@ -1454,7 +1459,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             var_dict["Total Other Fixed Costs"] = value(self.other_fixed_costs)
 
         if hasattr(self, "variable_operating_costs"):
+
             if (0, "power") in self.variable_operating_costs.id_index_map().values():
+
                 var_dict["Total Variable Power Cost"] = value(
                     self.variable_operating_costs[0, "power"]
                 )
@@ -1517,6 +1524,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         if hasattr(self, "income_tax"):
             var_dict["Income Tax"] = value(self.income_tax)
+
+        if hasattr(self, "additional_tax_owed"):
+            var_dict["Additional Tax Owed"] = value(self.additional_tax_owed)
+
+        if hasattr(self, "additional_tax_credit"):
+            var_dict["Additional Tax Credit"] = value(self.additional_tax_credit)
 
         if hasattr(self, "net_tax_owed"):
             var_dict["Net Tax Owed"] = value(self.net_tax_owed)
@@ -3083,13 +3096,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         cash flows.
 
         This method supports capital expenditure, loan repayment, inflation,
-        and royalties. The NPV formulation assumes that negative cash flows
-        consists capital and operating costs scaled to a constant present
-        value. The general NPV formula with 100% of capital expenditure
-        upfront at the start of the operating period and no capital or
-        operating growth rate is
+        and taxes if previously calculated. The NPV formulation assumes that
+        negative cash flows consists capital and operating costs scaled to a
+        constant present value. The general NPV formula with 100% of capital
+        expenditure upfront at the start of the operating period and no capital
+        or operating growth rate is
 
-        NPV = [(REVENUE - OPEX - ROYALTIES) * P/A(r, N)] - CAPEX
+        NPV = [(REVENUE - OPEX - TAXES) * P/A(r, N)] - CAPEX
 
         where P/A(r, N) is the series present worth factor; this factor scales
         a future cost to its present value from a known discount rate r and
@@ -3100,8 +3113,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         where r is expressed as a decimal and N is expressed in years. In the
         NPV expression above, REVENUE is the constant annual revenue, OPEX is
-        the constant annual operating cost, and CAPEX is the total capital cost.
-        ROYALTIES are charged based on revenue, usually a fixed percentage.
+        the constant annual operating cost, CAPEX is the total capital cost,
+        and TAXES are the total net tax liability including income tax,
+        royalties, depletion rights, and incentives.
 
         Operating costs and revenues are adjusted based on predicted annuity
         growth to obtain the present value. These expressions are implemented
@@ -3122,7 +3136,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         a constant proportional growth rate expressed as an escalation or
         inflation percentage. The general formulation is given by
 
-        NPV = PV_Revenue - PV_Operating_Cost - PV_Royalties
+        NPV = PV_Revenue - PV_Operating_Cost - PV_Taxes
               - PV_Capital_Cost - PV_Loan_Interest
 
         For costs escalating at a constant rate for the project lifetime, the
@@ -3158,7 +3172,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         is the loan repayment period, and iLoan_% is the capital equipment loan interest
         rate expressed as a decimal.
 
-        Revenue, operating costs and royalties based on revenue escalate with
+        Revenue, operating costs and taxes based on revenue escalate with
         standard inflation. Notably, these cash flows occur after any capital
         expenditure period, meaning that the annuity growth must be offset by
         the length of the capital expenditure period. This yields the expressions
@@ -3167,17 +3181,18 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         PV_Operating_Cost = OPEX * [ P/A(r, gOp, NOp+NCap) - P/A(r, gOp, NCap) ]
 
-        PV_Royalties = iRoy_% * REVENUE * [ P/A(r, gRev, NOp+NCap) - P/A(r, gRev, NCap) ]
+        PV_Taxes = TAXES * [ P/A(r, 0, NOp+NCap) - P/A(r, gRev, NCap) ]
 
         where REVENUE is the annual revenue, OPEX is the annual operating cost,
-        gRev is the inflation or growth rate of revenue year-on-year expressed as
-        a decimal, gOp is the inflation or growth rate of operating costs year-on-year
-        expressed as a decimal, NOp is the length of the operating period or plant
-        lifetime, NCap is the length of the capital expenditure period, and iRoy_%
-        is the percentage of the revenue charged as royalties expressed as a decimal.
-        The expressions above take the annuity growth during the entire analysis
-        period (NOp+NCap) and subtract the capital expenditure period (NCap) as there
-        is no operation or production during that time.
+        TAXES is the annual net tax liability, gRev is the inflation or growth
+        rate of revenue year-on-year expressed as a decimal, gOp is the inflation
+        or growth rate of operating costs year-on-year expressed as a decimal,
+        NOp is the length of the operating period or plant lifetime, and NCap is
+        the length of the capital expenditure period. The expressions above take
+        the annuity growth during the entire analysis period (NOp+NCap) and subtract
+        the capital expenditure period (NCap) as there is no operation or production
+        during that time. Note that the taxes do not include inflation growth, as future
+        tax rates are difficult to predict and do not rise proportionally with inflation.
 
         Args:
             b: costing block to retrieve total plant cost (capital), total plant
@@ -3273,8 +3288,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if consider_taxes:
             b.pv_taxes = Var(
                 initialize=-b.net_tax_owed * pyunits.year * b.config.plant_lifetime,
-                bounds=(None, 0),
-                doc="Present value of total lifetime tax owed; negative cash flow",
+                bounds=(None, None),
+                doc="Present value of total lifetime tax owed; typically negative cash flow, positive in the case of an effective negative tax rate",
                 units=b.cost_units,
             )
 

@@ -947,7 +947,7 @@ class TestREECosting(object):
 
     @pytest.mark.unit
     def test_base_model_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.unit
@@ -1157,7 +1157,7 @@ class TestREECosting(object):
 
     @pytest.mark.unit
     def test_full_model_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -1177,7 +1177,7 @@ class TestREECosting(object):
 
     @pytest.mark.component
     def test_solved_model_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -1246,7 +1246,7 @@ class TestREECosting(object):
             CE_index_year=CE_index_year,
         )
 
-        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -1260,7 +1260,7 @@ class TestREECosting(object):
     @pytest.mark.component
     def test_costing_bounding_solve_diagnostics(self, model):
 
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -2336,7 +2336,7 @@ class TestCustomCosting(object):
         model.fs.power.fix()
 
         # check model structural diagnostics
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
         QGESSCostingData.costing_initialization(model.fs.costing)
@@ -2787,7 +2787,7 @@ class TestDiafiltrationCosting(object):
         model.fs.power.fix()
 
         # check model structural diagnostics
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
         QGESSCostingData.costing_initialization(model.fs.costing)
@@ -2992,7 +2992,7 @@ class TestHDDRecyclingCosting(object):
             fixed_OM=False,
         )
 
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -3007,7 +3007,7 @@ class TestHDDRecyclingCosting(object):
 
     @pytest.mark.component
     def test_HDD_Recycling_costing_solve_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -3122,7 +3122,7 @@ class TestNPVCostingBlock(object):
 
     @pytest.mark.unit
     def test_NPV_costingblock_build_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -3137,7 +3137,7 @@ class TestNPVCostingBlock(object):
 
     @pytest.mark.component
     def test_NPV_costingblock_solve_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -3209,7 +3209,7 @@ class TestNPVFixedInputs(object):
 
     @pytest.mark.unit
     def test_NPV_fixedinputs_build_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -3220,7 +3220,7 @@ class TestNPVFixedInputs(object):
 
     @pytest.mark.component
     def test_NPV_fixedinputs_solve_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -3317,7 +3317,7 @@ def test_REE_costing_CE_index_year():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3485,7 +3485,7 @@ def test_REE_costing_multipleaccountssameparameter():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3572,7 +3572,7 @@ def test_REE_costing_additionalcostingparams_newaccount():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3625,7 +3625,7 @@ def test_REE_costing_additionalcostingparams_overwrite():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3796,7 +3796,7 @@ def test_REE_costing_scaledownparallelequip():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3898,7 +3898,7 @@ def test_REE_costing_usersetTPC_noOM():
         fixed_OM=False,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3966,7 +3966,7 @@ def test_REE_costing_usersetTPC_withOM():
         ],
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4016,7 +4016,7 @@ def test_REE_costing_useLangfactor():
         fixed_OM=False,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4108,7 +4108,7 @@ def test_REE_costing_optionalexpressionarguments(argument, cost_obj):
         **{argument: getattr(m.fs, argument)},
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4160,7 +4160,7 @@ def test_REE_costing_fixedOM_defaults():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4624,7 +4624,7 @@ def test_REE_costing_variableOM_defaults():
         ],
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4711,7 +4711,7 @@ def test_REE_costing_variableOM_steadystateflowsheet():
         ],
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4836,7 +4836,7 @@ def test_REE_costing_variableOM_nofeedinput():
         ],
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5049,7 +5049,7 @@ def test_REE_costing_variableOM_customprices():
         prices={"water": 1.90e-3 * 1e-6 * pyunits.MUSD_2021 / pyunits.gallon},
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5322,7 +5322,7 @@ def test_REE_costing_recovery(recovery_rate_units, expectation):
             recovery_rate_per_year=m.fs.recovery_rate_per_year,
         )
 
-        dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=m)
         dt.assert_no_structural_warnings()
 
         QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5413,7 +5413,7 @@ def test_REE_costing_recovery_passedinmethodcall():
         / pyunits.year,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5514,7 +5514,7 @@ def test_REE_costing_recovery_transportcost(transport_cost_obj):
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5960,7 +5960,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
         calculate_NPV=True,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
     solver = get_solver()
     results = solver.solve(m, tee=True)
@@ -6061,7 +6061,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
         calculate_NPV=True,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
     solver = get_solver()
     results = solver.solve(m, tee=True)
@@ -6161,7 +6161,7 @@ def test_REE_costing_not_has_capital_expenditure_period_solve():
         calculate_NPV=True,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
     solver = get_solver()
     results = solver.solve(m, tee=True)
@@ -6344,7 +6344,7 @@ def test_REE_costing_debt_expression_solve():
         calculate_NPV=True,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     solver = get_solver()
@@ -6375,7 +6375,7 @@ def test_REE_costing_economy_of_numbers():
         learning_rate=0.05,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     solver = get_solver()
@@ -6450,7 +6450,7 @@ def test_REE_costing_consider_taxes():
         calculate_NPV=True,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)

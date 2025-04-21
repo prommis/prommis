@@ -129,13 +129,6 @@ class TestDiafiltrationTwoSalt(object):
             Constraint,
         )
         assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_permeate_conc_mass_lithium,
-            Constraint,
-        )
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_permeate_conc_mass_cobalt, Constraint
-        )
-        assert isinstance(
             diafiltration_two_salt.fs.unit.initial_d_retentate_conc_mass_lithium_dx,
             Constraint,
         )
@@ -213,9 +206,6 @@ class TestDiafiltrationTwoSalt(object):
         )
         assert isinstance(
             diafiltration_two_salt.fs.unit.geometric_flux_equation_lithium, Constraint
-        )
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.geometric_flux_equation_cobalt, Constraint
         )
         assert isinstance(diafiltration_two_salt.fs.unit.lumped_water_flux, Constraint)
         assert isinstance(

@@ -23,6 +23,8 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 
+import numpy as np
+
 
 @declare_process_block_class("SoluteProductParameter")
 class SoluteProductParameterData(PhysicalParameterBlock):
@@ -48,8 +50,14 @@ class SoluteProductParameterData(PhysicalParameterBlock):
         self.Cl = Component()
 
         # define length scale
-        # assumes 5 finite elements
-        self.x = Set(initialize=[0, 0.2, 0.4, 0.6, 0.8, 1])
+        nfe = 5
+
+        def discretize_x(nfe):
+            x_vals = np.arange(0, 1 + (1 / nfe), (1 / nfe))
+            return x_vals
+
+        x_vals = discretize_x(nfe)
+        self.x = Set(initialize=np.round((x_vals), 1))
 
         # add valence
         self.charge = Param(
@@ -138,7 +146,7 @@ class SoluteProductStateBlockData(StateBlockData):
             self.params.x,
             units=units.m**3 / units.h,
             initialize=10,
-            bounds=(1e-8, None),
+            bounds=(1e-10, None),
         )
         self.conc_mass_comp = Var(
             self.component_list,

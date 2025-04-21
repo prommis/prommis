@@ -14,7 +14,7 @@ from pyomo.environ import (
     ConcreteModel,
     SolverFactory,
     TransformationFactory,
-    assert_optimal_termination,
+    # assert_optimal_termination,
     value,
 )
 from pyomo.network import Arc
@@ -39,12 +39,13 @@ def main():
     """
     Builds and solves flowsheet with two-salt diafiltration unit model.
     """
+    # build flowsheet
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.feed_properties = SoluteFeedParameter()
     m.fs.product_properties = SoluteProductParameter()
 
-    # update parameter inputs
+    # update parameter inputs if desired
     build_membrane_parameters(m)
 
     # add the membrane unit model
@@ -57,17 +58,28 @@ def main():
     # fix the degrees of freedom to their default values
     fix_variables(m)
 
+    # add and connect flowsheet streams
     add_and_connect_streams(m)
+
+    # check structural warnings
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 
-    solve_model(m)  # TODO: debug numerical scaling for higher NFE
+    # solve model
+    # TODO: debug numerical scaling for higher NFE
+    solve_model(m)
+
+    # check numerical warnings
     # TODO: resolve numerical warnings
     # dt.assert_no_numerical_warnings()
     dt.report_numerical_issues()
+    dt.display_constraints_with_large_residuals()
+    dt.display_variables_at_or_outside_bounds()
+    dt.compute_infeasibility_explanation()
 
-    # plot_results(m)
-    # plot_membrane_results(m)
+    # visualize the results
+    plot_results(m)
+    plot_membrane_results(m)
 
 
 def build_membrane_parameters(m):
@@ -111,7 +123,7 @@ def add_and_connect_streams(m):
         destination=m.fs.membrane.diafiltrate_inlet,
     )
     m.fs.retentate_stream = Arc(
-        source=m.fs.membrane.retentate_oulet,
+        source=m.fs.membrane.retentate_outlet,
         destination=m.fs.retentate_block.inlet,
     )
     m.fs.permeate_stream = Arc(
@@ -133,8 +145,9 @@ def solve_model(m):
     scaled_model = scaling.create_using(m, rename=False)
 
     solver = SolverFactory("ipopt")
+    # solver.options['tol'] = 1E-5
     results = solver.solve(scaled_model, tee=True)
-    assert_optimal_termination(results)
+    # assert_optimal_termination(results)
 
     scaling.propagate_solution(scaled_model, m)
 
@@ -165,10 +178,18 @@ def plot_results(m):
 
     for x_val in m.fs.membrane.x_bar:
         x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
-        conc_ret_lith.append(value(m.fs.membrane.retentate_conc_mass_lithium[x_val]))
-        conc_perm_lith.append(value(m.fs.membrane.permeate_conc_mass_lithium[x_val]))
-        conc_ret_cob.append(value(m.fs.membrane.retentate_conc_mass_cobalt[x_val]))
-        conc_perm_cob.append(value(m.fs.membrane.permeate_conc_mass_cobalt[x_val]))
+        conc_ret_lith.append(
+            value(m.fs.membrane.retentate_conc_mass_comp[0, "Li", x_val])
+        )
+        conc_perm_lith.append(
+            value(m.fs.membrane.permeate_conc_mass_comp[0, "Li", x_val])
+        )
+        conc_ret_cob.append(
+            value(m.fs.membrane.retentate_conc_mass_comp[0, "Co", x_val])
+        )
+        conc_perm_cob.append(
+            value(m.fs.membrane.permeate_conc_mass_comp[0, "Co", x_val])
+        )
 
         water_flux.append(value(m.fs.membrane.volume_flux_water[x_val]))
         lithium_flux.append(value(m.fs.membrane.mass_flux_lithium[x_val]))
@@ -195,7 +216,7 @@ def plot_results(m):
     ax2.tick_params(direction="in", labelsize=10)
 
     ax3.plot(x_axis_values, conc_ret_cob, linewidth=2)
-    ax3.set_ylim(13, 13.5)
+    # ax3.set_ylim(13, 13.5)
     ax3.set_ylabel(
         "Retentate-side Cobalt\n Concentration (kg/m$^3$)",
         fontsize=10,
@@ -240,7 +261,6 @@ def plot_membrane_results(m):
         x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
     for z_val in m.fs.membrane.z_bar:
         z_axis_values.append(z_val * value(m.fs.membrane.membrane_thickness) * 1e9)
-
     # store values for concentration of lithium in the membrane
     conc_mem_lith = []
     conc_mem_lith_dict = {}

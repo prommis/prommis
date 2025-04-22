@@ -50,13 +50,13 @@ class SoluteProductParameterData(PhysicalParameterBlock):
         self.Cl = Component()
 
         # define length scale
-        nfe = 5
+        self.nfe = 5
 
         def discretize_x(nfe):
             x_vals = np.arange(0, 1 + (1 / nfe), (1 / nfe))
             return x_vals
 
-        x_vals = discretize_x(nfe)
+        x_vals = discretize_x(self.nfe)
         self.x = Set(initialize=np.round((x_vals), 1))
 
         # add valence

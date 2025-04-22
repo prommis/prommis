@@ -71,13 +71,17 @@ def main():
 
     # check numerical warnings
     # TODO: resolve numerical warnings
+    # some variables are hitting their lower bound of 0 (expected)
+    # some residuals are large (unexpected)
     # dt.assert_no_numerical_warnings()
     dt.report_numerical_issues()
     dt.display_constraints_with_large_residuals()
     dt.display_variables_at_or_outside_bounds()
-    dt.compute_infeasibility_explanation()
+
+    m.fs.membrane.display()
 
     # visualize the results
+    # currently no partitioning in the membrane
     plot_results(m)
     plot_membrane_results(m)
 
@@ -176,6 +180,18 @@ def plot_results(m):
     # store values for mass flux of lithium across membrane
     lithium_flux = []
 
+    # store values for percent recovery
+    percent_recovery = []
+
+    # store values for lithium rejection
+    lithium_rejection = []
+    # store values for lithium solute passage
+    lithium_sieving = []
+    # store values for cobalt rejection
+    cobalt_rejection = []
+    # store values for cobalt solute passage
+    cobalt_sieving = []
+
     for x_val in m.fs.membrane.x_bar:
         x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
         conc_ret_lith.append(
@@ -194,54 +210,100 @@ def plot_results(m):
         water_flux.append(value(m.fs.membrane.volume_flux_water[x_val]))
         lithium_flux.append(value(m.fs.membrane.mass_flux_lithium[x_val]))
 
+        lithium_rejection.append(
+            (
+                1
+                - (
+                    value(m.fs.membrane.permeate_conc_mass_comp[0, "Li", x_val])
+                    / value(m.fs.membrane.retentate_conc_mass_comp[0, "Li", x_val])
+                )
+            )
+            * 100
+        )
+        lithium_sieving.append(
+            (
+                value(m.fs.membrane.permeate_conc_mass_comp[0, "Li", x_val])
+                / value(m.fs.membrane.retentate_conc_mass_comp[0, "Li", x_val])
+            )
+        )
+        cobalt_rejection.append(
+            (
+                1
+                - (
+                    value(m.fs.membrane.permeate_conc_mass_comp[0, "Co", x_val])
+                    / value(m.fs.membrane.retentate_conc_mass_comp[0, "Co", x_val])
+                )
+            )
+            * 100
+        )
+        cobalt_sieving.append(
+            (
+                value(m.fs.membrane.permeate_conc_mass_comp[0, "Co", x_val])
+                / value(m.fs.membrane.retentate_conc_mass_comp[0, "Co", x_val])
+            )
+        )
+
+        percent_recovery.append(
+            (
+                value(m.fs.membrane.permeate_flow_volume[0, x_val])
+                / value(m.fs.membrane.feed_flow_volume[0])
+                * 100
+            )
+        )
+
     fig1, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(
-        3, 2, dpi=125, figsize=(10, 7)
+        3, 2, dpi=125, figsize=(12, 10)
     )
 
-    ax1.plot(x_axis_values, conc_ret_lith, linewidth=2)
-    ax1.set_ylim(1.3, 1.4)
+    ax1.plot(x_axis_values, conc_ret_lith, linewidth=2, label="retentate")
+    ax1.plot(x_axis_values, conc_perm_lith, linewidth=2, label="permeate")
     ax1.set_ylabel(
-        "Retentate-side Lithium\n Concentration (kg/m$^3$)",
+        "Lithium Concentration (kg/m$^3$)",
         fontsize=10,
         fontweight="bold",
     )
     ax1.tick_params(direction="in", labelsize=10)
+    ax1.legend()
 
-    ax2.plot(x_axis_values, conc_perm_lith, linewidth=2)
+    ax2.plot(x_axis_values, conc_ret_cob, linewidth=2, label="retentate")
+    ax2.plot(x_axis_values, conc_perm_cob, linewidth=2, label="permeate")
     ax2.set_ylabel(
-        "Permeate-side Lithium\n Concentration (kg/m$^3$)",
+        "Cobalt Concentration (kg/m$^3$)",
         fontsize=10,
         fontweight="bold",
     )
     ax2.tick_params(direction="in", labelsize=10)
+    ax2.legend()
 
-    ax3.plot(x_axis_values, conc_ret_cob, linewidth=2)
-    # ax3.set_ylim(13, 13.5)
-    ax3.set_ylabel(
-        "Retentate-side Cobalt\n Concentration (kg/m$^3$)",
-        fontsize=10,
-        fontweight="bold",
-    )
+    ax3.plot(x_axis_values, water_flux, linewidth=2)
+    ax3.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
+    ax3.set_ylabel("Water Flux (m$^3$/m$^2$/h)", fontsize=10, fontweight="bold")
     ax3.tick_params(direction="in", labelsize=10)
 
-    ax4.plot(x_axis_values, conc_perm_cob, linewidth=2)
+    ax4.plot(x_axis_values, lithium_flux, linewidth=2)
+    ax4.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
     ax4.set_ylabel(
-        "Permeate-side Cobalt\n Concentration (kg/m$^3$)",
-        fontsize=10,
-        fontweight="bold",
+        "Mass Flux of Lithium\n (kg/m$^2$/h)", fontsize=10, fontweight="bold"
     )
     ax4.tick_params(direction="in", labelsize=10)
 
-    ax5.plot(x_axis_values, water_flux, linewidth=2)
+    ax5.plot(x_axis_values, lithium_rejection, linewidth=2, label="lithium")
+    ax5.plot(x_axis_values, cobalt_rejection, linewidth=2, label="cobalt")
     ax5.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
-    ax5.set_ylabel("Water Flux (m$^3$/m$^2$/h)", fontsize=10, fontweight="bold")
+    ax5.set_ylabel("Solute Rejection (%)", fontsize=10, fontweight="bold")
     ax5.tick_params(direction="in", labelsize=10)
+    ax5.legend()
 
-    ax6.plot(x_axis_values, lithium_flux, linewidth=2)
+    # ax6.plot(x_axis_values, lithium_sieving, linewidth=2, label="lithium")
+    # ax6.plot(x_axis_values, cobalt_sieving, linewidth=2, label="cobalt")
+    # ax6.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
+    # ax6.set_ylabel("Solute Passage", fontsize=10, fontweight="bold")
+    # ax6.tick_params(direction="in", labelsize=10)
+    # ax6.legend()
+
+    ax6.plot(x_axis_values, percent_recovery, linewidth=2)
     ax6.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
-    ax6.set_ylabel(
-        "Mass Flux of Lithium\n (kg/m$^2$/h)", fontsize=10, fontweight="bold"
-    )
+    ax6.set_ylabel("Percent Recovery (%)", fontsize=10, fontweight="bold")
     ax6.tick_params(direction="in", labelsize=10)
 
     plt.show()

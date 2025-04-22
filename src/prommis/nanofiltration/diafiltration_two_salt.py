@@ -320,7 +320,7 @@ and used when constructing these,
             doc="Thickness of membrane (z-direction)",
         )
         self.membrane_permeability = Param(
-            initialize=0.01,
+            initialize=0.03,
             mutable=True,
             units=units.m / units.h / units.bar,
             doc="Hydraulic permeability coefficient",
@@ -574,8 +574,6 @@ and used when constructing these,
 
         # mass balance constraints
         def _overall_mass_balance(self, x):
-            if x == 1:
-                return Constraint.Skip
             return self.d_retentate_flow_volume_dx[0, x] == (
                 -self.volume_flux_water[x] * self.membrane_length * self.membrane_width
             )
@@ -614,42 +612,6 @@ and used when constructing these,
 
         self.cobalt_mass_balance = Constraint(self.x_bar, rule=_cobalt_mass_balance)
 
-        def _general_mass_balance_lithium(self, x):
-            if x == 0:
-                return Constraint.Skip
-            return (
-                self.retentate_conc_mass_comp[0, "Li", x]
-                * self.retentate_flow_volume[0, x]
-                + self.permeate_conc_mass_comp[0, "Li", x]
-                * self.permeate_flow_volume[0, x]
-            ) == (
-                self.feed_flow_volume[0] * self.feed_conc_mass_comp[0, "Li"]
-                + self.diafiltrate_flow_volume[0]
-                * self.diafiltrate_conc_mass_comp[0, "Co"]
-            )
-
-        self.general_mass_balance_lithium = Constraint(
-            self.x_bar, rule=_general_mass_balance_lithium
-        )
-
-        def _general_mass_balance_cobalt(self, x):
-            if x == 0:
-                return Constraint.Skip
-            return (
-                self.retentate_conc_mass_comp[0, "Co", x]
-                * self.retentate_flow_volume[0, x]
-                + self.permeate_conc_mass_comp[0, "Co", x]
-                * self.permeate_flow_volume[0, x]
-            ) == (
-                self.feed_flow_volume[0] * self.feed_conc_mass_comp[0, "Co"]
-                + self.diafiltrate_flow_volume[0]
-                * self.diafiltrate_conc_mass_comp[0, "Co"]
-            )
-
-        self.general_mass_balance_cobalt = Constraint(
-            self.x_bar, rule=_general_mass_balance_cobalt
-        )
-
         # transport constraints (geometric)
         def _geometric_flux_equation_overall(self, x):
             if x == 0:
@@ -667,7 +629,7 @@ and used when constructing these,
         )
 
         def _geometric_flux_equation_lithium(self, x):
-            if x != 1:
+            if x == 0:
                 return Constraint.Skip
             return self.mass_flux_lithium[x] == (
                 self.permeate_conc_mass_comp[0, "Li", x] * self.volume_flux_water[x]
@@ -675,6 +637,17 @@ and used when constructing these,
 
         self.geometric_flux_equation_lithium = Constraint(
             self.x_bar, rule=_geometric_flux_equation_lithium
+        )
+
+        def _geometric_flux_equation_cobalt(self, x):
+            if x == 0:
+                return Constraint.Skip
+            return self.mass_flux_cobalt[x] == (
+                self.permeate_conc_mass_comp[0, "Co", x] * self.volume_flux_water[x]
+            )
+
+        self.geometric_flux_equation_cobalt = Constraint(
+            self.x_bar, rule=_geometric_flux_equation_cobalt
         )
 
         # transport constraints (first principles)

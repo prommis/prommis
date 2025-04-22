@@ -12,6 +12,7 @@ from pyomo.environ import (
     ConcreteModel,
     Constraint,
     Param,
+    Set,
     SolverFactory,
     TransformationFactory,
     Var,
@@ -56,16 +57,12 @@ def diafiltration_two_salt():
     m.fs.unit.feed_flow_volume.fix(100)
     m.fs.unit.feed_conc_mass_comp[0, "Li"].fix(1.7)
     m.fs.unit.feed_conc_mass_comp[0, "Co"].fix(17)
-    m.fs.unit.feed_conc_mass_comp[0, "Cl"].fix(
-        0
-    )  # not used in the model but appears in port from property package
+    m.fs.unit.feed_conc_mass_comp[0, "Cl"].fix(10.7)
 
     m.fs.unit.diafiltrate_flow_volume.fix(30)
     m.fs.unit.diafiltrate_conc_mass_comp[0, "Li"].fix(0.1)
     m.fs.unit.diafiltrate_conc_mass_comp[0, "Co"].fix(0.2)
-    m.fs.unit.diafiltrate_conc_mass_comp[0, "Cl"].fix(
-        0
-    )  # not used in the model but appears in port from property package
+    m.fs.unit.diafiltrate_conc_mass_comp[0, "Cl"].fix(0.2)
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -95,13 +92,15 @@ class TestDiafiltrationTwoSalt(object):
         assert value(diafiltration_two_salt.fs.unit.membrane_thickness) == 1e-7
 
         assert isinstance(diafiltration_two_salt.fs.unit.membrane_permeability, Param)
-        assert value(diafiltration_two_salt.fs.unit.membrane_permeability) == 0.01
+        assert value(diafiltration_two_salt.fs.unit.membrane_permeability) == 0.03
 
         assert isinstance(diafiltration_two_salt.fs.unit.temperature, Param)
         assert value(diafiltration_two_salt.fs.unit.temperature) == 298
 
         assert isinstance(diafiltration_two_salt.fs.unit.x_bar, ContinuousSet)
         assert isinstance(diafiltration_two_salt.fs.unit.z_bar, ContinuousSet)
+        assert isinstance(diafiltration_two_salt.fs.unit.time, Set)
+        assert isinstance(diafiltration_two_salt.fs.unit.solutes, Set)
 
         assert isinstance(
             diafiltration_two_salt.fs.unit.initial_retentate_flow_volume, Constraint
@@ -196,16 +195,13 @@ class TestDiafiltrationTwoSalt(object):
             diafiltration_two_salt.fs.unit.cobalt_mass_balance, Constraint
         )
         assert isinstance(
-            diafiltration_two_salt.fs.unit.general_mass_balance_lithium, Constraint
-        )
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.general_mass_balance_cobalt, Constraint
-        )
-        assert isinstance(
             diafiltration_two_salt.fs.unit.geometric_flux_equation_overall, Constraint
         )
         assert isinstance(
             diafiltration_two_salt.fs.unit.geometric_flux_equation_lithium, Constraint
+        )
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.geometric_flux_equation_cobalt, Constraint
         )
         assert isinstance(diafiltration_two_salt.fs.unit.lumped_water_flux, Constraint)
         assert isinstance(
@@ -264,6 +260,7 @@ class TestDiafiltrationTwoSalt(object):
         )
 
         # TODO: check dimensions of indexed variables
+        # TODO: check scaling factors
 
     @pytest.mark.component
     def test_diagnostics(self, diafiltration_two_salt):
@@ -287,62 +284,58 @@ class TestDiafiltrationTwoSalt(object):
         test_dict = {
             "retentate_final": [
                 value(diafiltration_two_salt.fs.unit.retentate_flow_volume[0, 1]),
-                129.99999845610384,
+                99.99999997000003,
             ],
             "lithium_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Li", 1]
                 ),
-                1.3307691965147272,
+                1.330769230688393,
             ],
             "cobalt_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Co", 1]
                 ),
-                13.12307707892674,
+                13.12307692306405,
             ],
             "chlorine_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Cl", 1]
                 ),
-                22.585349063905188,
+                22.58534905091955,
+            ],
+            "permeate_final": [
+                value(diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 1]),
+                30.000000029999928,
             ],
             "lithium_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Li", 1]
                 ),
-                3.3691596267961286,
+                1.330769231005046,
+            ],
+            "cobalt_permeate_final": [
+                value(
+                    diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Co", 1]
+                ),
+                13.123076923114663,
             ],
             "chlorine_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Cl", 1]
                 ),
-                17.207427424982267,
+                22.585349052131857,
             ],
         }
 
         for model_result, test_val in test_dict.values():
             assert pytest.approx(test_val, rel=1e-5) == value(model_result)
 
-        test_dict_small_values = {
-            "permeate_final": [
-                value(diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 1]),
-                1.9315367820840497e-06,
-            ],
-            "cobalt_permeate_final": [
-                value(
-                    diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Co", 1]
-                ),
-                5.387084386093181e-06,
-            ],
-        }
-
-        for model_result, test_val in test_dict_small_values.values():
-            assert pytest.approx(test_val, rel=1e-2) == value(model_result)
-
     @pytest.mark.component
     def test_numerical_issues(self, diafiltration_two_salt):
         dt = DiagnosticsToolbox(diafiltration_two_salt.fs.unit)
         # TODO: resolve numerical warnings
+        # some variables are hitting their lower bound of 0 (expected)
+        # some residuals are large (unexpected)
         # dt.assert_no_numerical_warnings()
         dt.report_numerical_issues()

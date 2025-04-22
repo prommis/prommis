@@ -15,7 +15,7 @@ This multi-component model for the diafiltration membrane model is a two-salt sy
 Configuration Arguments
 -----------------------
 
-The Two-Salt Diafiltration model requires a property package that includes the moles of dissociated ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in solution. 
+The Two-Salt Diafiltration model requires two property packages that include the moles of dissociated ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in solution. The property package for the feed streams does not allow for the flow rates and concentrations to be indexed over membrane width, but the property package for the product streams does require the flow rates and concentrations to be indexed over membrane width.
 
 Additionally, there are two required arguments, ``NFEx`` and ``NFEz``, to specfiy the desired number of finite elements across the width and thickness of the membrane, respectively.
 
@@ -73,7 +73,7 @@ The Two-Salt Diafiltration model has the following parameters.
 Parameter   Description                            Name                      Default Value Units
 =========== ====================================== ========================= ============= =========================
 :math:`l`   thickness of the membrane              ``membrane_thickness``    1e-07         :math:`m`
-:math:`L_p` hydraulic permeability of the membrane ``membrane_permeability`` 0.01          :math:`m h^{-1} bar^{-1}`
+:math:`L_p` hydraulic permeability of the membrane ``membrane_permeability`` 0.03          :math:`m h^{-1} bar^{-1}`
 :math:`T`   temperature of the system              ``temperature``           298           :math:`K`
 =========== ====================================== ========================= ============= =========================
 
@@ -140,11 +140,6 @@ Differential mass balances in the retentate:
 .. math:: \frac{\mathrm{d}c_{\mathrm{Li^+},r}(\bar{x})}{\mathrm{d}\bar{x}} = \left( J_w(\bar{x}) c_{\mathrm{Li^+},r}(\bar{x}) - j_{\mathrm{Li^+}}(\bar{x}) \right) \frac{Lw}{q_r(\bar{x})}
 .. math:: \frac{\mathrm{d}c_{\mathrm{Co^{2+}},r}(\bar{x})}{\mathrm{d}\bar{x}} = \left( J_w(\bar{x}) c_{\mathrm{Co^{2+}},r}(\bar{x}) - j_{\mathrm{Co^{2+}}}(\bar{x}) \right) \frac{Lw}{q_r(\bar{x})}
 
-Overall component mass balances:
-
-.. math:: q_r(\bar{x})c_{\mathrm{Li^+},r}(\bar{x}) + q_p(\bar{x})c_{\mathrm{Li^+},p}(\bar{x}) = q_f c_{\mathrm{Li^+},f}+q_d c_{\mathrm{Li^+},d} \forall \bar{x} \neq 0
-.. math:: q_r(\bar{x})c_{\mathrm{Co^{2+}},r}(\bar{x}) + q_p(\bar{x})c_{\mathrm{Co^{2+}},p}(\bar{x}) = q_f c_{\mathrm{Li^+},f}+q_d c_{\mathrm{Li^+},d} \forall \bar{x} \neq 0
-
 Electroneutrality in the retentate:
 
 .. math:: c_{\mathrm{Cl^-},r}(\bar{x}) = - \frac{z_{\mathrm{Li^+}}}{z_{\mathrm{Cl^-}}} \frac{MW_{\mathrm{Cl^-}}}{MW_{\mathrm{Li^+}}} c_{\mathrm{Li^+},r}(\bar{x}) - \frac{z_{\mathrm{Co^{2+}}}}{z_{\mathrm{Cl^-}}} \frac{MW_{\mathrm{Cl^-}}}{MW_{\mathrm{Co^{2+}}}} c_{\mathrm{Co^{2+}},r}(\bar{x})
@@ -204,9 +199,9 @@ Mass balance (via convection) on the permeate outlet:
 
 Relate the concentrations at each phase interface:
 
-.. math:: c_{\mathrm{Li^+},r}(\bar{x})=c_{\mathrm{Li^+},m}(\bar{x},\bar{z}=0)
-.. math:: c_{\mathrm{Co^{2+}},r}(\bar{x})=c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}=0)
-.. math:: c_{\mathrm{Cl^-},r}(\bar{x})=c_{\mathrm{Cl^-},m}(\bar{x},\bar{z}=0)
+.. math:: c_{\mathrm{Li^+},r}(\bar{x})=c_{\mathrm{Li^+},m}(\bar{x},\bar{z}=0) \forall \bar{x} \neq 0
+.. math:: c_{\mathrm{Co^{2+}},r}(\bar{x})=c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}=0) \forall \bar{x} \neq 0
+.. math:: c_{\mathrm{Cl^-},r}(\bar{x})=c_{\mathrm{Cl^-},m}(\bar{x},\bar{z}=0) \forall \bar{x} \neq 0
 .. math:: c_{\mathrm{Li^+},m}(\bar{x},\bar{z}=1)=c_{\mathrm{Li^+},p}(\bar{x})
 .. math:: c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}=1)=c_{\mathrm{Co^{2+}},p}(\bar{x})
 .. math:: c_{\mathrm{Cl^-},m}(\bar{x},\bar{z}=1)=c_{\mathrm{Cl^-},p}(\bar{x})
@@ -217,8 +212,9 @@ Initial and boundary conditions:
 .. math:: q_r(\bar{x}=0) c_{\mathrm{Li^+},r}(\bar{x}=0)=q_f c_{\mathrm{Li^+},f} + q_d c_{\mathrm{Li^+},d}
 .. math:: q_r(\bar{x}=0) c_{\mathrm{Co^{2+}},r}(\bar{x}=0)=q_f c_{\mathrm{Co^{2+}},f} + q_d c_{\mathrm{Co^{2+}},d}
 .. math:: q_p(\bar{x}=0) = 0
-.. math:: c_{\mathrm{Li^+},p} (\bar{x}=0) = 0
-.. math:: c_{\mathrm{Co^{2+}},p} (\bar{x}=0) = 0
+.. math:: c_{\mathrm{Li^+},m} (\bar{x}=0,\bar{z}=0) = 0
+.. math:: c_{\mathrm{Co^{2+}},m} (\bar{x}=0,\bar{z}=0) = 0
+.. math:: c_{\mathrm{Cl^-},m} (\bar{x}=0,\bar{z}=0) = 0
 .. math:: \frac{\mathrm{d}q_r(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=0
 .. math:: \frac{\mathrm{d}c_{\mathrm{Li^+},r}(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=0
 .. math:: \frac{\mathrm{d}c_{\mathrm{Co^{2+}},r}(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=0

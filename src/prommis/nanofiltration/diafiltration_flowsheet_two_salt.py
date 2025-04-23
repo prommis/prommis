@@ -29,6 +29,7 @@ from pandas import DataFrame
 from prommis.nanofiltration.diafiltration_solute_feed_properties import (
     SoluteFeedParameter,
 )
+from prommis.nanofiltration.diafiltration_solute_properties import SoluteParameter
 from prommis.nanofiltration.diafiltration_solute_product_properties import (
     SoluteProductParameter,
 )
@@ -43,17 +44,26 @@ def main():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.feed_properties = SoluteFeedParameter()
+    m.fs.properties = SoluteParameter()
     m.fs.product_properties = SoluteProductParameter()
 
     # update parameter inputs if desired
     build_membrane_parameters(m)
 
+    # add feed blocks for feed and diafiltrate
+    m.fs.feed_block = Feed(property_package=m.fs.feed_properties)
+    m.fs.diafiltrate_block = Feed(property_package=m.fs.feed_properties)
+
     # add the membrane unit model
     m.fs.membrane = TwoSaltDiafiltration(
-        property_package=m.fs.feed_properties,
+        property_package=m.fs.properties,
         NFEx=5,
         NFEz=5,
     )
+
+    # add product blocks for retentate and permeate
+    m.fs.retentate_block = Product(property_package=m.fs.product_properties)
+    m.fs.permeate_block = Product(property_package=m.fs.product_properties)
 
     # fix the degrees of freedom to their default values
     fix_variables(m)
@@ -77,8 +87,6 @@ def main():
     dt.report_numerical_issues()
     dt.display_constraints_with_large_residuals()
     dt.display_variables_at_or_outside_bounds()
-
-    m.fs.membrane.display()
 
     # visualize the results
     # currently no partitioning in the membrane
@@ -113,11 +121,6 @@ def fix_variables(m):
 
 
 def add_and_connect_streams(m):
-    m.fs.feed_block = Feed(property_package=m.fs.feed_properties)
-    m.fs.diafiltrate_block = Feed(property_package=m.fs.feed_properties)
-    m.fs.retentate_block = Product(property_package=m.fs.product_properties)
-    m.fs.permeate_block = Product(property_package=m.fs.product_properties)
-
     m.fs.feed_stream = Arc(
         source=m.fs.feed_block.outlet,
         destination=m.fs.membrane.feed_inlet,

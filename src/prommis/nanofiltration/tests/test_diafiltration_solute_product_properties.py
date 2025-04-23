@@ -8,7 +8,7 @@
 Diagnostic tests for the two-salt diafiltration property model for feed streams.
 """
 
-from pyomo.environ import ConcreteModel, Param, Set, Var, value
+from pyomo.environ import ConcreteModel, Set, Var
 
 from idaes.core import FlowsheetBlock
 
@@ -40,12 +40,6 @@ def test_parameters(model):
             "Co",
             "Cl",
         ]
-        assert j in model.fs.product_properties.charge
-        assert j in model.fs.product_properties.molar_mass
-        assert j in model.fs.product_properties.sigma
-
-    assert isinstance(model.fs.product_properties.num_solutes, Param)
-    assert value(model.fs.product_properties.num_solutes) == 5
 
     assert model.fs.product_properties.nfe == 5
     assert isinstance(model.fs.product_properties.x, Set)

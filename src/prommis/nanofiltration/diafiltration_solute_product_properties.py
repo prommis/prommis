@@ -5,12 +5,12 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Property package for the diafiltration cascade products.
+Property package for the products from the multi-salt diafiltration membrane.
 
 Author: Molly Dougher
 """
 
-from pyomo.environ import Param, Set, Var, units
+from pyomo.environ import Set, Var, units
 
 from idaes.core import (
     Component,
@@ -29,7 +29,7 @@ import numpy as np
 @declare_process_block_class("SoluteProductParameter")
 class SoluteProductParameterData(PhysicalParameterBlock):
     """
-    Property Package for the diafiltration cascade.
+    Property Package for the products from the multi-salt diafiltration membrane.
 
     Currently includes the following solutes:
         Li+ (lithium ion)
@@ -58,45 +58,6 @@ class SoluteProductParameterData(PhysicalParameterBlock):
 
         x_vals = discretize_x(self.nfe)
         self.x = Set(initialize=np.round((x_vals), 1))
-
-        # add valence
-        self.charge = Param(
-            self.component_list,
-            units=units.dimensionless,
-            initialize={
-                "Li": 1,
-                "Co": 2,
-                "Cl": -1,
-            },
-        )
-
-        # add molecular weight
-        self.molar_mass = Param(
-            self.component_list,
-            units=units.kg / units.mol,
-            initialize={
-                "Li": 0.006941,
-                "Co": 0.05893,
-                "Cl": 0.03545,
-            },
-        )
-
-        # add thermal reflection coefficient, where 1 represents ideal behavior
-        self.sigma = Param(
-            self.component_list,
-            units=units.dimensionless,
-            initialize={
-                "Li": 1,
-                "Co": 1,
-                "Cl": 1,
-            },
-        )
-
-        self.num_solutes = Param(
-            initialize=5,
-            units=units.dimensionless,
-            doc="Number of dissociated ions in solution",
-        )
 
         self._state_block_class = SoluteProductStateBlock
 
@@ -136,7 +97,7 @@ class _SoluteProductStateBlock(StateBlock):
 )
 class SoluteProductStateBlockData(StateBlockData):
     """
-    State block for diafiltration cascade
+    State block for the products from the multi-salt diafiltration membrane
     """
 
     def build(self):

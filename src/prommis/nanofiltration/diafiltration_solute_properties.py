@@ -5,12 +5,12 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Property package for the feed to the multi-salt diafiltration membrane.
+Property package for the multi-salt diafiltration membrane.
 
 Author: Molly Dougher
 """
 
-from pyomo.environ import Var, units
+from pyomo.environ import Param, Var, units
 
 from idaes.core import (
     Component,
@@ -24,10 +24,10 @@ from idaes.core import (
 from idaes.core.util.initialization import fix_state_vars
 
 
-@declare_process_block_class("SoluteFeedParameter")
-class SoluteFeedParameterData(PhysicalParameterBlock):
+@declare_process_block_class("SoluteParameter")
+class SoluteParameterData(PhysicalParameterBlock):
     """
-    Property Package for the feed to the multi-salt diafiltration membrane.
+    Property Package for the multi-salt diafiltration membrane.
 
     Currently includes the following solutes:
         Li+ (lithium ion)
@@ -47,7 +47,46 @@ class SoluteFeedParameterData(PhysicalParameterBlock):
         # add anions
         self.Cl = Component()
 
-        self._state_block_class = SoluteFeedStateBlock
+        # add valence
+        self.charge = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "Li": 1,
+                "Co": 2,
+                "Cl": -1,
+            },
+        )
+
+        # add molecular weight
+        self.molar_mass = Param(
+            self.component_list,
+            units=units.kg / units.mol,
+            initialize={
+                "Li": 0.006941,
+                "Co": 0.05893,
+                "Cl": 0.03545,
+            },
+        )
+
+        # add thermal reflection coefficient, where 1 represents ideal behavior
+        self.sigma = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "Li": 1,
+                "Co": 1,
+                "Cl": 1,
+            },
+        )
+
+        self.num_solutes = Param(
+            initialize=5,
+            units=units.dimensionless,
+            doc="Number of dissociated ions in solution",
+        )
+
+        self._state_block_class = SoluteStateBlock
 
     @classmethod
     def define_metadata(cls, obj):
@@ -69,7 +108,7 @@ class SoluteFeedParameterData(PhysicalParameterBlock):
         )
 
 
-class _SoluteFeedStateBlock(StateBlock):
+class _SoluteStateBlock(StateBlock):
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -80,10 +119,10 @@ class _SoluteFeedStateBlock(StateBlock):
         fix_state_vars(self)
 
 
-@declare_process_block_class("SoluteFeedStateBlock", block_class=_SoluteFeedStateBlock)
-class SoluteFeedStateBlockData(StateBlockData):
+@declare_process_block_class("SoluteStateBlock", block_class=_SoluteStateBlock)
+class SoluteStateBlockData(StateBlockData):
     """
-    State block for the feed to the multi-salt diafiltration membrane
+    State block for multi-salt diafiltration membrane
     """
 
     def build(self):
@@ -92,7 +131,7 @@ class SoluteFeedStateBlockData(StateBlockData):
         self.flow_vol = Var(
             units=units.m**3 / units.h,
             initialize=10,
-            bounds=(1e-8, None),
+            bounds=(1e-10, None),
         )
         self.conc_mass_comp = Var(
             self.component_list,

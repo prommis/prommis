@@ -28,8 +28,8 @@ from idaes.core.util.model_statistics import degrees_of_freedom
 
 import pytest
 
-from prommis.nanofiltration.diafiltration_solute_feed_properties import (
-    SoluteFeedParameter,
+from prommis.nanofiltration.diafiltration_solute_properties import (
+    SoluteParameter,
 )
 from prommis.nanofiltration.diafiltration_two_salt import TwoSaltDiafiltration
 
@@ -41,7 +41,7 @@ def diafiltration_two_salt():
     """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.properties = SoluteFeedParameter()
+    m.fs.properties = SoluteParameter()
 
     m.fs.unit = TwoSaltDiafiltration(
         property_package=m.fs.properties,

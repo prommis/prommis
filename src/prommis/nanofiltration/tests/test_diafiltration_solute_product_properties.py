@@ -41,7 +41,7 @@ def test_parameters(model):
             "Cl",
         ]
 
-    assert model.fs.product_properties.nfe == 5
+    assert model.fs.product_properties.nfe == 10
     assert isinstance(model.fs.product_properties.x, Set)
 
 

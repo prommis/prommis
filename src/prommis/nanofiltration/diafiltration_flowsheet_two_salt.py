@@ -14,7 +14,7 @@ from pyomo.environ import (
     ConcreteModel,
     SolverFactory,
     TransformationFactory,
-    # assert_optimal_termination,
+    assert_optimal_termination,
     value,
 )
 from pyomo.network import Arc
@@ -57,7 +57,7 @@ def main():
     # add the membrane unit model
     m.fs.membrane = TwoSaltDiafiltration(
         property_package=m.fs.properties,
-        NFEx=5,
+        NFEx=10,
         NFEz=5,
     )
 
@@ -76,17 +76,10 @@ def main():
     dt.assert_no_structural_warnings()
 
     # solve model
-    # TODO: debug numerical scaling for higher NFE
     solve_model(m)
 
     # check numerical warnings
-    # TODO: resolve numerical warnings
-    # some variables are hitting their lower bound of 0 (expected)
-    # some residuals are large (unexpected)
-    # dt.assert_no_numerical_warnings()
-    dt.report_numerical_issues()
-    dt.display_constraints_with_large_residuals()
-    dt.display_variables_at_or_outside_bounds()
+    dt.assert_no_numerical_warnings()
 
     # visualize the results
     # currently no partitioning in the membrane
@@ -152,9 +145,8 @@ def solve_model(m):
     scaled_model = scaling.create_using(m, rename=False)
 
     solver = SolverFactory("ipopt")
-    # solver.options['tol'] = 1E-5
     results = solver.solve(scaled_model, tee=True)
-    # assert_optimal_termination(results)
+    assert_optimal_termination(results)
 
     scaling.propagate_solution(scaled_model, m)
 

@@ -107,7 +107,7 @@ class SoluteProductStateBlockData(StateBlockData):
             self.params.x,
             units=units.m**3 / units.h,
             initialize=10,
-            bounds=(1e-10, None),
+            bounds=(1e-20, None),
         )
         self.conc_mass_comp = Var(
             self.component_list,

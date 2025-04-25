@@ -98,10 +98,12 @@ def build_membrane_parameters(m):
 
 
 def fix_variables(m):
+    # fix degrees of freedom in the membrane
     m.fs.membrane.membrane_width.fix()
     m.fs.membrane.membrane_length.fix()
     m.fs.membrane.applied_pressure.fix()
 
+    # fix degrees of freedom in the flowsheet
     m.fs.membrane.feed_flow_volume.fix()
     m.fs.membrane.feed_conc_mass_comp[0, "Li"].fix()
     m.fs.membrane.feed_conc_mass_comp[0, "Co"].fix()

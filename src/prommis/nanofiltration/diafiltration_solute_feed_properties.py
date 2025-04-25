@@ -92,7 +92,7 @@ class SoluteFeedStateBlockData(StateBlockData):
         self.flow_vol = Var(
             units=units.m**3 / units.h,
             initialize=10,
-            bounds=(1e-8, None),
+            bounds=(1e-20, None),
         )
         self.conc_mass_comp = Var(
             self.component_list,

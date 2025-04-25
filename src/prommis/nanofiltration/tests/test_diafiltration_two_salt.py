@@ -49,21 +49,11 @@ def diafiltration_two_salt():
         NFEz=5,
     )
 
-    assert degrees_of_freedom(m.fs.unit) == 9
+    assert degrees_of_freedom(m.fs.unit) == 3
 
     m.fs.unit.membrane_width.fix(1)
     m.fs.unit.membrane_length.fix(100)
     m.fs.unit.applied_pressure.fix(10)
-
-    m.fs.unit.feed_flow_volume.fix(100)
-    m.fs.unit.feed_conc_mass_comp[0, "Li"].fix(1.7)
-    m.fs.unit.feed_conc_mass_comp[0, "Co"].fix(17)
-    m.fs.unit.feed_conc_mass_comp[0, "Cl"].fix(10.7)
-
-    m.fs.unit.diafiltrate_flow_volume.fix(30)
-    m.fs.unit.diafiltrate_conc_mass_comp[0, "Li"].fix(0.1)
-    m.fs.unit.diafiltrate_conc_mass_comp[0, "Co"].fix(0.2)
-    m.fs.unit.diafiltrate_conc_mass_comp[0, "Cl"].fix(0.2)
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -252,7 +242,7 @@ class TestDiafiltrationTwoSalt(object):
         assert isinstance(
             diafiltration_two_salt.fs.unit.osmotic_pressure_calculation, Constraint
         )
-        assert len(diafiltration_two_salt.fs.unit.osmotic_pressure_calculation) == 11
+        assert len(diafiltration_two_salt.fs.unit.osmotic_pressure_calculation) == 1
 
         assert isinstance(
             diafiltration_two_salt.fs.unit.electroneutrality_retentate, Constraint
@@ -347,100 +337,113 @@ class TestDiafiltrationTwoSalt(object):
         )
         assert len(diafiltration_two_salt.fs.unit.electroneutrality_membrane) == 55
 
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_retentate_flow_volume, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.initial_retentate_flow_volume) == 1
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_permeate_flow_volume, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.initial_permeate_flow_volume) == 1
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_retentate_conc_mass_lithium,
-            Constraint,
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.initial_retentate_conc_mass_lithium) == 1
+        assert diafiltration_two_salt.fs.unit.retentate_flow_volume[0, 0].fixed
+        assert value(diafiltration_two_salt.fs.unit.retentate_flow_volume[0, 0]) == (
+            value(diafiltration_two_salt.fs.unit.feed_flow_volume[0])
+            + value(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume[0])
         )
 
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_retentate_conc_mass_cobalt,
-            Constraint,
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.initial_retentate_conc_mass_cobalt) == 1
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_membrane_interface_lithium,
-            Constraint,
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.initial_membrane_interface_lithium) == 1
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_membrane_interface_cobalt, Constraint
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.initial_membrane_interface_cobalt) == 1
+        assert diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Li", 0].fixed
+        assert value(
+            diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Li", 0]
+        ) == (
+            (
+                value(diafiltration_two_salt.fs.unit.feed_flow_volume[0])
+                * value(diafiltration_two_salt.fs.unit.feed_conc_mass_comp[0, "Li"])
+                + value(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume[0])
+                * value(
+                    diafiltration_two_salt.fs.unit.diafiltrate_conc_mass_comp[0, "Li"]
+                )
+            )
+            / (
+                value(diafiltration_two_salt.fs.unit.feed_flow_volume[0])
+                + value(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume[0])
+            )
         )
 
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_membrane_interface_chlorine,
-            Constraint,
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.initial_membrane_interface_chlorine) == 1
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_d_retentate_conc_mass_lithium_dx,
-            Constraint,
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.initial_d_retentate_conc_mass_lithium_dx)
-            == 1
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_d_retentate_conc_mass_cobalt_dx,
-            Constraint,
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.initial_d_retentate_conc_mass_cobalt_dx)
-            == 1
+        assert diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Co", 0].fixed
+        assert value(
+            diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Co", 0]
+        ) == (
+            (
+                value(diafiltration_two_salt.fs.unit.feed_flow_volume[0])
+                * value(diafiltration_two_salt.fs.unit.feed_conc_mass_comp[0, "Co"])
+                + value(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume[0])
+                * value(
+                    diafiltration_two_salt.fs.unit.diafiltrate_conc_mass_comp[0, "Co"]
+                )
+            )
+            / (
+                value(diafiltration_two_salt.fs.unit.feed_flow_volume[0])
+                + value(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume[0])
+            )
         )
 
-        assert isinstance(
-            diafiltration_two_salt.fs.unit._initial_d_retentate_flow_volume_dx,
-            Constraint,
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit._initial_d_retentate_flow_volume_dx) == 1
+        assert diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 0].fixed
+        assert value(
+            diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 0]
+        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+
+        assert diafiltration_two_salt.fs.unit.membrane_conc_mass_lithium[0, 0].fixed
+        assert value(
+            diafiltration_two_salt.fs.unit.membrane_conc_mass_lithium[0, 0]
+        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+
+        assert diafiltration_two_salt.fs.unit.membrane_conc_mass_cobalt[0, 0].fixed
+        assert value(
+            diafiltration_two_salt.fs.unit.membrane_conc_mass_cobalt[0, 0]
+        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+
+        assert diafiltration_two_salt.fs.unit.membrane_conc_mass_chlorine[0, 0].fixed
+        assert value(
+            diafiltration_two_salt.fs.unit.membrane_conc_mass_chlorine[0, 0]
+        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+
+        assert diafiltration_two_salt.fs.unit.d_retentate_conc_mass_comp_dx[
+            0, "Li", 0
+        ].fixed
+        assert value(
+            diafiltration_two_salt.fs.unit.d_retentate_conc_mass_comp_dx[0, "Li", 0]
+        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+
+        assert diafiltration_two_salt.fs.unit.d_retentate_conc_mass_comp_dx[
+            0, "Co", 0
+        ].fixed
+        assert value(
+            diafiltration_two_salt.fs.unit.d_retentate_conc_mass_comp_dx[0, "Co", 0]
+        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+
+        assert diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx[0, 0].fixed
+        assert value(
+            diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx[0, 0]
+        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+
+        assert diafiltration_two_salt.fs.unit.volume_flux_water[0].fixed
+        assert value(diafiltration_two_salt.fs.unit.volume_flux_water[0]) == value(
+            diafiltration_two_salt.fs.unit.numerical_zero_tolerance
         )
 
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_volume_flux_water, Constraint
+        assert diafiltration_two_salt.fs.unit.mass_flux_lithium[0].fixed
+        assert value(diafiltration_two_salt.fs.unit.mass_flux_lithium[0]) == value(
+            diafiltration_two_salt.fs.unit.numerical_zero_tolerance
         )
-        assert len(diafiltration_two_salt.fs.unit.initial_volume_flux_water) == 1
 
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_mass_flux_lithium, Constraint
+        assert diafiltration_two_salt.fs.unit.mass_flux_cobalt[0].fixed
+        assert value(diafiltration_two_salt.fs.unit.mass_flux_cobalt[0]) == value(
+            diafiltration_two_salt.fs.unit.numerical_zero_tolerance
         )
-        assert len(diafiltration_two_salt.fs.unit.initial_mass_flux_lithium) == 1
 
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_mass_flux_cobalt, Constraint
+        assert diafiltration_two_salt.fs.unit.mass_flux_chlorine[0].fixed
+        assert value(diafiltration_two_salt.fs.unit.mass_flux_chlorine[0]) == value(
+            diafiltration_two_salt.fs.unit.numerical_zero_tolerance
         )
-        assert len(diafiltration_two_salt.fs.unit.initial_mass_flux_cobalt) == 1
 
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.initial_mass_flux_chlorine, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.initial_mass_flux_chlorine) == 1
+        for x in diafiltration_two_salt.fs.unit.x_bar:
+            if x != 0:
+                assert diafiltration_two_salt.fs.unit.osmotic_pressure[x].fixed
+                assert value(
+                    diafiltration_two_salt.fs.unit.osmotic_pressure[x]
+                ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
         # ports
         assert isinstance(diafiltration_two_salt.fs.unit.feed_inlet, Port)
@@ -481,47 +484,47 @@ class TestDiafiltrationTwoSalt(object):
         test_dict = {
             "retentate_final": [
                 value(diafiltration_two_salt.fs.unit.retentate_flow_volume[0, 1]),
-                100.00030000010014,
+                100.00000000030005,
             ],
             "lithium_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Li", 1]
                 ),
-                1.3307692308692318,
+                1.3307692307692314,
             ],
             "cobalt_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Co", 1]
                 ),
-                13.123076923176937,
+                13.123076923076928,
             ],
             "chlorine_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Cl", 1]
                 ),
-                22.58534905197903,
+                22.585349051347965,
             ],
             "permeate_final": [
                 value(diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 1]),
-                29.99969999999936,
+                29.9999999997,
             ],
             "lithium_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Li", 1]
                 ),
-                1.3307692308692316,
+                1.3307692307692307,
             ],
             "cobalt_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Co", 1]
                 ),
-                13.123076923176937,
+                13.12307692307693,
             ],
             "chlorine_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Cl", 1]
                 ),
-                22.585349051979023,
+                22.58534905134796,
             ],
         }
 

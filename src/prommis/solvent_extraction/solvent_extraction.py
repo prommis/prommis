@@ -76,7 +76,7 @@ function of the parameter of partition coefficient defined by the user.
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Param, Block
+from pyomo.environ import Block, Constraint, Param
 from pyomo.network import Port
 
 from idaes.core import (
@@ -85,8 +85,8 @@ from idaes.core import (
     declare_process_block_class,
     useDefault,
 )
-from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.initialization import ModularInitializerBase
+from idaes.core.util.config import is_physical_parameter_block
 from idaes.models.unit_models.mscontactor import MSContactor
 
 

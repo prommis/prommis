@@ -10,7 +10,7 @@ Example property package for testing evaporation pond unit model.
 Authors: Andrew Lee
 """
 
-from pyomo.environ import Constraint, Param, units, Var
+from pyomo.environ import Constraint, Param, Var, units
 
 from idaes.core import (
     Component,

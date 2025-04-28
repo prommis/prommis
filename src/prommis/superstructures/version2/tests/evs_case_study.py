@@ -598,6 +598,8 @@ m = build_model(
         (5, 4): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
         (5, 5): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
     },
+    # conversion of kg REE/Fe to kg REO/Fe2O3
+    REE_to_REO_Conversion={"Nd": 1.664, "Dy": 1.147, "Fe": 1.43},
     # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
     # OPEX = a*F_in + b*y
     N_OC_var={
@@ -679,9 +681,8 @@ m = build_model(
     ###################################################################################################
     ###################################################################################################
     # Choice of objective function. Options are 'NPV' or 'COR'.capitalize
+    # obj_func="NPV",
     obj_func="NPV",
-    # conversion of kg REE/Fe to kg REO/Fe2O3
-    REE_to_REO_Conversion={"Nd": 1.664, "Dy": 1.147, "Fe": 1.43},
     ###################################################################################################
     ###################################################################################################
     ### Consideration of environmental impacts parameters
@@ -711,19 +712,18 @@ m = build_model(
         (5, 4): 800,
         (5, 5): 1000,
     },
-    epsilon=1,  # epsilon factor for generating Pareto front
+    epsilon=1e16,  # epsilon factor for generating Pareto front
     ###################################################################################################
     ###################################################################################################
     ### Byproduct valorization
     # boolean to decide whether or not to consider the valorization of byproducts
-    consider_byprod_val=False,
+    consider_byprod_val=True,
     # list of byproducts
     byprods=["Jarosite", "Iron oxide", "Residue", "Iron hydroxide"],
     # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
     byprod_vals={
         "Jarosite": -0.17,
         "Iron oxide": 10,
-        # "Iron oxide": 9.1,
         "Residue": -0.17,
         "Iron hydroxide": -0.17,
     },
@@ -749,7 +749,7 @@ m = build_model(
         "Iron hydroxide": {(3, 4): 0.597, (5, 4): 1},  # means 40.3% of Fe remains
     },
     # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
-    Fe_to_byproduct={
+    TC_to_byproduct={
         "Jarosite": 2.893,
         "Iron oxide": 1.430,
         "Residue": 1,
@@ -774,7 +774,7 @@ m = build_model(
 solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2
 
-results = solver.solve(m, tee=False)
+results = solver.solve(m, tee=True)
 
 # print(isinstance())
 
@@ -784,116 +784,116 @@ results = solver.solve(m, tee=False)
 # # results.display()
 
 
-Options_in_stage = {
-    1: 2,
-    2: 4,
-    3: 6,
-    4: 4,
-    5: 5,
-}
+# Options_in_stage = {
+#     1: 2,
+#     2: 4,
+#     3: 6,
+#     4: 4,
+#     5: 5,
+# }
 
-# m.plantYear[2038].F.display()
+# # m.plantYear[2038].F.display()
 
-Available_feed = {
-    2025: 290273,
-    2026: 274648,
-    2027: 286512,
-    2028: 487819,
-    2029: 592637,
-    2030: 571054,
-    2031: 498472,
-    2032: 506565,
-    2033: 566355,
-    2034: 669094,
-    2035: 719057,
-    2036: 762656,
-    2037: 1434637,
-    2038: 1697805,
-}
-
-
-# for t in pyo.RangeSet(2025, 2038):
-for t in pyo.RangeSet(2025, 2026):
-    print("\n Year: ", t)
-    # m.plantYear[t].P_entering.display()
-    # for j in m.J:
-    #     if j != 1 and j != 5:
-    #         num_options = pyo.RangeSet(Options_in_stage[j])
-
-    #         print('\n for j = ', j)
-    m.plantYear[t].F.display()
-
-# m.binOpt.display()
+# Available_feed = {
+#     2025: 290273,
+#     2026: 274648,
+#     2027: 286512,
+#     2028: 487819,
+#     2029: 592637,
+#     2030: 571054,
+#     2031: 498472,
+#     2032: 506565,
+#     2033: 566355,
+#     2034: 669094,
+#     2035: 719057,
+#     2036: 762656,
+#     2037: 1434637,
+#     2038: 1697805,
+# }
 
 
-# m.obj.display()
-CR = 0.1
-Option_Eff = {
-    # Level 1 yields
-    (1, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
-    (1, 2): {"Nd": 1, "Dy": 1, "Fe": 1},
-    # level 2 yields
-    (2, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
-    (2, 2): {"Nd": 1, "Dy": 1, "Fe": 1},
-    (2, 3): {"Nd": 1, "Dy": 1, "Fe": 1},
-    (2, 4): {"Nd": 1, "Dy": 1, "Fe": 1},
-    # level 3 yields
-    (3, 1): {"Nd": 0.985, "Dy": 0.985, "Fe": 0},
-    (3, 2): {"Nd": 0.985, "Dy": 0.985, "Fe": 0},
-    (3, 3): {"Nd": 0.925, "Dy": 0.98, "Fe": 0},
-    (3, 4): {"Nd": 1, "Dy": 1, "Fe": 0},
-    (3, 5): {"Nd": 1, "Dy": 1, "Fe": 0},
-    (3, 6): {"Nd": 1, "Dy": 1, "Fe": 0.403},
-    # level 4 yields
-    (4, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
-    (4, 2): {"Nd": 1, "Dy": 0.899, "Fe": 0},
-    (4, 3): {"Nd": 1, "Dy": 1, "Fe": 1},
-    (4, 4): {"Nd": 1, "Dy": 1, "Fe": 1},
-    # level 5 yields
-    (5, 1): {"Nd": 1, "Dy": 1, "Fe": 0},
-    (5, 2): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
-    (5, 3): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
-    (5, 4): {
-        "Nd": 0.98,
-        "Dy": 0.98,
-        "Fe": 0,
-    },
-    (5, 5): {
-        "Nd": 0.98,
-        "Dy": 0.98,
-        "Fe": 0,
-    },
-}
+# # for t in pyo.RangeSet(2025, 2038):
+# for t in pyo.RangeSet(2025, 2026):
+#     print("\n Year: ", t)
+#     # m.plantYear[t].P_entering.display()
+#     # for j in m.J:
+#     #     if j != 1 and j != 5:
+#     #         num_options = pyo.RangeSet(Options_in_stage[j])
 
-Prod_comp_mass = {
-    "Nd": 0.206 * 3,
-    "Dy": 0.103 * 3,
-    "Fe": 0.691 * 3,
-}
+#     #         print('\n for j = ', j)
+#     m.plantYear[t].F.display()
+
+# # m.binOpt.display()
 
 
-Tracked_comps = ["Nd", "Dy", "Fe"]
-numStages = 5
-opt_stages = [(1, 2), (2, 2), (3, 6), (4, 4), (5, 4)]
-t = 2025
+# # m.obj.display()
+# CR = 0.1
+# Option_Eff = {
+#     # Level 1 yields
+#     (1, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
+#     (1, 2): {"Nd": 1, "Dy": 1, "Fe": 1},
+#     # level 2 yields
+#     (2, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
+#     (2, 2): {"Nd": 1, "Dy": 1, "Fe": 1},
+#     (2, 3): {"Nd": 1, "Dy": 1, "Fe": 1},
+#     (2, 4): {"Nd": 1, "Dy": 1, "Fe": 1},
+#     # level 3 yields
+#     (3, 1): {"Nd": 0.985, "Dy": 0.985, "Fe": 0},
+#     (3, 2): {"Nd": 0.985, "Dy": 0.985, "Fe": 0},
+#     (3, 3): {"Nd": 0.925, "Dy": 0.98, "Fe": 0},
+#     (3, 4): {"Nd": 1, "Dy": 1, "Fe": 0},
+#     (3, 5): {"Nd": 1, "Dy": 1, "Fe": 0},
+#     (3, 6): {"Nd": 1, "Dy": 1, "Fe": 0.403},
+#     # level 4 yields
+#     (4, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
+#     (4, 2): {"Nd": 1, "Dy": 0.899, "Fe": 0},
+#     (4, 3): {"Nd": 1, "Dy": 1, "Fe": 1},
+#     (4, 4): {"Nd": 1, "Dy": 1, "Fe": 1},
+#     # level 5 yields
+#     (5, 1): {"Nd": 1, "Dy": 1, "Fe": 0},
+#     (5, 2): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
+#     (5, 3): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
+#     (5, 4): {
+#         "Nd": 0.98,
+#         "Dy": 0.98,
+#         "Fe": 0,
+#     },
+#     (5, 5): {
+#         "Nd": 0.98,
+#         "Dy": 0.98,
+#         "Fe": 0,
+#     },
+# }
 
-for t in pyo.RangeSet(2025, 2026):
-    print(t)
-    for j in pyo.RangeSet(numStages - 1):
-        print(j)
-        for c in Tracked_comps:
-            print(c)
-            # print(math.prod(Option_Eff[opt_stages[stage]][c] for stage in pyo.RangeSet(0, j - 1)))
-            test = (
-                CR
-                * Available_feed[t]
-                * Prod_comp_mass[c]
-                * math.prod(
-                    Option_Eff[opt_stages[stage]][c] for stage in pyo.RangeSet(0, j - 1)
-                )
-            )
-            print(test)
-            print(pyo.value(m.plantYear[t].F[j, c]))
+# Prod_comp_mass = {
+#     "Nd": 0.206 * 3,
+#     "Dy": 0.103 * 3,
+#     "Fe": 0.691 * 3,
+# }
+
+
+# Tracked_comps = ["Nd", "Dy", "Fe"]
+# numStages = 5
+# opt_stages = [(1, 2), (2, 2), (3, 6), (4, 4), (5, 4)]
+# t = 2025
+
+# for t in pyo.RangeSet(2025, 2026):
+#     print(t)
+#     for j in pyo.RangeSet(numStages - 1):
+#         print(j)
+#         for c in Tracked_comps:
+#             print(c)
+#             # print(math.prod(Option_Eff[opt_stages[stage]][c] for stage in pyo.RangeSet(0, j - 1)))
+#             test = (
+#                 CR
+#                 * Available_feed[t]
+#                 * Prod_comp_mass[c]
+#                 * math.prod(
+#                     Option_Eff[opt_stages[stage]][c] for stage in pyo.RangeSet(0, j - 1)
+#                 )
+#             )
+#             print(test)
+#             print(pyo.value(m.plantYear[t].F[j, c]))
 
 
 # j = 5
@@ -904,18 +904,16 @@ for t in pyo.RangeSet(2025, 2026):
 # m.plantYear[2025].F_in.display()
 
 
-try:
-    got_solver = True
-    solver = get_solver("test")
-except KeyError:
-    got_solver = False
-    print("failed")
+# try:
+#     got_solver = True
+#     solver = get_solver("test")
+# except KeyError:
+#     got_solver = False
+#     print("failed")
 
-print(got_solver)
+# print(got_solver)
 
-# m.binOpt.display()
-
-m.DisOptWorkers.display()
+# m.DisOptWorkers.display()
 
 # numWorkers = {
 #     (1, 1): 1,
@@ -950,59 +948,74 @@ m.DisOptWorkers.display()
 
 
 
-# calculate feed entering parameter based on yearly available feedstock and collection rate
-Feed_entering = copy.deepcopy(Available_feed)
-for key in Feed_entering:
-    Feed_entering[key] = Available_feed[key] * CR
+# # calculate feed entering parameter based on yearly available feedstock and collection rate
+# Feed_entering = copy.deepcopy(Available_feed)
+# for key in Feed_entering:
+#     Feed_entering[key] = Available_feed[key] * CR
 
-# calculate max feed that can enter the plant
-maxFeedEntering = max(Feed_entering.values())
+# # calculate max feed that can enter the plant
+# maxFeedEntering = max(Feed_entering.values())
 
 
-Dis_Rate = {
-    (1, 1): 7868,
-    (1, 2): 52453,
-}
+# Dis_Rate = {
+#     (1, 1): 7868,
+#     (1, 2): 52453,
+# }
 
-# calculate max disassembly units possible for each option
-max_dis_by_option = copy.deepcopy(Dis_Rate)
-for key in max_dis_by_option.keys():
-    max_dis_by_option[key] = math.ceil(maxFeedEntering / Dis_Rate[key])
-max_dis_workers = max(max_dis_by_option.values())
+# # calculate max disassembly units possible for each option
+# max_dis_by_option = copy.deepcopy(Dis_Rate)
+# for key in max_dis_by_option.keys():
+#     max_dis_by_option[key] = math.ceil(maxFeedEntering / Dis_Rate[key])
+# max_dis_workers = max(max_dis_by_option.values())
 
 # disassembly stage is the first stage
-j_dis = 1
-J_dis = pyo.RangeSet(j_dis)
+# j_dis = 1
+# J_dis = pyo.RangeSet(j_dis)
 
 # set of options in the disassembly stage
-K_dis = pyo.RangeSet(Options_in_stage[j_dis])
+# K_dis = pyo.RangeSet(Options_in_stage[j_dis])
 
 # set of max possible disassembly workers
-dis_workers_range = pyo.RangeSet(0, max_dis_workers)
-jkw_dis = []  # for declaring bin vars
-for k_dis in K_dis:
-    for w_dis in pyo.RangeSet(0, max_dis_by_option[j_dis, k_dis]):
-        jkw_dis.append((j_dis, k_dis, w_dis))
-DisOptWorkersSet = pyo.Set(
-    within=J_dis * K_dis * dis_workers_range, initialize=jkw_dis
-)
+# dis_workers_range = pyo.RangeSet(0, max_dis_workers)
+# jkw_dis = []  # for declaring bin vars
+# for k_dis in K_dis:
+#     for w_dis in pyo.RangeSet(0, max_dis_by_option[j_dis, k_dis]):
+#         jkw_dis.append((j_dis, k_dis, w_dis))
+# DisOptWorkersSet = pyo.Set(
+#     within=J_dis * K_dis * dis_workers_range, initialize=jkw_dis
+# )
 
-DisOptWorkersSet.display()
+# DisOptWorkersSet.display()
 
 # for dis_opt_worker in DisOptWorkersSet:
 #     print(dis_opt_worker)
 
-for t in pyo.RangeSet(2025, 2038):
-    print(pyo.value(m.plantYear[t].OC_var_total))
+# for t in pyo.RangeSet(2025, 2038):
+#     print(pyo.value(m.plantYear[t].OC_var_total))
 
+m.binOpt.display()
 # m.bin_workers.display()
 # m.total_workers.display()
 # m.COL_Total.display()
 # m.BEC_max_flow.display()
-m.BEC.display()
+# m.BEC.display()
 # m.TPC.display()
 # m.Total_TPC.display()
 # m.TOC.display()
 # m.node_TOC.display()
 # m.CF.display()
 # m.TOC_exp.display()
+# m.obj.display()
+# m.COR.display()
+
+# for t in pyo.RangeSet(2025, 2038):
+#     # print('Year: ' + str(t))
+#     # j = 5
+#     # k = 4
+#     # # print('Option: ' + str((j, k)))
+#     # print('Profit: ' + str(pyo.value(m.plantYear[t].ProfitOpt[(j, k)])))
+#     print(pyo.value(m.plantYear[t].yearly_GWP[1, 1]))
+#     # print(type(m.plantYear[t].yearly_GWP[1, 1]))
+    # m.plantYear[t].yearly_GWP.display()
+
+# print(type(m.obj_func))

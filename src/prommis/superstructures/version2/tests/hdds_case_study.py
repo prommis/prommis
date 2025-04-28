@@ -4,6 +4,14 @@ import copy
 # import sys
 import pyomo.environ as pyo
 
+# model statistics
+from idaes.core.util.model_statistics import (
+    number_total_constraints,
+    number_variables,
+    number_unused_variables,
+    degrees_of_freedom,
+)
+
 from prommis.superstructures.version2.superstructure_v2 import build_model
 
 ### cost of purchased equipment for iron valorization processes (k$).
@@ -559,13 +567,14 @@ m = build_model(
     ###################################################################################################
     # Choice of objective function. Options are 'NPV' or 'COR'.capitalize
     obj_func="NPV",
+    # obj_func="COR",
     # conversion of metric tonnes REE/Fe to metric tonnes REO/Fe2O3
     REE_to_REO_Conversion={"Nd": 1.664, "Fe": 1.43},
     ###################################################################################################
     ###################################################################################################
     ### Consideration of environmental impacts parameters
     # boolean to decide whether or not to consider environmental impacts
-    consider_environ_impacts=True,
+    consider_environ_impacts=False,
     # environmental impacts matrix (kg CO2e per metric tonne of incoming flowrate)
     # Environmental Impacts Matrix
     environ_impacts={
@@ -593,7 +602,7 @@ m = build_model(
     ###################################################################################################
     ### Byproduct valorization
     # boolean to decide whether or not to consider the valorization of byproducts
-    consider_byprod_val=True,
+    consider_byprod_val=False,
     # list of byproducts
     byprods=["Jarosite", "Iron oxide", "Residue", "Iron hydroxide"],
     # dictionary of values for each byproduct (k$/metric tonnes). Negative value indicates it cost money to dispose of the byproduct
@@ -625,7 +634,7 @@ m = build_model(
         "Iron hydroxide": {(3, 4): 0.597, (4, 3): 1},  # means 40.3% of Fe remains
     },
     # Conversion factors of tracked component to byproduct (metric tonnes byproduct / metric tonnes iron)
-    Fe_to_byproduct={
+    TC_to_byproduct={
         "Jarosite": 2.893,
         "Iron oxide": 1.430,
         "Residue": 1,
@@ -636,8 +645,19 @@ m = build_model(
 solver = pyo.SolverFactory("gurobi")
 solver.options["NumericFocus"] = 2
 
-results = pyo.SolverFactory("gurobi").solve(m, tee=False)
+results = pyo.SolverFactory("gurobi").solve(m, tee=True)
 
 m.obj.display()
 m.binOpt.display()
-m.GWP.display()
+# m.GWP.display()
+print(HDD_input_flow)
+
+print(number_variables(m))
+print(number_total_constraints(m))
+print(number_unused_variables(m))
+print(degrees_of_freedom(m))
+
+m.DisOptWorkers.display()
+m.total_workers.display()
+m.BEC_max_flow.display()
+m.BEC.display()

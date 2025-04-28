@@ -3660,11 +3660,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             for key in costs.keys():
                 # check if the object is a Reference
-                try:
-                    costs[key] = costs[key][None]
-                except:
-                    # continue on
-                    pass
+                print(costs[key])
+                if type(costs[key]) not in [float, int]:
+                    # assume it's a Pyomo object
+                    if costs[key].is_reference():
+                        costs[key] = costs[key][None]
 
                 if type(costs[key]) in [Expression, ScalarExpression]:
                     if pyunits.get_units(costs[key]) == pyunits.dimensionless:

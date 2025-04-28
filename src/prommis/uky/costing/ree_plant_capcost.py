@@ -3660,7 +3660,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             for key in costs.keys():
                 # check if the object is a Reference
-                print(costs[key])
                 if type(costs[key]) not in [float, int]:
                     # assume it's a Pyomo object
                     if costs[key].is_reference():

@@ -57,6 +57,7 @@ from pandas import DataFrame
 from prommis.uky.costing.costing_dictionaries import (
     load_default_resource_prices,
     load_default_sale_prices,
+    load_location_factor,
     load_REE_costing_dictionary,
 )
 
@@ -284,6 +285,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         self,
         # arguments related to installation costs
         total_purchase_cost=None,
+        location=("United States", "Washington DC"),
         Lang_factor=None,  # default percentages are effective Lang_factor of 2.97
         piping_materials_and_labor_percentage=20,
         electrical_materials_and_labor_percentage=20,
@@ -364,6 +366,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 purchase cost (not including installation or other plant costs).
                 To use as the total plant cost, including installation, set the
                 Lang_factor to 1.
+            location: location factor; default to Unitest States, Washington DC,
+                which is the benchmarch and with value 1.
             Lang_factor: single multiplicative factor to estimate installation
                 costs; defaults to None and method will use percentages. The
                 default percentages yield an effective Lang factor of 2.97.
@@ -498,7 +502,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             self.custom_variable_costs_list = []
 
             if total_purchase_cost is None:
-                self.get_total_BEC(CE_index_year, watertap_blocks)
+                self.get_total_BEC(CE_index_year, watertap_blocks, location=location)
             else:
                 self.total_BEC = Var(
                     initialize=total_purchase_cost,
@@ -2698,7 +2702,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
                 )
 
-    def get_total_BEC(b, CE_index_year, watertap_blocks=None):
+    def get_total_BEC(
+        b,
+        CE_index_year,
+        watertap_blocks=None,
+        location=("United States", "Washington DC"),
+    ):
         # This method accepts a flowsheet-level costing block
 
         try:
@@ -2711,7 +2720,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"Valid CE index options include CE500, CE394 and years from "
                 f"1990 to 2020."
             )
-
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
             if o.name in [block.name for block in b._registered_unit_costing]:
@@ -2778,9 +2786,63 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             units=CE_index_units,
         )
 
+        # Load the location factor list
+        # User-provide the location as a single (country, city) tuple
+        # Benchmark location: ("United States", "Washington DC")
+        b.location_factor_list = load_location_factor()
+
+        # Build dictionary keyed by (country, city)
+        location_factor_dict = {
+            (entry["country"], entry["city"]): entry["location_factor"]
+            for entry in b.location_factor_list
+        }
+        # Store location factor list for test access
+        b.location_factor_dict = location_factor_dict
+
+        # First tries to match (country, city) exactly.
+        if location in location_factor_dict:
+            location_factor = location_factor_dict[location]["average"]
+        # If no city been provided in location_factors.json, fall back to (country, None)
+        elif (location[0], None) in location_factor_dict:
+            fallback_location = (location[0], None)
+            location_factor = location_factor_dict[fallback_location]["average"]
+        # If country matches but city doesn't, suggest cities
+        elif any(loc[0] == location[0] for loc in location_factor_dict.keys()):
+            # Find all available cities for this country (excluding None)
+            available_cities = sorted(
+                {
+                    loc[1]
+                    for loc in location_factor_dict.keys()
+                    if loc[0] == location[0] and loc[1] is not None
+                }
+            )
+
+            available_city_list = (
+                ", ".join(available_cities) if available_cities else "None"
+            )
+            raise AttributeError(
+                f"No location factor found for {location}. "
+                f"Available cities for '{location[0]}' are: {available_city_list}. "
+                f"Did you mean one of those?"
+            )
+
+        # No country match
+        else:
+            available_countries = sorted(
+                {loc[0] for loc in location_factor_dict.keys()}
+            )
+            raise AttributeError(
+                f"No location factor found for country '{location[0]}'. "
+                f"Available countries are: {', '.join(available_countries)}"
+            )
+
+        # Store base BEC and location factor to be used in test file
+        b.base_BEC = Expression(expr=sum(b.BEC_list))
+        b.location_factor_used = Param(initialize=location_factor, mutable=True)
+
         @b.Constraint()
         def total_BEC_eq(c):
-            return c.total_BEC == sum(b.BEC_list)
+            return c.total_BEC == sum(b.BEC_list) * b.location_factor_used
 
     def display_flowsheet_cost(b):
         # This method accepts a flowsheet-level costing block

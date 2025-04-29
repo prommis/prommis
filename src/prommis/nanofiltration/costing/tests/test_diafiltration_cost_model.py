@@ -8,22 +8,12 @@
 Tests the diafiltration cost model
 """
 
-from pyomo.environ import (
-    ConcreteModel,
-    Param,
-    SolverFactory,
-    Var,
-    units,
-)
+from pyomo.environ import ConcreteModel, Param, SolverFactory, Var, units
+
+from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 import pytest
-
-from idaes.core import (
-    FlowsheetBlock,
-    UnitModelBlock,
-    UnitModelCostingBlock,
-)
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
     DiafiltrationCosting,

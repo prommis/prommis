@@ -4,7 +4,6 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-import pytest
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
@@ -26,6 +25,9 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
+
+import pytest
+
 from prommis.solid_handling.crusher import Crusher
 from prommis.solid_handling.crusher_solids_properties import CoalRefuseParameters
 

@@ -7,3 +7,4 @@ chapters:
   - file: tutorials/uky_flowsheet-solution
   - file: tutorials/byproduct_recovery_determination-solution
   - file: api.rst
+  - file: examples/cmi_process.rst

@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -40,7 +40,7 @@ def report_values(m, prec=True):
     data["Membrane Area"] = []
     for i in m.fs.stages:
         m.fs.stage[i].length.pprint()
-        data["Membrane Area"].append(m.fs.stage[i].length.value)
+        data["Membrane Area"].append(pyo.value(m.fs.stage[i].length))
 
     print("feed flows")
     data["feed flows"] = []
@@ -221,16 +221,16 @@ def report_values(m, prec=True):
         print("\nsplit fractions for precipitator")
         data["prec sf retentate"] = []
         for sol in m.fs.solutes:
-            print(m.fs.precipitator["retentate"].yields[sol, "solid"].value)
+            print(pyo.value(m.fs.precipitator["retentate"].yields[sol, "solid"]))
             data["prec sf retentate"].append(
-                m.fs.precipitator["retentate"].yields[sol, "solid"].value
+                pyo.value(m.fs.precipitator["retentate"].yields[sol, "solid"])
             )
         print("^retentate vpermeate")
         data["prec sf permeate"] = []
         for sol in m.fs.solutes:
-            print(m.fs.precipitator["permeate"].yields[sol, "solid"].value)
+            print(pyo.value(m.fs.precipitator["permeate"].yields[sol, "solid"]))
             data["prec sf permeate"].append(
-                m.fs.precipitator["permeate"].yields[sol, "solid"].value
+                pyo.value(m.fs.precipitator["permeate"].yields[sol, "solid"])
             )
 
         print("\nactual Co/Li Recovery")
@@ -240,8 +240,8 @@ def report_values(m, prec=True):
         m.fs.precipitator["retentate"].volume.pprint()
         m.fs.precipitator["permeate"].volume.pprint()
         data["prec volumes"] = [
-            m.fs.precipitator["retentate"].volume.value,
-            m.fs.precipitator["permeate"].volume.value,
+            pyo.value(m.fs.precipitator["retentate"].volume),
+            pyo.value(m.fs.precipitator["permeate"].volume),
         ]
     return data
 

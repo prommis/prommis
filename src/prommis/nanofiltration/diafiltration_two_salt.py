@@ -175,18 +175,18 @@ that have the following regressed parameter values:
 ================== ========= ================
 Parameter          Value     Units
 ================== ========= ================
-:math:`\beta_0`    -3.87e-06 :math:`m^2/h`
-:math:`\beta_1`    -6.56e-08 :math:`m^5/kg/h`
-:math:`\beta_2`    2.58e-08  :math:`m^5/kg/h`
-:math:`\beta_3`    -4.50e-07 :math:`m^2/h`
-:math:`\beta_4`    -1.70e-07 :math:`m^5/kg/h`
-:math:`\beta_5`    6.67e-08  :math:`m^5/kg/h`
-:math:`\beta_6`    -6.47e-07 :math:`m^2/h`
-:math:`\beta_7`    4.10e-08  :math:`m^5/kg/h`
-:math:`\beta_8`    -1.61e-08 :math:`m^5/kg/h`
-:math:`\beta_9`    -3.56e-06 :math:`m^2/h`
-:math:`\beta_{10}` 3.91e-07  :math:`m^5/kg/h`
-:math:`\beta_{11}` -1.53e-07 :math:`m^5/kg/h`
+:math:`\beta_0`    -3.79e-06 :math:`m^2/h`
+:math:`\beta_1`    -3.64e-08 :math:`m^5/kg/h`
+:math:`\beta_2`    7.00e-09  :math:`m^5/kg/h`
+:math:`\beta_3`    -2.40e-07 :math:`m^2/h`
+:math:`\beta_4`    -9.40e-08 :math:`m^5/kg/h`
+:math:`\beta_5`    1.82e-08  :math:`m^5/kg/h`
+:math:`\beta_6`    -6.98e-07 :math:`m^2/h`
+:math:`\beta_7`    2.27e-08  :math:`m^5/kg/h`
+:math:`\beta_8`    -4.40e-09 :math:`m^5/kg/h`
+:math:`\beta_9`    -4.04e-06 :math:`m^2/h`
+:math:`\beta_{10}` 2.17e-07  :math:`m^5/kg/h`
+:math:`\beta_{11}` -4.20e-08 :math:`m^5/kg/h`
 ================== ========= ================
 
 No applied potential on the system:
@@ -536,29 +536,33 @@ and used when constructing these,
         self.D_lithium_lithium = Var(
             self.x_bar,
             self.z_bar,
-            initialize=-1e-6,
+            initialize=1e-6,
             units=units.m**2 / units.h,
+            domain=NonNegativeReals,
             doc="Linearized cross diffusion coefficient for lithium-lithium",
         )
         self.D_lithium_cobalt = Var(
             self.x_bar,
             self.z_bar,
-            initialize=-1e-7,
+            initialize=1e-7,
             units=units.m**2 / units.h,
+            domain=NonNegativeReals,
             doc="Linearized cross diffusion coefficient for lithium-cobalt",
         )
         self.D_cobalt_lithium = Var(
             self.x_bar,
             self.z_bar,
-            initialize=-1e-7,
+            initialize=1e-7,
             units=units.m**2 / units.h,
+            domain=NonNegativeReals,
             doc="Linearized cross diffusion coefficient for cobalt-lithium",
         )
         self.D_cobalt_cobalt = Var(
             self.x_bar,
             self.z_bar,
-            initialize=-1e-6,
+            initialize=1e-6,
             units=units.m**2 / units.h,
+            domain=NonNegativeReals,
             doc="Linearized cross diffusion coefficient for cobalt-cobalt",
         )
 
@@ -689,14 +693,15 @@ and used when constructing these,
         self.lumped_water_flux = Constraint(self.x_bar, rule=_lumped_water_flux)
 
         def _D_lithium_lithium_calculation(self, x, z):
-            return self.D_lithium_lithium[x, z] == (
-                (-3.87e-6 * units.m**2 / units.h)
+            params_lithium_lithium = [-3.79e-06, -3.64e-08, 7e-09]
+            return self.D_lithium_lithium[x, z] == -(
+                (params_lithium_lithium[0] * units.m**2 / units.h)
                 + (
-                    (-6.56e-8 * units.m**5 / units.kg / units.h)
+                    (params_lithium_lithium[1] * units.m**5 / units.kg / units.h)
                     * (self.membrane_conc_mass_lithium[x, z])
                 )
                 + (
-                    (2.58e-8 * units.m**5 / units.kg / units.h)
+                    (params_lithium_lithium[2] * units.m**5 / units.kg / units.h)
                     * (self.membrane_conc_mass_cobalt[x, z])
                 )
             )
@@ -706,14 +711,15 @@ and used when constructing these,
         )
 
         def _D_lithium_cobalt_calculation(self, x, z):
-            return self.D_lithium_cobalt[x, z] == (
-                (-4.50e-7 * units.m**2 / units.h)
+            params_lithium_cobalt = [-2.4e-07, -9.4e-08, 1.82e-08]
+            return self.D_lithium_cobalt[x, z] == -(
+                (params_lithium_cobalt[0] * units.m**2 / units.h)
                 + (
-                    (-1.70e-7 * units.m**5 / units.kg / units.h)
+                    (params_lithium_cobalt[1] * units.m**5 / units.kg / units.h)
                     * (self.membrane_conc_mass_lithium[x, z])
                 )
                 + (
-                    (6.67e-8 * units.m**5 / units.kg / units.h)
+                    (params_lithium_cobalt[2] * units.m**5 / units.kg / units.h)
                     * (self.membrane_conc_mass_cobalt[x, z])
                 )
             )
@@ -723,14 +729,15 @@ and used when constructing these,
         )
 
         def _D_cobalt_lithium_calculation(self, x, z):
-            return self.D_cobalt_lithium[x, z] == (
-                (-6.47e-7 * units.m**2 / units.h)
+            param_cobalt_lithium = [-6.98e-07, 2.27e-08, -4.4e-09]
+            return self.D_cobalt_lithium[x, z] == -(
+                (param_cobalt_lithium[0] * units.m**2 / units.h)
                 + (
-                    (4.10e-8 * units.m**5 / units.kg / units.h)
+                    (param_cobalt_lithium[1] * units.m**5 / units.kg / units.h)
                     * (self.membrane_conc_mass_lithium[x, z])
                 )
                 + (
-                    (-1.61e-8 * units.m**5 / units.kg / units.h)
+                    (param_cobalt_lithium[2] * units.m**5 / units.kg / units.h)
                     * (self.membrane_conc_mass_cobalt[x, z])
                 )
             )
@@ -740,14 +747,15 @@ and used when constructing these,
         )
 
         def _D_cobalt_cobalt_calculation(self, x, z):
-            return self.D_cobalt_cobalt[x, z] == (
-                (-3.56e-6 * units.m**2 / units.h)
+            params_cobalt_cobalt = [-4.04e-06, 2.17e-07, -4.2e-08]
+            return self.D_cobalt_cobalt[x, z] == -(
+                (params_cobalt_cobalt[0] * units.m**2 / units.h)
                 + (
-                    (3.91e-7 * units.m**5 / units.kg / units.h)
+                    (params_cobalt_cobalt[1] * units.m**5 / units.kg / units.h)
                     * (self.membrane_conc_mass_lithium[x, z])
                 )
                 + (
-                    (-1.53e-7 * units.m**5 / units.kg / units.h)
+                    (params_cobalt_cobalt[2] * units.m**5 / units.kg / units.h)
                     * (self.membrane_conc_mass_cobalt[x, z])
                 )
             )
@@ -762,12 +770,12 @@ and used when constructing these,
 
             return self.mass_flux_lithium[x] == (
                 self.membrane_conc_mass_lithium[x, z] * self.volume_flux_water[x]
-                + (
+                - (
                     self.D_lithium_lithium[x, z]
                     / self.membrane_thickness
                     * self.d_membrane_conc_mass_lithium_dz[x, z]
                 )
-                + (
+                - (
                     self.D_lithium_cobalt[x, z]
                     / self.membrane_thickness
                     * self.d_membrane_conc_mass_cobalt_dz[x, z]
@@ -784,12 +792,12 @@ and used when constructing these,
 
             return self.mass_flux_cobalt[x] == (
                 self.membrane_conc_mass_cobalt[x, z] * self.volume_flux_water[x]
-                + (
+                - (
                     self.D_cobalt_lithium[x, z]
                     / self.membrane_thickness
                     * self.d_membrane_conc_mass_lithium_dz[x, z]
                 )
-                + (
+                - (
                     self.D_cobalt_cobalt[x, z]
                     / self.membrane_thickness
                     * self.d_membrane_conc_mass_cobalt_dz[x, z]

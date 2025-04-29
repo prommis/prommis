@@ -13,7 +13,6 @@ from pyomo.environ import (
     Constraint,
     Objective,
     RangeSet,
-    Set,
     SolverFactory,
     Var,
     assert_optimal_termination,

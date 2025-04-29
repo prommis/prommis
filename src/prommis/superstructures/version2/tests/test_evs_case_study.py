@@ -2448,7 +2448,7 @@ class TestByprodVal(object):
                                 )
                                 yearly_F_in_vals[t][(j, k)][c] = F_in_val
         # create a dictionary to hold the yearly amounts of each byproduct produced
-        totaly_yearly_byprod = {
+        total_yearly_byprod = {
             key1: {key2: None for key2 in byprods} for key1 in operational_range
         }
         # calculate yearly amounts of byproducts produced and store in dict
@@ -2457,7 +2457,7 @@ class TestByprodVal(object):
                 byprod_val = byprod_vals[byprod]
                 c = tracked_comp_for_byprod[byprod]
 
-                totaly_yearly_byprod[t][byprod] = sum(
+                total_yearly_byprod[t][byprod] = sum(
                     yearly_F_in_vals[t][byprod_option][c] * TC_to_byproduct[byprod]
                     for byprod_option in byprod_options[byprod]
                 )
@@ -2466,7 +2466,7 @@ class TestByprodVal(object):
         # calculate yearly amount of profit generated from byproducts and store in dict
         for t in operational_range:
             Byprod_Profit[t] = sum(
-                totaly_yearly_byprod[t][byprod] * byprod_vals[byprod]
+                total_yearly_byprod[t][byprod] * byprod_vals[byprod]
                 for byprod in byprods
             )
         ###################################################################################################
@@ -2476,7 +2476,7 @@ class TestByprodVal(object):
             for byprod in byprods:
                 assert value(
                     BV_model.plantYear[t].total_yearly_byprod[byprod]
-                ) == pytest.approx(totaly_yearly_byprod[t][byprod], rel=1e-8)
+                ) == pytest.approx(total_yearly_byprod[t][byprod], rel=1e-8)
 
         # test profit generated from byproduct valorization
         for t in operational_range:

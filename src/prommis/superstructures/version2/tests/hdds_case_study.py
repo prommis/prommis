@@ -660,6 +660,7 @@ m = build_model(
 )
 
 from idaes.core.solvers import get_solver
+
 # solver = pyo.SolverFactory("gurobi")
 solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2
@@ -682,7 +683,7 @@ print(HDD_input_flow)
 # m.BEC.display()
 
 for t in pyo.RangeSet(2025, 2038):
-    print('Year: ', t)
+    print("Year: ", t)
     m.plantYear[t].ProfitOpt.display()
 
 # m.COR.display()

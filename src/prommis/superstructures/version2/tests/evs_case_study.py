@@ -488,6 +488,12 @@ Discretized_CAPEX = {
     },
 }
 
+# Option 1: Modify the original dictionary in-place
+for node, data in Discretized_CAPEX.items():
+    for category in ["Flowrates", "Costs"]:
+        for key in data[category]:
+            data[category][key] = data[category][key] / 1000
+
 m = build_model(
     ###################################################################################################
     ### Plant Lifetime Parameters
@@ -498,20 +504,20 @@ m = build_model(
     ### Feed parameters
     # Total feedstock (thousands of EOL products) available for recycling each year
     Available_feed={
-        2025: 290273,
-        2026: 274648,
-        2027: 286512,
-        2028: 487819,
-        2029: 592637,
-        2030: 571054,
-        2031: 498472,
-        2032: 506565,
-        2033: 566355,
-        2034: 669094,
-        2035: 719057,
-        2036: 762656,
-        2037: 1434637,
-        2038: 1697805,
+        2025: 290273 / 1000,
+        2026: 274648 / 1000,
+        2027: 286512 / 1000,
+        2028: 487819 / 1000,
+        2029: 592637 / 1000,
+        2030: 571054 / 1000,
+        2031: 498472 / 1000,
+        2032: 506565 / 1000,
+        2033: 566355 / 1000,
+        2034: 669094 / 1000,
+        2035: 719057 / 1000,
+        2036: 762656 / 1000,
+        2037: 1434637 / 1000,
+        2038: 1697805 / 1000,
     },
     # collection rate for how much of the available feed is processed by the plant each year
     CR=0.1,
@@ -604,26 +610,26 @@ m = build_model(
     # OPEX = a*F_in + b*y
     N_OC_var={
         # level 2
-        (2, 1): {"a": 0.0053, "b": 7929.7},
-        (2, 2): {"a": 0.0015, "b": 2233.16},
+        (2, 1): {"a": 0.0053, "b": 7929.7 / 1000},
+        (2, 2): {"a": 0.0015, "b": 2233.16 / 1000},
         (2, 3): {"a": 0.0034, "b": 0},
         (2, 4): {"a": 0.0117, "b": 0},
         # level 3
-        (3, 1): {"a": 15.594, "b": 4e6},
-        (3, 2): {"a": 35.58463, "b": 4e6},
+        (3, 1): {"a": 15.594, "b": 4e6 / 1000},
+        (3, 2): {"a": 35.58463, "b": 4e6 / 1000},
         (3, 3): {"a": 1.8359, "b": 0},
-        (3, 4): {"a": 3.7414, "b": 2378.6},
-        (3, 5): {"a": 10.35427, "b": 2378.6},
+        (3, 4): {"a": 3.7414, "b": 2378.6 / 1000},
+        (3, 5): {"a": 10.35427, "b": 2378.6 / 1000},
         (3, 6): {"a": 1.58, "b": 0},
         # level 4
         (4, 1): {"a": 0, "b": 0},
-        (4, 2): {"a": 111.09, "b": 254606},
+        (4, 2): {"a": 111.09, "b": 254606 / 1000},
         (4, 3): {"a": 0, "b": 0},
         (4, 4): {"a": 0, "b": 0},
         # level 5
-        (5, 1): {"a": 0.4997, "b": 89832},
-        (5, 2): {"a": 9.8127, "b": 964921},
-        (5, 3): {"a": 9.8127, "b": 964921},
+        (5, 1): {"a": 0.4997, "b": 89832 / 1000},
+        (5, 2): {"a": 9.8127, "b": 964921 / 1000},
+        (5, 3): {"a": 9.8127, "b": 964921 / 1000},
         (5, 4): {"a": 2.17, "b": 0},
         (5, 5): {"a": 6.7063559004, "b": 0},
     },
@@ -651,21 +657,21 @@ m = build_model(
         (5, 4): 1.15,
         (5, 5): 1.15,
     },
-    labor_rate=8000 * 38.20,  # yearly wage per type of labor (k$)
+    labor_rate=8000 * 38.20 / 1000,  # yearly wage per type of labor (k$)
     # yearly operating costs per unit (k$/unit*yr)
     YCU={
         (1, 1): 0,
-        (1, 2): 280,
+        (1, 2): 280 / 1000,
     },
     # cost (k$) per disassembly stage unit for each disassembly option
     CU={
         (1, 1): 0,
-        (1, 2): 200000,
+        (1, 2): 200000 / 1000,
     },
     # disassembly rate for each disassembly option (in terms of thousands of EOL products disassembled per year per unit)
     Dis_Rate={
-        (1, 1): 7868,
-        (1, 2): 52453,
+        (1, 1): 7868 / 1000,
+        (1, 2): 52453 / 1000,
     },
     ###################################################################################################
     ###################################################################################################
@@ -954,7 +960,6 @@ m.binOpt.display()
 # print(degrees_of_freedom(m))
 
 
-
 # # calculate feed entering parameter based on yearly available feedstock and collection rate
 # Feed_entering = copy.deepcopy(Available_feed)
 # for key in Feed_entering:
@@ -1023,6 +1028,6 @@ m.binOpt.display()
 #     # print('Profit: ' + str(pyo.value(m.plantYear[t].ProfitOpt[(j, k)])))
 #     print(pyo.value(m.plantYear[t].yearly_GWP[1, 1]))
 #     # print(type(m.plantYear[t].yearly_GWP[1, 1]))
-    # m.plantYear[t].yearly_GWP.display()
+# m.plantYear[t].yearly_GWP.display()
 
 # print(type(m.obj_func))

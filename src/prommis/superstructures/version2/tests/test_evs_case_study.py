@@ -762,7 +762,10 @@ def get_common_params():
             "Jarosite": {(3, 1): 1},
             "Iron oxide": {(3, 2): 1, (3, 5): 1, (3, 6): 1, (5, 5): 1},
             "Residue": {(3, 3): 1},
-            "Iron hydroxide": {(3, 4): 0.597, (5, 4): 1},  # means 40.3% of tracked component (Fe) remains
+            "Iron hydroxide": {
+                (3, 4): 0.597,
+                (5, 4): 1,
+            },  # means 40.3% of tracked component (Fe) remains
         },
         # Conversion factors of tracked component to byproduct (kg byproduct / kg tracked component)
         "TC_to_byproduct": {
@@ -1572,6 +1575,83 @@ class TestCOR(object):
     @pytest.fixture(scope="class")
     def COR_model(self, get_common_params):
         common_params = get_common_params
+
+        ### Scaling all flowrates and costs by 1000 to help solver
+        # scale available feed
+        Available_feed = {
+            2025: 290273 / 1000,
+            2026: 274648 / 1000,
+            2027: 286512 / 1000,
+            2028: 487819 / 1000,
+            2029: 592637 / 1000,
+            2030: 571054 / 1000,
+            2031: 498472 / 1000,
+            2032: 506565 / 1000,
+            2033: 566355 / 1000,
+            2034: 669094 / 1000,
+            2035: 719057 / 1000,
+            2036: 762656 / 1000,
+            2037: 1434637 / 1000,
+            2038: 1697805 / 1000,
+        }
+
+        # scale opex (only y-intercept need to be scaled)
+        N_OC_var = {
+            # level 2
+            (2, 1): {"a": 0.0053, "b": 7929.7 / 1000},
+            (2, 2): {"a": 0.0015, "b": 2233.16 / 1000},
+            (2, 3): {"a": 0.0034, "b": 0},
+            (2, 4): {"a": 0.0117, "b": 0},
+            # level 3
+            (3, 1): {"a": 15.594, "b": 4e6 / 1000},
+            (3, 2): {"a": 35.58463, "b": 4e6 / 1000},
+            (3, 3): {"a": 1.8359, "b": 0},
+            (3, 4): {"a": 3.7414, "b": 2378.6 / 1000},
+            (3, 5): {"a": 10.35427, "b": 2378.6 / 1000},
+            (3, 6): {"a": 1.58, "b": 0},
+            # level 4
+            (4, 1): {"a": 0, "b": 0},
+            (4, 2): {"a": 111.09, "b": 254606 / 1000},
+            (4, 3): {"a": 0, "b": 0},
+            (4, 4): {"a": 0, "b": 0},
+            # level 5
+            (5, 1): {"a": 0.4997, "b": 89832 / 1000},
+            (5, 2): {"a": 9.8127, "b": 964921 / 1000},
+            (5, 3): {"a": 9.8127, "b": 964921 / 1000},
+            (5, 4): {"a": 2.17, "b": 0},
+            (5, 5): {"a": 6.7063559004, "b": 0},
+        }
+
+        # scale yearly wage
+        labor_rate = 8000 * 38.20 / 1000
+
+        # scale yearly operating costs per unit
+        YCU = {
+            (1, 1): 0,
+            (1, 2): 280 / 1000,
+        }
+
+        # scale cost per unit for disassembly stage
+        CU = {
+            (1, 1): 0,
+            (1, 2): 200000 / 1000,
+        }
+
+        # scale disassembly rate
+        Dis_Rate = {
+            (1, 1): 7868 / 1000,
+            (1, 2): 52453 / 1000,
+        }
+
+        # scale BEC data (in terms of metric tonnes flowrate vs k$)
+        Discretized_CAPEX = common_params["Discretized_CAPEX"]
+
+        modified_capex = copy.deepcopy(Discretized_CAPEX)
+        for node, data in modified_capex.items():
+            for category in ["Flowrates", "Costs"]:
+                for key in data[category]:
+                    data[category][key] = data[category][key] / 1000
+
         m = build_model(
             ###################################################################################################
             ### Plant Lifetime Parameters
@@ -1581,7 +1661,7 @@ class TestCOR(object):
             ###################################################################################################
             ### Feed parameters
             # Total feedstock available for recycling each year
-            Available_feed=common_params["Available_feed"],
+            Available_feed=Available_feed,
             # collection rate for how much of the available feed is processed by the plant each year
             CR=common_params["CR"],
             Tracked_comps=common_params["Tracked_comps"],  # tracked components
@@ -1609,16 +1689,16 @@ class TestCOR(object):
             REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
             # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
             # OPEX = a*F_in + b*y
-            N_OC_var=common_params["N_OC_var"],
+            N_OC_var=N_OC_var,
             # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
             num_workers=common_params["num_workers"],
-            labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
+            labor_rate=labor_rate,  # yearly wage per type of labor
             # yearly operating costs per unit ($/unit*yr)
-            YCU=common_params["YCU"],
+            YCU=YCU,
             # cost per disassembly stage unit for each disassembly option
-            CU=common_params["CU"],
+            CU=CU,
             # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
-            Dis_Rate=common_params["Dis_Rate"],
+            Dis_Rate=Dis_Rate,
             ###################################################################################################
             ###################################################################################################
             ### Costing Parameters
@@ -1633,7 +1713,7 @@ class TestCOR(object):
                 "f_exp"
             ],
             # Define Python Dictionary with discretized cost by flows for each option.
-            Discretized_CAPEX=common_params["Discretized_CAPEX"],
+            Discretized_CAPEX=modified_capex,
             ###################################################################################################
             ###################################################################################################
             ### Choice of objective function. Options are 'NPV' or 'COR'.capitalize
@@ -1795,20 +1875,20 @@ class TestCOR(object):
         COR = 35.153012173
         # profit for the final option in the optimal pathway by year
         profit = {
-            2025: 1382759.91,
-            2026: 1308327.83,
-            2027: 1364843.81,
-            2028: 2323800.55,
-            2029: 2823117.16,
-            2030: 2720303.23,
-            2031: 2374547.75,
-            2032: 2413100,
-            2033: 2697918.82,
-            2034: 3187331.79,
-            2035: 3425338.2,
-            2036: 3633028.72,
-            2037: 6834113.18,
-            2038: 8087754.27,
+            2025: 1382.75991,
+            2026: 1308.32783,
+            2027: 1364.84381,
+            2028: 2323.80055,
+            2029: 2823.11716,
+            2030: 2720.30323,
+            2031: 2374.54775,
+            2032: 2413.100,
+            2033: 2697.91882,
+            2034: 3187.33179,
+            2035: 3425.3382,
+            2036: 3633.02872,
+            2037: 6834.11318,
+            2038: 8087.75427,
         }
 
         # test COR
@@ -1825,7 +1905,7 @@ class TestCOR(object):
                 else:
                     assert value(
                         COR_model.plantYear[t].ProfitOpt[(j, k)]
-                    ) == pytest.approx(0, rel=1e-8)
+                    ) == pytest.approx(0, abs=1e-8)
 
         # test the NPV
         assert value(COR_model.NPV) == pytest.approx(0, rel=1e-8)

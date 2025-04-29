@@ -127,7 +127,7 @@ def build_model(
     byprod_options_eff: dict,
     # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
     # of the form -> byprod1: conv_factor1, ...
-    Fe_to_byproduct: dict,
+    TC_to_byproduct: dict,
 ):
     ###################################################################################################
     ### Calculate other plant lifetime parameters
@@ -268,7 +268,7 @@ def build_model(
                     == sum(
                         b.F_in[byprod_option + (c,)]
                         * byprod_options_eff[byprod][byprod_option]
-                        * Fe_to_byproduct[byprod]
+                        * TC_to_byproduct[byprod]
                         for byprod_option in byprod_options[byprod]
                     )
                 )

@@ -188,7 +188,9 @@ def get_common_params():
             (4, 3): 1.15,
             (4, 4): 1.15,
         },
-        "labor_rate": 8000 * 38.20 / 1000,  # yearly wage per type of labor (k$/operator/yr)
+        "labor_rate": 8000
+        * 38.20
+        / 1000,  # yearly wage per type of labor (k$/operator/yr)
         # yearly operating costs per unit (k$/unit/yr)
         "YCU": {
             (1, 1): 0,
@@ -887,12 +889,12 @@ class TestNPV(object):
         for key in Feed_entering:
             Feed_entering[key] = Available_feed[key] * CR
         # calculate max feed that can enter the plant
-        maxFeedEntering = max( # max feed entering plant over production period
+        maxFeedEntering = max(  # max feed entering plant over production period
             Feed_entering.values()
-        )  
-        maxFeedEnteringYear = max( # year in which max feed enters plant
+        )
+        maxFeedEnteringYear = max(  # year in which max feed enters plant
             Feed_entering, key=Feed_entering.get
-        )  
+        )
         ###################################################################################################
         ###################################################################################################
         ### Superstructure formulation parameters
@@ -962,7 +964,12 @@ class TestNPV(object):
         # number of shredder units
         shred_units = 1
         # list of disassembly workers/units tuple (stage, option, no. dis. workers/units)
-        dis_stage_workers = [(1, 1, man_dis_workers), (1, 2, auto_dis_units), (1, 3, mech_frac_units), (1, 4, shred_units)]
+        dis_stage_workers = [
+            (1, 1, man_dis_workers),
+            (1, 2, auto_dis_units),
+            (1, 3, mech_frac_units),
+            (1, 4, shred_units),
+        ]
         # define number of workers for overall process
         total_workers = 4
         # create dictionary to hold yearly flow values
@@ -1163,7 +1170,6 @@ class TestNPV(object):
                                 NPV_model.plantYear[t].OC_var[(j, k)]
                             ) == pytest.approx(elem_OC_var, rel=1e-8)
 
-
                     # checking rest
                     if j != 1:
                         if (j, k) not in opt_stages:
@@ -1241,7 +1247,7 @@ class TestNPV(object):
             for k in RangeSet(Options_in_stage[j]):
                 elem = (j, k)
 
-                if j == 1:                    
+                if j == 1:
                     if elem == (1, 4):
                         assert value(NPV_model.BEC[elem]) == pytest.approx(
                             BECs[elem], rel=1e-8
@@ -1276,7 +1282,9 @@ class TestNPV(object):
                         assert value(NPV_model.BEC_max_flow[elem]) == pytest.approx(
                             BEC_max_flows[elem], rel=1e-8
                         )
-                        assert value(NPV_model.BEC[elem]) == pytest.approx(BECs[elem], rel=1e-8)
+                        assert value(NPV_model.BEC[elem]) == pytest.approx(
+                            BECs[elem], rel=1e-8
+                        )
 
         # test TPC
         for j in RangeSet(numStages):
@@ -1339,7 +1347,7 @@ class TestNPV(object):
                     assert value(NPV_model.node_TOC[elem]) == pytest.approx(
                         elem_TOC[elem], rel=1e-8
                     )
- 
+
         # test TOC expenditure
         for t in plant_life_range:
             if t < plant_start + 3:  # capital expended over first three years
@@ -2065,7 +2073,7 @@ class TestByprodVal(object):
         # collection rate for how much of the available feed is processed by the plant each year (fraction)
         CR = get_common_params["CR"]
         # list of tracked components
-        Tracked_comps = get_common_params["Tracked_comps"] # tracked components
+        Tracked_comps = get_common_params["Tracked_comps"]  # tracked components
         # mass of tracked component per EOL Product (metric tonnes of component / 1000 EOL product)
         Prod_comp_mass = get_common_params["Prod_comp_mass"]
         # calculate feed entering parameter based on yearly available feedstock and collection rate
@@ -2073,12 +2081,12 @@ class TestByprodVal(object):
         for key in Feed_entering:
             Feed_entering[key] = Available_feed[key] * CR
         # calculate max feed that can enter the plant
-        maxFeedEntering = max( # max feed entering plant over production period
+        maxFeedEntering = max(  # max feed entering plant over production period
             Feed_entering.values()
-        )  
-        maxFeedEnteringYear = max( # year in which max feed enters plant
+        )
+        maxFeedEnteringYear = max(  # year in which max feed enters plant
             Feed_entering, key=Feed_entering.get
-        )  
+        )
         ###################################################################################################
         ###################################################################################################
         ### Superstructure formulation parameters

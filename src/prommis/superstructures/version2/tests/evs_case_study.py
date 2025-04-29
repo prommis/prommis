@@ -496,7 +496,7 @@ m = build_model(
     ###################################################################################################
     ###################################################################################################
     ### Feed parameters
-    # Total feedstock available for recycling each year
+    # Total feedstock (thousands of EOL products) available for recycling each year
     Available_feed={
         2025: 290273,
         2026: 274648,
@@ -600,7 +600,7 @@ m = build_model(
     },
     # conversion of kg REE/Fe to kg REO/Fe2O3
     REE_to_REO_Conversion={"Nd": 1.664, "Dy": 1.147, "Fe": 1.43},
-    # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
+    # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it (metric tonnes)
     # OPEX = a*F_in + b*y
     N_OC_var={
         # level 2
@@ -651,18 +651,18 @@ m = build_model(
         (5, 4): 1.15,
         (5, 5): 1.15,
     },
-    labor_rate=8000 * 38.20,  # yearly wage per type of labor
-    # yearly operating costs per unit ($/unit*yr)
+    labor_rate=8000 * 38.20,  # yearly wage per type of labor (k$)
+    # yearly operating costs per unit (k$/unit*yr)
     YCU={
         (1, 1): 0,
         (1, 2): 280,
     },
-    # cost per disassembly stage unit for each disassembly option
+    # cost (k$) per disassembly stage unit for each disassembly option
     CU={
         (1, 1): 0,
         (1, 2): 200000,
     },
-    # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
+    # disassembly rate for each disassembly option (in terms of thousands of EOL products disassembled per year per unit)
     Dis_Rate={
         (1, 1): 7868,
         (1, 2): 52453,
@@ -682,7 +682,7 @@ m = build_model(
     ###################################################################################################
     # Choice of objective function. Options are 'NPV' or 'COR'.capitalize
     # obj_func="NPV",
-    obj_func="NPV",
+    obj_func="COR",
     ###################################################################################################
     ###################################################################################################
     ### Consideration of environmental impacts parameters
@@ -717,7 +717,7 @@ m = build_model(
     ###################################################################################################
     ### Byproduct valorization
     # boolean to decide whether or not to consider the valorization of byproducts
-    consider_byprod_val=True,
+    consider_byprod_val=False,
     # list of byproducts
     byprods=["Jarosite", "Iron oxide", "Residue", "Iron hydroxide"],
     # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
@@ -757,8 +757,16 @@ m = build_model(
     },
 )
 
-# m.obj.display()
-# m.binOpt.display()
+
+solver = pyo.SolverFactory("gurobi")
+solver.options["NumericFocus"] = 2
+results = solver.solve(m, tee=True)
+
+pyo.assert_optimal_termination(results)
+
+
+m.obj.display()
+m.binOpt.display()
 # m.GWP.display()
 
 # m.display()
@@ -771,10 +779,9 @@ m = build_model(
 # dt.display_unused_variables()
 
 # solver = pyo.SolverFactory("gurobi")
-solver = get_solver(solver="gurobi")
-solver.options["NumericFocus"] = 2
 
-results = solver.solve(m, tee=True)
+
+# m.COR.display()
 
 # print(isinstance())
 
@@ -993,7 +1000,7 @@ results = solver.solve(m, tee=True)
 # for t in pyo.RangeSet(2025, 2038):
 #     print(pyo.value(m.plantYear[t].OC_var_total))
 
-m.binOpt.display()
+# m.binOpt.display()
 # m.bin_workers.display()
 # m.total_workers.display()
 # m.COL_Total.display()

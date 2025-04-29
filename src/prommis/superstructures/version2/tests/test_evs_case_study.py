@@ -21,8 +21,6 @@ from pyomo.environ import (
     Set,
 )
 
-# import sys
-
 # model statistics
 from idaes.core.util.model_statistics import (
     number_total_constraints,
@@ -34,12 +32,6 @@ from idaes.core.util.model_statistics import (
 from idaes.core.solvers import get_solver
 
 from prommis.superstructures.version2.superstructure_v2 import build_model
-
-# try:
-#     solver = SolverFactory("test")
-#     gurobi_available = True
-# except KeyError:
-#     gurobi_available = False
 
 solver_available = SolverFactory("gurobi").available()
 if solver_available:
@@ -770,9 +762,9 @@ def get_common_params():
             "Jarosite": {(3, 1): 1},
             "Iron oxide": {(3, 2): 1, (3, 5): 1, (3, 6): 1, (5, 5): 1},
             "Residue": {(3, 3): 1},
-            "Iron hydroxide": {(3, 4): 0.597, (5, 4): 1},  # means 40.3% of Fe remains
+            "Iron hydroxide": {(3, 4): 0.597, (5, 4): 1},  # means 40.3% of tracked component (Fe) remains
         },
-        # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
+        # Conversion factors of tracked component to byproduct (kg byproduct / kg tracked component)
         "TC_to_byproduct": {
             "Jarosite": 2.893,
             "Iron oxide": 1.430,

@@ -163,14 +163,14 @@ Discretized_CAPEX = {
         },
         "Costs": {
             "0": 0.0,
-            "1": 343.229 + jarosite_capex,
-            "2": 482.425 + jarosite_capex,
-            "3": 618.182 + jarosite_capex,
-            "4": 743.75 + jarosite_capex,
-            "5": 844.443 + jarosite_capex,
-            "6": 978.48 + jarosite_capex,
-            "7": 1183.835 + jarosite_capex,
-            "8": 1440.661 + jarosite_capex,
+            "1": 643.229,
+            "2": 782.425,
+            "3": 918.182,
+            "4": 1043.75,
+            "5": 1144.443,
+            "6": 1278.48,
+            "7": 1483.835,
+            "8": 1740.661,
         },
     },
     "(3, 3)": {
@@ -235,14 +235,14 @@ Discretized_CAPEX = {
         },
         "Costs": {
             "0": 0.0,
-            "1": 226.79 + iron_hydroxide_capex,
-            "2": 446.435 + iron_hydroxide_capex,
-            "3": 713.714 + iron_hydroxide_capex,
-            "4": 1270.105 + iron_hydroxide_capex,
-            "5": 1541.353 + iron_hydroxide_capex,
-            "6": 2920.751 + iron_hydroxide_capex,
-            "7": 3652.064 + iron_hydroxide_capex,
-            "8": 5323.087 + iron_hydroxide_capex,
+            "1": 476.79,
+            "2": 696.435,
+            "3": 963.714,
+            "4": 1520.105,
+            "5": 1791.353,
+            "6": 3170.751,
+            "7": 3902.064,
+            "8": 5573.087,
         },
     },
     "(3, 6)": {
@@ -355,14 +355,14 @@ Discretized_CAPEX = {
         },
         "Costs": {
             "0": 0.0,
-            "1": 154.6847193 + iron_hydroxide_capex,
-            "2": 354.009 + iron_hydroxide_capex,
-            "3": 490.597 + iron_hydroxide_capex,
-            "4": 562.047 + iron_hydroxide_capex,
-            "5": 679.397 + iron_hydroxide_capex,
-            "6": 912.244 + iron_hydroxide_capex,
-            "7": 1097.498 + iron_hydroxide_capex,
-            "8": 1297.052 + iron_hydroxide_capex,
+            "1": 404.6847193,
+            "2": 604.009,
+            "3": 740.597,
+            "4": 812.047,
+            "5": 929.397,
+            "6": 1162.244,
+            "7": 1347.498,
+            "8": 1547.052,
         },
     },
 }
@@ -408,6 +408,23 @@ HDD_input_flow = copy.deepcopy(EOLDesktops)
 for key in HDD_input_flow:
     # flow in terms of thousands of EOL products
     HDD_input_flow[key] = (EOLDesktops[key] + EOLLaptops[key]) / 1000
+
+HDD_input_flow = {
+    2025: 19482.463,
+    2026: 19362.314,
+    2027: 17893.125,
+    2028: 17651.492,
+    2029: 16370.492,
+    2030: 13854.916,
+    2031: 13284.074,
+    2032: 11991.115,
+    2033: 10870.423,
+    2034: 9787.703,
+    2035: 8743.312,
+    2036: 7734.329,
+    2037: 6758.895,
+    2038: 5813.304,
+}
 
 m = build_model(
     ###################################################################################################
@@ -494,16 +511,16 @@ m = build_model(
         (2, 4): {"a": 0.0117, "b": 0},
         # level 3
         (3, 1): {"a": 15.594, "b": 4e6 / 1000},
-        (3, 2): {"a": 15.594 + jaro_opex_param, "b": 4e6 / 1000},
+        (3, 2): {"a": 35.845, "b": 4e6 / 1000},
         (3, 3): {"a": 1.8359, "b": 0},
         (3, 4): {"a": 3.7414, "b": 3476.7 / 1000},
-        (3, 5): {"a": 3.7414 + Sel_Leach_iron_hydrox_opex_param, "b": 3476.7 / 1000},
+        (3, 5): {"a": 10.4404, "b": 3476.7 / 1000},
         (3, 6): {"a": 1.58, "b": 0},
         # level 4
         (4, 1): {"a": 0.4997, "b": 898320 / 1000},
         (4, 2): {"a": 9.8352, "b": 677751 / 1000},
         (4, 3): {"a": 2.17, "b": 0},
-        (4, 4): {"a": 2.17 + AFDE_iron_hydrox_opex_param, "b": 0},
+        (4, 4): {"a": 6.807857755993, "b": 0},
     },
     # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
     num_workers={
@@ -574,7 +591,7 @@ m = build_model(
     ###################################################################################################
     ### Consideration of environmental impacts parameters
     # boolean to decide whether or not to consider environmental impacts
-    consider_environ_impacts=False,
+    consider_environ_impacts=True,
     # environmental impacts matrix (kg CO2e per metric tonne of incoming flowrate)
     # Environmental Impacts Matrix
     environ_impacts={
@@ -642,22 +659,30 @@ m = build_model(
     },
 )
 
-solver = pyo.SolverFactory("gurobi")
+from idaes.core.solvers import get_solver
+# solver = pyo.SolverFactory("gurobi")
+solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2
 
 results = pyo.SolverFactory("gurobi").solve(m, tee=True)
 
 m.obj.display()
 m.binOpt.display()
-# m.GWP.display()
+# # m.GWP.display()
 print(HDD_input_flow)
 
-print(number_variables(m))
-print(number_total_constraints(m))
-print(number_unused_variables(m))
-print(degrees_of_freedom(m))
+# print(number_variables(m))
+# print(number_total_constraints(m))
+# print(number_unused_variables(m))
+# print(degrees_of_freedom(m))
 
-m.DisOptWorkers.display()
-m.total_workers.display()
-m.BEC_max_flow.display()
-m.BEC.display()
+# m.DisOptWorkers.display()
+# m.total_workers.display()
+# m.BEC_max_flow.display()
+# m.BEC.display()
+
+for t in pyo.RangeSet(2025, 2038):
+    print('Year: ', t)
+    m.plantYear[t].ProfitOpt.display()
+
+# m.COR.display()

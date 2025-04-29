@@ -21,8 +21,6 @@ from pyomo.environ import (
     Set,
 )
 
-# import sys
-
 # model statistics
 from idaes.core.util.model_statistics import (
     number_total_constraints,
@@ -34,12 +32,6 @@ from idaes.core.util.model_statistics import (
 from idaes.core.solvers import get_solver
 
 from prommis.superstructures.version2.superstructure_v2 import build_model
-
-# try:
-#     solver = SolverFactory("test")
-#     gurobi_available = True
-# except KeyError:
-#     gurobi_available = False
 
 solver_available = SolverFactory("gurobi").available()
 if solver_available:
@@ -65,20 +57,20 @@ def get_common_params():
             2027: 17893.125,
             2028: 17651.492,
             2029: 16370.492,
-            2030: 16370.87,
-            2031: 13854.916,
-            2032: 13284.074,
-            2033: 11991.115,
-            2034: 10870.423,
-            2035: 9787.703,
-            2036: 8743.312,
-            2037: 7734.329,
+            2030: 13854.916,
+            2031: 13284.074,
+            2032: 11991.115,
+            2033: 10870.423,
+            2034: 9787.703,
+            2035: 8743.312,
+            2036: 7734.329,
+            2037: 6758.895,
             2038: 5813.304,
         },
         # collection rate for how much of the available feed is processed by the plant each year
         "CR": 0.6,
         "Tracked_comps": ["Nd", "Fe"],  # tracked components
-        # mass of tracked component per EOL Product (kg component / EOL product)
+        # mass of tracked component per EOL Product (metric tonnes of component / 1000 EOL product)
         "Prod_comp_mass": {
             "Nd": 7.5e-4,
             "Fe": 0.00175,
@@ -142,7 +134,7 @@ def get_common_params():
         ###################################################################################################
         ###################################################################################################
         ### Operating Parameters
-        # profit per kg of product in terms of tracked components
+        # profit (k$) per metric tonnes of product in terms of tracked components
         "Profit": {
             (4, 1): {"Nd": 69.888, "Fe": 0},
             (4, 2): {"Nd": 69.888, "Fe": 0},
@@ -151,7 +143,7 @@ def get_common_params():
         },
         # conversion of kg REE/Fe to kg REO/Fe2O3
         "REE_to_REO_Conversion": {"Nd": 1.664, "Fe": 1.43},
-        # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it (metric tonnes).
+        # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it (metric tonnes)
         # OPEX = a*F_in + b*y
         "N_OC_var": {
             # level 2
@@ -212,7 +204,6 @@ def get_common_params():
             (1, 4): 50000 / 1000,
         },
         # disassembly rate (thousands of EOL HDDs/yr/unit)
-        # for each disassembly option (in terms of EOL products disassembled per year per unit)
         "Dis_Rate": {
             (1, 1): 181132 / 1000,
             (1, 2): 523636 / 1000,
@@ -232,7 +223,7 @@ def get_common_params():
             0.6,
             0.3,
         ],
-        # Define Python Dictionary with discretized cost by flows for each option.
+        # Define Python Dictionary with discretized cost by flows for each option
         "Discretized_CAPEX": {
             "(2, 1)": {
                 "Flowrates": {
@@ -574,7 +565,6 @@ def get_common_params():
         ###################################################################################################
         ###################################################################################################
         # environmental impacts matrix (kg CO2e per metric tonne of incoming flowrate)
-        # Environmental Impacts Matrix
         "environ_impacts": {
             (1, 1): 0,
             (1, 2): 600,
@@ -601,7 +591,7 @@ def get_common_params():
         ### Byproduct valorization
         # list of byproducts
         "byprods": ["Jarosite", "Iron oxide", "Residue", "Iron hydroxide"],
-        # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
+        # dictionary of values for each byproduct (k$/metric tonnes). Negative value indicates it cost money to dispose of the byproduct
         "byprod_vals": {
             "Jarosite": -0.17,
             "Iron oxide": 10,
@@ -629,7 +619,7 @@ def get_common_params():
             "Residue": {(3, 3): 1},
             "Iron hydroxide": {(3, 4): 0.597, (4, 3): 1},  # means 40.3% of Fe remains
         },
-        # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
+        # Conversion factors of tracked component to byproduct (metric tonnes byproduct / metric tonnes tracked component)
         "TC_to_byproduct": {
             "Jarosite": 2.893,
             "Iron oxide": 1.430,
@@ -651,12 +641,12 @@ class TestNPV(object):
             ###################################################################################################
             ###################################################################################################
             ### Feed parameters
-            # Total feedstock available for recycling each year
+            # Total feedstock available for recycling each year (in terms of thousands of HDDs per year)
             Available_feed=common_params["Available_feed"],
             # collection rate for how much of the available feed is processed by the plant each year
             CR=common_params["CR"],
             Tracked_comps=common_params["Tracked_comps"],  # tracked components
-            # mass of tracked component per EOL Product (kg component / EOL product)
+            # mass of tracked component per EOL Product (metric tonnes of component / 1000 EOL product)
             Prod_comp_mass=common_params["Prod_comp_mass"],
             ###################################################################################################
             ###################################################################################################
@@ -674,21 +664,21 @@ class TestNPV(object):
             ###################################################################################################
             ###################################################################################################
             ### Operating Parameters
-            # profit per kg of product in terms of tracked components
+            # profit (k$) per metric tonnes of product in terms of tracked components
             Profit=common_params["Profit"],
             # conversion of kg REE/Fe to kg REO/Fe2O3
             REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
-            # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
+            # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it (metric tonnes)
             # OPEX = a*F_in + b*y
             N_OC_var=common_params["N_OC_var"],
             # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
             num_workers=common_params["num_workers"],
             labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
-            # yearly operating costs per unit ($/unit*yr)
+            # yearly operating costs per unit (k$/unit/yr)
             YCU=common_params["YCU"],
-            # cost per disassembly stage unit for each disassembly option
+            # cost per disassembly stage unit for each disassembly option (k$/unit)
             CU=common_params["CU"],
-            # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
+            # disassembly rate (thousands of EOL HDDs/yr/unit)
             Dis_Rate=common_params["Dis_Rate"],
             ###################################################################################################
             ###################################################################################################
@@ -714,7 +704,7 @@ class TestNPV(object):
             ### Consideration of environmental impacts parameters
             # boolean to decide whether or not to consider environmental impacts
             consider_environ_impacts=False,
-            # environmental impacts matrix (kg CO2e per kg incoming flowrate)
+            # environmental impacts matrix (kg CO2e per metric tonne of incoming flowrate)
             environ_impacts=common_params["environ_impacts"],
             epsilon=common_params[  # epsilon factor for generating Pareto front
                 "epsilon"
@@ -726,7 +716,7 @@ class TestNPV(object):
             consider_byprod_val=False,
             # list of byproducts
             byprods=common_params["byprods"],
-            # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
+            # dictionary of values for each byproduct (k$/metric tonnes). Negative value indicates it cost money to dispose of the byproduct
             byprod_vals=common_params["byprod_vals"],
             # dictionary keeping track of which tracked component produces which byproduct
             tracked_comp_for_byprod=common_params["tracked_comp_for_byprod"],
@@ -734,7 +724,7 @@ class TestNPV(object):
             byprod_options=common_params["byprod_options"],
             # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
             byprod_options_eff=common_params["byprod_options_eff"],
-            # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
+            # Conversion factors of tracked component to byproduct (metric tonnes byproduct / metric tonnes tracked component)
             TC_to_byproduct=common_params["TC_to_byproduct"],
         )
 
@@ -858,7 +848,7 @@ class TestNPV(object):
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
     @pytest.mark.component
     def test_solve(self, NPV_model):
-        solver.options["NumericFocus"] = 2
+        solver.options["NumericFocus"] = 3
 
         results = solver.solve(NPV_model)
         assert_optimal_termination(results)
@@ -890,19 +880,19 @@ class TestNPV(object):
         CR = get_common_params["CR"]
         # list of tracked components
         Tracked_comps = get_common_params["Tracked_comps"]
-        # mass of tracked component per EOL Product (kg component / EOL product)
+        # mass of tracked component per EOL Product (metric tonnes of component / 1000 EOL product)
         Prod_comp_mass = get_common_params["Prod_comp_mass"]
         # calculate feed entering parameter based on yearly available feedstock and collection rate
         Feed_entering = copy.deepcopy(Available_feed)
         for key in Feed_entering:
             Feed_entering[key] = Available_feed[key] * CR
         # calculate max feed that can enter the plant
-        maxFeedEntering = max(
+        maxFeedEntering = max( # max feed entering plant over production period
             Feed_entering.values()
-        )  # max feed entering plant over production period
-        maxFeedEnteringYear = max(
+        )  
+        maxFeedEnteringYear = max( # year in which max feed enters plant
             Feed_entering, key=Feed_entering.get
-        )  # year in which max feed enters plant
+        )  
         ###################################################################################################
         ###################################################################################################
         ### Superstructure formulation parameters
@@ -919,21 +909,21 @@ class TestNPV(object):
         ###################################################################################################
         ###################################################################################################
         ### Operating Parameters
-        # profit per kg of product in terms of tracked components
+        # profit (k$) per metric tonnes of product in terms of tracked components
         Profit = get_common_params["Profit"]
         # conversion of kg REE/Fe to kg REO/Fe2O3
         REE_to_REO_Conversion = get_common_params["REE_to_REO_Conversion"]
-        # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
+        # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it (metric tonnes).
         # OPEX = a*F_in + b*y
         N_OC_var = get_common_params["N_OC_var"]
         # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
         num_workers = get_common_params["num_workers"]
         labor_rate = get_common_params["labor_rate"]  # yearly wage per type of labor
-        # yearly operating costs per unit ($/unit*yr)
+        # yearly operating costs per unit (k$/unit/yr)
         YCU = get_common_params["YCU"]
-        # cost per disassembly stage unit for each disassembly option
+        # cost per disassembly stage unit for each disassembly option (k$/unit)
         CU = get_common_params["CU"]
-        # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
+        # disassembly rate (thousands of EOL HDDs/yr/unit)
         Dis_Rate = get_common_params["Dis_Rate"]
         # calculate max disassembly units possible for each option
         max_dis_by_option = copy.deepcopy(Dis_Rate)
@@ -1349,7 +1339,7 @@ class TestNPV(object):
                     assert value(NPV_model.node_TOC[elem]) == pytest.approx(
                         elem_TOC[elem], rel=1e-8
                     )
-
+ 
         # test TOC expenditure
         for t in plant_life_range:
             if t < plant_start + 3:  # capital expended over first three years
@@ -1409,12 +1399,12 @@ class TestCOR(object):
             ###################################################################################################
             ###################################################################################################
             ### Feed parameters
-            # Total feedstock available for recycling each year
+            # Total feedstock available for recycling each year (in terms of thousands of HDDs per year)
             Available_feed=common_params["Available_feed"],
             # collection rate for how much of the available feed is processed by the plant each year
             CR=common_params["CR"],
             Tracked_comps=common_params["Tracked_comps"],  # tracked components
-            # mass of tracked component per EOL Product (kg component / EOL product)
+            # mass of tracked component per EOL Product (metric tonnes of component / 1000 EOL product)
             Prod_comp_mass=common_params["Prod_comp_mass"],
             ###################################################################################################
             ###################################################################################################
@@ -1432,21 +1422,21 @@ class TestCOR(object):
             ###################################################################################################
             ###################################################################################################
             ### Operating Parameters
-            # profit per kg of product in terms of tracked components
+            # profit (k$) per metric tonnes of product in terms of tracked components
             Profit=common_params["Profit"],
             # conversion of kg REE/Fe to kg REO/Fe2O3
             REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
-            # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
+            # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it (metric tonnes).
             # OPEX = a*F_in + b*y
             N_OC_var=common_params["N_OC_var"],
             # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
             num_workers=common_params["num_workers"],
             labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
-            # yearly operating costs per unit ($/unit*yr)
+            # yearly operating costs per unit (k$/unit/yr)
             YCU=common_params["YCU"],
-            # cost per disassembly stage unit for each disassembly option
+            # cost per disassembly stage unit for each disassembly option (k$/unit)
             CU=common_params["CU"],
-            # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
+            # disassembly rate (thousands of EOL HDDs/yr/unit)
             Dis_Rate=common_params["Dis_Rate"],
             ###################################################################################################
             ###################################################################################################
@@ -1472,7 +1462,7 @@ class TestCOR(object):
             ### Consideration of environmental impacts parameters
             # boolean to decide whether or not to consider environmental impacts
             consider_environ_impacts=False,
-            # environmental impacts matrix (kg CO2e per kg incoming flowrate)
+            # environmental impacts matrix (kg CO2e per metric tonne of incoming flowrate)
             environ_impacts=common_params["environ_impacts"],
             epsilon=common_params[  # epsilon factor for generating Pareto front
                 "epsilon"
@@ -1484,7 +1474,7 @@ class TestCOR(object):
             consider_byprod_val=False,
             # list of byproducts
             byprods=common_params["byprods"],
-            # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
+            # dictionary of values for each byproduct (k$/metric tonnes). Negative value indicates it cost money to dispose of the byproduct
             byprod_vals=common_params["byprod_vals"],
             # dictionary keeping track of which tracked component produces which byproduct
             tracked_comp_for_byprod=common_params["tracked_comp_for_byprod"],
@@ -1492,7 +1482,7 @@ class TestCOR(object):
             byprod_options=common_params["byprod_options"],
             # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
             byprod_options_eff=common_params["byprod_options_eff"],
-            # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
+            # Conversion factors of tracked component to byproduct (metric tonnes byproduct / metric tonnes tracked component)
             TC_to_byproduct=common_params["TC_to_byproduct"],
         )
 
@@ -1513,722 +1503,722 @@ class TestCOR(object):
         assert isinstance(COR_model.NPV_con1, Constraint)
         assert isinstance(COR_model.NPV_con2, Constraint)
 
-        assert number_variables(COR_model) == 2805
-        assert number_total_constraints(COR_model) == 4022
+        assert number_variables(COR_model) == 1963
+        assert number_total_constraints(COR_model) == 2611
         assert number_unused_variables(COR_model) == 0
-        assert degrees_of_freedom(COR_model) == 872
+        assert degrees_of_freedom(COR_model) == 641
 
-#     @pytest.mark.solver
-#     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
-#     @pytest.mark.component
-#     def test_solve(self, COR_model):
-#         solver.options["NumericFocus"] = 2
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    def test_solve(self, COR_model):
+        solver.options["NumericFocus"] = 3
 
-#         results = solver.solve(COR_model)
-#         assert_optimal_termination(results)
+        results = solver.solve(COR_model, tee=True)
+        assert_optimal_termination(results)
 
-#     @pytest.mark.solver
-#     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
-#     @pytest.mark.component
-#     def test_solution(self, COR_model, get_common_params):
-#         ##### Define Parameters for tests
-#         ###################################################################################################
-#         ### Plant Lifetime Parameters
-#         plant_start = get_common_params["plant_start"]  # start of plant production
-#         plant_lifetime = get_common_params["plant_lifetime"]  # lifetime of plant
-#         # first year is construction
-#         prod_start = plant_start + 1
-#         plant_end = (  # final year plant is in production
-#             plant_start + plant_lifetime - 1
-#         )
-#         # total plant lifetime
-#         plant_life_range = RangeSet(plant_start, plant_end)
-#         # operational lifetime of the plant
-#         operational_range = RangeSet(prod_start, plant_end)
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Feed parameters
-#         # Total feedstock available for recycling each year
-#         Available_feed = get_common_params["Available_feed"]
-#         # collection rate for how much of the available feed is processed by the plant each year (fraction)
-#         CR = get_common_params["CR"]
-#         # list of tracked components
-#         Tracked_comps = get_common_params["Tracked_comps"]
-#         # mass of tracked component per EOL Product (kg component / EOL product)
-#         Prod_comp_mass = get_common_params["Prod_comp_mass"]
-#         # calculate feed entering parameter based on yearly available feedstock and collection rate
-#         Feed_entering = copy.deepcopy(Available_feed)
-#         for key in Feed_entering:
-#             Feed_entering[key] = Available_feed[key] * CR
-#         # calculate max feed that can enter the plant
-#         maxFeedEntering = max(  # max feed entering plant over production period
-#             Feed_entering.values()
-#         )
-#         maxFeedEnteringYear = max(  # year in which max feed enters plant
-#             Feed_entering, key=Feed_entering.get
-#         )
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Superstructure formulation parameters
-#         numStages = get_common_params["numStages"]  # no. of total stages
-#         # number of options in each stage
-#         Options_in_stage = get_common_params["Options_in_stage"]
-#         # set of options k' in stage j+1 connected to option k in stage j
-#         Option_outlets = get_common_params["Option_outlets"]
-#         # dictionary of tracked component retention efficiency for each option
-#         Option_Eff = get_common_params["Option_Eff"]
-#         maxOptions = max(Options_in_stage.values())  # max options in any of the stages
-#         # make a list of the options in the final stage
-#         final_opt_list = [(numStages, j) for j in RangeSet(Options_in_stage[numStages])]
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Operating Parameters
-#         # profit per kg of product in terms of tracked components
-#         Profit = get_common_params["Profit"]
-#         # conversion of kg REE/Fe to kg REO/Fe2O3
-#         REE_to_REO_Conversion = get_common_params["REE_to_REO_Conversion"]
-#         # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
-#         # OPEX = a*F_in + b*y
-#         N_OC_var = get_common_params["N_OC_var"]
-#         # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
-#         num_workers = get_common_params["num_workers"]
-#         labor_rate = get_common_params["labor_rate"]  # yearly wage per type of labor
-#         # yearly operating costs per unit ($/unit*yr)
-#         YCU = get_common_params["YCU"]
-#         # cost per disassembly stage unit for each disassembly option
-#         CU = get_common_params["CU"]
-#         # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
-#         Dis_Rate = get_common_params["Dis_Rate"]
-#         # calculate max disassembly units possible for each option
-#         max_dis_by_option = copy.deepcopy(Dis_Rate)
-#         for key in max_dis_by_option.keys():
-#             max_dis_by_option[key] = math.ceil(maxFeedEntering / Dis_Rate[key])
-#         max_dis_workers = max(max_dis_by_option.values())
-#         # calculate max possible workers for the process
-#         max_workers = max_dis_workers + numStages * math.ceil(max(num_workers.values()))
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Costing Parameters
-#         LF = get_common_params["LF"]  # Lang Factor
-#         TOC_factor = get_common_params["TOC_factor"]  # Overnight costs factor
-#         ATWACC = get_common_params["ATWACC"]  # discount rate
-#         i_OC_esc = get_common_params["i_OC_esc"]  # opex, revenue escalation rate
-#         i_CAP_esc = get_common_params["i_CAP_esc"]  # capex escalation rate
-#         f_exp = get_common_params["f_exp"]  # capital expenditure schedule
-#         # Define Python Dictionary with discretized cost by flows for each option.
-#         Discretized_CAPEX = get_common_params["Discretized_CAPEX"]
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Other Parameters needed for tests
-#         # cost of recovery
-#         COR = 35.153012173
-#         # profit for the final option in the optimal pathway by year
-#         profit = {
-#             2025: 1382759.91,
-#             2026: 1308327.83,
-#             2027: 1364843.81,
-#             2028: 2323800.55,
-#             2029: 2823117.16,
-#             2030: 2720303.23,
-#             2031: 2374547.75,
-#             2032: 2413100,
-#             2033: 2697918.82,
-#             2034: 3187331.79,
-#             2035: 3425338.2,
-#             2036: 3633028.72,
-#             2037: 6834113.18,
-#             2038: 8087754.27,
-#         }
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    def test_solution(self, COR_model, get_common_params):
+        ##### Define Parameters for tests
+        ###################################################################################################
+        ### Plant Lifetime Parameters
+        plant_start = get_common_params["plant_start"]  # start of plant production
+        plant_lifetime = get_common_params["plant_lifetime"]  # lifetime of plant
+        # first year is construction
+        prod_start = plant_start + 1
+        plant_end = (  # final year plant is in production
+            plant_start + plant_lifetime - 1
+        )
+        # total plant lifetime
+        plant_life_range = RangeSet(plant_start, plant_end)
+        # operational lifetime of the plant
+        operational_range = RangeSet(prod_start, plant_end)
+        ###################################################################################################
+        ###################################################################################################
+        ### Feed parameters
+        # Total feedstock available for recycling each year
+        Available_feed = get_common_params["Available_feed"]
+        # collection rate for how much of the available feed is processed by the plant each year (fraction)
+        CR = get_common_params["CR"]
+        # list of tracked components
+        Tracked_comps = get_common_params["Tracked_comps"]
+        # mass of tracked component per EOL Product (metric tonnes of component / 1000 EOL product)
+        Prod_comp_mass = get_common_params["Prod_comp_mass"]
+        # calculate feed entering parameter based on yearly available feedstock and collection rate
+        Feed_entering = copy.deepcopy(Available_feed)
+        for key in Feed_entering:
+            Feed_entering[key] = Available_feed[key] * CR
+        # calculate max feed that can enter the plant
+        maxFeedEntering = max(  # max feed entering plant over production period
+            Feed_entering.values()
+        )
+        maxFeedEnteringYear = max(  # year in which max feed enters plant
+            Feed_entering, key=Feed_entering.get
+        )
+        ###################################################################################################
+        ###################################################################################################
+        ### Superstructure formulation parameters
+        numStages = get_common_params["numStages"]  # no. of total stages
+        # number of options in each stage
+        Options_in_stage = get_common_params["Options_in_stage"]
+        # set of options k' in stage j+1 connected to option k in stage j
+        Option_outlets = get_common_params["Option_outlets"]
+        # dictionary of tracked component retention efficiency for each option
+        Option_Eff = get_common_params["Option_Eff"]
+        maxOptions = max(Options_in_stage.values())  # max options in any of the stages
+        # make a list of the options in the final stage
+        final_opt_list = [(numStages, j) for j in RangeSet(Options_in_stage[numStages])]
+        ###################################################################################################
+        ###################################################################################################
+        ### Operating Parameters
+        # profit (k$) per metric tonnes of product in terms of tracked components
+        Profit = get_common_params["Profit"]
+        # conversion of kg REE/Fe to kg REO/Fe2O3
+        REE_to_REO_Conversion = get_common_params["REE_to_REO_Conversion"]
+        # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it (metric tonnes).
+        # OPEX = a*F_in + b*y
+        N_OC_var = get_common_params["N_OC_var"]
+        # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
+        num_workers = get_common_params["num_workers"]
+        labor_rate = get_common_params["labor_rate"]  # yearly wage per type of labor
+        # yearly operating costs per unit (k$/unit/yr)
+        YCU = get_common_params["YCU"]
+        # cost per disassembly stage unit for each disassembly option (k$/unit)
+        CU = get_common_params["CU"]
+        # disassembly rate (thousands of EOL HDDs/yr/unit)
+        Dis_Rate = get_common_params["Dis_Rate"]
+        # calculate max disassembly units possible for each option
+        max_dis_by_option = copy.deepcopy(Dis_Rate)
+        for key in max_dis_by_option.keys():
+            max_dis_by_option[key] = math.ceil(maxFeedEntering / Dis_Rate[key])
+        max_dis_workers = max(max_dis_by_option.values())
+        # calculate max possible workers for the process
+        max_workers = max_dis_workers + numStages * math.ceil(max(num_workers.values()))
+        ###################################################################################################
+        ###################################################################################################
+        ### Costing Parameters
+        LF = get_common_params["LF"]  # Lang Factor
+        TOC_factor = get_common_params["TOC_factor"]  # Overnight costs factor
+        ATWACC = get_common_params["ATWACC"]  # discount rate
+        i_OC_esc = get_common_params["i_OC_esc"]  # opex, revenue escalation rate
+        i_CAP_esc = get_common_params["i_CAP_esc"]  # capex escalation rate
+        f_exp = get_common_params["f_exp"]  # capital expenditure schedule
+        # Define Python Dictionary with discretized cost by flows for each option.
+        Discretized_CAPEX = get_common_params["Discretized_CAPEX"]
+        ###################################################################################################
+        ###################################################################################################
+        ### Other Parameters needed for tests
+        # cost of recovery
+        COR = 253.93284856
+        # profit for the final option in the optimal pathway by year (k$ per year)
+        profit = {
+            2025: 3630.401484,
+            2026: 3608.012676,
+            2027: 3334.241033,
+            2028: 3289.214652,
+            2029: 3050.510526,
+            2030: 2581.753016,
+            2031: 2475.381165,
+            2032: 2234.448575,
+            2033: 2025.616566,
+            2034: 1823.860335,
+            2035: 1629.246408,
+            2036: 1441.230479,
+            2037: 1259.466138,
+            2038: 1083.262802,
+        }
 
-#         # test COR
-#         assert value(COR_model.COR) == pytest.approx(COR, rel=1e-8)
+        # test COR
+        assert value(COR_model.COR) == pytest.approx(COR, rel=1e-8)
 
-#         # test the profit from each option in the final stage
-#         for t in operational_range:
-#             j = 5
-#             for k in RangeSet(Options_in_stage[j]):
-#                 if (j, k) == (5, 4):
-#                     assert value(
-#                         COR_model.plantYear[t].ProfitOpt[(j, k)]
-#                     ) == pytest.approx(profit[t], rel=1e-8)
-#                 else:
-#                     assert value(
-#                         COR_model.plantYear[t].ProfitOpt[(j, k)]
-#                     ) == pytest.approx(0, rel=1e-8)
+        # test the profit from each option in the final stage
+        for t in operational_range:
+            j = 4
+            for k in RangeSet(Options_in_stage[j]):
+                if (j, k) == (4, 3):
+                    assert value(
+                        COR_model.plantYear[t].ProfitOpt[(j, k)]
+                    ) == pytest.approx(profit[t], rel=1e-8)
+                else:
+                    assert value(
+                        COR_model.plantYear[t].ProfitOpt[(j, k)]
+                    ) == pytest.approx(0, rel=1e-8)
 
-#         # test the NPV
-#         assert value(COR_model.NPV) == pytest.approx(0, rel=1e-8)
+        # test the NPV
+        assert value(COR_model.NPV) == pytest.approx(0, rel=1e-8)
 
-#         # test the objective function
-#         assert value(COR_model.obj) == pytest.approx(COR, rel=1e-8)
-
-
-# class TestEnvironmentalImpacts(object):
-#     @pytest.fixture(scope="class")
-#     def EI_model(self, get_common_params):
-#         common_params = get_common_params
-#         m = build_model(
-#             ###################################################################################################
-#             ### Plant Lifetime Parameters
-#             plant_start=common_params["plant_start"],  # start of plant production
-#             plant_lifetime=common_params["plant_lifetime"],  # lifetime of plant
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Feed parameters
-#             # Total feedstock available for recycling each year
-#             Available_feed=common_params["Available_feed"],
-#             # collection rate for how much of the available feed is processed by the plant each year
-#             CR=common_params["CR"],
-#             Tracked_comps=common_params["Tracked_comps"],  # tracked components
-#             # mass of tracked component per EOL Product (kg component / EOL product)
-#             Prod_comp_mass=common_params["Prod_comp_mass"],
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Superstructure formulation parameters
-#             numStages=common_params["numStages"],  # number of total stages
-#             Options_in_stage=common_params[  # number of options in each stage
-#                 "Options_in_stage"
-#             ],
-#             # set of options k' in stage j+1 connected to option k in stage j
-#             Option_outlets=common_params[  # set of options k' in stage j+1 connected to option k in stage j
-#                 "Option_outlets"
-#             ],
-#             # dictionary of tracked component retention efficiency for each option
-#             Option_Eff=common_params["Option_Eff"],
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Operating Parameters
-#             # profit per kg of product in terms of tracked components
-#             Profit=common_params["Profit"],
-#             # conversion of kg REE/Fe to kg REO/Fe2O3
-#             REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
-#             # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
-#             # OPEX = a*F_in + b*y
-#             N_OC_var=common_params["N_OC_var"],
-#             # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
-#             num_workers=common_params["num_workers"],
-#             labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
-#             # yearly operating costs per unit ($/unit*yr)
-#             YCU=common_params["YCU"],
-#             # cost per disassembly stage unit for each disassembly option
-#             CU=common_params["CU"],
-#             # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
-#             Dis_Rate=common_params["Dis_Rate"],
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Costing Parameters
-#             LF=common_params["LF"],  # Lang Factor
-#             TOC_factor=common_params["TOC_factor"],  # Overnight costs factor
-#             ATWACC=common_params["ATWACC"],  # discount rate. (default of 5.77%)
-#             i_OC_esc=common_params["i_OC_esc"],  # opex, revenue (default of 3%)
-#             i_CAP_esc=common_params[  # capex escalation rate (default of 3.6%)
-#                 "i_CAP_esc"
-#             ],
-#             f_exp=common_params[  # capital expenditure schedule (default of 10%, 60%, 30%)
-#                 "f_exp"
-#             ],
-#             # Define Python Dictionary with discretized cost by flows for each option.
-#             Discretized_CAPEX=common_params["Discretized_CAPEX"],
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Choice of objective function. Options are 'NPV' or 'COR'.capitalize
-#             obj_func="NPV",
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Consideration of environmental impacts parameters
-#             # boolean to decide whether or not to consider environmental impacts
-#             consider_environ_impacts=True,
-#             # environmental impacts matrix (kg CO2e per kg incoming flowrate)
-#             environ_impacts=common_params["environ_impacts"],
-#             epsilon=common_params[  # epsilon factor for generating Pareto front
-#                 "epsilon"
-#             ],
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Byproduct valorization
-#             # boolean to decide whether or not to consider the valorization of byproducts
-#             consider_byprod_val=False,
-#             # list of byproducts
-#             byprods=common_params["byprods"],
-#             # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
-#             byprod_vals=common_params["byprod_vals"],
-#             # dictionary keeping track of which tracked component produces which byproduct
-#             tracked_comp_for_byprod=common_params["tracked_comp_for_byprod"],
-#             # dictionary tracking which options produce a given byproduct
-#             byprod_options=common_params["byprod_options"],
-#             # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
-#             byprod_options_eff=common_params["byprod_options_eff"],
-#             # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
-#             TC_to_byproduct=common_params["TC_to_byproduct"],
-#         )
-
-#         return m
-
-#     def test_build(self, EI_model, get_common_params):
-#         # start of plant production
-#         prod_start = get_common_params["plant_start"] + 1
-#         # final year plant is in production
-#         plant_end = (
-#             get_common_params["plant_start"] + get_common_params["plant_lifetime"] - 1
-#         )
-#         # plant operational period
-#         operational_range = RangeSet(prod_start, plant_end)
-#         # no. of total stages
-#         numStages = get_common_params["numStages"]
-#         # number of options in each stage
-#         Options_in_stage = get_common_params["Options_in_stage"]
-
-#         for t in operational_range:
-#             assert isinstance(EI_model.plantYear[t].total_yearly_GWP, Var)
-#             assert isinstance(EI_model.GWP_cons, Constraint)
-
-#             for j in RangeSet(numStages):
-#                 for k in RangeSet(Options_in_stage[j]):
-#                     print((j, k))
-#                     assert isinstance(EI_model.plantYear[t].yearly_GWP, Var)
-
-#         assert isinstance(EI_model.GWP, Var)
-#         assert isinstance(EI_model.GWP_cons, Constraint)
-#         assert isinstance(EI_model.epsilon_con, Constraint)
-
-#     @pytest.mark.solver
-#     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
-#     @pytest.mark.component
-#     def test_solve(self, EI_model):
-#         solver.options["NumericFocus"] = 2
-
-#         results = solver.solve(EI_model)
-#         assert_optimal_termination(results)
-
-#     @pytest.mark.solver
-#     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
-#     @pytest.mark.component
-#     def test_solution(self, EI_model, get_common_params):
-#         ##### Define Parameters for tests
-#         ###################################################################################################
-#         ### Plant Lifetime Parameters
-#         plant_start = get_common_params["plant_start"]  # start of plant production
-#         plant_lifetime = get_common_params["plant_lifetime"]  # lifetime of plant
-#         # first year is construction
-#         prod_start = plant_start + 1
-#         plant_end = (  # final year plant is in production
-#             plant_start + plant_lifetime - 1
-#         )
-#         # total plant lifetime
-#         plant_life_range = RangeSet(plant_start, plant_end)
-#         # operational lifetime of the plant
-#         operational_range = RangeSet(prod_start, plant_end)
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Feed parameters
-#         # Total feedstock available for recycling each year
-#         Available_feed = get_common_params["Available_feed"]
-#         # collection rate for how much of the available feed is processed by the plant each year (fraction)
-#         CR = get_common_params["CR"]
-#         # list of tracked components
-#         Tracked_comps = get_common_params["Tracked_comps"]
-#         # mass of tracked component per EOL Product (kg component / EOL product)
-#         Prod_comp_mass = get_common_params["Prod_comp_mass"]
-#         # calculate feed entering parameter based on yearly available feedstock and collection rate
-#         Feed_entering = copy.deepcopy(Available_feed)
-#         for key in Feed_entering:
-#             Feed_entering[key] = Available_feed[key] * CR
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Superstructure formulation parameters
-#         numStages = get_common_params["numStages"]  # no. of total stages
-#         # number of options in each stage
-#         Options_in_stage = get_common_params["Options_in_stage"]
-#         # dictionary of tracked component retention efficiency for each option
-#         Option_Eff = get_common_params["Option_Eff"]
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Consideration of environmental impacts parameters
-#         environ_impacts = get_common_params["environ_impacts"]
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Other Parameters needed for tests
-#         # make a list of all options
-#         all_opts_list = []
-#         for j in RangeSet(numStages):
-#             for k in RangeSet(Options_in_stage[j]):
-#                 all_opts_list.append((j, k))
-#         # list of stages that should be chosen for optimal process
-#         opt_stages = [(1, 2), (2, 2), (3, 6), (4, 4), (5, 4)]
-#         # create dictionary to hold yearly F_in values
-#         yearly_F_in_vals = {
-#             key1: {
-#                 key2: {key3: None for key3 in Tracked_comps} for key2 in all_opts_list
-#             }
-#             for key1 in operational_range
-#         }
-#         # calculate F_in vals and store in dictionary
-#         for t in operational_range:
-#             for j in RangeSet(numStages):
-#                 for k in RangeSet(Options_in_stage[j]):
-#                     for c in Tracked_comps:
-#                         F_in_val = 0
-#                         # flow is zero for all stages that aren't part of the optimal process
-#                         if (j, k) not in opt_stages:
-#                             F_in_val = 0
-#                             yearly_F_in_vals[t][(j, k)][c] = F_in_val
-#                         else:
-#                             if j == 1:
-#                                 F_in_val = Feed_entering[t] * Prod_comp_mass[c]
-#                                 yearly_F_in_vals[t][(j, k)][c] = F_in_val
-
-#                             else:
-#                                 F_in_val = (
-#                                     Feed_entering[t]
-#                                     * Prod_comp_mass[c]
-#                                     * math.prod(
-#                                         Option_Eff[opt_stages[stage]][c]
-#                                         for stage in RangeSet(0, j - 2)
-#                                     )
-#                                 )
-#                                 yearly_F_in_vals[t][(j, k)][c] = F_in_val
-#         # create a dict to store yearly GWP
-#         yearly_GWP = {
-#             key1: {key2: None for key2 in all_opts_list} for key1 in operational_range
-#         }
-#         # calculate yearly GWP vals and store in dictionary
-#         for t in operational_range:
-#             for opt in all_opts_list:
-#                 yearly_GWP[t][opt] = (
-#                     sum(yearly_F_in_vals[t][opt][c] for c in Tracked_comps)
-#                     * environ_impacts[opt]
-#                 )
-#         # create dict to store total yearly GWP
-#         total_yearly_GWP = {key1: None for key1 in operational_range}
-#         # calculate total yearly GWP vals and store in dictionary
-#         for t in operational_range:
-#             total_yearly_GWP[t] = sum(yearly_GWP[t][opt] for opt in all_opts_list)
-#         # Calculate GWP
-#         GWP = sum(total_yearly_GWP[t] for t in operational_range)
-#         ###################################################################################################
-
-#         for t in operational_range:
-#             for opt in all_opts_list:
-#                 # test yearly GWP
-#                 assert value(EI_model.plantYear[t].yearly_GWP[opt]) == pytest.approx(
-#                     yearly_GWP[t][opt], rel=1e-8
-#                 )
-
-#             # test total yearly GWP
-#             assert value(EI_model.plantYear[t].total_yearly_GWP) == pytest.approx(
-#                 total_yearly_GWP[t], rel=1e-8
-#             )
-
-#         assert value(EI_model.GWP) == pytest.approx(GWP, rel=1e-8)
+        # test the objective function
+        assert value(COR_model.obj) == pytest.approx(COR, rel=1e-8)
 
 
-# class TestByprodVal(object):
-#     @pytest.fixture(scope="class")
-#     def BV_model(self, get_common_params):
-#         common_params = get_common_params
-#         m = build_model(
-#             ###################################################################################################
-#             ### Plant Lifetime Parameters
-#             plant_start=common_params["plant_start"],  # start of plant production
-#             plant_lifetime=common_params["plant_lifetime"],  # lifetime of plant
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Feed parameters
-#             # Total feedstock available for recycling each year
-#             Available_feed=common_params["Available_feed"],
-#             # collection rate for how much of the available feed is processed by the plant each year
-#             CR=common_params["CR"],
-#             Tracked_comps=common_params["Tracked_comps"],  # tracked components
-#             # mass of tracked component per EOL Product (kg component / EOL product)
-#             Prod_comp_mass=common_params["Prod_comp_mass"],
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Superstructure formulation parameters
-#             numStages=common_params["numStages"],  # number of total stages
-#             Options_in_stage=common_params[  # number of options in each stage
-#                 "Options_in_stage"
-#             ],
-#             # set of options k' in stage j+1 connected to option k in stage j
-#             Option_outlets=common_params[  # set of options k' in stage j+1 connected to option k in stage j
-#                 "Option_outlets"
-#             ],
-#             # dictionary of tracked component retention efficiency for each option
-#             Option_Eff=common_params["Option_Eff"],
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Operating Parameters
-#             # profit per kg of product in terms of tracked components
-#             Profit=common_params["Profit"],
-#             # conversion of kg REE/Fe to kg REO/Fe2O3
-#             REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
-#             # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
-#             # OPEX = a*F_in + b*y
-#             N_OC_var=common_params["N_OC_var"],
-#             # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
-#             num_workers=common_params["num_workers"],
-#             labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
-#             # yearly operating costs per unit ($/unit*yr)
-#             YCU=common_params["YCU"],
-#             # cost per disassembly stage unit for each disassembly option
-#             CU=common_params["CU"],
-#             # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
-#             Dis_Rate=common_params["Dis_Rate"],
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Costing Parameters
-#             LF=common_params["LF"],  # Lang Factor
-#             TOC_factor=common_params["TOC_factor"],  # Overnight costs factor
-#             ATWACC=common_params["ATWACC"],  # discount rate. (default of 5.77%)
-#             i_OC_esc=common_params["i_OC_esc"],  # opex, revenue (default of 3%)
-#             i_CAP_esc=common_params[  # capex escalation rate (default of 3.6%)
-#                 "i_CAP_esc"
-#             ],
-#             f_exp=common_params[  # capital expenditure schedule (default of 10%, 60%, 30%)
-#                 "f_exp"
-#             ],
-#             # Define Python Dictionary with discretized cost by flows for each option.
-#             Discretized_CAPEX=common_params["Discretized_CAPEX"],
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Choice of objective function. Options are 'NPV' or 'COR'.capitalize
-#             obj_func="NPV",
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Consideration of environmental impacts parameters
-#             # boolean to decide whether or not to consider environmental impacts
-#             consider_environ_impacts=False,
-#             # environmental impacts matrix (kg CO2e per kg incoming flowrate)
-#             environ_impacts=common_params["environ_impacts"],
-#             epsilon=common_params[  # epsilon factor for generating Pareto front
-#                 "epsilon"
-#             ],
-#             ###################################################################################################
-#             ###################################################################################################
-#             ### Byproduct valorization
-#             # boolean to decide whether or not to consider the valorization of byproducts
-#             consider_byprod_val=True,
-#             # list of byproducts
-#             byprods=common_params["byprods"],
-#             # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
-#             byprod_vals=common_params["byprod_vals"],
-#             # dictionary keeping track of which tracked component produces which byproduct
-#             tracked_comp_for_byprod=common_params["tracked_comp_for_byprod"],
-#             # dictionary tracking which options produce a given byproduct
-#             byprod_options=common_params["byprod_options"],
-#             # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
-#             byprod_options_eff=common_params["byprod_options_eff"],
-#             # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
-#             TC_to_byproduct=common_params["TC_to_byproduct"],
-#         )
+class TestEnvironmentalImpacts(object):
+    @pytest.fixture(scope="class")
+    def EI_model(self, get_common_params):
+        common_params = get_common_params
+        m = build_model(
+            ###################################################################################################
+            ### Plant Lifetime Parameters
+            plant_start=common_params["plant_start"],  # start of plant production
+            plant_lifetime=common_params["plant_lifetime"],  # lifetime of plant
+            ###################################################################################################
+            ###################################################################################################
+            ### Feed parameters
+            # Total feedstock available for recycling each year (in terms of thousands of HDDs per year)
+            Available_feed=common_params["Available_feed"],
+            # collection rate for how much of the available feed is processed by the plant each year
+            CR=common_params["CR"],
+            Tracked_comps=common_params["Tracked_comps"],  # tracked components
+            # mass of tracked component per EOL Product (metric tonnes of component / 1000 EOL product)
+            Prod_comp_mass=common_params["Prod_comp_mass"],
+            ###################################################################################################
+            ###################################################################################################
+            ### Superstructure formulation parameters
+            numStages=common_params["numStages"],  # number of total stages
+            Options_in_stage=common_params[  # number of options in each stage
+                "Options_in_stage"
+            ],
+            # set of options k' in stage j+1 connected to option k in stage j
+            Option_outlets=common_params[  # set of options k' in stage j+1 connected to option k in stage j
+                "Option_outlets"
+            ],
+            # dictionary of tracked component retention efficiency for each option
+            Option_Eff=common_params["Option_Eff"],
+            ###################################################################################################
+            ###################################################################################################
+            ### Operating Parameters
+            # profit (k$) per metric tonnes of product in terms of tracked components
+            Profit=common_params["Profit"],
+            # conversion of kg REE/Fe to kg REO/Fe2O3
+            REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
+            # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it (metric tonnes).
+            # OPEX = a*F_in + b*y
+            N_OC_var=common_params["N_OC_var"],
+            # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
+            num_workers=common_params["num_workers"],
+            labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
+            # yearly operating costs per unit (k$/unit/yr)
+            YCU=common_params["YCU"],
+            # cost per disassembly stage unit for each disassembly option
+            CU=common_params["CU"],
+            # disassembly rate (thousands of EOL HDDs/yr/unit)
+            Dis_Rate=common_params["Dis_Rate"],
+            ###################################################################################################
+            ###################################################################################################
+            ### Costing Parameters
+            LF=common_params["LF"],  # Lang Factor
+            TOC_factor=common_params["TOC_factor"],  # Overnight costs factor
+            ATWACC=common_params["ATWACC"],  # discount rate. (default of 5.77%)
+            i_OC_esc=common_params["i_OC_esc"],  # opex, revenue (default of 3%)
+            i_CAP_esc=common_params[  # capex escalation rate (default of 3.6%)
+                "i_CAP_esc"
+            ],
+            f_exp=common_params[  # capital expenditure schedule (default of 10%, 60%, 30%)
+                "f_exp"
+            ],
+            # Define Python Dictionary with discretized cost by flows for each option.
+            Discretized_CAPEX=common_params["Discretized_CAPEX"],
+            ###################################################################################################
+            ###################################################################################################
+            ### Choice of objective function. Options are 'NPV' or 'COR'.capitalize
+            obj_func="NPV",
+            ###################################################################################################
+            ###################################################################################################
+            ### Consideration of environmental impacts parameters
+            # boolean to decide whether or not to consider environmental impacts
+            consider_environ_impacts=True,
+            # environmental impacts matrix (kg CO2e per metric tonne of incoming flowrate)
+            environ_impacts=common_params["environ_impacts"],
+            epsilon=common_params[  # epsilon factor for generating Pareto front
+                "epsilon"
+            ],
+            ###################################################################################################
+            ###################################################################################################
+            ### Byproduct valorization
+            # boolean to decide whether or not to consider the valorization of byproducts
+            consider_byprod_val=False,
+            # list of byproducts
+            byprods=common_params["byprods"],
+            # dictionary of values for each byproduct (k$/metric tonnes). Negative value indicates it cost money to dispose of the byproduct
+            byprod_vals=common_params["byprod_vals"],
+            # dictionary keeping track of which tracked component produces which byproduct
+            tracked_comp_for_byprod=common_params["tracked_comp_for_byprod"],
+            # dictionary tracking which options produce a given byproduct
+            byprod_options=common_params["byprod_options"],
+            # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
+            byprod_options_eff=common_params["byprod_options_eff"],
+            # Conversion factors of tracked component to byproduct (metric tonnes byproduct / metric tonnes tracked component)
+            TC_to_byproduct=common_params["TC_to_byproduct"],
+        )
 
-#         return m
+        return m
 
-#     def test_build(self, BV_model, get_common_params):
-#         # start of plant production
-#         prod_start = get_common_params["plant_start"] + 1
-#         # final year plant is in production
-#         plant_end = (
-#             get_common_params["plant_start"] + get_common_params["plant_lifetime"] - 1
-#         )
-#         # plant operational period
-#         operational_range = RangeSet(prod_start, plant_end)
+    def test_build(self, EI_model, get_common_params):
+        # start of plant production
+        prod_start = get_common_params["plant_start"] + 1
+        # final year plant is in production
+        plant_end = (
+            get_common_params["plant_start"] + get_common_params["plant_lifetime"] - 1
+        )
+        # plant operational period
+        operational_range = RangeSet(prod_start, plant_end)
+        # no. of total stages
+        numStages = get_common_params["numStages"]
+        # number of options in each stage
+        Options_in_stage = get_common_params["Options_in_stage"]
 
-#         for t in operational_range:
-#             assert isinstance(BV_model.plantYear[t].total_yearly_byprod, Var)
-#             assert isinstance(BV_model.plantYear[t].yearly_byprod_cons, Constraint)
+        for t in operational_range:
+            assert isinstance(EI_model.plantYear[t].total_yearly_GWP, Var)
+            assert isinstance(EI_model.GWP_cons, Constraint)
 
-#             assert isinstance(BV_model.plantYear[t].Byprod_Profit, Var)
-#             assert isinstance(BV_model.plantYear[t].byprod_profit_con, Constraint)
+            for j in RangeSet(numStages):
+                for k in RangeSet(Options_in_stage[j]):
+                    print((j, k))
+                    assert isinstance(EI_model.plantYear[t].yearly_GWP, Var)
 
-#     @pytest.mark.solver
-#     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
-#     @pytest.mark.component
-#     def test_solve(self, BV_model):
-#         solver.options["NumericFocus"] = 2
+        assert isinstance(EI_model.GWP, Var)
+        assert isinstance(EI_model.GWP_cons, Constraint)
+        assert isinstance(EI_model.epsilon_con, Constraint)
 
-#         results = solver.solve(BV_model)
-#         assert_optimal_termination(results)
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    def test_solve(self, EI_model):
+        solver.options["NumericFocus"] = 3
 
-#     @pytest.mark.solver
-#     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
-#     @pytest.mark.component
-#     def test_solution(self, BV_model, get_common_params):
-#         ##### Define Parameters for tests
-#         ###################################################################################################
-#         ### Plant Lifetime Parameters
-#         plant_start = get_common_params["plant_start"]  # start of plant production
-#         plant_lifetime = get_common_params["plant_lifetime"]  # lifetime of plant
-#         # first year is construction
-#         prod_start = plant_start + 1
-#         plant_end = (  # final year plant is in production
-#             plant_start + plant_lifetime - 1
-#         )
-#         # total plant lifetime
-#         plant_life_range = RangeSet(plant_start, plant_end)
-#         # operational lifetime of the plant
-#         operational_range = RangeSet(prod_start, plant_end)
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Feed parameters
-#         # Total feedstock available for recycling each year
-#         Available_feed = get_common_params["Available_feed"]
-#         # collection rate for how much of the available feed is processed by the plant each year (fraction)
-#         CR = get_common_params["CR"]
-#         # list of tracked components
-#         Tracked_comps = get_common_params["Tracked_comps"]
-#         # mass of tracked component per EOL Product (kg component / EOL product)
-#         Prod_comp_mass = get_common_params["Prod_comp_mass"]
-#         # calculate feed entering parameter based on yearly available feedstock and collection rate
-#         Feed_entering = copy.deepcopy(Available_feed)
-#         for key in Feed_entering:
-#             Feed_entering[key] = Available_feed[key] * CR
-#         # calculate max feed that can enter the plant
-#         maxFeedEntering = max(
-#             Feed_entering.values()
-#         )  # max feed entering plant over production period
-#         maxFeedEnteringYear = max(
-#             Feed_entering, key=Feed_entering.get
-#         )  # year in which max feed enters plant
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Superstructure formulation parameters
-#         numStages = get_common_params["numStages"]  # no. of total stages
-#         # number of options in each stage
-#         Options_in_stage = get_common_params["Options_in_stage"]
-#         # set of options k' in stage j+1 connected to option k in stage j
-#         Option_outlets = get_common_params["Option_outlets"]
-#         # dictionary of tracked component retention efficiency for each option
-#         Option_Eff = get_common_params["Option_Eff"]
-#         maxOptions = max(Options_in_stage.values())  # max options in any of the stages
-#         # make a list of the options in the final stage
-#         final_opt_list = [(numStages, j) for j in RangeSet(Options_in_stage[numStages])]
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Operating Parameters
-#         # profit per kg of product in terms of tracked components
-#         Profit = get_common_params["Profit"]
-#         # conversion of kg REE/Fe to kg REO/Fe2O3
-#         REE_to_REO_Conversion = get_common_params["REE_to_REO_Conversion"]
-#         # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
-#         # OPEX = a*F_in + b*y
-#         N_OC_var = get_common_params["N_OC_var"]
-#         # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
-#         num_workers = get_common_params["num_workers"]
-#         labor_rate = get_common_params["labor_rate"]  # yearly wage per type of labor
-#         # yearly operating costs per unit ($/unit*yr)
-#         YCU = get_common_params["YCU"]
-#         # cost per disassembly stage unit for each disassembly option
-#         CU = get_common_params["CU"]
-#         # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
-#         Dis_Rate = get_common_params["Dis_Rate"]
-#         # calculate max disassembly units possible for each option
-#         max_dis_by_option = copy.deepcopy(Dis_Rate)
-#         for key in max_dis_by_option.keys():
-#             max_dis_by_option[key] = math.ceil(maxFeedEntering / Dis_Rate[key])
-#         max_dis_workers = max(max_dis_by_option.values())
-#         # calculate max possible workers for the process
-#         max_workers = max_dis_workers + numStages * math.ceil(max(num_workers.values()))
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Costing Parameters
-#         LF = get_common_params["LF"]  # Lang Factor
-#         TOC_factor = get_common_params["TOC_factor"]  # Overnight costs factor
-#         ATWACC = get_common_params["ATWACC"]  # discount rate
-#         i_OC_esc = get_common_params["i_OC_esc"]  # opex, revenue escalation rate
-#         i_CAP_esc = get_common_params["i_CAP_esc"]  # capex escalation rate
-#         f_exp = get_common_params["f_exp"]  # capital expenditure schedule
-#         # Define Python Dictionary with discretized cost by flows for each option.
-#         Discretized_CAPEX = get_common_params["Discretized_CAPEX"]
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Byproduct valorization
-#         # list of byproducts
-#         byprods = get_common_params["byprods"]
-#         # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
-#         byprod_vals = get_common_params["byprod_vals"]
-#         # dictionary keeping track of which tracked component produces which byproduct
-#         tracked_comp_for_byprod = get_common_params["tracked_comp_for_byprod"]
-#         # dictionary tracking which options produce a given byproduct
-#         byprod_options = get_common_params["byprod_options"]
-#         # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
-#         byprod_options_eff = get_common_params["byprod_options_eff"]
-#         # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
-#         TC_to_byproduct = get_common_params["TC_to_byproduct"]
-#         ###################################################################################################
-#         ###################################################################################################
-#         ### Other Parameters needed for tests
-#         # make a list of all options
-#         all_opts_list = []
-#         for j in RangeSet(numStages):
-#             for k in RangeSet(Options_in_stage[j]):
-#                 all_opts_list.append((j, k))
-#         # list of stages that should be chosen for optimal process
-#         opt_stages = [(1, 2), (2, 2), (3, 6), (4, 4), (5, 5)]
-#         # create dictionary to hold yearly F_in values
-#         yearly_F_in_vals = {
-#             key1: {
-#                 key2: {key3: None for key3 in Tracked_comps} for key2 in all_opts_list
-#             }
-#             for key1 in operational_range
-#         }
-#         # calculate F_in vals and store in dictionary
-#         for t in operational_range:
-#             for j in RangeSet(numStages):
-#                 for k in RangeSet(Options_in_stage[j]):
-#                     for c in Tracked_comps:
-#                         F_in_val = 0
-#                         # flow is zero for all stages that aren't part of the optimal process
-#                         if (j, k) not in opt_stages:
-#                             F_in_val = 0
-#                             yearly_F_in_vals[t][(j, k)][c] = F_in_val
-#                         else:
-#                             if j == 1:
-#                                 F_in_val = Feed_entering[t] * Prod_comp_mass[c]
-#                                 yearly_F_in_vals[t][(j, k)][c] = F_in_val
+        results = solver.solve(EI_model)
+        assert_optimal_termination(results)
 
-#                             else:
-#                                 F_in_val = (
-#                                     Feed_entering[t]
-#                                     * Prod_comp_mass[c]
-#                                     * math.prod(
-#                                         Option_Eff[opt_stages[stage]][c]
-#                                         for stage in RangeSet(0, j - 2)
-#                                     )
-#                                 )
-#                                 yearly_F_in_vals[t][(j, k)][c] = F_in_val
-#         # create a dictionary to hold the yearly amounts of each byproduct produced
-#         totaly_yearly_byprod = {
-#             key1: {key2: None for key2 in byprods} for key1 in operational_range
-#         }
-#         # calculate yearly amounts of byproducts produced and store in dict
-#         for t in operational_range:
-#             for byprod in byprods:
-#                 byprod_val = byprod_vals[byprod]
-#                 c = tracked_comp_for_byprod[byprod]
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    def test_solution(self, EI_model, get_common_params):
+        ##### Define Parameters for tests
+        ###################################################################################################
+        ### Plant Lifetime Parameters
+        plant_start = get_common_params["plant_start"]  # start of plant production
+        plant_lifetime = get_common_params["plant_lifetime"]  # lifetime of plant
+        # first year is construction
+        prod_start = plant_start + 1
+        plant_end = (  # final year plant is in production
+            plant_start + plant_lifetime - 1
+        )
+        # total plant lifetime
+        plant_life_range = RangeSet(plant_start, plant_end)
+        # operational lifetime of the plant
+        operational_range = RangeSet(prod_start, plant_end)
+        ###################################################################################################
+        ###################################################################################################
+        ### Feed parameters
+        # Total feedstock available for recycling each year
+        Available_feed = get_common_params["Available_feed"]
+        # collection rate for how much of the available feed is processed by the plant each year (fraction)
+        CR = get_common_params["CR"]
+        # list of tracked components
+        Tracked_comps = get_common_params["Tracked_comps"]
+        # mass of tracked component per EOL Product (metric tonnes of component / 1000 EOL product)
+        Prod_comp_mass = get_common_params["Prod_comp_mass"]
+        # calculate feed entering parameter based on yearly available feedstock and collection rate
+        Feed_entering = copy.deepcopy(Available_feed)
+        for key in Feed_entering:
+            Feed_entering[key] = Available_feed[key] * CR
+        ###################################################################################################
+        ###################################################################################################
+        ### Superstructure formulation parameters
+        numStages = get_common_params["numStages"]  # no. of total stages
+        # number of options in each stage
+        Options_in_stage = get_common_params["Options_in_stage"]
+        # dictionary of tracked component retention efficiency for each option
+        Option_Eff = get_common_params["Option_Eff"]
+        ###################################################################################################
+        ###################################################################################################
+        ### Consideration of environmental impacts parameters
+        environ_impacts = get_common_params["environ_impacts"]
+        ###################################################################################################
+        ###################################################################################################
+        ### Other Parameters needed for tests
+        # make a list of all options
+        all_opts_list = []
+        for j in RangeSet(numStages):
+            for k in RangeSet(Options_in_stage[j]):
+                all_opts_list.append((j, k))
+        # list of stages that should be chosen for optimal process
+        opt_stages = [(1, 4), (2, 2), (3, 6), (4, 3)]
+        # create dictionary to hold yearly F_in values
+        yearly_F_in_vals = {
+            key1: {
+                key2: {key3: None for key3 in Tracked_comps} for key2 in all_opts_list
+            }
+            for key1 in operational_range
+        }
+        # calculate F_in vals and store in dictionary
+        for t in operational_range:
+            for j in RangeSet(numStages):
+                for k in RangeSet(Options_in_stage[j]):
+                    for c in Tracked_comps:
+                        F_in_val = 0
+                        # flow is zero for all stages that aren't part of the optimal process
+                        if (j, k) not in opt_stages:
+                            F_in_val = 0
+                            yearly_F_in_vals[t][(j, k)][c] = F_in_val
+                        else:
+                            if j == 1:
+                                F_in_val = Feed_entering[t] * Prod_comp_mass[c]
+                                yearly_F_in_vals[t][(j, k)][c] = F_in_val
 
-#                 totaly_yearly_byprod[t][byprod] = sum(
-#                     yearly_F_in_vals[t][byprod_option][c] * TC_to_byproduct[byprod]
-#                     for byprod_option in byprod_options[byprod]
-#                 )
-#         # create a dictionary to hold the yearly profit generated from byproduct valorization
-#         Byprod_Profit = {key1: None for key1 in operational_range}
-#         # calculate yearly amount of profit generated from byproducts and store in dict
-#         for t in operational_range:
-#             Byprod_Profit[t] = sum(
-#                 totaly_yearly_byprod[t][byprod] * byprod_vals[byprod]
-#                 for byprod in byprods
-#             )
-#         ###################################################################################################
+                            else:
+                                F_in_val = (
+                                    Feed_entering[t]
+                                    * Prod_comp_mass[c]
+                                    * math.prod(
+                                        Option_Eff[opt_stages[stage]][c]
+                                        for stage in RangeSet(0, j - 2)
+                                    )
+                                )
+                                yearly_F_in_vals[t][(j, k)][c] = F_in_val
+        # create a dict to store yearly GWP
+        yearly_GWP = {
+            key1: {key2: None for key2 in all_opts_list} for key1 in operational_range
+        }
+        # calculate yearly GWP vals and store in dictionary
+        for t in operational_range:
+            for opt in all_opts_list:
+                yearly_GWP[t][opt] = (
+                    sum(yearly_F_in_vals[t][opt][c] for c in Tracked_comps)
+                    * environ_impacts[opt]
+                )
+        # create dict to store total yearly GWP
+        total_yearly_GWP = {key1: None for key1 in operational_range}
+        # calculate total yearly GWP vals and store in dictionary
+        for t in operational_range:
+            total_yearly_GWP[t] = sum(yearly_GWP[t][opt] for opt in all_opts_list)
+        # Calculate GWP
+        GWP = sum(total_yearly_GWP[t] for t in operational_range)
+        ###################################################################################################
 
-#         # test yearly byproducts produced
-#         for t in operational_range:
-#             for byprod in byprods:
-#                 assert value(
-#                     BV_model.plantYear[t].total_yearly_byprod[byprod]
-#                 ) == pytest.approx(totaly_yearly_byprod[t][byprod], rel=1e-8)
+        for t in operational_range:
+            for opt in all_opts_list:
+                # test yearly GWP
+                assert value(EI_model.plantYear[t].yearly_GWP[opt]) == pytest.approx(
+                    yearly_GWP[t][opt], rel=1e-8
+                )
 
-#         # test profit generated from byproduct valorization
-#         for t in operational_range:
-#             assert value(BV_model.plantYear[t].Byprod_Profit) == pytest.approx(
-#                 Byprod_Profit[t], rel=1e-8
-#             )
+            # test total yearly GWP
+            assert value(EI_model.plantYear[t].total_yearly_GWP) == pytest.approx(
+                total_yearly_GWP[t], rel=1e-8
+            )
+
+        assert value(EI_model.GWP) == pytest.approx(GWP, rel=1e-8)
+
+
+class TestByprodVal(object):
+    @pytest.fixture(scope="class")
+    def BV_model(self, get_common_params):
+        common_params = get_common_params
+        m = build_model(
+            ###################################################################################################
+            ### Plant Lifetime Parameters
+            plant_start=common_params["plant_start"],  # start of plant production
+            plant_lifetime=common_params["plant_lifetime"],  # lifetime of plant
+            ###################################################################################################
+            ###################################################################################################
+            ### Feed parameters
+            # Total feedstock available for recycling each year (in terms of thousands of HDDs per year)
+            Available_feed=common_params["Available_feed"],
+            # collection rate for how much of the available feed is processed by the plant each year
+            CR=common_params["CR"],
+            Tracked_comps=common_params["Tracked_comps"],  # tracked components
+            # mass of tracked component per EOL Product (metric tonnes of component / 1000 EOL product)
+            Prod_comp_mass=common_params["Prod_comp_mass"],
+            ###################################################################################################
+            ###################################################################################################
+            ### Superstructure formulation parameters
+            numStages=common_params["numStages"],  # number of total stages
+            Options_in_stage=common_params[  # number of options in each stage
+                "Options_in_stage"
+            ],
+            # set of options k' in stage j+1 connected to option k in stage j
+            Option_outlets=common_params[  # set of options k' in stage j+1 connected to option k in stage j
+                "Option_outlets"
+            ],
+            # dictionary of tracked component retention efficiency for each option
+            Option_Eff=common_params["Option_Eff"],
+            ###################################################################################################
+            ###################################################################################################
+            ### Operating Parameters
+            # profit (k$) per metric tonnes of product in terms of tracked components
+            Profit=common_params["Profit"],
+            # conversion of kg REE/Fe to kg REO/Fe2O3
+            REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
+            # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it (metric tonnes)
+            # OPEX = a*F_in + b*y
+            N_OC_var=common_params["N_OC_var"],
+            # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
+            num_workers=common_params["num_workers"],
+            labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
+            # yearly operating costs per unit (k$/unit/yr)
+            YCU=common_params["YCU"],
+            # cost per disassembly stage unit for each disassembly option (k$/unit)
+            CU=common_params["CU"],
+            # disassembly rate (thousands of EOL HDDs/yr/unit)
+            Dis_Rate=common_params["Dis_Rate"],
+            ###################################################################################################
+            ###################################################################################################
+            ### Costing Parameters
+            LF=common_params["LF"],  # Lang Factor
+            TOC_factor=common_params["TOC_factor"],  # Overnight costs factor
+            ATWACC=common_params["ATWACC"],  # discount rate. (default of 5.77%)
+            i_OC_esc=common_params["i_OC_esc"],  # opex, revenue (default of 3%)
+            i_CAP_esc=common_params[  # capex escalation rate (default of 3.6%)
+                "i_CAP_esc"
+            ],
+            f_exp=common_params[  # capital expenditure schedule (default of 10%, 60%, 30%)
+                "f_exp"
+            ],
+            # Define Python Dictionary with discretized cost by flows for each option.
+            Discretized_CAPEX=common_params["Discretized_CAPEX"],
+            ###################################################################################################
+            ###################################################################################################
+            ### Choice of objective function. Options are 'NPV' or 'COR'.capitalize
+            obj_func="NPV",
+            ###################################################################################################
+            ###################################################################################################
+            ### Consideration of environmental impacts parameters
+            # boolean to decide whether or not to consider environmental impacts
+            consider_environ_impacts=False,
+            # environmental impacts matrix (kg CO2e per metric tonne of incoming flowrate)
+            environ_impacts=common_params["environ_impacts"],
+            epsilon=common_params[  # epsilon factor for generating Pareto front
+                "epsilon"
+            ],
+            ###################################################################################################
+            ###################################################################################################
+            ### Byproduct valorization
+            # boolean to decide whether or not to consider the valorization of byproducts
+            consider_byprod_val=True,
+            # list of byproducts
+            byprods=common_params["byprods"],
+            # dictionary of values for each byproduct (k$/metric tonnes). Negative value indicates it cost money to dispose of the byproduct
+            byprod_vals=common_params["byprod_vals"],
+            # dictionary keeping track of which tracked component produces which byproduct
+            tracked_comp_for_byprod=common_params["tracked_comp_for_byprod"],
+            # dictionary tracking which options produce a given byproduct
+            byprod_options=common_params["byprod_options"],
+            # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
+            byprod_options_eff=common_params["byprod_options_eff"],
+            # Conversion factors of tracked component to byproduct (metric tonnes byproduct / metric tonnes tracked component)
+            TC_to_byproduct=common_params["TC_to_byproduct"],
+        )
+
+        return m
+
+    def test_build(self, BV_model, get_common_params):
+        # start of plant production
+        prod_start = get_common_params["plant_start"] + 1
+        # final year plant is in production
+        plant_end = (
+            get_common_params["plant_start"] + get_common_params["plant_lifetime"] - 1
+        )
+        # plant operational period
+        operational_range = RangeSet(prod_start, plant_end)
+
+        for t in operational_range:
+            assert isinstance(BV_model.plantYear[t].total_yearly_byprod, Var)
+            assert isinstance(BV_model.plantYear[t].yearly_byprod_cons, Constraint)
+
+            assert isinstance(BV_model.plantYear[t].Byprod_Profit, Var)
+            assert isinstance(BV_model.plantYear[t].byprod_profit_con, Constraint)
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    def test_solve(self, BV_model):
+        solver.options["NumericFocus"] = 3
+
+        results = solver.solve(BV_model)
+        assert_optimal_termination(results)
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    def test_solution(self, BV_model, get_common_params):
+        ##### Define Parameters for tests
+        ###################################################################################################
+        ### Plant Lifetime Parameters
+        plant_start = get_common_params["plant_start"]  # start of plant production
+        plant_lifetime = get_common_params["plant_lifetime"]  # lifetime of plant
+        # first year is construction
+        prod_start = plant_start + 1
+        plant_end = (  # final year plant is in production
+            plant_start + plant_lifetime - 1
+        )
+        # total plant lifetime
+        plant_life_range = RangeSet(plant_start, plant_end)
+        # operational lifetime of the plant
+        operational_range = RangeSet(prod_start, plant_end)
+        ###################################################################################################
+        ###################################################################################################
+        ### Feed parameters
+        # Total feedstock available for recycling each year (in terms of thousands of HDDs per year)
+        Available_feed = get_common_params["Available_feed"]
+        # collection rate for how much of the available feed is processed by the plant each year (fraction)
+        CR = get_common_params["CR"]
+        # list of tracked components
+        Tracked_comps = get_common_params["Tracked_comps"] # tracked components
+        # mass of tracked component per EOL Product (metric tonnes of component / 1000 EOL product)
+        Prod_comp_mass = get_common_params["Prod_comp_mass"]
+        # calculate feed entering parameter based on yearly available feedstock and collection rate
+        Feed_entering = copy.deepcopy(Available_feed)
+        for key in Feed_entering:
+            Feed_entering[key] = Available_feed[key] * CR
+        # calculate max feed that can enter the plant
+        maxFeedEntering = max( # max feed entering plant over production period
+            Feed_entering.values()
+        )  
+        maxFeedEnteringYear = max( # year in which max feed enters plant
+            Feed_entering, key=Feed_entering.get
+        )  
+        ###################################################################################################
+        ###################################################################################################
+        ### Superstructure formulation parameters
+        numStages = get_common_params["numStages"]  # no. of total stages
+        # number of options in each stage
+        Options_in_stage = get_common_params["Options_in_stage"]
+        # set of options k' in stage j+1 connected to option k in stage j
+        Option_outlets = get_common_params["Option_outlets"]
+        # dictionary of tracked component retention efficiency for each option
+        Option_Eff = get_common_params["Option_Eff"]
+        maxOptions = max(Options_in_stage.values())  # max options in any of the stages
+        # make a list of the options in the final stage
+        final_opt_list = [(numStages, j) for j in RangeSet(Options_in_stage[numStages])]
+        ###################################################################################################
+        ###################################################################################################
+        ### Operating Parameters
+        # profit (k$) per metric tonnes of product in terms of tracked components
+        Profit = get_common_params["Profit"]
+        # conversion of kg REE/Fe to kg REO/Fe2O3
+        REE_to_REO_Conversion = get_common_params["REE_to_REO_Conversion"]
+        # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it (metric tonnes)
+        # OPEX = a*F_in + b*y
+        N_OC_var = get_common_params["N_OC_var"]
+        # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
+        num_workers = get_common_params["num_workers"]
+        labor_rate = get_common_params["labor_rate"]  # yearly wage per type of labor
+        # yearly operating costs per unit (k$/unit/yr)
+        YCU = get_common_params["YCU"]
+        # cost per disassembly stage unit for each disassembly option (k$/unit)
+        CU = get_common_params["CU"]
+        # disassembly rate (thousands of EOL HDDs/yr/unit)
+        Dis_Rate = get_common_params["Dis_Rate"]
+        # calculate max disassembly units possible for each option
+        max_dis_by_option = copy.deepcopy(Dis_Rate)
+        for key in max_dis_by_option.keys():
+            max_dis_by_option[key] = math.ceil(maxFeedEntering / Dis_Rate[key])
+        max_dis_workers = max(max_dis_by_option.values())
+        # calculate max possible workers for the process
+        max_workers = max_dis_workers + numStages * math.ceil(max(num_workers.values()))
+        ###################################################################################################
+        ###################################################################################################
+        ### Costing Parameters
+        LF = get_common_params["LF"]  # Lang Factor
+        TOC_factor = get_common_params["TOC_factor"]  # Overnight costs factor
+        ATWACC = get_common_params["ATWACC"]  # discount rate
+        i_OC_esc = get_common_params["i_OC_esc"]  # opex, revenue escalation rate
+        i_CAP_esc = get_common_params["i_CAP_esc"]  # capex escalation rate
+        f_exp = get_common_params["f_exp"]  # capital expenditure schedule
+        # Define Python Dictionary with discretized cost by flows for each option.
+        Discretized_CAPEX = get_common_params["Discretized_CAPEX"]
+        ###################################################################################################
+        ###################################################################################################
+        ### Byproduct valorization
+        # list of byproducts
+        byprods = get_common_params["byprods"]
+        # dictionary of values for each byproduct (k$/metric tonnes). Negative value indicates it cost money to dispose of the byproduct
+        byprod_vals = get_common_params["byprod_vals"]
+        # dictionary keeping track of which tracked component produces which byproduct
+        tracked_comp_for_byprod = get_common_params["tracked_comp_for_byprod"]
+        # dictionary tracking which options produce a given byproduct
+        byprod_options = get_common_params["byprod_options"]
+        # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
+        byprod_options_eff = get_common_params["byprod_options_eff"]
+        # Conversion factors of tracked component to byproduct (metric tonnes byproduct / metric tonnes tracked component)
+        TC_to_byproduct = get_common_params["TC_to_byproduct"]
+        ###################################################################################################
+        ###################################################################################################
+        ### Other Parameters needed for tests
+        # make a list of all options
+        all_opts_list = []
+        for j in RangeSet(numStages):
+            for k in RangeSet(Options_in_stage[j]):
+                all_opts_list.append((j, k))
+        # list of stages that should be chosen for optimal process
+        opt_stages = [(1, 2), (2, 2), (3, 6), (4, 3)]
+        # create dictionary to hold yearly F_in values
+        yearly_F_in_vals = {
+            key1: {
+                key2: {key3: None for key3 in Tracked_comps} for key2 in all_opts_list
+            }
+            for key1 in operational_range
+        }
+        # calculate F_in vals and store in dictionary
+        for t in operational_range:
+            for j in RangeSet(numStages):
+                for k in RangeSet(Options_in_stage[j]):
+                    for c in Tracked_comps:
+                        F_in_val = 0
+                        # flow is zero for all stages that aren't part of the optimal process
+                        if (j, k) not in opt_stages:
+                            F_in_val = 0
+                            yearly_F_in_vals[t][(j, k)][c] = F_in_val
+                        else:
+                            if j == 1:
+                                F_in_val = Feed_entering[t] * Prod_comp_mass[c]
+                                yearly_F_in_vals[t][(j, k)][c] = F_in_val
+
+                            else:
+                                F_in_val = (
+                                    Feed_entering[t]
+                                    * Prod_comp_mass[c]
+                                    * math.prod(
+                                        Option_Eff[opt_stages[stage]][c]
+                                        for stage in RangeSet(0, j - 2)
+                                    )
+                                )
+                                yearly_F_in_vals[t][(j, k)][c] = F_in_val
+        # create a dictionary to hold the yearly amounts of each byproduct produced
+        totaly_yearly_byprod = {
+            key1: {key2: None for key2 in byprods} for key1 in operational_range
+        }
+        # calculate yearly amounts of byproducts produced and store in dict
+        for t in operational_range:
+            for byprod in byprods:
+                byprod_val = byprod_vals[byprod]
+                c = tracked_comp_for_byprod[byprod]
+
+                totaly_yearly_byprod[t][byprod] = sum(
+                    yearly_F_in_vals[t][byprod_option][c] * TC_to_byproduct[byprod]
+                    for byprod_option in byprod_options[byprod]
+                )
+        # create a dictionary to hold the yearly profit generated from byproduct valorization
+        Byprod_Profit = {key1: None for key1 in operational_range}
+        # calculate yearly amount of profit generated from byproducts and store in dict
+        for t in operational_range:
+            Byprod_Profit[t] = sum(
+                totaly_yearly_byprod[t][byprod] * byprod_vals[byprod]
+                for byprod in byprods
+            )
+        ###################################################################################################
+
+        # test yearly byproducts produced
+        for t in operational_range:
+            for byprod in byprods:
+                assert value(
+                    BV_model.plantYear[t].total_yearly_byprod[byprod]
+                ) == pytest.approx(totaly_yearly_byprod[t][byprod], rel=1e-8)
+
+        # test profit generated from byproduct valorization
+        for t in operational_range:
+            assert value(BV_model.plantYear[t].Byprod_Profit) == pytest.approx(
+                Byprod_Profit[t], rel=1e-8
+            )

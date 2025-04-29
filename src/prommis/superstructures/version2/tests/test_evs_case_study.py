@@ -6,30 +6,31 @@
 #####################################################################################################
 import copy
 import math
-import pytest
 
 from pyomo.environ import (
-    assert_optimal_termination,
-    ConcreteModel,
-    RangeSet,
-    value,
-    SolverFactory,
-    Var,
     Block,
+    ConcreteModel,
     Constraint,
     Objective,
+    RangeSet,
     Set,
-)
-
-# model statistics
-from idaes.core.util.model_statistics import (
-    number_total_constraints,
-    number_variables,
-    number_unused_variables,
-    degrees_of_freedom,
+    SolverFactory,
+    Var,
+    assert_optimal_termination,
+    value,
 )
 
 from idaes.core.solvers import get_solver
+
+# model statistics
+from idaes.core.util.model_statistics import (
+    degrees_of_freedom,
+    number_total_constraints,
+    number_unused_variables,
+    number_variables,
+)
+
+import pytest
 
 from prommis.superstructures.version2.superstructure_v2 import build_model
 

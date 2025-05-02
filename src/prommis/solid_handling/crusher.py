@@ -62,16 +62,16 @@ Variable         Name   Notes
 """
 
 from functools import partial
-from pyomo.environ import Var, log, Constraint, units as pyunits
-from pyomo.common.config import ConfigValue, ConfigDict, In
-from idaes.core import (
-    declare_process_block_class,
-    UnitModelBlockData,
-    useDefault,
-)
+
+from pyomo.common.config import ConfigDict, ConfigValue, In
+from pyomo.environ import Constraint, Var, log
+from pyomo.environ import units as pyunits
+from pyomo.environ import value
+
+import idaes.logger as idaeslog
+from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.tables import create_stream_table_dataframe
-import idaes.logger as idaeslog
 
 _log = idaeslog.getLogger(__name__)
 
@@ -214,7 +214,7 @@ see property package for documentation.}""",
     def _get_performance_contents(self, time_point=0):
         # Report
         var_dict = {
-            "Work Required (W)": self.work[time_point].value,
+            "Work Required (W)": value(self.work[time_point]),
         }
         return {"vars": var_dict}
 

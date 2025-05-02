@@ -1197,6 +1197,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         + " in millions",
                         units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
                     )
+                    self.additional_cost_of_recovery.fix()
 
                     if (
                         pyunits.get_units(recovery_rate_per_year)

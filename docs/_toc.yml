@@ -10,3 +10,4 @@ chapters:
   - file: tutorials/uky_flowsheet-solution
   - file: tutorials/ree_costing_framework_uky_flowsheet_demo-solution
   - file: api.rst
+  - file: examples/cmi_process.rst

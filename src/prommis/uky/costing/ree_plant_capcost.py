@@ -2807,10 +2807,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 % value(b.total_overnight_capital)
             )
         if hasattr(b, "annualized_cost"):
-            print("Total annualized capital cost (MUSD): %.3f" % value(b.annualized_cost))
+            print(
+                "Total annualized capital cost (MUSD): %.3f" % value(b.annualized_cost)
+            )
         print()
         if hasattr(b, "total_fixed_OM_cost"):
-            print("Total annual fixed O&M cost (MUSD): %.3f" % value(b.total_fixed_OM_cost))
+            print(
+                "Total annual fixed O&M cost (MUSD): %.3f"
+                % value(b.total_fixed_OM_cost)
+            )
         if hasattr(b, "total_variable_OM_cost"):
             print(
                 "Total annual variable O&M cost (MUSD): %.3f"

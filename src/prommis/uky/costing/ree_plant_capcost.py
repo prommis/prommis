@@ -1533,6 +1533,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if hasattr(self, "net_tax_owed"):
             var_dict["Net Tax Owed"] = value(self.net_tax_owed)
 
+        if hasattr(self, "cost_of_recovery"):
+            var_dict["Cost of Recovery (USD/kg REE)"] = value(self.cost_of_recovery)
+
         report_dir = {}
         report_dir["Value"] = {}
         report_dir["pos"] = {}
@@ -2677,7 +2680,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
 
     def display_total_plant_costs(b):
-        print("-----Total Plant Costs-----")
+        print("-----Total Plant Costs (MUSD)-----")
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
             if o.name in [
@@ -2694,7 +2697,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
 
     def display_bare_erected_costs(b):
-        print("-----Bare Erected Costs-----")
+        print("-----Bare Erected Costs (MUSD)-----")
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
             if o.name in [
@@ -2797,30 +2800,30 @@ class QGESSCostingData(FlowsheetCostingBlockData):
     def display_flowsheet_cost(b):
         # This method accepts a flowsheet-level costing block
         print("\n")
-        print("Total bare erected cost: %.3f" % value(b.total_BEC))
+        print("Total bare erected cost (MUSD): %.3f" % value(b.total_BEC))
         if hasattr(b, "total_overnight_capital"):
             print(
                 "Total overnight (installed) equipment cost: %.3f"
                 % value(b.total_overnight_capital)
             )
         if hasattr(b, "annualized_cost"):
-            print("Total annualized capital cost: %.3f" % value(b.annualized_cost))
+            print("Total annualized capital cost (MUSD): %.3f" % value(b.annualized_cost))
         print()
         if hasattr(b, "total_fixed_OM_cost"):
-            print("Total annual fixed O&M cost: %.3f" % value(b.total_fixed_OM_cost))
+            print("Total annual fixed O&M cost (MUSD): %.3f" % value(b.total_fixed_OM_cost))
         if hasattr(b, "total_variable_OM_cost"):
             print(
-                "Total annual variable O&M cost: %.3f"
+                "Total annual variable O&M cost (MUSD): %.3f"
                 % value(b.total_variable_OM_cost[0])
             )
         if hasattr(b, "total_fixed_OM_cost") and hasattr(b, "total_variable_OM_cost"):
             print(
-                "Total annual O&M cost: %.3f"
+                "Total annual O&M cost (MUSD): %.3f"
                 % value(b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
             )
             if hasattr(b, "feed_input_rate"):
                 print(
-                    "Total annual O&M cost per ton feed processed: %.3f"
+                    "Total annual O&M cost per ton feed processed (USD/ton): %.3f"
                     % value(
                         (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
                         * 1e6
@@ -2836,7 +2839,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
             if hasattr(b, "recovery_rate_per_year"):
                 print(
-                    "Total annual O&M cost per kg REE recovered: %.3f"
+                    "Total annual O&M cost per kg REE recovered (USD/kg): %.3f"
                     % value(
                         (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
                         * 1e6
@@ -2855,7 +2858,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             and hasattr(b, "total_variable_OM_cost")
         ):
             print(
-                "Total annualized plant cost: %.3f"
+                "Total annualized plant cost (MUSD): %.3f"
                 % value(
                     b.annualized_cost
                     + (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
@@ -2864,7 +2867,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
         if hasattr(b, "recovery_rate_per_year"):
             print(
-                "Annual rate of recovery: %.3f kg/year REE recovered"
+                "Annual rate of recovery (kg/year): %.3f"
                 % value(
                     pyunits.convert(
                         b.recovery_rate_per_year, to_units=pyunits.kg / pyunits.year
@@ -2873,13 +2876,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
         if hasattr(b, "cost_of_recovery"):
             print(
-                "Cost of recovery per kg REE recovered: %.3f"
+                "Cost of recovery per kg REE recovered (USD/kg): %.3f"
                 % value(b.cost_of_recovery)
             )
         print()
 
         if hasattr(b, "npv"):
-            print("Net present value: %.3f" % value(b.npv))
+            print("Net present value (MUSD): %.3f" % value(b.npv))
         print("\n")
 
     def calculate_REE_costing_bounds(

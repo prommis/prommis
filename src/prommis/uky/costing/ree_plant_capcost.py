@@ -2192,7 +2192,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.watertap_fixed_costs = Var(
             initialize=0,
             bounds=(0, None),
-            doc="Watertap fixed costs",
+            doc="WaterTAP fixed costs",
             units=CE_index_units / pyunits.year,
         )
 
@@ -2297,7 +2297,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # sum of fixed O&M costs
 
-        # sum of fixed operating costs of watertap units
+        # sum of fixed operating costs of WaterTAP units
         @b.Constraint()
         def sum_watertap_fixed_costs(c):
             if len(c.watertap_fixed_costs_list) == 0:
@@ -2449,12 +2449,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.other_variable_costs.fix(1e-12)
 
         # TODO commented as no WaterTAP models currently use this, may change in the future
-        # variable for user to assign watertap variable costs to,
+        # variable for user to assign WaterTAP variable costs to,
         # constraint sets to sum of list, which is 0 for empty list
         # b.watertap_variable_costs = Var(
         #     initialize=0,
         #     bounds=(0, None),
-        #     doc="Watertap variable costs",
+        #     doc="WaterTAP variable costs",
         #     units=CE_index_units / pyunits.year,
         # )
 
@@ -2495,7 +2495,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         # TODO commented as no WaterTAP models currently use this, may change in the future
-        # sum of variable operating costs of watertap units
+        # sum of variable operating costs of WaterTAP units
         # @b.Constraint()
         # def sum_watertap_variable_costs(c):
         #     if len(c.watertap_variable_costs_list) == 0:

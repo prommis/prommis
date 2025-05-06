@@ -33,6 +33,7 @@ from sys import stdout
 
 from pyomo.common.config import ConfigValue, ListOf
 from pyomo.common.dependencies import attempt_import
+from pyomo.core.base.component import Component
 from pyomo.core.base.expression import ScalarExpression
 from pyomo.core.base.units_container import InconsistentUnitsError, UnitsError
 from pyomo.environ import ConcreteModel, Expression, Param, Reference, Var, log10
@@ -3660,11 +3661,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             for key in costs.keys():
                 # check if the object is a Reference
-                try:
-                    costs[key] = costs[key][None]
-                except:
-                    # continue on
-                    pass
+                if isinstance(costs[key], Component):
+                    # it's a Pyomo object
+                    if costs[key].is_reference():
+                        costs[key] = costs[key][None]
 
                 if type(costs[key]) in [Expression, ScalarExpression]:
                     if pyunits.get_units(costs[key]) == pyunits.dimensionless:

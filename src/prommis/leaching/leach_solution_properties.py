@@ -280,7 +280,11 @@ class LeachSolutionStateBlockData(StateBlockData):
         # Note conversion to mol/hour
         if j == "H2O":
             # Assume constant density of 1 kg/L
-            return self.flow_vol * self.params.dens_mass / self.params.mw[j]
+            return units.convert(
+                self.flow_vol * self.params.dens_mass / self.params.mw[j],
+                to_units=units.mol / units.hour,
+            )
+
         else:
             # Need to convert from moles to mass
             return units.convert(

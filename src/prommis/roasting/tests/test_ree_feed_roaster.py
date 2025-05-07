@@ -1,34 +1,31 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 from pyomo.environ import (
-    assert_optimal_termination,
     ConcreteModel,
     Constraint,
     SolverFactory,
+    Var,
+    assert_optimal_termination,
     units,
     value,
-    Var,
 )
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
+from idaes.core.initialization import (
+    BlockTriangularizationInitializer,
+    InitializationStatus,
+)
+from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
     number_total_constraints,
     number_unused_variables,
     number_variables,
 )
-
-from idaes.core.util import DiagnosticsToolbox
-from idaes.core.initialization import (
-    BlockTriangularizationInitializer,
-    InitializationStatus,
-)
-
-import pytest
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
@@ -36,6 +33,8 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
     get_prop,
 )
+
+import pytest
 
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.roasting.ree_feed_roaster import REEFeedRoaster

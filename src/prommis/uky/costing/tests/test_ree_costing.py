@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -105,7 +105,6 @@ def base_model():
         debt_percentage_of_CAPEX=50,
         operating_inflation_percentage=3,
         revenue_inflation_percentage=3,
-        royalty_charge_percentage_of_revenue=6.5,
     )
     CE_index_year = "UKy_2019"
 
@@ -948,7 +947,7 @@ class TestREECosting(object):
 
     @pytest.mark.unit
     def test_base_model_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model)
+        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.unit
@@ -1158,7 +1157,7 @@ class TestREECosting(object):
 
     @pytest.mark.unit
     def test_full_model_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model)
+        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -1185,42 +1184,39 @@ class TestREECosting(object):
     def test_results(self, model):
         # check some overall cost results
 
-        assert model.fs.costing.total_plant_cost.value == pytest.approx(
+        assert value(model.fs.costing.total_plant_cost) == pytest.approx(
             133.23, rel=1e-4
         )
-        assert model.fs.costing.total_BEC.value == pytest.approx(44.308, rel=1e-4)
-        assert model.fs.costing.total_installation_cost.value == pytest.approx(
+        assert value(model.fs.costing.total_BEC) == pytest.approx(44.308, rel=1e-4)
+        assert value(model.fs.costing.total_installation_cost) == pytest.approx(
             87.287, rel=1e-4
         )
-        assert model.fs.costing.other_plant_costs.value == pytest.approx(
+        assert value(model.fs.costing.other_plant_costs) == pytest.approx(
             1.6309, rel=1e-4
         )
-        assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
-            11.105, rel=1e-4
+        assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(
+            10.916, rel=1e-4
         )
-        assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-            532.90, rel=1e-4
+        assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
+            525.71, rel=1e-4
         )
-        assert pyo.value(model.fs.costing.land_cost) == pytest.approx(
+        assert value(model.fs.costing.land_cost) == pytest.approx(
             1.2247, rel=1e-4
         )  # Expression, not Var
-        assert model.fs.costing.total_sales_revenue.value == pytest.approx(
-            65.333, rel=1e-4
+        assert value(model.fs.costing.total_sales_revenue) == pytest.approx(
+            27.654, rel=1e-4
         )
-        assert model.fs.costing.pv_capital_cost.value == pytest.approx(
+        assert value(model.fs.costing.pv_capital_cost) == pytest.approx(
             -112.78144, rel=1e-4
         )
-        assert model.fs.costing.pv_loan_interest.value == pytest.approx(
+        assert value(model.fs.costing.pv_loan_interest) == pytest.approx(
             -11.001142, rel=1e-4
         )
-        assert model.fs.costing.pv_operating_cost.value == pytest.approx(
-            -4677.8978, rel=1e-4
+        assert value(model.fs.costing.pv_operating_cost) == pytest.approx(
+            -4614.5826, rel=1e-4
         )
-        assert model.fs.costing.pv_royalties.value == pytest.approx(
-            -36.434467, rel=1e-4
-        )
-        assert model.fs.costing.pv_revenue.value == pytest.approx(560.53027, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(-4277.58453, rel=1e-4)
+        assert value(model.fs.costing.pv_revenue) == pytest.approx(237.25943, rel=1e-4)
+        assert value(model.fs.costing.npv) == pytest.approx(-4501.10576, rel=1e-4)
 
     @pytest.mark.unit
     def test_report(self, model):
@@ -1250,7 +1246,7 @@ class TestREECosting(object):
             CE_index_year=CE_index_year,
         )
 
-        dt = DiagnosticsToolbox(model)
+        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -1294,12 +1290,12 @@ class TestREECosting(object):
 
         for key in model.fs.costing.costing_lower_bound.keys():
 
-            assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
+            assert value(model.fs.costing.costing_lower_bound[key]) == pytest.approx(
                 expected_costing_lower_bound[key], abs=1e-8, rel=1e-4
             )
 
         for key in model.fs.costing.costing_upper_bound.keys():
-            assert model.fs.costing.costing_upper_bound[key].value == pytest.approx(
+            assert value(model.fs.costing.costing_upper_bound[key]) == pytest.approx(
                 expected_costing_upper_bound[key], rel=1e-4
             )
 
@@ -1344,12 +1340,12 @@ class TestREECosting(object):
 
         for key in model.fs.costing.costing_lower_bound.keys():
 
-            assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
+            assert value(model.fs.costing.costing_lower_bound[key]) == pytest.approx(
                 expected_costing_lower_bound[key], abs=1e-8, rel=1e-4
             )
 
         for key in model.fs.costing.costing_upper_bound.keys():
-            assert model.fs.costing.costing_upper_bound[key].value == pytest.approx(
+            assert value(model.fs.costing.costing_upper_bound[key]) == pytest.approx(
                 expected_costing_upper_bound[key], rel=1e-4
             )
 
@@ -1394,12 +1390,12 @@ class TestREECosting(object):
 
         for key in model.fs.costing.costing_lower_bound.keys():
 
-            assert model.fs.costing.costing_lower_bound[key].value == pytest.approx(
+            assert value(model.fs.costing.costing_lower_bound[key]) == pytest.approx(
                 expected_costing_lower_bound[key], abs=1e-8, rel=1e-4
             )
 
         for key in model.fs.costing.costing_upper_bound.keys():
-            assert model.fs.costing.costing_upper_bound[key].value == pytest.approx(
+            assert value(model.fs.costing.costing_upper_bound[key]) == pytest.approx(
                 expected_costing_upper_bound[key], rel=1e-4
             )
 
@@ -1944,7 +1940,7 @@ class TestWaterTAPCosting(object):
     @pytest.mark.component
     def test_REE_watertap_costing_results_totalCAPEX(self, model):
 
-        assert model.fs.costing.total_BEC.value == pytest.approx(50.686, rel=1e-4)
+        assert value(model.fs.costing.total_BEC) == pytest.approx(50.686, rel=1e-4)
 
     @pytest.mark.component
     def test_REE_watertap_costing_results_equipmentCAPEX(self, model):
@@ -1955,31 +1951,31 @@ class TestWaterTAPCosting(object):
             pyunits, "MUSD_" + CE_index_year
         )  # millions of USD, for base year
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs_membrane.nfunit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.0015159, rel=1e-4)
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs_membrane.rounit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.0016148, rel=1e-4)
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs_membrane.ixunit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(4.0354, rel=1e-4)
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs_membrane.nfzounit.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(2.3391, rel=1e-4)
 
-        assert pyo.value(
+        assert value(
             model.fs.costing.total_BEC
             - pyunits.convert(
                 model.fs_membrane.nfunit.costing.capital_cost, to_units=CE_index_units
@@ -2004,35 +2000,35 @@ class TestWaterTAPCosting(object):
             pyunits, "MUSD_" + CE_index_year
         )  # millions of USD, for base year
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs_membrane.nfunit.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.00015159, rel=1e-4)
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs_membrane.rounit.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.00016148, rel=1e-4)
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs_membrane.ixunit.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.037284, rel=1e-4)
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs_membrane.nfzounit.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.467810, rel=1e-4)
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs_membrane.nfunit.costing.fixed_operating_cost
                 + model.fs_membrane.rounit.costing.fixed_operating_cost
@@ -2045,23 +2041,23 @@ class TestWaterTAPCosting(object):
             )
         ) == pytest.approx(0.505407, rel=1e-4)
 
-        assert model.fs.costing.watertap_fixed_costs.value == pytest.approx(
+        assert value(model.fs.costing.watertap_fixed_costs) == pytest.approx(
             0.505407, rel=1e-4
         )
 
-        assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
-            12.17825, rel=1e-4
+        assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(
+            11.98986, rel=1e-4
         )
 
     # TODO commented as no WaterTAP models currently use this, may change in the future
     # @pytest.mark.component
     # def test_REE_watertap_costing_variableOPEX(self, model):
 
-    #     assert model.fs.costing.watertap_variable_costs.value == pytest.approx(
+    #     assert value(model.fs.costing.watertap_variable_costs) == pytest.approx(
     #         0, abs=1e-4
     #     )
 
-    #     assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
+    #     assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
     #         533.10082, rel=1e-4
     #     )
 
@@ -2354,47 +2350,47 @@ class TestCustomCosting(object):
         # check model numerical diagnostics
         dt.assert_no_numerical_warnings()
 
-        assert model.fs.costing.total_BEC.value == pytest.approx(44.377, rel=1e-4)
-        assert pyo.value(
+        assert value(model.fs.costing.total_BEC) == pytest.approx(44.377, rel=1e-4)
+        assert value(
             pyunits.convert(
                 model.fs.custom_vessel.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.0686081, rel=1e-4)
-        assert pyo.value(
+        assert value(
             model.fs.costing.total_BEC
             - pyunits.convert(
                 model.fs.custom_vessel.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(44.308, rel=1e-4)
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.custom_vessel.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.00343040, rel=1e-4)
 
-        assert model.fs.costing.custom_fixed_costs.value == pytest.approx(
+        assert value(model.fs.costing.custom_fixed_costs) == pytest.approx(
             0.00343040, rel=1e-4
         )
 
-        assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
-            11.11414, rel=1e-4
+        assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(
+            10.92575, rel=1e-4
         )
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.custom_vessel.costing.variable_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(4.13750, rel=1e-4)
 
-        assert model.fs.costing.custom_variable_costs.value == pytest.approx(
+        assert value(model.fs.costing.custom_variable_costs) == pytest.approx(
             4.13750, rel=1e-4
         )
 
-        assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-            537.87082, rel=1e-4
+        assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
+            530.67815, rel=1e-4
         )
 
 
@@ -2805,33 +2801,33 @@ class TestDiafiltrationCosting(object):
         # check model numerical diagnostics
         dt.assert_no_numerical_warnings()
 
-        assert model.fs.costing.total_BEC.value == pytest.approx(44.684, rel=1e-4)
-        assert pyo.value(
+        assert value(model.fs.costing.total_BEC) == pytest.approx(44.684, rel=1e-4)
+        assert value(
             pyunits.convert(
                 model.fs.stage1.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.0043043, rel=1e-4)
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.stage2.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.0043043, rel=1e-4)
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.stage3.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.0043043, rel=1e-4)
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.feed_pump.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.34788, rel=1e-4)
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.diafiltrate_pump.costing.capital_cost, to_units=CE_index_units
             )
         ) == pytest.approx(0.014780, rel=1e-4)
-        assert pyo.value(
+        assert value(
             model.fs.costing.total_BEC
             - pyunits.convert(
                 model.fs.stage1.costing.capital_cost, to_units=CE_index_units
@@ -2850,58 +2846,58 @@ class TestDiafiltrationCosting(object):
             )
         ) == pytest.approx(44.308, rel=1e-4)
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.stage1.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.00086087, rel=1e-4)
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.stage2.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.00086087, rel=1e-4)
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.stage3.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.00086087, rel=1e-4)
 
-        assert model.fs.costing.custom_fixed_costs.value == pytest.approx(
+        assert value(model.fs.costing.custom_fixed_costs) == pytest.approx(
             0.0025826, rel=1e-4
         )
 
-        assert model.fs.costing.total_fixed_OM_cost.value == pytest.approx(
-            11.14064, rel=1e-4
+        assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(
+            10.95225, rel=1e-4
         )
 
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.cascade.costing.variable_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(0.985221, rel=1e-4)
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.feed_pump.costing.variable_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(8.09845e-17, rel=1e-4)
-        assert pyo.value(
+        assert value(
             pyunits.convert(
                 model.fs.diafiltrate_pump.costing.variable_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
         ) == pytest.approx(2.36473e-10, rel=1e-4)
 
-        assert model.fs.costing.custom_variable_costs.value == pytest.approx(
+        assert value(model.fs.costing.custom_variable_costs) == pytest.approx(
             2.36473e-10, rel=1e-4
         )
 
-        assert model.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-            532.90975, rel=1e-4
+        assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
+            525.7185, rel=1e-4
         )
 
 
@@ -2996,7 +2992,7 @@ class TestHDDRecyclingCosting(object):
             fixed_OM=False,
         )
 
-        dt = DiagnosticsToolbox(model=model)
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -3036,7 +3032,7 @@ class TestHDDRecyclingCosting(object):
             ]
         ) == pytest.approx(0.41035, rel=1e-4)
 
-        assert model.fs.costing.total_plant_cost.value == pytest.approx(
+        assert value(model.fs.costing.total_plant_cost) == pytest.approx(
             3.8220, rel=1e-4
         )
 
@@ -3105,8 +3101,8 @@ class TestNPVCostingBlock(object):
         assert isinstance(model.fs.costing.pv_loan_interest, pyo.Var)
         assert isinstance(model.fs.costing.pv_operating_cost, pyo.Var)
         assert isinstance(model.fs.costing.pv_revenue, pyo.Var)
-        assert isinstance(model.fs.costing.pv_royalties, pyo.Var)
         assert isinstance(model.fs.costing.npv, pyo.Var)
+        assert not hasattr(model.fs.costing, "pv_taxes")
         assert isinstance(model.fs.costing.discount_percentage, pyo.Param)
         assert isinstance(model.fs.costing.plant_lifetime, pyo.Param)
         assert isinstance(model.fs.costing.capital_expenditure_percentages, pyo.Param)
@@ -3116,20 +3112,17 @@ class TestNPVCostingBlock(object):
         assert isinstance(model.fs.costing.debt_percentage_of_CAPEX, pyo.Param)
         assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
-        assert isinstance(
-            model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param
-        )
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.loan_debt_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_loan_interest_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
-        assert isinstance(model.fs.costing.pv_royalties_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.npv_constraint, pyo.Constraint)
+        assert not hasattr(model.fs.costing, "pv_taxes_constraint")
 
     @pytest.mark.unit
     def test_NPV_costingblock_build_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model)
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -3150,18 +3143,17 @@ class TestNPVCostingBlock(object):
     @pytest.mark.component
     def test_NPV_costingblock_results(self, model):
         # check some NPV results
-        assert model.fs.costing.pv_capital_cost.value == pytest.approx(
+        assert value(model.fs.costing.pv_capital_cost) == pytest.approx(
             -6.3162037, rel=1e-4
         )
-        assert model.fs.costing.pv_loan_interest.value == pytest.approx(
+        assert value(model.fs.costing.pv_loan_interest) == pytest.approx(
             -0.61610712, rel=1e-4
         )
-        assert model.fs.costing.pv_operating_cost.value == pytest.approx(
-            -59.02935, rel=1e-4
+        assert value(model.fs.costing.pv_operating_cost) == pytest.approx(
+            -57.28850, rel=1e-4
         )
-        assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
-        assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(450.51057, rel=1e-4)
+        assert value(model.fs.costing.pv_revenue) == pytest.approx(239.63402, rel=1e-4)
+        assert value(model.fs.costing.npv) == pytest.approx(175.4132, rel=1e-4)
 
 
 class TestNPVFixedInputs(object):
@@ -3196,8 +3188,8 @@ class TestNPVFixedInputs(object):
         assert isinstance(model.fs.costing.pv_loan_interest, pyo.Var)
         assert isinstance(model.fs.costing.pv_operating_cost, pyo.Var)
         assert isinstance(model.fs.costing.pv_revenue, pyo.Var)
-        assert isinstance(model.fs.costing.pv_royalties, pyo.Var)
         assert isinstance(model.fs.costing.npv, pyo.Var)
+        assert not hasattr(model.fs.costing, "pv_taxes")
         assert isinstance(model.fs.costing.discount_percentage, pyo.Param)
         assert isinstance(model.fs.costing.plant_lifetime, pyo.Param)
         assert isinstance(model.fs.costing.capital_expenditure_percentages, pyo.Param)
@@ -3207,20 +3199,17 @@ class TestNPVFixedInputs(object):
         assert isinstance(model.fs.costing.debt_percentage_of_CAPEX, pyo.Param)
         assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
-        assert isinstance(
-            model.fs.costing.royalty_charge_percentage_of_revenue, pyo.Param
-        )
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.loan_debt_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_loan_interest_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_operating_cost_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.pv_revenue_constraint, pyo.Constraint)
-        assert isinstance(model.fs.costing.pv_royalties_constraint, pyo.Constraint)
         assert isinstance(model.fs.costing.npv_constraint, pyo.Constraint)
+        assert not hasattr(model.fs.costing, "pv_taxes_constraint")
 
     @pytest.mark.unit
     def test_NPV_fixedinputs_build_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model)
+        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -3237,18 +3226,17 @@ class TestNPVFixedInputs(object):
     @pytest.mark.component
     def test_NPV_fixedinputs_results(self, model):
         # check some NPV results
-        assert model.fs.costing.pv_capital_cost.value == pytest.approx(
+        assert value(model.fs.costing.pv_capital_cost) == pytest.approx(
             -6.3162037, rel=1e-4
         )
-        assert model.fs.costing.pv_loan_interest.value == pytest.approx(
+        assert value(model.fs.costing.pv_loan_interest) == pytest.approx(
             -0.61610712, rel=1e-4
         )
-        assert model.fs.costing.pv_operating_cost.value == pytest.approx(
+        assert value(model.fs.costing.pv_operating_cost) == pytest.approx(
             -59.02935, rel=1e-4
         )
-        assert model.fs.costing.pv_royalties.value == pytest.approx(-35.90449, rel=1e-4)
-        assert model.fs.costing.pv_revenue.value == pytest.approx(552.37672, rel=1e-4)
-        assert model.fs.costing.npv.value == pytest.approx(450.51057, rel=1e-4)
+        assert value(model.fs.costing.pv_revenue) == pytest.approx(552.37672, rel=1e-4)
+        assert value(model.fs.costing.npv) == pytest.approx(486.41505, rel=1e-4)
 
 
 @pytest.mark.component
@@ -3343,7 +3331,7 @@ def test_REE_costing_CE_index_year():
         # USD_2021 = CE 708.0
         assert (
             pytest.approx(
-                pyo.value(
+                value(
                     m.fs.CS_jaw_crusher_2021.costing.bare_erected_cost[account]
                     / m.fs.CS_jaw_crusher_CE500.costing.bare_erected_cost[account]
                 ),
@@ -3355,7 +3343,7 @@ def test_REE_costing_CE_index_year():
         # USD_UKy_2019 = CE 609.495
         assert (
             pytest.approx(
-                pyo.value(
+                value(
                     m.fs.CS_jaw_crusher_UKy_2019.costing.bare_erected_cost[account]
                     / m.fs.CS_jaw_crusher_CE500.costing.bare_erected_cost[account]
                 ),
@@ -3367,7 +3355,7 @@ def test_REE_costing_CE_index_year():
         # USD_2022 = CE 816.0
         assert (
             pytest.approx(
-                pyo.value(
+                value(
                     m.fs.CS_jaw_crusher_2022.costing.bare_erected_cost[account]
                     / m.fs.CS_jaw_crusher_CE500.costing.bare_erected_cost[account]
                 ),
@@ -3379,7 +3367,7 @@ def test_REE_costing_CE_index_year():
         # USD_2025 = CE 815.59
         assert (
             pytest.approx(
-                pyo.value(
+                value(
                     m.fs.CS_jaw_crusher_2025.costing.bare_erected_cost[account]
                     / m.fs.CS_jaw_crusher_CE500.costing.bare_erected_cost[account]
                 ),
@@ -3506,16 +3494,16 @@ def test_REE_costing_multipleaccountssameparameter():
     assert_optimal_termination(results)
     dt.assert_no_numerical_warnings()
 
-    assert m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3"].value == pytest.approx(
+    assert value(m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3"]) == pytest.approx(
         2.5122, rel=1e-4
     )
-    assert m.fs.CS_crusher.costing.bare_erected_cost["1.3"].value == pytest.approx(
+    assert value(m.fs.CS_crusher.costing.bare_erected_cost["1.3"]) == pytest.approx(
         2.5122, rel=1e-4
     )
-    assert m.fs.CS_roll_crusher.costing.bare_erected_cost["1.5"].value == pytest.approx(
-        0.32769, rel=1e-4
-    )
-    assert m.fs.CS_crusher.costing.bare_erected_cost["1.5"].value == pytest.approx(
+    assert value(
+        m.fs.CS_roll_crusher.costing.bare_erected_cost["1.5"]
+    ) == pytest.approx(0.32769, rel=1e-4)
+    assert value(m.fs.CS_crusher.costing.bare_erected_cost["1.5"]) == pytest.approx(
         0.32769, rel=1e-4
     )
 
@@ -3594,9 +3582,9 @@ def test_REE_costing_additionalcostingparams_newaccount():
     dt.assert_no_numerical_warnings()
 
     # adding a check just to make sure everything works as expected
-    assert m.fs.CS_jaw_crusher.costing.bare_erected_cost[
-        "1.3new"
-    ].value == pytest.approx(2.5122, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3new"]
+    ) == pytest.approx(2.5122, rel=1e-4)
 
 
 @pytest.mark.component
@@ -3647,7 +3635,7 @@ def test_REE_costing_additionalcostingparams_overwrite():
     dt.assert_no_numerical_warnings()
 
     # adding a check just to make sure 1.3 was overwritten before it was used
-    assert m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3"].value == pytest.approx(
+    assert value(m.fs.CS_jaw_crusher.costing.bare_erected_cost["1.3"]) == pytest.approx(
         2.0650, rel=1e-4
     )
 
@@ -3818,34 +3806,34 @@ def test_REE_costing_scaledownparallelequip():
     dt.assert_no_numerical_warnings()
 
     # base case
-    assert m.fs.CS_jaw_crusher_1.costing.bare_erected_cost[
-        "1.3"
-    ].value == pytest.approx(1.0000, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_1.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(1.0000, rel=1e-4)
 
     # only one unit, parallel doesn't change result
-    assert m.fs.CS_jaw_crusher_2.costing.bare_erected_cost[
-        "1.3"
-    ].value == pytest.approx(1.0000, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_2.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(1.0000, rel=1e-4)
 
     # same capacity over two units should be slightly less expensive than one unit
-    assert m.fs.CS_jaw_crusher_3.costing.bare_erected_cost[
-        "1.3"
-    ].value == pytest.approx(0.84095, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_3.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(0.84095, rel=1e-4)
 
     # two units with base case capacity should be double the cost
-    assert m.fs.CS_jaw_crusher_4.costing.bare_erected_cost[
-        "1.3"
-    ].value == pytest.approx(2.0000, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_4.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(2.0000, rel=1e-4)
 
     # same capacity over five units should be much less expensive than one unit
-    assert m.fs.CS_jaw_crusher_5.costing.bare_erected_cost[
-        "1.3"
-    ].value == pytest.approx(0.66878, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_5.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(0.66878, rel=1e-4)
 
     # five units with base case capacity should be five times the cost
-    assert m.fs.CS_jaw_crusher_6.costing.bare_erected_cost[
-        "1.3"
-    ].value == pytest.approx(5.0000, rel=1e-4)
+    assert value(
+        m.fs.CS_jaw_crusher_6.costing.bare_erected_cost["1.3"]
+    ) == pytest.approx(5.0000, rel=1e-4)
 
 
 @pytest.mark.unit
@@ -3928,8 +3916,8 @@ def test_REE_costing_usersetTPC_noOM():
     assert hasattr(m.fs.costing, "total_plant_cost")
     assert hasattr(m.fs.costing, "total_overnight_capital")
     # check some results
-    assert m.fs.costing.total_BEC.value == pytest.approx(1.0000, rel=1e-4)
-    assert m.fs.costing.total_plant_cost.value == pytest.approx(2.9700, rel=1e-4)
+    assert value(m.fs.costing.total_BEC) == pytest.approx(1.0000, rel=1e-4)
+    assert value(m.fs.costing.total_plant_cost) == pytest.approx(2.9700, rel=1e-4)
 
 
 @pytest.mark.component
@@ -3996,8 +3984,8 @@ def test_REE_costing_usersetTPC_withOM():
     assert hasattr(m.fs.costing, "total_plant_cost")
     assert hasattr(m.fs.costing, "total_overnight_capital")
     # check some results
-    assert m.fs.costing.total_BEC.value == pytest.approx(1.0000, rel=1e-4)
-    assert m.fs.costing.total_plant_cost.value == pytest.approx(2.9700, rel=1e-4)
+    assert value(m.fs.costing.total_BEC) == pytest.approx(1.0000, rel=1e-4)
+    assert value(m.fs.costing.total_plant_cost) == pytest.approx(2.9700, rel=1e-4)
 
 
 @pytest.mark.component
@@ -4051,8 +4039,8 @@ def test_REE_costing_useLangfactor():
     # instead of percentages, Lang factor should be built
     assert hasattr(m.fs.costing, "Lang_factor")
 
-    assert m.fs.costing.total_BEC.value == pytest.approx(2.5122, rel=1e-4)
-    assert m.fs.costing.total_plant_cost.value == pytest.approx(7.4612, rel=1e-4)
+    assert value(m.fs.costing.total_BEC) == pytest.approx(2.5122, rel=1e-4)
+    assert value(m.fs.costing.total_plant_cost) == pytest.approx(7.4612, rel=1e-4)
 
 
 # optional cost arguments - land, additional chemicals, additional waste
@@ -4131,7 +4119,7 @@ def test_REE_costing_optionalexpressionarguments(argument, cost_obj):
 
     # check that the cost units are as expected
     assert hasattr(m.fs.costing, argument)
-    assert pyo.value(getattr(m.fs.costing, argument)) == pytest.approx(1e-3, rel=1e-4)
+    assert value(getattr(m.fs.costing, argument)) == pytest.approx(1e-3, rel=1e-4)
     assert pyunits.get_units(getattr(m.fs.costing, argument)) == pyunits.MUSD_2021
 
     # clean up for subsequent parameterization runs
@@ -4200,31 +4188,31 @@ def test_REE_costing_fixedOM_defaults():
     assert not hasattr(m.fs.costing, "total_variable_OM_cost")
     assert not hasattr(m.fs.costing, "plant_overhead_cost")
 
-    assert m.fs.costing.annual_operating_labor_cost.value == pytest.approx(
+    assert value(m.fs.costing.annual_operating_labor_cost) == pytest.approx(
         3.0730, rel=1e-4
     )
-    assert m.fs.costing.annual_technical_labor_cost.value == pytest.approx(
+    assert value(m.fs.costing.annual_technical_labor_cost) == pytest.approx(
         1.1801, rel=1e-4
     )
-    assert m.fs.costing.annual_labor_cost.value == pytest.approx(4.2531, rel=1e-4)
-    assert m.fs.costing.maintenance_and_material_cost.value == pytest.approx(
+    assert value(m.fs.costing.annual_labor_cost) == pytest.approx(4.2531, rel=1e-4)
+    assert value(m.fs.costing.maintenance_and_material_cost) == pytest.approx(
         0.14922, rel=1e-4
     )
-    assert m.fs.costing.quality_assurance_and_control_cost.value == pytest.approx(
+    assert value(m.fs.costing.quality_assurance_and_control_cost) == pytest.approx(
         0.30730, rel=1e-4
     )
-    assert m.fs.costing.sales_patenting_and_research_cost.value == pytest.approx(
-        0.32191, rel=1e-4
+    assert value(m.fs.costing.sales_patenting_and_research_cost) == pytest.approx(
+        0.13965, rel=1e-4
     )
-    assert m.fs.costing.admin_and_support_labor_cost.value == pytest.approx(
+    assert value(m.fs.costing.admin_and_support_labor_cost) == pytest.approx(
         0.61460, rel=1e-4
     )
-    assert m.fs.costing.property_taxes_and_insurance_cost.value == pytest.approx(
+    assert value(m.fs.costing.property_taxes_and_insurance_cost) == pytest.approx(
         0.074612, rel=1e-4
     )
-    assert m.fs.costing.other_fixed_costs.value == pytest.approx(0.0000, abs=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_sales_revenue.value == pytest.approx(64.382, rel=1e-4)
+    assert value(m.fs.costing.other_fixed_costs) == pytest.approx(0.0000, abs=1e-4)
+    assert value(m.fs.costing.total_fixed_OM_cost) == pytest.approx(5.5384, rel=1e-4)
+    assert value(m.fs.costing.total_sales_revenue) == pytest.approx(27.931, rel=1e-4)
 
 
 @pytest.mark.unit
@@ -4494,11 +4482,7 @@ def test_REE_costing_fixedOM_pureproductnoprice():
     with pytest.raises(
         AttributeError,
         match="A pure product was included that does not contain a sale price. "
-        "Sale prices exist for the following products: \\['Sc', 'Y', 'La', "
-        "'Ce', 'Pr', 'Nd', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', "
-        "'Yb', 'Lu', 'Sc2O3', 'Y2O3', 'La2O3', 'CeO2', 'Pr6O11', 'Nd2O3', "
-        "'Sm2O3', 'Eu2O3', 'Gd2O3', 'Tb4O7', 'Dy2O3', 'Ho2O3', 'Er2O3', "
-        "'Tm2O3', 'Yb2O3', 'Lu2O3'\\]",
+        "Sale prices exist for the following products: \\['Al', 'Sb', 'As', 'Ba', 'Be', 'Bi', 'Ce', 'Cs', 'Cr', 'Co', 'Dy', 'Er', 'Eu', 'CaF2', 'Gd', 'Ga', 'Ge', 'C', 'Ha', 'Ho', 'In', 'Ir', 'La', 'Li', 'Lu', 'Mg', 'Mn', 'Nd', 'Ni', 'Nb', 'Pd', 'Pt', 'Pr', 'Rh', 'Rb', 'Ru', 'Sm', 'Sc', 'Ta', 'Te', 'Tb', 'Tm', 'Sn', 'Ti', 'W', 'V', 'Yb', 'Y', 'Zn', 'Zr', 'CeO2', 'Dy2O3', 'Eu2O3', 'La2O3', 'Nd2O3', 'Sc2O3', 'Ta2O5', 'Tb4O7', 'TiO2', 'WO3', 'Y2O3', 'Er2O3', 'Ho2O3', 'Gd2O3', 'Lu2O3', 'Pr6O11', 'Sm2O3', 'Tm2O3', 'Yb2O3'\\]",
     ):
         m.fs.costing.build_process_costs(
             pure_product_output_rates={
@@ -4581,11 +4565,7 @@ def test_REE_costing_fixedOM_disallowedlabortype():
     with pytest.raises(
         AttributeError,
         match="A mixed product was included that does not contain a sale price. "
-        "Sale prices exist for the following products: \\['Sc', 'Y', 'La', "
-        "'Ce', 'Pr', 'Nd', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', "
-        "'Yb', 'Lu', 'Sc2O3', 'Y2O3', 'La2O3', 'CeO2', 'Pr6O11', 'Nd2O3', "
-        "'Sm2O3', 'Eu2O3', 'Gd2O3', 'Tb4O7', 'Dy2O3', 'Ho2O3', 'Er2O3', "
-        "'Tm2O3', 'Yb2O3', 'Lu2O3'\\]",
+        "Sale prices exist for the following products: \\['Al', 'Sb', 'As', 'Ba', 'Be', 'Bi', 'Ce', 'Cs', 'Cr', 'Co', 'Dy', 'Er', 'Eu', 'CaF2', 'Gd', 'Ga', 'Ge', 'C', 'Ha', 'Ho', 'In', 'Ir', 'La', 'Li', 'Lu', 'Mg', 'Mn', 'Nd', 'Ni', 'Nb', 'Pd', 'Pt', 'Pr', 'Rh', 'Rb', 'Ru', 'Sm', 'Sc', 'Ta', 'Te', 'Tb', 'Tm', 'Sn', 'Ti', 'W', 'V', 'Yb', 'Y', 'Zn', 'Zr', 'CeO2', 'Dy2O3', 'Eu2O3', 'La2O3', 'Nd2O3', 'Sc2O3', 'Ta2O5', 'Tb4O7', 'TiO2', 'WO3', 'Y2O3', 'Er2O3', 'Ho2O3', 'Gd2O3', 'Lu2O3', 'Pr6O11', 'Sm2O3', 'Tm2O3', 'Yb2O3'\\]",
     ):
         m.fs.costing.build_process_costs(
             pure_product_output_rates={
@@ -4668,20 +4648,20 @@ def test_REE_costing_variableOM_defaults():
 
     # check some cost results
     assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
-    assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1595, rel=1e-4
+    assert value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
+    assert value(m.fs.costing.total_fixed_OM_cost) == pytest.approx(5.5384, rel=1e-4)
+    assert value(m.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
+        1.1388, rel=1e-4
     )
-    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1441, rel=1e-4)
-    assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
+    assert value(m.fs.costing.plant_overhead_cost[0]) == pytest.approx(1.1077, rel=1e-4)
+    assert value(m.fs.costing.other_variable_costs[0]) == pytest.approx(
         0.0000, abs=1e-4
     )
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
+    assert value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
+    assert value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
         0.0000, abs=1e-4
     )
+    assert value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
 
 
 @pytest.mark.component
@@ -4755,20 +4735,20 @@ def test_REE_costing_variableOM_steadystateflowsheet():
 
     # check some cost results
     assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
-    assert pyo.value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
-    assert m.fs.costing.total_fixed_OM_cost.value == pytest.approx(5.7207, rel=1e-4)
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1595, rel=1e-4
+    assert value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
+    assert value(m.fs.costing.total_fixed_OM_cost) == pytest.approx(5.5384, rel=1e-4)
+    assert value(m.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
+        1.1388, rel=1e-4
     )
-    assert m.fs.costing.plant_overhead_cost[0].value == pytest.approx(1.1441, rel=1e-4)
-    assert m.fs.costing.other_variable_costs[0].value == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
-    assert pyo.value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
+    assert value(m.fs.costing.plant_overhead_cost[0]) == pytest.approx(1.1077, rel=1e-4)
+    assert value(m.fs.costing.other_variable_costs[0]) == pytest.approx(
         0.0000, abs=1e-4
     )
-    assert pyo.value(m.fs.costing.additional_waste_cost) == pytest.approx(
+    assert value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
+    assert value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
         0.0000, abs=1e-4
     )
+    assert value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
 
 
 @pytest.mark.unit
@@ -5081,8 +5061,8 @@ def test_REE_costing_variableOM_customprices():
     dt.assert_no_numerical_warnings()
 
     # check some cost results
-    assert m.fs.costing.total_variable_OM_cost[0].value == pytest.approx(
-        1.1595, rel=1e-4
+    assert value(m.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
+        1.12301, rel=1e-4
     )
 
 
@@ -5250,6 +5230,19 @@ recovery_rate_units_dict = {
 }
 
 
+recovery_rate_value_dict = {
+    "base_case": 254324.44799999997,
+    "no_units": 254324.44799999997,
+    "not_mass_units": 254324.44799999997,
+    "not_per_year_units": value(
+        pyunits.convert(
+            254324.44799999997 * pyunits.kg / pyunits.year,
+            to_units=pyunits.kg / pyunits.h,
+        )
+    ),
+}
+
+
 @pytest.mark.parametrize(
     "recovery_rate_units, expectation",
     [
@@ -5270,19 +5263,10 @@ recovery_rate_units_dict = {
                 match="The argument recovery_rate_per_year was passed with units of "
                 "mol/a which cannot be converted to units of mass per year. Please "
                 "ensure that recovery_rate_per_year is passed with rate units "
-                "of mass per year \\(mass/a\\) or dimensionless.",
+                "of mass per year \\(mass/a\\).",
             ),
         ),
-        (
-            "not_per_year_units",
-            pytest.raises(
-                UnitsError,
-                match="The argument recovery_rate_per_year was passed with units of "
-                "kg/h and must be on an anuual basis. Please "
-                "ensure that recovery_rate_per_year is passed with rate units "
-                "of mass per year \\(mass/a\\) or dimensionless.",
-            ),
-        ),
+        ("not_per_year_units", does_not_raise()),
     ],
 )
 @pytest.mark.component
@@ -5313,11 +5297,7 @@ def test_REE_costing_recovery(recovery_rate_units, expectation):
     m.fs.water.fix()
 
     m.fs.recovery_rate_per_year = pyo.Var(
-        initialize=39.3
-        * 0.8025
-        * 8
-        * 3
-        * 336,  # TREO (total rare earth oxide), 80.25% REE in REO
+        initialize=recovery_rate_value_dict[recovery_rate_units],
         units=recovery_rate_units_dict[recovery_rate_units],
     )
     m.fs.recovery_rate_per_year.fix()
@@ -5360,14 +5340,12 @@ def test_REE_costing_recovery(recovery_rate_units, expectation):
 
         # check some cost results
         assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-        assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(
+        assert value(m.fs.costing.recovery_rate_per_year) == pytest.approx(
             254324, rel=1e-4
         )
         assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-        assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(
-            30.416, rel=1e-4
-        )
-        assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+        assert value(m.fs.costing.cost_of_recovery) == pytest.approx(29.6178, rel=1e-4)
+        assert value(m.fs.costing.additional_cost_of_recovery) == pytest.approx(
             0.0000, abs=1e-4
         )
 
@@ -5428,7 +5406,7 @@ def test_REE_costing_recovery_passedinmethodcall():
         ],
         recovery_rate_per_year=39.3
         * 0.8025
-        * pyo.value(m.fs.annual_operating_hours)
+        * value(m.fs.annual_operating_hours)
         * pyunits.kg
         / pyunits.year,
     )
@@ -5451,10 +5429,10 @@ def test_REE_costing_recovery_passedinmethodcall():
 
     # check some cost results
     assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-    assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
+    assert value(m.fs.costing.recovery_rate_per_year) == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-    assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+    assert value(m.fs.costing.cost_of_recovery) == pytest.approx(29.6178, rel=1e-4)
+    assert value(m.fs.costing.additional_cost_of_recovery) == pytest.approx(
         0.0000, abs=1e-4
     )
 
@@ -5553,13 +5531,13 @@ def test_REE_costing_recovery_transportcost(transport_cost_obj):
 
     # check some cost results
     assert str(pyunits.get_units(m.fs.costing.recovery_rate_per_year)) == "kg/a"
-    assert m.fs.costing.recovery_rate_per_year.value == pytest.approx(254324, rel=1e-4)
+    assert value(m.fs.costing.recovery_rate_per_year) == pytest.approx(254324, rel=1e-4)
     assert str(pyunits.get_units(m.fs.costing.cost_of_recovery)) == "USD_2021/kg"
-    assert pyo.value(m.fs.costing.cost_of_recovery) == pytest.approx(30.416, rel=1e-4)
-    assert m.fs.costing.additional_cost_of_recovery.value == pytest.approx(
+    assert value(m.fs.costing.cost_of_recovery) == pytest.approx(29.6178, rel=1e-4)
+    assert value(m.fs.costing.additional_cost_of_recovery) == pytest.approx(
         0.0000, abs=1e-4
     )
-    assert pyo.value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
+    assert value(m.fs.costing.transport_cost) == pytest.approx(0.0028034, rel=1e-4)
 
 
 @pytest.mark.unit
@@ -5640,15 +5618,12 @@ def test_REE_costing_config_defaults():
     assert m.fs.costing.config.debt_expression is None
     assert m.fs.costing.config.operating_inflation_percentage == 3
     assert m.fs.costing.config.revenue_inflation_percentage == 3
-    assert m.fs.costing.config.royalty_charge_percentage_of_revenue == 6.5
-    assert m.fs.costing.config.royalty_expression is None
 
 
 @pytest.mark.unit
 def test_REE_costing_config_kwargs():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.royalty_expression = pyo.Var(initialize=1, units=pyunits.m)
     m.fs.debt_expression = pyo.Var(initialize=1, units=pyunits.m)
     m.fs.costing = QGESSCosting(
         discount_percentage=10,
@@ -5666,8 +5641,6 @@ def test_REE_costing_config_kwargs():
         debt_expression=m.fs.debt_expression,
         operating_inflation_percentage=2,
         revenue_inflation_percentage=2,
-        royalty_charge_percentage_of_revenue=2,
-        royalty_expression=m.fs.royalty_expression,
     )
 
     assert isinstance(m.fs.costing.config, ConfigDict)
@@ -5686,8 +5659,6 @@ def test_REE_costing_config_kwargs():
     assert isinstance(m.fs.costing.config.debt_expression, pyo.Var)
     assert m.fs.costing.config.operating_inflation_percentage == 2
     assert m.fs.costing.config.revenue_inflation_percentage == 2
-    assert m.fs.costing.config.royalty_charge_percentage_of_revenue == 2
-    assert isinstance(m.fs.costing.config.royalty_expression, pyo.Var)
 
 
 @pytest.mark.unit
@@ -6000,8 +5971,8 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
         """
         return (1 - ((1 + g) ** (N)) * ((1 + r) ** (-N))) / (r - g)
 
-    assert pyo.value(m.fs.costing.pv_capital_cost) == pytest.approx(
-        pyo.value(
+    assert value(m.fs.costing.pv_capital_cost) == pytest.approx(
+        value(
             -pyunits.convert(
                 sum(
                     pyunits.convert(
@@ -6101,8 +6072,8 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
         """
         return (1 - ((1 + g) ** (N)) * ((1 + r) ** (-N))) / (r - g)
 
-    assert pyo.value(m.fs.costing.pv_capital_cost) == pytest.approx(
-        pyo.value(
+    assert value(m.fs.costing.pv_capital_cost) == pytest.approx(
+        value(
             -pyunits.convert(
                 sum(
                     pyunits.convert(
@@ -6201,7 +6172,7 @@ def test_REE_costing_not_has_capital_expenditure_period_solve():
         """
         return (1 - ((1 + g) ** (N)) * ((1 + r) ** (-N))) / (r - g)
 
-    assert pyo.value(m.fs.costing.pv_capital_cost) == pytest.approx(-100, rel=1e-4)
+    assert value(m.fs.costing.pv_capital_cost) == pytest.approx(-100, rel=1e-4)
 
 
 @pytest.mark.unit
@@ -6304,87 +6275,6 @@ def test_REE_costing_assert_Pyomo_object(assert_cost_obj, expectation):
 
 
 @pytest.mark.unit
-def test_REE_costing_royalty_expression():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=False)
-
-    m.fs.total_capital_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
-    m.fs.annual_operating_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
-    m.fs.annual_revenue = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
-    m.fs.cost_year = "2021"
-
-    # suppose royalties are 6.5% of revenue (default), plus $100,000 flat fee
-    m.fs.royalty_formula = pyo.Expression(
-        expr=6.5 / 100 * m.fs.annual_revenue + 0.1 * pyunits.MUSD_2021
-    )
-
-    m.fs.costing = QGESSCosting(
-        discount_percentage=10,
-        plant_lifetime=20,
-        total_capital_cost=m.fs.total_capital_cost,
-        annual_operating_cost=m.fs.annual_operating_cost,
-        annual_revenue=m.fs.annual_revenue,
-        cost_year=m.fs.cost_year,
-        royalty_expression=m.fs.royalty_formula,
-    )
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=False,
-        calculate_NPV=True,
-    )
-
-    assert isinstance(m.fs.costing.pv_royalties[None], ScalarExpression)
-    assert not hasattr(m.fs.costing, "pv_royalties_constraint")
-    assert m.fs.costing.pv_royalties[None].expr == m.fs.royalty_formula.expr
-
-
-@pytest.mark.component
-def test_REE_costing_royalty_expression_solve():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=False)
-
-    m.fs.total_capital_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
-    m.fs.total_capital_cost.fix()
-    m.fs.annual_operating_cost = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
-    m.fs.annual_operating_cost.fix()
-    m.fs.annual_revenue = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
-    m.fs.annual_revenue.fix()
-    m.fs.cost_year = "2021"
-
-    # suppose royalties are 6.5% of revenue (default), plus $100,000 flat fee
-    m.fs.royalty_formula = pyo.Expression(
-        expr=6.5 / 100 * m.fs.annual_revenue + 0.1 * pyunits.MUSD_2021
-    )
-
-    m.fs.costing = QGESSCosting(
-        discount_percentage=10,
-        plant_lifetime=20,
-        total_capital_cost=m.fs.total_capital_cost,
-        annual_operating_cost=m.fs.annual_operating_cost,
-        annual_revenue=m.fs.annual_revenue,
-        cost_year=m.fs.cost_year,
-        royalty_expression=m.fs.royalty_formula,
-    )
-
-    m.fs.costing.build_process_costs(
-        fixed_OM=False,
-        calculate_NPV=True,
-    )
-
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
-    dt.assert_no_structural_warnings()
-
-    solver = get_solver()
-    results = solver.solve(m, tee=True)
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    assert pyo.value(m.fs.costing.pv_royalties[None]) == pytest.approx(
-        pyo.value(m.fs.royalty_formula), rel=1e-4
-    )
-
-
-@pytest.mark.unit
 def test_REE_costing_debt_expression():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -6460,8 +6350,8 @@ def test_REE_costing_debt_expression_solve():
     assert_optimal_termination(results)
     dt.assert_no_numerical_warnings()
 
-    assert pyo.value(m.fs.costing.loan_debt[None]) == pytest.approx(
-        pyo.value(m.fs.debt_formula), rel=1e-4
+    assert value(m.fs.costing.loan_debt[None]) == pytest.approx(
+        value(m.fs.debt_formula), rel=1e-4
     )
 
 
@@ -6491,4 +6381,126 @@ def test_REE_costing_economy_of_numbers():
     assert_optimal_termination(results)
     dt.assert_no_numerical_warnings()
 
-    assert pyo.value(m.fs.costing.cost_NOAK) == pytest.approx(36.574, rel=1e-4)
+    assert value(m.fs.costing.cost_NOAK) == pytest.approx(36.574, rel=1e-4)
+
+
+@pytest.mark.component
+def test_REE_costing_consider_taxes():
+
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting(
+        # arguments for NPV
+        discount_percentage=10,  # percent
+        plant_lifetime=20,  # years
+        has_capital_expenditure_period=True,
+        capital_expenditure_percentages=[10, 60, 30],
+        capital_escalation_percentage=3.6,
+        capital_loan_interest_percentage=6,
+        capital_loan_repayment_period=10,
+        debt_percentage_of_CAPEX=50,
+        operating_inflation_percentage=3,
+        revenue_inflation_percentage=3,
+    )
+
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=True,
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
+        variable_OM=True,
+        feed_input=m.fs.feed_input,
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
+        consider_taxes=True,
+        calculate_NPV=True,
+    )
+
+    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    # check that some objects are built as expected
+    assert hasattr(m.fs.costing, "feed_input_rate")
+    assert hasattr(m.fs.costing, "total_fixed_OM_cost")
+    assert hasattr(m.fs.costing, "total_variable_OM_cost")
+    assert hasattr(m.fs.costing, "plant_overhead_cost")
+    assert hasattr(m.fs.costing, "other_variable_costs")
+    assert hasattr(m.fs.costing, "land_cost")
+    assert hasattr(m.fs.costing, "additional_chemicals_cost")
+    assert hasattr(m.fs.costing, "additional_waste_cost")
+    assert not hasattr(m.fs.costing, "cost_of_recovery")
+
+    assert hasattr(m.fs.costing, "income_tax_percentage")
+    assert hasattr(m.fs.costing, "mineral_depletion_percentage")
+    assert hasattr(m.fs.costing, "production_incentive_percentage")
+    assert hasattr(m.fs.costing, "min_net_tax_owed")
+    assert hasattr(m.fs.costing, "net_tax_owed")
+    assert hasattr(m.fs.costing, "income_tax")
+    assert hasattr(m.fs.costing, "additional_tax_credit")
+    assert hasattr(m.fs.costing, "additional_tax_owed")
+    assert hasattr(m.fs.costing, "pv_taxes")
+    assert hasattr(m.fs.costing, "npv")
+
+    assert isinstance(m.fs.costing.mineral_depletion_charge, pyo.Expression)
+    assert isinstance(m.fs.costing.production_incentive_charge, pyo.Expression)
+    assert isinstance(m.fs.costing.income_tax_eq, pyo.Constraint)
+    assert isinstance(m.fs.costing.net_tax_owed_eq, pyo.Constraint)
+    assert isinstance(m.fs.costing.pv_taxes_constraint, pyo.Constraint)
+    assert isinstance(m.fs.costing.npv_constraint, pyo.Constraint)
+
+    # check some cost results
+    assert str(pyunits.get_units(m.fs.costing.feed_input_rate)) == "ton/h"
+    assert value(m.fs.costing.feed_input_rate) == pytest.approx(500.00, rel=1e-4)
+    assert value(m.fs.costing.total_fixed_OM_cost) == pytest.approx(5.5384, rel=1e-4)
+    assert value(m.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
+        1.1388, rel=1e-4
+    )
+    assert value(m.fs.costing.plant_overhead_cost[0]) == pytest.approx(1.1077, rel=1e-4)
+    assert value(m.fs.costing.other_variable_costs[0]) == pytest.approx(
+        0.0000, abs=1e-4
+    )
+    assert value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
+    assert value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
+        0.0000, abs=1e-4
+    )
+    assert value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
+    assert value(m.fs.costing.income_tax) == pytest.approx(5.303479, abs=1e-4)
+    assert value(m.fs.costing.net_tax_owed) == pytest.approx(2.709606, abs=1e-4)
+    assert value(m.fs.costing.pv_taxes) == pytest.approx(-17.33163, abs=1e-4)
+    assert value(m.fs.costing.npv) == pytest.approx(158.08158, abs=1e-4)

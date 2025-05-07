@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -10,50 +10,44 @@ Demonstration flowsheet for EvaporationPond unit model.
 Authors: Andrew Lee
 """
 
-import pytest
-
 from pyomo.environ import (
-    assert_optimal_termination,
     ConcreteModel,
     Constraint,
     Param,
     Set,
+    Var,
+    assert_optimal_termination,
     units,
     value,
-    Var,
 )
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import (
     Component,
-    declare_process_block_class,
     FlowsheetBlock,
     MaterialFlowBasis,
     Phase,
     PhysicalParameterBlock,
+    ReactionBlockBase,
+    ReactionBlockDataBase,
     ReactionParameterBlock,
     StateBlock,
     StateBlockData,
-    ReactionBlockBase,
-    ReactionBlockDataBase,
+    declare_process_block_class,
 )
-
-from idaes.core.util import DiagnosticsToolbox
-from idaes.core.initialization import (
-    InitializationStatus,
-)
+from idaes.core.initialization import InitializationStatus
 from idaes.core.solvers import get_solver
+from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.exceptions import ConfigurationError, PropertyPackageError
+
+import pytest
 
 from prommis.evaporation_pond.evaporation_pond import (
     EvaporationPond,
     EvaporationPondInitializer,
 )
 from prommis.evaporation_pond.tests.example_properties import BrineParameters
-from prommis.evaporation_pond.tests.example_reactions import (
-    BrineReactionParameters,
-)
-
+from prommis.evaporation_pond.tests.example_reactions import BrineReactionParameters
 
 # TODO: Conversion of bases?
 

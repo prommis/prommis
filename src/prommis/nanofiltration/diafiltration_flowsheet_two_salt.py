@@ -21,11 +21,12 @@ from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-from idaes.models.unit_models import Feed, Product
+from idaes.models.unit_models import Feed
 
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 
+from prommis.nanofiltration.diafiltration_product import DiafiltrationProduct
 from prommis.nanofiltration.diafiltration_solute_feed_properties import (
     SoluteFeedParameter,
 )
@@ -54,16 +55,26 @@ def main():
     m.fs.feed_block = Feed(property_package=m.fs.feed_properties)
     m.fs.diafiltrate_block = Feed(property_package=m.fs.feed_properties)
 
+    # define the number of finite elements on flowsheet-level
+    number_x_elements = 10
+    number_z_elements = 5
+
     # add the membrane unit model
     m.fs.membrane = TwoSaltDiafiltration(
         property_package=m.fs.properties,
-        NFEx=10,
-        NFEz=5,
+        NFEx=number_x_elements,
+        NFEz=number_z_elements,
     )
 
     # add product blocks for retentate and permeate
-    m.fs.retentate_block = Product(property_package=m.fs.product_properties)
-    m.fs.permeate_block = Product(property_package=m.fs.product_properties)
+    m.fs.retentate_block = DiafiltrationProduct(
+        property_package=m.fs.product_properties,
+        NFEx=number_x_elements,
+    )
+    m.fs.permeate_block = DiafiltrationProduct(
+        property_package=m.fs.product_properties,
+        NFEx=number_x_elements,
+    )
 
     # fix the degrees of freedom to their default values
     fix_variables(m)
@@ -192,16 +203,16 @@ def plot_results(m):
     for x_val in m.fs.membrane.x_bar:
         x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
         conc_ret_lith.append(
-            value(m.fs.membrane.retentate_conc_mass_comp[0, "Li", x_val])
+            value(m.fs.membrane.retentate_conc_mass_comp[0, x_val, "Li"])
         )
         conc_perm_lith.append(
-            value(m.fs.membrane.permeate_conc_mass_comp[0, "Li", x_val])
+            value(m.fs.membrane.permeate_conc_mass_comp[0, x_val, "Li"])
         )
         conc_ret_cob.append(
-            value(m.fs.membrane.retentate_conc_mass_comp[0, "Co", x_val])
+            value(m.fs.membrane.retentate_conc_mass_comp[0, x_val, "Co"])
         )
         conc_perm_cob.append(
-            value(m.fs.membrane.permeate_conc_mass_comp[0, "Co", x_val])
+            value(m.fs.membrane.permeate_conc_mass_comp[0, x_val, "Co"])
         )
 
         water_flux.append(value(m.fs.membrane.volume_flux_water[x_val]))
@@ -211,32 +222,32 @@ def plot_results(m):
             (
                 1
                 - (
-                    value(m.fs.membrane.permeate_conc_mass_comp[0, "Li", x_val])
-                    / value(m.fs.membrane.retentate_conc_mass_comp[0, "Li", x_val])
+                    value(m.fs.membrane.permeate_conc_mass_comp[0, x_val, "Li"])
+                    / value(m.fs.membrane.retentate_conc_mass_comp[0, x_val, "Li"])
                 )
             )
             * 100
         )
         lithium_sieving.append(
             (
-                value(m.fs.membrane.permeate_conc_mass_comp[0, "Li", x_val])
-                / value(m.fs.membrane.retentate_conc_mass_comp[0, "Li", x_val])
+                value(m.fs.membrane.permeate_conc_mass_comp[0, x_val, "Li"])
+                / value(m.fs.membrane.retentate_conc_mass_comp[0, x_val, "Li"])
             )
         )
         cobalt_rejection.append(
             (
                 1
                 - (
-                    value(m.fs.membrane.permeate_conc_mass_comp[0, "Co", x_val])
-                    / value(m.fs.membrane.retentate_conc_mass_comp[0, "Co", x_val])
+                    value(m.fs.membrane.permeate_conc_mass_comp[0, x_val, "Co"])
+                    / value(m.fs.membrane.retentate_conc_mass_comp[0, x_val, "Co"])
                 )
             )
             * 100
         )
         cobalt_sieving.append(
             (
-                value(m.fs.membrane.permeate_conc_mass_comp[0, "Co", x_val])
-                / value(m.fs.membrane.retentate_conc_mass_comp[0, "Co", x_val])
+                value(m.fs.membrane.permeate_conc_mass_comp[0, x_val, "Co"])
+                / value(m.fs.membrane.retentate_conc_mass_comp[0, x_val, "Co"])
             )
         )
 

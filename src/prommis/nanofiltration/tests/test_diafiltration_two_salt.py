@@ -6,6 +6,8 @@
 #####################################################################################################
 """
 Diagnostic tests for the two-salt diafiltration unit model.
+
+Author: Molly Dougher
 """
 
 from pyomo.environ import (
@@ -343,9 +345,9 @@ class TestDiafiltrationTwoSalt(object):
             + value(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume[0])
         )
 
-        assert diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Li", 0].fixed
+        assert diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, 0, "Li"].fixed
         assert value(
-            diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Li", 0]
+            diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, 0, "Li"]
         ) == (
             (
                 value(diafiltration_two_salt.fs.unit.feed_flow_volume[0])
@@ -361,9 +363,9 @@ class TestDiafiltrationTwoSalt(object):
             )
         )
 
-        assert diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Co", 0].fixed
+        assert diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, 0, "Co"].fixed
         assert value(
-            diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Co", 0]
+            diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, 0, "Co"]
         ) == (
             (
                 value(diafiltration_two_salt.fs.unit.feed_flow_volume[0])
@@ -400,17 +402,17 @@ class TestDiafiltrationTwoSalt(object):
         ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
         assert diafiltration_two_salt.fs.unit.d_retentate_conc_mass_comp_dx[
-            0, "Li", 0
+            0, 0, "Li"
         ].fixed
         assert value(
-            diafiltration_two_salt.fs.unit.d_retentate_conc_mass_comp_dx[0, "Li", 0]
+            diafiltration_two_salt.fs.unit.d_retentate_conc_mass_comp_dx[0, 0, "Li"]
         ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
         assert diafiltration_two_salt.fs.unit.d_retentate_conc_mass_comp_dx[
-            0, "Co", 0
+            0, 0, "Co"
         ].fixed
         assert value(
-            diafiltration_two_salt.fs.unit.d_retentate_conc_mass_comp_dx[0, "Co", 0]
+            diafiltration_two_salt.fs.unit.d_retentate_conc_mass_comp_dx[0, 0, "Co"]
         ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
         assert diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx[0, 0].fixed
@@ -488,19 +490,19 @@ class TestDiafiltrationTwoSalt(object):
             ],
             "lithium_retentate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Li", 1]
+                    diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, 1, "Li"]
                 ),
                 1.3307692307692314,
             ],
             "cobalt_retentate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Co", 1]
+                    diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, 1, "Co"]
                 ),
                 13.123076923076928,
             ],
             "chlorine_retentate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, "Cl", 1]
+                    diafiltration_two_salt.fs.unit.retentate_conc_mass_comp[0, 1, "Cl"]
                 ),
                 22.585349051347965,
             ],
@@ -510,19 +512,19 @@ class TestDiafiltrationTwoSalt(object):
             ],
             "lithium_permeate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Li", 1]
+                    diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, 1, "Li"]
                 ),
                 1.3307692307692307,
             ],
             "cobalt_permeate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Co", 1]
+                    diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, 1, "Co"]
                 ),
                 13.12307692307693,
             ],
             "chlorine_permeate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, "Cl", 1]
+                    diafiltration_two_salt.fs.unit.permeate_conc_mass_comp[0, 1, "Cl"]
                 ),
                 22.58534905134796,
             ],

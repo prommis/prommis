@@ -10,7 +10,7 @@ Property package for the products from the multi-salt diafiltration membrane.
 Author: Molly Dougher
 """
 
-from pyomo.environ import Set, Var, units
+from pyomo.environ import Var, units
 
 from idaes.core import (
     Component,
@@ -22,8 +22,6 @@ from idaes.core import (
     declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
-
-import numpy as np
 
 
 @declare_process_block_class("SoluteProductParameter")
@@ -48,16 +46,6 @@ class SoluteProductParameterData(PhysicalParameterBlock):
 
         # add anions
         self.Cl = Component()
-
-        # define length scale
-        self.nfe = 10
-
-        def discretize_x(nfe):
-            x_vals = np.arange(0, 1 + (1 / nfe), (1 / nfe))
-            return x_vals
-
-        x_vals = discretize_x(self.nfe)
-        self.x = Set(initialize=np.round((x_vals), 1))
 
         self._state_block_class = SoluteProductStateBlock
 
@@ -104,14 +92,12 @@ class SoluteProductStateBlockData(StateBlockData):
         super().build()
 
         self.flow_vol = Var(
-            self.params.x,
             units=units.m**3 / units.h,
             initialize=10,
             bounds=(1e-20, None),
         )
         self.conc_mass_comp = Var(
             self.component_list,
-            self.params.x,
             units=units.kg / units.m**3,
             initialize=1e-5,
             bounds=(1e-20, None),

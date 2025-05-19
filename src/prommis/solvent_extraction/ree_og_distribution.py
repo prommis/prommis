@@ -173,7 +173,7 @@ class REESolExOgStateBlockData(StateBlockData):
         self.temperature = Var(
             domain=Reals,
             initialize=298.15,
-            bounds=(298.15, None),
+            bounds=(298.1, None),
             doc="State temperature [K]",
             units=units.K,
         )

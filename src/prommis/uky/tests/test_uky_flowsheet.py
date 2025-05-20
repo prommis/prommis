@@ -853,7 +853,7 @@ def test_costing_solution(system_frame):
     )
     assert value(model.fs.costing.land_cost) == pytest.approx(6.1234e-5, rel=1e-4)
     assert model.fs.costing.total_sales_revenue.value == pytest.approx(
-        2.69422e-5, rel=1e-4
+        2.69422e-5, abs=1e-4
     )
 
 

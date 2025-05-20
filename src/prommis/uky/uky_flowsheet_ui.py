@@ -27,7 +27,6 @@ from prommis.uky.uky_flowsheet import (
     build,
     initialize_system,
     set_operating_conditions,
-    set_partition_coefficients,
     set_scaling,
     solve_system,
 )
@@ -382,7 +381,6 @@ def build_flowsheet(build_options=None, **kwargs):
     """
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
-    set_partition_coefficients(m)
     set_operating_conditions(m)
     set_scaling(m)
     scaling = pyo.TransformationFactory("core.scale_model")
@@ -401,7 +399,6 @@ def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
 
     m = build()
-    set_partition_coefficients(m)
 
     set_operating_conditions(m)
 

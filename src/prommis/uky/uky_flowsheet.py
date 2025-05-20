@@ -2964,4 +2964,3 @@ def display_costing(m):
 
 if __name__ == "__main__":
     m, results = main()
-    m.fs.precipitator.cv_aqueous.properties_out[0].display()

@@ -87,6 +87,7 @@ from idaes.core import (
     declare_process_block_class,
     useDefault,
 )
+from idaes.core.initialization import ModularInitializerBase
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.constants import Constants
 from idaes.core.initialization import ModularInitializerBase

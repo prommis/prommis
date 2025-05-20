@@ -86,6 +86,22 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Y2O3",
     }
 
+    # Organic components
+    comp_org = {
+        "Al_o",
+        "Ca_o",
+        "Ce_o",
+        "Dy_o",
+        "Fe_o",
+        "Gd_o",
+        "La_o",
+        "Nd_o",
+        "Pr_o",
+        "Sc_o",
+        "Sm_o",
+        "Y_o",
+    }
+
     # Liquid chemical components
     comp_liq = {"H", "H2O", "HSO4", "SO4"}
 
@@ -296,6 +312,8 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             if stype == "rougher" and ltype == "aqueous":
                 # add aqueous components for the aqueous rougher
                 complist = comp.union(comp_liq)
+            elif ltype == "organic":
+                complist = comp_org
             else:
                 complist = comp
             # export the output for each component

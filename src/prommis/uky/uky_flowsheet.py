@@ -143,7 +143,6 @@ from pyomo.environ import (
     Constraint,
     Expression,
     Param,
-    SolverFactory,
     Suffix,
     TransformationFactory,
     Var,
@@ -164,6 +163,7 @@ from idaes.core import (
 )
 from idaes.core.initialization import BlockTriangularizationInitializer
 from idaes.core.scaling.scaling_base import ScalerBase
+from idaes.core.scaling import CustomScalerBase, ConstraintScalingScheme
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
@@ -199,11 +199,11 @@ from prommis.precipitate.precipitate_solids_properties import PrecipitateParamet
 from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.translator_leach_precip import TranslatorLeachPrecip
 from prommis.solvent_extraction.solvent_extraction import (
     SolventExtraction,
     SolventExtractionInitializer,
 )
+from prommis.solvent_extraction.translator_leach_precip import TranslatorLeachPrecip
 from prommis.solvent_extraction.solvent_extraction_reaction_package import SolventExtractionReactions
 from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
@@ -256,7 +256,6 @@ def main():
     add_costing(m)
 
     # diagnostics, initialize, and solve
-
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 
@@ -323,7 +322,7 @@ def build():
     m.fs.leach_filter_cake = Product(property_package=m.fs.coal)
     m.fs.leach_filter_cake_liquid = Product(property_package=m.fs.leach_soln)
     # ----------------------------------------------------------------------------------------------------------------
-    # Solvent extraction property and unit models
+    # Solvent extraction property, reaction and unit models
     m.fs.prop_o = REESolExOgParameters()
     m.fs.reaxn = SolventExtractionReactions()
 
@@ -574,7 +573,8 @@ def build():
         outlet_property_package=m.fs.properties_aq,
     )
 
-    # -----------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
+
     # UKy flowsheet connections
     m.fs.leaching_sol_feed = Arc(
         source=m.fs.leach_solid_feed.outlet, destination=m.fs.leach.solid_inlet
@@ -708,7 +708,6 @@ def build():
     m.fs.sl_sep2_solid_inlet = Arc(
         source=m.fs.translator_precipitate_to_leaching.outlet, destination=m.fs.sl_sep2.liquid_inlet
     )
-
     m.fs.sl_sep2_solid_outlet = Arc(
         source=m.fs.sl_sep2.solid_outlet, destination=m.fs.roaster.solid_inlet
     )
@@ -751,14 +750,54 @@ def set_scaling(m):
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
     sb = ScalerBase()
+    csb = CustomScalerBase()
+
+    # Apply scaling to constraints
+    csb.scale_constraint_by_nominal_value(
+        m.fs.leach.mscontactor.heterogeneous_reactions[0, 1].reaction_rate_eq["Sc2O3"],
+        scheme=ConstraintScalingScheme.inverseMaximum,
+        overwrite=False,
+    )
+    csb.scale_constraint_by_nominal_value(
+        m.fs.leach.mscontactor.heterogeneous_reactions[0, 2].reaction_rate_eq["Sc2O3"],
+        scheme=ConstraintScalingScheme.inverseMaximum,
+        overwrite=False,
+    )
+    csb.scale_constraint_by_nominal_value(
+        m.fs.solex_rougher_load.distribution_extent_constraint[0, 1, "Ca", "Ca_o"],
+        scheme=ConstraintScalingScheme.inverseMaximum,
+        overwrite=False,
+    )
+    csb.scale_constraint_by_nominal_value(
+        m.fs.solex_rougher_scrub.distribution_extent_constraint[0, 1, "Al", "Al_o"],
+        scheme=ConstraintScalingScheme.inverseMaximum,
+        overwrite=False,
+    )
+    csb.scale_constraint_by_nominal_value(
+        m.fs.roaster.energy_balance_eqn[0],
+        scheme=ConstraintScalingScheme.inverseMaximum,
+        overwrite=False,
+    )
+    csb.scale_constraint_by_nominal_value(
+        m.fs.precipitator.aqueous_depletion[0, "H2O"],
+        scheme=ConstraintScalingScheme.inverseMaximum,
+        overwrite=False,
+    )
+
+    # Apply scaling to variables
+    sb.set_variable_scaling_factor(
+        m.fs.roaster.heat_duty[0],
+        1e-2)
 
     for var in m.fs.component_data_objects(Var, descend_into=True):
         if "temperature" in var.name:
-            sb.set_variable_scaling_factor(var, 1e-2)
+            sb.set_variable_scaling_factor(var, 1e-2, overwrite=True)
         if "pressure" in var.name:
             sb.set_variable_scaling_factor(var, 1e-5)
         if "flow_mol" in var.name:
             sb.set_variable_scaling_factor(var, 1e-3)
+        if "conc_mass_comp" in var.name:
+            sb.set_variable_scaling_factor(var, 1e0, overwrite=True)
 
     return m
 
@@ -890,7 +929,7 @@ def set_operating_conditions(m):
     m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].fix(dehpa_conc)
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"].fix(kerosene_conc)
 
-    m.fs.acid_feed1.flow_vol.fix(0.09)
+    m.fs.acid_feed1.flow_vol.fix(90)  # Increased by 1000x from REESim
     m.fs.acid_feed1.properties[0.0].pressure.fix(P_atm)
     m.fs.acid_feed1.properties[0.0].temperature.fix(Temp_room)
     m.fs.acid_feed1.conc_mass_comp[0, "H2O"].fix(1000000)
@@ -911,7 +950,7 @@ def set_operating_conditions(m):
     m.fs.acid_feed1.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Dy"].fix(eps)
 
-    m.fs.acid_feed2.flow_vol.fix(0.09)
+    m.fs.acid_feed2.flow_vol.fix(9)
     m.fs.acid_feed2.properties[0.0].pressure.fix(P_atm)
     m.fs.acid_feed2.properties[0.0].temperature.fix(Temp_room)
     m.fs.acid_feed2.conc_mass_comp[0, "H2O"].fix(1000000)
@@ -996,7 +1035,7 @@ def set_operating_conditions(m):
     m.fs.sl_sep1.split.retained_state[0.0].pressure.fix(P_atm)
     m.fs.sl_sep1.split.retained_state[0.0].temperature.fix(Temp_room)
 
-    m.fs.sl_sep2.liquid_recovery.fix(0.95)
+    m.fs.sl_sep2.liquid_recovery.fix(0.9)
     m.fs.sl_sep2.split.recovered_state[0.0].pressure.fix(P_atm)
     m.fs.sl_sep2.split.recovered_state[0.0].temperature.fix(Temp_room)
     m.fs.sl_sep2.split.retained_state[0.0].pressure.fix(P_atm)
@@ -1090,109 +1129,215 @@ def initialize_system(m):
         print(o[0].name)
 
     tear_guesses1 = {
-        "flow_vol": {0: 747.99},
+        "flow_vol": {0: 866.06},
         "conc_mass_comp": {
-            (0, "Al"): 180.84,
-            (0, "Ca"): 28.93,
-            (0, "Ce"): 5.48,
-            (0, "Dy"): 4.46e-11,
-            (0, "Fe"): 269.98,
-            (0, "Gd"): 2.60e-7,
-            (0, "H"): 20.06,
+            (0, "Al"): 207.46,
+            (0, "Ca"): 40.23,
+            (0, "Ce"): 2.11,
+            (0, "Cl"): 158.36,
+            (0, "Dy"): 1.13e-2,
+            (0, "Fe"): 292.56,
+            (0, "Gd"): 0.24,
+            (0, "H"): 13.66,
             (0, "H2O"): 1000000,
-            (0, "HSO4"): 963.06,
-            (0, "Cl"): 1e-8,
-            (0, "La"): 0.0037,
-            (0, "Nd"): 1.81e-7,
-            (0, "Pr"): 3.65e-6,
-            (0, "SO4"): 486.24,
-            (0, "Sc"): 4.17e-11,
-            (0, "Sm"): 6.30e-10,
-            (0, "Y"): 7.18e-11,
+            (0, "HSO4"): 1940.93,
+            (0, "La"): 0.76,
+            (0, "Nd"): 1.06,
+            (0, "Pr"): 0.26,
+            (0, "SO4"): 1438.92,
+            (0, "Sc"): 2.07e-3,
+            (0, "Sm"): 0.10,
+            (0, "Y"): 2.02e-2,
         },
     }
     tear_guesses2 = {
         "flow_vol": {0: 62.01},
         "conc_mass_comp": {
-            (0, "Al_o"): 1e-9,
-            (0, "Ca_o"): 1e-9,
-            (0, "Ce_o"): 1e-4,
-            (0, "Dy_o"): 1e-7,
-            (0, "Fe_o"): 1e-7,
-            (0, "Gd_o"): 1e-6,
-            (0, "La_o"): 1e-5,
-            (0, "Nd_o"): 1e-4,
-            (0, "Pr_o"): 1e-6,
-            (0, "Sc_o"): 250,
-            (0, "Sm_o"): 1e-6,
-            (0, "Y_o"): 1e-6,
-            (0, "DEHPA"): 9.758e5,
-            (0, "Kerosene"): 8.20e5,
+            (0, "Al_o"): 0.048,
+            (0, "Ca_o"): 1.98e-2,
+            (0, "Ce_o"): 5.71e-3,
+            (0, "Dy_o"): 1.077,
+            (0, "Fe_o"): 1.954,
+            (0, "Gd_o"): 0.14,
+            (0, "La_o"): 4.03e-3,
+            (0, "Nd_o"): 3.37e-3,
+            (0, "Pr_o"): 1.04e-3,
+            (0, "Sc_o"): 1.74,
+            (0, "Sm_o"): 4.91e-3,
+            (0, "Y_o"): 4.17,
+            (0, "DEHPA"): 9.7e5,
+            (0, "Kerosene"): 8.2e5,
         },
     }
     tear_guesses3 = {
-        "flow_vol": {0: 520},
+        "flow_vol": {0: 623.07},
         "conc_mass_comp": {
-            (0, "Al"): 430,
-            (0, "Ca"): 99,
-            (0, "Ce"): 2,
-            (0, "Dy"): 0.01,
-            (0, "Fe"): 660,
-            (0, "Gd"): 0.1,
-            (0, "H"): 2,
+            (0, "Al"): 320.46,
+            (0, "Ca"): 62.14,
+            (0, "Ce"): 3.26,
+            (0, "Cl"): 192.63,
+            (0, "Dy"): 4.6e-2,
+            (0, "Fe"): 452.28,
+            (0, "Gd"): 0.40,
+            (0, "H"): 2.92,
             (0, "H2O"): 1000000,
-            (0, "HSO4"): 900,
-            (0, "Cl"): 0.1,
-            (0, "La"): 1,
-            (0, "Nd"): 1,
-            (0, "Pr"): 0.1,
-            (0, "SO4"): 4000,
-            (0, "Sc"): 0.05,
-            (0, "Sm"): 0.07,
-            (0, "Y"): 0.1,
+            (0, "HSO4"): 732.71,
+            (0, "La"): 1.18,
+            (0, "Nd"): 1.63,
+            (0, "Pr"): 0.41,
+            (0, "SO4"): 2543.95,
+            (0, "Sc"): 2.25e-2,
+            (0, "Sm"): 0.16,
+            (0, "Y"): 0.11,
         },
     }
     tear_guesses4 = {
-        "flow_vol": {0: 64},
+        "flow_vol": {0: 62},
         "conc_mass_comp": {
-            (0, "Al_o"): 1e-9,
-            (0, "Ca_o"): 1e-9,
-            (0, "Ce_o"): 1e-5,
-            (0, "Dy_o"): 1e-7,
-            (0, "Fe_o"): 1e-7,
-            (0, "Gd_o"): 1e-6,
-            (0, "La_o"): 1e-5,
-            (0, "Nd_o"): 1e-5,
-            (0, "Pr_o"): 1e-6,
-            (0, "Sc_o"): 321.34,
-            (0, "Sm_o"): 1e-6,
-            (0, "Y_o"): 1e-6,
-            (0, "DEHPA"): 9.758e5,
-            (0, "Kerosene"): 8.20e5,
+            (0, "Al_o"): 3.64e-3,
+            (0, "Ca_o"): 2.13e-3,
+            (0, "Ce_o"): 5.93e-4,
+            (0, "Dy_o"): 0.33,
+            (0, "Fe_o"): 0.75,
+            (0, "Gd_o"): 4.00e-2,
+            (0, "La_o"): 4.08e-4,
+            (0, "Nd_o"): 3.76e-4,
+            (0, "Pr_o"): 1.47e-4,
+            (0, "Sc_o"): 3.97e-3,
+            (0, "Sm_o"): 7.87e-4,
+            (0, "Y_o"): 1.03,
+            (0, "DEHPA"): 9.8e5,
+            (0, "Kerosene"): 8.2e5,
         },
     }
     tear_guesses5 = {
-        "flow_vol": {0: 5.7},
+        "flow_vol": {0: 16.70},
         "conc_mass_comp": {
-            (0, "Al"): 5,
-            (0, "Ca"): 16,
-            (0, "Ce"): 346,
-            (0, "Dy"): 6,
-            (0, "Fe"): 1,
-            (0, "Gd"): 22,
-            (0, "H"): 14,
+            (0, "Al"): 2.42,
+            (0, "Ca"): 0.68,
+            (0, "Ce"): 0.16,
+            (0, "Cl"): 1438.56,
+            (0, "Dy"): 0.64,
+            (0, "Fe"): 22.67,
+            (0, "Gd"): 1.01,
+            (0, "H"): 39.81,
             (0, "H2O"): 1000000,
-            (0, "HSO4"): 1e-7,
-            (0, "Cl"): 1400,
-            (0, "La"): 160,
-            (0, "Nd"): 121,
-            (0, "Pr"): 30,
-            (0, "SO4"): 1e-7,
-            (0, "Sc"): 149.2,
-            (0, "Sm"): 13,
-            (0, "Y"): 18,
+            (0, "HSO4"): 2.88e-6,
+            (0, "La"): 0.13,
+            (0, "Nd"): 8.52e-2,
+            (0, "Pr"): 2.10e-2,
+            (0, "SO4"): 2.54e-6,
+            (0, "Sc"): 1.65e-3,
+            (0, "Sm"): 7.88e-2,
+            (0, "Y"): 1.17,
         },
     }
+
+
+    # tear_guesses1 = {
+    #     "flow_vol": {0: 625.69},
+    #     "conc_mass_comp": {
+    #         (0, "Al"): 264.91,
+    #         (0, "Ca"): 67.99,
+    #         (0, "Ce"): 3.23,
+    #         (0, "Cl"): 43.66,
+    #         (0, "Dy"): 4.57e-2,
+    #         (0, "Fe"): 426.21,
+    #         (0, "Gd"): 0.32,
+    #         (0, "H"): 14.15,
+    #         (0, "H2O"): 1000000,
+    #         (0, "HSO4"): 2726.90,
+    #         (0, "La"): 1.22,
+    #         (0, "Nd"): 1.58,
+    #         (0, "Pr"): 0.41,
+    #         (0, "SO4"): 1951.83,
+    #         (0, "Sc"): 5.07e-2,
+    #         (0, "Sm"): 0.16,
+    #         (0, "Y"): 5.14e-3,
+    #     },
+    # }
+    # tear_guesses2 = {
+    #     "flow_vol": {0: 62.01},
+    #     "conc_mass_comp": {
+    #         (0, "Al_o"): 0.49,
+    #         (0, "Ca_o"): 3.79,
+    #         (0, "Ce_o"): 0.91,
+    #         (0, "Dy_o"): 15.68,
+    #         (0, "Fe_o"): 83.46,
+    #         (0, "Gd_o"): 1.77,
+    #         (0, "La_o"): 0.58,
+    #         (0, "Nd_o"): 0.46,
+    #         (0, "Pr_o"): 0.12,
+    #         (0, "Sc_o"): 50.03,
+    #         (0, "Sm_o"): 0.23,
+    #         (0, "Y_o"): 3.72,
+    #         (0, "DEHPA"): 9.7e5,   # 975.8e3
+    #         (0, "Kerosene"): 8.2e5,  # 820e3
+    #     },
+    # }
+    # tear_guesses3 = {
+    #     "flow_vol": {0: 445.90},
+    #     "conc_mass_comp": {
+    #         (0, "Al"): 413.04,
+    #         (0, "Ca"): 106.08,
+    #         (0, "Ce"): 5.05,
+    #         (0, "Cl"): 68.01,
+    #         (0, "Dy"): 0.28,
+    #         (0, "Fe"): 665.92,
+    #         (0, "Gd"): 0.52,
+    #         (0, "H"): 2.02,
+    #         (0, "H2O"): 1000000,
+    #         (0, "HSO4"): 760.31,
+    #         (0, "La"): 1.91,
+    #         (0, "Nd"): 2.47,
+    #         (0, "Pr"): 0.64,
+    #         (0, "SO4"): 3815.60,
+    #         (0, "Sc"): 0.78,
+    #         (0, "Sm"): 0.25,
+    #         (0, "Y"): 6.56e-2,
+    #     },
+    # }
+    # tear_guesses4 = {
+    #     "flow_vol": {0: 62},
+    #     "conc_mass_comp": {
+    #         (0, "Al_o"): 5.17e-6,
+    #         (0, "Ca_o"): 1.59e-4,
+    #         (0, "Ce_o"): 2.37e-4,
+    #         (0, "Dy_o"): 6.33e-4,
+    #         (0, "Fe_o"): 0.41,
+    #         (0, "Gd_o"): 4.14e-5,
+    #         (0, "La_o"): 1.03e-4,
+    #         (0, "Nd_o"): 1.40e-4,
+    #         (0, "Pr_o"): 7.53e-5,
+    #         (0, "Sc_o"): 1.15e-3,
+    #         (0, "Sm_o"): 4.79e-5,
+    #         (0, "Y_o"): 1.30e-4,
+    #         (0, "DEHPA"): 9.8e5,   # 975.8e3
+    #         (0, "Kerosene"): 8.2e5,  # 820e3
+    #     },
+    # }
+    # tear_guesses5 = {
+    #     "flow_vol": {0: 7.78},
+    #     "conc_mass_comp": {
+    #         (0, "Al"): 0.80,
+    #         (0, "Ca"): 1.18,
+    #         (0, "Ce"): 7.91e-2,
+    #         (0, "Cl"): 1438.56,
+    #         (0, "Dy"): 1.99e-3,
+    #         (0, "Fe"): 15.75,
+    #         (0, "Gd"): 1.06e-2,
+    #         (0, "H"): 40.42,
+    #         (0, "H2O"): 1000000,
+    #         (0, "HSO4"): 6.22e-5,
+    #         (0, "La"): 3.56e-2,
+    #         (0, "Nd"): 3.65e-2,
+    #         (0, "Pr"): 9.88e-3,
+    #         (0, "SO4"): 6.07e-5,
+    #         (0, "Sc"): 1.02e-3,
+    #         (0, "Sm"): 4.63e-3,
+    #         (0, "Y"): 2.39e-4,
+    #     },
+    # }
 
     # Pass the tear_guess to the SD tool
     seq.set_guesses_for(m.fs.leach.liquid_inlet, tear_guesses1)
@@ -1225,15 +1370,11 @@ def initialize_system(m):
     sep_units = [
         m.fs.scrub_sep,
         m.fs.precip_sep,
-        # m.fs.cleaner_sep,
-        # m.fs.rougher_sep,
     ]
 
     initializer_mix = MixerInitializer()
     mix_units = [
         m.fs.precip_sx_mixer,
-        # m.fs.cleaner_mixer,
-        # m.fs.rougher_mixer,
     ]
 
     initializer_leach = LeachingTrainInitializer()
@@ -1244,8 +1385,8 @@ def initialize_system(m):
     initializer_sx = SolventExtractionInitializer()
     sx_units = [
         m.fs.solex_rougher_load,
-        # m.fs.solex_rougher_scrub,
-        # m.fs.solex_rougher_strip,
+        m.fs.solex_rougher_scrub,
+        m.fs.solex_rougher_strip,
         m.fs.solex_cleaner_load,
         m.fs.solex_cleaner_strip,
     ]
@@ -1271,43 +1412,6 @@ def initialize_system(m):
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
-        elif unit == m.fs.solex_rougher_scrub:
-            try:
-                _log.info(f"Initializing {unit}")
-                initializer_sx.initialize(unit)
-            except:
-                # Fix feed states
-                m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[:].flow_vol.fix()
-                m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[:].conc_mass_comp.fix()
-                m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[:].flow_vol.fix()
-                m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[:].conc_mass_comp.fix()
-                # Re-solve leach unit
-                solver = SolverFactory("ipopt")
-                solver.solve(m.fs.solex_rougher_scrub, tee=True)
-                # Unfix feed states
-                m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[:].flow_vol.unfix()
-                m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[:].conc_mass_comp.unfix()
-                m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[:].flow_vol.unfix()
-                m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[:].conc_mass_comp.unfix()
-        elif unit == m.fs.solex_rougher_strip:
-            try:
-                _log.info(f"Initializing {unit}")
-                initializer_sx.initialize(unit)
-            except:
-                # Fix feed states
-                m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[:].flow_vol.fix()
-                m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[:].conc_mass_comp.fix()
-                m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[:].flow_vol.fix()
-                m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[:].conc_mass_comp.fix()
-                # Re-solve leach unit
-                solver = SolverFactory("ipopt")
-                solver.solve(m.fs.solex_rougher_strip, tee=True)
-                # Unfix feed states
-                m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[:].flow_vol.unfix()
-                m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[:].conc_mass_comp.unfix()
-                m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[:].flow_vol.unfix()
-                m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[:].conc_mass_comp.unfix()
-
         else:
             _log.info(f"Initializing {unit}")
             initializer_bt.initialize(unit)
@@ -1315,7 +1419,7 @@ def initialize_system(m):
     seq.run(m, function)
 
 
-def solve_system(m, solver=None, tee=False):
+def solve_system(m, solver=None, tee=True):
     """
     Solve the model.
 
@@ -1328,6 +1432,7 @@ def solve_system(m, solver=None, tee=False):
         solver = solver
     else:
         solver = get_solver()
+
     results = solver.solve(m, tee=tee)
 
     return results
@@ -2859,3 +2964,4 @@ def display_costing(m):
 
 if __name__ == "__main__":
     m, results = main()
+    m.fs.precipitator.cv_aqueous.properties_out[0].display()

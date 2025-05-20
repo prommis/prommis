@@ -204,7 +204,9 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 from prommis.solvent_extraction.translator_leach_precip import TranslatorLeachPrecip
-from prommis.solvent_extraction.solvent_extraction_reaction_package import SolventExtractionReactions
+from prommis.solvent_extraction.solvent_extraction_reaction_package import (
+    SolventExtractionReactions,
+)
 from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
@@ -573,7 +575,7 @@ def build():
         outlet_property_package=m.fs.properties_aq,
     )
 
-# -----------------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     # UKy flowsheet connections
     m.fs.leaching_sol_feed = Arc(
@@ -703,10 +705,12 @@ def build():
         destination=m.fs.sl_sep2.solid_inlet,
     )
     m.fs.precip_aq_outlet = Arc(
-        source=m.fs.precipitator.aqueous_outlet, destination=m.fs.translator_precipitate_to_leaching.inlet
+        source=m.fs.precipitator.aqueous_outlet,
+        destination=m.fs.translator_precipitate_to_leaching.inlet,
     )
     m.fs.sl_sep2_solid_inlet = Arc(
-        source=m.fs.translator_precipitate_to_leaching.outlet, destination=m.fs.sl_sep2.liquid_inlet
+        source=m.fs.translator_precipitate_to_leaching.outlet,
+        destination=m.fs.sl_sep2.liquid_inlet,
     )
     m.fs.sl_sep2_solid_outlet = Arc(
         source=m.fs.sl_sep2.solid_outlet, destination=m.fs.roaster.solid_inlet
@@ -723,10 +727,12 @@ def build():
         destination=m.fs.roaster.liquid_inlet,
     )
     m.fs.sl_sep2_aq_purge = Arc(
-        source=m.fs.precip_sep.purge, destination=m.fs.translator_precip_sep_to_purge.inlet
+        source=m.fs.precip_sep.purge,
+        destination=m.fs.translator_precip_sep_to_purge.inlet,
     )
     m.fs.precip_purge_inlet = Arc(
-        source=m.fs.translator_precip_sep_to_purge.outlet, destination=m.fs.precip_purge.inlet
+        source=m.fs.translator_precip_sep_to_purge.outlet,
+        destination=m.fs.precip_purge.inlet,
     )
     m.fs.sl_sep2_aq_recycle = Arc(
         source=m.fs.precip_sep.recycle,
@@ -785,9 +791,7 @@ def set_scaling(m):
     )
 
     # Apply scaling to variables
-    sb.set_variable_scaling_factor(
-        m.fs.roaster.heat_duty[0],
-        1e-2)
+    sb.set_variable_scaling_factor(m.fs.roaster.heat_duty[0], 1e-2)
 
     for var in m.fs.component_data_objects(Var, descend_into=True):
         if "temperature" in var.name:
@@ -863,8 +867,8 @@ def set_operating_conditions(m):
     m.fs.leach.volume.fix(100 * units.gallon)
 
     # Fix all temperatures and pressure
-    m.fs.leach.mscontactor.liquid[0.0,2].temperature.fix(Temp_room)
-    m.fs.leach.mscontactor.liquid[0.0,2].pressure.fix(P_atm)
+    m.fs.leach.mscontactor.liquid[0.0, 2].temperature.fix(Temp_room)
+    m.fs.leach.mscontactor.liquid[0.0, 2].pressure.fix(P_atm)
     m.fs.leach_mixer.mixed_state[0.0].pressure.fix(P_atm)
     m.fs.leach_mixer.mixed_state[0.0].temperature.fix(Temp_room)
     m.fs.load_sep.recycle_state[0.0].pressure.fix(P_atm)
@@ -878,32 +882,32 @@ def set_operating_conditions(m):
     m.fs.solex_rougher_load.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex_rougher_load.area_cross_stage[:] = 1
     m.fs.solex_rougher_load.elevation[:] = 0
-    m.fs.solex_rougher_load.mscontactor.aqueous[0.0,3].temperature.fix(Temp_room)
-    m.fs.solex_rougher_load.mscontactor.organic[0.0,1].temperature.fix(Temp_room)
+    m.fs.solex_rougher_load.mscontactor.aqueous[0.0, 3].temperature.fix(Temp_room)
+    m.fs.solex_rougher_load.mscontactor.organic[0.0, 1].temperature.fix(Temp_room)
     m.fs.solex_rougher_scrub.mscontactor.volume[:].fix(0.4 * units.m**3)
     m.fs.solex_rougher_scrub.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex_rougher_scrub.area_cross_stage[:] = 1
     m.fs.solex_rougher_scrub.elevation[:] = 0
-    m.fs.solex_rougher_scrub.mscontactor.aqueous[0.0,1].temperature.fix(Temp_room)
-    m.fs.solex_rougher_scrub.mscontactor.organic[0.0,1].temperature.fix(Temp_room)
+    m.fs.solex_rougher_scrub.mscontactor.aqueous[0.0, 1].temperature.fix(Temp_room)
+    m.fs.solex_rougher_scrub.mscontactor.organic[0.0, 1].temperature.fix(Temp_room)
     m.fs.solex_rougher_strip.mscontactor.volume[:].fix(0.4 * units.m**3)
     m.fs.solex_rougher_strip.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex_rougher_strip.area_cross_stage[:] = 1
     m.fs.solex_rougher_strip.elevation[:] = 0
-    m.fs.solex_rougher_strip.mscontactor.organic[0.0,2].temperature.fix(Temp_room)
-    m.fs.solex_rougher_strip.mscontactor.aqueous[0.0,1].temperature.fix(Temp_room)
+    m.fs.solex_rougher_strip.mscontactor.organic[0.0, 2].temperature.fix(Temp_room)
+    m.fs.solex_rougher_strip.mscontactor.aqueous[0.0, 1].temperature.fix(Temp_room)
     m.fs.solex_cleaner_load.mscontactor.volume[:].fix(0.4 * units.m**3)
     m.fs.solex_cleaner_load.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex_cleaner_load.area_cross_stage[:] = 1
     m.fs.solex_cleaner_load.elevation[:] = 0
-    m.fs.solex_cleaner_load.mscontactor.aqueous[0.0,3].temperature.fix(Temp_room)
-    m.fs.solex_cleaner_load.mscontactor.organic[0.0,1].temperature.fix(Temp_room)
+    m.fs.solex_cleaner_load.mscontactor.aqueous[0.0, 3].temperature.fix(Temp_room)
+    m.fs.solex_cleaner_load.mscontactor.organic[0.0, 1].temperature.fix(Temp_room)
     m.fs.solex_cleaner_strip.mscontactor.volume[:].fix(0.4 * units.m**3)
     m.fs.solex_cleaner_strip.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex_cleaner_strip.area_cross_stage[:] = 1
     m.fs.solex_cleaner_strip.elevation[:] = 0
-    m.fs.solex_cleaner_strip.mscontactor.organic[0.0,3].temperature.fix(Temp_room)
-    m.fs.solex_cleaner_strip.mscontactor.aqueous[0.0,1].temperature.fix(Temp_room)
+    m.fs.solex_cleaner_strip.mscontactor.organic[0.0, 3].temperature.fix(Temp_room)
+    m.fs.solex_cleaner_strip.mscontactor.aqueous[0.0, 1].temperature.fix(Temp_room)
 
     m.fs.load_sep.split_fraction[:, "recycle"].fix(0.9)
     m.fs.scrub_sep.split_fraction[:, "recycle"].fix(0.9)
@@ -1232,7 +1236,6 @@ def initialize_system(m):
             (0, "Y"): 1.17,
         },
     }
-
 
     # tear_guesses1 = {
     #     "flow_vol": {0: 625.69},

@@ -596,9 +596,7 @@ def test_solution(system_frame):
         0.040237, 1e-4
     )
 
-    assert model.fs.leach_mixer.outlet.flow_vol[0].value == pytest.approx(
-        865.078, 1e-4
-    )
+    assert model.fs.leach_mixer.outlet.flow_vol[0].value == pytest.approx(865.078, 1e-4)
     assert model.fs.rougher_org_make_up.outlet.flow_vol[0].value == pytest.approx(
         6.201, 1e-4
     )

@@ -1,6 +1,5 @@
 # Import Pyomo libraries
 from pyomo.environ import (
-    units as pyunits,
     check_optimal_termination,
     Set,
 )

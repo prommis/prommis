@@ -10,7 +10,6 @@ from idaes.core.initialization import InitializationStatus
 from idaes.core.solvers import get_solver
 from idaes.core.util import DiagnosticsToolbox
 
-import numpy as np
 import pytest
 
 from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer

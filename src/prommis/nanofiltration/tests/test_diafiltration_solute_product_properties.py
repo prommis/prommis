@@ -51,14 +51,18 @@ def test_build(model):
     assert len(model.fs.state) == 1
 
     assert isinstance(model.fs.state[0].flow_vol, Var)
-    assert isinstance(model.fs.state[0].conc_mass_comp, Var)
+    assert isinstance(model.fs.state[0].conc_mass_lithium, Var)
+    assert isinstance(model.fs.state[0].conc_mass_cobalt, Var)
+    assert isinstance(model.fs.state[0].conc_mass_chlorine, Var)
 
     model.fs.state[0].flow_vol.set_value(10)
-    for j in model.fs.product_properties.component_list:
-        model.fs.state[0].conc_mass_comp[j].set_value(1)
+    model.fs.state[0].conc_mass_lithium.set_value(1)
+    model.fs.state[0].conc_mass_cobalt.set_value(1)
+    model.fs.state[0].conc_mass_chlorine.set_value(1)
 
     model.fs.state.fix_initialization_states()
 
     assert model.fs.state[0].flow_vol.fixed
-    for j in model.fs.product_properties.component_list:
-        assert model.fs.state[0].conc_mass_comp[j].fixed
+    assert model.fs.state[0].conc_mass_lithium.fixed
+    assert model.fs.state[0].conc_mass_cobalt.fixed
+    assert model.fs.state[0].conc_mass_chlorine.fixed

@@ -96,18 +96,29 @@ class SoluteProductStateBlockData(StateBlockData):
             initialize=10,
             bounds=(1e-20, None),
         )
-        self.conc_mass_comp = Var(
-            self.component_list,
+        self.conc_mass_lithium = Var(
+            units=units.kg / units.m**3,
+            initialize=1e-5,
+            bounds=(1e-20, None),
+        )
+        self.conc_mass_cobalt = Var(
+            units=units.kg / units.m**3,
+            initialize=1e-5,
+            bounds=(1e-20, None),
+        )
+        self.conc_mass_chlorine = Var(
             units=units.kg / units.m**3,
             initialize=1e-5,
             bounds=(1e-20, None),
         )
 
-    def get_material_flow_terms(self, p, j):
-        return self.flow_vol * self.conc_mass_comp[j]
-
     def get_material_flow_basis(self):
         return MaterialFlowBasis.mass
 
     def define_state_vars(self):
-        return {"flow_vol": self.flow_vol, "conc_mass_comp": self.conc_mass_comp}
+        return {
+            "flow_vol": self.flow_vol,
+            "conc_mass_lithium": self.conc_mass_lithium,
+            "conc_mass_cobalt": self.conc_mass_cobalt,
+            "conc_mass_chlorine": self.conc_mass_chlorine,
+        }

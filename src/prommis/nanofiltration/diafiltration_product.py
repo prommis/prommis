@@ -10,9 +10,8 @@ Custom product block used with the two-salt diafiltration unit model.
 Author: Molly Dougher
 """
 
-from pyomo.common.config import ConfigValue
-from pyomo.dae import ContinuousSet
-from pyomo.environ import TransformationFactory
+from pyomo.environ import Reference
+from pyomo.network import Port
 
 from idaes.core import declare_process_block_class
 from idaes.models.unit_models.product import ProductData
@@ -23,69 +22,33 @@ class DiafiltrationProductData(ProductData):
     """
     Modification of the Product Unit Model for use in the Two-Salt
     Diafiltration Unit Model.
-
-    Discretizes the property package over the width of the membrane.
     """
 
     CONFIG = ProductData.CONFIG()
 
-    CONFIG.declare(
-        "NFEx",
-        ConfigValue(
-            doc="Number of discretization points in the x-direction",
-        ),
-    )
-
     def build(self):
         super().build()
-        self.add_length()
-        self.add_state_blocks()
-        self.discretize_length()
         self.add_inlet_port()
-
-    def add_length(self):
-        """
-        Creates an equivalent length scale as the memrbane width in the
-        diafiltration membrane unit model with the product block.
-        """
-        self.x_bar = ContinuousSet(bounds=(0, 1))
-
-    def add_state_blocks(self):
-        """
-        Adds to state blocks for the property package that will be indexed over
-        time and the length scale (membrane width).
-        """
-        # remove defined self.properties from super().build()
-        self.del_component(self.properties)
-
-        # define self.properties such that it is discretized over t, x
-        self.properties = self.config.property_package.build_state_block(
-            self.flowsheet().time,
-            self.x_bar,
-            doc="Material properties",
-            initialize=dict(**self.config.property_package_args),
-        )
-
-    def discretize_length(self):
-        """
-        Discretizes the product block over the same number of finite elements
-        as the diafiltration membrane such that the ports have properly
-        matched variables.
-        """
-        discretizer = TransformationFactory("dae.finite_difference")
-        discretizer.apply_to(
-            self, wrt=self.x_bar, nfe=self.config.NFEx, scheme="BACKWARD"
-        )
 
     def add_inlet_port(self):
         """
-        Adds the inlet Port to the product block that will include the
-        References to the discretizes state block properties,
+        Updates the inlet Port to the product block to incorporate the time
+        index within the Reference.
         """
         # remove defined self.inlet Port and References from super().build()
         self.del_component(self.inlet)
         self.del_component(self._flow_vol_inlet_ref)
-        self.del_component(self._conc_mass_comp_inlet_ref)
+        self.del_component(self._conc_mass_lithium_inlet_ref)
+        self.del_component(self._conc_mass_cobalt_inlet_ref)
+        self.del_component(self._conc_mass_chlorine_inlet_ref)
 
-        # create self.inlet Port such that it is discretized over t, x
-        self.add_port(name="inlet", block=self.properties, doc="Inlet Port")
+        # create self.inlet Port with adjusted References
+        self.inlet = Port(doc="Inlet Port")
+        self._flow_volume_ref = Reference(self.flow_vol[0])
+        self.inlet.add(self._flow_volume_ref, "flow_vol")
+        self._conc_mass_lithium_ref = Reference(self.conc_mass_lithium[0])
+        self.inlet.add(self._conc_mass_lithium_ref, "conc_mass_lithium")
+        self._conc_mass_cobalt_ref = Reference(self.conc_mass_cobalt[0])
+        self.inlet.add(self._conc_mass_cobalt_ref, "conc_mass_cobalt")
+        self._conc_mass_chlorine_ref = Reference(self.conc_mass_chlorine[0])
+        self.inlet.add(self._conc_mass_chlorine_ref, "conc_mass_chlorine")

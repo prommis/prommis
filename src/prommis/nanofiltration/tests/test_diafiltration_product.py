@@ -13,7 +13,6 @@ Author: Molly Dougher
 from pyomo.environ import (
     ConcreteModel,
 )
-from pyomo.dae import ContinuousSet
 from pyomo.network import Port
 
 from idaes.core import FlowsheetBlock
@@ -37,10 +36,7 @@ def diafiltration_product():
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties = SoluteProductParameter()
 
-    m.fs.unit = DiafiltrationProduct(
-        property_package=m.fs.properties,
-        NFEx=10,
-    )
+    m.fs.unit = DiafiltrationProduct(property_package=m.fs.properties)
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -49,8 +45,8 @@ def diafiltration_product():
 
 @pytest.mark.unit
 def test_config(diafiltration_product):
-    # product.py has 4 config args, diafiltration_product.py adds 1
-    assert len(diafiltration_product.fs.unit.config) == 5
+    # product.py has 4 config args
+    assert len(diafiltration_product.fs.unit.config) == 4
 
     assert not diafiltration_product.fs.unit.config.dynamic
     assert not diafiltration_product.fs.unit.config.has_holdup
@@ -59,19 +55,17 @@ def test_config(diafiltration_product):
         diafiltration_product.fs.unit.config.property_package
         is diafiltration_product.fs.properties
     )
-    assert diafiltration_product.fs.unit.config.NFEx is 10
 
 
 class TestDiafiltrationProduct(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build(self, diafiltration_product):
-        assert isinstance(diafiltration_product.fs.unit.x_bar, ContinuousSet)
-        assert len(diafiltration_product.fs.unit.x_bar) == 11
-
         assert isinstance(diafiltration_product.fs.unit.inlet, Port)
-        assert len(diafiltration_product.fs.unit.inlet.flow_vol) == 11
-        assert len(diafiltration_product.fs.unit.inlet.conc_mass_comp) == 33
+        assert hasattr(diafiltration_product.fs.unit.inlet, "flow_vol")
+        assert hasattr(diafiltration_product.fs.unit.inlet, "conc_mass_lithium")
+        assert hasattr(diafiltration_product.fs.unit.inlet, "conc_mass_cobalt")
+        assert hasattr(diafiltration_product.fs.unit.inlet, "conc_mass_chlorine")
 
     @pytest.mark.component
     def test_diagnostics(self, diafiltration_product):

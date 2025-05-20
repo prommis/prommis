@@ -1096,27 +1096,65 @@ and used when constructing these,
 
     def add_ports(self):
         self.feed_inlet = Port(doc="Feed Inlet Port")
-        self.feed_flow_volume_ref = Reference(self.feed_flow_volume)
-        self.feed_inlet.add(self.feed_flow_volume_ref, "flow_vol")
-        self.feed_conc_mass_comp_ref = Reference(self.feed_conc_mass_comp)
-        self.feed_inlet.add(self.feed_conc_mass_comp_ref, "conc_mass_comp")
+        self._feed_flow_volume_ref = Reference(self.feed_flow_volume)
+        self.feed_inlet.add(self._feed_flow_volume_ref, "flow_vol")
+        self._feed_conc_mass_comp_ref = Reference(self.feed_conc_mass_comp)
+        self.feed_inlet.add(self._feed_conc_mass_comp_ref, "conc_mass_comp")
 
         self.diafiltrate_inlet = Port(doc="Diafiltrate Inlet Port")
-        self.diafiltrate_flow_volume_ref = Reference(self.diafiltrate_flow_volume)
-        self.diafiltrate_inlet.add(self.diafiltrate_flow_volume_ref, "flow_vol")
-        self.diafiltrate_conc_mass_comp_ref = Reference(self.diafiltrate_conc_mass_comp)
+        self._diafiltrate_flow_volume_ref = Reference(self.diafiltrate_flow_volume)
+        self.diafiltrate_inlet.add(self._diafiltrate_flow_volume_ref, "flow_vol")
+        self._diafiltrate_conc_mass_comp_ref = Reference(
+            self.diafiltrate_conc_mass_comp
+        )
         self.diafiltrate_inlet.add(
-            self.diafiltrate_conc_mass_comp_ref, "conc_mass_comp"
+            self._diafiltrate_conc_mass_comp_ref, "conc_mass_comp"
         )
 
         self.retentate_outlet = Port(doc="Retentate Outlet Port")
-        self.retentate_flow_volume_ref = Reference(self.retentate_flow_volume)
-        self.retentate_outlet.add(self.retentate_flow_volume_ref, "flow_vol")
-        self.retentate_conc_mass_comp_ref = Reference(self.retentate_conc_mass_comp)
-        self.retentate_outlet.add(self.retentate_conc_mass_comp_ref, "conc_mass_comp")
+        self._retentate_flow_volume_ref = Reference(
+            self.retentate_flow_volume[0, value(self.membrane_width)]
+        )
+        self.retentate_outlet.add(self._retentate_flow_volume_ref, "flow_vol")
+        self._retentate_conc_mass_lithium_ref = Reference(
+            self.retentate_conc_mass_comp[0, value(self.membrane_width), "Li"]
+        )
+        self.retentate_outlet.add(
+            self._retentate_conc_mass_lithium_ref, "conc_mass_lithium"
+        )
+        self._retentate_conc_mass_cobalt_ref = Reference(
+            self.retentate_conc_mass_comp[0, value(self.membrane_width), "Co"]
+        )
+        self.retentate_outlet.add(
+            self._retentate_conc_mass_cobalt_ref, "conc_mass_cobalt"
+        )
+        self._retentate_conc_mass_chlorine_ref = Reference(
+            self.retentate_conc_mass_comp[0, value(self.membrane_width), "Cl"]
+        )
+        self.retentate_outlet.add(
+            self._retentate_conc_mass_chlorine_ref, "conc_mass_chlorine"
+        )
 
         self.permeate_outlet = Port(doc="Permeate Outlet Port")
-        self.permeate_flow_volume_ref = Reference(self.permeate_flow_volume)
-        self.permeate_outlet.add(self.permeate_flow_volume_ref, "flow_vol")
-        self.permeate_conc_mass_comp_ref = Reference(self.permeate_conc_mass_comp)
-        self.permeate_outlet.add(self.permeate_conc_mass_comp_ref, "conc_mass_comp")
+        self._permeate_flow_volume_ref = Reference(
+            self.permeate_flow_volume[0, value(self.membrane_width)]
+        )
+        self.permeate_outlet.add(self._permeate_flow_volume_ref, "flow_vol")
+        self._permeate_conc_mass_lithium_ref = Reference(
+            self.permeate_conc_mass_comp[0, value(self.membrane_width), "Li"]
+        )
+        self.permeate_outlet.add(
+            self._permeate_conc_mass_lithium_ref, "conc_mass_lithium"
+        )
+        self._permeate_conc_mass_cobalt_ref = Reference(
+            self.permeate_conc_mass_comp[0, value(self.membrane_width), "Co"]
+        )
+        self.permeate_outlet.add(
+            self._permeate_conc_mass_cobalt_ref, "conc_mass_cobalt"
+        )
+        self._permeate_conc_mass_chlorine_ref = Reference(
+            self.permeate_conc_mass_comp[0, value(self.membrane_width), "Cl"]
+        )
+        self.permeate_outlet.add(
+            self._permeate_conc_mass_chlorine_ref, "conc_mass_chlorine"
+        )

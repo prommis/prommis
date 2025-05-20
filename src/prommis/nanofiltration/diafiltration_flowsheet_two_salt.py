@@ -55,26 +55,18 @@ def main():
     m.fs.feed_block = Feed(property_package=m.fs.feed_properties)
     m.fs.diafiltrate_block = Feed(property_package=m.fs.feed_properties)
 
-    # define the number of finite elements on flowsheet-level
-    number_x_elements = 10
-    number_z_elements = 5
-
     # add the membrane unit model
     m.fs.membrane = TwoSaltDiafiltration(
         property_package=m.fs.properties,
-        NFEx=number_x_elements,
-        NFEz=number_z_elements,
+        NFEx=10,
+        NFEz=5,
     )
 
     # add product blocks for retentate and permeate
     m.fs.retentate_block = DiafiltrationProduct(
-        property_package=m.fs.product_properties,
-        NFEx=number_x_elements,
+        property_package=m.fs.product_properties
     )
-    m.fs.permeate_block = DiafiltrationProduct(
-        property_package=m.fs.product_properties,
-        NFEx=number_x_elements,
-    )
+    m.fs.permeate_block = DiafiltrationProduct(property_package=m.fs.product_properties)
 
     # fix the degrees of freedom to their default values
     fix_variables(m)

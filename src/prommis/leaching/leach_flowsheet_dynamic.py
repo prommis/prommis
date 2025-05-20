@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -10,7 +10,7 @@ parameters and data for West Kentucky No. 13 coal refuse.
 
 Authors: Arkoprabho Dasgupta, Akintomiwa Ojo
 """
-
+import matplotlib.pyplot as plt
 from pyomo.environ import (
     ConcreteModel,
     TransformationFactory,
@@ -73,7 +73,7 @@ def discretization(m):
     """
 
     m.discretizer = TransformationFactory("dae.collocation")
-    m.discretizer.apply_to(m, nfe=3, ncp=2, wrt=m.fs.time, scheme="LAGRANGE-RADAU")
+    m.discretizer.apply_to(m, nfe=6, ncp=2, wrt=m.fs.time, scheme="LAGRANGE-RADAU")
 
 
 def copy_first_steady_state(m):
@@ -92,15 +92,25 @@ def copy_first_steady_state(m):
                 var[t].value = var[m.fs.time.first()].value
 
 
-def set_inputs(m):
+def set_inputs(m, perturb_time):
     """
     Set inlet conditions to leach reactor based on one case study from
     University of Kentucky pilot plant study. The values of the time discrete
     variables at initial time are fixed to the steady state values.
+    Args:
+        m: ConcreteModel object with the leaching system.
+        perturb_time: Time at which the perturbation is applied.
+    Returns:
+        None
     """
 
     # Liquid feed state
-    m.fs.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
+    for t in m.fs.time:
+        if t <= perturb_time:
+            m.fs.leach.liquid_inlet.flow_vol[t].fix(224.3 * units.L / units.hour)
+        else:
+            m.fs.leach.liquid_inlet.flow_vol[t].fix(300 * units.L / units.hour)
+
     m.fs.leach.liquid_inlet.conc_mass_comp.fix(1e-10 * units.mg / units.L)
 
     m.fs.leach.liquid_inlet.conc_mass_comp[:, "H"].fix(
@@ -146,8 +156,8 @@ def set_inputs(m):
     )
 
     # Fixing the volume and the volumetric phases of the leach reactor
-    m.fs.leach.volume.fix(50 * units.gallon)
-    m.fs.leach.mscontactor.volume.fix(50 * units.gallon)
+    m.fs.leach.volume.fix(100 * units.gallon)
+    m.fs.leach.mscontactor.volume.fix(100 * units.gallon)
     m.fs.leach.mscontactor.volume_frac_stream[:, :, "liquid"].fix(0.5)
 
     # Fixing the variable values at t=0
@@ -188,6 +198,7 @@ def set_inputs(m):
 if __name__ == "__main__":
 
     time_duration = 24
+    perturb_time = 12
     number_of_tanks = 1
 
     # Call the build_model function to create the model
@@ -203,7 +214,7 @@ if __name__ == "__main__":
     copy_first_steady_state(m)
 
     # Set the inputs for the model
-    set_inputs(m)
+    set_inputs(m, perturb_time)
 
     # Solve the model
     solver = get_solver("ipopt")
@@ -218,3 +229,18 @@ if __name__ == "__main__":
     m.fs.leach.mscontactor.liquid[
         time_duration, number_of_tanks
     ].conc_mass_comp.pprint()
+
+    # Plotting the results for REE oxides
+    REE_set = m.fs.coal.component_list - ["inerts", "Al2O3", "Fe2O3", "CaO"]
+    for e in REE_set:
+        plt.plot(m.fs.time, m.fs.leach.recovery[:, e]())
+    plt.legend(REE_set)
+    plt.xlabel("Time (h)")
+    plt.ylabel("Recovery %")
+    plt.axvline(
+        x=perturb_time,
+        color="r",
+        linestyle="--",
+        label="Perturbation at t=12h",
+    )
+    plt.title("REE oxide recovery variation wrt time, with perturbation at t=12 ")

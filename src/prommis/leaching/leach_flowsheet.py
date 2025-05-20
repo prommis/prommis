@@ -156,10 +156,7 @@ if __name__ == "__main__":
     # Initialize model
     # This is likely to fail to converge, but gives a good enough starting point
     initializer = LeachingTrainInitializer()
-    try:
-        initializer.initialize(scaled_model.fs.leach)
-    except:
-        pass
+    initializer.initialize(scaled_model.fs.leach)
 
     # Solve scaled model
     solver = SolverFactory("ipopt")

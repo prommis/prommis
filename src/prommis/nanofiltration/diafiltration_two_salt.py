@@ -239,7 +239,6 @@ from pyomo.common.config import ConfigBlock, ConfigValue
 from pyomo.dae import ContinuousSet, DerivativeVar
 from pyomo.environ import (
     Constraint,
-    NonNegativeReals,
     Param,
     Reference,
     Set,
@@ -367,26 +366,26 @@ and used when constructing these,
         self.membrane_width = Var(
             initialize=1,
             units=units.m,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Width of the membrane (x-direction)",
         )
         self.membrane_length = Var(
             initialize=100,
             units=units.m,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Length of the membrane, wound radially",
         )
         self.applied_pressure = Var(
             initialize=10,
             units=units.bar,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Pressure applied to membrane",
         )
         self.feed_flow_volume = Var(
             self.time,
             initialize=100,
             units=units.m**3 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Volumetric flow rate of the feed",
         )
 
@@ -399,14 +398,14 @@ and used when constructing these,
             self.solutes,
             initialize=initialize_feed_conc_mass_comp,
             units=units.kg / units.m**3,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Mass concentration of solutes in the feed",
         )
         self.diafiltrate_flow_volume = Var(
             self.time,
             initialize=30,
             units=units.m**3 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Volumetric flow rate of the diafiltrate",
         )
 
@@ -419,7 +418,7 @@ and used when constructing these,
             self.solutes,
             initialize=initialize_diafiltrate_conc_mass_comp,
             units=units.kg / units.m**3,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Mass concentration of solutes in the diafiltrate",
         )
 
@@ -428,28 +427,28 @@ and used when constructing these,
             self.x_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.m**3 / units.m**2 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Volumetric water flux of water across the membrane",
         )
         self.mass_flux_lithium = Var(
             self.x_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**2 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Mass flux of lithium across the membrane (z-direction, x-dependent)",
         )
         self.mass_flux_cobalt = Var(
             self.x_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**2 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Mass flux of cobalt across the membrane (z-direction, x-dependent)",
         )
         self.mass_flux_chlorine = Var(
             self.x_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**2 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Mass flux of chlorine across the membrane (z-direction, x-dependent)",
         )
         self.retentate_flow_volume = Var(
@@ -457,7 +456,7 @@ and used when constructing these,
             self.x_bar,
             initialize=130,
             units=units.m**3 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Volumetric flow rate of the retentate, x-dependent",
         )
 
@@ -471,7 +470,7 @@ and used when constructing these,
             self.solutes,
             initialize=initialize_retentate_conc_mass_comp,
             units=units.kg / units.m**3,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Mass concentration of solutes in the retentate, x-dependent",
         )
         self.permeate_flow_volume = Var(
@@ -479,7 +478,7 @@ and used when constructing these,
             self.x_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.m**3 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Volumetric flow rate of the permeate, x-dependent",
         )
 
@@ -497,14 +496,14 @@ and used when constructing these,
             self.solutes,
             initialize=initialize_permeate_conc_mass_comp,
             units=units.kg / units.m**3,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Mass concentration of solutes in the permeate, x-dependent",
         )
         self.osmotic_pressure = Var(
             self.x_bar,
             initialize=5,
             units=units.bar,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Osmostic pressure of the feed-side fluid",
         )
 
@@ -514,7 +513,7 @@ and used when constructing these,
             self.z_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**3,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Mass concentration of lithium in the membrane, x- and z-dependent",
         )
         self.membrane_conc_mass_cobalt = Var(
@@ -522,7 +521,7 @@ and used when constructing these,
             self.z_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**3,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Mass concentration of cobalt in the membrane, x- and z-dependent",
         )
         self.membrane_conc_mass_chlorine = Var(
@@ -530,7 +529,7 @@ and used when constructing these,
             self.z_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**3,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Mass concentration of chlorine in the membrane, x- and z-dependent",
         )
         self.D_lithium_lithium = Var(
@@ -538,7 +537,7 @@ and used when constructing these,
             self.z_bar,
             initialize=1e-6,
             units=units.m**2 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Linearized cross diffusion coefficient for lithium-lithium",
         )
         self.D_lithium_cobalt = Var(
@@ -546,7 +545,7 @@ and used when constructing these,
             self.z_bar,
             initialize=1e-7,
             units=units.m**2 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Linearized cross diffusion coefficient for lithium-cobalt",
         )
         self.D_cobalt_lithium = Var(
@@ -554,7 +553,7 @@ and used when constructing these,
             self.z_bar,
             initialize=1e-7,
             units=units.m**2 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Linearized cross diffusion coefficient for cobalt-lithium",
         )
         self.D_cobalt_cobalt = Var(
@@ -562,7 +561,7 @@ and used when constructing these,
             self.z_bar,
             initialize=1e-6,
             units=units.m**2 / units.h,
-            domain=NonNegativeReals,
+            bounds=[0, None],
             doc="Linearized cross diffusion coefficient for cobalt-cobalt",
         )
 
@@ -998,6 +997,16 @@ and used when constructing these,
         """
         Fix initial values for the two salt diafiltration unit model.
         """
+        for x in self.x_bar:
+            # chlorine concentration gradient in retentate variable is created
+            # by default but is not needed in model
+            self.d_retentate_conc_mass_comp_dx[0, x, "Cl"].fix(
+                value(self.numerical_zero_tolerance)
+            )
+            # associated discretization equation not needed in model
+            if x != 0:
+                self.d_retentate_conc_mass_comp_dx_disc_eq[0, x, "Cl"].deactivate()
+
         # initial conditions
         self.retentate_flow_volume[0, 0].fix(
             self.feed_flow_volume[0] + self.diafiltrate_flow_volume[0]
@@ -1059,9 +1068,6 @@ and used when constructing these,
                     1e5
                 )
                 self.scaling_factor[self.d_retentate_conc_mass_comp_dx[0, x, "Co"]] = (
-                    1e2
-                )
-                self.scaling_factor[self.d_retentate_conc_mass_comp_dx[0, x, "Cl"]] = (
                     1e2
                 )
 

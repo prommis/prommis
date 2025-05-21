@@ -81,11 +81,9 @@ Nanofiltration
    :template: autosummary/module-with-contents.rst
 
    prommis.nanofiltration.diafiltration_flowsheet_two_salt
-   prommis.nanofiltration.diafiltration_product
    prommis.nanofiltration.diafiltration_properties
-   prommis.nanofiltration.diafiltration_solute_feed_properties
-   prommis.nanofiltration.diafiltration_solute_product_properties
    prommis.nanofiltration.diafiltration_solute_properties
+   prommis.nanofiltration.diafiltration_stream_properties
    prommis.nanofiltration.diafiltration_two_salt
    prommis.nanofiltration.diafiltration
    prommis.nanofiltration.nf_brine_plot

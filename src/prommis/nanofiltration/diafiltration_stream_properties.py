@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Property package for the products from the multi-salt diafiltration membrane.
+Property package for the inlet and outlet streams of the two-salt diafiltration membrane.
 
 Author: Molly Dougher
 """
@@ -24,10 +24,11 @@ from idaes.core import (
 from idaes.core.util.initialization import fix_state_vars
 
 
-@declare_process_block_class("SoluteProductParameter")
-class SoluteProductParameterData(PhysicalParameterBlock):
+@declare_process_block_class("DiafiltrationStreamParameter")
+class DiafiltrationStreamParameterData(PhysicalParameterBlock):
     """
-    Property Package for the products from the multi-salt diafiltration membrane.
+    Property Package for the feed and product streams in the
+    two-salt diafiltration membrane.
 
     Currently includes the following solutes:
         Li+ (lithium ion)
@@ -47,7 +48,7 @@ class SoluteProductParameterData(PhysicalParameterBlock):
         # add anions
         self.Cl = Component()
 
-        self._state_block_class = SoluteProductStateBlock
+        self._state_block_class = DiafiltrationStreamStateBlock
 
     @classmethod
     def define_metadata(cls, obj):
@@ -69,7 +70,7 @@ class SoluteProductParameterData(PhysicalParameterBlock):
         )
 
 
-class _SoluteProductStateBlock(StateBlock):
+class _DiafiltrationStreamStateBlock(StateBlock):
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -81,11 +82,12 @@ class _SoluteProductStateBlock(StateBlock):
 
 
 @declare_process_block_class(
-    "SoluteProductStateBlock", block_class=_SoluteProductStateBlock
+    "DiafiltrationStreamStateBlock", block_class=_DiafiltrationStreamStateBlock
 )
-class SoluteProductStateBlockData(StateBlockData):
+class DiafiltrationStreamStateBlockData(StateBlockData):
     """
-    State block for the products from the multi-salt diafiltration membrane
+    State block for the feed and product streams in the
+    two-salt diafiltration membrane.
     """
 
     def build(self):
@@ -96,29 +98,18 @@ class SoluteProductStateBlockData(StateBlockData):
             initialize=10,
             bounds=(1e-20, None),
         )
-        self.conc_mass_lithium = Var(
+        self.conc_mass_comp = Var(
+            self.component_list,
             units=units.kg / units.m**3,
             initialize=1e-5,
             bounds=(1e-20, None),
         )
-        self.conc_mass_cobalt = Var(
-            units=units.kg / units.m**3,
-            initialize=1e-5,
-            bounds=(1e-20, None),
-        )
-        self.conc_mass_chlorine = Var(
-            units=units.kg / units.m**3,
-            initialize=1e-5,
-            bounds=(1e-20, None),
-        )
+
+    def get_material_flow_terms(self, p, j):
+        return self.flow_vol * self.conc_mass_comp[j]
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.mass
 
     def define_state_vars(self):
-        return {
-            "flow_vol": self.flow_vol,
-            "conc_mass_lithium": self.conc_mass_lithium,
-            "conc_mass_cobalt": self.conc_mass_cobalt,
-            "conc_mass_chlorine": self.conc_mass_chlorine,
-        }
+        return {"flow_vol": self.flow_vol, "conc_mass_comp": self.conc_mass_comp}

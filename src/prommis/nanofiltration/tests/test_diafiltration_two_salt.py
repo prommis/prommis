@@ -457,28 +457,12 @@ class TestDiafiltrationTwoSalt(object):
         assert len(diafiltration_two_salt.fs.unit.diafiltrate_inlet.conc_mass_comp) == 3
 
         assert isinstance(diafiltration_two_salt.fs.unit.retentate_outlet, Port)
-        assert hasattr(diafiltration_two_salt.fs.unit.retentate_outlet, "flow_vol")
-        assert hasattr(
-            diafiltration_two_salt.fs.unit.retentate_outlet, "conc_mass_lithium"
-        )
-        assert hasattr(
-            diafiltration_two_salt.fs.unit.retentate_outlet, "conc_mass_cobalt"
-        )
-        assert hasattr(
-            diafiltration_two_salt.fs.unit.retentate_outlet, "conc_mass_chlorine"
-        )
+        assert len(diafiltration_two_salt.fs.unit.retentate_outlet.flow_vol) == 1
+        assert len(diafiltration_two_salt.fs.unit.retentate_outlet.conc_mass_comp) == 3
 
         assert isinstance(diafiltration_two_salt.fs.unit.permeate_outlet, Port)
-        assert hasattr(diafiltration_two_salt.fs.unit.permeate_outlet, "flow_vol")
-        assert hasattr(
-            diafiltration_two_salt.fs.unit.permeate_outlet, "conc_mass_lithium"
-        )
-        assert hasattr(
-            diafiltration_two_salt.fs.unit.permeate_outlet, "conc_mass_cobalt"
-        )
-        assert hasattr(
-            diafiltration_two_salt.fs.unit.permeate_outlet, "conc_mass_chlorine"
-        )
+        assert len(diafiltration_two_salt.fs.unit.permeate_outlet.flow_vol) == 1
+        assert len(diafiltration_two_salt.fs.unit.permeate_outlet.conc_mass_comp) == 3
 
     @pytest.mark.component
     def test_diagnostics(self, diafiltration_two_salt):

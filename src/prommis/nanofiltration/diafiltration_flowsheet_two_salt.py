@@ -21,19 +21,15 @@ from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-from idaes.models.unit_models import Feed
+from idaes.models.unit_models import Feed, Product
 
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 
-from prommis.nanofiltration.diafiltration_product import DiafiltrationProduct
-from prommis.nanofiltration.diafiltration_solute_feed_properties import (
-    SoluteFeedParameter,
+from prommis.nanofiltration.diafiltration_stream_properties import (
+    DiafiltrationStreamParameter,
 )
 from prommis.nanofiltration.diafiltration_solute_properties import SoluteParameter
-from prommis.nanofiltration.diafiltration_solute_product_properties import (
-    SoluteProductParameter,
-)
 from prommis.nanofiltration.diafiltration_two_salt import TwoSaltDiafiltration
 
 
@@ -44,16 +40,15 @@ def main():
     # build flowsheet
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.feed_properties = SoluteFeedParameter()
+    m.fs.stream_properties = DiafiltrationStreamParameter()
     m.fs.properties = SoluteParameter()
-    m.fs.product_properties = SoluteProductParameter()
 
     # update parameter inputs if desired
     build_membrane_parameters(m)
 
     # add feed blocks for feed and diafiltrate
-    m.fs.feed_block = Feed(property_package=m.fs.feed_properties)
-    m.fs.diafiltrate_block = Feed(property_package=m.fs.feed_properties)
+    m.fs.feed_block = Feed(property_package=m.fs.stream_properties)
+    m.fs.diafiltrate_block = Feed(property_package=m.fs.stream_properties)
 
     # add the membrane unit model
     m.fs.membrane = TwoSaltDiafiltration(
@@ -63,10 +58,8 @@ def main():
     )
 
     # add product blocks for retentate and permeate
-    m.fs.retentate_block = DiafiltrationProduct(
-        property_package=m.fs.product_properties
-    )
-    m.fs.permeate_block = DiafiltrationProduct(property_package=m.fs.product_properties)
+    m.fs.retentate_block = Product(property_package=m.fs.stream_properties)
+    m.fs.permeate_block = Product(property_package=m.fs.stream_properties)
 
     # fix the degrees of freedom to their default values
     fix_variables(m)

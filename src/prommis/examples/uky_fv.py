@@ -23,9 +23,10 @@ except ImportError:
     visualize = None
 from idaes import logger as idaeslog
 
+from prommis.examples import util
+
 # prommis
 from prommis.uky.uky_flowsheet_ui import build_flowsheet
-from prommis.examples import util
 
 _log = idaeslog.getLogger(__name__)
 

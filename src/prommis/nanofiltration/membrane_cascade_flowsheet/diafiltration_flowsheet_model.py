@@ -21,6 +21,7 @@ from pyomo.environ import (
     Var,
     maximize,
     units,
+    value,
 )
 from pyomo.network import Arc
 
@@ -932,8 +933,8 @@ class DiafiltrationModel:
         itr = 0
         check_sol = self.solutes[0]
         while not np.isclose(diaf_old, diaf_new) and itr < 100:
-            diaf_old = (
-                m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute[check_sol].value
+            diaf_old = value(
+                m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute[check_sol]
             )
             split_initializer.initialize(m.fs.split_diafiltrate)
 
@@ -970,14 +971,14 @@ class DiafiltrationModel:
                                 ].fix(0)
                     else:
                         if i == check_loc:
-                            check_old = (
-                                m.fs.inlet_mixers[i].mixed_state[0].flow_vol.value
+                            check_old = value(
+                                m.fs.inlet_mixers[i].mixed_state[0].flow_vol
                             )
 
                     mixer_initializer = MixerInitializer()
                     mixer_initializer.initialize(m.fs.inlet_mixers[i])
                     if i == check_loc:
-                        check_new = m.fs.inlet_mixers[i].mixed_state[0].flow_vol.value
+                        check_new = value(m.fs.inlet_mixers[i].mixed_state[0].flow_vol)
 
                     # propagate state if using stage mixing to the splitter
                     if mixing == "stage":
@@ -1009,8 +1010,8 @@ class DiafiltrationModel:
 
             self.initialize_precipitators(m, precipitate)
 
-            diaf_new = (
-                m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute[check_sol].value
+            diaf_new = value(
+                m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute[check_sol]
             )
             flowsheet_logger.info(f"=>Recycle Error: {diaf_new - diaf_old}\n")
             itr += 1

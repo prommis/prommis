@@ -95,7 +95,7 @@ class REESolExOgParameterData(PhysicalParameterBlock):
 
         # density of Kerosene
         self.dens_mass = Param(
-            initialize=820e-3,
+            initialize=0.82,
             units=units.kg / units.litre,
             mutable=True,
         )
@@ -230,17 +230,32 @@ class REESolExOgStateBlockData(StateBlockData):
             )
 
     def get_enthalpy_flow_terms(b, p):
-        return (
-            b.flow_vol
-            * (b.params.dens_mass / b.params.mw["Kerosene"])
-            * b.params.cp_mol
-            * (b.temperature - b.params.temperature_ref)
+        units_meta = b.params.get_metadata().get_derived_units
+        length_unit = units_meta("length")
+        mass_unit = units_meta("mass")
+        time_unit = units_meta("time")
+        return units.convert(
+            (
+                b.flow_vol
+                * (b.params.dens_mass / b.params.mw["Kerosene"])
+                * b.params.cp_mol
+                * (b.temperature - b.params.temperature_ref)
+            ),
+            to_units=(mass_unit * length_unit**2) / time_unit**3,
         )
 
     def get_energy_density_terms(b, p):
-        return (b.params.dens_mass / b.params.mw["Kerosene"]) * b.params.cp_mol * (
-            b.temperature - b.params.temperature_ref
-        ) - b.pressure * b.params.mw["H2O"] / b.params.dens_mass
+        units_meta = b.params.get_metadata().get_derived_units
+        length_unit = units_meta("length")
+        mass_unit = units_meta("mass")
+        time_unit = units_meta("time")
+        return units.convert(
+            (b.params.dens_mass / b.params.mw["Kerosene"])
+            * b.params.cp_mol
+            * (b.temperature - b.params.temperature_ref)
+            - b.pressure * b.params.mw["H2O"] / b.params.dens_mass,
+            to_units=mass_unit / (length_unit * time_unit**2),
+        )
 
     def default_energy_balance_type(self):
         return EnergyBalanceType.enthalpyTotal

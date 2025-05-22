@@ -77,19 +77,6 @@ class TranslatorDataLeachPrecip(TranslatorData):
                 == blk.properties_in[t].conc_mass_comp[i]
             )
 
-        # self.acids = Set(initialize=["H", "HSO4", "SO4"])
-
-        # @self.Constraint(
-        #     self.flowsheet().time,
-        #     self.acids,
-        #     doc="Equality equation for acid components",
-        # )
-        # def eq_conc_mole_acids(blk, t, i):
-        #     return (
-        #         blk.properties_out[t].conc_mole_acid[i]
-        #         == 1e-7 * pyunits.mol / pyunits.L
-        #     )
-
     def initialize_build(
         self,
         state_args_in=None,

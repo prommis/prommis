@@ -66,7 +66,7 @@ The core model consists of a MSContactor model, with stream names hard coded as 
 'organic', and the stream dictionaries and number of finite elements are the same as those provided
 by the user.
 
-This model uses the heterogeneous reaction term defined in the MSContactor, to calculate the amount of
+This model uses the heterogeneous reaction term defined in the MSContactor to calculate the amount of
 material transferred between the phases for each of the rare earth elements. The distribution coefficients
 used for this quantification are defined in the reaction package, and the constraint pertaining to the
 distribution coefficient is defined in the solvent extraction model.
@@ -93,6 +93,7 @@ from idaes.core.util.constants import Constants
 from idaes.core.initialization import ModularInitializerBase
 
 from idaes.models.unit_models.mscontactor import MSContactor
+from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 
 class SolventExtractionInitializer(ModularInitializerBase):
@@ -135,10 +136,11 @@ class SolventExtractionInitializer(ModularInitializerBase):
         Returns:
             None
         """
-
-        model.mscontactor.heterogeneous_reaction_extent.fix(1e-8)
-        model.mscontactor.volume.fix(1)
-        model.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
+        # print(dof(model.mscontactor))
+        model.mscontactor.heterogeneous_reaction_extent.fix()
+        # print(dof(model.mscontactor))
+        model.mscontactor.volume.fix()
+        model.mscontactor.volume_frac_stream[:, :, "aqueous"].fix()
 
         # Initialize MSContactor
         msc_init = model.mscontactor.default_initializer(
@@ -150,9 +152,9 @@ class SolventExtractionInitializer(ModularInitializerBase):
         model.mscontactor.heterogeneous_reaction_extent.unfix()
 
         solver = self._get_solver()
-        init_model = solver.solve(model)
+        results = solver.solve(model)
 
-        return init_model
+        return results
 
 
 Stream_Config = ConfigDict()
@@ -241,18 +243,17 @@ class SolventExtractionData(UnitModelBlockData):
     )
 
     CONFIG.declare(
-        "reaction_package",
+        "heterogeneous_reaction_package",
         ConfigValue(
-            # TODO: Add a domain validator for this
-            description="Heterogeneous reaction package for leaching.",
+            description="Heterogeneous reaction package for solvent extraction.",
         ),
     )
     CONFIG.declare(
-        "reaction_package_args",
+        "heterogeneous_reaction_package_args",
         ConfigValue(
             default=None,
             domain=dict,
-            description="Arguments for heterogeneous reaction package for leaching.",
+            description="Arguments for heterogeneous reaction package for solvent extractiong.",
         ),
     )
 
@@ -266,29 +267,14 @@ class SolventExtractionData(UnitModelBlockData):
         self.mscontactor = MSContactor(
             streams=streams_dict,
             number_of_finite_elements=self.config.number_of_finite_elements,
-            heterogeneous_reactions=self.config.reaction_package,
-            heterogeneous_reactions_args=self.config.reaction_package_args,
+            heterogeneous_reactions=self.config.heterogeneous_reaction_package,
+            heterogeneous_reactions_args=self.config.heterogeneous_reaction_package_args,
             has_holdup=self.config.has_holdup,
         )
 
-        distribution_set = [
-            ("Al", "Al_o"),
-            ("Ca", "Ca_o"),
-            ("Fe", "Fe_o"),
-            ("Sc", "Sc_o"),
-            ("Y", "Y_o"),
-            ("Gd", "Gd_o"),
-            ("Dy", "Dy_o"),
-            ("Sm", "Sm_o"),
-            ("La", "La_o"),
-            ("Pr", "Pr_o"),
-            ("Ce", "Ce_o"),
-            ("Nd", "Nd_o"),
-        ]
-
-        def distribution_ratio_rule(b, t, s, e, f):
+        def distribution_ratio_rule(b, t, s, e):
             return (
-                b.mscontactor.organic[t, s].conc_mol_comp[f]
+                b.mscontactor.organic[t, s].conc_mol_comp[f"{e}_o"]
                 == b.mscontactor.heterogeneous_reactions[t, s].distribution_coefficient[
                     e
                 ]
@@ -298,7 +284,7 @@ class SolventExtractionData(UnitModelBlockData):
         self.distribution_extent_constraint = Constraint(
             self.flowsheet().time,
             self.mscontactor.elements,
-            distribution_set,
+            self.config.heterogeneous_reaction_package.element_list,
             rule=distribution_ratio_rule,
         )
 
@@ -313,24 +299,41 @@ class SolventExtractionData(UnitModelBlockData):
         self.elevation = Param(
             self.mscontactor.elements,
             units=units.m,
-            doc="Elevation of each stage",
+            doc="Height of settler tank base above outflow valve level",
             initialize=1,
             mutable=True,
         )
 
-        def aqueous_pressure_calculation(b, t, s):
-            # g = 9.8 * (units.m) / units.sec**2
+        def organic_pressure_calculation(b, t, s):
+
             g = Constants.acceleration_gravity
             P_atm = 101325 * units.Pa
 
-            rho_aq = sum(
-                b.mscontactor.aqueous[t, s].conc_mass_comp[p]
-                for p in getattr(b.mscontactor, "aqueous").component_list
+            rho_og = b.config.organic_stream["property_package"].dens_mass
+
+            P_org = units.convert(
+                (
+                    rho_og
+                    * g
+                    * b.mscontactor.volume[s]
+                    * b.mscontactor.volume_frac_stream[t, s, "organic"]
+                    / b.area_cross_stage[s]
+                ),
+                to_units=units.Pa,
             )
-            rho_og = sum(
-                b.mscontactor.organic[t, s].conc_mass_comp[p]
-                for p in getattr(b.mscontactor, "organic").component_list
-            )
+
+            return b.mscontactor.organic[t, s].pressure == P_org + P_atm
+
+        self.organic_pressure_constraint = Constraint(
+            self.flowsheet().time,
+            self.mscontactor.elements,
+            rule=organic_pressure_calculation,
+        )
+
+        def aqueous_pressure_calculation(b, t, s):
+            g = Constants.acceleration_gravity
+
+            rho_aq = b.config.aqueous_stream["property_package"].dens_mass
             P_aq = units.convert(
                 (
                     rho_aq
@@ -344,49 +347,16 @@ class SolventExtractionData(UnitModelBlockData):
                 ),
                 to_units=units.Pa,
             )
-            P_org = units.convert(
-                (
-                    rho_og
-                    * g
-                    * b.mscontactor.volume[s]
-                    * b.mscontactor.volume_frac_stream[t, s, "organic"]
-                    / b.area_cross_stage[s]
-                ),
-                to_units=units.Pa,
+
+            return (
+                b.mscontactor.aqueous[t, s].pressure
+                == P_aq + b.mscontactor.organic[t, s].pressure
             )
-            return b.mscontactor.aqueous[t, s].pressure == P_aq + P_org + P_atm
 
         self.aqueous_pressure_constraint = Constraint(
             self.flowsheet().time,
             self.mscontactor.elements,
             rule=aqueous_pressure_calculation,
-        )
-
-        def organic_pressure_calculation(b, t, s):
-            g = 9.8 * (units.m) / units.sec**2
-            P_atm = 101325 * units.Pa
-
-            rho_og = sum(
-                b.mscontactor.organic[t, s].conc_mass_comp[p]
-                for p in getattr(b.mscontactor, "organic").component_list
-            )
-
-            P_org = units.convert(
-                (
-                    rho_og
-                    * g
-                    * b.mscontactor.volume[s]
-                    * b.mscontactor.volume_frac_stream[t, s, "organic"]
-                    / b.area_cross_stage[s]
-                ),
-                to_units=units.Pa,
-            )
-            return b.mscontactor.organic[t, s].pressure == P_org + P_atm
-
-        self.organic_pressure_constraint = Constraint(
-            self.flowsheet().time,
-            self.mscontactor.elements,
-            rule=organic_pressure_calculation,
         )
 
         self.aqueous_inlet = Port(extends=self.mscontactor.aqueous_inlet)

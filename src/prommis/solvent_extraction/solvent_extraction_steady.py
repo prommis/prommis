@@ -52,7 +52,7 @@ def build_model(dosage, number_of_stages):
             "has_energy_balance": False,
             "has_pressure_balance": False,
         },
-        reaction_package=m.fs.reaxn,
+        heterogeneous_reaction_package=m.fs.reaxn,
         has_holdup=True,
     )
 

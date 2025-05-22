@@ -307,7 +307,7 @@ class SolventExtractionReactionsData(ProcessBlockData):
             initialize=1,
         )
 
-        def distribution_eq(b, e):
+        def distribution_expression(b, e):
             aq_block = b.parent_block().aqueous[b.index()]
 
             pH = aq_block.pH_phase["liquid"]
@@ -316,8 +316,8 @@ class SolventExtractionReactionsData(ProcessBlockData):
                 + (b.params.B0[e] + b.params.B1[e] * log10(b.params.extractant_dosage))
             ) * (1 - b.params.K_corr[e]) + b.params.K_corr[e] * b.params.K1[e]
 
-        self.distribution_constraint = Constraint(
-            self.params.element_list, rule=distribution_eq
+        self.distribution_expression_constraint = Constraint(
+            self.params.element_list, rule=distribution_expression
         )
 
     @property

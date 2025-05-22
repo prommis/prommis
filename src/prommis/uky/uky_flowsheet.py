@@ -345,7 +345,7 @@ def build():
             "has_energy_balance": False,
             "has_pressure_balance": False,
         },
-        reaction_package=m.fs.reaxn,
+        heterogeneous_reaction_package=m.fs.reaxn,
         has_holdup=True,
     )
 
@@ -366,7 +366,7 @@ def build():
             "has_energy_balance": False,
             "has_pressure_balance": False,
         },
-        reaction_package=m.fs.reaxn,
+        heterogeneous_reaction_package=m.fs.reaxn,
         has_holdup=True,
     )
 
@@ -387,7 +387,7 @@ def build():
             "has_energy_balance": False,
             "has_pressure_balance": False,
         },
-        reaction_package=m.fs.reaxn,
+        heterogeneous_reaction_package=m.fs.reaxn,
         has_holdup=True,
     )
 
@@ -442,7 +442,7 @@ def build():
             "has_energy_balance": False,
             "has_pressure_balance": False,
         },
-        reaction_package=m.fs.reaxn,
+        heterogeneous_reaction_package=m.fs.reaxn,
         has_holdup=True,
     )
 
@@ -461,7 +461,7 @@ def build():
             "has_energy_balance": False,
             "has_pressure_balance": False,
         },
-        reaction_package=m.fs.reaxn,
+        heterogeneous_reaction_package=m.fs.reaxn,
         has_holdup=True,
     )
 
@@ -770,12 +770,12 @@ def set_scaling(m):
         overwrite=False,
     )
     csb.scale_constraint_by_nominal_value(
-        m.fs.solex_rougher_load.distribution_extent_constraint[0, 1, "Ca", "Ca_o"],
+        m.fs.solex_rougher_load.distribution_extent_constraint[0, 1, "Ca"],
         scheme=ConstraintScalingScheme.inverseMaximum,
         overwrite=False,
     )
     csb.scale_constraint_by_nominal_value(
-        m.fs.solex_rougher_scrub.distribution_extent_constraint[0, 1, "Al", "Al_o"],
+        m.fs.solex_rougher_scrub.distribution_extent_constraint[0, 1, "Al"],
         scheme=ConstraintScalingScheme.inverseMaximum,
         overwrite=False,
     )

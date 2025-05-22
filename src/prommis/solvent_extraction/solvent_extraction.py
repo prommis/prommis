@@ -93,7 +93,6 @@ from idaes.core.util.constants import Constants
 from idaes.core.initialization import ModularInitializerBase
 
 from idaes.models.unit_models.mscontactor import MSContactor
-from idaes.core.util.model_statistics import degrees_of_freedom as dof
 
 
 class SolventExtractionInitializer(ModularInitializerBase):

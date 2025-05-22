@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -76,7 +76,7 @@ function of the parameter of partition coefficient defined by the user.
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Param
+from pyomo.environ import Block, Constraint, Param
 from pyomo.network import Port
 
 from idaes.core import (
@@ -85,8 +85,53 @@ from idaes.core import (
     declare_process_block_class,
     useDefault,
 )
+from idaes.core.initialization import ModularInitializerBase
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.models.unit_models.mscontactor import MSContactor
+
+
+class SolventExtractionInitializer(ModularInitializerBase):
+    """
+    This is a general purpose Initializer  for the Solvent Extraction unit model.
+
+    This routine calls the initializer for the internal MSContactor model.
+
+    """
+
+    CONFIG = ModularInitializerBase.CONFIG()
+
+    def initialize_main_model(
+        self,
+        model: Block,
+    ):
+        """
+        Initialization routine for MSContactor Blocks.
+
+        Args:
+            model: model to be initialized
+
+        Returns:
+            None
+        """
+        """
+        This model adds an additional constraint of the material transfer term.
+        This constraint is present outside the main MSContactor model, so this term is 
+        fixed to give a square model to the MScontactor Initializer.
+
+        """
+
+        model.mscontactor.material_transfer_term.fix(1e-10)
+
+        msc_init = self.get_submodel_initializer(model.mscontactor)
+        msc_init.initialize(model.mscontactor)
+
+        model.mscontactor.material_transfer_term.unfix()
+
+        solver = self._get_solver()
+        results = solver.solve(model)
+
+        return results
+
 
 Stream_Config = ConfigDict()
 

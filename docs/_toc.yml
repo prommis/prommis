@@ -1,7 +1,9 @@
 format: jb-book
 root: index
 chapters:
+  - file: getting_started.md
   - file: tutorials/diafiltration
   - file: tutorials/diafiltration-solution
   - file: tutorials/uky_flowsheet-solution
   - file: api.rst
+  - file: examples/cmi_process.rst

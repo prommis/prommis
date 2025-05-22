@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -126,9 +126,9 @@ Precipitator solid-liquid separator liquid recycle split fraction     0.9       
 
 Costing
 -------
-Unit model costing in this flowsheet is preliminary and is based on the commercial scale unit model parameters provided in Table 4-28 :math:`^1`.
-However, this flowsheet is at the pilot scale, so while some of the unit model costing parameters have been scaled down
-accordingly, a more robust scale-down procedure of the costing parameters is necessary to accurately approximate the cost of this pilot scale system.
+Unit model costing in this flowsheet is based on the commercial scale unit model parameters provided in Table 4-28 :math:`^1`.
+The reference cost and capacity parameter data from [1] are at commercial scale. As this flowsheet is at the pilot scale, some
+of the unit model capacity parameters have been scaled down accordingly by unit feed rate.
 
 
 References:
@@ -139,20 +139,20 @@ using advanced separation processes", 2019
 """
 
 from pyomo.environ import (
-    check_optimal_termination,
     ConcreteModel,
     Constraint,
     Expression,
     Param,
-    SolverFactory,
     Suffix,
     TransformationFactory,
     Var,
-    value,
+    check_optimal_termination,
     units,
+    value,
 )
 from pyomo.network import Arc, SequentialDecomposition
 
+import idaes.logger as idaeslog
 from idaes.core import (
     FlowDirection,
     FlowsheetBlock,
@@ -161,8 +161,10 @@ from idaes.core import (
     UnitModelBlock,
     UnitModelCostingBlock,
 )
-from idaes.core.solvers import get_solver
 from idaes.core.initialization import BlockTriangularizationInitializer
+from idaes.core.scaling.scaling_base import ScalerBase
+from idaes.core.solvers import get_solver
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
@@ -170,37 +172,43 @@ from idaes.models.properties.modular_properties.base.generic_property import (
 from idaes.models.unit_models.feed import Feed, FeedInitializer
 from idaes.models.unit_models.mixer import (
     Mixer,
+    MixerInitializer,
     MixingType,
     MomentumMixingType,
-    MixerInitializer,
 )
 from idaes.models.unit_models.product import Product, ProductInitializer
 from idaes.models.unit_models.separator import (
     EnergySplittingType,
     Separator,
-    SplittingType,
     SeparatorInitializer,
+    SplittingType,
 )
 from idaes.models.unit_models.solid_liquid import SLSeparator
 from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
     get_prop,
 )
-import idaes.logger as idaeslog
 
-from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
+from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
 _log = idaeslog.getLogger(__name__)
+
+# Epsilon represents near-zero component concentrations
+eps = 1e-8 * units.mg / units.L
 
 
 def main():
@@ -212,7 +220,10 @@ def main():
 
     set_operating_conditions(m)
 
-    scaled_model = set_scaling(m)
+    set_scaling(m)
+
+    scaling = TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(m, rename=False)
 
     if degrees_of_freedom(scaled_model) != 0:
         raise AssertionError(
@@ -236,12 +247,25 @@ def main():
             "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
         )
 
-    scaling = TransformationFactory("core.scale_model")
     results = scaling.propagate_solution(scaled_model, m)
 
     display_results(m)
 
     add_costing(m)
+
+    # diagnostics, initialize, and solve
+
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+
+    solve_system(m)
+
+    dt.assert_no_numerical_warnings()
+
     display_costing(m)
 
     return m, results
@@ -467,15 +491,6 @@ def build():
     # --------------------------------------------------------------------------------------------------------------
     # Precipitation property and unit models
 
-    key_components = {
-        "H^+",
-        "Ce^3+",
-        "Al^3+",
-        "Fe^3+",
-        "Ca^2+",
-        "C2O4^2-",
-    }
-
     m.fs.properties_aq = AqueousParameter()
     m.fs.properties_solid = PrecipitateParameters()
 
@@ -520,13 +535,12 @@ def build():
         doc="gas property",
     )
 
-    m.fs.prop_solid = PrecipitateParameters(
-        key_components=key_components,
-    )
+    m.fs.prop_solid = PrecipitateParameters()
 
     m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
-        property_package_precipitate=m.fs.prop_solid,
+        property_package_precipitate_solid=m.fs.prop_solid,
+        property_package_precipitate_liquid=m.fs.properties_aq,
         has_holdup=False,
         has_heat_transfer=True,
         has_pressure_change=True,
@@ -534,139 +548,145 @@ def build():
 
     # -----------------------------------------------------------------------------------------------------------------
     # UKy flowsheet connections
-    m.fs.sol_feed = Arc(
+    m.fs.leaching_sol_feed = Arc(
         source=m.fs.leach_solid_feed.outlet, destination=m.fs.leach.solid_inlet
     )
-    m.fs.liq_feed = Arc(
+    m.fs.leaching_liq_feed = Arc(
         source=m.fs.leach_liquid_feed.outlet, destination=m.fs.leach_mixer.feed
     )
-    m.fs.feed_mixture = Arc(
+    m.fs.leaching_feed_mixture = Arc(
         source=m.fs.leach_mixer.outlet, destination=m.fs.leach.liquid_inlet
     )
-    m.fs.s01 = Arc(source=m.fs.leach.solid_outlet, destination=m.fs.sl_sep1.solid_inlet)
-    m.fs.s02 = Arc(
+    m.fs.leaching_solid_outlet = Arc(
+        source=m.fs.leach.solid_outlet, destination=m.fs.sl_sep1.solid_inlet
+    )
+    m.fs.leaching_liquid_outlet = Arc(
         source=m.fs.leach.liquid_outlet, destination=m.fs.sl_sep1.liquid_inlet
     )
-    m.fs.sep1_solid = Arc(
+    m.fs.sl_sep1_solid_outlet = Arc(
         source=m.fs.sl_sep1.solid_outlet, destination=m.fs.leach_filter_cake.inlet
     )
-    m.fs.sep1_retained_liquid = Arc(
+    m.fs.sl_sep1_retained_liquid_outlet = Arc(
         source=m.fs.sl_sep1.retained_liquid_outlet,
         destination=m.fs.leach_filter_cake_liquid.inlet,
     )
-    m.fs.sep1_liquid = Arc(
+    m.fs.sl_sep1_liquid_outlet = Arc(
         source=m.fs.sl_sep1.recovered_liquid_outlet,
         destination=m.fs.leach_sx_mixer.leach,
     )
-    m.fs.mixed_aq_feed = Arc(
+    m.fs.sx_rougher_load_aq_feed = Arc(
         source=m.fs.leach_sx_mixer.outlet,
-        destination=m.fs.solex_rougher_load.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_rougher_load.aqueous_inlet,
     )
-    m.fs.org_feed = Arc(
+    m.fs.sx_rougher_org_feed = Arc(
         source=m.fs.rougher_org_make_up.outlet, destination=m.fs.rougher_mixer.make_up
     )
-    m.fs.mixed_org_feed = Arc(
+    m.fs.sx_rougher_mixed_org_recycle = Arc(
         source=m.fs.rougher_mixer.outlet,
-        destination=m.fs.solex_rougher_load.mscontactor.organic_inlet,
+        destination=m.fs.solex_rougher_load.organic_inlet,
     )
-    m.fs.s03 = Arc(
-        source=m.fs.solex_rougher_load.mscontactor.aqueous_outlet,
+    m.fs.sx_rougher_load_aq_outlet = Arc(
+        source=m.fs.solex_rougher_load.aqueous_outlet,
         destination=m.fs.load_sep.inlet,
     )
-    m.fs.load_recycle = Arc(
+    m.fs.sx_rougher_load_aq_recycle = Arc(
         source=m.fs.load_sep.recycle, destination=m.fs.leach_mixer.load_recycle
     )
-    m.fs.s04 = Arc(
-        source=m.fs.solex_rougher_load.mscontactor.organic_outlet,
-        destination=m.fs.solex_rougher_scrub.mscontactor.organic_inlet,
+    m.fs.sx_rougher_load_org_outlet = Arc(
+        source=m.fs.solex_rougher_load.organic_outlet,
+        destination=m.fs.solex_rougher_scrub.organic_inlet,
     )
-    m.fs.s05 = Arc(
+    m.fs.sx_rougher_scrub_acid_feed = Arc(
         source=m.fs.acid_feed1.outlet,
-        destination=m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_rougher_scrub.aqueous_inlet,
     )
-    m.fs.s06 = Arc(
-        source=m.fs.solex_rougher_scrub.mscontactor.aqueous_outlet,
+    m.fs.sx_rougher_scrub_aq_outlet = Arc(
+        source=m.fs.solex_rougher_scrub.aqueous_outlet,
         destination=m.fs.scrub_sep.inlet,
     )
-    m.fs.scrub_recycle = Arc(
+    m.fs.sx_rougher_scrub_aq_recycle = Arc(
         source=m.fs.scrub_sep.recycle, destination=m.fs.leach_mixer.scrub_recycle
     )
-    m.fs.s07 = Arc(
-        source=m.fs.solex_rougher_scrub.mscontactor.organic_outlet,
-        destination=m.fs.solex_rougher_strip.mscontactor.organic_inlet,
+    m.fs.sx_rougher_scrub_org_outlet = Arc(
+        source=m.fs.solex_rougher_scrub.organic_outlet,
+        destination=m.fs.solex_rougher_strip.organic_inlet,
     )
-    m.fs.s08 = Arc(
+    m.fs.sx_rougher_strip_acid_feed = Arc(
         source=m.fs.acid_feed2.outlet,
-        destination=m.fs.solex_rougher_strip.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_rougher_strip.aqueous_inlet,
     )
-    m.fs.s09 = Arc(
-        source=m.fs.solex_rougher_strip.mscontactor.organic_outlet,
+    m.fs.sx_rougher_strip_org_outlet = Arc(
+        source=m.fs.solex_rougher_strip.organic_outlet,
         destination=m.fs.rougher_sep.inlet,
     )
-    m.fs.s10 = Arc(
+    m.fs.sx_rougher_strip_org_purge = Arc(
         source=m.fs.rougher_sep.purge, destination=m.fs.sc_circuit_purge.inlet
     )
-    m.fs.s11 = Arc(
+    m.fs.sx_rougher_strip_org_recycle = Arc(
         source=m.fs.rougher_sep.recycle, destination=m.fs.rougher_mixer.recycle
     )
-    m.fs.s12 = Arc(
-        source=m.fs.solex_rougher_strip.mscontactor.aqueous_outlet,
+    m.fs.sx_rougher_strip_aq_outlet = Arc(
+        source=m.fs.solex_rougher_strip.aqueous_outlet,
         destination=m.fs.precip_sx_mixer.rougher,
     )
-    m.fs.s13 = Arc(
+    m.fs.sx_cleaner_load_aq_feed = Arc(
         source=m.fs.precip_sx_mixer.outlet,
-        destination=m.fs.solex_cleaner_load.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_cleaner_load.aqueous_inlet,
     )
-    m.fs.org_feed2 = Arc(
+    m.fs.sx_cleaner_org_feed = Arc(
         source=m.fs.cleaner_org_make_up.outlet, destination=m.fs.cleaner_mixer.make_up
     )
-    m.fs.s14 = Arc(
+    m.fs.sx_cleaner_mixed_org_recycle = Arc(
         source=m.fs.cleaner_mixer.outlet,
-        destination=m.fs.solex_cleaner_load.mscontactor.organic_inlet,
+        destination=m.fs.solex_cleaner_load.organic_inlet,
     )
-    m.fs.s15 = Arc(
-        source=m.fs.solex_cleaner_load.mscontactor.aqueous_outlet,
+    m.fs.sx_cleaner_load_aq_outlet = Arc(
+        source=m.fs.solex_cleaner_load.aqueous_outlet,
         destination=m.fs.leach_sx_mixer.cleaner,
     )
-    m.fs.s16 = Arc(
+    m.fs.sx_cleaner_strip_acid_feed = Arc(
         source=m.fs.acid_feed3.outlet,
-        destination=m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet,
+        destination=m.fs.solex_cleaner_strip.aqueous_inlet,
     )
-    m.fs.s17 = Arc(
-        source=m.fs.solex_cleaner_load.mscontactor.organic_outlet,
-        destination=m.fs.solex_cleaner_strip.mscontactor.organic_inlet,
+    m.fs.sx_cleaner_load_org_outlet = Arc(
+        source=m.fs.solex_cleaner_load.organic_outlet,
+        destination=m.fs.solex_cleaner_strip.organic_inlet,
     )
-    m.fs.s18 = Arc(
-        source=m.fs.solex_cleaner_strip.mscontactor.organic_outlet,
+    m.fs.sx_cleaner_strip_org_outlet = Arc(
+        source=m.fs.solex_cleaner_strip.organic_outlet,
         destination=m.fs.cleaner_sep.inlet,
     )
-    m.fs.s19 = Arc(source=m.fs.cleaner_sep.purge, destination=m.fs.cleaner_purge.inlet)
-    m.fs.s20 = Arc(
+    m.fs.sx_cleaner_strip_org_purge = Arc(
+        source=m.fs.cleaner_sep.purge, destination=m.fs.cleaner_purge.inlet
+    )
+    m.fs.sx_cleaner_strip_org_recycle = Arc(
         source=m.fs.cleaner_sep.recycle, destination=m.fs.cleaner_mixer.recycle
     )
-    m.fs.s21 = Arc(
-        source=m.fs.solex_cleaner_strip.mscontactor.aqueous_outlet,
+    m.fs.sx_cleaner_strip_aq_outlet = Arc(
+        source=m.fs.solex_cleaner_strip.aqueous_outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )
-    m.fs.s22 = Arc(
+    m.fs.precip_solid_outlet = Arc(
         source=m.fs.precipitator.precipitate_outlet,
         destination=m.fs.sl_sep2.solid_inlet,
     )
-    m.fs.s23 = Arc(
+    m.fs.precip_aq_outlet = Arc(
         source=m.fs.precipitator.aqueous_outlet, destination=m.fs.sl_sep2.liquid_inlet
     )
-    m.fs.sep2_solid = Arc(
+    m.fs.sl_sep2_solid_outlet = Arc(
         source=m.fs.sl_sep2.solid_outlet, destination=m.fs.roaster.solid_inlet
     )
-    # # TODO: roaster model cannot currently handle liquid inlets
-    # m.fs.sep2_retained_liquid = Arc(
-    #     source=m.fs.sl_sep2.retained_liquid_outlet, destination=m.fs.roaster.liquid_inlet
-    # )
-    m.fs.sep2_recovered_liquid = Arc(
+    m.fs.sl_sep2_retained_liquid_outlet = Arc(
+        source=m.fs.sl_sep2.retained_liquid_outlet,
+        destination=m.fs.roaster.liquid_inlet,
+    )
+    m.fs.sl_sep2_liquid_outlet = Arc(
         source=m.fs.sl_sep2.recovered_liquid_outlet, destination=m.fs.precip_sep.inlet
     )
-    m.fs.s24 = Arc(source=m.fs.precip_sep.purge, destination=m.fs.precip_purge.inlet)
-    m.fs.s25 = Arc(
+    m.fs.sl_sep2_aq_purge = Arc(
+        source=m.fs.precip_sep.purge, destination=m.fs.precip_purge.inlet
+    )
+    m.fs.sl_sep2_aq_recycle = Arc(
         source=m.fs.precip_sep.recycle,
         destination=m.fs.precip_sx_mixer.precip,
     )
@@ -955,369 +975,17 @@ def set_scaling(m):
     # Scaling
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
-    aqueous_component_set = [
-        "H2O",
-        "H",
-        "HSO4",
-        "SO4",
-        "Cl",
-        "Sc",
-        "Y",
-        "La",
-        "Ce",
-        "Pr",
-        "Nd",
-        "Sm",
-        "Gd",
-        "Dy",
-        "Al",
-        "Ca",
-        "Fe",
-    ]
+    sb = ScalerBase()
 
-    organic_component_set = [
-        "Sc",
-        "Y",
-        "La",
-        "Ce",
-        "Pr",
-        "Nd",
-        "Sm",
-        "Gd",
-        "Dy",
-        "Al",
-        "Ca",
-        "Fe",
-    ]
+    for var in m.fs.component_data_objects(Var, descend_into=True):
+        if "temperature" in var.name:
+            sb.set_variable_scaling_factor(var, 1e-2)
+        if "pressure" in var.name:
+            sb.set_variable_scaling_factor(var, 1e-5)
+        if "flow_mol" in var.name:
+            sb.set_variable_scaling_factor(var, 1e-3)
 
-    for component in aqueous_component_set:
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_liquid_feed.properties[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep1.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep1.split.recovered_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep1.split.retained_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_filter_cake_liquid.properties[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_mixer.load_recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_mixer.scrub_recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.leach_mixer.feed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.leach_mixer.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_scrub.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.aqueous[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.aqueous[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[m.fs.acid_feed1.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_scrub.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[m.fs.acid_feed2.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.aqueous[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.aqueous[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.aqueous[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_sx_mixer.leach_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_sx_mixer.cleaner_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach_sx_mixer.mixed_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep2.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep2.split.retained_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.sl_sep2.split.recovered_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.load_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.load_sep.recycle_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.load_sep.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.scrub_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.scrub_sep.recycle_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.scrub_sep.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.precip_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.precip_sep.recycle_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[m.fs.precip_sep.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.precip_purge.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.precip_sx_mixer.precip_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.precip_sx_mixer.rougher_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.precip_sx_mixer.mixed_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.acid_feed3.properties[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.precip_purge.properties[0].conc_mol_comp[component]] = 1
-        m.scaling_factor[
-            m.fs.precipitator.cv_aqueous.properties_in[0].conc_mol_comp[component]
-        ] = 1
-        m.scaling_factor[
-            m.fs.precipitator.cv_aqueous.properties_out[0].conc_mol_comp[component]
-        ] = 1
-
-    for component in organic_component_set:
-        m.scaling_factor[
-            m.fs.rougher_org_make_up.properties[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.organic[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.organic[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_scrub.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.organic[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_mixer.make_up_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_mixer.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.rougher_mixer.mixed_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[m.fs.rougher_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.rougher_sep.recycle_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[m.fs.rougher_sep.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_mixer.make_up_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.rougher_mixer.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.rougher_mixer.mixed_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[
-            m.fs.sc_circuit_purge.properties[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.cleaner_mixer.make_up_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.cleaner_mixer.recycle_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.cleaner_mixer.mixed_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[
-            m.fs.sc_circuit_purge.properties[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.organic[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.organic[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_load.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[m.fs.cleaner_sep.mixed_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[m.fs.cleaner_sep.recycle_state[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[m.fs.cleaner_sep.purge_state[0].conc_mol_comp[component]] = 1e5
-        m.scaling_factor[
-            m.fs.cleaner_org_make_up.properties[0].conc_mol_comp[component]
-        ] = 1e5
-
-        m.scaling_factor[m.fs.cleaner_purge.properties[0].conc_mol_comp[component]] = (
-            1e5
-        )
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.organic[0, 1].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.organic[0, 2].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.organic[0, 3].conc_mol_comp[component]
-        ] = 1e5
-        m.scaling_factor[
-            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].conc_mol_comp[
-                component
-            ]
-        ] = 1e5
-
-    m.scaling_factor[m.fs.solex_cleaner_load.mscontactor.aqueous[0, 1].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.solex_cleaner_load.mscontactor.organic[0, 1].flow_vol] = 1e-2
-
-    m.scaling_factor[m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 1].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 2].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.solex_cleaner_strip.mscontactor.aqueous[0, 3].flow_vol] = 1e-2
-    m.scaling_factor[
-        m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].flow_vol
-    ] = 1e-2
-    m.scaling_factor[m.fs.solex_cleaner_strip.mscontactor.organic[0, 1].flow_vol] = 1e-2
-
-    m.scaling_factor[m.fs.sl_sep2.solid_state[0].temperature] = 1e-2
-    m.scaling_factor[m.fs.sl_sep2.liquid_inlet_state[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.sl_sep2.split.recovered_state[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.sl_sep2.split.retained_state[0].flow_vol] = 1e-2
-
-    m.scaling_factor[m.fs.precip_sep.mixed_state[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.precip_sep.recycle_state[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.precip_sep.purge_state[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.precip_purge.properties[0].flow_vol] = 1e-2
-
-    m.scaling_factor[m.fs.precipitator.cv_precipitate[0].temperature] = 1e2
-
-    m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_in[0].flow_vol] = 1e-2
-    m.scaling_factor[m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol] = 1e-2
-
-    m.scaling_factor[m.fs.roaster.gas_in[0].flow_mol] = 1e-3
-    m.scaling_factor[m.fs.roaster.gas_in[0].flow_mol_phase["Vap"]] = 1e-3
-    m.scaling_factor[m.fs.roaster.gas_in[0].temperature] = 1e-2
-    m.scaling_factor[m.fs.roaster.gas_in[0].pressure] = 1e-5
-    m.scaling_factor[m.fs.roaster.gas_out[0].flow_mol_phase["Vap"]] = 1e-3
-    m.scaling_factor[m.fs.roaster.gas_out[0].flow_mol] = 1e-3
-    m.scaling_factor[m.fs.roaster.gas_out[0].temperature] = 1e-2
-    m.scaling_factor[m.fs.roaster.gas_out[0].pressure] = 1e-5
-    m.scaling_factor[m.fs.roaster.solid_in[0].temperature] = 1e-2
-
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-
-    return scaled_model
+    return m
 
 
 def set_operating_conditions(m):
@@ -1327,8 +995,6 @@ def set_operating_conditions(m):
     Args:
         m: pyomo model
     """
-    eps = 1e-8 * units.mg / units.L
-
     m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
     m.fs.leach_liquid_feed.conc_mass_comp.fix(1e-10 * units.mg / units.L)
     m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].fix(
@@ -1411,7 +1077,6 @@ def set_operating_conditions(m):
     m.fs.acid_feed1.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Dy"].fix(eps)
 
-    # TODO: flow rate and HCl concentration are not defined in REESim
     m.fs.acid_feed2.flow_vol.fix(0.09)
     m.fs.acid_feed2.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed2.conc_mass_comp[0, "H"].fix(
@@ -1435,7 +1100,6 @@ def set_operating_conditions(m):
 
     m.fs.rougher_sep.split_fraction[:, "recycle"].fix(0.9)
 
-    # TODO: flow rate and HCl concentration are not defined in REESim
     m.fs.acid_feed3.flow_vol.fix(9)
     m.fs.acid_feed3.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed3.conc_mass_comp[0, "H"].fix(
@@ -1475,7 +1139,7 @@ def set_operating_conditions(m):
     m.fs.cleaner_sep.split_fraction[:, "recycle"].fix(0.9)
 
     m.fs.sl_sep1.liquid_recovery.fix(0.7)
-    m.fs.sl_sep2.liquid_recovery.fix(0.7)
+    m.fs.sl_sep2.liquid_recovery.fix(0.95)
 
     m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
 
@@ -1502,7 +1166,6 @@ def set_operating_conditions(m):
     m.fs.roaster.gas_outlet.temperature.fix(873.15)
 
     # Fix operating conditions
-    m.fs.roaster.flow_mol_moist_feed.fix(6.75e-4)
     m.fs.roaster.frac_comp_recovery.fix(0.95)
 
     # Touch properties that are used in the UI
@@ -1544,11 +1207,11 @@ def initialize_system(m):
     seq.options.tear_method = "Direct"
     seq.options.iterLim = 1
     seq.options.tear_set = [
-        m.fs.feed_mixture,
-        m.fs.mixed_aq_feed,
-        m.fs.mixed_org_feed,
-        m.fs.s13,
-        m.fs.s14,
+        m.fs.leaching_feed_mixture,
+        m.fs.sx_rougher_load_aq_feed,
+        m.fs.sx_rougher_mixed_org_recycle,
+        m.fs.sx_cleaner_load_aq_feed,
+        m.fs.sx_cleaner_mixed_org_recycle,
     ]
 
     G = seq.create_graph(m)
@@ -1660,18 +1323,10 @@ def initialize_system(m):
 
     # Pass the tear_guess to the SD tool
     seq.set_guesses_for(m.fs.leach.liquid_inlet, tear_guesses1)
-    seq.set_guesses_for(
-        m.fs.solex_rougher_load.mscontactor.organic_inlet, tear_guesses2
-    )
-    seq.set_guesses_for(
-        m.fs.solex_rougher_load.mscontactor.aqueous_inlet, tear_guesses3
-    )
-    seq.set_guesses_for(
-        m.fs.solex_cleaner_load.mscontactor.organic_inlet, tear_guesses4
-    )
-    seq.set_guesses_for(
-        m.fs.solex_cleaner_load.mscontactor.aqueous_inlet, tear_guesses5
-    )
+    seq.set_guesses_for(m.fs.solex_rougher_load.organic_inlet, tear_guesses2)
+    seq.set_guesses_for(m.fs.solex_rougher_load.aqueous_inlet, tear_guesses3)
+    seq.set_guesses_for(m.fs.solex_cleaner_load.organic_inlet, tear_guesses4)
+    seq.set_guesses_for(m.fs.solex_cleaner_load.aqueous_inlet, tear_guesses5)
 
     initializer_feed = FeedInitializer()
     feed_units = [
@@ -1695,7 +1350,6 @@ def initialize_system(m):
 
     initializer_sep = SeparatorInitializer()
     sep_units = [
-        m.fs.load_sep,
         m.fs.scrub_sep,
         m.fs.precip_sep,
         m.fs.cleaner_sep,
@@ -1707,6 +1361,20 @@ def initialize_system(m):
         m.fs.precip_sx_mixer,
         m.fs.cleaner_mixer,
         m.fs.rougher_mixer,
+    ]
+
+    initializer_leach = LeachingTrainInitializer()
+    leach_units = [
+        m.fs.leach,
+    ]
+
+    initializer_sx = SolventExtractionInitializer()
+    sx_units = [
+        m.fs.solex_rougher_load,
+        m.fs.solex_rougher_scrub,
+        m.fs.solex_rougher_strip,
+        m.fs.solex_cleaner_load,
+        m.fs.solex_cleaner_strip,
     ]
 
     initializer_bt = BlockTriangularizationInitializer()
@@ -1724,136 +1392,12 @@ def initialize_system(m):
         elif unit in mix_units:
             _log.info(f"Initializing {unit}")
             initializer_mix.initialize(unit)
-        elif unit == m.fs.leach:
+        elif unit in leach_units:
             _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.leach.liquid_inlet.flow_vol.fix()
-            m.fs.leach.liquid_inlet.conc_mass_comp.fix()
-            m.fs.leach.solid_inlet.flow_mass.fix()
-            m.fs.leach.solid_inlet.mass_frac_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.leach, tee=True)
-            # Unfix feed states
-            m.fs.leach.liquid_inlet.flow_vol.unfix()
-            m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
-            m.fs.leach.solid_inlet.flow_mass.unfix()
-            m.fs.leach.solid_inlet.mass_frac_comp.unfix()
-        elif unit == m.fs.solex_rougher_load.mscontactor:
+            initializer_leach.initialize(unit)
+        elif unit in sx_units:
             _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.solex_rougher_load, tee=True)
-            # Unfix feed states
-            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_load.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-            m.fs.solex_rougher_load.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-        elif unit == m.fs.solex_rougher_scrub.mscontactor:
-            _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.solex_rougher_scrub, tee=True)
-            # Unfix feed states
-            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_scrub.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-            m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-        elif unit == m.fs.solex_rougher_strip.mscontactor:
-            _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.solex_rougher_strip, tee=True)
-            # Unfix feed states
-            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_rougher_strip.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-            m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-        elif unit == m.fs.solex_cleaner_load.mscontactor:
-            _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].flow_vol.fix()
-            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.solex_cleaner_load, tee=True)
-            # Unfix feed states
-            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_cleaner_load.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-            m.fs.solex_cleaner_load.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-        elif unit == m.fs.solex_cleaner_strip.mscontactor:
-            _log.info(f"Initializing {unit}")
-            # Fix feed states
-            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].flow_vol.fix()
-            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].flow_vol.fix()
-            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.fix()
-            # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.solex_cleaner_strip, tee=True)
-            # Unfix feed states
-            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[0].flow_vol.unfix()
-            m.fs.solex_cleaner_strip.mscontactor.organic_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
-            m.fs.solex_cleaner_strip.mscontactor.aqueous_inlet_state[
-                0
-            ].conc_mass_comp.unfix()
+            initializer_sx.initialize(unit)
         else:
             _log.info(f"Initializing {unit}")
             initializer_bt.initialize(unit)
@@ -1901,7 +1445,7 @@ def display_results(m):
     Args:
         m: pyomo model
     """
-    m.fs.roaster.display()
+    m.fs.roaster.report()
 
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),
@@ -2238,6 +1782,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Al"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -2253,6 +1802,11 @@ def display_results(m):
                 metal_mass_frac["CaO"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "CaO"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Ca"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )
@@ -2272,6 +1826,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Ce"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -2287,6 +1846,11 @@ def display_results(m):
                 metal_mass_frac["Dy2O3"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Dy2O3"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Dy"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )
@@ -2306,6 +1870,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Fe"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -2321,6 +1890,11 @@ def display_results(m):
                 metal_mass_frac["Gd2O3"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Gd2O3"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Gd"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )
@@ -2340,6 +1914,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["La"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -2355,6 +1934,11 @@ def display_results(m):
                 metal_mass_frac["Nd2O3"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Nd2O3"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Nd"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )
@@ -2374,6 +1958,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Pr"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -2389,6 +1978,11 @@ def display_results(m):
                 metal_mass_frac["Sc2O3"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Sc2O3"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Sc"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )
@@ -2408,6 +2002,11 @@ def display_results(m):
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
                 to_units=units.kg / units.hr,
             )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Sm"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
+                to_units=units.kg / units.hr,
+            )
         )
         * 100
     )
@@ -2423,6 +2022,11 @@ def display_results(m):
                 metal_mass_frac["Y2O3"]
                 * m.fs.leach_solid_feed.outlet.mass_frac_comp[0, "Y2O3"]
                 * m.fs.leach_solid_feed.outlet.flow_mass[0],
+                to_units=units.kg / units.hr,
+            )
+            + units.convert(
+                m.fs.leach.mscontactor.liquid_inlet_state[0].conc_mass_comp["Y"]
+                * m.fs.leach.mscontactor.liquid_inlet_state[0].flow_vol,
                 to_units=units.kg / units.hr,
             )
         )
@@ -2462,17 +2066,27 @@ def add_costing(m):
     Args:
         m: pyomo model
     """
-    # TODO: Costing is preliminary until more unit model costing metrics can be verified
-    # TODO: Should ideally define balance-of-plant equipment in the flowsheet and attach costing to it,
-    # eliminating the need to create UnitModelBlocks in the costing
+
     m.fs.costing = QGESSCosting()
     CE_index_year = "UKy_2019"
+
+    # define reference values for empirical scaling to estimate balance of
+    # plant unit operation process parameters
+    # scaled_parameter = reference_parameter * (scaled_basis_flow/reference_basis_flow)
+
+    # reference values from UKy study - Table 4-7 p. 351
+    REE_costing_params = load_REE_costing_dictionary()
+    reference_basis_flow = {
+        "leach_sol_flow_mass": 495 * units.ton / units.hr,  # p. 273, 351
+        "rougher_solex_aqueous_flow_vol": 23131 * units.L / units.min,
+        "cleaner_solex_aqueous_flow_vol": 925 * units.L / units.min,
+        "precipitator_solex_aqueous_flow_vol": 231 * units.L / units.min,
+    }
 
     # Leaching costs
     # 4.2 is UKy Leaching - Polyethylene Tanks
     L_pe_tanks_accounts = ["4.2"]
-    m.fs.L_pe_tanks = UnitModelBlock()
-    m.fs.L_pe_tanks.costing = UnitModelCostingBlock(
+    m.fs.leach.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
@@ -2487,15 +2101,26 @@ def add_costing(m):
 
     # 4.3 is UKy Leaching - Tank Mixer
     L_tank_mixer_accounts = ["4.3"]
-    m.fs.L_tank_mixers = UnitModelBlock()
-    m.fs.L_tank_mixers.power = Var(initialize=4.74, units=units.hp)
-    m.fs.L_tank_mixers.power.fix()
-    m.fs.L_tank_mixers.costing = UnitModelCostingBlock(
+    m.fs.leach_mixer.power = Var(initialize=4.74, units=units.hp, bounds=(0, None))
+
+    @m.fs.leach_mixer.Constraint(L_tank_mixer_accounts)
+    def power_scaling_constraint(c, k):
+        return m.fs.leach_mixer.power == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.hp
+            * (
+                m.fs.leach_solid_feed.flow_mass[0]
+                / reference_basis_flow["leach_sol_flow_mass"]
+            ),
+            to_units=units.hp,
+        )
+
+    m.fs.leach_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": L_tank_mixer_accounts,
-            "scaled_param": m.fs.L_tank_mixers.power,
+            "scaled_param": m.fs.leach_mixer.power,
             "source": 1,
             "n_equip": 3,
             "scale_down_parallel_equip": False,
@@ -2505,8 +2130,8 @@ def add_costing(m):
 
     # 4.4 is UKy Leaching - Process Pump
     L_pump_accounts = ["4.4"]
-    m.fs.L_pump = UnitModelBlock()
-    m.fs.L_pump.costing = UnitModelCostingBlock(
+    m.fs.leach_pump = UnitModelBlock()
+    m.fs.leach_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
@@ -2521,15 +2146,28 @@ def add_costing(m):
 
     # 4.5 is UKy Leaching - Thickener
     L_thickener_accounts = ["4.5"]
-    m.fs.L_thickener = UnitModelBlock()
-    m.fs.L_thickener.area = Var(initialize=225.90, units=units.ft**2)
-    m.fs.L_thickener.area.fix()
-    m.fs.L_thickener.costing = UnitModelCostingBlock(
+    m.fs.leach_sx_mixer.area = Var(
+        initialize=225.90, units=units.ft**2, bounds=(0, None)
+    )
+
+    @m.fs.leach_sx_mixer.Constraint(L_thickener_accounts)
+    def area_scaling_constraint(c, k):
+        return m.fs.leach_sx_mixer.area == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.ft**2
+            * (
+                m.fs.leach_solid_feed.flow_mass[0]
+                / reference_basis_flow["leach_sol_flow_mass"]
+            ),
+            to_units=units.ft**2,
+        )
+
+    m.fs.leach_sx_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": L_thickener_accounts,
-            "scaled_param": m.fs.L_thickener.area,
+            "scaled_param": m.fs.leach_sx_mixer.area,
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,
@@ -2539,15 +2177,26 @@ def add_costing(m):
 
     # 4.6 is UKy Leaching - Solid Waste Filter Press
     L_filter_press_accounts = ["4.6"]
-    m.fs.L_filter_press = UnitModelBlock()
-    m.fs.L_filter_press.volume = Var(initialize=36.00, units=units.ft**3)
-    m.fs.L_filter_press.volume.fix()
-    m.fs.L_filter_press.costing = UnitModelCostingBlock(
+    m.fs.sl_sep1.volume = Var(initialize=36.00, units=units.ft**3, bounds=(0, None))
+
+    @m.fs.sl_sep1.Constraint(L_filter_press_accounts)
+    def volume_scaling_constraint(c, k):
+        return m.fs.sl_sep1.volume == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.ft**3
+            * (
+                m.fs.leach_solid_feed.flow_mass[0]
+                / reference_basis_flow["leach_sol_flow_mass"]
+            ),
+            to_units=units.ft**3,
+        )
+
+    m.fs.sl_sep1.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": L_filter_press_accounts,
-            "scaled_param": m.fs.L_filter_press.volume,
+            "scaled_param": m.fs.sl_sep1.volume,
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,
@@ -2557,15 +2206,30 @@ def add_costing(m):
 
     # 4.8 is UKy Leaching - Solution Heater
     L_solution_heater_accounts = ["4.8"]
-    m.fs.L_solution_heater = UnitModelBlock()
-    m.fs.L_solution_heater.duty = Var(initialize=0.24, units=units.MBTU / units.hr)
-    m.fs.L_solution_heater.duty.fix()
-    m.fs.L_solution_heater.costing = UnitModelCostingBlock(
+    m.fs.leach_solution_heater = UnitModelBlock()
+    m.fs.leach_solution_heater.duty = Var(
+        initialize=0.24, units=units.MBTU / units.hr, bounds=(0, None)
+    )
+
+    @m.fs.leach_solution_heater.Constraint(L_solution_heater_accounts)
+    def duty_scaling_constraint(c, k):
+        return m.fs.leach_solution_heater.duty == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.MBTU
+            / units.hr
+            * (
+                m.fs.leach_solid_feed.flow_mass[0]
+                / reference_basis_flow["leach_sol_flow_mass"]
+            ),
+            to_units=units.MBTU / units.hr,
+        )
+
+    m.fs.leach_solution_heater.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": L_solution_heater_accounts,
-            "scaled_param": m.fs.L_solution_heater.duty,
+            "scaled_param": m.fs.leach_solution_heater.duty,
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,
@@ -2576,15 +2240,29 @@ def add_costing(m):
     # Solvent extraction costs
     # 5.1 is UKy Rougher Solvent Extraction - Polyethylene Tanks
     RSX_pe_tanks_accounts = ["5.1"]
-    m.fs.RSX_pe_tanks = UnitModelBlock()
-    m.fs.RSX_pe_tanks.capacity = Var(initialize=35.136, units=units.gal)
-    m.fs.RSX_pe_tanks.capacity.fix()
-    m.fs.RSX_pe_tanks.costing = UnitModelCostingBlock(
+    m.fs.rougher_solex_tank = UnitModelBlock()
+    m.fs.rougher_solex_tank.volume = Var(
+        initialize=35.136, units=units.gal, bounds=(0, None)
+    )
+
+    @m.fs.rougher_solex_tank.Constraint(RSX_pe_tanks_accounts)
+    def volume_scaling_constraint(c, k):
+        return m.fs.rougher_solex_tank.volume == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.gal
+            * (
+                m.fs.solex_rougher_load.mscontactor.aqueous_inlet.flow_vol[0]
+                / reference_basis_flow["rougher_solex_aqueous_flow_vol"]
+            ),
+            to_units=units.gal,
+        )
+
+    m.fs.rougher_solex_tank.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": RSX_pe_tanks_accounts,
-            "scaled_param": m.fs.RSX_pe_tanks.capacity,
+            "scaled_param": m.fs.rougher_solex_tank.volume,
             "source": 1,
             "n_equip": 6,
             "scale_down_parallel_equip": False,
@@ -2594,15 +2272,26 @@ def add_costing(m):
 
     # 5.2 is UKy Rougher Solvent Extraction - Tank Mixer
     RSX_tank_mixer_accounts = ["5.2"]
-    m.fs.RSX_tank_mixers = UnitModelBlock()
-    m.fs.RSX_tank_mixers.power = Var(initialize=2.0, units=units.hp)
-    m.fs.RSX_tank_mixers.power.fix()
-    m.fs.RSX_tank_mixers.costing = UnitModelCostingBlock(
+    m.fs.rougher_mixer.power = Var(initialize=2.0, units=units.hp, bounds=(0, None))
+
+    @m.fs.rougher_mixer.Constraint(RSX_tank_mixer_accounts)
+    def power_scaling_constraint(c, k):
+        return m.fs.rougher_mixer.power == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.hp
+            * (
+                m.fs.solex_rougher_load.mscontactor.aqueous_inlet.flow_vol[0]
+                / reference_basis_flow["rougher_solex_aqueous_flow_vol"]
+            ),
+            to_units=units.hp,
+        )
+
+    m.fs.rougher_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": RSX_tank_mixer_accounts,
-            "scaled_param": m.fs.RSX_tank_mixers.power,
+            "scaled_param": m.fs.rougher_mixer.power,
             "source": 1,
             "n_equip": 2,
             "scale_down_parallel_equip": False,
@@ -2612,8 +2301,8 @@ def add_costing(m):
 
     # 5.3 is UKy Rougher Solvent Extraction - Process Pump
     RSX_pump_accounts = ["5.3"]
-    m.fs.RSX_pump = UnitModelBlock()
-    m.fs.RSX_pump.costing = UnitModelCostingBlock(
+    m.fs.rougher_pump = UnitModelBlock()
+    m.fs.rougher_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
@@ -2630,15 +2319,29 @@ def add_costing(m):
 
     # 5.4 is UKy Rougher Solvent Extraction - Mixer Settler
     RSX_mixer_settler_accounts = ["5.4"]
-    m.fs.RSX_mixer_settler = UnitModelBlock()
-    m.fs.RSX_mixer_settler.volume = Var(initialize=61.107, units=units.gal)
-    m.fs.RSX_mixer_settler.volume.fix()
-    m.fs.RSX_mixer_settler.costing = UnitModelCostingBlock(
+    m.fs.rougher_solex_settler = UnitModelBlock()
+    m.fs.rougher_solex_settler.volume = Var(
+        initialize=61.107, units=units.gal, bounds=(0, None)
+    )
+
+    @m.fs.rougher_solex_settler.Constraint(RSX_mixer_settler_accounts)
+    def volume_scaling_constraint(c, k):
+        return m.fs.rougher_solex_settler.volume == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.gal
+            * (
+                m.fs.solex_rougher_load.mscontactor.aqueous_inlet.flow_vol[0]
+                / reference_basis_flow["rougher_solex_aqueous_flow_vol"]
+            ),
+            to_units=units.gal,
+        )
+
+    m.fs.rougher_solex_settler.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": RSX_mixer_settler_accounts,
-            "scaled_param": m.fs.RSX_mixer_settler.volume,
+            "scaled_param": m.fs.rougher_solex_settler.volume,
             "source": 1,
             "n_equip": 6,
             "scale_down_parallel_equip": False,
@@ -2648,15 +2351,29 @@ def add_costing(m):
 
     # 6.1 is UKy Cleaner Solvent Extraction - Polyethylene Tanks
     CSX_pe_tanks_accounts = ["6.1"]
-    m.fs.CSX_pe_tanks = UnitModelBlock()
-    m.fs.CSX_pe_tanks.capacity = Var(initialize=14.05, units=units.gal)
-    m.fs.CSX_pe_tanks.capacity.fix()
-    m.fs.CSX_pe_tanks.costing = UnitModelCostingBlock(
+    m.fs.cleaner_solex_tank = UnitModelBlock()
+    m.fs.cleaner_solex_tank.volume = Var(
+        initialize=14.05, units=units.gal, bounds=(0, None)
+    )
+
+    @m.fs.cleaner_solex_tank.Constraint(CSX_pe_tanks_accounts)
+    def volume_scaling_constraint(c, k):
+        return m.fs.cleaner_solex_tank.volume == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.gal
+            * (
+                m.fs.solex_cleaner_load.mscontactor.aqueous_inlet.flow_vol[0]
+                / reference_basis_flow["cleaner_solex_aqueous_flow_vol"]
+            ),
+            to_units=units.gal,
+        )
+
+    m.fs.cleaner_solex_tank.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": CSX_pe_tanks_accounts,
-            "scaled_param": m.fs.CSX_pe_tanks.capacity,
+            "scaled_param": m.fs.cleaner_solex_tank.volume,
             "source": 1,
             "n_equip": 5,
             "scale_down_parallel_equip": False,
@@ -2666,15 +2383,26 @@ def add_costing(m):
 
     # 6.2 is UKy Cleaner Solvent Extraction - Tank Mixer
     CSX_tank_mixer_accounts = ["6.2"]
-    m.fs.CSX_tank_mixers = UnitModelBlock()
-    m.fs.CSX_tank_mixers.power = Var(initialize=0.08, units=units.hp)
-    m.fs.CSX_tank_mixers.power.fix()
-    m.fs.CSX_tank_mixers.costing = UnitModelCostingBlock(
+    m.fs.cleaner_mixer.power = Var(initialize=0.08, units=units.hp, bounds=(0, None))
+
+    @m.fs.cleaner_mixer.Constraint(CSX_tank_mixer_accounts)
+    def power_scaling_constraint(c, k):
+        return m.fs.cleaner_mixer.power == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.hp
+            * (
+                m.fs.solex_cleaner_load.mscontactor.aqueous_inlet.flow_vol[0]
+                / reference_basis_flow["cleaner_solex_aqueous_flow_vol"]
+            ),
+            to_units=units.hp,
+        )
+
+    m.fs.cleaner_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": CSX_tank_mixer_accounts,
-            "scaled_param": m.fs.CSX_tank_mixers.power,
+            "scaled_param": m.fs.cleaner_mixer.power,
             "source": 1,
             "n_equip": 2,
             "scale_down_parallel_equip": False,
@@ -2684,8 +2412,8 @@ def add_costing(m):
 
     # 6.3 is UKy Cleaner Solvent Extraction - Process Pump
     CSX_pump_accounts = ["6.3"]
-    m.fs.CSX_pump = UnitModelBlock()
-    m.fs.CSX_pump.costing = UnitModelCostingBlock(
+    m.fs.cleaner_pump = UnitModelBlock()
+    m.fs.cleaner_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
@@ -2702,15 +2430,29 @@ def add_costing(m):
 
     # 6.4 is UKy Cleaner Solvent Extraction - Mixer Settler
     CSX_mixer_settler_accounts = ["6.4"]
-    m.fs.CSX_mixer_settler = UnitModelBlock()
-    m.fs.CSX_mixer_settler.volume = Var(initialize=24.44, units=units.gal)
-    m.fs.CSX_mixer_settler.volume.fix()
-    m.fs.CSX_mixer_settler.costing = UnitModelCostingBlock(
+    m.fs.cleaner_solex_settler = UnitModelBlock()
+    m.fs.cleaner_solex_settler.volume = Var(
+        initialize=24.44, units=units.gal, bounds=(0, None)
+    )
+
+    @m.fs.cleaner_solex_settler.Constraint(CSX_mixer_settler_accounts)
+    def volume_scaling_constraint(c, k):
+        return m.fs.cleaner_solex_settler.volume == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.gal
+            * (
+                m.fs.solex_cleaner_load.mscontactor.aqueous_inlet.flow_vol[0]
+                / reference_basis_flow["cleaner_solex_aqueous_flow_vol"]
+            ),
+            to_units=units.gal,
+        )
+
+    m.fs.cleaner_solex_settler.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": CSX_mixer_settler_accounts,
-            "scaled_param": m.fs.CSX_mixer_settler.volume,
+            "scaled_param": m.fs.cleaner_solex_settler.volume,
             "source": 1,
             "n_equip": 6,
             "scale_down_parallel_equip": False,
@@ -2719,17 +2461,28 @@ def add_costing(m):
     )
 
     # Precipitation costs
-    # 9.2 is UKy Rare Earth Element Precipitation - Polyethylene Tanks
-    reep_pe_tanks_accounts = ["9.2"]
-    m.fs.reep_pe_tanks = UnitModelBlock()
-    m.fs.reep_pe_tanks.capacity = Var(initialize=15.04, units=units.gal)
-    m.fs.reep_pe_tanks.capacity.fix()
-    m.fs.reep_pe_tanks.costing = UnitModelCostingBlock(
+    # 10.1 is UKy Oxalate Precipitation - Polyethylene Tanks
+    reep_pe_tanks_accounts = ["10.1"]
+    m.fs.precipitator.volume = Var(initialize=15.04, units=units.gal, bounds=(0, None))
+
+    @m.fs.precipitator.Constraint(reep_pe_tanks_accounts)
+    def volume_scaling_constraint(c, k):
+        return m.fs.precipitator.volume == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.gal
+            * (
+                m.fs.precipitator.aqueous_inlet.flow_vol[0]
+                / reference_basis_flow["precipitator_solex_aqueous_flow_vol"]
+            ),
+            to_units=units.gal,
+        )
+
+    m.fs.precipitator.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": reep_pe_tanks_accounts,
-            "scaled_param": m.fs.reep_pe_tanks.capacity,
+            "scaled_param": m.fs.precipitator.volume,
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,
@@ -2737,17 +2490,31 @@ def add_costing(m):
         },
     )
 
-    # 9.3 is UKy Rare Earth Element Precipitation - Tank Mixer
-    reep_tank_mixer_accounts = ["9.3"]
-    m.fs.reep_tank_mixers = UnitModelBlock()
-    m.fs.reep_tank_mixers.power = Var(initialize=0.61, units=units.hp)
-    m.fs.reep_tank_mixers.power.fix()
-    m.fs.reep_tank_mixers.costing = UnitModelCostingBlock(
+    # 10.2 is UKy Oxalate Precipitation - Tank Mixer
+    reep_tank_mixer_accounts = ["10.2"]
+    m.fs.precipitator_mixer = UnitModelBlock()
+    m.fs.precipitator_mixer.power = Var(
+        initialize=0.61, units=units.hp, bounds=(0, None)
+    )
+
+    @m.fs.precipitator_mixer.Constraint(reep_tank_mixer_accounts)
+    def power_scaling_constraint(c, k):
+        return m.fs.precipitator_mixer.power == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.hp
+            * (
+                m.fs.precipitator.aqueous_inlet.flow_vol[0]
+                / reference_basis_flow["precipitator_solex_aqueous_flow_vol"]
+            ),
+            to_units=units.hp,
+        )
+
+    m.fs.precipitator_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": reep_tank_mixer_accounts,
-            "scaled_param": m.fs.reep_tank_mixers.power,
+            "scaled_param": m.fs.precipitator_mixer.power,
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,
@@ -2755,10 +2522,10 @@ def add_costing(m):
         },
     )
 
-    # 9.4 is UKy Rare Earth Element Precipitation - Process Pump
-    reep_pump_accounts = ["9.4"]
-    m.fs.reep_pump = UnitModelBlock()
-    m.fs.reep_pump.costing = UnitModelCostingBlock(
+    # 10.3 is UKy Oxalate Precipitation - Process Pump
+    reep_pump_accounts = ["10.3"]
+    m.fs.precipitator_pump = UnitModelBlock()
+    m.fs.precipitator_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
@@ -2771,17 +2538,28 @@ def add_costing(m):
         },
     )
 
-    # 9.5 is UKy Rare Earth Element Precipitation - Filter Press
-    reep_filter_press_accounts = ["9.5"]
-    m.fs.reep_filter_press = UnitModelBlock()
-    m.fs.reep_filter_press.volume = Var(initialize=0.405, units=units.ft**3)
-    m.fs.reep_filter_press.volume.fix()
-    m.fs.reep_filter_press.costing = UnitModelCostingBlock(
+    # 10.4 is UKy Oxalate Precipitation - Filter Press
+    reep_filter_press_accounts = ["10.4"]
+    m.fs.sl_sep2.volume = Var(initialize=0.405, units=units.ft**3, bounds=(0, None))
+
+    @m.fs.sl_sep2.Constraint(reep_filter_press_accounts)
+    def volume_scaling_constraint(c, k):
+        return m.fs.sl_sep2.volume == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.ft**3
+            * (
+                m.fs.precipitator.aqueous_inlet.flow_vol[0]
+                / reference_basis_flow["precipitator_solex_aqueous_flow_vol"]
+            ),
+            to_units=units.ft**3,
+        )
+
+    m.fs.sl_sep2.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": reep_filter_press_accounts,
-            "scaled_param": m.fs.reep_filter_press.volume,
+            "scaled_param": m.fs.sl_sep2.volume,
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,
@@ -2789,127 +2567,14 @@ def add_costing(m):
         },
     )
 
-    # 9.8 is UKy Rare Earth Element Precipitation - Roaster
-    reep_roaster_accounts = ["9.8"]
-    m.fs.reep_roaster = UnitModelBlock()
-    m.fs.reep_roaster.duty = Var(initialize=0.035, units=units.MBTU / units.hr)
-    m.fs.reep_roaster.duty.fix()
-    m.fs.reep_roaster.costing = UnitModelCostingBlock(
+    # 10.5 is UKy Oxalate Precipitation - Roaster
+    reep_roaster_accounts = ["10.5"]
+    m.fs.roaster.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": reep_roaster_accounts,
-            "scaled_param": m.fs.reep_roaster.duty,
-            "source": 1,
-            "n_equip": 1,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # Roasting costs
-    # 3.1 is UKy Roasting - Storage Bins
-    R_storage_bins_accounts = ["3.1"]
-    m.fs.R_storage_bins = UnitModelBlock()
-    m.fs.R_storage_bins.capacity = Var(initialize=10.0, units=units.ton)
-    m.fs.R_storage_bins.capacity.fix()
-    m.fs.R_storage_bins.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_storage_bins_accounts,
-            "scaled_param": m.fs.R_storage_bins.capacity,
-            "source": 1,
-            "n_equip": 2,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # TODO: Add bounds to flow_mass_product by converting it to a variable in the roaster model
-    # 3.2 is UKy Roasting - Conveyors
-    R_conveyors_accounts = ["3.2"]
-    m.fs.R_conveyors = UnitModelBlock()
-    m.fs.R_conveyors.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_conveyors_accounts,
-            "scaled_param": m.fs.roaster.flow_mass_product[0],
-            "source": 1,
-            "n_equip": 1,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 3.3 is UKy Roasting - Roaster
-    R_roaster_accounts = ["3.3"]
-    m.fs.R_roaster = UnitModelBlock()
-    m.fs.R_roaster.duty = Var(initialize=73.7, units=units.MBTU / units.hr)
-    m.fs.R_roaster.duty.fix()
-    m.fs.R_roaster.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_roaster_accounts,
-            "scaled_param": m.fs.R_roaster.duty,
-            "source": 1,
-            "n_equip": 1,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 3.4 is UKy Roasting - Gas Scrubber
-    R_gas_scrubber_accounts = ["3.4"]
-    m.fs.R_gas_scrubber = UnitModelBlock()
-    m.fs.R_gas_scrubber.gas_rate = Var(initialize=11.500, units=units.ft**3 / units.min)
-    m.fs.R_gas_scrubber.gas_rate.fix()
-    m.fs.R_gas_scrubber.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_gas_scrubber_accounts,
-            "scaled_param": m.fs.R_gas_scrubber.gas_rate,
-            "source": 1,
-            "n_equip": 1,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 3.5 is UKy Roasting - Spray Chamber Quencher (7000-60000 ft**3/min)
-    R_spray_chamber_quencher_accounts = ["3.5"]
-    m.fs.R_spray_chamber_quencher = UnitModelBlock()
-    m.fs.R_spray_chamber_quencher.gas_rate = Var(
-        initialize=11.500, units=units.ft**3 / units.min
-    )
-    m.fs.R_spray_chamber_quencher.gas_rate.fix()
-    m.fs.R_spray_chamber_quencher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_spray_chamber_quencher_accounts,
-            "scaled_param": m.fs.R_spray_chamber_quencher.gas_rate,
-            "source": 1,
-            "n_equip": 3,
-            "scale_down_parallel_equip": False,
-            "CE_index_year": CE_index_year,
-        },
-    )
-
-    # 3.7 is UKy Roasting - Chiller
-    R_chiller_accounts = ["3.7"]
-    m.fs.R_chiller = UnitModelBlock()
-    m.fs.R_chiller.duty = Var(initialize=13.1, units=units.MBTU / units.hr)
-    m.fs.R_chiller.duty.fix()
-    m.fs.R_chiller.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": R_chiller_accounts,
-            "scaled_param": m.fs.R_chiller.duty,
+            "scaled_param": abs(m.fs.roaster.heat_duty[0]),
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,
@@ -2935,7 +2600,9 @@ def add_costing(m):
         for molecule, REE_frac in REE_mass_frac.items()
     )
 
-    m.fs.feed_input = Var(initialize=0.025, units=units.ton / units.hr)
+    m.fs.feed_input = Var(
+        initialize=0.025, units=units.ton / units.hr, bounds=(0, None)
+    )
     m.fs.feed_input_constraint = Constraint(
         expr=m.fs.feed_input
         == units.convert(
@@ -2943,7 +2610,7 @@ def add_costing(m):
         )
     )
 
-    m.fs.feed_grade = Var(initialize=318.015, units=units.ppm)
+    m.fs.feed_grade = Var(initialize=318.015, units=units.ppm, bounds=(0, None))
     m.fs.feed_grade_constraint = Constraint(
         expr=m.fs.feed_grade
         == units.convert(
@@ -2962,7 +2629,9 @@ def add_costing(m):
         units=units.hours / units.a,
     )
 
-    m.fs.recovery_rate_per_year = Var(initialize=13.306, units=units.kg / units.yr)
+    m.fs.recovery_rate_per_year = Var(
+        initialize=13.306, units=units.kg / units.yr, bounds=(0, None)
+    )
     m.fs.recovery_rate_per_year_constraint = Constraint(
         expr=m.fs.recovery_rate_per_year
         == units.convert(
@@ -2986,7 +2655,9 @@ def add_costing(m):
         * units.day
     )
 
-    m.fs.solid_waste = Var(m.fs.time, initialize=0.0245, units=units.ton / units.hr)
+    m.fs.solid_waste = Var(
+        m.fs.time, initialize=0.0245, units=units.ton / units.hr, bounds=(0, None)
+    )
     m.fs.solid_waste_constraint = Constraint(
         expr=m.fs.solid_waste[0]
         == units.convert(
@@ -2995,25 +2666,25 @@ def add_costing(m):
     )
 
     m.fs.precipitate = Var(
-        m.fs.time, initialize=0, units=units.ton / units.hr
+        m.fs.time, initialize=1e-8, units=units.ton / units.hr, bounds=(0, None)
     )  # non-hazardous precipitate
 
     m.fs.dust_and_volatiles = Var(
-        m.fs.time, initialize=9.5e-8, units=units.ton / units.hr
+        m.fs.time, initialize=9.5e-8, units=units.ton / units.hr, bounds=(0, None)
     )
     m.fs.dust_and_volatiles_constraint = Constraint(
         expr=m.fs.dust_and_volatiles[0]
         == units.convert(m.fs.roaster.flow_mass_dust[0], to_units=units.ton / units.hr)
     )
 
-    m.fs.power = Var(m.fs.time, initialize=7, units=units.hp)
+    m.fs.power = Var(m.fs.time, initialize=7, units=units.hp, bounds=(0, None))
     m.fs.power_constraint = Constraint(
         expr=m.fs.power[0]
         == units.convert(
-            m.fs.reep_tank_mixers.power
-            + m.fs.CSX_tank_mixers.power
-            + m.fs.RSX_tank_mixers.power
-            + m.fs.L_tank_mixers.power,
+            m.fs.precipitator_mixer.power
+            + m.fs.cleaner_mixer.power
+            + m.fs.rougher_mixer.power
+            + m.fs.leach_mixer.power,
             to_units=units.hp,
         )
     )
@@ -3191,7 +2862,6 @@ def add_costing(m):
         project_management_and_construction_percentage=30,
         process_contingency_percentage=15,
         # argument related to Fixed OM costs
-        nameplate_capacity=500,  # short (US) ton/hr
         labor_types=[
             "skilled",
             "unskilled",
@@ -3228,14 +2898,31 @@ def add_costing(m):
 
     # define reagent fill costs as an other plant cost so framework adds this to TPC calculation
     m.fs.costing.other_plant_costs.unfix()
-    m.fs.costing.other_plant_costs_rule = Constraint(
+    m.fs.costing.other_plant_costs_eq = Constraint(
         expr=(
             m.fs.costing.other_plant_costs
             == units.convert(
-                1218.073 * units.USD_2016  # Rougher Solvent Extraction
-                + 48.723 * units.USD_2016  # Cleaner Solvent Extraction
+                1218.073
+                * units.USD_2016  # Rougher Solvent Extraction
+                * (
+                    m.fs.solex_rougher_load.mscontactor.aqueous_inlet.flow_vol[0]
+                    / reference_basis_flow["rougher_solex_aqueous_flow_vol"]
+                )
+                ** 0.7
+                + 48.723
+                * units.USD_2016  # Cleaner Solvent Extraction
+                * (
+                    m.fs.solex_cleaner_load.mscontactor.aqueous_inlet.flow_vol[0]
+                    / reference_basis_flow["cleaner_solex_aqueous_flow_vol"]
+                )
+                ** 0.7
                 + 182.711
-                * units.USD_2016,  # Solvent Extraction Wash and Saponification
+                * units.USD_2016  # Solvent Extraction Wash and Saponification
+                * (
+                    m.fs.precipitator.aqueous_inlet.flow_vol[0]
+                    / reference_basis_flow["precipitator_solex_aqueous_flow_vol"]
+                )
+                ** 0.7,
                 to_units=getattr(units, "MUSD_" + CE_index_year),
             )
         )
@@ -3243,15 +2930,6 @@ def add_costing(m):
 
     # fix costing vars that shouldn't change
     m.fs.precipitate.fix()
-
-    # Initialize costing
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-
-    # Solve costing
-    solver = get_solver()
-    solver.solve(m, tee=True)
 
     return m
 

@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -17,18 +17,19 @@ __author__ = "Dan Gunter"
 
 # third party
 import pyomo.environ as pyo
+
 from idaes import logger as idaeslog
-from watertap.ui.fsapi import FlowsheetInterface
-from watertap.ui.fsapi import FlowsheetCategory
+
+from idaes_flowsheet_processor.api import FlowsheetCategory, FlowsheetInterface
 
 # package
 from prommis.uky.uky_flowsheet import (
     build,
-    set_partition_coefficients,
+    initialize_system,
     set_operating_conditions,
+    set_partition_coefficients,
     set_scaling,
     solve_system,
-    initialize_system,
 )
 
 _log = idaeslog.getLogger(__name__)
@@ -370,7 +371,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             is_output=True,
             output_category=category,
         )
-    _log.debug(f"exports:\n{exports.json()}")
+    _log.debug(f"exports:\n{exports.model_dump_json()}")
     _log.info(f"end/setup-UI-exports build_options={build_options}")
 
 
@@ -383,9 +384,9 @@ def build_flowsheet(build_options=None, **kwargs):
     m = build()
     set_partition_coefficients(m)
     set_operating_conditions(m)
-    scaled_model = set_scaling(m)
-    # assert_units_consistent(scaled_model)
-    # assert degrees_of_freedom(scaled_model) == 0
+    set_scaling(m)
+    scaling = pyo.TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(m, rename=False)
     initialize_system(scaled_model)
     _log.info(f"end/build-flowsheet build_options={build_options}")
     return scaled_model
@@ -404,12 +405,13 @@ def solve_flowsheet(flowsheet=None):
 
     set_operating_conditions(m)
 
-    scaled_model = set_scaling(m)
+    set_scaling(m)
+
+    scaling = pyo.TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(m, rename=False)
 
     initialize_system(scaled_model)
 
     results = solve_system(scaled_model)
 
     return results
-
-    # return solve(flowsheet)

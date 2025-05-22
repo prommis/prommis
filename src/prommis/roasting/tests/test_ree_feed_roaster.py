@@ -1,31 +1,31 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+from pyomo.environ import (
+    ConcreteModel,
+    Constraint,
+    SolverFactory,
+    Var,
+    assert_optimal_termination,
+    units,
+    value,
+)
+from pyomo.util.check_units import assert_units_consistent
 
-"""
-flowsheet to test the roster unit model
-authors: J. Ma
-"""
-
-# Import Pyomo libraries
-import pyomo.environ as pyo
-
-import idaes.core.util.scaling as iscale
-
-# Import IDAES standard unit model
-import idaes.logger as idaeslog
-
-# Import IDAES core
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,
     InitializationStatus,
 )
-from idaes.core.solvers import get_solver
-from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.core.util import DiagnosticsToolbox
+from idaes.core.util.model_statistics import (
+    number_total_constraints,
+    number_unused_variables,
+    number_variables,
+)
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
@@ -34,106 +34,49 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     get_prop,
 )
 
+import pytest
+
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.roasting.ree_feed_roaster import REEFeedRoaster
 
-_log = idaeslog.getModelLogger(__name__)
 
+@pytest.fixture(scope="module")
+def model():
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
 
-def main(m=None):
-    """Create concrete model, make the flowsheet object, fix some variables,
-    and solve the problem."""
+    gas_species = {"O2", "H2O", "CO2", "N2"}
+    m.fs.prop_gas = GenericParameterBlock(
+        **get_prop(gas_species, ["Vap"], EosType.IDEAL),
+        doc="gas property",
+    )
+    m.fs.prop_solid = CoalRefuseParameters(
+        doc="solid property",
+    )
 
-    if m is None:
-        # Create a Concrete Model as the top level object
-        m = pyo.ConcreteModel()
-        # Add a flowsheet object to the model
-        m.fs = FlowsheetBlock(dynamic=False)
-        # Add property packages to flowsheet library
-        gas_species = {"O2", "H2O", "CO2", "N2"}
-        m.fs.prop_gas = GenericParameterBlock(
-            **get_prop(gas_species, ["Vap"], EosType.IDEAL),
-            doc="gas property",
+    m.fs.prop_gas.set_default_scaling("enth_mol_phase", 1e-3)
+    m.fs.prop_gas.set_default_scaling("pressure", 1e-5)
+    m.fs.prop_gas.set_default_scaling("temperature", 1e-2)
+    m.fs.prop_gas.set_default_scaling("flow_mol", 1e1)
+    m.fs.prop_gas.set_default_scaling("flow_mol_phase", 1e1)
+    m.fs.prop_gas.set_default_scaling("_energy_density_term", 1e-4)
+    m.fs.prop_gas.set_default_scaling("phase_frac", 1)
+
+    _mf_scale = {
+        "O2": 5,
+        "CO2": 10,
+        "H2O": 5,
+        "N2": 1,
+    }
+    for comp, s in _mf_scale.items():
+        m.fs.prop_gas.set_default_scaling("mole_frac_comp", s, index=comp)
+        m.fs.prop_gas.set_default_scaling(
+            "mole_frac_phase_comp", s, index=("Vap", comp)
         )
-        m.fs.prop_solid = CoalRefuseParameters(
-            doc="solid property",
+        m.fs.prop_gas.set_default_scaling(
+            "flow_mol_phase_comp", s * 1e1, index=("Vap", comp)
         )
 
-    create_model(m)
-    set_inputs(m)
-    iscale.calculate_scaling_factors(m)
-    initialize_system(m)
-    solver = get_solver(options={"max_iter": 50})
-    dof = degrees_of_freedom(m)
-    print("dof=", dof)
-    result = solver.solve(m, tee=True)
-    print("heat_duty=", m.fs.roaster.heat_duty[0].value)
-    print(
-        "Total mass flow of dry organic free impurity in feed stream=",
-        pyo.value(m.fs.roaster.flow_mass_impurity_feed[0]),
-    )
-    print(
-        "Un mass fraction in dry organic free feed",
-        pyo.value(m.fs.roaster.mass_frac_comp_impurity_ele_feed[0, "Un"]),
-    )
-    print(
-        "Al mass fraction in dry organic free feed",
-        pyo.value(m.fs.roaster.mass_frac_comp_impurity_ele_feed[0, "Al"]),
-    )
-    print(
-        "Ca mass fraction in dry organic free feed",
-        pyo.value(m.fs.roaster.mass_frac_comp_impurity_ele_feed[0, "Ca"]),
-    )
-    print(
-        "Fe mass fraction in dry organic free feed",
-        pyo.value(m.fs.roaster.mass_frac_comp_impurity_ele_feed[0, "Fe"]),
-    )
-    print(
-        "Si mass fraction in dry organic free feed",
-        pyo.value(m.fs.roaster.mass_frac_comp_impurity_ele_feed[0, "Si"]),
-    )
-    print(
-        "Total mass flow of recovered solid product=",
-        pyo.value(m.fs.roaster.flow_mass_product_recovered[0]),
-    )
-    print(
-        "Un mass fraction in recovered solid product",
-        pyo.value(m.fs.roaster.mass_frac_comp_impurity_ele_product[0, "Un"]),
-    )
-    print(
-        "Al mass fraction in recovered solid product",
-        pyo.value(m.fs.roaster.mass_frac_comp_impurity_ele_product[0, "Al"]),
-    )
-    print(
-        "Ca mass fraction in recovered solid product",
-        pyo.value(m.fs.roaster.mass_frac_comp_impurity_ele_product[0, "Ca"]),
-    )
-    print(
-        "Fe mass fraction in recovered solid product",
-        pyo.value(m.fs.roaster.mass_frac_comp_impurity_ele_product[0, "Fe"]),
-    )
-    print(
-        "Si mass fraction in recovered solid product",
-        pyo.value(m.fs.roaster.mass_frac_comp_impurity_ele_product[0, "Si"]),
-    )
-    print("insoluble REE in the solid recovered product in ppm of total mass:")
-    for i in m.fs.roaster.ree_list:
-        print(i, pyo.value(m.fs.roaster.ppm_comp_ree_ins_product[0, i]))
-    print("dissovable REE in the solid recovered product in ppm of total mass:")
-    for i in m.fs.roaster.ree_list:
-        print(i, pyo.value(m.fs.roaster.ppm_comp_ree_dis_product[0, i]))
-    print(
-        "mass flow rate of solid outlet=",
-        pyo.value(m.fs.roaster.solid_out[0].flow_mass),
-    )
-    print("mass fractions of species in solid outlet:")
-    for i in m.fs.prop_solid.component_list:
-        print(i, pyo.value(m.fs.roaster.solid_out[0].mass_frac_comp[i]))
-    return m
-
-
-def create_model(m):
-    """Create unit models"""
     m.fs.roaster = REEFeedRoaster(
         gas_property_package=m.fs.prop_gas,
         solid_property_package=m.fs.prop_solid,
@@ -160,12 +103,7 @@ def create_model(m):
         ],
     )
 
-
-def set_inputs(m):
-    """fix variables for geometry and design data"""
-    # assuming no pressure drop
     m.fs.roaster.deltaP.fix(0)
-    # inlet flue gas composition, typical flue gas by burning CH4 with air to get excess O2 at 15.5%
     m.fs.roaster.gas_inlet.temperature.fix(895)
     m.fs.roaster.gas_inlet.pressure.fix(101325)
     gas_comp = {
@@ -272,17 +210,132 @@ def set_inputs(m):
     # recovery fraction of impurity minerals
     m.fs.roaster.frac_impurity_recovery.fix(0.99)
 
+    return m
 
-def initialize_system(m):
+
+@pytest.mark.unit
+def test_build(model):
+    assert hasattr(model.fs, "roaster")
+    assert isinstance(model.fs.roaster, REEFeedRoaster)
+    assert len(model.fs.roaster.config) == 9
+    assert not model.fs.roaster.config.dynamic
+    assert not model.fs.roaster.config.has_holdup
+    assert model.fs.roaster.config.has_heat_transfer
+    assert model.fs.roaster.config.has_pressure_change
+    assert model.fs.roaster.config.gas_property_package is model.fs.prop_gas
+    assert model.fs.roaster.config.solid_property_package is model.fs.prop_solid
+    assert len(model.fs.prop_gas.component_list) == 4
+    assert len(model.fs.roaster.ree_list) == 16
+    assert isinstance(model.fs.roaster.heat_duty, Var)
+    assert isinstance(model.fs.roaster.deltaP, Var)
+    assert isinstance(model.fs.roaster.flow_mol_outlet_eqn, Constraint)
+    assert len(model.fs.roaster.flow_mol_outlet_eqn) == 4
+    assert number_variables(model.fs.roaster) == 193
+    assert number_total_constraints(model.fs.roaster) == 103
+    assert number_unused_variables(model.fs.roaster) == 1
+    assert_units_consistent(model.fs.roaster)
+
+
+@pytest.mark.unit
+def test_structural_issues(model):
+    dt = DiagnosticsToolbox(model)
+    dt.assert_no_structural_warnings()
+
+
+@pytest.mark.component
+@pytest.mark.solver
+def test_initialize_and_solve(model):
     initializer = BlockTriangularizationInitializer()
-    initializer.initialize(m.fs.roaster)
-    assert initializer.summary[m.fs.roaster]["status"] == InitializationStatus.Ok
+    initializer.initialize(model.fs.roaster)
+    assert initializer.summary[model.fs.roaster]["status"] == InitializationStatus.Ok
+    # Solve model
+    solver = SolverFactory("ipopt")
+    results = solver.solve(model, tee=False)
+    assert_optimal_termination(results)
 
 
-if __name__ == "__main__":
-    """
-    Main function to to run simulation
-    To run steady-state model, call main_steady()
-    to run dynamic model, call main_dyn()
-    """
-    m = main()
+@pytest.mark.component
+@pytest.mark.solver
+def test_numerical_issues(model):
+    dt = DiagnosticsToolbox(model)
+    dt.assert_no_numerical_warnings()
+
+
+@pytest.mark.component
+@pytest.mark.solver
+def test_solution(model):
+    flow_mol_out_gas = value(model.fs.roaster.gas_out[0].flow_mol)
+    assert flow_mol_out_gas == pytest.approx(82.01903587318019, rel=1e-5, abs=1e-6)
+    mole_frac_h2o = value(model.fs.roaster.gas_out[0].mole_frac_comp["H2O"])
+    assert mole_frac_h2o == pytest.approx(0.105061218702762, rel=1e-5, abs=1e-6)
+    mole_frac_o2 = value(model.fs.roaster.gas_out[0].mole_frac_comp["O2"])
+    assert mole_frac_o2 == pytest.approx(0.060924564, rel=1e-5, abs=1e-6)
+    mole_frac_co2 = value(model.fs.roaster.gas_out[0].mole_frac_comp["CO2"])
+    assert mole_frac_co2 == pytest.approx(0.0922570830375, rel=1e-5, abs=1e-6)
+    heat_duty = value(model.fs.roaster.heat_duty[0])
+    assert heat_duty == pytest.approx(-2541458.25, rel=1e-5, abs=1e-3)
+    flow_mass_solid_out = value(model.fs.roaster.solid_out[0].flow_mass)
+    assert flow_mass_solid_out == pytest.approx(579.369, rel=1e-5, abs=1e-6)
+    mass_frac_comp_solid_out = {
+        "inerts": 0.5438792755532115,
+        "Sc2O3": 1.6043595369991272e-05,
+        "Y2O3": 2.767022982988265e-05,
+        "La2O3": 4.833796064532411e-05,
+        "Ce2O3": 0.00010273370445831112,
+        "Pr2O3": 1.931695289570546e-05,
+        "Nd2O3": 4.557010896553694e-05,
+        "Sm2O3": 1.050789201041692e-05,
+        "Gd2O3": 8.427859759143537e-06,
+        "Dy2O3": 5.146215251158445e-06,
+        "Al2O3": 0.2874097993439199,
+        "CaO": 0.013738348321299278,
+        "Fe2O3": 0.15468882226238415,
+    }
+    for i in model.fs.prop_solid.component_list:
+        assert value(model.fs.roaster.solid_out[0].mass_frac_comp[i]) == pytest.approx(
+            mass_frac_comp_solid_out[i], rel=1e-5, abs=1e-6
+        )
+    ppm_insoluable_in_product = {
+        "Sc": 1.8851305084719268,
+        "Y": 5.703616099755223,
+        "La": 8.191165847386474,
+        "Ce": 23.710635917672906,
+        "Pr": 7.907868653255506,
+        "Nd": 11.64024057196155,
+        "Sm": 2.648781847223353,
+        "Eu": 0.9661802856697338,
+        "Gd": 6.459496817385459,
+        "Tb": 0.0,
+        "Dy": 1.163415954814308,
+        "Ho": 0.0,
+        "Er": 0.0,
+        "Tm": 0.0,
+        "Yb": 0.6134119292750246,
+        "Lu": 0.0,
+    }
+    for i in model.fs.roaster.ree_list:
+        assert value(model.fs.roaster.ppm_comp_ree_ins_product[0, i]) == pytest.approx(
+            ppm_insoluable_in_product[i], rel=1e-5, abs=1e-6
+        )
+    ppm_dissovable_in_product = {
+        "Sc": 14.158464861519352,
+        "Y": 21.966613730127424,
+        "La": 40.146794797937645,
+        "Ce": 79.02306854063823,
+        "Pr": 11.409084242449953,
+        "Nd": 33.92986839357539,
+        "Sm": 7.859110163193565,
+        "Eu": 0.4011715926573889,
+        "Gd": 1.9683629417580777,
+        "Tb": 0.7458282972693396,
+        "Dy": 3.982799296344135,
+        "Ho": 1.491656594538679,
+        "Er": 4.615848461989136,
+        "Tm": 1.0524465972578458,
+        "Yb": 2.7345284273562336,
+        "Lu": 0.8784199945616665,
+    }
+    for i in model.fs.roaster.ree_list:
+        assert value(model.fs.roaster.ppm_comp_ree_dis_product[0, i]) == pytest.approx(
+            ppm_dissovable_in_product[i], rel=1e-5, abs=1e-6
+        )

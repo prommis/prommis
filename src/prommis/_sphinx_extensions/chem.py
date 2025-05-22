@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -11,7 +11,6 @@ from typing import List
 from docutils import nodes
 from sphinx.application import Sphinx as SphinxApp
 from sphinx.directives.patches import MathDirective
-
 
 _logger = logging.getLogger(f"sphinx.ext.{Path(__file__).stem}")
 

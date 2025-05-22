@@ -19,7 +19,6 @@ classifiers = [
     "Operating System :: Unix",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -31,19 +30,24 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse==2.5.0",
-    "pyomo >= 6.7.0",
+    "idaes-pse >=2.8.0",
+    "pyomo >=6.7.0",
 ]
 [project.optional-dependencies]
 watertap = [
-    # TODO: update once watertap 1.0.0 is available
-    "watertap >= 1.0.0rc0",
+    "watertap >= 1.3.0rc0",
+]
+flowsheet-processor = [
+    "idaes-flowsheet-processor >=0.1.dev4",
 ]
 
 [tool.setuptools_scm]
+# https://setuptools-scm.readthedocs.io/en/v8.1.0/extending/
+version_scheme = "only-version"
+local_scheme = "node-and-date"
 
 [tool.pylint.main]
-py-version = "3.8"
+py-version = "3.9"
 
 [tool.pylint."messages control"]
 disable = [
@@ -79,6 +83,9 @@ inlinevar-naming-style = "any"
 [project.entry-points.pytest11]
 known_issues = "prommis._testing_utils.known_issues"
 
+[project.entry-points."prommis.flowsheets"]
+"UKy" = "prommis.uky.uky_flowsheet_ui"
+
 [tool.pytest.ini_options]
 addopts = """
 --pyargs prommis
@@ -101,8 +108,11 @@ extend-exclude = [
 [tool.typos.default.extend-words]
 # Ignore IDAES
 IDAES = "IDAES"
+# ignore phase_equil
+phase_equil = "phase_equil"
 # Atomic elements
 Nd = "Nd"
+Ba = "Ba"
 [tool.typos.default]
 extend-ignore-re = [
     # Jupyter notebooks: ignore hexadecimal values in "id" cell metadata field

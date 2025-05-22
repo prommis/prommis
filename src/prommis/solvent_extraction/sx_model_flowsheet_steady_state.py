@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -12,18 +12,19 @@ Authors: Arkoprabho Dasgupta
 
 """
 
-from pyomo.environ import ConcreteModel, SolverFactory
+from pyomo.environ import ConcreteModel
+
+from idaes.core import FlowDirection, FlowsheetBlock
+from idaes.core.solvers import get_solver
 
 import numpy as np
 
-from idaes.core import FlowDirection, FlowsheetBlock
-from idaes.core.initialization.block_triangularization import (
-    BlockTriangularizationInitializer,
-)
-
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
 
 """
 Method of building a solvent extraction model with a specified number of stages
@@ -97,48 +98,47 @@ Fixing the inlet conditions of the two feed streams to the solvent extraction mo
 based on a case study of University of Kentucky pilot plant.
 
 """
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1e6)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "H"].fix(1.755)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "SO4"].fix(3999.818)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(693.459)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Al"].fix(422.375)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Ca"].fix(109.542)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Fe"].fix(688.266)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Sc"].fix(0.032)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Y"].fix(0.124)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "La"].fix(0.986)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Ce"].fix(2.277)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Pr"].fix(0.303)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Nd"].fix(0.946)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Sm"].fix(0.097)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Gd"].fix(0.2584)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Dy"].fix(0.047)
+m.fs.solex.aqueous_inlet.conc_mass_comp[0, "Cl"].fix(1e-8)
 
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H2O"].fix(1e6)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["H"].fix(1.755)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["SO4"].fix(3999.818)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["HSO4"].fix(693.459)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Al"].fix(422.375)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Ca"].fix(109.542)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Fe"].fix(688.266)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Sc"].fix(0.032)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Y"].fix(0.124)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["La"].fix(0.986)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Ce"].fix(2.277)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Pr"].fix(0.303)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Nd"].fix(0.946)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Sm"].fix(0.097)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Gd"].fix(0.2584)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Dy"].fix(0.047)
-m.fs.solex.mscontactor.aqueous_inlet_state[0].conc_mass_comp["Cl"].fix(1e-8)
+m.fs.solex.aqueous_inlet.flow_vol.fix(62.01)
 
-m.fs.solex.mscontactor.aqueous_inlet_state[0].flow_vol.fix(62.01)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "Al"].fix(1.267e-5)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "Ca"].fix(2.684e-5)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "Fe"].fix(2.873e-6)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "Sc"].fix(1.734)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "Y"].fix(2.179e-5)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "La"].fix(0.000105)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "Ce"].fix(0.00031)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "Pr"].fix(3.711e-5)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "Nd"].fix(0.000165)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "Sm"].fix(1.701e-5)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "Gd"].fix(3.357e-5)
+m.fs.solex.organic_inlet.conc_mass_comp[0, "Dy"].fix(8.008e-6)
 
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Al"].fix(1.267e-5)
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Ca"].fix(2.684e-5)
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Fe"].fix(2.873e-6)
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Sc"].fix(1.734)
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Y"].fix(2.179e-5)
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["La"].fix(0.000105)
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Ce"].fix(0.00031)
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Pr"].fix(3.711e-5)
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Nd"].fix(0.000165)
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Sm"].fix(1.701e-5)
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Gd"].fix(3.357e-5)
-m.fs.solex.mscontactor.organic_inlet_state[0].conc_mass_comp["Dy"].fix(8.008e-6)
-
-m.fs.solex.mscontactor.organic_inlet_state[0].flow_vol.fix(62.01)
+m.fs.solex.organic_inlet.flow_vol.fix(62.01)
 
 """
 Initialization of the model, which gives a good starting point.
 
 """
 
-initializer = BlockTriangularizationInitializer(constraint_tolerance=1e-4)
+initializer = SolventExtractionInitializer()
 initializer.initialize(m.fs.solex)
 
 """
@@ -146,15 +146,11 @@ Solution of the model and display of the final results.
 
 """
 
-solver = SolverFactory("ipopt")
-solver.options["bound_push"] = 1e-8
-solver.options["mu_init"] = 1e-8
+solver = get_solver("ipopt")
 solver.solve(m, tee=True)
 
 # Final organic outlet display
-m.fs.solex.mscontactor.organic[0, 1].conc_mass_comp.display()
-m.fs.solex.mscontactor.organic[0, 1].conc_mol_comp.display()
+m.fs.solex.organic_outlet.conc_mass_comp.display()
 
 # Final aqueous outlets display
-m.fs.solex.mscontactor.aqueous[0, 3].conc_mass_comp.display()
-m.fs.solex.mscontactor.aqueous[0, 3].conc_mol_comp.display()
+m.fs.solex.aqueous_outlet.conc_mass_comp.display()

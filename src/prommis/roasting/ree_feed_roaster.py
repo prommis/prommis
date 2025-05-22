@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -77,10 +77,14 @@ The standard heats of formation and heat capacities of solid components involved
    R.L. Nuttall, "The NBS tables of chemical thermodynamic properties-Selected values for
    inorganic and C1 and C2 organic substances in SI units," Journal of Physical and Chemical
    Reference Data, 11(2), 1982
+3. Merrick, D., "Mathematical models of the thermal decomposition of coal, 2. Specific heats and heats of reaction,"
+   Fuel, 62, pp540-546, 1983
 
 The NIST WebBook data are used for the properties of :ce:`Al2O3`, :ce:`SiO2`, :ce:`CaO`, :ce:`Fe2O3`, and `pyrite`. Note that the heat capacity model is simplified as a linear function of temperature.
 The data of Wagman et al are used for the properties of :ce:`CaCO3` and `kaolinite`.
 The gas phase properties are calculated based on user configured property package.
+The heat capacity of organic part of the feed is usually a function of temperature and elemental composition of C, H, O, N, and S elements according to Merrick (1983).
+For simplicity, a constant heat capacity of 1260 J/kg-K in the range reported by Merrick is used in this model.
 
 Assumptions
 -----------
@@ -582,9 +586,9 @@ constructed,
         self.cp1_comp_product["SiO2"] = self.cp1_SiO2
         self.cp1_comp_product["Fe2O3"] = self.cp1_Fe2O3
 
-        # organic heat capacity, currently assuming constant
+        # organic heat capacity, currently assuming constant based on Merrick (1983)
         self.cp_organic = Param(
-            initialize=1260, units=pyunits.J / pyunits.mol / pyunits.K
+            initialize=1260, units=pyunits.J / pyunits.kg / pyunits.K
         )
 
         # unit constants used for the expressions of HHV and heat of formation of organic material and liquid water enthalpy
@@ -1060,13 +1064,19 @@ constructed,
         def solid_outlet_comp_eqn(b, t, i):
             if i == "Al2O3" or i == "CaO" or i == "Fe2O3":
                 return (
-                    b.solid_out[t].mass_frac_comp[i] * b.solid_out[t].flow_mass
+                    b.solid_out[t].mass_frac_comp[i]
+                    * pyunits.convert(
+                        b.solid_out[t].flow_mass, to_units=pyunits.kg / pyunits.second
+                    )
                     == b.flow_mol_comp_product_recovered[t, i]
                     * b.config.solid_property_package.mw[i]
                 )
             elif i == "inerts":
                 return (
-                    b.solid_out[t].mass_frac_comp[i] * b.solid_out[t].flow_mass
+                    b.solid_out[t].mass_frac_comp[i]
+                    * pyunits.convert(
+                        b.solid_out[t].flow_mass, to_units=pyunits.kg / pyunits.second
+                    )
                     == b.flow_mol_comp_product_recovered[t, "Un2O3"] * b.mw_Un2O3
                     + b.flow_mol_comp_product_recovered[t, "SiO2"] * b.mw_SiO2
                     + b.flow_mol_comp_product_recovered[t, "CaCO3"] * b.mw_CaCO3

@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -34,17 +34,17 @@ def test_main():
             94.9999989334488,
         ],
         "li_rejection": [
-            m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"].value * 100,
+            value(m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"]) * 100,
             1.8379272407186817,
         ],
         "feed_ion_ratio": [
-            (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
-            / (m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
+            (value(m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"]) / 0.024)
+            / (value(m.fs.feed.flow_mol_phase_comp[0, "Liq", "Li_+"]) / 0.0069),
             0.5077446970643547,
         ],
         "perm_ion_ratio": [
-            (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"].value / 0.024)
-            / (m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"].value / 0.0069),
+            (value(m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"]) / 0.024)
+            / (value(m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"]) / 0.0069),
             0.4972950260825848,
         ],
     }

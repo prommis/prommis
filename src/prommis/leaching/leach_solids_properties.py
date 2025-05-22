@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -172,7 +172,7 @@ class CoalRefuseStateBlockData(StateBlockData):
             self.params.component_list,
             initialize=0,
             units=units.dimensionless,
-            bounds=(None, 0.99),
+            bounds=(None, 0.999999),
         )
 
         @self.Constraint(self.params.component_list)

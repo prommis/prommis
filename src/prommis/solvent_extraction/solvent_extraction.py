@@ -135,9 +135,9 @@ class SolventExtractionInitializer(ModularInitializerBase):
         Returns:
             None
         """
-        # print(dof(model.mscontactor))
-        model.mscontactor.heterogeneous_reaction_extent.fix()
-        # print(dof(model.mscontactor))
+
+        model.mscontactor.heterogeneous_reaction_extent.fix(1e-8)
+
         model.mscontactor.volume.fix()
         model.mscontactor.volume_frac_stream[:, :, "aqueous"].fix()
 

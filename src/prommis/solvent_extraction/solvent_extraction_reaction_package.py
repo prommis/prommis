@@ -23,7 +23,7 @@ from idaes.core.util.misc import add_object_reference
 
 
 # -----------------------------------------------------------------------------
-# Leach solution property package
+# Solvent extraction property package
 @declare_process_block_class("SolventExtractionReactions")
 class SolventExtractionReactionsData(
     ProcessBlockData, property_meta.HasPropertyClassMetadata

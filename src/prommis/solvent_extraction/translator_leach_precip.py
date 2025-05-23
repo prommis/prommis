@@ -1,7 +1,6 @@
 # Import Pyomo libraries
 from pyomo.environ import Set
 
-
 # Import IDAES cores
 from idaes.core import declare_process_block_class
 from idaes.models.unit_models.translator import TranslatorData

@@ -28,7 +28,7 @@ def test_build():
     }
 
     # define reaction stoichiometry for aqueous components
-    eq_stoich_dict = {
+    aq_stoich_dict = {
         "E1": {"HNO3": -1, "H^+": 1, "NO3^-": 1, "OH^-": 0, "Fe^3+": 0},
         "E2": {"H^+": 1, "OH^-": 1, "HNO3": 0, "NO3^-": 0, "Fe^3+": 0},
         "E3": {"OH^-": 3, "Fe^3+": 1, "HNO3": 0, "NO3^-": 0, "H^+": 0},
@@ -36,8 +36,8 @@ def test_build():
 
     m.fs.aq_properties = aq_thermo_prop_pack.AqueousParameter(
         aq_comp_list=aq_comp_list,
-        eq_rxn_logkeq_dict=aq_log_keq_dict,
-        eq_rxn_stoich_dict=eq_stoich_dict,
+        logkeq_dict=aq_log_keq_dict,
+        stoich_dict=aq_stoich_dict,
     )
 
     m.fs.state = m.fs.aq_properties.build_state_block(m.fs.time)

@@ -39,13 +39,13 @@ class AqueousParameterData(PhysicalParameterBlock):
         ConfigValue(domain=list, description="List of aqueous components in process"),
     )
     CONFIG.declare(
-        "eq_rxn_logkeq_dict",
+        "logkeq_dict",
         ConfigValue(
             domain=dict, description="Dictionary of equilibrium reaction constants"
         ),
     )
     CONFIG.declare(
-        "eq_rxn_stoich_dict",
+        "stoich_dict",
         ConfigValue(
             domain=dict, description="Dictionary of equilibrium reaction stoichiometry"
         ),
@@ -64,14 +64,14 @@ class AqueousParameterData(PhysicalParameterBlock):
         ## equilibrium reaction parameters
         # equilibrium reaction index
         self.eq_rxn_set = Set(
-            initialize=list(set(key for key in self.config.eq_rxn_logkeq_dict.keys()))
+            initialize=list(set(key for key in self.config.logkeq_dict.keys()))
         )
 
         # stoichiometry for each equilibrium reaction
-        self.eq_rxn_stoich_dict = self.config.eq_rxn_stoich_dict
+        self.stoich_dict = self.config.stoich_dict
 
         # log(keq) for each equilibrium reaction
-        self.eq_rxn_logkeq_dict = self.config.eq_rxn_logkeq_dict
+        self.logkeq_dict = self.config.logkeq_dict
 
         self._state_block_class = AqueousStateBlock
 
@@ -86,7 +86,7 @@ class AqueousParameterData(PhysicalParameterBlock):
         )
         obj.add_default_units(
             {
-                "time": pyunits.hour,
+                "time": pyunits.s,
                 "length": pyunits.m,
                 "mass": pyunits.kg,
                 "amount": pyunits.mol,
@@ -113,7 +113,7 @@ class AqueousStateBlockData(StateBlockData):
         super().build()
 
         self.flow_vol = Var(
-            units=pyunits.kg / pyunits.hour,
+            units=pyunits.kg / pyunits.s,
             initialize=1,
             bounds=(1e-5, None),
         )

@@ -15,6 +15,7 @@ from idaes.core.util.model_statistics import (
     number_variables,
 )
 from idaes.core.util.scaling import set_scaling_factor
+from idaes.core.solvers import get_solver
 
 import pytest
 
@@ -24,7 +25,12 @@ from prommis.cmi_custom_precipitator import (
 )
 from prommis.cmi_custom_precipitator.opt_based_precipitator import Precipitator
 
+# -----------------------------------------------------------------------------
+# Get default solver for testing
+solver = get_solver()
 
+
+# -----------------------------------------------------------------------------
 class TestPrec(object):
     @pytest.fixture(scope="class")
     def prec(self):
@@ -48,14 +54,14 @@ class TestPrec(object):
         }
 
         # define reaction stoichiometry for aqueous components
-        eq_stoich_dict = {
+        aq_stoich_dict = {
             "E1": {"HNO3": -1, "H^+": 1, "NO3^-": 1, "OH^-": 0, "Fe^3+": 0},
             "E2": {"H^+": 1, "OH^-": 1, "HNO3": 0, "NO3^-": 0, "Fe^3+": 0},
             "E3": {"OH^-": 3, "Fe^3+": 1, "HNO3": 0, "NO3^-": 0, "H^+": 0},
         }
 
         # define reaction stoichiometry for precipitates
-        precip_eq_stoich_dict = {
+        precip_stoich_dict = {
             "E1": {"FeOH3": 0},
             "E2": {"FeOH3": 0},
             "E3": {"FeOH3": -1},
@@ -63,13 +69,13 @@ class TestPrec(object):
 
         m.fs.aq_properties = aq_thermo_prop_pack.AqueousParameter(
             aq_comp_list=aq_comp_list,
-            eq_rxn_logkeq_dict=aq_log_keq_dict,
-            eq_rxn_stoich_dict=eq_stoich_dict,
+            logkeq_dict=aq_log_keq_dict,
+            stoich_dict=aq_stoich_dict,
         )
         m.fs.precip_properties = precip_thermo_prop_pack.PrecipitateParameter(
             precip_comp_list=precip_comp_list,
-            precip_eq_rxn_logkeq_dict=precip_log_keq_dict,
-            precip_eq_rxn_stoich_dict=precip_eq_stoich_dict,
+            logkeq_dict=precip_log_keq_dict,
+            stoich_dict=precip_stoich_dict,
         )
 
         m.fs.unit = Precipitator(
@@ -155,6 +161,7 @@ class TestPrec(object):
         assert degrees_of_freedom(prec) == 1
 
     @pytest.mark.solver
+    @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
     def test_solve(self, prec):
         # scale model
@@ -180,7 +187,8 @@ class TestPrec(object):
             1e4,
         )
 
-        results = prec.fs.unit.solve_unit()
+        solver = get_solver()
+        results = solver.solve(prec)
         assert_optimal_termination(results)
 
     @pytest.mark.solver

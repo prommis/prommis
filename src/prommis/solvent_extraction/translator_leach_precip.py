@@ -1,15 +1,10 @@
 # Import Pyomo libraries
-from pyomo.environ import (
-    check_optimal_termination,
-    Set,
-)
+from pyomo.environ import Set
+
 
 # Import IDAES cores
 from idaes.core import declare_process_block_class
 from idaes.models.unit_models.translator import TranslatorData
-from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.solvers import get_solver
-from idaes.core.util.exceptions import InitializationError
 
 import idaes.logger as idaeslog
 

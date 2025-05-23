@@ -144,7 +144,7 @@ the overall effect of the reactions is very likely exothermic even though calcin
 """
 
 from pyomo.dae import DerivativeVar
-from pyomo.environ import Constraint, exp, Param, sqrt, Var, units
+from pyomo.environ import Constraint, Param, Var, exp, sqrt, units
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
 from idaes import logger as idaeslog

@@ -84,7 +84,7 @@ Streams
 -------
 
 - **Gas Inlet Stream**: :ce:`O2`-containing hot flue gas fed to the reactor. It must contain at least :ce:`O2`, :ce:`N2`, :ce:`H2O`, :ce:`CO2`, and :ce:`SO2`. IDAES' generic ideal gas property package can be used for the gas stream.
-- **Gas Outlet Stream**: Gas product leaving the reactor. The same gas property package as that for the gas inlet stream shold be used.
+- **Gas Outlet Stream**: Gas product leaving the reactor. The same gas property package as that for the gas inlet stream should be used.
 - **Solid Inlet Stream**: Solid REE-containling material fed to the reactor. A property package of ReeFeedParameters should be used.
 - **Solid Outlet Stream**: Solid product leaving the reactor without moisture and organic contents. A property package of ReeRoastParameters should be used.
 - **Leach Solid Outlet Stream**: Solid product leaving the reactor with species consistent with the leach solids property package CoalRefuseParameters. This stream can be linked to the subsequent leaching unit.
@@ -124,8 +124,7 @@ Assumptions
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
 # Additional import for the unit operation
-from pyomo.environ import Param, Var, exp, sqrt, Constraint
-from pyomo.environ import units as pyunits
+from pyomo.environ import Param, Var, exp, sqrt, Constraint, units as pyunits
 
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog

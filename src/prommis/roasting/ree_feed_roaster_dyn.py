@@ -8,8 +8,11 @@ r"""
 IDAES REE Feed Roaster Unit Model
 ==================================
 
-This model represents a roaster/calcination unit for Rare Earth Element (REE) feedstock, which includes rare earth minerals, gangue/impurity minerals, moisture, and combustible organic materials containing C, H, O, N, and S elements.
-This model can be used for both steady-state and dynamic simulations. Since the reaction kinetics are considered, the reactor volume and voidage of the reactor bed have to be specified and solid material holdup will be calculated even for a steady-state simulation.
+This model represents a roaster/calcination unit for Rare Earth Element (REE) feedstock, which includes rare earth minerals,
+gangue/impurity minerals, moisture, and combustible organic materials containing :ce:`C`, :ce:`H`, :ce:`O`, :ce:`N`, and :ce:`S` elements.
+This model can be used for both steady-state and dynamic simulations. Since the reaction kinetics are considered,
+the reactor volume and the voidage of the reactor bed have to be specified and solid material holdup will be calculated
+even for a steady-state simulation.
 
 Reactions
 ---------
@@ -28,8 +31,8 @@ The reactions of impurities involved are listed below:
    .. ce::
       CaCO3 -> CaO + CO2 (g)
 
-   Typically occurs above 850°C; conversion is a determined by kinetics from a reference listed below:
-   Carrillo Garcia, A. (2019). Thermal Decomposition of a Rare Earth Ore [Ph.D. thesis, Polytechnique Montréal]. PolyPublie. https://publications.polymtl.ca/4147/
+   Typically occurs above 850°C. Conversion is a determined by kinetics in the following reference:
+   Carrillo Garcia, A. (2019). Thermal Decomposition of a Rare Earth Ore, Ph.D. thesis, Polytechnique Montréal.
 
 3. Pyrite combustion:
 
@@ -46,17 +49,19 @@ Combustion of organic elements is modeled as follows:
 - :ce:`N -> 0.5 N2`
 - :ce:`S + O2 -> SO2`
 
-The reactions of insoluable rare earth mineral represented by RE2X to dissovable rare earth oxide RE2O3 and inert rare earth mineral (never leachable) Ree2X are through two parallel competing reactions.
+The reactions of insoluable rare earth mineral represented by :ce:`RE2X` to dissovable rare earth oxide :ce:`RE2O3` and
+inert rare earth mineral (never leachable) :ce:`Ree2X` are through two parallel competing reactions.
 
    .. ce::
-      RE2X  -> y1 RE2O3 + (1-y1) Ree2X
+      RE2X -> y1 RE2O3 + (1-y1) Ree2X
 
    .. ce::
-      RE2X  -> y2 RE2O3 + (1-y2) Ree2X
+      RE2X -> y2 RE2O3 + (1-y2) Ree2X
 
-   where RE represent an element including Sc, Y, La, Ce, Pr, Nd, Sm, Gd, Dy.
-   The first reaction has a lower activation energy and a higher oxide yield while the second reaction has a higher activation energy and a lower oxide yield.
-   This reaction mechanism tends to predict low conversion to dissovable oxide at too low or too high reaction temperatures.
+   where :ce:`RE` represent an element including :ce:`Sc`, :ce:`Y`, :ce:`La`, :ce:`Ce`, :ce:`Pr`, :ce:`Nd`, :ce:`Sm`, :ce:`Gd`, and :ce:`Dy`.
+   The first reaction has a lower activation energy and a higher oxide yield `y1`
+   while the second reaction has a higher activation energy and a lower oxide yield `y2`.
+   This reaction mechanism tends to predict low conversions to dissovable oxides at too low or too high reaction temperatures.
 
 
 Physical Changes
@@ -68,32 +73,40 @@ Solid Composition
 ----------------------
 
 A property package named ReeFeedParameters should be used to represent the solid feed material.
-Impurity minerals are assumed to be a mixture of :ce:`SiO2`, :ce:`Al2O3`, kaolinite, :ce:`CaCO3`, :ce:`CaO`, pyrite (:ce:`FeS2`), and :ce:`Fe2O3`.
-The solid feed material also contains moisture and organic material including :ce:`C`, :ce:`H`, :ce:`O`, :ce:`N`, :ce:`S` elements. The composition of the organic material is specified by the user.
-The insoluable rare earth mineral is represented as RE2X in the ReeFeedParameters property package where RE stands for a rare earth element.
-The dissovable rare earth mineral is represented as RE2O3 in the ReeFeedParameters property package where RE stands for a rare earth element.
-After roasting, the solid product stream does not contain moisture and organic contents. A property package named ReeRoastParameters is used to represent the solid product.
+Impurity minerals are assumed to be a mixture of :ce:`SiO2`, :ce:`Al2O3`, `kaolinite`, :ce:`CaCO3`, :ce:`CaO`, `pyrite` (:ce:`FeS2`),
+and :ce:`Fe2O3`. The solid feed material also contains moisture and organic material including :ce:`C`, :ce:`H`, :ce:`O`,
+:ce:`N`, :ce:`S` elements. The composition of the organic material is specified by the user.
+The insoluable rare earth mineral is represented as RE2X in the ReeFeedParameters property package where RE stands for
+a rare earth element. The dissovable rare earth mineral is represented as RE2O3 in the ReeFeedParameters property package
+where RE stands for a rare earth element. After roasting, the solid product stream does not contain moisture and organic elements.
+A property package named ReeRoastParameters is used to represent the solid product.
 
 Heat Source
 -----------
 
-The heat to the reactor can be provided either by external heating as a user input or by the combustion of a fossil fuel with air to form a hot :ce:`O2`-containing flue gas. The gas inlet stream is an :ce:`O2`-containing hot flue gas.
-Due to the combustible organic contents in the solid feed stream, heat is usually generated by the combustion of the organic material. However, hot gas is still required to start the combustion.
+The heat to the reactor can be provided either by external heating as a user input or by the combustion of a fossil fuel with air to
+form a hot :ce:`O2`-containing flue gas. The gas inlet stream is an :ce:`O2`-containing hot flue gas.
+Due to the combustible organic contents in the solid feed stream, heat is usually generated by the combustion of the organic material.
+However, hot gas is still required to start the combustion.
 
 Streams
 -------
 
-- **Gas Inlet Stream**: :ce:`O2`-containing hot flue gas fed to the reactor. It must contain at least :ce:`O2`, :ce:`N2`, :ce:`H2O`, :ce:`CO2`, and :ce:`SO2`. IDAES' generic ideal gas property package can be used for the gas stream.
+- **Gas Inlet Stream**: :ce:`O2`-containing hot gas fed to the reactor. It must contain at least :ce:`O2`, :ce:`N2`, :ce:`H2O`,
+:ce:`CO2`, and :ce:`SO2`. IDAES' generic ideal gas property package can be used for the gas stream.
 - **Gas Outlet Stream**: Gas product leaving the reactor. The same gas property package as that for the gas inlet stream should be used.
-- **Solid Inlet Stream**: Solid REE-containling material fed to the reactor. A property package of ReeFeedParameters should be used.
-- **Solid Outlet Stream**: Solid product leaving the reactor without moisture and organic contents. A property package of ReeRoastParameters should be used.
-- **Leach Solid Outlet Stream**: Solid product leaving the reactor with species consistent with the leach solids property package CoalRefuseParameters. This stream can be linked to the subsequent leaching unit.
+- **Solid Inlet Stream**: Solid REE-containling material fed to the reactor. A property package of `ReeFeedParameters` should be used.
+- **Solid Outlet Stream**: Solid product leaving the reactor without moisture and organic contents. A property package of
+`ReeRoastParameters` should be used.
+- **Leach Solid Outlet Stream**: Solid product leaving the reactor with species consistent with the leach solids property package
+`CoalRefuseParameters`. This stream can be linked to the subsequent leaching unit.
 
 
 Thermal Properties
 ------------------
 
-The standard heats of formation and heat capacities of solid components involved are defined as parameters in this model. The default values of those parameters are obtained from two sources as listed below:
+The standard heats of formation and heat capacities of solid components involved are defined as parameters in this model.
+The default values of those parameters are obtained from two sources as listed below:
 
 1. NIST Chemistry WebBook
 2. Wagman, D.D., W.H. Evans, V.B. Parker, R.H.Schumm, I. Halow, S.M. Bailey, K.L. Churney,
@@ -101,41 +114,45 @@ The standard heats of formation and heat capacities of solid components involved
    inorganic and C1 and C2 organic substances in SI units," Journal of Physical and Chemical
    Reference Data, 11(2), 1982
 
-The NIST WebBook data are used for the properties of :ce:`Al2O3`, :ce:`SiO2`, :ce:`CaO`, :ce:`Fe2O3`, and `pyrite`. Note that the heat capacity model is simplified as a linear function of temperature.
+The NIST WebBook data are used for the properties of :ce:`Al2O3`, :ce:`SiO2`, :ce:`CaO`, :ce:`Fe2O3`, and `pyrite`. 
+Note that the heat capacity model is simplified as a linear function of temperature.
 The data of Wagman et al are used for the properties of :ce:`CaCO3` and `kaolinite`.
 The gas phase properties are calculated based on user configured property package.
-The heat capacity of organic part of the feed is usually a function of temperature and elemental composition of C, H, O, N, and S elements according to Merrick (1983).
-For simplicity, a constant heat capacity of 1260 J/kg-K in the range reported by Merrick is used in this model. The standard enthalpy of formation of the organic material is assumed to be zero. In other words, individual elements are treated as pure species, which may slightly overpredict the higher heating value of the organic material.
+The heat capacity of organic part of the feed is usually a function of temperature and elemental composition of
+:ce:`C`, :ce:`H`, :ce:`O`, :ce:`N`, and :ce:`S` elements according to Merrick (1983).
+For simplicity, a constant heat capacity of 1260 J/kg-K in the range reported by Merrick is used in this model.
+The standard enthalpy of formation of the organic material is assumed to be zero. In other words,
+they are treated as elemental molecules, which may cause slightly overprediction of the heating value of the organic material.
 
 Assumptions
 -----------
 
 - No kinetics or mass transfer is considered for the Kaolinite calcination and pyrite combustion. Complete conversions are assumed.
-- Reaction rate for :ce:`CaCO3` calcination is based on kinetics reported by Carrillo Garcia (2019). The rate is a function of conversion. It is assumed that the conversion of :ce:`CaCO3` in the feed stream is zero.
-- Reaction rates for the conversion of insoluble REE mineral to dissolvable mineral for each element is modeled by two competing reactions with two different activation energies and yield fractions.
-- The carryover of fine particles by the gas stream is ignored. The user should add a splitter model for the solid product stream to account for the solid material loss due to the carryover.
-- Rare earth minerals, being in ppm level, are ignored in energy balance. The property packages assume zero enthalpy and heat capacity for them.
-- If the product temperature is specified as a user input, the heat duty will be calculated. If the heat duty is given, the product temperature will be calculated. Note that due to the contents of combustible organic elements, the overall effect of the reactions is very likely exothermic even though calcination reactions are endothermic.
+- Reaction rate for :ce:`CaCO3` calcination is based on kinetics reported by Carrillo Garcia (2019). 
+The rate is a function of conversion. It is assumed that the conversion of :ce:`CaCO3` in the feed stream is zero.
+- Reaction rates for the conversion of insoluble REE mineral to dissolvable mineral for each element is modeled by
+two competing reactions with two different activation energies and yield fractions.
+- The carryover of fine particles by the gas stream is ignored. The user should add a splitter model for the solid
+product stream to account for the solid material loss due to the carryover.
+- Rare earth minerals, being in ppm level, are ignored in energy balance. The property packages assume zero enthalpy and
+heat capacity for them.
+- If the product temperature is specified as a user input, the heat duty will be calculated. If the heat duty is given,
+the product temperature will be calculated. Note that due to the contents of combustible organic elements,
+the overall effect of the reactions is very likely exothermic even though calcination reactions are endothermic.
 - Temperatures of solid and gas products are assumed to be the same.
 
 """
 
-# Import Pyomo libraries
+from pyomo.dae import DerivativeVar
+from pyomo.environ import Param, Var, exp, sqrt, Constraint, units as pyunits
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
-# Additional import for the unit operation
-from pyomo.environ import Param, Var, exp, sqrt, Constraint, units as pyunits
-
-import idaes.core.util.scaling as iscale
-import idaes.logger as idaeslog
-
-# Import IDAES cores
+from idaes import logger as idaeslog
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.solvers import get_solver
+from idaes.core.util import scaling as iscale
 from idaes.core.util.config import DefaultBool, is_physical_parameter_block
 from idaes.core.util.constants import Constants as const
-
-from pyomo.dae import DerivativeVar
 
 __author__ = "Jinliang Ma"
 __version__ = "1.0.0"

@@ -1317,7 +1317,7 @@ def initialize_system(m):
     seq.run(m, function)
 
 
-def solve_system(m, solver=None, tee=True):
+def solve_system(m, solver=None, tee=False):
     """
     Solve the model.
 

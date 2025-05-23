@@ -13,7 +13,7 @@ from idaes.core.util import DiagnosticsToolbox
 import pytest
 
 from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer
-from prommis.solvent_extraction.solvent_extraction_steady import build_model, set_inputs
+from prommis.solvent_extraction.solvent_extraction_steady import main
 
 solver = get_solver()
 
@@ -23,9 +23,7 @@ class TestSXmodel:
     def SolEx_frame(self):
         dosage = 5
         number_of_stages = 3
-
-        m = build_model(dosage, number_of_stages)
-        set_inputs(m, dosage)
+        m = main(dosage, number_of_stages)
 
         return m
 

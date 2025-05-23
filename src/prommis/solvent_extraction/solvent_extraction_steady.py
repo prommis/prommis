@@ -114,21 +114,23 @@ def set_inputs(m, dosage):
     m.fs.solex.mscontactor.organic_inlet_state[:].temperature.fix(305.15 * units.K)
 
 
-if __name__ == "__main__":
-
+def main(dosage, number_of_stages):
     """
-    Build the model, initialize and solve it.
+    Main function to run the model.
     """
-
-    dosage = 5
-    number_of_stages = 3
-    stage_number = np.arange(1, number_of_stages + 1)
-
     m = build_model(dosage, number_of_stages)
     set_inputs(m, dosage)
 
-    initializer = SolventExtractionInitializer()
-    initializer.initialize(m.fs.solex)
+    return m
 
-    solver = get_solver(solver="ipopt_v2")
-    solver.solve(m, tee=True)
+
+dosage = 5
+number_of_stages = 3
+
+m = main(dosage, number_of_stages)
+
+initializer = SolventExtractionInitializer()
+initializer.initialize(m.fs.solex)
+
+solver = get_solver(solver="ipopt_v2")
+solver.solve(m, tee=True)

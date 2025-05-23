@@ -304,37 +304,8 @@ class LeachSolutionStateBlockData(StateBlockData):
                 to_units=units.mol / units.m**3,
             )
 
-    def get_enthalpy_flow_terms(b, p):
-        units_meta = b.params.get_metadata().get_derived_units
-        length_unit = units_meta("length")
-        mass_unit = units_meta("mass")
-        time_unit = units_meta("time")
-        return units.convert(
-            b.flow_vol
-            * (b.params.dens_mass / b.params.mw["H2O"])
-            * b.params.cp_mol
-            * (b.temperature - b.params.temperature_ref),
-            to_units=(mass_unit * length_unit**2) / time_unit**3,
-        )
-
-    def get_energy_density_terms(b, p):
-        units_meta = b.params.get_metadata().get_derived_units
-        length_unit = units_meta("length")
-        mass_unit = units_meta("mass")
-        time_unit = units_meta("time")
-        return units.convert(
-            (b.params.dens_mass / b.params.mw["H2O"])
-            * b.params.cp_mol
-            * (b.temperature - b.params.temperature_ref)
-            - b.pressure * b.params.mw["H2O"] / b.params.dens_mass,
-            to_units=mass_unit / (length_unit * time_unit**2,),
-        )
-
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar
-
-    def default_energy_balance_type(self):
-        return EnergyBalanceType.enthalpyTotal
 
     def define_state_vars(self):
         return {

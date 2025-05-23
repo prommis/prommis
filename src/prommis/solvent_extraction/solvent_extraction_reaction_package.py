@@ -96,8 +96,6 @@ class SolventExtractionReactionsData(
             reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", e)] = -1
             reaction_stoichiometry[(f"{e}_mass_transfer", "organic", f"{e}_o")] = 1
             reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H")] = 3
-            reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "HSO4")] = 0
-            reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "SO4")] = 0
             reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -3
 
         for e in Impurity_list:

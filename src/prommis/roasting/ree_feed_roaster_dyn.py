@@ -144,7 +144,7 @@ the overall effect of the reactions is very likely exothermic even though calcin
 """
 
 from pyomo.dae import DerivativeVar
-from pyomo.environ import Param, Var, exp, sqrt, Constraint, units as pyunits
+from pyomo.environ import Constraint, exp, Param, sqrt, Var, units
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
 from idaes import logger as idaeslog
@@ -369,7 +369,7 @@ constructed,
         # Currently the gas phase material and energy holdup are ignored even for dynamic model
         # The energy holdup is needed only for dynamic cases
 
-        self.volume = Var(initialize=1, units=pyunits.m**3, doc="volume of the reactor")
+        self.volume = Var(initialize=1, units=units.m**3, doc="volume of the reactor")
         self.volume.fix()
 
         self.voidage = Var(
@@ -387,7 +387,7 @@ constructed,
             self.heat_duty = Var(
                 self.flowsheet().time,
                 initialize=0,
-                units=pyunits.W,
+                units=units.W,
                 doc="heat duty added to the reactor",
             )
 
@@ -395,7 +395,7 @@ constructed,
             self.deltaP = Var(
                 self.flowsheet().time,
                 initialize=0,
-                units=pyunits.Pa,
+                units=units.Pa,
                 doc="pressure drop from inlet to outlet",
             )
 
@@ -423,7 +423,7 @@ constructed,
         self.A_CaCO3 = Param(
             initialize=exp(23.5),
             mutable=True,
-            units=1 / pyunits.s,
+            units=1 / units.s,
             doc="Pre-exponential factor for CaCO3 decomposition",
         )
 
@@ -432,7 +432,7 @@ constructed,
         self.E_CaCO3 = Param(
             initialize=2.094e5,
             mutable=True,
-            units=pyunits.J / pyunits.mol,
+            units=units.J / units.mol,
             doc="Activation energy for CaCO3 decomposition",
         )
 
@@ -440,7 +440,7 @@ constructed,
             self.Ree_list,
             initialize=23.7,
             mutable=True,
-            units=1 / pyunits.s,
+            units=1 / units.s,
             doc="Pre-exponential factor for the first REE roasting reaction",
         )
 
@@ -448,7 +448,7 @@ constructed,
             self.Ree_list,
             initialize=3.6e7,
             mutable=True,
-            units=1 / pyunits.s,
+            units=1 / units.s,
             doc="Pre-exponential factor for the 2nd REE roasting reaction",
         )
 
@@ -456,7 +456,7 @@ constructed,
             self.Ree_list,
             initialize=75980.0,
             mutable=True,
-            units=pyunits.J / pyunits.mol,
+            units=units.J / units.mol,
             doc="Activation energy for the 1st REE roasting reaction",
         )
 
@@ -464,7 +464,7 @@ constructed,
             self.Ree_list,
             initialize=203339.3,
             mutable=True,
-            units=pyunits.J / pyunits.mol,
+            units=units.J / units.mol,
             doc="Activation energy for the 2nd REE roasting reaction",
         )
 
@@ -488,7 +488,7 @@ constructed,
             self.flowsheet().time,
             self.config.solid_product_property_package.component_list,
             initialize=1.0,
-            units=pyunits.mol,
+            units=units.mol,
             doc="Solid species mole holdup",
         )
 
@@ -496,28 +496,28 @@ constructed,
             self.solid_energy_holdup = Var(
                 self.flowsheet().time,
                 initialize=1.0,
-                units=pyunits.J,
+                units=units.J,
                 doc="Solid energy holdup",
             )
 
             self.solid_material_accumulation = DerivativeVar(
                 self.solid_material_holdup,
                 wrt=self.flowsheet().config.time,
-                units=pyunits.mol / pyunits.s,
+                units=units.mol / units.s,
                 doc="Accumulation of solid material",
             )
 
             self.solid_energy_accumulation = DerivativeVar(
                 self.solid_energy_holdup,
                 wrt=self.flowsheet().config.time,
-                units=pyunits.W,
+                units=units.W,
                 doc="Solid energy accumulation",
             )
 
         self.rate_CaCO3 = Var(
             self.flowsheet().config.time,
             initialize=1.0,
-            units=pyunits.mol / pyunits.s,
+            units=units.mol / units.s,
             doc="Rate of CaCO3 decomposition, Always positive",
         )
 
@@ -525,7 +525,7 @@ constructed,
             self.flowsheet().config.time,
             self.Ree_list,
             initialize=1.0,
-            units=pyunits.mol / pyunits.s,
+            units=units.mol / units.s,
             doc="Rate of 1st REE roasting reaction in term of mole of reactant reacted, Always positive",
         )
 
@@ -533,7 +533,7 @@ constructed,
             self.flowsheet().config.time,
             self.Ree_list,
             initialize=1.0,
-            units=pyunits.mol / pyunits.s,
+            units=units.mol / units.s,
             doc="Rate of 2nd REE roasting reaction in term of mole of reactant reacted, Always positive",
         )
 
@@ -901,9 +901,9 @@ constructed,
         )
         def leach_solid_outlet_total_mass_flow_eqn(b, t):
             return (
-                pyunits.convert(
+                units.convert(
                     b.leach_solid_out[t].flow_mass,
-                    to_units=pyunits.kg / pyunits.s,
+                    to_units=units.kg / units.s,
                 )
                 == b.solid_out[t].flow_mass
             )

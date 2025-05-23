@@ -10,7 +10,15 @@ Initial property package for REE leach solutions from coal refuse.
 Authors: Andrew Lee
 """
 
-from pyomo.environ import Constraint, Param, Set, Var, units
+from pyomo.environ import (
+    Constraint,
+    Param,
+    Set,
+    Var,
+    units,
+    PositiveReals,
+    Reals,
+)
 
 from idaes.core import (
     Component,
@@ -133,6 +141,22 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
             mutable=True,
         )
 
+        # Heat capacity of water
+        self.cp_mol = Param(
+            mutable=True,
+            initialize=75.327,
+            doc="Molar heat capacity of water [J/mol.K]",
+            units=units.J / units.mol / units.K,
+        )
+
+        self.temperature_ref = Param(
+            within=PositiveReals,
+            mutable=True,
+            default=298.15,
+            doc="Reference temperature [K]",
+            units=units.K,
+        )
+
         self._state_block_class = LeachSolutionStateBlock
 
     @classmethod
@@ -203,6 +227,30 @@ class LeachSolutionStateBlockData(StateBlockData):
             bounds=(1e-20, None),
         )
 
+        self.temperature = Var(
+            domain=Reals,
+            initialize=298.15,
+            bounds=(298.1, None),
+            doc="State temperature [K]",
+            units=units.K,
+        )
+
+        self.pressure = Var(
+            domain=Reals,
+            initialize=101325.0,
+            bounds=(1e3, 1e6),
+            doc="State pressure [Pa]",
+            units=units.Pa,
+        )
+
+        self.pH_phase = Var(
+            self.params.phase_list, domain=Reals, initialize=2, doc="pH of the solution"
+        )
+
+        @self.Constraint(self.phase_list)
+        def pH_constraint(b, p):
+            return 10 ** (-b.pH_phase[p]) == b.conc_mol_comp["H"] * units.L / units.mol
+
         # Concentration conversion constraint
         @self.Constraint(self.params.component_list)
         def molar_concentration_constraint(b, j):
@@ -231,7 +279,11 @@ class LeachSolutionStateBlockData(StateBlockData):
         # Note conversion to mol/hour
         if j == "H2O":
             # Assume constant density of 1 kg/L
-            return self.flow_vol * self.params.dens_mass / self.params.mw[j]
+            return units.convert(
+                self.flow_vol * self.params.dens_mass / self.params.mw[j],
+                to_units=units.mol / units.hour,
+            )
+
         else:
             # Need to convert from moles to mass
             return units.convert(
@@ -258,4 +310,6 @@ class LeachSolutionStateBlockData(StateBlockData):
         return {
             "flow_vol": self.flow_vol,
             "conc_mass_comp": self.conc_mass_comp,
+            "temperature": self.temperature,
+            "pressure": self.pressure,
         }

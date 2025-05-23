@@ -122,9 +122,9 @@ def test_build(model):
         len(model.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint) == 12
     )
 
-    assert number_variables(model.fs.leach) == 197
-    assert number_total_constraints(model.fs.leach) == 164
-    assert number_unused_variables(model.fs.leach) == 0
+    assert number_variables(model.fs.leach) == 203
+    assert number_total_constraints(model.fs.leach) == 166
+    assert number_unused_variables(model.fs.leach) == 4
 
 
 @pytest.mark.unit
@@ -329,9 +329,9 @@ def test_build_ub(model_ub):
         == 12
     )
 
-    assert number_variables(model_ub.fs.leach) == 197
-    assert number_total_constraints(model_ub.fs.leach) == 164
-    assert number_unused_variables(model_ub.fs.leach) == 0
+    assert number_variables(model_ub.fs.leach) == 203
+    assert number_total_constraints(model_ub.fs.leach) == 166
+    assert number_unused_variables(model_ub.fs.leach) == 4
 
 
 @pytest.mark.unit
@@ -536,9 +536,9 @@ def test_build_lb(model_lb):
         == 12
     )
 
-    assert number_variables(model_lb.fs.leach) == 197
-    assert number_total_constraints(model_lb.fs.leach) == 164
-    assert number_unused_variables(model_lb.fs.leach) == 0
+    assert number_variables(model_lb.fs.leach) == 203
+    assert number_total_constraints(model_lb.fs.leach) == 166
+    assert number_unused_variables(model_lb.fs.leach) == 4
 
 
 @pytest.mark.unit

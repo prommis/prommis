@@ -3,8 +3,6 @@ from pyomo.environ import (
     units,
 )
 
-import numpy as np
-
 from idaes.core import (
     FlowDirection,
     FlowsheetBlock,

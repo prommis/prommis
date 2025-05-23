@@ -28,7 +28,6 @@ from idaes.core import (
     StateBlock,
     StateBlockData,
     declare_process_block_class,
-    EnergyBalanceType,
 )
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference

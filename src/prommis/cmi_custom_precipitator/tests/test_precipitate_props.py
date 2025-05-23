@@ -26,7 +26,7 @@ def test_build():
     }
 
     # define reaction stoichiometry for precipitates
-    precip_eq_stoich_dict = {
+    precip_stoich_dict = {
         "E1": {"FeOH3": 0},
         "E2": {"FeOH3": 0},
         "E3": {"FeOH3": -1},
@@ -37,8 +37,8 @@ def test_build():
 
     m.fs.precip_properties = precip_thermo_prop_pack.PrecipitateParameter(
         precip_comp_list=precip_comp_list,
-        precip_eq_rxn_logkeq_dict=precip_log_keq_dict,
-        precip_eq_rxn_stoich_dict=precip_eq_stoich_dict,
+        logkeq_dict=precip_log_keq_dict,
+        stoich_dict=precip_stoich_dict,
     )
 
     m.fs.state = m.fs.precip_properties.build_state_block(m.fs.time)

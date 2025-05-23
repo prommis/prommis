@@ -38,14 +38,14 @@ class PrecipitateParameterData(PhysicalParameterBlock):
         ),
     )
     CONFIG.declare(
-        "precip_eq_rxn_logkeq_dict",
+        "logkeq_dict",
         ConfigValue(
             domain=dict,
             description="Dictionary of precipitation equilibrium reaction constants",
         ),
     )
     CONFIG.declare(
-        "precip_eq_rxn_stoich_dict",
+        "stoich_dict",
         ConfigValue(
             domain=dict,
             description="Dictionary of precipitate component stoichiometry for each reaction.",
@@ -65,15 +65,15 @@ class PrecipitateParameterData(PhysicalParameterBlock):
         # precipitation equilibrium reaction index
         self.eq_rxn_set = Set(
             initialize=list(
-                set(key for key in self.config.precip_eq_rxn_logkeq_dict.keys())
+                set(key for key in self.config.logkeq_dict.keys())
             )
         )
 
         # stoichiometry for each precipitation equilibrium reaction
-        self.eq_rxn_stoich_dict = self.config.precip_eq_rxn_stoich_dict
+        self.stoich_dict = self.config.stoich_dict
 
         # log(keq) for each equilibrium precipitation reaction
-        self.eq_rxn_logkeq_dict = self.config.precip_eq_rxn_logkeq_dict
+        self.logkeq_dict = self.config.logkeq_dict
 
         self._state_block_class = PrecipitateStateBlock
 
@@ -87,7 +87,7 @@ class PrecipitateParameterData(PhysicalParameterBlock):
         )
         obj.add_default_units(
             {
-                "time": pyunits.hour,
+                "time": pyunits.s,
                 "length": pyunits.m,
                 "mass": pyunits.kg,
                 "amount": pyunits.mol,
@@ -117,7 +117,7 @@ class PrecipitateStateBlockData(StateBlockData):
 
         self.moles_precip_comp = Var(
             self.component_list,
-            units=pyunits.mol / pyunits.hour,
+            units=pyunits.mol / pyunits.s,
             initialize=1e-20,
             bounds=(1e-20, None),
         )

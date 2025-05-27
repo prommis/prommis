@@ -232,7 +232,7 @@ constructed,
         # Params
         # create a set containing all reaction logkeq values
         self.merged_logkeq_dict = (
-            prop_aq.eq_rxn_logkeq_dict | prop_precip.eq_rxn_logkeq_dict
+            prop_aq.logkeq_dict | prop_precip.logkeq_dict
         )
         # create a set containing all reactions
         self.merged_rxns = self.merged_logkeq_dict.keys()
@@ -249,17 +249,20 @@ constructed,
             self.merged_rxns,
             initialize=1,
             doc="The extent of the reactions",
-            units=pyo.units.mol / pyo.units.kg,
+            units=pyunits.mol / pyunits.kg,
         )
         # log(q) for precipitation reactions
         self.log_q = pyo.Var(
             prop_precip.eq_rxn_set,
             initialize=1,
             doc="log(q) var for each reaction",
-            units=pyo.units.dimensionless,
+            units=pyunits.dimensionless,
         )
-        # reference molality of 1 to make log(molalities) dimensionless
-        m_ref = 1 * pyunits.mol / pyunits.kg
+        self.m_ref = pyo.Param(
+            initialize=1,
+            doc="Reference molality of 1 to make log(molalities) dimensionless",
+            units = pyunits.mol / pyunits.kg
+        )
 
         # constraints
         @self.Constraint(
@@ -270,11 +273,11 @@ constructed,
         def log_k_equil_rxn_eqns(blk, t, r):
 
             return blk.log_k[r] == sum(
-                prop_aq.eq_rxn_stoich_dict[r][c]
+                prop_aq.stoich_dict[r][c]
                 * pyo.log10(
-                    blk.cv_aqueous.properties_out[t].molality_aq_comp[c] / m_ref
+                    blk.cv_aqueous.properties_out[t].molality_aq_comp[c] / self.m_ref
                 )
-                for c in prop_aq.eq_rxn_stoich_dict[r]
+                for c in prop_aq.stoich_dict[r]
             )
 
         @self.Constraint(
@@ -285,17 +288,17 @@ constructed,
         def log_q_precip_equil_rxn_eqns(blk, t, r):
 
             return blk.log_q[r] == sum(
-                prop_aq.eq_rxn_stoich_dict[r][c]
+                prop_aq.stoich_dict[r][c]
                 * pyo.log10(
-                    blk.cv_aqueous.properties_out[t].molality_aq_comp[c] / m_ref
+                    blk.cv_aqueous.properties_out[t].molality_aq_comp[c] / self.m_ref
                 )
-                for c in prop_aq.eq_rxn_stoich_dict[r]
+                for c in prop_aq.stoich_dict[r]
             )
 
         # log(q) must be <= log(k) for precipitating reactions
         @self.Constraint(
             prop_precip.eq_rxn_set,
-            doc="log(q) must be less than or equal to log(k) for precipitating reactions",
+            doc="log(q) must be less than or equal to log(k) for precipitating reactions.",
         )
         def precip_rxns_log_cons(blk, r):
             return blk.log_q[r] <= self.log_k[r]
@@ -310,7 +313,7 @@ constructed,
             return blk.cv_aqueous.properties_out[t].molality_aq_comp[
                 comp
             ] == blk.cv_aqueous.properties_in[t].molality_aq_comp[comp] + sum(
-                prop_aq.eq_rxn_stoich_dict[r][comp] * blk.rxn_extent[r]
+                prop_aq.stoich_dict[r][comp] * blk.rxn_extent[r]
                 for r in self.merged_rxns
             )
 
@@ -332,7 +335,7 @@ constructed,
             return blk.cv_precipitate.properties_out[t].moles_precip_comp[
                 comp
             ] == blk.cv_precipitate.properties_in[t].moles_precip_comp[comp] + sum(
-                prop_precip.eq_rxn_stoich_dict[r][comp]
+                prop_precip.stoich_dict[r][comp]
                 * blk.rxn_extent[r]
                 * blk.cv_aqueous.properties_out[t].flow_vol
                 for r in prop_precip.eq_rxn_set
@@ -346,12 +349,3 @@ constructed,
             return sum(
                 (self.log_k[r] - blk.log_q[r]) ** 2 for r in prop_precip.eq_rxn_set
             )
-
-    def solve_unit(self):
-        """solves unit"""
-
-        solver_obj = get_solver(solver="ipopt_v2", writer_config={"scale_model": True})
-
-        results = solver_obj.solve(self, tee=True)
-
-        return results

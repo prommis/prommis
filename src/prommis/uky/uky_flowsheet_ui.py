@@ -30,6 +30,7 @@ from prommis.uky.uky_flowsheet import (
     set_partition_coefficients,
     set_scaling,
     solve_system,
+    calculate_results,
 )
 
 _log = idaeslog.getLogger(__name__)
@@ -104,6 +105,8 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sm2(C2O4)3(s)",
         "Y2(C2O4)3(s)",
     }
+
+    add_kpis(exports, flowsheet)
 
     # Export the leach liquid feed and its mass components, as inputs
     llf = flowsheet.leach_liquid_feed
@@ -390,6 +393,68 @@ def build_flowsheet(build_options=None, **kwargs):
     initialize_system(scaled_model)
     _log.info(f"end/build-flowsheet build_options={build_options}")
     return scaled_model
+
+
+def add_kpis(exports, fs):
+    data = calculate_results(fs)
+    exports.add_kpi_value(
+        name="total-recovery",
+        units="%",
+        value=data["REE-recovery"],
+        label="Total REE recovery",
+    )
+    exports.add_kpi_value(
+        name="purity",
+        units="%",
+        value=data["product-purity"],
+        label="Product purity",
+    )
+    element_names = {
+        "al": "Aluminum",
+        "ca": "Calcium",
+        "ce": "Cerium",
+        "dy": "Dysprosium",
+        "fe": "Iron",
+        "gd": "Gadolinium",
+        "la": "Lanthanum",
+        "nd": "Neodynium",
+        "pr": "Praseodymium",
+        "sc": "Scandium",
+        "sm": "Samarium",
+        "yt": "Yttrium",
+    }
+    element_values, element_labels = [], []
+    for element, full_name in element_names.items():
+        element_values.append(data[f"{element}-recovery"])
+        element_labels.append(full_name)
+    exports.add_kpi_vector(
+        name="element-recovery",
+        values=element_values,
+        labels=element_labels,
+        title="REE Elemental Recovery",
+        xlab="Rare earth elements",
+        ylab="Elemental Recovery",
+        units="%",
+    )
+
+    roaster_values, roaster_labels = [], []
+    roaster_perf = fs.roaster._get_performance_contents()
+    for title, expr in roaster_perf["exprs"].items():
+        # extract element from, e.g., 'Product Al Mass Fraction'
+        words = title.split()
+        element = words[1]
+        roaster_labels.append(element)
+        # get numeric value for expression
+        val = pyo.value(expr)
+        roaster_values.append(val)
+    exports.add_kpi_total(
+        name="roaster-prod",
+        values=roaster_values,
+        labels=roaster_labels,
+        title="Roaster Product",
+        total_label="Elements",
+        units="mass fraction",
+    )
 
 
 def get_diagram(build_options):

@@ -31,7 +31,7 @@ and a dictionary defining the precipitation/dissolution reaction stoichiometry i
 Model Structure
 ---------------
 
-This unit model has an inlet for aqueous ('aqueous_inlet') and precipitates ('precipitate_inlet') entering the unit, and an outlet for 
+This unit model has an inlet for aqueous ('aqueous_inlet') and precipitates ('precipitate_inlet') entering the unit, and an outlet for
 aqueous ('aqueous_outlet') and precipitates ('precipitate_outlet') leaving the unit.
 
 
@@ -39,7 +39,7 @@ Additional Model Information
 ----------------------------
 
 This precipitator model seeks to model aqeuous systems involving precipitation and dissolution reactions as chemical equilibrium problems.
-The approach taken here is to solve a system of nonlinear equations involving equilibrium constants (the law of mass action approach, LMA) [1]. 
+The approach taken here is to solve a system of nonlinear equations involving equilibrium constants (the law of mass action approach, LMA) [1].
 Instead of utilizing saturation indices heuristics commonly used by LMA software [1], this model formulates an optimization problem where the
 objective function is to minimize the square difference between the ion product, :math:`Q_{r,sp}`, defined over the actual concentration in solution,
 and the solubility constant, :math:`K_{r,sp}`, defined over the equilibrium concentration in solution,
@@ -60,7 +60,7 @@ Equilibrium conditions are imposed in all reactions that do not involve solids' 
 
 .. math:: log(K_{r,aq}) = \sum_{i \in I_{r,products}} \alpha_{i,r} log(C_i^f) - \sum_{i \in I_{r, reactants}} \alpha_{i,r} log(C_i^f) \forall r \in N_{rxn,aq} \quad (4)
 
-where :math:`\alpha_{i,r}` is the stoichiometric coefficient of species :math:`i` in reaction :math:`r`, :math:`C_i^f` is the equilibrium concentration of 
+where :math:`\alpha_{i,r}` is the stoichiometric coefficient of species :math:`i` in reaction :math:`r`, :math:`C_i^f` is the equilibrium concentration of
 species :math:`i`, and :math:`N_{rxn,aq}` is the set of all aqueous reactions. The logartihmic form(s) in Eq. (2-4) to minimize numerical issues.
 
 The set of restrictions is completed with the inclusion of mass and concentration balances to calculate the final concentration/mass of species:
@@ -70,7 +70,7 @@ The set of restrictions is completed with the inclusion of mass and concentratio
 .. math:: m_i^f = m_i^0 + \sum_{r \in N_{rxn,i}} \alpha_{i,r} X_r V \forall i \in I_{sp} \quad (6)
 
 where :math:`C_i^0` is the initial concentration of species :math:`i`, :math:`N_{rxn,i}` is the set of all reactions involving species :math:`i`, :math:`X_r`
-is the extent of reaction :math:`r`, :math:`I_{aq}` is the set of all aqueous species, :math:`m_i^0` is the initial amount of solid species :math:`i`, 
+is the extent of reaction :math:`r`, :math:`I_{aq}` is the set of all aqueous species, :math:`m_i^0` is the initial amount of solid species :math:`i`,
 :math:`V` is the volumetric flowrate of solvent, and :math:`I_{sp}` is the set of all precipitates.
 
 [1] Allan M.M. Leal, Dmitrii A. Kulik, William R. Smith, and Martin O. Saar. An overview of computational methods for chemical equilibrium and kinetic calculations for
@@ -246,9 +246,7 @@ constructed,
 
         # Params
         # create a set containing all reaction logkeq values
-        self.merged_logkeq_dict = (
-            prop_aq.logkeq_dict | prop_precip.logkeq_dict
-        )
+        self.merged_logkeq_dict = prop_aq.logkeq_dict | prop_precip.logkeq_dict
         # create a set containing all reactions
         self.merged_rxns = self.merged_logkeq_dict.keys()
 
@@ -276,7 +274,7 @@ constructed,
         self.m_ref = pyo.Param(
             initialize=1,
             doc="Reference molality of 1 to make log(molalities) dimensionless",
-            units = pyunits.mol / pyunits.kg
+            units=pyunits.mol / pyunits.kg,
         )
 
         # constraints
@@ -365,7 +363,6 @@ constructed,
                 (self.log_k[r] - blk.log_q[r]) ** 2 for r in prop_precip.eq_rxn_set
             )
 
-
     def _get_stream_table_contents(self, time_point=0):
         return create_stream_table_dataframe(
             {
@@ -374,9 +371,9 @@ constructed,
                 "Precipitate Inlet": self.precipitate_inlet,
                 "Precipitate Outlet": self.precipitate_outlet,
             },
-            time_point=time_point
+            time_point=time_point,
         )
-        
+
     def _get_performance_contents(self, time_point=0):
         var_dict = {}
 
@@ -386,7 +383,4 @@ constructed,
 
             var_dict[name] = rxn_extent
 
-
-        
         return {"vars": var_dict}
-        

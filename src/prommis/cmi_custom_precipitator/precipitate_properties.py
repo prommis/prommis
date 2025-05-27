@@ -64,9 +64,7 @@ class PrecipitateParameterData(PhysicalParameterBlock):
         ## precipitation equilibrium reaction parameters
         # precipitation equilibrium reaction index
         self.eq_rxn_set = Set(
-            initialize=list(
-                set(key for key in self.config.logkeq_dict.keys())
-            )
+            initialize=list(set(key for key in self.config.logkeq_dict.keys()))
         )
 
         # stoichiometry for each precipitation equilibrium reaction

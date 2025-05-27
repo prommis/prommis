@@ -225,12 +225,12 @@ constructed,
         self.add_inlet_port(block=self.cv_precipitate, name="precipitate_inlet")
         self.add_outlet_port(block=self.cv_precipitate, name="precipitate_outlet")
 
-        prop_aq = self.config.property_package_aqueous
-        prop_precip = self.config.property_package_precipitate
+        prop_aqueous = self.config.property_package_aqueous
+        prop_precipitate = self.config.property_package_precipitate
 
         # Params
         # create a set containing all reaction logkeq values
-        self.merged_logkeq_dict = prop_aq.logkeq_dict | prop_precip.logkeq_dict
+        self.merged_logkeq_dict = prop_aqueous.logkeq_dict | prop_precipitate.logkeq_dict
         # create a set containing all reactions
         self.merged_rxns = self.merged_logkeq_dict.keys()
 
@@ -250,7 +250,7 @@ constructed,
         )
         # log(q) for precipitation reactions
         self.log_q = pyo.Var(
-            prop_precip.eq_rxn_set,
+            prop_precipitate.rxn_set,
             initialize=1,
             doc="log(q) var for each reaction",
             units=pyunits.dimensionless,
@@ -264,37 +264,37 @@ constructed,
         # constraints
         @self.Constraint(
             self.flowsheet().time,
-            prop_aq.eq_rxn_set,
+            prop_aqueous.rxn_set,
             doc="equilibrium reactions (log form) constraints (non-precipitate forming)",
         )
-        def log_k_equil_rxn_eqns(blk, t, r):
+        def log_k_equilibrium_rxn_eqns(blk, t, r):
 
             return blk.log_k[r] == sum(
-                prop_aq.stoich_dict[r][c]
+                prop_aqueous.stoich_dict[r][c]
                 * pyo.log10(
-                    blk.cv_aqueous.properties_out[t].molality_aq_comp[c] / self.m_ref
+                    blk.cv_aqueous.properties_out[t].molality_aqueous_comp[c] / self.m_ref
                 )
-                for c in prop_aq.stoich_dict[r]
+                for c in prop_aqueous.stoich_dict[r]
             )
 
         @self.Constraint(
             self.flowsheet().time,
-            prop_precip.eq_rxn_set,
+            prop_precipitate.rxn_set,
             doc="equilibrium reactions (log form) constraints (precipitate forming)",
         )
-        def log_q_precip_equil_rxn_eqns(blk, t, r):
+        def log_q_precipitate_equilibrium_rxn_eqns(blk, t, r):
 
             return blk.log_q[r] == sum(
-                prop_aq.stoich_dict[r][c]
+                prop_aqueous.stoich_dict[r][c]
                 * pyo.log10(
-                    blk.cv_aqueous.properties_out[t].molality_aq_comp[c] / self.m_ref
+                    blk.cv_aqueous.properties_out[t].molality_aqueous_comp[c] / self.m_ref
                 )
-                for c in prop_aq.stoich_dict[r]
+                for c in prop_aqueous.stoich_dict[r]
             )
 
         # log(q) must be <= log(k) for precipitating reactions
         @self.Constraint(
-            prop_precip.eq_rxn_set,
+            prop_precipitate.rxn_set,
             doc="log(q) must be less than or equal to log(k) for precipitating reactions.",
         )
         def precip_rxns_log_cons(blk, r):
@@ -303,14 +303,14 @@ constructed,
         # mole balance on all aqueous components
         @self.Constraint(
             self.flowsheet().time,
-            prop_aq.component_list,
+            prop_aqueous.component_list,
             doc="Aqueous Components Mole balance equations.",
         )
-        def aq_mole_balance_eqns(blk, t, comp):
-            return blk.cv_aqueous.properties_out[t].molality_aq_comp[
+        def aqueous_mole_balance_eqns(blk, t, comp):
+            return blk.cv_aqueous.properties_out[t].molality_aqueous_comp[
                 comp
-            ] == blk.cv_aqueous.properties_in[t].molality_aq_comp[comp] + sum(
-                prop_aq.stoich_dict[r][comp] * blk.rxn_extent[r]
+            ] == blk.cv_aqueous.properties_in[t].molality_aqueous_comp[comp] + sum(
+                prop_aqueous.stoich_dict[r][comp] * blk.rxn_extent[r]
                 for r in self.merged_rxns
             )
 
@@ -325,17 +325,17 @@ constructed,
         # mole balance on all precipitate components
         @self.Constraint(
             self.flowsheet().time,
-            prop_precip.component_list,
+            prop_precipitate.component_list,
             doc="Precipitate Components Mole balance equations.",
         )
-        def precip_mole_balance_eqns(blk, t, comp):
-            return blk.cv_precipitate.properties_out[t].moles_precip_comp[
+        def precipitate_mole_balance_eqns(blk, t, comp):
+            return blk.cv_precipitate.properties_out[t].moles_precipitate_comp[
                 comp
-            ] == blk.cv_precipitate.properties_in[t].moles_precip_comp[comp] + sum(
-                prop_precip.stoich_dict[r][comp]
+            ] == blk.cv_precipitate.properties_in[t].moles_precipitate_comp[comp] + sum(
+                prop_precipitate.stoich_dict[r][comp]
                 * blk.rxn_extent[r]
                 * blk.cv_aqueous.properties_out[t].flow_vol
-                for r in prop_precip.eq_rxn_set
+                for r in prop_precipitate.rxn_set
             )
 
         # objective function to minimize difference between log(k) and log(q)
@@ -344,7 +344,7 @@ constructed,
         )
         def min_logs(blk, r):
             return sum(
-                (self.log_k[r] - blk.log_q[r]) ** 2 for r in prop_precip.eq_rxn_set
+                (self.log_k[r] - blk.log_q[r]) ** 2 for r in prop_precipitate.rxn_set
             )
 
     def _get_stream_table_contents(self, time_point=0):

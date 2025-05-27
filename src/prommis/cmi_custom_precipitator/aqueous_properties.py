@@ -35,7 +35,7 @@ _log = idaeslog.getLogger(__name__)
 class AqueousParameterData(PhysicalParameterBlock):
     CONFIG = PhysicalParameterBlock.CONFIG()
     CONFIG.declare(
-        "aq_comp_list",
+        "aqueous_comp_list",
         ConfigValue(domain=list, description="List of aqueous components in process"),
     )
     CONFIG.declare(
@@ -59,11 +59,11 @@ class AqueousParameterData(PhysicalParameterBlock):
         super().build()
 
         self.AqueousPhase = Phase()
-        self.component_list = self.config.aq_comp_list
+        self.component_list = self.config.aqueous_comp_list
 
         ## equilibrium reaction parameters
         # equilibrium reaction index
-        self.eq_rxn_set = Set(
+        self.rxn_set = Set(
             initialize=list(set(key for key in self.config.logkeq_dict.keys()))
         )
 
@@ -80,7 +80,7 @@ class AqueousParameterData(PhysicalParameterBlock):
         """Define properties supported and units."""
         obj.define_custom_properties(
             {
-                "molality_aq_comp": {"method": None},
+                "molality_aqueous_comp": {"method": None},
                 "flow_vol": {"method": None},
             }
         )
@@ -118,7 +118,7 @@ class AqueousStateBlockData(StateBlockData):
             bounds=(1e-5, None),
         )
 
-        self.molality_aq_comp = Var(
+        self.molality_aqueous_comp = Var(
             self.component_list,
             units=pyunits.mol / pyunits.kg,
             initialize=1e-20,
@@ -131,5 +131,5 @@ class AqueousStateBlockData(StateBlockData):
     def define_state_vars(self):
         return {
             "flow_vol": self.flow_vol,
-            "molality_aq_comp": self.molality_aq_comp,
+            "molality_aqueous_comp": self.molality_aqueous_comp,
         }

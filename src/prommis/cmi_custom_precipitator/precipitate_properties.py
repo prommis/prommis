@@ -32,7 +32,7 @@ from idaes.core.util.initialization import fix_state_vars
 class PrecipitateParameterData(PhysicalParameterBlock):
     CONFIG = PhysicalParameterBlock.CONFIG()
     CONFIG.declare(
-        "precip_comp_list",
+        "precipitate_comp_list",
         ConfigValue(
             domain=list, description="List of precipitate components in process."
         ),
@@ -59,11 +59,11 @@ class PrecipitateParameterData(PhysicalParameterBlock):
         super().build()
 
         self.SolidPhase = Phase()
-        self.component_list = self.config.precip_comp_list
+        self.component_list = self.config.precipitate_comp_list
 
         ## precipitation equilibrium reaction parameters
         # precipitation equilibrium reaction index
-        self.eq_rxn_set = Set(
+        self.rxn_set = Set(
             initialize=list(set(key for key in self.config.logkeq_dict.keys()))
         )
 
@@ -80,7 +80,7 @@ class PrecipitateParameterData(PhysicalParameterBlock):
         """Define properties supported and units."""
         obj.define_custom_properties(
             {
-                "molality_precip_comp": {"method": None},
+                "moles_precipitate_comp": {"method": None},
             }
         )
         obj.add_default_units(
@@ -113,7 +113,7 @@ class _PrecipitateStateBlock(StateBlock):
 class PrecipitateStateBlockData(StateBlockData):
     def build(self):
 
-        self.moles_precip_comp = Var(
+        self.moles_precipitate_comp = Var(
             self.component_list,
             units=pyunits.mol / pyunits.s,
             initialize=1e-20,
@@ -125,5 +125,5 @@ class PrecipitateStateBlockData(StateBlockData):
 
     def define_state_vars(self):
         return {
-            "moles_precip_comp": self.moles_precip_comp,
+            "moles_precipitate_comp": self.moles_precipitate_comp,
         }

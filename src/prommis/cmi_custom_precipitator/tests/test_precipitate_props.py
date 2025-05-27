@@ -11,22 +11,22 @@ from idaes.core import FlowsheetBlock
 import pytest
 
 from prommis.cmi_custom_precipitator import (
-    precipitate_properties as precip_thermo_prop_pack,
+    precipitate_properties as precipitate_thermo_prop_pack,
 )
 
 
 @pytest.mark.unit
 def test_build():
     # Define precipitate species present in system
-    precip_comp_list = ["FeOH3"]
+    precipitate_comp_list = ["FeOH3"]
 
     # define equilibrium constant for precipitation/dissolution reactions
-    precip_log_keq_dict = {
+    precipitate_log_keq_dict = {
         "E3": -33.498,
     }
 
     # define reaction stoichiometry for precipitates
-    precip_stoich_dict = {
+    precipitate_stoich_dict = {
         "E1": {"FeOH3": 0},
         "E2": {"FeOH3": 0},
         "E3": {"FeOH3": -1},
@@ -35,22 +35,22 @@ def test_build():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.precip_properties = precip_thermo_prop_pack.PrecipitateParameter(
-        precip_comp_list=precip_comp_list,
-        logkeq_dict=precip_log_keq_dict,
-        stoich_dict=precip_stoich_dict,
+    m.fs.precipitate_properties = precipitate_thermo_prop_pack.PrecipitateParameter(
+        precipitate_comp_list=precipitate_comp_list,
+        logkeq_dict=precipitate_log_keq_dict,
+        stoich_dict=precipitate_stoich_dict,
     )
 
-    m.fs.state = m.fs.precip_properties.build_state_block(m.fs.time)
+    m.fs.state = m.fs.precipitate_properties.build_state_block(m.fs.time)
 
     assert len(m.fs.state) == 1
 
-    assert isinstance(m.fs.state[0].moles_precip_comp, Var)
+    assert isinstance(m.fs.state[0].moles_precipitate_comp, Var)
 
-    for i in m.fs.precip_properties.component_list:
-        m.fs.state[0].moles_precip_comp[i].set_value(0.5)
+    for i in m.fs.precipitate_properties.component_list:
+        m.fs.state[0].moles_precipitate_comp[i].set_value(0.5)
 
     m.fs.state.fix_initialization_states()
 
-    for i in m.fs.precip_properties.component_list:
-        assert m.fs.state[0].moles_precip_comp[i].fixed
+    for i in m.fs.precipitate_properties.component_list:
+        assert m.fs.state[0].moles_precipitate_comp[i].fixed

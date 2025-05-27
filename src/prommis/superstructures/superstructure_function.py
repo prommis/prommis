@@ -472,10 +472,7 @@ def build_model(
                     )
                     * m.COR
                 )
-
-        else:
-            sys.exit("Neither COR nor NPV specified as objective function.")
-
+                
         m.plantYear[t].Profit = pyo.Var(domain=pyo.NonNegativeReals)
         m.plantYear[t].profit_con = pyo.Constraint(
             expr=m.plantYear[t].Profit
@@ -765,15 +762,5 @@ def build_model(
         m.obj = pyo.Objective(expr=m.COR, sense=pyo.minimize)
     else:
         sys.exit("Neither COR nor NPV specified as objective function.")
-
-    # solver = pyo.SolverFactory("gurobi")
-    # solver.options["NumericFocus"] = 2
-
-    # # Enable the solution pool
-    # solver.options["PoolSearchMode"] = 2  # final all solutions within the gap
-    # solver.options["PoolSolutions"] = 10  # store up to 10 solutions in the pool
-    # solver.options["PoolGap"] = 0  # look for multiple solutions
-
-    # m.results = pyo.SolverFactory("gurobi").solve(m, tee=True)
 
     return m

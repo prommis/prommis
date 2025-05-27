@@ -472,6 +472,8 @@ def build_model(
                     )
                     * m.COR
                 )
+        else:
+            sys.exit("Neither COR nor NPV specified as objective function.")
 
         m.plantYear[t].Profit = pyo.Var(domain=pyo.NonNegativeReals)
         m.plantYear[t].profit_con = pyo.Constraint(

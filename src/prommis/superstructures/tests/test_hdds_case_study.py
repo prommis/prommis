@@ -2234,7 +2234,6 @@ class TestByprodVal(object):
 
 # Check if function exits if an incorrect objective function is chosen.
 class TestNoObjectiveFunction(object):
-    @pytest.fixture(scope="class")
     def No_Obj_Model(self, get_common_params):
         common_params = get_common_params
 

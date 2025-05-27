@@ -2591,3 +2591,407 @@ class TestNoObjectiveFunction(object):
         assert (
             excinfo.value.code == "Neither COR nor NPV specified as objective function."
         )
+
+        with pytest.raises(SystemExit) as excinfo:
+            m = build_model(
+                ###################################################################################################
+                ### Plant Lifetime Parameters
+                plant_start=common_params["plant_start"],  # start of plant production
+                plant_lifetime=common_params["plant_lifetime"],  # lifetime of plant
+                ###################################################################################################
+                ###################################################################################################
+                ### Feed parameters
+                # Total feedstock available for recycling each year
+                Available_feed=common_params["Available_feed"],
+                # collection rate for how much of the available feed is processed by the plant each year
+                CR=common_params["CR"],
+                Tracked_comps=common_params["Tracked_comps"],  # tracked components
+                # mass of tracked component per EOL Product (kg component / EOL product)
+                Prod_comp_mass=common_params["Prod_comp_mass"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Superstructure formulation parameters
+                numStages=common_params["numStages"],  # number of total stages
+                Options_in_stage=common_params[  # number of options in each stage
+                    "Options_in_stage"
+                ],
+                # set of options k' in stage j+1 connected to option k in stage j
+                Option_outlets=common_params[  # set of options k' in stage j+1 connected to option k in stage j
+                    "Option_outlets"
+                ],
+                # dictionary of tracked component retention efficiency for each option
+                Option_Eff=common_params["Option_Eff"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Operating Parameters
+                # profit per kg of product in terms of tracked components
+                Profit=common_params["Profit"],
+                # conversion of kg REE/Fe to kg REO/Fe2O3
+                REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
+                # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
+                # OPEX = a*F_in + b*y
+                N_OC_var=common_params["N_OC_var"],
+                # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
+                num_workers=common_params["num_workers"],
+                labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
+                # yearly operating costs per unit ($/unit*yr)
+                YCU=common_params["YCU"],
+                # cost per disassembly stage unit for each disassembly option
+                CU=common_params["CU"],
+                # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
+                Dis_Rate=common_params["Dis_Rate"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Costing Parameters
+                LF=common_params["LF"],  # Lang Factor
+                TOC_factor=common_params["TOC_factor"],  # Overnight costs factor
+                ATWACC=common_params["ATWACC"],  # discount rate. (default of 5.77%)
+                i_OC_esc=common_params["i_OC_esc"],  # opex, revenue (default of 3%)
+                i_CAP_esc=common_params[  # capex escalation rate (default of 3.6%)
+                    "i_CAP_esc"
+                ],
+                f_exp=common_params[  # capital expenditure schedule (default of 10%, 60%, 30%)
+                    "f_exp"
+                ],
+                # Define Python Dictionary with discretized cost by flows for each option.
+                Discretized_CAPEX=common_params["Discretized_CAPEX"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Choice of objective function. Options are 'NPV' or 'COR'.capitalize
+                obj_func="npv",
+                ###################################################################################################
+                ###################################################################################################
+                ### Consideration of environmental impacts parameters
+                # boolean to decide whether or not to consider environmental impacts
+                consider_environ_impacts=False,
+                # environmental impacts matrix (kg CO2e per kg incoming flowrate)
+                environ_impacts=common_params["environ_impacts"],
+                epsilon=common_params[  # epsilon factor for generating Pareto front
+                    "epsilon"
+                ],
+                ###################################################################################################
+                ###################################################################################################
+                ### Byproduct valorization
+                # boolean to decide whether or not to consider the valorization of byproducts
+                consider_byprod_val=False,
+                # list of byproducts
+                byprods=common_params["byprods"],
+                # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
+                byprod_vals=common_params["byprod_vals"],
+                # dictionary keeping track of which tracked component produces which byproduct
+                tracked_comp_for_byprod=common_params["tracked_comp_for_byprod"],
+                # dictionary tracking which options produce a given byproduct
+                byprod_options=common_params["byprod_options"],
+                # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
+                byprod_options_eff=common_params["byprod_options_eff"],
+                # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
+                TC_to_byproduct=common_params["TC_to_byproduct"],
+            )
+
+        # Check the exit code and message
+        assert (
+            excinfo.value.code == "Neither COR nor NPV specified as objective function."
+        )
+
+        with pytest.raises(SystemExit) as excinfo:
+            m = build_model(
+                ###################################################################################################
+                ### Plant Lifetime Parameters
+                plant_start=common_params["plant_start"],  # start of plant production
+                plant_lifetime=common_params["plant_lifetime"],  # lifetime of plant
+                ###################################################################################################
+                ###################################################################################################
+                ### Feed parameters
+                # Total feedstock available for recycling each year
+                Available_feed=common_params["Available_feed"],
+                # collection rate for how much of the available feed is processed by the plant each year
+                CR=common_params["CR"],
+                Tracked_comps=common_params["Tracked_comps"],  # tracked components
+                # mass of tracked component per EOL Product (kg component / EOL product)
+                Prod_comp_mass=common_params["Prod_comp_mass"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Superstructure formulation parameters
+                numStages=common_params["numStages"],  # number of total stages
+                Options_in_stage=common_params[  # number of options in each stage
+                    "Options_in_stage"
+                ],
+                # set of options k' in stage j+1 connected to option k in stage j
+                Option_outlets=common_params[  # set of options k' in stage j+1 connected to option k in stage j
+                    "Option_outlets"
+                ],
+                # dictionary of tracked component retention efficiency for each option
+                Option_Eff=common_params["Option_Eff"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Operating Parameters
+                # profit per kg of product in terms of tracked components
+                Profit=common_params["Profit"],
+                # conversion of kg REE/Fe to kg REO/Fe2O3
+                REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
+                # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
+                # OPEX = a*F_in + b*y
+                N_OC_var=common_params["N_OC_var"],
+                # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
+                num_workers=common_params["num_workers"],
+                labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
+                # yearly operating costs per unit ($/unit*yr)
+                YCU=common_params["YCU"],
+                # cost per disassembly stage unit for each disassembly option
+                CU=common_params["CU"],
+                # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
+                Dis_Rate=common_params["Dis_Rate"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Costing Parameters
+                LF=common_params["LF"],  # Lang Factor
+                TOC_factor=common_params["TOC_factor"],  # Overnight costs factor
+                ATWACC=common_params["ATWACC"],  # discount rate. (default of 5.77%)
+                i_OC_esc=common_params["i_OC_esc"],  # opex, revenue (default of 3%)
+                i_CAP_esc=common_params[  # capex escalation rate (default of 3.6%)
+                    "i_CAP_esc"
+                ],
+                f_exp=common_params[  # capital expenditure schedule (default of 10%, 60%, 30%)
+                    "f_exp"
+                ],
+                # Define Python Dictionary with discretized cost by flows for each option.
+                Discretized_CAPEX=common_params["Discretized_CAPEX"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Choice of objective function. Options are 'NPV' or 'COR'.capitalize
+                obj_func="cor",
+                ###################################################################################################
+                ###################################################################################################
+                ### Consideration of environmental impacts parameters
+                # boolean to decide whether or not to consider environmental impacts
+                consider_environ_impacts=False,
+                # environmental impacts matrix (kg CO2e per kg incoming flowrate)
+                environ_impacts=common_params["environ_impacts"],
+                epsilon=common_params[  # epsilon factor for generating Pareto front
+                    "epsilon"
+                ],
+                ###################################################################################################
+                ###################################################################################################
+                ### Byproduct valorization
+                # boolean to decide whether or not to consider the valorization of byproducts
+                consider_byprod_val=False,
+                # list of byproducts
+                byprods=common_params["byprods"],
+                # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
+                byprod_vals=common_params["byprod_vals"],
+                # dictionary keeping track of which tracked component produces which byproduct
+                tracked_comp_for_byprod=common_params["tracked_comp_for_byprod"],
+                # dictionary tracking which options produce a given byproduct
+                byprod_options=common_params["byprod_options"],
+                # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
+                byprod_options_eff=common_params["byprod_options_eff"],
+                # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
+                TC_to_byproduct=common_params["TC_to_byproduct"],
+            )
+
+        # Check the exit code and message
+        assert (
+            excinfo.value.code == "Neither COR nor NPV specified as objective function."
+        )
+
+        with pytest.raises(SystemExit) as excinfo:
+            m = build_model(
+                ###################################################################################################
+                ### Plant Lifetime Parameters
+                plant_start=common_params["plant_start"],  # start of plant production
+                plant_lifetime=common_params["plant_lifetime"],  # lifetime of plant
+                ###################################################################################################
+                ###################################################################################################
+                ### Feed parameters
+                # Total feedstock available for recycling each year
+                Available_feed=common_params["Available_feed"],
+                # collection rate for how much of the available feed is processed by the plant each year
+                CR=common_params["CR"],
+                Tracked_comps=common_params["Tracked_comps"],  # tracked components
+                # mass of tracked component per EOL Product (kg component / EOL product)
+                Prod_comp_mass=common_params["Prod_comp_mass"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Superstructure formulation parameters
+                numStages=common_params["numStages"],  # number of total stages
+                Options_in_stage=common_params[  # number of options in each stage
+                    "Options_in_stage"
+                ],
+                # set of options k' in stage j+1 connected to option k in stage j
+                Option_outlets=common_params[  # set of options k' in stage j+1 connected to option k in stage j
+                    "Option_outlets"
+                ],
+                # dictionary of tracked component retention efficiency for each option
+                Option_Eff=common_params["Option_Eff"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Operating Parameters
+                # profit per kg of product in terms of tracked components
+                Profit=common_params["Profit"],
+                # conversion of kg REE/Fe to kg REO/Fe2O3
+                REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
+                # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
+                # OPEX = a*F_in + b*y
+                N_OC_var=common_params["N_OC_var"],
+                # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
+                num_workers=common_params["num_workers"],
+                labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
+                # yearly operating costs per unit ($/unit*yr)
+                YCU=common_params["YCU"],
+                # cost per disassembly stage unit for each disassembly option
+                CU=common_params["CU"],
+                # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
+                Dis_Rate=common_params["Dis_Rate"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Costing Parameters
+                LF=common_params["LF"],  # Lang Factor
+                TOC_factor=common_params["TOC_factor"],  # Overnight costs factor
+                ATWACC=common_params["ATWACC"],  # discount rate. (default of 5.77%)
+                i_OC_esc=common_params["i_OC_esc"],  # opex, revenue (default of 3%)
+                i_CAP_esc=common_params[  # capex escalation rate (default of 3.6%)
+                    "i_CAP_esc"
+                ],
+                f_exp=common_params[  # capital expenditure schedule (default of 10%, 60%, 30%)
+                    "f_exp"
+                ],
+                # Define Python Dictionary with discretized cost by flows for each option.
+                Discretized_CAPEX=common_params["Discretized_CAPEX"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Choice of objective function. Options are 'NPV' or 'COR'.capitalize
+                obj_func="",
+                ###################################################################################################
+                ###################################################################################################
+                ### Consideration of environmental impacts parameters
+                # boolean to decide whether or not to consider environmental impacts
+                consider_environ_impacts=False,
+                # environmental impacts matrix (kg CO2e per kg incoming flowrate)
+                environ_impacts=common_params["environ_impacts"],
+                epsilon=common_params[  # epsilon factor for generating Pareto front
+                    "epsilon"
+                ],
+                ###################################################################################################
+                ###################################################################################################
+                ### Byproduct valorization
+                # boolean to decide whether or not to consider the valorization of byproducts
+                consider_byprod_val=False,
+                # list of byproducts
+                byprods=common_params["byprods"],
+                # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
+                byprod_vals=common_params["byprod_vals"],
+                # dictionary keeping track of which tracked component produces which byproduct
+                tracked_comp_for_byprod=common_params["tracked_comp_for_byprod"],
+                # dictionary tracking which options produce a given byproduct
+                byprod_options=common_params["byprod_options"],
+                # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
+                byprod_options_eff=common_params["byprod_options_eff"],
+                # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
+                TC_to_byproduct=common_params["TC_to_byproduct"],
+            )
+
+        # Check the exit code and message
+        assert (
+            excinfo.value.code == "Neither COR nor NPV specified as objective function."
+        )
+
+        with pytest.raises(SystemExit) as excinfo:
+            m = build_model(
+                ###################################################################################################
+                ### Plant Lifetime Parameters
+                plant_start=common_params["plant_start"],  # start of plant production
+                plant_lifetime=common_params["plant_lifetime"],  # lifetime of plant
+                ###################################################################################################
+                ###################################################################################################
+                ### Feed parameters
+                # Total feedstock available for recycling each year
+                Available_feed=common_params["Available_feed"],
+                # collection rate for how much of the available feed is processed by the plant each year
+                CR=common_params["CR"],
+                Tracked_comps=common_params["Tracked_comps"],  # tracked components
+                # mass of tracked component per EOL Product (kg component / EOL product)
+                Prod_comp_mass=common_params["Prod_comp_mass"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Superstructure formulation parameters
+                numStages=common_params["numStages"],  # number of total stages
+                Options_in_stage=common_params[  # number of options in each stage
+                    "Options_in_stage"
+                ],
+                # set of options k' in stage j+1 connected to option k in stage j
+                Option_outlets=common_params[  # set of options k' in stage j+1 connected to option k in stage j
+                    "Option_outlets"
+                ],
+                # dictionary of tracked component retention efficiency for each option
+                Option_Eff=common_params["Option_Eff"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Operating Parameters
+                # profit per kg of product in terms of tracked components
+                Profit=common_params["Profit"],
+                # conversion of kg REE/Fe to kg REO/Fe2O3
+                REE_to_REO_Conversion=common_params["REE_to_REO_Conversion"],
+                # For all options excluding the disassembly stage, the OPEX costs are linearly related to the flow entering it.
+                # OPEX = a*F_in + b*y
+                N_OC_var=common_params["N_OC_var"],
+                # number of workers, and type, needed by option (for disassembly stage, its operators per unit)
+                num_workers=common_params["num_workers"],
+                labor_rate=common_params["labor_rate"],  # yearly wage per type of labor
+                # yearly operating costs per unit ($/unit*yr)
+                YCU=common_params["YCU"],
+                # cost per disassembly stage unit for each disassembly option
+                CU=common_params["CU"],
+                # disassembly rate for each disassembly option (in terms of EOL products disassembled per year per unit)
+                Dis_Rate=common_params["Dis_Rate"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Costing Parameters
+                LF=common_params["LF"],  # Lang Factor
+                TOC_factor=common_params["TOC_factor"],  # Overnight costs factor
+                ATWACC=common_params["ATWACC"],  # discount rate. (default of 5.77%)
+                i_OC_esc=common_params["i_OC_esc"],  # opex, revenue (default of 3%)
+                i_CAP_esc=common_params[  # capex escalation rate (default of 3.6%)
+                    "i_CAP_esc"
+                ],
+                f_exp=common_params[  # capital expenditure schedule (default of 10%, 60%, 30%)
+                    "f_exp"
+                ],
+                # Define Python Dictionary with discretized cost by flows for each option.
+                Discretized_CAPEX=common_params["Discretized_CAPEX"],
+                ###################################################################################################
+                ###################################################################################################
+                ### Choice of objective function. Options are 'NPV' or 'COR'.capitalize
+                obj_func=" ",
+                ###################################################################################################
+                ###################################################################################################
+                ### Consideration of environmental impacts parameters
+                # boolean to decide whether or not to consider environmental impacts
+                consider_environ_impacts=False,
+                # environmental impacts matrix (kg CO2e per kg incoming flowrate)
+                environ_impacts=common_params["environ_impacts"],
+                epsilon=common_params[  # epsilon factor for generating Pareto front
+                    "epsilon"
+                ],
+                ###################################################################################################
+                ###################################################################################################
+                ### Byproduct valorization
+                # boolean to decide whether or not to consider the valorization of byproducts
+                consider_byprod_val=False,
+                # list of byproducts
+                byprods=common_params["byprods"],
+                # dictionary of values for each byproduct ($/kg). Negative value indicates it cost money to dispose of the byproduct
+                byprod_vals=common_params["byprod_vals"],
+                # dictionary keeping track of which tracked component produces which byproduct
+                tracked_comp_for_byprod=common_params["tracked_comp_for_byprod"],
+                # dictionary tracking which options produce a given byproduct
+                byprod_options=common_params["byprod_options"],
+                # dictionary tracking byproduct recovery efficiency for each option (in terms of tracked component)
+                byprod_options_eff=common_params["byprod_options_eff"],
+                # Conversion factors of tracked component to byproduct (kg byproduct / kg iron)
+                TC_to_byproduct=common_params["TC_to_byproduct"],
+            )
+
+        # Check the exit code and message
+        assert (
+            excinfo.value.code == "Neither COR nor NPV specified as objective function."
+        )

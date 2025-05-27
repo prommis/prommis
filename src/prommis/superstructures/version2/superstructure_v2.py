@@ -474,7 +474,7 @@ def build_model(
                 )
 
         else:
-            sys.exit("No objective function chosen.")
+            sys.exit("Neither COR nor NPV specified as objective function.")
 
         m.plantYear[t].Profit = pyo.Var(domain=pyo.NonNegativeReals)
         m.plantYear[t].profit_con = pyo.Constraint(
@@ -764,7 +764,7 @@ def build_model(
         m.NPV_con2 = pyo.Constraint(expr=m.NPV == 0)
         m.obj = pyo.Objective(expr=m.COR, sense=pyo.minimize)
     else:
-        sys.exit("no objective function was specified")
+        sys.exit("Neither COR nor NPV specified as objective function.")
 
     # solver = pyo.SolverFactory("gurobi")
     # solver.options["NumericFocus"] = 2

@@ -230,7 +230,9 @@ constructed,
 
         # Params
         # create a set containing all reaction logkeq values
-        self.merged_logkeq_dict = prop_aqueous.logkeq_dict | prop_precipitate.logkeq_dict
+        self.merged_logkeq_dict = (
+            prop_aqueous.logkeq_dict | prop_precipitate.logkeq_dict
+        )
         # create a set containing all reactions
         self.merged_rxns = self.merged_logkeq_dict.keys()
 
@@ -272,7 +274,8 @@ constructed,
             return blk.log_k[r] == sum(
                 prop_aqueous.stoich_dict[r][c]
                 * pyo.log10(
-                    blk.cv_aqueous.properties_out[t].molality_aqueous_comp[c] / self.m_ref
+                    blk.cv_aqueous.properties_out[t].molality_aqueous_comp[c]
+                    / self.m_ref
                 )
                 for c in prop_aqueous.stoich_dict[r]
             )
@@ -287,7 +290,8 @@ constructed,
             return blk.log_q[r] == sum(
                 prop_aqueous.stoich_dict[r][c]
                 * pyo.log10(
-                    blk.cv_aqueous.properties_out[t].molality_aqueous_comp[c] / self.m_ref
+                    blk.cv_aqueous.properties_out[t].molality_aqueous_comp[c]
+                    / self.m_ref
                 )
                 for c in prop_aqueous.stoich_dict[r]
             )

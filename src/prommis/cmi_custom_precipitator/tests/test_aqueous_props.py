@@ -10,7 +10,9 @@ from idaes.core import FlowsheetBlock
 
 import pytest
 
-from prommis.cmi_custom_precipitator import aqueous_properties as aqueous_thermo_prop_pack
+from prommis.cmi_custom_precipitator import (
+    aqueous_properties as aqueous_thermo_prop_pack,
+)
 
 
 @pytest.mark.unit

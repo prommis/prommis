@@ -19,7 +19,9 @@ from idaes.core.util.scaling import set_scaling_factor
 
 import pytest
 
-from prommis.cmi_custom_precipitator import aqueous_properties as aqueous_thermo_prop_pack
+from prommis.cmi_custom_precipitator import (
+    aqueous_properties as aqueous_thermo_prop_pack,
+)
 from prommis.cmi_custom_precipitator import (
     precipitate_properties as precipitate_thermo_prop_pack,
 )
@@ -114,7 +116,9 @@ class TestPrec(object):
         assert prec.fs.unit.config.has_equilibrium_reactions
         assert not prec.fs.unit.config.has_phase_equilibrium
         assert not prec.fs.unit.config.has_heat_of_reaction
-        assert prec.fs.unit.config.property_package_aqueous is prec.fs.aqueous_properties
+        assert (
+            prec.fs.unit.config.property_package_aqueous is prec.fs.aqueous_properties
+        )
         assert (
             prec.fs.unit.config.property_package_precipitate
             is prec.fs.precipitate_properties
@@ -166,24 +170,31 @@ class TestPrec(object):
     def test_solve(self, prec):
         # scale model
         set_scaling_factor(
-            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["H^+"], 1e4
+            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["H^+"],
+            1e4,
         )
         set_scaling_factor(
-            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["OH^-"], 1e11
+            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["OH^-"],
+            1e11,
         )
         set_scaling_factor(
-            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["NO3^-"], 1e2
+            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["NO3^-"],
+            1e2,
         )
         set_scaling_factor(
-            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["HNO3"], 1e5
+            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["HNO3"],
+            1e5,
         )
         set_scaling_factor(
-            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["Fe^3+"], 1e2
+            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["Fe^3+"],
+            1e2,
         )
 
         # set scaling for precipitate final amount
         set_scaling_factor(
-            prec.fs.unit.cv_precipitate.properties_out[0.0].moles_precipitate_comp["FeOH3"],
+            prec.fs.unit.cv_precipitate.properties_out[0.0].moles_precipitate_comp[
+                "FeOH3"
+            ],
             1e4,
         )
 

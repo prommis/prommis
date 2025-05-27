@@ -472,7 +472,7 @@ def build_model(
                     )
                     * m.COR
                 )
-                
+
         m.plantYear[t].Profit = pyo.Var(domain=pyo.NonNegativeReals)
         m.plantYear[t].profit_con = pyo.Constraint(
             expr=m.plantYear[t].Profit

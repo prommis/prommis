@@ -263,7 +263,7 @@ constructed,
         self.rxn_extent = pyo.Var(
             self.merged_rxns,
             initialize=1,
-            doc="The extent of the reactions",
+            doc="Extent of the reaction.",
             units=pyunits.mol / pyunits.kg,
         )
         # log(q) for precipitation reactions
@@ -376,4 +376,17 @@ constructed,
             },
             time_point=time_point
         )
+        
+    def _get_performance_contents(self, time_point=0):
+        var_dict = {}
+
+        for r in self.merged_rxns:
+            name = f"Reaction {r} extent"
+            rxn_extent = self.rxn_extent[r]
+
+            var_dict[name] = rxn_extent
+
+
+        
+        return {"vars": var_dict}
         

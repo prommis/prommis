@@ -77,9 +77,13 @@ is the extent of reaction :math:`r`, :math:`I_{aq}` is the set of all aqueous sp
 geochemical and reactive transport modeling. *Pure Appl. Chem.*, 89:597-643, 2017.
 """
 
+import sys
+import textwrap
+
 # Import Pyomo libraries
 import pyomo.environ as pyo
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
+from pyomo.common.formatting import tabular_writer
 from pyomo.environ import units as pyunits
 
 # Import IDAES cores
@@ -91,21 +95,19 @@ from idaes.core import (
 )
 from idaes.core.solvers import get_solver
 from idaes.core.util.config import is_physical_parameter_block
-from idaes.core.util.tables import create_stream_table_dataframe
-from pandas import DataFrame
-
-import sys
-import textwrap
-from idaes.core.util.tables import stream_table_dataframe_to_string
-
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
-    number_variables,
-    number_activated_constraints,
     number_activated_blocks,
+    number_activated_constraints,
+    number_variables,
 )
-from pyomo.common.formatting import tabular_writer
+from idaes.core.util.tables import (
+    create_stream_table_dataframe,
+    stream_table_dataframe_to_string,
+)
 from idaes.core.util.units_of_measurement import report_quantity
+
+from pandas import DataFrame
 
 
 @declare_process_block_class("Precipitator")

@@ -8,6 +8,7 @@ from pyomo.environ import ConcreteModel, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
     number_total_constraints,
@@ -15,7 +16,6 @@ from idaes.core.util.model_statistics import (
     number_variables,
 )
 from idaes.core.util.scaling import set_scaling_factor
-from idaes.core.solvers import get_solver
 
 import pytest
 

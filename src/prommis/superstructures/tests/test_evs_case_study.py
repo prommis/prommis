@@ -2588,4 +2588,6 @@ class TestNoObjectiveFunction(object):
             )
 
         # Check the exit code and message
-        assert excinfo.value.code == "Neither COR nor NPV specified as objective function."
+        assert (
+            excinfo.value.code == "Neither COR nor NPV specified as objective function."
+        )

@@ -2304,7 +2304,7 @@ class TestNoObjectiveFunction(object):
                 ###################################################################################################
                 ###################################################################################################
                 ### Choice of objective function. Options are 'NPV' or 'COR'.capitalize
-                obj_func="npv", # NPV passed as lower-case. should trigger error
+                obj_func="npv",  # NPV passed as lower-case. should trigger error
                 ###################################################################################################
                 ###################################################################################################
                 ### Consideration of environmental impacts parameters
@@ -2334,4 +2334,6 @@ class TestNoObjectiveFunction(object):
                 TC_to_byproduct=common_params["TC_to_byproduct"],
             )
         # Check the exit code and message
-        assert excinfo.value.code == "Neither COR nor NPV specified as objective function."
+        assert (
+            excinfo.value.code == "Neither COR nor NPV specified as objective function."
+        )

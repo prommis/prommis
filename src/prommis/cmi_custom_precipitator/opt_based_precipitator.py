@@ -91,6 +91,21 @@ from idaes.core import (
 )
 from idaes.core.solvers import get_solver
 from idaes.core.util.config import is_physical_parameter_block
+from idaes.core.util.tables import create_stream_table_dataframe
+from pandas import DataFrame
+
+import sys
+import textwrap
+from idaes.core.util.tables import stream_table_dataframe_to_string
+
+from idaes.core.util.model_statistics import (
+    degrees_of_freedom,
+    number_variables,
+    number_activated_constraints,
+    number_activated_blocks,
+)
+from pyomo.common.formatting import tabular_writer
+from idaes.core.util.units_of_measurement import report_quantity
 
 
 @declare_process_block_class("Precipitator")
@@ -349,3 +364,16 @@ constructed,
             return sum(
                 (self.log_k[r] - blk.log_q[r]) ** 2 for r in prop_precip.eq_rxn_set
             )
+
+
+    def _get_stream_table_contents(self, time_point=0):
+        return create_stream_table_dataframe(
+            {
+                "Aqueous Inlet": self.aqueous_inlet,
+                "Aqueous Outlet": self.aqueous_outlet,
+                "Precipitate Inlet": self.precipitate_inlet,
+                "Precipitate Outlet": self.precipitate_outlet,
+            },
+            time_point=time_point
+        )
+        

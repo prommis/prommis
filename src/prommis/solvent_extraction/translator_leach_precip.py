@@ -17,7 +17,7 @@ _log = idaeslog.getLogger(__name__)
 @declare_process_block_class("TranslatorLeachPrecip")
 class TranslatorDataLeachPrecip(TranslatorData):
     """
-    Translator block representing the SX/old_leaching interface
+    Translator block representing the SX/leaching interface
     """
 
     def build(self):

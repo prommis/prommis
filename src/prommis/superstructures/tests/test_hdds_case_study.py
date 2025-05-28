@@ -2234,7 +2234,7 @@ class TestByprodVal(object):
 
 # Check if function exits if an incorrect objective function is chosen.
 class TestNoObjectiveFunction(object):
-    def No_Obj_Model(self, get_common_params):
+    def test_no_objective_chosen(self, get_common_params):
         common_params = get_common_params
 
         with pytest.raises(SystemExit) as excinfo:

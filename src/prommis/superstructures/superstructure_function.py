@@ -762,7 +762,5 @@ def build_model(
         )
         m.NPV_con2 = pyo.Constraint(expr=m.NPV == 0)
         m.obj = pyo.Objective(expr=m.COR, sense=pyo.minimize)
-    else:
-        sys.exit("Neither COR nor NPV specified as objective function.")
 
     return m

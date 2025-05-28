@@ -27,18 +27,14 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 
-# Set up logger
-_log = idaeslog.getLogger(__name__)
-
-
 @declare_process_block_class("AqueousParameter")
 class AqueousParameterData(PhysicalParameterBlock):
     """
-    Property package for aqueous equilibrium reactions taking place in the precipitator unit.
+    Property package for aqueous species.
 
     This property package requires that the user pass in a list of aqueous components (aqueous_comp_list), 
     a dictionary of the aqueous equilibrium reaction constants (logkeq_dict), and a dictionary containing 
-    the aqueous equilibrium reaction stoichiometry (stoich_dict). 
+    the aqueous component stoichiometry for each reaction (stoich_dict). 
     """
 
     CONFIG = PhysicalParameterBlock.CONFIG()
@@ -117,7 +113,7 @@ class _AqueousStateBlock(StateBlock):
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
 class AqueousStateBlockData(StateBlockData):
     """
-    State block for the aqueous equilibrium reactions taking place in the precipitator unit.
+    State block for the aqueous species.
     """
 
     def build(self):

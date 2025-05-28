@@ -33,6 +33,14 @@ _log = idaeslog.getLogger(__name__)
 
 @declare_process_block_class("AqueousParameter")
 class AqueousParameterData(PhysicalParameterBlock):
+    """
+    Property package for aqueous equilibrium reactions taking place in the precipitator unit.
+
+    This property package requires that the user pass in a list of aqueous components (aqueous_comp_list), 
+    a dictionary of the aqueous equilibrium reaction constants (logkeq_dict), and a dictionary containing 
+    the aqueous equilibrium reaction stoichiometry (stoich_dict). 
+    """
+
     CONFIG = PhysicalParameterBlock.CONFIG()
     CONFIG.declare(
         "aqueous_comp_list",
@@ -55,7 +63,6 @@ class AqueousParameterData(PhysicalParameterBlock):
         """
         Calllable method for Block construction.
         """
-        # super(AqueousParameterData, self).build()
         super().build()
 
         self.AqueousPhase = Phase()
@@ -109,6 +116,10 @@ class _AqueousStateBlock(StateBlock):
 
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
 class AqueousStateBlockData(StateBlockData):
+    """
+    State block for the aqueous equilibrium reactions taking place in the precipitator unit.
+    """
+
     def build(self):
         super().build()
 

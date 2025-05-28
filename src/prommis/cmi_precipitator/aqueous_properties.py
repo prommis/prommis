@@ -27,14 +27,15 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 
+
 @declare_process_block_class("AqueousParameter")
 class AqueousParameterData(PhysicalParameterBlock):
     """
     Property package for aqueous species.
 
-    This property package requires that the user pass in a list of aqueous components (aqueous_comp_list), 
-    a dictionary of the aqueous equilibrium reaction constants (logkeq_dict), and a dictionary containing 
-    the aqueous component stoichiometry for each reaction (stoich_dict). 
+    This property package requires that the user pass in a list of aqueous components (aqueous_comp_list),
+    a dictionary of the aqueous equilibrium reaction constants (logkeq_dict), and a dictionary containing
+    the aqueous component stoichiometry for each reaction (stoich_dict).
     """
 
     CONFIG = PhysicalParameterBlock.CONFIG()

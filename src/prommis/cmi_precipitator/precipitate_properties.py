@@ -24,14 +24,15 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 
+
 @declare_process_block_class("PrecipitateParameter")
 class PrecipitateParameterData(PhysicalParameterBlock):
     """
     Property package for precipitate species.
 
-    This property package requires that the user pass in a list of precipitate components (precipitate_comp_list), 
-    a dictionary of the precipitate-forming equilibrium reaction constants (logkeq_dict), and a dictionary containing 
-    the precipitate stoichiometry for each reaction (stoich_dict). 
+    This property package requires that the user pass in a list of precipitate components (precipitate_comp_list),
+    a dictionary of the precipitate-forming equilibrium reaction constants (logkeq_dict), and a dictionary containing
+    the precipitate stoichiometry for each reaction (stoich_dict).
     """
 
     CONFIG = PhysicalParameterBlock.CONFIG()

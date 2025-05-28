@@ -14,8 +14,6 @@ from pyomo.common.config import ConfigValue
 from pyomo.environ import Set, Var
 from pyomo.environ import units as pyunits
 
-import idaes.logger as idaeslog
-
 # Import IDAES cores
 from idaes.core import (
     MaterialFlowBasis,

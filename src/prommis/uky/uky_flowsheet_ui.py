@@ -106,10 +106,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Y2(C2O4)3(s)",
     }
 
-    # TODO: Remove this check once the "KPI" part of the API
-    # TODO: is merged into idaes_flowsheet_processor
-    if hasattr(exports, "add_kpi_value"):
-        add_kpis(exports, flowsheet)
+    add_kpis(exports)
 
     # Export the leach liquid feed and its mass components, as inputs
     llf = flowsheet.leach_liquid_feed
@@ -398,8 +395,15 @@ def build_flowsheet(build_options=None, **kwargs):
     return scaled_model
 
 
-def add_kpis(exports, fs):
+def add_kpis(exports):  # pragma: no cover
+    # TODO: Remove this check once the "KPI" part of the API
+    # TODO: is merged into idaes_flowsheet_processor
+    if not hasattr(exports, "add_kpi_value"):
+        return
+
+    fs = exports.m.fs
     data = calculate_results(fs)
+
     exports.add_kpi_value(
         name="total-recovery",
         units="%",

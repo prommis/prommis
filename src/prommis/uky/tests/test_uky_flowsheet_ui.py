@@ -26,3 +26,11 @@ def test_uky_ui_solve():
     interface = ui.export_to_ui()
     interface.build()
     interface.solve()
+
+
+@pytest.mark.component
+def test_uky_ui_kpi():
+    fsui = ui.export_to_ui()
+    fsui.build()  # solve not needed
+    exports = fsui.fs_exp
+    ui.add_kpis(exports)

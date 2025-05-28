@@ -88,7 +88,9 @@ from idaes.core.util.tables import create_stream_table_dataframe
 
 @declare_process_block_class("Precipitator")
 class PrecipitatorData(UnitModelBlockData):
-    """"""
+    """
+    Precipitator Unit Model Class
+    """
 
     CONFIG = UnitModelBlockData.CONFIG()
 

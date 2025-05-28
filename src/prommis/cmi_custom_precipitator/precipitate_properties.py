@@ -24,12 +24,16 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 
-# -----------------------------------------------------------------------------
-# Precipitate solution property package
-
-
 @declare_process_block_class("PrecipitateParameter")
 class PrecipitateParameterData(PhysicalParameterBlock):
+    """
+    Property package for precipitate species.
+
+    This property package requires that the user pass in a list of precipitate components (precipitate_comp_list), 
+    a dictionary of the precipitate-forming equilibrium reaction constants (logkeq_dict), and a dictionary containing 
+    the precipitate stoichiometry for each reaction (stoich_dict). 
+    """
+
     CONFIG = PhysicalParameterBlock.CONFIG()
     CONFIG.declare(
         "precipitate_comp_list",
@@ -41,14 +45,14 @@ class PrecipitateParameterData(PhysicalParameterBlock):
         "logkeq_dict",
         ConfigValue(
             domain=dict,
-            description="Dictionary of precipitation equilibrium reaction constants",
+            description="Dictionary of precipitation-forming equilibrium reaction constants",
         ),
     )
     CONFIG.declare(
         "stoich_dict",
         ConfigValue(
             domain=dict,
-            description="Dictionary of precipitate component stoichiometry for each reaction.",
+            description="Dictionary of precipitate stoichiometry for each reaction.",
         ),
     )
 
@@ -102,7 +106,6 @@ class _PrecipitateStateBlock(StateBlock):
         Returns:
             None
         """
-
         # Fix state variables
         return fix_state_vars(self)
 
@@ -111,7 +114,12 @@ class _PrecipitateStateBlock(StateBlock):
     "PrecipitateStateBlock", block_class=_PrecipitateStateBlock
 )
 class PrecipitateStateBlockData(StateBlockData):
+    """
+    State block for the precipitate species.
+    """
+
     def build(self):
+        super().build()
 
         self.moles_precipitate_comp = Var(
             self.component_list,

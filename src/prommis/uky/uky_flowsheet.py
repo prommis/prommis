@@ -1451,7 +1451,7 @@ def display_results(m):
     print(f"REE feed mass flow is {data['REE-feed']} kg/hr")
     print(f"Total REE recovery is {data['REE-recovery']} %")
     print(f"Product purity is {data['product-purity']} % REE")
-    print(f"\nLeaching Aluminum recovery is {data['al_recovery']} %")
+    print(f"\nLeaching Aluminum recovery is {data['al-recovery']} %")
     print(f"Total aluminum recovery is {data['total-al-recovery']} %")
     print(f"\nLeaching Calcium recovery is {data['ca-recovery']} %")
     print(f"Total Calcium recovery is {data['total-ca-recovery']} %")

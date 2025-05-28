@@ -89,7 +89,7 @@ Nanofiltration
    prommis.nanofiltration.nf_brine_plot
    prommis.nanofiltration.nf_brine
 
-CMI Precipitator
+CMI Precipitator 
 ----------------
 
 .. autosummary::

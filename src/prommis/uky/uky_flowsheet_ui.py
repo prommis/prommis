@@ -106,7 +106,10 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Y2(C2O4)3(s)",
     }
 
-    add_kpis(exports, flowsheet)
+    # TODO: Remove this check once the "KPI" part of the API
+    # TODO: is merged into idaes_flowsheet_processor
+    if hasattr(exports, "add_kpi_value"):
+        add_kpis(exports, flowsheet)
 
     # Export the leach liquid feed and its mass components, as inputs
     llf = flowsheet.leach_liquid_feed

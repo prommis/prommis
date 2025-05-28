@@ -19,13 +19,13 @@ from idaes.core.util.scaling import set_scaling_factor
 
 import pytest
 
-from prommis.cmi_custom_precipitator import (
+from prommis.cmi_precipitator import (
     aqueous_properties as aqueous_thermo_prop_pack,
 )
-from prommis.cmi_custom_precipitator import (
+from prommis.cmi_precipitator import (
     precipitate_properties as precipitate_thermo_prop_pack,
 )
-from prommis.cmi_custom_precipitator.opt_based_precipitator import Precipitator
+from prommis.cmi_precipitator.opt_based_precipitator import Precipitator
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing

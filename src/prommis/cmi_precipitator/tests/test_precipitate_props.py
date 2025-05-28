@@ -10,7 +10,7 @@ from idaes.core import FlowsheetBlock
 
 import pytest
 
-from prommis.cmi_custom_precipitator import (
+from prommis.cmi_precipitator import (
     precipitate_properties as precipitate_thermo_prop_pack,
 )
 

@@ -30,9 +30,9 @@ Solvent Extraction
    :toctree: _autosummary
    :template: autosummary/module-with-contents.rst
 
-   prommis.solvent_extraction.ree_aq_distribution
    prommis.solvent_extraction.ree_og_distribution
    prommis.solvent_extraction.solvent_extraction
+   prommis.solvent_extraction.solvent_extraction_reaction_package
 
 Precipitate
 -----------

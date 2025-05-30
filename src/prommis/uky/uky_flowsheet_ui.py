@@ -463,6 +463,8 @@ def add_kpis(exports):  # pragma: no cover
         units="mass fraction",
     )
 
+    exports.set_kpi_default_options(stack=False, total_type="donut")
+
 
 def get_diagram(build_options):
     """Return a diagram to be shown in the UI for this flowsheet."""

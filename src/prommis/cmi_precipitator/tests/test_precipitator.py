@@ -186,10 +186,15 @@ class TestPrec(object):
         solver.options["nlp_scaling_method"] = "user-scaling"
         results = solver.solve(prec)
 
+        assert_optimal_termination(results)
+
         dt = DiagnosticsToolbox(prec)
         dt.assert_no_numerical_warnings()
 
-        assert_optimal_termination(results)
+        # fixing final concentration of precipitate to optimal value to avoid non-zero dof warnings
+        optimal_feoh3 = value(prec.fs.unit.precipitate_outlet.moles_precipitate_comp[0, "FeOH3"])
+        prec.fs.unit.precipitate_outlet.moles_precipitate_comp[0, "FeOH3"].fix(optimal_feoh3)
+        dt.assert_no_structural_warnings()
 
     @pytest.mark.solver
     @pytest.mark.component

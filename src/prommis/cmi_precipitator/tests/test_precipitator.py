@@ -4,11 +4,21 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-from pyomo.environ import ConcreteModel, assert_optimal_termination, value
+from pyomo.environ import (
+    ConcreteModel, 
+    Constraint,
+    assert_optimal_termination, 
+    value
+)
+from idaes.core.util.scaling import (
+    constraint_scaling_transform,
+    get_scaling_factor
+)
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
 from idaes.core.solvers import get_solver
+from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
     number_total_constraints,
@@ -90,9 +100,9 @@ class TestPrec(object):
 
         Feppp_init = 1.05e-1
         NO3m_init = 1.8e-1
-        HNO3m_init = 1e-20
-        FeOH3_init = 1e-20
-        Fe2O3_init = 1e-20
+        HNO3m_init = 1e-10
+        FeOH3_init = 1e-10
+        Fe2O3_init = 1e-10
 
         m.fs.unit.aqueous_inlet.flow_vol[0].fix(1)
         m.fs.unit.aqueous_inlet.molality_aqueous_comp[0, "HNO3"].fix(HNO3m_init)
@@ -168,36 +178,29 @@ class TestPrec(object):
     def test_solve(self, prec):
         # scale model
         set_scaling_factor(
-            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["H^+"],
-            1e4,
+            prec.fs.unit.log_k_equilibrium_rxn_eqns[0.0, "E1"],
+            1e-4
         )
         set_scaling_factor(
-            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["OH^-"],
-            1e11,
+            prec.fs.unit.log_k_equilibrium_rxn_eqns[0.0, "E2"],
+            1e-10
         )
         set_scaling_factor(
-            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["NO3^-"],
-            1e2,
+            prec.fs.unit.log_q_precipitate_equilibrium_rxn_eqns[0.0, "E3"],
+            1e-10
         )
-        set_scaling_factor(
-            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["HNO3"],
-            1e5,
-        )
-        set_scaling_factor(
-            prec.fs.unit.cv_aqueous.properties_out[0.0].molality_aqueous_comp["Fe^3+"],
-            1e2,
-        )
-
-        # set scaling for precipitate final amount
-        set_scaling_factor(
-            prec.fs.unit.cv_precipitate.properties_out[0.0].moles_precipitate_comp[
-                "FeOH3"
-            ],
-            1e4,
-        )
+        for con in prec.fs.component_data_objects(Constraint, active=True):
+            scaling_factor = get_scaling_factor(con, default=None)
+            if scaling_factor is not None:
+                constraint_scaling_transform(con, scaling_factor)
 
         solver = get_solver()
+        solver.options['nlp_scaling_method'] = 'user-scaling'
         results = solver.solve(prec)
+
+        dt = DiagnosticsToolbox(prec)
+        dt.assert_no_numerical_warnings()
+
         assert_optimal_termination(results)
 
     @pytest.mark.solver

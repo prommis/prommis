@@ -4,16 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-from pyomo.environ import (
-    ConcreteModel, 
-    Constraint,
-    assert_optimal_termination, 
-    value
-)
-from idaes.core.util.scaling import (
-    constraint_scaling_transform,
-    get_scaling_factor
-)
+from pyomo.environ import ConcreteModel, Constraint, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
@@ -25,7 +16,11 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
-from idaes.core.util.scaling import set_scaling_factor
+from idaes.core.util.scaling import (
+    constraint_scaling_transform,
+    get_scaling_factor,
+    set_scaling_factor,
+)
 
 import pytest
 
@@ -177,17 +172,10 @@ class TestPrec(object):
     @pytest.mark.component
     def test_solve(self, prec):
         # scale model
+        set_scaling_factor(prec.fs.unit.log_k_equilibrium_rxn_eqns[0.0, "E1"], 1e-4)
+        set_scaling_factor(prec.fs.unit.log_k_equilibrium_rxn_eqns[0.0, "E2"], 1e-10)
         set_scaling_factor(
-            prec.fs.unit.log_k_equilibrium_rxn_eqns[0.0, "E1"],
-            1e-4
-        )
-        set_scaling_factor(
-            prec.fs.unit.log_k_equilibrium_rxn_eqns[0.0, "E2"],
-            1e-10
-        )
-        set_scaling_factor(
-            prec.fs.unit.log_q_precipitate_equilibrium_rxn_eqns[0.0, "E3"],
-            1e-10
+            prec.fs.unit.log_q_precipitate_equilibrium_rxn_eqns[0.0, "E3"], 1e-10
         )
         for con in prec.fs.component_data_objects(Constraint, active=True):
             scaling_factor = get_scaling_factor(con, default=None)
@@ -195,7 +183,7 @@ class TestPrec(object):
                 constraint_scaling_transform(con, scaling_factor)
 
         solver = get_solver()
-        solver.options['nlp_scaling_method'] = 'user-scaling'
+        solver.options["nlp_scaling_method"] = "user-scaling"
         results = solver.solve(prec)
 
         dt = DiagnosticsToolbox(prec)

@@ -32,7 +32,7 @@ aqueous ('aqueous_outlet') and precipitates ('precipitate_outlet') leaving the u
 Additional Model Information
 ----------------------------
 
-This precipitator model seeks to model aqeuous systems involving precipitation and dissolution reactions as chemical equilibrium problems.
+This precipitator model seeks to model aqueous systems involving precipitation and dissolution reactions as chemical equilibrium problems.
 The approach taken here is to solve a system of nonlinear equations involving equilibrium constants (the law of mass action approach, LMA) [1].
 Instead of utilizing saturation indices heuristics commonly used by LMA software [1], this model formulates an optimization problem where the
 objective function is to minimize the square difference between the ion product, :math:`Q_{r,sp}`, defined over the actual concentration in solution,

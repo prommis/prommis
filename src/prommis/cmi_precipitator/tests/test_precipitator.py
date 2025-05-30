@@ -192,8 +192,12 @@ class TestPrec(object):
         dt.assert_no_numerical_warnings()
 
         # fixing final concentration of precipitate to optimal value to avoid non-zero dof warnings
-        optimal_feoh3 = value(prec.fs.unit.precipitate_outlet.moles_precipitate_comp[0, "FeOH3"])
-        prec.fs.unit.precipitate_outlet.moles_precipitate_comp[0, "FeOH3"].fix(optimal_feoh3)
+        optimal_feoh3 = value(
+            prec.fs.unit.precipitate_outlet.moles_precipitate_comp[0, "FeOH3"]
+        )
+        prec.fs.unit.precipitate_outlet.moles_precipitate_comp[0, "FeOH3"].fix(
+            optimal_feoh3
+        )
         dt.assert_no_structural_warnings()
 
     @pytest.mark.solver

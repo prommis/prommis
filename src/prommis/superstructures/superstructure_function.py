@@ -170,12 +170,11 @@ def build_model(
     ###################################################################################################
 
     m = pyo.ConcreteModel()
-    b = pyo.ConcreteModel()
 
     if obj_func == "COR":
         m.COR = pyo.Var(domain=pyo.NonNegativeReals)
 
-    def cash_flow_block_rule(b, t):
+    def yearly_mass_flow_block_rule(b, t):
 
         # These sets will be used to define the flow vars
         b.J = pyo.RangeSet(numStages)  # number of stages
@@ -297,7 +296,7 @@ def build_model(
 
     # build mass balance constraints for each year the plant is in operation.
     m.plant_year = pyo.RangeSet(prod_start, plant_end)
-    m.plantYear = pyo.Block(m.plant_year, rule=cash_flow_block_rule)
+    m.plantYear = pyo.Block(m.plant_year, rule=yearly_mass_flow_block_rule)
 
     # These sets will be used to define the binary and flow vars
     m.J = pyo.RangeSet(numStages)  # number of stages

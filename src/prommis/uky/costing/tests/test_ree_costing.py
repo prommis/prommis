@@ -37,6 +37,7 @@ import pytest
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
     DiafiltrationCostingData,
 )
+from prommis.uky.costing.costing_dictionaries import load_location_factor
 from prommis.uky.costing.custom_costing_example import CustomCostingData
 from prommis.uky.costing.ree_plant_capcost import (
     QGESSCosting,
@@ -1398,6 +1399,125 @@ class TestREECosting(object):
             assert value(model.fs.costing.costing_upper_bound[key]) == pytest.approx(
                 expected_costing_upper_bound[key], rel=1e-4
             )
+
+    @pytest.mark.unit
+    def test_location_factor(self):
+        location_data = load_location_factor()
+        # Test all valid (country, city) combinations
+        for entry in location_data:
+            location = (entry["country"], entry["city"])
+            location_factor = entry["location_factor"]["average"]
+
+            model = pyo.ConcreteModel()
+            model.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+            model.fs.costing = QGESSCosting()
+
+            model.fs.costing.build_process_costs(
+                location=location,
+                Lang_factor=2.97,
+                fixed_OM=False,
+            )
+
+            dt = DiagnosticsToolbox(
+                model=model, variable_bounds_violation_tolerance=1e-4
+            )
+            dt.assert_no_structural_warnings()
+            # Solve the model before extracting values from Var
+            QGESSCostingData.costing_initialization(model.fs.costing)
+            solver = get_solver()
+            results = solver.solve(model, tee=True)
+            assert_optimal_termination(results)
+            dt.assert_no_numerical_warnings()
+
+            assert (
+                results.solver.termination_condition == pyo.TerminationCondition.optimal
+            )
+            # Check base BEC and calculate expected
+            base_BEC = pyo.value(model.fs.costing.base_BEC)
+            expected_total_BEC = base_BEC * location_factor
+            actual_total_BEC = pyo.value(model.fs.costing.total_BEC)
+
+            print(f"\nTesting location: {location}")
+            print(f"  Base BEC: {base_BEC:,.2f}")
+            print(f"  Location Factor: {location_factor}")
+            print(f"  Expected Total BEC: {expected_total_BEC:,.2f}")
+            print(f"  Actual Total BEC: {actual_total_BEC:,.2f}")
+            assert actual_total_BEC == pytest.approx(expected_total_BEC, rel=1e-4)
+
+    def test_location_factor_invalidcountry(self):
+        location_data = load_location_factor()
+        valid_locations = {(entry["country"], entry["city"]) for entry in location_data}
+        invalid_country = ("Brunei", None)
+        if invalid_country not in valid_locations:
+            model = pyo.ConcreteModel()
+            model.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+            model.fs.costing = QGESSCosting()
+
+            with pytest.raises(
+                AttributeError, match="No location factor found for country 'Brunei'"
+            ):
+                model.fs.costing.build_process_costs(
+                    location=invalid_country,
+                    Lang_factor=2.97,
+                    fixed_OM=False,
+                )
+
+    def test_location_factor_nocityprovided(self):
+        location_data = load_location_factor()
+        valid_locations = {(entry["country"], entry["city"]) for entry in location_data}
+
+        # Fallback to (country, None) when city is not provided in databank but country exist
+        fallback_location = ("Austria", None)
+        test_location = ("Austria", "Vienna")
+
+        if (
+            fallback_location in valid_locations
+            and test_location not in valid_locations
+        ):
+            model = pyo.ConcreteModel()
+            model.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+            model.fs.costing = QGESSCosting()
+
+            model.fs.costing.build_process_costs(
+                location=test_location,
+                Lang_factor=2.97,
+                fixed_OM=False,
+            )
+
+            fallback_factor = next(
+                entry["location_factor"]["average"]
+                for entry in location_data
+                if (entry["country"], entry["city"]) == fallback_location
+            )
+            actual_factor = pyo.value(model.fs.costing.location_factor_used)
+
+            assert actual_factor == pytest.approx(
+                fallback_factor, rel=1e-6
+            ), f"Fallback for {test_location} did not use {fallback_location}'s factor"
+
+    def test_location_factor_invalidcity(self):
+        location_data = load_location_factor()
+        valid_locations = {(entry["country"], entry["city"]) for entry in location_data}
+        # Country exist, but city not match, no fallback available, raise AttributeError with city suggestions
+        bad_city_location = ("United States", "Boston")
+        if (
+            any(loc[0] == bad_city_location[0] for loc in valid_locations)
+            and bad_city_location not in valid_locations
+            and (bad_city_location[0], None)
+            not in valid_locations  # ensure no fallback masks it
+        ):
+            model = pyo.ConcreteModel()
+            model.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+            model.fs.costing = QGESSCosting()
+            with pytest.raises(
+                AttributeError,
+                match=r"No location factor found for \('United States', 'Boston'\)",
+            ):
+                model.fs.costing.build_process_costs(
+                    location=bad_city_location,
+                    Lang_factor=2.97,
+                    fixed_OM=False,
+                )
 
 
 class TestWaterTAPCosting(object):

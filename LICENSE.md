@@ -1,9 +1,6 @@
 License Agreement
 =================
 
-PrOMMiS Copyright © 2025, by the software owners: The Regents of the University of California,
-through Lawrence Berkeley National Laboratory, et al. All rights reserved.
-
 Redistribution and use in source and binary forms, with or without modification, are permitted
 provided that the following conditions are met:
 

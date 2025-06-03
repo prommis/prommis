@@ -228,7 +228,7 @@ class TestLiCoDiafiltration:
 
     def test_example_usage(self):
         """
-        Ensure that the example usage from script A runs correctly.
+        Ensure that the example usage from script runs correctly.
         """
         determine_result, net_benefit_value = determine_example_usage()
         assert net_benefit_value == pytest.approx(4920.00, rel=1e-4)

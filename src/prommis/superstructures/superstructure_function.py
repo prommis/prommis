@@ -49,26 +49,42 @@ def add_plant_lifetime_params_block(m, plant_start, plant_lifetime):
     # Create a block to hold plant lifetime parameters
     m.plant_lifetime_params = pyo.Block()
 
-    m.plant_lifetime_params.plant_start = pyo.Param(initialize=plant_start, doc="The year that plant construction begins.")
-    m.plant_lifetime_params.plant_lifetime = pyo.Param(initialize=plant_lifetime, doc="The total lifetime of the plant, including plant construction. Must be at least three years.")
+    m.plant_lifetime_params.plant_start = pyo.Param(
+        initialize=plant_start, doc="The year that plant construction begins."
+    )
+    m.plant_lifetime_params.plant_lifetime = pyo.Param(
+        initialize=plant_lifetime,
+        doc="The total lifetime of the plant, including plant construction. Must be at least three years.",
+    )
 
     ## Calculate other necessary params from user input
     # first year is construction
     prod_start = plant_start + 1
-    m.plant_lifetime_params.prod_start = pyo.Param(initialize=prod_start, doc="The first year of plant production.")
+    m.plant_lifetime_params.prod_start = pyo.Param(
+        initialize=prod_start, doc="The first year of plant production."
+    )
     # final year plant is in production
     plant_end = plant_start + plant_lifetime - 1
-    m.plant_lifetime_params.plant_end = pyo.Param(initialize=plant_end, doc="The final year of plant production.")
+    m.plant_lifetime_params.plant_end = pyo.Param(
+        initialize=plant_end, doc="The final year of plant production."
+    )
     # lifetime of the plant
-    m.plant_lifetime_params.plant_life_range = pyo.RangeSet(plant_start, plant_end, doc="Lifetime of the plant.")
+    m.plant_lifetime_params.plant_life_range = pyo.RangeSet(
+        plant_start, plant_end, doc="Lifetime of the plant."
+    )
     # operational lifetime of the plant
-    m.plant_lifetime_params.operational_range = pyo.RangeSet(prod_start, plant_end, doc="Operational lifetime of the plant.")
+    m.plant_lifetime_params.operational_range = pyo.RangeSet(
+        prod_start, plant_end, doc="Operational lifetime of the plant."
+    )
 
     return m
 
+
 ###################################################################################################
 ### Feed Parameters
-def check_feed_params(m, available_feed, collection_rate, tracked_comps, prod_comp_mass):
+def check_feed_params(
+    m, available_feed, collection_rate, tracked_comps, prod_comp_mass
+):
     """
     The function checks that the feed parameter inputs are feasible.
 
@@ -124,7 +140,7 @@ def check_feed_params(m, available_feed, collection_rate, tracked_comps, prod_co
         raise ValueError(
             f"prod_comp_mass keys don't match up with the set of tracked components."
         )
-    
+
     ## Check that amounts contained within EOL product for each tracked component is non-negative
     if any(v < 0 for v in prod_comp_mass.values()):
         negative_prods = [prod for prod, amount in prod_comp_mass.items() if amount < 0]
@@ -132,13 +148,18 @@ def check_feed_params(m, available_feed, collection_rate, tracked_comps, prod_co
             f"prod_comp_mass contains negative values for the tracked components: {negative_prods}. "
             "Amounts cannot be negative"
         )
-    
+
     ## Raise warning if amounts contained within EOL product for a tracked component is zero
     if any(value == 0 for value in prod_comp_mass.values()):
         zero_prods = [prod for prod, amount in prod_comp_mass.items() if amount == 0]
-        warnings.warn(f"prod_comp_mass contains zero values for the tracked components: {zero_prods}. ")
+        warnings.warn(
+            f"prod_comp_mass contains zero values for the tracked components: {zero_prods}. "
+        )
 
-def add_feed_params_block(m, available_feed, collection_rate, tracked_comps, prod_comp_mass):
+
+def add_feed_params_block(
+    m, available_feed, collection_rate, tracked_comps, prod_comp_mass
+):
     """
     This function builds the rest of the feed parameters from the ones provided by the user, and adds them all to a
     block.
@@ -154,35 +175,57 @@ def add_feed_params_block(m, available_feed, collection_rate, tracked_comps, pro
     # Create a block to hold plant lifetime parameters
     m.feed_params = pyo.Block()
 
-    m.feed_params.available_feed = pyo.Param(m.plant_lifetime_params.operational_range, initialize=available_feed, doc="The total feedstock available for recycling each year.")
-    m.feed_params.collection_rate = pyo.Param(initialize=collection_rate, doc="The fraction of available feed that is processed by the plant each year.")
-    m.feed_params.tracked_comps = pyo.Set(initialize=tracked_comps, doc="Tracked components.")
-    m.feed_params.prod_comp_mass = pyo.Param(m.feed_params.tracked_comps, initialize=prod_comp_mass, doc="The mass of each tracked component per EOL product.")
+    m.feed_params.available_feed = pyo.Param(
+        m.plant_lifetime_params.operational_range,
+        initialize=available_feed,
+        doc="The total feedstock available for recycling each year.",
+    )
+    m.feed_params.collection_rate = pyo.Param(
+        initialize=collection_rate,
+        doc="The fraction of available feed that is processed by the plant each year.",
+    )
+    m.feed_params.tracked_comps = pyo.Set(
+        initialize=tracked_comps, doc="Tracked components."
+    )
+    m.feed_params.prod_comp_mass = pyo.Param(
+        m.feed_params.tracked_comps,
+        initialize=prod_comp_mass,
+        doc="The mass of each tracked component per EOL product.",
+    )
 
     ## Calculate other necessary params from user input
     # calculate feed entering parameter based on yearly available feedstock and collection rate
     feed_entering = copy.deepcopy(available_feed)
     for key in feed_entering:
         feed_entering[key] = available_feed[key] * collection_rate
-    m.feed_params.feed_entering = pyo.Param(m.plant_lifetime_params.operational_range, initialize=feed_entering, doc="The amount of feed entering the plant each year.")
-    
-    # max feed entering plant over production period
-    max_feed_entering = max(
-        feed_entering.values()
+    m.feed_params.feed_entering = pyo.Param(
+        m.plant_lifetime_params.operational_range,
+        initialize=feed_entering,
+        doc="The amount of feed entering the plant each year.",
     )
-    m.feed_params.max_feed_entering = pyo.Param(initialize=max_feed_entering, doc="The max yearly feed that enters the plant over the production period.")
+
+    # max feed entering plant over production period
+    max_feed_entering = max(feed_entering.values())
+    m.feed_params.max_feed_entering = pyo.Param(
+        initialize=max_feed_entering,
+        doc="The max yearly feed that enters the plant over the production period.",
+    )
 
     # year in which max feed enters plant
-    max_feed_entering_year = max(
-        feed_entering, key=feed_entering.get
+    max_feed_entering_year = max(feed_entering, key=feed_entering.get)
+    m.feed_params.max_feed_entering_year = pyo.Param(
+        initialize=max_feed_entering_year,
+        doc="The year that the max feed enters the plant.",
     )
-    m.feed_params.max_feed_entering_year = pyo.Param(initialize=max_feed_entering_year, doc="The year that the max feed enters the plant.")
 
     return m
 
+
 ###################################################################################################
 ### Superstructure Formulation Parameters
-def check_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, option_eff):
+def check_supe_formulation_params(
+    m, num_stages, options_in_stage, option_outlets, option_eff
+):
     """
     The function checks that the superstructure formulation parameter inputs are feasible.
 
@@ -197,8 +240,8 @@ def check_supe_formulation_params(m, num_stages, options_in_stage, option_outlet
     ## Check that there is at least 2 stage
     if num_stages < 2:
         raise ValueError("There must be at least 2 processing stages.")
-    
-    ## The stages must be numbered starting at 1 and count up. 
+
+    ## The stages must be numbered starting at 1 and count up.
     # Extract the relevant sets
     num_stages_set = set(pyo.RangeSet(num_stages).data())
     options_in_stage_keys_set = set(options_in_stage.keys())
@@ -206,10 +249,10 @@ def check_supe_formulation_params(m, num_stages, options_in_stage, option_outlet
     if num_stages_set != options_in_stage_keys_set:
         raise ValueError(
             "Stages must start at 1 and count up. Each stage must contain at least 1 option. options_in_stage does not follow this convention. "
-                f"Expected keys: {num_stages_set}, "
-                f"but got: {options_in_stage_keys_set}"
-            )
-    
+            f"Expected keys: {num_stages_set}, "
+            f"but got: {options_in_stage_keys_set}"
+        )
+
     ## Check that connections between options in superstructure are feasible
     # Check that each option in stage j is connected to an option in stage j+1
     missing_values = [key for key, value in option_outlets.items() if value is None]
@@ -217,22 +260,22 @@ def check_supe_formulation_params(m, num_stages, options_in_stage, option_outlet
         raise ValueError(
             f"Options {missing_values} are missing connections in the next stage, as defined by option_outlets."
         )
-    
+
     # Check that each option in stage j is connected to an option in the preceding stage, stage j-1
     disconnected_options = []
-    
+
     # Iterate over stages starting from 2 (since stage 1 has no predecessors)
     for current_stage in range(2, num_stages + 1):
         previous_stage = current_stage - 1
-        
+
         # Get number of options in current and previous stages
         num_current_options = options_in_stage[current_stage]
         num_previous_options = options_in_stage[previous_stage]
-        
+
         # Check each option in the current stage
         for current_option in range(1, num_current_options + 1):
             connected = False
-            
+
             # Check all options in the previous stage
             for previous_option in range(1, num_previous_options + 1):
                 # Get outlets for (previous_stage, previous_option)
@@ -240,10 +283,10 @@ def check_supe_formulation_params(m, num_stages, options_in_stage, option_outlet
                 if current_option in outlets:
                     connected = True
                     break  # No need to check further
-            
+
             if not connected:
                 disconnected_options.append((current_stage, current_option))
-    
+
     # Raise error if disconnected options exist
     if disconnected_options:
         error_msg = "The following options are not connected from the previous stage:\n"
@@ -252,7 +295,6 @@ def check_supe_formulation_params(m, num_stages, options_in_stage, option_outlet
             for stage, option in disconnected_options
         )
         raise ValueError(error_msg)
-    
 
     ## Check that an option efficiency is defined for each option and is nonnegative
     # Extract the relevant sets
@@ -293,8 +335,11 @@ def check_supe_formulation_params(m, num_stages, options_in_stage, option_outlet
             for j, k, negative in negative_effs
         )
         raise ValueError(msg)
-    
-def add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, option_eff):
+
+
+def add_supe_formulation_params(
+    m, num_stages, options_in_stage, option_outlets, option_eff
+):
     """
     This function builds the rest of the superstructure formulation parameters from the ones provided by the user, and adds them all to a
     block.
@@ -309,14 +354,26 @@ def add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets,
 
     m.supe_form_params = pyo.Block()
 
-    m.supe_form_params.num_stages = pyo.Param(initialize=num_stages, doc="The total number of stages in the superstructure.")
-    m.supe_form_params.stages_set = pyo.RangeSet(1, num_stages, doc="A set of all the stages in the superstructure.")
-    m.supe_form_params.options_in_stage = pyo.Param(m.supe_form_params.stages_set, initialize=options_in_stage, doc="The number of options in each stage.")
-    
+    m.supe_form_params.num_stages = pyo.Param(
+        initialize=num_stages, doc="The total number of stages in the superstructure."
+    )
+    m.supe_form_params.stages_set = pyo.RangeSet(
+        1, num_stages, doc="A set of all the stages in the superstructure."
+    )
+    m.supe_form_params.options_in_stage = pyo.Param(
+        m.supe_form_params.stages_set,
+        initialize=options_in_stage,
+        doc="The number of options in each stage.",
+    )
+
     # Define a parameter for the max number of options in any of the stages
     max_options = max(options_in_stage.values())
-    m.supe_form_params.max_options = pyo.Param(initialize=max_options, doc="The max number of options in any of the stages.")
-    m.supe_form_params.max_options_set = pyo.RangeSet(1, max_options, doc="Set containing max number of options in any of the stages.")
+    m.supe_form_params.max_options = pyo.Param(
+        initialize=max_options, doc="The max number of options in any of the stages."
+    )
+    m.supe_form_params.max_options_set = pyo.RangeSet(
+        1, max_options, doc="Set containing max number of options in any of the stages."
+    )
 
     ## build a set of all the options in the superstructure
     # create a set to hold all options in the superstructure. Indexed by stages 'j', and option 'k' in stage 'j'
@@ -327,24 +384,50 @@ def add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets,
             for k in range(1, options_in_stage[j] + 1)
         )
     )
-        
-    m.supe_form_params.option_outlets = pyo.Param(m.supe_form_params.opt_set, initialize=option_outlets, doc="Defines the set of options k' in stage j+1 connected to option k in stage j.")
+
+    m.supe_form_params.option_outlets = pyo.Param(
+        m.supe_form_params.opt_set,
+        initialize=option_outlets,
+        doc="Defines the set of options k' in stage j+1 connected to option k in stage j.",
+    )
 
     ## Define a parameter to hold the tracked component efficiencies for each option in the superstructure
     # Efficiency defined for each tracked component 'c' for each option 'k' in each stage 'j'
     def option_eff_initialize(m, j, k, c):
         return option_eff[(j, k)][c]
-    m.supe_form_params.option_eff = pyo.Param(m.supe_form_params.opt_set, m.feed_params.tracked_comps, initialize=option_eff_initialize)
+
+    m.supe_form_params.option_eff = pyo.Param(
+        m.supe_form_params.opt_set,
+        m.feed_params.tracked_comps,
+        initialize=option_eff_initialize,
+    )
 
     # Define a set containing all of the options in the final stage
-    final_opt_list = [(num_stages, k) for k in range(1, options_in_stage[num_stages] + 1)]
-    m.supe_form_params.final_opt_set = pyo.Set(initialize=final_opt_list, doc="Set containing all of the options in the final stage.")
+    final_opt_list = [
+        (num_stages, k) for k in range(1, options_in_stage[num_stages] + 1)
+    ]
+    m.supe_form_params.final_opt_set = pyo.Set(
+        initialize=final_opt_list,
+        doc="Set containing all of the options in the final stage.",
+    )
 
     return m
 
+
 ###################################################################################################
 ### Operating Parameters
-def check_operating_params(m, profit, opt_var_oc_params, discr_opts, workers_per_discr_unit, yearly_cost_per_unit, cost_per_unit, processing_rate, num_workers, labor_rate):
+def check_operating_params(
+    m,
+    profit,
+    opt_var_oc_params,
+    discr_opts,
+    workers_per_discr_unit,
+    yearly_cost_per_unit,
+    cost_per_unit,
+    processing_rate,
+    num_workers,
+    labor_rate,
+):
     """
     This function checks that all the operating parameters are feasible.
 
@@ -366,8 +449,10 @@ def check_operating_params(m, profit, opt_var_oc_params, discr_opts, workers_per
     final_opt_set = set(m.supe_form_params.final_opt_set)
 
     if profit_opt_keys != final_opt_set:
-        raise ValueError("Must include profit per unit of product for all options in the final stage.")
-    
+        raise ValueError(
+            "Must include profit per unit of product for all options in the final stage."
+        )
+
     ## Check that profit per product is in terms of the tracked components for all options in the final stage and are all nonnegative
     # create relevant sets
     tracked_comps = set(m.feed_params.tracked_comps.data())
@@ -389,13 +474,13 @@ def check_operating_params(m, profit, opt_var_oc_params, discr_opts, workers_per
             negative_profit_comps.append(opt + (negative_comps,))
 
     if missing_profit_comps:
-        msg = "Profits not specifed for all tracked components in the following options:\n"
+        msg = "Profits not specified for all tracked components in the following options:\n"
         msg += "\n".join(
             f"  Option (stage={j}, option={k}) missing components: {missing}"
             for j, k, missing in missing_profit_comps
         )
         raise ValueError(msg)
-    
+
     if negative_profit_comps:
         msg = "Profits some tracked components are listed as negative in the following options\n"
         msg += "\n".join(
@@ -403,7 +488,7 @@ def check_operating_params(m, profit, opt_var_oc_params, discr_opts, workers_per
             for j, k, negative in negative_profit_comps
         )
         raise ValueError(msg)
-    
+
     ## Check that variable operating cost params are defined for all continuous options
     opt_var_oc_params_keys = set(opt_var_oc_params.keys())
     discr_opts_set = set(discr_opts)
@@ -411,8 +496,10 @@ def check_operating_params(m, profit, opt_var_oc_params, discr_opts, workers_per
     continuous_opts_set = all_opts_set - discr_opts_set
 
     if opt_var_oc_params_keys != continuous_opts_set:
-        raise ValueError("Variable operating cost params not defined for all continuous options.")
-        
+        raise ValueError(
+            "Variable operating cost params not defined for all continuous options."
+        )
+
     ## Check that both necessary variable operating cost parameters ('a' and 'b') are defined for all continuous options
     var_oc_params = set(["a", "b"])
     # list to track issues
@@ -425,7 +512,7 @@ def check_operating_params(m, profit, opt_var_oc_params, discr_opts, workers_per
         if params != var_oc_params:
             missing = var_oc_params - params
             missing_var_oc_params.append(opt + (missing,))
-            
+
     if missing_var_oc_params:
         msg = "not all variable operating cost parameters defined in the following options:\n"
         msg += "\n".join(
@@ -433,57 +520,67 @@ def check_operating_params(m, profit, opt_var_oc_params, discr_opts, workers_per
             for j, k, missing in missing_var_oc_params
         )
         raise ValueError(msg)
-        
+
     ## Check that the discrete options listed are feasible
     if not (discr_opts_set <= all_opts_set):
         raise ValueError("Discrete options listed are not feasible.")
-        
+
     ## Check that workers per discrete unit is defined for all options that utilize discrete units
     workers_per_discr_unit_keys = set(workers_per_discr_unit.keys())
 
     if workers_per_discr_unit_keys != discr_opts_set:
         raise ValueError("workers_per_discr_unit not defined for all discrete options.")
-    
+
     ## Check that workers per discrete unit are all defined to be non-negative
-    negative_workers_per_discr_units = [opt for opt, w in workers_per_discr_unit.items() if w < 0]
+    negative_workers_per_discr_units = [
+        opt for opt, w in workers_per_discr_unit.items() if w < 0
+    ]
     if negative_workers_per_discr_units:
         raise ValueError("Workers per discrete unit must all be non-negative.")
-    
+
     ## Check that yearly cost per unit is defined for all discrete options
     yearly_cost_per_unit_keys = set(yearly_cost_per_unit.keys())
     if yearly_cost_per_unit_keys != discr_opts_set:
-        raise ValueError("yearly_cost_per_unit must be defined for all discrete options.")
-    
+        raise ValueError(
+            "yearly_cost_per_unit must be defined for all discrete options."
+        )
+
     ## Check that the yearly cost per unit values are all non-negative
-    negative_yearly_cost_per_unit = [opt for opt, cost in yearly_cost_per_unit.items() if cost < 0]
+    negative_yearly_cost_per_unit = [
+        opt for opt, cost in yearly_cost_per_unit.items() if cost < 0
+    ]
     if negative_yearly_cost_per_unit:
         raise ValueError("yearly_cost_per_unit values must all be non-negative.")
-    
+
     ## Check that cost per unit is defined for all discrete options
     cost_per_unit_keys = set(cost_per_unit.keys())
     if cost_per_unit_keys != discr_opts_set:
         raise ValueError("cost_per_unit must be defined for all discrete options.")
-    
+
     ## Check that the cost per unit values are all non-negative
     negative_cost_per_unit = [opt for opt, cost in cost_per_unit.items() if cost < 0]
     if negative_cost_per_unit:
         raise ValueError("cost_per_unit values must all be non-negative.")
-    
+
     ## Check that prosessing rate is defined for all discrete options
     processing_rate_keys = set(processing_rate.keys())
     if processing_rate_keys != discr_opts_set:
         raise ValueError("processing_rate must be defined for all discrete options.")
-    
+
     ## Check that all processing rates are positive
-    nonpositive_processing_rate = [opt for opt, rate in processing_rate.items() if rate <= 0]
+    nonpositive_processing_rate = [
+        opt for opt, rate in processing_rate.items() if rate <= 0
+    ]
     if nonpositive_processing_rate:
         raise ValueError("processing rates must all be positive.")
-    
+
     ## Check that num_workers is defined for all continuous options
     num_workers_keys = set(num_workers.keys())
     if num_workers_keys != continuous_opts_set:
-        raise ValueError("num_workers must be defined for all continuous options, and must not be defined for discrete options.")
-    
+        raise ValueError(
+            "num_workers must be defined for all continuous options, and must not be defined for discrete options."
+        )
+
     ## Check that num_workers values are all non-negative
     negative_num_workers = [opt for opt, workers in num_workers.items() if workers < 0]
     if negative_num_workers:
@@ -493,13 +590,14 @@ def check_operating_params(m, profit, opt_var_oc_params, discr_opts, workers_per
     if labor_rate < 0:
         raise ValueError("labor rate must be non-negative.")
 
+
 def build_model(
     ###################################################################################################
     ### Plant Lifetime Parameters
     # first year of plant lifetime
-    plant_start: int,  
+    plant_start: int,
     # lifetime of plant
-    plant_lifetime: int,  
+    plant_lifetime: int,
     ###################################################################################################
     ###################################################################################################
     ### Feed parameters
@@ -518,12 +616,12 @@ def build_model(
     ###################################################################################################
     ### Superstructure formulation parameters
     # number of total stages
-    num_stages: int,  
+    num_stages: int,
     # number of options in each stage. Of the form -> stage number: number of options
     options_in_stage: dict,
     # set of options k' in stage j+1 connected to option k in stage j
     # of the form -> (j, k): [1, 2, 3...], ...
-    option_outlets: dict, 
+    option_outlets: dict,
     # dictionary of tracked component retention efficiency for each option
     # of the form -> (j, k): {"comp1": eff1, "comp2": eff2, ...}, ...
     option_eff: dict,
@@ -541,7 +639,7 @@ def build_model(
     # OPEX = a*F_in + b*y
     # of the form -> (j, k): {"a": val1, "b": val2}, ...
     opt_operating_cost_params: dict,
-    # list of the options that utilitize discrete units (typically disassembly options)
+    # list of the options that utilize discrete units (typically disassembly options)
     # of the form -> [(1, 1), (1, 2), ...]
     dis_opts: list,
     # number of workers needed per discrete unit for options that utilize discrete units
@@ -610,13 +708,17 @@ def build_model(
 
     ### Feed parameters
     # Check that feed parameters are feasible
-    check_feed_parameters(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
+    check_feed_parameters(
+        m, available_feed, collection_rate, tracked_comps, prod_comp_mass
+    )
     # Create separate block to hold feed parameters
-    m = add_feed_params_block(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
+    m = add_feed_params_block(
+        m, available_feed, collection_rate, tracked_comps, prod_comp_mass
+    )
 
     ### Superstructure formulation parameters
-    # 
-    
+    #
+
     ###################################################################################################
     ###################################################################################################
     ### Calculate other superstructure formulation parameters

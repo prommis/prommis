@@ -1,18 +1,17 @@
 import pyomo.environ as pyo
 
-from prommis.superstructures.superstructure_function import(
-    check_plant_lifetime_params,
-    add_plant_lifetime_params_block,
-    check_feed_params,
+from prommis.superstructures.superstructure_function import (
     add_feed_params_block,
-    check_supe_formulation_params,
+    add_plant_lifetime_params_block,
     add_supe_formulation_params,
+    check_feed_params,
     check_operating_params,
+    check_plant_lifetime_params,
+    check_supe_formulation_params,
 )
 
 ### Build model
 m = pyo.ConcreteModel()
-
 
 
 ### Plant Lifetime Params
@@ -122,7 +121,9 @@ option_eff = {
     },
 }
 
-check_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, option_eff)
+check_supe_formulation_params(
+    m, num_stages, options_in_stage, option_outlets, option_eff
+)
 add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, option_eff)
 
 ### Operating Parameters
@@ -133,7 +134,7 @@ add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, opt
 #     (5, 4): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
 #     (5, 5): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
 # }
-profit =  {
+profit = {
     (5, 1): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
     (5, 2): {"Nd": 69.888, "Dy": 263.81, "Fe": 0},
     (5, 3): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
@@ -205,4 +206,15 @@ num_workers = {
 }
 labor_rate = -8000 * 38.20
 
-check_operating_params(m, profit, opt_var_oc_params, discr_opts, workers_per_discr_unit, yearly_cost_per_unit, cost_per_unit, processing_rate, num_workers, labor_rate)
+check_operating_params(
+    m,
+    profit,
+    opt_var_oc_params,
+    discr_opts,
+    workers_per_discr_unit,
+    yearly_cost_per_unit,
+    cost_per_unit,
+    processing_rate,
+    num_workers,
+    labor_rate,
+)

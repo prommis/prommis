@@ -27,7 +27,6 @@ from prommis.uky.uky_flowsheet import (
     build,
     initialize_system,
     set_operating_conditions,
-    set_partition_coefficients,
     set_scaling,
     solve_system,
 )
@@ -85,6 +84,22 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sc2O3",
         "Sm2O3",
         "Y2O3",
+    }
+
+    # Organic components
+    comp_org = {
+        "Al_o",
+        "Ca_o",
+        "Ce_o",
+        "Dy_o",
+        "Fe_o",
+        "Gd_o",
+        "La_o",
+        "Nd_o",
+        "Pr_o",
+        "Sc_o",
+        "Sm_o",
+        "Y_o",
     }
 
     # Liquid chemical components
@@ -297,6 +312,8 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             if stype == "rougher" and ltype == "aqueous":
                 # add aqueous components for the aqueous rougher
                 complist = comp.union(comp_liq)
+            elif ltype == "organic":
+                complist = comp_org
             else:
                 complist = comp
             # export the output for each component
@@ -382,7 +399,6 @@ def build_flowsheet(build_options=None, **kwargs):
     """
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
-    set_partition_coefficients(m)
     set_operating_conditions(m)
     set_scaling(m)
     scaling = pyo.TransformationFactory("core.scale_model")
@@ -401,7 +417,6 @@ def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
 
     m = build()
-    set_partition_coefficients(m)
 
     set_operating_conditions(m)
 

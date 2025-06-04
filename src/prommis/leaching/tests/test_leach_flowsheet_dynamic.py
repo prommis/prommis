@@ -39,7 +39,7 @@ from prommis.leaching.leach_flowsheet import (
 def model():
     m = build_model(time_duration=24, number_of_tanks=1)
     discretization(m)
-    from_json(m, fname="leaching.json")
+    from_json(m, fname="../leaching.json")
     copy_first_steady_state(m)
     set_inputs(m, perturb_time=12)
 

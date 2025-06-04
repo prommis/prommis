@@ -11,12 +11,7 @@ parameters and data for West Kentucky No. 13 coal refuse.
 Authors: Arkoprabho Dasgupta, Akintomiwa Ojo
 """
 import matplotlib.pyplot as plt
-from pyomo.environ import (
-    ConcreteModel,
-    TransformationFactory,
-    units,
-    Var,
-)
+from pyomo.environ import ConcreteModel, TransformationFactory, units, Var, Constraint
 from pyomo.dae.flatten import flatten_dae_components
 
 from idaes.core import FlowsheetBlock
@@ -109,7 +104,7 @@ def set_inputs(m, perturb_time):
         if t <= perturb_time:
             m.fs.leach.liquid_inlet.flow_vol[t].fix(224.3 * units.L / units.hour)
         else:
-            m.fs.leach.liquid_inlet.flow_vol[t].fix(300 * units.L / units.hour)
+            m.fs.leach.liquid_inlet.flow_vol[t].fix(224.3 * units.L / units.hour)
 
     m.fs.leach.liquid_inlet.conc_mass_comp.fix(1e-10 * units.mg / units.L)
 
@@ -158,7 +153,21 @@ def set_inputs(m, perturb_time):
     # Fixing the volume and the volumetric phases of the leach reactor
     m.fs.leach.volume.fix(100 * units.gallon)
     m.fs.leach.mscontactor.volume.fix(100 * units.gallon)
-    m.fs.leach.mscontactor.volume_frac_stream[:, :, "liquid"].fix(0.5)
+    m.fs.leach.mscontactor.volume_frac_stream[0, :, "liquid"].fix(0.5)
+
+    @m.Constraint(m.fs.time, m.fs.leach.mscontactor.elements)
+    def volume_fraction_rule(m, t, s):
+        if t == m.fs.time.first():
+            return Constraint.Skip
+        else:
+            theta_s = m.fs.leach.mscontactor.volume_frac_stream[t, s, "solid"]
+            theta_l = m.fs.leach.mscontactor.volume_frac_stream[t, s, "liquid"]
+            v_l = m.fs.leach.mscontactor.liquid[t, s].flow_vol
+            solid_dens_mass = m.fs.leach.config.solid_phase[
+                "property_package"
+            ].dens_mass
+            v_s = m.fs.leach.mscontactor.solid[t, s].flow_mass / solid_dens_mass
+            return v_l * theta_s == v_s * theta_l
 
     # Fixing the variable values at t=0
     m.fs.leach.mscontactor.liquid[0, :].flow_vol.fix()
@@ -244,3 +253,8 @@ if __name__ == "__main__":
         label="Perturbation at t=12h",
     )
     plt.title("REE oxide recovery variation wrt time, with perturbation at t=12 ")
+    plt.figure()
+    plt.plot(m.fs.time, m.fs.leach.mscontactor.solid[:, :].flow_mass())
+    plt.title("Solid mass flow rate variation wrt time")
+    plt.xlabel("Time (h)")
+    plt.ylabel("Solid mass flow rate (kg/h)")

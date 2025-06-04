@@ -150,7 +150,7 @@ class TestLiCoDiafiltration:
 
         model = ConcreteModel()
         model.recovery_determine = ByproductRecovery(materials=material_list)
-        
+
         # annual production rate of material, assume operate 8000 hrs per year
         annual_Li_recovery_mass = self.Li_recovery_mass * 8000
         annual_Co_recovery_mass = self.Co_recovery_mass * 8000

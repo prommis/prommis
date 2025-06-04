@@ -5,6 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 
+import os
 from pyomo.environ import (
     SolverFactory,
     TransformationFactory,
@@ -39,7 +40,10 @@ from prommis.leaching.leach_flowsheet import (
 def model():
     m = build_model(time_duration=24, number_of_tanks=1)
     discretization(m)
-    from_json(m, fname="../leaching.json")
+    current_directory = os.path.dirname(__file__)
+    parent_directory = os.path.dirname(current_directory)
+    json_file_path = os.path.join(parent_directory, "leaching.json")
+    from_json(m, fname=json_file_path)
     copy_first_steady_state(m)
     set_inputs(m, perturb_time=12)
 

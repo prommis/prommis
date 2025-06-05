@@ -224,7 +224,7 @@ def add_feed_params_block(
 ###################################################################################################
 ### Superstructure Formulation Parameters
 def check_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, option_eff
+    m, num_stages, options_in_stage, option_outlets, discrete_opts, option_eff
 ):
     """
     The function checks that the superstructure formulation parameter inputs are feasible.
@@ -234,6 +234,7 @@ def check_supe_formulation_params(
         num_stages: (int) number of total stages
         options_in_stage: (dict) number of options in each stage
         options_outlets: (dict) set of options k' in stage j+1 connected to option k in stage j
+        discrete_opts: (list) list of options that utilize discrete units
         option_eff: (dict) tracked component retention efficiency for each option
     """
 
@@ -295,6 +296,17 @@ def check_supe_formulation_params(
             for stage, option in disconnected_options
         )
         raise ValueError(error_msg)
+    
+    ## Check that all discrete options listed are feasible
+    all_opts_set = {
+        (j, k)
+        for j in range(1, num_stages + 1)
+        for k in range(1, options_in_stage[j] + 1)
+    }
+    discr_opts_set = set(discrete_opts)
+
+    if not (discr_opts_set <= all_opts_set):
+        raise ValueError("Discrete options listed are not feasible.")
 
     ## Check that an option efficiency is defined for each option and is nonnegative
     # Extract the relevant sets
@@ -338,7 +350,7 @@ def check_supe_formulation_params(
 
 
 def add_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, option_eff
+    m, num_stages, options_in_stage, option_outlets, discrete_opts, option_eff
 ):
     """
     This function builds the rest of the superstructure formulation parameters from the ones provided by the user, and adds them all to a
@@ -349,6 +361,7 @@ def add_supe_formulation_params(
         num_stages: (int) number of total stages
         options_in_stage: (dict) number of options in each stage
         option_outlets: (dict) set of options k' in stage j+1 connected to option k in stage j
+        discrete_opts: (list) list of options that utilize discrete units
         option_eff: (dict) tracked component retention efficiency for each option
     """
 
@@ -375,18 +388,44 @@ def add_supe_formulation_params(
         1, max_options, doc="Set containing max number of options in any of the stages."
     )
 
-    ## build a set of all the options in the superstructure
-    # create a set to hold all options in the superstructure. Indexed by stages 'j', and option 'k' in stage 'j'
-    m.supe_form_params.opt_set = pyo.Set(
+    ## Build a set of all the options in the superstructure
+    # Create a set to hold all options in the superstructure. Indexed by stages 'j', and option 'k' in stage 'j'
+    m.supe_form_params.all_opts_set = pyo.Set(
         initialize=(
             (j, k)
             for j in m.supe_form_params.stages_set
             for k in range(1, options_in_stage[j] + 1)
-        )
+        ),
+        doc="Set containing all options in the superstructure."
     )
 
+    ## Build a set containing all discrete options
+    # Define necessary set
+    discrete_opts_set = set(discrete_opts)
+    m.supe_form_params.discrete_opts_set = pyo.Set(
+        initialize=(
+            (opt)
+            for opt in discrete_opts_set
+        ),
+        doc="Set containing all the options which utilize discrete units."
+    )
+
+    ## Build a set containing all continuous options in the superstructure
+    # Define necessary sets
+    all_opts_set = set(m.supe_form_params.all_opts_set.data())
+    continuous_opts_set = all_opts_set - discrete_opts_set
+
+    m.supe_form_params.continuous_opts_set = pyo.Set(
+        initialize=(
+            (opt)
+            for opt in continuous_opts_set
+        ),
+        doc="Set containing all the continuous options."
+    )
+
+
     m.supe_form_params.option_outlets = pyo.Param(
-        m.supe_form_params.opt_set,
+        m.supe_form_params.all_opts_set,
         initialize=option_outlets,
         doc="Defines the set of options k' in stage j+1 connected to option k in stage j.",
     )
@@ -397,17 +436,17 @@ def add_supe_formulation_params(
         return option_eff[(j, k)][c]
 
     m.supe_form_params.option_eff = pyo.Param(
-        m.supe_form_params.opt_set,
+        m.supe_form_params.all_opts_set,
         m.feed_params.tracked_comps,
         initialize=option_eff_initialize,
     )
 
     # Define a set containing all of the options in the final stage
-    final_opt_list = [
+    final_opts_list = [
         (num_stages, k) for k in range(1, options_in_stage[num_stages] + 1)
     ]
-    m.supe_form_params.final_opt_set = pyo.Set(
-        initialize=final_opt_list,
+    m.supe_form_params.final_opts_set = pyo.Set(
+        initialize=final_opts_list,
         doc="Set containing all of the options in the final stage.",
     )
 
@@ -420,7 +459,6 @@ def check_operating_params(
     m,
     profit,
     opt_var_oc_params,
-    discr_opts,
     workers_per_discr_unit,
     yearly_cost_per_unit,
     cost_per_unit,
@@ -432,23 +470,22 @@ def check_operating_params(
     This function checks that all the operating parameters are feasible.
 
     Args:
-        m: pyomo model
-        profit: (dict) profit per unit of product in terms of tracked components
-        opt_var_oc_params: (dict) holds the variable operating cost params for options that don't utilize discrete units.
-        discr_opts: (list) list of options that utilize discrete units
+        m: pyomo model.
+        profit: (dict) profit per unit of product in terms of tracked components.
+        opt_var_oc_params: (dict) holds the variable operating cost param for options that are continuous. Variable operating costs assumed to be proportional to the feed entering the option.
         workers_per_discr_unit: (dict) number of workers needed per discrete unit for options that utilize discrete units.
         yearly_cost_per_unit: (dict) yearly operating costs per unit for options which utilize discrete units.
         cost_per_unit: (dict) cost per unit for options which utilize discrete units.
         processing_rate: (dict) disassembly rate per unit for options that utilize discrete units. In terms of units of incoming feed processed per year per unit.
-        num_workers: (dict) number of workers needed by option for options that don't utilize discrete units.
-        labor_rate: (float) yearly wage per worker
+        num_workers: (dict) number of workers needed for each option.
+        labor_rate: (float) yearly wage per worker.
     """
 
     ## Check that profit per product is defined for all options in the final stage
     profit_opt_keys = set(profit.keys())
-    final_opt_set = set(m.supe_form_params.final_opt_set)
+    final_opts_set = set(m.supe_form_params.final_opts_set)
 
-    if profit_opt_keys != final_opt_set:
+    if profit_opt_keys != final_opts_set:
         raise ValueError(
             "Must include profit per unit of product for all options in the final stage."
         )
@@ -460,7 +497,7 @@ def check_operating_params(
     missing_profit_comps = []
     negative_profit_comps = []
 
-    for opt in m.supe_form_params.final_opt_set:
+    for opt in m.supe_form_params.final_opts_set:
 
         # Check for missing profits
         profit_tracked_comps = set(profit[opt].keys())
@@ -491,9 +528,8 @@ def check_operating_params(
 
     ## Check that variable operating cost params are defined for all continuous options
     opt_var_oc_params_keys = set(opt_var_oc_params.keys())
-    discr_opts_set = set(discr_opts)
-    all_opts_set = set(m.supe_form_params.opt_set.data())
-    continuous_opts_set = all_opts_set - discr_opts_set
+    discr_opts_set = set(m.supe_form_params.discrete_opts_set.data())
+    continuous_opts_set = set(m.supe_form_params.continuous_opts_set.data())
 
     if opt_var_oc_params_keys != continuous_opts_set:
         raise ValueError(
@@ -520,10 +556,6 @@ def check_operating_params(
             for j, k, missing in missing_var_oc_params
         )
         raise ValueError(msg)
-
-    ## Check that the discrete options listed are feasible
-    if not (discr_opts_set <= all_opts_set):
-        raise ValueError("Discrete options listed are not feasible.")
 
     ## Check that workers per discrete unit is defined for all options that utilize discrete units
     workers_per_discr_unit_keys = set(workers_per_discr_unit.keys())
@@ -589,6 +621,74 @@ def check_operating_params(
     ## Check that labor rate is non-negative
     if labor_rate < 0:
         raise ValueError("labor rate must be non-negative.")
+    
+def add_operating_params(
+    m,
+    profit,
+    opt_var_oc_params,
+    workers_per_discr_unit,
+    yearly_cost_per_unit,
+    cost_per_unit,
+    processing_rate,
+    num_workers,
+    labor_rate,
+):
+    """
+    This function builds the rest of the operating parameters from the ones provided by the user, and adds them all to a
+    block.
+
+    Args:
+        m: pyomo model
+        profit: (dict) profit per unit of product in terms of tracked components
+        opt_var_oc_params: (dict) holds the variable operating cost params for options that don't utilize discrete units.
+        workers_per_discr_unit: (dict) number of workers needed per discrete unit for options that utilize discrete units.
+        yearly_cost_per_unit: (dict) yearly operating costs per unit for options which utilize discrete units.
+        cost_per_unit: (dict) cost per unit for options which utilize discrete units.
+        processing_rate: (dict) disassembly rate per unit for options that utilize discrete units. In terms of units of incoming feed processed per year per unit.
+        num_workers: (dict) number of workers needed by option for options that don't utilize discrete units.
+        labor_rate: (float) yearly wage per worker
+    """
+
+    m.operating_params = pyo.Block()
+
+    ## Define a parameter to hold the profit for all options in the final stage in terms of the tracked components
+    def profit_initialization(m, j, k, c):
+        return profit[(j, k)][c]
+    
+    m.operating_params.profit = pyo.Param(
+        m.supe_form_params.final_opts_set,
+        m.feed_params.tracked_comps,
+        initialize=profit_initialization,
+        doc="Holds the profit for all options in the final stage in terms of the tracked components."
+    )
+    
+    # Define set containing the variable operating cost parameters
+    m.operating_params.var_oc_params_set = pyo.Set(initialize=["a", "b"], doc="Set containing the necessary parameters for calculating the variable operating costs for all continuous options.")
+
+    ## Define a parameter to hold the variable operating cost params for continuous options
+    def opt_var_oc_params_initialization(m, j, k, var_oc_param):
+        return opt_var_oc_params[(j, k)][var_oc_param]
+    
+    m.operating_params.opt_var_oc_params = pyo.Param(
+        m.supe_form_params.continuous_opts_set,
+        m.operating_params.var_oc_params_set,
+        initialize=opt_var_oc_params_initialization,
+        doc="Holds all the variable operating costs parameter values for all continuous options."
+    )
+    m.operating_params.opt_var_oc_params.display()
+
+    ## Define a parameter to hold the number of workers needed per discrete unit for options that utilize discrete units
+    # m.operating_params.
+
+    # # calculate max disassembly units possible for each option
+    # max_dis_by_option = copy.deepcopy(Dis_Rate)
+    # for key in max_dis_by_option.keys():
+    #     max_dis_by_option[key] = math.ceil(maxFeedEntering / Dis_Rate[key])
+    # # max_dis_workers = max(max_dis_by_option.values()) + 10
+    # max_dis_workers = max(max_dis_by_option.values())
+    # # calculate max possible workers for process
+    # max_workers = max_dis_workers + numStages * math.ceil(max(num_workers.values()))
+
 
 
 def build_model(

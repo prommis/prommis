@@ -4,6 +4,7 @@ from prommis.superstructures.superstructure_function import (
     add_feed_params_block,
     add_plant_lifetime_params_block,
     add_supe_formulation_params,
+    add_operating_params,
     check_feed_params,
     check_operating_params,
     check_plant_lifetime_params,
@@ -80,6 +81,7 @@ option_outlets = {
     (4, 3): [3],
     (4, 4): [4, 5],
 }
+discrete_opts = [(1, 1), (1, 2)]
 option_eff = {
     # Level 1 yields
     (1, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
@@ -122,18 +124,11 @@ option_eff = {
 }
 
 check_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, option_eff
+    m, num_stages, options_in_stage, option_outlets, discrete_opts, option_eff
 )
-add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, option_eff)
+add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, discrete_opts, option_eff)
 
 ### Operating Parameters
-# profit =  {
-#     (5, 1): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
-#     (5, 2): {"Nd": 69.888, "Dy": 263.81, "Fe": 0},
-#     (5, 3): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
-#     (5, 4): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
-#     (5, 5): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
-# }
 profit = {
     (5, 1): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
     (5, 2): {"Nd": 69.888, "Dy": 263.81, "Fe": 0},
@@ -166,7 +161,6 @@ opt_var_oc_params = {
     (5, 4): {"a": 2.17, "b": 0},
     (5, 5): {"a": 6.7063559004, "b": 0},
 }
-discr_opts = [(1, 1), (1, 2)]
 workers_per_discr_unit = {
     (1, 1): 1,
     (1, 2): 0,
@@ -204,13 +198,23 @@ num_workers = {
     (5, 4): 1.15,
     (5, 5): 1.15,
 }
-labor_rate = -8000 * 38.20
+labor_rate = 8000 * 38.20
 
 check_operating_params(
     m,
     profit,
     opt_var_oc_params,
-    discr_opts,
+    workers_per_discr_unit,
+    yearly_cost_per_unit,
+    cost_per_unit,
+    processing_rate,
+    num_workers,
+    labor_rate,
+)
+add_operating_params(
+    m,
+    profit,
+    opt_var_oc_params,
     workers_per_discr_unit,
     yearly_cost_per_unit,
     cost_per_unit,

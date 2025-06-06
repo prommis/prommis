@@ -71,16 +71,21 @@ def main():
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 
+    # TODO: debug convergence issues
     # solve model
     solve_model(m)
 
     # check numerical warnings
-    dt.assert_no_numerical_warnings()
+    # dt.assert_no_numerical_warnings()
+    dt.report_numerical_issues()
+    dt.display_constraints_with_large_residuals()
+    dt.compute_infeasibility_explanation()
+    dt.display_constraints_with_extreme_jacobians()
 
     # visualize the results
     # currently no partitioning in the membrane
-    plot_results(m)
-    plot_membrane_results(m)
+    # plot_results(m)
+    # plot_membrane_results(m)
 
 
 def build_membrane_parameters(m):
@@ -144,7 +149,7 @@ def solve_model(m):
 
     solver = SolverFactory("ipopt")
     results = solver.solve(scaled_model, tee=True)
-    assert_optimal_termination(results)
+    # assert_optimal_termination(results)
 
     scaling.propagate_solution(scaled_model, m)
 

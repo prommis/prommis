@@ -10,7 +10,7 @@ Property package for the multi-salt diafiltration membrane.
 Author: Molly Dougher
 """
 
-from pyomo.environ import Param, Var, units
+from pyomo.environ import NonNegativeReals, Param, Var, units
 
 from idaes.core import (
     Component,
@@ -67,6 +67,7 @@ class SoluteParameterData(PhysicalParameterBlock):
                 "Co": 0.05893,
                 "Cl": 0.03545,
             },
+            domain=NonNegativeReals,
         )
 
         # add thermal reflection coefficient, where 1 represents ideal behavior
@@ -90,6 +91,7 @@ class SoluteParameterData(PhysicalParameterBlock):
                 "Co": 0.5,
                 "Cl": 1,
             },
+            domain=NonNegativeReals,
         )
 
         self.num_solutes = Param(

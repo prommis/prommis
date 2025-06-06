@@ -917,6 +917,23 @@ and used when constructing these,
             self.x_bar, self.z_bar, rule=_electroneutrality_membrane
         )
 
+        def _electroneutrality_permeate(self, x):
+            return 0 == (
+                self.config.property_package.charge["Li"]
+                * self.permeate_conc_mass_comp[0, x, "Li"]
+                / self.config.property_package.molar_mass["Li"]
+                + self.config.property_package.charge["Co"]
+                * self.permeate_conc_mass_comp[0, x, "Co"]
+                / self.config.property_package.molar_mass["Co"]
+                + self.config.property_package.charge["Cl"]
+                * self.permeate_conc_mass_comp[0, x, "Cl"]
+                / self.config.property_package.molar_mass["Cl"]
+            )
+
+        self.electroneutrality_permeate = Constraint(
+            self.x_bar, rule=_electroneutrality_permeate
+        )
+
         # boundary conditions
         def _retentate_membrane_interface_lithium(self, x):
             if x == 0:
@@ -941,12 +958,14 @@ and used when constructing these,
         def _retentate_membrane_interface_cobalt(self, x):
             if x == 0:
                 return Constraint.Skip
-            return self.config.property_package.partition_coefficient[
-                "Co"
-            ] * self.config.property_package.partition_coefficient["Cl"] == (
+            return self.config.property_package.partition_coefficient["Co"] ** (
+                1 / self.config.property_package.charge["Co"]
+            ) * self.config.property_package.partition_coefficient["Cl"] == (
                 (
                     self.membrane_conc_mass_cobalt[x, 0]
+                    ** (1 / self.config.property_package.charge["Co"])
                     / self.retentate_conc_mass_comp[0, x, "Co"]
+                    ** (1 / self.config.property_package.charge["Co"])
                 )
                 * (
                     self.membrane_conc_mass_chlorine[x, 0]
@@ -959,9 +978,17 @@ and used when constructing these,
         )
 
         def _membrane_permeate_interface_lithium(self, x):
-            return (
-                self.permeate_conc_mass_comp[0, x, "Li"]
-                == self.membrane_conc_mass_lithium[x, 1]
+            return self.config.property_package.partition_coefficient[
+                "Li"
+            ] * self.config.property_package.partition_coefficient["Cl"] == (
+                (
+                    self.membrane_conc_mass_lithium[x, 0]
+                    / self.permeate_conc_mass_comp[0, x, "Li"]
+                )
+                * (
+                    self.membrane_conc_mass_chlorine[x, 0]
+                    / self.permeate_conc_mass_comp[0, x, "Cl"]
+                )
             )
 
         self.membrane_permeate_interface_lithium = Constraint(
@@ -969,23 +996,23 @@ and used when constructing these,
         )
 
         def _membrane_permeate_interface_cobalt(self, x):
-            return (
-                self.permeate_conc_mass_comp[0, x, "Co"]
-                == self.membrane_conc_mass_cobalt[x, 1]
+            return self.config.property_package.partition_coefficient["Co"] ** (
+                1 / self.config.property_package.charge["Co"]
+            ) * self.config.property_package.partition_coefficient["Cl"] == (
+                (
+                    self.membrane_conc_mass_cobalt[x, 0]
+                    ** (1 / self.config.property_package.charge["Co"])
+                    / self.permeate_conc_mass_comp[0, x, "Co"]
+                    ** (1 / self.config.property_package.charge["Co"])
+                )
+                * (
+                    self.membrane_conc_mass_chlorine[x, 0]
+                    / self.permeate_conc_mass_comp[0, x, "Cl"]
+                )
             )
 
         self.membrane_permeate_interface_cobalt = Constraint(
             self.x_bar, rule=_membrane_permeate_interface_cobalt
-        )
-
-        def _membrane_permeate_interface_chlorine(self, x):
-            return (
-                self.permeate_conc_mass_comp[0, x, "Cl"]
-                == self.membrane_conc_mass_chlorine[x, 1]
-            )
-
-        self.membrane_permeate_interface_chlorine = Constraint(
-            self.x_bar, rule=_membrane_permeate_interface_chlorine
         )
 
     def discretize_model(self):

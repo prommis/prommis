@@ -227,7 +227,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ),
     )
     CONFIG.declare(
-        "debt_percentage_of_CAPEX",
+        "debt_percentage_of_capex",
         ConfigValue(
             default=50,
             domain=float,
@@ -3260,35 +3260,35 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # build variables
 
         b.pv_capital_cost = Var(
-            initialize=-b.CAPEX,
+            initialize=-b.capex,
             bounds=(None, 0),
             doc="Present value of total lifetime capital costs; negative cash flow",
             units=b.cost_units,
         )
 
         b.loan_debt = Var(
-            initialize=b.CAPEX,
+            initialize=b.capex,
             bounds=(0, 1e4),
             doc="total debt from loans in $MM",
             units=b.cost_units,
         )
 
         b.pv_loan_interest = Var(
-            initialize=-b.CAPEX,
+            initialize=-b.capex,
             bounds=(-1e4, 1e4),
             doc="present value of total lifetime loan interest in $MM; normally a negative cash flow, but can be positive depending on the discount and interest rates",
             units=b.cost_units,
         )
 
         b.pv_operating_cost = Var(
-            initialize=-b.OPEX * b.config.plant_lifetime,
+            initialize=-b.opex * b.config.plant_lifetime,
             bounds=(None, 0),
             doc="Present value of total lifetime operating costs; negative cash flow",
             units=b.cost_units,
         )
 
         b.pv_revenue = Var(
-            initialize=b.REVENUE * b.config.plant_lifetime,
+            initialize=b.revenue * b.config.plant_lifetime,
             bounds=(0, None),
             doc="Present value of total lifetime sales revenue; positive cash flow",
             units=b.cost_units,
@@ -3303,7 +3303,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         b.npv = Var(
-            initialize=(-b.CAPEX + (b.REVENUE - b.OPEX) * b.config.plant_lifetime),
+            initialize=(-b.capex + (b.revenue - b.opex) * b.config.plant_lifetime),
             bounds=(None, None),
             doc="Present value of plant over entire capital and operation lifetime",
             units=b.cost_units,
@@ -3341,8 +3341,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=b.config.capital_loan_repayment_period, units=pyunits.years
         )
 
-        b.debt_percentage_of_CAPEX = Param(
-            initialize=b.config.debt_percentage_of_CAPEX, units=pyunits.percent
+        b.debt_percentage_of_capex = Param(
+            initialize=b.config.debt_percentage_of_capex, units=pyunits.percent
         )
 
         b.operating_inflation_percentage = Param(
@@ -3386,7 +3386,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             * pyunits.percent,
                             to_units=pyunits.dimensionless,
                         )
-                        * c.CAPEX
+                        * c.capex
                         * (  # P/A_year(i) - P/A_year(i-1))
                             series_present_worth_factor(
                                 pyunits.convert(
@@ -3424,7 +3424,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 # PV_Capital_Cost = - CAPEX
 
                 return c.pv_capital_cost == -pyunits.convert(
-                    c.CAPEX,
+                    c.capex,
                     to_units=c.cost_units,
                 )
 
@@ -3436,9 +3436,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
                 return c.loan_debt == pyunits.convert(
                     pyunits.convert(
-                        c.debt_percentage_of_CAPEX, to_units=pyunits.dimensionless
+                        c.debt_percentage_of_capex, to_units=pyunits.dimensionless
                     )
-                    * c.CAPEX,
+                    * c.capex,
                     to_units=c.cost_units,
                 )
 
@@ -3512,7 +3512,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # PV_Operating_Cost = - OPEX * [ P/A(r, g, OPEX_end_year) - P/A(r, g, CAPEX_end_year) ]
 
             return c.pv_operating_cost == -pyunits.convert(
-                c.OPEX
+                c.opex
                 * (
                     series_present_worth_factor(
                         pyunits.convert(
@@ -3545,7 +3545,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # PV_Revenue = - REVENUE * [ P/A(r, g, Revenue_end_year) - P/A(r, g, CAPEX_end_year) ]
 
             return c.pv_revenue == pyunits.convert(
-                c.REVENUE
+                c.revenue
                 * (
                     series_present_worth_factor(
                         pyunits.convert(
@@ -3625,15 +3625,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         Verify that parent block for NPV calculations has expected attributes.
         """
         try:
-            b.CAPEX = b.total_BEC + b.total_installation_cost + b.other_plant_costs
-            b.OPEX = (
+            b.capex = b.total_BEC + b.total_installation_cost + b.other_plant_costs
+            b.opex = (
                 b.total_fixed_OM_cost * pyunits.year
                 + b.total_variable_OM_cost[0] * pyunits.year
                 + b.land_cost
             )
-            b.REVENUE = Reference(b.total_sales_revenue)[None] * pyunits.year
+            b.revenue = Reference(b.total_sales_revenue)[None] * pyunits.year
 
-            b.cost_units = pyunits.get_units(b.CAPEX)
+            b.cost_units = pyunits.get_units(b.capex)
 
         except AttributeError:
             raise AttributeError(
@@ -3676,9 +3676,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         else:
             # check if the cost arguments are variables or expressions with units and handle appropriately
             costs = {
-                "CAPEX": b.config.total_capital_cost,
-                "OPEX": b.config.annual_operating_cost,
-                "REVENUE": b.config.annual_revenue,
+                "capex": b.config.total_capital_cost,
+                "opex": b.config.annual_operating_cost,
+                "revenue": b.config.annual_revenue,
             }
             b.cost_units = getattr(pyunits, "MUSD_" + b.config.cost_year)
 
@@ -3705,9 +3705,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         )
 
             # store for later use
-            b.CAPEX = costs["CAPEX"]
-            b.OPEX = costs["OPEX"]
-            b.REVENUE = costs["REVENUE"]
+            b.capex = costs["capex"]
+            b.opex = costs["opex"]
+            b.revenue = costs["revenue"]
 
     def assert_config_argument_set(b, name):
         """

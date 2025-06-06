@@ -102,7 +102,7 @@ def base_model():
         capital_escalation_percentage=3.6,
         capital_loan_interest_percentage=6,
         capital_loan_repayment_period=10,
-        debt_percentage_of_CAPEX=50,
+        debt_percentage_of_capex=50,
         operating_inflation_percentage=3,
         revenue_inflation_percentage=3,
     )
@@ -1938,12 +1938,12 @@ class TestWaterTAPCosting(object):
         assert_optimal_termination(results)
 
     @pytest.mark.component
-    def test_REE_watertap_costing_results_totalCAPEX(self, model):
+    def test_REE_watertap_costing_results_totalcapex(self, model):
 
         assert value(model.fs.costing.total_BEC) == pytest.approx(50.686, rel=1e-4)
 
     @pytest.mark.component
-    def test_REE_watertap_costing_results_equipmentCAPEX(self, model):
+    def test_REE_watertap_costing_results_equipmentcapex(self, model):
 
         CE_index_year = "UKy_2019"
 
@@ -1992,7 +1992,7 @@ class TestWaterTAPCosting(object):
         ) == pytest.approx(44.308, rel=1e-4)
 
     @pytest.mark.component
-    def test_REE_watertap_costing_results_fixedOPEX(self, model):
+    def test_REE_watertap_costing_results_fixedopex(self, model):
 
         CE_index_year = "UKy_2019"
 
@@ -2051,7 +2051,7 @@ class TestWaterTAPCosting(object):
 
     # TODO commented as no WaterTAP models currently use this, may change in the future
     # @pytest.mark.component
-    # def test_REE_watertap_costing_variableOPEX(self, model):
+    # def test_REE_watertap_costing_variableopex(self, model):
 
     #     assert value(model.fs.costing.watertap_variable_costs) == pytest.approx(
     #         0, abs=1e-4
@@ -2473,7 +2473,7 @@ class TestDiafiltrationCosting(object):
                 + pyunits.convert(
                     m.fs.cascade.costing.pressure_drop, to_units=pyunits.Pa
                 ),
-                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
+                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump opex
                 * pyunits.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
                 "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # feed
             },
@@ -3109,7 +3109,7 @@ class TestNPVCostingBlock(object):
         assert isinstance(model.fs.costing.capital_escalation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.capital_loan_interest_percentage, pyo.Param)
         assert isinstance(model.fs.costing.capital_loan_repayment_period, pyo.Param)
-        assert isinstance(model.fs.costing.debt_percentage_of_CAPEX, pyo.Param)
+        assert isinstance(model.fs.costing.debt_percentage_of_capex, pyo.Param)
         assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
@@ -3165,7 +3165,7 @@ class TestNPVFixedInputs(object):
         m.fs.costing = QGESSCosting(
             discount_percentage=10,
             plant_lifetime=20,
-            # use CAPEX, OPEX, REVENUE from CostingBlock test to verify results are the same
+            # use capex, opex, revenue from CostingBlock test to verify results are the same
             total_capital_cost=7.461172417869669,
             annual_operating_cost=6.880158261340908,
             annual_revenue=64.38220104959998,
@@ -3196,7 +3196,7 @@ class TestNPVFixedInputs(object):
         assert isinstance(model.fs.costing.capital_escalation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.capital_loan_interest_percentage, pyo.Param)
         assert isinstance(model.fs.costing.capital_loan_repayment_period, pyo.Param)
-        assert isinstance(model.fs.costing.debt_percentage_of_CAPEX, pyo.Param)
+        assert isinstance(model.fs.costing.debt_percentage_of_capex, pyo.Param)
         assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
@@ -5614,7 +5614,7 @@ def test_REE_costing_config_defaults():
     assert m.fs.costing.config.capital_escalation_percentage == 3.6
     assert m.fs.costing.config.capital_loan_interest_percentage == 6
     assert m.fs.costing.config.capital_loan_repayment_period == 10
-    assert m.fs.costing.config.debt_percentage_of_CAPEX == 50
+    assert m.fs.costing.config.debt_percentage_of_capex == 50
     assert m.fs.costing.config.debt_expression is None
     assert m.fs.costing.config.operating_inflation_percentage == 3
     assert m.fs.costing.config.revenue_inflation_percentage == 3
@@ -5637,7 +5637,7 @@ def test_REE_costing_config_kwargs():
         capital_escalation_percentage=2,
         capital_loan_interest_percentage=2,
         capital_loan_repayment_period=2,
-        debt_percentage_of_CAPEX=2,
+        debt_percentage_of_capex=2,
         debt_expression=m.fs.debt_expression,
         operating_inflation_percentage=2,
         revenue_inflation_percentage=2,
@@ -5655,7 +5655,7 @@ def test_REE_costing_config_kwargs():
     assert m.fs.costing.config.capital_escalation_percentage == 2
     assert m.fs.costing.config.capital_loan_interest_percentage == 2
     assert m.fs.costing.config.capital_loan_repayment_period == 2
-    assert m.fs.costing.config.debt_percentage_of_CAPEX == 2
+    assert m.fs.costing.config.debt_percentage_of_capex == 2
     assert isinstance(m.fs.costing.config.debt_expression, pyo.Var)
     assert m.fs.costing.config.operating_inflation_percentage == 2
     assert m.fs.costing.config.revenue_inflation_percentage == 2
@@ -5980,7 +5980,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
                         * pyunits.percent,
                         to_units=pyunits.dimensionless,
                     )
-                    * m.fs.costing.CAPEX
+                    * m.fs.costing.capex
                     * (  # P/A_year(i) - P/A_year(i-1))
                         series_present_worth_factor(
                             pyunits.convert(
@@ -6081,7 +6081,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
                         * pyunits.percent,
                         to_units=pyunits.dimensionless,
                     )
-                    * m.fs.costing.CAPEX
+                    * m.fs.costing.capex
                     * (  # P/A_year(i) - P/A_year(i-1))
                         series_present_worth_factor(
                             pyunits.convert(
@@ -6284,7 +6284,7 @@ def test_REE_costing_debt_expression():
     m.fs.annual_revenue = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
     m.fs.cost_year = "2021"
 
-    # suppose debt is 50% of CAPEX (default), plus 5% of OPEX
+    # suppose debt is 50% of capex (default), plus 5% of opex
     m.fs.debt_formula = pyo.Expression(
         expr=50 / 100 * m.fs.total_capital_cost + 5 / 100 * m.fs.annual_operating_cost
     )
@@ -6322,7 +6322,7 @@ def test_REE_costing_debt_expression_solve():
     m.fs.annual_revenue.fix()
     m.fs.cost_year = "2021"
 
-    # suppose debt is 50% of CAPEX (default), plus 5% of OPEX
+    # suppose debt is 50% of capex (default), plus 5% of opex
     m.fs.debt_formula = pyo.Expression(
         expr=50 / 100 * m.fs.total_capital_cost + 5 / 100 * m.fs.annual_operating_cost
     )
@@ -6398,7 +6398,7 @@ def test_REE_costing_consider_taxes():
         capital_escalation_percentage=3.6,
         capital_loan_interest_percentage=6,
         capital_loan_repayment_period=10,
-        debt_percentage_of_CAPEX=50,
+        debt_percentage_of_capex=50,
         operating_inflation_percentage=3,
         revenue_inflation_percentage=3,
     )

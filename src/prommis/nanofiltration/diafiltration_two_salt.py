@@ -115,10 +115,10 @@ Variable                             Description                                
 :math:`L`                            length of the membrane                          ``membrane_length``                                    :math:`m`
 :math:`\Delta \pi`                   osmotic pressure of feed-side fluid             ``osmotic_pressure``                                   :math:`bar`               discretized over :math:`\bar{x}`
 :math:`\Delta P`                     applied pressure to the membrane                ``applied_pressure``                                   :math:`bar`
-:math:`q_d`                          volumetic flow rate of the diafiltrate          ``diafiltrate_flow_volume``                            :math:`m^3 h^{-1}`        discretized over :math:`t`
-:math:`q_f`                          volumetic flow rate of the feed                 ``feed_flow_volume``                                   :math:`m^3 h^{-1}`        discretized over :math:`t`
-:math:`q_p`                          volumetic flow rate of the permeate             ``permeate_flow_volume``                               :math:`m^3 h^{-1}`        discretized over :math:`t` and :math:`\bar{x}`
-:math:`q_r`                          volumetic flow rate of the retentate            ``retentate_flow_volume``                              :math:`m^3 h^{-1}`        discretized over :math:`t` and :math:`\bar{x}`
+:math:`q_d`                          volumetric flow rate of the diafiltrate          ``diafiltrate_flow_volume``                            :math:`m^3 h^{-1}`        discretized over :math:`t`
+:math:`q_f`                          volumetric flow rate of the feed                 ``feed_flow_volume``                                   :math:`m^3 h^{-1}`        discretized over :math:`t`
+:math:`q_p`                          volumetric flow rate of the permeate             ``permeate_flow_volume``                               :math:`m^3 h^{-1}`        discretized over :math:`t` and :math:`\bar{x}`
+:math:`q_r`                          volumetric flow rate of the retentate            ``retentate_flow_volume``                              :math:`m^3 h^{-1}`        discretized over :math:`t` and :math:`\bar{x}`
 :math:`w`                            width of the membrane                           ``membrane_width``                                     :math:`m`
 ==================================== =============================================== ====================================================== ========================= ====================================================
 

@@ -80,6 +80,18 @@ class SoluteParameterData(PhysicalParameterBlock):
             },
         )
 
+        # add single salt partition coefficient
+        # TODO: verify values
+        self.partition_coefficient = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "Li": 1.5,
+                "Co": 0.5,
+                "Cl": 1,
+            },
+        )
+
         self.num_solutes = Param(
             initialize=5,
             units=units.dimensionless,

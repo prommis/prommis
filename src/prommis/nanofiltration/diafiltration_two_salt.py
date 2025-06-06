@@ -366,26 +366,26 @@ and used when constructing these,
         self.membrane_width = Var(
             initialize=1,
             units=units.m,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Width of the membrane (x-direction)",
         )
         self.membrane_length = Var(
             initialize=100,
             units=units.m,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Length of the membrane, wound radially",
         )
         self.applied_pressure = Var(
             initialize=10,
             units=units.bar,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Pressure applied to membrane",
         )
         self.feed_flow_volume = Var(
             self.time,
             initialize=100,
             units=units.m**3 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Volumetric flow rate of the feed",
         )
 
@@ -398,14 +398,14 @@ and used when constructing these,
             self.solutes,
             initialize=initialize_feed_conc_mass_comp,
             units=units.kg / units.m**3,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Mass concentration of solutes in the feed",
         )
         self.diafiltrate_flow_volume = Var(
             self.time,
             initialize=30,
             units=units.m**3 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Volumetric flow rate of the diafiltrate",
         )
 
@@ -418,7 +418,7 @@ and used when constructing these,
             self.solutes,
             initialize=initialize_diafiltrate_conc_mass_comp,
             units=units.kg / units.m**3,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Mass concentration of solutes in the diafiltrate",
         )
 
@@ -427,28 +427,28 @@ and used when constructing these,
             self.x_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.m**3 / units.m**2 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Volumetric water flux of water across the membrane",
         )
         self.mass_flux_lithium = Var(
             self.x_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**2 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Mass flux of lithium across the membrane (z-direction, x-dependent)",
         )
         self.mass_flux_cobalt = Var(
             self.x_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**2 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Mass flux of cobalt across the membrane (z-direction, x-dependent)",
         )
         self.mass_flux_chlorine = Var(
             self.x_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**2 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Mass flux of chlorine across the membrane (z-direction, x-dependent)",
         )
         self.retentate_flow_volume = Var(
@@ -456,7 +456,7 @@ and used when constructing these,
             self.x_bar,
             initialize=130,
             units=units.m**3 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Volumetric flow rate of the retentate, x-dependent",
         )
 
@@ -470,7 +470,7 @@ and used when constructing these,
             self.solutes,
             initialize=initialize_retentate_conc_mass_comp,
             units=units.kg / units.m**3,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Mass concentration of solutes in the retentate, x-dependent",
         )
         self.permeate_flow_volume = Var(
@@ -478,7 +478,7 @@ and used when constructing these,
             self.x_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.m**3 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Volumetric flow rate of the permeate, x-dependent",
         )
 
@@ -496,14 +496,14 @@ and used when constructing these,
             self.solutes,
             initialize=initialize_permeate_conc_mass_comp,
             units=units.kg / units.m**3,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Mass concentration of solutes in the permeate, x-dependent",
         )
         self.osmotic_pressure = Var(
             self.x_bar,
             initialize=5,
             units=units.bar,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Osmostic pressure of the feed-side fluid",
         )
 
@@ -513,7 +513,7 @@ and used when constructing these,
             self.z_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**3,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Mass concentration of lithium in the membrane, x- and z-dependent",
         )
         self.membrane_conc_mass_cobalt = Var(
@@ -521,7 +521,7 @@ and used when constructing these,
             self.z_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**3,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Mass concentration of cobalt in the membrane, x- and z-dependent",
         )
         self.membrane_conc_mass_chlorine = Var(
@@ -529,7 +529,7 @@ and used when constructing these,
             self.z_bar,
             initialize=value(self.numerical_zero_tolerance),
             units=units.kg / units.m**3,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Mass concentration of chlorine in the membrane, x- and z-dependent",
         )
         self.D_lithium_lithium = Var(
@@ -537,7 +537,7 @@ and used when constructing these,
             self.z_bar,
             initialize=1e-6,
             units=units.m**2 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Linearized cross diffusion coefficient for lithium-lithium",
         )
         self.D_lithium_cobalt = Var(
@@ -545,7 +545,7 @@ and used when constructing these,
             self.z_bar,
             initialize=1e-7,
             units=units.m**2 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Linearized cross diffusion coefficient for lithium-cobalt",
         )
         self.D_cobalt_lithium = Var(
@@ -553,7 +553,7 @@ and used when constructing these,
             self.z_bar,
             initialize=1e-7,
             units=units.m**2 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Linearized cross diffusion coefficient for cobalt-lithium",
         )
         self.D_cobalt_cobalt = Var(
@@ -561,7 +561,7 @@ and used when constructing these,
             self.z_bar,
             initialize=1e-6,
             units=units.m**2 / units.h,
-            bounds=[0, None],
+            bounds=[1e-11, None],
             doc="Linearized cross diffusion coefficient for cobalt-cobalt",
         )
 
@@ -899,7 +899,7 @@ and used when constructing these,
         )
 
         def _electroneutrality_membrane(self, x, z):
-            if z == 0:
+            if x == 0 and z == 0:
                 return Constraint.Skip
             return 0 == (
                 self.config.property_package.charge["Li"]
@@ -921,9 +921,17 @@ and used when constructing these,
         def _retentate_membrane_interface_lithium(self, x):
             if x == 0:
                 return Constraint.Skip
-            return (
-                self.retentate_conc_mass_comp[0, x, "Li"]
-                == self.membrane_conc_mass_lithium[x, 0]
+            return self.config.property_package.partition_coefficient[
+                "Li"
+            ] * self.config.property_package.partition_coefficient["Cl"] == (
+                (
+                    self.membrane_conc_mass_lithium[x, 0]
+                    / self.retentate_conc_mass_comp[0, x, "Li"]
+                )
+                * (
+                    self.membrane_conc_mass_chlorine[x, 0]
+                    / self.retentate_conc_mass_comp[0, x, "Cl"]
+                )
             )
 
         self.retentate_membrane_interface_lithium = Constraint(
@@ -933,25 +941,21 @@ and used when constructing these,
         def _retentate_membrane_interface_cobalt(self, x):
             if x == 0:
                 return Constraint.Skip
-            return (
-                self.retentate_conc_mass_comp[0, x, "Co"]
-                == self.membrane_conc_mass_cobalt[x, 0]
+            return self.config.property_package.partition_coefficient[
+                "Co"
+            ] * self.config.property_package.partition_coefficient["Cl"] == (
+                (
+                    self.membrane_conc_mass_cobalt[x, 0]
+                    / self.retentate_conc_mass_comp[0, x, "Co"]
+                )
+                * (
+                    self.membrane_conc_mass_chlorine[x, 0]
+                    / self.retentate_conc_mass_comp[0, x, "Cl"]
+                )
             )
 
         self.retentate_membrane_interface_cobalt = Constraint(
             self.x_bar, rule=_retentate_membrane_interface_cobalt
-        )
-
-        def _retentate_membrane_interface_chlorine(self, x):
-            if x == 0:
-                return Constraint.Skip
-            return (
-                self.retentate_conc_mass_comp[0, x, "Cl"]
-                == self.membrane_conc_mass_chlorine[x, 0]
-            )
-
-        self.retentate_membrane_interface_chlorine = Constraint(
-            self.x_bar, rule=_retentate_membrane_interface_chlorine
         )
 
         def _membrane_permeate_interface_lithium(self, x):

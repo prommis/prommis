@@ -193,7 +193,16 @@ class CoalRefuseStateBlockData(StateBlockData):
             )
 
     def get_material_flow_terms(self, p, j):
-        return self.flow_mass * self.mass_frac_comp[j] / self.params.mw[j]
+        return units.convert(
+            self.flow_mass * self.mass_frac_comp[j] / self.params.mw[j],
+            to_units=units.mol / units.hour,
+        )
+
+    def get_material_density_terms(self, p, j):
+        return units.convert(
+            self.params.dens_mass * self.mass_frac_comp[j] / self.params.mw[j],
+            to_units=units.mol / units.m**3,
+        )
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar

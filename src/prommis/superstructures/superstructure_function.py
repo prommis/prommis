@@ -15,6 +15,7 @@ import copy
 import math
 import sys
 import warnings
+
 import pyomo.environ as pyo
 
 
@@ -292,7 +293,7 @@ def check_supe_formulation_params(
         for current_option in range(1, num_current_options + 1):
             # Define a boolean to track if current_option has any connections to options from previous stage.
             connected = False
-            # Check if option in current stage is connected to any optios in the previous stage.
+            # Check if option in current stage is connected to any options in the previous stage.
             for previous_option in range(1, num_previous_options + 1):
                 # Get outlets for option: (previous_stage, previous_option).
                 outlets = option_outlets.get((previous_stage, previous_option), [])
@@ -559,7 +560,7 @@ def check_operating_params(
             # Keep tracking of the missing variable operating cost parameters for the option.
             missing = var_oc_params - params
             missing_var_oc_params.append(opt + (missing,))
-    # Raise an error if there are continuous options missing varaible operating cost parameters.
+    # Raise an error if there are continuous options missing variable operating cost parameters.
     if missing_var_oc_params:
         msg = "not all variable operating cost parameters defined in the following options:\n"
         msg += "\n".join(
@@ -771,7 +772,7 @@ def check_costing_params(m, discretized_capex):
 
     # Check that discretized capex not provided for discrete opts.
     for opt in m.supe_form_params.discrete_opts_set:
-        # Keep track of the disrete options for which discretized capex data is defined for.
+        # Keep track of the discrete options for which discretized capex data is defined for.
         if opt in discretized_capex_opts_set:
             discrete_opts.append(opt)
 
@@ -993,7 +994,7 @@ def build_model(
     check_objective_function_params(m, obj_func)
     # Create a separate block to hold costing parameters.
     add_objective_function_params(m, obj_func)
-    
+
     m = pyo.ConcreteModel()
 
     if obj_func == "COR":

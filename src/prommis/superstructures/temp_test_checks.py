@@ -1,16 +1,16 @@
 import pyomo.environ as pyo
 
 from prommis.superstructures.superstructure_function import (
+    add_costing_params,
     add_feed_params_block,
     add_operating_params,
     add_plant_lifetime_params_block,
     add_supe_formulation_params,
-    add_costing_params,
+    check_costing_params,
     check_feed_params,
     check_operating_params,
     check_plant_lifetime_params,
     check_supe_formulation_params,
-    check_costing_params,
 )
 
 ### Build model

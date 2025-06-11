@@ -885,7 +885,7 @@ def add_mass_balance_vars(m):
     Args:
         m: pyomo model.
     """
-    ### Define necessary pyomo variables
+    ### Define necessary pyomo variables.
     ## Create block
     m.mb_vars = pyo.Block(doc="Block to hold all mass balance variables.")
     ## Pyomo variables
@@ -915,15 +915,18 @@ def add_mass_balance_cons(m):
     Args:
         m: pyomo model.
     """
-    ### Define necessary pyomo variables
+    ### Define necessary pyomo constraints
     ## Create block
     m.mb_cons = pyo.Block(doc="Block to hold all mass balance constraints.")
 
     ## Pyomo constraints
     @m.mb_cons.Constraint(
-        m.mb_params.flow_set, doc="Equation (1) from the documentation."
+        m.supe_form_params.stages_set,
+        m.feed_params.tracked_comps,
+        m.plant_lifetime_params.operational_range,
+        doc="Equation (1) from the documentation.",
     )
-    def inlet_flow_cons(b, j, k, c, t):
+    def inlet_flow_cons(b, j, c, t):
         m = b.model()  # Get the main model
         if j == 1:
             return pyo.Constraint.Skip
@@ -935,9 +938,12 @@ def add_mass_balance_cons(m):
             )
 
     @m.mb_cons.Constraint(
-        m.mb_params.flow_set, doc="Equation (2) from the documentation."
+        m.supe_form_params.stages_set,
+        m.feed_params.tracked_comps,
+        m.plant_lifetime_params.operational_range,
+        doc="Equation (2) from the documentation.",
     )
-    def init_flow_cons(b, j, k, c, t):
+    def init_flow_cons(b, j, c, t):
         m = b.model()  # Get the main model
         if j == 1:
             # Extract all the options available in stage 'j'
@@ -957,9 +963,12 @@ def add_mass_balance_cons(m):
         return m.mb_vars.f_in[j, k, c, t] * alpha == m.mb_vars.f_out[j, k, c, t]
 
     @m.mb_cons.Constraint(
-        m.mb_params.flow_set, doc="Equation (4) from the documentation."
+        m.supe_form_params.stages_set,
+        m.feed_params.tracked_comps,
+        m.plant_lifetime_params.operational_range,
+        doc="Equation (4) from the documentation.",
     )
-    def outlet_flow_cons(b, j, k, c, t):
+    def outlet_flow_cons(b, j, c, t):
         m = b.model()  # Get the main model
         if j != m.supe_form_params.num_stages:
             # Extract all the options available in stage 'j'
@@ -970,6 +979,109 @@ def add_mass_balance_cons(m):
             )
         else:
             return pyo.Constraint.Skip
+
+
+def add_logic_params(m):
+    """
+    This function adds all logic parameters to a block.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Define parameters
+    # Calculate Big-M values for each tracked component.
+    m_val = {}
+    for c in m.feed_params.tracked_comps:
+        # Max value assumes 100% efficiency (no losses) over the plant's lifetime. Rounded up to ensure validity
+        # in constraints.
+        m_val[c] = math.ceil(
+            m.feed_params.max_feed_entering * m.feed_params.prod_comp_mass[c]
+        )
+
+    ### Define necessary pyomo parameters.
+    ## Create block
+    m.logic_params = pyo.Block(doc="Block to hold logic parameters.")
+    ## Pyomo parameters
+    m.logic_params.big_m_val = pyo.Param(
+        m.feed_params.tracked_comps,
+        initialize=m_val,
+        doc="Big-M parameters used in Equations (7) and (8) from the documentation.",
+    )
+
+
+def add_logic_vars(m):
+    """
+    This function adds all logic variables to a block.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Define necessary pyomo variables.
+    ## Create block
+    m.logic_vars = pyo.Block(doc="Block to hold logic variables.")
+    ## Pyomo variables
+    m.logic_vars.option_binary_var = pyo.Var(
+        m.supe_form_params.all_opts_set,
+        domain=pyo.Binary,
+        doc="Binary variables to indicate whether or not an option has been selected.",
+    )
+
+
+def add_logic_cons(m):
+    """
+    This function adds all logic constraints to a block.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Define necessary pyomo constraints
+    ## Create block
+    m.logic_cons = pyo.Block(doc="Block to hold logic constraints.")
+
+    ## Pyomo constraints
+    @m.logic_cons.Constraint(
+        m.supe_form_params.stages_set, doc="Equation (5) from the documentation."
+    )
+    def stage_binary_cons(b, j):
+        m = b.model()  # Get the main model
+        # Extract all the options available in stage 'j'
+        num_options = range(1, m.supe_form_params.options_in_stage[j] + 1)
+        return sum(m.logic_vars.option_binary_var[j, k] for k in num_options) == 1
+
+    @m.logic_cons.Constraint(
+        m.supe_form_params.all_opts_set, doc="Equation (6) from the documentation."
+    )
+    def connection_binary_cons(b, j, k):
+        m = b.model()  # Get the main model
+        if j != m.supe_form_params.num_stages:
+            # Extract the set of options k' in stage j+1 connected to option k in stage j.
+            opt_connections = m.supe_form_params.option_outlets[j, k]
+            return m.logic_vars.option_binary_var[j, k] <= sum(
+                m.logic_vars.option_binary_var[j + 1, kp] for kp in opt_connections
+            )
+        else:
+            return pyo.Constraint.Skip
+
+    # create constraints
+    @m.logic_cons.Constraint(
+        m.mb_params.flow_set, doc="Equation (7) from the documentation."
+    )
+    def f_in_big_m_cons(b, j, k, c, t):
+        m = b.model()  # Get the main model
+        return (
+            m.mb_vars.f_in[j, k, c, t]
+            <= m.logic_vars.option_binary_var[j, k] * m.logic_params.big_m_val[c]
+        )
+
+    @m.logic_cons.Constraint(
+        m.mb_params.flow_set, doc="Equation (8) from the documentation."
+    )
+    def f_out_big_m_cons(b, j, k, c, t):
+        m = b.model()  # Get the main model
+        return (
+            m.mb_vars.f_out[j, k, c, t]
+            <= m.logic_vars.option_binary_var[j, k] * m.logic_params.big_m_val[c]
+        )
 
 
 def build_model(
@@ -1108,52 +1220,13 @@ def build_model(
     # Generate mass balance constraints.
     add_mass_balance_cons(m)
 
-    ### declare binary variables
-    m.binOpt = pyo.Var(m.OptSet, domain=pyo.Binary)
-
-    ### Logical Constraints
-    # eqn. 5
-    m.stage_bin_cons = pyo.ConstraintList()
-    for j in m.J:
-        num_options = pyo.RangeSet(Options_in_stage[j])
-        m.stage_bin_cons.add(expr=sum(m.binOpt[j, k] for k in num_options) == 1)
-
-    # eqn. 6
-    m.connect_bin_cons = pyo.ConstraintList()
-    j = 0
-    for j in pyo.RangeSet(1, numStages - 1):
-        num_options = pyo.RangeSet(Options_in_stage[j])
-
-        k = 0
-        for k in num_options:
-            opt_connects = Option_outlets[(j, k)]
-            m.connect_bin_cons.add(
-                expr=1
-                - m.binOpt[j, k]
-                + sum(m.binOpt[j + 1, kp] for kp in opt_connects)
-                >= 1
-            )
-
-    ## big-M constraints
-    m.big_M_cons = pyo.ConstraintList()
-    M = {"Nd": 0, "Dy": 0, "Fe": 0}
-    val = 0
-    for c in m.KeyComps:
-        val = math.ceil(maxFeedEntering * Prod_comp_mass[c])
-        M[c] = val
-
-    for t in pyo.RangeSet(prod_start, plant_end):
-        for j in m.J:
-            num_options = pyo.RangeSet(Options_in_stage[j])
-
-            for k in num_options:
-                for c in m.KeyComps:
-                    m.big_M_cons.add(
-                        expr=m.plantYear[t].F_in[j, k, c] <= m.binOpt[j, k] * M[c]
-                    )  # eqn. 7
-                    m.big_M_cons.add(
-                        expr=m.plantYear[t].F_out[j, k, c] <= m.binOpt[j, k] * M[c]
-                    )  # eqn. 8
+    ### Logic constraints
+    # Generate logic parameters.
+    add_logic_params(m)
+    # Generate logic variables.
+    add_logic_vars(m)
+    # Generate logic constraints.
+    add_logic_cons(m)
 
     # define disassembly works set
     j_dis = 1
@@ -1275,18 +1348,6 @@ def build_model(
             expr=m.plantYear[t].Profit
             == sum(m.plantYear[t].ProfitOpt[opt] for opt in m.final_opt_set)
         )
-
-        ## Calculate profit generated from byproduct valorization
-        # only if specified by user
-        if consider_byprod_val == True:
-            m.plantYear[t].Byprod_Profit = pyo.Var(domain=pyo.Reals)
-            m.plantYear[t].byprod_profit_con = pyo.Constraint(
-                expr=m.plantYear[t].Byprod_Profit
-                == sum(
-                    m.plantYear[t].total_yearly_byprod[byprod] * byprod_vals[byprod]
-                    for byprod in m.Byprods
-                )
-            )
 
     ################################################ OC_fixed Constraints ################################################
     # calculate the cost of labor
@@ -1521,22 +1582,6 @@ def build_model(
 
     ### testing
     m.bin_test_cons = pyo.ConstraintList()
-
-    ### environmental impacts
-    # only consider if option is enabled by user
-    if consider_environ_impacts == True:
-        m.GWP = pyo.Var(domain=pyo.NonNegativeReals)
-        m.GWP_cons = pyo.ConstraintList()
-
-        m.GWP_cons.add(
-            expr=m.GWP
-            == sum(
-                m.plantYear[t].total_yearly_GWP
-                for t in pyo.RangeSet(prod_start, plant_end)
-            )
-        )
-        # add in epsilon constraint
-        m.epsilon_con = pyo.Constraint(expr=m.GWP <= epsilon)
 
     if obj_func == "NPV":
 

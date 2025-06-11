@@ -662,7 +662,7 @@ def add_operating_params(
     def profit_initialization(m, j, k, c):
         return profit[(j, k)][c]
 
-    # Define a function for initializing opt_var_oc_params pyomo paramter.
+    # Define a function for initializing opt_var_oc_params pyomo parameter.
     def opt_var_oc_params_initialization(m, j, k, var_oc_param):
         return opt_var_oc_params[(j, k)][var_oc_param]
 

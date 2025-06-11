@@ -31,7 +31,7 @@ from idaes.core.util.model_statistics import (
 
 import pytest
 
-from prommis.superstructures.superstructure_function import build_model
+from prommis.superstructure.superstructure_function import build_model
 
 solver_available = SolverFactory("gurobi").available()
 if solver_available:

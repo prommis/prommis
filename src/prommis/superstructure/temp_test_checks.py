@@ -3,19 +3,19 @@ import pyomo.environ as pyo
 from prommis.superstructure.superstructure_function import (
     add_costing_params,
     add_feed_params_block,
+    add_mass_balance_cons,
+    add_mass_balance_params,
+    add_mass_balance_vars,
+    add_objective_function_params,
     add_operating_params,
     add_plant_lifetime_params_block,
     add_supe_formulation_params,
-    add_objective_function_params,
-    add_mass_balance_params,
-    add_mass_balance_vars,
-    add_mass_balance_cons,
     check_costing_params,
     check_feed_params,
+    check_objective_function_params,
     check_operating_params,
     check_plant_lifetime_params,
     check_supe_formulation_params,
-    check_objective_function_params,
 )
 
 ### Build model
@@ -695,8 +695,8 @@ Discretized_CAPEX = {
 check_costing_params(m, Discretized_CAPEX)
 add_costing_params(m, Discretized_CAPEX)
 
-check_objective_function_params(m, obj_func='NPV')
-add_objective_function_params(m, obj_func='NPV')
+check_objective_function_params(m, obj_func="NPV")
+add_objective_function_params(m, obj_func="NPV")
 
 add_mass_balance_params(m)
 add_mass_balance_vars(m)

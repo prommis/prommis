@@ -1108,10 +1108,6 @@ def build_model(
     # Generate mass balance constraints.
     add_mass_balance_cons(m)
 
-
-    
-    
-
     ### declare binary variables
     m.binOpt = pyo.Var(m.OptSet, domain=pyo.Binary)
 

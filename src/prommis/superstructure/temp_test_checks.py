@@ -3,6 +3,9 @@ import pyomo.environ as pyo
 from prommis.superstructure.superstructure_function import (
     add_costing_params,
     add_feed_params_block,
+    add_logic_cons,
+    add_logic_params,
+    add_logic_vars,
     add_mass_balance_cons,
     add_mass_balance_params,
     add_mass_balance_vars,
@@ -10,9 +13,6 @@ from prommis.superstructure.superstructure_function import (
     add_operating_params,
     add_plant_lifetime_params_block,
     add_supe_formulation_params,
-    add_logic_cons,
-    add_logic_params,
-    add_logic_vars, 
     check_costing_params,
     check_feed_params,
     check_objective_function_params,
@@ -717,4 +717,3 @@ add_logic_cons(m)
 # m.logic_cons.stage_binary_cons.pprint()
 # m.logic_cons.connection_binary_cons.pprint()
 # m.logic_params.big_m_val.pprint()
-

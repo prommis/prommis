@@ -1745,7 +1745,9 @@ def add_net_present_value(m):
         m: pyomo model.
     """
     ### Create block
-    m.net_present_value = pyo.Block(doc="Block to hold all net present value variables, constraints, and objective function.")
+    m.net_present_value = pyo.Block(
+        doc="Block to hold all net present value variables, constraints, and objective function."
+    )
 
     ## Define necessary pyomo parameters.
     m.net_present_value.discount_factor = pyo.Param(
@@ -1771,9 +1773,11 @@ def add_net_present_value(m):
             )
             for t in m.plant_lifetime_params.plant_life_range
         )
-    
+
     ## Define objective function
-    m.net_present_value.obj = pyo.Objective(expr=m.net_present_value.npv, sense=pyo.maximize)
+    m.net_present_value.obj = pyo.Objective(
+        expr=m.net_present_value.npv, sense=pyo.maximize
+    )
 
 
 def build_model(

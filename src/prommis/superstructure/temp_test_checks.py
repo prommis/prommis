@@ -1,31 +1,31 @@
 import pyomo.environ as pyo
 
 from prommis.superstructure.superstructure_function import (
+    add_capital_expense_cons,
+    add_capital_expense_params,
+    add_capital_expense_vars,
+    add_cash_flow_cons,
+    add_cash_flow_params,
+    add_cash_flow_vars,
     add_costing_params,
     add_feed_params_block,
+    add_fixed_operating_expense_cons,
+    add_fixed_operating_expense_vars,
     add_logic_cons,
     add_logic_params,
     add_logic_vars,
     add_mass_balance_cons,
     add_mass_balance_params,
     add_mass_balance_vars,
+    add_net_present_value,
     add_objective_function_params,
     add_operating_params,
     add_plant_lifetime_params_block,
-    add_supe_formulation_params,
-    add_capital_expense_params,
-    add_capital_expense_vars,
-    add_fixed_operating_expense_vars,
-    add_capital_expense_cons,
-    add_variable_operating_expense_vars,
-    add_variable_operating_expense_cons,
-    add_revenue_vars,
     add_revenue_cons,
-    add_fixed_operating_expense_cons,
-    add_cash_flow_params,
-    add_cash_flow_vars,
-    add_cash_flow_cons,
-    add_net_present_value,
+    add_revenue_vars,
+    add_supe_formulation_params,
+    add_variable_operating_expense_cons,
+    add_variable_operating_expense_vars,
     check_costing_params,
     check_feed_params,
     check_objective_function_params,
@@ -149,9 +149,7 @@ option_eff = {
 check_supe_formulation_params(
     m, num_stages, options_in_stage, option_outlets, option_eff
 )
-add_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, option_eff
-)
+add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, option_eff)
 
 ### Operating Parameters
 profit = {
@@ -760,7 +758,7 @@ from idaes.core.solvers import get_solver
 
 solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2
-results = solver.solve(m, tee='True')
+results = solver.solve(m, tee="True")
 # print(pyo.value(m.mb_vars.f_out[5, 5, 'Nd', 2029]))
 
 m.logic_vars.option_binary_var.pprint()

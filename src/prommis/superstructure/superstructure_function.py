@@ -730,17 +730,17 @@ def add_operating_params(
 
 ###################################################################################################
 ### Costing Parameters
-def check_costing_params(m, discretized_capex):
+def check_costing_params(m, discretized_purchased_equipment_cost):
     """
     This function checks that all the costing parameters are feasible.
 
     Args:
         m: pyomo model.
-        discretized_capex: (dict) Discretized cost by flows entering for each continuous option.
+        discretized_purchased_equipment_cost: (dict) Discretized cost by flows entering for each continuous option.
     """
     ### Define parameters necessary for tests
-    # Define a set of all the keys in the discretized_capex dict.
-    discretized_capex_opts_set = set(discretized_capex.keys())
+    # Define a set of all the keys in the discretized_purchased_equipment_cost dict.
+    discretized_purchased_equipment_cost_opts_set = set(discretized_purchased_equipment_cost.keys())
 
     ### Define necessary data structures for tests.
     # Define a list of continuous options which are missing discretized capex data.
@@ -755,56 +755,56 @@ def check_costing_params(m, discretized_capex):
     # and check that discretized capex not provided for options that utilize discrete units.
     for opt in m.supe_form_params.continuous_opts_set:
         # Keep track of the continuous opts for which discretized data is not defined for.
-        if opt not in discretized_capex_opts_set:
+        if opt not in discretized_purchased_equipment_cost_opts_set:
             missing_continuous_opts.append(opt)
     # Check that discretized capex not provided for discrete opts.
     for opt in m.supe_form_params.discrete_opts_set:
         # Keep track of the discrete options for which discretized capex data is defined for.
-        if opt in discretized_capex_opts_set:
+        if opt in discretized_purchased_equipment_cost_opts_set:
             discrete_opts.append(opt)
     # Raise error if discretized capex is not provided for all continuous options.
     if missing_continuous_opts:
         raise ValueError(
-            f"discretized_capex is missing values for the following continuous options: {missing_continuous_opts}. "
+            f"discretized_purchased_equipment_cost is missing values for the following continuous options: {missing_continuous_opts}. "
         )
     # Raise error if discretized capex provided for any discrete options.
     if discrete_opts:
         raise ValueError(
-            f"discretized_capex contains values for the following discrete options: {discrete_opts}. "
+            f"discretized_purchased_equipment_cost contains values for the following discrete options: {discrete_opts}. "
         )
     ## Check that all options have the same number of discretized data points for flows entering and costs.
     for opt in m.supe_form_params.continuous_opts_set:
         # Keep track of the number of flowrate data points defined for the option.
-        opt_num_flow_data_points = len(discretized_capex[opt]["Flowrates"])
+        opt_num_flow_data_points = len(discretized_purchased_equipment_cost[opt]["Flowrates"])
         # Keep track of the number of cost data points defined for the option.
-        opt_num_cost_data_points = len(discretized_capex[opt]["Costs"])
+        opt_num_cost_data_points = len(discretized_purchased_equipment_cost[opt]["Costs"])
         # Keep track of the options for which the number of flowrate and cost data points are not the same.
         if opt_num_flow_data_points != opt_num_cost_data_points:
             inconsistent_data_point_opts.append(opt)
-    # Raise error if there are options with an inconsistent number of data points within discretized_capex.
+    # Raise error if there are options with an inconsistent number of data points within discretized_purchased_equipment_cost.
     if inconsistent_data_point_opts:
         raise ValueError(
-            f"Inconsistent number of data points for Flowrates and Costs within discretized_capex for the following options: {inconsistent_data_point_opts}. "
+            f"Inconsistent number of data points for Flowrates and Costs within discretized_purchased_equipment_cost for the following options: {inconsistent_data_point_opts}. "
         )
 
 
-def add_costing_params(m, discretized_capex):
+def add_costing_params(m, discretized_purchased_equipment_cost):
     """
     This function adds all the costing parameters to a block.
 
     Args:
         m: pyomo model.
-        discretized_capex: (dict) Discretized cost by flows entering for each continuous option
+        discretized_purchased_equipment_cost: (dict) Discretized cost by flows entering for each continuous option
     """
     ### Define parameters from user input.
     # Define a dict to hold discretized flowrate data for each option.
     flowrates_data = {}
     for opt in m.supe_form_params.continuous_opts_set:
-        flowrates_data[opt] = discretized_capex[opt]["Flowrates"]
+        flowrates_data[opt] = discretized_purchased_equipment_cost[opt]["Flowrates"]
     # Define a dict to hold discretized cost data for each option.
     costs_data = {}
     for opt in m.supe_form_params.continuous_opts_set:
-        costs_data[opt] = discretized_capex[opt]["Costs"]
+        costs_data[opt] = discretized_purchased_equipment_cost[opt]["Costs"]
 
     ### Define necessary pyomo parameters.
     ## Create a block
@@ -856,74 +856,72 @@ def add_objective_function_params(m, obj_func):
     )
 
 
-def add_mass_balance_params(m):
+def add_mass_balances(m):
     """
-    This function adds all mass balance parameters to a block.
+    This function adds mass balances to a block.
 
     Args:
         m: pyomo model.
     """
-    ### Define necessary pyomo parameters.
+    ### Mass balances
+    ## Define parameters
+    # Calculate Big-M values for each tracked component.
+    m_val = {}
+    for c in m.feed_params.tracked_comps:
+        # Max value assumes 100% efficiency (no losses) over the plant's lifetime. Rounded up to ensure validity
+        # in constraints.
+        m_val[c] = math.ceil(
+            m.feed_params.max_feed_entering * m.feed_params.prod_comp_mass[c]
+        )
+
     ## Create block
-    m.mb_params = pyo.Block(doc="Block to hold all mass balance parameters.")
+    m.mass_balances = pyo.Block(doc="Block to hold mass balances.")
+
     ## Pyomo parameters
     # Flow entering each stage (except the last stage).
-    m.mb_params.f_stages = pyo.RangeSet(
+    m.mass_balances.f_stages = pyo.RangeSet(
         1,
         m.supe_form_params.num_stages - 1,
         doc="Set of all stages except the last. Used to define the flow variable: 'f'.",
     )
-    m.mb_params.flow_set = pyo.Set(
+    m.mass_balances.flow_set = pyo.Set(
         initialize=m.supe_form_params.all_opts_set
         * m.feed_params.tracked_comps
         * m.plant_lifetime_params.operational_range,
         doc="Set of all options, tracked components, and operational years of the plant. Used to define the flow variables: 'f_in' and 'f_out'.",
     )
+    m.mass_balances.big_m_val = pyo.Param(
+        m.feed_params.tracked_comps,
+        initialize=m_val,
+        doc="Big-M parameters used in Equations (7) and (8) from the documentation.",
+    )
 
-
-def add_mass_balance_vars(m):
-    """
-    This function adds all mass balance variables to a block.
-
-    Args:
-        m: pyomo model.
-    """
-    ### Define necessary pyomo variables.
-    ## Create block
-    m.mb_vars = pyo.Block(doc="Block to hold all mass balance variables.")
     ## Pyomo variables
-    m.mb_vars.f = pyo.Var(
-        m.mb_params.f_stages
+    m.mass_balances.f = pyo.Var(
+        m.mass_balances.f_stages
         * m.feed_params.tracked_comps
         * m.plant_lifetime_params.operational_range,
         domain=pyo.NonNegativeReals,
         doc="Flow entering each stage (except the last stage). See documentation for more details.",
     )
-    m.mb_vars.f_in = pyo.Var(
-        m.mb_params.flow_set,
+    m.mass_balances.f_in = pyo.Var(
+        m.mass_balances.flow_set,
         domain=pyo.NonNegativeReals,
         doc="Flow entering each option. See documentation for more details.",
     )
-    m.mb_vars.f_out = pyo.Var(
-        m.mb_params.flow_set,
+    m.mass_balances.f_out = pyo.Var(
+        m.mass_balances.flow_set,
         domain=pyo.NonNegativeReals,
         doc="Flow entering each option. See documentation for more details.",
     )
-
-
-def add_mass_balance_cons(m):
-    """
-    This function adds all mass balance constraints to a block.
-
-    Args:
-        m: pyomo model.
-    """
-    ### Define necessary pyomo constraints.
-    ## Create block
-    m.mb_cons = pyo.Block(doc="Block to hold all mass balance constraints.")
+    m.mass_balances.option_binary_var = pyo.Var(
+        m.supe_form_params.all_opts_set,
+        domain=pyo.Binary,
+        doc="Binary variables to indicate whether or not an option has been selected.",
+    )
 
     ## Pyomo constraints
-    @m.mb_cons.Constraint(
+    @m.mass_balances.Constraint(
         m.supe_form_params.stages_set,
         m.feed_params.tracked_comps,
         m.plant_lifetime_params.operational_range,
@@ -936,11 +934,11 @@ def add_mass_balance_cons(m):
         else:
             # Extract all the options available in stage 'j'
             num_options = range(1, m.supe_form_params.options_in_stage[j] + 1)
-            return m.mb_vars.f[j - 1, c, t] == sum(
-                m.mb_vars.f_in[j, k, c, t] for k in num_options
+            return m.mass_balances.f[j - 1, c, t] == sum(
+                m.mass_balances.f_in[j, k, c, t] for k in num_options
             )
 
-    @m.mb_cons.Constraint(
+    @m.mass_balances.Constraint(
         m.supe_form_params.stages_set,
         m.feed_params.tracked_comps,
         m.plant_lifetime_params.operational_range,
@@ -953,19 +951,19 @@ def add_mass_balance_cons(m):
             num_options = range(1, m.supe_form_params.options_in_stage[j] + 1)
             return m.feed_params.feed_entering[t] * m.feed_params.prod_comp_mass[
                 c
-            ] == sum(m.mb_vars.f_in[j, k, c, t] for k in num_options)
+            ] == sum(m.mass_balances.f_in[j, k, c, t] for k in num_options)
         else:
             return pyo.Constraint.Skip
 
-    @m.mb_cons.Constraint(
-        m.mb_params.flow_set, doc="Equation (3) from the documentation."
+    @m.mass_balances.Constraint(
+        m.mass_balances.flow_set, doc="Equation (3) from the documentation."
     )
     def intermediate_flow_cons(b, j, k, c, t):
         m = b.model()  # Get the main model
         alpha = m.supe_form_params.option_eff[j, k, c]
-        return m.mb_vars.f_in[j, k, c, t] * alpha == m.mb_vars.f_out[j, k, c, t]
+        return m.mass_balances.f_in[j, k, c, t] * alpha == m.mass_balances.f_out[j, k, c, t]
 
-    @m.mb_cons.Constraint(
+    @m.mass_balances.Constraint(
         m.supe_form_params.stages_set,
         m.feed_params.tracked_comps,
         m.plant_lifetime_params.operational_range,
@@ -977,71 +975,12 @@ def add_mass_balance_cons(m):
             # Extract all the options available in stage 'j'
             num_options = range(1, m.supe_form_params.options_in_stage[j] + 1)
             return (
-                sum(m.mb_vars.f_out[j, k, c, t] for k in num_options)
-                == m.mb_vars.f[j, c, t]
+                sum(m.mass_balances.f_out[j, k, c, t] for k in num_options)
+                == m.mass_balances.f[j, c, t]
             )
         else:
             return pyo.Constraint.Skip
-
-
-def add_logic_params(m):
-    """
-    This function adds all logic parameters to a block.
-
-    Args:
-        m: pyomo model.
-    """
-    ### Define parameters
-    # Calculate Big-M values for each tracked component.
-    m_val = {}
-    for c in m.feed_params.tracked_comps:
-        # Max value assumes 100% efficiency (no losses) over the plant's lifetime. Rounded up to ensure validity
-        # in constraints.
-        m_val[c] = math.ceil(
-            m.feed_params.max_feed_entering * m.feed_params.prod_comp_mass[c]
-        )
-
-    ### Define necessary pyomo parameters.
-    ## Create block
-    m.logic_params = pyo.Block(doc="Block to hold logic parameters.")
-    ## Pyomo parameters
-    m.logic_params.big_m_val = pyo.Param(
-        m.feed_params.tracked_comps,
-        initialize=m_val,
-        doc="Big-M parameters used in Equations (7) and (8) from the documentation.",
-    )
-
-
-def add_logic_vars(m):
-    """
-    This function adds all logic variables to a block.
-
-    Args:
-        m: pyomo model.
-    """
-    ### Define necessary pyomo variables.
-    ## Create block
-    m.logic_vars = pyo.Block(doc="Block to hold logic variables.")
-    ## Pyomo variables
-    m.logic_vars.option_binary_var = pyo.Var(
-        m.supe_form_params.all_opts_set,
-        domain=pyo.Binary,
-        doc="Binary variables to indicate whether or not an option has been selected.",
-    )
-
-
-def add_logic_cons(m):
-    """
-    This function adds all logic constraints to a block.
-
-    Args:
-        m: pyomo model.
-    """
-    ### Define necessary pyomo constraints
-    ## Create block
-    m.logic_cons = pyo.Block(doc="Block to hold logic constraints.")
-
-    ## Pyomo constraints
+        
     @m.logic_cons.Constraint(
         m.supe_form_params.stages_set, doc="Equation (5) from the documentation."
     )
@@ -1049,7 +988,7 @@ def add_logic_cons(m):
         m = b.model()  # Get the main model
         # Extract all the options available in stage 'j'
         num_options = range(1, m.supe_form_params.options_in_stage[j] + 1)
-        return sum(m.logic_vars.option_binary_var[j, k] for k in num_options) == 1
+        return sum(m.mass_balances.option_binary_var[j, k] for k in num_options) == 1
 
     @m.logic_cons.Constraint(
         m.supe_form_params.all_opts_set, doc="Equation (6) from the documentation."
@@ -1059,32 +998,32 @@ def add_logic_cons(m):
         if j != m.supe_form_params.num_stages:
             # Extract the set of options k' in stage j+1 connected to option k in stage j.
             opt_connections = m.supe_form_params.option_outlets[j, k]
-            return m.logic_vars.option_binary_var[j, k] <= sum(
-                m.logic_vars.option_binary_var[j + 1, kp] for kp in opt_connections
+            return m.mass_balances.option_binary_var[j, k] <= sum(
+                m.mass_balances.option_binary_var[j + 1, kp] for kp in opt_connections
             )
         else:
             return pyo.Constraint.Skip
 
     # create constraints
     @m.logic_cons.Constraint(
-        m.mb_params.flow_set, doc="Equation (7) from the documentation."
+        m.mass_balances.flow_set, doc="Equation (7) from the documentation."
     )
     def f_in_big_m_cons(b, j, k, c, t):
         m = b.model()  # Get the main model
         return (
-            m.mb_vars.f_in[j, k, c, t]
-            <= m.logic_vars.option_binary_var[j, k] * m.logic_params.big_m_val[c]
+            m.mass_balances.f_in[j, k, c, t]
+            <= m.mass_balances.option_binary_var[j, k] * m.mass_balances.big_m_val[c]
         )
 
     @m.logic_cons.Constraint(
-        m.mb_params.flow_set, doc="Equation (8) from the documentation."
+        m.mass_balances.flow_set, doc="Equation (8) from the documentation."
     )
     def f_out_big_m_cons(b, j, k, c, t):
         m = b.model()  # Get the main model
         return (
-            m.mb_vars.f_out[j, k, c, t]
-            <= m.logic_vars.option_binary_var[j, k] * m.logic_params.big_m_val[c]
-        )
+            m.mass_balances.f_out[j, k, c, t]
+            <= m.mass_balances.option_binary_var[j, k] * m.mass_balances.big_m_val[c]
+        )    
 
 
 def add_revenue_vars(m):
@@ -1126,7 +1065,7 @@ def add_revenue_cons(m):
     )
     def calculate_final_opts_profit_cons(b, j, k, t):
         return m.revenue_vars.opt_profit[j, k, t] == sum(
-            m.mb_vars.f_out[j, k, c, t] * m.operating_params.profit[j, k, c]
+            m.mass_balances.f_out[j, k, c, t] * m.operating_params.profit[j, k, c]
             for c in m.feed_params.tracked_comps
         )
 
@@ -1150,7 +1089,7 @@ def add_capital_expense_params(m):
     ### Define parameters from user input.
     # Create an upper bound for the total flow entering a continuous option.
     max_flow_upper_bound = sum(
-        m.logic_params.big_m_val[c] for c in m.feed_params.tracked_comps
+        m.mass_balances.big_m_val[c] for c in m.feed_params.tracked_comps
     )
 
     ### Define necessary pyomo parameters.
@@ -1239,7 +1178,7 @@ def add_capital_expense_cons(m):
     def max_flow_entering_cons(b, j, k, t):
         m = b.model()  # Get the main model
         return m.capital_expense_vars.flow_entering[j, k] >= sum(
-            m.mb_vars.f_in[j, k, c, t] for c in m.feed_params.tracked_comps
+            m.mass_balances.f_in[j, k, c, t] for c in m.feed_params.tracked_comps
         )
 
     def piecewise_rule(b, j, k):
@@ -1364,15 +1303,15 @@ def add_variable_operating_expense_cons(m):
                 m.variable_operating_expense_vars.opt_var_operating_expense[j, k, t]
                 == m.operating_params.discrete_units_per_option[j, k]
                 * m.operating_params.yearly_cost_per_unit[j, k]
-                * m.logic_vars.option_binary_var[j, k]
+                * m.mass_balances.option_binary_var[j, k]
             )
         else:
             return (
                 m.variable_operating_expense_vars.opt_var_operating_expense[j, k, t]
                 == m.operating_params.opt_var_oc_params[j, k, "a"]
-                * sum(m.mb_vars.f_in[j, k, c, t] for c in m.feed_params.tracked_comps)
+                * sum(m.mass_balances.f_in[j, k, c, t] for c in m.feed_params.tracked_comps)
                 + m.operating_params.opt_var_oc_params[j, k, "b"]
-                * m.logic_vars.option_binary_var[j, k]
+                * m.mass_balances.option_binary_var[j, k]
             )
 
     @m.variable_operating_expense_cons.Constraint(
@@ -1463,13 +1402,13 @@ def add_fixed_operating_expense_cons(m):
                 m.fixed_operating_expense_vars.opt_operators[j, k]
                 == m.operating_params.discrete_units_per_option[j, k]
                 * m.operating_params.operators_per_discrete_unit[j, k]
-                * m.logic_vars.option_binary_var[j, k]
+                * m.mass_balances.option_binary_var[j, k]
             )
         else:
             return (
                 m.fixed_operating_expense_vars.opt_operators[j, k]
                 == m.operating_params.num_operators[j, k]
-                * m.logic_vars.option_binary_var[j, k]
+                * m.mass_balances.option_binary_var[j, k]
             )
 
     @m.fixed_operating_expense_cons.Constraint(
@@ -1799,7 +1738,7 @@ def build_model(
     ###################################################################################################
     ### Costing Parameters
     # Define Python Dictionary with discretized cost by flows for each option.
-    discretized_capex: dict,
+    discretized_purchased_equipment_cost: dict,
     ###################################################################################################
     ###################################################################################################
     ### Objective Function Parameters
@@ -1862,9 +1801,9 @@ def build_model(
 
     ### Costing parameters
     # Check that costing parameters are feasible.
-    check_costing_params(m, discretized_capex)
+    check_costing_params(m, discretized_purchased_equipment_cost)
     # Create a separate block to hold costing parameters.
-    add_costing_params(m, discretized_capex)
+    add_costing_params(m, discretized_purchased_equipment_cost)
 
     ### Objective function parameters
     # Check that objective function parameters are feasible.
@@ -1882,9 +1821,9 @@ def build_model(
 
     ### Logic constraints
     # Generate logic parameters.
-    add_logic_params(m)
+    add_mass_balances(m)
     # Generate logic variables.
-    add_logic_vars(m)
+    add_mass_balances(m)
     # Generate logic constraints.
     add_logic_cons(m)
 

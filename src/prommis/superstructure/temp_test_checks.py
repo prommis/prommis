@@ -13,13 +13,20 @@ from prommis.superstructure.superstructure_function import (
     add_operating_params,
     add_plant_lifetime_params_block,
     add_supe_formulation_params,
+    add_capital_expense_params,
+    add_capital_expense_vars,
+    add_capital_expense_constraints,
+    add_variable_operating_expense_vars,
+    add_variable_operating_expense_constraints,
+    add_revenue_vars,
+    add_revenue_cons,
+    add_fixed_operating_expense_constraints,
     check_costing_params,
     check_feed_params,
     check_objective_function_params,
     check_operating_params,
     check_plant_lifetime_params,
     check_supe_formulation_params,
-    capital_expense_constraints,
 )
 
 ### Build model
@@ -719,11 +726,22 @@ add_logic_cons(m)
 # m.logic_cons.connection_binary_cons.pprint()
 # m.logic_params.big_m_val.pprint()
 
+add_revenue_vars(m)
+add_revenue_cons(m)
 
-capital_expense_constraints(m)
+add_capital_expense_params(m)
+add_capital_expense_vars(m)
+add_capital_expense_constraints(m)
+
 # m.capital_expense_cons.
-m.capital_expense_cons.calculate_total_plant_cost_con.pprint()
+# m.capital_expense_cons.calculate_total_plant_cost_con.pprint()
 
+add_variable_operating_expense_vars(m)
+add_variable_operating_expense_constraints(m)
+
+add_fixed_operating_expense_constraints(m)
+
+# m.variable_operating_expense_cons.calculate_total_yearly_variable_expense_cons.pprint()
 # m.obj = pyo.Objective(expr=m.mb_vars.f_out[5, 5, 'Nd', 2029], sense=pyo.maximize)
 
 

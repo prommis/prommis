@@ -1,5 +1,7 @@
-from idaes.core.solvers import get_solver
 import pyomo.environ as pyo
+
+from idaes.core.solvers import get_solver
+
 from prommis.superstructure.superstructure_function import (
     add_capital_expense_cons,
     add_capital_expense_params,

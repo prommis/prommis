@@ -661,30 +661,6 @@ def add_operating_params(
         discrete_units_per_option[key] = math.ceil(
             m.feed_params.max_feed_entering / processing_rate[key]
         )
-    ## Calculate the max number of operators that may be needed for the entire process.
-    # First, calculate the number of operators needed for each discrete unit.
-    operators_per_discrete_option = copy.deepcopy(discrete_units_per_option)
-    # This is calculated by multiply the number of disassembly units needed by the number of operators per discrete unit and rounding up.
-    for key in operators_per_discrete_option.keys():
-        operators_per_discrete_option[key] = math.ceil(
-            discrete_units_per_option[key] * operators_per_discrete_unit[key]
-        )
-    # Next, the discrete option that needs the most operators, and the corresponding number of operators is returned.
-    max_dicrete_option, max_discrete_operators = max(
-        operators_per_discrete_option.items(), key=lambda item: item[1]
-    )
-    # Then, the continuous option that needs the most operators, and the corresponding number of operators is returned.
-    max_continuous_option, max_continuous_operators = max(
-        num_operators.items(), key=lambda item: item[1]
-    )
-    # Then, the max number operators needed for the continuous stages is calculated by multiply the max operators for a continuoous option
-    # by the number of continuous stages (number of stages - 1 b/c first stage is disassembly).
-    continuous_operators = max_continuous_operators * (
-        m.supe_form_params.num_stages - 1
-    )
-    # Finally, the upper bound to the number of operators needed for the entire process is calculated by adding the max number of operators
-    # needed for the disassembly stage (first stage) and the max number of operators needed for the continuous stages.
-    max_total_operators = max_discrete_operators + continuous_operators
 
     ### Define functions needed to initialize pyomo parameters.
     # Define a function for initializing profit pyomo parameter.
@@ -749,16 +725,6 @@ def add_operating_params(
         initialize=discrete_units_per_option,
         doc="The number of discrete units per option needed to disassemble all the incoming end-of-life products over the operational "
         "lifetime of the plant.",
-    )
-    m.operating_params.max_total_operators = pyo.Param(
-        initialize=max_total_operators,
-        doc="The upper bound for the max number of operators needed for the entire process.",
-    )
-    m.operating_params.max_operators_set = pyo.RangeSet(
-        1,
-        m.operating_params.max_total_operators,
-        doc="Set for the upper bound of the "
-        "max number of operators needed for the entire process.",
     )
 
 

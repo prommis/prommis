@@ -886,7 +886,7 @@ def add_objective_function_params(m, obj_func):
     ## Create block
     m.obj_func_params = pyo.Block("Block to hold objective function parameters.")
     ## Pyomo parameters
-    m.obj_func_params.obj = pyo.Param(
+    m.obj_func_params.chosen_obj = pyo.Param(
         initialize=obj_func, doc="Choice of objective function."
     )
 
@@ -1239,7 +1239,7 @@ def add_capital_expense_vars(m):
     )
 
 
-def add_capital_expense_constraints(m):
+def add_capital_expense_cons(m):
     """
     This function adds all capital expense constraints to a block.
 
@@ -1370,11 +1370,11 @@ def add_variable_operating_expense_vars(m):
     m.variable_operating_expense_vars.total_var_operating_expense = pyo.Var(
         m.plant_lifetime_params.operational_range,
         domain=pyo.Reals,
-        doc="Total yearly Variable operating expense.",
+        doc="Total yearly variable operating expense.",
     )
 
 
-def add_variable_operating_expense_constraints(m):
+def add_variable_operating_expense_cons(m):
     """
     This function adds all variable operating expense constraints to a block.
 
@@ -1412,16 +1412,69 @@ def add_variable_operating_expense_constraints(m):
 
     @m.variable_operating_expense_cons.Constraint(
         m.plant_lifetime_params.operational_range,
-        doc="Calculates the total yearly operating cost.",
+        doc="Calculates the total yearly variable operating cost.",
     )
-    def calculate_total_yearly_variable_expense_cons(b, t):
+    def calculate_total_yearly_variable_operating_expense_cons(b, t):
         return m.variable_operating_expense_vars.total_var_operating_expense[t] == sum(
             m.variable_operating_expense_vars.opt_var_operating_expense[opt, t]
             for opt in m.supe_form_params.all_opts_set
         )
 
 
-def add_fixed_operating_expense_constraints(m):
+def add_fixed_operating_expense_vars(m):
+    """
+    This function adds all fixed operating expense variables to a block.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Define necessary pyomo variables.
+    ## Create block
+    m.fixed_operating_expense_vars = pyo.Block(
+        doc="Block to hold all fixed operating expense variables."
+    )
+    ## Pyomo variables
+    m.fixed_operating_expense_vars.opt_operators = pyo.Var(
+        m.supe_form_params.all_opts_set,
+        domain=pyo.NonNegativeReals,
+        doc="The number of operators needed for each option.",
+    )
+    m.fixed_operating_expense_vars.total_operators = pyo.Var(
+        domain=pyo.NonNegativeIntegers,
+        doc="The total number of operators needed for the process. Must be an integer value.",
+    )
+    m.fixed_operating_expense_vars.cost_of_labor = pyo.Var(
+        domain=pyo.NonNegativeReals, doc="The cost of labor for the process."
+    )
+    m.fixed_operating_expense_vars.m_and_sm = pyo.Var(
+        domain=pyo.NonNegativeReals, doc="Maintenance & Supply Materials (M&SM)."
+    )
+    m.fixed_operating_expense_vars.sa_and_qa_qc = pyo.Var(
+        domain=pyo.NonNegativeReals,
+        doc="Sample Analysis & Quality Assurance/Quality Control (SA&QA/QC).",
+    )
+    m.fixed_operating_expense_vars.s_ip_r_and_d = pyo.Var(
+        m.plant_lifetime_params.operational_range,
+        domain=pyo.NonNegativeReals,
+        doc="Sales, Intellectual Property, and Research & Development (S,IP,R&D).",
+    )
+    m.fixed_operating_expense_vars.a_and_sl = pyo.Var(
+        domain=pyo.NonNegativeReals, doc="Administrative & Supporting Labor (A&SL)."
+    )
+    m.fixed_operating_expense_vars.fb = pyo.Var(
+        domain=pyo.NonNegativeReals, doc="Fringe Benefits (FB)."
+    )
+    m.fixed_operating_expense_vars.pt_and_i = pyo.Var(
+        domain=pyo.NonNegativeReals, doc="Property Taxes & Insurance (PT&I)."
+    )
+    m.fixed_operating_expense_vars.total_fixed_operating_expense = pyo.Var(
+        m.plant_lifetime_params.operational_range,
+        domain=pyo.NonNegativeReals,
+        doc="Total yearly fixed operating expense.",
+    )
+
+
+def add_fixed_operating_expense_cons(m):
     """
     This function adds all fixed operating expense constraints to a block.
 
@@ -1430,22 +1483,11 @@ def add_fixed_operating_expense_constraints(m):
     """
     ### Define necessary pyomo constraints.
     ## Create block
-    m.fixed_operating_expense_params = pyo.Block(
-        doc="Block to hold all fixed operating expense parameters."
-    )
-    m.fixed_operating_expense_vars = pyo.Block(
-        doc="Block to hold all fixed operating expense variables."
-    )
     m.fixed_operating_expense_cons = pyo.Block(
         doc="Block to hold all variable operating expense constraints."
     )
-    ## Pyomo constraints
-    m.fixed_operating_expense_vars.opt_operators = pyo.Var(
-        m.supe_form_params.all_opts_set,
-        domain=pyo.NonNegativeReals,
-        doc="The number of operators needed for each option.",
-    )
 
+    ## Pyomo constraints
     @m.fixed_operating_expense_cons.Constraint(
         m.supe_form_params.all_opts_set,
         doc="Calculate the number of operators needed for each option.",
@@ -1465,11 +1507,6 @@ def add_fixed_operating_expense_constraints(m):
                 * m.logic_vars.option_binary_var[j, k]
             )
 
-    m.fixed_operating_expense_vars.total_operators = pyo.Var(
-        domain=pyo.NonNegativeIntegers,
-        doc="The total number of operators needed for the process. Must be an integer value.",
-    )
-
     @m.fixed_operating_expense_cons.Constraint(
         doc="Calculate the number of operators needed for the entire process."
     )
@@ -1478,10 +1515,6 @@ def add_fixed_operating_expense_constraints(m):
             m.fixed_operating_expense_vars.opt_operators[opt]
             for opt in m.supe_form_params.all_opts_set
         )
-
-    m.fixed_operating_expense_vars.cost_of_labor = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="The cost of labor for the process."
-    )
 
     @m.fixed_operating_expense_cons.Constraint(
         doc="Calculates the cost of labor for the process."
@@ -1493,10 +1526,6 @@ def add_fixed_operating_expense_constraints(m):
             * m.operating_params.labor_rate
         )
 
-    m.fixed_operating_expense_vars.m_and_sm = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="Maintenance & Supply Materials (M&SM)."
-    )
-
     @m.fixed_operating_expense_cons.Constraint(
         doc="Calculate M&SM. Assumed to be 2% of the total plant cost."
     )
@@ -1506,11 +1535,6 @@ def add_fixed_operating_expense_constraints(m):
             == 0.02 * m.capital_expense_vars.total_plant_cost
         )
 
-    m.fixed_operating_expense_vars.sa_and_qa_qc = pyo.Var(
-        domain=pyo.NonNegativeReals,
-        doc="Sample Analysis & Quality Assurance/Quality Control (SA&QA/QC).",
-    )
-
     @m.fixed_operating_expense_cons.Constraint(
         doc="Calculate SA&QA/QC. Assumed to be 10% of the cost of labor."
     )
@@ -1519,12 +1543,6 @@ def add_fixed_operating_expense_constraints(m):
             m.fixed_operating_expense_vars.sa_and_qa_qc
             == 0.1 * m.fixed_operating_expense_vars.cost_of_labor
         )
-
-    m.fixed_operating_expense_vars.s_ip_r_and_d = pyo.Var(
-        m.plant_lifetime_params.operational_range,
-        domain=pyo.NonNegativeReals,
-        doc="Sales, Intellectual Property, and Research & Development (S,IP,R&D).",
-    )
 
     @m.fixed_operating_expense_cons.Constraint(
         m.plant_lifetime_params.operational_range,
@@ -1536,10 +1554,6 @@ def add_fixed_operating_expense_constraints(m):
             == 0.01 * m.revenue_vars.total_profit[t]
         )
 
-    m.fixed_operating_expense_vars.a_and_sl = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="Administrative & Supporting Labor (A&SL)."
-    )
-
     @m.fixed_operating_expense_cons.Constraint(
         doc="Calculate A&SL. Assumed to be 20% of the cost of labor."
     )
@@ -1548,10 +1562,6 @@ def add_fixed_operating_expense_constraints(m):
             m.fixed_operating_expense_vars.a_and_sl
             == 0.2 * m.fixed_operating_expense_vars.cost_of_labor
         )
-
-    m.fixed_operating_expense_vars.fb = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="Fringe Benefits (FB)."
-    )
 
     @m.fixed_operating_expense_cons.Constraint(
         doc="Calculate FB. Assumed to be 25% of the cost of labor."
@@ -1562,18 +1572,208 @@ def add_fixed_operating_expense_constraints(m):
             == 0.25 * m.fixed_operating_expense_vars.cost_of_labor
         )
 
-    m.fixed_operating_expense_vars.pt_and_i = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="Property Taxes & Insurance (PT&I)."
-    )
-
     @m.fixed_operating_expense_cons.Constraint(
         doc="Calculate PT&I. Assumed to be 1% of the total plant cost."
     )
-    def calculate_m_and_sm_con(b):
+    def calculate_pt_and_i_con(b):
         return (
             m.fixed_operating_expense_vars.pt_and_i
             == 0.01 * m.capital_expense_vars.total_plant_cost
         )
+
+    @m.fixed_operating_expense_cons.Constraint(
+        m.plant_lifetime_params.operational_range,
+        doc="Calculates the total yearly fixed operating cost.",
+    )
+    def calculate_total_yearly_fixed_operating_expense_cons(b, t):
+        return (
+            m.fixed_operating_expense_vars.total_fixed_operating_expense[t]
+            == m.fixed_operating_expense_vars.cost_of_labor
+            + m.fixed_operating_expense_vars.m_and_sm
+            + m.fixed_operating_expense_vars.sa_and_qa_qc
+            + m.fixed_operating_expense_vars.s_ip_r_and_d[t]
+            + m.fixed_operating_expense_vars.a_and_sl
+            + m.fixed_operating_expense_vars.fb
+            + m.fixed_operating_expense_vars.pt_and_i
+        )
+
+
+def add_cash_flow_params(m):
+    """
+    This function adds all cash flow parameters to a block.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Define necessary pyomo parameters.
+    ## Create block
+    m.cash_flow_params = pyo.Block(doc="Block to hold all cash flow parameters.")
+
+    ## Pyomo parameters
+    m.cash_flow_params.i_operating_expense_escalation = pyo.Param(
+        initialize=0.03, doc="Operating expenses escalation rate."
+    )
+    m.cash_flow_params.i_capital_escalation = pyo.Param(
+        initialize=0.036, doc="Capital expenses escalation rate."
+    )
+
+
+def add_cash_flow_vars(m):
+    """
+    This function adds all cash flow variables to a block.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Define necessary pyomo variables.
+    ## Create block
+    m.cash_flow_vars = pyo.Block(doc="Block to hold all cash flow variables.")
+
+    ## Pyomo variables
+    m.cash_flow_vars.total_overnight_cost_expended = pyo.Var(
+        m.plant_lifetime_params.plant_life_range,
+        domain=pyo.NonNegativeReals,
+        doc="The total overnight cost expended each year.",
+    )
+    m.cash_flow_vars.plant_overhead = pyo.Var(
+        m.plant_lifetime_params.operational_range,
+        domain=pyo.NonNegativeReals,
+        doc="The yearly plant overhead.",
+    )
+    m.cash_flow_vars.total_operating_expense = pyo.Var(
+        m.plant_lifetime_params.operational_range,
+        domain=pyo.NonNegativeReals,
+        doc="The total operating expense each year.",
+    )
+    m.cash_flow_vars.cash_flow = pyo.Var(
+        m.plant_lifetime_params.plant_life_range,
+        domain=pyo.Reals,
+        doc="The yearly cash flow.",
+    )
+
+
+def add_cash_flow_cons(m):
+    """
+    This function adds all cash flow constraints to a block.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Define necessary pyomo constraints.
+    ## Create block
+    m.cash_flow_cons = pyo.Block(doc="Block to hold all cash flow constraints.")
+
+    ## Pyomo constraints
+    @m.cash_flow_cons.Constraint(
+        m.plant_lifetime_params.plant_life_range,
+        doc="Calculates the total overnight cost expended in a given year. It is assumed that 10% is expended "
+        "in the first year, 60% in the second year, and 30% in the third year.",
+    )
+    def calculate_total_overnight_cost_expended_cons(b, t):
+        if t == m.plant_lifetime_params.plant_start:
+            return (
+                m.cash_flow_vars.total_overnight_cost_expended[t]
+                == 0.1 * m.capital_expense_vars.total_overnight_cost
+            )
+        elif t == (m.plant_lifetime_params.plant_start + 1):
+            return (
+                m.cash_flow_vars.total_overnight_cost_expended[t]
+                == 0.6 * m.capital_expense_vars.total_overnight_cost
+            )
+        elif t == (m.plant_lifetime_params.plant_start + 2):
+            return (
+                m.cash_flow_vars.total_overnight_cost_expended[t]
+                == 0.3 * m.capital_expense_vars.total_overnight_cost
+            )
+        else:
+            return m.cash_flow_vars.total_overnight_cost_expended[t] == 0
+
+    @m.cash_flow_cons.Constraint(
+        m.plant_lifetime_params.operational_range,
+        doc="Calculates the plant overhead each year. Assumed to be 20% of the fixed and variable "
+        "operating costs.",
+    )
+    def calculate_plant_overhead_cons(b, t):
+        return m.cash_flow_vars.plant_overhead[t] == 0.2 * (
+            m.variable_operating_expense_vars.total_var_operating_expense[t]
+            + m.fixed_operating_expense_vars.total_fixed_operating_expense[t]
+        )
+
+    @m.cash_flow_cons.Constraint(
+        m.plant_lifetime_params.operational_range,
+        doc="Calculates the total operating expenses each year. Includes variable, fixed, and plant overhead.",
+    )
+    def calculate_total_operating_expense_cons(b, t):
+        return (
+            m.cash_flow_vars.total_operating_expense[t]
+            == m.variable_operating_expense_vars.total_var_operating_expense[t]
+            + m.fixed_operating_expense_vars.total_fixed_operating_expense[t]
+            + m.cash_flow_vars.plant_overhead[t]
+        )
+
+    @m.cash_flow_cons.Constraint(
+        m.plant_lifetime_params.plant_life_range,
+        doc="Calculate the cash flow for each year of the plant's lifetime.",
+    )
+    def calculate_yearly_cash_flow_cons(b, t):
+        if t == m.plant_lifetime_params.plant_start:
+            return (
+                m.cash_flow_vars.cash_flow[t]
+                == -m.cash_flow_vars.total_overnight_cost_expended[t]
+            )
+        else:
+            return m.cash_flow_vars.cash_flow[t] == (
+                m.revenue_vars.total_profit[t]
+                - m.cash_flow_vars.total_operating_expense[t]
+            ) * (1 + m.cash_flow_params.i_operating_expense_escalation) ** (
+                t - m.plant_lifetime_params.plant_start
+            ) - m.cash_flow_vars.total_overnight_cost_expended[
+                t
+            ] * (
+                1 + m.cash_flow_params.i_capital_escalation
+            ) ** (
+                t - m.plant_lifetime_params.plant_start
+            )
+
+
+def add_net_present_value(m):
+    """
+    This function creates a block to hold the relevant variables, constraints, and objective function
+    for maximizing the net present value of the plant.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Create block
+    m.net_present_value = pyo.Block(doc="Block to hold all net present value variables, constraints, and objective function.")
+
+    ## Define necessary pyomo parameters.
+    m.net_present_value.discount_factor = pyo.Param(
+        initialize=0.0577, doc="Discount factor for calculate the net present value."
+    )
+
+    ## Define necessary pyomo variables.
+    m.net_present_value.npv = pyo.Var(
+        domain=pyo.Reals, doc="The net present value of the plant."
+    )
+
+    ## Define necessary pyomo constraints.
+    ## Pyomo constraints
+    @m.net_present_value.Constraint(
+        doc="Calculates the net present value of the plant."
+    )
+    def calculate_net_present_value_con(b):
+        return m.net_present_value.npv == sum(
+            m.cash_flow_vars.cash_flow[t]
+            / (
+                (1 + m.net_present_value.discount_factor)
+                ** (t - m.plant_lifetime_params.plant_start)
+            )
+            for t in m.plant_lifetime_params.plant_life_range
+        )
+    
+    ## Define objective function
+    m.net_present_value.obj = pyo.Objective(expr=m.net_present_value.npv, sense=pyo.maximize)
 
 
 def build_model(
@@ -1731,246 +1931,27 @@ def build_model(
     # Generate capital expense variables.
     add_capital_expense_vars(m)
     # Generate capital expense constraints.
-    add_capital_expense_constraints(m)
+    add_capital_expense_cons(m)
 
     ### Variable operating costs
     # Generate variable operating expense variables.
     add_variable_operating_expense_vars(m)
     # Generate variable operating expense constraints.
-    add_variable_operating_expense_constraints(m)
+    add_variable_operating_expense_cons(m)
 
     ### Fixed operating costs
     # Generate fixed operating expense variables.
+    add_fixed_operating_expense_vars(m)
     # Generate fixed operating expense constraints.
+    add_fixed_operating_expense_cons(m)
 
-    ################################################ Cash Flow Constraints ################################################
-    m.OC_var_cons = pyo.ConstraintList()
-    m.DisWorkerCons = pyo.ConstraintList()  # for the disassembly stage
-    # calculate profit
-    m.final_opt_set = pyo.Set(initialize=final_opt_list)  # list of final node list
-    m.profit_opt_cons = pyo.ConstraintList()
+    ### Cash flows
+    # Generate cash flow parameters.
+    add_cash_flow_params(m)
+    # Generate cash flow variables.
+    add_cash_flow_vars(m)
+    # Generate cash flow constraints.
+    add_cash_flow_cons(m)
 
-    # opex and profit only calculated once production starts
-    for t in pyo.RangeSet(prod_start, plant_end):
-        m.plantYear[t].OC_var = pyo.Var(m.OptSet, domain=pyo.Reals)
-
-        # calculate variable costs for disassembly stage
-        j = 1
-        k = 0
-        for k in pyo.RangeSet(Options_in_stage[j]):
-            option = (j, k)
-            m.OC_var_cons.add(
-                expr=m.plantYear[t].OC_var[option]
-                == sum(
-                    m.DisOptWorkers[option + (i,)] * i
-                    for i in pyo.RangeSet(0, max_dis_by_option[elem])
-                )
-                * YCU[option]
-            )
-
-        # calculate variable costs for rest of stages
-        for elem in m.OptSet:
-            j = 0
-            k = 0
-            j, k = elem
-            if j > 1:  # already calculated opex for discretized options
-                m.OC_var_cons.add(
-                    expr=m.plantYear[t].OC_var[elem]
-                    == N_OC_var[elem]["a"]
-                    * sum(m.plantYear[t].F_in[elem + (c,)] for c in m.KeyComps)
-                    + N_OC_var[elem]["b"] * m.binOpt[elem]
-                )
-
-        # calculate total variable cost
-        m.plantYear[t].OC_var_total = pyo.Var(domain=pyo.Reals)
-        m.OC_var_cons.add(
-            expr=m.plantYear[t].OC_var_total
-            == sum(m.plantYear[t].OC_var[elem] for elem in m.OptSet)
-        )
-
-        m.plantYear[t].ProfitOpt = pyo.Var(m.final_opt_set)
-
-        if obj_func == "NPV":
-            for opt in m.final_opt_set:
-                m.profit_opt_cons.add(
-                    expr=m.plantYear[t].ProfitOpt[opt]
-                    == sum(
-                        m.plantYear[t].F_out[opt + (c,)] * Profit[opt][c]
-                        for c in m.KeyComps
-                    )
-                )
-        elif obj_func == "COR":
-            for opt in m.final_opt_set:
-                m.profit_opt_cons.add(
-                    expr=m.plantYear[t].ProfitOpt[opt]
-                    == sum(
-                        m.plantYear[t].F_out[opt + (c,)] * REE_to_REO_Conversion[c]
-                        for c in m.KeyComps
-                    )
-                    * m.COR
-                )
-        else:
-            sys.exit("Neither COR nor NPV specified as objective function.")
-
-        m.plantYear[t].Profit = pyo.Var(domain=pyo.NonNegativeReals)
-        m.plantYear[t].profit_con = pyo.Constraint(
-            expr=m.plantYear[t].Profit
-            == sum(m.plantYear[t].ProfitOpt[opt] for opt in m.final_opt_set)
-        )
-
-    ################################################ OC_fixed Constraints ################################################
-    # calculate the cost of labor
-    m.workers = pyo.Var(m.OptSet, domain=pyo.Reals)
-    m.worker_cons = pyo.ConstraintList()
-    m.COL_cons = pyo.ConstraintList()
-
-    # calculate the number of workers for each stage
-    dis_workers_range = pyo.RangeSet(0, max_dis_workers)
-    j = 0
-    for j in pyo.RangeSet(1, numStages):
-        k = 0
-        elem = 0
-        for k in pyo.RangeSet(Options_in_stage[j]):
-            elem = (j, k)
-
-            if j == 1:
-                m.worker_cons.add(
-                    expr=m.workers[j, k]
-                    == sum(
-                        i * m.DisOptWorkers[j, k, i]
-                        for i in pyo.RangeSet(0, max_dis_by_option[elem])
-                    )
-                    * num_workers[elem]
-                )
-
-            else:
-                m.worker_cons.add(
-                    expr=m.workers[j, k] == m.binOpt[j, k] * num_workers[elem]
-                )
-
-    m.workers_range = pyo.RangeSet(0, max_workers)
-    m.bin_workers = pyo.Var(m.workers_range, domain=pyo.Binary)
-    m.total_workers = pyo.Var(domain=pyo.Reals)
-
-    m.worker_cons.add(
-        expr=sum(m.workers[elem] for elem in m.OptSet)
-        <= sum(i * m.bin_workers[i] for i in m.workers_range)
-    )
-    m.worker_cons.add(expr=sum(m.bin_workers[i] for i in m.workers_range) == 1)
-
-    m.worker_cons.add(
-        expr=m.total_workers == sum(i * m.bin_workers[i] for i in m.workers_range)
-    )
-
-    # calculate total COL
-    m.COL_Total = pyo.Var(domain=pyo.NonNegativeReals)
-    m.COL_Total_con = pyo.Constraint(expr=m.COL_Total == m.total_workers * labor_rate)
-
-    #### Construct cash flows
-    m.CF = pyo.Var(plant_life_range, domain=pyo.Reals)
-    m.CF_cons = pyo.ConstraintList()
-    ## CAPEX cons
-    # yearly TOC expenditure
-    m.TOC_exp = pyo.Var(plant_life_range, domain=pyo.NonNegativeReals)
-    m.TOC_exp_cons = pyo.ConstraintList()
-
-    ## OPEX cons
-    # net earnings
-    # gross earnings
-    m.GE = pyo.Var(plant_life_range, domain=pyo.Reals)
-    m.GE_cons = pyo.ConstraintList()
-    # revenue
-    m.Rev = pyo.Var(plant_life_range, domain=pyo.Reals)
-    m.Rev_cons = pyo.ConstraintList()
-    # fixed operation costs
-    m.OC_fixed = pyo.Var(plant_life_range, domain=pyo.NonNegativeReals)
-    m.OC_fixed_cons = pyo.ConstraintList()
-    # variable operating costs
-    m.OC_var = pyo.Var(plant_life_range, domain=pyo.NonNegativeReals)
-    # plant overhead costs
-    m.OH = pyo.Var(plant_life_range, domain=pyo.NonNegativeReals)
-    m.OH_cons = pyo.ConstraintList()
-
-    t = 0
-    for t in plant_life_range:
-        # capital expenditure only in first three years
-        if t <= (plant_start + 2):
-            m.TOC_exp_cons.add(
-                expr=m.TOC_exp[t]
-                == ((1 + i_CAP_esc) ** (t - plant_start))
-                * f_exp[t - plant_start]
-                * m.TOC
-            )
-        else:
-            # no capital escalation after third year
-            m.TOC_exp_cons.add(expr=m.TOC_exp[t] == 0)
-
-        # opex and revenue only once production begins (starting second year)
-        if prod_start <= t:
-            # fixed operating costs
-            m.OC_fixed_cons.add(
-                expr=m.OC_fixed[t]
-                == m.COL_Total
-                + 0.02 * m.Total_TPC
-                + 0.1 * m.COL_Total
-                + 0.01 * m.plantYear[t].Profit
-                + 0.2 * m.COL_Total
-                + 0.25 * m.COL_Total
-                + 0.01 * m.Total_TPC
-            )
-
-            # variable costs
-            m.OC_var_cons.add(expr=m.OC_var[t] == m.plantYear[t].OC_var_total)
-
-            ## revenue
-            # consider byproduct valorization if specified by user
-            if consider_byprod_val == True:
-                m.Rev_cons.add(
-                    expr=m.Rev[t]
-                    == m.plantYear[t].Profit + m.plantYear[t].Byprod_Profit
-                )
-            else:  # otherwise don't
-                m.Rev_cons.add(expr=m.Rev[t] == m.plantYear[t].Profit)
-
-        else:
-            m.OC_fixed_cons.add(expr=m.OC_fixed[t] == 0)
-            m.OC_var_cons.add(expr=m.OC_var[t] == 0)
-            m.Rev_cons.add(expr=m.Rev[t] == 0)
-
-        # calculate plant overhead
-        m.OH_cons.add(expr=m.OH[t] == 0.2 * (m.OC_fixed[t] + m.OC_var[t]))
-
-        # calculate the gross earnings
-        m.GE_cons.add(
-            expr=m.GE[t]
-            == (m.Rev[t] - m.OC_fixed[t] - m.OC_var[t] - m.OH[t])
-            * (1 + i_OC_esc) ** (t - 2024)
-        )
-
-        # calculate the cash flow
-        m.CF_cons.add(expr=m.CF[t] == m.GE[t] - m.TOC_exp[t])
-
-    ### testing
-    m.bin_test_cons = pyo.ConstraintList()
-
-    if obj_func == "NPV":
-
-        def obj_rule(m):
-            return sum(
-                m.CF[t] / (1 + ATWACC) ** (t - plant_start) for t in plant_life_range
-            )
-
-        m.obj = pyo.Objective(rule=obj_rule, sense=pyo.maximize)
-
-    elif obj_func == "COR":
-        m.NPV = pyo.Var(domain=pyo.Reals)
-        m.NPV_con1 = pyo.Constraint(
-            expr=m.NPV
-            == sum(
-                m.CF[t] / (1 + ATWACC) ** (t - plant_start) for t in plant_life_range
-            )
-        )
-        m.NPV_con2 = pyo.Constraint(expr=m.NPV == 0)
-        m.obj = pyo.Objective(expr=m.COR, sense=pyo.minimize)
-
-    return m
+    ### Objective function
+    add_net_present_value(m)

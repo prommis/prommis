@@ -15,12 +15,17 @@ from prommis.superstructure.superstructure_function import (
     add_supe_formulation_params,
     add_capital_expense_params,
     add_capital_expense_vars,
-    add_capital_expense_constraints,
+    add_fixed_operating_expense_vars,
+    add_capital_expense_cons,
     add_variable_operating_expense_vars,
-    add_variable_operating_expense_constraints,
+    add_variable_operating_expense_cons,
     add_revenue_vars,
     add_revenue_cons,
-    add_fixed_operating_expense_constraints,
+    add_fixed_operating_expense_cons,
+    add_cash_flow_params,
+    add_cash_flow_vars,
+    add_cash_flow_cons,
+    add_net_present_value,
     check_costing_params,
     check_feed_params,
     check_objective_function_params,
@@ -731,23 +736,32 @@ add_revenue_cons(m)
 
 add_capital_expense_params(m)
 add_capital_expense_vars(m)
-add_capital_expense_constraints(m)
+add_capital_expense_cons(m)
 
 # m.capital_expense_cons.
 # m.capital_expense_cons.calculate_total_plant_cost_con.pprint()
 
 add_variable_operating_expense_vars(m)
-add_variable_operating_expense_constraints(m)
+add_variable_operating_expense_cons(m)
 
-add_fixed_operating_expense_constraints(m)
+add_fixed_operating_expense_vars(m)
+add_fixed_operating_expense_cons(m)
 
+add_cash_flow_params(m)
+add_cash_flow_vars(m)
+add_cash_flow_cons(m)
+
+add_net_present_value(m)
 # m.variable_operating_expense_cons.calculate_total_yearly_variable_expense_cons.pprint()
 # m.obj = pyo.Objective(expr=m.mb_vars.f_out[5, 5, 'Nd', 2029], sense=pyo.maximize)
 
 
-# from idaes.core.solvers import get_solver
+from idaes.core.solvers import get_solver
 
-# solver = get_solver(solver="gurobi")
-# solver.options["NumericFocus"] = 2
-# results = solver.solve(m, tee='True')
+solver = get_solver(solver="gurobi")
+solver.options["NumericFocus"] = 2
+results = solver.solve(m, tee='True')
 # print(pyo.value(m.mb_vars.f_out[5, 5, 'Nd', 2029]))
+
+m.logic_vars.option_binary_var.pprint()
+m.fixed_operating_expense_vars.pprint()

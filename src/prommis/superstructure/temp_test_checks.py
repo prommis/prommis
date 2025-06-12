@@ -1,5 +1,5 @@
+from idaes.core.solvers import get_solver
 import pyomo.environ as pyo
-
 from prommis.superstructure.superstructure_function import (
     add_capital_expense_cons,
     add_capital_expense_params,
@@ -752,9 +752,6 @@ add_cash_flow_cons(m)
 add_net_present_value(m)
 # m.variable_operating_expense_cons.calculate_total_yearly_variable_expense_cons.pprint()
 # m.obj = pyo.Objective(expr=m.mb_vars.f_out[5, 5, 'Nd', 2029], sense=pyo.maximize)
-
-
-from idaes.core.solvers import get_solver
 
 solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2

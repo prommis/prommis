@@ -13,7 +13,6 @@ Author: Chris Laliwala
 
 import copy
 import math
-import sys
 import warnings
 
 import pyomo.environ as pyo

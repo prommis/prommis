@@ -221,7 +221,7 @@ def add_feed_params_block(
 ###################################################################################################
 ### Superstructure Formulation Parameters
 def check_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, discrete_opts, option_eff
+    m, num_stages, options_in_stage, option_outlets, option_eff
 ):
     """
     The function checks that the superstructure formulation parameter inputs are feasible.
@@ -231,7 +231,6 @@ def check_supe_formulation_params(
         num_stages: (int) Number of total stages.
         options_in_stage: (dict) Number of options in each stage.
         option_outlets: (dict) Set of options k' in stage j+1 connected to option k in stage j.
-        discrete_opts: (list) List of options that utilize discrete units.
         option_eff: (dict) Tracked component retention efficiency for each option.
     """
     ### Define parameters necessary for tests.
@@ -245,7 +244,6 @@ def check_supe_formulation_params(
         for j in range(1, num_stages + 1)
         for k in range(1, options_in_stage[j] + 1)
     }
-    discr_opts_set = set(discrete_opts)
     # Define a set for all the tracked components.
     tracked_comps = set(m.feed_params.tracked_comps.data())
     # Define a set containing the keys of the opt_var_oc_params dict.
@@ -312,10 +310,6 @@ def check_supe_formulation_params(
             for stage, option in disconnected_options
         )
         raise ValueError(error_msg)
-    ## Check that all discrete options listed are feasible.
-    # This means they must be contained within the superstructure.
-    if not (discr_opts_set <= all_opts_set):
-        raise ValueError("Discrete options listed are not feasible.")
     ## Check that an option efficiency is defined for each option and is nonnegative.
     for j in range(1, num_stages + 1):
         for k in range(1, options_in_stage[j] + 1):
@@ -349,7 +343,7 @@ def check_supe_formulation_params(
 
 
 def add_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, discrete_opts, option_eff
+    m, num_stages, options_in_stage, option_outlets, option_eff
 ):
     """
     This function builds the rest of the superstructure formulation parameters from the ones provided by the user, and adds them all to a
@@ -360,21 +354,20 @@ def add_supe_formulation_params(
         num_stages: (int) Number of total stages.
         options_in_stage: (dict) Number of options in each stage.
         option_outlets: (dict) Set of options k' in stage j+1 connected to option k in stage j.
-        discrete_opts: (list) List of options that utilize discrete units.
         option_eff: (dict) Tracked component retention efficiency for each option.
     """
     ### Define parameters from user input.
     # Define a parameter for the max number of options in any of the stages.
     max_options = max(options_in_stage.values())
-    # Define a set of all the discrete options.
-    discrete_opts_set = set(discrete_opts)
+    # Define a set of all the discrete options. It is assumed that all options in the first stage are discrete.
+    discrete_opts_set = set((1, k) for k in range(1, options_in_stage[1] + 1))
     # Define a set containing all the options in the superstructure.
     all_opts_set = set(
         (j, k)
         for j in range(1, num_stages + 1)
         for k in range(1, options_in_stage[j] + 1)
     )
-    # Define a set containing all the continuous options in the superstructure.
+    # Define a set containing all the continuous options in the superstructure. All options after the first stage are continuous.
     continuous_opts_set = all_opts_set - discrete_opts_set
     # Define a set containing all the  options in the final stage.
     final_opts_list = [
@@ -419,11 +412,14 @@ def add_supe_formulation_params(
     )
     m.supe_form_params.discrete_opts_set = pyo.Set(
         initialize=((opt) for opt in discrete_opts_set),
-        doc="Set containing all the options which utilize discrete units (discrete options).",
+        doc="Set containing all the options which utilize discrete units (discrete options). These are the options in the first stage, "
+        "which utilize discrete units (or operators) to disassemble the incoming end-of-life products.",
     )
     m.supe_form_params.continuous_opts_set = pyo.Set(
         initialize=((opt) for opt in continuous_opts_set),
-        doc="Set containing all the options in the stage which don't utilize discrete units (continuous options).",
+        doc="Set containing all the options in the stage which don't utilize discrete units (continuous options). "
+        "All options after the first stage are assumed to be continuous. The sizing of these options is calculated "
+        "based on the sum of the tracked components entering the option.",
     )
     m.supe_form_params.option_outlets = pyo.Param(
         m.supe_form_params.all_opts_set,
@@ -449,7 +445,7 @@ def check_operating_params(
     m,
     profit,
     opt_var_oc_params,
-    workers_per_discr_unit,
+    operators_per_discrete_unit,
     yearly_cost_per_unit,
     capital_cost_per_unit,
     processing_rate,
@@ -463,7 +459,7 @@ def check_operating_params(
         m: pyomo model.
         profit: (dict) Profit per unit of product in terms of tracked components.
         opt_var_oc_params: (dict) Holds the variable operating cost param for options that are continuous. Variable operating costs assumed to be proportional to the feed entering the option.
-        workers_per_discr_unit: (dict) Number of workers needed per discrete unit for options that utilize discrete units.
+        operators_per_discrete_unit: (dict) Number of workers needed per discrete unit for options that utilize discrete units.
         yearly_cost_per_unit: (dict) Yearly operating costs per unit for options which utilize discrete units.
         capital_cost_per_unit: (dict) Cost per unit for options which utilize discrete units.
         processing_rate: (dict) Processing rate per unit for options that utilize discrete units. In terms of units of incoming feed processed per year per unit.
@@ -480,13 +476,13 @@ def check_operating_params(
     # Define a set containing the keys in the opt_var_oc_params dict.
     opt_var_oc_params_keys = set(opt_var_oc_params.keys())
     # Define a set containing all the discrete options.
-    discr_opts_set = set(m.supe_form_params.discrete_opts_set.data())
+    discrete_opts_set = set(m.supe_form_params.discrete_opts_set.data())
     # Define a set containing all the continuous options.
     continuous_opts_set = set(m.supe_form_params.continuous_opts_set.data())
     # Define a set containing the necessary variable operating parameters for all continuous options.
     var_oc_params = set(["a", "b"])
-    # Define a set containing the keys of the workers_per_discr_unit dict.
-    workers_per_discr_unit_keys = set(workers_per_discr_unit.keys())
+    # Define a set containing the keys of the operators_per_discrete_unit dict.
+    operators_per_discrete_unit_keys = set(operators_per_discrete_unit.keys())
     # Define a set containing the keys from the yearly_cost_per_unit dict.
     yearly_cost_per_unit_keys = set(yearly_cost_per_unit.keys())
     # Define a set containing all the keys in the capital_cost_per_unit dict.
@@ -504,7 +500,7 @@ def check_operating_params(
     # are not defined.
     missing_var_oc_params = []
     # Define a list for tracking the options which define negative workers per discrete unit.
-    negative_workers_per_discr_units = []
+    negative_operators_per_discrete_units = []
     # Define a list for tracking the options which define a negative yearly cost per unit
     negative_yearly_cost_per_unit = []
     # Define a list for tracking the discrete options which define a negative capital cost per unit.
@@ -571,17 +567,19 @@ def check_operating_params(
         )
         raise ValueError(msg)
     ## Check that workers per discrete unit is defined for all options that utilize discrete units.
-    if workers_per_discr_unit_keys != discr_opts_set:
-        raise ValueError("workers_per_discr_unit not defined for all discrete options.")
+    if operators_per_discrete_unit_keys != discrete_opts_set:
+        raise ValueError(
+            "operators_per_discrete_unit not defined for all discrete options."
+        )
     ## Check that workers per discrete unit are all defined to be non-negative.
-    negative_workers_per_discr_units = [
-        opt for opt, w in workers_per_discr_unit.items() if w < 0
+    negative_operators_per_discrete_units = [
+        opt for opt, w in operators_per_discrete_unit.items() if w < 0
     ]
     # If there are negative workers defined per discrete unit for any discrete options, raise an error.
-    if negative_workers_per_discr_units:
+    if negative_operators_per_discrete_units:
         raise ValueError("Workers per discrete unit must all be non-negative.")
     ## Check that yearly cost per unit is defined for all discrete options.
-    if yearly_cost_per_unit_keys != discr_opts_set:
+    if yearly_cost_per_unit_keys != discrete_opts_set:
         raise ValueError(
             "yearly_cost_per_unit must be defined for all discrete options."
         )
@@ -593,7 +591,7 @@ def check_operating_params(
     if negative_yearly_cost_per_unit:
         raise ValueError("yearly_cost_per_unit values must all be non-negative.")
     ## Check that cost per unit is defined for all discrete options.
-    if capital_cost_per_unit_set != discr_opts_set:
+    if capital_cost_per_unit_set != discrete_opts_set:
         raise ValueError(
             "capital_cost_per_unit must be defined for all discrete options."
         )
@@ -605,7 +603,7 @@ def check_operating_params(
     if negative_capital_cost_per_unit:
         raise ValueError("capital_cost_per_unit values must all be non-negative.")
     ## Check that prosessing rate is defined for all discrete options.
-    if processing_rate_keys != discr_opts_set:
+    if processing_rate_keys != discrete_opts_set:
         raise ValueError("processing_rate must be defined for all discrete options.")
     ## Check that all processing rates are positive.
     nonpositive_processing_rate = [
@@ -634,7 +632,7 @@ def add_operating_params(
     m,
     profit,
     opt_var_oc_params,
-    workers_per_discr_unit,
+    operators_per_discrete_unit,
     yearly_cost_per_unit,
     capital_cost_per_unit,
     processing_rate,
@@ -649,13 +647,45 @@ def add_operating_params(
         m: pyomo model.
         profit: (dict) Profit per unit of product in terms of tracked components.
         opt_var_oc_params: (dict) Holds the variable operating cost param for options that are continuous. Variable operating costs assumed to be proportional to the feed entering the option.
-        workers_per_discr_unit: (dict) Number of workers needed per discrete unit for options that utilize discrete units.
+        operators_per_discrete_unit: (dict) Number of operators needed per discrete unit for options that utilize discrete units.
         yearly_cost_per_unit: (dict) Yearly operating costs per unit for options which utilize discrete units.
         capital_cost_per_unit: (dict) Cost per unit for options which utilize discrete units.
-        processing_rate: (dict) Processing rate per unit for options that utilize discrete units. In terms of units of incoming feed processed per year per unit.
-        num_operators: (dict) Number of operators needed for each option.
+        processing_rate: (dict) Processing rate per unit for options that utilize discrete units. In terms of end-of-life products disassembled per year per unit.
+        num_operators: (dict) Number of operators needed for each continuous option.
         labor_rate: (float) Yearly wage per operator.
     """
+    ### Define parameters from user input.
+    ## Calculate the number of discrete units needed for each option. There must be enough discrete units to handle the maximum flow of end-of-life products
+    # that enters the plant over its operational lifetime.
+    discrete_units_per_option = copy.deepcopy(processing_rate)
+    for key in discrete_units_per_option.keys():
+        discrete_units_per_option[key] = math.ceil(
+            m.feed_params.max_feed_entering / processing_rate[key]
+        )
+    ## Calculate the max number of operators that may be needed for the entire process.
+    # First, calculate the number of operators needed for each discrete unit.
+    operators_per_discrete_option = copy.deepcopy(discrete_units_per_option)
+    # This is calculated by multiply the number of disassembly units needed by the number of operators per discrete unit and rounding up.
+    for key in operators_per_discrete_option.keys():
+        operators_per_discrete_option[key] = math.ceil(
+            discrete_units_per_option[key] * operators_per_discrete_unit[key]
+        )
+    # Next, the discrete option that needs the most operators, and the corresponding number of operators is returned.
+    max_dicrete_option, max_discrete_operators = max(
+        operators_per_discrete_option.items(), key=lambda item: item[1]
+    )
+    # Then, the continuous option that needs the most operators, and the corresponding number of operators is returned.
+    max_continuous_option, max_continuous_operators = max(
+        num_operators.items(), key=lambda item: item[1]
+    )
+    # Then, the max number operators needed for the continuous stages is calculated by multiply the max operators for a continuoous option
+    # by the number of continuous stages (number of stages - 1 b/c first stage is disassembly).
+    continuous_operators = max_continuous_operators * (
+        m.supe_form_params.num_stages - 1
+    )
+    # Finally, the upper bound to the number of operators needed for the entire process is calculated by adding the max number of operators
+    # needed for the disassembly stage (first stage) and the max number of operators needed for the continuous stages.
+    max_total_operators = max_discrete_operators + continuous_operators
 
     ### Define functions needed to initialize pyomo parameters.
     # Define a function for initializing profit pyomo parameter.
@@ -686,9 +716,9 @@ def add_operating_params(
         initialize=opt_var_oc_params_initialization,
         doc="Holds all the variable operating costs parameter values for all continuous options.",
     )
-    m.operating_params.workers_per_discr_unit = pyo.Param(
+    m.operating_params.operators_per_discrete_unit = pyo.Param(
         m.supe_form_params.discrete_opts_set,
-        initialize=workers_per_discr_unit,
+        initialize=operators_per_discrete_unit,
         doc="The number of operators needed per discrete unit for discrete options.",
     )
     m.operating_params.yearly_cost_per_unit = pyo.Param(
@@ -704,7 +734,8 @@ def add_operating_params(
     m.operating_params.processing_rate = pyo.Param(
         m.supe_form_params.discrete_opts_set,
         initialize=processing_rate,
-        doc="The processing rate per discrete unit for discrete options.",
+        doc="The processing rate per discrete unit for discrete options. In terms of number of end-of-life products "
+        "disassembled per discrete unit per year.",
     )
     m.operating_params.num_operators = pyo.Param(
         m.supe_form_params.continuous_opts_set,
@@ -714,14 +745,21 @@ def add_operating_params(
     m.operating_params.labor_rate = pyo.Param(
         initialize=labor_rate, doc="The yearly wage per operator."
     )
-    # This is a hardcoded value for now. Setting to 100, as having this many units would likely not be reasonable anyways.
-    m.operating_params.max_dis_workers = pyo.Param(
-        initialize=100, doc="The max number of disassembly units possible."
+    m.operating_params.discete_units_per_option = pyo.Param(
+        m.supe_form_params.discrete_opts_set,
+        initialize=discrete_units_per_option,
+        doc="The number of discrete units per option needed to disassemble all the incoming end-of-life products over the operational "
+        "lifetime of the plant.",
     )
-    # This is a hardcoded value for now. Setting to 100, as having this many operators would likely not be reasonable anyways.
-    m.operating_params.max_operators = pyo.Param(
-        initialize=100,
-        doc="The max number of operators possible for the entire process.",
+    m.operating_params.max_total_operators = pyo.Param(
+        initialize=max_total_operators,
+        doc="The upper bound for the max number of operators needed for the entire process.",
+    )
+    m.operating_params.max_operators_set = pyo.RangeSet(
+        1,
+        m.operating_params.max_total_operators,
+        doc="Set for the upper bound of the "
+        "max number of operators needed for the entire process.",
     )
 
 
@@ -915,7 +953,7 @@ def add_mass_balance_cons(m):
     Args:
         m: pyomo model.
     """
-    ### Define necessary pyomo constraints
+    ### Define necessary pyomo constraints.
     ## Create block
     m.mb_cons = pyo.Block(doc="Block to hold all mass balance constraints.")
 
@@ -1084,6 +1122,195 @@ def add_logic_cons(m):
         )
 
 
+def add_capital_expense_params(m):
+    """
+    This function adds all the capital expense parameters to a block.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Define parameters from user input.
+    # Create an upper bound for the total flow entering a continuous option.
+    max_flow_upper_bound = sum(
+        m.logic_params.big_m_val[c] for c in m.feed_params.tracked_comps
+    )
+
+    ### Define necessary pyomo parameters.
+    ## Create block
+    m.capital_expense_params = pyo.Block(
+        doc="Block to hold all the capital expense parameters."
+    )
+    ## Pyomo parameters
+    m.capital_expense_params.max_flow_upper_bound = pyo.Param(
+        initialize=max_flow_upper_bound,
+        doc="Upper bound for the total flow entering a continuous option.",
+    )
+    m.capital_expense_params.lang_factor = pyo.Param(initialize=2.97)
+
+
+def add_capital_expense_vars(m):
+    """
+    This function adds all capital expense variables to a block.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Define necessary pyomo variables.
+    ## Create block
+    m.capital_expense_vars = pyo.Block(
+        doc="Block to hold all the capital expense variables."
+    )
+    ## Pyomo variables
+    m.capital_expense_vars.purchased_equipment_cost = pyo.Var(
+        m.supe_form_params.all_opts_set,
+        domain=pyo.NonNegativeReals,
+        doc="The cost of purchased equipment.",
+    )
+    m.capital_expense_vars.flow_entering = pyo.Var(
+        m.supe_form_params.continuous_opts_set,
+        bounds=(0, m.capital_expense_params.max_flow_upper_bound),
+        doc="The total flow entering each continuous option.",
+    )
+    m.capital_expense_vars.total_plant_cost = pyo.Var(
+        domain=pyo.NonNegativeReals, doc="The total plant cost."
+    )
+    m.capital_expense_vars.financing = pyo.Var(
+        domain=pyo.NonNegativeReals, doc="The total financing cost of the plant."
+    )
+    m.capital_expense_vars.other_costs = pyo.Var(
+        domain=pyo.NonNegativeReals, doc="'Other costs' associated with the plant."
+    )
+    m.capital_expense_vars.total_overnight_cost = pyo.Var(
+        domain=pyo.NonNegativeReals, doc="The total overnight cost of the plant."
+    )
+
+
+def add_capital_expense_constraints(m):
+    """
+    This function adds all capital expense constraints to a block.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Define necessary pyomo constraints.
+    ## Create block
+    m.capital_expense_cons = pyo.Block(
+        doc="Block to hold all capital expense constraints."
+    )
+
+    ## Pyomo constraints
+    @m.capital_expense_cons.Constraint(
+        m.supe_form_params.discrete_opts_set,
+        doc="Calculates the purchased cost of equipment for all discrete options. "
+        "Done by multiplying the number of discrete units by the capital cost per unit.",
+    )
+    def discrete_opts_purchased_equipment_cost_cons(b, j, k):
+        m = b.model()  # Get the main model
+        return (
+            m.capital_expense_vars.purchased_equipment_cost[j, k]
+            == m.operating_params.discete_units_per_option[j, k]
+            * m.operating_params.capital_cost_per_unit[j, k]
+        )
+
+    @m.capital_expense_cons.Constraint(
+        m.supe_form_params.continuous_opts_set,
+        m.plant_lifetime_params.operational_range,
+        doc="Constraint to determine the max flow entering each continuous option over the lifetime of the plant.",
+    )
+    def max_flow_entering_cons(b, j, k, t):
+        m = b.model()  # Get the main model
+        return m.capital_expense_vars.flow_entering[j, k] >= sum(
+            m.mb_vars.f_in[j, k, c, t] for c in m.feed_params.tracked_comps
+        )
+
+    def piecewise_rule(b, j, k):
+        m = b.model()  # Get the main model
+
+        flow_data = m.costing_params.flowrates_data[j, k]
+        purchased_equipment_cost_data = m.costing_params.costs_data[j, k]
+
+        # use m.add_component to generate all piecewise functions
+        # piecewise = Piecewise(yval, xval, *kwargs)
+        piecewise = pyo.Piecewise(
+            m.capital_expense_vars.purchased_equipment_cost[j, k],
+            m.capital_expense_vars.flow_entering[j, k],
+            pw_pts=flow_data,
+            pw_constr_type="EQ",
+            f_rule=purchased_equipment_cost_data,
+            pw_repn="SOS2",
+        )
+        b.add_component("Option_" + str((j, k)) + "_Piecewise_Constraint", piecewise)
+
+    m.capital_expense_cons.piecewise_cons = pyo.Block(
+        m.supe_form_params.continuous_opts_set,
+        rule=piecewise_rule,
+        doc="This block holds all the piecewise constraints for calculating the "
+        "purchased equipment costs for all the continuous option.",
+    )
+
+    @m.capital_expense_cons.Constraint(
+        doc="Calculates the total plant cost of the plant. See Equation (x) in the documentation."
+    )
+    def calculate_total_plant_cost_con(b):
+        m = b.model()  # Get the main model
+        return m.capital_expense_vars.total_plant_cost == sum(
+            m.capital_expense_vars.purchased_equipment_cost[opt]
+            for opt in m.supe_form_params.discrete_opts_set
+        ) + m.capital_expense_params.lang_factor * sum(
+            m.capital_expense_vars.purchased_equipment_cost[opt]
+            for opt in m.supe_form_params.continuous_opts_set
+        )
+
+    @m.capital_expense_cons.Constraint(
+        doc="Calculates the total financing cost of the plant. Assumed to be 2.7% of the total plant cost."
+    )
+    def calculate_financing_cost_con(b):
+        m = b.model()  # Get the main model
+        return (
+            m.capital_expense_vars.financing
+            == 0.027 * m.capital_expense_vars.total_plant_cost
+        )
+
+    @m.capital_expense_cons.Constraint(
+        doc="Calculates the 'other costs' of the plant. Assumed to be 15% of the total plant cost."
+    )
+    def calculate_financing_cost_con(b):
+        m = b.model()  # Get the main model
+        return (
+            m.capital_expense_vars.other_costs
+            == 0.15 * m.capital_expense_vars.total_plant_cost
+        )
+
+    @m.capital_expense_cons.Constraint(
+        doc="Calculates the total overnight cost of the plant. " \
+        "Equal to the total plant cost + financing + 'other costs'."
+    )
+    def calculate_total_overnight_cost_con(b):
+        m = b.model()  # Get the main model
+        return (
+            m.capital_expense_vars.total_overnight_cost
+            == m.capital_expense_vars.total_plant_cost
+            + m.capital_expense_vars.financing
+            + m.capital_expense_vars.other_costs
+        )
+    
+def add_variable_operating_expense_constraints(m):
+    """
+    This function adds all variable operating expense constraints to a block.
+
+    Args:
+        m: pyomo model.
+    """
+    ### Define necessary pyomo constraints.
+    ## Create block
+    m.capital_expense_cons = pyo.Block(
+        doc="Block to hold all capital expense constraints."
+    )
+
+    ## Pyomo constraints
+
+
+
 def build_model(
     ###################################################################################################
     ### Plant Lifetime Parameters
@@ -1111,8 +1338,6 @@ def build_model(
     options_in_stage: dict,
     # Set of options k' in stage j+1 connected to option k in stage j.
     option_outlets: dict,
-    # List of options that utilize discrete units.
-    discrete_opts: list,
     # Tracked component retention efficiency for each option.
     option_eff: dict,
     ###################################################################################################
@@ -1124,7 +1349,7 @@ def build_model(
     # Variable operating costs assumed to be proportional to the feed entering the option.
     opt_var_oc_params: dict,
     # Number of workers needed per discrete unit for options that utilize discrete units.
-    workers_per_discr_unit: dict,
+    operators_per_discrete_unit: dict,
     # Yearly operating costs per unit for options which utilize discrete units.
     yearly_cost_per_unit: dict,
     # Cost per unit for options which utilize discrete units.
@@ -1132,7 +1357,7 @@ def build_model(
     # Processing rate per unit for options that utilize discrete units.
     # In terms of units of incoming feed processed per year per unit.
     processing_rate: dict,
-    # Number of operators needed for each option.
+    # Number of operators needed for each continuous option.
     num_operators: dict,
     # Yearly wage per operator.
     labor_rate: float,
@@ -1168,11 +1393,11 @@ def build_model(
     ### Superstructure formulation parameters
     # Check that superstructure formulation parameters are feasible.
     check_supe_formulation_params(
-        m, num_stages, options_in_stage, option_outlets, discrete_opts, option_eff
+        m, num_stages, options_in_stage, option_outlets, option_eff
     )
     # Create separate block to hold superstructure formulation parameters.
     add_supe_formulation_params(
-        m, num_stages, options_in_stage, option_outlets, discrete_opts, option_eff
+        m, num_stages, options_in_stage, option_outlets, option_eff
     )
 
     ### Operating parameters
@@ -1181,7 +1406,7 @@ def build_model(
         m,
         profit,
         opt_var_oc_params,
-        workers_per_discr_unit,
+        operators_per_discrete_unit,
         yearly_cost_per_unit,
         capital_cost_per_unit,
         processing_rate,
@@ -1193,7 +1418,7 @@ def build_model(
         m,
         profit,
         opt_var_oc_params,
-        workers_per_discr_unit,
+        operators_per_discrete_unit,
         yearly_cost_per_unit,
         capital_cost_per_unit,
         processing_rate,
@@ -1206,6 +1431,7 @@ def build_model(
     check_costing_params(m, discretized_capex)
     # Create a separate block to hold costing parameters.
     add_costing_params(m, discretized_capex)
+
     ### Objective function parameters
     # Check that objective function parameters are feasible.
     check_objective_function_params(m, obj_func)
@@ -1228,23 +1454,18 @@ def build_model(
     # Generate logic constraints.
     add_logic_cons(m)
 
-    # define disassembly works set
-    j_dis = 1
-    m.J_dis = pyo.RangeSet(j_dis)
-    m.K_dis = pyo.RangeSet(Options_in_stage[j_dis])  # options in disassembly stage
-    dis_workers_range = pyo.RangeSet(0, max_dis_workers)
-    jk_dis = []
-    jkw_dis = []  # for declaring bin vars
-    for k_dis in m.K_dis:
-        jk_dis.append((j_dis, k_dis))
-        for w_dis in pyo.RangeSet(0, max_dis_by_option[j_dis, k_dis]):
-            jkw_dis.append((j_dis, k_dis, w_dis))
+    ### Capital expenses
+    # Generate capital expense parameters.
+    add_capital_expense_params(m)
+    # Generate capital expense variables.
+    add_capital_expense_vars(m)
+    # Generate capital expense constraints.
+    add_capital_expense_constraints(m)
 
-    m.disOpts = pyo.Set(within=m.J_dis * m.K_dis, initialize=jk_dis)
-    m.DisOptWorkersSet = pyo.Set(
-        within=m.J_dis * m.K_dis * dis_workers_range, initialize=jkw_dis
-    )
-    m.DisOptWorkers = pyo.Var(m.DisOptWorkersSet, domain=pyo.Binary)
+    ### Variable operating costs
+
+
+
 
     ################################################ Cash Flow Constraints ################################################
     m.OC_var_cons = pyo.ConstraintList()
@@ -1253,37 +1474,9 @@ def build_model(
     m.final_opt_set = pyo.Set(initialize=final_opt_list)  # list of final node list
     m.profit_opt_cons = pyo.ConstraintList()
 
-    m.Byprods = pyo.Set(initialize=byprods)  # set of byproducts
-
     # opex and profit only calculated once production starts
     for t in pyo.RangeSet(prod_start, plant_end):
         m.plantYear[t].OC_var = pyo.Var(m.OptSet, domain=pyo.Reals)
-
-        # must be enough dis units to handle incoming feed each year.
-        m.DisWorkerCons.add(
-            expr=m.plantYear[t].P_entering
-            <= sum(
-                Dis_Rate[elem]
-                * sum(
-                    i * m.DisOptWorkers[elem + (i,)]
-                    for i in pyo.RangeSet(0, max_dis_by_option[elem])
-                )
-                for elem in m.disOpts
-            )
-        )
-
-        for elem in m.disOpts:
-            # only 1 'amount' of workers can be chosen.
-            m.DisWorkerCons.add(
-                expr=sum(
-                    m.DisOptWorkers[elem + (i,)]
-                    for i in pyo.RangeSet(0, max_dis_by_option[elem])
-                )
-                == 1
-            )
-
-            # if a disassembly option is not chosen, then that 'amount' must be 0
-            m.DisWorkerCons.add(expr=m.binOpt[elem] >= 1 - m.DisOptWorkers[elem + (0,)])
 
         # calculate variable costs for disassembly stage
         j = 1
@@ -1397,104 +1590,6 @@ def build_model(
     m.COL_Total = pyo.Var(domain=pyo.NonNegativeReals)
     m.COL_Total_con = pyo.Constraint(expr=m.COL_Total == m.total_workers * labor_rate)
 
-    ################################################ CAPEX Constraints ################################################
-    t_max = maxFeedEnteringYear
-
-    # set of non-disassembly options
-
-    # TPC = BEC * LF
-    m.BEC = pyo.Var(m.OptSet, domain=pyo.NonNegativeReals)
-    m.BEC_cons = pyo.ConstraintList()
-
-    # make a var for the max flow entering each option. Used to calculate capex
-    maxFlowUB = maxFeedEntering * sum(Prod_comp_mass[c] for c in Tracked_comps)
-    m.BEC_max_flow = pyo.Var(m.OptSet_no_dis, bounds=(0, maxFlowUB))
-    m.BEC_max_flow_cons = pyo.ConstraintList()
-
-    # Calculate disassembly BEC (disassembly stage is always the first stage)
-    k = 0
-    for k in pyo.RangeSet(Options_in_stage[1]):
-        m.BEC_cons.add(
-            expr=m.BEC[1, k]
-            == sum(
-                i * m.DisOptWorkers[1, k, i]
-                for i in pyo.RangeSet(0, max_dis_by_option[1, k])
-            )
-            * CU[1, k]
-        )
-
-    # calculate BEC for rest of stages
-    for elem in m.OptSet:
-        j, k = elem
-        if j > 1:  # already calculated capex for disassembly stage
-            # calculate max flow stream for capex
-            # find the max flow (flow must be >= all flows entering it)
-            for t in pyo.RangeSet(prod_start, plant_end):
-                m.BEC_max_flow_cons.add(
-                    expr=m.BEC_max_flow[elem]
-                    >= sum(m.plantYear[t].F_in[elem + (c,)] for c in m.KeyComps)
-                )
-
-    j = 0
-    k = 0
-    for j in pyo.RangeSet(2, numStages):
-        for k in pyo.RangeSet(Options_in_stage[j]):
-            # get x and y data
-            flowData = list(Discretized_CAPEX[str((j, k))]["Flowrates"].values())
-            CAPEXData = list(Discretized_CAPEX[str((j, k))]["Costs"].values())
-
-            # use m.add_component to generate all piecewise functions
-            # piecewise = Piecewise(yval, xval, *kwargs)
-            piecewise = pyo.Piecewise(
-                m.BEC[j, k],
-                m.BEC_max_flow[j, k],
-                pw_pts=flowData,
-                pw_constr_type="EQ",
-                f_rule=CAPEXData,
-                pw_repn="SOS2",
-            )
-            optName = (j, k)
-            print("Piecewise_Node" + str(optName))
-            m.add_component("Piecewise_Node" + str(optName), piecewise)
-
-    m.TPC = pyo.Var(m.OptSet, domain=pyo.NonNegativeReals)
-    m.TPC_cons = pyo.ConstraintList()
-    # TPC for disassembly (no installation factor for disassembly)
-    j = 1  # disassembly takes place in first stage always
-    k = 0
-    for k in pyo.RangeSet(Options_in_stage[j]):
-        m.TPC_cons.add(expr=m.TPC[j, k] == m.BEC[j, k])
-
-    # multiply all TPCs by lang factor
-    j = 0
-    for j in pyo.RangeSet(2, numStages):
-        k = 0
-        for k in pyo.RangeSet(Options_in_stage[j]):
-            m.TPC_cons.add(expr=m.TPC[j, k] == m.BEC[j, k] * LF)
-
-    # calculate total TPC
-    m.Total_TPC = pyo.Var(domain=pyo.NonNegativeReals)
-    m.Total_TPC_con = pyo.Constraint(
-        expr=m.Total_TPC == sum(m.TPC[elem] for elem in m.OptSet)
-    )
-
-    # calculate TOC
-    m.TOC = pyo.Var(domain=pyo.NonNegativeReals)
-    m.TOC_con = pyo.Constraint(expr=m.TOC == m.Total_TPC * TOC_factor)
-
-    # calculate node TOCs
-    m.node_TOC = pyo.Var(m.OptSet, domain=pyo.NonNegativeReals)
-    m.node_TOC_cons = pyo.ConstraintList()
-
-    j = 0
-    for j in pyo.RangeSet(1, numStages):
-        k = 0
-        for k in pyo.RangeSet(Options_in_stage[j]):
-            elem = (j, k)
-            m.node_TOC_cons.add(
-                expr=m.node_TOC[elem]
-                == m.TPC[elem] + 0.027 * m.TPC[elem] + 0.15 * m.TPC[elem]
-            )
 
     #### Construct cash flows
     m.CF = pyo.Var(plant_life_range, domain=pyo.Reals)

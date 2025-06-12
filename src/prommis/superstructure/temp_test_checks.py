@@ -19,6 +19,7 @@ from prommis.superstructure.superstructure_function import (
     check_operating_params,
     check_plant_lifetime_params,
     check_supe_formulation_params,
+    capital_expense_constraints,
 )
 
 ### Build model
@@ -134,10 +135,10 @@ option_eff = {
 }
 
 check_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, discrete_opts, option_eff
+    m, num_stages, options_in_stage, option_outlets, option_eff
 )
 add_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, discrete_opts, option_eff
+    m, num_stages, options_in_stage, option_outlets, option_eff
 )
 
 ### Operating Parameters
@@ -717,3 +718,18 @@ add_logic_cons(m)
 # m.logic_cons.stage_binary_cons.pprint()
 # m.logic_cons.connection_binary_cons.pprint()
 # m.logic_params.big_m_val.pprint()
+
+
+capital_expense_constraints(m)
+# m.capital_expense_cons.
+m.capital_expense_cons.calculate_total_plant_cost_con.pprint()
+
+# m.obj = pyo.Objective(expr=m.mb_vars.f_out[5, 5, 'Nd', 2029], sense=pyo.maximize)
+
+
+# from idaes.core.solvers import get_solver
+
+# solver = get_solver(solver="gurobi")
+# solver.options["NumericFocus"] = 2
+# results = solver.solve(m, tee='True')
+# print(pyo.value(m.mb_vars.f_out[5, 5, 'Nd', 2029]))

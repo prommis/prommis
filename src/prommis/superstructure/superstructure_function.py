@@ -383,6 +383,7 @@ def add_supe_formulation_params(
     m.supe_form_params = pyo.Block(
         doc="Block to hold superstructure formulation parameters."
     )
+
     ## Pyomo parameters
     m.supe_form_params.num_stages = pyo.Param(
         initialize=num_stages, doc="The total number of stages in the superstructure."
@@ -1742,43 +1743,7 @@ def add_byproduct_valorization_params(
         byproduct_values: (dict) The value of each byproduct ($/kg byproduct)
         byproduct_opt_conversions: (dict) Conversion factors for each byproduct for each option.
     """
-    ## Create blocks
-    m.byproduct_valorization_params = pyo.Block()
-
-    m.byproduct_valorization_params.byproducts_set = pyo.Set(
-        initialize=byproducts, doc="Set of byproducts considered."
-    )
-
-    m.byproduct_valorization_params.byproduct_values = pyo.Param(
-        m.byproduct_valorization_params.byproducts_set,
-        initialize=byproduct_values,
-        doc="Defines the value of each byproduct ($/kg).",
-    )
-
-    m.byproduct_valorization_params.byproduct_opts_set = pyo.Set(
-        initialize=byproduct_opt_conversions.keys(),
-        doc="Set of options that produce byproducts.",
-    )
-
-    m.byproduct_valorization_params.opt_byproduct_set = pyo.Set(
-        initialize=(
-            (opt, byproduct)
-            for opt in byproduct_opt_conversions.keys()
-            for byproduct in byproduct_opt_conversions[opt].keys()
-        ),
-        doc="Set of options that produce byproducts, and the byproducts that they produce.",
-    )
-
-    # Define a function for initializing byproduct option conversion pyomo parameter
-    def byproduct_opt_conversion_initialize(b, j, k, byproduct):
-        return byproduct_opt_conversions[(j, k)][byproduct]
-
-    m.byproduct_valorization_params.byproduct_opt_conversion = pyo.Param(
-        m.byproduct_valorization_params.opt_byproduct_set,
-        initialize=byproduct_opt_conversion_initialize,
-        doc="Defines the conversion factors for all byproducts for all options that produce them.",
-    )
-
+    ### Define parameters from user input.
     # Define a dictionary that maps all byproducts to the options that produce it.
     byproduct_producing_opts = {}
     # First, iterate through the byproduct_opt_conversion dict. Extract the options, and the innter dict
@@ -1789,6 +1754,42 @@ def add_byproduct_valorization_params(
             # Append opt to the list associated with the byproduct. Create a new list if the byproduct entry doesn't exist.
             byproduct_producing_opts.setdefault(inner_key, []).append(outer_key)
 
+    ### Define functions needed to initialize pyomo parameters.
+    # Define a function for initializing byproduct option conversion pyomo parameter
+    def byproduct_opt_conversion_initialize(b, j, k, byproduct):
+        return byproduct_opt_conversions[(j, k)][byproduct]
+
+    ### Define necessary pyomo parameters.
+    ## Create blocks
+    m.byproduct_valorization_params = pyo.Block()
+
+    ## Pyomo parameters
+    m.byproduct_valorization_params.byproducts_set = pyo.Set(
+        initialize=byproducts, doc="Set of byproducts considered."
+    )
+    m.byproduct_valorization_params.byproduct_values = pyo.Param(
+        m.byproduct_valorization_params.byproducts_set,
+        initialize=byproduct_values,
+        doc="Defines the value of each byproduct ($/kg).",
+    )
+    m.byproduct_valorization_params.byproduct_opts_set = pyo.Set(
+        initialize=byproduct_opt_conversions.keys(),
+        doc="Set of options that produce byproducts.",
+    )
+    m.byproduct_valorization_params.opt_byproduct_set = pyo.Set(
+        initialize=(
+            (opt, byproduct)
+            for opt in byproduct_opt_conversions.keys()
+            for byproduct in byproduct_opt_conversions[opt].keys()
+        ),
+        doc="Set of options that produce byproducts, and the byproducts that they produce.",
+    )
+
+    m.byproduct_valorization_params.byproduct_opt_conversion = pyo.Param(
+        m.byproduct_valorization_params.opt_byproduct_set,
+        initialize=byproduct_opt_conversion_initialize,
+        doc="Defines the conversion factors for all byproducts for all options that produce them.",
+    )
     m.byproduct_valorization_params.byproduct_producing_opts = pyo.Param(
         m.byproduct_valorization_params.byproducts_set,
         initialize=byproduct_producing_opts,
@@ -1796,28 +1797,48 @@ def add_byproduct_valorization_params(
     )
 
 
-def add_byproduct_valorization_cons(m):
+def add_byproduct_valorization_vars(m):
     """
-    This function builds the byproduct valorization constraints.
-    """
+    This function builds the byproduct valorization variables.
 
+    Args:
+        m: pyomo model.
+    """
     ## Create blocks
     m.byproduct_valorization = pyo.Block()
-    m.no_byproduct_valorization = pyo.Block()
 
-    @m.no_byproduct_valorization.Constraint(
-        m.plant_lifetime_params.operational_range,
-        doc="Sets the profit from the valorization of byproducts to zero.",
-    )
-    def calculate_opt_byprod_val_cons(b, t):
-        return m.costing.total_byproduct_profit[t] == 0
-
+    ## Pyomo variables
     m.byproduct_valorization.byproduct_produced = pyo.Var(
         m.byproduct_valorization_params.byproducts_set
         * m.plant_lifetime_params.operational_range,
         domain=pyo.NonNegativeReals,
         doc="The amount of each byproduct produced each year.",
     )
+    m.byproduct_valorization.byproduct_profit = pyo.Var(
+        m.byproduct_valorization_params.byproducts_set
+        * m.plant_lifetime_params.operational_range,
+        domain=pyo.Reals,
+        doc="The amount of profit generated from each byproduct each year.",
+    )
+
+
+def add_byproduct_valorization_cons(m):
+    """
+    This function builds the byproduct valorization constraints.
+
+    Args:
+        m: pyomo model.
+    """
+    ## Create blocks
+    m.no_byproduct_valorization = pyo.Block()
+
+    ## Pyomo constraints
+    @m.no_byproduct_valorization.Constraint(
+        m.plant_lifetime_params.operational_range,
+        doc="Sets the profit from the valorization of byproducts to zero.",
+    )
+    def calculate_opt_byprod_val_cons(b, t):
+        return m.costing.total_byproduct_profit[t] == 0
 
     @m.byproduct_valorization.Constraint(
         m.byproduct_valorization_params.byproducts_set,
@@ -1830,13 +1851,6 @@ def add_byproduct_valorization_cons(m):
             * m.byproduct_valorization_params.byproduct_opt_conversion[opt, byprod]
             for opt in m.byproduct_valorization_params.byproduct_producing_opts[byprod]
         )
-
-    m.byproduct_valorization.byproduct_profit = pyo.Var(
-        m.byproduct_valorization_params.byproducts_set
-        * m.plant_lifetime_params.operational_range,
-        domain=pyo.Reals,
-        doc="The amount of profit generated from each byproduct each year.",
-    )
 
     @m.byproduct_valorization.Constraint(
         m.byproduct_valorization_params.byproducts_set,

@@ -664,9 +664,6 @@ discretized_purchased_equipment_cost = {
     },
 }
 
-#################################################################################################
-### Build model
-m = pyo.ConcreteModel()
 
 ### Objective Function Parameters
 obj_func = "NPV"
@@ -698,6 +695,29 @@ options_environmental_impacts = {
 }
 # epsilon = 1e16
 epsilon = 1
+
+### Byproduct Valorization Parameters
+byproducts = ["Jarosite", "Iron oxide", "Residue", "Iron hydroxide"]
+byproduct_values = {
+    "Jarosite": -0.17,
+    "Iron oxide": 10,
+    "Residue": -0.17,
+    "Iron hydroxide": -0.17,
+}
+byproduct_opt_conversions = {
+    (3, 1): {"Jarosite": 0.75},
+    (3, 2): {"Iron oxide": 1},
+    (3, 3): {"Residue": 0.25},
+    (3, 4): {"Iron hydroxide": 0.5},
+    (3, 5): {"Iron oxide": 1},
+    (3, 6): {"Iron oxide": 1},
+    (5, 4): {"Iron hydroxide": 0.5},
+    (5, 5): {"Iron oxide": 1},
+}
+
+#################################################################################################
+### Build model
+m = pyo.ConcreteModel()
 
 ### Plant lifetime parameters
 # Check that plant lifetime parameters are feasible.
@@ -774,7 +794,10 @@ add_costing_vars(m)
 add_costing_cons(m)
 
 ### Choose objective function
+# Deactivate if NPV is objective function
 m.cost_of_recovery.deactivate()
+
+# Deactivate if COR is objective function
 # m.net_present_value.deactivate()
 
 ### Environmental impacts
@@ -788,24 +811,6 @@ add_environmental_impact_vars(m)
 add_environmental_impact_cons(m)
 
 ### Byproduct valorization
-byproducts = ["Jarosite", "Iron oxide", "Residue", "Iron hydroxide"]
-byproduct_values = {
-    "Jarosite": -0.17,
-    "Iron oxide": 10,
-    "Residue": -0.17,
-    "Iron hydroxide": -0.17,
-}
-byproduct_opt_conversions = {
-    (3, 1): {"Jarosite": 0.75},
-    (3, 2): {"Iron oxide": 1},
-    (3, 3): {"Residue": 0.25},
-    (3, 4): {"Iron hydroxide": 0.5},
-    (3, 5): {"Iron oxide": 1},
-    (3, 6): {"Iron oxide": 1},
-    (5, 4): {"Iron hydroxide": 0.5},
-    (5, 5): {"Iron oxide": 1},
-}
-
 add_byproduct_valorization_params(
     m, byproducts, byproduct_values, byproduct_opt_conversions
 )
@@ -828,12 +833,15 @@ m.environmental_impacts.deactivate()
 ### Choose if byproduct valorization is considered
 # deactivate if considered
 # m.no_byproduct_valorization.deactivate()
+
 # deactivate if not considered
 m.byproduct_valorization.deactivate()
 
+### Solve model
 solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2
 results = solver.solve(m, tee="True")
 
+### Print out results
 m.mass_balances.option_binary_var.display()
-m.costing.total_byproduct_profit.display()
+# m.costing.total_byproduct_profit.display()

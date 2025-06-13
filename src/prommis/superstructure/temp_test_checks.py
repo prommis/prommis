@@ -3,49 +3,32 @@ import pyomo.environ as pyo
 from idaes.core.solvers import get_solver
 
 from prommis.superstructure.superstructure_function import (
-    add_capital_expense_cons,
-    add_capital_expense_params,
-    add_capital_expense_vars,
-    add_cash_flow_cons,
-    add_cash_flow_params,
-    add_cash_flow_vars,
-    add_costing_params,
+    check_plant_lifetime_params,
+    add_plant_lifetime_params_block,
+    check_feed_params,
     add_feed_params_block,
-    add_fixed_operating_expense_cons,
-    add_fixed_operating_expense_vars,
-    add_logic_cons,
-    add_logic_params,
-    add_logic_vars,
-    add_mass_balance_cons,
+    check_supe_formulation_params,
+    add_supe_formulation_params,
+    check_operating_params,
+    add_operating_params,
+    check_discretized_costing_params,
+    add_discretized_costing_params,
+    check_objective_function_params,
+    add_objective_function_params,
     add_mass_balance_params,
     add_mass_balance_vars,
-    add_net_present_value,
-    add_objective_function_params,
-    add_operating_params,
-    add_plant_lifetime_params_block,
-    add_revenue_cons,
-    add_revenue_vars,
-    add_supe_formulation_params,
-    add_variable_operating_expense_cons,
-    add_variable_operating_expense_vars,
-    check_costing_params,
-    check_feed_params,
-    check_objective_function_params,
-    check_operating_params,
-    check_plant_lifetime_params,
-    check_supe_formulation_params,
+    add_mass_balance_cons,
+    add_costing_params,
+    add_costing_vars,
+    add_costing_cons,
 )
 
 ### Build model
 m = pyo.ConcreteModel()
 
-
 ### Plant Lifetime Params
 plant_start = 2024
 plant_lifetime = 15
-
-check_plant_lifetime_params(plant_lifetime)
-add_plant_lifetime_params_block(m, plant_start, plant_lifetime)
 
 ### Feed Params
 available_feed = {
@@ -71,9 +54,6 @@ prod_comp_mass = {
     "Dy": 0.103 * 3,
     "Fe": 0.691 * 3,
 }
-
-check_feed_params(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
-add_feed_params_block(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
 
 ### Superstructure Formulation Parameters
 num_stages = 5
@@ -148,11 +128,6 @@ option_eff = {
     },
 }
 
-check_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, option_eff
-)
-add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, option_eff)
-
 ### Operating Parameters
 profit = {
     (5, 1): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
@@ -186,7 +161,7 @@ opt_var_oc_params = {
     (5, 4): {"a": 2.17, "b": 0},
     (5, 5): {"a": 6.7063559004, "b": 0},
 }
-workers_per_discr_unit = {
+operators_per_discrete_unit = {
     (1, 1): 1,
     (1, 2): 0,
 }
@@ -202,7 +177,7 @@ processing_rate = {
     (1, 1): 7868,
     (1, 2): 52453,
 }
-num_workers = {
+num_operators = {
     (2, 1): 0.65,
     (2, 2): 0.65,
     (2, 3): 0.65,
@@ -225,31 +200,8 @@ num_workers = {
 }
 labor_rate = 8000 * 38.20
 
-check_operating_params(
-    m,
-    profit,
-    opt_var_oc_params,
-    workers_per_discr_unit,
-    yearly_cost_per_unit,
-    capital_cost_per_unit,
-    processing_rate,
-    num_workers,
-    labor_rate,
-)
-add_operating_params(
-    m,
-    profit,
-    opt_var_oc_params,
-    workers_per_discr_unit,
-    yearly_cost_per_unit,
-    capital_cost_per_unit,
-    processing_rate,
-    num_workers,
-    labor_rate,
-)
-
 ### Costing Parameters
-Discretized_CAPEX = {
+discretized_purchased_equipment_cost = {
     (2, 1): {
         "Flowrates": [
             0.0,
@@ -708,57 +660,90 @@ Discretized_CAPEX = {
     },
 }
 
-check_costing_params(m, Discretized_CAPEX)
-add_costing_params(m, Discretized_CAPEX)
+### Plant lifetime parameters
+# Check that plant lifetime parameters are feasible.
+check_plant_lifetime_params(plant_lifetime)
+# Create separate block to hold plant lifetime parameters.
+add_plant_lifetime_params_block(m, plant_start, plant_lifetime)
 
-check_objective_function_params(m, obj_func="NPV")
-add_objective_function_params(m, obj_func="NPV")
+### Feed parameters
+# Check that feed parameters are feasible.
+check_feed_params(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
+# Create separate block to hold feed parameters.
+add_feed_params_block(
+    m, available_feed, collection_rate, tracked_comps, prod_comp_mass
+)
 
+### Superstructure formulation parameters
+# Check that superstructure formulation parameters are feasible.
+check_supe_formulation_params(
+    m, num_stages, options_in_stage, option_outlets, option_eff
+)
+# Create separate block to hold superstructure formulation parameters.
+add_supe_formulation_params(
+    m, num_stages, options_in_stage, option_outlets, option_eff
+)
+
+### Operating parameters
+# Check that operating parameters are feasible.
+check_operating_params(
+    m,
+    profit,
+    opt_var_oc_params,
+    operators_per_discrete_unit,
+    yearly_cost_per_unit,
+    capital_cost_per_unit,
+    processing_rate,
+    num_operators,
+    labor_rate,
+)
+# Create separate block to hold operating parameters.
+add_operating_params(
+    m,
+    profit,
+    opt_var_oc_params,
+    operators_per_discrete_unit,
+    yearly_cost_per_unit,
+    capital_cost_per_unit,
+    processing_rate,
+    num_operators,
+    labor_rate,
+)
+
+obj_func = 'NPV'
+
+### Costing parameters
+# Check that costing parameters are feasible.
+check_discretized_costing_params(m, discretized_purchased_equipment_cost)
+# Create a separate block to hold costing parameters.
+add_discretized_costing_params(m, discretized_purchased_equipment_cost)
+
+### Objective function parameters
+# Check that objective function parameters are feasible.
+check_objective_function_params(m, obj_func)
+# Create a separate block to hold costing parameters.
+add_objective_function_params(m, obj_func)
+
+### Mass balances
+# Generate mass balance parameters.
 add_mass_balance_params(m)
+# Generate mass balance variables.
 add_mass_balance_vars(m)
+# Generate mass balance constraints.
 add_mass_balance_cons(m)
 
-# m.mb_params.flow_set.pprint()
-# m.mb_cons.inlet_flow_cons.pprint()
-# m.mb_cons.init_flow_cons.pprint()
-# m.mb_cons.intermediate_flow_cons.pprint()
-# m.mb_cons.outlet_flow_cons.pprint()
+### Costing
+# Generate costing parameters.
+add_costing_params(m)
+# Generate costing variables.
+add_costing_vars(m)
+# Generate costing constraints.
+add_costing_cons(m)
 
-add_logic_params(m)
-add_logic_vars(m)
-add_logic_cons(m)
-# m.logic_cons.stage_binary_cons.pprint()
-# m.logic_cons.connection_binary_cons.pprint()
-# m.logic_params.big_m_val.pprint()
-
-add_revenue_vars(m)
-add_revenue_cons(m)
-
-add_capital_expense_params(m)
-add_capital_expense_vars(m)
-add_capital_expense_cons(m)
-
-# m.capital_expense_cons.
-# m.capital_expense_cons.calculate_total_plant_cost_con.pprint()
-
-add_variable_operating_expense_vars(m)
-add_variable_operating_expense_cons(m)
-
-add_fixed_operating_expense_vars(m)
-add_fixed_operating_expense_cons(m)
-
-add_cash_flow_params(m)
-add_cash_flow_vars(m)
-add_cash_flow_cons(m)
-
-add_net_present_value(m)
-# m.variable_operating_expense_cons.calculate_total_yearly_variable_expense_cons.pprint()
-# m.obj = pyo.Objective(expr=m.mb_vars.f_out[5, 5, 'Nd', 2029], sense=pyo.maximize)
+# m.cost_of_recovery.deactivate()
+m.net_present_value.deactivate()
 
 solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2
 results = solver.solve(m, tee="True")
-# print(pyo.value(m.mb_vars.f_out[5, 5, 'Nd', 2029]))
 
-m.logic_vars.option_binary_var.pprint()
-m.fixed_operating_expense_vars.pprint()

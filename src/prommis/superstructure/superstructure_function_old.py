@@ -768,7 +768,7 @@ def build_model(
     ### Consideration of environmental impacts parameters
     # boolean to decide whether or not to consider environmental impacts
     consider_environ_impacts: bool,
-    # environmental impacts matrix (kg CO2e per incoming flowrate)
+    # environmental impacts matrix (kg chosen environmental indicator per incoming flowrate)
     # of the form -> (j, k): factor1, ...
     environ_impacts: dict,
     epsilon: float,  # epsilon factor for generating Pareto front

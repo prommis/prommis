@@ -21,11 +21,15 @@ from prommis.superstructure.superstructure_function import (
     add_costing_params,
     add_costing_vars,
     add_costing_cons,
+    check_environmental_impact_params,
+    add_environmental_impact_params,
+    add_environmental_impact_vars,
+    add_environmental_impact_cons,
+    add_byproduct_valorization_params,
+    add_byproduct_valorization_cons
 )
 
-### Build model
-m = pyo.ConcreteModel()
-
+#################################################################################################
 ### Plant Lifetime Params
 plant_start = 2024
 plant_lifetime = 15
@@ -660,6 +664,41 @@ discretized_purchased_equipment_cost = {
     },
 }
 
+#################################################################################################
+### Build model
+m = pyo.ConcreteModel()
+
+### Objective Function Parameters
+obj_func = "NPV"
+
+### Environmnetal Impact Parameters
+consider_environmental_impacts = True
+options_environmental_impacts = {
+    (1, 1): 0,
+    (1, 2): 1000,
+    (2, 1): 0,
+    (2, 2): 1000,
+    (2, 3): 600,
+    (2, 4): 800,
+    (3, 1): 600,
+    (3, 2): 0,
+    (3, 3): 600,
+    (3, 4): 800,
+    (3, 5): 800,
+    (3, 6): 1000,
+    (4, 1): 0,
+    (4, 2): 800,
+    (4, 3): 600,
+    (4, 4): 1000,
+    (5, 1): 0,
+    (5, 2): 800,
+    (5, 3): 600,
+    (5, 4): 800,
+    (5, 5): 1000,
+}
+# epsilon = 1e16
+epsilon = 1
+
 ### Plant lifetime parameters
 # Check that plant lifetime parameters are feasible.
 check_plant_lifetime_params(plant_lifetime)
@@ -670,9 +709,7 @@ add_plant_lifetime_params_block(m, plant_start, plant_lifetime)
 # Check that feed parameters are feasible.
 check_feed_params(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
 # Create separate block to hold feed parameters.
-add_feed_params_block(
-    m, available_feed, collection_rate, tracked_comps, prod_comp_mass
-)
+add_feed_params_block(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
 
 ### Superstructure formulation parameters
 # Check that superstructure formulation parameters are feasible.
@@ -680,9 +717,7 @@ check_supe_formulation_params(
     m, num_stages, options_in_stage, option_outlets, option_eff
 )
 # Create separate block to hold superstructure formulation parameters.
-add_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, option_eff
-)
+add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, option_eff)
 
 ### Operating parameters
 # Check that operating parameters are feasible.
@@ -709,8 +744,6 @@ add_operating_params(
     num_operators,
     labor_rate,
 )
-
-obj_func = 'NPV'
 
 ### Costing parameters
 # Check that costing parameters are feasible.
@@ -740,10 +773,65 @@ add_costing_vars(m)
 # Generate costing constraints.
 add_costing_cons(m)
 
-# m.cost_of_recovery.deactivate()
-m.net_present_value.deactivate()
+### Choose objective function
+m.cost_of_recovery.deactivate()
+# m.net_present_value.deactivate()
+
+### Environmental impacts
+check_environmental_impact_params(
+    m, consider_environmental_impacts, options_environmental_impacts, epsilon
+)
+add_environmental_impact_params(
+    m, consider_environmental_impacts, options_environmental_impacts, epsilon
+)
+add_environmental_impact_vars(m)
+add_environmental_impact_cons(m)
+
+### Byproduct valorization
+byproducts = ["Jarosite", "Iron oxide", "Residue", "Iron hydroxide"]
+byproduct_values = {
+    "Jarosite": -0.17,
+    "Iron oxide": 10,
+    "Residue": -0.17,
+    "Iron hydroxide": -0.17,
+}
+byproduct_opt_conversions = {
+    (3, 1): {"Jarosite": 0.75},
+    (3, 2): {"Iron oxide": 1},
+    (3, 3): {"Residue": 0.25},
+    (3, 4): {"Iron hydroxide": 0.5},
+    (3, 5): {"Iron oxide": 1},
+    (3, 6): {"Iron oxide": 1},
+    (5, 4): {"Iron hydroxide": 0.5},
+    (5, 5): {"Iron oxide": 1},
+}
+
+add_byproduct_valorization_params(m, byproducts, byproduct_values, byproduct_opt_conversions)
+# m.byproduct_valorization_params.byproducts_set.pprint()
+# m.byproduct_valorization_params.byproduct_values.pprint()
+# m.byproduct_valorization_params.byproduct_opts_set.pprint()
+# m.byproduct_valorization_params.opt_byproduct_set.pprint()
+# m.byproduct_valorization_params.byproduct_opt_conversion.pprint()
+# m.byproduct_valorization_params.byproduct_producing_opts.pprint()
+
+add_byproduct_valorization_cons(m)
+# m.byproduct_valorization.calculate_byproduct_produced_cons.pprint()
+# m.byproduct_valorization.calculate_byproduct_profit_cons.pprint()
+# m.byproduct_valorization.calculate_opt_byprod_val_cons.pprint()
+
+### Choose if environmental impacts are considered
+# deactivate if not considered
+m.environmental_impacts.deactivate()
+
+### Choose if byproduct valorization is considered
+# deactivate if considered
+# m.no_byproduct_valorization.deactivate()
+# deactivate if not considered
+m.byproduct_valorization.deactivate()
 
 solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2
 results = solver.solve(m, tee="True")
 
+m.mass_balances.option_binary_var.display()
+m.costing.total_byproduct_profit.display()

@@ -3,30 +3,30 @@ import pyomo.environ as pyo
 from idaes.core.solvers import get_solver
 
 from prommis.superstructure.superstructure_function import (
-    check_plant_lifetime_params,
-    add_plant_lifetime_params_block,
-    check_feed_params,
-    add_feed_params_block,
-    check_supe_formulation_params,
-    add_supe_formulation_params,
-    check_operating_params,
-    add_operating_params,
-    check_discretized_costing_params,
-    add_discretized_costing_params,
-    check_objective_function_params,
-    add_objective_function_params,
-    add_mass_balance_params,
-    add_mass_balance_vars,
-    add_mass_balance_cons,
+    add_byproduct_valorization_cons,
+    add_byproduct_valorization_params,
+    add_costing_cons,
     add_costing_params,
     add_costing_vars,
-    add_costing_cons,
-    check_environmental_impact_params,
+    add_discretized_costing_params,
+    add_environmental_impact_cons,
     add_environmental_impact_params,
     add_environmental_impact_vars,
-    add_environmental_impact_cons,
-    add_byproduct_valorization_params,
-    add_byproduct_valorization_cons
+    add_feed_params_block,
+    add_mass_balance_cons,
+    add_mass_balance_params,
+    add_mass_balance_vars,
+    add_objective_function_params,
+    add_operating_params,
+    add_plant_lifetime_params_block,
+    add_supe_formulation_params,
+    check_discretized_costing_params,
+    check_environmental_impact_params,
+    check_feed_params,
+    check_objective_function_params,
+    check_operating_params,
+    check_plant_lifetime_params,
+    check_supe_formulation_params,
 )
 
 #################################################################################################
@@ -806,7 +806,9 @@ byproduct_opt_conversions = {
     (5, 5): {"Iron oxide": 1},
 }
 
-add_byproduct_valorization_params(m, byproducts, byproduct_values, byproduct_opt_conversions)
+add_byproduct_valorization_params(
+    m, byproducts, byproduct_values, byproduct_opt_conversions
+)
 # m.byproduct_valorization_params.byproducts_set.pprint()
 # m.byproduct_valorization_params.byproduct_values.pprint()
 # m.byproduct_valorization_params.byproduct_opts_set.pprint()

@@ -27,6 +27,10 @@ from prommis.superstructure.superstructure_function import (
     check_operating_params,
     check_plant_lifetime_params,
     check_supe_formulation_params,
+
+    check_byproduct_valorization_params,
+    add_byproduct_valorization_vars,
+    add_byproduct_valorization_cons,
 )
 
 #################################################################################################
@@ -70,7 +74,8 @@ options_in_stage = {
 }
 option_outlets = {
     # level 1
-    (1, 1): [1, 2, 3, 4],
+    # (1, 1): [1, 2, 3, 4],
+    (1, 1): [],
     (1, 2): [1, 2, 3, 4],
     # level 2
     (2, 1): [1, 2, 3, 6],
@@ -697,7 +702,7 @@ options_environmental_impacts = {
 epsilon = 1
 
 ### Byproduct Valorization Parameters
-byproducts = ["Jarosite", "Iron oxide", "Residue", "Iron hydroxide"]
+consider_byproduct_valorization = True
 byproduct_values = {
     "Jarosite": -0.17,
     "Iron oxide": 10,
@@ -811,20 +816,15 @@ add_environmental_impact_vars(m)
 add_environmental_impact_cons(m)
 
 ### Byproduct valorization
-add_byproduct_valorization_params(
-    m, byproducts, byproduct_values, byproduct_opt_conversions
+check_byproduct_valorization_params(
+    m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
 )
-# m.byproduct_valorization_params.byproducts_set.pprint()
-# m.byproduct_valorization_params.byproduct_values.pprint()
-# m.byproduct_valorization_params.byproduct_opts_set.pprint()
-# m.byproduct_valorization_params.opt_byproduct_set.pprint()
-# m.byproduct_valorization_params.byproduct_opt_conversion.pprint()
-# m.byproduct_valorization_params.byproduct_producing_opts.pprint()
-
+add_byproduct_valorization_params(
+    m, byproduct_values, byproduct_opt_conversions
+)
+add_byproduct_valorization_vars(m)
 add_byproduct_valorization_cons(m)
-# m.byproduct_valorization.calculate_byproduct_produced_cons.pprint()
-# m.byproduct_valorization.calculate_byproduct_profit_cons.pprint()
-# m.byproduct_valorization.calculate_opt_byprod_val_cons.pprint()
+
 
 ### Choose if environmental impacts are considered
 # deactivate if not considered
@@ -832,16 +832,16 @@ m.environmental_impacts.deactivate()
 
 ### Choose if byproduct valorization is considered
 # deactivate if considered
-# m.no_byproduct_valorization.deactivate()
+m.no_byproduct_valorization.deactivate()
 
 # deactivate if not considered
-m.byproduct_valorization.deactivate()
+# m.byproduct_valorization.deactivate()
 
-### Solve model
+# ### Solve model
 solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2
 results = solver.solve(m, tee="True")
 
-### Print out results
+# ### Print out results
 m.mass_balances.option_binary_var.display()
 # m.costing.total_byproduct_profit.display()

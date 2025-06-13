@@ -1712,38 +1712,115 @@ def add_environmental_impact_cons(m):
 
 ###################################################################################################
 ### Byproduct Valorization
-# def check_byproduct_valorization_params(m, consider_byprod_val, byprods, byprod_vals, tracked_comp_for_byprod, byprod_options, byprod_options_eff, tracked_comp_to_byproduct):
-#     """
-#     This function checks that all the byproduct valorization parameters are feasible.
+def check_byproduct_valorization_params(m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions):
+    """
+    This function checks that all the byproduct valorization parameters are feasible.
 
-#     Args:
-#         m: pyomo model.
-#         consider_byprod_val: (bool) Decide whether or not to consider the valorization of byproducts.
-#         byprods: (list) Byproducts considered.
-#         byprod_vals: (dict) Value for each byproduct ($/kg).
-#         byprod_options: (dict) Tracks which options produce which byproduct.
-#     """
-#     # Only need to check feasibility of parameters if user wants to consider environmental impacts (consider_byprod_val is True).
-#     if consider_byprod_val:
-#         ### Define parameters necessary for tests.
+    Args:
+        m: pyomo model.
+        consider_byprod_valorization: (bool) Decide whether or not to consider the valorization of byproducts.
+        byproduct_values: (dict) Byproducts considered, and their value ($/kg).
+        byproduct_opt_conversions: (dict) Defines the conversion factors for different byproducts for different options.
+    """
+    # Only need to check feasibility of parameters if user wants to consider environmental impacts (consider_byprod_val is True).
+    if consider_byproduct_valorization:
+        ### Define parameters necessary for tests.
+        # Create a set of the byproducts considered
+        byproducts_considered = set(byproduct_values.keys())
+        # Create a set of the options that produce byproducts.
+        byproduct_producing_options = set(byproduct_opt_conversions.keys())
+        # Create a list to track the missing byproduct values.
+        incorrect_byproduct_values = []
+        # Create a list to track the infeasible options.
+        infeasible_options = []
+        # Create a list to track options in byproduct_opt_conversions for which an empy dict is defined.
+        empty_opts = []
+        # Create a list to track byproducts that are not defined.
+        undefined_byproducts = []
+            
+        ### Run tests
+        ## Check that a value of type int or float is defined for each byproduct.
+        for byprod, val in byproduct_values.items():
+            # Track the byproducts for which incorrect value is defined.
+            if not isinstance(val, (int, float)):
+                incorrect_byproduct_values.append(byprod)
 
-#         ### Run tests
-#         ## Check
+        # Raise an error if there are byproducts for which values are incorrectly defined.
+        if incorrect_byproduct_values:
+            msg = "Values incorrectly specified for the following byproducts (should be of type int or float):\n"
+            msg += "\n".join(
+                f"  {incorrect}"
+                for incorrect in incorrect_byproduct_values
+            )
+            raise ValueError(msg)
+        
+        ## Check that the set of options that produce byproducts is feasible (i.e. they exist within the superstructure).
+        for opt in byproduct_producing_options:
+            # Keep track of the infeasible options.
+            if opt not in m.supe_form_params.all_opts_set:
+                infeasible_options.append(opt)
+
+        # Raise an error if there are infeasible options defined.
+        if infeasible_options:
+            msg = "Some options defined are infeasible:\n"
+            msg += "\n".join(
+                f"  {infeasible}"
+                for infeasible in infeasible_options
+            )
+            raise ValueError(msg)
+        
+        ## Check that inner dictionary is not empty.
+        for opt, inner_dict in byproduct_opt_conversions.items():
+            # Track the options for which the inner dict is empty.
+            if not inner_dict:
+                empty_opts.append(opt)
+
+        # If some options have empty dicts in byproduct_opt_conversions, raise an error.
+        if empty_opts:
+            msg= "Empty dict passed for the following options: "
+            msg += "\n".join(
+                f"  {opt}"
+                for opt in empty_opts
+            )
+            raise ValueError(msg)
+        
+        ## Check that all byproducts are defined.
+        for opt, inner_dict in byproduct_opt_conversions.items():
+            # Keep track of undefined byproducts.
+            undefined = [byprod for byprod in inner_dict.keys() if byprod not in byproducts_considered]
+            if undefined:
+                undefined_byproducts.append((opt, undefined))
+
+        # Raise an error if there are undefined byproducts.
+        if undefined_byproducts:
+            msg= "The following byproducts are not defined:\n"
+            msg += "\n".join(
+                f"  Option: {opt} produces the undefined byproduct(s): {undefined}"
+                for opt, undefined in undefined_byproducts
+            )
+            raise ValueError(msg)
+
+
+
+
+
+
 
 
 def add_byproduct_valorization_params(
-    m, byproducts, byproduct_values, byproduct_opt_conversions
+    m, byproduct_values, byproduct_opt_conversions
 ):
     """
     This function builds the byproduct valorization parameters.
 
     Args:
         m: pyomo model.
-        byproducts: (list) The byproducts considered.
-        byproduct_values: (dict) The value of each byproduct ($/kg byproduct)
+        byproduct_values: (dict) Byproducts considered, and their value ($/kg).
         byproduct_opt_conversions: (dict) Conversion factors for each byproduct for each option.
     """
     ### Define parameters from user input.
+    # Create a set of the byproducts considered.
+    byproducts = set(byproduct_values.keys())
     # Define a dictionary that maps all byproducts to the options that produce it.
     byproduct_producing_opts = {}
     # First, iterate through the byproduct_opt_conversion dict. Extract the options, and the innter dict
@@ -1948,9 +2025,9 @@ def build_model(
     ###################################################################################################
     ### Byproduct Valorization Parameters
     # Boolean to decide whether or not to consider the valorization of byproducts.
-    consider_byprod_val: bool,
+    consider_byproduct_valorization: bool,
     # List of byproducts.
-    byprods: list,
+    byproducts: list,
     # Dictionary of values for each byproduct ($/kg).
     byprod_vals: dict,
     # Dictionary keeping track of which tracked component produces which byproduct.

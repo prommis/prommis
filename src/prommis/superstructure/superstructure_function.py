@@ -1712,7 +1712,9 @@ def add_environmental_impact_cons(m):
 
 ###################################################################################################
 ### Byproduct Valorization
-def check_byproduct_valorization_params(m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions):
+def check_byproduct_valorization_params(
+    m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
+):
     """
     This function checks that all the byproduct valorization parameters are feasible.
 
@@ -1733,11 +1735,11 @@ def check_byproduct_valorization_params(m, consider_byproduct_valorization, bypr
         incorrect_byproduct_values = []
         # Create a list to track the infeasible options.
         infeasible_options = []
-        # Create a list to track options in byproduct_opt_conversions for which an empy dict is defined.
+        # Create a list to track options in byproduct_opt_conversions for which an empty dict is defined.
         empty_opts = []
         # Create a list to track byproducts that are not defined.
         undefined_byproducts = []
-            
+
         ### Run tests
         ## Check that a value of type int or float is defined for each byproduct.
         for byprod, val in byproduct_values.items():
@@ -1749,11 +1751,10 @@ def check_byproduct_valorization_params(m, consider_byproduct_valorization, bypr
         if incorrect_byproduct_values:
             msg = "Values incorrectly specified for the following byproducts (should be of type int or float):\n"
             msg += "\n".join(
-                f"  {incorrect}"
-                for incorrect in incorrect_byproduct_values
+                f"  {incorrect}" for incorrect in incorrect_byproduct_values
             )
             raise ValueError(msg)
-        
+
         ## Check that the set of options that produce byproducts is feasible (i.e. they exist within the superstructure).
         for opt in byproduct_producing_options:
             # Keep track of the infeasible options.
@@ -1763,12 +1764,9 @@ def check_byproduct_valorization_params(m, consider_byproduct_valorization, bypr
         # Raise an error if there are infeasible options defined.
         if infeasible_options:
             msg = "Some options defined are infeasible:\n"
-            msg += "\n".join(
-                f"  {infeasible}"
-                for infeasible in infeasible_options
-            )
+            msg += "\n".join(f"  {infeasible}" for infeasible in infeasible_options)
             raise ValueError(msg)
-        
+
         ## Check that inner dictionary is not empty.
         for opt, inner_dict in byproduct_opt_conversions.items():
             # Track the options for which the inner dict is empty.
@@ -1777,23 +1775,24 @@ def check_byproduct_valorization_params(m, consider_byproduct_valorization, bypr
 
         # If some options have empty dicts in byproduct_opt_conversions, raise an error.
         if empty_opts:
-            msg= "Empty dict passed for the following options: "
-            msg += "\n".join(
-                f"  {opt}"
-                for opt in empty_opts
-            )
+            msg = "Empty dict passed for the following options: "
+            msg += "\n".join(f"  {opt}" for opt in empty_opts)
             raise ValueError(msg)
-        
+
         ## Check that all byproducts are defined.
         for opt, inner_dict in byproduct_opt_conversions.items():
             # Keep track of undefined byproducts.
-            undefined = [byprod for byprod in inner_dict.keys() if byprod not in byproducts_considered]
+            undefined = [
+                byprod
+                for byprod in inner_dict.keys()
+                if byprod not in byproducts_considered
+            ]
             if undefined:
                 undefined_byproducts.append((opt, undefined))
 
         # Raise an error if there are undefined byproducts.
         if undefined_byproducts:
-            msg= "The following byproducts are not defined:\n"
+            msg = "The following byproducts are not defined:\n"
             msg += "\n".join(
                 f"  Option: {opt} produces the undefined byproduct(s): {undefined}"
                 for opt, undefined in undefined_byproducts
@@ -1801,15 +1800,7 @@ def check_byproduct_valorization_params(m, consider_byproduct_valorization, bypr
             raise ValueError(msg)
 
 
-
-
-
-
-
-
-def add_byproduct_valorization_params(
-    m, byproduct_values, byproduct_opt_conversions
-):
+def add_byproduct_valorization_params(m, byproduct_values, byproduct_opt_conversions):
     """
     This function builds the byproduct valorization parameters.
 

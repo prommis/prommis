@@ -5,6 +5,7 @@ from idaes.core.solvers import get_solver
 from prommis.superstructure.superstructure_function import (
     add_byproduct_valorization_cons,
     add_byproduct_valorization_params,
+    add_byproduct_valorization_vars,
     add_costing_cons,
     add_costing_params,
     add_costing_vars,
@@ -20,6 +21,7 @@ from prommis.superstructure.superstructure_function import (
     add_operating_params,
     add_plant_lifetime_params_block,
     add_supe_formulation_params,
+    check_byproduct_valorization_params,
     check_discretized_costing_params,
     check_environmental_impact_params,
     check_feed_params,
@@ -27,10 +29,6 @@ from prommis.superstructure.superstructure_function import (
     check_operating_params,
     check_plant_lifetime_params,
     check_supe_formulation_params,
-
-    check_byproduct_valorization_params,
-    add_byproduct_valorization_vars,
-    add_byproduct_valorization_cons,
 )
 
 #################################################################################################
@@ -819,9 +817,7 @@ add_environmental_impact_cons(m)
 check_byproduct_valorization_params(
     m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
 )
-add_byproduct_valorization_params(
-    m, byproduct_values, byproduct_opt_conversions
-)
+add_byproduct_valorization_params(m, byproduct_values, byproduct_opt_conversions)
 add_byproduct_valorization_vars(m)
 add_byproduct_valorization_cons(m)
 

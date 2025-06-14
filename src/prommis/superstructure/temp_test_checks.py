@@ -72,9 +72,9 @@ options_in_stage = {
 }
 option_outlets = {
     # level 1
-    # (1, 1): [1, 2, 3, 4],
-    (1, 1): [],
+    (1, 1): [1, 2, 3, 4],
     (1, 2): [1, 2, 3, 4],
+    (1, 3): {5},
     # level 2
     (2, 1): [1, 2, 3, 6],
     (2, 2): [1, 2, 3, 6],
@@ -93,7 +93,6 @@ option_outlets = {
     (4, 3): [3],
     (4, 4): [4, 5],
 }
-discrete_opts = [(1, 1), (1, 2)]
 option_eff = {
     # Level 1 yields
     (1, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
@@ -724,7 +723,7 @@ m = pyo.ConcreteModel()
 
 ### Plant lifetime parameters
 # Check that plant lifetime parameters are feasible.
-check_plant_lifetime_params(plant_lifetime)
+check_plant_lifetime_params(plant_start, plant_lifetime)
 # Create separate block to hold plant lifetime parameters.
 add_plant_lifetime_params_block(m, plant_start, plant_lifetime)
 
@@ -833,11 +832,11 @@ m.no_byproduct_valorization.deactivate()
 # deactivate if not considered
 # m.byproduct_valorization.deactivate()
 
-# ### Solve model
-solver = get_solver(solver="gurobi")
-solver.options["NumericFocus"] = 2
-results = solver.solve(m, tee="True")
+### Solve model
+# solver = get_solver(solver="gurobi")
+# solver.options["NumericFocus"] = 2
+# results = solver.solve(m, tee="True")
 
-# ### Print out results
-m.mass_balances.option_binary_var.display()
+### Print out results
+# m.mass_balances.option_binary_var.display()
 # m.costing.total_byproduct_profit.display()

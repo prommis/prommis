@@ -20,13 +20,22 @@ import pyomo.environ as pyo
 
 ###################################################################################################
 ### Plant Lifetime Parameters
-def check_plant_lifetime_params(plant_lifetime):
+def check_plant_lifetime_params(plant_start, plant_lifetime):
     """
     This function checks that the lifetime parameters are feasible.
 
     Args:
         plant_lifetime: (int) The total lifetime of the plant, including plant construction. Must be at least three years.
     """
+    ### Check types and structure.
+    ## Check that plant_start is of type int.
+    if not isinstance(plant_start, int):
+        raise TypeError("plant_start is not of type int.")
+    
+    ## Check that plant_lifetime is of type int.
+    if not isinstance(plant_lifetime, int):
+        raise TypeError("plant_lifetime is not of type int.")
+
     ## Check that plant lifetime is at least three years.
     if plant_lifetime < 3:
         raise ValueError("Plant lifetime must be a minimum of three years.")
@@ -88,6 +97,41 @@ def check_feed_params(
         tracked_comps: (list) List of tracked components.
         prod_comp_mass: (dict) Mass of tracked components per EOL product.
     """
+    ### Check types and structure.
+    ## Check that available_feed is not an empty dict.
+    if not available_feed:
+        raise TypeError("available_feed dict is empty.")
+    
+    ## Check that structure of available_feed is correct.
+    for key, value in available_feed.items():
+        if not isinstance(key, int):
+            raise TypeError(f"key {key} in available_feed dict is not of type int.")
+        if not isinstance(value, (int, float)):
+            raise TypeError(f"value {value} in available_feed dict is not of type int or float.")
+    
+    ## Check that collection rate is of type int or float.
+    if not isinstance(collection_rate, (int, float)):
+        raise TypeError(f"collection_rate is not of type int or float.")
+    
+    ## Check that tracked_comps is a list.
+    if not isinstance(tracked_comps, list):
+        raise TypeError(f"tracked_comps is not of type list.")
+    
+    ## Check that all components in tracked_comps are of type str.
+    for c in tracked_comps:
+        if not isinstance(c, str):
+            raise TypeError(f"Value {c} in tracked_comps is not of type str.")
+        
+    ## Check that prod_comp_mass is of type dict.
+    if not isinstance(prod_comp_mass, dict):
+        raise TypeError(f"prod_comp_mass is not of type dict.")
+    
+    ## Check that structure of prod_comp_mass is correct.
+    for key, value in prod_comp_mass.items():
+        if not isinstance(key, str):
+            raise TypeError(f"key {key} in prod_comp_mass dict is not of type str.")
+        if not isinstance(value, (int, float)):
+            raise TypeError(f"value {value} in prod_comp_mass dict is not of type int or float.")
     ### Define parameters necessary for tests.
     # Define a set for the years in which the amount of available feed is defined.
     feed_years = set(available_feed.keys())
@@ -232,6 +276,41 @@ def check_supe_formulation_params(
         option_outlets: (dict) Set of options k' in stage j+1 connected to option k in stage j.
         option_eff: (dict) Tracked component retention efficiency for each option.
     """
+    ### Check types and structure.
+    ## Check that num_stages is of type int.
+    if not isinstance(num_stages, int):
+        raise TypeError("num_stages is not of type int.")
+    
+    ## Check that options_in_stage is of type dict.
+    if not isinstance(options_in_stage, dict):
+        raise TypeError("options_in_stage is not of type dict.")
+    
+    ## Check that structure of options_in_stage is correct.
+    for key, val in options_in_stage.items():
+        if not isinstance(key, int):
+            raise TypeError(f"key {key} in options_in_stage is not of type int.")
+        if not isinstance(val, int):
+            raise TypeError(f"value {val} in options_in_stage is not of type int.")
+        
+    ## Check that option_outlets is of type dict.
+    if not isinstance(option_outlets, dict):
+        raise TypeError("option_outlets is not of type dict.")
+    
+    ## Check that structure of option_outlets is correct.
+    for key, val in option_outlets.items():
+        if not isinstance(key, tuple):
+            raise TypeError(f"key {key} in option_outlets is not of type tuple.")
+        if not isinstance(val, list):
+            raise TypeError(f"value {val} in option_outlets is not of type list.")
+
+    
+    ## Check that option_eff is of type dict.
+    if not isinstance(option_eff, dict):
+        raise TypeError("option_eff is not of type dict.")
+    
+    ## Check that structure of option_eff is correct.
+
+
     ### Define parameters necessary for tests.
     # Define a set of the number of stages in the superstructure.
     num_stages_set = set(pyo.RangeSet(num_stages).data())
@@ -1720,7 +1799,7 @@ def check_byproduct_valorization_params(
 
     Args:
         m: pyomo model.
-        consider_byprod_valorization: (bool) Decide whether or not to consider the valorization of byproducts.
+        consider_byproduct_valorization: (bool) Decide whether or not to consider the valorization of byproducts.
         byproduct_values: (dict) Byproducts considered, and their value ($/kg).
         byproduct_opt_conversions: (dict) Defines the conversion factors for different byproducts for different options.
     """
@@ -1739,8 +1818,45 @@ def check_byproduct_valorization_params(
         empty_opts = []
         # Create a list to track byproducts that are not defined.
         undefined_byproducts = []
+        # Create a list to track the byproducts being produced by options.
+        produced_byproducts = []
 
         ### Run tests
+        ## Check that consider_byproduct_valorization is of type bool.
+        if not isinstance(consider_byproduct_valorization, bool):
+            raise TypeError("consider_byproduct_valorization not of type bool.")
+        
+        ## Check that structure of byproduct_values is correct.
+        for key, val in byproduct_values.items():
+            if not isinstance(key, str):
+                raise TypeError(f"key {key} in byproduct_values is not of type str.")
+            if not isinstance(val, (int, float)):
+                raise TypeError(f"value {val} in byproduct_values is not of type int or float.")
+
+        ## Check that inner dictionary of byproduct_opt_conversions is not empty.
+        for opt, inner_dict in byproduct_opt_conversions.items():
+            # Track the options for which the inner dict is empty.
+            if not inner_dict:
+                empty_opts.append(opt)
+
+        # If some options have empty dicts in byproduct_opt_conversions, raise an error.
+        if empty_opts:
+            msg = "Empty dict passed for the following options: "
+            msg += "\n".join(f"  {opt}" for opt in empty_opts)
+            raise TypeError(msg)
+        
+        ## Check that structure of byproduct_opt_conversions is correct
+        for opt, inner_dict in byproduct_opt_conversions.items():
+            # Check value is a dictionary
+            if not isinstance(inner_dict, dict):
+                raise TypeError(f"Value for option {opt} is not a dictionary.")
+            # Check that all keys are strings, values are int/float
+            for byprod, conversion in inner_dict.items():
+                if not isinstance(byprod, str):
+                    raise TypeError(f"Key in inner dictionary of byproduct_opt_conversions[{opt}] is not of type string.")
+                if not (isinstance(conversion, (int, float))):
+                    raise TypeError(f"Value in inner dictionary of byproduct_opt_conversions[{opt}] is not of type int or float.")
+
         ## Check that a value of type int or float is defined for each byproduct.
         for byprod, val in byproduct_values.items():
             # Track the byproducts for which incorrect value is defined.
@@ -1763,20 +1879,8 @@ def check_byproduct_valorization_params(
 
         # Raise an error if there are infeasible options defined.
         if infeasible_options:
-            msg = "Some options defined are infeasible:\n"
+            msg = "Some options defined are infeasible (do not exist in the superstructure):\n"
             msg += "\n".join(f"  {infeasible}" for infeasible in infeasible_options)
-            raise ValueError(msg)
-
-        ## Check that inner dictionary is not empty.
-        for opt, inner_dict in byproduct_opt_conversions.items():
-            # Track the options for which the inner dict is empty.
-            if not inner_dict:
-                empty_opts.append(opt)
-
-        # If some options have empty dicts in byproduct_opt_conversions, raise an error.
-        if empty_opts:
-            msg = "Empty dict passed for the following options: "
-            msg += "\n".join(f"  {opt}" for opt in empty_opts)
             raise ValueError(msg)
 
         ## Check that all byproducts are defined.
@@ -1796,6 +1900,25 @@ def check_byproduct_valorization_params(
             msg += "\n".join(
                 f"  Option: {opt} produces the undefined byproduct(s): {undefined}"
                 for opt, undefined in undefined_byproducts
+            )
+            raise ValueError(msg)
+        
+        ## Check that all byproducts considered have at least one option that is producing it.
+        for opt, inner_dict in byproduct_opt_conversions.items():
+            for byprod in inner_dict.keys():
+                if byprod not in produced_byproducts:
+                    produced_byproducts.append(byprod)
+
+        # turn list of produced byproducts into a set
+        produced_byproducts_set = set(produced_byproducts)
+
+        # Raise an error if there are considered byproducts that aren't being produced.
+        if byproducts_considered != produced_byproducts_set:
+            missing = byproducts_considered - produced_byproducts_set
+            msg="The following considered byproducts are not being produced by any options:\n"
+            msg += "\n".join(
+                f"{byprod}"
+                for byprod in missing  
             )
             raise ValueError(msg)
 

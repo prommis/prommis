@@ -1,7 +1,5 @@
 import pyomo.environ as pyo
 
-from idaes.core.solvers import get_solver
-
 from prommis.superstructure.superstructure_function import (
     add_byproduct_valorization_cons,
     add_byproduct_valorization_params,

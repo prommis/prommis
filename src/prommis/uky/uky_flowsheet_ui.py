@@ -44,10 +44,15 @@ def export_to_ui():
         do_build=build_flowsheet,
         do_solve=solve_flowsheet,
         get_diagram=get_diagram,
+        do_kpis=add_kpis,
         requires_idaes_solver=True,
         category=FlowsheetCategory.wastewater,
         build_options={},
     )
+
+
+# I think this is a better name
+flowsheet_interface = export_to_ui
 
 
 def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs):
@@ -105,8 +110,6 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sm2(C2O4)3(s)",
         "Y2(C2O4)3(s)",
     }
-
-    add_kpis(exports)
 
     # Export the leach liquid feed and its mass components, as inputs
     llf = flowsheet.leach_liquid_feed
@@ -395,26 +398,21 @@ def build_flowsheet(build_options=None, **kwargs):
     return scaled_model
 
 
-def add_kpis(exports):  # pragma: no cover
-    # TODO: Remove this check once the "KPI" part of the API
-    # TODO: is merged into idaes_flowsheet_processor
-    if not hasattr(exports, "add_kpi_value"):
-        return
-
-    fs = exports.m.fs
+def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
+    fs = flowsheet  # alias
     data = calculate_results(fs)
 
-    exports.add_kpi_value(
-        name="total-recovery",
-        units="%",
-        value=data["REE-recovery"],
-        label="Total REE recovery",
-    )
-    exports.add_kpi_value(
-        name="purity",
-        units="%",
-        value=data["product-purity"],
-        label="Product purity",
+    def round_recoveries(value):
+        """Round the recovery values to 2 decimal places."""
+        return round(value, 2)
+
+    exports.add_kpi_values(
+        name="stats",
+        labels=["Total REE Recovery", "Product Purity"],
+        units=["%", "%"],
+        values=[
+            round_recoveries(data[key]) for key in ("REE-recovery", "product-purity")
+        ],
     )
     element_names = {
         "al": "Aluminum",
@@ -434,7 +432,7 @@ def add_kpis(exports):  # pragma: no cover
     for element, full_name in element_names.items():
         element_values.append(data[f"{element}-recovery"])
         element_labels.append(full_name)
-    exports.add_kpi_vector(
+    exports.add_kpi_barchart(
         name="element-recovery",
         values=element_values,
         labels=element_labels,

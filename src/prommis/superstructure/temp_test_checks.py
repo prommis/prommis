@@ -29,6 +29,8 @@ from prommis.superstructure.superstructure_function import (
     check_supe_formulation_params,
 )
 
+from idaes.core.solvers import get_solver
+
 #################################################################################################
 ### Plant Lifetime Params
 plant_start = 2024
@@ -72,7 +74,6 @@ option_outlets = {
     # level 1
     (1, 1): [1, 2, 3, 4],
     (1, 2): [1, 2, 3, 4],
-    (1, 3): {5},
     # level 2
     (2, 1): [1, 2, 3, 6],
     (2, 2): [1, 2, 3, 6],
@@ -91,7 +92,7 @@ option_outlets = {
     (4, 3): [3],
     (4, 4): [4, 5],
 }
-option_eff = {
+option_efficiencies = {
     # Level 1 yields
     (1, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
     (1, 2): {"Nd": 1, "Dy": 1, "Fe": 1},
@@ -664,7 +665,6 @@ discretized_purchased_equipment_cost = {
     },
 }
 
-
 ### Objective Function Parameters
 obj_func = "NPV"
 
@@ -734,10 +734,10 @@ add_feed_params_block(m, available_feed, collection_rate, tracked_comps, prod_co
 ### Superstructure formulation parameters
 # Check that superstructure formulation parameters are feasible.
 check_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, option_eff
+    m, num_stages, options_in_stage, option_outlets, option_efficiencies
 )
 # Create separate block to hold superstructure formulation parameters.
-add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, option_eff)
+add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, option_efficiencies)
 
 ### Operating parameters
 # Check that operating parameters are feasible.

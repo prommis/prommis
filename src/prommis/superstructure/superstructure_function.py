@@ -2276,7 +2276,7 @@ def add_byproduct_valorization_vars(m):
 
 def add_byproduct_valorization_cons(m):
     """
-    This function builds the byproduct valorization constraints.
+    This function builds the byproduct valorization constraints. 
 
     Args:
         m: pyomo model.

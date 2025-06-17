@@ -15,7 +15,6 @@ from prommis.superstructure.superstructure_function import (
     add_mass_balance_cons,
     add_mass_balance_params,
     add_mass_balance_vars,
-    add_objective_function_params,
     add_operating_params,
     add_plant_lifetime_params_block,
     add_supe_formulation_params,
@@ -23,10 +22,10 @@ from prommis.superstructure.superstructure_function import (
     check_discretized_costing_params,
     check_environmental_impact_params,
     check_feed_params,
-    check_objective_function_params,
     check_operating_params,
     check_plant_lifetime_params,
     check_supe_formulation_params,
+    configure_model,
 )
 
 from idaes.core.solvers import get_solver
@@ -666,10 +665,10 @@ discretized_purchased_equipment_cost = {
 }
 
 ### Objective Function Parameters
-obj_func = "NPV"
+obj_func = 'NPV'
 
 ### Environmnetal Impact Parameters
-consider_environmental_impacts = True
+consider_environmental_impacts = False
 options_environmental_impacts = {
     (1, 1): 0,
     (1, 2): 1000,
@@ -697,7 +696,7 @@ options_environmental_impacts = {
 epsilon = 1
 
 ### Byproduct Valorization Parameters
-consider_byproduct_valorization = True
+consider_byproduct_valorization = False
 byproduct_values = {
     "Jarosite": -0.17,
     "Iron oxide": 10,
@@ -705,8 +704,7 @@ byproduct_values = {
     "Iron hydroxide": -0.17,
 }
 byproduct_opt_conversions = {
-    # (3, 1): {"Jarosite": 0.75},
-    (3, 1): {},
+    (3, 1): {"Jarosite": 0.75},
     (3, 2): {"Iron oxide": 1},
     (3, 3): {"Residue": 0.25},
     (3, 4): {"Iron hydroxide": 0.5},
@@ -772,12 +770,6 @@ check_discretized_costing_params(m, discretized_purchased_equipment_cost)
 # Create a separate block to hold costing parameters.
 add_discretized_costing_params(m, discretized_purchased_equipment_cost)
 
-### Objective function parameters
-# Check that objective function parameters are feasible.
-check_objective_function_params(m, obj_func)
-# Create a separate block to hold costing parameters.
-add_objective_function_params(m, obj_func)
-
 ### Mass balances
 # Generate mass balance parameters.
 add_mass_balance_params(m)
@@ -794,13 +786,6 @@ add_costing_vars(m)
 # Generate costing constraints.
 add_costing_cons(m)
 
-### Choose objective function
-# Deactivate if NPV is objective function
-m.cost_of_recovery.deactivate()
-
-# Deactivate if COR is objective function
-# m.net_present_value.deactivate()
-
 ### Environmental impacts
 check_environmental_impact_params(
     m, consider_environmental_impacts, options_environmental_impacts, epsilon
@@ -815,27 +800,18 @@ add_environmental_impact_cons(m)
 check_byproduct_valorization_params(
     m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
 )
-add_byproduct_valorization_params(m, byproduct_values, byproduct_opt_conversions)
+add_byproduct_valorization_params(m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions)
 add_byproduct_valorization_vars(m)
 add_byproduct_valorization_cons(m)
 
-
-### Choose if environmental impacts are considered
-# deactivate if not considered
-m.environmental_impacts.deactivate()
-
-### Choose if byproduct valorization is considered
-# deactivate if considered
-m.no_byproduct_valorization.deactivate()
-
-# deactivate if not considered
-# m.byproduct_valorization.deactivate()
+### Configure model
+configure_model(m, "NPV")
 
 ### Solve model
-# solver = get_solver(solver="gurobi")
-# solver.options["NumericFocus"] = 2
-# results = solver.solve(m, tee="True")
+solver = get_solver(solver="gurobi")
+solver.options["NumericFocus"] = 2
+results = solver.solve(m, tee="True")
 
 ### Print out results
-# m.mass_balances.option_binary_var.display()
+m.mass_balances.option_binary_var.display()
 # m.costing.total_byproduct_profit.display()

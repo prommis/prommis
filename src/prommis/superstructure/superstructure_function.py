@@ -1164,45 +1164,6 @@ def add_discretized_costing_params(m, discretized_purchased_equipment_cost):
 
 
 ###################################################################################################
-### Objective Function Parameters
-def check_objective_function_params(m, obj_func):
-    """
-    This function checks that all the objective function params are feasible.
-
-    Args:
-        m: pyomo model.
-        obj_func (str) Choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive.
-    """
-    ### Check types and structure.
-    ## Check that obj_fun is of type str.
-    if not isinstance(obj_func, str):
-        raise TypeError("obj_func is not of type str.")
-
-    ### Run tests
-    if (obj_func != "NPV") and (obj_func != "COR"):
-        raise ValueError(
-            "Invalid choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive."
-        )
-
-
-def add_objective_function_params(m, obj_func):
-    """
-    This function adds all the objective function parameters to a block.
-
-    Args:
-        m: pyomo model.
-        obj_func: (str) Choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive.
-    """
-    ### Define necessary pyomo parameters.
-    ## Create block
-    m.obj_func_params = pyo.Block("Block to hold objective function parameters.")
-    ## Pyomo parameters
-    m.obj_func_params.chosen_obj = pyo.Param(
-        initialize=obj_func, doc="Choice of objective function."
-    )
-
-
-###################################################################################################
 ### Mass Balances
 def add_mass_balance_params(m):
     """
@@ -2191,12 +2152,13 @@ def check_byproduct_valorization_params(
             raise ValueError(msg)
 
 
-def add_byproduct_valorization_params(m, byproduct_values, byproduct_opt_conversions):
+def add_byproduct_valorization_params(m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions):
     """
     This function builds the byproduct valorization parameters.
 
     Args:
         m: pyomo model.
+        consider_byproduct_valorization: (bool) Decide whether or not to consider the valorization of byproducts.
         byproduct_values: (dict) Byproducts considered, and their value ($/kg).
         byproduct_opt_conversions: (dict) Conversion factors for each byproduct for each option.
     """
@@ -2223,6 +2185,11 @@ def add_byproduct_valorization_params(m, byproduct_values, byproduct_opt_convers
     m.byproduct_valorization_params = pyo.Block()
 
     ## Pyomo parameters
+    m.byproduct_valorization_params.consider_byproduct_valorization = pyo.Param(
+        initialize=consider_byproduct_valorization,
+        within=pyo.Boolean,
+        doc="Choice of whether or not to consider byproduct valorization."
+    )
     m.byproduct_valorization_params.byproducts_set = pyo.Set(
         initialize=byproducts, doc="Set of byproducts considered."
     )
@@ -2334,170 +2301,43 @@ def add_byproduct_valorization_cons(m):
         )
 
 
-def build_model(
-    ###################################################################################################
-    ### Plant Lifetime Parameters
-    # The year that plant construction begins.
-    plant_start: int,
-    # The total lifetime of the plant, including plant construction. Must be at least three years.
-    plant_lifetime: int,
-    ###################################################################################################
-    ###################################################################################################
-    ### Feed parameters
-    # Total feedstock available for recycling each year.
-    available_feed: dict,
-    # How much available feed is processed by the plant each year.
-    collection_rate: float,
-    # List of tracked components.
-    tracked_comps: list,
-    # Mass of tracked component per EOL product.
-    prod_comp_mass: dict,
-    ###################################################################################################
-    ###################################################################################################
-    ### Superstructure formulation parameters
-    # Number of total stages.
-    num_stages: int,
-    # Number of options in each stage.
-    options_in_stage: dict,
-    # Set of options k' in stage j+1 connected to option k in stage j.
-    option_outlets: dict,
-    # Tracked component retention efficiency for each option.
-    option_efficiencies: dict,
-    ###################################################################################################
-    ###################################################################################################
-    ### Operating Parameters
-    # Profit per unit of product in terms of tracked components.
-    profit: dict,
-    # Holds the variable operating cost param for options that are continuous.
-    # Variable operating costs assumed to be proportional to the feed entering the option.
-    opt_var_oc_params: dict,
-    # Number of operators needed per discrete unit for options that utilize discrete units.
-    operators_per_discrete_unit: dict,
-    # Yearly operating costs per unit for options which utilize discrete units.
-    yearly_cost_per_unit: dict,
-    # Cost per unit for options which utilize discrete units.
-    capital_cost_per_unit: dict,
-    # Processing rate per unit for options that utilize discrete units.
-    # In terms of units of incoming feed processed per year per unit.
-    processing_rate: dict,
-    # Number of operators needed for each continuous option.
-    num_operators: dict,
-    # Yearly wage per operator.
-    labor_rate: float,
-    ###################################################################################################
-    ###################################################################################################
-    ### Discretized Costing Parameters
-    # Define Python Dictionary with discretized cost by flows for each option.
-    discretized_purchased_equipment_cost: dict,
-    ###################################################################################################
-    ###################################################################################################
-    ### Objective Function Parameters
-    # Choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive.
-    obj_func: str,
-    ###################################################################################################
-    ###################################################################################################
-    ### Environmental Impact Parameters
-    # Boolean to decide whether or not to consider environmental impacts.
-    consider_environmental_impacts: bool,
-    # Environmental impacts matrix (unit chosen indicator per unit of incoming flowrate).
-    options_environmental_impacts: dict,
-    # Epsilon factor for generating the Pareto front.
-    epsilon: float,
-    ###################################################################################################
-    ###################################################################################################
-    ### Byproduct Valorization Parameters
-    # Boolean to decide whether or not to consider the valorization of byproducts.
-    consider_byproduct_valorization: bool,
-    # List of byproducts.
-    byproducts: list,
-    # Dictionary of values for each byproduct ($/kg).
-    byprod_vals: dict,
-    # Dictionary keeping track of which tracked component produces which byproduct.
-    tracked_comp_for_byprod: dict,
-    # Dictionary tracking which options produce a given byproduct.
-    byprod_options: dict,
-    # Dictionary tracking byproduct recovery efficiency for each option (in terms of the tracked component).
-    byprod_options_eff: dict,
-    # Conversion factors of tracked component to byproduct (kg byproduct / kg tracked component).
-    tracked_comp_to_byproduct: dict,
-):
-    # Define model
-    m = pyo.ConcreteModel()
+def configure_model(m, obj_func):
+    """
+    The configures the model based on the specifications of the user by activating and deactivating different
+    blocks to ensure the correct constraints are considered.
 
-    ### Plant lifetime parameters
-    # Check that plant lifetime parameters are feasible.
-    check_plant_lifetime_params(plant_lifetime)
-    # Create separate block to hold plant lifetime parameters.
-    add_plant_lifetime_params_block(m, plant_start, plant_lifetime)
+    Args:
+        m: pyomo model.
+        obj_func: (str) Choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive.
+    """
+    ### Check types and structure.
+    ## Check that obj_fun is of type str.
+    if not isinstance(obj_func, str):
+        raise TypeError("obj_func is not of type str.")
 
-    ### Feed parameters
-    # Check that feed parameters are feasible.
-    check_feed_params(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
-    # Create separate block to hold feed parameters.
-    add_feed_params_block(
-        m, available_feed, collection_rate, tracked_comps, prod_comp_mass
-    )
+    ### Run tests
+    if (obj_func != "NPV") and (obj_func != "COR"):
+        raise ValueError(
+            "Invalid choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive."
+        )
 
-    ### Superstructure formulation parameters
-    # Check that superstructure formulation parameters are feasible.
-    check_supe_formulation_params(
-        m, num_stages, options_in_stage, option_outlets, option_efficiencies
-    )
-    # Create separate block to hold superstructure formulation parameters.
-    add_supe_formulation_params(
-        m, num_stages, options_in_stage, option_outlets, option_efficiencies
-    )
+    # Check the objective function.
+    if obj_func == 'NPV':
+        # deactivate the cost of recovery constraints and objective function if the NPV objective function is chosen.
+        m.cost_of_recovery.deactivate()
+    else:
+        # deactivate the net present value constraints and objective function if the cost of recovery objective function is chosen.
+        m.net_present_value.deactivate()
+    
+    # Check if environmental impacts are considered.
+    if pyo.value(m.environmental_impacts.consider_environmental_impacts) == False:
+        # deactivate environmental impact constraints if they are not considered.
+        m.environmental_impacts.deactivate()
 
-    ### Operating parameters
-    # Check that operating parameters are feasible.
-    check_operating_params(
-        m,
-        profit,
-        opt_var_oc_params,
-        operators_per_discrete_unit,
-        yearly_cost_per_unit,
-        capital_cost_per_unit,
-        processing_rate,
-        num_operators,
-        labor_rate,
-    )
-    # Create separate block to hold operating parameters.
-    add_operating_params(
-        m,
-        profit,
-        opt_var_oc_params,
-        operators_per_discrete_unit,
-        yearly_cost_per_unit,
-        capital_cost_per_unit,
-        processing_rate,
-        num_operators,
-        labor_rate,
-    )
-
-    ### Costing parameters
-    # Check that costing parameters are feasible.
-    check_discretized_costing_params(m, discretized_purchased_equipment_cost)
-    # Create a separate block to hold costing parameters.
-    add_discretized_costing_params(m, discretized_purchased_equipment_cost)
-
-    ### Objective function parameters
-    # Check that objective function parameters are feasible.
-    check_objective_function_params(m, obj_func)
-    # Create a separate block to hold costing parameters.
-    add_objective_function_params(m, obj_func)
-
-    ### Mass balances
-    # Generate mass balance parameters.
-    add_mass_balance_params(m)
-    # Generate mass balance variables.
-    add_mass_balance_vars(m)
-    # Generate mass balance constraints.
-    add_mass_balance_cons(m)
-
-    ### Costing
-    # Generate costing parameters.
-    add_costing_params(m)
-    # Generate costing variables.
-    add_costing_vars(m)
-    # Generate costing constraints.
-    add_costing_cons(m)
+    # Check if byproduct valorization is considered.  Different constraints are considered depending on if they are considered or not.
+    if pyo.value(m.byproduct_valorization_params.consider_byproduct_valorization) == True:
+        # deactivate the constraints that're associated with no byproduct valorization if it is considered.
+        m.no_byproduct_valorization.deactivate()
+    else:
+        # deactivate the constraints that're associated with byproduct valorization if it is not considered.
+        m.byproduct_valorization.deactivate()

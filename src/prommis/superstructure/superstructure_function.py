@@ -646,15 +646,13 @@ def check_operating_params(
     ## Check that profit is of type dict.
     if not isinstance(profit, dict):
         raise TypeError("profit is not of type dict.")
-    
+
     ## Check that structure of profit is correct.
     for key, inner_dict in profit.items():
         if not isinstance(key, tuple):
             raise TypeError(f"key {key} in profit is not of type tuple.")
         if not isinstance(inner_dict, dict):
-            raise TypeError(
-                f"value for profit[{key}] is not of type dict."
-            )
+            raise TypeError(f"value for profit[{key}] is not of type dict.")
         for comp, value in inner_dict.items():
             if not isinstance(comp, str):
                 raise TypeError(
@@ -664,7 +662,7 @@ def check_operating_params(
                 raise TypeError(
                     f"value of profit[{key}][{comp}] is not of type int or float."
                 )
-            
+
     ## Check that structure of opt_var_oc_params is correct.
     for key, inner_dict in opt_var_oc_params.items():
         if not isinstance(key, tuple):
@@ -673,49 +671,65 @@ def check_operating_params(
             raise TypeError(f"value of opt_var_oc_params[{key}] is not of type dict.")
         for oc_param, value in inner_dict.items():
             if not isinstance(oc_param, str):
-                raise TypeError(f"key {oc_param} in opt_var_oc_params[{key}] is not of type str.")
+                raise TypeError(
+                    f"key {oc_param} in opt_var_oc_params[{key}] is not of type str."
+                )
             if not isinstance(value, (int, float)):
-                raise TypeError(f"value of opt_var_oc_params[{key}][{oc_param}] is not of type int or float.")
-            
+                raise TypeError(
+                    f"value of opt_var_oc_params[{key}][{oc_param}] is not of type int or float."
+                )
+
     ## Check that structure of operators_per_discrete_unit is correct.
     for key, value in operators_per_discrete_unit.items():
         if not isinstance(key, tuple):
-            raise TypeError(f"key {key} in operators_per_discrete_unit is not of type tuple.")
+            raise TypeError(
+                f"key {key} in operators_per_discrete_unit is not of type tuple."
+            )
         if not isinstance(value, (int, float)):
-            raise TypeError(f"value {value} of operators_per_discrete_unit[{key}] is not of type int or float.")
-        
+            raise TypeError(
+                f"value {value} of operators_per_discrete_unit[{key}] is not of type int or float."
+            )
+
     ## Check that structure of yearly_cost_per_unit is correct.
     for key, value in yearly_cost_per_unit.items():
         if not isinstance(key, tuple):
             raise TypeError(f"key {key} in yearly_cost_per_unit is not of type tuple.")
         if not isinstance(value, (int, float)):
-            raise TypeError(f"value {value} of yearly_cost_per_unit[{key}] is not of type int or float.")
-        
+            raise TypeError(
+                f"value {value} of yearly_cost_per_unit[{key}] is not of type int or float."
+            )
+
     ## Check that structure of capital_cost_per_unit is correct.
     for key, value in capital_cost_per_unit.items():
         if not isinstance(key, tuple):
             raise TypeError(f"key {key} in capital_cost_per_unit is not of type tuple.")
         if not isinstance(value, (int, float)):
-            raise TypeError(f"value {value} of capital_cost_per_unit[{key}] is not of type int or float.")
-        
+            raise TypeError(
+                f"value {value} of capital_cost_per_unit[{key}] is not of type int or float."
+            )
+
     ## Check that structure of processing_rate is correct.
     for key, value in processing_rate.items():
         if not isinstance(key, tuple):
             raise TypeError(f"key {key} in processing_rate is not of type tuple.")
         if not isinstance(value, (int, float)):
-            raise TypeError(f"value {value} of processing_rate[{key}] is not of type int or float.")
-        
+            raise TypeError(
+                f"value {value} of processing_rate[{key}] is not of type int or float."
+            )
+
     ## Check that structure of num_operators is correct.
     for key, value in num_operators.items():
         if not isinstance(key, tuple):
             raise TypeError(f"key {key} in num_operators is not of type tuple.")
         if not isinstance(value, (int, float)):
-            raise TypeError(f"value {value} of num_operators[{key}] is not of type int or float.")
-        
+            raise TypeError(
+                f"value {value} of num_operators[{key}] is not of type int or float."
+            )
+
     ## Check that labor_rate is of type int or float.
     if not isinstance(labor_rate, (int, float)):
         raise TypeError("labor_rate is not of type int or float.")
-    
+
     ### Define parameters necessary for tests.
     # Define a set of all the keys in profit dict.
     profit_opt_keys = set(profit.keys())
@@ -763,7 +777,7 @@ def check_operating_params(
     undefined_profit_opts = []
     # Define a list to track the infeasible options.
     infeasible_profit_opts = []
-    # Define a list to track the continuous options for which variable operating costs are not 
+    # Define a list to track the continuous options for which variable operating costs are not
     # defined.
     opts_missing_oc_params = []
     # Define a list to track the options for which variable operating costs are defined but aren't feasible.
@@ -776,7 +790,7 @@ def check_operating_params(
         raise ValueError(
             f"Profit not defined for the following options in the final stage: {undefined_profit_opts}"
         )
-    
+
     ## Check that all options for which profits are defined are feasible (exist in the final stage of the superstructure).
     infeasible_profit_opts = profit_opt_keys - final_opts_set
     if infeasible_profit_opts:
@@ -813,7 +827,7 @@ def check_operating_params(
             for j, k, negative in negative_profit_comps
         )
         raise ValueError(msg)
-    
+
     ## Check that all components in profit are defined tracked components.
     for opt, inner_dict in profit.items():
         for comp in inner_dict.keys():
@@ -821,7 +835,7 @@ def check_operating_params(
                 raise ValueError(
                     f"component: {comp} as defined in profit for option {opt} is not a tracked component."
                 )
-                
+
     ## Check that variable operating cost params are defined for all continuous options.
     opts_missing_oc_params = continuous_opts_set - opt_var_oc_params_keys
     # Raise an error if there are opts missing oc params.
@@ -829,7 +843,7 @@ def check_operating_params(
         raise ValueError(
             f"Variable operating cost params not defined for the following continuous options: {opts_missing_oc_params}."
         )
-    
+
     ## Check that all all options for which variable operating costs params are defined are feasible.
     infeasible_opts_oc_params = opt_var_oc_params_keys - continuous_opts_set
     # Raise an error if there are infeasible options found.
@@ -837,7 +851,7 @@ def check_operating_params(
         raise ValueError(
             f"The following options for which variable operating costs params were defined do not exist as continuous options in the superstructure: {infeasible_opts_oc_params}."
         )
-    
+
     ## Check that both necessary variable operating cost parameters ('a' and 'b') are defined for all continuous options.
     for opt in continuous_opts_set:
         opt_params_set = set(opt_var_oc_params[opt].keys())
@@ -845,13 +859,13 @@ def check_operating_params(
             raise ValueError(
                 f"Variable operating cost params incorrectly defined in opt_var_oc_params for option: {opt}."
             )
-    
+
     ## Check that operators per discrete unit is defined for all options that utilize discrete units.
     if operators_per_discrete_unit_keys != discrete_opts_set:
         raise ValueError(
             "operators_per_discrete_unit must be defined, and only defined, for all discrete options."
         )
-    
+
     ## Check that operators per discrete unit are all defined to be non-negative.
     negative_operators_per_discrete_units = [
         opt for opt, w in operators_per_discrete_unit.items() if w < 0
@@ -859,13 +873,13 @@ def check_operating_params(
     # If there are negative operators defined per discrete unit for any discrete options, raise an error.
     if negative_operators_per_discrete_units:
         raise ValueError("Operators per discrete unit must all be non-negative.")
-    
+
     ## Check that yearly cost per unit is defined for all discrete options.
     if yearly_cost_per_unit_keys != discrete_opts_set:
         raise ValueError(
             "yearly_cost_per_unit must be defined, and only defined for, all discrete options."
         )
-    
+
     ## Check that the yearly cost per unit values are all non-negative.
     negative_yearly_cost_per_unit = [
         opt for opt, cost in yearly_cost_per_unit.items() if cost < 0
@@ -873,13 +887,13 @@ def check_operating_params(
     # If there any discrete options that define a negative yearly cost per unit, raise an error.
     if negative_yearly_cost_per_unit:
         raise ValueError("yearly_cost_per_unit values must all be non-negative.")
-    
+
     ## Check that cost per unit is defined for all discrete options.
     if capital_cost_per_unit_set != discrete_opts_set:
         raise ValueError(
             "capital_cost_per_unit must be defined, and only defined for, all discrete options."
         )
-    
+
     ## Check that the cost per unit values are all non-negative.
     negative_capital_cost_per_unit = [
         opt for opt, cost in capital_cost_per_unit.items() if cost < 0
@@ -887,11 +901,13 @@ def check_operating_params(
     # If there are any discrete options which define a negative capital cost per unit, raise an error.
     if negative_capital_cost_per_unit:
         raise ValueError("capital_cost_per_unit values must all be non-negative.")
-    
+
     ## Check that prosessing rate is defined for all discrete options.
     if processing_rate_keys != discrete_opts_set:
-        raise ValueError("processing_rate must be defined, and only defined for, all discrete options.")
-    
+        raise ValueError(
+            "processing_rate must be defined, and only defined for, all discrete options."
+        )
+
     ## Check that all processing rates are positive.
     nonpositive_processing_rate = [
         opt for opt, rate in processing_rate.items() if rate <= 0
@@ -899,20 +915,20 @@ def check_operating_params(
     # If there are any discrete options which define a non-positive processing rate for a unit, raise an error.
     if nonpositive_processing_rate:
         raise ValueError("processing rates must all be positive.")
-    
+
     ## Check that num_operators is defined for all continuous options
     if num_operators_keys != continuous_opts_set:
         raise ValueError(
             "num_operators must be defined, and only defined for, all continuous options."
         )
-    
+
     ## Check that num_operators values are all non-negative
     negative_num_operators = [
         opt for opt, operators in num_operators.items() if operators < 0
     ]
     if negative_num_operators:
         raise ValueError("number of operators must all be non-negative.")
-    
+
     ## Check that labor rate is non-negative
     if labor_rate < 0:
         raise ValueError("labor rate must be non-negative.")
@@ -1033,13 +1049,17 @@ def check_discretized_costing_params(m, discretized_purchased_equipment_cost):
     ## Check that discretized_purchased_equipment_cost is of type dict.
     if not isinstance(discretized_purchased_equipment_cost, dict):
         raise TypeError("discretized_purchased_equipment_cost is not of type dict.")
-    
+
     ## Check structure of discretized_purchased_equipment_cost.
     for opt, inner_dict in discretized_purchased_equipment_cost.items():
         if not isinstance(opt, tuple):
-            raise TypeError(f"opt {opt} in discretized_purchased_equipment_cost is not of type tuple.")
+            raise TypeError(
+                f"opt {opt} in discretized_purchased_equipment_cost is not of type tuple."
+            )
         if not isinstance(inner_dict, dict):
-            raise TypeError(f"discretized_purchased_equipment_cost[{opt}] is not of type dict.")
+            raise TypeError(
+                f"discretized_purchased_equipment_cost[{opt}] is not of type dict."
+            )
         if not inner_dict:
             raise ValueError(
                 f"discretized_purchased_equipment_cost[{opt}] is an empty dict."
@@ -1893,14 +1913,18 @@ def check_environmental_impact_params(
         ## Check that structure of options_environmental_impacts is correct.
         for opt, val in options_environmental_impacts.items():
             if not isinstance(opt, tuple):
-                raise TypeError(f"key {opt} in options_environmental_impacts is not of type tuple.")
+                raise TypeError(
+                    f"key {opt} in options_environmental_impacts is not of type tuple."
+                )
             if not isinstance(val, (int, float)):
-                raise TypeError(f"value of options_environmental_impacts[{opt}] is not of type int or float.")
+                raise TypeError(
+                    f"value of options_environmental_impacts[{opt}] is not of type int or float."
+                )
 
         ## Check that epsilon is of type int or float.
         if not isinstance(epsilon, (int, float)):
             raise TypeError("epsilon is not of type int or float.")
-        
+
         ### Define parameters necessary for tests.
         # Define a set for all the options in the superstructure.
         all_opts_set = set(m.supe_form_params.all_opts_set.data())
@@ -1912,8 +1936,8 @@ def check_environmental_impact_params(
         ### Run tests
         ## Check that environmental impacts matrix contains entry for all options in the superstructure.
         if all_opts_set != options_environmental_impacts_keys_set:
-            msg="options_environmental_impacts must provide values for all options in the superstructure. "
-            msg+="Please check that environmental impacts are defined for all options, and that there aren't any defined for infeasible options (options that don't exist within th superstructure)."
+            msg = "options_environmental_impacts must provide values for all options in the superstructure. "
+            msg += "Please check that environmental impacts are defined for all options, and that there aren't any defined for infeasible options (options that don't exist within th superstructure)."
             raise ValueError(msg)
 
 
@@ -2152,7 +2176,9 @@ def check_byproduct_valorization_params(
             raise ValueError(msg)
 
 
-def add_byproduct_valorization_params(m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions):
+def add_byproduct_valorization_params(
+    m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
+):
     """
     This function builds the byproduct valorization parameters.
 
@@ -2188,7 +2214,7 @@ def add_byproduct_valorization_params(m, consider_byproduct_valorization, byprod
     m.byproduct_valorization_params.consider_byproduct_valorization = pyo.Param(
         initialize=consider_byproduct_valorization,
         within=pyo.Boolean,
-        doc="Choice of whether or not to consider byproduct valorization."
+        doc="Choice of whether or not to consider byproduct valorization.",
     )
     m.byproduct_valorization_params.byproducts_set = pyo.Set(
         initialize=byproducts, doc="Set of byproducts considered."
@@ -2322,20 +2348,23 @@ def configure_model(m, obj_func):
         )
 
     # Check the objective function.
-    if obj_func == 'NPV':
+    if obj_func == "NPV":
         # deactivate the cost of recovery constraints and objective function if the NPV objective function is chosen.
         m.cost_of_recovery.deactivate()
     else:
         # deactivate the net present value constraints and objective function if the cost of recovery objective function is chosen.
         m.net_present_value.deactivate()
-    
+
     # Check if environmental impacts are considered.
     if pyo.value(m.environmental_impacts.consider_environmental_impacts) == False:
         # deactivate environmental impact constraints if they are not considered.
         m.environmental_impacts.deactivate()
 
     # Check if byproduct valorization is considered.  Different constraints are considered depending on if they are considered or not.
-    if pyo.value(m.byproduct_valorization_params.consider_byproduct_valorization) == True:
+    if (
+        pyo.value(m.byproduct_valorization_params.consider_byproduct_valorization)
+        == True
+    ):
         # deactivate the constraints that're associated with no byproduct valorization if it is considered.
         m.no_byproduct_valorization.deactivate()
     else:

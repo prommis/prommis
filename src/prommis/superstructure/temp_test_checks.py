@@ -705,7 +705,8 @@ byproduct_values = {
     "Iron hydroxide": -0.17,
 }
 byproduct_opt_conversions = {
-    (3, 1): {"Jarosite": 0.75},
+    # (3, 1): {"Jarosite": 0.75},
+    (3, 1): {},
     (3, 2): {"Iron oxide": 1},
     (3, 3): {"Residue": 0.25},
     (3, 4): {"Iron hydroxide": 0.5},

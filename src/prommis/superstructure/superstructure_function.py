@@ -1918,15 +1918,14 @@ def check_environmental_impact_params(
         options_environmental_impacts: (dict) Environmental impacts matrix. Unit chosen indicator per unit of incoming flowrate.
         epsilon: (float) Epsilon factor for generating the Pareto front.
     """
-    ### Only need to check feasibility of parameters if user wants to consider environmental impacts
+    ## Check that consider_environmental_impacts is of type bool. Must be provided regardles on whether or not environmental impacts are considered.
+    if not isinstance(consider_environmental_impacts, bool):
+        raise TypeError("consider_environmental_impacts is not of type bool.")
+    ### Only need to check feasibility of the rest of the parameters if user wants to consider environmental impacts
     # (consider_environmental_impacts is True).
     if consider_environmental_impacts:
         ### Check types and structure.
-        ## Check that consider_environmental_impacts is of type bool.
-        if not isinstance(consider_environmental_impacts, bool):
-            raise TypeError("consider_environmental_impacts is not of type bool.")
-        
-        ## Check that options_environmental_impacts if of type dict.
+        ## Check that options_environmental_impacts is of type dict.
         if not isinstance(options_environmental_impacts, dict):
             raise TypeError("options_environmental_impacts is not of type dict.")
 
@@ -1952,7 +1951,9 @@ def check_environmental_impact_params(
         ### Run tests
         ## Check that environmental impacts matrix contains entry for all options in the superstructure.
         if all_opts_set != options_environmental_impacts_keys_set:
-            raise ValueError("options_environmental_impacts must provide values for all options in the superstructure.")
+            msg="options_environmental_impacts must provide values for all options in the superstructure. "
+            msg+="Please check that environmental impacts are defined for all options, and that there aren't any defined for infeasible options (options that don't exist within th superstructure)."
+            raise ValueError(msg)
 
 
 def add_environmental_impact_params(
@@ -2076,39 +2077,6 @@ def check_byproduct_valorization_params(
     ### Only need to check feasibility of parameters if user wants to consider environmental impacts (consider_byprod_val is True).
     if consider_byproduct_valorization:
         ### Check typos and structure.
-        ## Check consider_byproduct_valorization is of type bool.
-        if not isinstance(consider_byproduct_valorization, bool):
-            raise TypeError("consider_byproduct_valorization is not of type bool.")
-        
-        ## Check byproduct_values is of type dict.
-        if not isinstance(byproduct_values, dict):
-            raise TypeError("byproduct_values is not of type dict.")
-        
-        ## Check structure of byproduct_values.
-        
-        ## Check that byproduct_opt_conversions is of type dict.
-        if not isinstance(byproduct_opt_conversions, dict):
-            raise TypeError("byproduct_opt_conversions is not of type dict.")
-
-        ## Check structure of byproduct_opt_conversions.
-
-        ### Define parameters necessary for tests.
-        # Create a set of the byproducts considered
-        byproducts_considered = set(byproduct_values.keys())
-        # Create a set of the options that produce byproducts.
-        byproduct_producing_options = set(byproduct_opt_conversions.keys())
-        # Create a list to track the missing byproduct values.
-        incorrect_byproduct_values = []
-        # Create a list to track the infeasible options.
-        infeasible_options = []
-        # Create a list to track options in byproduct_opt_conversions for which an empty dict is defined.
-        empty_opts = []
-        # Create a list to track byproducts that are not defined.
-        undefined_byproducts = []
-        # Create a list to track the byproducts being produced by options.
-        produced_byproducts = []
-
-        ### Run tests
         ## Check that consider_byproduct_valorization is of type bool.
         if not isinstance(consider_byproduct_valorization, bool):
             raise TypeError("consider_byproduct_valorization not of type bool.")
@@ -2142,13 +2110,24 @@ def check_byproduct_valorization_params(
         for opt, inner_dict in byproduct_opt_conversions.items():
             # Track the options for which the inner dict is empty.
             if not inner_dict:
-                empty_opts.append(opt)
-        # If some options have empty dicts in byproduct_opt_conversions, raise an error.
-        if empty_opts:
-            msg = "Empty dict passed for the following options: "
-            msg += "\n".join(f"  {opt}" for opt in empty_opts)
-            raise TypeError(msg)
+                # If some options have empty dicts in byproduct_opt_conversions, raise an error.
+                raise TypeError(f"Empty dict passed for the option: {opt}.")
 
+        ### Define parameters necessary for tests.
+        # Create a set of the byproducts considered
+        byproducts_considered = set(byproduct_values.keys())
+        # Create a set of the options that produce byproducts.
+        byproduct_producing_options = set(byproduct_opt_conversions.keys())
+        # Create a list to track the missing byproduct values.
+        incorrect_byproduct_values = []
+        # Create a list to track the infeasible options.
+        infeasible_options = []
+        # Create a list to track byproducts that are not defined.
+        undefined_byproducts = []
+        # Create a list to track the byproducts being produced by options.
+        produced_byproducts = []
+
+        ### Run tests
         ## Check that a value of type int or float is defined for each byproduct.
         for byprod, val in byproduct_values.items():
             # Track the byproducts for which incorrect value is defined.

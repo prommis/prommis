@@ -378,9 +378,9 @@ def test_initialize_and_solve_dynamic(model_dynamic):
     # Add disturbance and solve dynamic model
     temp0 = m_scaled.fs.roaster.solid_inlet.temperature[0].value
     sf = get_scaling_factor(m_scaled.fs.roaster.solid_inlet.temperature[0])
-    # solid inlet tempertaure ramp rate for unscaled model
+    # solid inlet temperature ramp rate for unscaled model
     dTdt = 0.2
-    # solid inlet tempertaure ramp rate for scaled model
+    # solid inlet temperature ramp rate for scaled model
     dTdt_scaled = dTdt * sf
     for t in m_scaled.fs.time:
         if t > 30:

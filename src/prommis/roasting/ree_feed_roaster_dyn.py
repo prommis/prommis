@@ -144,18 +144,316 @@ the overall effect of the reactions is very likely exothermic even though calcin
 """
 
 from pyomo.dae import DerivativeVar
-from pyomo.environ import Constraint, Param, Var, exp, sqrt, units
-from pyomo.common.config import Bool, ConfigBlock, ConfigValue
+from pyomo.environ import Block, Constraint, Param, Var, value, exp, sqrt, units
+from pyomo.common.config import Bool, ConfigBlock, ConfigDict, ConfigValue
 
 from idaes import logger as idaeslog
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
-from idaes.core.solvers import get_solver
-from idaes.core.util import scaling as iscale
+from idaes.core.initialization import ModularInitializerBase
+from idaes.core.scaling import (
+    ConstraintScalingScheme,
+    CustomScalerBase,
+    get_scaling_factor,
+)
 from idaes.core.util.config import DefaultBool, is_physical_parameter_block
 from idaes.core.util.constants import Constants as const
 
+
 __author__ = "Jinliang Ma"
 __version__ = "1.0.0"
+
+
+class REEFeedRoasterScaler(CustomScalerBase):
+    """
+    Scaler for the REEFeedRoaster unit model.
+    """
+
+    DEFAULT_SCALING_FACTORS = {
+        "volume": 1.0,
+        "voidage": 1.0,
+    }
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        """
+        Variable scaling routine for REEFeedRoaster.
+
+        Args:
+            model: instance of REEFeedRoaster to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: dict of Scalers to use for sub-models, keyed by submodel local name
+
+        Returns:
+            None
+        """
+        if submodel_scalers is None:
+            submodel_scalers = {}
+
+        # scaling property submodel variables
+        # gas inlet properties
+        self.call_submodel_scaler_method(
+            submodel=model.gas_in,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+        # gas outlet properties
+        self.call_submodel_scaler_method(
+            submodel=model.gas_out,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+        # solid inlet properties
+        self.call_submodel_scaler_method(
+            submodel=model.solid_in,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+        # solid outlet properties
+        self.call_submodel_scaler_method(
+            submodel=model.solid_out,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+        # leach solid outlet properties
+        self.call_submodel_scaler_method(
+            submodel=model.leach_solid_out,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        if hasattr(model, "volume"):
+            self.scale_variable_by_default(model.volume, overwrite=overwrite)
+        if hasattr(model, "voidage"):
+            self.scale_variable_by_default(model.voidage, overwrite=overwrite)
+        if hasattr(model, "heat_duty"):
+            for v in model.heat_duty.values():
+                sf = 1e-6
+                self.set_variable_scaling_factor(v, sf, overwrite=overwrite)
+        if hasattr(model, "deltaP"):
+            for v in model.deltaP.values():
+                sf = 1e-3
+                self.set_variable_scaling_factor(v, sf, overwrite=overwrite)
+
+        for (t, i), v in model.solid_material_holdup.items():
+            sf_volume = self.get_scaling_factor(model.volume)
+            sf_voidage = self.get_scaling_factor(model.voidage)
+            sf_mf = self.get_scaling_factor(model.solid_out[t].mass_frac_comp[i])
+            sf = (
+                sf_volume
+                * sf_voidage
+                * sf_mf
+                / value(model.config.solid_product_property_package.dens_mass)
+                * value(model.config.solid_product_property_package.mw_comp[i])
+            )
+            self.set_variable_scaling_factor(v, sf, overwrite=overwrite)
+
+        if hasattr(model, "solid_energy_holdup"):
+            for t, v in model.solid_energy_holdup.items():
+                sf = (
+                    self.get_scaling_factor(model.volume)
+                    * self.get_scaling_factor(model.voidage)
+                    / value(model.config.solid_product_property_package.dens_mass)
+                    * self.get_scaling_factor(model.solid_out[t].enth_mass)
+                )
+                self.set_variable_scaling_factor(v, sf, overwrite=overwrite)
+
+        if hasattr(model, "solid_material_accumulation"):
+            for (t, i), v in model.solid_material_accumulation.items():
+                if i in ["Al2O3", "SiO2", "CaCO3", "CaO", "Fe2O3"]:
+                    sf = 1e3
+                else:
+                    sf = 1e6
+                self.set_variable_scaling_factor(v, sf, overwrite=overwrite)
+
+        if hasattr(model, "solid_energy_accumulation"):
+            for v in model.solid_energy_accumulation.values():
+                sf = 1e-4
+                self.set_variable_scaling_factor(v, sf, overwrite=overwrite)
+
+        for v in model.rate_CaCO3.values():
+            sf = 20
+            self.set_variable_scaling_factor(v, sf, overwrite=overwrite)
+
+        for (t, i), v in model.rate_REE1.items():
+            sf = 1e5
+            self.set_variable_scaling_factor(v, sf, overwrite=overwrite)
+
+        for (t, i), v in model.rate_REE2.items():
+            sf = 1e7
+            self.set_variable_scaling_factor(v, sf, overwrite=overwrite)
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        """
+        Routine to apply scaling factors to constraints in model.
+
+        Args:
+            model: model to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: dict of Scalers to use for sub-models, keyed by submodel local name
+
+        Returns:
+            None
+        """
+
+        self.call_submodel_scaler_method(
+            submodel=model.gas_in,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+        self.call_submodel_scaler_method(
+            submodel=model.gas_out,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+        self.call_submodel_scaler_method(
+            submodel=model.solid_in,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+        self.call_submodel_scaler_method(
+            submodel=model.solid_out,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+        self.call_submodel_scaler_method(
+            submodel=model.leach_solid_out,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        for idx, con in model.solid_material_holdup_eqn.items():
+            t, i = idx
+            sf = self.get_scaling_factor(model.solid_material_holdup[t, i])
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        if hasattr(model, "solid_energy_holdup_eqn"):
+            for t, con in model.solid_energy_holdup_eqn.items():
+                sf = self.get_scaling_factor(model.solid_energy_holdup[t])
+                self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        for t, con in model.rate_CaCO3_eqn.items():
+            sf = self.get_scaling_factor(model.rate_CaCO3[t])
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        for (t, i), con in model.rate_REE1_eqn.items():
+            sf = self.get_scaling_factor(model.rate_REE1[t, i])
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        for (t, i), con in model.rate_REE2_eqn.items():
+            sf = self.get_scaling_factor(model.rate_REE2[t, i])
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        for (t, i), con in model.solid_mass_balance_eqn.items():
+            sf = self.get_scaling_factor(model.solid_out[t].flow_mol_comp[i])
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        for (t, i), con in model.gas_mass_balance_eqn.items():
+            sf = 1.0  # self.get_scaling_factor(model.gas_out[t].flow_mol_comp[i])
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        for (t, i), con in model.leach_solid_outlet_comp_eqn.items():
+            sf = self.get_scaling_factor(model.solid_out[t].mass_frac_comp[i])
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        for t, con in model.leach_solid_outlet_total_mass_flow_eqn.items():
+            sf = self.get_scaling_factor(model.solid_out[t].flow_mass)
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        for t, con in model.outlet_temperature_eqn.items():
+            sf = self.get_scaling_factor(model.solid_out[t].temperature)
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        for t, con in model.energy_balance_eqn.items():
+            sf = self.get_scaling_factor(model.heat_duty[t])
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        for t, con in model.momentum_balance_eqn.items():
+            sf = 1e-5
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+
+class REEFeedRoasterInitializer(ModularInitializerBase):
+    """
+    This is a general purpose Initializer  for the REEFeedRoaster unit model.
+
+    """
+
+    def initialization_routine(
+        self,
+        model: Block,
+    ):
+        """
+        Initialization routine for REEFeedRoaster Blocks.
+
+        Args:
+            model: model to be initialized
+
+        Returns:
+            None
+        """
+
+        init_log = idaeslog.getInitLogger(
+            model.name, self.get_output_level(), tag="unit"
+        )
+        solve_log = idaeslog.getSolveLogger(
+            model.name, self.get_output_level(), tag="unit"
+        )
+
+        # set the gas_out state variables the same as the gas_in state variables
+        for i in model.config.gas_property_package.component_list:
+            model.gas_out[:].mole_frac_comp[i].value = (
+                model.gas_in[0].mole_frac_comp[i].value
+            )
+        model.gas_out[:].temperature.value = model.gas_in[0].temperature.value
+        model.gas_out[:].pressure.value = model.gas_in[0].pressure.value
+        model.gas_out[:].flow_mol.value = model.gas_in[0].flow_mol.value
+
+        model.rate_CaCO3.fix(0)
+        model.rate_REE1.fix(0)
+        model.rate_REE2.fix(0)
+        for i in model.config.leach_solids_property_package.component_list:
+            model.leach_solid_out[:].mass_frac_comp[i].fix(
+                model.config.leach_solids_property_package.mass_frac_comp_initial[i]
+            )
+        model.leach_solid_out[:].mass_frac_comp["inerts"].unfix()
+        model.leach_solid_out[:].flow_mass.fix(model.solid_in[0].flow_mass.value * 0.8)
+        model.rate_CaCO3_eqn.deactivate()
+        model.rate_REE1_eqn.deactivate()
+        model.rate_REE2_eqn.deactivate()
+        model.leach_solid_outlet_comp_eqn.deactivate()
+        model.leach_solid_outlet_total_mass_flow_eqn.deactivate()
+        solver = self._get_solver()
+        with idaeslog.solver_log(solve_log, idaeslog.DEBUG) as slc:
+            res = solver.solve(model, tee=slc.tee)
+        init_log.info_high("Initialization Step 1 {}.".format(idaeslog.condition(res)))
+        model.rate_CaCO3.unfix()
+        model.rate_REE1.unfix()
+        model.rate_REE2.unfix()
+        model.leach_solid_out[:].mass_frac_comp[:].unfix()
+        model.leach_solid_out[:].flow_mass.unfix()
+        model.rate_CaCO3_eqn.activate()
+        model.rate_REE1_eqn.activate()
+        model.rate_REE2_eqn.activate()
+        model.leach_solid_outlet_comp_eqn.activate()
+        model.leach_solid_outlet_total_mass_flow_eqn.activate()
+        with idaeslog.solver_log(solve_log, idaeslog.DEBUG) as slc:
+            res = solver.solve(model, tee=slc.tee)
+        init_log.info("Initialization Complete.")
+
+        return res
 
 
 # ----------------------------------------------------------------------------------------------------------
@@ -488,6 +786,7 @@ constructed,
             self.flowsheet().time,
             self.config.solid_product_property_package.component_list,
             initialize=1.0,
+            bounds=(1e-10, None),
             units=units.mol,
             doc="Solid species mole holdup",
         )
@@ -592,9 +891,7 @@ constructed,
         def rate_CaCO3_eqn(b, t):
             return b.rate_CaCO3[t] == 2 * sqrt(
                 b.solid_material_holdup[t, "CaCO3"]
-                *
-                # b.mole_fraction_of_ca_as_caco3_in_feed[t]*
-                (
+                * (
                     b.solid_material_holdup[t, "CaCO3"]
                     + b.solid_material_holdup[t, "CaO"]
                 )
@@ -954,123 +1251,3 @@ constructed,
             self.solid_material_accumulation[t0, :].fix(0)
             self.solid_energy_accumulation[:].value = 0
             self.solid_energy_accumulation[t0].fix(0)
-
-    def initialize_build(
-        blk,
-        state_args_gas_in=None,
-        outlvl=idaeslog.NOTSET,
-        solver=None,
-        optarg=None,
-    ):
-        """
-        Initialization routine.
-        1.- initialize state blocks, using an initial guess for inlet
-        gas inlet.
-        2.- guess gas outlet component molar flowrates,
-        Temperature, and Pressure. Initialize flue gas state block.
-        3.- Then, solve complete model.
-
-        Keyword Arguments:
-            state_args_gas_in : a dict of arguments to be passed to the property
-                           package(s) for the inlet gas state block to
-                           provide an initial state for initialization
-                           (see documentation of the specific property package)
-                           (default = None).
-            outlvl : sets output level of initialisation routine
-            optarg : solver options dictionary object (default=None, use
-                     default solver options)
-            solver : str indicating which solver to use during
-                     initialization (default = None, use default solver)
-
-        Returns:
-            None
-        """
-        init_log = idaeslog.getInitLogger(blk.name, outlvl, tag="unit")
-        solve_log = idaeslog.getSolveLogger(blk.name, outlvl, tag="unit")
-
-        # Create solver
-        opt = get_solver(solver, optarg)
-
-        # ---------------------------------------------------------------------
-        # Initialize inlet gas property block
-        blk.gas_in.initialize(
-            outlvl=outlvl, optarg=optarg, solver=solver, state_args=state_args_gas_in
-        )
-        init_log.info_high("Initialization Step 1 Complete.")
-
-        # initialize outlet gas property block
-        blk.gas_out.initialize(
-            outlvl=outlvl, optarg=optarg, solver=solver, state_args=state_args_gas_in
-        )
-        init_log.info_high("Initialization Step 2 Complete.")
-
-        # set REE reaction rates to zero to estimate the initial guess of solid_out and holdup
-        blk.rate_CaCO3.fix(0)
-        blk.rate_REE1.fix(0)
-        blk.rate_REE2.fix(0)
-        for i in blk.config.leach_solids_property_package.component_list:
-            blk.leach_solid_out[:].mass_frac_comp[i].fix(
-                blk.config.leach_solids_property_package.mass_frac_comp_initial[i]
-            )
-        blk.leach_solid_out[:].mass_frac_comp["inerts"].unfix()
-        blk.leach_solid_out[:].flow_mass.fix(blk.solid_in[0].flow_mass.value * 0.8)
-        blk.rate_CaCO3_eqn.deactivate()
-        blk.rate_REE1_eqn.deactivate()
-        blk.rate_REE2_eqn.deactivate()
-        blk.leach_solid_outlet_comp_eqn.deactivate()
-        blk.leach_solid_outlet_total_mass_flow_eqn.deactivate()
-        with idaeslog.solver_log(solve_log, idaeslog.DEBUG) as slc:
-            res = opt.solve(blk, tee=slc.tee)
-        init_log.info_high("Initialization Step 3 {}.".format(idaeslog.condition(res)))
-        blk.rate_CaCO3.unfix()
-        blk.rate_REE1.unfix()
-        blk.rate_REE2.unfix()
-        blk.leach_solid_out[:].mass_frac_comp[:].unfix()
-        blk.leach_solid_out[:].flow_mass.unfix()
-        blk.rate_CaCO3_eqn.activate()
-        blk.rate_REE1_eqn.activate()
-        blk.rate_REE2_eqn.activate()
-        blk.leach_solid_outlet_comp_eqn.activate()
-        blk.leach_solid_outlet_total_mass_flow_eqn.activate()
-        with idaeslog.solver_log(solve_log, idaeslog.DEBUG) as slc:
-            res = opt.solve(blk, tee=slc.tee)
-        init_log.info("Initialization Complete.")
-
-    def calculate_scaling_factors(self):
-        super().calculate_scaling_factors()
-        # sf_volume = iscale.get_scaling_factor(
-        #        self.volume, default=1, warning=True)
-        for i, c in self.rate_REE1_eqn.items():
-            sf = iscale.get_scaling_factor(self.rate_REE1[i], default=1e5, warning=True)
-            iscale.constraint_scaling_transform(c, sf, overwrite=False)
-
-        for i, c in self.rate_REE2_eqn.items():
-            sf = iscale.get_scaling_factor(self.rate_REE2[i], default=1e6, warning=True)
-            iscale.constraint_scaling_transform(c, sf, overwrite=False)
-
-        # set a default platen heat scaling factor
-        if self.config.has_heat_transfer is True:
-            for v in self.heat_duty.values():
-                if iscale.get_scaling_factor(v, warning=True) is None:
-                    iscale.set_scaling_factor(v, 1e-6)
-
-        # set energy balance constraint scaling factor
-        if self.config.has_heat_transfer is True:
-            for t, c in self.energy_balance_eqn.items():
-                sf = iscale.get_scaling_factor(
-                    self.heat_duty[t], default=1e-6, warning=True
-                )
-                iscale.constraint_scaling_transform(c, sf, overwrite=False)
-
-        for t, c in self.outlet_temperature_eqn.items():
-            sf = iscale.get_scaling_factor(
-                self.gas_out[t].temperature, default=1e-2, warning=True
-            )
-            iscale.constraint_scaling_transform(c, sf, overwrite=False)
-
-        if self.config.dynamic:
-            for t, c in self.solid_energy_holdup_eqn.items():
-                sf = iscale.get_scaling_factor(
-                    self.solid_energy_holdup[t], default=1e-8, warning=True
-                )
-                iscale.constraint_scaling_transform(c, sf, overwrite=False)

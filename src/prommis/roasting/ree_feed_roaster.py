@@ -1292,9 +1292,9 @@ constructed,
         @self.Constraint(self.flowsheet().config.time, doc="momentum balance equation")
         def momentum_balance_eqn(b, t):
             if self.config.has_pressure_change is True:
-                return b.gas_out[t].pressure == b.gas_in[t].pressure
-            else:
                 return b.gas_out[t].pressure == b.gas_in[t].pressure + b.deltaP[t]
+            else:
+                return b.gas_out[t].pressure == b.gas_in[t].pressure
 
     def set_initial_condition(self):
         pass

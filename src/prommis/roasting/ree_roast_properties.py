@@ -10,7 +10,7 @@ property package for the solid product stream of a feedstock roaster
 Authors: Jinliang ma
 """
 
-from pyomo.environ import Constraint, Expression, Param, Var, units
+from pyomo.environ import Constraint, Expression, Param, Var, value, units
 
 from idaes.core import (
     Component,
@@ -22,6 +22,97 @@ from idaes.core import (
     declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
+from idaes.core.scaling import CustomScalerBase, get_scaling_factor
+
+ree_sp_list = [
+    "Ree2X",
+    "Sc2X",
+    "Y2X",
+    "La2X",
+    "Ce2X",
+    "Pr2X",
+    "Nd2X",
+    "Sm2X",
+    "Gd2X",
+    "Dy2X",
+    "Sc2O3",
+    "Y2O3",
+    "La2O3",
+    "Ce2O3",
+    "Pr2O3",
+    "Nd2O3",
+    "Sm2O3",
+    "Gd2O3",
+    "Dy2O3",
+]
+gangue_sp_list = ["Al2O3", "SiO2", "CaCO3", "CaO", "Fe2O3"]
+
+
+class ReeRoastPropertiesScaler(CustomScalerBase):
+    """
+    Scaler for REE roast solid.
+    """
+
+    CONFIG = CustomScalerBase.CONFIG
+
+    DEFAULT_SCALING_FACTORS = {
+        "flow_mass": 1e-1,
+        "temperature": 1e-2,
+        "enth_mol": 1e-5,
+        "enth_mass": 1e-6,
+    }
+    for sp in ree_sp_list:
+        DEFAULT_SCALING_FACTORS[f"mass_frac_comp[{sp}]"] = 1e5
+    for sp in gangue_sp_list:
+        DEFAULT_SCALING_FACTORS[f"mass_frac_comp[{sp}]"] = 3
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        # Scale state variables
+        self.scale_variable_by_default(model.flow_mass, overwrite=overwrite)
+        self.scale_variable_by_default(model.temperature, overwrite=overwrite)
+        self.scale_variable_by_default(model.enth_mol, overwrite=overwrite)
+        self.scale_variable_by_default(model.enth_mass, overwrite=overwrite)
+        for var in model.mass_frac_comp.values():
+            self.scale_variable_by_default(var, overwrite=overwrite)
+
+        params = model.params
+        for idx, var in model.flow_mol_comp.items():
+            sf = (
+                get_scaling_factor(model.mass_frac_comp[idx])
+                * get_scaling_factor(model.flow_mass)
+                * value(params.mw_comp[idx])
+            )
+            self.set_variable_scaling_factor(var, sf, overwrite=overwrite)
+        for idx, var in model.enth_mol_comp.items():
+            self.set_variable_scaling_factor(var, 1e-5, overwrite=overwrite)
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        for idx, con in model.flow_mol_comp_constraint.items():
+            sf = get_scaling_factor(model.flow_mol_comp[idx])
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        if model.is_property_constructed("sum_mass_frac"):
+            self.set_constraint_scaling_factor(
+                model.sum_mass_frac, 1, overwrite=overwrite
+            )
+
+        for idx, con in model.enth_mol_comp_constraint.items():
+            sf = get_scaling_factor(model.enth_mol_comp[idx])
+            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+
+        sf = get_scaling_factor(model.enth_mol)
+        self.set_constraint_scaling_factor(
+            model.enth_mol_constraint, sf, overwrite=overwrite
+        )
+
+        sf = get_scaling_factor(model.enth_mass)
+        self.set_constraint_scaling_factor(
+            model.enth_mass_constraint, sf, overwrite=overwrite
+        )
 
 
 # -----------------------------------------------------------------------------
@@ -276,6 +367,7 @@ class ReeRoastStateBlockData(StateBlockData):
         super(ReeRoastStateBlockData, self).build()
 
         self.flow_mass = Var(
+            initialize=1,
             units=units.kg / units.s,
             bounds=(1e-8, None),
             doc="Mass flow rate [kg/s]",
@@ -298,6 +390,7 @@ class ReeRoastStateBlockData(StateBlockData):
 
         self.flow_mol_comp = Var(
             self.params.component_list,
+            initialize=0.1,
             units=units.mol / units.s,
             bounds=(0, None),
             doc="Component molar flowrate [mol/s]",
@@ -340,16 +433,19 @@ class ReeRoastStateBlockData(StateBlockData):
 
         self.enth_mol_comp = Var(
             self.params.component_list,
+            initialize=0,
             units=units.J / units.mol,
             doc="Component molar enthalpy [J/mol]",
         )
 
         self.enth_mol = Var(
+            initialize=0,
             units=units.J / units.mol,
             doc="Molar enthalpy of mixture [J/mol]",
         )
 
         self.enth_mass = Var(
+            initialize=0,
             units=units.J / units.kg,
             doc="Mass enthalpy [J/kg]",
         )
@@ -378,7 +474,7 @@ class ReeRoastStateBlockData(StateBlockData):
         def rule_enth_mol_comp(b, i):
             t = b.temperature
             tref = self.params.temperature_ref
-            return b.enth_mol_comp[i] * 1e-4 == 1e-4 * (
+            return b.enth_mol_comp[i] == (
                 self.params.enth0_comp[i]
                 + b.params.cp0_comp[i] * (t - tref)
                 + 0.5 * b.params.cp1_comp[i] * (t * t - tref * tref)
@@ -389,7 +485,7 @@ class ReeRoastStateBlockData(StateBlockData):
         )
 
         def rule_enth_mol(b):
-            return b.enth_mol * 1e-5 == 1e-5 * sum(
+            return b.enth_mol == sum(
                 b.enth_mol_comp[i] * b.mole_frac_comp[i]
                 for i in self.params.component_list
             )
@@ -397,7 +493,7 @@ class ReeRoastStateBlockData(StateBlockData):
         self.enth_mol_constraint = Constraint(rule=rule_enth_mol)
 
         def rule_enth_mass(b):
-            return b.enth_mass * 1e-5 == 1e-5 * sum(
+            return b.enth_mass == sum(
                 b.enth_mol_comp[i] * b.mass_frac_comp[i] / self.params.mw_comp[i]
                 for i in self.params.component_list
             )

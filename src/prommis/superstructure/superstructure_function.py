@@ -1077,7 +1077,7 @@ def check_discretized_costing_params(m, discretized_purchased_equipment_cost):
                 )
             if not data:
                 raise ValueError(
-                    f"Empy list passed for option: {opt}, data type: {data_type}."
+                    f"Empty list passed for option: {opt}, data type: {data_type}."
                 )
 
     ### Define parameters necessary for tests
@@ -1899,7 +1899,7 @@ def check_environmental_impact_params(
         options_environmental_impacts: (dict) Environmental impacts matrix. Unit chosen indicator per unit of incoming flowrate.
         epsilon: (float) Epsilon factor for generating the Pareto front.
     """
-    ## Check that consider_environmental_impacts is of type bool. Must be provided regardles on whether or not environmental impacts are considered.
+    ## Check that consider_environmental_impacts is of type bool. Must be provided regardless on whether or not environmental impacts are considered.
     if not isinstance(consider_environmental_impacts, bool):
         raise TypeError("consider_environmental_impacts is not of type bool.")
     ### Only need to check feasibility of the rest of the parameters if user wants to consider environmental impacts
@@ -2276,7 +2276,7 @@ def add_byproduct_valorization_vars(m):
 
 def add_byproduct_valorization_cons(m):
     """
-    This function builds the byproduct valorization constraints. 
+    This function builds the byproduct valorization constraints.
 
     Args:
         m: pyomo model.

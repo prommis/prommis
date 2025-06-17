@@ -1,5 +1,7 @@
 import pyomo.environ as pyo
 
+from idaes.core.solvers import get_solver
+
 from prommis.superstructure.superstructure_function import (
     add_byproduct_valorization_cons,
     add_byproduct_valorization_params,
@@ -27,8 +29,6 @@ from prommis.superstructure.superstructure_function import (
     check_supe_formulation_params,
     configure_model,
 )
-
-from idaes.core.solvers import get_solver
 
 #################################################################################################
 ### Plant Lifetime Params
@@ -665,7 +665,7 @@ discretized_purchased_equipment_cost = {
 }
 
 ### Objective Function Parameters
-obj_func = 'NPV'
+obj_func = "NPV"
 
 ### Environmnetal Impact Parameters
 consider_environmental_impacts = False
@@ -736,7 +736,9 @@ check_supe_formulation_params(
     m, num_stages, options_in_stage, option_outlets, option_efficiencies
 )
 # Create separate block to hold superstructure formulation parameters.
-add_supe_formulation_params(m, num_stages, options_in_stage, option_outlets, option_efficiencies)
+add_supe_formulation_params(
+    m, num_stages, options_in_stage, option_outlets, option_efficiencies
+)
 
 ### Operating parameters
 # Check that operating parameters are feasible.
@@ -800,7 +802,9 @@ add_environmental_impact_cons(m)
 check_byproduct_valorization_params(
     m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
 )
-add_byproduct_valorization_params(m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions)
+add_byproduct_valorization_params(
+    m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
+)
 add_byproduct_valorization_vars(m)
 add_byproduct_valorization_cons(m)
 

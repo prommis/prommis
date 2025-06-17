@@ -145,16 +145,12 @@ the overall effect of the reactions is very likely exothermic even though calcin
 
 from pyomo.dae import DerivativeVar
 from pyomo.environ import Block, Constraint, Param, Var, value, exp, sqrt, units
-from pyomo.common.config import Bool, ConfigBlock, ConfigDict, ConfigValue
+from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
 from idaes import logger as idaeslog
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.initialization import ModularInitializerBase
-from idaes.core.scaling import (
-    ConstraintScalingScheme,
-    CustomScalerBase,
-    get_scaling_factor,
-)
+from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.config import DefaultBool, is_physical_parameter_block
 from idaes.core.util.constants import Constants as const
 

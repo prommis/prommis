@@ -6,7 +6,7 @@
 #####################################################################################################
 r"""
 IDAES REE Feed Roaster Unit Model
-=================================
+==================================
 
 This model represents a roaster/calcination unit for Rare Earth Element (REE) feedstock, which includes rare earth minerals, gangue/impurity minerals, moisture, and combustible organic materials.
 
@@ -16,7 +16,7 @@ Reactions
 The reactions of impurities involved are listed below:
 
 1. Kaolinite calcination:
-
+   
    .. ce::
       Al2O3 \cdot 2SiO2 \cdot 2H2O -> Al2O3 + 2 SiO2 + 2 H2O (g)
 
@@ -68,10 +68,12 @@ Streams
 - **Gas Outlet Stream**: Gas product leaving the reactor.
 - **Solid Outlet Stream**: Recovered solid product leaving the reactor.
 
+
 Thermal Properties
 ------------------
 
 The standard heats of formation and heat capacities of solid components involved are defined as parameters in this model. The default values of those parameters are obtained from two sources as listed below:
+
 1. NIST Chemistry WebBook
 2. Wagman, D.D., W.H. Evans, V.B. Parker, R.H.Schumm, I. Halow, S.M. Bailey, K.L. Churney,
    R.L. Nuttall, "The NBS tables of chemical thermodynamic properties-Selected values for
@@ -98,7 +100,7 @@ Assumptions
 - Material balance of the REE is considered for the element only; the forms of the RE compounds (in salt or oxide forms) are not considered.
 - If the product temperature is specified as a user input, the heat duty will be calculated. If the heat duty is given, the product temperature will be calculated.
 - Temperatures of solid and gas products are assumed to be the same.
-- No port for the solid inlet stream is used. The mass flow rate and composition of the solid reactant are specified as input variables inside the model. The mass flow rate and the composition of the solid product and dust streams are also declared as model variables. When mapping the solid products to the `solid_outlet` port, only the components defined in the :mod:`prommis.leaching.leach_solids_properties` module are mapped. The other species are discarded.
+- No port for the solid inlet stream is used. The mass flow rate and composition of the solid reactant are specified as input variables inside the model. The mass flow rate and the composition of the solid product and dust streams are also declared as model variables. When mapping the solid products to the ``solid_outlet`` port, only the components defined in the :mod:`prommis.leaching.leach_solids_properties` module are mapped. The other species are discarded.
 
 """
 
@@ -1292,9 +1294,9 @@ constructed,
         @self.Constraint(self.flowsheet().config.time, doc="momentum balance equation")
         def momentum_balance_eqn(b, t):
             if self.config.has_pressure_change is True:
-                return b.gas_out[t].pressure == b.gas_in[t].pressure + b.deltaP[t]
-            else:
                 return b.gas_out[t].pressure == b.gas_in[t].pressure
+            else:
+                return b.gas_out[t].pressure == b.gas_in[t].pressure + b.deltaP[t]
 
     def set_initial_condition(self):
         pass

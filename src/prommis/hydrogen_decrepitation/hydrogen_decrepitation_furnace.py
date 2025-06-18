@@ -310,14 +310,23 @@ constructed,
         ]
 
         # list of considered impurity mineral species in solid feed stream
-        self.impurity_list = ["Nd", "Nd2Fe14B",]
-
+        self.impurity_list = [
+            "Nd",
+            "Nd2Fe14B",
+        ]
 
         # list of solid product species
-        self.product_list = ["Nd", "Nd2Fe14B",]
+        self.product_list = [
+            "Nd",
+            "Nd2Fe14B",
+        ]
 
         # list of impurity elements
-        self.impurity_ele_list = ["Nd", "Fe", "B",]
+        self.impurity_ele_list = [
+            "Nd",
+            "Fe",
+            "B",
+        ]
 
         # user-specified list of rare earth elements
         self.ree_list = Set(
@@ -338,7 +347,10 @@ constructed,
         self.am_ree_list_all["Nd"] = self.am_Nd
 
         # molecular weights of compounds
-        self.mw_Nd2Fe14B = Param(initialize=self.am_Nd * 2 + self.am_Fe * 14 + self.am_B, units=pyunits.kg / pyunits.mol)
+        self.mw_Nd2Fe14B = Param(
+            initialize=self.am_Nd * 2 + self.am_Fe * 14 + self.am_B,
+            units=pyunits.kg / pyunits.mol,
+        )
 
         # molecular weights of impurity mineral species in solid feed
         self.mw_comp_impurity = Param(
@@ -356,7 +368,9 @@ constructed,
 
         # standard enthalpy of formation compound at 298.15 K
         self.enth0_Nd = Param(initialize=326.9e3, units=pyunits.J / pyunits.mol)  # [2]
-        self.enth0_Nd2Fe14B = Param(initialize=-93.39e3, units=pyunits.J / pyunits.mol)  # [4]
+        self.enth0_Nd2Fe14B = Param(
+            initialize=-93.39e3, units=pyunits.J / pyunits.mol
+        )  # [4]
 
         # heat capacity modeled as linear function of temperature T in K.
         # Cp = Cp0 + Cp1*T
@@ -460,6 +474,7 @@ constructed,
             initialize=0.1,
             doc="mass fraction of impurity element in solid product stream",
         )
+
     def _make_mass_balance(self):
         """This section contains equations for mass balance within the reactor model."""
 
@@ -470,8 +485,9 @@ constructed,
         )
         def flow_mass_impurity_feed(b, t):
             return sum(
-                b.solid_in[t].flow_mass * b.solid_in[t].mass_frac_comp[i] for i in b.impurity_list
-                )
+                b.solid_in[t].flow_mass * b.solid_in[t].mass_frac_comp[i]
+                for i in b.impurity_list
+            )
 
         # mass flow rates of individual mineral impurities
         @self.Expression(
@@ -543,7 +559,8 @@ constructed,
             if i == "Fe":
                 return (
                     b.flow_mol_comp_impurity_feed[t, "Nd2Fe14B"]
-                    * b.am_Fe * 14
+                    * b.am_Fe
+                    * 14
                     / b.flow_mass_impurity_feed[t]
                 )
 
@@ -558,22 +575,19 @@ constructed,
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
                     * b.flow_mass_product_recovered[t]
-                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"]
-                    * b.am_Nd * 2
+                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_Nd * 2
                 )
             elif i == "Fe":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
                     * b.flow_mass_product_recovered[t]
-                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"]
-                    * b.am_Fe * 14
+                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_Fe * 14
                 )
             elif i == "B":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
                     * b.flow_mass_product_recovered[t]
-                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"]
-                    * b.am_B
+                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_B
                 )
 
         # solid product with 13 species defined in CoalRefuseParameters

@@ -32,7 +32,7 @@ class REPMParameterData(PhysicalParameterBlock):
     Solid phase property package for rare earth permanent magnets, specifically
     recycling neodymium materials from hard drive disks (HDDs).
 
-    
+
     Includes the following components: Nd, Nd2Fe14B
 
     """

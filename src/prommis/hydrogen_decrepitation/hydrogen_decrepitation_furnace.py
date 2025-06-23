@@ -96,7 +96,7 @@ The gas phase properties are calculated based on user configured property packag
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
 # Additional import for the unit operation
-from pyomo.environ import Param, Set, Var
+from pyomo.environ import Param, PositiveReals, Set, Var, exp
 from pyomo.environ import units as pyunits
 
 import idaes.core.util.scaling as iscale
@@ -106,7 +106,9 @@ import idaes.logger as idaeslog
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.solvers import get_solver
 from idaes.core.util.config import DefaultBool, is_physical_parameter_block
-from idaes.core.util.constants import Constants as const
+from idaes.core.util.constants import Constants
+from idaes.core.util.math import smooth_max
+from idaes.core.util.tables import create_stream_table_dataframe
 
 __author__ = "Brandon Paul, Akintomiwa Ojo"
 __version__ = "1.0.0"
@@ -236,6 +238,16 @@ constructed,
         """,
         ),
     )
+    CONFIG.declare(
+        "number_of_units",
+        ConfigValue(
+            default=1,
+            domain=int,
+            description="Integer value of number of furnaces required",
+            doc="""Applies to several model equations to account for multiple units.
+        """,
+        ),
+    )
 
     def build(self):
         # Call TranslatorData build to setup dynamics
@@ -294,6 +306,7 @@ constructed,
         # Construct performance equations
         self._make_params()
         self._make_vars()
+        self._make_geometry()
         self._make_mass_balance()
         self._make_energy_balance()
         self._make_momentum_balance()
@@ -434,8 +447,218 @@ constructed,
         self.cp1_comp_product["Nd"] = self.cp1_Nd
         self.cp1_comp_product["Nd2Fe14B"] = self.cp1_Nd2Fe14B
 
+        # operating parameters
+        self.ramp_up_time = Param(
+            initialize=300,
+            units=pyunits.s,
+            mutable=True,
+            doc="Time required to reach operating temperature",
+        )
+        self.decrepitation_duration = Param(
+            initialize=10800,
+            units=pyunits.s,
+            mutable=True,
+            doc="Amount of time the furnace operates at its operating temperature",
+        )
+        self.preparation_time = Param(
+            initialize=3600,
+            units=pyunits.s,
+            mutable=True,
+            doc="Time required to setup the furnace",
+        )
+        self.cool_down_time = Param(
+            initialize=3600,
+            units=pyunits.s,
+            mutable=True,
+            doc="Time required for the decrepitated sample to cool down to room temperature",
+        )
+        self.sample_density = Param(
+            initialize=7500,
+            units=pyunits.kg / pyunits.m**3,
+            doc="Mass density of the sample",
+        )
+        self.chamber_to_sample_ratio = Param(
+            initialize=2,
+            units=pyunits.dimensionless,
+            mutable=True,
+            doc="ratio of the volume of furnace chamber to the volume of the sample",
+        )
+
+        # vendor material properties for first insulation, ceramide fiber
+        # https://www.grainger.com/product/23AR50?gucid=N:N:PS:Paid:GGL:CSM-2295:4P7A1P:20501231&gad_source=1&gclid=CjwKCAjwnqK1BhBvEiwAi7o0Xxz1EhsrD9nk0yk9SgHwN7fzjC8X249MA5NulaF_JSsTjC290z-HChoCSyYQAvD_BwE&gclsrc=aw.ds
+        self.length_insulation1 = Param(
+            initialize=7.62,
+            units=pyunits.m,
+            doc="The length of a unit of the first insulation material",
+        )
+        self.width_insulation1 = Param(
+            initialize=0.6096,
+            units=pyunits.m,
+            doc="The width of a unit of the first insulation material",
+        )
+        self.thickness_insulation1 = Param(
+            initialize=0.0254,
+            units=pyunits.m,
+            doc="The thickness of a unit of the first insulation material",
+        )
+        self.weight_insulation1 = Param(
+            initialize=15.42,
+            units=pyunits.kg,
+            doc="The weight of a unit of the first insulation material",
+        )
+        self.thermal_cond_insulation_material1 = Param(
+            initialize=0.33,
+            units=pyunits.W / pyunits.m / pyunits.K,
+            doc="The thermal conductivity of a unit of the first insulation material",
+        )
+        self.specific_heat_capacity_insulation1 = Param(
+            initialize=1.08,
+            units=pyunits.kJ / pyunits.kg / pyunits.K,
+            doc="The specific heat capacity of a unit of the first insulation material",
+        )
+
+        # vendor material properties for first metal material, SS304
+        self.density_metal1 = Param(
+            initialize=7473.57,
+            units=pyunits.kg / pyunits.m**3,
+            doc="The density of the first metal material",
+        )
+        self.thermal_cond_metal_material1 = Param(
+            initialize=13.53,
+            units=pyunits.W / pyunits.m / pyunits.K,
+            doc="The thermal conductivity of the first metal material",
+        )
+        self.specific_heat_capacity_metal1 = Param(
+            initialize=0.468,
+            units=pyunits.kJ / pyunits.kg / pyunits.K,
+            doc="The specific heat capacity of the first metal material",
+        )
+
+        # vendor material properties for second insulation, fiberglass
+        self.length_insulation2 = Param(
+            initialize=1.19,
+            units=pyunits.m,
+            doc="The length of a unit of the second insulation material",
+        )
+        self.width_insulation2 = Param(
+            initialize=0.381,
+            units=pyunits.m,
+            doc="The width of a unit of the second insulation material",
+        )
+        self.thickness_insulation2 = Param(
+            initialize=0.0889,
+            units=pyunits.m,
+            doc="The thickness of a unit of the second insulation material",
+        )
+        self.weight_insulation2 = Param(
+            initialize=10.43,
+            units=pyunits.kg,
+            doc="The weight of a unit of the second insulation material",
+        )
+        self.thermal_cond_insulation_material2 = Param(
+            initialize=0.069,
+            units=pyunits.W / pyunits.m / pyunits.K,
+            doc="The thermal conductivity of a unit of the second insulation material",
+        )
+        self.specific_heat_capacity_insulation2 = Param(
+            initialize=0.9,
+            units=pyunits.kJ / pyunits.kg / pyunits.K,
+            doc="The specific heat capacity of a unit of the second insulation material",
+        )
+
+        # vendor material properties for second metal material, carbon steel
+        self.density_metal2 = Param(
+            initialize=7861.09,
+            units=pyunits.kg / pyunits.m**3,
+            doc="The density of the second metal material",
+        )
+        self.thermal_cond_metal_material2 = Param(
+            initialize=45,
+            units=pyunits.W / pyunits.m / pyunits.K,
+            doc="The thermal conductivity of the second metal material",
+        )
+        self.specific_heat_capacity_metal2 = Param(
+            initialize=0.502416,
+            units=pyunits.kJ / pyunits.kg / pyunits.K,
+            doc="The specific heat capacity of the second metal material",
+        )
+
+        # heat transfer parameters
+        self.max_temperature = Param(
+            initialize=1173.15,
+            units=pyunits.K,
+            doc="Maximum allowable operating temperature",
+        )
+        self.temperature_metal_material1 = Param(
+            initialize=950.13,
+            units=pyunits.K,
+            doc="Temperature of metal material 1 under steady operating conditions",
+        )
+        self.temperature_insulation_material2 = Param(
+            initialize=950.00,
+            units=pyunits.K,
+            doc="Temperature of insulation material 2 under steady operating conditions",
+        )
+        self.temperature_metal_material2 = Param(
+            initialize=333.18,
+            units=pyunits.K,
+            doc="Temperature of metal material 2 under steady operating conditions",
+        )
+        self.temperature_furnace_ext_surface = Param(
+            initialize=333.15,
+            units=pyunits.K,
+            doc="Temperature of external surface of the furnace under steady operating conditions",
+        )
+        self.air_heat_transfer_coeff = Param(
+            initialize=5,
+            units=pyunits.W / (pyunits.m**2 * pyunits.K),
+            doc="Heat transfer coefficient of air (natural/free convection) at ambient temperature",
+        )
+        self.ref_temp = Param(
+            initialize=298.15,
+            units=pyunits.K,
+            doc="Reference temperature - 25 degree celsius",
+        )
+        self.min_quantity_insulation = Param(
+            initialize=1,
+            units=pyunits.dimensionless,
+            doc="Smooth max parameter for relative volume of insulation materials",
+        )
+        self.insulation1_max_delta_temp = Param(
+            initialize=875,
+            units=pyunits.K,
+            mutable=True,
+            doc="Temperature change of insulation material 1 from reference temperature to steady operating condition",
+        )
+        self.metal1_max_delta_temp = Param(
+            initialize=651.98,
+            units=pyunits.K,
+            mutable=True,
+            doc="Temperature change of metal 1 from reference temperature to steady operating condition",
+        )
+        self.insulation2_max_delta_temp = Param(
+            initialize=651.85,
+            units=pyunits.K,
+            mutable=True,
+            doc="Temperature change of insulation material 2 from reference temperature to steady operating condition",
+        )
+        self.metal2_max_delta_temp = Param(
+            initialize=35.03,
+            units=pyunits.K,
+            mutable=True,
+            doc="Temperature change of metal 2 from reference temperature to steady operating condition",
+        )
+
     def _make_vars(self):
         """This section declares variables within this model."""
+
+        # solid feed temperature
+        self.flow_vol_feed = Var(
+            self.flowsheet().config.time,
+            initialize=1,
+            units=pyunits.m**3 / pyunits.s,
+            doc="solid feed volumetric flow",
+        )
 
         # solid feed temperature
         self.temp_feed = Var(
@@ -474,6 +697,441 @@ constructed,
             initialize=0.1,
             doc="mass fraction of impurity element in solid product stream",
         )
+
+        # operating variables
+        self.sample_heat_capacity = Var(
+            self.flowsheet().config.time,
+            initialize=0.44,
+            units=pyunits.kJ / (pyunits.kg * pyunits.K),
+            doc="heat capacity of the sample",
+        )
+
+        self.sample_mass = Var(
+            self.flowsheet().config.time,
+            initialize=62.025,
+            units=pyunits.kg,
+            doc="mass of the sample",
+        )
+
+        self.sample_volume = Var(
+            self.flowsheet().config.time,
+            initialize=0.002,
+            units=pyunits.m**3,
+            doc="volume of the sample",
+        )
+
+        self.furnace_chamber_volume = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=1,
+            bounds=(1e-12, 1e12),
+            units=pyunits.m**3,
+            doc="internal volume of the furnace",
+        )
+
+        self.heat_loss = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=1e3,
+            units=pyunits.W,
+            bounds=(1e-6, None),
+            doc="Heat loss from the external surface of the furnace",
+        )
+
+        self.temperature_insulation_material1 = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=1050,
+            units=pyunits.K,
+            bounds=(950.13, 1173.15),
+            doc="Temperature of insulation material 1 under steady operating conditions",
+        )
+
+        self.thickness_insulation_material1 = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=0.12,
+            units=pyunits.m,
+            bounds=(0, None),
+            doc="Thickness of insulation material 1",
+        )
+
+        self.relative_thickness_ratio_insulation_material1 = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=1,
+            units=pyunits.dimensionless,
+            bounds=(0, None),
+            doc="Relative thickness ratio of insulation material 1",
+        )
+
+        self.thickness_metal_material1 = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=3 * 1e-3,
+            units=pyunits.m,
+            bounds=(0, None),
+            doc="Thickness of metal material 1",
+        )
+
+        self.relative_thickness_ratio_metal_material1 = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=0.05,
+            units=pyunits.dimensionless,
+            bounds=(0, None),
+            doc="Relative thickness ratio of metal material 1",
+        )
+
+        self.thickness_insulation_material2 = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=0.15,
+            units=pyunits.m,
+            bounds=(0, None),
+            doc="Thickness of insulation material 2",
+        )
+
+        self.relative_thickness_ratio_insulation_material2 = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=1,
+            units=pyunits.dimensionless,
+            bounds=(0, None),
+            doc="Relative thickness ratio of insulation material 2",
+        )
+
+        self.thickness_metal_material2 = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=4 * 1e-3,
+            units=pyunits.m,
+            bounds=(0, None),
+            doc="Thickness of metal material 2",
+        )
+
+        self.relative_thickness_ratio_metal_material2 = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=0.01,
+            units=pyunits.dimensionless,
+            bounds=(0, None),
+            doc="Relative thickness ratio of metal material 2",
+        )
+
+    def _make_geometry(self):
+        """This section contains equations related to the geometry of the reactor model."""
+
+        # feed properties
+        @self.Constraint(
+            self.flowsheet().config.time,
+            doc="volumetric flow of solid feed",
+        )
+        def flow_vol_feed_eqn(b, t):
+            return b.flow_vol_feed[t] == pyunits.convert(
+                b.solid_in[t].flow_mass / b.sample_density,
+                to_units=pyunits.m**3 / pyunits.s,
+            )
+
+        @self.Constraint(
+            self.flowsheet().config.time,
+            doc="mass of solid feed",
+        )
+        def sample_mass_eqn(b, t):
+            return b.sample_mass[t] == pyunits.convert(
+                b.solid_in[t].flow_mass * b.decrepitation_duration, to_units=pyunits.kg
+            )
+
+        @self.Constraint(
+            self.flowsheet().config.time,
+            doc="volume of solid feed",
+        )
+        def sample_volume_eqn(b, t):
+            return b.sample_volume[t] == pyunits.convert(
+                b.flow_vol_feed[t] * b.decrepitation_duration, to_units=pyunits.m**3
+            )
+
+        # furnace chamber dimensions
+        @self.Constraint(
+            self.flowsheet().config.time,
+            doc="internal volume of the furnace",
+        )
+        def furnace_chamber_volume_eqn(b, t):
+            return b.furnace_chamber_volume[t] == pyunits.convert(
+                b.chamber_to_sample_ratio * b.sample_volume[t], to_units=pyunits.m**3
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time, doc="Radius of the furnace chamber"
+        )
+        def radius_chamber(b, t):
+            return (b.furnace_chamber_volume[t] / (6 * Constants.pi)) ** (1 / 3)
+
+        @self.Expression(
+            self.flowsheet().config.time, doc="Length of the furnace chamber"
+        )
+        def length_chamber(b, t):
+            # 3 times the diameter
+            return 6 * b.radius_chamber[t]
+
+        @self.Expression(
+            self.flowsheet().config.time, doc="Volume of insulation material 1"
+        )
+        def volume_insulation1(b, t):
+            return (
+                Constants.pi
+                * b.length_chamber[t]
+                * (
+                    ((b.radius_chamber[t] + b.thickness_insulation_material1[t]) ** 2)
+                    - (b.radius_chamber[t] ** 2)
+                )
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="Required quantity of insulation material 1",
+        )
+        def quantity_insulation1(b, t):
+            return smooth_max(
+                b.min_quantity_insulation,
+                (
+                    b.volume_insulation1[t]
+                    / (
+                        b.length_insulation1
+                        * b.width_insulation1
+                        * b.thickness_insulation1
+                    )
+                ),
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time, doc="Total weight of insulation material 1"
+        )
+        def total_weight_insulation1(b, t):
+            return b.quantity_insulation1[t] * b.weight_insulation1
+
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="Internal diameter of the structure formed after attaching metal 1",
+        )
+        def internal_diameter_metal1(b, t):
+            return 2 * (b.radius_chamber[t] + b.thickness_insulation_material1[t])
+
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="External diameter of the structure formed after attaching metal 1",
+        )
+        def external_diameter_metal1(b, t):
+            return 2 * (
+                b.radius_chamber[t]
+                + b.thickness_insulation_material1[t]
+                + b.thickness_metal_material1[t]
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time, doc="Required volume of metal material 1"
+        )
+        def volume_metal1(b, t):
+            return pyunits.convert(
+                (
+                    Constants.pi
+                    * (
+                        (b.external_diameter_metal1[t] ** 2)
+                        - (b.internal_diameter_metal1[t] ** 2)
+                    )
+                    * b.length_chamber[t]
+                )
+                / 4,
+                to_units=pyunits.inches**3,
+            )
+
+        @self.Expression(self.flowsheet().config.time, doc="Weight of metal material 1")
+        def weight_metal1(b, t):
+            return b.volume_metal1[t] * pyunits.convert(
+                b.density_metal1, to_units=pyunits.pound / (pyunits.inches**3)
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time, doc="Volume of insulation material 2"
+        )
+        def volume_insulation2(b, t):
+            return (
+                Constants.pi
+                * b.length_chamber[t]
+                * (
+                    (
+                        (
+                            b.radius_chamber[t]
+                            + b.thickness_insulation_material1[t]
+                            + b.thickness_metal_material1[t]
+                            + b.thickness_insulation_material2[t]
+                        )
+                        ** 2
+                    )
+                    - (
+                        (
+                            b.radius_chamber[t]
+                            + b.thickness_insulation_material1[t]
+                            + b.thickness_metal_material1[t]
+                        )
+                        ** 2
+                    )
+                )
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="Required quantity of insulation material 2",
+        )
+        def quantity_insulation2(b, t):
+            return smooth_max(
+                b.min_quantity_insulation,
+                (
+                    b.volume_insulation2[t]
+                    / (
+                        b.length_insulation2
+                        * b.width_insulation2
+                        * b.thickness_insulation2
+                    )
+                ),
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time, doc="Total weight of insulation material 2"
+        )
+        def total_weight_insulation2(b, t):
+            return b.quantity_insulation2[t] * b.weight_insulation2
+
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="Internal diameter of the structure formed after attaching metal 2",
+        )
+        def internal_diameter_metal2(b, t):
+            return 2 * (
+                b.radius_chamber[t]
+                + b.thickness_insulation_material1[t]
+                + b.thickness_metal_material1[t]
+                + b.thickness_insulation_material2[t]
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="External diameter of the structure formed after attaching metal 2",
+        )
+        def external_diameter_metal2(b, t):
+            return 2 * (
+                b.radius_chamber[t]
+                + b.thickness_insulation_material1[t]
+                + b.thickness_metal_material1[t]
+                + b.thickness_insulation_material2[t]
+                + b.thickness_metal_material2[t]
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time, doc="Required volume of metal material 2"
+        )
+        def volume_metal2(b, t):
+            return pyunits.convert(
+                (
+                    Constants.pi
+                    * (
+                        (b.external_diameter_metal2[t] ** 2)
+                        - (b.internal_diameter_metal2[t] ** 2)
+                    )
+                    * b.length_chamber[t]
+                )
+                / 4,
+                to_units=pyunits.inches**3,
+            )
+
+        @self.Expression(self.flowsheet().config.time, doc="Weight of metal material 2")
+        def weight_metal2(b, t):
+            return b.volume_metal2[t] * pyunits.convert(
+                b.density_metal2, to_units=pyunits.pound / (pyunits.inches**3)
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time, doc="External surface area of the furnace"
+        )
+        def furnace_external_surface_area(b, t):
+            return (
+                Constants.pi * b.external_diameter_metal2[t] * b.length_chamber[t]
+            ) + ((Constants.pi * (b.external_diameter_metal2[t] ** 2)) / 2)
+
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="Energy required to raise the temperature of furnace material from room temperature to temperature at steady state",
+        )
+        def heat_furnace_material(b, t):
+            return (
+                (
+                    b.total_weight_insulation1[t]
+                    * b.specific_heat_capacity_insulation1
+                    * b.insulation1_max_delta_temp
+                )
+                + (
+                    (pyunits.convert(b.weight_metal1[t], to_units=pyunits.kg))
+                    * b.specific_heat_capacity_metal1
+                    * b.metal1_max_delta_temp
+                )
+                + (
+                    b.total_weight_insulation2[t]
+                    * b.specific_heat_capacity_insulation2
+                    * b.insulation2_max_delta_temp
+                )
+                + (
+                    (pyunits.convert(b.weight_metal2[t], to_units=pyunits.kg))
+                    * b.specific_heat_capacity_metal2
+                    * b.metal2_max_delta_temp
+                )
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="Energy lost in the decrepitation duration",
+        )
+        def energy_consumption(b, t):
+            return pyunits.convert(
+                b.heat_loss[t] * b.decrepitation_duration,
+                to_units=pyunits.kJ,
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="Energy required to raise the temperature of sample to operating temperature",
+        )
+        def heat_sample_material(b, t):
+            return (
+                b.sample_mass[t]
+                * b.sample_heat_capacity[t]
+                * (b.gas_out[t].temperature - b.ref_temp)
+            )
+
+        @self.Expression(self.flowsheet().config.time, doc="Total heat duty needed")
+        def total_heat(b, t):
+            return (
+                b.heat_furnace_material[t]
+                + b.energy_consumption[t]
+                + b.heat_sample_material[t]
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time,
+            doc="Total duration of the decrepitation process",
+        )
+        def processing_time(b, t):
+            return (
+                (pyunits.convert(b.preparation_time, to_units=pyunits.hr))
+                + (pyunits.convert(b.ramp_up_time, to_units=pyunits.hr))
+                + (pyunits.convert(b.decrepitation_duration, to_units=pyunits.hr))
+                + (pyunits.convert(b.cool_down_time, to_units=pyunits.hr))
+            )
+
+        @self.Expression(self.flowsheet().config.time, doc="Total heat duty needed")
+        def total_heat_duty(b, t):
+            return pyunits.convert(
+                b.total_heat[t] / b.processing_time[t], to_units=pyunits.W
+            )
 
     def _make_mass_balance(self):
         """This section contains equations for mass balance within the reactor model."""
@@ -666,6 +1324,167 @@ constructed,
                 + b.gas_out[t].flow_mol * b.gas_out[t].enth_mol
             )
 
+        # sample heat capacity
+        @self.Constraint(
+            self.flowsheet().config.time,
+            doc="solid sample heat capacity",
+        )
+        def sample_heat_capacity_eqn(b, t):
+            # lever rule, Cp = sum(mass_frac_i * Cp_mol_i * mw_i for all components i)
+            return b.sample_heat_capacity[t] == pyunits.convert(
+                b.solid_in[t].mass_frac_comp["Nd2Fe14B"]
+                * (b.cp0_Nd2Fe14B + b.cp1_Nd2Fe14B * b.temp_feed[t])
+                / b.mw_Nd2Fe14B
+                + b.solid_in[t].mass_frac_comp["Nd"]
+                * (b.cp0_Nd + b.cp1_Nd * b.temp_feed[t])
+                / b.am_Nd,
+                to_units=pyunits.J / (pyunits.g * pyunits.K),
+            )
+
+        # heat loss from radiation
+        @self.Constraint(self.flowsheet().config.time, doc="heat loss from radiation")
+        def heat_loss_radiation(b, t):
+            return b.heat_loss[t] == 0.70 * 2 * Constants.pi * b.radius_chamber[
+                t
+            ] * b.length_chamber[t] * Constants.stefan_constant * (
+                (b.max_temperature**4) - (b.temperature_insulation_material1[t] ** 4)
+            )
+
+        # relative thickness and heat loss of insulation material 1
+        @self.Constraint(
+            self.flowsheet().config.time,
+            doc="relative thickness of insulation material 1",
+        )
+        def relative_thickness_insulation_material1(b, t):
+            return (
+                exp(b.relative_thickness_ratio_insulation_material1[t])
+                == (b.radius_chamber[t] + b.thickness_insulation_material1[t])
+                / b.radius_chamber[t]
+            )
+
+        @self.Constraint(
+            self.flowsheet().config.time, doc="heat loss of insulation material 1"
+        )
+        def heat_loss_insulation_material1(b, t):
+            return b.heat_loss[t] * b.relative_thickness_ratio_insulation_material1[
+                t
+            ] == (
+                2
+                * Constants.pi
+                * b.thermal_cond_insulation_material1
+                * b.length_chamber[t]
+                * (
+                    b.temperature_insulation_material1[t]
+                    - b.temperature_metal_material1
+                )
+            )
+
+        # relative thickness and heat loss of metal material 1
+        @self.Constraint(
+            self.flowsheet().config.time, doc="relative thickness of metal material 1"
+        )
+        def relative_thickness_metal_material1(b, t):
+            return exp(b.relative_thickness_ratio_metal_material1[t]) == (
+                b.radius_chamber[t]
+                + b.thickness_insulation_material1[t]
+                + b.thickness_metal_material1[t]
+            ) / (b.radius_chamber[t] + b.thickness_insulation_material1[t])
+
+        @self.Constraint(
+            self.flowsheet().config.time, doc="heat loss of metal material 1"
+        )
+        def heat_loss_metal_material1(b, t):
+            return b.heat_loss[t] * b.relative_thickness_ratio_metal_material1[t] == (
+                2
+                * Constants.pi
+                * b.thermal_cond_metal_material1
+                * b.length_chamber[t]
+                * (b.temperature_metal_material1 - b.temperature_insulation_material2)
+            )
+
+        @self.Constraint(
+            self.flowsheet().config.time,
+            doc="relative thickness of insulation material 2",
+        )
+        def relative_thickness_insulation_material2(b, t):
+            return exp(b.relative_thickness_ratio_insulation_material2[t]) == (
+                b.radius_chamber[t]
+                + b.thickness_insulation_material1[t]
+                + b.thickness_metal_material1[t]
+                + b.thickness_insulation_material2[t]
+            ) / (
+                b.radius_chamber[t]
+                + b.thickness_insulation_material1[t]
+                + b.thickness_metal_material1[t]
+            )
+
+        @self.Constraint(
+            self.flowsheet().config.time, doc="heat loss of insulation material 2"
+        )
+        def heat_loss_insulation_material2(b, t):
+            return b.heat_loss[t] * b.relative_thickness_ratio_insulation_material2[
+                t
+            ] == (
+                (
+                    2
+                    * Constants.pi
+                    * b.thermal_cond_insulation_material2
+                    * b.length_chamber[t]
+                )
+                * (b.temperature_insulation_material2 - b.temperature_metal_material2)
+            )
+
+        # relative thickness and heat loss of metal material 2
+        @self.Constraint(
+            self.flowsheet().config.time, doc="relative thickness of metal material 2"
+        )
+        def relative_thickness_metal_material2(b, t):
+            return exp(b.relative_thickness_ratio_metal_material2[t]) == (
+                b.radius_chamber[t]
+                + b.thickness_insulation_material1[t]
+                + b.thickness_metal_material1[t]
+                + b.thickness_insulation_material2[t]
+                + b.thickness_metal_material2[t]
+            ) / (
+                b.radius_chamber[t]
+                + b.thickness_insulation_material1[t]
+                + b.thickness_metal_material1[t]
+                + b.thickness_insulation_material2[t]
+            )
+
+        @self.Constraint(
+            self.flowsheet().config.time, doc="heat loss of metal material 2"
+        )
+        def heat_loss_metal_material2(b, t):
+            return b.heat_loss[t] * b.relative_thickness_ratio_metal_material2[t] == (
+                2
+                * Constants.pi
+                * b.thermal_cond_metal_material2
+                * b.length_chamber[t]
+                * (b.temperature_metal_material2 - b.temperature_furnace_ext_surface)
+            )
+
+        # heat loss from external air convection outside the furnace
+        @self.Constraint(
+            self.flowsheet().config.time,
+            doc="heat loss from external air convection outside the furnace",
+        )
+        def heat_loss_external_air_convection(b, t):
+            return b.heat_loss[t] == (
+                b.air_heat_transfer_coeff
+                * 2
+                * Constants.pi
+                * b.length_chamber[t]
+                * (b.temperature_furnace_ext_surface - b.ref_temp)
+                * (
+                    b.radius_chamber[t]
+                    + b.thickness_insulation_material1[t]
+                    + b.thickness_metal_material1[t]
+                    + b.thickness_insulation_material2[t]
+                    + b.thickness_metal_material2[t]
+                )
+            )
+
     def _make_momentum_balance(self):
         @self.Constraint(self.flowsheet().config.time, doc="momentum balance equation")
         def momentum_balance_eqn(b, t):
@@ -747,3 +1566,32 @@ constructed,
                     self.heat_duty[t], default=1e-6, warning=True
                 )
                 iscale.constraint_scaling_transform(c, sf, overwrite=False)
+
+    def _get_stream_table_contents(self, time_point=0):
+        return create_stream_table_dataframe(
+            {
+                "Solid Inlet": self.solid_inlet,
+                "Solid Outlet": self.solid_outlet,
+                "Gas Inlet": self.gas_inlet,
+                "Gas Outlet": self.gas_outlet,
+            },
+            time_point=time_point,
+        )
+
+    def _get_performance_contents(self, time_point=0):
+        exprs = {}
+        exprs["Heat Duty"] = self.heat_duty[0]
+        exprs["Sample Mass"] = self.sample_mass[0]
+        exprs["Sample Volume"] = self.sample_volume[0]
+        exprs["Furnace Chamber Volume"] = self.furnace_chamber_volume[0]
+        exprs["Furnace Chamber Radius"] = self.radius_chamber[0]
+        exprs["Furnace Chamber Length"] = self.length_chamber[0]
+        exprs["Temperature Insulation Material 1"] = (
+            self.temperature_insulation_material1
+        )
+        exprs["Thickness Insulation Material 1"] = self.thickness_insulation_material1
+        exprs["Relative Thickness Ratio Insulation Material 1"] = (
+            self.relative_thickness_ratio1
+        )
+
+        return {"exprs": exprs}

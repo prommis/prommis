@@ -227,6 +227,7 @@ class REEFeedRoasterScaler(CustomScalerBase):
             self.scale_variable_by_default(model.volume, overwrite=overwrite)
         if hasattr(model, "voidage"):
             self.scale_variable_by_default(model.voidage, overwrite=overwrite)
+
         if hasattr(model, "heat_duty"):
             for v in model.heat_duty.values():
                 sf = 1e-6
@@ -664,13 +665,11 @@ constructed,
         # The energy holdup is needed only for dynamic cases
 
         self.volume = Var(initialize=1, units=units.m**3, doc="volume of the reactor")
-        self.volume.fix()
 
         self.voidage = Var(
             initialize=0.4,
             doc="Void fraction of the reactor bed. The fraction occupied by the gas phase",
         )
-        self.voidage.fix()
 
         @self.Expression(doc="Volume of solid phase")
         def volume_solid(b):
@@ -927,7 +926,7 @@ constructed,
             if self.config.dynamic:
                 accumulation = b.solid_material_accumulation[t, i]
             else:
-                accumulation = 0
+                accumulation = 0 * units.mol / units.s
             if i == "Al2O3":
                 # Kaolinite -> Al2O3 + 2 SiO2 + 2 H2O (g)
                 return (
@@ -977,22 +976,6 @@ constructed,
                     + (1 - b.y_REE2[j]) * b.rate_REE2[t, j]
                     for j in b.Ree_list
                 )
-            elif i == "Sc2X":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    - b.rate_REE1[t, "Sc"]
-                    - b.rate_REE2[t, "Sc"]
-                )
-            elif i == "Sc2O3":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    + b.y_REE1["Sc"] * b.rate_REE1[t, "Sc"]
-                    + b.y_REE2["Sc"] * b.rate_REE2[t, "Sc"]
-                )
             elif i == "Y2X":
                 return (
                     accumulation
@@ -1009,120 +992,25 @@ constructed,
                     + b.y_REE1["Y"] * b.rate_REE1[t, "Y"]
                     + b.y_REE2["Y"] * b.rate_REE2[t, "Y"]
                 )
-            elif i == "La2X":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    - b.rate_REE1[t, "La"]
-                    - b.rate_REE2[t, "La"]
-                )
-            elif i == "La2O3":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    + b.y_REE1["La"] * b.rate_REE1[t, "La"]
-                    + b.y_REE2["La"] * b.rate_REE2[t, "La"]
-                )
-            elif i == "Ce2X":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    - b.rate_REE1[t, "Ce"]
-                    - b.rate_REE2[t, "Ce"]
-                )
-            elif i == "Ce2O3":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    + b.y_REE1["Ce"] * b.rate_REE1[t, "Ce"]
-                    + b.y_REE2["Ce"] * b.rate_REE2[t, "Ce"]
-                )
-            elif i == "Pr2X":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    - b.rate_REE1[t, "Pr"]
-                    - b.rate_REE2[t, "Pr"]
-                )
-            elif i == "Pr2O3":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    + b.y_REE1["Pr"] * b.rate_REE1[t, "Pr"]
-                    + b.y_REE2["Pr"] * b.rate_REE2[t, "Pr"]
-                )
-            elif i == "Nd2X":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    - b.rate_REE1[t, "Nd"]
-                    - b.rate_REE2[t, "Nd"]
-                )
-            elif i == "Nd2O3":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    + b.y_REE1["Nd"] * b.rate_REE1[t, "Nd"]
-                    + b.y_REE2["Nd"] * b.rate_REE2[t, "Nd"]
-                )
-            elif i == "Sm2X":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    - b.rate_REE1[t, "Sm"]
-                    - b.rate_REE2[t, "Sm"]
-                )
-            elif i == "Sm2O3":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    + b.y_REE1["Sm"] * b.rate_REE1[t, "Sm"]
-                    + b.y_REE2["Sm"] * b.rate_REE2[t, "Sm"]
-                )
-            elif i == "Gd2X":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    - b.rate_REE1[t, "Gd"]
-                    - b.rate_REE2[t, "Gd"]
-                )
-            elif i == "Gd2O3":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    + b.y_REE1["Gd"] * b.rate_REE1[t, "Gd"]
-                    + b.y_REE2["Gd"] * b.rate_REE2[t, "Gd"]
-                )
-            elif i == "Dy2X":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    - b.rate_REE1[t, "Dy"]
-                    - b.rate_REE2[t, "Dy"]
-                )
-            elif i == "Dy2O3":
-                return (
-                    accumulation
-                    == b.solid_in[t].flow_mol_comp[i]
-                    - b.solid_out[t].flow_mol_comp[i]
-                    + b.y_REE1["Dy"] * b.rate_REE1[t, "Dy"]
-                    + b.y_REE2["Dy"] * b.rate_REE2[t, "Dy"]
-                )
-            else:
-                return Constraint.Skip
+            else:  # i is either RE2X or RE2O3 form
+                j = i[0:2]
+                k = i[3:]
+                if k == "X":
+                    return (
+                        accumulation
+                        == b.solid_in[t].flow_mol_comp[i]
+                        - b.solid_out[t].flow_mol_comp[i]
+                        - b.rate_REE1[t, j]
+                        - b.rate_REE2[t, j]
+                    )
+                else:  # k == "O3"
+                    return (
+                        accumulation
+                        == b.solid_in[t].flow_mol_comp[i]
+                        - b.solid_out[t].flow_mol_comp[i]
+                        + b.y_REE1[j] * b.rate_REE1[t, j]
+                        + b.y_REE2[j] * b.rate_REE2[t, j]
+                    )
 
         # the gas product should contain at least N2, O2, H2O, CO2, and SO2
         # assume no accumulation in the gas phase
@@ -1222,7 +1110,7 @@ constructed,
             if self.config.dynamic:
                 accumulation = b.solid_energy_accumulation[t]
             else:
-                accumulation = 0
+                accumulation = 0 * units.W
             return (
                 accumulation
                 == b.solid_in[t].enth_mass * b.solid_in[t].flow_mass

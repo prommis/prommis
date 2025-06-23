@@ -287,13 +287,12 @@ constructed,
 
         # Add heat duty
         if self.config.has_heat_transfer is True:
-            self.heat_duty = Var(
+            self.supplied_heat_duty = Var(
                 self.flowsheet().time,
                 initialize=0,
                 units=pyunits.W,
-                doc="heat duty added to the reactor",
+                doc="heat duty added to the reactor in addition to that required by decrepitation",
             )
-            self.heat_duty.fix()
 
         if self.config.has_pressure_change is True:
             self.deltaP = Var(
@@ -652,7 +651,6 @@ constructed,
     def _make_vars(self):
         """This section declares variables within this model."""
 
-        # solid feed temperature
         self.flow_vol_feed = Var(
             self.flowsheet().config.time,
             initialize=1,
@@ -660,12 +658,25 @@ constructed,
             doc="solid feed volumetric flow",
         )
 
-        # solid feed temperature
         self.temp_feed = Var(
             self.flowsheet().config.time,
             initialize=298.15,
             units=pyunits.K,
             doc="solid feed temperature",
+        )
+
+        self.temp_prod = Var(
+            self.flowsheet().config.time,
+            initialize=298.15,
+            units=pyunits.K,
+            doc="solid product temperature after cooling",
+        )
+
+        self.operating_temperature = Var(
+            self.flowsheet().config.time,
+            initialize=443.15,
+            units=pyunits.K,
+            doc="operating temperature of furnace",
         )
 
         self.flow_mol_comp_product_total = Var(
@@ -1104,7 +1115,7 @@ constructed,
             return (
                 b.sample_mass[t]
                 * b.sample_heat_capacity[t]
-                * (b.gas_out[t].temperature - b.ref_temp)
+                * (b.operating_temperature[t] - b.ref_temp)
             )
 
         @self.Expression(self.flowsheet().config.time, doc="Total heat duty needed")
@@ -1290,13 +1301,12 @@ constructed,
             doc="molar enthalpy of individual product minerals",
         )
         def enth_mol_comp_product(b, t, i):
-            temp_prod = b.gas_out[t].temperature
             return (
                 b.enth0_comp_product[i]
-                + b.cp0_comp_product[i] * (temp_prod - b.temp_ref)
+                + b.cp0_comp_product[i] * (b.temp_prod[t] - b.temp_ref)
                 + 0.5
                 * b.cp1_comp_product[i]
-                * (temp_prod * temp_prod - b.temp_ref * b.temp_ref)
+                * (b.temp_prod[t] * b.temp_prod[t] - b.temp_ref * b.temp_ref)
             )
 
         # enthalpy in + heat in == enthalpy out
@@ -1306,7 +1316,7 @@ constructed,
         )
         def energy_balance_eqn(b, t):
             if self.config.has_heat_transfer is True:
-                heat = b.heat_duty[t]
+                heat = b.supplied_heat_duty[t]
             else:
                 heat = 0
             return (
@@ -1580,18 +1590,19 @@ constructed,
 
     def _get_performance_contents(self, time_point=0):
         exprs = {}
-        exprs["Heat Duty"] = self.heat_duty[0]
+        exprs["Heat Duty For Decrepitation"] = self.total_heat_duty[0]
+        exprs["Heat Duty Supplemental To Decrepitation"] = self.supplied_heat_duty[0]
         exprs["Sample Mass"] = self.sample_mass[0]
         exprs["Sample Volume"] = self.sample_volume[0]
         exprs["Furnace Chamber Volume"] = self.furnace_chamber_volume[0]
         exprs["Furnace Chamber Radius"] = self.radius_chamber[0]
         exprs["Furnace Chamber Length"] = self.length_chamber[0]
-        exprs["Temperature Insulation Material 1"] = (
-            self.temperature_insulation_material1
-        )
-        exprs["Thickness Insulation Material 1"] = self.thickness_insulation_material1
-        exprs["Relative Thickness Ratio Insulation Material 1"] = (
-            self.relative_thickness_ratio1
-        )
+        # exprs["Temperature Insulation Material 1"] = (
+            # self.temperature_insulation_material1
+        # )
+        # exprs["Thickness Insulation Material 1"] = self.thickness_insulation_material1
+        # exprs["Relative Thickness Ratio Insulation Material 1"] = (
+            # self.relative_thickness_ratio1
+        # )
 
         return {"exprs": exprs}

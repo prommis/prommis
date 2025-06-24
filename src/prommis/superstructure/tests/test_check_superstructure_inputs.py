@@ -7,15 +7,23 @@
 
 import pytest
 
-from prommis.superstructure.check_superstructure_inputs import (
-    # check_byproduct_valorization_params,
-    # check_discretized_costing_params,
-    # check_environmental_impact_params,
-    # check_feed_params,
-    # check_operating_params,
+from prommis.superstructure.check_superstructure_inputs import (  # check_byproduct_valorization_params,; check_discretized_costing_params,; check_environmental_impact_params,; check_feed_params,; check_operating_params,; check_supe_formulation_params,
     check_plant_lifetime_params,
-    # check_supe_formulation_params,
 )
+
+from pyomo.environ import (
+    Block,
+    ConcreteModel,
+    Constraint,
+    Objective,
+    RangeSet,
+    SolverFactory,
+    Var,
+    assert_optimal_termination,
+    value,
+)
+
+from idaes.core.solvers import get_solver
 
 solver_available = SolverFactory("gurobi").available()
 if solver_available:

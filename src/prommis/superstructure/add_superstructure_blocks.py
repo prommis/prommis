@@ -1225,10 +1225,10 @@ def add_byproduct_valorization_params(
 
     ### Define parameters from user input.
     m.byproduct_valorization_params.consider_byproduct_valorization = pyo.Param(
-            initialize=consider_byproduct_valorization,
-            within=pyo.Boolean,
-            doc="Choice of whether or not to consider byproduct valorization.",
-        )
+        initialize=consider_byproduct_valorization,
+        within=pyo.Boolean,
+        doc="Choice of whether or not to consider byproduct valorization.",
+    )
     ## Only add parameters if user wants to consider byproduct valorization.
     if consider_byproduct_valorization:
         # Create a set of the byproducts considered.
@@ -1295,7 +1295,6 @@ def add_byproduct_valorization_vars(m):
 
     ## Pyomo variables
 
-
     # Only build variables if user wants to consider byproduct valorization. Otherwise, will build non-indexed vars to not throw errors. Cons will be deactivated anyways.
     if m.byproduct_valorization_params.consider_byproduct_valorization:
         m.byproduct_valorization.byproduct_produced = pyo.Var(
@@ -1338,9 +1337,10 @@ def add_byproduct_valorization_cons(m):
     )
     def calculate_opt_byprod_val_cons(b, t):
         return m.costing.total_byproduct_profit[t] == 0
-    
+
     # only build constraints if user wants to consider byproduct valorization.
     if m.byproduct_valorization_params.consider_byproduct_valorization:
+
         @m.byproduct_valorization.Constraint(
             m.byproduct_valorization_params.byproducts_set,
             m.plant_lifetime_params.operational_range,
@@ -1348,9 +1348,13 @@ def add_byproduct_valorization_cons(m):
         )
         def calculate_byproduct_produced_cons(b, byprod, t):
             return m.byproduct_valorization.byproduct_produced[byprod, t] == sum(
-                sum(m.mass_balances.f_in[opt, c, t] for c in m.feed_params.tracked_comps)
+                sum(
+                    m.mass_balances.f_in[opt, c, t] for c in m.feed_params.tracked_comps
+                )
                 * m.byproduct_valorization_params.byproduct_opt_conversion[opt, byprod]
-                for opt in m.byproduct_valorization_params.byproduct_producing_opts[byprod]
+                for opt in m.byproduct_valorization_params.byproduct_producing_opts[
+                    byprod
+                ]
             )
 
         @m.byproduct_valorization.Constraint(

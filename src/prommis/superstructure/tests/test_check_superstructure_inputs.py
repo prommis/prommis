@@ -701,6 +701,7 @@ def get_params():
         },
     }
 
+
 ### Test plant lifetime parameters
 def test_plant_start_type():
     """Test that TypeError is raised if plant_start is not an int."""

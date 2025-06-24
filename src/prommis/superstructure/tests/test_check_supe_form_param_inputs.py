@@ -1,4 +1,6 @@
-from prommis.superstructure.check_superstructure_inputs import check_supe_formulation_params
+from prommis.superstructure.check_superstructure_inputs import (
+    check_supe_formulation_params,
+)
 
 
 ### Test superstructure formulation parameters

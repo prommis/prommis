@@ -407,6 +407,7 @@ def check_supe_formulation_params(
                     f"component {comp} for option {opt} in option_efficiencies is not defined as a tracked component."
                 )
 
+
 ### Operating Parameters
 profit = {
     (5, 1): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
@@ -478,6 +479,8 @@ num_operators = {
     (5, 5): 1.15,
 }
 labor_rate = 8000 * 38.20
+
+
 def check_operating_params(
     m,
     profit,

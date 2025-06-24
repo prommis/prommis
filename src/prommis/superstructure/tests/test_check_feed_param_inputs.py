@@ -7,13 +7,12 @@
 
 import warnings
 
-from pyomo.environ import SolverFactory
 
-from idaes.core.solvers import get_solver
 
 import pytest
 
 from prommis.superstructure.check_superstructure_inputs import check_feed_params
+
 
 # Helper function to create a mock model with operational years
 def create_mock_model(operational_years):

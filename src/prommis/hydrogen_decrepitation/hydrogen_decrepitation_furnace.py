@@ -1147,7 +1147,10 @@ constructed,
                 + (pyunits.convert(b.cool_down_time, to_units=pyunits.hr))
             )
 
-        @self.Constraint(self.flowsheet().config.time, doc="Total heat duty required for decrepitation")
+        @self.Constraint(
+            self.flowsheet().config.time,
+            doc="Total heat duty required for decrepitation",
+        )
         def total_heat_duty_constraint(b, t):
             return b.total_heat_duty[t] == pyunits.convert(
                 b.total_heat[t] / b.processing_time[t], to_units=pyunits.W

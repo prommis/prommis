@@ -6,7 +6,6 @@
 #####################################################################################################
 from pyomo.environ import (
     ConcreteModel,
-    Constraint,
     Param,
     SolverFactory,
     TransformationFactory,
@@ -14,9 +13,7 @@ from pyomo.environ import (
     assert_optimal_termination,
 )
 from pyomo.environ import units as pyunits
-from pyomo.environ import value
 from pyomo.network import Arc
-from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
@@ -26,12 +23,6 @@ from idaes.core.initialization import (
 from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.math import smooth_max
-from idaes.core.util.model_statistics import (
-    degrees_of_freedom,
-    number_total_constraints,
-    number_unused_variables,
-    number_variables,
-)
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
@@ -41,18 +32,17 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     get_prop,
 )
 
-import pytest
-
 from prommis.hydrogen_decrepitation.hydrogen_decrepitation_furnace import (
     REPMHydrogenDecrepitationFurnace,
 )
 from prommis.hydrogen_decrepitation.repm_solids_properties import REPMParameters
 
+
 def main():
-    
+
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    
+
     gas_species = {
         "H2",
     }
@@ -63,7 +53,7 @@ def main():
     m.fs.prop_solid = REPMParameters(
         doc="solid property",
     )
-    
+
     m.fs.prop_gas.set_default_scaling("enth_mol_phase", 1e-3)
     m.fs.prop_gas.set_default_scaling("pressure", 1e-5)
     m.fs.prop_gas.set_default_scaling("temperature", 1e-2)
@@ -71,36 +61,38 @@ def main():
     m.fs.prop_gas.set_default_scaling("flow_mol_phase", 1e1)
     m.fs.prop_gas.set_default_scaling("_energy_density_term", 1e-4)
     m.fs.prop_gas.set_default_scaling("phase_frac", 1)
-    
+
     _mf_scale = {
         "H2": 1,
     }
     for comp, s in _mf_scale.items():
         m.fs.prop_gas.set_default_scaling("mole_frac_comp", s, index=comp)
-        m.fs.prop_gas.set_default_scaling("mole_frac_phase_comp", s, index=("Vap", comp))
+        m.fs.prop_gas.set_default_scaling(
+            "mole_frac_phase_comp", s, index=("Vap", comp)
+        )
         m.fs.prop_gas.set_default_scaling(
             "flow_mol_phase_comp", s * 1e1, index=("Vap", comp)
         )
-    
+
     # shredder and HDD feed to define REPM flow into hydrogen decrepitation furnace
     m.fs.shredder = Feed(property_package=m.fs.prop_solid)
-    
+
     m.fs.plant_basis_year = Param(
         initialize=2023, units=pyunits.dimensionless
     )  # year of plant operation
-    
+
     m.fs.flow_2_5inch_HDDs = Var(m.fs.time, initialize=600, units=pyunits.h**-1)
     m.fs.flow_2_5inch_HDDs.fix()
     m.fs.flow_3_5inch_HDDs = Var(m.fs.time, initialize=2100, units=pyunits.h**-1)
     m.fs.flow_3_5inch_HDDs.fix()
-    
-    
+
     @m.fs.shredder.Constraint(m.fs.time)
     def HDD_to_REPM_conversion_constraint(b, t):
         return b.flow_mass[t] == (
             # 2.5 g per 2.5 inch HDD
             pyunits.convert(
-                2.5 * pyunits.g * m.fs.flow_2_5inch_HDDs[t], to_units=pyunits.kg / pyunits.s
+                2.5 * pyunits.g * m.fs.flow_2_5inch_HDDs[t],
+                to_units=pyunits.kg / pyunits.s,
             )
             +
             # (17.87 - 0.35 * t) g per 3.5 inch HDD
@@ -114,13 +106,12 @@ def main():
                 to_units=pyunits.kg / pyunits.s,
             )
         )
-    
-    
+
     m.fs.shredder.mass_frac_comp[0, "Nd2Fe14B"].fix(0.99)
-    
+
     # don't fix, already have mole frac balance so just need initial value
     m.fs.shredder.mass_frac_comp[0, "Nd"] = 0.01
-    
+
     m.fs.hydrogen_decrepitation_furnace = REPMHydrogenDecrepitationFurnace(
         gas_property_package=m.fs.prop_gas,
         solid_property_package=m.fs.prop_solid,
@@ -132,84 +123,89 @@ def main():
         ],
         number_of_units=1,
     )
-    
+
     # don't fix, already have mole frac balance so just need initial value
     m.fs.hydrogen_decrepitation_furnace.gas_inlet.mole_frac_comp[0, "H2"].fix(1)
-    
-    
+
     # inlet flue gas mole flow rate, stoichiometric on molar basis with REPM
     @m.fs.hydrogen_decrepitation_furnace.Constraint(m.fs.time)
     def flow_mol_gas_constraint(b, t):
         return b.gas_inlet.flow_mol[t] == (
-            sum(b.flow_mol_comp_impurity_feed[t, c] for c in m.fs.prop_solid.component_list)
+            sum(
+                b.flow_mol_comp_impurity_feed[t, c]
+                for c in m.fs.prop_solid.component_list
+            )
         )
-    
+
     # operating parameters
     m.fs.hydrogen_decrepitation_furnace.deltaP.fix(0)
     m.fs.hydrogen_decrepitation_furnace.operating_temperature.fix(443.15)
     m.fs.hydrogen_decrepitation_furnace.gas_inlet.pressure.fix(101325)
-    
-    m.fs.hydrogen_decrepitation_furnace.decrepitation_duration.set_value(10800 * pyunits.s)
+
+    m.fs.hydrogen_decrepitation_furnace.decrepitation_duration.set_value(
+        10800 * pyunits.s
+    )
     m.fs.hydrogen_decrepitation_furnace.sample_density.set_value(
         m.fs.prop_solid.dens_mass
     )  # 7500 kg/m3
     m.fs.hydrogen_decrepitation_furnace.chamber_to_sample_ratio.set_value(2)
-    
+
     # solid temperature, cools back to inlet temperature during shutdown
     m.fs.hydrogen_decrepitation_furnace.temp_feed.fix(298.15)
     m.fs.hydrogen_decrepitation_furnace.temp_prod.fix(298.15)
-    
+
     # gas temperature, assume comes in at operating temperature
     m.fs.hydrogen_decrepitation_furnace.gas_in[0].temperature.fix(443.15)
-    
+
     # no additional heat is supplied other than what's required for decrepitation
     m.fs.hydrogen_decrepitation_furnace.supplied_heat_duty.fix(0)
-    
+
     # connect shredder and furnace
     m.fs.shredded_REPM = Arc(
         source=m.fs.shredder.outlet,
         destination=m.fs.hydrogen_decrepitation_furnace.solid_inlet,
     )
-    
+
     TransformationFactory("network.expand_arcs").apply_to(m)
 
     return m
+
 
 if __name__ == "__main__":
     m = main()
 
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
-    
+
     initializer = BlockTriangularizationInitializer()
     initializer.initialize(m.fs.shredder)
     propagate_state(m.fs.shredded_REPM)
-    
+
     # m.fs.hydrogen_decrepitation_furnace.gas_outlet.temperature.unfix()
     m.fs.hydrogen_decrepitation_furnace.flow_mol_gas_constraint.deactivate()  # flow mol will be fixed by initializer
     m.fs.hydrogen_decrepitation_furnace.solid_in[
         0
     ].sum_mass_frac.deactivate()  # mass frac will be fixed by initializer
-    
+
     initializer.initialize(m.fs.hydrogen_decrepitation_furnace)
-    
+
     # m.fs.hydrogen_decrepitation_furnace.gas_outlet.temperature.fix()
     m.fs.hydrogen_decrepitation_furnace.flow_mol_gas_constraint.activate()
     m.fs.hydrogen_decrepitation_furnace.solid_in[0].sum_mass_frac.activate()
-    
+
     assert (
         initializer.summary[m.fs.hydrogen_decrepitation_furnace]["status"]
         == InitializationStatus.Ok
     )
-        
+
     # Solve model
     solver = SolverFactory("ipopt")
     results = solver.solve(m, tee=True)
     assert_optimal_termination(results)
-    
+
     m.fs.shredder.report()
-    
+
     m.fs.hydrogen_decrepitation_furnace.report()
-    
+
     dt = DiagnosticsToolbox(m)
     dt.assert_no_numerical_warnings()

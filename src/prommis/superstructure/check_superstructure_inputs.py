@@ -201,7 +201,7 @@ def check_supe_formulation_params(
     ## Check that option_outlets is of type dict.
     if not isinstance(option_outlets, dict):
         raise TypeError("option_outlets is not of type dict.")
-    
+
     ## Check that option_outlets is not empty
     if not option_outlets:
         raise TypeError("option_outlets is an empty dict.")
@@ -224,7 +224,7 @@ def check_supe_formulation_params(
     ## Check that option_efficiencies is of type dict.
     if not isinstance(option_efficiencies, dict):
         raise TypeError("option_efficiencies is not of type dict.")
-    
+
     ## Check that option_efficiencies is not an empty dict.
     if not option_efficiencies:
         raise TypeError("option_efficiencies is an empty dict.")

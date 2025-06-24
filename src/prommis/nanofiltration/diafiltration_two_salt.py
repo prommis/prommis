@@ -245,6 +245,7 @@ from pyomo.environ import (
     Suffix,
     TransformationFactory,
     Var,
+    log,
     units,
     value,
 )
@@ -253,6 +254,7 @@ from pyomo.network import Port
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.constants import Constants
+from idaes.core.util.scaling import constraint_autoscale_large_jac
 
 
 @declare_process_block_class("TwoSaltDiafiltration")
@@ -334,6 +336,12 @@ and used when constructing these,
             mutable=True,
             units=units.m,
             doc="Thickness of membrane (z-direction)",
+        )
+        self.membrane_fixed_charge = Param(
+            initialize=0,
+            mutable=True,
+            units=units.mol / units.m**3,
+            doc="Fixed charge on the membrane",
         )
         self.membrane_permeability = Param(
             initialize=0.03,
@@ -764,7 +772,7 @@ and used when constructing these,
         )
 
         def _lithium_flux_membrane(self, x, z):
-            if z == 0:
+            if x == 0 or z == 0:
                 return Constraint.Skip
 
             return self.mass_flux_lithium[x] == (
@@ -786,7 +794,7 @@ and used when constructing these,
         )
 
         def _cobalt_flux_membrane(self, x, z):
-            if z == 0:
+            if x == 0 or z == 0:
                 return Constraint.Skip
 
             return self.mass_flux_cobalt[x] == (
@@ -810,26 +818,22 @@ and used when constructing these,
         def _chlorine_flux_membrane(self, x):
             if x == 0:
                 return Constraint.Skip
-            return self.mass_flux_chlorine[x] == -(
+            return 0 == (
                 (
                     self.config.property_package.charge["Li"]
-                    / self.config.property_package.charge["Cl"]
-                )
-                * (
-                    self.config.property_package.molar_mass["Cl"]
                     / self.config.property_package.molar_mass["Li"]
+                    * self.mass_flux_lithium[x]
                 )
-                * self.mass_flux_lithium[x]
-            ) - (
-                (
+                + (
                     self.config.property_package.charge["Co"]
-                    / self.config.property_package.charge["Cl"]
-                )
-                * (
-                    self.config.property_package.molar_mass["Cl"]
                     / self.config.property_package.molar_mass["Co"]
+                    * self.mass_flux_cobalt[x]
                 )
-                * self.mass_flux_cobalt[x]
+                + (
+                    self.config.property_package.charge["Cl"]
+                    / self.config.property_package.molar_mass["Cl"]
+                    * self.mass_flux_chlorine[x]
+                )
             )
 
         self.chlorine_flux_membrane = Constraint(
@@ -838,15 +842,10 @@ and used when constructing these,
 
         # other physical constraints
         def _osmotic_pressure_calculation(self, x):
-            if x != 0:
-                return Constraint.Skip
             return self.osmotic_pressure[x] == units.convert(
                 (
-                    (
-                        self.config.property_package.num_solutes
-                        * Constants.gas_constant  # J / mol / K
-                        * self.temperature
-                    )
+                    Constants.gas_constant  # J / mol / K
+                    * self.temperature
                     * (
                         (
                             self.config.property_package.sigma["Li"]
@@ -864,7 +863,8 @@ and used when constructing these,
                                 - self.permeate_conc_mass_comp[0, x, "Co"]
                             )
                         )
-                        + (
+                        + 3  # TODO link to property package
+                        * (
                             self.config.property_package.sigma["Cl"]
                             / self.config.property_package.molar_mass["Cl"]
                             * (
@@ -899,7 +899,7 @@ and used when constructing these,
         )
 
         def _electroneutrality_membrane(self, x, z):
-            if x == 0 and z == 0:
+            if x == 0:
                 return Constraint.Skip
             return 0 == (
                 self.config.property_package.charge["Li"]
@@ -911,6 +911,7 @@ and used when constructing these,
                 + self.config.property_package.charge["Cl"]
                 * self.membrane_conc_mass_chlorine[x, z]
                 / self.config.property_package.molar_mass["Cl"]
+                + self.membrane_fixed_charge
             )
 
         self.electroneutrality_membrane = Constraint(
@@ -938,18 +939,41 @@ and used when constructing these,
         def _retentate_membrane_interface_lithium(self, x):
             if x == 0:
                 return Constraint.Skip
-            return self.config.property_package.partition_coefficient[
-                "Li"
-            ] * self.config.property_package.partition_coefficient["Cl"] == (
-                (
-                    self.membrane_conc_mass_lithium[x, 0]
-                    / self.retentate_conc_mass_comp[0, x, "Li"]
-                )
-                * (
-                    self.membrane_conc_mass_chlorine[x, 0]
-                    / self.retentate_conc_mass_comp[0, x, "Cl"]
-                )
+            return (
+                self.config.property_package.partition_coefficient["Li"]
+                * self.config.property_package.partition_coefficient["Cl"]
+                * self.retentate_conc_mass_comp[0, x, "Li"]
+                * self.retentate_conc_mass_comp[0, x, "Cl"]
+            ) == (
+                self.membrane_conc_mass_lithium[x, 0]
+                * self.membrane_conc_mass_chlorine[x, 0]
             )
+
+        # return (
+        #         self.config.property_package.charge["Li"]
+        #         * (
+        #             log(self.config.property_package.partition_coefficient["Cl"])
+        #             - log(
+        #                 self.membrane_conc_mass_chlorine[x, 0] * units.m**3 / units.kg
+        #             )
+        #             + log(
+        #                 self.retentate_conc_mass_comp[0, x, "Cl"]
+        #                 * units.m**3
+        #                 / units.kg
+        #             )
+        #         )
+        #     ) == (
+        #         self.config.property_package.charge["Cl"]
+        #         * (
+        #             log(self.config.property_package.partition_coefficient["Li"])
+        #             - log(self.membrane_conc_mass_lithium[x, 0] * units.m**3 / units.kg)
+        #             + log(
+        #                 self.retentate_conc_mass_comp[0, x, "Li"]
+        #                 * units.m**3
+        #                 / units.kg
+        #             )
+        #         )
+        # )
 
         self.retentate_membrane_interface_lithium = Constraint(
             self.x_bar, rule=_retentate_membrane_interface_lithium
@@ -958,18 +982,29 @@ and used when constructing these,
         def _retentate_membrane_interface_cobalt(self, x):
             if x == 0:
                 return Constraint.Skip
-            return self.config.property_package.partition_coefficient["Co"] ** (
-                1 / self.config.property_package.charge["Co"]
-            ) * self.config.property_package.partition_coefficient["Cl"] == (
-                (
-                    self.membrane_conc_mass_cobalt[x, 0]
-                    ** (1 / self.config.property_package.charge["Co"])
-                    / self.retentate_conc_mass_comp[0, x, "Co"]
-                    ** (1 / self.config.property_package.charge["Co"])
-                )
+            return (
+                self.config.property_package.charge["Co"]
                 * (
-                    self.membrane_conc_mass_chlorine[x, 0]
-                    / self.retentate_conc_mass_comp[0, x, "Cl"]
+                    log(self.config.property_package.partition_coefficient["Cl"])
+                    - log(
+                        self.membrane_conc_mass_chlorine[x, 0] * units.m**3 / units.kg
+                    )
+                    + log(
+                        self.retentate_conc_mass_comp[0, x, "Cl"]
+                        * units.m**3
+                        / units.kg
+                    )
+                )
+            ) == (
+                self.config.property_package.charge["Cl"]
+                * (
+                    log(self.config.property_package.partition_coefficient["Co"])
+                    - log(self.membrane_conc_mass_cobalt[x, 0] * units.m**3 / units.kg)
+                    + log(
+                        self.retentate_conc_mass_comp[0, x, "Co"]
+                        * units.m**3
+                        / units.kg
+                    )
                 )
             )
 
@@ -978,36 +1013,65 @@ and used when constructing these,
         )
 
         def _membrane_permeate_interface_lithium(self, x):
-            return self.config.property_package.partition_coefficient[
-                "Li"
-            ] * self.config.property_package.partition_coefficient["Cl"] == (
-                (
-                    self.membrane_conc_mass_lithium[x, 0]
-                    / self.permeate_conc_mass_comp[0, x, "Li"]
-                )
-                * (
-                    self.membrane_conc_mass_chlorine[x, 0]
-                    / self.permeate_conc_mass_comp[0, x, "Cl"]
-                )
+            if x == 0:
+                return Constraint.Skip
+            return (
+                self.config.property_package.partition_coefficient["Li"]
+                * self.config.property_package.partition_coefficient["Cl"]
+                * self.permeate_conc_mass_comp[0, x, "Li"]
+                * self.permeate_conc_mass_comp[0, x, "Cl"]
+            ) == (
+                self.membrane_conc_mass_lithium[x, 0]
+                * self.membrane_conc_mass_chlorine[x, 0]
             )
+            # return (
+            #         self.config.property_package.charge["Li"]
+            #         * (
+            #             log(self.config.property_package.partition_coefficient["Cl"])
+            #             - log(
+            #                 self.membrane_conc_mass_chlorine[x, 0] * units.m**3 / units.kg
+            #             )
+            #             + log(
+            #                 self.permeate_conc_mass_comp[0, x, "Cl"] * units.m**3 / units.kg
+            #             )
+            #         )
+            #     ) == (
+            #         self.config.property_package.charge["Cl"]
+            #         * (
+            #             log(self.config.property_package.partition_coefficient["Li"])
+            #             - log(self.membrane_conc_mass_lithium[x, 0] * units.m**3 / units.kg)
+            #             + log(
+            #                 self.permeate_conc_mass_comp[0, x, "Li"] * units.m**3 / units.kg
+            #             )
+            #         )
+            #     )
 
         self.membrane_permeate_interface_lithium = Constraint(
             self.x_bar, rule=_membrane_permeate_interface_lithium
         )
 
         def _membrane_permeate_interface_cobalt(self, x):
-            return self.config.property_package.partition_coefficient["Co"] ** (
-                1 / self.config.property_package.charge["Co"]
-            ) * self.config.property_package.partition_coefficient["Cl"] == (
-                (
-                    self.membrane_conc_mass_cobalt[x, 0]
-                    ** (1 / self.config.property_package.charge["Co"])
-                    / self.permeate_conc_mass_comp[0, x, "Co"]
-                    ** (1 / self.config.property_package.charge["Co"])
-                )
+            if x == 0:
+                return Constraint.Skip
+            return (
+                self.config.property_package.charge["Co"]
                 * (
-                    self.membrane_conc_mass_chlorine[x, 0]
-                    / self.permeate_conc_mass_comp[0, x, "Cl"]
+                    log(self.config.property_package.partition_coefficient["Cl"])
+                    - log(
+                        self.membrane_conc_mass_chlorine[x, 0] * units.m**3 / units.kg
+                    )
+                    + log(
+                        self.permeate_conc_mass_comp[0, x, "Cl"] * units.m**3 / units.kg
+                    )
+                )
+            ) == (
+                self.config.property_package.charge["Cl"]
+                * (
+                    log(self.config.property_package.partition_coefficient["Co"])
+                    - log(self.membrane_conc_mass_cobalt[x, 0] * units.m**3 / units.kg)
+                    + log(
+                        self.permeate_conc_mass_comp[0, x, "Co"] * units.m**3 / units.kg
+                    )
                 )
             )
 
@@ -1061,9 +1125,22 @@ and used when constructing these,
 
         # set "zero" initial values to a sufficiently small value
         self.permeate_flow_volume[0, 0].fix(value(self.numerical_zero_tolerance))
-        self.membrane_conc_mass_lithium[0, 0].fix(value(self.numerical_zero_tolerance))
-        self.membrane_conc_mass_cobalt[0, 0].fix(value(self.numerical_zero_tolerance))
-        self.membrane_conc_mass_chlorine[0, 0].fix(value(self.numerical_zero_tolerance))
+        self.permeate_conc_mass_comp[0, 0, "Li"].fix(
+            value(self.numerical_zero_tolerance)
+        )
+        self.permeate_conc_mass_comp[0, 0, "Co"].fix(
+            value(self.numerical_zero_tolerance)
+        )
+        for z in self.z_bar:
+            self.membrane_conc_mass_lithium[0, z].fix(
+                value(self.numerical_zero_tolerance)
+            )
+            self.membrane_conc_mass_cobalt[0, z].fix(
+                value(self.numerical_zero_tolerance)
+            )
+            self.membrane_conc_mass_chlorine[0, z].fix(
+                value(self.numerical_zero_tolerance)
+            )
         self.d_retentate_conc_mass_comp_dx[0, 0, "Li"].fix(
             value(self.numerical_zero_tolerance)
         )
@@ -1078,11 +1155,6 @@ and used when constructing these,
         self.mass_flux_cobalt[0].fix(value(self.numerical_zero_tolerance))
         self.mass_flux_chlorine[0].fix(value(self.numerical_zero_tolerance))
 
-        # osmotic pressure after x=0 expected to be 0 (when no partitioning in the membrane)
-        for x in self.x_bar:
-            if x != 0:
-                self.osmotic_pressure[x].fix(value(self.numerical_zero_tolerance))
-
     def add_scaling_factors(self):
         """
         Assigns scaling factors to certain variables and constraints to
@@ -1094,36 +1166,33 @@ and used when constructing these,
         for x in self.x_bar:
             if x != 0:
                 self.scaling_factor[self.retentate_flow_volume[0, x]] = 1e-2
-                self.scaling_factor[self.mass_flux_lithium[x]] = 1e2
+                self.scaling_factor[self.permeate_flow_volume[0, x]] = 1e4
+
+                self.scaling_factor[self.permeate_conc_mass_comp[0, x, "Li"]] = 1e1
+                self.scaling_factor[self.permeate_conc_mass_comp[0, x, "Co"]] = 1e1
+                self.scaling_factor[self.permeate_conc_mass_comp[0, x, "Cl"]] = 1e1
+
+                self.scaling_factor[self.volume_flux_water[x]] = 1e6
+                self.scaling_factor[self.mass_flux_lithium[x]] = 1e6
+                self.scaling_factor[self.mass_flux_cobalt[x]] = 1e5
+                self.scaling_factor[self.mass_flux_chlorine[x]] = 1e4
+
                 self.scaling_factor[self.d_retentate_conc_mass_comp_dx[0, x, "Li"]] = (
-                    1e5
+                    1e4
                 )
                 self.scaling_factor[self.d_retentate_conc_mass_comp_dx[0, x, "Co"]] = (
-                    1e2
+                    1e4
                 )
+                self.scaling_factor[self.d_retentate_flow_volume_dx[0, x]] = 1e6
 
             for z in self.z_bar:
-                self.scaling_factor[self.D_lithium_lithium[x, z]] = 1e8
+                self.scaling_factor[self.D_lithium_lithium[x, z]] = 1e6
                 self.scaling_factor[self.D_lithium_cobalt[x, z]] = 1e7
                 self.scaling_factor[self.D_cobalt_lithium[x, z]] = 1e7
-                self.scaling_factor[self.D_cobalt_cobalt[x, z]] = 1e8
-                if x != 0:
-                    self.scaling_factor[self.membrane_conc_mass_chlorine[x, z]] = 1e-1
-                    self.scaling_factor[self.membrane_conc_mass_cobalt[x, z]] = 1e-1
+                self.scaling_factor[self.D_cobalt_cobalt[x, z]] = 1e6
 
         # Add scaling factors for poorly scaled constraints
-        for x in self.x_bar:
-            for z in self.z_bar:
-                self.scaling_factor[self.D_lithium_lithium_calculation[x, z]] = 1e6
-                self.scaling_factor[self.D_lithium_cobalt_calculation[x, z]] = 1e5
-                self.scaling_factor[self.D_cobalt_lithium_calculation[x, z]] = 1e5
-                self.scaling_factor[self.D_cobalt_cobalt_calculation[x, z]] = 1e6
-
-                if z != 0:
-                    self.scaling_factor[self.d_membrane_conc_mass_lithium_dz[x, z]] = (
-                        1e4
-                    )
-                    self.scaling_factor[self.d_membrane_conc_mass_cobalt_dz[x, z]] = 1e2
+        constraint_autoscale_large_jac(self)
 
     def add_ports(self):
         self.feed_inlet = Port(doc="Feed Inlet Port")

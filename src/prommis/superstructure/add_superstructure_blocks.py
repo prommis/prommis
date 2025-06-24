@@ -1070,7 +1070,7 @@ def add_environmental_impact_params(
         within=pyo.Boolean,
         doc="Choice of whether or not to consider environmental impacts.",
     )
-    
+
     # Only add parameters if user wants to consider environmental impacts. Otherwise, add defaults.
     if consider_environmental_impacts:
         m.environmental_impacts.options_environmental_impacts = pyo.Param(
@@ -1129,6 +1129,7 @@ def add_environmental_impact_cons(m):
     ## Pyomo constraints
     # only add if user wants to consider environmental impacts. Otherwise use default values to not throw errors. Constraints will be deactivated anyways.
     if m.environmental_impacts.consider_environmental_impacts:
+
         @m.environmental_impacts.Constraint(
             m.supe_form_params.all_opts_set,
             m.plant_lifetime_params.operational_range,
@@ -1138,7 +1139,8 @@ def add_environmental_impact_cons(m):
             return (
                 m.environmental_impacts.option_yearly_impacts[j, k, t]
                 == sum(
-                    m.mass_balances.f_in[j, k, c, t] for c in m.feed_params.tracked_comps
+                    m.mass_balances.f_in[j, k, c, t]
+                    for c in m.feed_params.tracked_comps
                 )
                 * m.environmental_impacts.options_environmental_impacts[j, k]
             )
@@ -1166,9 +1168,12 @@ def add_environmental_impact_cons(m):
             doc="Epsilon constraint. Total process impacts must be less than epsilon."
         )
         def epsilon_con(b):
-            return m.environmental_impacts.total_impacts <= m.environmental_impacts.epsilon
-        
+            return (
+                m.environmental_impacts.total_impacts <= m.environmental_impacts.epsilon
+            )
+
     else:
+
         @m.environmental_impacts.Constraint(
             m.supe_form_params.all_opts_set,
             m.plant_lifetime_params.operational_range,
@@ -1195,7 +1200,6 @@ def add_environmental_impact_cons(m):
         )
         def epsilon_con(b):
             return m.environmental_impacts.total_impacts <= 1
-
 
 
 def add_byproduct_valorization_params(

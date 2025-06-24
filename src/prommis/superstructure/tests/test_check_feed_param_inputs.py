@@ -7,8 +7,6 @@
 
 import warnings
 
-
-
 import pytest
 
 from prommis.superstructure.check_superstructure_inputs import check_feed_params

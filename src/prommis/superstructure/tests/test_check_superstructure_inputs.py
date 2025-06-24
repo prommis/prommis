@@ -1,25 +1,26 @@
-import pytest
 import pyomo.environ as pyo
-import warnings
+
+import pytest
+
+from prommis.superstructure.add_superstructure_blocks import (
+    # add_byproduct_valorization_params,
+    # add_discretized_costing_params,
+    # add_environmental_impact_params,
+    add_feed_params_block,
+    # add_operating_params,
+    add_plant_lifetime_params_block,
+    add_supe_formulation_params,
+)
 
 # Import functions to test
-from check_superstructure_inputs import (
-    check_plant_lifetime_params,
-    check_feed_params,
-    check_supe_formulation_params,
-    check_operating_params,
+from prommis.superstructure.check_superstructure_inputs import (
+    check_byproduct_valorization_params,
     check_discretized_costing_params,
     check_environmental_impact_params,
-    check_byproduct_valorization_params,
-)
-from add_superstructure_blocks import (
-    add_plant_lifetime_params_block,
-    add_feed_params_block,
-    add_supe_formulation_params,
-    add_operating_params,
-    add_discretized_costing_params,
-    add_environmental_impact_params,
-    add_byproduct_valorization_params,
+    check_feed_params,
+    check_operating_params,
+    check_plant_lifetime_params,
+    check_supe_formulation_params,
 )
 
 # --- Valid parameter values from temp_test_checks.py ---

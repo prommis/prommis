@@ -701,35 +701,6 @@ def get_params():
         },
     }
 
-
-# class TestSuperstructureParams(object):
-#     @pytest.fixture(scope="class")
-# def get_superstructure_params(self, get_params):
-# common_params = get_params
-# plant_start=common_params["plant_start"]
-# plant_lifetime=common_params["plant_lifetime"]
-# available_feed=common_params["available_feed"]
-# collection_rate=common_params["collection_rate"]
-# tracked_comps=common_params["tracked_comps"]
-# prod_comp_mass=common_params["prod_comp_mass"]
-# num_stages=common_params["num_stages"]
-# options_in_stage=common_params["options_in_stage"]
-# option_outlets=common_params["option_outlets"]
-# option_efficiencies=common_params["option_efficiencies"]
-# profit=common_params["profit"]
-# opt_var_oc_params=common_params["opt_var_oc_params"]
-# operators_per_discrete_unit=common_params["operators_per_discrete_unit"]
-# yearly_cost_per_unit=common_params["yearly_cost_per_unit"]
-# capital_cost_per_unit=common_params["capital_cost_per_unit"]
-# processing_rate=common_params["processing_rate"]
-# num_operators=common_params["num_operators"]
-# labor_rate=common_params["labor_rate"]
-# discretized_purchased_equipment_cost=common_params["discretized_purchased_equipment_cost"]
-# options_environmental_impacts=common_params["options_environmental_impacts"]
-# epsilon=common_params["epsilon"]
-# byproduct_values=byproduct_values["byproduct_values"]
-
-
 ### Test plant lifetime parameters
 def test_plant_start_type():
     """Test that TypeError is raised if plant_start is not an int."""

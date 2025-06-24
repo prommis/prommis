@@ -4,43 +4,17 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-import copy
-import math
-
-from pyomo.environ import (
-    Block,
-    ConcreteModel,
-    Constraint,
-    Objective,
-    RangeSet,
-    SolverFactory,
-    Var,
-    assert_optimal_termination,
-    value,
-)
-
-from idaes.core.solvers import get_solver
-
-# model statistics
-from idaes.core.util.model_statistics import (
-    degrees_of_freedom,
-    number_total_constraints,
-    number_unused_variables,
-    number_variables,
-)
 
 import pytest
 
-from prommis.superstructure.superstructure_function import build_model
-
-from prommis.superstructure.check_superstructure_inputs import(
-    check_plant_lifetime_params,
-    check_feed_params,
-    check_supe_formulation_params,
-    check_operating_params,
+from prommis.superstructure.check_superstructure_inputs import (
+    check_byproduct_valorization_params,
     check_discretized_costing_params,
     check_environmental_impact_params,
-    check_byproduct_valorization_params,
+    check_feed_params,
+    check_operating_params,
+    check_plant_lifetime_params,
+    check_supe_formulation_params,
 )
 
 solver_available = SolverFactory("gurobi").available()
@@ -54,8 +28,8 @@ else:
 def get_params():
     return {
         ### Plant Lifetime Parameters
-        "plant_start": 2024, 
-        "plant_lifetime": 15,  
+        "plant_start": 2024,
+        "plant_lifetime": 15,
         ### Feed parameters
         "available_feed": {
             2025: 290273,
@@ -74,14 +48,14 @@ def get_params():
             2038: 1697805,
         },
         "collection_rate": 0.1,
-        "tracked_comps": ["Nd", "Dy", "Fe"],  
+        "tracked_comps": ["Nd", "Dy", "Fe"],
         "prod_comp_mass": {
             "Nd": 0.206 * 3,
             "Dy": 0.103 * 3,
             "Fe": 0.691 * 3,
         },
         ### Superstructure formulation parameters
-        "num_stages": 5,  
+        "num_stages": 5,
         "options_in_stage": {
             1: 2,
             2: 4,
@@ -221,7 +195,7 @@ def get_params():
             (5, 4): 1.15,
             (5, 5): 1.15,
         },
-        "labor_rate": 8000 * 38.20, 
+        "labor_rate": 8000 * 38.20,
         ### Discretized costing Parameters
         "discretized_purchased_equipment_cost": {
             (2, 1): {
@@ -728,30 +702,31 @@ def get_params():
 
 # class TestSuperstructureParams(object):
 #     @pytest.fixture(scope="class")
-    # def get_superstructure_params(self, get_params):
-        # common_params = get_params
-        # plant_start=common_params["plant_start"]
-        # plant_lifetime=common_params["plant_lifetime"]
-        # available_feed=common_params["available_feed"]
-        # collection_rate=common_params["collection_rate"]
-        # tracked_comps=common_params["tracked_comps"]
-        # prod_comp_mass=common_params["prod_comp_mass"]
-        # num_stages=common_params["num_stages"]
-        # options_in_stage=common_params["options_in_stage"]
-        # option_outlets=common_params["option_outlets"]
-        # option_efficiencies=common_params["option_efficiencies"]
-        # profit=common_params["profit"]
-        # opt_var_oc_params=common_params["opt_var_oc_params"]
-        # operators_per_discrete_unit=common_params["operators_per_discrete_unit"]
-        # yearly_cost_per_unit=common_params["yearly_cost_per_unit"]
-        # capital_cost_per_unit=common_params["capital_cost_per_unit"]
-        # processing_rate=common_params["processing_rate"]
-        # num_operators=common_params["num_operators"]
-        # labor_rate=common_params["labor_rate"]
-        # discretized_purchased_equipment_cost=common_params["discretized_purchased_equipment_cost"]
-        # options_environmental_impacts=common_params["options_environmental_impacts"]
-        # epsilon=common_params["epsilon"]
-        # byproduct_values=byproduct_values["byproduct_values"]
+# def get_superstructure_params(self, get_params):
+# common_params = get_params
+# plant_start=common_params["plant_start"]
+# plant_lifetime=common_params["plant_lifetime"]
+# available_feed=common_params["available_feed"]
+# collection_rate=common_params["collection_rate"]
+# tracked_comps=common_params["tracked_comps"]
+# prod_comp_mass=common_params["prod_comp_mass"]
+# num_stages=common_params["num_stages"]
+# options_in_stage=common_params["options_in_stage"]
+# option_outlets=common_params["option_outlets"]
+# option_efficiencies=common_params["option_efficiencies"]
+# profit=common_params["profit"]
+# opt_var_oc_params=common_params["opt_var_oc_params"]
+# operators_per_discrete_unit=common_params["operators_per_discrete_unit"]
+# yearly_cost_per_unit=common_params["yearly_cost_per_unit"]
+# capital_cost_per_unit=common_params["capital_cost_per_unit"]
+# processing_rate=common_params["processing_rate"]
+# num_operators=common_params["num_operators"]
+# labor_rate=common_params["labor_rate"]
+# discretized_purchased_equipment_cost=common_params["discretized_purchased_equipment_cost"]
+# options_environmental_impacts=common_params["options_environmental_impacts"]
+# epsilon=common_params["epsilon"]
+# byproduct_values=byproduct_values["byproduct_values"]
+
 
 @pytest.mark.unit
 def test_plant_lifetime_params(get_params):
@@ -761,16 +736,3 @@ def test_plant_lifetime_params(get_params):
 
     with pytest.raises(TypeError, match="plant_start is not of type int."):
         check_plant_lifetime_params(plant_start="2020", plant_lifetime=15)
-
-
-
-
-
-
-
-
-
-
-
-
-

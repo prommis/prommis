@@ -11,37 +11,37 @@ Superstructure Code
 Author: Chris Laliwala
 """
 
-from idaes.core.solvers import get_solver
-
 import pyomo.environ as pyo
 
-from prommis.superstructure.add_superstructure_blocks import(
-    add_plant_lifetime_params_block,
-    add_feed_params_block,
-    add_supe_formulation_params,
-    add_operating_params,
-    add_discretized_costing_params,
-    add_mass_balance_params,
-    add_mass_balance_vars,
-    add_mass_balance_cons,
-    add_costing_params,
-    add_costing_vars,
-    add_costing_cons,
-    add_environmental_impact_params,
-    add_environmental_impact_vars,
-    add_environmental_impact_cons,
+from idaes.core.solvers import get_solver
+
+from prommis.superstructure.add_superstructure_blocks import (
+    add_byproduct_valorization_cons,
     add_byproduct_valorization_params,
     add_byproduct_valorization_vars,
-    add_byproduct_valorization_cons,
+    add_costing_cons,
+    add_costing_params,
+    add_costing_vars,
+    add_discretized_costing_params,
+    add_environmental_impact_cons,
+    add_environmental_impact_params,
+    add_environmental_impact_vars,
+    add_feed_params_block,
+    add_mass_balance_cons,
+    add_mass_balance_params,
+    add_mass_balance_vars,
+    add_operating_params,
+    add_plant_lifetime_params_block,
+    add_supe_formulation_params,
 )
-from prommis.superstructure.check_superstructure_inputs import(
-    check_plant_lifetime_params,
-    check_feed_params,
-    check_supe_formulation_params,
-    check_operating_params,
+from prommis.superstructure.check_superstructure_inputs import (
+    check_byproduct_valorization_params,
     check_discretized_costing_params,
     check_environmental_impact_params,
-    check_byproduct_valorization_params,
+    check_feed_params,
+    check_operating_params,
+    check_plant_lifetime_params,
+    check_supe_formulation_params,
 )
 
 
@@ -89,6 +89,7 @@ def configure_model(m, obj_func):
         # deactivate the constraints that're associated with byproduct valorization if it is not considered.
         m.byproduct_valorization.deactivate()
 
+
 def build_model(
     m,
     ### Plant lifetime parameters
@@ -122,7 +123,7 @@ def build_model(
     consider_byproduct_valorization,
     byproduct_values,
 ):
-    
+
     #################################################################################################
     ### Build model
     m = pyo.ConcreteModel()
@@ -137,7 +138,9 @@ def build_model(
     # Check that feed parameters are feasible.
     check_feed_params(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
     # Create separate block to hold feed parameters.
-    add_feed_params_block(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
+    add_feed_params_block(
+        m, available_feed, collection_rate, tracked_comps, prod_comp_mass
+    )
 
     ### Superstructure formulation parameters
     # Check that superstructure formulation parameters are feasible.
@@ -224,4 +227,3 @@ def build_model(
     solver = get_solver(solver="gurobi")
     solver.options["NumericFocus"] = 2
     results = solver.solve(m, tee="True")
-    

@@ -44,8 +44,8 @@ else:
 def get_params():
     return {
         ### Plant Lifetime Parameters
-        "plant_start": 2024, 
-        "plant_lifetime": 15,  
+        "plant_start": 2024,
+        "plant_lifetime": 15,
         ### Feed parameters
         "available_feed": {
             2025: 290273,
@@ -64,14 +64,14 @@ def get_params():
             2038: 1697805,
         },
         "collection_rate": 0.1,
-        "tracked_comps": ["Nd", "Dy", "Fe"],  
+        "tracked_comps": ["Nd", "Dy", "Fe"],
         "prod_comp_mass": {
             "Nd": 0.206 * 3,
             "Dy": 0.103 * 3,
             "Fe": 0.691 * 3,
         },
         ### Superstructure formulation parameters
-        "num_stages": 5,  
+        "num_stages": 5,
         "options_in_stage": {
             1: 2,
             2: 4,
@@ -211,7 +211,7 @@ def get_params():
             (5, 4): 1.15,
             (5, 5): 1.15,
         },
-        "labor_rate": 8000 * 38.20, 
+        "labor_rate": 8000 * 38.20,
         ### Discretized costing Parameters
         "discretized_purchased_equipment_cost": {
             (2, 1): {

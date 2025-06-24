@@ -2,12 +2,8 @@ import pyomo.environ as pyo
 
 import pytest
 
-from prommis.superstructure.add_superstructure_blocks import (
-    # add_byproduct_valorization_params,
-    # add_discretized_costing_params,
-    # add_environmental_impact_params,
+from prommis.superstructure.add_superstructure_blocks import (  # add_byproduct_valorization_params,; add_discretized_costing_params,; add_environmental_impact_params,; add_operating_params,
     add_feed_params_block,
-    # add_operating_params,
     add_plant_lifetime_params_block,
     add_supe_formulation_params,
 )
@@ -654,14 +650,12 @@ byproduct_opt_conversions = {
 }
 
 
-# --- Helper function to reset the model for sequential testing ---
+### Helper function to reset the model for sequential testing
 def get_clean_model():
     return pyo.ConcreteModel()
 
 
-# --- Test functions ---
-
-
+### Test functions
 def test_plant_lifetime_params():
     # Test correct inputs
     check_plant_lifetime_params(plant_start, plant_lifetime)

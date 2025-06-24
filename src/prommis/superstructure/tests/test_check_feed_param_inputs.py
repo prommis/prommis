@@ -124,7 +124,10 @@ def test_non_numeric_value_in_prod_mass():
 def test_feed_years_mismatch():
     """Test mismatch between feed years and operational years"""
     m = create_mock_model({2025, 2026})  # Different from VALID_FEED keys
-    with pytest.raises(ValueError, match="Years of available_feed do not match"):
+    msg = "Years of available_feed do not match the plant's operational period. "
+    msg += "Expected years: [2025], "
+    msg += "but got: {2025, 2026}"
+    with pytest.raises(ValueError, match=msg):
         check_feed_params(m, VALID_FEED, 0.1, VALID_TRACKED, VALID_PROD_MASS)
 
 

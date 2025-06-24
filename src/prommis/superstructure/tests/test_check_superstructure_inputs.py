@@ -605,7 +605,7 @@ discretized_purchased_equipment_cost = {
     },
 }
 
-consider_environmental_impacts = False
+consider_environmental_impacts = True
 options_environmental_impacts = {
     (1, 1): 0,
     (1, 2): 1000,
@@ -631,7 +631,7 @@ options_environmental_impacts = {
 }
 epsilon = 1
 
-consider_byproduct_valorization = False
+consider_byproduct_valorization = True
 byproduct_values = {
     "Jarosite": -0.17,
     "Iron oxide": 10,

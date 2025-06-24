@@ -8,13 +8,13 @@
 import pytest
 
 from prommis.superstructure.check_superstructure_inputs import (
-    check_byproduct_valorization_params,
-    check_discretized_costing_params,
-    check_environmental_impact_params,
-    check_feed_params,
-    check_operating_params,
+    # check_byproduct_valorization_params,
+    # check_discretized_costing_params,
+    # check_environmental_impact_params,
+    # check_feed_params,
+    # check_operating_params,
     check_plant_lifetime_params,
-    check_supe_formulation_params,
+    # check_supe_formulation_params,
 )
 
 solver_available = SolverFactory("gurobi").available()

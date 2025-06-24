@@ -204,7 +204,7 @@ num_operators = {
 }
 labor_rate = 8000 * 38.20
 
-### Costing Parameters
+### Discretized costing Parameters
 discretized_purchased_equipment_cost = {
     (2, 1): {
         "Flowrates": [

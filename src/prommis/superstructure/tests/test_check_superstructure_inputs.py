@@ -5,11 +5,11 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 
+import warnings
+
 from pyomo.environ import SolverFactory
 
 from idaes.core.solvers import get_solver
-
-import warnings
 
 import pytest
 

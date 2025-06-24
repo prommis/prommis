@@ -2757,7 +2757,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                                 to_units=CE_index_units / pyunits.year,
                             )
                         )
-
+        from idaes.core.util.model_diagnostics import degrees_of_freedom
         if watertap_blocks is not None:  # added from WaterTAP
             for w in watertap_blocks:
                 m = ConcreteModel()
@@ -2766,9 +2766,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     m.fs.costing = ZeroOrderCosting()
                 else:
                     m.fs.costing = WaterTAPCosting()
-                if hasattr(w, "costing"):  # delete the placeholder and create a new one
-                    w.del_component("costing")
-                w.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
+                if not hasattr(w, "costing"):  # this will only create a costing block if one doesn't already exist
+                    w.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
                 b.BEC_list.append(
                     pyunits.convert(w.costing.capital_cost, to_units=CE_index_units)
                 )

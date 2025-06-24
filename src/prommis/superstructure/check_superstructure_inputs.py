@@ -36,6 +36,7 @@ def check_plant_lifetime_params(plant_start, plant_lifetime):
     if plant_lifetime < 3:
         raise ValueError("Plant lifetime must be a minimum of three years.")
 
+
 def check_feed_params(
     m, available_feed, collection_rate, tracked_comps, prod_comp_mass
 ):

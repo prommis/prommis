@@ -704,7 +704,7 @@ byproduct_values = {
     "Iron hydroxide": -0.17,
 }
 byproduct_values = {
-    6: 'a',
+    6: "a",
     "Iron oxide": 10,
     "Residue": -0.17,
     "Iron hydroxide": -0.17,

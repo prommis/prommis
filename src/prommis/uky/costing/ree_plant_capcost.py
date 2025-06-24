@@ -2766,6 +2766,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     m.fs.costing = ZeroOrderCosting()
                 else:
                     m.fs.costing = WaterTAPCosting()
+                if hasattr(w, "costing"):  # delete the placeholder and create a new one
+                    w.del_component("costing")
                 w.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
                 b.BEC_list.append(
                     pyunits.convert(w.costing.capital_cost, to_units=CE_index_units)

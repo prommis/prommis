@@ -830,6 +830,15 @@ constructed,
             doc="Relative thickness ratio of metal material 2",
         )
 
+        self.total_heat_duty = Var(
+            self.flowsheet().config.time,
+            within=PositiveReals,
+            initialize=3500,
+            units=pyunits.W,
+            bounds=(0, None),
+            doc="Total heat duty required for decrepitation",
+        )
+
     def _make_geometry(self):
         """This section contains equations related to the geometry of the reactor model."""
 
@@ -1138,9 +1147,9 @@ constructed,
                 + (pyunits.convert(b.cool_down_time, to_units=pyunits.hr))
             )
 
-        @self.Expression(self.flowsheet().config.time, doc="Total heat duty needed")
-        def total_heat_duty(b, t):
-            return pyunits.convert(
+        @self.Constraint(self.flowsheet().config.time, doc="Total heat duty required for decrepitation")
+        def total_heat_duty_constraint(b, t):
+            return b.total_heat_duty[t] == pyunits.convert(
                 b.total_heat[t] / b.processing_time[t], to_units=pyunits.W
             )
 
@@ -1590,6 +1599,7 @@ constructed,
 
     def _get_performance_contents(self, time_point=0):
         exprs = {}
+        exprs["Volumetric Feed Flow"] = self.flow_vol_feed[0]
         exprs["Heat Duty For Decrepitation"] = self.total_heat_duty[0]
         exprs["Heat Duty Supplemental To Decrepitation"] = self.supplied_heat_duty[0]
         exprs["Sample Mass"] = self.sample_mass[0]
@@ -1597,12 +1607,20 @@ constructed,
         exprs["Furnace Chamber Volume"] = self.furnace_chamber_volume[0]
         exprs["Furnace Chamber Radius"] = self.radius_chamber[0]
         exprs["Furnace Chamber Length"] = self.length_chamber[0]
-        # exprs["Temperature Insulation Material 1"] = (
-            # self.temperature_insulation_material1
-        # )
-        # exprs["Thickness Insulation Material 1"] = self.thickness_insulation_material1
-        # exprs["Relative Thickness Ratio Insulation Material 1"] = (
-            # self.relative_thickness_ratio1
-        # )
+        exprs["Volume Insulation 1"] = self.volume_insulation1[0]
+        exprs["Weight Insulation 1"] = self.total_weight_insulation1[0]
+        exprs["Internal Diameter Metal 1"] = self.internal_diameter_metal1[0]
+        exprs["External Diameter Metal 1"] = self.external_diameter_metal1[0]
+        exprs["Volume Metal 1"] = self.volume_metal1[0]
+        exprs["Weight Metal 1"] = self.weight_metal1[0]
+        exprs["Volume Insulation 2"] = self.volume_insulation2[0]
+        exprs["Weight Insulation 2"] = self.total_weight_insulation2[0]
+        exprs["Internal Diameter Metal 2"] = self.internal_diameter_metal2[0]
+        exprs["External Diameter Metal 2"] = self.external_diameter_metal2[0]
+        exprs["Volume Metal 2"] = self.volume_metal2[0]
+        exprs["Weight Metal 2"] = self.weight_metal2[0]
+        exprs["Furnace External Surface Area"] = self.furnace_external_surface_area[0]
+        exprs["Decrepitation Duration"] = self.decrepitation_duration
+        exprs["Total Processing Time"] = self.processing_time[0]
 
         return {"exprs": exprs}

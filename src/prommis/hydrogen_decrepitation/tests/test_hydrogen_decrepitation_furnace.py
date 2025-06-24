@@ -137,35 +137,30 @@ def model():
 # TODO update these once all model equations are added
 @pytest.mark.unit
 def test_build(model):
-     assert hasattr(model.fs, "hydrogen_decrepitation_furnace")
-#    assert isinstance(
-#        model.fs.hydrogen_decrepitation_furnace, REPMHydrogenDecrepitationFurnace
-#    )
-#    assert len(model.fs.hydrogen_decrepitation_furnace.config) == 9
-#    assert not model.fs.hydrogen_decrepitation_furnace.config.dynamic
-#    assert not model.fs.hydrogen_decrepitation_furnace.config.has_holdup
-#    assert model.fs.hydrogen_decrepitation_furnace.config.has_heat_transfer
-#    assert model.fs.hydrogen_decrepitation_furnace.config.has_pressure_change
-#    assert (
-#        model.fs.hydrogen_decrepitation_furnace.config.gas_property_package
-#        is model.fs.prop_gas
-#    )
-#    assert (
-#        model.fs.hydrogen_decrepitation_furnace.config.solid_property_package
-#        is model.fs.prop_solid
-#    )
-#    assert len(model.fs.prop_gas.component_list) == 1
-#    assert len(model.fs.hydrogen_decrepitation_furnace.ree_list) == 1
-#    assert isinstance(model.fs.hydrogen_decrepitation_furnace.heat_duty, Var)
-#    assert isinstance(model.fs.hydrogen_decrepitation_furnace.deltaP, Var)
-#    assert isinstance(
-#        model.fs.hydrogen_decrepitation_furnace.flow_mol_outlet_eqn, Constraint
-#    )
-#    assert len(model.fs.hydrogen_decrepitation_furnace.flow_mol_outlet_eqn) == 1
-#    assert number_variables(model.fs.hydrogen_decrepitation_furnace) == 31
-#    assert number_total_constraints(model.fs.hydrogen_decrepitation_furnace) == 23
-#    assert number_unused_variables(model.fs.hydrogen_decrepitation_furnace) == 0
-#    assert_units_consistent(model.fs.hydrogen_decrepitation_furnace)
+    assert hasattr(model.fs, "hydrogen_decrepitation_furnace")
+    assert isinstance(
+        model.fs.hydrogen_decrepitation_furnace, REPMHydrogenDecrepitationFurnace
+    )
+    assert len(model.fs.hydrogen_decrepitation_furnace.config) == 10
+    assert not model.fs.hydrogen_decrepitation_furnace.config.dynamic
+    assert not model.fs.hydrogen_decrepitation_furnace.config.has_holdup
+    assert model.fs.hydrogen_decrepitation_furnace.config.has_heat_transfer
+    assert model.fs.hydrogen_decrepitation_furnace.config.has_pressure_change
+    assert (
+        model.fs.hydrogen_decrepitation_furnace.config.gas_property_package
+        is model.fs.prop_gas
+    )
+    assert (
+        model.fs.hydrogen_decrepitation_furnace.config.solid_property_package
+        is model.fs.prop_solid
+    )
+    assert len(model.fs.prop_gas.component_list) == 1
+    assert len(model.fs.hydrogen_decrepitation_furnace.ree_list) == 1
+
+    assert number_variables(model.fs.hydrogen_decrepitation_furnace) == 49
+    assert number_total_constraints(model.fs.hydrogen_decrepitation_furnace) == 39
+    assert number_unused_variables(model.fs.hydrogen_decrepitation_furnace) == 0
+    assert_units_consistent(model.fs.hydrogen_decrepitation_furnace)
 
 
 @pytest.mark.unit
@@ -186,7 +181,6 @@ def test_initialize_and_solve(model):
 
     initializer.initialize(model.fs.hydrogen_decrepitation_furnace)
 
-    # m.fs.hydrogen_decrepitation_furnace.gas_outlet.temperature.fix()
     model.fs.hydrogen_decrepitation_furnace.flow_mol_gas_constraint.activate()
     model.fs.hydrogen_decrepitation_furnace.solid_in[0].sum_mass_frac.activate()
 
@@ -208,82 +202,38 @@ def test_numerical_issues(model):
     dt.assert_no_numerical_warnings()
 
 
-# TODO update these once all model equations are added, these are old results from the feed roaster test file
-# @pytest.mark.component
-# @pytest.mark.solver
-# def test_solution(model):
-#     flow_mol_out_gas = value(model.fs.hydrogen_decrepitation_furnace.gas_out[0].flow_mol)
-#     assert flow_mol_out_gas == pytest.approx(82.01903587318019, rel=1e-5, abs=1e-6)
-#     mole_frac_h2o = value(model.fs.hydrogen_decrepitation_furnace.gas_out[0].mole_frac_comp["H2O"])
-#     assert mole_frac_h2o == pytest.approx(0.105061218702762, rel=1e-5, abs=1e-6)
-#     mole_frac_o2 = value(model.fs.hydrogen_decrepitation_furnace.gas_out[0].mole_frac_comp["O2"])
-#     assert mole_frac_o2 == pytest.approx(0.060924564, rel=1e-5, abs=1e-6)
-#     mole_frac_co2 = value(model.fs.hydrogen_decrepitation_furnace.gas_out[0].mole_frac_comp["CO2"])
-#     assert mole_frac_co2 == pytest.approx(0.0922570830375, rel=1e-5, abs=1e-6)
-#     heat_duty = value(model.fs.hydrogen_decrepitation_furnace.heat_duty[0])
-#     assert heat_duty == pytest.approx(-2541458.25, rel=1e-5, abs=1e-3)
-#     flow_mass_solid_out = value(model.fs.hydrogen_decrepitation_furnace.solid_out[0].flow_mass)
-#     assert flow_mass_solid_out == pytest.approx(579.369, rel=1e-5, abs=1e-6)
-#     mass_frac_comp_solid_out = {
-#         "inerts": 0.5438792755532115,
-#         "Sc2O3": 1.6043595369991272e-05,
-#         "Y2O3": 2.767022982988265e-05,
-#         "La2O3": 4.833796064532411e-05,
-#         "Ce2O3": 0.00010273370445831112,
-#         "Pr2O3": 1.931695289570546e-05,
-#         "Nd2O3": 4.557010896553694e-05,
-#         "Sm2O3": 1.050789201041692e-05,
-#         "Gd2O3": 8.427859759143537e-06,
-#         "Dy2O3": 5.146215251158445e-06,
-#         "Al2O3": 0.2874097993439199,
-#         "CaO": 0.013738348321299278,
-#         "Fe2O3": 0.15468882226238415,
-#     }
-#     for i in model.fs.prop_solid.component_list:
-#         assert value(model.fs.hydrogen_decrepitation_furnace.solid_out[0].mass_frac_comp[i]) == pytest.approx(
-#             mass_frac_comp_solid_out[i], rel=1e-5, abs=1e-6
-#         )
-#     ppm_insoluable_in_product = {
-#         "Sc": 1.8851305084719268,
-#         "Y": 5.703616099755223,
-#         "La": 8.191165847386474,
-#         "Ce": 23.710635917672906,
-#         "Pr": 7.907868653255506,
-#         "Nd": 11.64024057196155,
-#         "Sm": 2.648781847223353,
-#         "Eu": 0.9661802856697338,
-#         "Gd": 6.459496817385459,
-#         "Tb": 0.0,
-#         "Dy": 1.163415954814308,
-#         "Ho": 0.0,
-#         "Er": 0.0,
-#         "Tm": 0.0,
-#         "Yb": 0.6134119292750246,
-#         "Lu": 0.0,
-#     }
-#     for i in model.fs.hydrogen_decrepitation_furnace.ree_list:
-#         assert value(model.fs.hydrogen_decrepitation_furnace.ppm_comp_ree_ins_product[0, i]) == pytest.approx(
-#             ppm_insoluable_in_product[i], rel=1e-5, abs=1e-6
-#         )
-#     ppm_dissovable_in_product = {
-#         "Sc": 14.158464861519352,
-#         "Y": 21.966613730127424,
-#         "La": 40.146794797937645,
-#         "Ce": 79.02306854063823,
-#         "Pr": 11.409084242449953,
-#         "Nd": 33.92986839357539,
-#         "Sm": 7.859110163193565,
-#         "Eu": 0.4011715926573889,
-#         "Gd": 1.9683629417580777,
-#         "Tb": 0.7458282972693396,
-#         "Dy": 3.982799296344135,
-#         "Ho": 1.491656594538679,
-#         "Er": 4.615848461989136,
-#         "Tm": 1.0524465972578458,
-#         "Yb": 2.7345284273562336,
-#         "Lu": 0.8784199945616665,
-#     }
-#     for i in model.fs.hydrogen_decrepitation_furnace.ree_list:
-#         assert value(model.fs.hydrogen_decrepitation_furnace.ppm_comp_ree_dis_product[0, i]) == pytest.approx(
-#             ppm_dissovable_in_product[i], rel=1e-5, abs=1e-6
-#         )
+@pytest.mark.component
+@pytest.mark.solver
+def test_solution(model):
+    model.fs.hydrogen_decrepitation_furnace.report()
+    assert value(model.fs.hydrogen_decrepitation_furnace.solid_out[0].flow_mass) == pytest.approx(0.0057367, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.solid_out[0].mass_frac_comp["Nd"]) == pytest.approx(0.0100001, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.solid_out[0].mass_frac_comp["Nd2Fe14B"]) == pytest.approx(0.99, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.gas_out[0].flow_mol) == pytest.approx(0.0056509, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.gas_out[0].mole_frac_comp["H2"]) == pytest.approx(1.0000, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.gas_out[0].temperature) == pytest.approx(443.15, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.gas_out[0].pressure) == pytest.approx(1.01325e5, rel=1e-5)
+
+    assert value(model.fs.hydrogen_decrepitation_furnace.flow_vol_feed[0]) == pytest.approx(7.6489e-7, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.total_heat_duty[0]) == pytest.approx(3771.14, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.supplied_heat_duty[0]) == pytest.approx(0.0, abs=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.sample_mass[0]) == pytest.approx(61.956, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.sample_volume[0]) == pytest.approx(0.0082608, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.furnace_chamber_volume[0]) == pytest.approx(0.0165217, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.radius_chamber[0]) == pytest.approx(0.095701, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.length_chamber[0]) == pytest.approx(0.57421, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.volume_insulation1[0]) == pytest.approx(0.091450, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.total_weight_insulation1[0]) == pytest.approx(15.420, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.internal_diameter_metal1[0]) == pytest.approx(0.48930, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.external_diameter_metal1[0]) == pytest.approx(0.50056, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.volume_metal1[0]) == pytest.approx(306.781, rel=1e-5)  # in3, report has m3
+    assert value(model.fs.hydrogen_decrepitation_furnace.weight_metal1[0]) == pytest.approx(82.8308, rel=1e-5)  # lb, report has kg
+    assert value(model.fs.hydrogen_decrepitation_furnace.volume_insulation2[0]) == pytest.approx(0.226876, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.total_weight_insulation2[0]) == pytest.approx(58.708, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.internal_diameter_metal2[0]) == pytest.approx(0.86812, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.external_diameter_metal2[0]) == pytest.approx(0.88342, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.volume_metal2[0]) == pytest.approx(737.2515, rel=1e-5)  # in3, report has m3
+    assert value(model.fs.hydrogen_decrepitation_furnace.weight_metal2[0]) == pytest.approx(209.379, rel=1e-5)  # lb, report has kg
+    assert value(model.fs.hydrogen_decrepitation_furnace.furnace_external_surface_area[0]) == pytest.approx(2.8195, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.decrepitation_duration) == pytest.approx(10800, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.processing_time[0]) == pytest.approx(5.0833, rel=1e-5)  # h, report has s

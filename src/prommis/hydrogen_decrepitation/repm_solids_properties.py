@@ -43,18 +43,14 @@ class REPMParameterData(PhysicalParameterBlock):
         self.solid = Phase()
 
         self.Nd = Component()
-        # self.NdH2 = Component()
         self.Nd2Fe14B = Component()
-        # self.Nd2Fe14BH2 = Component()
 
         self.mw = Param(
             self.component_list,
             units=units.kg / units.mol,
             initialize={
                 "Nd": (144.242 * 1) * 1e-3,
-                # "NdH2": (144.242 * 1 + 1.00794 * 2) * 1e-3,
                 "Nd2Fe14B": (144.242 * 2 + 55.845 * 14 + 10.811 * 1) * 1e-3,
-                # "Nd2Fe14BH2": (144.242 * 2 + 55.845 * 14 + 10.811 * 1 + 1.00794 * 2) * 1e-3,
             },
         )
 

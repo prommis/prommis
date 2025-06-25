@@ -30,9 +30,9 @@ Solvent Extraction
    :toctree: _autosummary
    :template: autosummary/module-with-contents.rst
 
-   prommis.solvent_extraction.ree_aq_distribution
    prommis.solvent_extraction.ree_og_distribution
    prommis.solvent_extraction.solvent_extraction
+   prommis.solvent_extraction.solvent_extraction_reaction_package
 
 Precipitate
 -----------
@@ -80,7 +80,22 @@ Nanofiltration
    :toctree: _autosummary
    :template: autosummary/module-with-contents.rst
 
+   prommis.nanofiltration.diafiltration_flowsheet_two_salt
    prommis.nanofiltration.diafiltration_properties
+   prommis.nanofiltration.diafiltration_solute_properties
+   prommis.nanofiltration.diafiltration_stream_properties
+   prommis.nanofiltration.diafiltration_two_salt
    prommis.nanofiltration.diafiltration
    prommis.nanofiltration.nf_brine_plot
    prommis.nanofiltration.nf_brine
+
+CMI Precipitator 
+----------------
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: autosummary/module-with-contents.rst
+
+   prommis.cmi_precipitator.opt_based_precipitator
+   prommis.cmi_precipitator.aqueous_properties
+   prommis.cmi_precipitator.precipitate_properties

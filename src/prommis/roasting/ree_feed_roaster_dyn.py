@@ -1106,7 +1106,7 @@ constructed,
             if self.config.has_heat_transfer is True:
                 heat = b.heat_duty[t]
             else:
-                heat = 0
+                heat = 0 * units.W
             if self.config.dynamic:
                 accumulation = b.solid_energy_accumulation[t]
             else:

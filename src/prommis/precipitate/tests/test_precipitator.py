@@ -158,6 +158,10 @@ class TestPrec(object):
         results = solver.solve(prec)
         assert_optimal_termination(results)
 
+        dt = DiagnosticsToolbox(prec)
+        dt.assert_no_numerical_warnings()
+        dt.assert_no_structural_warnings()
+
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component

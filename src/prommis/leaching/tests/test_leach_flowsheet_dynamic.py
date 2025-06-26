@@ -15,8 +15,6 @@ from pyomo.environ import (
     units,
 )
 
-from pyomo.dae.flatten import flatten_dae_components
-
 from idaes.core.util import DiagnosticsToolbox, from_json
 from idaes.core import FlowsheetBlock
 from idaes.core.solvers import get_solver

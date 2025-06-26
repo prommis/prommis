@@ -249,7 +249,11 @@ def set_scaling(m):
                     ] = 1e5
 
 
-def main(time_duration, perturb_time, number_of_tanks):
+if __name__ == "__main__":
+
+    time_duration = 24
+    perturb_time = 12
+    number_of_tanks = 1
 
     # Call the build_model function to create the model
     m = build_model(time_duration, number_of_tanks)
@@ -268,46 +272,41 @@ def main(time_duration, perturb_time, number_of_tanks):
 
     set_scaling(m)
 
-    return m
+    scaling = TransformationFactory("core.scale_model")
+    scaled_model = scaling.create_using(m, rename=False)
 
+    # Solve the model
+    solver = get_solver("ipopt_v2")
+    solver.solve(scaled_model, tee=True)
 
-time_duration = 24
-perturb_time = 12
-number_of_tanks = 1
-m = main(time_duration, perturb_time, number_of_tanks)
-scaling = TransformationFactory("core.scale_model")
-scaled_model = scaling.create_using(m, rename=False)
+    scaling.propagate_solution(scaled_model, m)
 
-# Solve the model
-solver = get_solver("ipopt_v2")
-solver.solve(scaled_model, tee=True)
+    # Solid stream outlet values at final time
+    m.fs.leach.mscontactor.solid[time_duration, number_of_tanks].flow_mass.pprint()
+    m.fs.leach.mscontactor.solid[time_duration, number_of_tanks].mass_frac_comp.pprint()
 
-scaling.propagate_solution(scaled_model, m)
+    # Liquid stream outlet values at final time
+    m.fs.leach.mscontactor.liquid[time_duration, number_of_tanks].flow_vol.pprint()
+    m.fs.leach.mscontactor.liquid[
+        time_duration, number_of_tanks
+    ].conc_mass_comp.pprint()
 
-# Solid stream outlet values at final time
-m.fs.leach.mscontactor.solid[time_duration, number_of_tanks].flow_mass.pprint()
-m.fs.leach.mscontactor.solid[time_duration, number_of_tanks].mass_frac_comp.pprint()
-
-# Liquid stream outlet values at final time
-m.fs.leach.mscontactor.liquid[time_duration, number_of_tanks].flow_vol.pprint()
-m.fs.leach.mscontactor.liquid[time_duration, number_of_tanks].conc_mass_comp.pprint()
-
-# Plotting the results for REE oxides
-REE_set = m.fs.coal.component_list - ["inerts", "Al2O3", "Fe2O3", "CaO"]
-for e in REE_set:
-    plt.plot(m.fs.time, m.fs.leach.recovery[:, e]())
-plt.legend(REE_set)
-plt.xlabel("Time (h)")
-plt.ylabel("Recovery %")
-plt.axvline(
-    x=perturb_time,
-    color="r",
-    linestyle="--",
-    label="Perturbation at t=12h",
-)
-plt.title("REE oxide recovery variation wrt time, with perturbation at t=12 ")
-plt.figure()
-plt.plot(m.fs.time, m.fs.leach.mscontactor.solid[:, :].flow_mass())
-plt.title("Solid mass flow rate variation wrt time")
-plt.xlabel("Time (h)")
-plt.ylabel("Solid mass flow rate (kg/h)")
+    # Plotting the results for REE oxides
+    REE_set = m.fs.coal.component_list - ["inerts", "Al2O3", "Fe2O3", "CaO"]
+    for e in REE_set:
+        plt.plot(m.fs.time, m.fs.leach.recovery[:, e]())
+    plt.legend(REE_set)
+    plt.xlabel("Time (h)")
+    plt.ylabel("Recovery %")
+    plt.axvline(
+        x=perturb_time,
+        color="r",
+        linestyle="--",
+        label="Perturbation at t=12h",
+    )
+    plt.title("REE oxide recovery variation wrt time, with perturbation at t=12 ")
+    plt.figure()
+    plt.plot(m.fs.time, m.fs.leach.mscontactor.solid[:, :].flow_mass())
+    plt.title("Solid mass flow rate variation wrt time")
+    plt.xlabel("Time (h)")
+    plt.ylabel("Solid mass flow rate (kg/h)")

@@ -177,16 +177,16 @@ Parameter          Value     Units
 ================== ========= ================
 :math:`\beta_0`    -3.79e-06 :math:`m^2/h`
 :math:`\beta_1`    -3.64e-08 :math:`m^5/kg/h`
-:math:`\beta_2`    7.00e-09  :math:`m^5/kg/h`
+:math:`\beta_2`    7.02e-09  :math:`m^5/kg/h`
 :math:`\beta_3`    -2.40e-07 :math:`m^2/h`
-:math:`\beta_4`    -9.40e-08 :math:`m^5/kg/h`
+:math:`\beta_4`    -9.43e-08 :math:`m^5/kg/h`
 :math:`\beta_5`    1.82e-08  :math:`m^5/kg/h`
 :math:`\beta_6`    -6.98e-07 :math:`m^2/h`
 :math:`\beta_7`    2.27e-08  :math:`m^5/kg/h`
-:math:`\beta_8`    -4.40e-09 :math:`m^5/kg/h`
-:math:`\beta_9`    -4.04e-06 :math:`m^2/h`
-:math:`\beta_{10}` 2.17e-07  :math:`m^5/kg/h`
-:math:`\beta_{11}` -4.20e-08 :math:`m^5/kg/h`
+:math:`\beta_8`    -4.38e-09 :math:`m^5/kg/h`
+:math:`\beta_9`    -4.45e-06 :math:`m^2/h`
+:math:`\beta_{10}` 5.88e-08  :math:`m^5/kg/h`
+:math:`\beta_{11}` -1.13e-08 :math:`m^5/kg/h`
 ================== ========= ================
 
 No applied potential on the system:
@@ -700,7 +700,7 @@ and used when constructing these,
         self.lumped_water_flux = Constraint(self.x_bar, rule=_lumped_water_flux)
 
         def _D_lithium_lithium_calculation(self, x, z):
-            params_lithium_lithium = [-3.79e-06, -3.64e-08, 7e-09]
+            params_lithium_lithium = [-3.79e-06, -3.64e-08, 7.02e-09]
             return self.D_lithium_lithium[x, z] == -(
                 (params_lithium_lithium[0] * units.m**2 / units.h)
                 + (
@@ -718,7 +718,7 @@ and used when constructing these,
         )
 
         def _D_lithium_cobalt_calculation(self, x, z):
-            params_lithium_cobalt = [-2.4e-07, -9.4e-08, 1.82e-08]
+            params_lithium_cobalt = [-2.4e-07, -9.43e-08, 1.82e-08]
             return self.D_lithium_cobalt[x, z] == -(
                 (params_lithium_cobalt[0] * units.m**2 / units.h)
                 + (
@@ -736,7 +736,7 @@ and used when constructing these,
         )
 
         def _D_cobalt_lithium_calculation(self, x, z):
-            param_cobalt_lithium = [-6.98e-07, 2.27e-08, -4.4e-09]
+            param_cobalt_lithium = [-6.98e-07, 2.27e-08, -4.38e-09]
             return self.D_cobalt_lithium[x, z] == -(
                 (param_cobalt_lithium[0] * units.m**2 / units.h)
                 + (
@@ -754,7 +754,7 @@ and used when constructing these,
         )
 
         def _D_cobalt_cobalt_calculation(self, x, z):
-            params_cobalt_cobalt = [-4.04e-06, 2.17e-07, -4.2e-08]
+            params_cobalt_cobalt = [-4.45e-06, 5.88e-08, -1.13e-08]
             return self.D_cobalt_cobalt[x, z] == -(
                 (params_cobalt_cobalt[0] * units.m**2 / units.h)
                 + (

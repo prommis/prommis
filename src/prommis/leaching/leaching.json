@@ -2,11 +2,11 @@
   "__metadata__": {
     "format_version": 4,
     "date": "2025-06-26",
-    "time": "02:05:18.503160",
+    "time": "17:06:22.245014",
     "other": {},
     "__performance__": {
-      "n_components": 596,
-      "etime_make_dict": 0.006930112838745117
+      "n_components": 599,
+      "etime_make_dict": 0.0029718875885009766
     }
   },
   "unknown": {
@@ -2275,6 +2275,30 @@
                                                 "active": true
                                               }
                                             }
+                                          },
+                                          "scaling_factor": {
+                                            "__type__": "<class 'pyomo.core.base.suffix.Suffix'>",
+                                            "__id__": 344,
+                                            "data": {
+                                              "302": 100000.0,
+                                              "330": 1000.0,
+                                              "303": 100000.0,
+                                              "331": 1000.0,
+                                              "304": 100000.0,
+                                              "332": 1000.0,
+                                              "305": 100000.0,
+                                              "333": 1000.0,
+                                              "306": 100000.0,
+                                              "334": 1000.0,
+                                              "307": 100000.0,
+                                              "335": 1000.0,
+                                              "308": 100000.0,
+                                              "336": 1000.0,
+                                              "309": 100000.0,
+                                              "337": 1000.0,
+                                              "310": 100000.0,
+                                              "338": 1000.0
+                                            }
                                           }
                                         }
                                       }
@@ -2282,21 +2306,21 @@
                                   },
                                   "solid_inlet_state": {
                                     "__type__": "<class 'idaes.core.base.process_block._IndexedCoalRefuseStateBlock'>",
-                                    "__id__": 344,
+                                    "__id__": 345,
                                     "active": true,
                                     "data": {
                                       "0.0": {
                                         "__type__": "<class 'prommis.leaching.leach_solids_properties.CoalRefuseStateBlockData'>",
-                                        "__id__": 345,
+                                        "__id__": 346,
                                         "active": true,
                                         "__pyomo_components__": {
                                           "flow_mass": {
                                             "__type__": "<class 'pyomo.core.base.var.ScalarVar'>",
-                                            "__id__": 346,
+                                            "__id__": 347,
                                             "data": {
                                               "None": {
                                                 "__type__": "<class 'pyomo.core.base.var.ScalarVar'>",
-                                                "__id__": 347,
+                                                "__id__": 348,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 22.68,
@@ -2307,11 +2331,11 @@
                                           },
                                           "mass_frac_comp": {
                                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
-                                            "__id__": 348,
+                                            "__id__": 349,
                                             "data": {
                                               "'inerts'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 349,
+                                                "__id__": 350,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 0.6952,
@@ -2320,7 +2344,7 @@
                                               },
                                               "'Sc2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 350,
+                                                "__id__": 351,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 2.77966e-05,
@@ -2329,7 +2353,7 @@
                                               },
                                               "'Y2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 351,
+                                                "__id__": 352,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 3.28653e-05,
@@ -2338,7 +2362,7 @@
                                               },
                                               "'La2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 352,
+                                                "__id__": 353,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 6.77769e-05,
@@ -2347,7 +2371,7 @@
                                               },
                                               "'Ce2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 353,
+                                                "__id__": 354,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 0.000156161,
@@ -2356,7 +2380,7 @@
                                               },
                                               "'Pr2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 354,
+                                                "__id__": 355,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 1.71438e-05,
@@ -2365,7 +2389,7 @@
                                               },
                                               "'Nd2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 355,
+                                                "__id__": 356,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 6.76618e-05,
@@ -2374,7 +2398,7 @@
                                               },
                                               "'Sm2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 356,
+                                                "__id__": 357,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 1.47926e-05,
@@ -2383,7 +2407,7 @@
                                               },
                                               "'Gd2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 357,
+                                                "__id__": 358,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 1.0405e-05,
@@ -2392,7 +2416,7 @@
                                               },
                                               "'Dy2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 358,
+                                                "__id__": 359,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 7.548270000000001e-06,
@@ -2401,7 +2425,7 @@
                                               },
                                               "'Al2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 359,
+                                                "__id__": 360,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 0.237,
@@ -2410,7 +2434,7 @@
                                               },
                                               "'CaO'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 360,
+                                                "__id__": 361,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 0.00331,
@@ -2419,7 +2443,7 @@
                                               },
                                               "'Fe2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 361,
+                                                "__id__": 362,
                                                 "fixed": true,
                                                 "stale": false,
                                                 "value": 0.0642,
@@ -2430,11 +2454,11 @@
                                           },
                                           "conversion": {
                                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
-                                            "__id__": 362,
+                                            "__id__": 363,
                                             "data": {
                                               "'inerts'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 363,
+                                                "__id__": 364,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 0.0,
@@ -2443,7 +2467,7 @@
                                               },
                                               "'Sc2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 364,
+                                                "__id__": 365,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": -1.75331058167246e-16,
@@ -2452,7 +2476,7 @@
                                               },
                                               "'Y2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 365,
+                                                "__id__": 366,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": -2.9658072748167037e-16,
@@ -2461,7 +2485,7 @@
                                               },
                                               "'La2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 366,
+                                                "__id__": 367,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": -1.4381322519771988e-16,
@@ -2470,7 +2494,7 @@
                                               },
                                               "'Ce2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 367,
+                                                "__id__": 368,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": -1.248354529351546e-16,
@@ -2479,7 +2503,7 @@
                                               },
                                               "'Pr2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 368,
+                                                "__id__": 369,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": -1.4213906168561434e-16,
@@ -2488,7 +2512,7 @@
                                               },
                                               "'Nd2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 369,
+                                                "__id__": 370,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": -1.440578669633876e-16,
@@ -2497,7 +2521,7 @@
                                               },
                                               "'Sm2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 370,
+                                                "__id__": 371,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": -1.6473126061178127e-16,
@@ -2506,7 +2530,7 @@
                                               },
                                               "'Gd2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 371,
+                                                "__id__": 372,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": -1.1709772444621985e-16,
@@ -2515,7 +2539,7 @@
                                               },
                                               "'Dy2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 372,
+                                                "__id__": 373,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": -1.6141471129979685e-16,
@@ -2524,7 +2548,7 @@
                                               },
                                               "'Al2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 373,
+                                                "__id__": 374,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 0.0,
@@ -2533,7 +2557,7 @@
                                               },
                                               "'CaO'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 374,
+                                                "__id__": 375,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 0.0,
@@ -2542,7 +2566,7 @@
                                               },
                                               "'Fe2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 375,
+                                                "__id__": 376,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 0.0,
@@ -2553,74 +2577,98 @@
                                           },
                                           "conversion_eq": {
                                             "__type__": "<class 'pyomo.core.base.constraint.IndexedConstraint'>",
-                                            "__id__": 376,
+                                            "__id__": 377,
                                             "active": true,
                                             "data": {
                                               "'inerts'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 377,
+                                                "__id__": 378,
                                                 "active": true
                                               },
                                               "'Sc2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 378,
+                                                "__id__": 379,
                                                 "active": true
                                               },
                                               "'Y2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 379,
+                                                "__id__": 380,
                                                 "active": true
                                               },
                                               "'La2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 380,
+                                                "__id__": 381,
                                                 "active": true
                                               },
                                               "'Ce2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 381,
+                                                "__id__": 382,
                                                 "active": true
                                               },
                                               "'Pr2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 382,
+                                                "__id__": 383,
                                                 "active": true
                                               },
                                               "'Nd2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 383,
+                                                "__id__": 384,
                                                 "active": true
                                               },
                                               "'Sm2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 384,
+                                                "__id__": 385,
                                                 "active": true
                                               },
                                               "'Gd2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 385,
+                                                "__id__": 386,
                                                 "active": true
                                               },
                                               "'Dy2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 386,
+                                                "__id__": 387,
                                                 "active": true
                                               },
                                               "'Al2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 387,
+                                                "__id__": 388,
                                                 "active": true
                                               },
                                               "'CaO'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 388,
+                                                "__id__": 389,
                                                 "active": true
                                               },
                                               "'Fe2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 389,
+                                                "__id__": 390,
                                                 "active": true
                                               }
+                                            }
+                                          },
+                                          "scaling_factor": {
+                                            "__type__": "<class 'pyomo.core.base.suffix.Suffix'>",
+                                            "__id__": 391,
+                                            "data": {
+                                              "351": 100000.0,
+                                              "379": 1000.0,
+                                              "352": 100000.0,
+                                              "380": 1000.0,
+                                              "353": 100000.0,
+                                              "381": 1000.0,
+                                              "354": 100000.0,
+                                              "382": 1000.0,
+                                              "355": 100000.0,
+                                              "383": 1000.0,
+                                              "356": 100000.0,
+                                              "384": 1000.0,
+                                              "357": 100000.0,
+                                              "385": 1000.0,
+                                              "358": 100000.0,
+                                              "386": 1000.0,
+                                              "359": 100000.0,
+                                              "387": 1000.0
                                             }
                                           }
                                         }
@@ -2629,21 +2677,21 @@
                                   },
                                   "heterogeneous_reactions": {
                                     "__type__": "<class 'idaes.core.base.process_block._IndexedCoalRefuseLeachingReactionsBlock'>",
-                                    "__id__": 390,
+                                    "__id__": 392,
                                     "active": true,
                                     "data": {
                                       "(0.0, 1)": {
                                         "__type__": "<class 'prommis.leaching.leach_reactions.CoalRefuseLeachingReactionsData'>",
-                                        "__id__": 391,
+                                        "__id__": 393,
                                         "active": true,
                                         "__pyomo_components__": {
                                           "reaction_rate": {
                                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
-                                            "__id__": 392,
+                                            "__id__": 394,
                                             "data": {
                                               "'Al2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 393,
+                                                "__id__": 395,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 0.004183215248410947,
@@ -2652,7 +2700,7 @@
                                               },
                                               "'Fe2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 394,
+                                                "__id__": 396,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 0.003935571053768077,
@@ -2661,7 +2709,7 @@
                                               },
                                               "'CaO'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 395,
+                                                "__id__": 397,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 0.0018195456238933629,
@@ -2670,7 +2718,7 @@
                                               },
                                               "'Sc2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 396,
+                                                "__id__": 398,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 6.626890390797905e-07,
@@ -2679,7 +2727,7 @@
                                               },
                                               "'Y2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 397,
+                                                "__id__": 399,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 1.3161106713688723e-06,
@@ -2688,7 +2736,7 @@
                                               },
                                               "'La2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 398,
+                                                "__id__": 400,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 4.778939911205022e-06,
@@ -2697,7 +2745,7 @@
                                               },
                                               "'Ce2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 399,
+                                                "__id__": 401,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 1.1993420584046797e-05,
@@ -2706,7 +2754,7 @@
                                               },
                                               "'Pr2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 400,
+                                                "__id__": 402,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 1.5081422994168908e-06,
@@ -2715,7 +2763,7 @@
                                               },
                                               "'Nd2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 401,
+                                                "__id__": 403,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 5.517405110642077e-06,
@@ -2724,7 +2772,7 @@
                                               },
                                               "'Sm2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 402,
+                                                "__id__": 404,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 5.94152143105957e-07,
@@ -2733,7 +2781,7 @@
                                               },
                                               "'Gd2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 403,
+                                                "__id__": 405,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 1.0501464084960796e-06,
@@ -2742,7 +2790,7 @@
                                               },
                                               "'Dy2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                                "__id__": 404,
+                                                "__id__": 406,
                                                 "fixed": false,
                                                 "stale": false,
                                                 "value": 2.7117443087535226e-07,
@@ -2753,69 +2801,93 @@
                                           },
                                           "reaction_rate_eq": {
                                             "__type__": "<class 'pyomo.core.base.constraint.IndexedConstraint'>",
-                                            "__id__": 405,
+                                            "__id__": 407,
                                             "active": true,
                                             "data": {
                                               "'Al2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 406,
+                                                "__id__": 408,
                                                 "active": true
                                               },
                                               "'Fe2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 407,
+                                                "__id__": 409,
                                                 "active": true
                                               },
                                               "'CaO'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 408,
+                                                "__id__": 410,
                                                 "active": true
                                               },
                                               "'Sc2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 409,
+                                                "__id__": 411,
                                                 "active": true
                                               },
                                               "'Y2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 410,
+                                                "__id__": 412,
                                                 "active": true
                                               },
                                               "'La2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 411,
+                                                "__id__": 413,
                                                 "active": true
                                               },
                                               "'Ce2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 412,
+                                                "__id__": 414,
                                                 "active": true
                                               },
                                               "'Pr2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 413,
+                                                "__id__": 415,
                                                 "active": true
                                               },
                                               "'Nd2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 414,
+                                                "__id__": 416,
                                                 "active": true
                                               },
                                               "'Sm2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 415,
+                                                "__id__": 417,
                                                 "active": true
                                               },
                                               "'Gd2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 416,
+                                                "__id__": 418,
                                                 "active": true
                                               },
                                               "'Dy2O3'": {
                                                 "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                                "__id__": 417,
+                                                "__id__": 419,
                                                 "active": true
                                               }
+                                            }
+                                          },
+                                          "scaling_factor": {
+                                            "__type__": "<class 'pyomo.core.base.suffix.Suffix'>",
+                                            "__id__": 420,
+                                            "data": {
+                                              "398": 100000.0,
+                                              "411": 100000.0,
+                                              "399": 100000.0,
+                                              "412": 100000.0,
+                                              "400": 100000.0,
+                                              "413": 100000.0,
+                                              "401": 100000.0,
+                                              "414": 100000.0,
+                                              "402": 100000.0,
+                                              "415": 100000.0,
+                                              "403": 100000.0,
+                                              "416": 100000.0,
+                                              "404": 100000.0,
+                                              "417": 100000.0,
+                                              "405": 100000.0,
+                                              "418": 100000.0,
+                                              "406": 100000.0,
+                                              "419": 100000.0
                                             }
                                           }
                                         }
@@ -2824,16 +2896,16 @@
                                   },
                                   "material_transfer_term": {
                                     "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
-                                    "__id__": 418,
+                                    "__id__": 421,
                                     "data": {}
                                   },
                                   "heterogeneous_reaction_extent": {
                                     "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
-                                    "__id__": 419,
+                                    "__id__": 422,
                                     "data": {
                                       "(0.0, 1, 'Al2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 420,
+                                        "__id__": 423,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 1.5835192296343281,
@@ -2842,7 +2914,7 @@
                                       },
                                       "(0.0, 1, 'Fe2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 421,
+                                        "__id__": 424,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 1.4897757043702973,
@@ -2851,7 +2923,7 @@
                                       },
                                       "(0.0, 1, 'CaO')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 422,
+                                        "__id__": 425,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.6887729446211566,
@@ -2860,7 +2932,7 @@
                                       },
                                       "(0.0, 1, 'Sc2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 423,
+                                        "__id__": 426,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0002508550897660274,
@@ -2869,7 +2941,7 @@
                                       },
                                       "(0.0, 1, 'Y2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 424,
+                                        "__id__": 427,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0004982020844447879,
@@ -2878,7 +2950,7 @@
                                       },
                                       "(0.0, 1, 'La2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 425,
+                                        "__id__": 428,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.00180902554549034,
@@ -2887,7 +2959,7 @@
                                       },
                                       "(0.0, 1, 'Ce2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 426,
+                                        "__id__": 429,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.004540003560931889,
@@ -2896,7 +2968,7 @@
                                       },
                                       "(0.0, 1, 'Pr2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 427,
+                                        "__id__": 430,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0005708939632161553,
@@ -2905,7 +2977,7 @@
                                       },
                                       "(0.0, 1, 'Nd2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 428,
+                                        "__id__": 431,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0020885650322926335,
@@ -2914,7 +2986,7 @@
                                       },
                                       "(0.0, 1, 'Sm2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 429,
+                                        "__id__": 432,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.00022491105240021435,
@@ -2923,7 +2995,7 @@
                                       },
                                       "(0.0, 1, 'Gd2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 430,
+                                        "__id__": 433,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0003975236589646336,
@@ -2932,7 +3004,7 @@
                                       },
                                       "(0.0, 1, 'Dy2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 431,
+                                        "__id__": 434,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.00010265068861550515,
@@ -2943,11 +3015,11 @@
                                   },
                                   "liquid_inherent_reaction_extent": {
                                     "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
-                                    "__id__": 432,
+                                    "__id__": 435,
                                     "data": {
                                       "(0.0, 1, 'Ka2')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 433,
+                                        "__id__": 436,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -2.039271801536689,
@@ -2958,11 +3030,11 @@
                                   },
                                   "liquid_inherent_reaction_generation": {
                                     "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
-                                    "__id__": 434,
+                                    "__id__": 437,
                                     "data": {
                                       "(0.0, 1, 'liquid', 'H2O')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 435,
+                                        "__id__": 438,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -2971,7 +3043,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'H')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 436,
+                                        "__id__": 439,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -2.039271801536689,
@@ -2980,7 +3052,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'HSO4')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 437,
+                                        "__id__": 440,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 2.039271801536689,
@@ -2989,7 +3061,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'SO4')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 438,
+                                        "__id__": 441,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -2.039271801536689,
@@ -2998,7 +3070,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Cl')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 439,
+                                        "__id__": 442,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3007,7 +3079,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Sc')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 440,
+                                        "__id__": 443,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3016,7 +3088,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Y')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 441,
+                                        "__id__": 444,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3025,7 +3097,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'La')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 442,
+                                        "__id__": 445,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3034,7 +3106,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Ce')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 443,
+                                        "__id__": 446,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3043,7 +3115,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Pr')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 444,
+                                        "__id__": 447,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3052,7 +3124,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Nd')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 445,
+                                        "__id__": 448,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3061,7 +3133,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Sm')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 446,
+                                        "__id__": 449,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3070,7 +3142,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Gd')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 447,
+                                        "__id__": 450,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3079,7 +3151,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Dy')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 448,
+                                        "__id__": 451,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3088,7 +3160,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Al')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 449,
+                                        "__id__": 452,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3097,7 +3169,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Ca')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 450,
+                                        "__id__": 453,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3106,7 +3178,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Fe')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 451,
+                                        "__id__": 454,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3117,103 +3189,103 @@
                                   },
                                   "liquid_inherent_reaction_constraint": {
                                     "__type__": "<class 'pyomo.core.base.constraint.IndexedConstraint'>",
-                                    "__id__": 452,
+                                    "__id__": 455,
                                     "active": true,
                                     "data": {
                                       "(0.0, 1, 'liquid', 'H2O')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 453,
+                                        "__id__": 456,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'H')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 454,
+                                        "__id__": 457,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'HSO4')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 455,
+                                        "__id__": 458,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'SO4')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 456,
+                                        "__id__": 459,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Cl')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 457,
+                                        "__id__": 460,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Sc')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 458,
+                                        "__id__": 461,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Y')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 459,
+                                        "__id__": 462,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'La')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 460,
+                                        "__id__": 463,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Ce')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 461,
+                                        "__id__": 464,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Pr')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 462,
+                                        "__id__": 465,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Nd')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 463,
+                                        "__id__": 466,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Sm')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 464,
+                                        "__id__": 467,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Gd')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 465,
+                                        "__id__": 468,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Dy')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 466,
+                                        "__id__": 469,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Al')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 467,
+                                        "__id__": 470,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Ca')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 468,
+                                        "__id__": 471,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Fe')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 469,
+                                        "__id__": 472,
                                         "active": true
                                       }
                                     }
                                   },
                                   "liquid_heterogeneous_reactions_generation": {
                                     "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
-                                    "__id__": 470,
+                                    "__id__": 473,
                                     "data": {
                                       "(0.0, 1, 'liquid', 'H2O')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 471,
+                                        "__id__": 474,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 9.940105638663399,
@@ -3222,7 +3294,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'H')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 472,
+                                        "__id__": 475,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -19.880211277326797,
@@ -3231,7 +3303,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'HSO4')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 473,
+                                        "__id__": 476,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3240,7 +3312,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'SO4')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 474,
+                                        "__id__": 477,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3249,7 +3321,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Cl')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 475,
+                                        "__id__": 478,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3258,7 +3330,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Sc')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 476,
+                                        "__id__": 479,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0005017101795320549,
@@ -3267,7 +3339,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Y')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 477,
+                                        "__id__": 480,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0009964041688895757,
@@ -3276,7 +3348,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'La')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 478,
+                                        "__id__": 481,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.00361805109098068,
@@ -3285,7 +3357,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Ce')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 479,
+                                        "__id__": 482,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.009080007121863779,
@@ -3294,7 +3366,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Pr')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 480,
+                                        "__id__": 483,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0011417879264323107,
@@ -3303,7 +3375,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Nd')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 481,
+                                        "__id__": 484,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.004177130064585267,
@@ -3312,7 +3384,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Sm')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 482,
+                                        "__id__": 485,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0004498221048004287,
@@ -3321,7 +3393,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Gd')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 483,
+                                        "__id__": 486,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0007950473179292672,
@@ -3330,7 +3402,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Dy')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 484,
+                                        "__id__": 487,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0002053013772310103,
@@ -3339,7 +3411,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Al')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 485,
+                                        "__id__": 488,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 3.1670384592686562,
@@ -3348,7 +3420,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Ca')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 486,
+                                        "__id__": 489,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.6887729446211566,
@@ -3357,7 +3429,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Fe')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 487,
+                                        "__id__": 490,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 2.9795514087405945,
@@ -3368,195 +3440,195 @@
                                   },
                                   "liquid_heterogeneous_reaction_constraint": {
                                     "__type__": "<class 'pyomo.core.base.constraint.IndexedConstraint'>",
-                                    "__id__": 488,
+                                    "__id__": 491,
                                     "active": true,
                                     "data": {
                                       "(0.0, 1, 'liquid', 'H2O')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 489,
+                                        "__id__": 492,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'H')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 490,
+                                        "__id__": 493,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'HSO4')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 491,
+                                        "__id__": 494,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'SO4')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 492,
+                                        "__id__": 495,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Cl')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 493,
+                                        "__id__": 496,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Sc')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 494,
+                                        "__id__": 497,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Y')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 495,
+                                        "__id__": 498,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'La')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 496,
+                                        "__id__": 499,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Ce')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 497,
+                                        "__id__": 500,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Pr')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 498,
+                                        "__id__": 501,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Nd')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 499,
+                                        "__id__": 502,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Sm')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 500,
+                                        "__id__": 503,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Gd')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 501,
+                                        "__id__": 504,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Dy')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 502,
+                                        "__id__": 505,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Al')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 503,
+                                        "__id__": 506,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Ca')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 504,
+                                        "__id__": 507,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Fe')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 505,
+                                        "__id__": 508,
                                         "active": true
                                       }
                                     }
                                   },
                                   "liquid_material_balance": {
                                     "__type__": "<class 'pyomo.core.base.constraint.IndexedConstraint'>",
-                                    "__id__": 506,
+                                    "__id__": 509,
                                     "active": true,
                                     "data": {
                                       "(0.0, 1, 'H2O')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 507,
+                                        "__id__": 510,
                                         "active": true
                                       },
                                       "(0.0, 1, 'H')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 508,
+                                        "__id__": 511,
                                         "active": true
                                       },
                                       "(0.0, 1, 'HSO4')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 509,
+                                        "__id__": 512,
                                         "active": true
                                       },
                                       "(0.0, 1, 'SO4')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 510,
+                                        "__id__": 513,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Cl')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 511,
+                                        "__id__": 514,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Sc')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 512,
+                                        "__id__": 515,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Y')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 513,
+                                        "__id__": 516,
                                         "active": true
                                       },
                                       "(0.0, 1, 'La')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 514,
+                                        "__id__": 517,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Ce')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 515,
+                                        "__id__": 518,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Pr')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 516,
+                                        "__id__": 519,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Nd')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 517,
+                                        "__id__": 520,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Sm')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 518,
+                                        "__id__": 521,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Gd')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 519,
+                                        "__id__": 522,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Dy')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 520,
+                                        "__id__": 523,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Al')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 521,
+                                        "__id__": 524,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Ca')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 522,
+                                        "__id__": 525,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Fe')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 523,
+                                        "__id__": 526,
                                         "active": true
                                       }
                                     }
                                   },
                                   "solid_heterogeneous_reactions_generation": {
                                     "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
-                                    "__id__": 524,
+                                    "__id__": 527,
                                     "data": {
                                       "(0.0, 1, 'solid', 'inerts')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 525,
+                                        "__id__": 528,
                                         "fixed": false,
                                         "stale": false,
                                         "value": 0.0,
@@ -3565,7 +3637,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'Sc2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 526,
+                                        "__id__": 529,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -0.0002508550897660274,
@@ -3574,7 +3646,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'Y2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 527,
+                                        "__id__": 530,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -0.0004982020844447879,
@@ -3583,7 +3655,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'La2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 528,
+                                        "__id__": 531,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -0.00180902554549034,
@@ -3592,7 +3664,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'Ce2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 529,
+                                        "__id__": 532,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -0.004540003560931889,
@@ -3601,7 +3673,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'Pr2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 530,
+                                        "__id__": 533,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -0.0005708939632161553,
@@ -3610,7 +3682,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'Nd2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 531,
+                                        "__id__": 534,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -0.0020885650322926335,
@@ -3619,7 +3691,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'Sm2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 532,
+                                        "__id__": 535,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -0.00022491105240021435,
@@ -3628,7 +3700,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'Gd2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 533,
+                                        "__id__": 536,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -0.0003975236589646336,
@@ -3637,7 +3709,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'Dy2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 534,
+                                        "__id__": 537,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -0.00010265068861550515,
@@ -3646,7 +3718,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'Al2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 535,
+                                        "__id__": 538,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -1.5835192296343281,
@@ -3655,7 +3727,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'CaO')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 536,
+                                        "__id__": 539,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -0.6887729446211566,
@@ -3664,7 +3736,7 @@
                                       },
                                       "(0.0, 1, 'solid', 'Fe2O3')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                        "__id__": 537,
+                                        "__id__": 540,
                                         "fixed": false,
                                         "stale": false,
                                         "value": -1.4897757043702973,
@@ -3675,154 +3747,137 @@
                                   },
                                   "solid_heterogeneous_reaction_constraint": {
                                     "__type__": "<class 'pyomo.core.base.constraint.IndexedConstraint'>",
-                                    "__id__": 538,
+                                    "__id__": 541,
                                     "active": true,
                                     "data": {
                                       "(0.0, 1, 'solid', 'inerts')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 539,
+                                        "__id__": 542,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'Sc2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 540,
+                                        "__id__": 543,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'Y2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 541,
+                                        "__id__": 544,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'La2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 542,
+                                        "__id__": 545,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'Ce2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 543,
+                                        "__id__": 546,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'Pr2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 544,
+                                        "__id__": 547,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'Nd2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 545,
+                                        "__id__": 548,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'Sm2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 546,
+                                        "__id__": 549,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'Gd2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 547,
+                                        "__id__": 550,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'Dy2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 548,
+                                        "__id__": 551,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'Al2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 549,
+                                        "__id__": 552,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'CaO')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 550,
+                                        "__id__": 553,
                                         "active": true
                                       },
                                       "(0.0, 1, 'solid', 'Fe2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 551,
+                                        "__id__": 554,
                                         "active": true
                                       }
                                     }
                                   },
                                   "solid_material_balance": {
                                     "__type__": "<class 'pyomo.core.base.constraint.IndexedConstraint'>",
-                                    "__id__": 552,
+                                    "__id__": 555,
                                     "active": true,
                                     "data": {
                                       "(0.0, 1, 'inerts')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 553,
+                                        "__id__": 556,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Sc2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 554,
+                                        "__id__": 557,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Y2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 555,
+                                        "__id__": 558,
                                         "active": true
                                       },
                                       "(0.0, 1, 'La2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 556,
+                                        "__id__": 559,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Ce2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 557,
+                                        "__id__": 560,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Pr2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 558,
+                                        "__id__": 561,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Nd2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 559,
+                                        "__id__": 562,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Sm2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 560,
+                                        "__id__": 563,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Gd2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 561,
+                                        "__id__": 564,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Dy2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 562,
+                                        "__id__": 565,
                                         "active": true
                                       },
                                       "(0.0, 1, 'Al2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 563,
+                                        "__id__": 566,
                                         "active": true
                                       },
                                       "(0.0, 1, 'CaO')": {
-                                        "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 564,
-                                        "active": true
-                                      },
-                                      "(0.0, 1, 'Fe2O3')": {
-                                        "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 565,
-                                        "active": true
-                                      }
-                                    }
-                                  },
-                                  "heterogeneous_reaction_extent_constraint": {
-                                    "__type__": "<class 'pyomo.core.base.constraint.IndexedConstraint'>",
-                                    "__id__": 566,
-                                    "active": true,
-                                    "data": {
-                                      "(0.0, 1, 'Al2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
                                         "__id__": 567,
                                         "active": true
@@ -3831,55 +3886,72 @@
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
                                         "__id__": 568,
                                         "active": true
-                                      },
-                                      "(0.0, 1, 'CaO')": {
-                                        "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 569,
-                                        "active": true
-                                      },
-                                      "(0.0, 1, 'Sc2O3')": {
+                                      }
+                                    }
+                                  },
+                                  "heterogeneous_reaction_extent_constraint": {
+                                    "__type__": "<class 'pyomo.core.base.constraint.IndexedConstraint'>",
+                                    "__id__": 569,
+                                    "active": true,
+                                    "data": {
+                                      "(0.0, 1, 'Al2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
                                         "__id__": 570,
                                         "active": true
                                       },
-                                      "(0.0, 1, 'Y2O3')": {
+                                      "(0.0, 1, 'Fe2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
                                         "__id__": 571,
                                         "active": true
                                       },
-                                      "(0.0, 1, 'La2O3')": {
+                                      "(0.0, 1, 'CaO')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
                                         "__id__": 572,
                                         "active": true
                                       },
-                                      "(0.0, 1, 'Ce2O3')": {
+                                      "(0.0, 1, 'Sc2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
                                         "__id__": 573,
                                         "active": true
                                       },
-                                      "(0.0, 1, 'Pr2O3')": {
+                                      "(0.0, 1, 'Y2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
                                         "__id__": 574,
                                         "active": true
                                       },
-                                      "(0.0, 1, 'Nd2O3')": {
+                                      "(0.0, 1, 'La2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
                                         "__id__": 575,
                                         "active": true
                                       },
-                                      "(0.0, 1, 'Sm2O3')": {
+                                      "(0.0, 1, 'Ce2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
                                         "__id__": 576,
                                         "active": true
                                       },
-                                      "(0.0, 1, 'Gd2O3')": {
+                                      "(0.0, 1, 'Pr2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
                                         "__id__": 577,
                                         "active": true
                                       },
-                                      "(0.0, 1, 'Dy2O3')": {
+                                      "(0.0, 1, 'Nd2O3')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
                                         "__id__": 578,
+                                        "active": true
+                                      },
+                                      "(0.0, 1, 'Sm2O3')": {
+                                        "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
+                                        "__id__": 579,
+                                        "active": true
+                                      },
+                                      "(0.0, 1, 'Gd2O3')": {
+                                        "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
+                                        "__id__": 580,
+                                        "active": true
+                                      },
+                                      "(0.0, 1, 'Dy2O3')": {
+                                        "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
+                                        "__id__": 581,
                                         "active": true
                                       }
                                     }
@@ -3890,11 +3962,11 @@
                           },
                           "volume": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
-                            "__id__": 579,
+                            "__id__": 582,
                             "data": {
                               "(0.0, 1)": {
                                 "__type__": "<class 'pyomo.core.base.var.VarData'>",
-                                "__id__": 580,
+                                "__id__": 583,
                                 "fixed": true,
                                 "stale": false,
                                 "value": 0.3785411783999999,
@@ -3905,59 +3977,59 @@
                           },
                           "recovery": {
                             "__type__": "<class 'pyomo.core.base.expression.IndexedExpression'>",
-                            "__id__": 581,
+                            "__id__": 584,
                             "data": {
                               "(0.0, 'inerts')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 582
+                                "__id__": 585
                               },
                               "(0.0, 'Sc2O3')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 583
+                                "__id__": 586
                               },
                               "(0.0, 'Y2O3')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 584
+                                "__id__": 587
                               },
                               "(0.0, 'La2O3')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 585
+                                "__id__": 588
                               },
                               "(0.0, 'Ce2O3')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 586
+                                "__id__": 589
                               },
                               "(0.0, 'Pr2O3')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 587
+                                "__id__": 590
                               },
                               "(0.0, 'Nd2O3')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 588
+                                "__id__": 591
                               },
                               "(0.0, 'Sm2O3')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 589
+                                "__id__": 592
                               },
                               "(0.0, 'Gd2O3')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 590
+                                "__id__": 593
                               },
                               "(0.0, 'Dy2O3')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 591
+                                "__id__": 594
                               },
                               "(0.0, 'Al2O3')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 592
+                                "__id__": 595
                               },
                               "(0.0, 'CaO')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 593
+                                "__id__": 596
                               },
                               "(0.0, 'Fe2O3')": {
                                 "__type__": "<class 'pyomo.core.base.expression.ExpressionData'>",
-                                "__id__": 594
+                                "__id__": 597
                               }
                             }
                           }
@@ -3971,63 +4043,8 @@
           },
           "scaling_factor": {
             "__type__": "<class 'pyomo.core.base.suffix.Suffix'>",
-            "__id__": 595,
-            "data": {
-              "302": 100000.0,
-              "350": 100000.0,
-              "396": 100000.0,
-              "330": 1000.0,
-              "378": 1000.0,
-              "409": 100000.0,
-              "303": 100000.0,
-              "351": 100000.0,
-              "397": 100000.0,
-              "331": 1000.0,
-              "379": 1000.0,
-              "410": 100000.0,
-              "304": 100000.0,
-              "352": 100000.0,
-              "398": 100000.0,
-              "332": 1000.0,
-              "380": 1000.0,
-              "411": 100000.0,
-              "305": 100000.0,
-              "353": 100000.0,
-              "399": 100000.0,
-              "333": 1000.0,
-              "381": 1000.0,
-              "412": 100000.0,
-              "306": 100000.0,
-              "354": 100000.0,
-              "400": 100000.0,
-              "334": 1000.0,
-              "382": 1000.0,
-              "413": 100000.0,
-              "307": 100000.0,
-              "355": 100000.0,
-              "401": 100000.0,
-              "335": 1000.0,
-              "383": 1000.0,
-              "414": 100000.0,
-              "308": 100000.0,
-              "356": 100000.0,
-              "402": 100000.0,
-              "336": 1000.0,
-              "384": 1000.0,
-              "415": 100000.0,
-              "309": 100000.0,
-              "357": 100000.0,
-              "403": 100000.0,
-              "337": 1000.0,
-              "385": 1000.0,
-              "416": 100000.0,
-              "310": 100000.0,
-              "358": 100000.0,
-              "404": 100000.0,
-              "338": 1000.0,
-              "386": 1000.0,
-              "417": 100000.0
-            }
+            "__id__": 598,
+            "data": {}
           }
         }
       }

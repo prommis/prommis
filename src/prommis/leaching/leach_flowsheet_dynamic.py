@@ -16,12 +16,13 @@ from pyomo.environ import (
     TransformationFactory,
     units,
     Var,
-    Suffix,
+    Param,
 )
 from pyomo.dae.flatten import flatten_dae_components
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util import from_json
+from idaes.core.util.scaling import set_scaling_factor
 from idaes.core.solvers import get_solver
 
 from prommis.leaching.leach_train import LeachingTrain
@@ -106,6 +107,10 @@ def set_inputs(m, perturb_time):
         None
     """
 
+    m.liquid_solid_residence_time_ratio = Param(
+        initialize=1 / 32, units=units.dimensionless
+    )
+
     # Liquid feed state
     for t in m.fs.time:
         if t <= perturb_time:
@@ -164,13 +169,12 @@ def set_inputs(m, perturb_time):
     @m.Constraint(m.fs.time, m.fs.leach.mscontactor.elements)
     def volume_fraction_rule(m, t, s):
 
-        scale = 1 / 32
         theta_s = m.fs.leach.mscontactor.volume_frac_stream[t, s, "solid"]
         theta_l = m.fs.leach.mscontactor.volume_frac_stream[t, s, "liquid"]
         v_l = m.fs.leach.mscontactor.liquid[t, s].flow_vol
         solid_dens_mass = m.fs.leach.config.solid_phase["property_package"].dens_mass
         v_s = m.fs.leach.mscontactor.solid[t, s].flow_mass / solid_dens_mass
-        return theta_l * v_s == theta_s * v_l * scale
+        return theta_l * v_s == theta_s * v_l * m.liquid_solid_residence_time_ratio
 
     # Fixing the variable values at t=0
     m.fs.leach.mscontactor.liquid[0, :].flow_vol.fix()
@@ -211,42 +215,46 @@ def set_scaling(m):
     """
     Apply scaling factors to improve solver performance.
     """
-    m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
     for t in m.fs.time:
         for s in m.fs.leach.mscontactor.elements:
             for j in m.fs.coal.component_list:
                 if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
-                    m.scaling_factor[
-                        m.fs.leach.mscontactor.solid[t, s].mass_frac_comp[j]
-                    ] = 1e5
-                    m.scaling_factor[
-                        m.fs.leach.mscontactor.solid_inlet_state[t].mass_frac_comp[j]
-                    ] = 1e5
-                    m.scaling_factor[
+                    set_scaling_factor(
+                        m.fs.leach.mscontactor.solid[t, s].mass_frac_comp[j], 1e5
+                    )
+                    set_scaling_factor(
+                        m.fs.leach.mscontactor.solid_inlet_state[t].mass_frac_comp[j],
+                        1e5,
+                    )
+                    set_scaling_factor(
                         m.fs.leach.mscontactor.heterogeneous_reactions[
                             t, s
-                        ].reaction_rate[j]
-                    ] = 1e5
-                    m.scaling_factor[
-                        m.fs.leach.mscontactor.solid[t, s].conversion_eq[j]
-                    ] = 1e3
-                    m.scaling_factor[
-                        m.fs.leach.mscontactor.solid_inlet_state[t].conversion_eq[j]
-                    ] = 1e3
-                    m.scaling_factor[
+                        ].reaction_rate[j],
+                        1e5,
+                    )
+                    set_scaling_factor(
+                        m.fs.leach.mscontactor.solid[t, s].conversion_eq[j], 1e3
+                    )
+                    set_scaling_factor(
+                        m.fs.leach.mscontactor.solid_inlet_state[t].conversion_eq[j],
+                        1e3,
+                    )
+                    set_scaling_factor(
                         m.fs.leach.mscontactor.heterogeneous_reactions[
                             t, s
-                        ].reaction_rate_eq[j]
-                    ] = 1e5
+                        ].reaction_rate_eq[j],
+                        1e5,
+                    )
             for j in m.fs.leach_soln.component_list:
                 if j not in ["H2O"]:
-                    m.scaling_factor[
-                        m.fs.leach.mscontactor.liquid[t, s].conc_mass_comp[j]
-                    ] = 1e5
-                    m.scaling_factor[
-                        m.fs.leach.mscontactor.liquid_inlet_state[t].conc_mass_comp[j]
-                    ] = 1e5
+                    set_scaling_factor(
+                        m.fs.leach.mscontactor.liquid[t, s].conc_mass_comp[j], 1e5
+                    )
+                    set_scaling_factor(
+                        m.fs.leach.mscontactor.liquid_inlet_state[t].conc_mass_comp[j],
+                        1e5,
+                    )
 
 
 if __name__ == "__main__":

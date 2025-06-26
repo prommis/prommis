@@ -6,9 +6,12 @@ from pyomo.environ import (
     units,
     RangeSet,
     TransformationFactory,
+    value,
+    Var,
 )
 from pyomo.network import Port, Arc
-
+from pyomo.dae.flatten import flatten_dae_components
+from idaes.core.util.model_statistics import degrees_of_freedom as dof
 from idaes.core import (
     FlowDirection,
     UnitModelBlockData,
@@ -21,19 +24,307 @@ from idaes.core import (
 )
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.constants import Constants
-from idaes.core.initialization import ModularInitializerBase
+from idaes.core.initialization import (
+    ModularInitializerBase,
+    SingleControlVolumeUnitInitializer,
+)
+from idaes.core.util.initialization import propagate_state
 
-from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
+from idaes.core.util import DiagnosticsToolbox
+from requests import delete
 
 
-# class CompoundSolventExtractionInitializer(ModularInitializerBase):
+class CompoundSolventExtractionInitializer(ModularInitializerBase):
+    """
+    This is a general purpose Initializer  for the Solvent Extraction unit model.
 
-#     def initialize_main_model(
-#         self,
-#         model: Block,
-#     ):
-#         for i in model.elements:
-#             model.solvent_extraction_mixer[i]
+    This routine calls the initializer for the internal MSContactor model.
+
+    """
+
+    print("flag1")
+    CONFIG = ModularInitializerBase.CONFIG()
+
+    CONFIG.declare(
+        "ssc_solver_options",
+        ConfigDict(
+            implicit=True,
+            description="Dict of arguments for solver calls by ssc_solver",
+        ),
+    )
+    CONFIG.declare(
+        "calculate_variable_options",
+        ConfigDict(
+            implicit=True,
+            description="Dict of options to pass to 1x1 block solver",
+            doc="Dict of options to pass to calc_var_kwds argument in "
+            "scc_solver method.",
+        ),
+    )
+    print("flag2")
+
+    def initialize_main_model(
+        self,
+        model: Block,
+    ):
+        print("flag3")
+        for j in ["aqueous", "organic"]:
+            for e in model.elements:
+                getattr(
+                    model, f"solvent_extraction_mixer_{j}_settler_arc_{e}_expanded"
+                ).deactivate()
+                if (
+                    getattr(model.config, f"{j}_stream").flow_direction
+                    == FlowDirection.forward
+                ):
+                    if e != model.elements.first():
+                        previous_stage = e - 1
+                        current_stage = e
+                    else:
+                        continue
+                else:
+                    if e != model.elements.last():
+                        previous_stage = e + 1
+                        current_stage = e
+                    else:
+                        continue
+                getattr(
+                    model,
+                    f"solvent_extraction_{j}_settler_{previous_stage}_to_mixer_{current_stage}_arc_expanded",
+                ).deactivate()
+
+        for e in model.elements:
+            if model.config.aqueous_stream.flow_direction == FlowDirection.forward:
+                if e != model.elements.first():
+                    previous_stage = e - 1
+                    current_stage = e
+                else:
+                    continue
+            else:
+                if e != model.elements.last():
+                    previous_stage = e + 1
+                    current_stage = e
+                else:
+                    continue
+            setattr(
+                model,
+                f"aqueous_{previous_stage}_bypass_{current_stage}_arc",
+                Arc(
+                    source=model.solvent_extraction_mixer[
+                        previous_stage
+                    ].unit.aqueous_outlet,
+                    destination=model.solvent_extraction_mixer[
+                        current_stage
+                    ].unit.aqueous_inlet,
+                ),
+            ),
+
+        for e in model.elements:
+            model.solvent_extraction_aqueous_settler[e].unit.deactivate()
+            model.solvent_extraction_organic_settler[e].unit.deactivate()
+
+        TransformationFactory("network.expand_arcs").apply_to(model)
+
+        for k, v in model.organic_inlet.vars.items():
+            for i in v:
+                for e in model.elements:
+                    if e != model.elements.last():
+                        for k1, v1 in model.solvent_extraction_mixer[
+                            e
+                        ].unit.organic_inlet.vars.items():
+                            if k1 == k:
+                                v1[i].fix(value(v[i]))
+
+        sx_initializer = SolventExtractionInitializer()
+        for e in model.elements:
+            print(dof(model.solvent_extraction_mixer[e].unit))
+            sx_initializer.initialize(model.solvent_extraction_mixer[e].unit)
+            if e != model.elements.last():
+                propagate_state(arc=getattr(model, f"aqueous_{e}_bypass_{e+1}_arc"))
+
+        solver = self._get_solver()
+        results_mx = solver.solve(model)
+
+        for e in model.elements:
+            model.solvent_extraction_aqueous_settler[e].unit.activate()
+            model.solvent_extraction_organic_settler[e].unit.activate()
+
+        for k, v in model.organic_inlet.vars.items():
+            for i in v:
+                for e in model.elements:
+                    for k1, v1 in getattr(
+                        model, f"organic_settler_{e}_in"
+                    ).vars.items():
+                        if k1 == k:
+                            v1[i].fix(value(v[i]))
+
+        # for k, v in model.organic_inlet.vars.items():
+        #     for e in model.elements:
+        #         model.solvent_extraction_organic_settler[e].unit.organic_inlet.vars[
+        #             k
+        #         ] = v
+
+        for k, v in model.aqueous_inlet.vars.items():
+            for i in v:
+                for e in model.elements:
+                    for k1, v1 in getattr(
+                        model, f"aqueous_settler_{e}_in"
+                    ).vars.items():
+                        if k1 == k:
+                            v1[i].fix(value(v[i]))
+
+        for e in model.elements:
+            for j in ["aqueous", "organic"]:
+                target_model = getattr(model, f"solvent_extraction_{j}_settler")[e].unit
+                target_x = getattr(model, f"solvent_extraction_{j}_settler")[
+                    e
+                ].unit.length_domain
+
+                regular_vars, length_vars = flatten_dae_components(
+                    target_model,
+                    target_x,
+                    Var,
+                    active=True,
+                )
+                # Copy initial conditions forward
+                for var in length_vars:
+                    for x in target_x:
+                        if x == target_x.first():
+                            continue
+                        else:
+                            var[x].value = var[target_x.first()].value
+                result_sx = solver.solve(target_model)
+                print(f"{j}_settler_{e} solved")
+
+        print(dof(model.solvent_extraction_mixer[1].unit))
+        model.solvent_extraction_mixer[1].unit.organic_inlet.unfix()
+        print(dof(model.solvent_extraction_mixer[1].unit))
+        model.solvent_extraction_organic_settler_2_to_mixer_1_arc_expanded.activate()
+        TransformationFactory("network.expand_arcs").apply_to(model)
+        print(dof(model.solvent_extraction_mixer[1].unit))
+        print(dof(model))
+        print(f"first mixer tank reconnected")
+
+        for e in model.elements:
+            print(dof(model.solvent_extraction_aqueous_settler[e].unit))
+            getattr(model, f"aqueous_settler_{e}_in").unfix()
+            print(dof(model.solvent_extraction_aqueous_settler[e].unit))
+            getattr(
+                model, f"solvent_extraction_mixer_aqueous_settler_arc_{e}_expanded"
+            ).activate()
+            TransformationFactory("network.expand_arcs").apply_to(model)
+            print(dof(model.solvent_extraction_aqueous_settler[e].unit))
+            print(dof(model))
+            print(f"{e} aqueous settler tank reconnected")
+
+            print(dof(model.solvent_extraction_organic_settler[e].unit))
+            getattr(model, f"organic_settler_{e}_in").unfix()
+            print(dof(model.solvent_extraction_organic_settler[e].unit))
+            getattr(
+                model, f"solvent_extraction_mixer_organic_settler_arc_{e}_expanded"
+            ).activate()
+            TransformationFactory("network.expand_arcs").apply_to(model)
+            print(dof(model.solvent_extraction_organic_settler[e].unit))
+            print(dof(model))
+            print(f"{e} organic settler tank reconnected")
+
+        print(dof(model.solvent_extraction_mixer[2].unit))
+        model.solvent_extraction_mixer[2].unit.organic_inlet.unfix()
+        print(dof(model.solvent_extraction_mixer[2].unit))
+        model.solvent_extraction_mixer[2].unit.aqueous_inlet.unfix()
+        print(dof(model.solvent_extraction_mixer[2].unit))
+        model.solvent_extraction_organic_settler_3_to_mixer_2_arc_expanded.activate()
+        print(dof(model.solvent_extraction_mixer[2].unit))
+        model.solvent_extraction_aqueous_settler_1_to_mixer_2_arc_expanded.activate()
+        delattr(model, "aqueous_1_bypass_2_arc_expanded")
+        print(dof(model.solvent_extraction_mixer[2].unit))
+        TransformationFactory("network.expand_arcs").apply_to(model)
+        print(dof(model.solvent_extraction_mixer[2].unit))
+        print(dof(model))
+        print(f"second mixer tank reconnected")
+
+        print(dof(model.solvent_extraction_mixer[3].unit))
+        model.solvent_extraction_aqueous_settler_2_to_mixer_3_arc_expanded.activate()
+        delattr(model, "aqueous_2_bypass_3_arc_expanded")
+        TransformationFactory("network.expand_arcs").apply_to(model)
+        print(dof(model.solvent_extraction_mixer[1].unit))
+        print(dof(model))
+        print(f"third mixer tank reconnected")
+
+        for arc in model.component_objects(Arc, descend_into=True):
+            if "bypass" in arc.name:
+                delete(arc)
+        # print(dof(model.solvent_extraction_mixer[3].unit))
+        # model.solvent_extraction_mixer[2].unit.organic_inlet.unfix()
+        # print(dof(model.solvent_extraction_mixer[2].unit))
+        # model.solvent_extraction_organic_settler_3_to_mixer_2_arc_expanded.activate()
+        # TransformationFactory("network.expand_arcs").apply_to(model)
+        # print(dof(model.solvent_extraction_mixer[2].unit))
+        # print(dof(model))
+        # print(f"second mixer tank reconnected")
+
+        # for j in ["aqueous", "organic"]:
+        #     for e in model.elements:
+        #         getattr(
+        #             model, f"solvent_extraction_mixer_{j}_settler_arc_{e}_expanded"
+        #         ).activate()
+        #         if (
+        #             getattr(model.config, f"{j}_stream").flow_direction
+        #             == FlowDirection.forward
+        #         ):
+        #             if e != model.elements.first():
+        #                 previous_stage = e - 1
+        #                 current_stage = e
+        #             else:
+        #                 continue
+        #         else:
+        #             if e != model.elements.last():
+        #                 previous_stage = e + 1
+        #                 current_stage = e
+        #             else:
+        #                 continue
+        #         getattr(
+        #             model,
+        #             f"solvent_extraction_{j}_settler_{previous_stage}_to_mixer_{current_stage}_arc_expanded",
+        #         ).activate()
+
+        # for e in model.elements:
+        #     if model.config.aqueous_stream.flow_direction == FlowDirection.forward:
+        #         if e != model.elements.first():
+        #             previous_stage = e - 1
+        #             current_stage = e
+        #         else:
+        #             continue
+        #     else:
+        #         if e != model.elements.last():
+        #             previous_stage = e + 1
+        #             current_stage = e
+        #         else:
+        #             continue
+        #     delattr(
+        #         model,
+        #         f"aqueous_{previous_stage}_bypass_{current_stage}_arc",
+        #     ),
+        #     if e != model.elements.last():
+        #         model.solvent_extraction_mixer[e].unit.organic_inlet.unfix()
+        #     getattr(model, f"organic_settler_{e}_in").unfix()
+        #     getattr(model, f"aqueous_settler_{e}_in").unfix()
+
+        # TransformationFactory("network.expand_arcs").apply_to(model)
+
+        # print(dof(model))
+
+        dt = DiagnosticsToolbox(model)
+        dt.report_structural_issues()
+        dt.display_overconstrained_set()
+
+        final_results = solver.solve(model)
+
+        return final_results
 
 
 Stream_Config = ConfigDict()
@@ -234,11 +525,11 @@ class CompoundSolventExtractionData(UnitModelBlockData):
             )
             self.solvent_extraction_aqueous_settler[i].unit.apply_transformation()
             self.add_inlet_port(
-                name=f"aqueous_settler_{i}_inlet",
+                name=f"aqueous_settler_{i}_in",
                 block=self.solvent_extraction_aqueous_settler[i].unit,
             )
             self.add_outlet_port(
-                name=f"aqueous_settler_{i}_outlet",
+                name=f"aqueous_settler_{i}_out",
                 block=self.solvent_extraction_aqueous_settler[i].unit,
             )
 
@@ -275,11 +566,11 @@ class CompoundSolventExtractionData(UnitModelBlockData):
             )
             self.solvent_extraction_organic_settler[i].unit.apply_transformation()
             self.add_inlet_port(
-                name=f"organic_settler_{i}_inlet",
+                name=f"organic_settler_{i}_in",
                 block=self.solvent_extraction_organic_settler[i].unit,
             )
             self.add_outlet_port(
-                name=f"organic_settler_{i}_outlet",
+                name=f"organic_settler_{i}_out",
                 block=self.solvent_extraction_organic_settler[i].unit,
             )
 
@@ -293,7 +584,7 @@ class CompoundSolventExtractionData(UnitModelBlockData):
                         source=getattr(
                             self.solvent_extraction_mixer[i].unit, f"{j}_outlet"
                         ),
-                        destination=getattr(self, f"{j}_settler_{i}_inlet"),
+                        destination=getattr(self, f"{j}_settler_{i}_in"),
                     ),
                 )
 
@@ -321,7 +612,7 @@ class CompoundSolventExtractionData(UnitModelBlockData):
                     Arc(
                         source=getattr(
                             self,
-                            f"{j}_settler_{previous_stage}_outlet",
+                            f"{j}_settler_{previous_stage}_out",
                         ),
                         destination=getattr(
                             self.solvent_extraction_mixer[current_stage].unit,
@@ -359,7 +650,7 @@ class CompoundSolventExtractionData(UnitModelBlockData):
                 Port(
                     extends=getattr(
                         self,
-                        f"{j}_settler_{outlet_stage}_outlet",
+                        f"{j}_settler_{outlet_stage}_out",
                     ),
                 ),
             )

@@ -16,6 +16,7 @@ from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.compound_solvent_extraction import (
     CompoundSolventExtraction,
+    CompoundSolventExtractionInitializer,
 )
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,
@@ -141,24 +142,31 @@ for s in m.fs.compound_solex.elements:
                 :, x
             ].pressure.fix(P * units.Pa)
 
-for s in m.fs.compound_solex.elements:
-    set_scaling_factor(
-        m.fs.compound_solex.solvent_extraction_mixer[s]
-        .unit.mscontactor.aqueous[0.0, 1]
-        .hso4_dissociation,
-        10,
-    )
+# for s in m.fs.compound_solex.elements:
+#     set_scaling_factor(
+#         m.fs.compound_solex.solvent_extraction_mixer[s]
+#         .unit.mscontactor.aqueous[0.0, 1]
+#         .hso4_dissociation,
+#         10,
+#     )
 
-scaling = TransformationFactory("core.scale_model")
-scaled_model = scaling.create_using(m, rename=False)
+print("Degrees of freedom:", dof(m.fs.compound_solex))
+m.fs.compound_solex.fix_initialization_states()
+print("DoF after fix:", dof(m.fs.compound_solex))
 
-print(dof(scaled_model))
+initializer = CompoundSolventExtractionInitializer()
+initializer.initialize(m.fs.compound_solex)
+
+# scaling = TransformationFactory("core.scale_model")
+# scaled_model = scaling.create_using(m, rename=False)
+
+# print(dof(scaled_model))
 
 solver = get_solver("ipopt_v2")
 solver.options["max_iter"] = 10000
 # # solver.options["tol"] = 1e-5
-results = solver.solve(scaled_model, tee=True)
+results = solver.solve(m, tee=True)
 
-scaling.propagate_solution(scaled_model, m)
+# scaling.propagate_solution(scaled_model, m)
 
-to_json(m, fname="compound_solvent_extraction.json", human_read=True)
+# to_json(m, fname="compound_solvent_extraction.json", human_read=True)

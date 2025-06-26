@@ -1,12 +1,12 @@
 {
   "__metadata__": {
     "format_version": 4,
-    "date": "2025-06-21",
-    "time": "17:36:07.590468",
+    "date": "2025-06-25",
+    "time": "12:15:39.850256",
     "other": {},
     "__performance__": {
       "n_components": 7809,
-      "etime_make_dict": 0.03225111961364746
+      "etime_make_dict": 0.03209066390991211
     }
   },
   "unknown": {
@@ -51214,7 +51214,7 @@
                               }
                             }
                           },
-                          "_flow_vol_aqueous_settler_1_inlet_ref": {
+                          "_flow_vol_aqueous_settler_1_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7294,
                             "data": {
@@ -51229,7 +51229,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_aqueous_settler_1_inlet_ref": {
+                          "_conc_mass_comp_aqueous_settler_1_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7296,
                             "data": {
@@ -51388,7 +51388,7 @@
                               }
                             }
                           },
-                          "_temperature_aqueous_settler_1_inlet_ref": {
+                          "_temperature_aqueous_settler_1_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7314,
                             "data": {
@@ -51403,7 +51403,7 @@
                               }
                             }
                           },
-                          "_pressure_aqueous_settler_1_inlet_ref": {
+                          "_pressure_aqueous_settler_1_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7316,
                             "data": {
@@ -51418,7 +51418,7 @@
                               }
                             }
                           },
-                          "_flow_vol_aqueous_settler_1_outlet_ref": {
+                          "_flow_vol_aqueous_settler_1_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7318,
                             "data": {
@@ -51433,7 +51433,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_aqueous_settler_1_outlet_ref": {
+                          "_conc_mass_comp_aqueous_settler_1_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7320,
                             "data": {
@@ -51592,7 +51592,7 @@
                               }
                             }
                           },
-                          "_temperature_aqueous_settler_1_outlet_ref": {
+                          "_temperature_aqueous_settler_1_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7338,
                             "data": {
@@ -51607,7 +51607,7 @@
                               }
                             }
                           },
-                          "_pressure_aqueous_settler_1_outlet_ref": {
+                          "_pressure_aqueous_settler_1_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7340,
                             "data": {
@@ -51622,7 +51622,7 @@
                               }
                             }
                           },
-                          "_flow_vol_aqueous_settler_2_inlet_ref": {
+                          "_flow_vol_aqueous_settler_2_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7342,
                             "data": {
@@ -51637,7 +51637,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_aqueous_settler_2_inlet_ref": {
+                          "_conc_mass_comp_aqueous_settler_2_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7344,
                             "data": {
@@ -51796,7 +51796,7 @@
                               }
                             }
                           },
-                          "_temperature_aqueous_settler_2_inlet_ref": {
+                          "_temperature_aqueous_settler_2_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7362,
                             "data": {
@@ -51811,7 +51811,7 @@
                               }
                             }
                           },
-                          "_pressure_aqueous_settler_2_inlet_ref": {
+                          "_pressure_aqueous_settler_2_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7364,
                             "data": {
@@ -51826,7 +51826,7 @@
                               }
                             }
                           },
-                          "_flow_vol_aqueous_settler_2_outlet_ref": {
+                          "_flow_vol_aqueous_settler_2_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7366,
                             "data": {
@@ -51841,7 +51841,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_aqueous_settler_2_outlet_ref": {
+                          "_conc_mass_comp_aqueous_settler_2_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7368,
                             "data": {
@@ -52000,7 +52000,7 @@
                               }
                             }
                           },
-                          "_temperature_aqueous_settler_2_outlet_ref": {
+                          "_temperature_aqueous_settler_2_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7386,
                             "data": {
@@ -52015,7 +52015,7 @@
                               }
                             }
                           },
-                          "_pressure_aqueous_settler_2_outlet_ref": {
+                          "_pressure_aqueous_settler_2_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7388,
                             "data": {
@@ -52030,7 +52030,7 @@
                               }
                             }
                           },
-                          "_flow_vol_aqueous_settler_3_inlet_ref": {
+                          "_flow_vol_aqueous_settler_3_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7390,
                             "data": {
@@ -52045,7 +52045,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_aqueous_settler_3_inlet_ref": {
+                          "_conc_mass_comp_aqueous_settler_3_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7392,
                             "data": {
@@ -52204,7 +52204,7 @@
                               }
                             }
                           },
-                          "_temperature_aqueous_settler_3_inlet_ref": {
+                          "_temperature_aqueous_settler_3_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7410,
                             "data": {
@@ -52219,7 +52219,7 @@
                               }
                             }
                           },
-                          "_pressure_aqueous_settler_3_inlet_ref": {
+                          "_pressure_aqueous_settler_3_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7412,
                             "data": {
@@ -52234,7 +52234,7 @@
                               }
                             }
                           },
-                          "_flow_vol_aqueous_settler_3_outlet_ref": {
+                          "_flow_vol_aqueous_settler_3_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7414,
                             "data": {
@@ -52249,7 +52249,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_aqueous_settler_3_outlet_ref": {
+                          "_conc_mass_comp_aqueous_settler_3_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7416,
                             "data": {
@@ -52408,7 +52408,7 @@
                               }
                             }
                           },
-                          "_temperature_aqueous_settler_3_outlet_ref": {
+                          "_temperature_aqueous_settler_3_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7434,
                             "data": {
@@ -52423,7 +52423,7 @@
                               }
                             }
                           },
-                          "_pressure_aqueous_settler_3_outlet_ref": {
+                          "_pressure_aqueous_settler_3_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7436,
                             "data": {
@@ -52438,7 +52438,7 @@
                               }
                             }
                           },
-                          "_flow_vol_organic_settler_1_inlet_ref": {
+                          "_flow_vol_organic_settler_1_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7438,
                             "data": {
@@ -52453,7 +52453,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_organic_settler_1_inlet_ref": {
+                          "_conc_mass_comp_organic_settler_1_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7440,
                             "data": {
@@ -52585,7 +52585,7 @@
                               }
                             }
                           },
-                          "_temperature_organic_settler_1_inlet_ref": {
+                          "_temperature_organic_settler_1_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7455,
                             "data": {
@@ -52600,7 +52600,7 @@
                               }
                             }
                           },
-                          "_pressure_organic_settler_1_inlet_ref": {
+                          "_pressure_organic_settler_1_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7457,
                             "data": {
@@ -52615,7 +52615,7 @@
                               }
                             }
                           },
-                          "_flow_vol_organic_settler_1_outlet_ref": {
+                          "_flow_vol_organic_settler_1_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7459,
                             "data": {
@@ -52630,7 +52630,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_organic_settler_1_outlet_ref": {
+                          "_conc_mass_comp_organic_settler_1_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7461,
                             "data": {
@@ -52762,7 +52762,7 @@
                               }
                             }
                           },
-                          "_temperature_organic_settler_1_outlet_ref": {
+                          "_temperature_organic_settler_1_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7476,
                             "data": {
@@ -52777,7 +52777,7 @@
                               }
                             }
                           },
-                          "_pressure_organic_settler_1_outlet_ref": {
+                          "_pressure_organic_settler_1_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7478,
                             "data": {
@@ -52792,7 +52792,7 @@
                               }
                             }
                           },
-                          "_flow_vol_organic_settler_2_inlet_ref": {
+                          "_flow_vol_organic_settler_2_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7480,
                             "data": {
@@ -52807,7 +52807,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_organic_settler_2_inlet_ref": {
+                          "_conc_mass_comp_organic_settler_2_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7482,
                             "data": {
@@ -52939,7 +52939,7 @@
                               }
                             }
                           },
-                          "_temperature_organic_settler_2_inlet_ref": {
+                          "_temperature_organic_settler_2_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7497,
                             "data": {
@@ -52954,7 +52954,7 @@
                               }
                             }
                           },
-                          "_pressure_organic_settler_2_inlet_ref": {
+                          "_pressure_organic_settler_2_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7499,
                             "data": {
@@ -52969,7 +52969,7 @@
                               }
                             }
                           },
-                          "_flow_vol_organic_settler_2_outlet_ref": {
+                          "_flow_vol_organic_settler_2_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7501,
                             "data": {
@@ -52984,7 +52984,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_organic_settler_2_outlet_ref": {
+                          "_conc_mass_comp_organic_settler_2_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7503,
                             "data": {
@@ -53116,7 +53116,7 @@
                               }
                             }
                           },
-                          "_temperature_organic_settler_2_outlet_ref": {
+                          "_temperature_organic_settler_2_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7518,
                             "data": {
@@ -53131,7 +53131,7 @@
                               }
                             }
                           },
-                          "_pressure_organic_settler_2_outlet_ref": {
+                          "_pressure_organic_settler_2_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7520,
                             "data": {
@@ -53146,7 +53146,7 @@
                               }
                             }
                           },
-                          "_flow_vol_organic_settler_3_inlet_ref": {
+                          "_flow_vol_organic_settler_3_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7522,
                             "data": {
@@ -53161,7 +53161,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_organic_settler_3_inlet_ref": {
+                          "_conc_mass_comp_organic_settler_3_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7524,
                             "data": {
@@ -53293,7 +53293,7 @@
                               }
                             }
                           },
-                          "_temperature_organic_settler_3_inlet_ref": {
+                          "_temperature_organic_settler_3_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7539,
                             "data": {
@@ -53308,7 +53308,7 @@
                               }
                             }
                           },
-                          "_pressure_organic_settler_3_inlet_ref": {
+                          "_pressure_organic_settler_3_in_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7541,
                             "data": {
@@ -53323,7 +53323,7 @@
                               }
                             }
                           },
-                          "_flow_vol_organic_settler_3_outlet_ref": {
+                          "_flow_vol_organic_settler_3_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7543,
                             "data": {
@@ -53338,7 +53338,7 @@
                               }
                             }
                           },
-                          "_conc_mass_comp_organic_settler_3_outlet_ref": {
+                          "_conc_mass_comp_organic_settler_3_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7545,
                             "data": {
@@ -53470,7 +53470,7 @@
                               }
                             }
                           },
-                          "_temperature_organic_settler_3_outlet_ref": {
+                          "_temperature_organic_settler_3_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7560,
                             "data": {
@@ -53485,7 +53485,7 @@
                               }
                             }
                           },
-                          "_pressure_organic_settler_3_outlet_ref": {
+                          "_pressure_organic_settler_3_out_ref": {
                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                             "__id__": 7562,
                             "data": {

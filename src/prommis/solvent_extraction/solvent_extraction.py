@@ -138,9 +138,6 @@ class SolventExtractionInitializer(ModularInitializerBase):
 
         model.mscontactor.heterogeneous_reaction_extent.fix(1e-8)
 
-        model.mscontactor.volume.fix()
-        model.mscontactor.volume_frac_stream[:, :, "aqueous"].fix()
-
         # Initialize MSContactor
         msc_init = model.mscontactor.default_initializer(
             ssc_solver_options=self.config.ssc_solver_options,

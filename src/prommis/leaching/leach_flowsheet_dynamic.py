@@ -11,7 +11,13 @@ parameters and data for West Kentucky No. 13 coal refuse.
 Authors: Arkoprabho Dasgupta, Akintomiwa Ojo
 """
 import matplotlib.pyplot as plt
-from pyomo.environ import ConcreteModel, TransformationFactory, units, Var, Constraint
+from pyomo.environ import (
+    ConcreteModel,
+    TransformationFactory,
+    units,
+    Var,
+    Suffix,
+)
 from pyomo.dae.flatten import flatten_dae_components
 
 from idaes.core import FlowsheetBlock
@@ -77,6 +83,7 @@ def copy_first_steady_state(m):
     This function is used to initialize all the time discrete variables to the
     initial steady state value.
     """
+
     regular_vars, time_vars = flatten_dae_components(m, m.fs.time, Var, active=True)
     # Copy initial conditions forward
     for var in time_vars:
@@ -104,10 +111,10 @@ def set_inputs(m, perturb_time):
         if t <= perturb_time:
             m.fs.leach.liquid_inlet.flow_vol[t].fix(224.3 * units.L / units.hour)
         else:
-            m.fs.leach.liquid_inlet.flow_vol[t].fix(224.3 * units.L / units.hour)
+            m.fs.leach.liquid_inlet.flow_vol[t].fix(300 * units.L / units.hour)
 
     m.fs.leach.liquid_inlet.conc_mass_comp.fix(1e-10 * units.mg / units.L)
-
+    m.fs.leach.liquid_inlet.conc_mass_comp[:, "H2O"].fix(1e6 * units.mg / units.L)
     m.fs.leach.liquid_inlet.conc_mass_comp[:, "H"].fix(
         2 * 0.05 * 1e3 * units.mg / units.L
     )
@@ -150,24 +157,20 @@ def set_inputs(m, perturb_time):
         7.54827e-06 * units.kg / units.kg
     )
 
-    # Fixing the volume and the volumetric phases of the leach reactor
+    # Fixing the volume of the leach reactor
     m.fs.leach.volume.fix(100 * units.gallon)
     m.fs.leach.mscontactor.volume.fix(100 * units.gallon)
-    m.fs.leach.mscontactor.volume_frac_stream[0, :, "liquid"].fix(0.5)
 
     @m.Constraint(m.fs.time, m.fs.leach.mscontactor.elements)
     def volume_fraction_rule(m, t, s):
-        if t == m.fs.time.first():
-            return Constraint.Skip
-        else:
-            theta_s = m.fs.leach.mscontactor.volume_frac_stream[t, s, "solid"]
-            theta_l = m.fs.leach.mscontactor.volume_frac_stream[t, s, "liquid"]
-            v_l = m.fs.leach.mscontactor.liquid[t, s].flow_vol
-            solid_dens_mass = m.fs.leach.config.solid_phase[
-                "property_package"
-            ].dens_mass
-            v_s = m.fs.leach.mscontactor.solid[t, s].flow_mass / solid_dens_mass
-            return v_l * theta_s == v_s * theta_l
+
+        scale = 1 / 32
+        theta_s = m.fs.leach.mscontactor.volume_frac_stream[t, s, "solid"]
+        theta_l = m.fs.leach.mscontactor.volume_frac_stream[t, s, "liquid"]
+        v_l = m.fs.leach.mscontactor.liquid[t, s].flow_vol
+        solid_dens_mass = m.fs.leach.config.solid_phase["property_package"].dens_mass
+        v_s = m.fs.leach.mscontactor.solid[t, s].flow_mass / solid_dens_mass
+        return theta_l * v_s == theta_s * v_l * scale
 
     # Fixing the variable values at t=0
     m.fs.leach.mscontactor.liquid[0, :].flow_vol.fix()
@@ -201,14 +204,52 @@ def set_inputs(m, perturb_time):
     m.fs.leach.mscontactor.solid[0, :].mass_frac_comp["Fe2O3"].fix()
     m.fs.leach.mscontactor.solid[0, :].flow_mass.fix()
 
-    m.fs.leach.mscontactor.liquid_inherent_reaction_extent[0.0, 1, "Ka2"].fix()
+    m.fs.leach.mscontactor.liquid_inherent_reaction_extent[0.0, :, "Ka2"].fix()
 
 
-if __name__ == "__main__":
+def set_scaling(m):
+    """
+    Apply scaling factors to improve solver performance.
+    """
+    m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
-    time_duration = 24
-    perturb_time = 12
-    number_of_tanks = 1
+    for t in m.fs.time:
+        for s in m.fs.leach.mscontactor.elements:
+            for j in m.fs.coal.component_list:
+                if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
+                    m.scaling_factor[
+                        m.fs.leach.mscontactor.solid[t, s].mass_frac_comp[j]
+                    ] = 1e5
+                    m.scaling_factor[
+                        m.fs.leach.mscontactor.solid_inlet_state[t].mass_frac_comp[j]
+                    ] = 1e5
+                    m.scaling_factor[
+                        m.fs.leach.mscontactor.heterogeneous_reactions[
+                            t, s
+                        ].reaction_rate[j]
+                    ] = 1e5
+                    m.scaling_factor[
+                        m.fs.leach.mscontactor.solid[t, s].conversion_eq[j]
+                    ] = 1e3
+                    m.scaling_factor[
+                        m.fs.leach.mscontactor.solid_inlet_state[t].conversion_eq[j]
+                    ] = 1e3
+                    m.scaling_factor[
+                        m.fs.leach.mscontactor.heterogeneous_reactions[
+                            t, s
+                        ].reaction_rate_eq[j]
+                    ] = 1e5
+            for j in m.fs.leach_soln.component_list:
+                if j not in ["H2O"]:
+                    m.scaling_factor[
+                        m.fs.leach.mscontactor.liquid[t, s].conc_mass_comp[j]
+                    ] = 1e5
+                    m.scaling_factor[
+                        m.fs.leach.mscontactor.liquid_inlet_state[t].conc_mass_comp[j]
+                    ] = 1e5
+
+
+def main(time_duration, perturb_time, number_of_tanks):
 
     # Call the build_model function to create the model
     m = build_model(time_duration, number_of_tanks)
@@ -225,36 +266,48 @@ if __name__ == "__main__":
     # Set the inputs for the model
     set_inputs(m, perturb_time)
 
-    # Solve the model
-    solver = get_solver("ipopt")
-    solver.solve(m, tee=True)
+    set_scaling(m)
 
-    # Solid stream outlet values at final time
-    m.fs.leach.mscontactor.solid[time_duration, number_of_tanks].flow_mass.pprint()
-    m.fs.leach.mscontactor.solid[time_duration, number_of_tanks].mass_frac_comp.pprint()
+    return m
 
-    # Liquid stream outlet values at final time
-    m.fs.leach.mscontactor.liquid[time_duration, number_of_tanks].flow_vol.pprint()
-    m.fs.leach.mscontactor.liquid[
-        time_duration, number_of_tanks
-    ].conc_mass_comp.pprint()
 
-    # Plotting the results for REE oxides
-    REE_set = m.fs.coal.component_list - ["inerts", "Al2O3", "Fe2O3", "CaO"]
-    for e in REE_set:
-        plt.plot(m.fs.time, m.fs.leach.recovery[:, e]())
-    plt.legend(REE_set)
-    plt.xlabel("Time (h)")
-    plt.ylabel("Recovery %")
-    plt.axvline(
-        x=perturb_time,
-        color="r",
-        linestyle="--",
-        label="Perturbation at t=12h",
-    )
-    plt.title("REE oxide recovery variation wrt time, with perturbation at t=12 ")
-    plt.figure()
-    plt.plot(m.fs.time, m.fs.leach.mscontactor.solid[:, :].flow_mass())
-    plt.title("Solid mass flow rate variation wrt time")
-    plt.xlabel("Time (h)")
-    plt.ylabel("Solid mass flow rate (kg/h)")
+time_duration = 24
+perturb_time = 12
+number_of_tanks = 1
+m = main(time_duration, perturb_time, number_of_tanks)
+scaling = TransformationFactory("core.scale_model")
+scaled_model = scaling.create_using(m, rename=False)
+
+# Solve the model
+solver = get_solver("ipopt_v2")
+solver.solve(scaled_model, tee=True)
+
+scaling.propagate_solution(scaled_model, m)
+
+# Solid stream outlet values at final time
+m.fs.leach.mscontactor.solid[time_duration, number_of_tanks].flow_mass.pprint()
+m.fs.leach.mscontactor.solid[time_duration, number_of_tanks].mass_frac_comp.pprint()
+
+# Liquid stream outlet values at final time
+m.fs.leach.mscontactor.liquid[time_duration, number_of_tanks].flow_vol.pprint()
+m.fs.leach.mscontactor.liquid[time_duration, number_of_tanks].conc_mass_comp.pprint()
+
+# Plotting the results for REE oxides
+REE_set = m.fs.coal.component_list - ["inerts", "Al2O3", "Fe2O3", "CaO"]
+for e in REE_set:
+    plt.plot(m.fs.time, m.fs.leach.recovery[:, e]())
+plt.legend(REE_set)
+plt.xlabel("Time (h)")
+plt.ylabel("Recovery %")
+plt.axvline(
+    x=perturb_time,
+    color="r",
+    linestyle="--",
+    label="Perturbation at t=12h",
+)
+plt.title("REE oxide recovery variation wrt time, with perturbation at t=12 ")
+plt.figure()
+plt.plot(m.fs.time, m.fs.leach.mscontactor.solid[:, :].flow_mass())
+plt.title("Solid mass flow rate variation wrt time")
+plt.xlabel("Time (h)")
+plt.ylabel("Solid mass flow rate (kg/h)")

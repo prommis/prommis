@@ -2,11 +2,11 @@
   "__metadata__": {
     "format_version": 4,
     "date": "2025-06-27",
-    "time": "11:56:28.565529",
+    "time": "13:13:03.557204",
     "other": {},
     "__performance__": {
       "n_components": 7806,
-      "etime_make_dict": 0.05689549446105957
+      "etime_make_dict": 0.038698673248291016
     }
   },
   "unknown": {

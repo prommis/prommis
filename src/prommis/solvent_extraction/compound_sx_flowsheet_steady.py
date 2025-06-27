@@ -158,17 +158,19 @@ def main(dosage, number_of_stages):
     return m
 
 
-dosage = 5
-number_of_stages = 3
+if __name__ == "__main__":
 
-m = main(dosage, number_of_stages)
+    dosage = 5
+    number_of_stages = 3
 
-initializer = m.fs.compound_solex.default_initializer()
-initializer.initialize(m.fs.compound_solex)
+    m = main(dosage, number_of_stages)
 
-solver = get_solver("ipopt_v2")
-solver.options["max_iter"] = 10000
+    initializer = m.fs.compound_solex.default_initializer()
+    initializer.initialize(m.fs.compound_solex)
 
-results = solver.solve(m, tee=True)
+    solver = get_solver("ipopt_v2")
+    solver.options["max_iter"] = 10000
 
-to_json(m, fname="compound_solvent_extraction.json", human_read=True)
+    results = solver.solve(m, tee=True)
+
+    to_json(m, fname="compound_solvent_extraction.json", human_read=True)

@@ -23,7 +23,7 @@ from prommis.solvent_extraction.compound_sx_flowsheet_dynamic import (
 solver = get_solver()
 
 
-class TestSXmodel:
+class TestSXdynamicmodel:
     @pytest.fixture(scope="class")
     def Comp_SolEx_frame(self):
         dosage = 5

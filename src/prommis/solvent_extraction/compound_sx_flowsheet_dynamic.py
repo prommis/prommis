@@ -252,34 +252,36 @@ number_of_stages = 3
 time_duration = 12
 perturb_time = 4
 
-m = build_model(dosage, number_of_stages, time_duration)
-discretization_scheme(m)
-from_json(m, fname="compound_solvent_extraction.json")
-copy_first_steady_state(m)
-set_inputs(m, dosage, perturb_time)
-set_initial_guess(m)
+if __name__ == "__main__":
 
-solver = get_solver("ipopt_v2")
-solver.options["max_iter"] = 10000
-# solver.options["tol"] = 1e-5
-results = solver.solve(m, tee=True)
+    m = build_model(dosage, number_of_stages, time_duration)
+    discretization_scheme(m)
+    from_json(m, fname="compound_solvent_extraction.json")
+    copy_first_steady_state(m)
+    set_inputs(m, dosage, perturb_time)
+    set_initial_guess(m)
 
-percentage_recovery = {}
-REE_set = ["Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
+    solver = get_solver("ipopt_v2")
+    solver.options["max_iter"] = 10000
+    # solver.options["tol"] = 1e-5
+    results = solver.solve(m, tee=True)
 
-for e in REE_set:
-    percentage_recovery[e] = [
-        (
-            1
-            - (
-                m.fs.compound_solex.aqueous_outlet.conc_mass_comp[t, e]()
-                * m.fs.compound_solex.aqueous_outlet.flow_vol[t]()
+    percentage_recovery = {}
+    REE_set = ["Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
+
+    for e in REE_set:
+        percentage_recovery[e] = [
+            (
+                1
+                - (
+                    m.fs.compound_solex.aqueous_outlet.conc_mass_comp[t, e]()
+                    * m.fs.compound_solex.aqueous_outlet.flow_vol[t]()
+                )
+                / (
+                    m.fs.compound_solex.aqueous_inlet.conc_mass_comp[t, e]()
+                    * m.fs.compound_solex.aqueous_inlet.flow_vol[t]()
+                )
             )
-            / (
-                m.fs.compound_solex.aqueous_inlet.conc_mass_comp[t, e]()
-                * m.fs.compound_solex.aqueous_inlet.flow_vol[t]()
-            )
-        )
-        * 100
-        for t in m.fs.time
-    ]
+            * 100
+            for t in m.fs.time
+        ]

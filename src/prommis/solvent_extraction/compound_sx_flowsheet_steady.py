@@ -13,7 +13,6 @@ from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.compound_solvent_extraction import (
     CompoundSolventExtraction,
-    CompoundSolventExtractionInitializer,
 )
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,

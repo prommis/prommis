@@ -18,7 +18,7 @@ from idaes.core.solvers import get_solver
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from compound_solvent_extraction import (
+from prommis.solvent_extraction.compound_solvent_extraction import (
     CompoundSolventExtraction,
 )
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (

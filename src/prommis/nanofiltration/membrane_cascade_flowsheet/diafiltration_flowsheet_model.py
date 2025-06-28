@@ -461,8 +461,8 @@ class DiafiltrationModel:
         @m.Expression()
         def rec_perc_li(b):
             return b.rec_mass_li / (
-                m.fs.split_feed.mixed_state[0].flow_mass_solute["Co"]
-                + m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute["Co"]
+                m.fs.split_feed.mixed_state[0].flow_mass_solute["Li"]
+                + m.fs.split_diafiltrate.mixed_state[0].flow_mass_solute["Li"]
             )
 
         # mass recovery objectives

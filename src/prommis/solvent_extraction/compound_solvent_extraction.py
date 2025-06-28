@@ -525,14 +525,3 @@ class CompoundSolventExtractionData(UnitModelBlockData):
             )
 
         TransformationFactory("network.expand_arcs").apply_to(self)
-
-        for i in self.elements:
-            for x in self.aqueous_settler[i].unit.length_domain:
-                if x != 0:
-                    self.aqueous_settler[i].unit.properties[:, x].temperature.fix(
-                        305.15 * units.K
-                    )
-                    P = value(self.aqueous_settler[i].unit.properties[0, 0].pressure)
-                    self.aqueous_settler[i].unit.properties[:, x].pressure.fix(
-                        P * units.Pa
-                    )

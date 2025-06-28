@@ -172,32 +172,6 @@ def set_inputs(m, dosage, perturb_time):
     m.fs.compound_solex.aqueous_settler[:].unit.length.fix(0.4)
     m.fs.compound_solex.organic_settler[:].unit.length.fix(0.4)
 
-    for s in m.fs.compound_solex.elements:
-        for x in m.fs.compound_solex.aqueous_settler[s].unit.length_domain:
-            if x != 0:
-                for e in m.fs.leach_soln.component_list:
-                    if e not in ["H2O", "HSO4"]:
-                        m.fs.compound_solex.aqueous_settler[s].unit.properties[
-                            0, x
-                        ].conc_mass_comp[e].fix()
-                m.fs.compound_solex.aqueous_settler[s].unit.properties[
-                    0, x
-                ].flow_vol.fix()
-                m.fs.compound_solex.aqueous_settler[s].unit.properties[
-                    :, x
-                ].temperature.fix()
-                m.fs.compound_solex.aqueous_settler[s].unit.inherent_reaction_extent[
-                    0, x, "Ka2"
-                ].fix()
-                P = value(
-                    m.fs.compound_solex.aqueous_settler[s]
-                    .unit.properties[0, 0]
-                    .pressure
-                )
-                m.fs.compound_solex.aqueous_settler[s].unit.properties[
-                    :, x
-                ].pressure.fix(P * units.Pa)
-
 
 def set_initial_guess(m):
 
@@ -224,6 +198,31 @@ def set_initial_guess(m):
         ].fix()
 
     for s in m.fs.compound_solex.elements:
+        for x in m.fs.compound_solex.aqueous_settler[s].unit.length_domain:
+            if x != 0:
+                for e in m.fs.leach_soln.component_list:
+                    if e not in ["H2O", "HSO4"]:
+                        m.fs.compound_solex.aqueous_settler[s].unit.properties[
+                            0, x
+                        ].conc_mass_comp[e].fix()
+                m.fs.compound_solex.aqueous_settler[s].unit.properties[
+                    0, x
+                ].flow_vol.fix()
+                m.fs.compound_solex.aqueous_settler[s].unit.properties[
+                    :, x
+                ].temperature.fix()
+                m.fs.compound_solex.aqueous_settler[s].unit.inherent_reaction_extent[
+                    0, x, "Ka2"
+                ].fix()
+                P = value(
+                    m.fs.compound_solex.aqueous_settler[s]
+                    .unit.properties[0, 0]
+                    .pressure
+                )
+                m.fs.compound_solex.aqueous_settler[s].unit.properties[
+                    :, x
+                ].pressure.fix(P * units.Pa)
+
         for x in m.fs.compound_solex.organic_settler[s].unit.length_domain:
             if x != 0:
                 for e in m.fs.prop_o.component_list:

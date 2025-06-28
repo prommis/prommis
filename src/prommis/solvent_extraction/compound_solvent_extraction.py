@@ -1,7 +1,6 @@
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
 from pyomo.environ import (
     Block,
-    units,
     RangeSet,
     TransformationFactory,
     value,

@@ -306,10 +306,12 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
         ax.add_patch(outer_box)
 
         if i != num_boxes - 1:
-            if model['Membrane Area'][i]*0.1 - model['Li product flows'][i*3] > tol:
+            if model["Membrane Area"][i] * 0.1 - model["Li product flows"][i * 3] > tol:
                 # Draw arrows from bottom of box to top of next box
                 ax.arrow(
-                    x_start + box_size + 0.03,  # Start X position (shifted further right)
+                    x_start
+                    + box_size
+                    + 0.03,  # Start X position (shifted further right)
                     y_start + 0.05,  # Y position (above bottom border)
                     (spacing - 0.12) / 2,  # X direction (shorter arrow)
                     0,  # Y direction

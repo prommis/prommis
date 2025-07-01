@@ -68,7 +68,7 @@ class ByproductRecoveryData(UnitModelBlockData):
         self.material_production = Var(
             self.materials,
             initialize=100,
-            units=pyunits.kg,
+            units=pyunits.kg / pyunits.yr,
             doc="Amount of material produced",
         )
         self.market_value = Var(
@@ -92,7 +92,7 @@ class ByproductRecoveryData(UnitModelBlockData):
         self.conversion_cost = Var(
             self.materials,
             initialize=0,
-            units=pyunits.USD_2021,
+            units=pyunits.USD_2021 / pyunits.yr,
             doc="Cost of conversion if applicable",
         )
         self.added_process_steps = Var(
@@ -104,11 +104,11 @@ class ByproductRecoveryData(UnitModelBlockData):
         self.added_process_cost = Var(
             self.materials,
             initialize=0,
-            units=pyunits.USD_2021,
+            units=pyunits.USD_2021 / pyunits.yr,
             doc="Additional cost for purification",
         )
 
-        # Revenue Calculation (Summing Over Materials)
+        # Revenue Calculation (Summing Over Materials) (USD/yr)
         self.potential_revenue = Expression(
             expr=sum(
                 self.material_production[m]
@@ -118,7 +118,7 @@ class ByproductRecoveryData(UnitModelBlockData):
             doc="Total revenue from byproduct recovery across materials",
         )
 
-        # Cost Calculation (Summing Over Materials)
+        # Cost Calculation (Summing Over Materials) (USD/yr)
         self.total_recovery_cost = Expression(
             expr=sum(
                 self.conversion_cost[m] * self.conversion_possible[m]
@@ -128,7 +128,7 @@ class ByproductRecoveryData(UnitModelBlockData):
             doc="Total cost of byproduct recovery across materials",
         )
 
-        # Net Benefit Calculation
+        # Net Benefit Calculation (USD/yr)
         self.net_benefit = Expression(
             expr=self.potential_revenue - self.total_recovery_cost,
             doc="Net benefit of byproduct recovery across all materials",
@@ -140,9 +140,9 @@ class ByproductRecoveryData(UnitModelBlockData):
         """
         net_benefit_value = value(self.net_benefit)
         if net_benefit_value > 0:
-            return f"✅ Byproduct recovery is financially viable. Net Benefit: ${net_benefit_value:.2f}"
+            return f"✅ Byproduct recovery is financially viable. Net Benefit: {net_benefit_value:.2f} $/yr"
         else:
-            return f"❌ Byproduct recovery is NOT financially viable. Loss: ${-net_benefit_value:.2f}"
+            return f"❌ Byproduct recovery is NOT financially viable. Loss: {-net_benefit_value:.2f} $/yr"
 
 
 def determine_example_usage():

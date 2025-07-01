@@ -68,30 +68,29 @@ def configure_model(m, obj_func):
     # Check the objective function.
     if obj_func == "NPV":
         # deactivate the cost of recovery constraints and objective function if the NPV objective function is chosen.
-        m.cost_of_recovery.deactivate()
+        m.fs.costing.cost_of_recovery.deactivate()
     else:
         # deactivate the net present value constraints and objective function if the cost of recovery objective function is chosen.
-        m.net_present_value.deactivate()
+        m.fs.costing.net_present_value.deactivate()
 
     # Check if environmental impacts are considered.
-    if pyo.value(m.environmental_impacts.consider_environmental_impacts) == False:
+    if pyo.value(m.fs.environmental_impacts.consider_environmental_impacts) == False:
         # deactivate environmental impact constraints if they are not considered.
-        m.environmental_impacts.deactivate()
+        m.fs.environmental_impacts.deactivate()
 
     # Check if byproduct valorization is considered.  Different constraints are considered depending on if they are considered or not.
     if (
-        pyo.value(m.byproduct_valorization_params.consider_byproduct_valorization)
+        pyo.value(m.fs.byproduct_valorization.consider_byproduct_valorization)
         == True
     ):
         # deactivate the constraints that're associated with no byproduct valorization if it is considered.
-        m.no_byproduct_valorization.deactivate()
+        m.fs.no_byproduct_valorization.deactivate()
     else:
         # deactivate the constraints that're associated with byproduct valorization if it is not considered.
-        m.byproduct_valorization.deactivate()
+        m.fs.byproduct_valorization.deactivate()
 
 
 def build_model(
-    m,
     ### Plant lifetime parameters
     plant_start,
     plant_lifetime,
@@ -110,6 +109,7 @@ def build_model(
     opt_var_oc_params,
     operators_per_discrete_unit,
     yearly_cost_per_unit,
+    capital_cost_per_unit,
     processing_rate,
     num_operators,
     labor_rate,
@@ -122,6 +122,9 @@ def build_model(
     ### Byproduct valorization parameters
     consider_byproduct_valorization,
     byproduct_values,
+    byproduct_opt_conversions,
+    ### Choice of objective function
+    obj_func,
 ):
 
     #################################################################################################
@@ -165,7 +168,7 @@ def build_model(
         num_operators,
         labor_rate,
     )
-    # Create separate block to hold operating parameters.
+    # Create a costing block, and add operating parameters to it.
     add_operating_params(
         m,
         profit,
@@ -181,7 +184,7 @@ def build_model(
     ### Costing parameters
     # Check that costing parameters are feasible.
     check_discretized_costing_params(m, discretized_purchased_equipment_cost)
-    # Create a separate block to hold costing parameters.
+    # Create add parameters to costing block
     add_discretized_costing_params(m, discretized_purchased_equipment_cost)
 
     ### Mass balances
@@ -221,9 +224,7 @@ def build_model(
     add_byproduct_valorization_cons(m)
 
     ### Configure model
-    configure_model(m, "NPV")
+    configure_model(m, obj_func)
 
-    ### Solve model
-    solver = get_solver(solver="gurobi")
-    solver.options["NumericFocus"] = 2
-    results = solver.solve(m, tee="True")
+    ### Return model
+    return m

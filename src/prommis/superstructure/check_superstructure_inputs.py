@@ -93,7 +93,7 @@ def check_feed_params(
     # Define a set for the years in which the amount of available feed is defined.
     feed_years = set(available_feed.keys())
     # Define a set for the years in which the plant is in operation.
-    operational_years = set(m.plant_lifetime_params.operational_range.data())
+    operational_years = set(m.fs.operational_range.data())
     # Define a set for the keys in prod_comp_mass.
     prod_comp_mass_keys = set(prod_comp_mass.keys())
     # Define a set for the tracked components.
@@ -263,7 +263,7 @@ def check_supe_formulation_params(
         for k in range(1, options_in_stage[j] + 1)
     }
     # Define a set for all the tracked components.
-    tracked_comps = set(m.feed_params.tracked_comps.data())
+    tracked_comps = set(m.fs.tracked_comps.data())
     # Define a set for the keys of option_outlets.
     option_outlets_keys = set(option_outlets.keys())
     # Define a set for all the options in the superstructure (except for the last stage).
@@ -606,15 +606,15 @@ def check_operating_params(
     # Define a set of all the keys in profit dict.
     profit_opt_keys = set(profit.keys())
     # Define a set containing all the options in the final stage.
-    final_opts_set = set(m.supe_form_params.final_opts_set)
+    final_opts_set = set(m.fs.final_opts_set)
     # Define a set of all the tracked components.
-    tracked_comps = set(m.feed_params.tracked_comps.data())
+    tracked_comps = set(m.fs.tracked_comps.data())
     # Define a set containing the keys in the opt_var_oc_params dict.
     opt_var_oc_params_keys = set(opt_var_oc_params.keys())
     # Define a set containing all the discrete options.
-    discrete_opts_set = set(m.supe_form_params.discrete_opts_set.data())
+    discrete_opts_set = set(m.fs.discrete_opts_set.data())
     # Define a set containing all the continuous options.
-    continuous_opts_set = set(m.supe_form_params.continuous_opts_set.data())
+    continuous_opts_set = set(m.fs.continuous_opts_set.data())
     # Define a set containing the necessary variable operating parameters for all continuous options.
     var_oc_params = set(["a", "b"])
     # Define a set containing the keys of the operators_per_discrete_unit dict.
@@ -671,7 +671,7 @@ def check_operating_params(
         )
 
     ## Check that profit per product is in terms of the tracked components for all options in the final stage and are all nonnegative.
-    for opt in m.supe_form_params.final_opts_set:
+    for opt in m.fs.final_opts_set:
         # Check for missing profits.
         profit_tracked_comps = set(profit[opt].keys())
         # Keep track of the tracked components for which no profit per component is defined.
@@ -868,19 +868,19 @@ def check_discretized_costing_params(m, discretized_purchased_equipment_cost):
     ### Run tests
     ## Check that discretized capex provided for all continuous options
     # and check that discretized capex not provided for options that utilize discrete units.
-    for opt in m.supe_form_params.continuous_opts_set:
+    for opt in m.fs.continuous_opts_set:
         # Keep track of the continuous opts for which discretized data is not defined for.
         if opt not in discretized_purchased_equipment_cost_opts_set:
             missing_continuous_opts.append(opt)
     # Check that discretized capex not provided for discrete opts.
-    for opt in m.supe_form_params.discrete_opts_set:
+    for opt in m.fs.discrete_opts_set:
         # Keep track of the discrete options for which discretized capex data is defined for.
         if opt in discretized_purchased_equipment_cost_opts_set:
             discrete_opts.append(opt)
     # Check all options in discretized capex are feasible.
     for opt in discretized_purchased_equipment_cost_opts_set:
         # Keep track of the infeasible opts
-        if opt not in m.supe_form_params.continuous_opts_set:
+        if opt not in m.fs.continuous_opts_set:
             infeasible_opts.append(opt)
     # Raise error if discretized capex is not provided for all continuous options.
     if missing_continuous_opts:
@@ -899,7 +899,7 @@ def check_discretized_costing_params(m, discretized_purchased_equipment_cost):
         )
 
     ## Check that all options have the same number of discretized data points for flows entering and costs.
-    for opt in m.supe_form_params.continuous_opts_set:
+    for opt in m.fs.continuous_opts_set:
         # Keep track of the number of flowrate data points defined for the option.
         opt_num_flow_data_points = len(
             discretized_purchased_equipment_cost[opt]["Flowrates"]
@@ -958,7 +958,7 @@ def check_environmental_impact_params(
 
         ### Define parameters necessary for tests.
         # Define a set for all the options in the superstructure.
-        all_opts_set = set(m.supe_form_params.all_opts_set.data())
+        all_opts_set = set(m.fs.all_opts_set.data())
         # Define a set for all the keys in the consider_environmental_impacts dict.
         options_environmental_impacts_keys_set = set(
             options_environmental_impacts.keys()
@@ -1055,7 +1055,7 @@ def check_byproduct_valorization_params(
         ## Check that the set of options that produce byproducts is feasible (i.e. they exist within the superstructure).
         for opt in byproduct_producing_options:
             # Keep track of the infeasible options.
-            if opt not in m.supe_form_params.all_opts_set:
+            if opt not in m.fs.all_opts_set:
                 infeasible_options.append(opt)
 
         # Raise an error if there are infeasible options defined.

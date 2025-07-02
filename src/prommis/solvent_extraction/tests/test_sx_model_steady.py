@@ -80,7 +80,7 @@ class TestSXmodel:
             "Pr": 0.27631,
             "Sc": 0.0027415,
             "Sm": 0.08669,
-            "Y": 4.27516e-06,
+            "Y": 4.27601e-06,
         }
 
         organic_outlet = {

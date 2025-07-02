@@ -42,55 +42,12 @@ from prommis.superstructure.check_superstructure_inputs import (
     check_operating_params,
     check_plant_lifetime_params,
     check_supe_formulation_params,
+    check_objective_function_choice,
 )
 
-
-def configure_model(m, obj_func):
-    """
-    The configures the model based on the specifications of the user by activating and deactivating different
-    blocks to ensure the correct constraints are considered.
-
-    Args:
-        m: pyomo model.
-        obj_func: (str) Choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive.
-    """
-    ### Check types and structure.
-    ## Check that obj_fun is of type str.
-    if not isinstance(obj_func, str):
-        raise TypeError("obj_func is not of type str.")
-
-    ### Run tests
-    if (obj_func != "NPV") and (obj_func != "COR"):
-        raise ValueError(
-            "Invalid choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive."
-        )
-
-    # Check the objective function.
-    if obj_func == "NPV":
-        # deactivate the cost of recovery constraints and objective function if the NPV objective function is chosen.
-        m.fs.costing.cost_of_recovery.deactivate()
-    else:
-        # deactivate the net present value constraints and objective function if the cost of recovery objective function is chosen.
-        m.fs.costing.net_present_value.deactivate()
-
-    # Check if environmental impacts are considered.
-    if pyo.value(m.fs.environmental_impacts.consider_environmental_impacts) == False:
-        # deactivate environmental impact constraints if they are not considered.
-        m.fs.environmental_impacts.deactivate()
-
-    # Check if byproduct valorization is considered.  Different constraints are considered depending on if they are considered or not.
-    if (
-        pyo.value(m.fs.byproduct_valorization.consider_byproduct_valorization)
-        == True
-    ):
-        # deactivate the constraints that're associated with no byproduct valorization if it is considered.
-        m.fs.no_byproduct_valorization.deactivate()
-    else:
-        # deactivate the constraints that're associated with byproduct valorization if it is not considered.
-        m.fs.byproduct_valorization.deactivate()
-
-
 def build_model(
+    ### Choice of objective function
+    obj_func,
     ### Plant lifetime parameters
     plant_start,
     plant_lifetime,
@@ -123,13 +80,13 @@ def build_model(
     consider_byproduct_valorization,
     byproduct_values,
     byproduct_opt_conversions,
-    ### Choice of objective function
-    obj_func,
 ):
-
     #################################################################################################
     ### Build model
     m = pyo.ConcreteModel()
+
+    ### Objective function
+    check_objective_function_choice(obj_func)
 
     ### Plant lifetime parameters
     # Check that plant lifetime parameters are feasible.
@@ -199,19 +156,18 @@ def build_model(
     # Generate costing parameters.
     add_costing_params(m)
     # Generate costing variables.
-    add_costing_vars(m)
-    # Generate costing constraints.
-    add_costing_cons(m)
+    add_costing_vars(m, obj_func)
 
     ### Environmental impacts
-    check_environmental_impact_params(
-        m, consider_environmental_impacts, options_environmental_impacts, epsilon
-    )
-    add_environmental_impact_params(
-        m, consider_environmental_impacts, options_environmental_impacts, epsilon
-    )
-    add_environmental_impact_vars(m)
-    add_environmental_impact_cons(m)
+    if consider_environmental_impacts:
+        check_environmental_impact_params(
+            m, consider_environmental_impacts, options_environmental_impacts, epsilon
+        )
+        add_environmental_impact_params(
+            m, consider_environmental_impacts, options_environmental_impacts, epsilon
+        )
+        add_environmental_impact_vars(m)
+        add_environmental_impact_cons(m)
 
     ### Byproduct valorization
     check_byproduct_valorization_params(
@@ -221,10 +177,10 @@ def build_model(
         m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
     )
     add_byproduct_valorization_vars(m)
-    add_byproduct_valorization_cons(m)
 
-    ### Configure model
-    configure_model(m, obj_func)
+    # Generate costing constraints.
+    add_costing_cons(m, obj_func)
+
 
     ### Return model
     return m

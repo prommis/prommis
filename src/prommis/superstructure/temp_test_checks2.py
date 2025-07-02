@@ -37,6 +37,9 @@ from idaes.core.solvers import get_solver
 # ):
 
 #################################################################################################
+### Choice of objectie function
+obj_func = "NPV"
+
 ### Plant Lifetime Params
 plant_start = 2024
 plant_lifetime = 15
@@ -720,12 +723,11 @@ byproduct_opt_conversions = {
     (5, 5): {"Iron oxide": 1},
 }
 
-### Choice of objectie function
-obj_func = "NPV"
-
 #################################################################################################
 ### Build model
 m = build_model(
+    ### Choice of objective function
+    obj_func,
     ### Plant lifetime parameters
     plant_start,
     plant_lifetime,
@@ -758,8 +760,6 @@ m = build_model(
     consider_byproduct_valorization,
     byproduct_values,
     byproduct_opt_conversions,
-    ### Choice of objective function
-    obj_func,
 )
 
 ### Solve model

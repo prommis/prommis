@@ -1099,3 +1099,22 @@ def check_byproduct_valorization_params(
             msg = "The following considered byproducts are not being produced by any options:\n"
             msg += "\n".join(f"{byprod}" for byprod in missing)
             raise ValueError(msg)
+
+def check_objective_function_choice(obj_func):
+    """
+    This function checks that the choice of objective function is feasible.
+
+    Args:
+        obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
+    """
+
+    ### Check types and structure.
+    ## Check that obj_fun is of type str.
+    if not isinstance(obj_func, str):
+        raise TypeError("obj_func is not of type str.")
+
+    ### Run tests
+    if (obj_func != "NPV") and (obj_func != "COR"):
+        raise ValueError(
+            "Invalid choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive."
+        )

@@ -674,7 +674,7 @@ discretized_purchased_equipment_cost = {
 }
 
 ### Objective Function Parameters
-obj_func = "NPV"
+obj_func = "COR"
 
 ### Environmnetal Impact Parameters
 consider_environmental_impacts = False
@@ -769,3 +769,19 @@ results = solver.solve(m, tee="True")
 
 ### Print out results
 m.fs.option_binary_var.display()
+
+# m.fs.costing.npv.display()
+
+# m.fs.costing.cash_flow.display()
+# m.fs.costing.total_profit.display()
+
+# m.fs.feed_entering.display()
+
+# m.fs.costing.display()
+
+# m.fs.costing.cash_flow.display()
+# m.fs.costing.total_profit.display()
+# m.fs.costing.cor.display()
+# m.fs.f_out.display()
+
+# m.fs.costing.calculate_total_profit_cons.display()

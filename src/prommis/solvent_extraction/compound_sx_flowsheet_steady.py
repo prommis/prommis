@@ -1,4 +1,4 @@
-from pyomo.environ import ConcreteModel, units, value
+from pyomo.environ import ConcreteModel, units
 
 from idaes.core import (
     FlowDirection,

@@ -3,7 +3,6 @@ from pyomo.environ import (
     units,
     TransformationFactory,
     Var,
-    value,
 )
 from pyomo.dae.flatten import flatten_dae_components
 

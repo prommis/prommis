@@ -137,6 +137,7 @@ class SolventExtractionInitializer(ModularInitializerBase):
         """
 
         model.mscontactor.heterogeneous_reaction_extent.fix(1e-8)
+        model.mscontactor.volume_frac_stream[:, :, "aqueous"].fix()
 
         # Initialize MSContactor
         msc_init = model.mscontactor.default_initializer(
@@ -146,6 +147,7 @@ class SolventExtractionInitializer(ModularInitializerBase):
         msc_init.initialize(model.mscontactor)
 
         model.mscontactor.heterogeneous_reaction_extent.unfix()
+        model.mscontactor.volume_frac_stream[:, :, "aqueous"].unfix()
 
         solver = self._get_solver()
         results = solver.solve(model)
@@ -254,6 +256,7 @@ class SolventExtractionData(UnitModelBlockData):
     )
 
     def build(self):
+
         super().build()
 
         streams_dict = {
@@ -299,6 +302,23 @@ class SolventExtractionData(UnitModelBlockData):
             initialize=1,
             mutable=True,
         )
+
+        def volume_fraction_rule(b, t, s):
+
+            theta_A = b.mscontactor.volume_frac_stream[t, s, "aqueous"]
+            theta_O = b.mscontactor.volume_frac_stream[t, s, "organic"]
+            v_A = b.mscontactor.aqueous[t, s].flow_vol
+            v_O = b.mscontactor.organic[t, s].flow_vol
+
+            return theta_A * v_O == theta_O * v_A
+
+        self.volume_fraction_constraint = Constraint(
+            self.flowsheet().time, self.mscontactor.elements, rule=volume_fraction_rule
+        )
+
+        if self.config.dynamic is True:
+            t0 = self.flowsheet().time.first()
+            self.volume_fraction_constraint[t0, :].deactivate()
 
         def organic_pressure_calculation(b, t, s):
 

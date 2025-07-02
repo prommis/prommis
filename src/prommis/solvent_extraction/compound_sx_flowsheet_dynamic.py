@@ -4,7 +4,6 @@ from pyomo.environ import (
     TransformationFactory,
     Var,
     value,
-    Constraint,
 )
 from pyomo.dae.flatten import flatten_dae_components
 
@@ -12,7 +11,7 @@ from idaes.core import (
     FlowDirection,
     FlowsheetBlock,
 )
-from idaes.core.util import from_json
+from idaes.core.util import from_json, StoreSpec
 
 from idaes.core.solvers import get_solver
 
@@ -72,7 +71,7 @@ def discretization_scheme(m):
     Discretize the model
     """
     m.discretizer = TransformationFactory("dae.collocation")
-    m.discretizer.apply_to(m, nfe=1, ncp=2, wrt=m.fs.time, scheme="LAGRANGE-RADAU")
+    m.discretizer.apply_to(m, nfe=4, ncp=2, wrt=m.fs.time, scheme="LAGRANGE-RADAU")
 
 
 def copy_first_steady_state(m):
@@ -143,21 +142,6 @@ def set_inputs(m, dosage, perturb_time):
 
     m.fs.compound_solex.mixer[:].unit.mscontactor.volume[:].fix(0.4 * units.m**3)
 
-    @m.Constraint(m.fs.time, m.fs.compound_solex.elements)
-    def volume_fraction_rule(m, t, s):
-        if t == m.fs.time.first():
-            return Constraint.Skip
-        theta_A = m.fs.compound_solex.mixer[s].unit.mscontactor.volume_frac_stream[
-            t, 1, "aqueous"
-        ]
-        theta_O = m.fs.compound_solex.mixer[s].unit.mscontactor.volume_frac_stream[
-            t, 1, "organic"
-        ]
-        v_A = m.fs.compound_solex.mixer[s].unit.mscontactor.aqueous[t, 1].flow_vol
-        v_O = m.fs.compound_solex.mixer[s].unit.mscontactor.organic[t, 1].flow_vol
-
-        return theta_A * v_O == theta_O * v_A
-
     m.fs.compound_solex.mixer[:].unit.mscontactor.aqueous[:, :].temperature.fix(
         305.15 * units.K
     )
@@ -181,6 +165,9 @@ def set_initial_guess(m):
                 e
             ].fix()
 
+    m.fs.compound_solex.mixer[:].unit.mscontactor.volume_frac_stream[
+        0, :, "aqueous"
+    ].fix()
     m.fs.compound_solex.mixer[:].unit.mscontactor.aqueous[0, :].flow_vol.fix()
 
     m.fs.compound_solex.mixer[:].unit.mscontactor.aqueous_inherent_reaction_extent[
@@ -208,20 +195,9 @@ def set_initial_guess(m):
                 m.fs.compound_solex.aqueous_settler[s].unit.properties[
                     0, x
                 ].flow_vol.fix()
-                m.fs.compound_solex.aqueous_settler[s].unit.properties[
-                    :, x
-                ].temperature.fix()
                 m.fs.compound_solex.aqueous_settler[s].unit.inherent_reaction_extent[
                     0, x, "Ka2"
                 ].fix()
-                P = value(
-                    m.fs.compound_solex.aqueous_settler[s]
-                    .unit.properties[0, 0]
-                    .pressure
-                )
-                m.fs.compound_solex.aqueous_settler[s].unit.properties[
-                    :, x
-                ].pressure.fix(P * units.Pa)
 
         for x in m.fs.compound_solex.organic_settler[s].unit.length_domain:
             if x != 0:
@@ -233,36 +209,24 @@ def set_initial_guess(m):
                 m.fs.compound_solex.organic_settler[s].unit.properties[
                     0, x
                 ].flow_vol.fix()
-                m.fs.compound_solex.organic_settler[s].unit.properties[
-                    :, x
-                ].temperature.fix()
-                P = value(
-                    m.fs.compound_solex.organic_settler[s]
-                    .unit.properties[0, 0]
-                    .pressure
-                )
-                m.fs.compound_solex.organic_settler[s].unit.properties[
-                    :, x
-                ].pressure.fix(P * units.Pa)
 
-
-dosage = 5
-number_of_stages = 3
-time_duration = 12
-perturb_time = 4
 
 if __name__ == "__main__":
 
+    dosage = 5
+    number_of_stages = 3
+    time_duration = 12
+    perturb_time = 4
+
     m = build_model(dosage, number_of_stages, time_duration)
     discretization_scheme(m)
-    from_json(m, fname="compound_solvent_extraction.json")
+    from_json(m, fname="compound_solvent_extraction.json", wts=StoreSpec.value())
     copy_first_steady_state(m)
     set_inputs(m, dosage, perturb_time)
     set_initial_guess(m)
 
     solver = get_solver("ipopt_v2")
     solver.options["max_iter"] = 10000
-    # solver.options["tol"] = 1e-5
     results = solver.solve(m, tee=True)
 
     percentage_recovery = {}

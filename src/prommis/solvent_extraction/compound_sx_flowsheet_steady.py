@@ -110,42 +110,11 @@ def set_inputs(m, dosage):
     )
 
     m.fs.compound_solex.mixer[:].unit.mscontactor.volume[:].fix(0.4 * units.m**3)
-    m.fs.compound_solex.mixer[:].unit.mscontactor.volume_frac_stream[
-        :, :, "organic"
-    ].fix(0.5)
 
     m.fs.compound_solex.organic_settler[:].unit.area.fix(1)
     m.fs.compound_solex.aqueous_settler[:].unit.area.fix(1)
     m.fs.compound_solex.aqueous_settler[:].unit.length.fix(1)
     m.fs.compound_solex.organic_settler[:].unit.length.fix(1)
-
-    for s in m.fs.compound_solex.elements:
-        for x in m.fs.compound_solex.aqueous_settler[s].unit.length_domain:
-            if x != 0:
-                m.fs.compound_solex.aqueous_settler[s].unit.properties[
-                    :, x
-                ].temperature.fix(305.15 * units.K)
-                P = value(
-                    m.fs.compound_solex.aqueous_settler[s]
-                    .unit.properties[0, 0]
-                    .pressure
-                )
-                m.fs.compound_solex.aqueous_settler[s].unit.properties[
-                    :, x
-                ].pressure.fix(P * units.Pa)
-        for x in m.fs.compound_solex.organic_settler[s].unit.length_domain:
-            if x != 0:
-                m.fs.compound_solex.organic_settler[s].unit.properties[
-                    :, x
-                ].temperature.fix(305.15 * units.K)
-                P = value(
-                    m.fs.compound_solex.organic_settler[s]
-                    .unit.properties[0, 0]
-                    .pressure
-                )
-                m.fs.compound_solex.organic_settler[s].unit.properties[
-                    :, x
-                ].pressure.fix(P * units.Pa)
 
 
 def main(dosage, number_of_stages):

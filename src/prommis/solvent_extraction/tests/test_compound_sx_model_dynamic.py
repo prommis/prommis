@@ -8,7 +8,7 @@ import os
 from pyomo.environ import check_optimal_termination, value
 
 from idaes.core.solvers import get_solver
-from idaes.core.util import DiagnosticsToolbox, from_json
+from idaes.core.util import DiagnosticsToolbox, from_json, StoreSpec
 
 import pytest
 
@@ -38,7 +38,7 @@ class TestSXmodel:
         json_file_path = os.path.join(
             parent_directory, "compound_solvent_extraction.json"
         )
-        from_json(m, fname=json_file_path)
+        from_json(m, fname=json_file_path, wts=StoreSpec.value())
         copy_first_steady_state(m)
         set_inputs(m, dosage, perturb_time)
         set_initial_guess(m)
@@ -75,22 +75,22 @@ class TestSXmodel:
         time_duration = 12
         aqueous_outlet = {
             "H2O": 1000000,
-            "H": 39.47196,
-            "SO4": 2058.1002,
-            "HSO4": 8021.5031,
-            "Al": 400.13261,
-            "Ca": 102.39299,
-            "Cl": 6.3421e-7,
-            "Ce": 2.10673,
-            "Dy": 0.0010188,
-            "Fe": 586.26075,
-            "Gd": 0.19143,
-            "La": 0.91468,
-            "Nd": 0.88054,
-            "Pr": 0.27649,
-            "Sc": 0.0027415,
-            "Sm": 0.086752,
-            "Y": 4.67305e-06,
+            "H": 39.3626,
+            "SO4": 2062.6383,
+            "HSO4": 8016.9174,
+            "Al": 400.6008,
+            "Ca": 102.5401,
+            "Cl": 7.23224e-07,
+            "Ce": 2.10975,
+            "Dy": 1.03533e-03,
+            "Fe": 588.068,
+            "Gd": 0.19219,
+            "La": 0.91596,
+            "Nd": 0.88173,
+            "Pr": 0.27698,
+            "Sc": 2.7415e-03,
+            "Sm": 8.6918e-02,
+            "Y": 9.91505e-06,
         }
 
         organic_outlet = {
@@ -98,16 +98,16 @@ class TestSXmodel:
             "Ca_o": 7.20595,
             "Ce_o": 0.17169,
             "DEHPA": 46086.679,
-            "Dy_o": 0.046208,
+            "Dy_o": 4.68083e-02,
             "Fe_o": 102.67241,
-            "Gd_o": 0.06724,
+            "Gd_o": 6.72757e-02,
             "Kerosene": 820000,
-            "La_o": 0.071891,
-            "Nd_o": 0.066063,
-            "Pr_o": 0.026727,
-            "Sc_o": 1.76353,
-            "Sm_o": 0.010324,
-            "Y_o": 0.12511,
+            "La_o": 7.1891e-02,
+            "Nd_o": 6.6063e-02,
+            "Pr_o": 2.6727e-02,
+            "Sc_o": 1.76417,
+            "Sm_o": 1.03253e-02,
+            "Y_o": 0.127708,
         }
 
         for k, v in model.fs.compound_solex.organic_outlet.conc_mass_comp.items():

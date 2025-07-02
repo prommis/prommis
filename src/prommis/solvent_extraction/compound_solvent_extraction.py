@@ -1,11 +1,5 @@
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import (
-    Block,
-    RangeSet,
-    TransformationFactory,
-    value,
-    Var,
-)
+from pyomo.environ import Block, RangeSet, TransformationFactory, value, Var, Constraint
 from pyomo.network import Port, Arc
 from pyomo.dae.flatten import flatten_dae_components
 from idaes.core import (
@@ -76,13 +70,13 @@ class CompoundSolventExtractionInitializer(ModularInitializerBase):
                             model,
                             f"{j}_settler_{model.elements.next(e)}_to_mixer_{e}_arc_expanded",
                         ).deactivate()
-                        for k, v in getattr(model, f"{j}_inlet").vars.items():
-                            for i in v:
-                                for k1, v1 in getattr(
-                                    model.mixer[e].unit, f"{j}_inlet"
-                                ).vars.items():
-                                    if k1 == k:
-                                        v1[i].fix(value(v[i]))
+                        src_port = getattr(model, f"{j}_inlet")
+                        dest_port = getattr(model.mixer[e].unit, f"{j}_inlet")
+                        for var_name, src_var_obj in src_port.vars.items():
+                            dest_var_obj = dest_port.vars[var_name]
+                            for idx in src_var_obj:
+                                dest_var_obj[idx].fix(value(src_var_obj[idx]))
+
                 else:
                     if e != model.elements.first():
                         getattr(
@@ -130,13 +124,12 @@ class CompoundSolventExtractionInitializer(ModularInitializerBase):
             model.organic_settler[e].unit.activate()
 
             for j in ["aqueous", "organic"]:
-                for k, v in getattr(model, f"{j}_inlet").vars.items():
-                    for i in v:
-                        for k1, v1 in getattr(
-                            model, f"{j}_settler_{e}_in"
-                        ).vars.items():
-                            if k1 == k:
-                                v1[i].fix(value(v[i]))
+                src_port = getattr(model, f"{j}_inlet")
+                dest_port = getattr(model, f"{j}_settler_{e}_in")
+                for var_name, src_var_obj in src_port.vars.items():
+                    dest_var_obj = dest_port.vars[var_name]
+                    for idx in src_var_obj:
+                        dest_var_obj[idx].fix(value(src_var_obj[idx]))
 
                 target_model = getattr(model, f"{j}_settler")[e].unit
                 target_x = getattr(model, f"{j}_settler")[e].unit.length_domain
@@ -186,8 +179,6 @@ class CompoundSolventExtractionInitializer(ModularInitializerBase):
                         model.del_component(
                             f"{j}_{model.elements.prev(e)}_bypass_{e}_arc"
                         )
-
-        TransformationFactory("network.expand_arcs").apply_to(model)
 
         final_results = solver.solve(model)
 
@@ -354,13 +345,13 @@ class CompoundSolventExtractionData(UnitModelBlockData):
 
             # Declare the mixer tank
             self.mixer[i].unit = SolventExtraction(
+                dynamic=self.config.dynamic,
                 number_of_finite_elements=1,
                 aqueous_stream=self.config.aqueous_stream,
                 organic_stream=self.config.organic_stream,
                 heterogeneous_reaction_package=self.config.heterogeneous_reaction_package,
                 heterogeneous_reaction_package_args=self.config.heterogeneous_reaction_package_args,
                 has_holdup=self.config.has_holdup,
-                dynamic=self.config.dynamic,
             )
 
             # Declare aqueous settler tank
@@ -441,9 +432,35 @@ class CompoundSolventExtractionData(UnitModelBlockData):
                 block=self.organic_settler[i].unit,
             )
 
+        def settler_temperature_outlet(b, t):
+            x0 = b.length_domain.first()
+            xf = b.length_domain.last()
+            return b.properties[t, x0].temperature == b.properties[t, xf].temperature
+
+        def settler_pressure_outlet(b, t):
+            x0 = b.length_domain.first()
+            xf = b.length_domain.last()
+            return b.properties[t, x0].pressure == b.properties[t, xf].pressure
+
         for i in self.elements:
+
+            # Constrain the inlet and outlet temperature and pressure for the settlers
+            self.aqueous_settler[i].unit.temperature_constraint = Constraint(
+                self.flowsheet().time, rule=settler_temperature_outlet
+            )
+            self.organic_settler[i].unit.temperature_constraint = Constraint(
+                self.flowsheet().time, rule=settler_temperature_outlet
+            )
+            self.aqueous_settler[i].unit.pressure_constraint = Constraint(
+                self.flowsheet().time, rule=settler_pressure_outlet
+            )
+            self.organic_settler[i].unit.pressure_constraint = Constraint(
+                self.flowsheet().time, rule=settler_pressure_outlet
+            )
+
             for j in ["aqueous", "organic"]:
 
+                # Declare arcs connecting mixers to their corresponding settler tanks
                 setattr(
                     self,
                     f"mixer_{j}_settler_arc_{i}",

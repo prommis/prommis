@@ -225,25 +225,4 @@ if __name__ == "__main__":
     set_initial_guess(m)
 
     solver = get_solver("ipopt_v2")
-    solver.options["max_iter"] = 10000
     results = solver.solve(m, tee=True)
-
-    percentage_recovery = {}
-    REE_set = ["Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
-
-    for e in REE_set:
-        percentage_recovery[e] = [
-            (
-                1
-                - (
-                    m.fs.compound_solex.aqueous_outlet.conc_mass_comp[t, e]()
-                    * m.fs.compound_solex.aqueous_outlet.flow_vol[t]()
-                )
-                / (
-                    m.fs.compound_solex.aqueous_inlet.conc_mass_comp[t, e]()
-                    * m.fs.compound_solex.aqueous_inlet.flow_vol[t]()
-                )
-            )
-            * 100
-            for t in m.fs.time
-        ]

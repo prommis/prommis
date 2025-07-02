@@ -19,8 +19,7 @@ import pyomo.environ as pyo
 
 def add_plant_lifetime_params_block(m, plant_start, plant_lifetime):
     """
-    This function builds the rest of the plant lifetime parameters from the ones provided by the user, and adds them all to a
-    block.
+    This function builds the rest of the plant lifetime parameters from the ones provided by the user.
 
     Args:
         m: pyomo model.
@@ -62,8 +61,7 @@ def add_feed_params_block(
     m, available_feed, collection_rate, tracked_comps, prod_comp_mass
 ):
     """
-    This function builds the rest of the feed parameters from the ones provided by the user, and adds them all to a
-    block.
+    This function builds the rest of the feed parameters from the ones provided by the user.
 
     Args:
         m: pyomo model.
@@ -118,8 +116,7 @@ def add_supe_formulation_params(
     m, num_stages, options_in_stage, option_outlets, option_efficiencies
 ):
     """
-    This function builds the rest of the superstructure formulation parameters from the ones provided by the user, and adds them all to a
-    block.
+    This function builds the rest of the superstructure formulation parameters from the ones provided by the user.
 
     Args:
         m: pyomo model.
@@ -212,8 +209,7 @@ def add_operating_params(
     labor_rate,
 ):
     """
-    This function builds the rest of the operating parameters from the ones provided by the user, and adds them all to a
-    block.
+    This function builds the rest of the operating parameters from the ones provided by the user.
 
     Args:
         m: pyomo model.
@@ -303,23 +299,23 @@ def add_operating_params(
     )
 
 
-def add_discretized_costing_params(m, discretized_purchased_equipment_cost):
+def add_discretized_costing_params(m, discretized_equipment_cost):
     """
-    This function adds all the discretized costing parameters to a block.
+    This function adds all the discretized costing parameters.
 
     Args:
         m: pyomo model.
-        discretized_purchased_equipment_cost: (dict) Discretized cost by flows entering for each continuous option
+        discretized_equipment_cost: (dict) Discretized cost by flows entering for each continuous option
     """
     ### Define parameters from user input.
     # Define a dict to hold discretized flowrate data for each option.
     flowrates_data = {}
     for opt in m.fs.continuous_opts_set:
-        flowrates_data[opt] = discretized_purchased_equipment_cost[opt]["Flowrates"]
+        flowrates_data[opt] = discretized_equipment_cost[opt]["Flowrates"]
     # Define a dict to hold discretized cost data for each option.
     costs_data = {}
     for opt in m.fs.continuous_opts_set:
-        costs_data[opt] = discretized_purchased_equipment_cost[opt]["Costs"]
+        costs_data[opt] = discretized_equipment_cost[opt]["Costs"]
 
     ### Define necessary pyomo parameters.
     ## Pyomo parameters
@@ -527,7 +523,8 @@ def add_costing_params(m):
     To calculate the capital cost parameters, the methodology presented in NETL's
     Quality Guidelines for Energy System Studies (QGESS)[1] was followed. However, since the methodology was created for costing
     electric power plants, modifications were made to match the economic assumptions made in Keim et al. (2019)[2]. To calculate
-    the fixed and variable operating costs, the methodology followed by Kiem et al. (2019) was followed.
+    the fixed and variable operating costs, the methodology followed by Kiem et al. (2019) was followed. For the objective functions,
+    the user has a choice of either maximizing the net present value, or minimizing the cost of recovery.
 
     **References:**
 
@@ -541,16 +538,67 @@ def add_costing_params(m):
     """
     ## Define parameters
     ## Pyomo parameters
-    m.fs.costing.lang_factor = pyo.Param(initialize=2.97)
+    m.fs.costing.lang_factor = pyo.Param(
+        initialize=2.97,
+        mutable=True,
+        doc="Lang factor for calculating total plant cost from equipment costs. Assumed to be 2.97[2].",
+    )
     m.fs.costing.i_operating_expense_escalation = pyo.Param(
-        initialize=0.03, doc="Operating expenses escalation rate."
+        initialize=0.03,
+        mutable=True,
+        doc="Operating expenses escalation rate. Assumed to be 3%[2].",
     )
     m.fs.costing.i_capital_escalation = pyo.Param(
-        initialize=0.036, doc="Capital expenses escalation rate."
+        initialize=0.036,
+        mutable=True,
+        doc="Capital expenses escalation rate. Assumed to be 3.6%[2].",
     )
     m.fs.costing.discount_factor = pyo.Param(
-        initialize=0.0577, doc="Discount factor for calculate the net present value."
+        initialize=0.0577,
+        mutable=True,
+        doc="Discount factor for calculate the net present value. The after-tax weighted average cost of capital was used (ATWACC)[1].",
     )
+    m.fs.costing.financing_factor = pyo.Param(
+        initialize=0.027,
+        mutable=True,
+        doc="Factor for calculating financing costs from total plant cost. Assumed to be 2.7%[1].",
+    )
+    m.fs.costing.other_costs_factor = pyo.Param(
+        initialize=0.15,
+        mutable=True,
+        doc="Factor for calculating the 'other costs', as defined by QGESS[1] from the total plant cost. Assumed to be 15%[1].",
+    )
+    m.fs.costing.m_and_sm_costing_factor = pyo.Param(
+        initialize=0.02,
+        mutable=True,
+        doc="Factor for calculating Maintenance & Supply Materials. Assumed to be 2% of the total plant cost[2].",
+    )
+    m.fs.costing.sa_and_qa_qc_costing_factor = pyo.Param(
+        initialize=0.1,
+        mutable=True,
+        doc="Factor for calculating Sample Analysis & Quality Assurance/Quality Control. Assumed to be 10% of the cost of labor[2].",
+    )
+    m.fs.costing.s_ip_r_and_d_costing_factor = pyo.Param(
+        initialize=0.01,
+        mutable=True,
+        doc="Factor for calculating Sales, Intellectual Property, and Research & Development. Assumed to be 1% of the total profit[2].",
+    )
+    m.fs.costing.a_and_sl_costing_factor = pyo.Param(
+        initialize=0.2,
+        mutable=True,
+        doc="Factor for calculating Administrative & Supporting Labor. Assumed to be 20% of the cost of labor[2].",
+    )
+    m.fs.costing.fb_costing_factor = pyo.Param(
+        initialize=0.25,
+        mutable=True,
+        doc="Factor for calculating Fringe Benefits. Assumed to be 25% of the cost of labor[2].",
+    )
+    m.fs.costing.pt_and_i_costing_factor = pyo.Param(
+        initialize=0.01,
+        mutable=True,
+        doc="Factor for calculating Property Taxes & Insurance. Assumed to be 1% of the total plant cost[2].",
+    )
+    
 
 
 def add_costing_vars(m, obj_func: str):
@@ -560,7 +608,9 @@ def add_costing_vars(m, obj_func: str):
     To calculate the capital cost parameters, the methodology presented in NETL's
     Quality Guidelines for Energy System Studies (QGESS)[1] was followed. However, since the methodology was created for costing
     electric power plants, modifications were made to match the economic assumptions made in Keim et al. (2019)[2]. To calculate
-    the fixed and variable operating costs, the methodology followed by Kiem et al. (2019) was followed.
+    the fixed and variable operating costs, the methodology followed by Kiem et al. (2019) was followed[2]. To calculate the number
+    of operators needed, the methodology described by Ulrich et al. (2004) was followed[3]. The cash flows were calculated using
+    the methodology described in Seider et al. (2017)[4].
 
     **References:**
 
@@ -568,6 +618,12 @@ def add_costing_vars(m, obj_func: str):
 
     [2] Keim, S. A. *Production of Salable Rare Earths Products from Coal and Coal Byproducts in the U.S. Using Advanced
     Processes: Phase 1*; 2019.
+
+    [3] Ulrich, G. D.; Vasudevan, P. T. *Chemical Engineering Process Design and Economics A Practical Guide*;
+    Process Publishing, 2004.
+
+    [4] Seider, W. D.; Lewin, D. R,; Seader, J.; Gani, S. W. R.; Ng, K. M. *Product and Process Design Principles*;
+    Wiley, 2017.
 
     Args:
         m: pyomo model.
@@ -585,100 +641,106 @@ def add_costing_vars(m, obj_func: str):
 
     # if cor is objective function, build relevant vars
     else:
-        m.fs.costing.cor = pyo.Var(
+        m.fs.costing.cost_of_recovery = pyo.Var(
             domain=pyo.NonNegativeReals, doc="The cost of recovery."
         )
 
     # build vars that're needed regardless of the objective function.
-    m.fs.costing.npv = pyo.Var(domain=pyo.Reals, doc="The net present value.")
+    m.fs.costing.net_present_value = pyo.Var(
+        domain=pyo.Reals, doc="The net present value."
+    )
     m.fs.costing.total_profit = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         doc="The total profit generated by the plant each year.",
     )
-    m.fs.costing.purchased_equipment_cost = pyo.Var(
+    m.fs.costing.equipment_cost = pyo.Var(
         m.fs.all_opts_set,
         domain=pyo.NonNegativeReals,
         doc="The cost of purchased equipment.",
     )
     m.fs.costing.total_plant_cost = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="The total plant cost."
+        domain=pyo.NonNegativeReals, doc="The total plant cost, as defined by QGESS[1]."
     )
     m.fs.costing.financing = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="The total financing cost of the plant."
+        domain=pyo.NonNegativeReals,
+        doc="The total financing cost of the plant, as defined by QGESS[1].",
     )
     m.fs.costing.other_costs = pyo.Var(
         domain=pyo.NonNegativeReals,
         doc="'Other costs' associated with the plant as defined by QGESS[1].",
     )
     m.fs.costing.total_overnight_cost = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="""The total overnight cost of the plant."""
+        domain=pyo.NonNegativeReals,
+        doc="The total overnight cost of the plant, as defined by QGESS[1].",
     )
-    m.fs.costing.opt_var_operating_expense = pyo.Var(
+    m.fs.costing.opt_variable_operating_cost = pyo.Var(
         m.fs.all_opts_set * m.fs.operational_range,
         domain=pyo.Reals,
-        doc="Yearly variable operating expense for each option.",
+        doc="Yearly variable operating expense for each option[2].",
     )
-    m.fs.costing.total_var_operating_expense = pyo.Var(
+    m.fs.costing.aggregate_variable_operating_cost = pyo.Var(
         m.fs.operational_range,
         domain=pyo.Reals,
-        doc="Total yearly variable operating expense.",
+        doc="Total yearly variable operating expense[2].",
     )
     m.fs.costing.operators_per_option = pyo.Var(
         m.fs.all_opts_set,
         domain=pyo.NonNegativeReals,
-        doc="The number of operators needed for each option.",
+        doc="The number of operators needed for each option[3].",
     )
     m.fs.costing.total_operators = pyo.Var(
         domain=pyo.NonNegativeIntegers,
-        doc="The total number of operators needed for the process. Must be an integer value.",
+        doc="The total number of operators needed for the process[3]. Must be an integer value.",
     )
     m.fs.costing.cost_of_labor = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="The cost of labor for the process."
+        domain=pyo.NonNegativeReals, doc="The cost of labor for the process[2]."
     )
     m.fs.costing.m_and_sm = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="Maintenance & Supply Materials (M&SM)."
+        domain=pyo.NonNegativeReals, doc="Maintenance & Supply Materials (M&SM)[2]."
     )
     m.fs.costing.sa_and_qa_qc = pyo.Var(
         domain=pyo.NonNegativeReals,
-        doc="Sample Analysis & Quality Assurance/Quality Control (SA&QA/QC).",
+        doc="Sample Analysis & Quality Assurance/Quality Control (SA&QA/QC)[2].",
     )
     m.fs.costing.s_ip_r_and_d = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
-        doc="Sales, Intellectual Property, and Research & Development (S,IP,R&D).",
+        doc="Sales, Intellectual Property, and Research & Development (S,IP,R&D)[2].",
     )
     m.fs.costing.a_and_sl = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="Administrative & Supporting Labor (A&SL)."
+        domain=pyo.NonNegativeReals, doc="Administrative & Supporting Labor (A&SL)[2]."
     )
-    m.fs.costing.fb = pyo.Var(domain=pyo.NonNegativeReals, doc="Fringe Benefits (FB).")
+    m.fs.costing.fb = pyo.Var(
+        domain=pyo.NonNegativeReals, doc="Fringe Benefits (FB)[2]."
+    )
     m.fs.costing.pt_and_i = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="Property Taxes & Insurance (PT&I)."
+        domain=pyo.NonNegativeReals, doc="Property Taxes & Insurance (PT&I)[2]."
     )
-    m.fs.costing.total_fixed_operating_expense = pyo.Var(
+    m.fs.costing.aggregate_fixed_operating_cost = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
-        doc="Total yearly fixed operating expense.",
+        doc="Total yearly fixed operating cost[2].",
     )
     m.fs.costing.total_overnight_cost_expended = pyo.Var(
         m.fs.plant_life_range,
         domain=pyo.NonNegativeReals,
-        doc="The total overnight cost expended each year.",
+        doc="The total overnight cost expended each year[1].",
     )
     m.fs.costing.plant_overhead = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
-        doc="The yearly plant overhead.",
+        doc="The yearly plant overhead[2].",
     )
     m.fs.costing.total_operating_expense = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
-        doc="The total operating expense each year.",
+        doc="The total operating expense each year[2].",
     )
     m.fs.costing.cash_flow = pyo.Var(
         m.fs.plant_life_range,
         domain=pyo.Reals,
-        doc="The yearly cash flow.",
+        doc="The yearly cash flow[4].",
     )
 
 
@@ -687,6 +749,8 @@ def add_byproduct_valorization_params(
 ):
     """
     This function builds the byproduct valorization parameters.
+
+    In byproduct valorization, the profit generated from byproducts is considered in addition to the profit generated from the main product.
 
     Args:
         m: pyomo model.
@@ -762,6 +826,8 @@ def add_byproduct_valorization_vars(m):
     """
     This function builds the byproduct valorization variables.
 
+    In byproduct valorization, the profit generated from byproducts is considered in addition to the profit generated from the main product.
+
     Args:
         m: pyomo model.
     """
@@ -788,6 +854,8 @@ def add_byproduct_valorization_vars(m):
 def add_byproduct_valorization_cons(m):
     """
     This function builds the byproduct valorization constraints.
+
+    In byproduct valorization, the profit generated from byproducts is considered in addition to the profit generated from the main product.
 
     Args:
         m: pyomo model.
@@ -830,14 +898,16 @@ def add_byproduct_valorization_cons(m):
         )
 
 
-def add_costing_cons(m, obj_func: str):
+def add_profit_cons(m, obj_func: str):
     """
-    This function builds the costing constraints.
+    This function builds the profit constraints.
 
     To calculate the capital cost parameters, the methodology presented in NETL's
     Quality Guidelines for Energy System Studies (QGESS)[1] was followed. However, since the methodology was created for costing
     electric power plants, modifications were made to match the economic assumptions made in Keim et al. (2019)[2]. To calculate
-    the fixed and variable operating costs, the methodology followed by Kiem et al. (2019) was followed.
+    the fixed and variable operating costs, the methodology followed by Kiem et al. (2019) was followed[2]. To calculate the number
+    of operators needed, the methodology described by Ulrich et al. (2004) was followed[3]. The cash flows were calculated using
+    the methodology described in Seider et al. (2017)[4].
 
     **References:**
 
@@ -845,6 +915,12 @@ def add_costing_cons(m, obj_func: str):
 
     [2] Keim, S. A. *Production of Salable Rare Earths Products from Coal and Coal Byproducts in the U.S. Using Advanced
     Processes: Phase 1*; 2019.
+
+    [3] Ulrich, G. D.; Vasudevan, P. T. *Chemical Engineering Process Design and Economics A Practical Guide*;
+    Process Publishing, 2004.
+
+    [4] Seider, W. D.; Lewin, D. R,; Seader, J.; Gani, S. W. R.; Ng, K. M. *Product and Process Design Principles*;
+    Wiley, 2017.
 
     Args:
         m: pyomo model.
@@ -869,6 +945,8 @@ def add_costing_cons(m, obj_func: str):
     # Check if profit from byproducts is considered
     if m.fs.costing.byproduct_valorization.consider_byproduct_valorization:
         # add byproduct valorization cons if so.
+        add_byproduct_valorization_params(m)
+        add_byproduct_valorization_vars(m)
         add_byproduct_valorization_cons(m)
 
         # Check if NPV is objective function
@@ -897,7 +975,7 @@ def add_costing_cons(m, obj_func: str):
             def calculate_total_profit_cons(b, t):
                 return (
                     m.fs.costing.total_profit[t]
-                    == m.fs.costing.cor
+                    == m.fs.costing.cost_of_recovery
                     * sum(
                         sum(m.fs.f_out[opt, c, t] for c in m.fs.tracked_comps)
                         for opt in m.fs.final_opts_set
@@ -921,40 +999,73 @@ def add_costing_cons(m, obj_func: str):
 
         # COR is objective function
         else:
+
             @m.fs.costing.Constraint(
                 m.fs.operational_range,
                 doc="Calculates the total yearly profit when the cost of recovery is selected as the objective function, and byproduct valorization is not considered.",
             )
             def calculate_total_profit_cons(b, t):
-                return m.fs.costing.total_profit[t] == m.fs.costing.cor * sum(
+                return m.fs.costing.total_profit[
+                    t
+                ] == m.fs.costing.cost_of_recovery * sum(
                     sum(m.fs.f_out[opt, c, t] for c in m.fs.tracked_comps)
                     for opt in m.fs.final_opts_set
                 )
+
+
+def add_capital_cost_cons(m):
+    """
+    This function builds the capital cost constraints.
+
+    To calculate the capital cost parameters, the methodology presented in NETL's
+    Quality Guidelines for Energy System Studies (QGESS)[1] was followed. However, since the methodology was created for costing
+    electric power plants, modifications were made to match the economic assumptions made in Keim et al. (2019)[2]. To calculate
+    the fixed and variable operating costs, the methodology followed by Kiem et al. (2019) was followed[2]. To calculate the number
+    of operators needed, the methodology described by Ulrich et al. (2004) was followed[3]. The cash flows were calculated using
+    the methodology described in Seider et al. (2017)[4].
+
+    **References:**
+
+    [1] Theis, J. *Cost Estimation Methodology for NETL Assessments of Power Plant Performance*; 2021.
+
+    [2] Keim, S. A. *Production of Salable Rare Earths Products from Coal and Coal Byproducts in the U.S. Using Advanced
+    Processes: Phase 1*; 2019.
+
+    [3] Ulrich, G. D.; Vasudevan, P. T. *Chemical Engineering Process Design and Economics A Practical Guide*;
+    Process Publishing, 2004.
+
+    [4] Seider, W. D.; Lewin, D. R,; Seader, J.; Gani, S. W. R.; Ng, K. M. *Product and Process Design Principles*;
+    Wiley, 2017.
+
+    Args:
+        m: pyomo model.
+        obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
+    """
 
     @m.fs.costing.Constraint(
         m.fs.discrete_opts_set,
         doc="Calculates the purchased cost of equipment for all discrete options. "
         "Done by multiplying the number of discrete units by the capital cost per unit.",
     )
-    def discrete_opts_purchased_equipment_cost_cons(b, j, k):
+    def discrete_opts_equipment_cost_cons(b, j, k):
         return (
-            m.fs.costing.purchased_equipment_cost[j, k]
+            m.fs.costing.equipment_cost[j, k]
             == m.fs.costing.discrete_units_per_option[j, k]
             * m.fs.costing.capital_cost_per_unit[j, k]
         )
 
     def piecewise_rule(b, j, k):
         flow_data = m.fs.costing.flowrates_data[j, k]
-        purchased_equipment_cost_data = m.fs.costing.costs_data[j, k]
+        equipment_cost_data = m.fs.costing.costs_data[j, k]
 
         # use m.add_component to generate all piecewise functions
         # piecewise = Piecewise(yval, xval, *kwargs)
         piecewise = pyo.Piecewise(
-            m.fs.costing.purchased_equipment_cost[j, k],
+            m.fs.costing.equipment_cost[j, k],
             m.fs.flow_entering[j, k],
             pw_pts=flow_data,
             pw_constr_type="EQ",
-            f_rule=purchased_equipment_cost_data,
+            f_rule=equipment_cost_data,
             pw_repn="SOS2",
         )
         b.add_component("Option_" + str((j, k)) + "_Piecewise_Constraint", piecewise)
@@ -966,30 +1077,31 @@ def add_costing_cons(m, obj_func: str):
         "purchased equipment costs for all the continuous option.",
     )
 
-    @m.fs.costing.Constraint(doc="Calculates the total plant cost.")
+    @m.fs.costing.Constraint(doc="Calculates the total plant cost[2].")
     def calculate_total_plant_cost_con(b):
         return m.fs.costing.total_plant_cost == sum(
-            m.fs.costing.purchased_equipment_cost[opt] for opt in m.fs.discrete_opts_set
+            m.fs.costing.equipment_cost[opt] for opt in m.fs.discrete_opts_set
         ) + m.fs.costing.lang_factor * sum(
-            m.fs.costing.purchased_equipment_cost[opt]
-            for opt in m.fs.continuous_opts_set
+            m.fs.costing.equipment_cost[opt] for opt in m.fs.continuous_opts_set
+        )
+
+    @m.fs.costing.Constraint(doc="Calculates the total financing cost of the plant[1].")
+    def calculate_financing_cost_con(b):
+        return (
+            m.fs.costing.financing
+            == m.fs.costing.financing_factor * m.fs.costing.total_plant_cost
+        )
+
+    @m.fs.costing.Constraint(doc="Calculates the 'other costs' of the plant[1].")
+    def calculate_other_costs_con(b):
+        return (
+            m.fs.costing.other_costs
+            == m.fs.costing.other_costs_factor * m.fs.costing.total_plant_cost
         )
 
     @m.fs.costing.Constraint(
-        doc="Calculates the total financing cost of the plant. Assumed to be 2.7% of the total plant cost."
-    )
-    def calculate_financing_cost_con(b):
-        return m.fs.costing.financing == 0.027 * m.fs.costing.total_plant_cost
-
-    @m.fs.costing.Constraint(
-        doc="Calculates the 'other costs' of the plant. Assumed to be 15% of the total plant cost."
-    )
-    def calculate_other_costs_con(b):
-        return m.fs.costing.other_costs == 0.15 * m.fs.costing.total_plant_cost
-
-    @m.fs.costing.Constraint(
         doc="Calculates the total overnight cost of the plant. "
-        "Equal to the total plant cost + financing + 'other costs'."
+        "Equal to the total plant cost + financing + 'other costs'[1]."
     )
     def calculate_total_overnight_cost_con(b):
         return (
@@ -999,22 +1111,52 @@ def add_costing_cons(m, obj_func: str):
             + m.fs.costing.other_costs
         )
 
+
+def add_operating_cost_cons(m):
+    """
+    This function builds the variable and fixed operating cost constraints.
+
+    To calculate the capital cost parameters, the methodology presented in NETL's
+    Quality Guidelines for Energy System Studies (QGESS)[1] was followed. However, since the methodology was created for costing
+    electric power plants, modifications were made to match the economic assumptions made in Keim et al. (2019)[2]. To calculate
+    the fixed and variable operating costs, the methodology followed by Kiem et al. (2019) was followed[2]. To calculate the number
+    of operators needed, the methodology described by Ulrich et al. (2004) was followed[3]. The cash flows were calculated using
+    the methodology described in Seider et al. (2017)[4].
+
+    **References:**
+
+    [1] Theis, J. *Cost Estimation Methodology for NETL Assessments of Power Plant Performance*; 2021.
+
+    [2] Keim, S. A. *Production of Salable Rare Earths Products from Coal and Coal Byproducts in the U.S. Using Advanced
+    Processes: Phase 1*; 2019.
+
+    [3] Ulrich, G. D.; Vasudevan, P. T. *Chemical Engineering Process Design and Economics A Practical Guide*;
+    Process Publishing, 2004.
+
+    [4] Seider, W. D.; Lewin, D. R,; Seader, J.; Gani, S. W. R.; Ng, K. M. *Product and Process Design Principles*;
+    Wiley, 2017.
+
+    Args:
+        m: pyomo model.
+        obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
+    """
+
     @m.fs.costing.Constraint(
         m.fs.all_opts_set,
         m.fs.operational_range,
-        doc="Calculates yearly operating expense for each option.",
+        doc="Calculates yearly operating expense for each option[2].",
     )
     def calculate_opt_yearly_variable_expense_cons(b, j, k, t):
         if (j, k) in m.fs.discrete_opts_set:
             return (
-                m.fs.costing.opt_var_operating_expense[j, k, t]
+                m.fs.costing.opt_variable_operating_cost[j, k, t]
                 == m.fs.costing.discrete_units_per_option[j, k]
                 * m.fs.costing.yearly_cost_per_unit[j, k]
                 * m.fs.option_binary_var[j, k]
             )
         else:
             return (
-                m.fs.costing.opt_var_operating_expense[j, k, t]
+                m.fs.costing.opt_variable_operating_cost[j, k, t]
                 == m.fs.costing.opt_var_oc_params[j, k, "a"]
                 * sum(m.fs.f_in[j, k, c, t] for c in m.fs.tracked_comps)
                 + m.fs.costing.opt_var_oc_params[j, k, "b"]
@@ -1023,16 +1165,17 @@ def add_costing_cons(m, obj_func: str):
 
     @m.fs.costing.Constraint(
         m.fs.operational_range,
-        doc="Calculates the total yearly variable operating cost.",
+        doc="Calculates the total yearly variable operating cost[2].",
     )
     def calculate_total_yearly_variable_operating_costs_cons(b, t):
-        return m.fs.costing.total_var_operating_expense[t] == sum(
-            m.fs.costing.opt_var_operating_expense[opt, t] for opt in m.fs.all_opts_set
+        return m.fs.costing.aggregate_variable_operating_cost[t] == sum(
+            m.fs.costing.opt_variable_operating_cost[opt, t]
+            for opt in m.fs.all_opts_set
         )
 
     @m.fs.costing.Constraint(
         m.fs.all_opts_set,
-        doc="Calculate the number of operators needed for each option.",
+        doc="Calculate the number of operators needed for each option[3].",
     )
     def calculate_operators_per_option_cons(b, j, k):
         if (j, k) in m.fs.discrete_opts_set:
@@ -1049,7 +1192,7 @@ def add_costing_cons(m, obj_func: str):
             )
 
     @m.fs.costing.Constraint(
-        doc="Calculate the number of operators needed for the entire process."
+        doc="Calculate the number of operators needed for the entire process[3]."
     )
     def calculate_total_operators_cons(b):
         return m.fs.costing.total_operators >= sum(
@@ -1063,50 +1206,45 @@ def add_costing_cons(m, obj_func: str):
             == m.fs.costing.total_operators * m.fs.costing.labor_rate
         )
 
-    @m.fs.costing.Constraint(
-        doc="Calculate M&SM. Assumed to be 2% of the total plant cost."
-    )
+    @m.fs.costing.Constraint(doc="Calculate Maintenance & Supply Materials[2].")
     def calculate_m_and_sm_con(b):
-        return m.fs.costing.m_and_sm == 0.02 * m.fs.costing.total_plant_cost
+        return (
+            m.fs.costing.m_and_sm
+            == m.fs.costing.m_and_sm_costing_factor * m.fs.costing.total_plant_cost
+        )
 
     @m.fs.costing.Constraint(
-        doc="Calculate SA&QA/QC. Assumed to be 10% of the cost of labor."
+        doc="Calculate Sample Analysis & Quality Assurance/Quality Control[2]."
     )
     def calculate_sa_and_qa_qc_con(b):
-        return m.fs.costing.sa_and_qa_qc == 0.1 * m.fs.costing.cost_of_labor
+        return m.fs.costing.sa_and_qa_qc == m.fs.costing.sa_and_qa_qc_costing_factor * m.fs.costing.cost_of_labor
 
     @m.fs.costing.Constraint(
         m.fs.operational_range,
-        doc="Calculate S,IP,R&D. Assumed to be 1% of the revenue each year.",
+        doc="Calculate Sales, Intellectual Property, and Research & Development[2].",
     )
     def calculate_s_ip_r_and_d_con(b, t):
-        return m.fs.costing.s_ip_r_and_d[t] == 0.01 * m.fs.costing.total_profit[t]
+        return m.fs.costing.s_ip_r_and_d[t] == m.fs.costing.s_ip_r_and_d_costing_factor * m.fs.costing.total_profit[t]
 
-    @m.fs.costing.Constraint(
-        doc="Calculate A&SL. Assumed to be 20% of the cost of labor."
-    )
+    @m.fs.costing.Constraint(doc="Calculate Administrative & Supporting Labor[2].")
     def calculate_a_and_sl_con(b):
-        return m.fs.costing.a_and_sl == 0.2 * m.fs.costing.cost_of_labor
+        return m.fs.costing.a_and_sl == m.fs.costing.a_and_sl_costing_factor * m.fs.costing.cost_of_labor
 
-    @m.fs.costing.Constraint(
-        doc="Calculate FB. Assumed to be 25% of the cost of labor."
-    )
+    @m.fs.costing.Constraint(doc="Calculate Fringe Benefits[2].")
     def calculate_fb_con(b):
-        return m.fs.costing.fb == 0.25 * m.fs.costing.cost_of_labor
+        return m.fs.costing.fb == m.fs.costing.fb_costing_factor * m.fs.costing.cost_of_labor
 
-    @m.fs.costing.Constraint(
-        doc="Calculate PT&I. Assumed to be 1% of the total plant cost."
-    )
+    @m.fs.costing.Constraint(doc="Calculate Property Taxes & Insurance[2].")
     def calculate_pt_and_i_con(b):
-        return m.fs.costing.pt_and_i == 0.01 * m.fs.costing.total_plant_cost
+        return m.fs.costing.pt_and_i == m.fs.costing.pt_and_i_costing_factor * m.fs.costing.total_plant_cost
 
     @m.fs.costing.Constraint(
         m.fs.operational_range,
-        doc="Calculates the total yearly fixed operating cost.",
+        doc="Calculates the total yearly fixed operating cost[2].",
     )
     def calculate_total_yearly_fixed_operating_costs_cons(b, t):
         return (
-            m.fs.costing.total_fixed_operating_expense[t]
+            m.fs.costing.aggregate_fixed_operating_cost[t]
             == m.fs.costing.cost_of_labor
             + m.fs.costing.m_and_sm
             + m.fs.costing.sa_and_qa_qc
@@ -1115,6 +1253,36 @@ def add_costing_cons(m, obj_func: str):
             + m.fs.costing.fb
             + m.fs.costing.pt_and_i
         )
+
+
+def add_cash_flow_cons(m):
+    """
+    This function builds the cash flow constraints
+
+    To calculate the capital cost parameters, the methodology presented in NETL's
+    Quality Guidelines for Energy System Studies (QGESS)[1] was followed. However, since the methodology was created for costing
+    electric power plants, modifications were made to match the economic assumptions made in Keim et al. (2019)[2]. To calculate
+    the fixed and variable operating costs, the methodology followed by Kiem et al. (2019) was followed[2]. To calculate the number
+    of operators needed, the methodology described by Ulrich et al. (2004) was followed[3]. The cash flows were calculated using
+    the methodology described in Seider et al. (2017)[4].
+
+    **References:**
+
+    [1] Theis, J. *Cost Estimation Methodology for NETL Assessments of Power Plant Performance*; 2021.
+
+    [2] Keim, S. A. *Production of Salable Rare Earths Products from Coal and Coal Byproducts in the U.S. Using Advanced
+    Processes: Phase 1*; 2019.
+
+    [3] Ulrich, G. D.; Vasudevan, P. T. *Chemical Engineering Process Design and Economics A Practical Guide*;
+    Process Publishing, 2004.
+
+    [4] Seider, W. D.; Lewin, D. R,; Seader, J.; Gani, S. W. R.; Ng, K. M. *Product and Process Design Principles*;
+    Wiley, 2017.
+
+    Args:
+        m: pyomo model.
+        obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
+    """
 
     @m.fs.costing.Constraint(
         m.fs.plant_life_range,
@@ -1147,8 +1315,8 @@ def add_costing_cons(m, obj_func: str):
     )
     def calculate_plant_overhead_cons(b, t):
         return m.fs.costing.plant_overhead[t] == 0.2 * (
-            m.fs.costing.total_var_operating_expense[t]
-            + m.fs.costing.total_fixed_operating_expense[t]
+            m.fs.costing.aggregate_variable_operating_cost[t]
+            + m.fs.costing.aggregate_fixed_operating_cost[t]
         )
 
     @m.fs.costing.Constraint(
@@ -1158,8 +1326,8 @@ def add_costing_cons(m, obj_func: str):
     def calculate_total_operating_expense_cons(b, t):
         return (
             m.fs.costing.total_operating_expense[t]
-            == m.fs.costing.total_var_operating_expense[t]
-            + m.fs.costing.total_fixed_operating_expense[t]
+            == m.fs.costing.aggregate_variable_operating_cost[t]
+            + m.fs.costing.aggregate_fixed_operating_cost[t]
             + m.fs.costing.plant_overhead[t]
         )
 
@@ -1185,10 +1353,40 @@ def add_costing_cons(m, obj_func: str):
             ) ** (
                 t - m.fs.plant_start
             )
-        
+
+
+def add_costing_objective_functions(m, obj_func: str):
+    """
+    This function builds the costing objective function (either maximizing the NPV, or minimizing the COR).
+
+    To calculate the capital cost parameters, the methodology presented in NETL's
+    Quality Guidelines for Energy System Studies (QGESS)[1] was followed. However, since the methodology was created for costing
+    electric power plants, modifications were made to match the economic assumptions made in Keim et al. (2019)[2]. To calculate
+    the fixed and variable operating costs, the methodology followed by Kiem et al. (2019) was followed[2]. To calculate the number
+    of operators needed, the methodology described by Ulrich et al. (2004) was followed[3]. The cash flows were calculated using
+    the methodology described in Seider et al. (2017)[4].
+
+    **References:**
+
+    [1] Theis, J. *Cost Estimation Methodology for NETL Assessments of Power Plant Performance*; 2021.
+
+    [2] Keim, S. A. *Production of Salable Rare Earths Products from Coal and Coal Byproducts in the U.S. Using Advanced
+    Processes: Phase 1*; 2019.
+
+    [3] Ulrich, G. D.; Vasudevan, P. T. *Chemical Engineering Process Design and Economics A Practical Guide*;
+    Process Publishing, 2004.
+
+    [4] Seider, W. D.; Lewin, D. R,; Seader, J.; Gani, S. W. R.; Ng, K. M. *Product and Process Design Principles*;
+    Wiley, 2017.
+
+    Args:
+        m: pyomo model.
+        obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
+    """
+
     @m.fs.costing.Constraint(doc="Calculates the net present value of the plant.")
     def calculate_net_present_value_con(b):
-        return m.fs.costing.npv == sum(
+        return m.fs.costing.net_present_value == sum(
             m.fs.costing.cash_flow[t]
             / ((1 + m.fs.costing.discount_factor) ** (t - m.fs.plant_start))
             for t in m.fs.plant_life_range
@@ -1198,7 +1396,7 @@ def add_costing_cons(m, obj_func: str):
     if obj_func == "NPV":
         # set objective function
         m.fs.costing.obj = pyo.Objective(
-            expr=m.fs.costing.npv,
+            expr=m.fs.costing.net_present_value,
             sense=pyo.maximize,
             doc="Objective function is maximizing the net present value when the NPV is chosen.",
         )
@@ -1211,11 +1409,11 @@ def add_costing_cons(m, obj_func: str):
             "objective function."
         )
         def set_net_present_value_to_zero_con(b):
-            return m.fs.costing.npv == 0
+            return m.fs.costing.net_present_value == 0
 
         # set objective function
         m.fs.costing.obj = pyo.Objective(
-            expr=m.fs.costing.cor,
+            expr=m.fs.costing.cost_of_recovery,
             sense=pyo.minimize,
             doc="Objective function is minimizing the cost of recovery when the COR is chosen.",
         )
@@ -1226,6 +1424,19 @@ def add_environmental_impact_params(
 ):
     """
     This function builds the environmental impact parameters.
+
+    When environmental impacts are considered, a multi-objective optimization problem is formulated in
+    which some environmental metric, specified by the user, is minimized. A pareto front can be generated
+    by varying the epsilon parameter value[1]. Although the global warming potential is the most common
+    environmental metric investigated, many others also exist. Refer to the EPA's Tool for
+    Reduction and Assessment of Chemicals and Other Environmental Impacts (TRACI)[2] for more information.
+
+    **References:**
+
+    [1] Mavrotas, G. Effective implementation of the epsilon-constraint method in multi-objective programming problems.
+    *Applied Mathematics and Computation*, 213:455-465, 2009.
+
+    [2] https://www.epa.gov/chemical-research/tool-reduction-and-assessment-chemicals-and-other-environmental-impacts-traci
 
     Args:
         m: pyomo model.
@@ -1246,7 +1457,7 @@ def add_environmental_impact_params(
     m.fs.environmental_impacts.options_environmental_impacts = pyo.Param(
         m.fs.all_opts_set,
         initialize=options_environmental_impacts,
-        doc="Environmental impacts matrix. Unita of chosen indicator per unit of incoming flowrate.",
+        doc="Environmental impacts matrix. Units of chosen indicator per unit of incoming flowrate.",
     )
     m.fs.environmental_impacts.epsilon = pyo.Param(
         initialize=epsilon,
@@ -1262,6 +1473,7 @@ def add_environmental_impact_vars(m):
     Args:
         m: pyomo model.
     """
+
     ## Pyomo variables
     m.fs.environmental_impacts.option_yearly_impacts = pyo.Var(
         m.fs.all_opts_set,

@@ -19,7 +19,9 @@ from prommis.superstructure.add_superstructure_blocks import (
     add_byproduct_valorization_cons,
     add_byproduct_valorization_params,
     add_byproduct_valorization_vars,
-    add_costing_cons,
+    add_capital_cost_cons,
+    add_cash_flow_cons,
+    add_costing_objective_functions,
     add_costing_params,
     add_costing_vars,
     add_discretized_costing_params,
@@ -30,8 +32,10 @@ from prommis.superstructure.add_superstructure_blocks import (
     add_mass_balance_cons,
     add_mass_balance_params,
     add_mass_balance_vars,
+    add_operating_cost_cons,
     add_operating_params,
     add_plant_lifetime_params_block,
+    add_profit_cons,
     add_supe_formulation_params,
 )
 from prommis.superstructure.check_superstructure_inputs import (
@@ -173,13 +177,13 @@ def build_model(
     check_byproduct_valorization_params(
         m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
     )
-    add_byproduct_valorization_params(
-        m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
-    )
-    add_byproduct_valorization_vars(m)
 
     # Generate costing constraints.
-    add_costing_cons(m, obj_func)
+    add_profit_cons(m, obj_func)
+    add_capital_cost_cons(m)
+    add_operating_cost_cons(m)
+    add_cash_flow_cons(m)
+    add_costing_objective_functions(m, obj_func)
 
 
     ### Return model

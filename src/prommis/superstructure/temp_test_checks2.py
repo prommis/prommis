@@ -674,10 +674,11 @@ discretized_purchased_equipment_cost = {
 }
 
 ### Objective Function Parameters
-obj_func = "COR"
+obj_func = "NPV"
+# obj_func = "COR"
 
 ### Environmnetal Impact Parameters
-consider_environmental_impacts = False
+consider_environmental_impacts = True
 options_environmental_impacts = {
     (1, 1): 0,
     (1, 2): 1000,
@@ -705,7 +706,7 @@ options_environmental_impacts = {
 epsilon = 1
 
 ### Byproduct Valorization Parameters
-consider_byproduct_valorization = True
+consider_byproduct_valorization = False
 byproduct_values = {
     "Jarosite": -0.17,
     "Iron oxide": 10,
@@ -763,6 +764,7 @@ m = build_model(
 )
 
 ### Solve model
+m.fs.environmental_impacts.deactivate()
 solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2
 results = solver.solve(m, tee="True")

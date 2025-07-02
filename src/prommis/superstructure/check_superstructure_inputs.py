@@ -15,6 +15,24 @@ import warnings
 
 import pyomo.environ as pyo
 
+def check_objective_function_choice(obj_func):
+    """
+    This function checks that the choice of objective function is feasible.
+
+    Args:
+        obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
+    """
+
+    ### Check types and structure.
+    ## Check that obj_fun is of type str.
+    if not isinstance(obj_func, str):
+        raise TypeError("obj_func is not of type str.")
+
+    ### Run tests
+    if (obj_func != "NPV") and (obj_func != "COR"):
+        raise ValueError(
+            "Invalid choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive."
+        )
 
 def check_plant_lifetime_params(plant_start, plant_lifetime):
     """
@@ -806,36 +824,36 @@ def check_operating_params(
         raise ValueError("labor rate must be non-negative.")
 
 
-def check_discretized_costing_params(m, discretized_purchased_equipment_cost):
+def check_discretized_costing_params(m, discretized_equipment_cost):
     """
     This function checks that all the costing parameters are feasible.
 
     Args:
         m: pyomo model.
-        discretized_purchased_equipment_cost: (dict) Discretized cost by flows entering for each continuous option.
+        discretized_equipment_cost: (dict) Discretized cost by flows entering for each continuous option.
     """
     ### Check types and structure.
-    ## Check that discretized_purchased_equipment_cost is of type dict.
-    if not isinstance(discretized_purchased_equipment_cost, dict):
-        raise TypeError("discretized_purchased_equipment_cost is not of type dict.")
+    ## Check that discretized_equipment_cost is of type dict.
+    if not isinstance(discretized_equipment_cost, dict):
+        raise TypeError("discretized_equipment_cost is not of type dict.")
 
-    ## Check structure of discretized_purchased_equipment_cost.
-    for opt, inner_dict in discretized_purchased_equipment_cost.items():
+    ## Check structure of discretized_equipment_cost.
+    for opt, inner_dict in discretized_equipment_cost.items():
         if not isinstance(opt, tuple):
             raise TypeError(
-                f"opt {opt} in discretized_purchased_equipment_cost is not of type tuple."
+                f"opt {opt} in discretized_equipment_cost is not of type tuple."
             )
         if not isinstance(inner_dict, dict):
             raise TypeError(
-                f"discretized_purchased_equipment_cost[{opt}] is not of type dict."
+                f"discretized_equipment_cost[{opt}] is not of type dict."
             )
         if not inner_dict:
             raise ValueError(
-                f"discretized_purchased_equipment_cost[{opt}] is an empty dict."
+                f"discretized_equipment_cost[{opt}] is an empty dict."
             )
         # For each continuous option, discretized flowrates ("Flowrates"), followed by discretized costs ("Costs") must be provided.
         if [key for key in inner_dict.keys()] != ["Flowrates", "Costs"]:
-            msg = "For each option in discretized_purchased_equipment_cost, discretized flowrates, followed by discretized costs must be provided. "
+            msg = "For each option in discretized_equipment_cost, discretized flowrates, followed by discretized costs must be provided. "
             msg += "This must be of the form: 'Flowrates': [list of data points], 'Costs': [list of data points]. "
             msg += f"This was not the case for the option: {opt}."
             raise ValueError(msg)
@@ -850,9 +868,9 @@ def check_discretized_costing_params(m, discretized_purchased_equipment_cost):
                 )
 
     ### Define parameters necessary for tests
-    # Define a set of all the keys in the discretized_purchased_equipment_cost dict.
-    discretized_purchased_equipment_cost_opts_set = set(
-        discretized_purchased_equipment_cost.keys()
+    # Define a set of all the keys in the discretized_equipment_cost dict.
+    discretized_equipment_cost_opts_set = set(
+        discretized_equipment_cost.keys()
     )
 
     ### Define necessary data structures for tests.
@@ -870,51 +888,51 @@ def check_discretized_costing_params(m, discretized_purchased_equipment_cost):
     # and check that discretized capex not provided for options that utilize discrete units.
     for opt in m.fs.continuous_opts_set:
         # Keep track of the continuous opts for which discretized data is not defined for.
-        if opt not in discretized_purchased_equipment_cost_opts_set:
+        if opt not in discretized_equipment_cost_opts_set:
             missing_continuous_opts.append(opt)
     # Check that discretized capex not provided for discrete opts.
     for opt in m.fs.discrete_opts_set:
         # Keep track of the discrete options for which discretized capex data is defined for.
-        if opt in discretized_purchased_equipment_cost_opts_set:
+        if opt in discretized_equipment_cost_opts_set:
             discrete_opts.append(opt)
     # Check all options in discretized capex are feasible.
-    for opt in discretized_purchased_equipment_cost_opts_set:
+    for opt in discretized_equipment_cost_opts_set:
         # Keep track of the infeasible opts
         if opt not in m.fs.continuous_opts_set:
             infeasible_opts.append(opt)
     # Raise error if discretized capex is not provided for all continuous options.
     if missing_continuous_opts:
         raise ValueError(
-            f"discretized_purchased_equipment_cost is missing values for the following continuous options: {missing_continuous_opts}. "
+            f"discretized_equipment_cost is missing values for the following continuous options: {missing_continuous_opts}. "
         )
     # Raise error if discretized capex provided for any discrete options.
     if discrete_opts:
         raise ValueError(
-            f"discretized_purchased_equipment_cost contains values for the following discrete options: {discrete_opts}. "
+            f"discretized_equipment_cost contains values for the following discrete options: {discrete_opts}. "
         )
     # Raise error if discretized capex provided for any infeasible options.
     if infeasible_opts:
         raise ValueError(
-            f"discretized_purchased_equipment_cost contains values for the following options which don't exist as continuous options in the superstructure: {infeasible_opts}."
+            f"discretized_equipment_cost contains values for the following options which don't exist as continuous options in the superstructure: {infeasible_opts}."
         )
 
     ## Check that all options have the same number of discretized data points for flows entering and costs.
     for opt in m.fs.continuous_opts_set:
         # Keep track of the number of flowrate data points defined for the option.
         opt_num_flow_data_points = len(
-            discretized_purchased_equipment_cost[opt]["Flowrates"]
+            discretized_equipment_cost[opt]["Flowrates"]
         )
         # Keep track of the number of cost data points defined for the option.
         opt_num_cost_data_points = len(
-            discretized_purchased_equipment_cost[opt]["Costs"]
+            discretized_equipment_cost[opt]["Costs"]
         )
         # Keep track of the options for which the number of flowrate and cost data points are not the same.
         if opt_num_flow_data_points != opt_num_cost_data_points:
             inconsistent_data_point_opts.append(opt)
-    # Raise error if there are options with an inconsistent number of data points within discretized_purchased_equipment_cost.
+    # Raise error if there are options with an inconsistent number of data points within discretized_equipment_cost.
     if inconsistent_data_point_opts:
         raise ValueError(
-            f"Inconsistent number of data points for Flowrates and Costs within discretized_purchased_equipment_cost for the following options: {inconsistent_data_point_opts}. "
+            f"Inconsistent number of data points for Flowrates and Costs within discretized_equipment_cost for the following options: {inconsistent_data_point_opts}. "
         )
 
 
@@ -1099,22 +1117,3 @@ def check_byproduct_valorization_params(
             msg = "The following considered byproducts are not being produced by any options:\n"
             msg += "\n".join(f"{byprod}" for byprod in missing)
             raise ValueError(msg)
-
-def check_objective_function_choice(obj_func):
-    """
-    This function checks that the choice of objective function is feasible.
-
-    Args:
-        obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
-    """
-
-    ### Check types and structure.
-    ## Check that obj_fun is of type str.
-    if not isinstance(obj_func, str):
-        raise TypeError("obj_func is not of type str.")
-
-    ### Run tests
-    if (obj_func != "NPV") and (obj_func != "COR"):
-        raise ValueError(
-            "Invalid choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive."
-        )

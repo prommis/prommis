@@ -12,15 +12,14 @@ from idaes.core.util import DiagnosticsToolbox
 
 import pytest
 
-from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer
-from prommis.solvent_extraction.solvent_extraction_steady import main
+from prommis.solvent_extraction.compound_sx_flowsheet_steady import main
 
 solver = get_solver()
 
 
 class TestSXmodel:
     @pytest.fixture(scope="class")
-    def SolEx_frame(self):
+    def Comp_SolEx_frame(self):
         dosage = 5
         number_of_stages = 3
         m = main(dosage, number_of_stages)
@@ -28,24 +27,27 @@ class TestSXmodel:
         return m
 
     @pytest.mark.component
-    def test_structural_issues(self, SolEx_frame):
-        model = SolEx_frame
+    def test_structural_issues(self, Comp_SolEx_frame):
+        model = Comp_SolEx_frame
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
-    def test_initialization(self, SolEx_frame):
-        model = SolEx_frame
-        initializer = SolventExtractionInitializer()
-        initializer.initialize(model.fs.solex)
+    def test_initialization(self, Comp_SolEx_frame):
+        model = Comp_SolEx_frame
+        initializer = model.fs.compound_solex.default_initializer()
+        initializer.initialize(model.fs.compound_solex)
 
-        assert initializer.summary[model.fs.solex]["status"] == InitializationStatus.Ok
+        assert (
+            initializer.summary[model.fs.compound_solex]["status"]
+            == InitializationStatus.Ok
+        )
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
-    def test_solve(self, SolEx_frame):
-        m = SolEx_frame
+    def test_solve(self, Comp_SolEx_frame):
+        m = Comp_SolEx_frame
         results = solver.solve(m, tee=True)
 
         # Check for optimal solution
@@ -53,16 +55,16 @@ class TestSXmodel:
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_numerical_issues(self, SolEx_frame):
-        model = SolEx_frame
+    def test_numerical_issues(self, Comp_SolEx_frame):
+        model = Comp_SolEx_frame
         dt = DiagnosticsToolbox(model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_solution(self, SolEx_frame):
+    def test_solution(self, Comp_SolEx_frame):
 
-        model = SolEx_frame
+        model = Comp_SolEx_frame
         aqueous_outlet = {
             "H2O": 1000000,
             "H": 39.5131,
@@ -80,7 +82,7 @@ class TestSXmodel:
             "Pr": 0.27631,
             "Sc": 0.0027415,
             "Sm": 0.08669,
-            "Y": 4.27601e-06,
+            "Y": 4.27516e-06,
         }
 
         organic_outlet = {
@@ -100,8 +102,8 @@ class TestSXmodel:
             "Y_o": 0.12401,
         }
 
-        for k, v in model.fs.solex.organic_outlet.conc_mass_comp.items():
+        for k, v in model.fs.compound_solex.organic_outlet.conc_mass_comp.items():
             assert value(v) == pytest.approx(organic_outlet[k[1]], rel=1e-4)
 
-        for k, v in model.fs.solex.aqueous_outlet.conc_mass_comp.items():
+        for k, v in model.fs.compound_solex.aqueous_outlet.conc_mass_comp.items():
             assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)

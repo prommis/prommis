@@ -63,7 +63,6 @@ def set_inputs(m, dosage):
     """
 
     m.fs.solex.mscontactor.volume[:].fix(0.4 * units.m**3)
-    m.fs.solex.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex.area_cross_stage[:] = 1
     m.fs.solex.elevation[:] = 0
 
@@ -122,13 +121,14 @@ def main(dosage, number_of_stages):
     return m
 
 
-dosage = 5
-number_of_stages = 3
+if __name__ == "__main__":
+    dosage = 5
+    number_of_stages = 3
 
-m = main(dosage, number_of_stages)
+    m = main(dosage, number_of_stages)
 
-initializer = SolventExtractionInitializer()
-initializer.initialize(m.fs.solex)
+    initializer = SolventExtractionInitializer()
+    initializer.initialize(m.fs.solex)
 
-solver = get_solver(solver="ipopt_v2")
-solver.solve(m, tee=True)
+    solver = get_solver(solver="ipopt_v2")
+    solver.solve(m, tee=True)

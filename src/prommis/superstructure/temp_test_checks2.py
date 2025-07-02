@@ -705,7 +705,7 @@ options_environmental_impacts = {
 epsilon = 1
 
 ### Byproduct Valorization Parameters
-consider_byproduct_valorization = False
+consider_byproduct_valorization = True
 byproduct_values = {
     "Jarosite": -0.17,
     "Iron oxide": 10,

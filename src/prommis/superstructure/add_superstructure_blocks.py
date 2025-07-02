@@ -825,8 +825,8 @@ def add_byproduct_valorization_cons(m):
     )
     def calculate_opt_byprod_val_cons(b, t):
         return m.fs.costing.byproduct_valorization.total_byproduct_profit[t] == sum(
-            m.fs.byproduct_valorization.byproduct_profit[byprod, t]
-            for byprod in m.fs.byproduct_valorization.byproducts_set
+            m.fs.costing.byproduct_valorization.byproduct_profit[byprod, t]
+            for byprod in m.fs.costing.byproduct_valorization.byproducts_set
         )
 
 
@@ -902,7 +902,7 @@ def add_costing_cons(m, obj_func: str):
                         sum(m.fs.f_out[opt, c, t] for c in m.fs.tracked_comps)
                         for opt in m.fs.final_opts_set
                     )
-                    + m.fs.costing.total_byproduct_profit[t]
+                    + m.fs.costing.byproduct_valorization.total_byproduct_profit[t]
                 )
 
     # don't include profit from byproducts

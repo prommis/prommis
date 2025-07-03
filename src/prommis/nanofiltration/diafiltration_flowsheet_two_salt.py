@@ -82,6 +82,18 @@ def main():
     plot_results(m)
     plot_membrane_results(m)
 
+    print("x, Lithium Retentate, Lithium Permeate")
+    for x in reversed(m.fs.membrane.x_bar):
+        print(
+            f"{x}\t{round(value(m.fs.membrane.retentate_conc_mass_comp[0,x,'Li']),3)}\t{round(value(m.fs.membrane.permeate_conc_mass_comp[0,x,'Li']),3)}"
+        )
+
+    print("x, Cobalt Retentate, Cobalt Permeate")
+    for x in reversed(m.fs.membrane.x_bar):
+        print(
+            f"{x}\t{round(value(m.fs.membrane.retentate_conc_mass_comp[0,x,'Co']),3)}\t{round(value(m.fs.membrane.permeate_conc_mass_comp[0,x,'Co']),3)}"
+        )
+
 
 def build_membrane_parameters(m):
     """
@@ -313,7 +325,8 @@ def plot_membrane_results(m):
     z_axis_values = []
 
     for x_val in m.fs.membrane.x_bar:
-        x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
+        if x_val != 0:
+            x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
     for z_val in m.fs.membrane.z_bar:
         z_axis_values.append(z_val * value(m.fs.membrane.membrane_thickness) * 1e9)
     # store values for concentration of lithium in the membrane
@@ -328,15 +341,16 @@ def plot_membrane_results(m):
 
     for z_val in m.fs.membrane.z_bar:
         for x_val in m.fs.membrane.x_bar:
-            conc_mem_lith.append(
-                value(m.fs.membrane.membrane_conc_mass_lithium[x_val, z_val])
-            )
-            conc_mem_cob.append(
-                value(m.fs.membrane.membrane_conc_mass_cobalt[x_val, z_val])
-            )
-            conc_mem_chl.append(
-                value(m.fs.membrane.membrane_conc_mass_chlorine[x_val, z_val])
-            )
+            if x_val != 0:
+                conc_mem_lith.append(
+                    value(m.fs.membrane.membrane_conc_mass_lithium[x_val, z_val])
+                )
+                conc_mem_cob.append(
+                    value(m.fs.membrane.membrane_conc_mass_cobalt[x_val, z_val])
+                )
+                conc_mem_chl.append(
+                    value(m.fs.membrane.membrane_conc_mass_chlorine[x_val, z_val])
+                )
 
         conc_mem_lith_dict[f"{z_val}"] = conc_mem_lith
         conc_mem_cob_dict[f"{z_val}"] = conc_mem_cob

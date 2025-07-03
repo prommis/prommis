@@ -87,8 +87,8 @@ class SoluteParameterData(PhysicalParameterBlock):
             self.component_list,
             units=units.dimensionless,
             initialize={
-                "Li": 1,
-                "Co": 1,
+                "Li": 1.5,
+                "Co": 0.5,
                 "Cl": 1,
             },
             domain=NonNegativeReals,

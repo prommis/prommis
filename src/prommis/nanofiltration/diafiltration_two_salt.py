@@ -839,8 +839,6 @@ and used when constructing these,
 
         # other physical constraints
         def _osmotic_pressure_calculation(self, x):
-            if x != 0:
-                return Constraint.Skip
             return self.osmotic_pressure[x] == units.convert(
                 (
                     Constants.gas_constant  # J / mol / K
@@ -981,8 +979,8 @@ and used when constructing these,
                 * self.permeate_conc_mass_comp[0, x, "Li"]
                 * self.permeate_conc_mass_comp[0, x, "Cl"]
             ) == (
-                self.membrane_conc_mass_lithium[x, 0]
-                * self.membrane_conc_mass_chlorine[x, 0]
+                self.membrane_conc_mass_lithium[x, 1]
+                * self.membrane_conc_mass_chlorine[x, 1]
             )
 
         self.membrane_permeate_interface_lithium = Constraint(
@@ -1000,8 +998,8 @@ and used when constructing these,
                 * self.permeate_conc_mass_comp[0, x, "Cl"]
                 ** self.config.property_package.charge["Co"]
             ) == (
-                self.membrane_conc_mass_cobalt[x, 0]
-                * self.membrane_conc_mass_chlorine[x, 0]
+                self.membrane_conc_mass_cobalt[x, 1]
+                * self.membrane_conc_mass_chlorine[x, 1]
                 ** self.config.property_package.charge["Co"]
             )
 
@@ -1084,11 +1082,6 @@ and used when constructing these,
         self.mass_flux_lithium[0].fix(value(self.numerical_zero_tolerance))
         self.mass_flux_cobalt[0].fix(value(self.numerical_zero_tolerance))
         self.mass_flux_chlorine[0].fix(value(self.numerical_zero_tolerance))
-
-        # osmotic pressure after x=0 expected to be 0 (when no partitioning in the membrane)
-        for x in self.x_bar:
-            if x != 0:
-                self.osmotic_pressure[x].fix(value(self.numerical_zero_tolerance))
 
     def add_scaling_factors(self):
         """

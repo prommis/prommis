@@ -206,6 +206,10 @@ def check_supe_formulation_params(
     ## Check that options_in_stage is of type dict.
     if not isinstance(options_in_stage, dict):
         raise TypeError("options_in_stage is not of type dict.")
+    
+    ## Check that options_in_stage is not an empty.
+    if not options_in_stage:
+        raise TypeError("options_in_stage is an empty dict.")
 
     ## Check that structure of options_in_stage is correct.
     for key, val in options_in_stage.items():
@@ -222,7 +226,7 @@ def check_supe_formulation_params(
     if not isinstance(option_outlets, dict):
         raise TypeError("option_outlets is not of type dict.")
 
-    ## Check that option_outlets is not empty
+    ## Check that option_outlets is not empty.
     if not option_outlets:
         raise TypeError("option_outlets is an empty dict.")
 
@@ -240,7 +244,7 @@ def check_supe_formulation_params(
             raise TypeError(
                 f"value for option {key} in option_outlets incorrectly defined. All elements must be positive integers."
             )
-
+        
     ## Check that option_efficiencies is of type dict.
     if not isinstance(option_efficiencies, dict):
         raise TypeError("option_efficiencies is not of type dict.")
@@ -276,12 +280,20 @@ def check_supe_formulation_params(
     num_stages_set = set(pyo.RangeSet(num_stages).data())
     # Define a set for the keys of the options_in_stage dict.
     options_in_stage_keys_set = set(options_in_stage.keys())
-    # Define a set for all the options in the superstructure.
-    all_opts_set = {
-        (j, k)
-        for j in range(1, num_stages + 1)
-        for k in range(1, options_in_stage[j] + 1)
-    }
+    # Define a set for all the options in the superstructure. Test that structure options_in_stage is correct at the same time.
+    try:
+        all_opts_set = {
+            (j, k)
+            for j in range(1, num_stages + 1)
+            for k in range(1, options_in_stage[j] + 1)
+        }
+    except:
+        raise ValueError(
+            "Stages must start at 1 and count up. Each stage must contain at least 1 option. options_in_stage does not follow this convention. "
+            f"Expected keys: {num_stages_set}, "
+            f"but got: {options_in_stage_keys_set}"
+        )
+    
     # Define a set for all the tracked components.
     tracked_comps = set(m.fs.tracked_comps.data())
     # Define a set for the keys of option_outlets.
@@ -315,14 +327,6 @@ def check_supe_formulation_params(
     ## Check that there is at least 2 stages.
     if num_stages < 2:
         raise ValueError("There must be at least 2 processing stages.")
-
-    ## Check that the stages must be numbered starting at 1 and counting up.
-    if num_stages_set != options_in_stage_keys_set:
-        raise ValueError(
-            "Stages must start at 1 and count up. Each stage must contain at least 1 option. options_in_stage does not follow this convention. "
-            f"Expected keys: {num_stages_set}, "
-            f"but got: {options_in_stage_keys_set}"
-        )
 
     ## Check that outlets are defined for all options in the superstructure (except the last stage). i.e. check that each option in stage j is
     # connected to an option in stage j+1.
@@ -538,6 +542,10 @@ def check_operating_params(
     ## Check that profit is of type dict.
     if not isinstance(profit, dict):
         raise TypeError("profit is not of type dict.")
+    
+    ## Check that profit is not empty.
+    if not profit:
+        raise TypeError("profit is an empty dict.")
 
     ## Check that structure of profit is correct.
     for key, inner_dict in profit.items():
@@ -554,6 +562,10 @@ def check_operating_params(
                 raise TypeError(
                     f"value of profit[{key}][{comp}] is not of type int or float."
                 )
+            
+    ## Check that opt_var_oc_params is not empty.
+    if not opt_var_oc_params:
+        raise TypeError("opt_var_oc_params is an empty dict.")
 
     ## Check that structure of opt_var_oc_params is correct.
     for key, inner_dict in opt_var_oc_params.items():
@@ -570,6 +582,10 @@ def check_operating_params(
                 raise TypeError(
                     f"value of opt_var_oc_params[{key}][{oc_param}] is not of type int or float."
                 )
+            
+    ## Check that operators_per_discrete_unit is not empty.
+    if not operators_per_discrete_unit:
+        raise TypeError("operators_per_discrete_unit is an empty dict.")
 
     ## Check that structure of operators_per_discrete_unit is correct.
     for key, value in operators_per_discrete_unit.items():
@@ -582,6 +598,10 @@ def check_operating_params(
                 f"value {value} of operators_per_discrete_unit[{key}] is not of type int or float."
             )
 
+    ## Check that yearly_cost_per_unit is not empty.
+    if not yearly_cost_per_unit:
+        raise TypeError("yearly_cost_per_unit is an empty dict.")
+    
     ## Check that structure of yearly_cost_per_unit is correct.
     for key, value in yearly_cost_per_unit.items():
         if not isinstance(key, tuple):
@@ -590,6 +610,10 @@ def check_operating_params(
             raise TypeError(
                 f"value {value} of yearly_cost_per_unit[{key}] is not of type int or float."
             )
+        
+    ## Check that capital_cost_per_unit is not empty.
+    if not capital_cost_per_unit:
+        raise TypeError("capital_cost_per_unit is an empty dict.")
 
     ## Check that structure of capital_cost_per_unit is correct.
     for key, value in capital_cost_per_unit.items():
@@ -599,6 +623,10 @@ def check_operating_params(
             raise TypeError(
                 f"value {value} of capital_cost_per_unit[{key}] is not of type int or float."
             )
+        
+    ## Check that processing_rate is not empty.
+    if not processing_rate:
+        raise TypeError("processing_rate is an empty dict.")
 
     ## Check that structure of processing_rate is correct.
     for key, value in processing_rate.items():
@@ -608,6 +636,10 @@ def check_operating_params(
             raise TypeError(
                 f"value {value} of processing_rate[{key}] is not of type int or float."
             )
+        
+    ## Check that num_operators is not empty.
+    if not num_operators:
+        raise TypeError("num_operators is an empty dict.")
 
     ## Check that structure of num_operators is correct.
     for key, value in num_operators.items():
@@ -1002,6 +1034,10 @@ def check_byproduct_valorization_params(
     ### Only need to check feasibility of parameters if user wants to consider environmental impacts (consider_byprod_val is True).
     if consider_byproduct_valorization:
         ### Check typos and structure.
+        ## Check that byproduct_values is not empty.
+        if not byproduct_values:
+            raise TypeError("byproduct_values is an empty dict.")
+        
         ## Check that structure of byproduct_values is correct.
         for key, val in byproduct_values.items():
             if not isinstance(key, str):
@@ -1010,6 +1046,17 @@ def check_byproduct_valorization_params(
                 raise TypeError(
                     f"value {val} in byproduct_values is not of type int or float."
                 )
+            
+        ## Check that byproduct_opt_conversions is not empty.
+        if not byproduct_opt_conversions:
+            raise TypeError("byproduct_opt_conversions is an empty dict.")
+        
+        ## Check that inner dictionary of byproduct_opt_conversions is not empty.
+        for opt, inner_dict in byproduct_opt_conversions.items():
+            # Track the options for which the inner dict is empty.
+            if not inner_dict:
+                # If some options have empty dicts in byproduct_opt_conversions, raise an error.
+                raise TypeError(f"Empty dict passed for the option: {opt}.")
 
         ## Check that structure of byproduct_opt_conversions is correct
         for opt, inner_dict in byproduct_opt_conversions.items():
@@ -1027,12 +1074,6 @@ def check_byproduct_valorization_params(
                         f"Value in inner dictionary of byproduct_opt_conversions[{opt}] is not of type int or float."
                     )
 
-        ## Check that inner dictionary of byproduct_opt_conversions is not empty.
-        for opt, inner_dict in byproduct_opt_conversions.items():
-            # Track the options for which the inner dict is empty.
-            if not inner_dict:
-                # If some options have empty dicts in byproduct_opt_conversions, raise an error.
-                raise TypeError(f"Empty dict passed for the option: {opt}.")
 
         ### Define parameters necessary for tests.
         # Create a set of the byproducts considered

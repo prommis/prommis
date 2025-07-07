@@ -93,7 +93,7 @@ In addition to the MSContactor model, the model creates the following parameters
 2. elevation = Elevation of each tank wrt the ground datum
 
 Additional Constraints
----------------------
+----------------------
 
 In addition to the MSContactor model, the model declares the following constraints.
 

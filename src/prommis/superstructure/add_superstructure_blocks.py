@@ -425,6 +425,7 @@ def add_mass_balance_params(m):
         m.fs.tracked_comps,
         initialize=m_val,
         doc="Big-M parameters used in Equations (7) and (8) from the documentation.",
+        units=pyunits.kg / pyunits.year
     )
     m.fs.max_flow_upper_bound = pyo.Param(
         initialize=max_flow_upper_bound,
@@ -588,7 +589,7 @@ def add_mass_balance_cons(m):
         doc="Constraint to determine the max flow entering each continuous option over the lifetime of the plant.",
     )
     def max_flow_entering_cons(b, j, k, t):
-        return b.piecewise_flow_entering[j, k] >= sum(
+        return b.piecewise_flow_entering[j, k] * pyunits.kg / pyunits.year >= sum(
             b.f_in[j, k, c, t] for c in b.tracked_comps
         )
 
@@ -1218,10 +1219,10 @@ def add_capital_cost_cons(m):
     @m.fs.costing.Constraint(doc="Calculates the total plant cost[2].")
     def calculate_total_plant_cost_con(b):
         return m.fs.costing.total_plant_cost == sum(
-            m.fs.costing.equipment_cost[opt] * pyunits.USD
+            m.fs.costing.equipment_cost[opt]
             for opt in m.fs.discrete_opts_set
         ) + m.fs.costing.lang_factor * sum(
-            m.fs.costing.equipment_cost[opt] * pyunits.USD
+            m.fs.costing.equipment_cost[opt]
             for opt in m.fs.continuous_opts_set
         )
 
@@ -1349,7 +1350,7 @@ def add_operating_cost_cons(m):
     def calculate_m_and_sm_con(b):
         return (
             m.fs.costing.m_and_sm
-            == m.fs.costing.m_and_sm_costing_factor * m.fs.costing.total_plant_cost
+            == m.fs.costing.m_and_sm_costing_factor * m.fs.costing.total_plant_cost / pyunits.year
         )
 
     @m.fs.costing.Constraint(
@@ -1389,7 +1390,7 @@ def add_operating_cost_cons(m):
     def calculate_pt_and_i_con(b):
         return (
             m.fs.costing.pt_and_i
-            == m.fs.costing.pt_and_i_costing_factor * m.fs.costing.total_plant_cost
+            == m.fs.costing.pt_and_i_costing_factor * m.fs.costing.total_plant_cost / pyunits.year
         )
 
     @m.fs.costing.Constraint(

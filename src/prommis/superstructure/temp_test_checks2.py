@@ -776,6 +776,8 @@ results = solver.solve(m, tee="True")
 m.fs.option_binary_var.display()
 
 # assert_units_consistent(m.fs)
+
+
 # # check blocks
 # for block in m.component_objects(pyo.Block, descend_into=True):
 #     try:
@@ -784,16 +786,17 @@ m.fs.option_binary_var.display()
 #     except TypeError as e:
 #         print(f"Skipped block {block.name}: {e}")
 
-
 # check constraints
+# for constr in m.component_objects(pyo.Constraint, descend_into=True):
+#     try:
+#         assert_units_consistent(constr)
+#         print(f"Units consistent for constraint: {constr.name}")
+#     except TypeError as e:
+#         print(f"Skipped constraint {constr.name}: {e}")
+#     except Exception as e:
+#         print(f"Units inconsistent in constraint {constr.name}: {e}")
 for constr in m.component_objects(pyo.Constraint, descend_into=True):
-    try:
-        assert_units_consistent(constr)
-        print(f"Units consistent for constraint: {constr.name}")
-    except TypeError as e:
-        print(f"Skipped constraint {constr.name}: {e}")
-    except Exception as e:
-        print(f"Units inconsistent in constraint {constr.name}: {e}")
+    assert_units_consistent(constr)
 
 # # check expressions
 # for expr in m.component_objects(pyo.Expression, descend_into=True):
@@ -804,7 +807,8 @@ for constr in m.component_objects(pyo.Constraint, descend_into=True):
 #         print(f"Skipped expression {expr.name}: {e}")
 #     except Exception as e:
 #         print(f"Units inconsistent in expression {expr.name}: {e}")
-
+for expr in m.component_objects(pyo.Expression, descend_into=True):
+    assert_units_consistent(expr)
 
 # m.fs.available_feed.display()
 # m.fs.feed_entering.display()

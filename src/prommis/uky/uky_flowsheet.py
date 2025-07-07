@@ -2862,3 +2862,5 @@ def display_costing(m):
 
 if __name__ == "__main__":
     m, results = main()
+    print("Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result.")
+    print("Efforts are ongoing to increase the REE recovery while keeping the system as realsitic as possible. Issue #152 in the PrOMMiS repository is tracking the status of this issue.")

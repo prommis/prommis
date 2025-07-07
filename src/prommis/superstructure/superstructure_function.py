@@ -14,8 +14,6 @@ Author: Chris Laliwala
 import pyomo.environ as pyo
 from pyomo.environ import units as pyunits
 
-# from idaes.core.solvers import get_solver
-
 from prommis.superstructure.add_superstructure_blocks import (
     add_byproduct_valorization_cons,
     add_byproduct_valorization_params,
@@ -49,6 +47,9 @@ from prommis.superstructure.check_superstructure_inputs import (
     check_plant_lifetime_params,
     check_supe_formulation_params,
 )
+
+# from idaes.core.solvers import get_solver
+
 
 
 def define_custom_units():

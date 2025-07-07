@@ -588,7 +588,9 @@ def add_mass_balance_cons(m):
         doc="Constraint to determine the max flow entering each continuous option over the lifetime of the plant.",
     )
     def max_flow_entering_cons(b, j, k, t):
-        return b.piecewise_flow_entering[j, k] >= sum(b.f_in[j, k, c, t] for c in b.tracked_comps)
+        return b.piecewise_flow_entering[j, k] >= sum(
+            b.f_in[j, k, c, t] for c in b.tracked_comps
+        )
 
 
 def add_costing_params(m):
@@ -761,7 +763,7 @@ def add_costing_vars(m, obj_func: str):
         m.fs.all_opts_set,
         domain=pyo.NonNegativeReals,
         doc="The cost of purchased equipment with units.",
-        units = pyunits.USD
+        units=pyunits.USD,
     )
     m.fs.costing.total_plant_cost = pyo.Var(
         domain=pyo.NonNegativeReals,
@@ -1205,17 +1207,22 @@ def add_capital_cost_cons(m):
 
     @m.fs.costing.Constraint(
         m.fs.continuous_opts_set,
-        doc="Adds units to equipment costs calculated from piecewise constraints."
+        doc="Adds units to equipment costs calculated from piecewise constraints.",
     )
     def add_units_to_piecewise_costs(b, j, k):
-        return m.fs.costing.equipment_cost[j, k] == m.fs.costing.piecewise_equipment_cost[j, k] * pyunits.USD
+        return (
+            m.fs.costing.equipment_cost[j, k]
+            == m.fs.costing.piecewise_equipment_cost[j, k] * pyunits.USD
+        )
 
     @m.fs.costing.Constraint(doc="Calculates the total plant cost[2].")
     def calculate_total_plant_cost_con(b):
         return m.fs.costing.total_plant_cost == sum(
-            m.fs.costing.equipment_cost[opt] * pyunits.USD for opt in m.fs.discrete_opts_set
+            m.fs.costing.equipment_cost[opt] * pyunits.USD
+            for opt in m.fs.discrete_opts_set
         ) + m.fs.costing.lang_factor * sum(
-            m.fs.costing.equipment_cost[opt] * pyunits.USD for opt in m.fs.continuous_opts_set
+            m.fs.costing.equipment_cost[opt] * pyunits.USD
+            for opt in m.fs.continuous_opts_set
         )
 
     @m.fs.costing.Constraint(doc="Calculates the total financing cost of the plant[1].")

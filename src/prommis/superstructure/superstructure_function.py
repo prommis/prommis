@@ -14,7 +14,7 @@ Author: Chris Laliwala
 import pyomo.environ as pyo
 from pyomo.environ import units as pyunits
 
-from idaes.core.solvers import get_solver
+# from idaes.core.solvers import get_solver
 
 from prommis.superstructure.add_superstructure_blocks import (
     add_byproduct_valorization_cons,
@@ -44,17 +44,17 @@ from prommis.superstructure.check_superstructure_inputs import (
     check_discretized_costing_params,
     check_environmental_impact_params,
     check_feed_params,
+    check_objective_function_choice,
     check_operating_params,
     check_plant_lifetime_params,
     check_supe_formulation_params,
-    check_objective_function_choice,
 )
 
 
 def define_custom_units():
     """
     This function defines custom units that are needed throughout the model.
-    """    
+    """
 
     # Define custom units.
     pyunits.load_definitions_from_strings(["year = [time]"])

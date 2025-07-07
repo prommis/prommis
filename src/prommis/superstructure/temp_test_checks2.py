@@ -1,7 +1,9 @@
-from prommis.superstructure.superstructure_function import build_model
 import pyomo.environ as pyo
-from idaes.core.solvers import get_solver
 from pyomo.util.check_units import assert_units_consistent
+
+from idaes.core.solvers import get_solver
+
+from prommis.superstructure.superstructure_function import build_model
 
 # def build_model(
 #     m,

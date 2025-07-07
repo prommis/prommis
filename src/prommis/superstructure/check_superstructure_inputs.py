@@ -15,6 +15,7 @@ import warnings
 
 import pyomo.environ as pyo
 
+
 def check_objective_function_choice(obj_func):
     """
     This function checks that the choice of objective function is feasible.
@@ -33,6 +34,7 @@ def check_objective_function_choice(obj_func):
         raise ValueError(
             "Invalid choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive."
         )
+
 
 def check_plant_lifetime_params(plant_start, plant_lifetime):
     """
@@ -844,13 +846,9 @@ def check_discretized_costing_params(m, discretized_equipment_cost):
                 f"opt {opt} in discretized_equipment_cost is not of type tuple."
             )
         if not isinstance(inner_dict, dict):
-            raise TypeError(
-                f"discretized_equipment_cost[{opt}] is not of type dict."
-            )
+            raise TypeError(f"discretized_equipment_cost[{opt}] is not of type dict.")
         if not inner_dict:
-            raise ValueError(
-                f"discretized_equipment_cost[{opt}] is an empty dict."
-            )
+            raise ValueError(f"discretized_equipment_cost[{opt}] is an empty dict.")
         # For each continuous option, discretized flowrates ("Flowrates"), followed by discretized costs ("Costs") must be provided.
         if [key for key in inner_dict.keys()] != ["Flowrates", "Costs"]:
             msg = "For each option in discretized_equipment_cost, discretized flowrates, followed by discretized costs must be provided. "
@@ -869,9 +867,7 @@ def check_discretized_costing_params(m, discretized_equipment_cost):
 
     ### Define parameters necessary for tests
     # Define a set of all the keys in the discretized_equipment_cost dict.
-    discretized_equipment_cost_opts_set = set(
-        discretized_equipment_cost.keys()
-    )
+    discretized_equipment_cost_opts_set = set(discretized_equipment_cost.keys())
 
     ### Define necessary data structures for tests.
     # Define a list of continuous options which are missing discretized capex data.
@@ -919,13 +915,9 @@ def check_discretized_costing_params(m, discretized_equipment_cost):
     ## Check that all options have the same number of discretized data points for flows entering and costs.
     for opt in m.fs.continuous_opts_set:
         # Keep track of the number of flowrate data points defined for the option.
-        opt_num_flow_data_points = len(
-            discretized_equipment_cost[opt]["Flowrates"]
-        )
+        opt_num_flow_data_points = len(discretized_equipment_cost[opt]["Flowrates"])
         # Keep track of the number of cost data points defined for the option.
-        opt_num_cost_data_points = len(
-            discretized_equipment_cost[opt]["Costs"]
-        )
+        opt_num_cost_data_points = len(discretized_equipment_cost[opt]["Costs"])
         # Keep track of the options for which the number of flowrate and cost data points are not the same.
         if opt_num_flow_data_points != opt_num_cost_data_points:
             inconsistent_data_point_opts.append(opt)
@@ -1006,7 +998,7 @@ def check_byproduct_valorization_params(
     ## Check that consider_byproduct_valorization is of type bool.
     if not isinstance(consider_byproduct_valorization, bool):
         raise TypeError("consider_byproduct_valorization not of type bool.")
-    
+
     ### Only need to check feasibility of parameters if user wants to consider environmental impacts (consider_byprod_val is True).
     if consider_byproduct_valorization:
         ### Check typos and structure.

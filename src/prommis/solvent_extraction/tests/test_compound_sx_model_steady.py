@@ -4,6 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+
 from pyomo.environ import check_optimal_termination, value
 
 from idaes.core.initialization import InitializationStatus
@@ -12,6 +13,9 @@ from idaes.core.util import DiagnosticsToolbox
 
 import pytest
 
+from prommis.solvent_extraction.compound_solvent_extraction import (
+    CompoundSolventExtractionInitializer,
+)
 from prommis.solvent_extraction.compound_sx_flowsheet_steady import main
 
 solver = get_solver()
@@ -36,6 +40,10 @@ class TestSXmodel:
     def test_initialization(self, Comp_SolEx_frame):
         model = Comp_SolEx_frame
         initializer = model.fs.compound_solex.default_initializer()
+        assert (
+            model.fs.compound_solex.default_initializer
+            is CompoundSolventExtractionInitializer
+        )
         initializer.initialize(model.fs.compound_solex)
 
         assert (

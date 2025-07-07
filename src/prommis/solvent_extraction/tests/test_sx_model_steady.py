@@ -4,6 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+
 from pyomo.environ import check_optimal_termination, value
 
 from idaes.core.initialization import InitializationStatus
@@ -36,7 +37,8 @@ class TestSXmodel:
     @pytest.mark.component
     def test_initialization(self, SolEx_frame):
         model = SolEx_frame
-        initializer = SolventExtractionInitializer()
+        initializer = model.fs.solex.default_initializer()
+        assert model.fs.solex.default_initializer is SolventExtractionInitializer
         initializer.initialize(model.fs.solex)
 
         assert initializer.summary[model.fs.solex]["status"] == InitializationStatus.Ok

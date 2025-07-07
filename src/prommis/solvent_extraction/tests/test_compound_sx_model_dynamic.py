@@ -4,6 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+
 import os
 from pyomo.environ import check_optimal_termination, value
 
@@ -13,11 +14,8 @@ from idaes.core.util import DiagnosticsToolbox, from_json, StoreSpec
 import pytest
 
 from prommis.solvent_extraction.compound_sx_flowsheet_dynamic import (
-    build_model,
-    discretization_scheme,
-    set_initial_guess,
-    set_inputs,
-    copy_first_steady_state,
+    build_model_and_discretize,
+    initialize_set_input_and_initialize_guess,
 )
 
 solver = get_solver()
@@ -31,17 +29,15 @@ class TestSXmodel:
         time_duration = 12
         perturb_time = 4
 
-        m = build_model(dosage, number_of_stages, time_duration)
-        discretization_scheme(m)
+        m = build_model_and_discretize(dosage, number_of_stages, time_duration)
         current_directory = os.path.dirname(__file__)
         parent_directory = os.path.dirname(current_directory)
         json_file_path = os.path.join(
             parent_directory, "compound_solvent_extraction.json"
         )
         from_json(m, fname=json_file_path, wts=StoreSpec.value())
-        copy_first_steady_state(m)
-        set_inputs(m, dosage, perturb_time)
-        set_initial_guess(m)
+        initialize_set_input_and_initialize_guess(m, dosage, perturb_time)
+
         return m
 
     @pytest.mark.component

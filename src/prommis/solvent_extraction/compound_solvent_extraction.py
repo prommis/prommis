@@ -1,3 +1,109 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+
+r"""
+Compound Solvent Extraction Model
+
+========================
+
+Author: Arkoprabho Dasgupta
+
+The Compound Solvent Extraction unit is an extension of the traditional Solvent Extraction unit
+model from a pure mixer tank-based model to a mixer-settler based model.
+The mixer models are the Solvent Extraction model with 1 tank, and each mixer tank is followed
+by two settler tanks.
+The settler tanks are 1D Control Volume blocks.
+
+Configuration Arguments
+-----------------------
+
+The user must specify the following configurations in a solvent extraction model to be able to
+use it.
+
+The user must specify the aqueous feed input in the ``aqueous_stream`` configuration, with a
+configuration that describes the aqueous feed's properties.
+
+The user must specify the organic feed input in the ``organic_stream`` configuration, with a
+configuration that describes the organic feed's properties.
+
+The number of stages in the solvent extraction process has to be specified by the user through
+the ``number_of_finite_elements`` configuration. It takes an integer value.
+
+The user must give a heterogeneous reaction package in the ``heterogeneous_reaction_package``
+argument for the extraction reaction between the two phases, and any additional arguments can
+be given in the ``heterogeneous_reaction_package_args`` argument.
+
+The user needs to specify the discretization method of the settler tank length in the argument
+``settler_transformation_method``. Once the discretization method is specified, the user needs
+to specify the corresponding discretization schemein the argument ``settler_transformation_scheme``.
+
+After the discretization, the user needs to specify the number of finite elements in the argument
+``settler_finite_elements``. If the discretization method is collocation, then the user has to
+additionally specify the number of collocation points in the ``settler_collocation_points``, else
+the user does not need tp specify anything in this argument.
+
+Stream configurations
+---------------------
+
+Each of the feed streams has to have a dictionary that specifies the property packages and other
+details as mentioned below.
+
+The ``property_package`` configuration is the property package that describes the state conditions
+and properties of a particular stream.
+
+The ``property_package_args`` configuration is any specific set of arguments that has to be passed
+to the property block for the unit operation.
+
+The user can specify the direction of the flow of the stream through the stages through the
+configuration ``flow_direction``. This is a configuration, that uses FlowDirection Enum, which
+can have two possible values.
+
+The stream has two more arguments, ``has_energy_balance`` and ``has_pressure_balance`` in lieu with
+the base MSContactor model. However, our model does not consider energy balance and pressure balance
+yet, so the default arguments will be ``has_energy_balance = False`` and ``has_pressure_balance = False``.
+
+Degrees of freedom
+------------------
+
+When the model is operated in steady state, the number of degrees of freedom of each unit is the sum
+of the volume of the mixer tank, and the length and area of both the settler tanks. The total degrees
+of freedom is the degrees of freedom of one unit multiplied by the number of stages.
+
+If the model is operated in dynamic state, the number of degrees of freedom of each unit is equal to
+the sum of all the variables in the mixer and the two settler tanks whose values have to be fixed at
+time=0, the volume of the mixer tank, and the area and length of the two settler tanks. The total degrees
+of freedom is the degrees of freedom of each unit multiplied by the number of tanks.
+
+Model structure
+---------------
+
+The core model is a combination of the traditional Solvent Extraction models and 1D Control Volume
+models.
+Each unit consists of a mixer tank model, which is a Solvent Extraction unit model, accompanied by
+two 1D Control Volume unit models for the aqueous and organic phases respectively. This entire unit
+is repeated as many times as the number of stages in the unit model.
+The material transfer between the two phases happens only in the mixer tanks, ie. the Solvent Extraction
+models, and they are quantified by the heterogeneous reaction package.
+Each of the mixer and settler tanks are connected extensively by Arcs, named after the sequence and
+the stage number of the tanks.
+
+Additional Constraints
+----------------------
+
+In addition to the MSContactor model, the model declares the following constraints.
+
+1. temperature_constraint = This constraint equates the inlet and outlet temperatures of all the
+settler tanks. These constraints are added directly to the 1D Control Volume blocks.
+
+2. pressure_constraint = This constraint equates the inlet and outlet pressures of all the
+settler tanks. These constraints are added directly to the 1D Control Volume blocks.
+
+"""
+
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
 from pyomo.environ import Block, RangeSet, TransformationFactory, value, Var, Constraint
 from pyomo.network import Port, Arc
@@ -21,6 +127,8 @@ from idaes.core.util.initialization import propagate_state
 from prommis.solvent_extraction.solvent_extraction import (
     SolventExtraction,
 )
+
+__author__ = "Arkoprabho Dasgupta"
 
 
 class CompoundSolventExtractionInitializer(ModularInitializerBase):
@@ -287,6 +395,26 @@ class CompoundSolventExtractionData(UnitModelBlockData):
     )
 
     CONFIG.declare(
+        "settler_transformation_method",
+        ConfigValue(
+            default=useDefault,
+            description="Discretization method to use for DAE transformation",
+            doc="""Discretization method to use for DAE transformation. See
+        Pyomo documentation for supported transformations.""",
+        ),
+    )
+
+    CONFIG.declare(
+        "settler_transformation_scheme",
+        ConfigValue(
+            default=useDefault,
+            description="Discretization scheme to use for DAE transformation",
+            doc="""Discretization scheme to use when transformating domain. See
+        Pyomo documentation for supported schemes.""",
+        ),
+    )
+
+    CONFIG.declare(
         "settler_finite_elements",
         ConfigValue(
             default=20,
@@ -308,28 +436,10 @@ class CompoundSolventExtractionData(UnitModelBlockData):
         ),
     )
 
-    CONFIG.declare(
-        "settler_transformation_method",
-        ConfigValue(
-            default=useDefault,
-            description="Discretization method to use for DAE transformation",
-            doc="""Discretization method to use for DAE transformation. See
-        Pyomo documentation for supported transformations.""",
-        ),
-    )
-
-    CONFIG.declare(
-        "settler_transformation_scheme",
-        ConfigValue(
-            default=useDefault,
-            description="Discretization scheme to use for DAE transformation",
-            doc="""Discretization scheme to use when transformating domain. See
-        Pyomo documentation for supported schemes.""",
-        ),
-    )
-
     def build(self):
         super().build()
+
+        # Declare indexed blocks
 
         self.elements = RangeSet(
             1,
@@ -337,9 +447,27 @@ class CompoundSolventExtractionData(UnitModelBlockData):
             doc="Set of finite elements in cascade (1 to number of elements)",
         )
 
+        # Declare indexed mixer tanks and settler tanks
+
         self.mixer = Block(self.elements)
         self.aqueous_settler = Block(self.elements)
         self.organic_settler = Block(self.elements)
+
+        # Declare energy balance type
+
+        if self.config.aqueous_stream.has_energy_balance == True:
+            energy_balance_type = EnergyBalanceType.enthalpyTotal
+        else:
+            energy_balance_type = EnergyBalanceType.none
+
+        # Declare pressure balance type
+
+        if self.config.aqueous_stream.has_pressure_balance == True:
+            pressure_balance_type = MomentumBalanceType.pressureTotal
+        else:
+            pressure_balance_type = MomentumBalanceType.none
+
+        # Define the individual mixer and settler models
 
         for i in self.elements:
 
@@ -377,11 +505,12 @@ class CompoundSolventExtractionData(UnitModelBlockData):
                 has_phase_equilibrium=False,
                 has_mass_transfer=False,
             )
+
             self.aqueous_settler[i].unit.add_energy_balances(
-                balance_type=EnergyBalanceType.none,
+                balance_type=energy_balance_type,
             )
             self.aqueous_settler[i].unit.add_momentum_balances(
-                balance_type=MomentumBalanceType.none,
+                balance_type=pressure_balance_type,
             )
             self.aqueous_settler[i].unit.apply_transformation()
             self.add_inlet_port(
@@ -417,10 +546,10 @@ class CompoundSolventExtractionData(UnitModelBlockData):
                 has_mass_transfer=False,
             )
             self.organic_settler[i].unit.add_energy_balances(
-                balance_type=EnergyBalanceType.none,
+                balance_type=energy_balance_type,
             )
             self.organic_settler[i].unit.add_momentum_balances(
-                balance_type=MomentumBalanceType.none,
+                balance_type=pressure_balance_type,
             )
             self.organic_settler[i].unit.apply_transformation()
             self.add_inlet_port(

@@ -1,3 +1,10 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+
 from pyomo.environ import (
     ConcreteModel,
     units,
@@ -158,6 +165,8 @@ def set_inputs(m, dosage, perturb_time):
 
 def set_initial_guess(m):
 
+    # set variable values in the mixer at t=0
+
     for e in m.fs.leach_soln.component_list:
         if e not in ["H2O", "HSO4"]:
             m.fs.compound_solex.mixer[:].unit.mscontactor.aqueous[0, :].conc_mass_comp[
@@ -183,6 +192,8 @@ def set_initial_guess(m):
             0.0, :, f"{e}_mass_transfer"
         ].fix()
 
+    # set variable values in the settler at t=0
+
     for s in m.fs.compound_solex.elements:
         for x in m.fs.compound_solex.aqueous_settler[s].unit.length_domain:
             if x != 0:
@@ -201,7 +212,7 @@ def set_initial_guess(m):
         for x in m.fs.compound_solex.organic_settler[s].unit.length_domain:
             if x != 0:
                 for e in m.fs.prop_o.component_list:
-                    if e != "Kerosene":
+                    if e not in ["Kerosene"]:
                         m.fs.compound_solex.organic_settler[s].unit.properties[
                             0, x
                         ].conc_mass_comp[e].fix()
@@ -210,19 +221,31 @@ def set_initial_guess(m):
                 ].flow_vol.fix()
 
 
-if __name__ == "__main__":
-
-    dosage = 5
-    number_of_stages = 3
-    time_duration = 12
-    perturb_time = 4
+def build_model_and_discretize(dosage, number_of_stages, time_duration):
 
     m = build_model(dosage, number_of_stages, time_duration)
     discretization_scheme(m)
-    from_json(m, fname="compound_solvent_extraction.json", wts=StoreSpec.value())
+
+    return m
+
+
+def initialize_set_input_and_initialize_guess(m, dosage, perturb_time):
+
     copy_first_steady_state(m)
     set_inputs(m, dosage, perturb_time)
     set_initial_guess(m)
+
+
+dosage = 5
+number_of_stages = 3
+time_duration = 12
+perturb_time = 4
+
+if __name__ == "__main__":
+
+    m = build_model_and_discretize(dosage, number_of_stages, time_duration)
+    from_json(m, fname="compound_solvent_extraction.json", wts=StoreSpec.value())
+    initialize_set_input_and_initialize_guess(m, dosage, perturb_time)
 
     solver = get_solver("ipopt_v2")
     results = solver.solve(m, tee=True)

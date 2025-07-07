@@ -1,3 +1,10 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+
 from pyomo.environ import (
     ConcreteModel,
     units,
@@ -13,10 +20,8 @@ from idaes.core.solvers import get_solver
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import (
-    SolventExtraction,
-    SolventExtractionInitializer,
-)
+from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,
 )
@@ -121,14 +126,14 @@ def main(dosage, number_of_stages):
     return m
 
 
+dosage = 5
+number_of_stages = 3
+
 if __name__ == "__main__":
-    dosage = 5
-    number_of_stages = 3
 
     m = main(dosage, number_of_stages)
 
-    initializer = SolventExtractionInitializer()
-    initializer.initialize(m.fs.solex)
+    m.fs.solex.default_initializer().initialize(m.fs.solex)
 
     solver = get_solver(solver="ipopt_v2")
     solver.solve(m, tee=True)

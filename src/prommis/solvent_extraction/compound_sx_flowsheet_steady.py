@@ -1,3 +1,10 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+
 from pyomo.environ import ConcreteModel, units
 
 from idaes.core import (
@@ -127,19 +134,16 @@ def main(dosage, number_of_stages):
     return m
 
 
-if __name__ == "__main__":
+dosage = 5
+number_of_stages = 3
 
-    dosage = 5
-    number_of_stages = 3
+if __name__ == "__main__":
 
     m = main(dosage, number_of_stages)
 
-    initializer = m.fs.compound_solex.default_initializer()
-    initializer.initialize(m.fs.compound_solex)
+    m.fs.compound_solex.default_initializer().initialize(m.fs.compound_solex)
 
     solver = get_solver("ipopt_v2")
-    solver.options["max_iter"] = 10000
-
     results = solver.solve(m, tee=True)
 
     to_json(m, fname="compound_solvent_extraction.json", human_read=True)

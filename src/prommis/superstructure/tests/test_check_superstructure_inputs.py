@@ -18,6 +18,7 @@ from prommis.superstructure.check_superstructure_inputs import (
     check_plant_lifetime_params,
     check_supe_formulation_params,
 )
+from prommis.superstructure.superstructure_function import define_custom_units
 
 # --- Valid parameter values from temp_test_checks.py ---
 plant_start = 2024
@@ -652,6 +653,7 @@ byproduct_opt_conversions = {
 
 ### Helper function to reset the model for sequential testing
 def get_clean_model():
+    define_custom_units()
     return pyo.ConcreteModel()
 
 
@@ -721,6 +723,7 @@ def test_feed_params():
 
 def test_supe_formulation_params():
     m = get_clean_model()
+
     add_plant_lifetime_params_block(m, plant_start, plant_lifetime)
     add_feed_params_block(
         m, available_feed, collection_rate, tracked_comps, prod_comp_mass

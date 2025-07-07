@@ -1,6 +1,7 @@
 from prommis.superstructure.superstructure_function import build_model
-
+import pyomo.environ as pyo
 from idaes.core.solvers import get_solver
+from pyomo.util.check_units import assert_units_consistent
 
 # def build_model(
 #     m,
@@ -678,7 +679,7 @@ obj_func = "NPV"
 # obj_func = "COR"
 
 ### Environmnetal Impact Parameters
-consider_environmental_impacts = True
+consider_environmental_impacts = False
 options_environmental_impacts = {
     (1, 1): 0,
     (1, 2): 1000,
@@ -764,7 +765,7 @@ m = build_model(
 )
 
 ### Solve model
-m.fs.environmental_impacts.deactivate()
+# m.fs.environmental_impacts.deactivate()
 solver = get_solver(solver="gurobi")
 solver.options["NumericFocus"] = 2
 results = solver.solve(m, tee="True")
@@ -772,18 +773,46 @@ results = solver.solve(m, tee="True")
 ### Print out results
 m.fs.option_binary_var.display()
 
-# m.fs.costing.npv.display()
+# assert_units_consistent(m.fs)
+# # check blocks
+# for block in m.component_objects(pyo.Block, descend_into=True):
+#     try:
+#         assert_units_consistent(block)
+#         print(f"Units consistent for block: {block.name}")
+#     except TypeError as e:
+#         print(f"Skipped block {block.name}: {e}")
 
-# m.fs.costing.cash_flow.display()
-# m.fs.costing.total_profit.display()
 
+# check constraints
+for constr in m.component_objects(pyo.Constraint, descend_into=True):
+    try:
+        assert_units_consistent(constr)
+        print(f"Units consistent for constraint: {constr.name}")
+    except TypeError as e:
+        print(f"Skipped constraint {constr.name}: {e}")
+    except Exception as e:
+        print(f"Units inconsistent in constraint {constr.name}: {e}")
+
+# # check expressions
+# for expr in m.component_objects(pyo.Expression, descend_into=True):
+#     try:
+#         assert_units_consistent(expr)
+#         print(f"Units consistent for expression: {expr.name}")
+#     except TypeError as e:
+#         print(f"Skipped expression {expr.name}: {e}")
+#     except Exception as e:
+#         print(f"Units inconsistent in expression {expr.name}: {e}")
+
+
+# m.fs.available_feed.display()
 # m.fs.feed_entering.display()
 
-# m.fs.costing.display()
-
-# m.fs.costing.cash_flow.display()
-# m.fs.costing.total_profit.display()
-# m.fs.costing.cor.display()
-# m.fs.f_out.display()
-
-# m.fs.costing.calculate_total_profit_cons.display()
+# m.fs.num_stages.display()
+# m.fs.stages_set.display()
+# m.fs.options_in_stage.display()
+# m.fs.all_opts_set.display()
+# m.fs.discrete_opts_set.display()
+# m.fs.continuous_opts_set.display()
+# m.fs.option_outlets.display()
+# m.fs.option_efficiencies.display()
+# m.fs.final_opts_set.display()

@@ -12,6 +12,7 @@ Author: Chris Laliwala
 """
 
 import pyomo.environ as pyo
+from pyomo.environ import units as pyunits
 
 from idaes.core.solvers import get_solver
 
@@ -49,6 +50,22 @@ from prommis.superstructure.check_superstructure_inputs import (
     check_objective_function_choice,
 )
 
+
+def define_custom_units():
+    """
+    This function defines custom units that are needed throughout the model.
+    """    
+
+    # Define custom units.
+    pyunits.load_definitions_from_strings(["year = [time]"])
+    pyunits.load_definitions_from_strings(["EOL_Product = [item]"])
+    pyunits.load_definitions_from_strings(["Operator = [item]"])
+    pyunits.load_definitions_from_strings(["Disassembly_Unit = [item]"])
+    pyunits.load_definitions_from_strings(["USD = [currency]"])
+    pyunits.load_definitions_from_strings(["KUSD = 1000 * USD"])
+    pyunits.load_definitions_from_strings(["MUSD = 1000 * KUSD"])
+
+
 def build_model(
     ### Choice of objective function
     obj_func,
@@ -85,7 +102,45 @@ def build_model(
     byproduct_values,
     byproduct_opt_conversions,
 ):
+    """
+    This function builds a superstructure model based on specifications from the user.
+
+    Args:
+        obj_func: (str) Choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
+
+        plant_start: (int) The year that plant construction begins.
+        plant_lifetime: (int) The total lifetime of the plant, including plant construction. Must be at least three years.
+
+        available_feed: (dict) Total feedstock available (number of EOL products) for recycling each year.
+        collection_rate: (float) Collection rate for how much available feed is processed by the plant each year.
+        tracked_comps: (list) List of tracked components.
+        prod_comp_mass: (dict) Mass of tracked components per EOL product (kg / EOL product).
+
+        num_stages: (int) Number of total stages.
+        options_in_stage: (dict) Number of options in each stage.
+        option_outlets: (dict) Set of options k' in stage j+1 connected to option k in stage j.
+        option_efficiencies: (dict) Tracked component retention efficiency for each option.
+
+        profit: (dict) Profit per unit of product in terms of tracked components ($/kg tracked component).
+        opt_var_oc_params: (dict) Holds the variable operating cost param for options that are continuous. Variable operating costs assumed to be proportional to the feed entering the option.
+        operators_per_discrete_unit: (dict) Number of operators needed per discrete unit for options that utilize discrete units.
+        yearly_cost_per_unit: (dict) Yearly operating costs per unit ($/year) for options which utilize discrete units.
+        capital_cost_per_unit: (dict) Cost per unit ($) for options which utilize discrete units.
+        processing_rate: (dict) Processing rate per unit for options that utilize discrete units. In terms of end-of-life products disassembled per year per unit (number of EOL products / year).
+        num_operators: (dict) Number of operators needed for each continuous option.
+        labor_rate: (float) Yearly wage per operator ($ / year).
+
+        discretized_equipment_cost: (dict) Discretized cost by flows entering for each continuous option ($/kg).
+
+
+
+        consider_byproduct_valorization: (bool) Decide whether or not to consider the valorization of byproducts.
+    """
+
     #################################################################################################
+    ### Define custom units
+    define_custom_units()
+
     ### Build model
     m = pyo.ConcreteModel()
 
@@ -163,10 +218,11 @@ def build_model(
     add_costing_vars(m, obj_func)
 
     ### Environmental impacts
+    check_environmental_impact_params(
+        m, consider_environmental_impacts, options_environmental_impacts, epsilon
+    )
+    # only add params, vars, and cons if environmental impacts are considered.
     if consider_environmental_impacts:
-        check_environmental_impact_params(
-            m, consider_environmental_impacts, options_environmental_impacts, epsilon
-        )
         add_environmental_impact_params(
             m, consider_environmental_impacts, options_environmental_impacts, epsilon
         )
@@ -177,14 +233,20 @@ def build_model(
     check_byproduct_valorization_params(
         m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
     )
+    # only add vars and cons if byproduct valorization is considered
+    if consider_byproduct_valorization:
+        add_byproduct_valorization_params(
+            m, byproduct_values, byproduct_opt_conversions
+        )
+        add_byproduct_valorization_vars(m)
+        add_byproduct_valorization_cons(m)
 
     # Generate costing constraints.
-    add_profit_cons(m, obj_func)
+    add_profit_cons(m, obj_func, consider_byproduct_valorization)
     add_capital_cost_cons(m)
     add_operating_cost_cons(m)
     add_cash_flow_cons(m)
     add_costing_objective_functions(m, obj_func)
-
 
     ### Return model
     return m

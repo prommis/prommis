@@ -20,7 +20,7 @@ def check_objective_function_choice(obj_func):
     This function checks that the choice of objective function is feasible.
 
     Args:
-        obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
+        obj_func: (str) Choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
     """
 
     ### Check types and structure.
@@ -1002,13 +1002,14 @@ def check_byproduct_valorization_params(
         byproduct_values: (dict) Byproducts considered, and their value ($/kg).
         byproduct_opt_conversions: (dict) Defines the conversion factors for different byproducts for different options.
     """
+
+    ## Check that consider_byproduct_valorization is of type bool.
+    if not isinstance(consider_byproduct_valorization, bool):
+        raise TypeError("consider_byproduct_valorization not of type bool.")
+    
     ### Only need to check feasibility of parameters if user wants to consider environmental impacts (consider_byprod_val is True).
     if consider_byproduct_valorization:
         ### Check typos and structure.
-        ## Check that consider_byproduct_valorization is of type bool.
-        if not isinstance(consider_byproduct_valorization, bool):
-            raise TypeError("consider_byproduct_valorization not of type bool.")
-
         ## Check that structure of byproduct_values is correct.
         for key, val in byproduct_values.items():
             if not isinstance(key, str):

@@ -15,6 +15,7 @@ import copy
 import math
 
 import pyomo.environ as pyo
+from pyomo.environ import units as pyunits
 
 
 def add_plant_lifetime_params_block(m, plant_start, plant_lifetime):
@@ -37,23 +38,34 @@ def add_plant_lifetime_params_block(m, plant_start, plant_lifetime):
     m.fs = pyo.Block(doc="Main flowsheet.")
     ## Pyomo parameters
     m.fs.plant_start = pyo.Param(
-        initialize=plant_start, doc="The year that plant construction begins."
+        initialize=plant_start,
+        doc="The year that plant construction begins.",
+        units=pyunits.year,
     )
     m.fs.plant_lifetime = pyo.Param(
         initialize=plant_lifetime,
         doc="The total lifetime of the plant, including plant construction. Must be at least three years.",
+        units=pyunits.year,
     )
     m.fs.prod_start = pyo.Param(
-        initialize=prod_start, doc="The first year of plant production."
+        initialize=prod_start,
+        doc="The first year of plant production.",
+        units=pyunits.year,
     )
     m.fs.plant_end = pyo.Param(
-        initialize=plant_end, doc="The final year of plant production."
+        initialize=plant_end,
+        doc="The final year of plant production.",
+        units=pyunits.year,
     )
     m.fs.plant_life_range = pyo.RangeSet(
-        plant_start, plant_end, doc="Lifetime of the plant."
+        pyo.value(plant_start),
+        pyo.value(plant_end),
+        doc="Lifetime of the plant.",
     )
     m.fs.operational_range = pyo.RangeSet(
-        prod_start, plant_end, doc="Operational lifetime of the plant."
+        pyo.value(prod_start),
+        pyo.value(plant_end),
+        doc="Operational lifetime of the plant.",
     )
 
 
@@ -65,10 +77,10 @@ def add_feed_params_block(
 
     Args:
         m: pyomo model.
-        available_feed: (dict) Total feedstock available for recycling each year.
+        available_feed: (dict) Total feedstock available (nunber of EOL products) for recycling each year.
         collection_rate: (float) Collection rate for how much available feed is processed by the plant each year.
         tracked_comps: (list) List of tracked components.
-        prod_comp_mass: (dict) Mass of tracked components per EOL product.
+        prod_comp_mass: (dict) Mass of tracked components per EOL product (kg per EOL product).
     """
     ### Define parameters from user input.
     # Define feed entering each year of plant operation in terms of available feed and collection rate.
@@ -86,6 +98,7 @@ def add_feed_params_block(
         m.fs.operational_range,
         initialize=available_feed,
         doc="The total feedstock available for recycling each year.",
+        units=pyunits.EOL_Product / pyunits.year,
     )
     m.fs.collection_rate = pyo.Param(
         initialize=collection_rate,
@@ -96,19 +109,23 @@ def add_feed_params_block(
         m.fs.tracked_comps,
         initialize=prod_comp_mass,
         doc="The mass of each tracked component per EOL product.",
+        units=pyunits.kg / pyunits.EOL_Product,
     )
     m.fs.feed_entering = pyo.Param(
         m.fs.operational_range,
         initialize=feed_entering,
-        doc="The amount of feed entering the plant each year.",
+        doc="The amount of EOL Products entering the plant each year.",
+        units=pyunits.EOL_Product / pyunits.year,
     )
     m.fs.max_feed_entering = pyo.Param(
         initialize=max_feed_entering,
         doc="The max yearly feed that enters the plant over the production period.",
+        units=pyunits.EOL_Product / pyunits.year,
     )
     m.fs.max_feed_entering_year = pyo.Param(
         initialize=max_feed_entering_year,
         doc="The year that the max feed enters the plant.",
+        units=pyunits.year,
     )
 
 
@@ -149,8 +166,12 @@ def add_supe_formulation_params(
         return option_efficiencies[(j, k)][c]
 
     ### Define necessary pyomo parameters.
-
     ## Pyomo parameters
+    m.fs.max_options = pyo.RangeSet(
+        1,
+        max_options,
+        doc="Set of the max number of options that exist in a single stage in the superstructure.",
+    )
     m.fs.num_stages = pyo.Param(
         initialize=num_stages, doc="The total number of stages in the superstructure."
     )
@@ -179,9 +200,13 @@ def add_supe_formulation_params(
         "All options after the first stage are assumed to be continuous. The sizing of these options is calculated "
         "based on the sum of the tracked components entering the option.",
     )
-    m.fs.option_outlets = pyo.Param(
-        m.fs.all_opts_set,
-        initialize=option_outlets,
+    # m.fs.option_outlets = pyo.Param(
+    #     m.fs.all_opts_set,
+    #     initialize=option_outlets,
+    #     doc="Defines the set of options k' in stage j+1 connected to option k in stage j.",
+    # )
+    m.fs.option_outlet_pairs = pyo.Set(
+        initialize=[(j, k, kp) for (j, k), kps in option_outlets.items() for kp in kps],
         doc="Defines the set of options k' in stage j+1 connected to option k in stage j.",
     )
     m.fs.option_efficiencies = pyo.Param(
@@ -213,14 +238,14 @@ def add_operating_params(
 
     Args:
         m: pyomo model.
-        profit: (dict) Profit per unit of product in terms of tracked components.
+        profit: (dict) Profit per unit of product in terms of tracked components ($/kg tracked component).
         opt_var_oc_params: (dict) Holds the variable operating cost param for options that are continuous. Variable operating costs assumed to be proportional to the feed entering the option.
         operators_per_discrete_unit: (dict) Number of operators needed per discrete unit for options that utilize discrete units.
-        yearly_cost_per_unit: (dict) Yearly operating costs per unit for options which utilize discrete units.
-        capital_cost_per_unit: (dict) Cost per unit for options which utilize discrete units.
-        processing_rate: (dict) Processing rate per unit for options that utilize discrete units. In terms of end-of-life products disassembled per year per unit.
+        yearly_cost_per_unit: (dict) Yearly operating costs per unit ($/year) for options which utilize discrete units.
+        capital_cost_per_unit: (dict) Cost per unit ($) for options which utilize discrete units.
+        processing_rate: (dict) Processing rate per unit for options that utilize discrete units. In terms of end-of-life products disassembled per year per unit (number of EOL products / year).
         num_operators: (dict) Number of operators needed for each continuous option.
-        labor_rate: (float) Yearly wage per operator.
+        labor_rate: (float) Yearly wage per operator ($ / year).
     """
     ### Define parameters from user input.
     ## Calculate the number of discrete units needed for each option. There must be enough discrete units to handle the maximum flow of end-of-life products
@@ -228,7 +253,7 @@ def add_operating_params(
     discrete_units_per_option = copy.deepcopy(processing_rate)
     for key in discrete_units_per_option.keys():
         discrete_units_per_option[key] = math.ceil(
-            m.fs.max_feed_entering / processing_rate[key]
+            pyo.value(m.fs.max_feed_entering) / processing_rate[key]
         )
 
     ### Define functions needed to initialize pyomo parameters.
@@ -236,9 +261,13 @@ def add_operating_params(
     def profit_initialization(m, j, k, c):
         return profit[(j, k)][c]
 
-    # Define a function for initializing opt_var_oc_params pyomo parameter.
-    def opt_var_oc_params_initialization(m, j, k, var_oc_param):
-        return opt_var_oc_params[(j, k)][var_oc_param]
+    # Define a function for initializing opt_var_oc_params pyomo A parameter.
+    def opt_var_oc_A_param_initialization(m, j, k):
+        return opt_var_oc_params[(j, k)]["a"]
+
+    # Define a function for initializing opt_var_oc_params pyomo B parameter.
+    def opt_var_oc_B_param_initialization(m, j, k):
+        return opt_var_oc_params[(j, k)]["b"]
 
     ### Define necessary pyomo parameters.
     ## Create block
@@ -251,51 +280,62 @@ def add_operating_params(
         m.fs.tracked_comps,
         initialize=profit_initialization,
         doc="Holds the profit for all options in the final stage in terms of the tracked components.",
+        units=pyunits.USD / pyunits.kg,
     )
-    m.fs.costing.var_oc_params_set = pyo.Set(
-        initialize=["a", "b"],
-        doc="Set containing the necessary parameters for calculating the variable operating costs for all continuous options.",
-    )
-    m.fs.costing.opt_var_oc_params = pyo.Param(
+    m.fs.costing.opt_var_oc_param_A = pyo.Param(
         m.fs.continuous_opts_set,
-        m.fs.costing.var_oc_params_set,
-        initialize=opt_var_oc_params_initialization,
-        doc="Holds all the variable operating costs parameter values for all continuous options.",
+        initialize=opt_var_oc_A_param_initialization,
+        doc="Holds all the 'A' variable operating costs parameter values for all continuous options.",
+        units=pyunits.USD / pyunits.kg,
+    )
+    m.fs.costing.opt_var_oc_param_B = pyo.Param(
+        m.fs.continuous_opts_set,
+        initialize=opt_var_oc_B_param_initialization,
+        doc="Holds all the 'B' variable operating costs parameter values for all continuous options.",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.operators_per_discrete_unit = pyo.Param(
         m.fs.discrete_opts_set,
         initialize=operators_per_discrete_unit,
         doc="The number of operators needed per discrete unit for discrete options.",
+        units=pyunits.Operator / pyunits.Disassembly_Unit,
     )
     m.fs.costing.yearly_cost_per_unit = pyo.Param(
         m.fs.discrete_opts_set,
         initialize=yearly_cost_per_unit,
         doc="The operating costs per discrete unit for discrete options.",
+        units=pyunits.USD / pyunits.Disassembly_Unit / pyunits.year,
     )
     m.fs.costing.capital_cost_per_unit = pyo.Param(
         m.fs.discrete_opts_set,
         initialize=capital_cost_per_unit,
         doc="The capital cost per discrete unit for discrete options.",
+        units=pyunits.USD / pyunits.Disassembly_Unit,
     )
     m.fs.costing.processing_rate = pyo.Param(
         m.fs.discrete_opts_set,
         initialize=processing_rate,
         doc="The processing rate per discrete unit for discrete options. In terms of number of end-of-life products "
         "disassembled per discrete unit per year.",
+        units=pyunits.EOL_Product / pyunits.Disassembly_Unit / pyunits.year,
     )
     m.fs.costing.num_operators = pyo.Param(
         m.fs.continuous_opts_set,
         initialize=num_operators,
         doc="The number of operators per continuous options.",
+        units=pyunits.Operator,
     )
     m.fs.costing.labor_rate = pyo.Param(
-        initialize=labor_rate, doc="The yearly wage per operator."
+        initialize=labor_rate,
+        doc="The yearly wage per operator.",
+        units=pyunits.USD / pyunits.Operator / pyunits.year,
     )
     m.fs.costing.discrete_units_per_option = pyo.Param(
         m.fs.discrete_opts_set,
         initialize=discrete_units_per_option,
         doc="The number of discrete units per option needed to disassemble all the incoming end-of-life products over the operational "
         "lifetime of the plant.",
+        units=pyunits.Disassembly_Unit,
     )
 
 
@@ -305,29 +345,48 @@ def add_discretized_costing_params(m, discretized_equipment_cost):
 
     Args:
         m: pyomo model.
-        discretized_equipment_cost: (dict) Discretized cost by flows entering for each continuous option
+        discretized_equipment_cost: (dict) Discretized cost by flows entering for each continuous option ($/kg).
     """
-    ### Define parameters from user input.
-    # Define a dict to hold discretized flowrate data for each option.
-    flowrates_data = {}
-    for opt in m.fs.continuous_opts_set:
-        flowrates_data[opt] = discretized_equipment_cost[opt]["Flowrates"]
-    # Define a dict to hold discretized cost data for each option.
-    costs_data = {}
-    for opt in m.fs.continuous_opts_set:
-        costs_data[opt] = discretized_equipment_cost[opt]["Costs"]
+
+    ### Define functions needed to initialize pyomo parameters.
+    # Define a function that returns the number of discretized data points that exist for a given option.
+    def opt_discretized_costing_datapoints_initialization(m, j, k):
+        return len(discretized_equipment_cost[(j, k)]["Flowrates"])
+
+    # Define a function that returns the corresponding flowrate for a given option and datapoint number.
+    def opt_discretized_costing_flowrates_initialization(m, j, k, dp):
+        return discretized_equipment_cost[(j, k)]["Flowrates"][dp]
+
+    # Define a function that returns the corresponding purchased equipment cost for a given option and datapoint number.
+    def opt_discretized_costing_costs_initialization(m, j, k, dp):
+        return discretized_equipment_cost[(j, k)]["Costs"][dp]
 
     ### Define necessary pyomo parameters.
     ## Pyomo parameters
-    m.fs.costing.flowrates_data = pyo.Param(
+    m.fs.costing.opt_discretized_costing_datapoints = pyo.Param(
         m.fs.continuous_opts_set,
-        initialize=flowrates_data,
+        initialize=opt_discretized_costing_datapoints_initialization,
+        doc="Holds the number of discretized costing datapoints that exist for all continuous options.",
+    )
+    m.fs.continuous_opts_discretized_costing_data_points = pyo.Set(
+        initialize=(
+            opt + (dp,)
+            for opt in m.fs.continuous_opts_set
+            for dp in range(len(discretized_equipment_cost[opt]["Flowrates"]))
+        ),
+        doc="Stores the discretized costing datapoints that exist for each continuous option.",
+    )
+    m.fs.costing.flowrates_data = pyo.Param(
+        m.fs.continuous_opts_discretized_costing_data_points,
+        initialize=opt_discretized_costing_flowrates_initialization,
         doc="Discretized flowrate data for all continuous options.",
+        units=pyunits.kg / pyunits.year,
     )
     m.fs.costing.costs_data = pyo.Param(
-        m.fs.continuous_opts_set,
-        initialize=costs_data,
+        m.fs.continuous_opts_discretized_costing_data_points,
+        initialize=opt_discretized_costing_costs_initialization,
         doc="Discretized costing data for all continuous options.",
+        units=pyunits.USD,
     )
 
 
@@ -344,7 +403,9 @@ def add_mass_balance_params(m):
     for c in m.fs.tracked_comps:
         # Max value assumes 100% efficiency (no losses) over the plant's lifetime. Rounded up to ensure validity
         # in constraints.
-        m_val[c] = math.ceil(m.fs.max_feed_entering * m.fs.prod_comp_mass[c])
+        m_val[c] = math.ceil(
+            pyo.value(m.fs.max_feed_entering) * pyo.value(m.fs.prod_comp_mass[c])
+        )
 
     # Create an upper bound for the total flow entering a continuous option.
     max_flow_upper_bound = sum(m_val[c] for c in m.fs.tracked_comps)
@@ -368,6 +429,7 @@ def add_mass_balance_params(m):
     m.fs.max_flow_upper_bound = pyo.Param(
         initialize=max_flow_upper_bound,
         doc="Upper bound for the total flow entering a continuous option.",
+        units=pyunits.kg / pyunits.year,
     )
 
 
@@ -383,27 +445,30 @@ def add_mass_balance_vars(m):
         m.fs.f_stages * m.fs.tracked_comps * m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         doc="Flow entering each stage (except the last stage). See documentation for more details.",
+        units=pyunits.kg / pyunits.year,
     )
     m.fs.f_in = pyo.Var(
         m.fs.flow_set,
         domain=pyo.NonNegativeReals,
         doc="Flow entering each option. See documentation for more details.",
+        units=pyunits.kg / pyunits.year,
     )
     m.fs.f_out = pyo.Var(
         m.fs.flow_set,
         domain=pyo.NonNegativeReals,
         doc="Flow entering each option. See documentation for more details.",
+        units=pyunits.kg / pyunits.year,
     )
     m.fs.option_binary_var = pyo.Var(
         m.fs.all_opts_set,
         domain=pyo.Binary,
         doc="Binary variables to indicate whether or not an option has been selected.",
     )
-    m.fs.flow_entering = pyo.Var(
+    m.fs.piecewise_flow_entering = pyo.Var(
         m.fs.continuous_opts_set,
         bounds=(0, m.fs.max_flow_upper_bound),
         doc="The max total flow that enters each continuous option over the lifetime"
-        "of the plant.",
+        "of the plant. Used in piecewise constraints and thus must be unitless.",
     )
 
 
@@ -477,16 +542,28 @@ def add_mass_balance_cons(m):
         num_options = range(1, b.options_in_stage[j] + 1)
         return sum(b.option_binary_var[j, k] for k in num_options) == 1
 
+    # @m.fs.Constraint(
+    #     m.fs.all_opts_set,
+    #     doc="Equation (6) from the documentation. Ensures that if an option in stage $j + 1$ can only be chosen if it is connected to an option that was chosen in stage $j$.",
+    # )
+    # def connection_binary_cons(b, j, k):
+    #     if j != m.fs.num_stages:
+    #         # Extract the set of options k' in stage j+1 connected to option k in stage j.
+    #         opt_connections = b.option_outlets[j, k]
+    #         return b.option_binary_var[j, k] <= sum(
+    #             b.option_binary_var[j + 1, kp] for kp in opt_connections
+    #         )
+    #     else:
+    #         return pyo.Constraint.Skip
     @m.fs.Constraint(
         m.fs.all_opts_set,
-        doc="Equation (6) from the documentation. Ensures that if an option in stage $j + 1$ can only be chosen if it is connected to an option that was chosen in stage $j$.",
     )
-    def connection_binary_cons(b, j, k):
+    def connetion_binary_cons(b, j, k):
         if j != m.fs.num_stages:
-            # Extract the set of options k' in stage j+1 connected to option k in stage j.
-            opt_connections = b.option_outlets[j, k]
             return b.option_binary_var[j, k] <= sum(
-                b.option_binary_var[j + 1, kp] for kp in opt_connections
+                b.option_binary_var[j + 1, kp]
+                for kp in m.fs.max_options
+                if (j, k, kp) in m.fs.option_outlet_pairs
             )
         else:
             return pyo.Constraint.Skip
@@ -505,15 +582,13 @@ def add_mass_balance_cons(m):
     def f_out_big_m_cons(b, j, k, c, t):
         return b.f_out[j, k, c, t] <= b.option_binary_var[j, k] * b.big_m_val[c]
 
-    @m.fs.costing.Constraint(
+    @m.fs.Constraint(
         m.fs.continuous_opts_set,
         m.fs.operational_range,
         doc="Constraint to determine the max flow entering each continuous option over the lifetime of the plant.",
     )
     def max_flow_entering_cons(b, j, k, t):
-        return m.fs.flow_entering[j, k] >= sum(
-            m.fs.f_in[j, k, c, t] for c in m.fs.tracked_comps
-        )
+        return b.piecewise_flow_entering[j, k] >= sum(b.f_in[j, k, c, t] for c in b.tracked_comps)
 
 
 def add_costing_params(m):
@@ -537,6 +612,13 @@ def add_costing_params(m):
         m: pyomo model.
     """
     ## Define parameters
+    # Define a Pyomo Param for fraction of total overnight cost expended
+    total_overnight_capital_fraction_expended = {
+        pyo.value(m.fs.plant_start): 0.1,
+        pyo.value(m.fs.plant_start) + 1: 0.6,
+        pyo.value(m.fs.plant_start) + 2: 0.3,
+    }
+
     ## Pyomo parameters
     m.fs.costing.lang_factor = pyo.Param(
         initialize=2.97,
@@ -598,7 +680,19 @@ def add_costing_params(m):
         mutable=True,
         doc="Factor for calculating Property Taxes & Insurance. Assumed to be 1% of the total plant cost[2].",
     )
-    
+    m.fs.costing.total_overnight_capital_fraction_expended = pyo.Param(
+        m.fs.plant_life_range,
+        initialize=lambda m, t: total_overnight_capital_fraction_expended.get(t, 0),
+        mutable=True,
+        doc="Fraction of overnight cost expended in each year. It is assumed that 10% is expended "
+        "in the first year, 60% in the second year, and 30% in the third year.",
+        units=1 / pyunits.year,
+    )
+    m.fs.costing.plant_overhead_factor = pyo.Param(
+        initialize=0.2,
+        mutable=True,
+        doc="Factor for calculating the plant overhead. Assumed to be 20% of the total operating costs each year[2].",
+    )
 
 
 def add_costing_vars(m, obj_func: str):
@@ -637,116 +731,150 @@ def add_costing_vars(m, obj_func: str):
             m.fs.operational_range,
             domain=pyo.NonNegativeReals,
             doc="The profit generated by each option in the final processing stage each year.",
+            units=pyunits.USD / pyunits.year,
         )
 
     # if cor is objective function, build relevant vars
     else:
         m.fs.costing.cost_of_recovery = pyo.Var(
-            domain=pyo.NonNegativeReals, doc="The cost of recovery."
+            domain=pyo.NonNegativeReals,
+            doc="The cost of recovery.",
+            units=pyunits.USD / pyunits.kg,
         )
 
     # build vars that're needed regardless of the objective function.
     m.fs.costing.net_present_value = pyo.Var(
-        domain=pyo.Reals, doc="The net present value."
+        domain=pyo.Reals, doc="The net present value.", units=pyunits.USD
     )
     m.fs.costing.total_profit = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         doc="The total profit generated by the plant each year.",
+        units=pyunits.USD / pyunits.year,
+    )
+    m.fs.costing.piecewise_equipment_cost = pyo.Var(
+        m.fs.all_opts_set,
+        domain=pyo.NonNegativeReals,
+        doc="The cost of purchased equipment. Calculated with piecewise constraints and thus must be dimensionless.",
     )
     m.fs.costing.equipment_cost = pyo.Var(
         m.fs.all_opts_set,
         domain=pyo.NonNegativeReals,
-        doc="The cost of purchased equipment.",
+        doc="The cost of purchased equipment with units.",
+        units = pyunits.USD
     )
     m.fs.costing.total_plant_cost = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="The total plant cost, as defined by QGESS[1]."
+        domain=pyo.NonNegativeReals,
+        doc="The total plant cost, as defined by QGESS[1].",
+        units=pyunits.USD,
     )
     m.fs.costing.financing = pyo.Var(
         domain=pyo.NonNegativeReals,
         doc="The total financing cost of the plant, as defined by QGESS[1].",
+        units=pyunits.USD,
     )
     m.fs.costing.other_costs = pyo.Var(
         domain=pyo.NonNegativeReals,
         doc="'Other costs' associated with the plant as defined by QGESS[1].",
+        units=pyunits.USD,
     )
     m.fs.costing.total_overnight_cost = pyo.Var(
         domain=pyo.NonNegativeReals,
         doc="The total overnight cost of the plant, as defined by QGESS[1].",
+        units=pyunits.USD,
     )
     m.fs.costing.opt_variable_operating_cost = pyo.Var(
         m.fs.all_opts_set * m.fs.operational_range,
         domain=pyo.Reals,
         doc="Yearly variable operating expense for each option[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.aggregate_variable_operating_cost = pyo.Var(
         m.fs.operational_range,
         domain=pyo.Reals,
         doc="Total yearly variable operating expense[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.operators_per_option = pyo.Var(
         m.fs.all_opts_set,
         domain=pyo.NonNegativeReals,
         doc="The number of operators needed for each option[3].",
+        units=pyunits.Operator,
     )
     m.fs.costing.total_operators = pyo.Var(
         domain=pyo.NonNegativeIntegers,
         doc="The total number of operators needed for the process[3]. Must be an integer value.",
+        units=pyunits.Operator,
     )
     m.fs.costing.cost_of_labor = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="The cost of labor for the process[2]."
+        domain=pyo.NonNegativeReals,
+        doc="The cost of labor for the process[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.m_and_sm = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="Maintenance & Supply Materials (M&SM)[2]."
+        domain=pyo.NonNegativeReals,
+        doc="Maintenance & Supply Materials (M&SM)[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.sa_and_qa_qc = pyo.Var(
         domain=pyo.NonNegativeReals,
         doc="Sample Analysis & Quality Assurance/Quality Control (SA&QA/QC)[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.s_ip_r_and_d = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         doc="Sales, Intellectual Property, and Research & Development (S,IP,R&D)[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.a_and_sl = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="Administrative & Supporting Labor (A&SL)[2]."
+        domain=pyo.NonNegativeReals,
+        doc="Administrative & Supporting Labor (A&SL)[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.fb = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="Fringe Benefits (FB)[2]."
+        domain=pyo.NonNegativeReals,
+        doc="Fringe Benefits (FB)[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.pt_and_i = pyo.Var(
-        domain=pyo.NonNegativeReals, doc="Property Taxes & Insurance (PT&I)[2]."
+        domain=pyo.NonNegativeReals,
+        doc="Property Taxes & Insurance (PT&I)[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.aggregate_fixed_operating_cost = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         doc="Total yearly fixed operating cost[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.total_overnight_cost_expended = pyo.Var(
         m.fs.plant_life_range,
         domain=pyo.NonNegativeReals,
         doc="The total overnight cost expended each year[1].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.plant_overhead = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         doc="The yearly plant overhead[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.total_operating_expense = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         doc="The total operating expense each year[2].",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.cash_flow = pyo.Var(
         m.fs.plant_life_range,
         domain=pyo.Reals,
         doc="The yearly cash flow[4].",
+        units=pyunits.USD / pyunits.year,
     )
 
 
-def add_byproduct_valorization_params(
-    m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
-):
+def add_byproduct_valorization_params(m, byproduct_values, byproduct_opt_conversions):
     """
     This function builds the byproduct valorization parameters.
 
@@ -754,72 +882,65 @@ def add_byproduct_valorization_params(
 
     Args:
         m: pyomo model.
-        consider_byproduct_valorization: (bool) Decide whether or not to consider the valorization of byproducts.
         byproduct_values: (dict) Byproducts considered, and their value ($/kg).
         byproduct_opt_conversions: (dict) Conversion factors for each byproduct for each option.
     """
     ## Create blocks
-    m.fs.costing.byproduct_valorization = pyo.Block()
+    m.fs.byproduct_valorization = pyo.Block()
 
     ### Define parameters from user input.
-    m.fs.costing.byproduct_valorization.consider_byproduct_valorization = pyo.Param(
-        initialize=consider_byproduct_valorization,
-        within=pyo.Boolean,
-        doc="Choice of whether or not to consider byproduct valorization.",
+    # Create a set of the byproducts considered.
+    byproducts = set(byproduct_values.keys())
+    # Define a dictionary that maps all byproducts to the options that produce it.
+    byproduct_producing_opts = {}
+    # First, iterate through the byproduct_opt_conversion dict. Extract the options, and the innter dict
+    # which contains the byproducts it produces as keys, and the corresponding conversion factor.
+    for outer_key, inner_dict in byproduct_opt_conversions.items():
+        # Extract the byproducts from the inner dict.
+        for inner_key in inner_dict:
+            # Append opt to the list associated with the byproduct. Create a new list if the byproduct entry doesn't exist.
+            byproduct_producing_opts.setdefault(inner_key, []).append(outer_key)
+
+    ### Define functions needed to initialize pyomo parameters.
+    # Define a function for initializing byproduct option conversion pyomo parameter
+    def byproduct_opt_conversion_initialize(b, j, k, byproduct):
+        return byproduct_opt_conversions[(j, k)][byproduct]
+
+    ### Define necessary pyomo parameters.
+    ## Pyomo parameters
+    ## Add params related to calculating amount of byproduct produced to byproduct_valorization block.
+    m.fs.byproduct_valorization.byproducts_set = pyo.Set(
+        initialize=byproducts, doc="Set of byproducts considered."
+    )
+    m.fs.byproduct_valorization.byproduct_opts_set = pyo.Set(
+        initialize=byproduct_opt_conversions.keys(),
+        doc="Set of options that produce byproducts.",
+    )
+    m.fs.byproduct_valorization.opt_byproduct_set = pyo.Set(
+        initialize=(
+            (opt, byproduct)
+            for opt in byproduct_opt_conversions.keys()
+            for byproduct in byproduct_opt_conversions[opt].keys()
+        ),
+        doc="Set of options that produce byproducts, and the byproducts that they produce.",
+    )
+    m.fs.byproduct_valorization.byproduct_opt_conversion = pyo.Param(
+        m.fs.byproduct_valorization.opt_byproduct_set,
+        initialize=byproduct_opt_conversion_initialize,
+        doc="Defines the conversion factors for all byproducts for all options that produce them.",
+    )
+    m.fs.byproduct_valorization.byproduct_producing_opts = pyo.Param(
+        m.fs.byproduct_valorization.byproducts_set,
+        initialize=byproduct_producing_opts,
+        doc="Pyomo parameter which defines what options produce each byproduct.",
     )
 
-    # only build vars if byproduct valorization is considered
-    if consider_byproduct_valorization:
-        # Create a set of the byproducts considered.
-        byproducts = set(byproduct_values.keys())
-        # Define a dictionary that maps all byproducts to the options that produce it.
-        byproduct_producing_opts = {}
-        # First, iterate through the byproduct_opt_conversion dict. Extract the options, and the innter dict
-        # which contains the byproducts it produces as keys, and the corresponding conversion factor.
-        for outer_key, inner_dict in byproduct_opt_conversions.items():
-            # Extract the byproducts from the inner dict.
-            for inner_key in inner_dict:
-                # Append opt to the list associated with the byproduct. Create a new list if the byproduct entry doesn't exist.
-                byproduct_producing_opts.setdefault(inner_key, []).append(outer_key)
-
-        ### Define functions needed to initialize pyomo parameters.
-        # Define a function for initializing byproduct option conversion pyomo parameter
-        def byproduct_opt_conversion_initialize(b, j, k, byproduct):
-            return byproduct_opt_conversions[(j, k)][byproduct]
-
-        ### Define necessary pyomo parameters.
-        ## Pyomo parameters
-        m.fs.costing.byproduct_valorization.byproducts_set = pyo.Set(
-            initialize=byproducts, doc="Set of byproducts considered."
-        )
-        m.fs.costing.byproduct_valorization.byproduct_values = pyo.Param(
-            m.fs.costing.byproduct_valorization.byproducts_set,
-            initialize=byproduct_values,
-            doc="Defines the value of each byproduct ($/kg).",
-        )
-        m.fs.costing.byproduct_valorization.byproduct_opts_set = pyo.Set(
-            initialize=byproduct_opt_conversions.keys(),
-            doc="Set of options that produce byproducts.",
-        )
-        m.fs.costing.byproduct_valorization.opt_byproduct_set = pyo.Set(
-            initialize=(
-                (opt, byproduct)
-                for opt in byproduct_opt_conversions.keys()
-                for byproduct in byproduct_opt_conversions[opt].keys()
-            ),
-            doc="Set of options that produce byproducts, and the byproducts that they produce.",
-        )
-
-        m.fs.costing.byproduct_valorization.byproduct_opt_conversion = pyo.Param(
-            m.fs.costing.byproduct_valorization.opt_byproduct_set,
-            initialize=byproduct_opt_conversion_initialize,
-            doc="Defines the conversion factors for all byproducts for all options that produce them.",
-        )
-        m.fs.costing.byproduct_valorization.byproduct_producing_opts = pyo.Param(
-            m.fs.costing.byproduct_valorization.byproducts_set,
-            initialize=byproduct_producing_opts,
-            doc="Pyomo parameter which defines what options produce each byproduct.",
-        )
+    ## Add params related to profit generated from byproducts to costing block.
+    m.fs.costing.byproduct_values = pyo.Param(
+        m.fs.byproduct_valorization.byproducts_set,
+        initialize=byproduct_values,
+        doc="Defines the value of each byproduct ($/kg).",
+    )
 
 
 def add_byproduct_valorization_vars(m):
@@ -832,23 +953,24 @@ def add_byproduct_valorization_vars(m):
         m: pyomo model.
     """
     ## Pyomo variables
-    # only build if byproduct valorization is considered
-    if m.fs.costing.byproduct_valorization.consider_byproduct_valorization:
-        m.fs.costing.byproduct_valorization.byproduct_produced = pyo.Var(
-            m.fs.costing.byproduct_valorization.byproducts_set * m.fs.operational_range,
-            domain=pyo.NonNegativeReals,
-            doc="The amount of each byproduct produced each year.",
-        )
-        m.fs.costing.byproduct_valorization.byproduct_profit = pyo.Var(
-            m.fs.costing.byproduct_valorization.byproducts_set * m.fs.operational_range,
-            domain=pyo.Reals,
-            doc="The amount of profit generated from each byproduct each year.",
-        )
-        m.fs.costing.byproduct_valorization.total_byproduct_profit = pyo.Var(
-            m.fs.operational_range,
-            domain=pyo.Reals,
-            doc="The total profit generated by the plant each year from the valorization of byproducts.",
-        )
+    ## Add vars related to calculating amount of byproduct produced to byproduct_valorization block.
+    m.fs.byproduct_valorization.byproduct_produced = pyo.Var(
+        m.fs.byproduct_valorization.byproducts_set * m.fs.operational_range,
+        domain=pyo.NonNegativeReals,
+        doc="The amount of each byproduct produced each year.",
+    )
+
+    ## Add vars related to profit generated from byproducts to costing block.
+    m.fs.costing.byproduct_profit = pyo.Var(
+        m.fs.byproduct_valorization.byproducts_set * m.fs.operational_range,
+        domain=pyo.Reals,
+        doc="The amount of profit generated from each byproduct each year.",
+    )
+    m.fs.costing.total_byproduct_profit = pyo.Var(
+        m.fs.operational_range,
+        domain=pyo.Reals,
+        doc="The total profit generated by the plant each year from the valorization of byproducts.",
+    )
 
 
 def add_byproduct_valorization_cons(m):
@@ -861,44 +983,21 @@ def add_byproduct_valorization_cons(m):
         m: pyomo model.
     """
 
-    @m.fs.costing.byproduct_valorization.Constraint(
-        m.fs.costing.byproduct_valorization.byproducts_set,
+    ## Add cons related to calculating amount of byproduct produced to byproduct_valorization block.
+    @m.fs.byproduct_valorization.Constraint(
+        m.fs.byproduct_valorization.byproducts_set,
         m.fs.operational_range,
         doc="Calculates the amount of each byproduct produced each year.",
     )
     def calculate_byproduct_produced_cons(b, byprod, t):
-        return m.fs.costing.byproduct_valorization.byproduct_produced[byprod, t] == sum(
+        return m.fs.byproduct_valorization.byproduct_produced[byprod, t] == sum(
             sum(m.fs.f_in[opt, c, t] for c in m.fs.tracked_comps)
-            * m.fs.costing.byproduct_valorization.byproduct_opt_conversion[opt, byprod]
-            for opt in m.fs.costing.byproduct_valorization.byproduct_producing_opts[
-                byprod
-            ]
-        )
-
-    @m.fs.costing.byproduct_valorization.Constraint(
-        m.fs.costing.byproduct_valorization.byproducts_set,
-        m.fs.operational_range,
-        doc="Calculate the yearly profit from each byproduct.",
-    )
-    def calculate_byproduct_profit_cons(b, byprod, t):
-        return (
-            m.fs.costing.byproduct_valorization.byproduct_profit[byprod, t]
-            == m.fs.costing.byproduct_valorization.byproduct_produced[byprod, t]
-            * m.fs.costing.byproduct_valorization.byproduct_values[byprod]
-        )
-
-    @m.fs.costing.byproduct_valorization.Constraint(
-        m.fs.operational_range,
-        doc="Calculates the total yearly profit from the valorization of byproducts.",
-    )
-    def calculate_opt_byprod_val_cons(b, t):
-        return m.fs.costing.byproduct_valorization.total_byproduct_profit[t] == sum(
-            m.fs.costing.byproduct_valorization.byproduct_profit[byprod, t]
-            for byprod in m.fs.costing.byproduct_valorization.byproducts_set
+            * m.fs.byproduct_valorization.byproduct_opt_conversion[opt, byprod]
+            for opt in m.fs.byproduct_valorization.byproduct_producing_opts[byprod]
         )
 
 
-def add_profit_cons(m, obj_func: str):
+def add_profit_cons(m, obj_func: str, consider_byproduct_valorization: bool):
     """
     This function builds the profit constraints.
 
@@ -925,6 +1024,7 @@ def add_profit_cons(m, obj_func: str):
     Args:
         m: pyomo model.
         obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
+        consider_byproduct_valorization: (bool) Decide whether or not to consider the valorization of byproducts.
     """
     ## Pyomo constraints
     # Check if NPV is objective function
@@ -943,11 +1043,29 @@ def add_profit_cons(m, obj_func: str):
             )
 
     # Check if profit from byproducts is considered
-    if m.fs.costing.byproduct_valorization.consider_byproduct_valorization:
-        # add byproduct valorization cons if so.
-        add_byproduct_valorization_params(m)
-        add_byproduct_valorization_vars(m)
-        add_byproduct_valorization_cons(m)
+    if consider_byproduct_valorization:
+        # add cons for calculating profit from byproducts if so
+        @m.fs.costing.Constraint(
+            m.fs.byproduct_valorization.byproducts_set,
+            m.fs.operational_range,
+            doc="Calculate the yearly profit from each byproduct.",
+        )
+        def calculate_byproduct_profit_cons(b, byprod, t):
+            return (
+                m.fs.costing.byproduct_profit[byprod, t]
+                == m.fs.byproduct_valorization.byproduct_produced[byprod, t]
+                * m.fs.costing.byproduct_values[byprod]
+            )
+
+        @m.fs.costing.Constraint(
+            m.fs.operational_range,
+            doc="Calculates the total yearly profit from the valorization of byproducts.",
+        )
+        def calculate_opt_byprod_val_cons(b, t):
+            return m.fs.costing.total_byproduct_profit[t] == sum(
+                m.fs.costing.byproduct_profit[byprod, t]
+                for byprod in m.fs.byproduct_valorization.byproducts_set
+            )
 
         # Check if NPV is objective function
         if obj_func == "NPV":
@@ -962,7 +1080,7 @@ def add_profit_cons(m, obj_func: str):
                     == sum(
                         m.fs.costing.opt_profit[opt, t] for opt in m.fs.final_opts_set
                     )
-                    + m.fs.costing.byproduct_valorization.total_byproduct_profit[t]
+                    + m.fs.costing.total_byproduct_profit[t]
                 )
 
         # COR is objective function
@@ -1055,14 +1173,22 @@ def add_capital_cost_cons(m):
         )
 
     def piecewise_rule(b, j, k):
-        flow_data = m.fs.costing.flowrates_data[j, k]
-        equipment_cost_data = m.fs.costing.costs_data[j, k]
+        # Create a range encompassing the number of discretized costing data points that exist for a particular option.
+        dp_range = range(m.fs.costing.opt_discretized_costing_datapoints[j, k])
+        # Create a list of the flow data for the option. Necessary to use pyo.Piecewise.
+        flow_data = [
+            pyo.value(m.fs.costing.flowrates_data[j, k, dp]) for dp in dp_range
+        ]
+        # Create a list of the cost data for the option. Necessary to use pyo.Piecewise.
+        equipment_cost_data = [
+            pyo.value(m.fs.costing.costs_data[j, k, dp]) for dp in dp_range
+        ]
 
         # use m.add_component to generate all piecewise functions
         # piecewise = Piecewise(yval, xval, *kwargs)
         piecewise = pyo.Piecewise(
-            m.fs.costing.equipment_cost[j, k],
-            m.fs.flow_entering[j, k],
+            m.fs.costing.piecewise_equipment_cost[j, k],
+            m.fs.piecewise_flow_entering[j, k],
             pw_pts=flow_data,
             pw_constr_type="EQ",
             f_rule=equipment_cost_data,
@@ -1077,12 +1203,19 @@ def add_capital_cost_cons(m):
         "purchased equipment costs for all the continuous option.",
     )
 
+    @m.fs.costing.Constraint(
+        m.fs.continuous_opts_set,
+        doc="Adds units to equipment costs calculated from piecewise constraints."
+    )
+    def add_units_to_piecewise_costs(b, j, k):
+        return m.fs.costing.equipment_cost[j, k] == m.fs.costing.piecewise_equipment_cost[j, k] * pyunits.USD
+
     @m.fs.costing.Constraint(doc="Calculates the total plant cost[2].")
     def calculate_total_plant_cost_con(b):
         return m.fs.costing.total_plant_cost == sum(
-            m.fs.costing.equipment_cost[opt] for opt in m.fs.discrete_opts_set
+            m.fs.costing.equipment_cost[opt] * pyunits.USD for opt in m.fs.discrete_opts_set
         ) + m.fs.costing.lang_factor * sum(
-            m.fs.costing.equipment_cost[opt] for opt in m.fs.continuous_opts_set
+            m.fs.costing.equipment_cost[opt] * pyunits.USD for opt in m.fs.continuous_opts_set
         )
 
     @m.fs.costing.Constraint(doc="Calculates the total financing cost of the plant[1].")
@@ -1157,10 +1290,9 @@ def add_operating_cost_cons(m):
         else:
             return (
                 m.fs.costing.opt_variable_operating_cost[j, k, t]
-                == m.fs.costing.opt_var_oc_params[j, k, "a"]
+                == m.fs.costing.opt_var_oc_param_A[j, k]
                 * sum(m.fs.f_in[j, k, c, t] for c in m.fs.tracked_comps)
-                + m.fs.costing.opt_var_oc_params[j, k, "b"]
-                * m.fs.option_binary_var[j, k]
+                + m.fs.costing.opt_var_oc_param_B[j, k] * m.fs.option_binary_var[j, k]
             )
 
     @m.fs.costing.Constraint(
@@ -1217,26 +1349,41 @@ def add_operating_cost_cons(m):
         doc="Calculate Sample Analysis & Quality Assurance/Quality Control[2]."
     )
     def calculate_sa_and_qa_qc_con(b):
-        return m.fs.costing.sa_and_qa_qc == m.fs.costing.sa_and_qa_qc_costing_factor * m.fs.costing.cost_of_labor
+        return (
+            m.fs.costing.sa_and_qa_qc
+            == m.fs.costing.sa_and_qa_qc_costing_factor * m.fs.costing.cost_of_labor
+        )
 
     @m.fs.costing.Constraint(
         m.fs.operational_range,
         doc="Calculate Sales, Intellectual Property, and Research & Development[2].",
     )
     def calculate_s_ip_r_and_d_con(b, t):
-        return m.fs.costing.s_ip_r_and_d[t] == m.fs.costing.s_ip_r_and_d_costing_factor * m.fs.costing.total_profit[t]
+        return (
+            m.fs.costing.s_ip_r_and_d[t]
+            == m.fs.costing.s_ip_r_and_d_costing_factor * m.fs.costing.total_profit[t]
+        )
 
     @m.fs.costing.Constraint(doc="Calculate Administrative & Supporting Labor[2].")
     def calculate_a_and_sl_con(b):
-        return m.fs.costing.a_and_sl == m.fs.costing.a_and_sl_costing_factor * m.fs.costing.cost_of_labor
+        return (
+            m.fs.costing.a_and_sl
+            == m.fs.costing.a_and_sl_costing_factor * m.fs.costing.cost_of_labor
+        )
 
     @m.fs.costing.Constraint(doc="Calculate Fringe Benefits[2].")
     def calculate_fb_con(b):
-        return m.fs.costing.fb == m.fs.costing.fb_costing_factor * m.fs.costing.cost_of_labor
+        return (
+            m.fs.costing.fb
+            == m.fs.costing.fb_costing_factor * m.fs.costing.cost_of_labor
+        )
 
     @m.fs.costing.Constraint(doc="Calculate Property Taxes & Insurance[2].")
     def calculate_pt_and_i_con(b):
-        return m.fs.costing.pt_and_i == m.fs.costing.pt_and_i_costing_factor * m.fs.costing.total_plant_cost
+        return (
+            m.fs.costing.pt_and_i
+            == m.fs.costing.pt_and_i_costing_factor * m.fs.costing.total_plant_cost
+        )
 
     @m.fs.costing.Constraint(
         m.fs.operational_range,
@@ -1286,42 +1433,28 @@ def add_cash_flow_cons(m):
 
     @m.fs.costing.Constraint(
         m.fs.plant_life_range,
-        doc="Calculates the total overnight cost expended in a given year. It is assumed that 10% is expended "
-        "in the first year, 60% in the second year, and 30% in the third year.",
+        doc="Calculates the total overnight cost expended in a given year[1].",
     )
     def calculate_total_overnight_cost_expended_cons(b, t):
-        if t == m.fs.plant_start:
-            return (
-                m.fs.costing.total_overnight_cost_expended[t]
-                == 0.1 * m.fs.costing.total_overnight_cost
-            )
-        elif t == (m.fs.plant_start + 1):
-            return (
-                m.fs.costing.total_overnight_cost_expended[t]
-                == 0.6 * m.fs.costing.total_overnight_cost
-            )
-        elif t == (m.fs.plant_start + 2):
-            return (
-                m.fs.costing.total_overnight_cost_expended[t]
-                == 0.3 * m.fs.costing.total_overnight_cost
-            )
-        else:
-            return m.fs.costing.total_overnight_cost_expended[t] == 0
+        return (
+            m.fs.costing.total_overnight_cost_expended[t]
+            == m.fs.costing.total_overnight_capital_fraction_expended[t]
+            * m.fs.costing.total_overnight_cost
+        )
 
     @m.fs.costing.Constraint(
         m.fs.operational_range,
-        doc="Calculates the plant overhead each year. Assumed to be 20% of the fixed and variable "
-        "operating costs.",
+        doc="Calculates the plant overhead each year[2].",
     )
     def calculate_plant_overhead_cons(b, t):
-        return m.fs.costing.plant_overhead[t] == 0.2 * (
+        return m.fs.costing.plant_overhead[t] == m.fs.costing.plant_overhead_factor * (
             m.fs.costing.aggregate_variable_operating_cost[t]
             + m.fs.costing.aggregate_fixed_operating_cost[t]
         )
 
     @m.fs.costing.Constraint(
         m.fs.operational_range,
-        doc="Calculates the total operating expenses each year. Includes variable, fixed, and plant overhead.",
+        doc="Calculates the total operating expenses each year. Includes variable, fixed, and plant overhead[2].",
     )
     def calculate_total_operating_expense_cons(b, t):
         return (
@@ -1333,10 +1466,12 @@ def add_cash_flow_cons(m):
 
     @m.fs.costing.Constraint(
         m.fs.plant_life_range,
-        doc="Calculate the cash flow for each year of the plant's lifetime.",
+        doc="Calculate the cash flow for each year of the plant's lifetime[4].",
     )
-    def calculate_yearly_costing(b, t):
-        if t == m.fs.plant_start:
+    def calculate_cash_flows(b, t):
+        start_year = pyo.value(m.fs.plant_start)
+        # no profit or operational expenses in first year.
+        if t == start_year:
             return (
                 m.fs.costing.cash_flow[t]
                 == -m.fs.costing.total_overnight_cost_expended[t]
@@ -1345,13 +1480,13 @@ def add_cash_flow_cons(m):
             return m.fs.costing.cash_flow[t] == (
                 m.fs.costing.total_profit[t] - m.fs.costing.total_operating_expense[t]
             ) * (1 + m.fs.costing.i_operating_expense_escalation) ** (
-                t - m.fs.plant_start
+                t - start_year
             ) - m.fs.costing.total_overnight_cost_expended[
                 t
             ] * (
                 1 + m.fs.costing.i_capital_escalation
             ) ** (
-                t - m.fs.plant_start
+                t - start_year
             )
 
 
@@ -1384,11 +1519,12 @@ def add_costing_objective_functions(m, obj_func: str):
         obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
     """
 
-    @m.fs.costing.Constraint(doc="Calculates the net present value of the plant.")
+    @m.fs.costing.Constraint(doc="Calculates the net present value of the plant[4].")
     def calculate_net_present_value_con(b):
+        start_year = pyo.value(m.fs.plant_start)
         return m.fs.costing.net_present_value == sum(
-            m.fs.costing.cash_flow[t]
-            / ((1 + m.fs.costing.discount_factor) ** (t - m.fs.plant_start))
+            (m.fs.costing.cash_flow[t] * pyunits.year)
+            / ((1 + m.fs.costing.discount_factor) ** (t - start_year))
             for t in m.fs.plant_life_range
         )
 

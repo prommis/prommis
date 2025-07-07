@@ -77,7 +77,7 @@ def add_feed_params_block(
 
     Args:
         m: pyomo model.
-        available_feed: (dict) Total feedstock available (nunber of EOL products) for recycling each year.
+        available_feed: (dict) Total feedstock available (number of EOL products) for recycling each year.
         collection_rate: (float) Collection rate for how much available feed is processed by the plant each year.
         tracked_comps: (list) List of tracked components.
         prod_comp_mass: (dict) Mass of tracked components per EOL product (kg per EOL product).
@@ -425,7 +425,7 @@ def add_mass_balance_params(m):
         m.fs.tracked_comps,
         initialize=m_val,
         doc="Big-M parameters used in Equations (7) and (8) from the documentation.",
-        units=pyunits.kg / pyunits.year
+        units=pyunits.kg / pyunits.year,
     )
     m.fs.max_flow_upper_bound = pyo.Param(
         initialize=max_flow_upper_bound,
@@ -559,7 +559,7 @@ def add_mass_balance_cons(m):
     @m.fs.Constraint(
         m.fs.all_opts_set,
     )
-    def connetion_binary_cons(b, j, k):
+    def connection_binary_cons(b, j, k):
         if j != m.fs.num_stages:
             return b.option_binary_var[j, k] <= sum(
                 b.option_binary_var[j + 1, kp]
@@ -1219,11 +1219,9 @@ def add_capital_cost_cons(m):
     @m.fs.costing.Constraint(doc="Calculates the total plant cost[2].")
     def calculate_total_plant_cost_con(b):
         return m.fs.costing.total_plant_cost == sum(
-            m.fs.costing.equipment_cost[opt]
-            for opt in m.fs.discrete_opts_set
+            m.fs.costing.equipment_cost[opt] for opt in m.fs.discrete_opts_set
         ) + m.fs.costing.lang_factor * sum(
-            m.fs.costing.equipment_cost[opt]
-            for opt in m.fs.continuous_opts_set
+            m.fs.costing.equipment_cost[opt] for opt in m.fs.continuous_opts_set
         )
 
     @m.fs.costing.Constraint(doc="Calculates the total financing cost of the plant[1].")
@@ -1350,7 +1348,9 @@ def add_operating_cost_cons(m):
     def calculate_m_and_sm_con(b):
         return (
             m.fs.costing.m_and_sm
-            == m.fs.costing.m_and_sm_costing_factor * m.fs.costing.total_plant_cost / pyunits.year
+            == m.fs.costing.m_and_sm_costing_factor
+            * m.fs.costing.total_plant_cost
+            / pyunits.year
         )
 
     @m.fs.costing.Constraint(
@@ -1390,7 +1390,9 @@ def add_operating_cost_cons(m):
     def calculate_pt_and_i_con(b):
         return (
             m.fs.costing.pt_and_i
-            == m.fs.costing.pt_and_i_costing_factor * m.fs.costing.total_plant_cost / pyunits.year
+            == m.fs.costing.pt_and_i_costing_factor
+            * m.fs.costing.total_plant_cost
+            / pyunits.year
         )
 
     @m.fs.costing.Constraint(

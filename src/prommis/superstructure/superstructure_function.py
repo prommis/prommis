@@ -51,7 +51,6 @@ from prommis.superstructure.check_superstructure_inputs import (
 # from idaes.core.solvers import get_solver
 
 
-
 def define_custom_units():
     """
     This function defines custom units that are needed throughout the model.

@@ -301,3 +301,9 @@ def test_solution(model):
     ) == pytest.approx(
         5.0833, rel=1e-5
     )  # h, report has s
+    assert value(
+        model.fs.hydrogen_decrepitation_furnace.furnace_volume[0]
+    ) == pytest.approx(12.4292, rel=1e-5)  # in3, report has m3
+    assert value(
+        model.fs.hydrogen_decrepitation_furnace.furnace_weight[0]
+    ) == pytest.approx(455.635, rel=1e-5)  # lb, report has kg

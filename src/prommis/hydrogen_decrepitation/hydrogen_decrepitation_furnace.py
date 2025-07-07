@@ -1079,6 +1079,28 @@ constructed,
             ) + ((Constants.pi * (b.external_diameter_metal2[t] ** 2)) / 2)
 
         @self.Expression(
+            self.flowsheet().config.time, doc="Total weight of furnace"
+            )
+        def furnace_weight(b, t):
+            return (
+                pyunits.convert(b.total_weight_insulation1[t], to_units=pyunits.pound)
+                + b.weight_metal1[t]
+                + pyunits.convert(b.total_weight_insulation2[t], to_units=pyunits.pound)
+                + b.weight_metal2[t]
+            )
+
+        @self.Expression(
+            self.flowsheet().config.time, doc="Volume of the furnace"
+            )
+        def furnace_volume(b, t):
+            return pyunits.convert(
+                Constants.pi * (
+                    b.external_diameter_metal2[t]**2
+                    ) * b.length_chamber[t] / 4,
+        to_units=pyunits.ft**3
+        )
+
+        @self.Expression(
             self.flowsheet().config.time,
             doc="Energy required to raise the temperature of furnace material from room temperature to temperature at steady state",
         )
@@ -1625,5 +1647,7 @@ constructed,
         exprs["Furnace External Surface Area"] = self.furnace_external_surface_area[0]
         exprs["Decrepitation Duration"] = self.decrepitation_duration
         exprs["Total Processing Time"] = self.processing_time[0]
+        exprs["Total Furnace Volume"] = self.furnace_volume[0]
+        exprs["Total Furnace Weight"] = self.furnace_weight[0]
 
         return {"exprs": exprs}

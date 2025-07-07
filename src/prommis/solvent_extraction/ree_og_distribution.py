@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 
-r"""
+"""
 Initial property package for the organic phase solution of the solvent extraction
 unit operation.
 ----------------------------------------------------------------------------------

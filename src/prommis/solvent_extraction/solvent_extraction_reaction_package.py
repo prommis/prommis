@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 
-r"""
+"""
 Reaction package for solvent extraction of rare earth elements using DEHPA as extractant
 with TBP as a phase modifier.
 ----------------------------------------------------------------------------------------

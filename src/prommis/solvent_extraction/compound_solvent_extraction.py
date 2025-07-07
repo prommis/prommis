@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 
-r"""
+"""
 Compound Solvent Extraction Model
 
 ========================

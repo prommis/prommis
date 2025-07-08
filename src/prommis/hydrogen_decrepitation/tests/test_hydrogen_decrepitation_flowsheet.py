@@ -7,25 +7,21 @@
 from pyomo.environ import (
     Constraint,
     Param,
-    SolverFactory,
     Var,
-    assert_optimal_termination,
     value,
 )
 from pyomo.util.check_units import assert_units_consistent
 
-from idaes.core.initialization import (
-    BlockTriangularizationInitializer,
-    InitializationStatus,
-)
 from idaes.core.util import DiagnosticsToolbox
-from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_statistics import number_total_constraints, number_variables
 from idaes.models.unit_models import Feed
 
 import pytest
 
-from prommis.hydrogen_decrepitation.hydrogen_decrepitation_flowsheet import main, initialize_and_solve
+from prommis.hydrogen_decrepitation.hydrogen_decrepitation_flowsheet import (
+    initialize_and_solve,
+    main,
+)
 from prommis.hydrogen_decrepitation.hydrogen_decrepitation_furnace import (
     REPMHydrogenDecrepitationFurnace,
 )

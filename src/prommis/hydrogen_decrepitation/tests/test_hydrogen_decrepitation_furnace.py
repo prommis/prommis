@@ -124,7 +124,6 @@ def model():
     return m
 
 
-# TODO update these once all model equations are added
 @pytest.mark.unit
 def test_build(model):
     assert hasattr(model.fs, "hydrogen_decrepitation_furnace")
@@ -296,7 +295,11 @@ def test_solution(model):
     )  # h, report has s
     assert value(
         model.fs.hydrogen_decrepitation_furnace.furnace_volume[0]
-    ) == pytest.approx(12.4292, rel=1e-5)  # in3, report has m3
+    ) == pytest.approx(
+        12.4292, rel=1e-5
+    )  # in3, report has m3
     assert value(
         model.fs.hydrogen_decrepitation_furnace.furnace_weight[0]
-    ) == pytest.approx(455.635, rel=1e-5)  # lb, report has kg
+    ) == pytest.approx(
+        455.635, rel=1e-5
+    )  # lb, report has kg

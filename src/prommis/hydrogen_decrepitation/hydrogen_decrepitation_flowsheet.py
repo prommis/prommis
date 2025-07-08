@@ -173,6 +173,7 @@ def main():
 
     return m
 
+
 def initialize_and_solve(m):
 
     initializer = BlockTriangularizationInitializer()
@@ -206,6 +207,7 @@ def initialize_and_solve(m):
 
     m.fs.shredder.report()
     m.fs.hydrogen_decrepitation_furnace.report()
+
 
 if __name__ == "__main__":
     m = main()

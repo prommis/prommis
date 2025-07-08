@@ -1075,9 +1075,7 @@ constructed,
                 Constants.pi * b.external_diameter_metal2[t] * b.length_chamber[t]
             ) + ((Constants.pi * (b.external_diameter_metal2[t] ** 2)) / 2)
 
-        @self.Expression(
-            self.flowsheet().config.time, doc="Total weight of furnace"
-            )
+        @self.Expression(self.flowsheet().config.time, doc="Total weight of furnace")
         def furnace_weight(b, t):
             return (
                 pyunits.convert(b.total_weight_insulation1[t], to_units=pyunits.pound)
@@ -1086,16 +1084,15 @@ constructed,
                 + b.weight_metal2[t]
             )
 
-        @self.Expression(
-            self.flowsheet().config.time, doc="Volume of the furnace"
-            )
+        @self.Expression(self.flowsheet().config.time, doc="Volume of the furnace")
         def furnace_volume(b, t):
             return pyunits.convert(
-                Constants.pi * (
-                    b.external_diameter_metal2[t]**2
-                    ) * b.length_chamber[t] / 4,
-        to_units=pyunits.ft**3
-        )
+                Constants.pi
+                * (b.external_diameter_metal2[t] ** 2)
+                * b.length_chamber[t]
+                / 4,
+                to_units=pyunits.ft**3,
+            )
 
         @self.Expression(
             self.flowsheet().config.time,
@@ -1645,8 +1642,10 @@ constructed,
         exprs["Total Processing Time"] = self.processing_time[0]
         exprs["Total Furnace Volume"] = self.furnace_volume[0]
         exprs["Total Furnace Weight"] = self.furnace_weight[0]
-    
+
         if hasattr(self, "supplied_heat_duty"):
-            exprs["Heat Duty Supplemental To Decrepitation"] = self.supplied_heat_duty[0]
+            exprs["Heat Duty Supplemental To Decrepitation"] = self.supplied_heat_duty[
+                0
+            ]
 
         return {"exprs": exprs}

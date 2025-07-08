@@ -25,7 +25,7 @@ from idaes.models.unit_models import Feed
 
 import pytest
 
-from prommis.hydrogen_decrepitation.hydrogen_decrepitation_flowsheet import main
+from prommis.hydrogen_decrepitation.hydrogen_decrepitation_flowsheet import main, initialize_and_solve
 from prommis.hydrogen_decrepitation.hydrogen_decrepitation_furnace import (
     REPMHydrogenDecrepitationFurnace,
 )
@@ -73,31 +73,7 @@ def test_structural_issues(model):
 @pytest.mark.component
 @pytest.mark.solver
 def test_initialize_and_solve(model):
-    initializer = BlockTriangularizationInitializer()
-
-    initializer = BlockTriangularizationInitializer()
-    initializer.initialize(model.fs.shredder)
-    propagate_state(model.fs.shredded_REPM)
-
-    model.fs.hydrogen_decrepitation_furnace.flow_mol_gas_constraint.deactivate()  # flow mol will be fixed by initializer
-    model.fs.hydrogen_decrepitation_furnace.solid_in[
-        0
-    ].sum_mass_frac.deactivate()  # mass frac will be fixed by initializer
-
-    initializer.initialize(model.fs.hydrogen_decrepitation_furnace)
-
-    model.fs.hydrogen_decrepitation_furnace.flow_mol_gas_constraint.activate()
-    model.fs.hydrogen_decrepitation_furnace.solid_in[0].sum_mass_frac.activate()
-
-    assert (
-        initializer.summary[model.fs.hydrogen_decrepitation_furnace]["status"]
-        == InitializationStatus.Ok
-    )
-
-    # Solve model
-    solver = SolverFactory("ipopt")
-    results = solver.solve(model, tee=True)
-    assert_optimal_termination(results)
+    initialize_and_solve(model)
 
 
 @pytest.mark.component

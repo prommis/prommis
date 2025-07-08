@@ -168,14 +168,12 @@ def main():
 
     TransformationFactory("network.expand_arcs").apply_to(m)
 
-    return m
-
-
-if __name__ == "__main__":
-    m = main()
-
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
+
+    return m
+
+def initialize_and_solve(m):
 
     initializer = BlockTriangularizationInitializer()
     initializer.initialize(m.fs.shredder)
@@ -203,9 +201,13 @@ if __name__ == "__main__":
     results = solver.solve(m, tee=True)
     assert_optimal_termination(results)
 
-    m.fs.shredder.report()
-
-    m.fs.hydrogen_decrepitation_furnace.report()
-
     dt = DiagnosticsToolbox(m)
     dt.assert_no_numerical_warnings()
+
+    m.fs.shredder.report()
+    m.fs.hydrogen_decrepitation_furnace.report()
+
+if __name__ == "__main__":
+    m = main()
+
+    initialize_and_solve(m)

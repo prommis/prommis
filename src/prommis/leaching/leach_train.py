@@ -247,6 +247,8 @@ class LeachingTrainData(UnitModelBlockData):
             },
             heterogeneous_reactions=self.config.reaction_package,
             heterogeneous_reactions_args=self.config.reaction_package_args,
+            dynamic=self.config.dynamic,
+            has_holdup=self.config.has_holdup,
         )
 
         # Get units of measurement from MSContactor

@@ -76,8 +76,8 @@ def model():
         gas_property_package=m.fs.prop_gas,
         solid_property_package=m.fs.prop_solid,
         has_holdup=False,
-        has_heat_transfer=True,
-        has_pressure_change=True,
+        has_heat_transfer=False,
+        has_pressure_change=False,
         ree_list=[
             "Nd",
         ],
@@ -103,7 +103,6 @@ def model():
         )
 
     # operating parameters
-    m.fs.hydrogen_decrepitation_furnace.deltaP.fix(0)
     m.fs.hydrogen_decrepitation_furnace.operating_temperature.fix(443.15)
     m.fs.hydrogen_decrepitation_furnace.gas_inlet.pressure.fix(101325)
 
@@ -122,9 +121,6 @@ def model():
     # gas temperature, assume comes in at operating temperature
     m.fs.hydrogen_decrepitation_furnace.gas_in[0].temperature.fix(443.15)
 
-    # no additional heat is supplied other than what's required for decrepitation
-    m.fs.hydrogen_decrepitation_furnace.supplied_heat_duty.fix(0)
-
     return m
 
 
@@ -138,8 +134,8 @@ def test_build(model):
     assert len(model.fs.hydrogen_decrepitation_furnace.config) == 10
     assert not model.fs.hydrogen_decrepitation_furnace.config.dynamic
     assert not model.fs.hydrogen_decrepitation_furnace.config.has_holdup
-    assert model.fs.hydrogen_decrepitation_furnace.config.has_heat_transfer
-    assert model.fs.hydrogen_decrepitation_furnace.config.has_pressure_change
+    assert not model.fs.hydrogen_decrepitation_furnace.config.has_heat_transfer
+    assert not model.fs.hydrogen_decrepitation_furnace.config.has_pressure_change
     assert (
         model.fs.hydrogen_decrepitation_furnace.config.gas_property_package
         is model.fs.prop_gas
@@ -151,7 +147,7 @@ def test_build(model):
     assert len(model.fs.prop_gas.component_list) == 1
     assert len(model.fs.hydrogen_decrepitation_furnace.ree_list) == 1
 
-    assert number_variables(model.fs.hydrogen_decrepitation_furnace) == 49
+    assert number_variables(model.fs.hydrogen_decrepitation_furnace) == 47
     assert number_total_constraints(model.fs.hydrogen_decrepitation_furnace) == 39
     assert number_unused_variables(model.fs.hydrogen_decrepitation_furnace) == 0
     assert_units_consistent(model.fs.hydrogen_decrepitation_furnace)
@@ -228,9 +224,6 @@ def test_solution(model):
     assert value(
         model.fs.hydrogen_decrepitation_furnace.total_heat_duty[0]
     ) == pytest.approx(3771.14, rel=1e-5)
-    assert value(
-        model.fs.hydrogen_decrepitation_furnace.supplied_heat_duty[0]
-    ) == pytest.approx(0.0, abs=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.sample_mass[0]
     ) == pytest.approx(61.956, rel=1e-5)

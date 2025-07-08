@@ -115,7 +115,7 @@ def main():
     m.fs.hydrogen_decrepitation_furnace = REPMHydrogenDecrepitationFurnace(
         gas_property_package=m.fs.prop_gas,
         solid_property_package=m.fs.prop_solid,
-        has_holdup=False,
+        has_holdup=True,
         has_heat_transfer=True,
         has_pressure_change=True,
         ree_list=[

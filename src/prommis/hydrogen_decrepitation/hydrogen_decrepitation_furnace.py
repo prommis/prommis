@@ -280,10 +280,7 @@ constructed,
 
         # Add Geometry
         if self.config.has_holdup is True:
-            self.volume = Var(
-                initialize=1, units=pyunits.m**3, doc="volume of the reactor"
-            )
-            self.volume.fix()
+            pass
 
         # Add heat duty
         if self.config.has_heat_transfer is True:
@@ -1626,7 +1623,6 @@ constructed,
         exprs = {}
         exprs["Volumetric Feed Flow"] = self.flow_vol_feed[0]
         exprs["Heat Duty For Decrepitation"] = self.total_heat_duty[0]
-        exprs["Heat Duty Supplemental To Decrepitation"] = self.supplied_heat_duty[0]
         exprs["Sample Mass"] = self.sample_mass[0]
         exprs["Sample Volume"] = self.sample_volume[0]
         exprs["Furnace Chamber Volume"] = self.furnace_chamber_volume[0]
@@ -1649,5 +1645,8 @@ constructed,
         exprs["Total Processing Time"] = self.processing_time[0]
         exprs["Total Furnace Volume"] = self.furnace_volume[0]
         exprs["Total Furnace Weight"] = self.furnace_weight[0]
+    
+        if hasattr(self, "supplied_heat_duty"):
+            exprs["Heat Duty Supplemental To Decrepitation"] = self.supplied_heat_duty[0]
 
         return {"exprs": exprs}

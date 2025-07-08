@@ -32,7 +32,7 @@ class SoluteParameterData(PhysicalParameterBlock):
     Currently includes the following solutes:
         Li+ (lithium ion)
         Co2+ (cobalt ion)
-        Cl- (chlorine ion)
+        Cl- (chloride ion)
     """
 
     def build(self):
@@ -87,9 +87,9 @@ class SoluteParameterData(PhysicalParameterBlock):
             self.component_list,
             units=units.dimensionless,
             initialize={
-                "Li": 1.5,
-                "Co": 0.5,
-                "Cl": 1,
+                "Li": 0.3,
+                "Co": 0.25,
+                "Cl": 0.3,
             },
             domain=NonNegativeReals,
         )
@@ -107,7 +107,7 @@ class SoluteParameterData(PhysicalParameterBlock):
         obj.add_properties(
             {
                 "flow_vol": {"method": None},
-                "conc_mass_comp": {"method": None},
+                "conc_mol_comp": {"method": None},
                 "flow_mol_comp": {"method": None},
             }
         )
@@ -147,18 +147,15 @@ class SoluteStateBlockData(StateBlockData):
             initialize=10,
             bounds=(1e-20, None),
         )
-        self.conc_mass_comp = Var(
+        self.conc_mol_comp = Var(
             self.component_list,
-            units=units.kg / units.m**3,
+            units=units.mol / units.m**3,
             initialize=1e-5,
             bounds=(1e-20, None),
         )
 
     def get_material_flow_terms(self, p, j):
-        return self.flow_vol * self.conc_mass_comp[j]
-
-    def get_material_flow_basis(self):
-        return MaterialFlowBasis.mass
+        return self.flow_vol * self.conc_mol_comp[j]
 
     def define_state_vars(self):
-        return {"flow_vol": self.flow_vol, "conc_mass_comp": self.conc_mass_comp}
+        return {"flow_vol": self.flow_vol, "conc_mol_comp": self.conc_mol_comp}

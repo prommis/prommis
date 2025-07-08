@@ -77,6 +77,8 @@ def main():
     # check numerical warnings
     dt.assert_no_numerical_warnings()
 
+    # TODO: investigate improving the numerics/scaling
+
     # visualize the results
     # currently no partitioning in the membrane
     plot_results(m)

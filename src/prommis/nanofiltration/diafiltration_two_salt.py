@@ -337,9 +337,9 @@ and used when constructing these,
             doc="Thickness of membrane (z-direction)",
         )
         self.membrane_fixed_charge = Param(
-            initialize=0,
+            initialize=0,  # TODO: increase to -140 mM
             mutable=True,
-            units=units.mol / units.m**3,
+            units=units.mol / units.m**3,  # mM
             doc="Fixed charge on the membrane",
         )
         self.membrane_permeability = Param(
@@ -404,7 +404,7 @@ and used when constructing these,
             self.time,
             self.solutes,
             initialize=initialize_feed_conc_mol_comp,
-            units=units.mol / units.m**3,
+            units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of solutes in the feed",
         )
@@ -424,7 +424,7 @@ and used when constructing these,
             self.time,
             self.solutes,
             initialize=initialize_diafiltrate_conc_mol_comp,
-            units=units.mol / units.m**3,
+            units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of solutes in the diafiltrate",
         )
@@ -476,7 +476,7 @@ and used when constructing these,
             self.x_bar,
             self.solutes,
             initialize=initialize_retentate_conc_mol_comp,
-            units=units.mol / units.m**3,
+            units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of solutes in the retentate, x-dependent",
         )
@@ -502,7 +502,7 @@ and used when constructing these,
             self.x_bar,
             self.solutes,
             initialize=initialize_permeate_conc_mol_comp,
-            units=units.mol / units.m**3,
+            units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of solutes in the permeate, x-dependent",
         )
@@ -519,7 +519,7 @@ and used when constructing these,
             self.x_bar,
             self.z_bar,
             initialize=48,
-            units=units.mol / units.m**3,
+            units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of lithium in the membrane, x- and z-dependent",
         )
@@ -527,7 +527,7 @@ and used when constructing these,
             self.x_bar,
             self.z_bar,
             initialize=222,
-            units=units.mol / units.m**3,
+            units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of cobalt in the membrane, x- and z-dependent",
         )
@@ -535,7 +535,7 @@ and used when constructing these,
             self.x_bar,
             self.z_bar,
             initialize=492,
-            units=units.mol / units.m**3,
+            units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of chloride in the membrane, x- and z-dependent",
         )
@@ -571,12 +571,26 @@ and used when constructing these,
             bounds=[1e-11, None],
             doc="Linearized cross diffusion coefficient for cobalt-cobalt",
         )
+        self.convection_coefficient_lithium = Var(
+            self.x_bar,
+            self.z_bar,
+            initialize=1,
+            units=units.dimensionless,
+            doc="Linearized convection coefficient for lithium",
+        )
+        self.convection_coefficient_cobalt = Var(
+            self.x_bar,
+            self.z_bar,
+            initialize=1,
+            units=units.dimensionless,
+            doc="Linearized convection coefficient for cobalt",
+        )
 
         # define the (partial) derivative variables
         self.d_retentate_conc_mol_comp_dx = DerivativeVar(
             self.retentate_conc_mol_comp,
             wrt=self.x_bar,
-            units=units.mol / units.m**3,
+            units=units.mol / units.m**3,  # mM
             doc="Solute concentration gradient in the retentate",
         )
         self.d_retentate_flow_volume_dx = DerivativeVar(
@@ -588,13 +602,13 @@ and used when constructing these,
         self.d_membrane_conc_mol_lithium_dz = DerivativeVar(
             self.membrane_conc_mol_lithium,
             wrt=self.z_bar,
-            units=units.mol / units.m**3,
+            units=units.mol / units.m**3,  # mM
             doc="Lithium concentration gradient wrt z in the membrane",
         )
         self.d_membrane_conc_mol_cobalt_dz = DerivativeVar(
             self.membrane_conc_mol_cobalt,
             wrt=self.z_bar,
-            units=units.mol / units.m**3,
+            units=units.mol / units.m**3,  # mM
             doc="Cobalt concentration gradient wrt z in the membrane",
         )
 
@@ -697,7 +711,12 @@ and used when constructing these,
         self.lumped_water_flux = Constraint(self.x_bar, rule=_lumped_water_flux)
 
         def _D_lithium_lithium_calculation(self, x, z):
-            params_lithium_lithium = [-4.10e-06, -9.50e-10, 1.26e-09]
+            if value(self.membrane_fixed_charge) == 0:
+                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                params_lithium_lithium = [-4.07e-06, -3.99e-09, 4.01e-09]
+            if value(self.membrane_fixed_charge) == -140:
+                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
+                params_lithium_lithium = [-4.93e-06, -4.51e-09, 1.32e-08]
             return self.D_lithium_lithium[x, z] == -(
                 (params_lithium_lithium[0] * units.m**2 / units.h)
                 + (
@@ -715,7 +734,12 @@ and used when constructing these,
         )
 
         def _D_lithium_cobalt_calculation(self, x, z):
-            params_lithium_cobalt = [-1.03e-06, -2.46e-09, 3.27e-09]
+            if value(self.membrane_fixed_charge) == 0:
+                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                params_lithium_cobalt = [-9.62e-07, -1.03e-08, 1.04e-08]
+            if value(self.membrane_fixed_charge) == -140:
+                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
+                params_lithium_cobalt = [-3.19e-06, -1.17e-08, 3.42e-08]
             return self.D_lithium_cobalt[x, z] == -(
                 (params_lithium_cobalt[0] * units.m**2 / units.h)
                 + (
@@ -733,7 +757,12 @@ and used when constructing these,
         )
 
         def _D_cobalt_lithium_calculation(self, x, z):
-            param_cobalt_lithium = [-5.06e-07, 5.93e-10, -7.87e-10]
+            if value(self.membrane_fixed_charge) == 0:
+                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                param_cobalt_lithium = [-5.24e-07, 2.49e-09, -2.50e-09]
+            if value(self.membrane_fixed_charge) == -140:
+                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
+                param_cobalt_lithium = [-1.73e-06, 8.27e-09, 3.88e-09]
             return self.D_cobalt_lithium[x, z] == -(
                 (param_cobalt_lithium[0] * units.m**2 / units.h)
                 + (
@@ -751,7 +780,12 @@ and used when constructing these,
         )
 
         def _D_cobalt_cobalt_calculation(self, x, z):
-            params_cobalt_cobalt = [-3.95e-06, 1.54e-09, -2.04e-09]
+            if value(self.membrane_fixed_charge) == 0:
+                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                params_cobalt_cobalt = [-4.00e-06, 6.45e-09, -6.48e-09]
+            if value(self.membrane_fixed_charge) == -140:
+                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
+                params_cobalt_cobalt = [-7.12e-06, 2.14e-08, 1.01e-08]
             return self.D_cobalt_cobalt[x, z] == -(
                 (params_cobalt_cobalt[0] * units.m**2 / units.h)
                 + (
@@ -768,11 +802,69 @@ and used when constructing these,
             self.x_bar, self.z_bar, rule=_D_cobalt_cobalt_calculation
         )
 
+        def _convection_coefficient_lithium_calculation(self, x, z):
+            if value(self.membrane_fixed_charge) == 0:
+                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                params_lithium = [1, 0, 0]
+            if value(self.membrane_fixed_charge) == -140:
+                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
+                params_lithium = [-0.170, 0.00366, 0.00814]
+            return self.convection_coefficient_lithium[x, z] == (
+                params_lithium[0]
+                + (
+                    params_lithium[1]
+                    * units.m**3
+                    / units.mol
+                    * self.membrane_conc_mol_lithium[x, z]
+                )
+                + (
+                    params_lithium[2]
+                    * units.m**3
+                    / units.mol
+                    * self.membrane_conc_mol_cobalt[x, z]
+                )
+            )
+
+        self.convection_coefficient_lithium_calculation = Constraint(
+            self.x_bar, self.z_bar, rule=_convection_coefficient_lithium_calculation
+        )
+
+        def _convection_coefficient_cobalt_calculation(self, x, z):
+            if value(self.membrane_fixed_charge) == 0:
+                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                params_cobalt = [1, 0, 0]
+            if value(self.membrane_fixed_charge) == -140:
+                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
+                params_cobalt = [-0.670, 0.00522, 0.00116]
+            return self.convection_coefficient_cobalt[x, z] == (
+                params_cobalt[0]
+                + (
+                    params_cobalt[1]
+                    * units.m**3
+                    / units.mol
+                    * self.membrane_conc_mol_lithium[x, z]
+                )
+                + (
+                    params_cobalt[2]
+                    * units.m**3
+                    / units.mol
+                    * self.membrane_conc_mol_cobalt[x, z]
+                )
+            )
+
+        self.convection_coefficient_cobalt_calculation = Constraint(
+            self.x_bar, self.z_bar, rule=_convection_coefficient_cobalt_calculation
+        )
+
         def _lithium_flux_membrane(self, x, z):
             if x == 0:
                 return Constraint.Skip
             return self.mol_flux_lithium[x] == (
-                self.membrane_conc_mol_lithium[x, z] * self.volume_flux_water[x]
+                (
+                    self.convection_coefficient_lithium[x, z]
+                    * self.membrane_conc_mol_lithium[x, z]
+                    * self.volume_flux_water[x]
+                )
                 - (
                     self.D_lithium_lithium[x, z]
                     / self.membrane_thickness
@@ -793,7 +885,11 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return self.mol_flux_cobalt[x] == (
-                self.membrane_conc_mol_cobalt[x, z] * self.volume_flux_water[x]
+                (
+                    self.convection_coefficient_cobalt[x, z]
+                    * self.membrane_conc_mol_cobalt[x, z]
+                    * self.volume_flux_water[x]
+                )
                 - (
                     self.D_cobalt_lithium[x, z]
                     / self.membrane_thickness
@@ -1071,26 +1167,22 @@ and used when constructing these,
         for x in self.x_bar:
             if x != 0:
                 self.scaling_factor[self.retentate_flow_volume[0, x]] = 1e-2
-                self.scaling_factor[self.permeate_flow_volume[0, x]] = 1e4
+                self.scaling_factor[self.permeate_flow_volume[0, x]] = 1e-2
 
-                self.scaling_factor[self.permeate_conc_mol_comp[0, x, "Li"]] = 1e1
-                self.scaling_factor[self.permeate_conc_mol_comp[0, x, "Co"]] = 1e1
-                self.scaling_factor[self.permeate_conc_mol_comp[0, x, "Cl"]] = 1e1
-
-                self.scaling_factor[self.volume_flux_water[x]] = 1e6
-                self.scaling_factor[self.mol_flux_lithium[x]] = 1e6
-                self.scaling_factor[self.mol_flux_cobalt[x]] = 1e5
-                self.scaling_factor[self.mol_flux_chloride[x]] = 1e4
-
-                self.scaling_factor[self.d_retentate_conc_mol_comp_dx[0, x, "Li"]] = 1e4
-                self.scaling_factor[self.d_retentate_conc_mol_comp_dx[0, x, "Co"]] = 1e4
-                self.scaling_factor[self.d_retentate_flow_volume_dx[0, x]] = 1e6
+                self.scaling_factor[self.volume_flux_water[x]] = 1e-1
+                self.scaling_factor[self.mol_flux_lithium[x]] = 1e-1
+                self.scaling_factor[self.mol_flux_cobalt[x]] = 1e-1
+                self.scaling_factor[self.mol_flux_chloride[x]] = 1e-2
 
             for z in self.z_bar:
                 self.scaling_factor[self.D_lithium_lithium[x, z]] = 1e6
                 self.scaling_factor[self.D_lithium_cobalt[x, z]] = 1e7
                 self.scaling_factor[self.D_cobalt_lithium[x, z]] = 1e7
                 self.scaling_factor[self.D_cobalt_cobalt[x, z]] = 1e6
+
+                self.scaling_factor[self.membrane_conc_mol_lithium[x, z]] = 1e-1
+                self.scaling_factor[self.membrane_conc_mol_cobalt[x, z]] = 1e-1
+                self.scaling_factor[self.membrane_conc_mol_chloride[x, z]] = 1e-2
 
         # Add scaling factors for poorly scaled constraints
         constraint_autoscale_large_jac(self)

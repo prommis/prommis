@@ -14,10 +14,10 @@ from prommis.superstructure.check_superstructure_inputs import (
     check_discretized_costing_params,
     check_environmental_impact_params,
     check_feed_params,
+    check_objective_function_choice,
     check_operating_params,
     check_plant_lifetime_params,
     check_supe_formulation_params,
-    check_objective_function_choice,
 )
 from prommis.superstructure.superstructure_function import define_custom_units
 
@@ -663,13 +663,13 @@ def get_clean_model():
 ### Test functions
 def test_objective_function_choice(obj_func):
     # Test correct inputs
-    check_objective_function_choice('NPV')
+    check_objective_function_choice("NPV")
 
     # Test incorrect inputs
     with pytest.raises(TypeError):
         check_objective_function_choice(1)
     with pytest.raises(ValueError):
-        check_objective_function_choice('hello world')
+        check_objective_function_choice("hello world")
 
 
 def test_plant_lifetime_params():
@@ -694,15 +694,19 @@ def test_feed_params():
 
     # Test incorrect inputs
     with pytest.raises(TypeError):
-        check_feed_params(m, {2025: 'hi'}, collection_rate, tracked_comps, prod_comp_mass)
+        check_feed_params(
+            m, {2025: "hi"}, collection_rate, tracked_comps, prod_comp_mass
+        )
     with pytest.raises(TypeError):
-        check_feed_params(m, available_feed, collection_rate, 'hi', prod_comp_mass)
+        check_feed_params(m, available_feed, collection_rate, "hi", prod_comp_mass)
     with pytest.raises(TypeError):
-        check_feed_params(m, available_feed, collection_rate, tracked_comps, 'hi')
+        check_feed_params(m, available_feed, collection_rate, tracked_comps, "hi")
     with pytest.raises(TypeError):
         check_feed_params(m, available_feed, collection_rate, tracked_comps, {1: 1})
     with pytest.raises(ValueError):
-        check_feed_params(m, {2025: -1000}, collection_rate, tracked_comps, prod_comp_mass)
+        check_feed_params(
+            m, {2025: -1000}, collection_rate, tracked_comps, prod_comp_mass
+        )
     with pytest.raises(ValueError):
         check_feed_params(m, {2025: 0}, collection_rate, tracked_comps, prod_comp_mass)
     with pytest.raises(ValueError):

@@ -1,3 +1,10 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+
 from pyomo.environ import (
     ConcreteModel,
     units,
@@ -13,10 +20,8 @@ from idaes.core.solvers import get_solver
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import (
-    SolventExtraction,
-    SolventExtractionInitializer,
-)
+from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,
 )
@@ -63,7 +68,6 @@ def set_inputs(m, dosage):
     """
 
     m.fs.solex.mscontactor.volume[:].fix(0.4 * units.m**3)
-    m.fs.solex.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex.area_cross_stage[:] = 1
     m.fs.solex.elevation[:] = 0
 
@@ -125,10 +129,11 @@ def main(dosage, number_of_stages):
 dosage = 5
 number_of_stages = 3
 
-m = main(dosage, number_of_stages)
+if __name__ == "__main__":
 
-initializer = SolventExtractionInitializer()
-initializer.initialize(m.fs.solex)
+    m = main(dosage, number_of_stages)
 
-solver = get_solver(solver="ipopt_v2")
-solver.solve(m, tee=True)
+    m.fs.solex.default_initializer().initialize(m.fs.solex)
+
+    solver = get_solver(solver="ipopt_v2")
+    solver.solve(m, tee=True)

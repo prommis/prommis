@@ -22,6 +22,6 @@ print(plant_end)
 yearly_cost_units = []
 
 
-for opt in [(1,1), (1,2), (1,3)]:
-    new_opt = opt + ('test',)
+for opt in [(1, 1), (1, 2), (1, 3)]:
+    new_opt = opt + ("test",)
     print(new_opt)

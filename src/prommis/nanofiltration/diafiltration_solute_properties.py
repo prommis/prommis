@@ -95,9 +95,14 @@ class SoluteParameterData(PhysicalParameterBlock):
         )
 
         self.num_solutes = Param(
-            initialize=5,
+            self.component_list,
             units=units.dimensionless,
-            doc="Number of dissociated ions in solution",
+            initialize={
+                "Li": 1,
+                "Co": 1,
+                "Cl": 3,
+            },
+            doc="Moles of ions dissociated in solution per mole of lithium and cobalt chloride",
         )
 
         self._state_block_class = SoluteStateBlock

@@ -930,22 +930,24 @@ and used when constructing these,
                     * self.temperature
                     * (
                         (
-                            self.config.property_package.sigma["Li"]
+                            self.config.property_package.num_solutes["Li"]
+                            * self.config.property_package.sigma["Li"]
                             * (
                                 self.retentate_conc_mol_comp[0, x, "Li"]
                                 - self.permeate_conc_mol_comp[0, x, "Li"]
                             )
                         )
                         + (
-                            self.config.property_package.sigma["Co"]
+                            self.config.property_package.num_solutes["Co"]
+                            * self.config.property_package.sigma["Co"]
                             * (
                                 self.retentate_conc_mol_comp[0, x, "Co"]
                                 - self.permeate_conc_mol_comp[0, x, "Co"]
                             )
                         )
-                        + 3  # TODO link to property package
-                        * (
-                            self.config.property_package.sigma["Cl"]
+                        + (
+                            self.config.property_package.num_solutes["Cl"]
+                            * self.config.property_package.sigma["Cl"]
                             * (
                                 self.retentate_conc_mol_comp[0, x, "Cl"]
                                 - self.permeate_conc_mol_comp[0, x, "Cl"]

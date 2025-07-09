@@ -518,7 +518,7 @@ and used when constructing these,
         self.membrane_conc_mol_lithium = Var(
             self.x_bar,
             self.z_bar,
-            initialize=48,
+            initialize=60,
             units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of lithium in the membrane, x- and z-dependent",
@@ -526,7 +526,7 @@ and used when constructing these,
         self.membrane_conc_mol_cobalt = Var(
             self.x_bar,
             self.z_bar,
-            initialize=222,
+            initialize=60,
             units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of cobalt in the membrane, x- and z-dependent",
@@ -534,7 +534,7 @@ and used when constructing these,
         self.membrane_conc_mol_chloride = Var(
             self.x_bar,
             self.z_bar,
-            initialize=492,
+            initialize=180,
             units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of chloride in the membrane, x- and z-dependent",

@@ -48,6 +48,7 @@ from prommis.superstructure.check_superstructure_inputs import (
     check_supe_formulation_params,
 )
 
+
 def define_custom_units():
     """
     This function defines custom units that are needed throughout the model.

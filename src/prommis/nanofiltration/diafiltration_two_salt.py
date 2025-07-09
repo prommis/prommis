@@ -337,7 +337,7 @@ and used when constructing these,
             doc="Thickness of membrane (z-direction)",
         )
         self.membrane_fixed_charge = Param(
-            initialize=0,  # TODO: increase to -140 mM
+            initialize=-140,
             mutable=True,
             units=units.mol / units.m**3,  # mM
             doc="Fixed charge on the membrane",
@@ -712,11 +712,11 @@ and used when constructing these,
 
         def _D_lithium_lithium_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
-                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
                 params_lithium_lithium = [-4.07e-06, -3.99e-09, 4.01e-09]
             if value(self.membrane_fixed_charge) == -140:
-                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
-                params_lithium_lithium = [-4.93e-06, -4.51e-09, 1.32e-08]
+                # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
+                params_lithium_lithium = [-4.33e-06, -4.25e-09, 5.14e-09]
             return self.D_lithium_lithium[x, z] == -(
                 (params_lithium_lithium[0] * units.m**2 / units.h)
                 + (
@@ -735,11 +735,11 @@ and used when constructing these,
 
         def _D_lithium_cobalt_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
-                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
                 params_lithium_cobalt = [-9.62e-07, -1.03e-08, 1.04e-08]
             if value(self.membrane_fixed_charge) == -140:
-                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
-                params_lithium_cobalt = [-3.19e-06, -1.17e-08, 3.42e-08]
+                # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
+                params_lithium_cobalt = [-1.63e-06, -1.10e-08, 1.33e-08]
             return self.D_lithium_cobalt[x, z] == -(
                 (params_lithium_cobalt[0] * units.m**2 / units.h)
                 + (
@@ -758,11 +758,11 @@ and used when constructing these,
 
         def _D_cobalt_lithium_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
-                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
                 param_cobalt_lithium = [-5.24e-07, 2.49e-09, -2.50e-09]
             if value(self.membrane_fixed_charge) == -140:
-                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
-                param_cobalt_lithium = [-1.73e-06, 8.27e-09, 3.88e-09]
+                # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
+                param_cobalt_lithium = [-1.32e-06, 4.72e-09, 1.47e-09]
             return self.D_cobalt_lithium[x, z] == -(
                 (param_cobalt_lithium[0] * units.m**2 / units.h)
                 + (
@@ -781,11 +781,11 @@ and used when constructing these,
 
         def _D_cobalt_cobalt_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
-                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
                 params_cobalt_cobalt = [-4.00e-06, 6.45e-09, -6.48e-09]
             if value(self.membrane_fixed_charge) == -140:
-                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
-                params_cobalt_cobalt = [-7.12e-06, 2.14e-08, 1.01e-08]
+                # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
+                params_cobalt_cobalt = [-6.05e-06, 1.22e-08, 3.81e-09]
             return self.D_cobalt_cobalt[x, z] == -(
                 (params_cobalt_cobalt[0] * units.m**2 / units.h)
                 + (
@@ -804,11 +804,11 @@ and used when constructing these,
 
         def _convection_coefficient_lithium_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
-                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
                 params_lithium = [1, 0, 0]
             if value(self.membrane_fixed_charge) == -140:
-                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
-                params_lithium = [-0.170, 0.00366, 0.00814]
+                # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
+                params_lithium = [0.260, 0.00139, 0.00314]
             return self.convection_coefficient_lithium[x, z] == (
                 params_lithium[0]
                 + (
@@ -831,11 +831,11 @@ and used when constructing these,
 
         def _convection_coefficient_cobalt_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
-                # these parameters assume chi=0 mM and ion concentration range 50-80 mM
+                # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
                 params_cobalt = [1, 0, 0]
             if value(self.membrane_fixed_charge) == -140:
-                # these parameters assume chi=-140 mM and ion concentration range 50-80 mM
-                params_cobalt = [-0.670, 0.00522, 0.00116]
+                # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
+                params_cobalt = [0.0860, 0.00198, 0.00448]
             return self.convection_coefficient_cobalt[x, z] == (
                 params_cobalt[0]
                 + (

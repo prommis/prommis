@@ -192,7 +192,6 @@ class MixerSettlerExtractionInitializer(ModularInitializerBase):
             the mixer-settler arcs are all reactivated. Then the overall model is solved. The
             resulting solution is the initialized model.
 
-
         """
 
         # Deconstructing the model and initializing the mixer and settler tanks separately
@@ -621,20 +620,6 @@ class MixerSettlerExtractionData(UnitModelBlockData):
                 return b.properties[t, x0].pressure == b.properties[t, xf].pressure
 
         for i in self.elements:
-
-            # # Constrain the inlet and outlet temperature and pressure for the settlers
-            # self.aqueous_settler[i].unit.temperature_constraint = Constraint(
-            #     self.flowsheet().time, rule=settler_temperature_outlet
-            # )
-            # self.organic_settler[i].unit.temperature_constraint = Constraint(
-            #     self.flowsheet().time, rule=settler_temperature_outlet
-            # )
-            # self.aqueous_settler[i].unit.pressure_constraint = Constraint(
-            #     self.flowsheet().time, rule=settler_pressure_outlet
-            # )
-            # self.organic_settler[i].unit.pressure_constraint = Constraint(
-            #     self.flowsheet().time, rule=settler_pressure_outlet
-            # )
 
             for j in ["aqueous", "organic"]:
 

@@ -20,10 +20,3 @@ plant_end = plant_start + plant_lifetime - 1
 print(plant_end)
 # Define a list to hold the custom yearly costing units that need to be defined.
 yearly_cost_units = []
-
-
-## Define custom units for costing. Need a new costing unit for each year of the plant's lifetime.
-for t in range(plant_start, plant_end + 1):
-    year_str = str(t)
-    unit = "MUSD_" + year_str
-    print(unit + " = [currency]")

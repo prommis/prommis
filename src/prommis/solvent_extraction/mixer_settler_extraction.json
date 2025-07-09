@@ -1,12 +1,12 @@
 {
   "__metadata__": {
     "format_version": 4,
-    "date": "2025-07-07",
-    "time": "18:05:03.875417",
+    "date": "2025-07-09",
+    "time": "16:12:37.254901",
     "other": {},
     "__performance__": {
       "n_components": 7836,
-      "etime_make_dict": 0.036650657653808594
+      "etime_make_dict": 0.03234672546386719
     }
   },
   "unknown": {
@@ -1134,13 +1134,13 @@
                       }
                     }
                   },
-                  "compound_solex": {
-                    "__type__": "<class 'idaes.core.base.process_block._ScalarCompoundSolventExtraction'>",
+                  "mixer_settler_ex": {
+                    "__type__": "<class 'idaes.core.base.process_block._ScalarMixerSettlerExtraction'>",
                     "__id__": 203,
                     "active": true,
                     "data": {
                       "None": {
-                        "__type__": "<class 'idaes.core.base.process_block._ScalarCompoundSolventExtraction'>",
+                        "__type__": "<class 'idaes.core.base.process_block._ScalarMixerSettlerExtraction'>",
                         "__id__": 204,
                         "active": true,
                         "__pyomo_components__": {

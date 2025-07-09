@@ -6,17 +6,18 @@
 #####################################################################################################
 
 r"""
-Compound Solvent Extraction Model
+Mixer Settler Extraction Model
 
 ========================
 
 Author: Arkoprabho Dasgupta
 
-The Compound Solvent Extraction unit is an extension of the traditional Solvent Extraction unit
-model from a pure mixer tank-based model to a mixer-settler based model.
-The mixer models are the Solvent Extraction model with 1 tank, and each mixer tank is followed
-by two settler tanks.
-The settler tanks are 1D Control Volume blocks.
+The Mixer Settler Extraction unit is an extension of the Solvent Extraction unit model from
+a pure mixer tank-based model to a mixer-settler based model. This model gives outlet concentration
+and flow values identical to the Solvent Extraction model, but it takes time delays into consideration
+which is important for dynamics.
+The mixer models are the Solvent Extraction model with 1 tank, and the settler tanks are modeled
+as an independent PFR without reaction (an empty pipe) for each phase, using 1D Control Volume blocks.
 
 Configuration Arguments
 -----------------------
@@ -25,13 +26,13 @@ The user must specify the following configurations in a solvent extraction model
 use it.
 
 The user must specify the aqueous feed input in the ``aqueous_stream`` configuration, with a
-configuration that describes the aqueous feed's properties.
+dictionary containing the aqueous feed's properties.
 
 The user must specify the organic feed input in the ``organic_stream`` configuration, with a
-configuration that describes the organic feed's properties.
+dictionary containing the organic feed's properties.
 
 The number of stages in the solvent extraction process has to be specified by the user through
-the ``number_of_finite_elements`` configuration. It takes an integer value.
+the ``number_of_stages`` configuration. It takes an integer value.
 
 The user must give a heterogeneous reaction package in the ``heterogeneous_reaction_package``
 argument for the extraction reaction between the two phases, and any additional arguments can
@@ -81,8 +82,7 @@ of freedom is the degrees of freedom of each unit multiplied by the number of ta
 Model structure
 ---------------
 
-The core model is a combination of the traditional Solvent Extraction models and 1D Control Volume
-models.
+The core model is a combination of the Solvent Extraction models and 1D Control Volume models.
 Each unit consists of a mixer tank model, which is a Solvent Extraction unit model, accompanied by
 two 1D Control Volume unit models for the aqueous and organic phases respectively. This entire unit
 is repeated as many times as the number of stages in the unit model.
@@ -131,9 +131,9 @@ from prommis.solvent_extraction.solvent_extraction import (
 __author__ = "Arkoprabho Dasgupta"
 
 
-class CompoundSolventExtractionInitializer(ModularInitializerBase):
+class MixerSettlerExtractionInitializer(ModularInitializerBase):
     """
-    This is a general purpose Initializer  for the compound solvent extraction unit model.
+    This is a general purpose Initializer  for the mixer settler extraction unit model.
 
     This routine calls the initializer for the internal SolventExtraction model.
 
@@ -162,6 +162,38 @@ class CompoundSolventExtractionInitializer(ModularInitializerBase):
         self,
         model: Block,
     ):
+        """
+        This initializer model can be decomposed into the following steps.
+        Step 1:
+            Deactivation of the arcs connecting the mixer tank to their corresponding settler
+            tanks, and the arcs connecting the settler tank to the next mixer tank.
+        Step 2:
+            If a stream is flowing backward, then the values of the state variables of that
+            corresponding inlet stream to each of the mixer tank are fixed to the values of
+            the state variables of that inlet stream to the overall model.
+            If a stream is flowing forward, then a bypass arc connecting the corresponding
+            outlet stream of the mixer to the inlet stream of the next mixer tank is created.
+            The settler tanks are all deactivated, and the newly created arcs are transformed.
+        Step 3:
+            The default initializer model for SolventExtraction model is called and the mixer
+            tanks are all initialized sequentially. While initializing the mixer tanks, if a
+            stream is forward flowing, and the tank is not the first tank, then the values of
+            the state variables of the stream outlet of the previous mixer is propagated along
+            the bypass arcs to the inlet stream of the mixer, then the mixer is initialized.
+            After the individual mixer tanks are initialized, the overall model is solved.
+        Step 4:
+            The settler tanks are all activated. The values of the state variables of the feed
+            streams to all the settlers are fixed to the values of state variables of the corresponding
+            inlet streams to the overall model, and the values at the inlet of the settler tanks
+            are propagated throughout the settler tank length. Then the overall model is solved.
+        Step 5:
+            The state variables of the inlet streams to the settler tanks and the backward flowing
+            inlet stream to the mixer tanks are all unfixed. All the bypass arcs are deleted and
+            the mixer-settler arcs are all reactivated. Then the overall model is solved. The
+            resulting solution is the initialized model.
+
+
+        """
 
         # Deconstructing the model and initializing the mixer and settler tanks separately
 
@@ -195,7 +227,9 @@ class CompoundSolventExtractionInitializer(ModularInitializerBase):
                             model,
                             f"{j}_{model.elements.prev(e)}_bypass_{e}_arc",
                             Arc(
-                                source=model.mixer[e - 1].unit.aqueous_outlet,
+                                source=model.mixer[
+                                    model.elements.prev(e)
+                                ].unit.aqueous_outlet,
                                 destination=model.mixer[e].unit.aqueous_inlet,
                             ),
                         ),
@@ -353,10 +387,10 @@ Stream_Config.declare(
 )
 
 
-@declare_process_block_class("CompoundSolventExtraction")
-class CompoundSolventExtractionData(UnitModelBlockData):
+@declare_process_block_class("MixerSettlerExtraction")
+class MixerSettlerExtractionData(UnitModelBlockData):
 
-    default_initializer = CompoundSolventExtractionInitializer
+    default_initializer = MixerSettlerExtractionInitializer
 
     CONFIG = UnitModelBlockData.CONFIG()
 
@@ -375,8 +409,8 @@ class CompoundSolventExtractionData(UnitModelBlockData):
     )
 
     CONFIG.declare(
-        "number_of_finite_elements",
-        ConfigValue(domain=int, description="Number of finite elements to use"),
+        "number_of_stages",
+        ConfigValue(domain=int, description="Number of stages in the model"),
     )
 
     CONFIG.declare(
@@ -443,8 +477,8 @@ class CompoundSolventExtractionData(UnitModelBlockData):
 
         self.elements = RangeSet(
             1,
-            self.config.number_of_finite_elements,
-            doc="Set of finite elements in cascade (1 to number of elements)",
+            self.config.number_of_stages,
+            doc="Set of number of stages in cascade (1 to number of elements)",
         )
 
         # Declare indexed mixer tanks and settler tanks
@@ -452,20 +486,6 @@ class CompoundSolventExtractionData(UnitModelBlockData):
         self.mixer = Block(self.elements)
         self.aqueous_settler = Block(self.elements)
         self.organic_settler = Block(self.elements)
-
-        # Declare energy balance type
-
-        if self.config.aqueous_stream.has_energy_balance == True:
-            energy_balance_type = EnergyBalanceType.enthalpyTotal
-        else:
-            energy_balance_type = EnergyBalanceType.none
-
-        # Declare pressure balance type
-
-        if self.config.aqueous_stream.has_pressure_balance == True:
-            pressure_balance_type = MomentumBalanceType.pressureTotal
-        else:
-            pressure_balance_type = MomentumBalanceType.none
 
         # Define the individual mixer and settler models
 
@@ -505,12 +525,19 @@ class CompoundSolventExtractionData(UnitModelBlockData):
                 has_phase_equilibrium=False,
                 has_mass_transfer=False,
             )
-
+            if self.config.aqueous_stream.has_energy_balance == True:
+                aqueous_energy_balance_type = EnergyBalanceType.enthalpyTotal
+            else:
+                aqueous_energy_balance_type = EnergyBalanceType.none
             self.aqueous_settler[i].unit.add_energy_balances(
-                balance_type=energy_balance_type,
+                balance_type=aqueous_energy_balance_type,
             )
+            if self.config.aqueous_stream.has_pressure_balance == True:
+                aqueous_pressure_balance_type = MomentumBalanceType.pressureTotal
+            else:
+                aqueous_pressure_balance_type = MomentumBalanceType.none
             self.aqueous_settler[i].unit.add_momentum_balances(
-                balance_type=pressure_balance_type,
+                balance_type=aqueous_pressure_balance_type,
             )
             self.aqueous_settler[i].unit.apply_transformation()
             self.add_inlet_port(
@@ -545,11 +572,19 @@ class CompoundSolventExtractionData(UnitModelBlockData):
                 has_phase_equilibrium=False,
                 has_mass_transfer=False,
             )
+            if self.config.organic_stream.has_energy_balance == True:
+                organic_energy_balance_type = EnergyBalanceType.enthalpyTotal
+            else:
+                organic_energy_balance_type = EnergyBalanceType.none
             self.organic_settler[i].unit.add_energy_balances(
-                balance_type=energy_balance_type,
+                balance_type=organic_energy_balance_type,
             )
+            if self.config.organic_stream.has_pressure_balance == True:
+                organic_pressure_balance_type = MomentumBalanceType.pressureTotal
+            else:
+                organic_pressure_balance_type = MomentumBalanceType.none
             self.organic_settler[i].unit.add_momentum_balances(
-                balance_type=pressure_balance_type,
+                balance_type=organic_pressure_balance_type,
             )
             self.organic_settler[i].unit.apply_transformation()
             self.add_inlet_port(
@@ -561,33 +596,67 @@ class CompoundSolventExtractionData(UnitModelBlockData):
                 block=self.organic_settler[i].unit,
             )
 
-        def settler_temperature_outlet(b, t):
-            x0 = b.length_domain.first()
-            xf = b.length_domain.last()
-            return b.properties[t, x0].temperature == b.properties[t, xf].temperature
+        # if there is no energy balance, define function for temperature outlet
+        if (
+            self.config.aqueous_stream.has_energy_balance == False
+            or self.config.organic_stream.has_energy_balance == False
+        ):
 
-        def settler_pressure_outlet(b, t):
-            x0 = b.length_domain.first()
-            xf = b.length_domain.last()
-            return b.properties[t, x0].pressure == b.properties[t, xf].pressure
+            def settler_temperature_outlet(b, t):
+                x0 = b.length_domain.first()
+                xf = b.length_domain.last()
+                return (
+                    b.properties[t, x0].temperature == b.properties[t, xf].temperature
+                )
+
+        # if there is no pressure balance, define function for pressure outlet
+        if (
+            self.config.aqueous_stream.has_pressure_balance == False
+            or self.config.organic_stream.has_pressure_balance == False
+        ):
+
+            def settler_pressure_outlet(b, t):
+                x0 = b.length_domain.first()
+                xf = b.length_domain.last()
+                return b.properties[t, x0].pressure == b.properties[t, xf].pressure
 
         for i in self.elements:
 
-            # Constrain the inlet and outlet temperature and pressure for the settlers
-            self.aqueous_settler[i].unit.temperature_constraint = Constraint(
-                self.flowsheet().time, rule=settler_temperature_outlet
-            )
-            self.organic_settler[i].unit.temperature_constraint = Constraint(
-                self.flowsheet().time, rule=settler_temperature_outlet
-            )
-            self.aqueous_settler[i].unit.pressure_constraint = Constraint(
-                self.flowsheet().time, rule=settler_pressure_outlet
-            )
-            self.organic_settler[i].unit.pressure_constraint = Constraint(
-                self.flowsheet().time, rule=settler_pressure_outlet
-            )
+            # # Constrain the inlet and outlet temperature and pressure for the settlers
+            # self.aqueous_settler[i].unit.temperature_constraint = Constraint(
+            #     self.flowsheet().time, rule=settler_temperature_outlet
+            # )
+            # self.organic_settler[i].unit.temperature_constraint = Constraint(
+            #     self.flowsheet().time, rule=settler_temperature_outlet
+            # )
+            # self.aqueous_settler[i].unit.pressure_constraint = Constraint(
+            #     self.flowsheet().time, rule=settler_pressure_outlet
+            # )
+            # self.organic_settler[i].unit.pressure_constraint = Constraint(
+            #     self.flowsheet().time, rule=settler_pressure_outlet
+            # )
 
             for j in ["aqueous", "organic"]:
+
+                # Declare temperature constraint for the settlers if it does not have energy balance
+                if getattr(self.config, f"{j}_stream").has_energy_balance == False:
+                    model = getattr(self, f"{j}_settler")[i].unit
+                    setattr(
+                        model,
+                        f"temperature_constraint",
+                        Constraint(
+                            self.flowsheet().time, rule=settler_temperature_outlet
+                        ),
+                    )
+
+                # Declare pressure constraint for the settlers if it does not have pressure balance
+                if getattr(self.config, f"{j}_stream").has_pressure_balance == False:
+                    model = getattr(self, f"{j}_settler")[i].unit
+                    setattr(
+                        model,
+                        f"pressure_constraint",
+                        Constraint(self.flowsheet().time, rule=settler_pressure_outlet),
+                    )
 
                 # Declare arcs connecting mixers to their corresponding settler tanks
                 setattr(

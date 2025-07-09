@@ -13,7 +13,7 @@ from idaes.core.util import DiagnosticsToolbox, from_json, StoreSpec
 
 import pytest
 
-from prommis.solvent_extraction.compound_sx_flowsheet_dynamic import (
+from prommis.solvent_extraction.mixer_settler_ex_flowsheet_dynamic import (
     build_model_and_discretize,
     initialize_set_input_and_initialize_guess,
 )
@@ -23,7 +23,7 @@ solver = get_solver()
 
 class TestSXmodel:
     @pytest.fixture(scope="class")
-    def Comp_SolEx_frame(self):
+    def Mix_Settle_Ex_frame(self):
         dosage = 5
         number_of_stages = 3
         time_duration = 12
@@ -32,25 +32,23 @@ class TestSXmodel:
         m = build_model_and_discretize(dosage, number_of_stages, time_duration)
         current_directory = os.path.dirname(__file__)
         parent_directory = os.path.dirname(current_directory)
-        json_file_path = os.path.join(
-            parent_directory, "compound_solvent_extraction.json"
-        )
+        json_file_path = os.path.join(parent_directory, "mixer_settler_extraction.json")
         from_json(m, fname=json_file_path, wts=StoreSpec.value())
         initialize_set_input_and_initialize_guess(m, dosage, perturb_time)
 
         return m
 
     @pytest.mark.component
-    def test_structural_issues(self, Comp_SolEx_frame):
-        model = Comp_SolEx_frame
+    def test_structural_issues(self, Mix_Settle_Ex_frame):
+        model = Mix_Settle_Ex_frame
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings(ignore_unit_consistency=True)
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
-    def test_solve(self, Comp_SolEx_frame):
-        m = Comp_SolEx_frame
+    def test_solve(self, Mix_Settle_Ex_frame):
+        m = Mix_Settle_Ex_frame
         results = solver.solve(m, tee=True)
 
         # Check for optimal solution
@@ -58,16 +56,16 @@ class TestSXmodel:
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_numerical_issues(self, Comp_SolEx_frame):
-        model = Comp_SolEx_frame
+    def test_numerical_issues(self, Mix_Settle_Ex_frame):
+        model = Mix_Settle_Ex_frame
         dt = DiagnosticsToolbox(model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_solution(self, Comp_SolEx_frame):
+    def test_solution(self, Mix_Settle_Ex_frame):
 
-        model = Comp_SolEx_frame
+        model = Mix_Settle_Ex_frame
         time_duration = 12
         aqueous_outlet = {
             "H2O": 1000000,
@@ -106,10 +104,10 @@ class TestSXmodel:
             "Y_o": 0.127708,
         }
 
-        for k, v in model.fs.compound_solex.organic_outlet.conc_mass_comp.items():
+        for k, v in model.fs.mixer_settler_ex.organic_outlet.conc_mass_comp.items():
             if k[0] == time_duration:
                 assert value(v) == pytest.approx(organic_outlet[k[1]], rel=1e-4)
 
-        for k, v in model.fs.compound_solex.aqueous_outlet.conc_mass_comp.items():
+        for k, v in model.fs.mixer_settler_ex.aqueous_outlet.conc_mass_comp.items():
             if k[0] == time_duration:
                 assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)

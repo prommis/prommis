@@ -90,7 +90,7 @@ Additional Parameters
 In addition to the MSContactor model, the model creates the following parameters.
 
 1. area_cross_stage = Cross-sectional area of each tank
-2. elevation = Elevation of each tank wrt the ground datum
+2. elevation = Elevation of each tank wrt the valve outlet
 
 Additional Constraints
 ----------------------

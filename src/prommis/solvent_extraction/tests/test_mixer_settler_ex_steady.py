@@ -13,17 +13,17 @@ from idaes.core.util import DiagnosticsToolbox
 
 import pytest
 
-from prommis.solvent_extraction.compound_solvent_extraction import (
-    CompoundSolventExtractionInitializer,
+from prommis.solvent_extraction.mixer_settler_extraction import (
+    MixerSettlerExtractionInitializer,
 )
-from prommis.solvent_extraction.compound_sx_flowsheet_steady import main
+from prommis.solvent_extraction.mixer_settler_ex_flowsheet_steady import main
 
 solver = get_solver()
 
 
 class TestSXmodel:
     @pytest.fixture(scope="class")
-    def Comp_SolEx_frame(self):
+    def Mix_Settle_Ex_frame(self):
         dosage = 5
         number_of_stages = 3
         m = main(dosage, number_of_stages)
@@ -31,31 +31,31 @@ class TestSXmodel:
         return m
 
     @pytest.mark.component
-    def test_structural_issues(self, Comp_SolEx_frame):
-        model = Comp_SolEx_frame
+    def test_structural_issues(self, Mix_Settle_Ex_frame):
+        model = Mix_Settle_Ex_frame
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
-    def test_initialization(self, Comp_SolEx_frame):
-        model = Comp_SolEx_frame
-        initializer = model.fs.compound_solex.default_initializer()
+    def test_initialization(self, Mix_Settle_Ex_frame):
+        model = Mix_Settle_Ex_frame
+        initializer = model.fs.mixer_settler_ex.default_initializer()
         assert (
-            model.fs.compound_solex.default_initializer
-            is CompoundSolventExtractionInitializer
+            model.fs.mixer_settler_ex.default_initializer
+            is MixerSettlerExtractionInitializer
         )
-        initializer.initialize(model.fs.compound_solex)
+        initializer.initialize(model.fs.mixer_settler_ex)
 
         assert (
-            initializer.summary[model.fs.compound_solex]["status"]
+            initializer.summary[model.fs.mixer_settler_ex]["status"]
             == InitializationStatus.Ok
         )
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
-    def test_solve(self, Comp_SolEx_frame):
-        m = Comp_SolEx_frame
+    def test_solve(self, Mix_Settle_Ex_frame):
+        m = Mix_Settle_Ex_frame
         results = solver.solve(m, tee=True)
 
         # Check for optimal solution
@@ -63,16 +63,16 @@ class TestSXmodel:
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_numerical_issues(self, Comp_SolEx_frame):
-        model = Comp_SolEx_frame
+    def test_numerical_issues(self, Mix_Settle_Ex_frame):
+        model = Mix_Settle_Ex_frame
         dt = DiagnosticsToolbox(model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_solution(self, Comp_SolEx_frame):
+    def test_solution(self, Mix_Settle_Ex_frame):
 
-        model = Comp_SolEx_frame
+        model = Mix_Settle_Ex_frame
         aqueous_outlet = {
             "H2O": 1000000,
             "H": 39.5131,
@@ -110,8 +110,8 @@ class TestSXmodel:
             "Y_o": 0.12401,
         }
 
-        for k, v in model.fs.compound_solex.organic_outlet.conc_mass_comp.items():
+        for k, v in model.fs.mixer_settler_ex.organic_outlet.conc_mass_comp.items():
             assert value(v) == pytest.approx(organic_outlet[k[1]], rel=1e-4)
 
-        for k, v in model.fs.compound_solex.aqueous_outlet.conc_mass_comp.items():
+        for k, v in model.fs.mixer_settler_ex.aqueous_outlet.conc_mass_comp.items():
             assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)

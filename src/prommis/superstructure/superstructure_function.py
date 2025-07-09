@@ -58,8 +58,6 @@ def define_custom_units():
     pyunits.load_definitions_from_strings(["Operator = [item]"])
     pyunits.load_definitions_from_strings(["Disassembly_Unit = [item]"])
     pyunits.load_definitions_from_strings(["USD = [currency]"])
-    pyunits.load_definitions_from_strings(["KUSD = 1000 * USD"])
-    pyunits.load_definitions_from_strings(["MUSD = 1000 * KUSD"])
 
 
 def build_model(

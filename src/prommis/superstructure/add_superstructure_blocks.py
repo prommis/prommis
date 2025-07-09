@@ -42,29 +42,19 @@ def add_plant_lifetime_params_block(m, plant_start, plant_lifetime):
         doc="The year that plant construction begins.",
         units=pyunits.year,
     )
-    m.fs.plant_lifetime = pyo.Param(
-        initialize=plant_lifetime,
-        doc="The total lifetime of the plant, including plant construction. Must be at least three years.",
-        units=pyunits.year,
-    )
-    m.fs.prod_start = pyo.Param(
-        initialize=prod_start,
-        doc="The first year of plant production.",
-        units=pyunits.year,
-    )
     m.fs.plant_end = pyo.Param(
         initialize=plant_end,
         doc="The final year of plant production.",
         units=pyunits.year,
     )
     m.fs.plant_life_range = pyo.RangeSet(
-        pyo.value(plant_start),
-        pyo.value(plant_end),
+        plant_start,
+        plant_end,
         doc="Lifetime of the plant.",
     )
     m.fs.operational_range = pyo.RangeSet(
-        pyo.value(prod_start),
-        pyo.value(plant_end),
+        prod_start,
+        plant_end,
         doc="Operational lifetime of the plant.",
     )
 
@@ -94,16 +84,6 @@ def add_feed_params_block(
 
     ### Define necessary pyomo parameters.
     ## Pyomo parameters
-    m.fs.available_feed = pyo.Param(
-        m.fs.operational_range,
-        initialize=available_feed,
-        doc="The total feedstock available for recycling each year.",
-        units=pyunits.EOL_Product / pyunits.year,
-    )
-    m.fs.collection_rate = pyo.Param(
-        initialize=collection_rate,
-        doc="The fraction of available feed that is processed by the plant each year.",
-    )
     m.fs.tracked_comps = pyo.Set(initialize=tracked_comps, doc="Tracked components.")
     m.fs.prod_comp_mass = pyo.Param(
         m.fs.tracked_comps,
@@ -121,11 +101,6 @@ def add_feed_params_block(
         initialize=max_feed_entering,
         doc="The max yearly feed that enters the plant over the production period.",
         units=pyunits.EOL_Product / pyunits.year,
-    )
-    m.fs.max_feed_entering_year = pyo.Param(
-        initialize=max_feed_entering_year,
-        doc="The year that the max feed enters the plant.",
-        units=pyunits.year,
     )
 
 
@@ -200,11 +175,6 @@ def add_supe_formulation_params(
         "All options after the first stage are assumed to be continuous. The sizing of these options is calculated "
         "based on the sum of the tracked components entering the option.",
     )
-    # m.fs.option_outlets = pyo.Param(
-    #     m.fs.all_opts_set,
-    #     initialize=option_outlets,
-    #     doc="Defines the set of options k' in stage j+1 connected to option k in stage j.",
-    # )
     m.fs.option_outlet_pairs = pyo.Set(
         initialize=[(j, k, kp) for (j, k), kps in option_outlets.items() for kp in kps],
         doc="Defines the set of options k' in stage j+1 connected to option k in stage j.",
@@ -312,13 +282,6 @@ def add_operating_params(
         doc="The capital cost per discrete unit for discrete options.",
         units=pyunits.USD / pyunits.Disassembly_Unit,
     )
-    m.fs.costing.processing_rate = pyo.Param(
-        m.fs.discrete_opts_set,
-        initialize=processing_rate,
-        doc="The processing rate per discrete unit for discrete options. In terms of number of end-of-life products "
-        "disassembled per discrete unit per year.",
-        units=pyunits.EOL_Product / pyunits.Disassembly_Unit / pyunits.year,
-    )
     m.fs.costing.num_operators = pyo.Param(
         m.fs.continuous_opts_set,
         initialize=num_operators,
@@ -417,10 +380,6 @@ def add_mass_balance_params(m):
         m.fs.num_stages - 1,
         doc="Set of all stages except the last. Used to define the flow variable: 'f'.",
     )
-    m.fs.flow_set = pyo.Set(
-        initialize=m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
-        doc="Set of all options, tracked components, and operational years of the plant. Used to define the flow variables: 'f_in' and 'f_out'.",
-    )
     m.fs.big_m_val = pyo.Param(
         m.fs.tracked_comps,
         initialize=m_val,
@@ -449,13 +408,13 @@ def add_mass_balance_vars(m):
         units=pyunits.kg / pyunits.year,
     )
     m.fs.f_in = pyo.Var(
-        m.fs.flow_set,
+        m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         doc="Flow entering each option. See documentation for more details.",
         units=pyunits.kg / pyunits.year,
     )
     m.fs.f_out = pyo.Var(
-        m.fs.flow_set,
+        m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         doc="Flow entering each option. See documentation for more details.",
         units=pyunits.kg / pyunits.year,
@@ -513,7 +472,7 @@ def add_mass_balance_cons(m):
             return pyo.Constraint.Skip
 
     @m.fs.Constraint(
-        m.fs.flow_set,
+        m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
         doc="Equation (3) from the documentation. The steam exiting an option is related to the inlet stream by an efficiency parameter.",
     )
     def intermediate_flow_cons(b, j, k, c, t):
@@ -542,20 +501,7 @@ def add_mass_balance_cons(m):
         # Extract all the options available in stage 'j'
         num_options = range(1, b.options_in_stage[j] + 1)
         return sum(b.option_binary_var[j, k] for k in num_options) == 1
-
-    # @m.fs.Constraint(
-    #     m.fs.all_opts_set,
-    #     doc="Equation (6) from the documentation. Ensures that if an option in stage $j + 1$ can only be chosen if it is connected to an option that was chosen in stage $j$.",
-    # )
-    # def connection_binary_cons(b, j, k):
-    #     if j != m.fs.num_stages:
-    #         # Extract the set of options k' in stage j+1 connected to option k in stage j.
-    #         opt_connections = b.option_outlets[j, k]
-    #         return b.option_binary_var[j, k] <= sum(
-    #             b.option_binary_var[j + 1, kp] for kp in opt_connections
-    #         )
-    #     else:
-    #         return pyo.Constraint.Skip
+    
     @m.fs.Constraint(
         m.fs.all_opts_set,
     )
@@ -570,14 +516,14 @@ def add_mass_balance_cons(m):
             return pyo.Constraint.Skip
 
     @m.fs.Constraint(
-        m.fs.flow_set,
+        m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
         doc="Equation (7) from the documentation. Big-M constraint for inlet streams. Inlet streams must be zero if the option is not chosen.",
     )
     def f_in_big_m_cons(b, j, k, c, t):
         return b.f_in[j, k, c, t] <= b.option_binary_var[j, k] * b.big_m_val[c]
 
     @m.fs.Constraint(
-        m.fs.flow_set,
+        m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
         doc="Equation (8) from the documentation. Big-M constraint for outlet streams. Outlet streams must be zero if the option is not chosen.",
     )
     def f_out_big_m_cons(b, j, k, c, t):
@@ -932,17 +878,13 @@ def add_byproduct_valorization_params(m, byproduct_values, byproduct_opt_convers
         initialize=byproduct_opt_conversion_initialize,
         doc="Defines the conversion factors for all byproducts for all options that produce them.",
     )
-    m.fs.byproduct_valorization.byproduct_producing_opts = pyo.Param(
-        m.fs.byproduct_valorization.byproducts_set,
-        initialize=byproduct_producing_opts,
-        doc="Pyomo parameter which defines what options produce each byproduct.",
-    )
 
     ## Add params related to profit generated from byproducts to costing block.
     m.fs.costing.byproduct_values = pyo.Param(
         m.fs.byproduct_valorization.byproducts_set,
         initialize=byproduct_values,
         doc="Defines the value of each byproduct ($/kg).",
+        units=pyunits.USD / pyunits.kg,
     )
 
 
@@ -961,6 +903,7 @@ def add_byproduct_valorization_vars(m):
         m.fs.byproduct_valorization.byproducts_set * m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         doc="The amount of each byproduct produced each year.",
+        units=pyunits.kg / pyunits.year,
     )
 
     ## Add vars related to profit generated from byproducts to costing block.
@@ -968,11 +911,13 @@ def add_byproduct_valorization_vars(m):
         m.fs.byproduct_valorization.byproducts_set * m.fs.operational_range,
         domain=pyo.Reals,
         doc="The amount of profit generated from each byproduct each year.",
+        units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.total_byproduct_profit = pyo.Var(
         m.fs.operational_range,
         domain=pyo.Reals,
         doc="The total profit generated by the plant each year from the valorization of byproducts.",
+        units=pyunits.USD / pyunits.year,
     )
 
 
@@ -996,7 +941,7 @@ def add_byproduct_valorization_cons(m):
         return m.fs.byproduct_valorization.byproduct_produced[byprod, t] == sum(
             sum(m.fs.f_in[opt, c, t] for c in m.fs.tracked_comps)
             * m.fs.byproduct_valorization.byproduct_opt_conversion[opt, byprod]
-            for opt in m.fs.byproduct_valorization.byproduct_producing_opts[byprod]
+            for opt in m.fs.all_opts_set if (opt, byprod) in m.fs.byproduct_valorization.opt_byproduct_set        
         )
 
 

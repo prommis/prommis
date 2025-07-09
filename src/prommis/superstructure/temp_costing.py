@@ -20,3 +20,8 @@ plant_end = plant_start + plant_lifetime - 1
 print(plant_end)
 # Define a list to hold the custom yearly costing units that need to be defined.
 yearly_cost_units = []
+
+
+for opt in [(1,1), (1,2), (1,3)]:
+    new_opt = opt + ('test',)
+    print(new_opt)

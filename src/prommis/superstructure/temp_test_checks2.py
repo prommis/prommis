@@ -709,7 +709,7 @@ options_environmental_impacts = {
 epsilon = 1
 
 ### Byproduct Valorization Parameters
-consider_byproduct_valorization = False
+consider_byproduct_valorization = True
 byproduct_values = {
     "Jarosite": -0.17,
     "Iron oxide": 10,
@@ -776,15 +776,21 @@ results = solver.solve(m, tee="True")
 m.fs.option_binary_var.display()
 
 # assert_units_consistent(m.fs)
+# m.fs.option_efficiencies.display()
+# m.fs.byproduct_valorization.opt_byproduct_set.display()
+# m.fs.byproduct_valorization.byproduct_opt_conversion.display()
+# m.fs.costing.byproduct_values.display()
 
+# this is wat is causing issues
+# m.fs.byproduct_valorization.byproduct_producing_opts.display()
 
-# # check blocks
-# for block in m.component_objects(pyo.Block, descend_into=True):
-#     try:
-#         assert_units_consistent(block)
-#         print(f"Units consistent for block: {block.name}")
-#     except TypeError as e:
-#         print(f"Skipped block {block.name}: {e}")
+# check blocks
+for block in m.component_objects(pyo.Block, descend_into=True):
+    try:
+        assert_units_consistent(block)
+        print(f"Units consistent for block: {block.name}")
+    except TypeError as e:
+        print(f"Skipped block {block.name}: {e}")
 
 # check constraints
 # for constr in m.component_objects(pyo.Constraint, descend_into=True):
@@ -822,3 +828,30 @@ for expr in m.component_objects(pyo.Expression, descend_into=True):
 # m.fs.option_outlets.display()
 # m.fs.option_efficiencies.display()
 # m.fs.final_opts_set.display()
+
+# Print out sets to check for redundancies
+# add plant lifetime params
+# m.fs.plant_life_range.display()
+# m.fs.operational_range.display()
+
+# add feed params
+# m.fs.tracked_comps.display()
+
+# add superstructure formulation params
+# m.fs.max_options.display()
+# m.fs.stages_set.display()
+# m.fs.all_opts_set.display()
+# m.fs.discrete_opts_set.display()
+# m.fs.continuous_opts_set.display()
+# m.fs.option_outlet_pairs.display()
+# m.fs.final_opts_set.display()
+
+# add operating params
+
+# add discretized costing params
+# m.fs.continuous_opts_discretized_costing_data_points.display()
+
+# add mass balance params
+# m.fs.f_stages.display()
+
+# m.fs.option_efficiencies.display()

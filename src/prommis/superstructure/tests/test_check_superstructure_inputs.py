@@ -2,7 +2,7 @@ import pyomo.environ as pyo
 
 import pytest
 
-from prommis.superstructure.add_superstructure_blocks import (  # add_byproduct_valorization_params,; add_discretized_costing_params,; add_environmental_impact_params,; add_operating_params,
+from prommis.superstructure.add_superstructure_blocks import (
     add_feed_params_block,
     add_plant_lifetime_params_block,
     add_supe_formulation_params,
@@ -689,6 +689,42 @@ def test_feed_params():
     m = get_clean_model()
     add_plant_lifetime_params_block(m, plant_start, plant_lifetime)
 
+    # define an available feed with negative feeds for testing purposes
+    available_feed_negative = {
+        2025: -290273,
+        2026: -274648,
+        2027: -286512,
+        2028: 487819,
+        2029: 592637,
+        2030: 571054,
+        2031: 498472,
+        2032: 506565,
+        2033: 566355,
+        2034: 669094,
+        2035: 719057,
+        2036: 762656,
+        2037: 1434637,
+        2038: 1697805,
+    }
+
+    # define an available feed with no feed for testing purposes
+    available_feed_zero = {
+        2025: 0,
+        2026: 0,
+        2027: 0,
+        2028: 0,
+        2029: 0,
+        2030: 0,
+        2031: 0,
+        2032: 0,
+        2033: 0,
+        2034: 0,
+        2035: 0,
+        2036: 0,
+        2037: 0,
+        2038: 0,
+    }
+
     # Test correct inputs
     check_feed_params(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
 
@@ -696,33 +732,47 @@ def test_feed_params():
     with pytest.raises(TypeError):
         check_feed_params(
             m, {2025: "hi"}, collection_rate, tracked_comps, prod_comp_mass
-        )
+        )  # incorrect structure of available_feed
     with pytest.raises(TypeError):
-        check_feed_params(m, available_feed, collection_rate, "hi", prod_comp_mass)
+        check_feed_params(
+            m, available_feed, collection_rate, "hi", prod_comp_mass
+        )  # incorrect type of tracked_comps
     with pytest.raises(TypeError):
-        check_feed_params(m, available_feed, collection_rate, tracked_comps, "hi")
+        check_feed_params(
+            m, available_feed, collection_rate, tracked_comps, "hi"
+        )  # incorrect type of prod_comp_mass
     with pytest.raises(TypeError):
-        check_feed_params(m, available_feed, collection_rate, tracked_comps, {1: 1})
+        check_feed_params(
+            m, available_feed, collection_rate, tracked_comps, {1: 1}
+        )  # incorrect structure of prod_comp_mass
     with pytest.raises(ValueError):
         check_feed_params(
-            m, {2025: -1000}, collection_rate, tracked_comps, prod_comp_mass
-        )
+            m, available_feed_negative, collection_rate, tracked_comps, prod_comp_mass
+        )  # test negative feed
     with pytest.raises(ValueError):
-        check_feed_params(m, {2025: 0}, collection_rate, tracked_comps, prod_comp_mass)
+        check_feed_params(
+            m, available_feed_zero, collection_rate, tracked_comps, prod_comp_mass
+        )  # test zero feed
     with pytest.raises(ValueError):
-        check_feed_params(m, available_feed, collection_rate, [], prod_comp_mass)
+        check_feed_params(
+            m, available_feed, collection_rate, [], prod_comp_mass
+        )  # no tracked comps
     with pytest.raises(ValueError):
-        check_feed_params(m, available_feed, collection_rate, tracked_comps, {"Nd": -3})
-    with pytest.raises(ValueError):
-        check_feed_params(m, available_feed, collection_rate, tracked_comps, {"Nd": -3})
+        check_feed_params(
+            m,
+            available_feed,
+            collection_rate,
+            tracked_comps,
+            {"Nd": -3, "Dy": 1, "Fe": 1},
+        )  # negative tracked comps per EOL product
     with pytest.warns(UserWarning):
         check_feed_params(
             m,
             available_feed,
             collection_rate,
             tracked_comps,
-            {"Nd": 0, "Dy": 0, "Fe": 0},
-        )
+            {"Nd": 0, "Dy": 1, "Fe": 1},
+        )  # zero tracked comp per EOL product
     with pytest.raises(TypeError):
         check_feed_params(
             m, {}, collection_rate, tracked_comps, prod_comp_mass

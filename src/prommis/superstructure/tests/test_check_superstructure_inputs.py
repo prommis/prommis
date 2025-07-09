@@ -661,7 +661,7 @@ def get_clean_model():
 
 
 ### Test functions
-def test_objective_function_choice(obj_func):
+def test_objective_function_choice():
     # Test correct inputs
     check_objective_function_choice("NPV")
 
@@ -716,7 +716,7 @@ def test_feed_params():
     with pytest.raises(ValueError):
         check_feed_params(m, available_feed, collection_rate, tracked_comps, {"Nd": -3})
     with pytest.warns(UserWarning):
-        check_feed_params(m, available_feed, collection_rate, tracked_comps, {"Nd": 0})
+        check_feed_params(m, available_feed, collection_rate, tracked_comps, {"Nd": 0, "Dy": 0, "Fe": 0})
     with pytest.raises(TypeError):
         check_feed_params(
             m, {}, collection_rate, tracked_comps, prod_comp_mass

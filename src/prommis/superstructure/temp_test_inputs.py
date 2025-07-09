@@ -1,22 +1,22 @@
 # Import functions to test
-from prommis.superstructure.check_superstructure_inputs import (
-    check_byproduct_valorization_params,
-    check_discretized_costing_params,
-    check_environmental_impact_params,
-    check_feed_params,
-    check_objective_function_choice,
-    check_operating_params,
-    check_plant_lifetime_params,
-    check_supe_formulation_params,
-)
-from prommis.superstructure.superstructure_function import define_custom_units
 import pyomo.environ as pyo
 
 from prommis.superstructure.add_superstructure_blocks import (
-    add_feed_params_block,
+    # add_feed_params_block,
     add_plant_lifetime_params_block,
-    add_supe_formulation_params,
+    # add_supe_formulation_params,
 )
+from prommis.superstructure.check_superstructure_inputs import (
+    # check_byproduct_valorization_params,
+    # check_discretized_costing_params,
+    # check_environmental_impact_params,
+    check_feed_params,
+    # check_objective_function_choice,
+    # check_operating_params,
+    # check_plant_lifetime_params,
+    # check_supe_formulation_params,
+)
+from prommis.superstructure.superstructure_function import define_custom_units
 
 # --- Valid parameter values from temp_test_checks.py ---
 # define custom units

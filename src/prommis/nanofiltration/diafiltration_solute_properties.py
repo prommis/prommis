@@ -70,7 +70,7 @@ class SoluteParameterData(PhysicalParameterBlock):
             domain=NonNegativeReals,
         )
 
-        # add thermal reflection coefficient, where 1 represents ideal behavior
+        # add thermal reflection coefficient, related to solute rejection
         self.sigma = Param(
             self.component_list,
             units=units.dimensionless,
@@ -81,14 +81,15 @@ class SoluteParameterData(PhysicalParameterBlock):
             },
         )
 
-        # add single salt partition coefficient
-        # TODO: verify values
+        # add partition coefficient
+        # currently H,Li is based on https://doi.org/10.1021/acs.iecr.4c04763
+        # H,Co and H,Cl are arbitrarily chosen to be the same value
         self.partition_coefficient = Param(
             self.component_list,
             units=units.dimensionless,
             initialize={
                 "Li": 0.3,
-                "Co": 0.25,
+                "Co": 0.3,
                 "Cl": 0.3,
             },
             domain=NonNegativeReals,

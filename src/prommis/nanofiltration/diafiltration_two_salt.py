@@ -371,19 +371,19 @@ and used when constructing these,
 
         # add global variables
         self.membrane_width = Var(
-            initialize=1,
+            initialize=4,
             units=units.m,
             bounds=[1e-11, None],
             doc="Width of the membrane (x-direction)",
         )
         self.membrane_length = Var(
-            initialize=100,
+            initialize=40,
             units=units.m,
             bounds=[1e-11, None],
             doc="Length of the membrane, wound radially",
         )
         self.applied_pressure = Var(
-            initialize=10,
+            initialize=15,
             units=units.bar,
             bounds=[1e-11, None],
             doc="Pressure applied to membrane",

@@ -82,18 +82,6 @@ def main():
     plot_results(m)
     plot_membrane_results(m)
 
-    print("x, Lithium Retentate, Lithium Permeate")
-    for x in reversed(m.fs.membrane.x_bar):
-        print(
-            f"{x}\t{round(value(m.fs.membrane.retentate_conc_mol_comp[0,x,'Li']),3)}\t{round(value(m.fs.membrane.permeate_conc_mol_comp[0,x,'Li']),3)}"
-        )
-
-    print("x, Cobalt Retentate, Cobalt Permeate")
-    for x in reversed(m.fs.membrane.x_bar):
-        print(
-            f"{x}\t{round(value(m.fs.membrane.retentate_conc_mol_comp[0,x,'Co']),3)}\t{round(value(m.fs.membrane.permeate_conc_mol_comp[0,x,'Co']),3)}"
-        )
-
 
 def build_membrane_parameters(m):
     """
@@ -198,66 +186,67 @@ def plot_results(m):
     cobalt_sieving = []
 
     for x_val in m.fs.membrane.x_bar:
-        x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
-        conc_ret_lith.append(
-            value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
-        )
-        conc_perm_lith.append(
-            value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-        )
-        conc_ret_cob.append(
-            value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
-        )
-        conc_perm_cob.append(
-            value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-        )
+        if x_val != 0:
+            x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
+            conc_ret_lith.append(
+                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
+            )
+            conc_perm_lith.append(
+                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
+            )
+            conc_ret_cob.append(
+                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
+            )
+            conc_perm_cob.append(
+                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
+            )
 
-        water_flux.append(value(m.fs.membrane.volume_flux_water[x_val]))
-        lithium_flux.append(value(m.fs.membrane.mol_flux_lithium[x_val]))
+            water_flux.append(value(m.fs.membrane.volume_flux_water[x_val]))
+            lithium_flux.append(value(m.fs.membrane.mol_flux_lithium[x_val]))
 
-        lithium_rejection.append(
-            (
-                1
-                - (
+            lithium_rejection.append(
+                (
+                    1
+                    - (
+                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
+                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
+                    )
+                )
+                * 100
+            )
+            lithium_sieving.append(
+                (
                     value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
                     / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
                 )
             )
-            * 100
-        )
-        lithium_sieving.append(
-            (
-                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-                / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
+            cobalt_rejection.append(
+                (
+                    1
+                    - (
+                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
+                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
+                    )
+                )
+                * 100
             )
-        )
-        cobalt_rejection.append(
-            (
-                1
-                - (
+            cobalt_sieving.append(
+                (
                     value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
                     / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
                 )
             )
-            * 100
-        )
-        cobalt_sieving.append(
-            (
-                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-                / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
-            )
-        )
 
-        percent_recovery.append(
-            (
-                value(m.fs.membrane.permeate_flow_volume[0, x_val])
-                / value(m.fs.membrane.feed_flow_volume[0])
-                * 100
+            percent_recovery.append(
+                (
+                    value(m.fs.membrane.permeate_flow_volume[0, x_val])
+                    / value(m.fs.membrane.feed_flow_volume[0])
+                    * 100
+                )
             )
-        )
 
     fig1, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(
-        3, 2, dpi=125, figsize=(12, 10)
+        3, 2, dpi=100, figsize=(12, 10)
     )
 
     ax1.plot(x_axis_values, conc_ret_lith, linewidth=2, label="retentate")
@@ -287,9 +276,7 @@ def plot_results(m):
 
     ax4.plot(x_axis_values, lithium_flux, linewidth=2)
     ax4.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
-    ax4.set_ylabel(
-        "Mole Flux of Lithium\n (mol/m$^2$/h)", fontsize=10, fontweight="bold"
-    )
+    ax4.set_ylabel("Lithium Molar Flux (mol/m$^2$/h)", fontsize=10, fontweight="bold")
     ax4.tick_params(direction="in", labelsize=10)
 
     ax5.plot(x_axis_values, lithium_rejection, linewidth=2, label="lithium")
@@ -365,7 +352,7 @@ def plot_membrane_results(m):
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, dpi=125, figsize=(15, 7))
     lithium_plot = ax1.pcolor(
-        z_axis_values, x_axis_values, conc_mem_lith_df, cmap="Blues"
+        z_axis_values, x_axis_values, conc_mem_lith_df, cmap="Greens"
     )
     ax1.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
     ax1.set_ylabel("Membrane Width (m)", fontsize=10, fontweight="bold")
@@ -388,11 +375,11 @@ def plot_membrane_results(m):
     fig.colorbar(cobalt_plot, ax=ax2)
 
     chloride_plot = ax3.pcolor(
-        z_axis_values, x_axis_values, conc_mem_chl_df, cmap="Blues"
+        z_axis_values, x_axis_values, conc_mem_chl_df, cmap="Oranges"
     )
     ax3.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
     ax3.set_title(
-        "Chlorine Concentration\n in Membrane (mol/m$^3$)",
+        "Chloride Concentration\n in Membrane (mol/m$^3$)",
         fontsize=10,
         fontweight="bold",
     )

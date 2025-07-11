@@ -1,17 +1,17 @@
-import pytest
-from pyomo.environ import(
+from pyomo.environ import (
     ConcreteModel,
-    Var,
-    Param,
     Constraint,
-    Expression,
-    )
-from pyomo.environ import units as pyunits, value, assert_optimal_termination
-from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
+    Param,
+    Var,
+    assert_optimal_termination,
+)
+from pyomo.environ import units as pyunits
+from pyomo.environ import value
+
 import idaes.logger as idaeslog
+from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
@@ -22,20 +22,14 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 
 import pytest
 
+from prommis.hydrogen_decrepitation.costing.cost_hydrogen_decrepitation_furnace import (
+    HydrogenDecrepitationCosting,
+    HydrogenDecrepitationCostingData,
+)
 from prommis.hydrogen_decrepitation.hydrogen_decrepitation_furnace import (
     REPMHydrogenDecrepitationFurnace,
 )
 from prommis.hydrogen_decrepitation.repm_solids_properties import REPMParameters
-
-from prommis.hydrogen_decrepitation.costing.cost_hydrogen_decrepitation_furnace import (
-    HydrogenDecrepitationCostingData,
-    HydrogenDecrepitationCosting,
-)
-from prommis.uky.costing.ree_plant_capcost import (
-    QGESSCosting,
-    QGESSCostingData,
-    custom_REE_plant_currency_units,
-)
 
 _log = idaeslog.getLogger(__name__)
 
@@ -150,9 +144,7 @@ class TestHydrogenDecrepitationCostingGasFired:
             model.fs.hydrogen_decrepitation_furnace.furnace_chamber_volume,
             Var,
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.heat_loss, Var
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.heat_loss, Var)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.temperature_insulation_material1,
             Var,
@@ -236,9 +228,7 @@ class TestHydrogenDecrepitationCostingGasFired:
             model.fs.hydrogen_decrepitation_furnace.air_heat_transfer_coeff,
             Param,
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.ref_temp, Param
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.ref_temp, Param)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.length_insulation1,
             Param,
@@ -257,9 +247,7 @@ class TestHydrogenDecrepitationCostingGasFired:
             model.fs.hydrogen_decrepitation_furnace.weight_insulation1,
             Param,
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.density_metal1, Param
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.density_metal1, Param)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.length_insulation2,
             Param,
@@ -275,9 +263,7 @@ class TestHydrogenDecrepitationCostingGasFired:
             model.fs.hydrogen_decrepitation_furnace.weight_insulation2,
             Param,
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.density_metal2, Param
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.density_metal2, Param)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.specific_heat_capacity_insulation1,
             Param,
@@ -294,9 +280,7 @@ class TestHydrogenDecrepitationCostingGasFired:
             model.fs.hydrogen_decrepitation_furnace.specific_heat_capacity_metal2,
             Param,
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.ramp_up_time, Param
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.ramp_up_time, Param)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.decrepitation_duration,
             Param,
@@ -312,9 +296,7 @@ class TestHydrogenDecrepitationCostingGasFired:
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.preparation_time, Param
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.cool_down_time, Param
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.cool_down_time, Param)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.heat_loss_radiation,
             Constraint,
@@ -470,7 +452,12 @@ class TestHydrogenDecrepitationCostingGasFired:
     @pytest.mark.component
     def test_results(self, model):
 
-        assert pyunits.get_units(model.fs.hydrogen_decrepitation_furnace.costing.capital_cost) == pyunits.USD_Jan_2024
+        assert (
+            pyunits.get_units(
+                model.fs.hydrogen_decrepitation_furnace.costing.capital_cost
+            )
+            == pyunits.USD_Jan_2024
+        )
 
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.capital_cost
@@ -503,9 +490,7 @@ class TestHydrogenDecrepitationCostingElectric:
             model.fs.hydrogen_decrepitation_furnace.furnace_chamber_volume,
             Var,
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.heat_loss, Var
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.heat_loss, Var)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.temperature_insulation_material1,
             Var,
@@ -589,9 +574,7 @@ class TestHydrogenDecrepitationCostingElectric:
             model.fs.hydrogen_decrepitation_furnace.air_heat_transfer_coeff,
             Param,
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.ref_temp, Param
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.ref_temp, Param)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.length_insulation1,
             Param,
@@ -610,9 +593,7 @@ class TestHydrogenDecrepitationCostingElectric:
             model.fs.hydrogen_decrepitation_furnace.weight_insulation1,
             Param,
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.density_metal1, Param
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.density_metal1, Param)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.length_insulation2,
             Param,
@@ -628,9 +609,7 @@ class TestHydrogenDecrepitationCostingElectric:
             model.fs.hydrogen_decrepitation_furnace.weight_insulation2,
             Param,
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.density_metal2, Param
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.density_metal2, Param)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.specific_heat_capacity_insulation1,
             Param,
@@ -647,9 +626,7 @@ class TestHydrogenDecrepitationCostingElectric:
             model.fs.hydrogen_decrepitation_furnace.specific_heat_capacity_metal2,
             Param,
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.ramp_up_time, Param
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.ramp_up_time, Param)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.decrepitation_duration,
             Param,
@@ -665,9 +642,7 @@ class TestHydrogenDecrepitationCostingElectric:
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.preparation_time, Param
         )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.cool_down_time, Param
-        )
+        assert isinstance(model.fs.hydrogen_decrepitation_furnace.cool_down_time, Param)
         assert isinstance(
             model.fs.hydrogen_decrepitation_furnace.heat_loss_radiation,
             Constraint,
@@ -823,7 +798,12 @@ class TestHydrogenDecrepitationCostingElectric:
     @pytest.mark.component
     def test_results(self, model):
 
-        assert pyunits.get_units(model.fs.hydrogen_decrepitation_furnace.costing.capital_cost) == pyunits.USD_Jan_2024
+        assert (
+            pyunits.get_units(
+                model.fs.hydrogen_decrepitation_furnace.costing.capital_cost
+            )
+            == pyunits.USD_Jan_2024
+        )
 
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.capital_cost
@@ -837,6 +817,7 @@ class TestHydrogenDecrepitationCostingElectric:
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.variable_operating_cost
         ) == pytest.approx(2592.89, rel=1e-4)
+
 
 @pytest.mark.unit
 def test_invalid_parent_block():
@@ -873,6 +854,7 @@ def test_invalid_parent_block():
     assert "REPMHydrogenDecrepitationFurnace" in str(e.value)
     assert " to use costing model." in str(e.value)
 
+
 @pytest.mark.unit
 def test_invalid_heating_mode():
     m = ConcreteModel()
@@ -902,9 +884,9 @@ def test_invalid_heating_mode():
     )
 
     with pytest.raises(
-            TypeError,
-            match="Valid heating modes are either 0: electric-fired or 1: gas-fired."
-            ):
+        TypeError,
+        match="Valid heating modes are either 0: electric-fired or 1: gas-fired.",
+    ):
         m.fs.unit.costing = UnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
             costing_method=HydrogenDecrepitationCostingData.cost_hydrogen_decrepitation_furnace,

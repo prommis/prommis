@@ -1,16 +1,13 @@
-from pyomo.environ import (
-    Param,
-    Var,
-    units as pyunits,
-    PositiveReals,
-)
+from pyomo.environ import Param, PositiveReals, Var
+from pyomo.environ import units as pyunits
+
+import idaes.logger as idaeslog
 from idaes.core import (
-    declare_process_block_class,
     FlowsheetCostingBlockData,
+    declare_process_block_class,
     register_idaes_currency_units,
 )
 from idaes.core.util.math import smooth_max
-import idaes.logger as idaeslog
 
 from prommis.hydrogen_decrepitation.hydrogen_decrepitation_furnace import (
     REPMHydrogenDecrepitationFurnace,
@@ -172,11 +169,18 @@ class HydrogenDecrepitationCostingData(FlowsheetCostingBlockData):
                         and project management.
         """
         if not isinstance(blk.parent_block(), REPMHydrogenDecrepitationFurnace):
-            raise TypeError("Parent block is of type ", blk.parent_block(), " and should be of type ",
-                            REPMHydrogenDecrepitationFurnace, " to use costing model.")
+            raise TypeError(
+                "Parent block is of type ",
+                blk.parent_block(),
+                " and should be of type ",
+                REPMHydrogenDecrepitationFurnace,
+                " to use costing model.",
+            )
 
         if heating_mode != 0 and heating_mode != 1:
-            raise TypeError("Valid heating modes are either 0: electric-fired or 1: gas-fired.")
+            raise TypeError(
+                "Valid heating modes are either 0: electric-fired or 1: gas-fired."
+            )
 
         # Material costs
 
@@ -204,7 +208,8 @@ class HydrogenDecrepitationCostingData(FlowsheetCostingBlockData):
         @blk.Expression(doc="Cost of metal material 1")
         def material_cost_metal1(b):
             return (
-                pyunits.convert(b.parent_block().weight_metal1[0], to_units=pyunits.kg) * b.price_metal1
+                pyunits.convert(b.parent_block().weight_metal1[0], to_units=pyunits.kg)
+                * b.price_metal1
             )
 
         blk.price_insulation2 = Param(
@@ -226,7 +231,8 @@ class HydrogenDecrepitationCostingData(FlowsheetCostingBlockData):
         @blk.Expression(doc="Cost of metal material 2")
         def material_cost_metal2(b):
             return (
-                pyunits.convert(b.parent_block().weight_metal2[0], to_units=pyunits.kg) * b.price_metal2
+                pyunits.convert(b.parent_block().weight_metal2[0], to_units=pyunits.kg)
+                * b.price_metal2
             )
 
         # Energy costs
@@ -236,9 +242,10 @@ class HydrogenDecrepitationCostingData(FlowsheetCostingBlockData):
 
         @blk.Expression(doc="Power rating of the furnace")
         def furnace_power_rating(b):
-            return (b.parent_block().heat_furnace_material[0] + b.parent_block().heat_sample_material[0]) / (
-                b.parent_block().ramp_up_time * b.efficiency
-            )
+            return (
+                b.parent_block().heat_furnace_material[0]
+                + b.parent_block().heat_sample_material[0]
+            ) / (b.parent_block().ramp_up_time * b.efficiency)
 
         blk.hours_per_shift = Param(units=pyunits.hr, mutable=True)
         blk.hours_per_shift.set_value(hours_per_shift)
@@ -277,10 +284,13 @@ class HydrogenDecrepitationCostingData(FlowsheetCostingBlockData):
         def operating_cost_eq(b):
             return b.OPEX == pyunits.convert(
                 (b.parent_block().total_heat_duty[0] / b.efficiency)
-                * b.hours_per_shift * b.shifts_per_day * b.operating_days_per_year
+                * b.hours_per_shift
+                * b.shifts_per_day
+                * b.operating_days_per_year
                 * b.utility_rate,
-                to_units=blk.costing_package.base_currency / blk.costing_package.base_period
-                )
+                to_units=blk.costing_package.base_currency
+                / blk.costing_package.base_period,
+            )
 
         blk.eps = Param(
             initialize=1e-4,
@@ -440,5 +450,6 @@ class HydrogenDecrepitationCostingData(FlowsheetCostingBlockData):
         def variable_operating_cost_eq(b):
             return (
                 b.variable_operating_cost
-                == b.variable_operating_cost_per_unit * b.parent_block().config.number_of_units
+                == b.variable_operating_cost_per_unit
+                * b.parent_block().config.number_of_units
             )

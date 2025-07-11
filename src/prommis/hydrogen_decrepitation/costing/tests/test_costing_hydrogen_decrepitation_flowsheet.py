@@ -1,45 +1,19 @@
-import pytest
-from pyomo.environ import(
-    ConcreteModel,
-    Var,
-    Param,
-    Constraint,
-    Expression,
-    )
-from pyomo.environ import units as pyunits, value, assert_optimal_termination
-from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
+from pyomo.environ import Constraint, Param, Var, assert_optimal_termination
+from pyomo.environ import units as pyunits
+from pyomo.environ import value
+
 import idaes.logger as idaeslog
+from idaes.core import UnitModelCostingBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
-from idaes.models.properties.modular_properties.base.generic_property import (
-    GenericParameterBlock,
-)
-from idaes.models_extra.power_generation.properties.natural_gas_PR import (
-    EosType,
-    get_prop,
-)
-
 import pytest
-
-from prommis.hydrogen_decrepitation.hydrogen_decrepitation_furnace import (
-    REPMHydrogenDecrepitationFurnace,
-)
-from prommis.hydrogen_decrepitation.hydrogen_decrepitation_flowsheet import (
-    initialize_and_solve,
-    main,
-)
-from prommis.hydrogen_decrepitation.repm_solids_properties import REPMParameters
 
 from prommis.hydrogen_decrepitation.costing.cost_hydrogen_decrepitation_furnace import (
     HydrogenDecrepitationCostingData,
-    HydrogenDecrepitationCosting,
 )
-from prommis.uky.costing.ree_plant_capcost import (
-    QGESSCosting,
-    QGESSCostingData,
-    custom_REE_plant_currency_units,
-)
+from prommis.hydrogen_decrepitation.hydrogen_decrepitation_flowsheet import main
+from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
 _log = idaeslog.getLogger(__name__)
 
@@ -191,9 +165,15 @@ class TestHydrogenDecrepitationQGESS:
         CE_index_year = "Jan_2024"
 
         model.fs.costing.build_process_costs(
-            labor_types=["unskilled",],
-            labor_rate=[38.20,],
-            operators_per_shift=[2,],
+            labor_types=[
+                "unskilled",
+            ],
+            labor_rate=[
+                38.20,
+            ],
+            operators_per_shift=[
+                2,
+            ],
             hours_per_shift=8,
             shifts_per_day=3,
             operating_days_per_year=336,
@@ -201,19 +181,23 @@ class TestHydrogenDecrepitationQGESS:
             pure_product_output_rates={
                 "Nd2Fe14B": 0.0000 * pyunits.kg / pyunits.hr,
                 "Nd": 0.0000 * pyunits.kg / pyunits.hr,
-                },
+            },
             mixed_product_output_rates={
-                "Nd2Fe14B":
-                    model.fs.hydrogen_decrepitation_furnace.solid_out[0].flow_mass *
-                    model.fs.hydrogen_decrepitation_furnace.solid_out[0].mass_frac_comp["Nd2Fe14B"],
-                "Nd":
-                    model.fs.hydrogen_decrepitation_furnace.solid_out[0].flow_mass *
-                    model.fs.hydrogen_decrepitation_furnace.solid_out[0].mass_frac_comp["Nd"],
-                },
-                # https://www.msesupplies.com/products/mse-pro-99-9-neodymium-iron-boron-magnetic-powder-ndfeb-100g?variant=40921835307066
+                "Nd2Fe14B": model.fs.hydrogen_decrepitation_furnace.solid_out[
+                    0
+                ].flow_mass
+                * model.fs.hydrogen_decrepitation_furnace.solid_out[0].mass_frac_comp[
+                    "Nd2Fe14B"
+                ],
+                "Nd": model.fs.hydrogen_decrepitation_furnace.solid_out[0].flow_mass
+                * model.fs.hydrogen_decrepitation_furnace.solid_out[0].mass_frac_comp[
+                    "Nd"
+                ],
+            },
+            # https://www.msesupplies.com/products/mse-pro-99-9-neodymium-iron-boron-magnetic-powder-ndfeb-100g?variant=40921835307066
             sale_prices={"Nd2Fe14B": 3899.90 * pyunits.USD_2023 / pyunits.kg},
             CE_index_year=CE_index_year,
-            )
+        )
 
     @pytest.mark.component
     def test_costing_diagnostics(self, model):
@@ -233,16 +217,21 @@ class TestHydrogenDecrepitationQGESS:
     @pytest.mark.component
     def test_results(self, model):
 
-        assert pyunits.get_units(model.fs.shredder.costing.bare_erected_cost["2.1"]) == pyunits.MUSD_Jan_2024
+        assert (
+            pyunits.get_units(model.fs.shredder.costing.bare_erected_cost["2.1"])
+            == pyunits.MUSD_Jan_2024
+        )
 
         assert value(
-            model.fs.shredder.costing.bare_erected_cost[
-                "2.1"
-            ]
+            model.fs.shredder.costing.bare_erected_cost["2.1"]
         ) == pytest.approx(0.065465, rel=1e-4)
 
-
-        assert pyunits.get_units(model.fs.hydrogen_decrepitation_furnace.costing.capital_cost) == pyunits.USD_Jan_2024
+        assert (
+            pyunits.get_units(
+                model.fs.hydrogen_decrepitation_furnace.costing.capital_cost
+            )
+            == pyunits.USD_Jan_2024
+        )
 
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.capital_cost
@@ -257,8 +246,10 @@ class TestHydrogenDecrepitationQGESS:
             model.fs.hydrogen_decrepitation_furnace.costing.variable_operating_cost
         ) == pytest.approx(2592.89, rel=1e-4)
 
-
-        assert pyunits.get_units(model.fs.costing.total_plant_cost) == pyunits.MUSD_Jan_2024
+        assert (
+            pyunits.get_units(model.fs.costing.total_plant_cost)
+            == pyunits.MUSD_Jan_2024
+        )
         model.fs.costing.report()
 
         assert value(model.fs.costing.total_plant_cost) == pytest.approx(
@@ -277,22 +268,30 @@ class TestHydrogenDecrepitationQGESS:
         assert value(model.fs.costing.annual_technical_labor_cost) == pytest.approx(
             1.0000e-12, rel=1e-4
         )
-        assert value(model.fs.costing.annual_labor_cost) == pytest.approx(0.77011, rel=1e-4)
+        assert value(model.fs.costing.annual_labor_cost) == pytest.approx(
+            0.77011, rel=1e-4
+        )
         assert value(model.fs.costing.maintenance_and_material_cost) == pytest.approx(
             0.0042796, rel=1e-4
         )
-        assert value(model.fs.costing.quality_assurance_and_control_cost) == pytest.approx(
-            0.077011, rel=1e-4
-        )
-        assert value(model.fs.costing.sales_patenting_and_research_cost) == pytest.approx(
-            2.0855, rel=1e-4
-        )
+        assert value(
+            model.fs.costing.quality_assurance_and_control_cost
+        ) == pytest.approx(0.077011, rel=1e-4)
+        assert value(
+            model.fs.costing.sales_patenting_and_research_cost
+        ) == pytest.approx(2.0855, rel=1e-4)
         assert value(model.fs.costing.admin_and_support_labor_cost) == pytest.approx(
             0.15402, rel=1e-4
         )
-        assert value(model.fs.costing.property_taxes_and_insurance_cost) == pytest.approx(
-            0.0021398, rel=1e-4
+        assert value(
+            model.fs.costing.property_taxes_and_insurance_cost
+        ) == pytest.approx(0.0021398, rel=1e-4)
+        assert value(model.fs.costing.other_fixed_costs) == pytest.approx(
+            1.0000e-12, rel=1e-4
         )
-        assert value(model.fs.costing.other_fixed_costs) == pytest.approx(1.0000e-12, rel=1e-4)
-        assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(3.0930, rel=1e-4)
-        assert value(model.fs.costing.total_sales_revenue) == pytest.approx(417.09, rel=1e-4)
+        assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(
+            3.0930, rel=1e-4
+        )
+        assert value(model.fs.costing.total_sales_revenue) == pytest.approx(
+            417.09, rel=1e-4
+        )

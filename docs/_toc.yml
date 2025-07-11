@@ -4,6 +4,10 @@ chapters:
   - file: getting_started.md
   - file: tutorials/diafiltration
   - file: tutorials/diafiltration-solution
+  - file: tutorials/costing_basic_features
+  - file: tutorials/costing_basic_features-solution
+  - file: tutorials/costing_advanced_features-solution
   - file: tutorials/uky_flowsheet-solution
+  - file: tutorials/costing_uky_flowsheet-solution
   - file: api.rst
   - file: examples/cmi_process.rst

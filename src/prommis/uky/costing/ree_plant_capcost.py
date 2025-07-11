@@ -2213,23 +2213,29 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # calculated from labor rate, labor burden, and operators per shift
         @b.Constraint()
         def annual_operating_labor_cost_eq(c):
-            return c.annual_operating_labor_cost == pyunits.convert(
-                (
-                    sum(
-                        c.operators_per_shift[i] * c.labor_rate[i]
-                        for i in operating_labor_types
-                    )
-                    * (1 + c.labor_burden / 100)
-                    * c.hours_per_shift
-                    * c.shifts_per_day
-                    * c.operating_days_per_year
-                ),
-                CE_index_units / pyunits.year,
-            )
+            if len(operating_labor_types) == 0:
+                return c.annual_operating_labor_cost == 1e-12 * CE_index_units / pyunits.year
+            else:
+                return c.annual_operating_labor_cost == pyunits.convert(
+                    (
+                        sum(
+                            c.operators_per_shift[i] * c.labor_rate[i]
+                            for i in operating_labor_types
+                        )
+                        * (1 + c.labor_burden / 100)
+                        * c.hours_per_shift
+                        * c.shifts_per_day
+                        * c.operating_days_per_year
+                    ),
+                    CE_index_units / pyunits.year,
+                )
 
         @b.Constraint()
         def annual_technical_labor_cost_eq(c):
-            return c.annual_technical_labor_cost == pyunits.convert(
+            if len(technical_labor_types) == 0:
+                return c.annual_technical_labor_cost == 1e-12 * CE_index_units / pyunits.year
+            else:
+                return c.annual_technical_labor_cost == pyunits.convert(
                 (
                     sum(
                         c.operators_per_shift[i] * c.labor_rate[i]
@@ -2318,25 +2324,28 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         @b.Constraint()
         def total_sales_revenue_eq(c):
-            return c.total_sales_revenue == pyunits.convert(
-                (
-                    (
-                        sum(
-                            pure_product_output_rates[p] * default_sale_prices[p]
-                            for p in pure_product_output_rates.keys()
+            return c.total_sales_revenue == (
+                sum(
+                    pyunits.convert(
+                        pure_product_output_rates[p] * default_sale_prices[p]
+                        * c.hours_per_shift
+                        * c.shifts_per_day
+                        * c.operating_days_per_year,
+                        CE_index_units / pyunits.year
                         )
-                        + c.mixed_product_sale_price_realization_factor
-                        * sum(
-                            mixed_product_output_rates[p] * default_sale_prices[p]
-                            for p in mixed_product_output_rates.keys()
-                        )
+                    for p in pure_product_output_rates.keys()
                     )
-                    * c.hours_per_shift
-                    * c.shifts_per_day
-                    * c.operating_days_per_year
-                ),
-                CE_index_units / pyunits.year,
-            )
+                + c.mixed_product_sale_price_realization_factor * sum(
+                    pyunits.convert(
+                        mixed_product_output_rates[p] * default_sale_prices[p]
+                        * c.hours_per_shift
+                        * c.shifts_per_day
+                        * c.operating_days_per_year,
+                        CE_index_units / pyunits.year
+                        )
+                    for p in mixed_product_output_rates.keys()
+                    )
+                )
 
     def get_variable_OM_costs(
         b,

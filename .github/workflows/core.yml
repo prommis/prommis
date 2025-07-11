@@ -70,7 +70,7 @@ jobs:
     # OS and/or Python version don't make a difference, so we choose ubuntu and 3.10 for performance
     runs-on: ubuntu-latest
     steps:
-      - uses: prommis/prommis/.github/actions/install@refs/pull/155/head
+      - uses: prommis/prommis/.github/actions/install@main
         with:
           variant: dev
           python-version: "3.11"
@@ -116,7 +116,7 @@ jobs:
             os: linux
             coverage: true
     steps:
-      - uses: prommis/prommis/.github/actions/install@refs/pull/155/head
+      - uses: prommis/prommis/.github/actions/install@main
         with:
           variant: ${{ matrix.install-variant }}
           python-version: ${{ matrix.python-version }}
@@ -180,7 +180,7 @@ jobs:
           - os: win64
             runner-image: windows-2022
     steps:
-      - uses: prommis/prommis/.github/actions/install@refs/pull/155/head
+      - uses: prommis/prommis/.github/actions/install@main
         with:
           variant: ${{ matrix.install-variant }}
           python-version: ${{ matrix.python-version }}

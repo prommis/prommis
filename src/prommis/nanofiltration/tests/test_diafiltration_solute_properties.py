@@ -8,7 +8,7 @@
 Diagnostic tests for the two-salt diafiltration property model for feed streams.
 """
 
-from pyomo.environ import ConcreteModel, Param, Var, value
+from pyomo.environ import ConcreteModel, Var
 
 from idaes.core import FlowsheetBlock
 

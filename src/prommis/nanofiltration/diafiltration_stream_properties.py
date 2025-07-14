@@ -14,7 +14,6 @@ from pyomo.environ import Var, units
 
 from idaes.core import (
     Component,
-    MaterialFlowBasis,
     Phase,
     PhysicalParameterBlock,
     StateBlock,

@@ -41,11 +41,9 @@ def test_parameters(model):
             "Cl",
         ]
         assert j in model.fs.product_properties.charge
-        assert j in model.fs.product_properties.molar_mass
         assert j in model.fs.product_properties.sigma
-
-    assert isinstance(model.fs.product_properties.num_solutes, Param)
-    assert value(model.fs.product_properties.num_solutes) == 5
+        assert j in model.fs.product_properties.partition_coefficient
+        assert j in model.fs.product_properties.num_solutes
 
 
 @pytest.mark.unit
@@ -55,14 +53,14 @@ def test_build(model):
     assert len(model.fs.state) == 1
 
     assert isinstance(model.fs.state[0].flow_vol, Var)
-    assert isinstance(model.fs.state[0].conc_mass_comp, Var)
+    assert isinstance(model.fs.state[0].conc_mol_comp, Var)
 
     model.fs.state[0].flow_vol.set_value(10)
     for j in model.fs.product_properties.component_list:
-        model.fs.state[0].conc_mass_comp[j].set_value(1)
+        model.fs.state[0].conc_mol_comp[j].set_value(1)
 
     model.fs.state.fix_initialization_states()
 
     assert model.fs.state[0].flow_vol.fixed
     for j in model.fs.product_properties.component_list:
-        assert model.fs.state[0].conc_mass_comp[j].fixed
+        assert model.fs.state[0].conc_mol_comp[j].fixed

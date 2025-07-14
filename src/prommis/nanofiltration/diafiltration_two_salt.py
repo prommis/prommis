@@ -324,6 +324,12 @@ and used when constructing these,
             doc="Number of discretization points in the z-direction",
         ),
     )
+    CONFIG.declare(
+        "charged_membrane",
+        ConfigValue(
+            default=True, doc="Boolean argument if the membrane has a surface charge"
+        ),
+    )
 
     def build(self):
         """
@@ -358,12 +364,20 @@ and used when constructing these,
             units=units.m,
             doc="Thickness of membrane (z-direction)",
         )
-        self.membrane_fixed_charge = Param(
-            initialize=-140,
-            mutable=True,
-            units=units.mol / units.m**3,  # mM
-            doc="Fixed charge on the membrane",
-        )
+        if self.config.charged_membrane:
+            self.membrane_fixed_charge = Param(
+                initialize=-140,
+                mutable=True,
+                units=units.mol / units.m**3,  # mM
+                doc="Fixed charge on the membrane",
+            )
+        else:
+            self.membrane_fixed_charge = Param(
+                initialize=0,
+                mutable=True,
+                units=units.mol / units.m**3,  # mM
+                doc="Fixed charge on the membrane",
+            )
         self.membrane_permeability = Param(
             initialize=0.03,
             mutable=True,
@@ -732,21 +746,32 @@ and used when constructing these,
 
         self.lumped_water_flux = Constraint(self.x_bar, rule=_lumped_water_flux)
 
+        # TODO: write exceptions for the valid membrane concentration ranges
         def _D_lithium_lithium_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
                 # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
-                params_lithium_lithium = [-4.07e-06, -3.99e-09, 4.01e-09]
+                self.diffusion_params_lithium_lithium = [-4.07e-06, -3.99e-09, 4.01e-09]
             if value(self.membrane_fixed_charge) == -140:
                 # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
-                params_lithium_lithium = [-4.33e-06, -4.25e-09, 5.14e-09]
+                self.diffusion_params_lithium_lithium = [-4.33e-06, -4.25e-09, 5.14e-09]
             return self.D_lithium_lithium[x, z] == -(
-                (params_lithium_lithium[0] * units.m**2 / units.h)
+                (self.diffusion_params_lithium_lithium[0] * units.m**2 / units.h)
                 + (
-                    (params_lithium_lithium[1] * units.m**5 / units.mol / units.h)
+                    (
+                        self.diffusion_params_lithium_lithium[1]
+                        * units.m**5
+                        / units.mol
+                        / units.h
+                    )
                     * (self.membrane_conc_mol_lithium[x, z])
                 )
                 + (
-                    (params_lithium_lithium[2] * units.m**5 / units.mol / units.h)
+                    (
+                        self.diffusion_params_lithium_lithium[2]
+                        * units.m**5
+                        / units.mol
+                        / units.h
+                    )
                     * (self.membrane_conc_mol_cobalt[x, z])
                 )
             )
@@ -758,18 +783,28 @@ and used when constructing these,
         def _D_lithium_cobalt_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
                 # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
-                params_lithium_cobalt = [-9.62e-07, -1.03e-08, 1.04e-08]
+                self.diffusion_params_lithium_cobalt = [-9.62e-07, -1.03e-08, 1.04e-08]
             if value(self.membrane_fixed_charge) == -140:
                 # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
-                params_lithium_cobalt = [-1.63e-06, -1.10e-08, 1.33e-08]
+                self.diffusion_params_lithium_cobalt = [-1.63e-06, -1.10e-08, 1.33e-08]
             return self.D_lithium_cobalt[x, z] == -(
-                (params_lithium_cobalt[0] * units.m**2 / units.h)
+                (self.diffusion_params_lithium_cobalt[0] * units.m**2 / units.h)
                 + (
-                    (params_lithium_cobalt[1] * units.m**5 / units.mol / units.h)
+                    (
+                        self.diffusion_params_lithium_cobalt[1]
+                        * units.m**5
+                        / units.mol
+                        / units.h
+                    )
                     * (self.membrane_conc_mol_lithium[x, z])
                 )
                 + (
-                    (params_lithium_cobalt[2] * units.m**5 / units.mol / units.h)
+                    (
+                        self.diffusion_params_lithium_cobalt[2]
+                        * units.m**5
+                        / units.mol
+                        / units.h
+                    )
                     * (self.membrane_conc_mol_cobalt[x, z])
                 )
             )
@@ -781,18 +816,28 @@ and used when constructing these,
         def _D_cobalt_lithium_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
                 # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
-                param_cobalt_lithium = [-5.24e-07, 2.49e-09, -2.50e-09]
+                self.diffusion_param_cobalt_lithium = [-5.24e-07, 2.49e-09, -2.50e-09]
             if value(self.membrane_fixed_charge) == -140:
                 # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
-                param_cobalt_lithium = [-1.32e-06, 4.72e-09, 1.47e-09]
+                self.diffusion_param_cobalt_lithium = [-1.32e-06, 4.72e-09, 1.47e-09]
             return self.D_cobalt_lithium[x, z] == -(
-                (param_cobalt_lithium[0] * units.m**2 / units.h)
+                (self.diffusion_param_cobalt_lithium[0] * units.m**2 / units.h)
                 + (
-                    (param_cobalt_lithium[1] * units.m**5 / units.mol / units.h)
+                    (
+                        self.diffusion_param_cobalt_lithium[1]
+                        * units.m**5
+                        / units.mol
+                        / units.h
+                    )
                     * (self.membrane_conc_mol_lithium[x, z])
                 )
                 + (
-                    (param_cobalt_lithium[2] * units.m**5 / units.mol / units.h)
+                    (
+                        self.diffusion_param_cobalt_lithium[2]
+                        * units.m**5
+                        / units.mol
+                        / units.h
+                    )
                     * (self.membrane_conc_mol_cobalt[x, z])
                 )
             )
@@ -804,18 +849,28 @@ and used when constructing these,
         def _D_cobalt_cobalt_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
                 # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
-                params_cobalt_cobalt = [-4.00e-06, 6.45e-09, -6.48e-09]
+                self.diffusion_params_cobalt_cobalt = [-4.00e-06, 6.45e-09, -6.48e-09]
             if value(self.membrane_fixed_charge) == -140:
                 # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
-                params_cobalt_cobalt = [-6.05e-06, 1.22e-08, 3.81e-09]
+                self.diffusion_params_cobalt_cobalt = [-6.05e-06, 1.22e-08, 3.81e-09]
             return self.D_cobalt_cobalt[x, z] == -(
-                (params_cobalt_cobalt[0] * units.m**2 / units.h)
+                (self.diffusion_params_cobalt_cobalt[0] * units.m**2 / units.h)
                 + (
-                    (params_cobalt_cobalt[1] * units.m**5 / units.mol / units.h)
+                    (
+                        self.diffusion_params_cobalt_cobalt[1]
+                        * units.m**5
+                        / units.mol
+                        / units.h
+                    )
                     * (self.membrane_conc_mol_lithium[x, z])
                 )
                 + (
-                    (params_cobalt_cobalt[2] * units.m**5 / units.mol / units.h)
+                    (
+                        self.diffusion_params_cobalt_cobalt[2]
+                        * units.m**5
+                        / units.mol
+                        / units.h
+                    )
                     * (self.membrane_conc_mol_cobalt[x, z])
                 )
             )
@@ -827,20 +882,20 @@ and used when constructing these,
         def _convection_coefficient_lithium_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
                 # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
-                params_lithium = [1, 0, 0]
+                self.convection_params_lithium = [1, 0, 0]
             if value(self.membrane_fixed_charge) == -140:
                 # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
-                params_lithium = [0.260, 0.00139, 0.00314]
+                self.convection_params_lithium = [0.260, 0.00139, 0.00314]
             return self.convection_coefficient_lithium[x, z] == (
-                params_lithium[0]
+                self.convection_params_lithium[0]
                 + (
-                    params_lithium[1]
+                    self.convection_params_lithium[1]
                     * units.m**3
                     / units.mol
                     * self.membrane_conc_mol_lithium[x, z]
                 )
                 + (
-                    params_lithium[2]
+                    self.convection_params_lithium[2]
                     * units.m**3
                     / units.mol
                     * self.membrane_conc_mol_cobalt[x, z]
@@ -854,20 +909,20 @@ and used when constructing these,
         def _convection_coefficient_cobalt_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
                 # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
-                params_cobalt = [1, 0, 0]
+                self.convection_params_cobalt = [1, 0, 0]
             if value(self.membrane_fixed_charge) == -140:
                 # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
-                params_cobalt = [0.0860, 0.00198, 0.00448]
+                self.convection_params_cobalt = [0.0860, 0.00198, 0.00448]
             return self.convection_coefficient_cobalt[x, z] == (
-                params_cobalt[0]
+                self.convection_params_cobalt[0]
                 + (
-                    params_cobalt[1]
+                    self.convection_params_cobalt[1]
                     * units.m**3
                     / units.mol
                     * self.membrane_conc_mol_lithium[x, z]
                 )
                 + (
-                    params_cobalt[2]
+                    self.convection_params_cobalt[2]
                     * units.m**3
                     / units.mol
                     * self.membrane_conc_mol_cobalt[x, z]
@@ -1030,6 +1085,7 @@ and used when constructing these,
         )
 
         # boundary conditions
+        # TODO: investigate numerics of substituting out H_Cl
         def _retentate_membrane_interface_lithium(self, x):
             if x == 0:
                 return Constraint.Skip

@@ -58,18 +58,6 @@ class SoluteParameterData(PhysicalParameterBlock):
             },
         )
 
-        # add molecular weight
-        self.molar_mass = Param(
-            self.component_list,
-            units=units.kg / units.mol,
-            initialize={
-                "Li": 0.006941,
-                "Co": 0.05893,
-                "Cl": 0.03545,
-            },
-            domain=NonNegativeReals,
-        )
-
         # add thermal reflection coefficient, related to solute rejection
         self.sigma = Param(
             self.component_list,

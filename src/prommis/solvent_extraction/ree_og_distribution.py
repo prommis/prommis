@@ -4,11 +4,13 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-"""
+
+r"""
 Initial property package for the organic phase solution of the solvent extraction
 unit operation.
+----------------------------------------------------------------------------------
 
-Authors: Arkoprabho Dasgupta
+Author: Arkoprabho Dasgupta
 
 """
 
@@ -25,6 +27,8 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
+
+__author__ = "Arkoprabho Dasgupta"
 
 
 @declare_process_block_class("REESolExOgParameters")

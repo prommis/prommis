@@ -15,7 +15,7 @@ import pytest
 
 from prommis.solvent_extraction.mixer_settler_ex_flowsheet_dynamic import (
     build_model_and_discretize,
-    initialize_set_input_and_initialize_guess,
+    initialize_set_input_and_initial_conditions,
 )
 
 solver = get_solver()
@@ -34,7 +34,7 @@ class TestSXmodel:
         parent_directory = os.path.dirname(current_directory)
         json_file_path = os.path.join(parent_directory, "mixer_settler_extraction.json")
         from_json(m, fname=json_file_path, wts=StoreSpec.value())
-        initialize_set_input_and_initialize_guess(m, dosage, perturb_time)
+        initialize_set_input_and_initial_conditions(m, dosage, perturb_time)
 
         return m
 

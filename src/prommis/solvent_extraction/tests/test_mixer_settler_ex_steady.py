@@ -16,7 +16,10 @@ import pytest
 from prommis.solvent_extraction.mixer_settler_extraction import (
     MixerSettlerExtractionInitializer,
 )
-from prommis.solvent_extraction.mixer_settler_ex_flowsheet_steady import main
+from prommis.solvent_extraction.mixer_settler_ex_flowsheet_steady import (
+    model_buildup_and_set_inputs,
+)
+
 
 solver = get_solver()
 
@@ -26,7 +29,7 @@ class TestSXmodel:
     def Mix_Settle_Ex_frame(self):
         dosage = 5
         number_of_stages = 3
-        m = main(dosage, number_of_stages)
+        m = model_buildup_and_set_inputs(dosage, number_of_stages)
 
         return m
 

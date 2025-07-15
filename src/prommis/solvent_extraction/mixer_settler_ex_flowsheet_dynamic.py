@@ -35,7 +35,13 @@ time_duration = 12
 
 def build_model(dosage, number_of_stages, time_duration):
     """
-    Build model
+    Method to build a dynamic flowsheet for mixer settler solvent extraction.
+    Args:
+        dosage: percentage dosage of extractant to the system.
+        number_of_stages: number of stages in the mixer settler model.
+        time_duration = total time of operation of the model
+    Returns:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
     """
 
     m = ConcreteModel()
@@ -74,7 +80,11 @@ def build_model(dosage, number_of_stages, time_duration):
 
 def discretization_scheme(m):
     """
-    Discretize the model
+    Discretize the mixer settler solvent extraction model
+    Args:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+    Returns:
+        None
     """
     m.discretizer = TransformationFactory("dae.collocation")
     m.discretizer.apply_to(m, nfe=4, ncp=2, wrt=m.fs.time, scheme="LAGRANGE-RADAU")
@@ -85,6 +95,10 @@ def copy_first_steady_state(m):
     Function that propagates initial steady state guess to future time points.
     This function is used to initialize all the time discrete variables to the
     initial steady state value.
+    Args:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+    Returns:
+        None
     """
     regular_vars, time_vars = flatten_dae_components(m, m.fs.time, Var, active=True)
     # Copy initial conditions forward
@@ -100,6 +114,18 @@ def copy_first_steady_state(m):
 
 
 def set_inputs(m, dosage, perturb_time):
+    """
+    Set inlet conditions to the mixer settler solvent extraction model and fixing
+    the parameters of the model.
+    Args:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+        dosage: percentage dosage of extractant to the system.
+        perturb_time : time at which a perturbation is added in the flowsheet, should
+        be lesser than the time of operation.
+    Returns:
+        None
+
+    """
 
     m.fs.mixer_settler_ex.aqueous_inlet.conc_mass_comp[:, "H2O"].fix(1e6)
     m.fs.mixer_settler_ex.aqueous_inlet.conc_mass_comp[:, "H"].fix(10.75)
@@ -163,9 +189,15 @@ def set_inputs(m, dosage, perturb_time):
     m.fs.mixer_settler_ex.organic_settler[:].unit.length.fix(0.4)
 
 
-def set_initial_guess(m):
+def set_initial_conditions(m):
+    """
+    Set initial conditions at time=0 for the mixer-settler solvent extraction model
+    Args:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+    Returns:
+        None
 
-    # set variable values in the mixer at t=0
+    """
 
     for e in m.fs.leach_soln.component_list:
         if e not in ["H2O", "HSO4"]:
@@ -222,6 +254,16 @@ def set_initial_guess(m):
 
 
 def build_model_and_discretize(dosage, number_of_stages, time_duration):
+    """
+    Method to build a dynamic model for mixer settler solvent extraction and discretize
+    the model.
+    Args:
+        dosage: percentage dosage of extractant to the system.
+        number_of_stages: number of stages in the mixer settler model.
+        time_duration = total time of operation of the model
+    Returns:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+    """
 
     m = build_model(dosage, number_of_stages, time_duration)
     discretization_scheme(m)
@@ -229,11 +271,69 @@ def build_model_and_discretize(dosage, number_of_stages, time_duration):
     return m
 
 
-def initialize_set_input_and_initialize_guess(m, dosage, perturb_time):
+def import_steady_value(m):
+    """
+    A function to import the steady state values of the mixer-settler solvent extraction
+    model to the dynamic model for initializing it.
+    Args:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+    Returns:
+        None
+    """
+    from_json(m, fname="mixer_settler_extraction.json", wts=StoreSpec.value())
+
+
+def initialize_set_input_and_initial_conditions(m, dosage, perturb_time):
+    """
+    Function to initialize, set inlet values and give initial conditions to the dynamic
+    mixer settler solvent extraction model.
+    Args:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+        dosage: percentage dosage of extractant to the system.
+        perturb_time : time at which a perturbation is added in the flowsheet, should
+        be lesser than the time of operation.
+    Returns:
+        None
+
+    """
 
     copy_first_steady_state(m)
     set_inputs(m, dosage, perturb_time)
-    set_initial_guess(m)
+    set_initial_conditions(m)
+
+
+def solve_model(m):
+    """
+    A function to solve the initialized mixer-settler solvent extraction model.
+    Args:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+    Returns:
+        None
+    """
+    solver = get_solver("ipopt_v2")
+    results = solver.solve(m, tee=True)
+
+
+def main(dosage, number_of_stages, time_duration, perturb_time):
+    """
+    Function to build a dynamic model, discretize it, initialize it, set input values
+    and give initial conditions, then solve the model.
+    Args:
+        dosage: percentage dosage of extractant to the system.
+        number_of_stages: number of stages in the mixer settler model.
+        time_duration = total time of operation of the model
+        perturb_time : time at which a perturbation is added in the flowsheet, should
+        be lesser than the time of operation.
+    Returns:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+
+    """
+    m = build_model_and_discretize(dosage, number_of_stages, time_duration)
+    import_steady_value(m)
+    initialize_set_input_and_initial_conditions(m, dosage, perturb_time)
+    solve_model(m)
+
+    return m
 
 
 dosage = 5
@@ -242,10 +342,4 @@ time_duration = 12
 perturb_time = 4
 
 if __name__ == "__main__":
-
-    m = build_model_and_discretize(dosage, number_of_stages, time_duration)
-    from_json(m, fname="mixer_settler_extraction.json", wts=StoreSpec.value())
-    initialize_set_input_and_initialize_guess(m, dosage, perturb_time)
-
-    solver = get_solver("ipopt_v2")
-    results = solver.solve(m, tee=True)
+    m = main(dosage, number_of_stages, time_duration, perturb_time)

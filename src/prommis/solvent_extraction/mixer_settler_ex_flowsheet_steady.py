@@ -28,7 +28,12 @@ from prommis.solvent_extraction.solvent_extraction_reaction_package import (
 
 def build_model(dosage, number_of_stages):
     """
-    Build the model
+    Method to build a steady state model for mixer settler solvent extraction
+    Args:
+        dosage: percentage dosage of extractant to the system.
+        number_of_stages: number of stages in the mixer settler model.
+    Returns:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
     """
 
     m = ConcreteModel()
@@ -67,7 +72,14 @@ def build_model(dosage, number_of_stages):
 
 def set_inputs(m, dosage):
     """
-    Set inputs to the streams
+    Set inlet conditions to the mixer settler solvent extraction model and fixing
+    the parameters of the model.
+    Args:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+        dosage: percentage dosage of extractant to the system.
+    Returns:
+        None
+
     """
 
     m.fs.mixer_settler_ex.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1e6)
@@ -124,12 +136,74 @@ def set_inputs(m, dosage):
     m.fs.mixer_settler_ex.organic_settler[:].unit.length.fix(1)
 
 
-def main(dosage, number_of_stages):
+def model_buildup_and_set_inputs(dosage, number_of_stages):
     """
-    Main function to run the model.
+    A function to build up the mixer settler solvent extraction model and set inlet
+    streams to the model.
+    Args:
+        dosage: percentage dosage of extractant to the system.
+        number_of_stages: Number of stages in the mixer settler model.
+    Returns:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
     """
     m = build_model(dosage, number_of_stages)
     set_inputs(m, dosage)
+
+    return m
+
+
+def initialize_steady_model(m):
+    """
+    A function to initialize the mixer settler solvent extraction model with the
+    default initializer after setting input conditions.
+    Args:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+    Returns:
+        None
+    """
+    initializer = m.fs.mixer_settler_ex.default_initializer()
+    initializer.initialize(m.fs.mixer_settler_ex)
+
+
+def solve_model(m):
+    """
+    A function to solve the initialized mixer-settler solvent extraction model.
+    Args:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+    Returns:
+        None
+    """
+    solver = get_solver("ipopt_v2")
+    results = solver.solve(m, tee=True)
+
+
+def export_results(m):
+    """
+    A function to export the results of the solved mixer-settler solvent extraction
+    model to a json file.
+    Args:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+    Returns:
+        None
+    """
+    to_json(m, fname="mixer_settler_extraction.json", human_read=True)
+
+
+def main(dosage, number_of_stages):
+    """
+    The main function used to build a mixer settler solvent extraction model, set inlets
+    to the model, initialize the model, solve the model and export the results to a json
+    file.
+    Args:
+        dosage: percentage dosage of extractant to the system.
+        number_of_stages: Number of stages in the mixer settler model.
+    Returns:
+        m: ConcreteModel object with the mixer-settler solvent extraction system.
+    """
+    m = model_buildup_and_set_inputs(dosage, number_of_stages)
+    initialize_steady_model(m)
+    solve_model(m)
+    export_results(m)
 
     return m
 
@@ -140,10 +214,3 @@ number_of_stages = 3
 if __name__ == "__main__":
 
     m = main(dosage, number_of_stages)
-
-    m.fs.mixer_settler_ex.default_initializer().initialize(m.fs.mixer_settler_ex)
-
-    solver = get_solver("ipopt_v2")
-    results = solver.solve(m, tee=True)
-
-    to_json(m, fname="mixer_settler_extraction.json", human_read=True)

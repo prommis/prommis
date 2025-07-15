@@ -133,7 +133,7 @@ __author__ = "Arkoprabho Dasgupta"
 
 class MixerSettlerExtractionInitializer(ModularInitializerBase):
     """
-    This is a general purpose Initializer  for the mixer settler extraction unit model.
+    This is a general purpose Initializer for the mixer settler extraction unit model.
 
     This routine calls the initializer for the internal SolventExtraction model.
 

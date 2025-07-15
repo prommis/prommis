@@ -115,6 +115,11 @@ class Test_Solvent_Extraction_steady_model:
     def SolEx_total_flowsheet(self):
         dosage = 5
         number_of_stages = 3
-        model = main(dosage, number_of_stages)
+        model, results = main(dosage, number_of_stages)
 
-        return model
+        return model, results
+
+    @pytest.mark.component
+    def test_solve_total(self, SolEx_total_flowsheet):
+        m, results = SolEx_total_flowsheet
+        assert check_optimal_termination(results)

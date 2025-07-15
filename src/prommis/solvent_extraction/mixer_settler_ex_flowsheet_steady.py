@@ -176,6 +176,8 @@ def solve_model(m):
     solver = get_solver("ipopt_v2")
     results = solver.solve(m, tee=True)
 
+    return results
+
 
 def export_results(m):
     """
@@ -202,14 +204,14 @@ def main(dosage, number_of_stages):
     """
     m = model_buildup_and_set_inputs(dosage, number_of_stages)
     initialize_steady_model(m)
-    solve_model(m)
+    results = solve_model(m)
     export_results(m)
 
-    return m
+    return m, results
 
 
 dosage = 5
 number_of_stages = 3
 
 if __name__ == "__main__":
-    m = main(dosage, number_of_stages)
+    m, results = main(dosage, number_of_stages)

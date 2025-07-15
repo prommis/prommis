@@ -313,6 +313,7 @@ def solve_model(m):
     """
     solver = get_solver("ipopt_v2")
     results = solver.solve(m, tee=True)
+    return results
 
 
 def main(dosage, number_of_stages, time_duration, perturb_time, path_name):
@@ -333,9 +334,9 @@ def main(dosage, number_of_stages, time_duration, perturb_time, path_name):
     m = build_model_and_discretize(dosage, number_of_stages, time_duration)
     import_steady_value(m, path_name)
     initialize_set_input_and_initial_conditions(m, dosage, perturb_time)
-    solve_model(m)
+    results = solve_model(m)
 
-    return m
+    return m, results
 
 
 dosage = 5
@@ -344,7 +345,7 @@ time_duration = 12
 perturb_time = 4
 
 if __name__ == "__main__":
-    m = main(
+    m, results = main(
         dosage,
         number_of_stages,
         time_duration,

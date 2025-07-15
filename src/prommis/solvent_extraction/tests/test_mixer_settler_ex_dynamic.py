@@ -76,9 +76,9 @@ class Test_Mixer_Settler_Ex_dynamic_model:
             "HSO4": 8016.9174,
             "Al": 400.6008,
             "Ca": 102.5401,
-            "Cl": 1e-07,
+            "Cl": 7.23224e-07,
             "Ce": 2.10975,
-            "Dy": 1.03483e-03,
+            "Dy": 1.03533e-03,
             "Fe": 588.068,
             "Gd": 0.19219,
             "La": 0.91596,
@@ -86,7 +86,7 @@ class Test_Mixer_Settler_Ex_dynamic_model:
             "Pr": 0.27698,
             "Sc": 2.7415e-03,
             "Sm": 8.6918e-02,
-            "Y": 4.35017e-06,
+            "Y": 9.91505e-06,
         }
 
         organic_outlet = {
@@ -115,7 +115,7 @@ class Test_Mixer_Settler_Ex_dynamic_model:
                 assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)
 
     @pytest.fixture(scope="class")
-    def Mix_Settle_Ex_frame(self):
+    def Mix_Settle_Ex_total_flowsheet(self):
         dosage = 5
         number_of_stages = 3
         time_duration = 12
@@ -124,6 +124,13 @@ class Test_Mixer_Settler_Ex_dynamic_model:
         parent_directory = os.path.dirname(current_directory)
         json_file_path = os.path.join(parent_directory, "mixer_settler_extraction.json")
 
-        m = main(dosage, number_of_stages, time_duration, perturb_time, json_file_path)
+        m, results = main(
+            dosage, number_of_stages, time_duration, perturb_time, json_file_path
+        )
 
-        return m
+        return m, results
+
+    @pytest.mark.component
+    def test_solve_total(self, Mix_Settle_Ex_total_flowsheet):
+        m, results = Mix_Settle_Ex_total_flowsheet
+        assert check_optimal_termination(results)

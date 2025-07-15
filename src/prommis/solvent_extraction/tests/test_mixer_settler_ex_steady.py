@@ -124,6 +124,11 @@ class Test_Mixer_Settler_EX_steady_model:
     def Mix_Settle_Ex_total_flowsheet(self):
         dosage = 5
         number_of_stages = 3
-        model = main(dosage, number_of_stages)
+        model, results = main(dosage, number_of_stages)
 
-        return model
+        return model, results
+
+    @pytest.mark.component
+    def test_solve_total(self, Mix_Settle_Ex_total_flowsheet):
+        m, results = Mix_Settle_Ex_total_flowsheet
+        assert check_optimal_termination(results)

@@ -14,17 +14,20 @@ from idaes.core.util import DiagnosticsToolbox
 import pytest
 
 from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer
-from prommis.solvent_extraction.solvent_extraction_steady import main
+from prommis.solvent_extraction.solvent_extraction_steady import (
+    main,
+    model_buildup_and_set_inputs,
+)
 
 solver = get_solver()
 
 
-class TestSXmodel:
+class Test_Solvent_Extraction_steady_model:
     @pytest.fixture(scope="class")
     def SolEx_frame(self):
         dosage = 5
         number_of_stages = 3
-        m = main(dosage, number_of_stages)
+        m = model_buildup_and_set_inputs(dosage, number_of_stages)
 
         return m
 
@@ -107,3 +110,11 @@ class TestSXmodel:
 
         for k, v in model.fs.solex.aqueous_outlet.conc_mass_comp.items():
             assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)
+
+    @pytest.fixture(scope="class")
+    def SolEx_total_flowsheet(self):
+        dosage = 5
+        number_of_stages = 3
+        model = main(dosage, number_of_stages)
+
+        return model

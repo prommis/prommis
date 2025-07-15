@@ -271,16 +271,17 @@ def build_model_and_discretize(dosage, number_of_stages, time_duration):
     return m
 
 
-def import_steady_value(m):
+def import_steady_value(m, path_name):
     """
     A function to import the steady state values of the mixer-settler solvent extraction
     model to the dynamic model for initializing it.
     Args:
         m: ConcreteModel object with the mixer-settler solvent extraction system.
+        path_name: name of the path of the json file
     Returns:
         None
     """
-    from_json(m, fname="mixer_settler_extraction.json", wts=StoreSpec.value())
+    from_json(m, fname=path_name, wts=StoreSpec.value())
 
 
 def initialize_set_input_and_initial_conditions(m, dosage, perturb_time):
@@ -314,7 +315,7 @@ def solve_model(m):
     results = solver.solve(m, tee=True)
 
 
-def main(dosage, number_of_stages, time_duration, perturb_time):
+def main(dosage, number_of_stages, time_duration, perturb_time, path_name):
     """
     Function to build a dynamic model, discretize it, initialize it, set input values
     and give initial conditions, then solve the model.
@@ -322,6 +323,7 @@ def main(dosage, number_of_stages, time_duration, perturb_time):
         dosage: percentage dosage of extractant to the system.
         number_of_stages: number of stages in the mixer settler model.
         time_duration = total time of operation of the model
+        path_name: name of the path of the json file
         perturb_time : time at which a perturbation is added in the flowsheet, should
         be lesser than the time of operation.
     Returns:
@@ -329,7 +331,7 @@ def main(dosage, number_of_stages, time_duration, perturb_time):
 
     """
     m = build_model_and_discretize(dosage, number_of_stages, time_duration)
-    import_steady_value(m)
+    import_steady_value(m, path_name)
     initialize_set_input_and_initial_conditions(m, dosage, perturb_time)
     solve_model(m)
 
@@ -342,4 +344,10 @@ time_duration = 12
 perturb_time = 4
 
 if __name__ == "__main__":
-    m = main(dosage, number_of_stages, time_duration, perturb_time)
+    m = main(
+        dosage,
+        number_of_stages,
+        time_duration,
+        perturb_time,
+        path_name="mixer_settler_extraction.json",
+    )

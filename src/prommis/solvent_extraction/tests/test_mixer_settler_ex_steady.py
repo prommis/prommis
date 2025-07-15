@@ -18,13 +18,14 @@ from prommis.solvent_extraction.mixer_settler_extraction import (
 )
 from prommis.solvent_extraction.mixer_settler_ex_flowsheet_steady import (
     model_buildup_and_set_inputs,
+    main,
 )
 
 
 solver = get_solver()
 
 
-class TestSXmodel:
+class Test_Mixer_Settler_EX_steady_model:
     @pytest.fixture(scope="class")
     def Mix_Settle_Ex_frame(self):
         dosage = 5
@@ -118,3 +119,11 @@ class TestSXmodel:
 
         for k, v in model.fs.mixer_settler_ex.aqueous_outlet.conc_mass_comp.items():
             assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)
+
+    @pytest.fixture(scope="class")
+    def Mix_Settle_Ex_total_flowsheet(self):
+        dosage = 5
+        number_of_stages = 3
+        model = main(dosage, number_of_stages)
+
+        return model

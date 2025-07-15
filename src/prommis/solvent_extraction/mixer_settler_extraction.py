@@ -84,7 +84,7 @@ Model Structure
 
 The core model is a combination of the Solvent Extraction models and 1D Control Volume models.
 Each unit consists of a mixer tank model, which is a Solvent Extraction unit model, accompanied by
-two 1D Control Volume unit models for the aqueous and organic phases respectively. This entire unit
+two 1D Control Volume unit models for the aqueous and organic phases, respectively. This entire unit
 is repeated as many times as the number of stages in the unit model.
 The material transfer between the two phases happens only in the mixer tanks, ie. the Solvent Extraction
 models, and they are quantified by the heterogeneous reaction package.

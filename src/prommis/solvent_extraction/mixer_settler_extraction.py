@@ -45,7 +45,7 @@ to specify the corresponding discretization schemein the argument ``settler_tran
 After the discretization, the user needs to specify the number of finite elements in the argument
 ``settler_finite_elements``. If the discretization method is collocation, then the user has to
 additionally specify the number of collocation points in the ``settler_collocation_points``, else
-the user does not need tp specify anything in this argument.
+the user does not need to specify anything in this argument.
 
 Stream configurations
 ---------------------

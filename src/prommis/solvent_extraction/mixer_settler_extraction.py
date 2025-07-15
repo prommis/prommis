@@ -17,7 +17,7 @@ a pure mixer tank-based model to a mixer-settler based model. This model gives o
 and flow values identical to the Solvent Extraction model, but it takes time delays into consideration
 which is important for dynamics.
 The mixer models are the Solvent Extraction model with 1 tank, and the settler tanks are modeled
-as an independent PFR without reaction (an empty pipe) for each phase, using 1D Control Volume blocks.
+as an independent process flow reactor without reaction (an empty pipe) for each phase, using 1D Control Volume blocks.
 
 Configuration Arguments
 -----------------------

@@ -47,7 +47,7 @@ After the discretization, the user needs to specify the number of finite element
 additionally specify the number of collocation points in the ``settler_collocation_points``, else
 the user does not need to specify anything in this argument.
 
-Stream configurations
+Stream Configurations
 ---------------------
 
 Each of the feed streams has to have a dictionary that specifies the property packages and other

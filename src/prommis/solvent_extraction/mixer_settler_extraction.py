@@ -67,7 +67,7 @@ The stream has two more arguments, ``has_energy_balance`` and ``has_pressure_bal
 the base MSContactor model. However, our model does not consider energy balance and pressure balance
 yet, so the default arguments will be ``has_energy_balance = False`` and ``has_pressure_balance = False``.
 
-Degrees of freedom
+Degrees of Freedom
 ------------------
 
 When the model is operated in steady state, the number of degrees of freedom of each unit is the sum

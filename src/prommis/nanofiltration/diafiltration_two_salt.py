@@ -746,7 +746,6 @@ and used when constructing these,
 
         self.lumped_water_flux = Constraint(self.x_bar, rule=_lumped_water_flux)
 
-        # TODO: write exceptions for the valid membrane concentration ranges
         def _D_lithium_lithium_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
                 # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
@@ -1085,7 +1084,6 @@ and used when constructing these,
         )
 
         # boundary conditions
-        # TODO: investigate numerics of substituting out H_Cl
         def _retentate_membrane_interface_lithium(self, x):
             if x == 0:
                 return Constraint.Skip

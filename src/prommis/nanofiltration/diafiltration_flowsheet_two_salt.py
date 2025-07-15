@@ -55,6 +55,7 @@ def main():
         property_package=m.fs.properties,
         NFEx=10,
         NFEz=5,
+        charged_membrane=True,
     )
 
     # add product blocks for retentate and permeate
@@ -73,6 +74,24 @@ def main():
 
     # solve model
     solve_model(m)
+
+    for x in m.fs.membrane.x_bar:
+        for z in m.fs.membrane.z_bar:
+            if 50 > value(m.fs.membrane.membrane_conc_mol_lithium[x, z]) > 80:
+                raise ValueError(
+                    "Membrane concentration for lithium is outside of the valid "
+                    "range for the diffusion coefficient approximations. The "
+                    "linearized approximations may need to be re-calculated."
+                )
+
+    for x in m.fs.membrane.x_bar:
+        for z in m.fs.membrane.z_bar:
+            if 80 > value(m.fs.membrane.membrane_conc_mol_cobalt[x, z]) > 110:
+                raise ValueError(
+                    "Membrane concentration for cobalt is outside of the valid "
+                    "range for the diffusion coefficient approximations. The "
+                    "linearized approximations may need to be re-calculated."
+                )
 
     # check numerical warnings
     dt.assert_no_numerical_warnings()
@@ -285,13 +304,6 @@ def plot_results(m):
     ax5.set_ylabel("Solute Rejection (%)", fontsize=10, fontweight="bold")
     ax5.tick_params(direction="in", labelsize=10)
     ax5.legend()
-
-    # ax6.plot(x_axis_values, lithium_sieving, linewidth=2, label="lithium")
-    # ax6.plot(x_axis_values, cobalt_sieving, linewidth=2, label="cobalt")
-    # ax6.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
-    # ax6.set_ylabel("Solute Passage", fontsize=10, fontweight="bold")
-    # ax6.tick_params(direction="in", labelsize=10)
-    # ax6.legend()
 
     ax6.plot(x_axis_values, percent_recovery, linewidth=2)
     ax6.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")

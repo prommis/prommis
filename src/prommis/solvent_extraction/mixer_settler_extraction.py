@@ -79,7 +79,7 @@ the sum of all the variables in the mixer and the two settler tanks whose values
 time=0, the volume of the mixer tank, and the area and length of the two settler tanks. The total degrees
 of freedom is the degrees of freedom of each unit multiplied by the number of tanks.
 
-Model structure
+Model Structure
 ---------------
 
 The core model is a combination of the Solvent Extraction models and 1D Control Volume models.

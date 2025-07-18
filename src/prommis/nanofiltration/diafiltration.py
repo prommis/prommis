@@ -38,6 +38,7 @@ from idaes.core.solvers import get_solver
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.core.util.scaling import constraint_autoscale_large_jac
 from idaes.models.unit_models import (
     Mixer,
     MixerInitializer,
@@ -688,7 +689,7 @@ def add_costing(m):
             "inlet_pressure": m.atmospheric_pressure
             + units.convert(m.fs.cascade.costing.pressure_drop, to_units=units.Pa),
             "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
-            * units.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
+            * units.psi,  # this should make m.fs.feed_pump.costing.variable_operating_cost ~0
             "inlet_vol_flow": m.fs.stage3.retentate_side_stream_state[
                 0, 10
             ].flow_vol,  # feed
@@ -786,27 +787,17 @@ def set_scaling(m):
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
     # Add scaling factors for poorly scaled constraints
-    m.scaling_factor[m.fs.cascade.costing.variable_operating_cost_constraint] = 1e-4
-    m.scaling_factor[m.fs.feed_pump.costing.capital_cost_constraint] = 1e-5
-    m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost_constraint] = 1e-4
-    m.scaling_factor[m.fs.feed_pump.costing.pump_head_equation] = 1e6
-    m.scaling_factor[m.fs.feed_pump.costing.pump_power_equation] = 1e9
-    m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost_constraint] = 1e8
-    m.scaling_factor[m.fs.costing.aggregate_capital_cost_constraint] = 1e-5
-    m.scaling_factor[m.fs.costing.aggregate_variable_operating_cost_constraint] = 1e-5
-    m.scaling_factor[m.fs.costing.total_capital_cost_constraint] = 1e-5
-    m.scaling_factor[
-        m.fs.costing.maintenance_labor_chemical_operating_cost_constraint
-    ] = 1e-4
-    m.scaling_factor[m.fs.costing.total_operating_cost_constraint] = 1e-5
+    constraint_autoscale_large_jac(m)
 
     # Add scaling factors for poorly scaled variables
     m.scaling_factor[m.fs.cascade.costing.variable_operating_cost] = 1e-5
     m.scaling_factor[m.fs.feed_pump.costing.capital_cost] = 1e-5
-    m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e8
-    m.scaling_factor[m.fs.feed_pump.costing.pump_head] = 1e6
-    m.scaling_factor[m.fs.feed_pump.costing.pump_power] = 1e9
-    m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost] = 1e-4
+    m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e3
+    m.scaling_factor[m.fs.feed_pump.costing.pump_head] = 1e5
+    m.scaling_factor[m.fs.feed_pump.costing.pump_power] = 1e2
+    m.scaling_factor[m.fs.diafiltrate_pump.costing.variable_operating_cost] = 1e-5
+    m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_head] = 1e-1
+    m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_power] = 1e-5
     m.scaling_factor[m.fs.costing.aggregate_capital_cost] = 1e-5
     m.scaling_factor[m.fs.costing.aggregate_variable_operating_cost] = 1e-5
     m.scaling_factor[m.fs.costing.total_capital_cost] = 1e-5

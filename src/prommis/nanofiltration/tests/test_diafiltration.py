@@ -65,17 +65,17 @@ def test_main():
     )  # check that there are no pressure balances
 
     test_dict = {
-        "lithium_recovery": [value(m.Li_recovery) * 100, 94.99999900000033],
-        "lithium_purity": [value(m.Li_purity) * 100, 20.8820384057719],
-        "cobalt_recovery": [value(m.Co_recovery) * 100, 63.49999900000085],
-        "cobalt_purity": [value(m.Co_purity) * 100, 99.20784627170993],
+        "lithium_recovery": [value(m.Li_recovery) * 100, 94.99999900024582],
+        "lithium_purity": [value(m.Li_purity) * 100, 20.88203840611844],
+        "cobalt_recovery": [value(m.Co_recovery) * 100, 63.499999000672226],
+        "cobalt_purity": [value(m.Co_purity) * 100, 99.2078462717568],
         "membrane_area": [
             (value(m.membrane_length) * value(m.w)),
-            3502.558324664463,
+            3793.476792676585,
         ],
         "total_annualized_cost": [
             value(m.fs.costing.total_annualized_cost),
-            251240.71142955605,
+            314860.4082193775,
         ],
     }
 

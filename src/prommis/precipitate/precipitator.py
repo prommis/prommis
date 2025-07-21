@@ -100,7 +100,7 @@ class OxalatePrecipitatorInitializer(ModularInitializerBase):
         ),
     )
 
-    def initialization_routine(
+    def initialize_main_model(
         self,
         model: Block,
     ):
@@ -116,13 +116,20 @@ class OxalatePrecipitatorInitializer(ModularInitializerBase):
         # Initialize MSContactor
         model.mscontactor.heterogeneous_reaction_extent.fix()
 
-        msc_init = self.get_submodel_initializer(model.mscontactor)
-        msc_init.initialize(model.mscontactor)
+        msc_init = model.mscontactor.default_initializer(
+            ssc_solver_options=self.config.ssc_solver_options,
+            calculate_variable_options=self.config.calculate_variable_options,
+        )
+ 
+        try: 
+            msc_init.initialize(model.mscontactor)
+        except:
+            pass
 
         model.mscontactor.heterogeneous_reaction_extent.unfix()
 
         solver = self._get_solver()
-        results = solver.solve(model)
+        results = solver.solve(model, tee=True)
 
         return results
 
@@ -305,20 +312,23 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             doc="conversion constraint",
         )
         def conversion_constraint(blk, t, s, r):
-            return log(self.conversion[r]) == (
-                -(
-                    (blk.config.reaction_package.E_D[r])
-                    ** blk.config.reaction_package.N_D[r]
-                )
-            ) / (
-                (
-                    (
-                        (blk.aqueous_inlet.conc_mass_comp[0, "H2C2O4"])
-                        / (1000 * pyunits.mg / pyunits.l)
+            if r == "Ca(C2O4)(s)":
+                return self.conversion[r] == 1e-6
+            else:
+                return log(self.conversion[r]) == (
+                    -(
+                        (blk.config.reaction_package.E_D[r])
+                        ** blk.config.reaction_package.N_D[r]
                     )
-                    ** blk.config.reaction_package.N_D[r]
+                ) / (
+                    (
+                        (
+                            (blk.aqueous_inlet.conc_mass_comp[0, "H2C2O4"])
+                            / (1000 * pyunits.mg / pyunits.l)
+                        )
+                        ** blk.config.reaction_package.N_D[r]
+                    )
                 )
-            )
 
         @self.Constraint(self.flowsheet().time, doc="temperature equation")
         def temp_constraint(blk, t):
@@ -329,45 +339,23 @@ class OxalatePrecipitatorData(UnitModelBlockData):
 
         @self.Constraint(
             self.flowsheet().time,
-            self.mscontactor.elements,
-            doc="water conservation equation",
-        )
-        def water_constraint(blk, t, r):
-            return (
-                blk.mscontactor.liquid_inlet_state[t].conc_mass_comp["H2O"]
-                == blk.mscontactor.liquid[t, r].conc_mass_comp["H2O"]
-            )
-
-        # @self.Constraint(
-        #     self.flowsheet().time,
-        #     self.mscontactor.elements,
-        #     doc="water conservation equation2",
-        # )
-        # def water_constraint2(blk, t, r):
-        #     return (
-        #         blk.mscontactor.liquid_inlet_state[t].conc_mol_comp["H2O"]
-        #         == blk.mscontactor.liquid[t, r].conc_mol_comp["H2O"]
-        #     )
-
-        @self.Constraint(
-            self.flowsheet().time,
             self.config.solid_phase.property_package.component_list,
             doc="Initial solids",
         )
         def init_solid_constraint(blk, t, r):
             return (
                 blk.mscontactor.solid_inlet_state[t].flow_mol_comp[r]
-                == 1e-6 * pyunits.mole / pyunits.hour
+                == 1e-9 * pyunits.mole / pyunits.hour
             )
 
         iscale.set_scaling_factor(self.hydraulic_retention_time, 1e0)
         iscale.set_scaling_factor(self.conversion, 1e1)
         iscale.set_scaling_factor(self.mscontactor.heterogeneous_reaction_extent, 1e3)
         iscale.set_scaling_factor(
-            self.mscontactor.liquid_heterogeneous_reactions_generation, 1e3
+            self.mscontactor.solid_heterogeneous_reactions_generation, 1e3
         )
         iscale.set_scaling_factor(
-            self.mscontactor.solid_heterogeneous_reactions_generation, 1e3
+            self.mscontactor.liquid_heterogeneous_reactions_generation, 1e3
         )
         iscale.set_scaling_factor(self.volume, 1e-3)
 

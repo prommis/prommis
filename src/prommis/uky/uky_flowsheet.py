@@ -215,7 +215,7 @@ from idaes.core.util.model_diagnostics import ipopt_solve_halt_on_error
 _log = idaeslog.getLogger(__name__)
 
 # Epsilon represents near-zero component concentrations
-eps = 1e-8 * units.mg / units.L
+eps = 1e-5 * units.mg / units.L
 
 
 def main():
@@ -1258,6 +1258,8 @@ def set_operating_conditions(m):
     m.fs.precipitator.precipitate_outlet.temperature[0]
     m.fs.precipitator.precipitate_outlet.flow_mol_comp
 
+    m.fs.roaster.liquid_in[0.0].h2o_concentration.deactivate()
+
 
 def initialize_system(m):
     """
@@ -1445,10 +1447,10 @@ def initialize_system(m):
         m.fs.solex_cleaner_strip,
     ]
 
-    # initializer_precip = OxalatePrecipitatorInitializer()
-    # precip_units = [
-    #     m.fs.precipitator,
-    # ]
+    initializer_precip = OxalatePrecipitatorInitializer()
+    precip_units = [
+        m.fs.precipitator,
+    ]
 
     initializer_bt = BlockTriangularizationInitializer()
 
@@ -1471,44 +1473,53 @@ def initialize_system(m):
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
-        # elif unit in precip_units:
-        #     _log.info(f"Initializing {unit}")
+        elif unit in precip_units:
+            _log.info(f"Initializing {unit}")
         #     try:
-        #         initializer_precip.initialize(unit)
+            initializer_precip.initialize(unit)
+            dt = DiagnosticsToolbox(unit)
+            print("---Numerical Issues after precip initialization---")
+            dt.report_numerical_issues()
+            dt.display_variables_at_or_outside_bounds()
+            dt.display_variables_with_extreme_jacobians()
+            dt.display_constraints_with_extreme_jacobians()
+            # dt.display_overconstrained_set()
         #     except:
         #         dt = DiagnosticsToolbox(m)
         #         print("---Structural Issues after precip initialization---")
         #         dt.report_structural_issues()
         #         dt.display_overconstrained_set()
-        elif unit == m.fs.precipitator:
-            _log.info(f"Initializing {unit}")
+        # elif unit == m.fs.precipitator:
+        #     _log.info(f"Initializing {unit}")
             # Fix feed states
-            m.fs.precipitator.aqueous_inlet.flow_vol.fix()
-            m.fs.precipitator.aqueous_inlet.conc_mass_comp.fix()
-            m.fs.precipitator.precipitate_outlet.temperature.fix()
+            # m.fs.precipitator.aqueous_inlet.flow_vol.fix()
+            # m.fs.precipitator.aqueous_inlet.conc_mass_comp.fix()
+            # m.fs.precipitator.precipitate_outlet.temperature.fix()
             # Re-solve unit
-            solver = SolverFactory("ipopt")
-            solver.solve(m.fs.precipitator, tee=True)
+            # solver = SolverFactory("ipopt")
+            # solver.solve(m.fs.precipitator, tee=True)
             # ipopt_solve_halt_on_error(m.fs.precipitator)
             # Unfix feed states
-            m.fs.precipitator.aqueous_inlet.flow_vol.unfix()
-            m.fs.precipitator.aqueous_inlet.conc_mass_comp.unfix()
-            m.fs.precipitator.precipitate_outlet.temperature.unfix()
+            # m.fs.precipitator.aqueous_inlet.flow_vol.unfix()
+            # m.fs.precipitator.aqueous_inlet.conc_mass_comp.unfix()
+            # m.fs.precipitator.precipitate_outlet.temperature.unfix()
         # elif unit == m.fs.precip_purge:
         #     _log.info(f"Initializing {unit}")
-        #     # Fix feed states
+        # #     # Fix feed states
         #     m.fs.precip_purge.inlet.flow_vol.fix()
         #     m.fs.precip_purge.inlet.conc_mass_comp.fix()
-        #     # Re-solve unit
+        # #     # Re-solve unit
         #     solver = SolverFactory("ipopt")
         #     solver.solve(m.fs.precip_purge, tee=True)
-        #     # Unfix feed states
+        # #     # Unfix feed states
         #     m.fs.precip_purge.inlet.flow_vol.unfix()
         #     m.fs.precip_purge.inlet.conc_mass_comp.unfix()
         else:
             _log.info(f"Initializing {unit}")
             initializer_bt.initialize(unit)
-
+            # dt = DiagnosticsToolbox(unit)
+            # dt.report_structural_issues()
+            # dt.display_overconstrained_set()
     seq.run(m, function)
 
 

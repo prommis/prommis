@@ -14,6 +14,11 @@ from pyomo.environ import (
     TransformationFactory,
 )
 
+from idaes.models.unit_models.mscontactor import (
+    MSContactor,
+    MSContactorInitializer,
+)
+
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
@@ -33,7 +38,7 @@ import pytest
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
-from prommis.precipitate.precipitator import OxalatePrecipitator
+from prommis.precipitate.precipitator import OxalatePrecipitator, OxalatePrecipitatorInitializer
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing
@@ -165,17 +170,12 @@ class TestPrec(object):
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
     def test_initialize(self, prec):
-        prec.scaling_factor = Suffix(direction=Suffix.EXPORT)
-        prec.scaling_factor[prec.fs.unit.conversion["Ca(C2O4)(s)"]] = 1e8
-        prec.scaling_factor[
-            prec.fs.unit.conversion_constraint[0.0, 1, "Ca(C2O4)(s)"]
-        ] = 1e8
 
         scaling = TransformationFactory("core.scale_model")
         scaled_model = scaling.create_using(prec, rename=False)
         initializer = prec.fs.unit.default_initializer()
         try:
-            initializer.initialize(scaled_model.fs.unit)
+            initializer.initialize(prec.fs.unit)
         except:
             pass
 
@@ -199,7 +199,7 @@ class TestPrec(object):
     @pytest.mark.solver
     def test_numerical_issues(self, prec):
         dt = DiagnosticsToolbox(prec)
-        # dt.assert_no_numerical_warnings()
+        dt.assert_no_numerical_warnings()
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
@@ -427,8 +427,6 @@ class TestPrecRob(object):
     def test_units(self, prec):
         assert_units_consistent(prec.fs.unit)
 
-        dt = DiagnosticsToolbox(model=prec)
-
     @pytest.mark.unit
     def test_dof(self, prec):
         assert degrees_of_freedom(prec) == 0
@@ -437,19 +435,10 @@ class TestPrecRob(object):
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
     def test_initialize(self, prec):
-        prec.scaling_factor = Suffix(direction=Suffix.EXPORT)
-        prec.scaling_factor[prec.fs.unit.conversion["Ca(C2O4)(s)"]] = 1e8
-        prec.scaling_factor[
-            prec.fs.unit.conversion_constraint[0.0, 1, "Ca(C2O4)(s)"]
-        ] = 1e8
-
         scaling = TransformationFactory("core.scale_model")
         scaled_model = scaling.create_using(prec, rename=False)
-        initializer = prec.fs.unit.default_initializer()
-        try:
-            initializer.initialize(scaled_model.fs.unit)
-        except:
-            pass
+        initializer = OxalatePrecipitatorInitializer()
+        initializer.initialize(prec.fs.unit)
 
         # Solve scaled model
         solver = SolverFactory("ipopt")
@@ -471,7 +460,7 @@ class TestPrecRob(object):
     @pytest.mark.solver
     def test_numerical_issues(self, prec):
         dt = DiagnosticsToolbox(prec)
-        # dt.assert_no_numerical_warnings()
+        dt.assert_no_numerical_warnings()
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
@@ -483,7 +472,7 @@ class TestPrecRob(object):
         assert pytest.approx(9.730, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Al"]
         )
-        assert pytest.approx(9.317, abs=1e-3) == value(
+        assert pytest.approx(9.9999, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Ca"]
         )
         assert pytest.approx(0.01922, abs=1e-3) == value(

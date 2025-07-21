@@ -216,12 +216,6 @@ class _AqueousStateBlock(StateBlock):
         # Fix state variables
         fix_state_vars(self)
 
-        # Deactivate inherent reactions
-        # for sbd in self.values():
-        #     if not sbd.config.defined_state:
-        #         sbd.h2o_concentration.deactivate()
-
-
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
 class AqueousStateBlockData(StateBlockData):
     """
@@ -285,16 +279,16 @@ class AqueousStateBlockData(StateBlockData):
                     == b.flow_mol_comp[j]
                 )
 
-        # if not self.config.defined_state:
-        #     # Concentration of H2O based on assumed density
-        #     self.h2o_concentration = Constraint(
-        #         expr=self.conc_mass_comp["H2O"] == 1e6 * units.mg / units.L
-        #     )
+        if not self.config.defined_state:
+            # Concentration of H2O based on assumed density
+            self.h2o_concentration = Constraint(
+                expr=self.conc_mass_comp["H2O"] == 1e6 * units.mg / units.L
+            )
 
         iscale.set_scaling_factor(self.flow_vol, 1e-2)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
-        iscale.set_scaling_factor(self.conc_mol_comp, 1e5)
+        iscale.set_scaling_factor(self.conc_mol_comp, 1e3)
 
     def _dens_mass(self):
         add_object_reference(self, "dens_mass", self.params.dens_mass)

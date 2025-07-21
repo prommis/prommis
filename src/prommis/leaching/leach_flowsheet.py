@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -20,6 +20,8 @@ from pyomo.environ import (
 )
 
 from idaes.core import FlowsheetBlock
+from idaes.core.util import to_json
+from idaes.core.util.scaling import set_scaling_factor
 
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
@@ -65,7 +67,7 @@ def set_inputs(m):
     # Liquid feed state
     m.fs.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
     m.fs.leach.liquid_inlet.conc_mass_comp.fix(1e-10 * units.mg / units.L)
-
+    m.fs.leach.liquid_inlet.conc_mass_comp[:, "H2O"].fix(1e6 * units.mg / units.L)
     m.fs.leach.liquid_inlet.conc_mass_comp[0, "H"].fix(
         2 * 0.05 * 1e3 * units.mg / units.L
     )
@@ -119,26 +121,28 @@ def set_scaling(m):
 
     for j in m.fs.coal.component_list:
         if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
-            m.scaling_factor[m.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j]] = (
-                1e5
+            set_scaling_factor(
+                m.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j], 1e5
             )
-            m.scaling_factor[
-                m.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j]
-            ] = 1e5
-            m.scaling_factor[
-                m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate[j]
-            ] = 1e5
-            m.scaling_factor[m.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j]] = (
-                1e3
+            set_scaling_factor(
+                m.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j], 1e5
             )
-            m.scaling_factor[
-                m.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j]
-            ] = 1e3
-            m.scaling_factor[
+            set_scaling_factor(
+                m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate[j],
+                1e5,
+            )
+            set_scaling_factor(
+                m.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j], 1e3
+            )
+            set_scaling_factor(
+                m.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j], 1e3
+            )
+            set_scaling_factor(
                 m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate_eq[
                     j
-                ]
-            ] = 1e5
+                ],
+                1e5,
+            )
 
 
 # -------------------------------------------------------------------------------------
@@ -153,6 +157,7 @@ if __name__ == "__main__":
     scaled_model = scaling.create_using(m, rename=False)
 
     # Initialize model
+    # This is likely to fail to converge, but gives a good enough starting point
     initializer = LeachingTrainInitializer()
     initializer.initialize(scaled_model.fs.leach)
 
@@ -162,6 +167,9 @@ if __name__ == "__main__":
 
     # Propagate results back to unscaled model
     scaling.propagate_solution(scaled_model, m)
+
+    # Store steady state values in a json file
+    to_json(m, fname="leaching.json", human_read=True)
 
     # Display some results
     m.fs.leach.liquid_outlet.display()

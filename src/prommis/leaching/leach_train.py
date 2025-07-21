@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -66,24 +66,19 @@ Variable         Name   Notes
 
 """
 
-from pyomo.environ import (
-    Block,
-    Constraint,
-    Var,
-    units,
-)
 from pyomo.common.config import Bool, ConfigDict, ConfigValue
+from pyomo.environ import Block, Constraint, Var, units
 from pyomo.network import Port
 
 from idaes.core import (
+    MaterialFlowBasis,
     UnitModelBlockData,
     declare_process_block_class,
     useDefault,
-    MaterialFlowBasis,
 )
+from idaes.core.initialization import ModularInitializerBase
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.models.unit_models.mscontactor import MSContactor
-from idaes.core.initialization import ModularInitializerBase
 
 
 class LeachingTrainInitializer(ModularInitializerBase):
@@ -251,6 +246,8 @@ class LeachingTrainData(UnitModelBlockData):
             },
             heterogeneous_reactions=self.config.reaction_package,
             heterogeneous_reactions_args=self.config.reaction_package_args,
+            dynamic=self.config.dynamic,
+            has_holdup=self.config.has_holdup,
         )
 
         # Get units of measurement from MSContactor

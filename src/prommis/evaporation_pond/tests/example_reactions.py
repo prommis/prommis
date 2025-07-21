@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -15,14 +15,13 @@ from pyomo.environ import Param, Set, units
 
 # Import IDAES cores
 from idaes.core import (
-    declare_process_block_class,
-    ReactionParameterBlock,
-    ReactionBlockDataBase,
-    ReactionBlockBase,
     MaterialFlowBasis,
+    ReactionBlockBase,
+    ReactionBlockDataBase,
+    ReactionParameterBlock,
+    declare_process_block_class,
 )
 from idaes.core.util.misc import add_object_reference
-
 
 # Some more information about this module
 __author__ = "Andrew Lee"

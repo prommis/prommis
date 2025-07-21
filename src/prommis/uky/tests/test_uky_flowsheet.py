@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -41,6 +41,7 @@ from prommis.precipitate.precipitator import OxalatePrecipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+from prommis.uky.costing.ree_plant_capcost import QGESSCostingData
 from prommis.uky.uky_flowsheet import (
     add_costing,
     build,
@@ -49,7 +50,6 @@ from prommis.uky.uky_flowsheet import (
     fix_organic_recycle,
     initialize_system,
     set_operating_conditions,
-    set_partition_coefficients,
     set_scaling,
     solve_system,
 )
@@ -58,7 +58,6 @@ from prommis.uky.uky_flowsheet import (
 @pytest.fixture(scope="module")
 def system_frame():
     m = build()
-    set_partition_coefficients(m)
     set_operating_conditions(m)
 
     return m
@@ -191,7 +190,6 @@ def test_solve(system_frame):
 
     results = solve_system(scaled_model)
 
-    scaling = TransformationFactory("core.scale_model")
     scaling.propagate_solution(scaled_model, model)
 
     assert_optimal_termination(results)
@@ -858,3 +856,4 @@ def test_solve(system_frame):
 #     model = system_frame
 #     display_results(model)
 #     display_costing(model)
+

@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -193,7 +193,16 @@ class CoalRefuseStateBlockData(StateBlockData):
             )
 
     def get_material_flow_terms(self, p, j):
-        return self.flow_mass * self.mass_frac_comp[j] / self.params.mw[j]
+        return units.convert(
+            self.flow_mass * self.mass_frac_comp[j] / self.params.mw[j],
+            to_units=units.mol / units.hour,
+        )
+
+    def get_material_density_terms(self, p, j):
+        return units.convert(
+            self.params.dens_mass * self.mass_frac_comp[j] / self.params.mw[j],
+            to_units=units.mol / units.m**3,
+        )
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar

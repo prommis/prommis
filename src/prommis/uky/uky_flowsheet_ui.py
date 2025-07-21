@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -17,18 +17,18 @@ __author__ = "Dan Gunter"
 
 # third party
 import pyomo.environ as pyo
+
 from idaes import logger as idaeslog
-from idaes_flowsheet_processor.api import FlowsheetInterface
-from idaes_flowsheet_processor.api import FlowsheetCategory
+
+from idaes_flowsheet_processor.api import FlowsheetCategory, FlowsheetInterface
 
 # package
 from prommis.uky.uky_flowsheet import (
     build,
-    set_partition_coefficients,
+    initialize_system,
     set_operating_conditions,
     set_scaling,
     solve_system,
-    initialize_system,
 )
 
 _log = idaeslog.getLogger(__name__)
@@ -85,6 +85,22 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sc2O3",
         "Sm2O3",
         "Y2O3",
+    }
+
+    # Organic components
+    comp_org = {
+        "Al_o",
+        "Ca_o",
+        "Ce_o",
+        "Dy_o",
+        "Fe_o",
+        "Gd_o",
+        "La_o",
+        "Nd_o",
+        "Pr_o",
+        "Sc_o",
+        "Sm_o",
+        "Y_o",
     }
 
     # Liquid chemical components
@@ -312,6 +328,8 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             if stype == "rougher" and ltype == "aqueous":
                 # add aqueous components for the aqueous rougher
                 complist = comp.union(comp_liq)
+            elif ltype == "organic":
+                complist = comp_org
             else:
                 complist = comp
             # export the output for each component
@@ -386,7 +404,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             is_output=True,
             output_category=category,
         )
-    _log.debug(f"exports:\n{exports.json()}")
+    _log.debug(f"exports:\n{exports.model_dump_json()}")
     _log.info(f"end/setup-UI-exports build_options={build_options}")
 
 
@@ -397,7 +415,6 @@ def build_flowsheet(build_options=None, **kwargs):
     """
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
-    set_partition_coefficients(m)
     set_operating_conditions(m)
     set_scaling(m)
     scaling = pyo.TransformationFactory("core.scale_model")
@@ -416,7 +433,6 @@ def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
 
     m = build()
-    set_partition_coefficients(m)
 
     set_operating_conditions(m)
 

@@ -2953,7 +2953,7 @@ class TestHDDRecyclingCosting(object):
                 "scaled_param": m.fs.HDD_Recycling_shredder.n_equip,  # 1 shredder
                 "source": 2,
                 # no. units is the scaling parameter for constant-cost units,
-                # so use n_equip below to specify the number of loaders
+                # so use n_equip below to specify the number of shredders
                 "n_equip": 1,
                 "scale_down_parallel_equip": False,
                 "CE_index_year": CE_index_year,

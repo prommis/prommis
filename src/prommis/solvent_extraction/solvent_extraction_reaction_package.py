@@ -4,11 +4,13 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+
 r"""
 Reaction package for solvent extraction of rare earth elements using DEHPA as extractant
 with TBP as a phase modifier.
+----------------------------------------------------------------------------------------
 
-Authors: Arkoprabho Dasgupta
+Author: Arkoprabho Dasgupta
 
 This is an example of how to write a reaction package for rare earth elements involved in
 solvent extraction.
@@ -21,6 +23,8 @@ from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_cla
 from idaes.core.base import property_meta
 from idaes.core.util.misc import add_object_reference
 
+__author__ = "Arkoprabho Dasgupta"
+
 
 # -----------------------------------------------------------------------------
 # Solvent extraction property package
@@ -29,7 +33,7 @@ class SolventExtractionReactionsData(
     ProcessBlockData, property_meta.HasPropertyClassMetadata
 ):
     """
-    Reaction package for the solvent extraction of rare earth elements from acidic leachate
+    Reaction package for the solvent extraction of rare earth elements from acidic aqueous
     solution using organic extractant DEHPA and TBP as phase modifier.
 
     Rare earth elements : La, Pr, Ce, Dy, Nd, Sm, Gd, Y
@@ -45,11 +49,17 @@ class SolventExtractionReactionsData(
     The distribution coefficient is defined as the ratio of the concentration in the organic
     phase to the concentration in the aqueous phase.
 
-    D[i] = C_organic[i]/C_aqueous[i]   i = REEs
+    D[i] = C_organic[i]/C_aqueous[i]   i = REEs and Impurities
 
     This reaction package is for a system where DEHPA acts as the main extractant and TBP acts
-    as the phase modifier in the system. The distribution correlation can be expressed in the
-    following correlation.
+    as the phase modifier in the system.
+
+    There are impurities considered in the system. We do not have adequate data points for
+    the impurities, so their distribution coefficient values has been calculated from REESim file
+    and assumed constant.
+
+    For the rare earth elements, the distribution correlation can be expressed in the following
+    correlation.
 
     logD[i] = m[i]*pH + B[i]   i = REEs
 
@@ -69,10 +79,6 @@ class SolventExtractionReactionsData(
     The data points for these empirical correlations have been taken from the phase 1 report.
     Certain rare earth elements do not have adequate data, hence certain functionalities could
     not be written here.
-
-    Alongside rare earth elements, there has been impurities considered in the system. We do not
-    have adequate data points for the impurities, so their distribution coefficient values has been
-    calculated from REESim file and assumed constant.
 
     """
 

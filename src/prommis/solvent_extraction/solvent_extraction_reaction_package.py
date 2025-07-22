@@ -54,7 +54,7 @@ class SolventExtractionReactionsData(
     This reaction package is for a system where DEHPA acts as the main extractant and TBP acts
     as the phase modifier in the system.
 
-    There has been impurities considered in the system. We do not have adequate data points for
+    There are impurities considered in the system. We do not have adequate data points for
     the impurities, so their distribution coefficient values has been calculated from REESim file
     and assumed constant.
 

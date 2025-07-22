@@ -52,8 +52,8 @@ The user can specify the direction of the flow of the stream through the stages 
 configuration ``flow_direction``. This is a configuration, that uses FlowDirection Enum, which
 can have two possible values.
 
-The stream has two more arguments, ``has_energy_balance`` and ``has_pressure_balance`` in lieu with
-the base MSContactor model. However, our model does not consider energy balance and pressure balance
+The stream has two more arguments, ``has_energy_balance`` and ``has_pressure_balance`` in accordance
+with the base MSContactor model. However, our model does not consider energy balance and pressure balance
 yet, so the default arguments will be ``has_energy_balance = False`` and ``has_pressure_balance = False``.
 
 Degrees of freedom

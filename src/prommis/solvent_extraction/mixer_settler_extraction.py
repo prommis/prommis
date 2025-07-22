@@ -40,7 +40,7 @@ be given in the ``heterogeneous_reaction_package_args`` argument.
 
 The user needs to specify the discretization method of the settler tank length in the argument
 ``settler_transformation_method``. Once the discretization method is specified, the user needs
-to specify the corresponding discretization schemein the argument ``settler_transformation_scheme``.
+to specify the corresponding discretization scheme in the argument ``settler_transformation_scheme``.
 
 After the discretization, the user needs to specify the number of finite elements in the argument
 ``settler_finite_elements``. If the discretization method is collocation, then the user has to

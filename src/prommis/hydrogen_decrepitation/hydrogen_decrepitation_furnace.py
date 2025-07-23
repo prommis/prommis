@@ -93,7 +93,7 @@ The gas phase properties are calculated based on user configured property packag
 """
 
 # Import Pyomo libraries
-from pyomo.common.config import Bool, ConfigBlock, ConfigValue
+from pyomo.common.config import Bool, ConfigBlock, ConfigValue, In
 
 # Additional import for the unit operation
 from pyomo.environ import Param, PositiveReals, Set, Var, exp
@@ -140,14 +140,10 @@ class REPMHydrogenDecrepitationFurnaceData(UnitModelBlockData):
         "has_holdup",
         ConfigValue(
             default=False,
-            domain=Bool,
-            description="Holdup construction flag",
-            doc="""Indicates whether holdup terms should be constructed or not.
-Must be True if dynamic = True,
-**default** - False.
-**Valid values:** {
-**True** - construct holdup terms,
-**False** - do not construct holdup terms}""",
+            domain=In([False]),
+            description="Holdup construction flag - must be False",
+            doc="""Hydrogen decrepitation model does not contain holdup, thus this must be
+False.""",
         ),
     )
     CONFIG.declare(
@@ -278,10 +274,6 @@ constructed,
         self.add_port("solid_inlet", self.solid_in)
         self.add_port("solid_outlet", self.solid_out)
 
-        # Add Geometry
-        if self.config.has_holdup is True:
-            pass
-
         # Add heat duty
         if self.config.has_heat_transfer is True:
             self.supplied_heat_duty = Var(
@@ -337,6 +329,9 @@ constructed,
             "B",
         ]
 
+        # stoichiometry dictionary
+        self.NdFeB_ratio = dict(zip(self.impurity_ele_list, [2, 14, 1]))
+
         # user-specified list of rare earth elements
         self.ree_list = Set(
             initialize=self.config.ree_list,
@@ -357,7 +352,7 @@ constructed,
 
         # molecular weights of compounds
         self.mw_Nd2Fe14B = Param(
-            initialize=self.am_Nd * 2 + self.am_Fe * 14 + self.am_B,
+            initialize=self.am_Nd * self.NdFeB_ratio["Nd"] + self.am_Fe * self.NdFeB_ratio["Fe"] + self.am_B * self.NdFeB_ratio["B"],
             units=pyunits.kg / pyunits.mol,
         )
 
@@ -478,6 +473,12 @@ constructed,
             units=pyunits.dimensionless,
             mutable=True,
             doc="ratio of the volume of furnace chamber to the volume of the sample",
+        )
+        self.aspect_ratio = Param(
+            initialize=6,
+            units=pyunits.dimensionless,
+            mutable=True,
+            doc="ratio of the length to the volume of the furnace chamber",
         )
 
         # vendor material properties for first insulation, ceramide fiber
@@ -730,7 +731,6 @@ constructed,
 
         self.furnace_chamber_volume = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=1,
             bounds=(1e-12, 1e12),
             units=pyunits.m**3,
@@ -739,7 +739,6 @@ constructed,
 
         self.heat_loss = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=1e3,
             units=pyunits.W,
             bounds=(1e-6, None),
@@ -748,7 +747,6 @@ constructed,
 
         self.temperature_insulation_material1 = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=1050,
             units=pyunits.K,
             bounds=(950.13, 1173.15),
@@ -757,7 +755,6 @@ constructed,
 
         self.thickness_insulation_material1 = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=0.12,
             units=pyunits.m,
             bounds=(0, None),
@@ -766,7 +763,6 @@ constructed,
 
         self.relative_thickness_ratio_insulation_material1 = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=1,
             units=pyunits.dimensionless,
             bounds=(0, None),
@@ -775,7 +771,6 @@ constructed,
 
         self.thickness_metal_material1 = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=3 * 1e-3,
             units=pyunits.m,
             bounds=(0, None),
@@ -784,7 +779,6 @@ constructed,
 
         self.relative_thickness_ratio_metal_material1 = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=0.05,
             units=pyunits.dimensionless,
             bounds=(0, None),
@@ -793,7 +787,6 @@ constructed,
 
         self.thickness_insulation_material2 = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=0.15,
             units=pyunits.m,
             bounds=(0, None),
@@ -802,7 +795,6 @@ constructed,
 
         self.relative_thickness_ratio_insulation_material2 = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=1,
             units=pyunits.dimensionless,
             bounds=(0, None),
@@ -811,7 +803,6 @@ constructed,
 
         self.thickness_metal_material2 = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=4 * 1e-3,
             units=pyunits.m,
             bounds=(0, None),
@@ -820,7 +811,6 @@ constructed,
 
         self.relative_thickness_ratio_metal_material2 = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=0.01,
             units=pyunits.dimensionless,
             bounds=(0, None),
@@ -829,7 +819,6 @@ constructed,
 
         self.total_heat_duty = Var(
             self.flowsheet().config.time,
-            within=PositiveReals,
             initialize=3500,
             units=pyunits.W,
             bounds=(0, None),
@@ -882,14 +871,14 @@ constructed,
             self.flowsheet().config.time, doc="Radius of the furnace chamber"
         )
         def radius_chamber(b, t):
-            return (b.furnace_chamber_volume[t] / (6 * Constants.pi)) ** (1 / 3)
+            return (b.furnace_chamber_volume[t] / (b.aspect_ratio * Constants.pi)) ** (1 / 3)
 
         @self.Expression(
             self.flowsheet().config.time, doc="Length of the furnace chamber"
         )
         def length_chamber(b, t):
             # 3 times the diameter
-            return 6 * b.radius_chamber[t]
+            return b.aspect_ratio * b.radius_chamber[t]
 
         @self.Expression(
             self.flowsheet().config.time, doc="Volume of insulation material 1"
@@ -1257,7 +1246,7 @@ constructed,
                 return (
                     b.flow_mol_comp_impurity_feed[t, "Nd2Fe14B"]
                     * b.am_Fe
-                    * 14
+                    * self.NdFeB_ratio["Fe"]
                     / b.flow_mass_impurity_feed[t]
                 )
 
@@ -1272,22 +1261,22 @@ constructed,
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
                     * b.flow_mass_product_recovered[t]
-                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_Nd * 2
+                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_Nd * self.NdFeB_ratio["Nd"]
                 )
             elif i == "Fe":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
                     * b.flow_mass_product_recovered[t]
-                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_Fe * 14
+                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_Fe * self.NdFeB_ratio["Fe"]
                 )
             elif i == "B":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
                     * b.flow_mass_product_recovered[t]
-                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_B
+                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_B * self.NdFeB_ratio["B"]
                 )
 
-        # solid product with 13 species defined in CoalRefuseParameters
+        # solid product with 13 species defined in REPMParameters
         @self.Constraint(
             self.flowsheet().config.time,
             self.config.solid_property_package.component_list,
@@ -1319,7 +1308,7 @@ constructed,
                 + b.cp0_comp_impurity[i] * (b.temp_feed[t] - b.temp_ref)
                 + 0.5
                 * b.cp1_comp_impurity[i]
-                * (b.temp_feed[t] * b.temp_feed[t] - b.temp_ref * b.temp_ref)
+                * (b.temp_feed[t] ** 2 - b.temp_ref ** 2)
             )
 
         # molar enthalpy of minerals in solid product
@@ -1334,7 +1323,7 @@ constructed,
                 + b.cp0_comp_product[i] * (b.temp_prod[t] - b.temp_ref)
                 + 0.5
                 * b.cp1_comp_product[i]
-                * (b.temp_prod[t] * b.temp_prod[t] - b.temp_ref * b.temp_ref)
+                * (b.temp_prod[t] ** 2 - b.temp_ref ** 2)
             )
 
         # enthalpy in + heat in == enthalpy out
@@ -1368,7 +1357,7 @@ constructed,
             doc="solid sample heat capacity",
         )
         def sample_heat_capacity_eqn(b, t):
-            # lever rule, Cp = sum(mass_frac_i * Cp_mol_i * mw_i for all components i)
+            # lever rule, Cp = sum(mass_frac_i * Cp_mol_i / mw_i for all components i)
             return b.sample_heat_capacity[t] == pyunits.convert(
                 b.solid_in[t].mass_frac_comp["Nd2Fe14B"]
                 * (b.cp0_Nd2Fe14B + b.cp1_Nd2Fe14B * b.temp_feed[t])
@@ -1385,7 +1374,7 @@ constructed,
             return b.heat_loss[t] == 0.70 * 2 * Constants.pi * b.radius_chamber[
                 t
             ] * b.length_chamber[t] * Constants.stefan_constant * (
-                (b.max_temperature**4) - (b.temperature_insulation_material1[t] ** 4)
+                (b.max_temperature ** 4) - (b.temperature_insulation_material1[t] ** 4)
             )
 
         # relative thickness and heat loss of insulation material 1
@@ -1532,6 +1521,7 @@ constructed,
                 return b.gas_out[t].pressure == b.gas_in[t].pressure
 
     def set_initial_condition(self):
+        # empty, may be populated in the future
         pass
 
     def initialize_build(
@@ -1541,52 +1531,7 @@ constructed,
         solver=None,
         optarg=None,
     ):
-        """
-        Initialization routine.
-        1.- initialize state blocks, using an initial guess for inlet
-        gas inlet.
-        2.- guess gas outlet component molar flowrates,
-        Temperature, and Pressure. Initialize flue gas state block.
-        3.- Then, solve complete model.
-
-        Keyword Arguments:
-            state_args_gas_in : a dict of arguments to be passed to the property
-                           package(s) for the inlet gas state block to
-                           provide an initial state for initialization
-                           (see documentation of the specific property package)
-                           (default = None).
-            outlvl : sets output level of initialisation routine
-            optarg : solver options dictionary object (default=None, use
-                     default solver options)
-            solver : str indicating which solver to use during
-                     initialization (default = None, use default solver)
-
-        Returns:
-            None
-        """
-        init_log = idaeslog.getInitLogger(blk.name, outlvl, tag="unit")
-        solve_log = idaeslog.getSolveLogger(blk.name, outlvl, tag="unit")
-
-        # Create solver
-        opt = get_solver(solver, optarg)
-
-        # ---------------------------------------------------------------------
-        # Initialize inlet gas property block
-        blk.gas_in.initialize(
-            outlvl=outlvl, optarg=optarg, solver=solver, state_args=state_args_gas_in
-        )
-        init_log.info_high("Initialization Step 1 Complete.")
-
-        # initialize outlet gas property block
-        blk.gas_out.initialize(
-            outlvl=outlvl, optarg=optarg, solver=solver, state_args=state_args_gas_in
-        )
-        init_log.info_high("Initialization Step 2 Complete.")
-
-        with idaeslog.solver_log(solve_log, idaeslog.DEBUG) as slc:
-            res = opt.solve(blk, tee=slc.tee)
-        init_log.info_high("Initialization Step 3 {}.".format(idaeslog.condition(res)))
-        init_log.info("Initialization Complete.")
+        return NotImplementedError("Please use the new initialization API using the BlockTriangularizationInitializer method.")
 
     def calculate_scaling_factors(self):
         super().calculate_scaling_factors()

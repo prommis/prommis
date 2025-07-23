@@ -75,7 +75,6 @@ def model():
     m.fs.hydrogen_decrepitation_furnace = REPMHydrogenDecrepitationFurnace(
         gas_property_package=m.fs.prop_gas,
         solid_property_package=m.fs.prop_solid,
-        has_holdup=False,
         has_heat_transfer=False,
         has_pressure_change=False,
         ree_list=[
@@ -113,6 +112,7 @@ def model():
         m.fs.prop_solid.dens_mass
     )  # 7500 kg/m3
     m.fs.hydrogen_decrepitation_furnace.chamber_to_sample_ratio.set_value(2)
+    m.fs.hydrogen_decrepitation_furnace.aspect_ratio.set_value(6)
 
     # solid temperature, cools back to inlet temperature during shutdown
     m.fs.hydrogen_decrepitation_furnace.temp_feed.fix(298.15)

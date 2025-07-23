@@ -5,33 +5,32 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 from pyomo.environ import (
-    assert_optimal_termination,
     ConcreteModel,
     Constraint,
     SolverFactory,
     Suffix,
     TransformationFactory,
+    Var,
+    assert_optimal_termination,
     units,
     value,
-    Var,
 )
 
 from idaes.core import FlowsheetBlock
-from idaes.models.unit_models import MSContactor
 from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
     number_total_constraints,
     number_unused_variables,
     number_variables,
 )
-
+from idaes.models.unit_models import MSContactor
 
 import pytest
 
-from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.leaching.leach_train import LeachingTrain
 
 
 @pytest.fixture(scope="module")
@@ -123,9 +122,9 @@ def test_build(model):
         len(model.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint) == 12
     )
 
-    assert number_variables(model.fs.leach) == 197
-    assert number_total_constraints(model.fs.leach) == 164
-    assert number_unused_variables(model.fs.leach) == 0
+    assert number_variables(model.fs.leach) == 203
+    assert number_total_constraints(model.fs.leach) == 166
+    assert number_unused_variables(model.fs.leach) == 4
 
 
 @pytest.mark.unit
@@ -330,9 +329,9 @@ def test_build_ub(model_ub):
         == 12
     )
 
-    assert number_variables(model_ub.fs.leach) == 197
-    assert number_total_constraints(model_ub.fs.leach) == 164
-    assert number_unused_variables(model_ub.fs.leach) == 0
+    assert number_variables(model_ub.fs.leach) == 203
+    assert number_total_constraints(model_ub.fs.leach) == 166
+    assert number_unused_variables(model_ub.fs.leach) == 4
 
 
 @pytest.mark.unit
@@ -537,9 +536,9 @@ def test_build_lb(model_lb):
         == 12
     )
 
-    assert number_variables(model_lb.fs.leach) == 197
-    assert number_total_constraints(model_lb.fs.leach) == 164
-    assert number_unused_variables(model_lb.fs.leach) == 0
+    assert number_variables(model_lb.fs.leach) == 203
+    assert number_total_constraints(model_lb.fs.leach) == 166
+    assert number_unused_variables(model_lb.fs.leach) == 4
 
 
 @pytest.mark.unit

@@ -35,7 +35,7 @@ dependencies = [
 ]
 [project.optional-dependencies]
 watertap = [
-    "watertap >= 1.3.0rc0",
+    "watertap >= 1.4.0rc0",
 ]
 flowsheet-processor = [
     "idaes-flowsheet-processor >=0.1.dev4",
@@ -108,6 +108,8 @@ extend-exclude = [
 [tool.typos.default.extend-words]
 # Ignore IDAES
 IDAES = "IDAES"
+# ignore phase_equil
+phase_equil = "phase_equil"
 # Atomic elements
 Nd = "Nd"
 Ba = "Ba"

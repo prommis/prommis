@@ -70,7 +70,7 @@ def system_frame():
 #     dt.report_structural_issues()
 #     dt.display_overconstrained_set()
 
-    # dt.assert_no_structural_warnings()
+# dt.assert_no_structural_warnings()
 
 
 @pytest.mark.unit
@@ -861,4 +861,3 @@ def test_solve(system_frame):
 #     model = system_frame
 #     display_results(model)
 #     display_costing(model)
-

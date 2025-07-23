@@ -120,8 +120,8 @@ class OxalatePrecipitatorInitializer(ModularInitializerBase):
             ssc_solver_options=self.config.ssc_solver_options,
             calculate_variable_options=self.config.calculate_variable_options,
         )
- 
-        try: 
+
+        try:
             msc_init.initialize(model.mscontactor)
         except:
             pass
@@ -339,17 +339,11 @@ class OxalatePrecipitatorData(UnitModelBlockData):
 
         @self.Constraint(self.flowsheet().time, doc="liquid temperature equation")
         def liq_temp_constraint(blk, t):
-            return (
-                blk.aqueous_inlet.temperature[t]
-                == blk.aqueous_outlet.temperature[t]
-            )
-        
+            return blk.aqueous_inlet.temperature[t] == blk.aqueous_outlet.temperature[t]
+
         @self.Constraint(self.flowsheet().time, doc="pressure equation")
         def press_constraint(blk, t):
-            return (
-                blk.aqueous_inlet.pressure[t]
-                == blk.aqueous_outlet.pressure[t]
-            )
+            return blk.aqueous_inlet.pressure[t] == blk.aqueous_outlet.pressure[t]
 
         @self.Constraint(
             self.flowsheet().time,

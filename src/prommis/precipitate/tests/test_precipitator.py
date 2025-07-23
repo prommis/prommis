@@ -38,7 +38,10 @@ import pytest
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
-from prommis.precipitate.precipitator import OxalatePrecipitator, OxalatePrecipitatorInitializer
+from prommis.precipitate.precipitator import (
+    OxalatePrecipitator,
+    OxalatePrecipitatorInitializer,
+)
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing
@@ -177,7 +180,6 @@ class TestPrec(object):
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
     def test_initialize(self, prec):
-
         scaling = TransformationFactory("core.scale_model")
         scaled_model = scaling.create_using(prec, rename=False)
         initializer = prec.fs.unit.default_initializer()
@@ -400,7 +402,6 @@ class TestPrecRob(object):
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(1e-9)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2C2O4"].fix(12000)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(100000)
-
 
         m.fs.unit.aqueous_inlet.temperature[0].fix(298.15)
         m.fs.unit.aqueous_inlet.pressure[0].fix(1e5)

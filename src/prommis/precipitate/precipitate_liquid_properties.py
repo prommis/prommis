@@ -216,6 +216,7 @@ class _AqueousStateBlock(StateBlock):
         # Fix state variables
         fix_state_vars(self)
 
+
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
 class AqueousStateBlockData(StateBlockData):
     """
@@ -263,7 +264,7 @@ class AqueousStateBlockData(StateBlockData):
             bounds=(1e3, 1e6),
             doc="State pressure [Pa]",
             units=units.Pa,
-        )        
+        )
 
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)

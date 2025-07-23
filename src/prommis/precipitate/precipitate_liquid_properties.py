@@ -251,6 +251,20 @@ class AqueousStateBlockData(StateBlockData):
             bounds=(1e-20, None),
         )
 
+        self.temperature = Var(
+            initialize=298.15,
+            bounds=(298, None),
+            doc="State temperature [K]",
+            units=units.K,
+        )
+
+        self.pressure = Var(
+            initialize=101325.0,
+            bounds=(1e3, 1e6),
+            doc="State pressure [Pa]",
+            units=units.Pa,
+        )        
+
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)
         def molar_concentration_constraint(b, j):
@@ -286,6 +300,8 @@ class AqueousStateBlockData(StateBlockData):
             )
 
         iscale.set_scaling_factor(self.flow_vol, 1e-2)
+        iscale.set_scaling_factor(self.temperature, 1e-2)
+        iscale.set_scaling_factor(self.pressure, 1e5)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
         iscale.set_scaling_factor(self.conc_mol_comp, 1e3)
@@ -312,4 +328,6 @@ class AqueousStateBlockData(StateBlockData):
         return {
             "flow_vol": self.flow_vol,
             "conc_mass_comp": self.conc_mass_comp,
+            "temperature": self.temperature,
+            "pressure": self.pressure,
         }

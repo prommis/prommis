@@ -273,7 +273,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             self.config.reaction_package.reaction_idx,
             initialize=0.5,
             units=pyunits.dimensionless,
-            bounds=(None, 0.999999),
+            bounds=(1e-20, 0.999999),
         )
 
         # Create unit level Ports
@@ -335,6 +335,20 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             return (
                 blk.mscontactor.solid_inlet_state[t].temperature
                 == blk.mscontactor.solid_outlet.temperature[t]
+            )
+
+        @self.Constraint(self.flowsheet().time, doc="liquid temperature equation")
+        def liq_temp_constraint(blk, t):
+            return (
+                blk.aqueous_inlet.temperature[t]
+                == blk.aqueous_outlet.temperature[t]
+            )
+        
+        @self.Constraint(self.flowsheet().time, doc="pressure equation")
+        def press_constraint(blk, t):
+            return (
+                blk.aqueous_inlet.pressure[t]
+                == blk.aqueous_outlet.pressure[t]
             )
 
         @self.Constraint(

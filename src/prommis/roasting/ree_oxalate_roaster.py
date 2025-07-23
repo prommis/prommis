@@ -759,6 +759,8 @@ constructed,
                 * b.mw_oxide_list_all[i]
                 / b.flow_mass_product[t]
             )
+        
+        self.liquid_in[0].h2o_concentration.deactivate()
 
     def _make_energy_balance(self):
         # molar enthalpy of feed solid
@@ -845,6 +847,9 @@ constructed,
                 return b.gas_out[t].pressure == b.gas_in[t].pressure
             else:
                 return b.gas_out[t].pressure == b.gas_in[t].pressure + b.deltaP[t]
+            
+
+
 
     def set_initial_condition(self):
         pass

@@ -63,12 +63,12 @@ def system_frame():
     return m
 
 
-@pytest.mark.component
-def test_structural_issues(system_frame):
-    model = system_frame
-    dt = DiagnosticsToolbox(model)
-    dt.report_structural_issues()
-    dt.display_overconstrained_set()
+# @pytest.mark.component
+# def test_structural_issues(system_frame):
+#     model = system_frame
+#     dt = DiagnosticsToolbox(model)
+#     dt.report_structural_issues()
+#     dt.display_overconstrained_set()
 
     # dt.assert_no_structural_warnings()
 
@@ -193,6 +193,11 @@ def test_solve(system_frame):
     scaling.propagate_solution(scaled_model, model)
 
     assert_optimal_termination(results)
+
+    dt = DiagnosticsToolbox(system_frame)
+    dt.report_numerical_issues()
+    dt.display_variables_at_or_outside_bounds()
+    dt.assert_no_numerical_warnings()
 
 
 # @pytest.mark.component

@@ -124,6 +124,9 @@ class TestPrec(object):
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2C2O4"].fix(6400)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(100000)
 
+        m.fs.unit.aqueous_inlet.temperature[0].fix(298.15)
+        m.fs.unit.aqueous_inlet.pressure[0].fix(1e5)
+
         m.fs.unit.precipitate_outlet.temperature.fix(348.15)
         m.fs.unit.hydraulic_retention_time[0.0].fix(2)
 
@@ -133,14 +136,18 @@ class TestPrec(object):
     @pytest.mark.unit
     def test_build(self, prec):
         assert hasattr(prec.fs.unit, "aqueous_inlet")
-        assert len(prec.fs.unit.aqueous_inlet.vars) == 2
+        assert len(prec.fs.unit.aqueous_inlet.vars) == 4
         assert hasattr(prec.fs.unit.aqueous_inlet, "flow_vol")
         assert hasattr(prec.fs.unit.aqueous_inlet, "conc_mass_comp")
+        assert hasattr(prec.fs.unit.aqueous_inlet, "temperature")
+        assert hasattr(prec.fs.unit.aqueous_inlet, "pressure")
 
         assert hasattr(prec.fs.unit, "aqueous_outlet")
-        assert len(prec.fs.unit.aqueous_outlet.vars) == 2
+        assert len(prec.fs.unit.aqueous_outlet.vars) == 4
         assert hasattr(prec.fs.unit.aqueous_outlet, "flow_vol")
         assert hasattr(prec.fs.unit.aqueous_outlet, "conc_mass_comp")
+        assert hasattr(prec.fs.unit.aqueous_outlet, "temperature")
+        assert hasattr(prec.fs.unit.aqueous_outlet, "pressure")
 
         assert hasattr(prec.fs.unit, "precipitate_outlet")
         assert len(prec.fs.unit.precipitate_outlet.vars) == 2
@@ -152,8 +159,8 @@ class TestPrec(object):
         assert hasattr(prec.fs.unit, "heterogeneous_reaction_extent_constraint")
         assert hasattr(prec.fs.unit, "eq_hydraulic_retention")
 
-        assert number_variables(prec.fs.unit) == 204
-        assert number_total_constraints(prec.fs.unit) == 183
+        assert number_variables(prec.fs.unit) == 208
+        assert number_total_constraints(prec.fs.unit) == 185
         assert number_unused_variables(prec.fs.unit) == 0
 
     @pytest.mark.component
@@ -199,9 +206,8 @@ class TestPrec(object):
     @pytest.mark.solver
     def test_numerical_issues(self, prec):
         dt = DiagnosticsToolbox(prec)
-        dt.assert_no_numerical_warnings()
-
-        dt = DiagnosticsToolbox(prec)
+        dt.report_numerical_issues()
+        dt.display_variables_at_or_outside_bounds()
         dt.assert_no_numerical_warnings()
         dt.assert_no_structural_warnings()
 
@@ -218,31 +224,31 @@ class TestPrec(object):
         assert pytest.approx(10, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Ca"]
         )
-        assert pytest.approx(0.1005, abs=1e-3) == value(
+        assert pytest.approx(0.0991, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Ce"]
         )
-        assert pytest.approx(2.3840, abs=1e-3) == value(
+        assert pytest.approx(2.3824, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Dy"]
         )
         assert pytest.approx(9.7864, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Fe"]
         )
-        assert pytest.approx(0.4502, abs=1e-3) == value(
+        assert pytest.approx(0.4486, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Gd"]
         )
         assert pytest.approx(1.5715, rel=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "La"]
         )
-        assert pytest.approx(0.1157, abs=1e-3) == value(
+        assert pytest.approx(0.1142, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Nd"]
         )
-        assert pytest.approx(0.2132, abs=1e-3) == value(
+        assert pytest.approx(0.2118, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Pr"]
         )
         assert pytest.approx(6.3964, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Sc"]
         )
-        assert pytest.approx(0.2198, abs=1e-3) == value(
+        assert pytest.approx(0.2183, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Sm"]
         )
         assert pytest.approx(1.8401, abs=1e-3) == value(
@@ -395,6 +401,10 @@ class TestPrecRob(object):
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2C2O4"].fix(12000)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(100000)
 
+
+        m.fs.unit.aqueous_inlet.temperature[0].fix(298.15)
+        m.fs.unit.aqueous_inlet.pressure[0].fix(1e5)
+
         m.fs.unit.precipitate_outlet.temperature.fix(348.15)
         m.fs.unit.hydraulic_retention_time[0.0].fix(2)
 
@@ -404,14 +414,18 @@ class TestPrecRob(object):
     @pytest.mark.unit
     def test_build(self, prec):
         assert hasattr(prec.fs.unit, "aqueous_inlet")
-        assert len(prec.fs.unit.aqueous_inlet.vars) == 2
+        assert len(prec.fs.unit.aqueous_inlet.vars) == 4
         assert hasattr(prec.fs.unit.aqueous_inlet, "flow_vol")
         assert hasattr(prec.fs.unit.aqueous_inlet, "conc_mass_comp")
+        assert hasattr(prec.fs.unit.aqueous_inlet, "temperature")
+        assert hasattr(prec.fs.unit.aqueous_inlet, "pressure")
 
         assert hasattr(prec.fs.unit, "aqueous_outlet")
-        assert len(prec.fs.unit.aqueous_outlet.vars) == 2
+        assert len(prec.fs.unit.aqueous_outlet.vars) == 4
         assert hasattr(prec.fs.unit.aqueous_outlet, "flow_vol")
         assert hasattr(prec.fs.unit.aqueous_outlet, "conc_mass_comp")
+        assert hasattr(prec.fs.unit.aqueous_outlet, "temperature")
+        assert hasattr(prec.fs.unit.aqueous_outlet, "pressure")
 
         assert hasattr(prec.fs.unit, "precipitate_outlet")
         assert len(prec.fs.unit.precipitate_outlet.vars) == 2
@@ -423,8 +437,8 @@ class TestPrecRob(object):
         assert hasattr(prec.fs.unit, "heterogeneous_reaction_extent_constraint")
         assert hasattr(prec.fs.unit, "eq_hydraulic_retention")
 
-        assert number_variables(prec.fs.unit) == 204
-        assert number_total_constraints(prec.fs.unit) == 183
+        assert number_variables(prec.fs.unit) == 208
+        assert number_total_constraints(prec.fs.unit) == 185
         assert number_unused_variables(prec.fs.unit) == 0
 
     @pytest.mark.component
@@ -479,31 +493,31 @@ class TestPrecRob(object):
         assert pytest.approx(9.9999, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Ca"]
         )
-        assert pytest.approx(0.01922, abs=1e-3) == value(
+        assert pytest.approx(0.01782, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Ce"]
         )
-        assert pytest.approx(0.1397, abs=1e-3) == value(
+        assert pytest.approx(0.1380, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Dy"]
         )
         assert pytest.approx(2.0863, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Fe"]
         )
-        assert pytest.approx(0.0342, abs=1e-3) == value(
+        assert pytest.approx(0.0327, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Gd"]
         )
-        assert pytest.approx(0.0938, rel=1e-3) == value(
+        assert pytest.approx(0.0924, rel=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "La"]
         )
-        assert pytest.approx(0.0265, abs=1e-3) == value(
+        assert pytest.approx(0.0250, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Nd"]
         )
-        assert pytest.approx(0.02595, abs=1e-3) == value(
+        assert pytest.approx(0.0254, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Pr"]
         )
         assert pytest.approx(0.1791, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Sc"]
         )
-        assert pytest.approx(0.0227, abs=1e-3) == value(
+        assert pytest.approx(0.0212, abs=1e-3) == value(
             prec.fs.unit.aqueous_outlet.conc_mass_comp[0, "Sm"]
         )
         assert pytest.approx(0.1080, abs=1e-3) == value(
@@ -512,7 +526,7 @@ class TestPrecRob(object):
         assert pytest.approx(0.0005, abs=1e-6) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Al2(C2O4)3(s)"]
         )
-        assert pytest.approx(0.0017, abs=1e-3) == value(
+        assert pytest.approx(1.3e-08, abs=1e-3) == value(
             prec.fs.unit.precipitate_outlet.flow_mol_comp[0, "Ca(C2O4)(s)"]
         )
         assert pytest.approx(0.003562, abs=1e-6) == value(

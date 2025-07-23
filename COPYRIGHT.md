@@ -1,11 +1,12 @@
 Copyright Notice
 ================
 
-Copyright © 2025
+Process Optimization and Modeling for Minerals Sustainability (PrOMMiS) Copyright (c) 2023-2025
 
-“PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-(“PrOMMiS”) initiative, and is copyrighted by the software owners: The Regents of the University of
-California, through Lawrence Berkeley National Laboratory, et al.
+“Process Optimization and Modeling for Minerals Sustainability (PrOMMiS)” was produced under the DOE
+Process Optimization and Modeling for Minerals Sustainability (“PrOMMiS”) initiative, and is
+copyrighted by the software owners: The Regents of the University of California, through Lawrence
+Berkeley National Laboratory, et al.
 
 NOTICE. This Software was developed under funding from the U.S. Department of Energy and the
 U.S. Government consequently retains certain rights. As such, the U.S. Government has been granted

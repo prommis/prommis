@@ -197,7 +197,11 @@ from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-from prommis.precipitate.precipitator import Precipitator
+from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
+from prommis.precipitate.precipitator import (
+    OxalatePrecipitator,
+    OxalatePrecipitatorInitializer,
+)
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import (
@@ -503,10 +507,32 @@ def build():
 
     m.fs.properties_aq = AqueousParameter()
     m.fs.properties_solid = PrecipitateParameters()
+    m.fs.precip_rxns = OxalatePrecipitationReactions()
 
-    m.fs.precipitator = Precipitator(
-        property_package_aqueous=m.fs.properties_aq,
-        property_package_precipitate=m.fs.properties_solid,
+    m.fs.precipitator = OxalatePrecipitator(
+        number_of_tanks=1,
+        liquid_phase={
+            "property_package": m.fs.properties_aq,
+            "has_energy_balance": False,
+            "has_pressure_balance": False,
+        },
+        solid_phase={
+            "property_package": m.fs.properties_solid,
+            "has_energy_balance": False,
+            "has_pressure_balance": False,
+        },
+        reaction_package=m.fs.precip_rxns,
+    )
+
+    m.fs.oxalic_acid_feed = Feed(property_package=m.fs.leach_soln)
+
+    m.fs.sx_oxalic_mixer = Mixer(
+        property_package=m.fs.leach_soln,
+        num_inlets=2,
+        inlet_list=["cleaner", "oxalic_acid"],
+        material_balance_type=MaterialBalanceType.componentTotal,
+        energy_mixing_type=MixingType.none,
+        momentum_mixing_type=MomentumMixingType.none,
     )
 
     m.fs.sl_sep2 = SLSeparator(
@@ -695,10 +721,14 @@ def build():
     )
     m.fs.sx_cleaner_strip_aq_outlet = Arc(
         source=m.fs.solex_cleaner_strip.aqueous_outlet,
-        destination=m.fs.translator_leaching_to_precipitate.inlet,
+        destination=m.fs.sx_oxalic_mixer.cleaner,
     )
-    m.fs.precip_aq_inlet = Arc(
-        source=m.fs.translator_leaching_to_precipitate.outlet,
+    m.fs.oxalic_feed = Arc(
+        source=m.fs.oxalic_acid_feed.outlet,
+        destination=m.fs.sx_oxalic_mixer.oxalic_acid,
+    )
+    m.fs.precip_aq_feed = Arc(
+        source=m.fs.sx_oxalic_mixer.outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )
     m.fs.precip_solid_outlet = Arc(
@@ -785,11 +815,11 @@ def set_scaling(m):
         scheme=ConstraintScalingScheme.inverseMaximum,
         overwrite=False,
     )
-    csb.scale_constraint_by_nominal_value(
-        m.fs.precipitator.aqueous_depletion[0, "H2O"],
-        scheme=ConstraintScalingScheme.inverseMaximum,
-        overwrite=False,
-    )
+    # csb.scale_constraint_by_nominal_value(
+    #     m.fs.precipitator.aqueous_depletion[0, "H2O"],
+    #     scheme=ConstraintScalingScheme.inverseMaximum,
+    #     overwrite=False,
+    # )
 
     # Apply scaling to variables
     sb.set_variable_scaling_factor(m.fs.roaster.heat_duty[0], 1e-2)
@@ -1043,7 +1073,30 @@ def set_operating_conditions(m):
     m.fs.translator_precipitate_to_leaching.outlet.pressure.fix(P_atm)
     m.fs.translator_precipitate_to_leaching.outlet.temperature.fix(Temp_room)
 
-    m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
+    # Assuming pH is 1.5, oxalic acid molarity is 0.0316M -> 2844.95 mgH2C2O4/L
+    # Since pH of 1.5, cannot solve, assume a pH of 1.16 -> 8000 mgH2C2O4/L
+    m.fs.oxalic_acid_feed.flow_vol.fix(31)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2O"].fix(1000000)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "H"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "SO4"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "HSO4"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2C2O4"].fix(8000)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Cl"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Al"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Ca"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Fe"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Sc"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Y"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "La"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Ce"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Pr"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Nd"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Sm"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Gd"].fix(eps)
+    m.fs.oxalic_acid_feed.conc_mass_comp[0, "Dy"].fix(eps)
+
+    m.fs.precipitator.precipitate_outlet.temperature.fix(348.15 * units.K)
+    m.fs.precipitator.hydraulic_retention_time[0].fix(2)
 
     m.fs.precip_sep.split_fraction[:, "recycle"].fix(0.9)
     m.fs.precip_sep.purge_state[0.0].pressure.fix(P_atm)
@@ -1097,11 +1150,11 @@ def set_operating_conditions(m):
     m.fs.solex_rougher_strip.mscontactor.aqueous_inlet_state[0].conc_mass_comp
     m.fs.solex_rougher_scrub.mscontactor.aqueous_inlet_state[0].conc_mass_comp
 
-    m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol
-    m.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp
+    m.fs.precipitator.aqueous_outlet.flow_vol[0]
+    m.fs.precipitator.aqueous_outlet.conc_mass_comp
 
-    m.fs.precipitator.cv_precipitate[0].temperature
-    m.fs.precipitator.cv_precipitate[0].flow_mol_comp
+    m.fs.precipitator.precipitate_outlet.temperature[0]
+    m.fs.precipitator.precipitate_outlet.flow_mol_comp
 
 
 def initialize_system(m):

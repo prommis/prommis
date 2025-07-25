@@ -183,42 +183,43 @@ class REEFeedRoasterScaler(CustomScalerBase):
         Returns:
             None
         """
-        if submodel_scalers is None:
-            submodel_scalers = {}
+        submodel_scalers_1 = {}
+        if submodel_scalers is not None:
+            submodel_scalers_1 = submodel_scalers
 
         # scaling property submodel variables
         # gas inlet properties
         self.call_submodel_scaler_method(
             submodel=model.gas_in,
-            submodel_scalers=submodel_scalers,
+            submodel_scalers=submodel_scalers_1,
             method="variable_scaling_routine",
             overwrite=overwrite,
         )
         # gas outlet properties
         self.call_submodel_scaler_method(
             submodel=model.gas_out,
-            submodel_scalers=submodel_scalers,
+            submodel_scalers=submodel_scalers_1,
             method="variable_scaling_routine",
             overwrite=overwrite,
         )
         # solid inlet properties
         self.call_submodel_scaler_method(
             submodel=model.solid_in,
-            submodel_scalers=submodel_scalers,
+            submodel_scalers=submodel_scalers_1,
             method="variable_scaling_routine",
             overwrite=overwrite,
         )
         # solid outlet properties
         self.call_submodel_scaler_method(
             submodel=model.solid_out,
-            submodel_scalers=submodel_scalers,
+            submodel_scalers=submodel_scalers_1,
             method="variable_scaling_routine",
             overwrite=overwrite,
         )
         # leach solid outlet properties
         self.call_submodel_scaler_method(
             submodel=model.leach_solid_out,
-            submodel_scalers=submodel_scalers,
+            submodel_scalers=submodel_scalers_1,
             method="variable_scaling_routine",
             overwrite=overwrite,
         )
@@ -374,7 +375,9 @@ class REEFeedRoasterScaler(CustomScalerBase):
             self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
 
         for t, con in model.energy_balance_eqn.items():
-            sf = self.get_scaling_factor(model.heat_duty[t])
+            sf = 1e-6
+            if hasattr(model, "heat_duty"):
+                sf = self.get_scaling_factor(model.heat_duty[t])
             self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
 
         for t, con in model.momentum_balance_eqn.items():
@@ -992,7 +995,7 @@ constructed,
                     + b.y_REE1["Y"] * b.rate_REE1[t, "Y"]
                     + b.y_REE2["Y"] * b.rate_REE2[t, "Y"]
                 )
-            else:  # i is either RE2X or RE2O3 form
+            else:  # i is either RE2X or RE2O3
                 j = i[0:2]
                 k = i[3:]
                 if k == "X":
@@ -1103,10 +1106,9 @@ constructed,
             doc="enthalpy balance equation for both phases",
         )
         def energy_balance_eqn(b, t):
+            heat = 0 * units.W
             if self.config.has_heat_transfer is True:
                 heat = b.heat_duty[t]
-            else:
-                heat = 0 * units.W
             if self.config.dynamic:
                 accumulation = b.solid_energy_accumulation[t]
             else:

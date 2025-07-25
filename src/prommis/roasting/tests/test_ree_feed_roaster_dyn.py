@@ -53,7 +53,13 @@ from prommis.roasting.ree_feed_roaster_dyn import (
 )
 
 
-def get_model(dynamic=True, time_set=None, nstep=None):
+def get_model(
+    dynamic=True,
+    has_heat_transfer=True,
+    has_pressure_change=True,
+    time_set=None,
+    nstep=None,
+):
     m = ConcreteModel("REE_feed_roaster")
     if dynamic:
         if time_set is None:
@@ -64,7 +70,7 @@ def get_model(dynamic=True, time_set=None, nstep=None):
     else:
         m.fs = FlowsheetBlock(dynamic=False)
 
-    gas_species = {"O2", "H2O", "CO2", "N2", "SO2"}
+    gas_species = {"Ar", "O2", "H2O", "CO2", "N2", "SO2"}
     m.fs.prop_gas = GenericParameterBlock(
         **get_prop(gas_species, ["Vap"], EosType.IDEAL),
         doc="gas property",
@@ -88,8 +94,8 @@ def get_model(dynamic=True, time_set=None, nstep=None):
         solid_feed_property_package=m.fs.ree_feed_prop,
         solid_product_property_package=m.fs.ree_roast_prop,
         leach_solids_property_package=m.fs.leach_solid_prop,
-        has_heat_transfer=True,
-        has_pressure_change=True,
+        has_heat_transfer=has_heat_transfer,
+        has_pressure_change=has_pressure_change,
     )
 
     if dynamic:
@@ -98,22 +104,24 @@ def get_model(dynamic=True, time_set=None, nstep=None):
 
     m.fs.roaster.volume.fix(4)
     m.fs.roaster.voidage.fix(0.4)
-    m.fs.roaster.deltaP.fix(0)
+    if has_pressure_change:
+        m.fs.roaster.deltaP.fix(0)
     m.fs.roaster.gas_inlet.temperature.fix(900)
     m.fs.roaster.gas_inlet.pressure.fix(101325)
     gas_comp = {
+        "Ar": 0.007,
         "O2": 0.155,
         "H2O": 0.0616,
         "CO2": 0.0235,
-        "N2": 0.7598,
+        "N2": 0.7528,
         "SO2": 0.0001,
     }
     for i, v in gas_comp.items():
         m.fs.roaster.gas_inlet.mole_frac_comp[:, i].fix(v)
     # inlet flue gas mole flow rate
     m.fs.roaster.gas_inlet.flow_mol.fix(80)
-
-    m.fs.roaster.heat_duty.fix(-3e6)
+    if has_heat_transfer:
+        m.fs.roaster.heat_duty.fix(-3e6)
     # solid feed temperature
     m.fs.roaster.solid_inlet.temperature.fix(298.15)
     # limestone conversion
@@ -181,7 +189,7 @@ def get_model(dynamic=True, time_set=None, nstep=None):
 
 @pytest.fixture(scope="module")
 def model_steady_state():
-    return get_model(dynamic=False)
+    return get_model(dynamic=False, has_pressure_change=False)
 
 
 @pytest.fixture(scope="module")
@@ -212,7 +220,7 @@ def test_build_steady_state(model_steady_state):
     assert not m_scaled.fs.roaster.config.dynamic
     assert m_scaled.fs.roaster.config.has_holdup
     assert m_scaled.fs.roaster.config.has_heat_transfer
-    assert m_scaled.fs.roaster.config.has_pressure_change
+    assert not m_scaled.fs.roaster.config.has_pressure_change
     assert m_scaled.fs.roaster.config.gas_property_package is m_scaled.fs.prop_gas
     assert (
         m_scaled.fs.roaster.config.solid_feed_property_package
@@ -226,18 +234,17 @@ def test_build_steady_state(model_steady_state):
         m_scaled.fs.roaster.config.leach_solids_property_package
         is m_scaled.fs.leach_solid_prop
     )
-    assert len(m_scaled.fs.prop_gas.component_list) == 5
+    assert len(m_scaled.fs.prop_gas.component_list) == 6
     assert isinstance(m_scaled.fs.roaster.heat_duty, Var)
-    assert isinstance(m_scaled.fs.roaster.deltaP, Var)
     assert isinstance(m_scaled.fs.roaster.volume, Var)
     assert isinstance(m_scaled.fs.roaster.voidage, Var)
     assert isinstance(m_scaled.fs.roaster.solid_mass_balance_eqn, Constraint)
     assert isinstance(m_scaled.fs.roaster.gas_mass_balance_eqn, Constraint)
     assert isinstance(m_scaled.fs.roaster.energy_balance_eqn, Constraint)
     assert len(m_scaled.fs.roaster.solid_mass_balance_eqn) == 24
-    assert len(m_scaled.fs.roaster.gas_mass_balance_eqn) == 5
-    assert number_variables(m_scaled.fs.roaster) == 280
-    assert number_total_constraints(m_scaled.fs.roaster) == 234
+    assert len(m_scaled.fs.roaster.gas_mass_balance_eqn) == 6
+    assert number_variables(m_scaled.fs.roaster) == 283
+    assert number_total_constraints(m_scaled.fs.roaster) == 237
     assert number_unused_variables(m_scaled.fs.roaster) == 0
     assert_units_consistent(m_scaled.fs.roaster)
 
@@ -277,7 +284,7 @@ def test_solution_steady_state(model_steady_state):
         81.98495217241386, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.gas_out[0].temperature) == pytest.approx(
-        784.33228, rel=1e-5, abs=1e-6
+        784.0991061479093, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.gas_out[0].mole_frac_comp["O2"]) == pytest.approx(
         0.0671451071666029, rel=1e-5, abs=1e-6
@@ -292,10 +299,10 @@ def test_solution_steady_state(model_steady_state):
         0.1847323, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.solid_out[0].mass_frac_comp["CaCO3"]) == pytest.approx(
-        0.0003107265, rel=1e-5, abs=1e-6
+        0.000316611070408, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.solid_out[0].mass_frac_comp["CaO"]) == pytest.approx(
-        0.0239803, rel=1e-5, abs=1e-6
+        0.023976930120916822, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.solid_out[0].mass_frac_comp["Fe2O3"]) == pytest.approx(
         0.1361225, rel=1e-5, abs=1e-6
@@ -343,7 +350,7 @@ def test_build_dynamic(model_dynamic):
         m_scaled.fs.roaster.config.leach_solids_property_package
         is m_scaled.fs.leach_solid_prop
     )
-    assert len(m_scaled.fs.prop_gas.component_list) == 5
+    assert len(m_scaled.fs.prop_gas.component_list) == 6
     assert isinstance(m_scaled.fs.roaster.heat_duty, Var)
     assert isinstance(m_scaled.fs.roaster.deltaP, Var)
     assert isinstance(m_scaled.fs.roaster.volume, Var)
@@ -352,9 +359,9 @@ def test_build_dynamic(model_dynamic):
     assert isinstance(m_scaled.fs.roaster.gas_mass_balance_eqn, Constraint)
     assert isinstance(m_scaled.fs.roaster.energy_balance_eqn, Constraint)
     assert len(m_scaled.fs.roaster.solid_mass_balance_eqn) == 264
-    assert len(m_scaled.fs.roaster.gas_mass_balance_eqn) == 55
-    assert number_variables(m_scaled.fs.roaster) == 3346
-    assert number_total_constraints(m_scaled.fs.roaster) == 2835
+    assert len(m_scaled.fs.roaster.gas_mass_balance_eqn) == 66
+    assert number_variables(m_scaled.fs.roaster) == 3390
+    assert number_total_constraints(m_scaled.fs.roaster) == 2868
     assert number_unused_variables(m_scaled.fs.roaster) == 0
 
 
@@ -378,9 +385,9 @@ def test_initialize_and_solve_dynamic(model_dynamic):
     # Add disturbance and solve dynamic model
     temp0 = m_scaled.fs.roaster.solid_inlet.temperature[0].value
     sf = get_scaling_factor(m_scaled.fs.roaster.solid_inlet.temperature[0])
-    # solid inlet temperature ramp rate for unscaled model
+    # solid inlet tempertaure ramp rate for unscaled model
     dTdt = 0.2
-    # solid inlet temperature ramp rate for scaled model
+    # solid inlet tempertaure ramp rate for scaled model
     dTdt_scaled = dTdt * sf
     for t in m_scaled.fs.time:
         if t > 30:
@@ -406,28 +413,28 @@ def test_solution_dynamic(model_dynamic):
     TransformationFactory("core.scale_model").propagate_solution(m_scaled, m)
     t = 400
     assert value(m.fs.roaster.gas_out[t].flow_mol) == pytest.approx(
-        82.038173, rel=1e-5, abs=1e-6
+        82.03953211409154, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.gas_out[t].temperature) == pytest.approx(
-        820.3593529, rel=1e-5, abs=1e-6
+        820.1335172303061, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.gas_out[t].mole_frac_comp["O2"]) == pytest.approx(
-        0.06710155, rel=1e-5, abs=1e-6
+        0.06710043631172598, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.gas_out[t].mole_frac_comp["H2O"]) == pytest.approx(
-        0.094582355, rel=1e-5, abs=1e-6
+        0.09458078899963354, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.gas_out[t].mole_frac_comp["SO2"]) == pytest.approx(
         0.00360817, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.solid_out[t].flow_mass) == pytest.approx(
-        0.1823888, rel=1e-5, abs=1e-6
+        0.1823290484141596, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.solid_out[t].mass_frac_comp["CaCO3"]) == pytest.approx(
-        6.212484e-5, rel=1e-5, abs=1e-6
+        6.465804386318614e-05, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.solid_out[t].mass_frac_comp["CaO"]) == pytest.approx(
-        0.02412222, rel=1e-5, abs=1e-6
+        0.024120773737993473, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.solid_out[t].mass_frac_comp["Fe2O3"]) == pytest.approx(
         0.1361374, rel=1e-5, abs=1e-6
@@ -442,7 +449,7 @@ def test_solution_dynamic(model_dynamic):
         2.21087888e-5, rel=1e-5, abs=1e-6
     )
     assert value(m.fs.roaster.leach_solid_out[t].flow_mass) == pytest.approx(
-        656.59988, rel=1e-5, abs=1e-6
+        656.3845742909085, rel=1e-5, abs=1e-6
     )
     assert value(
         m.fs.roaster.leach_solid_out[t].mass_frac_comp["Sc2O3"]

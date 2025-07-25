@@ -7,10 +7,13 @@
 from pyomo.environ import ConcreteModel, Constraint, Param, Var, value
 
 from idaes.core import FlowsheetBlock
+from idaes.core.solvers import get_solver
 
 import pytest
 
 from prommis.roasting.ree_roast_properties import ReeRoastParameters
+
+solver = get_solver()
 
 
 @pytest.fixture
@@ -62,7 +65,9 @@ def test_parameters(model):
         assert k in model.fs.roast_prop.cp1_comp
 
     assert isinstance(model.fs.roast_prop.dens_mass, Param)
+    assert isinstance(model.fs.roast_prop.temperature_ref, Param)
     assert value(model.fs.roast_prop.dens_mass) == pytest.approx(2000, rel=1e-8)
+    assert value(model.fs.roast_prop.temperature_ref) == pytest.approx(298.15, rel=1e-8)
 
 
 @pytest.mark.unit
@@ -96,6 +101,8 @@ def test_fix_state(model):
 
     model.fs.state.fix_initialization_states()
 
+    solver.solve(model)
+
     assert model.fs.state[0].flow_mass.fixed
     assert model.fs.state[0].temperature.fixed
     for j in model.fs.roast_prop.component_list:
@@ -105,3 +112,16 @@ def test_fix_state(model):
         assert model.fs.state[0].enth_mol_comp_constraint[j].active
     assert model.fs.state[0].enth_mol_constraint.active
     assert model.fs.state[0].enth_mass_constraint.active
+    assert value(
+        model.fs.state[0].get_material_density_terms("solid", "Ree2X")
+    ) == pytest.approx(2000, rel=1e-8)
+    assert value(model.fs.state[0].get_energy_density_terms("solid")) == pytest.approx(
+        -2281290803.79, rel=1e-8
+    )
+    assert model.fs.state[0].get_material_flow_basis() == MaterialFlowBasis.molar
+    assert value(
+        model.fs.state[0].get_material_flow_terms("solid", "Ree2X")
+    ) == pytest.approx(0.8064613684842962, rel=1e-8)
+    assert value(model.fs.state[0].get_enthalpy_flow_terms("solid")) == pytest.approx(
+        -11406454.0189, rel=1e-8
+    )

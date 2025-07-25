@@ -10,7 +10,7 @@ Two-Salt Diafiltration Unit Model
 
 Author: Molly Dougher
 
-This membrane unit model is for the multi-component diafiltration of a two-salt system with a common anion. The membrane is designed for use in a diafiltration cascade, i.e., represents a spiral-wound membrane module.
+This membrane unit model is for the multi-component diafiltration of a two-salt system with a common anion. The membrane is designed for use in a diafiltration cascade, i.e., the model represents one spiral-wound membrane module.
 
 Configuration Arguments
 -----------------------
@@ -40,7 +40,7 @@ To run a simulation (with zero degrees of freedom) in a flowsheet, the additiona
 Model Structure
 ---------------
 
-There are three phases in the Two-Salt Diafiltration model: the retentate, the membrane, and the permeate. The retentate and the permeate are only discretized with respect to :math:`x`, while the membrane is discretized with respect to both :math:`x` and :math:`z`. The resulting system of partial differential algebraic equations is solved by discretizing with the backward finite element method.
+There are three phases in the Two-Salt Diafiltration model: the retentate, the membrane, and the permeate. The retentate and the permeate are only discretized with respect to :math:`x`, while the membrane is discretized with respect to both :math:`x` and :math:`z`. The resulting system of partial differential algebraic equations is solved by discretizing with the backward finite difference method.
 
 Assumptions
 -----------
@@ -67,7 +67,7 @@ There are 2 continuous sets for each length dimension: ``dimensionless_module_le
 .. math:: \bar{x} \in \mathbb{R} \| 0 \leq \bar{x} \leq 1
 .. math:: \bar{z} \in \mathbb{R} \| 0 \leq \bar{z} \leq 1
 
-Some variables are discretized over time to be compatible with the property package, even though this is not a dynamic model. Thus, the following set is defined for time.
+Some variables have a time domain to be compatible with the property package, even though this is not a dynamic model. Thus, the following set is defined for time.
 
 .. math:: t \in [0]
 

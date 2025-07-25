@@ -10,10 +10,11 @@ Property package for the multi-salt diafiltration membrane.
 Author: Molly Dougher
 """
 
-from pyomo.environ import NonNegativeReals, Param, Var, units
+from pyomo.environ import Param, Var, units
 
 from idaes.core import (
     Component,
+    MaterialFlowBasis,
     Phase,
     PhysicalParameterBlock,
     StateBlock,
@@ -79,7 +80,6 @@ class SoluteParameterData(PhysicalParameterBlock):
                 "Co": 0.3,
                 "Cl": 0.3,
             },
-            domain=NonNegativeReals,
         )
 
         self.num_solutes = Param(
@@ -149,6 +149,9 @@ class SoluteStateBlockData(StateBlockData):
 
     def get_material_flow_terms(self, p, j):
         return self.flow_vol * self.conc_mol_comp[j]
+
+    def get_material_flow_basis(self):
+        return MaterialFlowBasis.mole
 
     def define_state_vars(self):
         return {"flow_vol": self.flow_vol, "conc_mol_comp": self.conc_mol_comp}

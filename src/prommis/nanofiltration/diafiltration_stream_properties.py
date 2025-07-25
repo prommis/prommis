@@ -14,6 +14,7 @@ from pyomo.environ import Var, units
 
 from idaes.core import (
     Component,
+    MaterialFlowBasis,
     Phase,
     PhysicalParameterBlock,
     StateBlock,
@@ -106,6 +107,9 @@ class DiafiltrationStreamStateBlockData(StateBlockData):
 
     def get_material_flow_terms(self, p, j):
         return self.flow_vol * self.conc_mol_comp[j]
+
+    def get_material_flow_basis(self):
+        return MaterialFlowBasis.mole
 
     def define_state_vars(self):
         return {"flow_vol": self.flow_vol, "conc_mol_comp": self.conc_mol_comp}

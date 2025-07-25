@@ -77,20 +77,34 @@ def main():
 
     for x in m.fs.membrane.x_bar:
         for z in m.fs.membrane.z_bar:
-            if 50 > value(m.fs.membrane.membrane_conc_mol_lithium[x, z]) > 80:
+            # skip check at x=0 as the concentration is expected to be 0 and the
+            # diffusion coefficient calculation is not needed
+            if x == 0:
+                pass
+            elif not (50 < value(m.fs.membrane.membrane_conc_mol_lithium[x, z]) < 80):
                 raise ValueError(
-                    "Membrane concentration for lithium is outside of the valid "
-                    "range for the diffusion coefficient approximations. The "
-                    "linearized approximations may need to be re-calculated."
+                    "Membrane concentration for lithium ("
+                    f"{value(m.fs.membrane.membrane_conc_mol_lithium[x, z])} mM at "
+                    f"x={x * value(m.fs.membrane.membrane_width)} m and "
+                    f"z={z * value(m.fs.membrane.membrane_thickness)} m) is outside "
+                    "of the valid range for the diffusion coefficient approximations "
+                    "(50-80 mM). The linearized approximation should be re-calculated."
                 )
 
     for x in m.fs.membrane.x_bar:
         for z in m.fs.membrane.z_bar:
-            if 80 > value(m.fs.membrane.membrane_conc_mol_cobalt[x, z]) > 110:
+            # skip check at x=0 as the concentration is expected to be 0 and the
+            # diffusion coefficient calculation is not needed
+            if x == 0:
+                pass
+            elif not (80 < value(m.fs.membrane.membrane_conc_mol_cobalt[x, z]) < 110):
                 raise ValueError(
-                    "Membrane concentration for cobalt is outside of the valid "
-                    "range for the diffusion coefficient approximations. The "
-                    "linearized approximations may need to be re-calculated."
+                    "Membrane concentration for cobalt ("
+                    f"{value(m.fs.membrane.membrane_conc_mol_cobalt[x, z])} mM at "
+                    f"x={x * value(m.fs.membrane.membrane_width)} m and "
+                    f"z={z * value(m.fs.membrane.membrane_thickness)} m) is outside "
+                    "of the valid range for the diffusion coefficient approximations "
+                    "(80-110 mM). The linearized approximation should be re-calculated."
                 )
 
     # check numerical warnings

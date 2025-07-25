@@ -15,6 +15,7 @@ from prommis.roasting.ree_feed_properties import ReeFeedParameters
 
 solver = get_solver()
 
+
 @pytest.fixture
 def model():
     m = ConcreteModel()
@@ -119,8 +120,16 @@ def test_fix_state(model):
         assert model.fs.state[0].enth_mol_comp_constraint[j].active
     assert model.fs.state[0].enth_mol_constraint.active
     assert model.fs.state[0].enth_mass_constraint.active
-    assert value(model.fs.state[0].get_material_density_terms('solid', 'Ree2X')) == pytest.approx(2000, rel=1e-8)
-    assert value(model.fs.state[0].get_energy_density_terms('solid')) == pytest.approx(34158356078.71398, rel=1e-8)
-    assert model.fs.state[0].get_material_flow_basis()==MaterialFlowBasis.molar
-    assert value(model.fs.state[0].get_material_flow_terms('solid', 'Ree2X')) == pytest.approx(0.8064613684842962, rel=1e-8)
-    assert value(model.fs.state[0].get_enthalpy_flow_terms('solid')) == pytest.approx(170791780.39356998, rel=1e-8)
+    assert value(
+        model.fs.state[0].get_material_density_terms("solid", "Ree2X")
+    ) == pytest.approx(2000, rel=1e-8)
+    assert value(model.fs.state[0].get_energy_density_terms("solid")) == pytest.approx(
+        34158356078.71398, rel=1e-8
+    )
+    assert model.fs.state[0].get_material_flow_basis() == MaterialFlowBasis.molar
+    assert value(
+        model.fs.state[0].get_material_flow_terms("solid", "Ree2X")
+    ) == pytest.approx(0.8064613684842962, rel=1e-8)
+    assert value(model.fs.state[0].get_enthalpy_flow_terms("solid")) == pytest.approx(
+        170791780.39356998, rel=1e-8
+    )

@@ -6,7 +6,7 @@
 #####################################################################################################
 from pyomo.environ import ConcreteModel, Constraint, Param, Var, value
 
-from idaes.core import FlowsheetBlock
+from idaes.core import FlowsheetBlock, MaterialFlowBasis
 from idaes.core.solvers import get_solver
 
 import pytest

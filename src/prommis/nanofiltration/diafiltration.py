@@ -177,8 +177,8 @@ def add_global_flowsheet_parameters(m):
     m.operating_pressure = Param(
         initialize=145,
         mutable=True,
-        doc="Membrane operating pressure",
-        units=units.psi,
+        doc="Membrane operating pressure in psi",
+        units=units.psi,  # assume psia
     )
     m.Q_feed = Param(
         initialize=100,
@@ -686,8 +686,7 @@ def add_costing(m):
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_pump,
         costing_method_arguments={
-            "inlet_pressure": m.atmospheric_pressure
-            + units.convert(m.fs.cascade.costing.pressure_drop, to_units=units.Pa),
+            "inlet_pressure": m.atmospheric_pressure,  # 14.7 psia
             "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
             * units.psi,  # this should make m.fs.feed_pump.costing.variable_operating_cost ~0
             "inlet_vol_flow": m.fs.stage3.retentate_side_stream_state[
@@ -699,7 +698,7 @@ def add_costing(m):
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_pump,
         costing_method_arguments={
-            "inlet_pressure": m.atmospheric_pressure,
+            "inlet_pressure": m.atmospheric_pressure,  # 14.7 psia
             "outlet_pressure": m.operating_pressure,
             "inlet_vol_flow": m.fs.stage3.retentate_inlet.flow_vol[0],  # diafiltrate
         },

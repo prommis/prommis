@@ -53,8 +53,8 @@ def main():
     # add the membrane unit model
     m.fs.membrane = TwoSaltDiafiltration(
         property_package=m.fs.properties,
-        NFEx=10,
-        NFEz=5,
+        NFE_module_length=10,
+        NFE_membrane_thickness=5,
         charged_membrane=True,
     )
 
@@ -75,8 +75,8 @@ def main():
     # solve model
     solve_model(m)
 
-    for x in m.fs.membrane.x_bar:
-        for z in m.fs.membrane.z_bar:
+    for x in m.fs.membrane.dimensionless_module_length:
+        for z in m.fs.membrane.dimensionless_membrane_thickness:
             # skip check at x=0 as the concentration is expected to be 0 and the
             # diffusion coefficient calculation is not needed
             if x == 0:
@@ -85,14 +85,14 @@ def main():
                 raise ValueError(
                     "Membrane concentration for lithium ("
                     f"{value(m.fs.membrane.membrane_conc_mol_lithium[x, z])} mM at "
-                    f"x={x * value(m.fs.membrane.membrane_width)} m and "
-                    f"z={z * value(m.fs.membrane.membrane_thickness)} m) is outside "
+                    f"x={x * value(m.fs.membrane.total_module_length)} m and "
+                    f"z={z * value(m.fs.membrane.total_membrane_thickness)} m) is outside "
                     "of the valid range for the diffusion coefficient approximations "
                     "(50-80 mM). The linearized approximation should be re-calculated."
                 )
 
-    for x in m.fs.membrane.x_bar:
-        for z in m.fs.membrane.z_bar:
+    for x in m.fs.membrane.dimensionless_module_length:
+        for z in m.fs.membrane.dimensionless_membrane_thickness:
             # skip check at x=0 as the concentration is expected to be 0 and the
             # diffusion coefficient calculation is not needed
             if x == 0:
@@ -101,8 +101,8 @@ def main():
                 raise ValueError(
                     "Membrane concentration for cobalt ("
                     f"{value(m.fs.membrane.membrane_conc_mol_cobalt[x, z])} mM at "
-                    f"x={x * value(m.fs.membrane.membrane_width)} m and "
-                    f"z={z * value(m.fs.membrane.membrane_thickness)} m) is outside "
+                    f"x={x * value(m.fs.membrane.total_module_length)} m and "
+                    f"z={z * value(m.fs.membrane.total_membrane_thickness)} m) is outside "
                     "of the valid range for the diffusion coefficient approximations "
                     "(80-110 mM). The linearized approximation should be re-calculated."
                 )
@@ -128,8 +128,8 @@ def build_membrane_parameters(m):
 
 def fix_variables(m):
     # fix degrees of freedom in the membrane
-    m.fs.membrane.membrane_width.fix()
-    m.fs.membrane.membrane_length.fix()
+    m.fs.membrane.total_module_length.fix()
+    m.fs.membrane.total_membrane_length.fix()
     m.fs.membrane.applied_pressure.fix()
 
     # fix degrees of freedom in the flowsheet
@@ -184,7 +184,7 @@ def solve_model(m):
 
 def plot_results(m):
     """
-    Plots concentration and flux variables across the width of the membrane module.
+    Plots concentration and flux variables across the length of the membrane module.
 
     Args:
         m: Pyomo model
@@ -218,9 +218,9 @@ def plot_results(m):
     # store values for cobalt solute passage
     cobalt_sieving = []
 
-    for x_val in m.fs.membrane.x_bar:
+    for x_val in m.fs.membrane.dimensionless_module_length:
         if x_val != 0:
-            x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
+            x_axis_values.append(x_val * value(m.fs.membrane.total_module_length))
             conc_ret_lith.append(
                 value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
             )
@@ -303,24 +303,24 @@ def plot_results(m):
     ax2.legend()
 
     ax3.plot(x_axis_values, water_flux, linewidth=2)
-    ax3.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
+    ax3.set_xlabel("Module Length (m)", fontsize=10, fontweight="bold")
     ax3.set_ylabel("Water Flux (m$^3$/m$^2$/h)", fontsize=10, fontweight="bold")
     ax3.tick_params(direction="in", labelsize=10)
 
     ax4.plot(x_axis_values, lithium_flux, linewidth=2)
-    ax4.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
+    ax4.set_xlabel("Module Length (m)", fontsize=10, fontweight="bold")
     ax4.set_ylabel("Lithium Molar Flux (mol/m$^2$/h)", fontsize=10, fontweight="bold")
     ax4.tick_params(direction="in", labelsize=10)
 
     ax5.plot(x_axis_values, lithium_rejection, linewidth=2, label="lithium")
     ax5.plot(x_axis_values, cobalt_rejection, linewidth=2, label="cobalt")
-    ax5.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
+    ax5.set_xlabel("Module Length (m)", fontsize=10, fontweight="bold")
     ax5.set_ylabel("Solute Rejection (%)", fontsize=10, fontweight="bold")
     ax5.tick_params(direction="in", labelsize=10)
     ax5.legend()
 
     ax6.plot(x_axis_values, percent_recovery, linewidth=2)
-    ax6.set_xlabel("Membrane Width (m)", fontsize=10, fontweight="bold")
+    ax6.set_xlabel("Module Length (m)", fontsize=10, fontweight="bold")
     ax6.set_ylabel("Percent Recovery (%)", fontsize=10, fontweight="bold")
     ax6.tick_params(direction="in", labelsize=10)
 
@@ -337,11 +337,13 @@ def plot_membrane_results(m):
     x_axis_values = []
     z_axis_values = []
 
-    for x_val in m.fs.membrane.x_bar:
+    for x_val in m.fs.membrane.dimensionless_module_length:
         if x_val != 0:
-            x_axis_values.append(x_val * value(m.fs.membrane.membrane_width))
-    for z_val in m.fs.membrane.z_bar:
-        z_axis_values.append(z_val * value(m.fs.membrane.membrane_thickness) * 1e9)
+            x_axis_values.append(x_val * value(m.fs.membrane.total_module_length))
+    for z_val in m.fs.membrane.dimensionless_membrane_thickness:
+        z_axis_values.append(
+            z_val * value(m.fs.membrane.total_membrane_thickness) * 1e9
+        )
     # store values for concentration of lithium in the membrane
     conc_mem_lith = []
     conc_mem_lith_dict = {}
@@ -352,8 +354,8 @@ def plot_membrane_results(m):
     conc_mem_chl = []
     conc_mem_chl_dict = {}
 
-    for z_val in m.fs.membrane.z_bar:
-        for x_val in m.fs.membrane.x_bar:
+    for z_val in m.fs.membrane.dimensionless_membrane_thickness:
+        for x_val in m.fs.membrane.dimensionless_module_length:
             if x_val != 0:
                 conc_mem_lith.append(
                     value(m.fs.membrane.membrane_conc_mol_lithium[x_val, z_val])
@@ -381,7 +383,7 @@ def plot_membrane_results(m):
         z_axis_values, x_axis_values, conc_mem_lith_df, cmap="Greens"
     )
     ax1.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
-    ax1.set_ylabel("Membrane Width (m)", fontsize=10, fontweight="bold")
+    ax1.set_ylabel("Module Length (m)", fontsize=10, fontweight="bold")
     ax1.set_title(
         "Lithium Concentration\n in Membrane (mol/m$^3$)",
         fontsize=10,

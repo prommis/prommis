@@ -17,15 +17,15 @@ Configuration Arguments
 
 The Two-Salt Diafiltration model requires a property package that provides the valency (:math:`z_i`), reflection coefficient (:math:`\sigma_i`), partition coefficient (:math:`H_i`), and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams. 
 
-Additionally, there are two required arguments, ``NFEx`` and ``NFEz``, to specfiy the desired number of finite elements across the width and thickness of the membrane, respectively.
+Additionally, there are two required arguments, ``NFE_module_length`` and ``NFE_membrane_thickness``, to specfiy the desired number of finite elements across the width and thickness of the membrane, respectively.
 
 Degrees of Freedom
 ------------------
 
 The Two-Salt Diafiltration unit model has three degrees of freedom (variable names and default values are provided in parentheses):
 
-#. the width of the membrane, i.e., the length of the membrane module (``membrane_width``; :math:`4 \, \mathrm{m}`)
-#. the length of the membrane (``membrane_length``; :math:`40 \, \mathrm{m}`)
+#. the length of the membrane module (``total_module_length``; :math:`4 \, \mathrm{m}`)
+#. the length of the membrane (``total_membrane_length``; :math:`40 \, \mathrm{m}`)
 #. the pressure applied to the membrane system (``applied_pressure``; :math:`15 \, \mathrm{bar}`)
 
 To run a simulation (with zero degrees of freedom) in a flowsheet, the additional following variables must be fixed to obtain zero degrees of freedom (variable names and default values are provided in parentheses):
@@ -62,7 +62,7 @@ The Two-Salt Diafiltration model defines the following discrete sets for ions in
 
 .. math:: \mathcal{I}=\{\mathrm{Li^+,Co^{2+},Cl^-}\}
 
-There are 2 continuous sets for each length dimension: the :math:`x`-direction parallel to the membrane surface and the :math:`z`-direction perpendicular to the membrane surface. :math:`x` and :math:`z` are non-dimensionalized with the module length or membrane width (:math:`w`) and membrane thickness (:math:`l`), respectively, to improve numerics.
+There are 2 continuous sets for each length dimension: ``dimensionless_module_length`` (in the :math:`x`-direction parallel to the membrane surface) and ``dimensionless_membrane_thickness`` (in the :math:`z`-direction perpendicular to the membrane surface). :math:`x` and :math:`z` are non-dimensionalized (denoted as :math:`\bar{x}` and :math:`\bar{z}`, respectively) using the module length or (:math:`w`) and membrane thickness (:math:`l`), respectively, to improve numerics.
 
 .. math:: \bar{x} \in \mathbb{R} \| 0 \leq \bar{x} \leq 1
 .. math:: \bar{z} \in \mathbb{R} \| 0 \leq \bar{z} \leq 1
@@ -80,7 +80,7 @@ The Two-Salt Diafiltration model has the following parameters.
 Parameter        Description                                     Name                         Default Value Units
 ================ =============================================== ============================ ============= ==========================================================
 :math:`\epsilon` numerical tolerance for zero values             ``numerical_zero_tolerance`` 1e-10
-:math:`l`        thickness of the membrane                       ``membrane_thickness``       1e-07         :math:`\mathrm{m}`
+:math:`l`        thickness of the membrane                       ``total_membrane_thickness`` 1e-07         :math:`\mathrm{m}`
 :math:`L_p`      hydraulic permeability of the membrane          ``membrane_permeability``    0.03          :math:`\mathrm{m} \, \mathrm{h}^{-1} \, \mathrm{bar}^{-1}`
 :math:`T`        temperature of the system                       ``temperature``              298           :math:`\mathrm{K}`
 :math:`\chi`     concentration of surface charge on the membrane ``membrane_fixed_charge``    -140          :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
@@ -119,14 +119,14 @@ Variable                             Description                                
 :math:`j_{\mathrm{Co^{2+}}}`         molar flux of cobalt ion across the membrane    ``mol_flux_cobalt``                                    :math:`\mathrm{mol} \, \mathrm{m}^{-2} \, \mathrm{h}^{-1}` discretized over :math:`\bar{x}`
 :math:`j_{\mathrm{Li^+}}`            molar flux of lithium ion across the membrane   ``mol_flux_lithium``                                   :math:`\mathrm{mol} \, \mathrm{m}^{-2} \, \mathrm{h}^{-1}` discretized over :math:`\bar{x}`
 :math:`J_w`                          water flux across the membrane                  ``volume_flux_water``                                  :math:`\mathrm{m}^3 \, \mathrm{m}^{-2} \, \mathrm{h}^{-1}` discretized over :math:`\bar{x}`
-:math:`L`                            length of the membrane                          ``membrane_length``                                    :math:`\mathrm{m}`
+:math:`L`                            length of the membrane                          ``total_membrane_length``                                    :math:`\mathrm{m}`
 :math:`\Delta \pi`                   osmotic pressure of feed-side fluid             ``osmotic_pressure``                                   :math:`\mathrm{bar}`                                       discretized over :math:`\bar{x}`
 :math:`\Delta P`                     applied pressure to the membrane                ``applied_pressure``                                   :math:`\mathrm{bar}`
 :math:`q_d`                          volumetic flow rate of the diafiltrate          ``diafiltrate_flow_volume``                            :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t`
 :math:`q_f`                          volumetic flow rate of the feed                 ``feed_flow_volume``                                   :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t`
 :math:`q_p`                          volumetic flow rate of the permeate             ``permeate_flow_volume``                               :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t` and :math:`\bar{x}`
 :math:`q_r`                          volumetic flow rate of the retentate            ``retentate_flow_volume``                              :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t` and :math:`\bar{x}`
-:math:`w`                            width of the membrane                           ``membrane_width``                                     :math:`\mathrm{m}`
+:math:`w`                            length of the membrane module                   ``total_module_length``                                     :math:`\mathrm{m}`
 ==================================== =============================================== ====================================================== ========================================================== ====================================================
 
 Derivative Variables
@@ -313,13 +313,13 @@ and used when constructing these,
         ),
     )
     CONFIG.declare(
-        "NFEx",
+        "NFE_module_length",
         ConfigValue(
             doc="Number of discretization points in the x-direction",
         ),
     )
     CONFIG.declare(
-        "NFEz",
+        "NFE_membrane_thickness",
         ConfigValue(
             doc="Number of discretization points in the z-direction",
         ),
@@ -358,7 +358,7 @@ and used when constructing these,
             mutable=True,
             doc="Numerical tolerance for zero values in the model",
         )
-        self.membrane_thickness = Param(
+        self.total_membrane_thickness = Param(
             initialize=1e-7,
             mutable=True,
             units=units.m,
@@ -396,8 +396,8 @@ and used when constructing these,
         Adds variables for the two salt diafiltration unit model.
         """
         # define length scales
-        self.x_bar = ContinuousSet(bounds=(0, 1))
-        self.z_bar = ContinuousSet(bounds=(0, 1))
+        self.dimensionless_module_length = ContinuousSet(bounds=(0, 1))
+        self.dimensionless_membrane_thickness = ContinuousSet(bounds=(0, 1))
 
         # add a time index since the property package variables are indexed over time
         self.time = Set(initialize=[0])
@@ -406,13 +406,13 @@ and used when constructing these,
         self.solutes = Set(initialize=["Li", "Co", "Cl"])
 
         # add global variables
-        self.membrane_width = Var(
+        self.total_module_length = Var(
             initialize=4,
             units=units.m,
             bounds=[1e-11, None],
             doc="Width of the membrane (x-direction)",
         )
-        self.membrane_length = Var(
+        self.total_membrane_length = Var(
             initialize=40,
             units=units.m,
             bounds=[1e-11, None],
@@ -465,30 +465,30 @@ and used when constructing these,
             doc="Mole concentration of solutes in the diafiltrate",
         )
 
-        # add variables dependent on x_bar
+        # add variables dependent on dimensionless_module_length
         self.volume_flux_water = Var(
-            self.x_bar,
+            self.dimensionless_module_length,
             initialize=0.3,
             units=units.m**3 / units.m**2 / units.h,
             bounds=[1e-11, None],
             doc="Volumetric water flux of water across the membrane",
         )
         self.mol_flux_lithium = Var(
-            self.x_bar,
+            self.dimensionless_module_length,
             initialize=50,
             units=units.mol / units.m**2 / units.h,
             bounds=[1e-11, None],
             doc="Mole flux of lithium across the membrane (z-direction, x-dependent)",
         )
         self.mol_flux_cobalt = Var(
-            self.x_bar,
+            self.dimensionless_module_length,
             initialize=60,
             units=units.mol / units.m**2 / units.h,
             bounds=[1e-11, None],
             doc="Mole flux of cobalt across the membrane (z-direction, x-dependent)",
         )
         self.mol_flux_chloride = Var(
-            self.x_bar,
+            self.dimensionless_module_length,
             initialize=170,
             units=units.mol / units.m**2 / units.h,
             bounds=[1e-11, None],
@@ -496,7 +496,7 @@ and used when constructing these,
         )
         self.retentate_flow_volume = Var(
             self.time,
-            self.x_bar,
+            self.dimensionless_module_length,
             initialize=100,
             units=units.m**3 / units.h,
             bounds=[1e-11, None],
@@ -509,7 +509,7 @@ and used when constructing these,
 
         self.retentate_conc_mol_comp = Var(
             self.time,
-            self.x_bar,
+            self.dimensionless_module_length,
             self.solutes,
             initialize=initialize_retentate_conc_mol_comp,
             units=units.mol / units.m**3,  # mM
@@ -518,7 +518,7 @@ and used when constructing these,
         )
         self.permeate_flow_volume = Var(
             self.time,
-            self.x_bar,
+            self.dimensionless_module_length,
             initialize=30,
             units=units.m**3 / units.h,
             bounds=[1e-11, None],
@@ -535,7 +535,7 @@ and used when constructing these,
 
         self.permeate_conc_mol_comp = Var(
             self.time,
-            self.x_bar,
+            self.dimensionless_module_length,
             self.solutes,
             initialize=initialize_permeate_conc_mol_comp,
             units=units.mol / units.m**3,  # mM
@@ -543,80 +543,80 @@ and used when constructing these,
             doc="Mole concentration of solutes in the permeate, x-dependent",
         )
         self.osmotic_pressure = Var(
-            self.x_bar,
+            self.dimensionless_module_length,
             initialize=1,
             units=units.bar,
             bounds=[1e-11, None],
             doc="Osmostic pressure of the feed-side fluid",
         )
 
-        # add variables dependent on x_bar and z_bar
+        # add variables dependent on dimensionless_module_length and dimensionless_membrane_thickness
         self.membrane_conc_mol_lithium = Var(
-            self.x_bar,
-            self.z_bar,
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
             initialize=60,
             units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of lithium in the membrane, x- and z-dependent",
         )
         self.membrane_conc_mol_cobalt = Var(
-            self.x_bar,
-            self.z_bar,
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
             initialize=60,
             units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of cobalt in the membrane, x- and z-dependent",
         )
         self.membrane_conc_mol_chloride = Var(
-            self.x_bar,
-            self.z_bar,
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
             initialize=180,
             units=units.mol / units.m**3,  # mM
             bounds=[1e-11, None],
             doc="Mole concentration of chloride in the membrane, x- and z-dependent",
         )
         self.D_lithium_lithium = Var(
-            self.x_bar,
-            self.z_bar,
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
             initialize=1e-6,
             units=units.m**2 / units.h,
             bounds=[1e-11, None],
             doc="Linearized cross diffusion coefficient for lithium-lithium",
         )
         self.D_lithium_cobalt = Var(
-            self.x_bar,
-            self.z_bar,
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
             initialize=1e-7,
             units=units.m**2 / units.h,
             bounds=[1e-11, None],
             doc="Linearized cross diffusion coefficient for lithium-cobalt",
         )
         self.D_cobalt_lithium = Var(
-            self.x_bar,
-            self.z_bar,
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
             initialize=1e-7,
             units=units.m**2 / units.h,
             bounds=[1e-11, None],
             doc="Linearized cross diffusion coefficient for cobalt-lithium",
         )
         self.D_cobalt_cobalt = Var(
-            self.x_bar,
-            self.z_bar,
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
             initialize=1e-6,
             units=units.m**2 / units.h,
             bounds=[1e-11, None],
             doc="Linearized cross diffusion coefficient for cobalt-cobalt",
         )
         self.convection_coefficient_lithium = Var(
-            self.x_bar,
-            self.z_bar,
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
             initialize=1,
             units=units.dimensionless,
             doc="Linearized convection coefficient for lithium",
         )
         self.convection_coefficient_cobalt = Var(
-            self.x_bar,
-            self.z_bar,
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
             initialize=1,
             units=units.dimensionless,
             doc="Linearized convection coefficient for cobalt",
@@ -625,25 +625,25 @@ and used when constructing these,
         # define the (partial) derivative variables
         self.d_retentate_conc_mol_comp_dx = DerivativeVar(
             self.retentate_conc_mol_comp,
-            wrt=self.x_bar,
+            wrt=self.dimensionless_module_length,
             units=units.mol / units.m**3,  # mM
             doc="Solute concentration gradient in the retentate",
         )
         self.d_retentate_flow_volume_dx = DerivativeVar(
             self.retentate_flow_volume,
-            wrt=self.x_bar,
+            wrt=self.dimensionless_module_length,
             units=units.m**3 / units.h,
             doc="Volume flow gradient in the retentate",
         )
         self.d_membrane_conc_mol_lithium_dz = DerivativeVar(
             self.membrane_conc_mol_lithium,
-            wrt=self.z_bar,
+            wrt=self.dimensionless_membrane_thickness,
             units=units.mol / units.m**3,  # mM
             doc="Lithium concentration gradient wrt z in the membrane",
         )
         self.d_membrane_conc_mol_cobalt_dz = DerivativeVar(
             self.membrane_conc_mol_cobalt,
-            wrt=self.z_bar,
+            wrt=self.dimensionless_membrane_thickness,
             units=units.mol / units.m**3,  # mM
             doc="Cobalt concentration gradient wrt z in the membrane",
         )
@@ -658,10 +658,14 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return self.d_retentate_flow_volume_dx[0, x] == (
-                -self.volume_flux_water[x] * self.membrane_length * self.membrane_width
+                -self.volume_flux_water[x]
+                * self.total_membrane_length
+                * self.total_module_length
             )
 
-        self.overall_mol_balance = Constraint(self.x_bar, rule=_overall_mol_balance)
+        self.overall_mol_balance = Constraint(
+            self.dimensionless_module_length, rule=_overall_mol_balance
+        )
 
         def _lithium_mol_balance(self, x):
             if x == 0:
@@ -674,11 +678,13 @@ and used when constructing these,
                     self.volume_flux_water[x] * self.retentate_conc_mol_comp[0, x, "Li"]
                     - self.mol_flux_lithium[x]
                 )
-                * self.membrane_length
-                * self.membrane_width
+                * self.total_membrane_length
+                * self.total_module_length
             )
 
-        self.lithium_mol_balance = Constraint(self.x_bar, rule=_lithium_mol_balance)
+        self.lithium_mol_balance = Constraint(
+            self.dimensionless_module_length, rule=_lithium_mol_balance
+        )
 
         def _cobalt_mol_balance(self, x):
             if x == 0:
@@ -691,11 +697,13 @@ and used when constructing these,
                     self.volume_flux_water[x] * self.retentate_conc_mol_comp[0, x, "Co"]
                     - self.mol_flux_cobalt[x]
                 )
-                * self.membrane_length
-                * self.membrane_width
+                * self.total_membrane_length
+                * self.total_module_length
             )
 
-        self.cobalt_mol_balance = Constraint(self.x_bar, rule=_cobalt_mol_balance)
+        self.cobalt_mol_balance = Constraint(
+            self.dimensionless_module_length, rule=_cobalt_mol_balance
+        )
 
         # transport constraints (geometric)
         def _geometric_flux_equation_overall(self, x):
@@ -705,12 +713,12 @@ and used when constructing these,
                 self.permeate_flow_volume[0, x]
                 == self.volume_flux_water[x]
                 * x
-                * self.membrane_length
-                * self.membrane_width
+                * self.total_membrane_length
+                * self.total_module_length
             )
 
         self.geometric_flux_equation_overall = Constraint(
-            self.x_bar, rule=_geometric_flux_equation_overall
+            self.dimensionless_module_length, rule=_geometric_flux_equation_overall
         )
 
         def _geometric_flux_equation_lithium(self, x):
@@ -721,7 +729,7 @@ and used when constructing these,
             )
 
         self.geometric_flux_equation_lithium = Constraint(
-            self.x_bar, rule=_geometric_flux_equation_lithium
+            self.dimensionless_module_length, rule=_geometric_flux_equation_lithium
         )
 
         def _geometric_flux_equation_cobalt(self, x):
@@ -732,7 +740,7 @@ and used when constructing these,
             )
 
         self.geometric_flux_equation_cobalt = Constraint(
-            self.x_bar, rule=_geometric_flux_equation_cobalt
+            self.dimensionless_module_length, rule=_geometric_flux_equation_cobalt
         )
 
         # transport constraints (first principles)
@@ -744,7 +752,9 @@ and used when constructing these,
                 * (self.applied_pressure - self.osmotic_pressure[x])
             )
 
-        self.lumped_water_flux = Constraint(self.x_bar, rule=_lumped_water_flux)
+        self.lumped_water_flux = Constraint(
+            self.dimensionless_module_length, rule=_lumped_water_flux
+        )
 
         def _D_lithium_lithium_calculation(self, x, z):
             if value(self.membrane_fixed_charge) == 0:
@@ -776,7 +786,9 @@ and used when constructing these,
             )
 
         self.D_lithium_lithium_calculation = Constraint(
-            self.x_bar, self.z_bar, rule=_D_lithium_lithium_calculation
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
+            rule=_D_lithium_lithium_calculation,
         )
 
         def _D_lithium_cobalt_calculation(self, x, z):
@@ -809,7 +821,9 @@ and used when constructing these,
             )
 
         self.D_lithium_cobalt_calculation = Constraint(
-            self.x_bar, self.z_bar, rule=_D_lithium_cobalt_calculation
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
+            rule=_D_lithium_cobalt_calculation,
         )
 
         def _D_cobalt_lithium_calculation(self, x, z):
@@ -842,7 +856,9 @@ and used when constructing these,
             )
 
         self.D_cobalt_lithium_calculation = Constraint(
-            self.x_bar, self.z_bar, rule=_D_cobalt_lithium_calculation
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
+            rule=_D_cobalt_lithium_calculation,
         )
 
         def _D_cobalt_cobalt_calculation(self, x, z):
@@ -875,7 +891,9 @@ and used when constructing these,
             )
 
         self.D_cobalt_cobalt_calculation = Constraint(
-            self.x_bar, self.z_bar, rule=_D_cobalt_cobalt_calculation
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
+            rule=_D_cobalt_cobalt_calculation,
         )
 
         def _convection_coefficient_lithium_calculation(self, x, z):
@@ -902,7 +920,9 @@ and used when constructing these,
             )
 
         self.convection_coefficient_lithium_calculation = Constraint(
-            self.x_bar, self.z_bar, rule=_convection_coefficient_lithium_calculation
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
+            rule=_convection_coefficient_lithium_calculation,
         )
 
         def _convection_coefficient_cobalt_calculation(self, x, z):
@@ -929,7 +949,9 @@ and used when constructing these,
             )
 
         self.convection_coefficient_cobalt_calculation = Constraint(
-            self.x_bar, self.z_bar, rule=_convection_coefficient_cobalt_calculation
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
+            rule=_convection_coefficient_cobalt_calculation,
         )
 
         def _lithium_flux_membrane(self, x, z):
@@ -943,18 +965,20 @@ and used when constructing these,
                 )
                 - (
                     self.D_lithium_lithium[x, z]
-                    / self.membrane_thickness
+                    / self.total_membrane_thickness
                     * self.d_membrane_conc_mol_lithium_dz[x, z]
                 )
                 - (
                     self.D_lithium_cobalt[x, z]
-                    / self.membrane_thickness
+                    / self.total_membrane_thickness
                     * self.d_membrane_conc_mol_cobalt_dz[x, z]
                 )
             )
 
         self.lithium_flux_membrane = Constraint(
-            self.x_bar, self.z_bar, rule=_lithium_flux_membrane
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
+            rule=_lithium_flux_membrane,
         )
 
         def _cobalt_flux_membrane(self, x, z):
@@ -968,18 +992,20 @@ and used when constructing these,
                 )
                 - (
                     self.D_cobalt_lithium[x, z]
-                    / self.membrane_thickness
+                    / self.total_membrane_thickness
                     * self.d_membrane_conc_mol_lithium_dz[x, z]
                 )
                 - (
                     self.D_cobalt_cobalt[x, z]
-                    / self.membrane_thickness
+                    / self.total_membrane_thickness
                     * self.d_membrane_conc_mol_cobalt_dz[x, z]
                 )
             )
 
         self.cobalt_flux_membrane = Constraint(
-            self.x_bar, self.z_bar, rule=_cobalt_flux_membrane
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
+            rule=_cobalt_flux_membrane,
         )
 
         def _chloride_flux_membrane(self, x):
@@ -995,7 +1021,7 @@ and used when constructing these,
             )
 
         self.chloride_flux_membrane = Constraint(
-            self.x_bar, rule=_chloride_flux_membrane
+            self.dimensionless_module_length, rule=_chloride_flux_membrane
         )
 
         # other physical constraints
@@ -1035,7 +1061,7 @@ and used when constructing these,
             )
 
         self.osmotic_pressure_calculation = Constraint(
-            self.x_bar, rule=_osmotic_pressure_calculation
+            self.dimensionless_module_length, rule=_osmotic_pressure_calculation
         )
 
         def _electroneutrality_retentate(self, x):
@@ -1049,7 +1075,7 @@ and used when constructing these,
             )
 
         self.electroneutrality_retentate = Constraint(
-            self.x_bar, rule=_electroneutrality_retentate
+            self.dimensionless_module_length, rule=_electroneutrality_retentate
         )
 
         def _electroneutrality_membrane(self, x, z):
@@ -1066,7 +1092,9 @@ and used when constructing these,
             )
 
         self.electroneutrality_membrane = Constraint(
-            self.x_bar, self.z_bar, rule=_electroneutrality_membrane
+            self.dimensionless_module_length,
+            self.dimensionless_membrane_thickness,
+            rule=_electroneutrality_membrane,
         )
 
         def _electroneutrality_permeate(self, x):
@@ -1080,7 +1108,7 @@ and used when constructing these,
             )
 
         self.electroneutrality_permeate = Constraint(
-            self.x_bar, rule=_electroneutrality_permeate
+            self.dimensionless_module_length, rule=_electroneutrality_permeate
         )
 
         # boundary conditions
@@ -1098,7 +1126,7 @@ and used when constructing these,
             )
 
         self.retentate_membrane_interface_lithium = Constraint(
-            self.x_bar, rule=_retentate_membrane_interface_lithium
+            self.dimensionless_module_length, rule=_retentate_membrane_interface_lithium
         )
 
         def _retentate_membrane_interface_cobalt(self, x):
@@ -1118,7 +1146,7 @@ and used when constructing these,
             )
 
         self.retentate_membrane_interface_cobalt = Constraint(
-            self.x_bar, rule=_retentate_membrane_interface_cobalt
+            self.dimensionless_module_length, rule=_retentate_membrane_interface_cobalt
         )
 
         def _membrane_permeate_interface_lithium(self, x):
@@ -1135,7 +1163,7 @@ and used when constructing these,
             )
 
         self.membrane_permeate_interface_lithium = Constraint(
-            self.x_bar, rule=_membrane_permeate_interface_lithium
+            self.dimensionless_module_length, rule=_membrane_permeate_interface_lithium
         )
 
         def _membrane_permeate_interface_cobalt(self, x):
@@ -1155,23 +1183,29 @@ and used when constructing these,
             )
 
         self.membrane_permeate_interface_cobalt = Constraint(
-            self.x_bar, rule=_membrane_permeate_interface_cobalt
+            self.dimensionless_module_length, rule=_membrane_permeate_interface_cobalt
         )
 
     def discretize_model(self):
         discretizer = TransformationFactory("dae.finite_difference")
         discretizer.apply_to(
-            self, wrt=self.x_bar, nfe=self.config.NFEx, scheme="BACKWARD"
+            self,
+            wrt=self.dimensionless_module_length,
+            nfe=self.config.NFE_module_length,
+            scheme="BACKWARD",
         )
         discretizer.apply_to(
-            self, wrt=self.z_bar, nfe=self.config.NFEz, scheme="BACKWARD"
+            self,
+            wrt=self.dimensionless_membrane_thickness,
+            nfe=self.config.NFE_membrane_thickness,
+            scheme="BACKWARD",
         )
 
     def fix_initial_values(self):
         """
         Fix initial values for the two salt diafiltration unit model.
         """
-        for x in self.x_bar:
+        for x in self.dimensionless_module_length:
             # chloride concentration gradient in retentate variable is created by default but
             # is not needed in model; fix to reduce number of variables
             self.d_retentate_conc_mol_comp_dx[0, x, "Cl"].fix(
@@ -1210,7 +1244,7 @@ and used when constructing these,
         self.permeate_conc_mol_comp[0, 0, "Co"].fix(
             value(self.numerical_zero_tolerance)
         )
-        for z in self.z_bar:
+        for z in self.dimensionless_membrane_thickness:
             self.membrane_conc_mol_lithium[0, z].fix(
                 value(self.numerical_zero_tolerance)
             )
@@ -1242,7 +1276,7 @@ and used when constructing these,
         self.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
         # Add scaling factors for poorly scaled variables
-        for x in self.x_bar:
+        for x in self.dimensionless_module_length:
             if x != 0:
                 self.scaling_factor[self.retentate_flow_volume[0, x]] = 1e-2
                 self.scaling_factor[self.permeate_flow_volume[0, x]] = 1e-2
@@ -1252,7 +1286,7 @@ and used when constructing these,
                 self.scaling_factor[self.mol_flux_cobalt[x]] = 1e-1
                 self.scaling_factor[self.mol_flux_chloride[x]] = 1e-2
 
-            for z in self.z_bar:
+            for z in self.dimensionless_membrane_thickness:
                 self.scaling_factor[self.D_lithium_lithium[x, z]] = 1e6
                 self.scaling_factor[self.D_lithium_cobalt[x, z]] = 1e7
                 self.scaling_factor[self.D_cobalt_lithium[x, z]] = 1e7
@@ -1280,20 +1314,20 @@ and used when constructing these,
 
         self.retentate_outlet = Port(doc="Retentate Outlet Port")
         self._retentate_flow_volume_ref = Reference(
-            self.retentate_flow_volume[:, self.x_bar.last()]
+            self.retentate_flow_volume[:, self.dimensionless_module_length.last()]
         )
         self.retentate_outlet.add(self._retentate_flow_volume_ref, "flow_vol")
         self._retentate_conc_mol_comp_ref = Reference(
-            self.retentate_conc_mol_comp[:, self.x_bar.last(), :]
+            self.retentate_conc_mol_comp[:, self.dimensionless_module_length.last(), :]
         )
         self.retentate_outlet.add(self._retentate_conc_mol_comp_ref, "conc_mol_comp")
 
         self.permeate_outlet = Port(doc="Permeate Outlet Port")
         self._permeate_flow_volume_ref = Reference(
-            self.permeate_flow_volume[:, self.x_bar.last()]
+            self.permeate_flow_volume[:, self.dimensionless_module_length.last()]
         )
         self.permeate_outlet.add(self._permeate_flow_volume_ref, "flow_vol")
         self._permeate_conc_mol_comp_ref = Reference(
-            self.permeate_conc_mol_comp[:, self.x_bar.last(), :]
+            self.permeate_conc_mol_comp[:, self.dimensionless_module_length.last(), :]
         )
         self.permeate_outlet.add(self._permeate_conc_mol_comp_ref, "conc_mol_comp")

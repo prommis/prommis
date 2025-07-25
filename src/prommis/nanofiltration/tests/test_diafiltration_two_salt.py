@@ -44,8 +44,8 @@ def test_zero_chi_implementation():
 
     m.fs.unit = TwoSaltDiafiltration(
         property_package=m.fs.properties,
-        NFEx=10,
-        NFEz=5,
+        NFE_module_length=10,
+        NFE_membrane_thickness=5,
         charged_membrane=False,
     )
 
@@ -61,8 +61,8 @@ def test_zero_chi_implementation():
     assert m.fs.unit.convection_params_lithium == [1, 0, 0]
     assert m.fs.unit.convection_params_cobalt == [1, 0, 0]
 
-    m.fs.unit.membrane_width.fix(4)
-    m.fs.unit.membrane_length.fix(40)
+    m.fs.unit.total_module_length.fix(4)
+    m.fs.unit.total_membrane_length.fix(40)
     m.fs.unit.applied_pressure.fix(15)
 
     dt = DiagnosticsToolbox(m.fs.unit)
@@ -127,8 +127,8 @@ def diafiltration_two_salt():
 
     m.fs.unit = TwoSaltDiafiltration(
         property_package=m.fs.properties,
-        NFEx=10,
-        NFEz=5,
+        NFE_module_length=10,
+        NFE_membrane_thickness=5,
         charged_membrane=True,
     )
 
@@ -146,8 +146,8 @@ def diafiltration_two_salt():
 
     assert degrees_of_freedom(m.fs.unit) == 3
 
-    m.fs.unit.membrane_width.fix(4)
-    m.fs.unit.membrane_length.fix(40)
+    m.fs.unit.total_module_length.fix(4)
+    m.fs.unit.total_membrane_length.fix(40)
     m.fs.unit.applied_pressure.fix(15)
 
     assert degrees_of_freedom(m.fs.unit) == 0
@@ -166,8 +166,8 @@ def test_config(diafiltration_two_salt):
         diafiltration_two_salt.fs.unit.config.property_package
         is diafiltration_two_salt.fs.properties
     )
-    assert diafiltration_two_salt.fs.unit.config.NFEx is 10
-    assert diafiltration_two_salt.fs.unit.config.NFEz is 5
+    assert diafiltration_two_salt.fs.unit.config.NFE_module_length is 10
+    assert diafiltration_two_salt.fs.unit.config.NFE_membrane_thickness is 5
     assert diafiltration_two_salt.fs.unit.config.charged_membrane is True
 
 
@@ -181,8 +181,10 @@ class TestDiafiltrationTwoSalt(object):
         )
         assert value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance) == 1e-10
 
-        assert isinstance(diafiltration_two_salt.fs.unit.membrane_thickness, Param)
-        assert value(diafiltration_two_salt.fs.unit.membrane_thickness) == 1e-7
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.total_membrane_thickness, Param
+        )
+        assert value(diafiltration_two_salt.fs.unit.total_membrane_thickness) == 1e-7
 
         assert isinstance(diafiltration_two_salt.fs.unit.membrane_fixed_charge, Param)
         assert value(diafiltration_two_salt.fs.unit.membrane_fixed_charge) == -140
@@ -194,11 +196,16 @@ class TestDiafiltrationTwoSalt(object):
         assert value(diafiltration_two_salt.fs.unit.temperature) == 298
 
         # sets
-        assert isinstance(diafiltration_two_salt.fs.unit.x_bar, ContinuousSet)
-        assert len(diafiltration_two_salt.fs.unit.x_bar) == 11
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.dimensionless_module_length, ContinuousSet
+        )
+        assert len(diafiltration_two_salt.fs.unit.dimensionless_module_length) == 11
 
-        assert isinstance(diafiltration_two_salt.fs.unit.z_bar, ContinuousSet)
-        assert len(diafiltration_two_salt.fs.unit.z_bar) == 6
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.dimensionless_membrane_thickness,
+            ContinuousSet,
+        )
+        assert len(diafiltration_two_salt.fs.unit.dimensionless_membrane_thickness) == 6
 
         assert isinstance(diafiltration_two_salt.fs.unit.time, Set)
         assert len(diafiltration_two_salt.fs.unit.time) == 1
@@ -207,11 +214,11 @@ class TestDiafiltrationTwoSalt(object):
         assert len(diafiltration_two_salt.fs.unit.solutes) == 3
 
         # variables
-        assert isinstance(diafiltration_two_salt.fs.unit.membrane_width, Var)
-        assert len(diafiltration_two_salt.fs.unit.membrane_width) == 1
+        assert isinstance(diafiltration_two_salt.fs.unit.total_module_length, Var)
+        assert len(diafiltration_two_salt.fs.unit.total_module_length) == 1
 
-        assert isinstance(diafiltration_two_salt.fs.unit.membrane_length, Var)
-        assert len(diafiltration_two_salt.fs.unit.membrane_length) == 1
+        assert isinstance(diafiltration_two_salt.fs.unit.total_membrane_length, Var)
+        assert len(diafiltration_two_salt.fs.unit.total_membrane_length) == 1
 
         assert isinstance(diafiltration_two_salt.fs.unit.applied_pressure, Var)
         assert len(diafiltration_two_salt.fs.unit.applied_pressure) == 1
@@ -454,7 +461,7 @@ class TestDiafiltrationTwoSalt(object):
         )
         assert len(diafiltration_two_salt.fs.unit.electroneutrality_membrane) == 60
 
-        for x in diafiltration_two_salt.fs.unit.x_bar:
+        for x in diafiltration_two_salt.fs.unit.dimensionless_module_length:
             assert diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[
                 0, x, "Cl"
             ].fixed
@@ -520,7 +527,7 @@ class TestDiafiltrationTwoSalt(object):
             diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 0, "Co"]
         ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
-        for z in diafiltration_two_salt.fs.unit.z_bar:
+        for z in diafiltration_two_salt.fs.unit.dimensionless_membrane_thickness:
             assert diafiltration_two_salt.fs.unit.membrane_conc_mol_lithium[0, z].fixed
             assert value(
                 diafiltration_two_salt.fs.unit.membrane_conc_mol_lithium[0, z]

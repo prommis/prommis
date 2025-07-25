@@ -49,7 +49,7 @@ Combustion of organic elements is modeled as follows:
 - :ce:`N -> 0.5 N2`
 - :ce:`S + O2 -> SO2`
 
-The reactions of insoluable rare earth mineral represented by :ce:`RE2X` to dissovable rare earth oxide :ce:`RE2O3` and
+The reactions of insoluble rare earth mineral represented by :ce:`RE2X` to dissovable rare earth oxide :ce:`RE2O3` and
 inert rare earth mineral (never leachable) :ce:`Ree2X` are through two parallel competing reactions.
 
    .. ce::
@@ -76,7 +76,7 @@ A property package named ReeFeedParameters should be used to represent the solid
 Impurity minerals are assumed to be a mixture of :ce:`SiO2`, :ce:`Al2O3`, `kaolinite`, :ce:`CaCO3`, :ce:`CaO`, `pyrite` (:ce:`FeS2`),
 and :ce:`Fe2O3`. The solid feed material also contains moisture and organic material including :ce:`C`, :ce:`H`, :ce:`O`,
 :ce:`N`, :ce:`S` elements. The composition of the organic material is specified by the user.
-The insoluable rare earth mineral is represented as RE2X in the ReeFeedParameters property package where RE stands for
+The insoluble rare earth mineral is represented as RE2X in the ReeFeedParameters property package where RE stands for
 a rare earth element. The dissovable rare earth mineral is represented as RE2O3 in the ReeFeedParameters property package
 where RE stands for a rare earth element. After roasting, the solid product stream does not contain moisture and organic elements.
 A property package named ReeRoastParameters is used to represent the solid product.

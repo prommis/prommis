@@ -148,8 +148,8 @@ class ReeRoastParameterData(PhysicalParameterBlock):
         self.CaO = Component()
         self.Fe2O3 = Component()
 
-        # REE Salt (Insoluable)
-        # Ree2X represented the roasting product that is insoluable
+        # REE Salt (insoluble)
+        # Ree2X represented the roasting product that is insoluble
         self.Ree2X = Component()
         self.Sc2X = Component()
         self.Y2X = Component()

@@ -168,10 +168,10 @@ class ReeFeedParameterData(PhysicalParameterBlock):
         self.FeS2 = Component()
         self.Fe2O3 = Component()
 
-        # REE Salt (Insoluable)
-        # Ree2X is the product of roasting that is Insoluable
+        # REE Salt (Insoluble)
+        # Ree2X is the product of roasting that is insoluble
         self.Ree2X = Component()
-        # Other salt is assumed insoluable but can be converted to Ree2X and oxides
+        # Other salt is assumed insoluble but can be converted to Ree2X and oxides
         self.Sc2X = Component()
         self.Y2X = Component()
         self.La2X = Component()

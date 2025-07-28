@@ -138,6 +138,7 @@ using advanced separation processes", 2019
 
 """
 
+from warnings import warn
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
@@ -879,31 +880,26 @@ def set_operating_conditions(m):
     m.fs.leach_sx_mixer.mixed_state[0.0].temperature.fix(Temp_room)
 
     m.fs.solex_rougher_load.mscontactor.volume[:].fix(0.4 * units.m**3)
-    m.fs.solex_rougher_load.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex_rougher_load.area_cross_stage[:] = 1
     m.fs.solex_rougher_load.elevation[:] = 0
     m.fs.solex_rougher_load.mscontactor.aqueous[0.0, 3].temperature.fix(Temp_room)
     m.fs.solex_rougher_load.mscontactor.organic[0.0, 1].temperature.fix(Temp_room)
     m.fs.solex_rougher_scrub.mscontactor.volume[:].fix(0.4 * units.m**3)
-    m.fs.solex_rougher_scrub.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex_rougher_scrub.area_cross_stage[:] = 1
     m.fs.solex_rougher_scrub.elevation[:] = 0
     m.fs.solex_rougher_scrub.mscontactor.aqueous[0.0, 1].temperature.fix(Temp_room)
     m.fs.solex_rougher_scrub.mscontactor.organic[0.0, 1].temperature.fix(Temp_room)
     m.fs.solex_rougher_strip.mscontactor.volume[:].fix(0.4 * units.m**3)
-    m.fs.solex_rougher_strip.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex_rougher_strip.area_cross_stage[:] = 1
     m.fs.solex_rougher_strip.elevation[:] = 0
     m.fs.solex_rougher_strip.mscontactor.organic[0.0, 2].temperature.fix(Temp_room)
     m.fs.solex_rougher_strip.mscontactor.aqueous[0.0, 1].temperature.fix(Temp_room)
     m.fs.solex_cleaner_load.mscontactor.volume[:].fix(0.4 * units.m**3)
-    m.fs.solex_cleaner_load.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex_cleaner_load.area_cross_stage[:] = 1
     m.fs.solex_cleaner_load.elevation[:] = 0
     m.fs.solex_cleaner_load.mscontactor.aqueous[0.0, 3].temperature.fix(Temp_room)
     m.fs.solex_cleaner_load.mscontactor.organic[0.0, 1].temperature.fix(Temp_room)
     m.fs.solex_cleaner_strip.mscontactor.volume[:].fix(0.4 * units.m**3)
-    m.fs.solex_cleaner_strip.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex_cleaner_strip.area_cross_stage[:] = 1
     m.fs.solex_cleaner_strip.elevation[:] = 0
     m.fs.solex_cleaner_strip.mscontactor.organic[0.0, 3].temperature.fix(Temp_room)
@@ -2862,3 +2858,9 @@ def display_costing(m):
 
 if __name__ == "__main__":
     m, results = main()
+    warn(
+        "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
+    )
+    warn(
+        "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
+    )

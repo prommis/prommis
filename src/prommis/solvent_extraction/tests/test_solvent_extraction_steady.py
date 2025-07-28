@@ -4,6 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+
 from pyomo.environ import check_optimal_termination, value
 
 from idaes.core.initialization import InitializationStatus
@@ -13,17 +14,20 @@ from idaes.core.util import DiagnosticsToolbox
 import pytest
 
 from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer
-from prommis.solvent_extraction.solvent_extraction_steady import main
+from prommis.solvent_extraction.solvent_extraction_steady import (
+    main,
+    model_buildup_and_set_inputs,
+)
 
 solver = get_solver()
 
 
-class TestSXmodel:
+class Test_Solvent_Extraction_steady_model:
     @pytest.fixture(scope="class")
     def SolEx_frame(self):
         dosage = 5
         number_of_stages = 3
-        m = main(dosage, number_of_stages)
+        m = model_buildup_and_set_inputs(dosage, number_of_stages)
 
         return m
 
@@ -36,7 +40,8 @@ class TestSXmodel:
     @pytest.mark.component
     def test_initialization(self, SolEx_frame):
         model = SolEx_frame
-        initializer = SolventExtractionInitializer()
+        initializer = model.fs.solex.default_initializer()
+        assert model.fs.solex.default_initializer is SolventExtractionInitializer
         initializer.initialize(model.fs.solex)
 
         assert initializer.summary[model.fs.solex]["status"] == InitializationStatus.Ok
@@ -80,7 +85,7 @@ class TestSXmodel:
             "Pr": 0.27631,
             "Sc": 0.0027415,
             "Sm": 0.08669,
-            "Y": 4.27516e-06,
+            "Y": 4.27601e-06,
         }
 
         organic_outlet = {
@@ -105,3 +110,16 @@ class TestSXmodel:
 
         for k, v in model.fs.solex.aqueous_outlet.conc_mass_comp.items():
             assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)
+
+    @pytest.fixture(scope="class")
+    def SolEx_total_flowsheet(self):
+        dosage = 5
+        number_of_stages = 3
+        model, results = main(dosage, number_of_stages)
+
+        return model, results
+
+    @pytest.mark.component
+    def test_solve_total(self, SolEx_total_flowsheet):
+        m, results = SolEx_total_flowsheet
+        assert check_optimal_termination(results)

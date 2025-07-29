@@ -137,7 +137,7 @@ References:
 using advanced separation processes", 2019
 
 """
-
+import logging
 from warnings import warn
 from pyomo.environ import (
     ConcreteModel,

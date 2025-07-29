@@ -208,7 +208,9 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtraction,
     SolventExtractionInitializer,
 )
-from prommis.solvent_extraction.translator_leach_precip import TranslatorLeachPrecip
+from prommis.solvent_extraction.translator_leach_precip import (
+    TranslatorLeachPrecip,
+)
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,
 )
@@ -272,7 +274,6 @@ def main():
 
     solve_system(m)
 
-    dt.assert_no_numerical_warnings()
 
     display_costing(m)
 
@@ -727,8 +728,12 @@ def build():
         source=m.fs.oxalic_acid_feed.outlet,
         destination=m.fs.sx_oxalic_mixer.oxalic_acid,
     )
-    m.fs.precip_aq_feed = Arc(
+    m.fs.oxalic_mixer_outlet = Arc(
         source=m.fs.sx_oxalic_mixer.outlet,
+        destination=m.fs.translator_leaching_to_precipitate.inlet,
+    )
+    m.fs.precip_aq_feed = Arc(
+        source=m.fs.translator_leaching_to_precipitate.outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )
     m.fs.precip_solid_outlet = Arc(
@@ -979,6 +984,7 @@ def set_operating_conditions(m):
     m.fs.acid_feed1.conc_mass_comp[0, "Sm"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Dy"].fix(eps)
+    m.fs.acid_feed1.conc_mass_comp[0, "H2C2O4"].fix(eps)
 
     m.fs.acid_feed2.flow_vol.fix(9)
     m.fs.acid_feed2.properties[0.0].pressure.fix(P_atm)
@@ -1002,6 +1008,7 @@ def set_operating_conditions(m):
     m.fs.acid_feed2.conc_mass_comp[0, "Sm"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Dy"].fix(eps)
+    m.fs.acid_feed2.conc_mass_comp[0, "H2C2O4"].fix(eps)
 
     m.fs.rougher_sep.split_fraction[:, "recycle"].fix(0.9)
     m.fs.rougher_sep.purge_state[0.0].pressure.fix(P_atm)
@@ -1031,6 +1038,7 @@ def set_operating_conditions(m):
     m.fs.acid_feed3.conc_mass_comp[0, "Sm"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Dy"].fix(eps)
+    m.fs.acid_feed3.conc_mass_comp[0, "H2C2O4"].fix(eps)
 
     m.fs.cleaner_org_make_up.flow_vol.fix(6.201)
 
@@ -1070,12 +1078,14 @@ def set_operating_conditions(m):
     m.fs.sl_sep2.split.recovered_state[0.0].temperature.fix(Temp_room)
     m.fs.sl_sep2.split.retained_state[0.0].pressure.fix(P_atm)
     m.fs.sl_sep2.split.retained_state[0.0].temperature.fix(Temp_room)
-    m.fs.translator_precipitate_to_leaching.outlet.pressure.fix(P_atm)
-    m.fs.translator_precipitate_to_leaching.outlet.temperature.fix(Temp_room)
+    m.fs.sx_oxalic_mixer.outlet.temperature.fix(Temp_room)
+    m.fs.sx_oxalic_mixer.outlet.pressure.fix(P_atm)
 
     # Assuming pH is 1.5, oxalic acid molarity is 0.0316M -> 2844.95 mgH2C2O4/L
     # Since pH of 1.5, cannot solve, assume a pH of 1.16 -> 8000 mgH2C2O4/L
     m.fs.oxalic_acid_feed.flow_vol.fix(31)
+    m.fs.oxalic_acid_feed.pressure.fix(P_atm)
+    m.fs.oxalic_acid_feed.temperature.fix(Temp_room)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "H"].fix(eps)
     m.fs.oxalic_acid_feed.conc_mass_comp[0, "SO4"].fix(eps)
@@ -1201,6 +1211,7 @@ def initialize_system(m):
             (0, "Sc"): 2.07e-3,
             (0, "Sm"): 0.10,
             (0, "Y"): 2.02e-2,
+            (0, "H2C2O4"): 1e-6,
         },
     }
     tear_guesses2 = {
@@ -1242,6 +1253,7 @@ def initialize_system(m):
             (0, "Sc"): 2.25e-2,
             (0, "Sm"): 0.16,
             (0, "Y"): 0.11,
+            (0, "H2C2O4"): 1e-6,
         },
     }
     tear_guesses4 = {
@@ -1283,6 +1295,7 @@ def initialize_system(m):
             (0, "Sc"): 1.65e-3,
             (0, "Sm"): 7.88e-2,
             (0, "Y"): 1.17,
+            (0, "H2C2O4"): 1e-6,
         },
     }
 

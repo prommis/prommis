@@ -438,7 +438,7 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
         "fe": "Iron",
         "gd": "Gadolinium",
         "la": "Lanthanum",
-        "nd": "Neodynium",
+        "nd": "Neodymium",
         "pr": "Praseodymium",
         "sc": "Scandium",
         "sm": "Samarium",

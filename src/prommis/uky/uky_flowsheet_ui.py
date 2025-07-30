@@ -415,7 +415,7 @@ def build_flowsheet(build_options=None, **kwargs):
 
 
 def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
-    fs = flowsheet  # alias
+    fs = flowsheet
     data = calculate_results(fs)
 
     def round_recoveries(value):
@@ -438,7 +438,7 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
         "fe": "Iron",
         "gd": "Gadolinium",
         "la": "Lanthanum",
-        "nd": "Neodynium",
+        "nd": "Neodymium",
         "pr": "Praseodymium",
         "sc": "Scandium",
         "sm": "Samarium",
@@ -472,12 +472,15 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
         name="roaster-prod",
         values=roaster_values,
         labels=roaster_labels,
-        title="Roaster Product",
+        title="Roaster Product (mass fraction)",
         total_label="Elements",
         units="mass fraction",
     )
 
-    exports.set_kpi_default_options(stack=False, total_type="donut")
+    exports.set_kpi_default_options(
+        total_type="donut"  # draw part-of-whole graphs as donut charts
+        # the other option is "waffle"
+    )
 
 
 def get_diagram(build_options):

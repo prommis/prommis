@@ -258,6 +258,10 @@ def main():
             "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
         )
 
+    print("Testing Results")
+    # scaled_model.fs.precipitator.aqueous_outlet.display()
+    scaled_model.fs.precipitator.precipitate_outlet.display()
+
     results = scaling.propagate_solution(scaled_model, m)
 
     display_results(m)
@@ -273,7 +277,6 @@ def main():
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
 
     solve_system(m)
-
 
     display_costing(m)
 
@@ -815,16 +818,6 @@ def set_scaling(m):
         scheme=ConstraintScalingScheme.inverseMaximum,
         overwrite=False,
     )
-    csb.scale_constraint_by_nominal_value(
-        m.fs.roaster.energy_balance_eqn[0],
-        scheme=ConstraintScalingScheme.inverseMaximum,
-        overwrite=False,
-    )
-    # csb.scale_constraint_by_nominal_value(
-    #     m.fs.precipitator.aqueous_depletion[0, "H2O"],
-    #     scheme=ConstraintScalingScheme.inverseMaximum,
-    #     overwrite=False,
-    # )
 
     # Apply scaling to variables
     sb.set_variable_scaling_factor(m.fs.roaster.heat_duty[0], 1e-2)
@@ -1192,7 +1185,7 @@ def initialize_system(m):
         print(o[0].name)
 
     tear_guesses1 = {
-        "flow_vol": {0: 866.06},
+        "flow_vol": {0: 926.156},  # 926.1561
         "conc_mass_comp": {
             (0, "Al"): 207.46,
             (0, "Ca"): 40.23,
@@ -1211,7 +1204,7 @@ def initialize_system(m):
             (0, "Sc"): 2.07e-3,
             (0, "Sm"): 0.10,
             (0, "Y"): 2.02e-2,
-            (0, "H2C2O4"): 1e-6,
+            (0, "H2C2O4"): 502.51,
         },
     }
     tear_guesses2 = {
@@ -1253,7 +1246,7 @@ def initialize_system(m):
             (0, "Sc"): 2.25e-2,
             (0, "Sm"): 0.16,
             (0, "Y"): 0.11,
-            (0, "H2C2O4"): 1e-6,
+            (0, "H2C2O4"): 749.628,
         },
     }
     tear_guesses4 = {
@@ -1276,7 +1269,7 @@ def initialize_system(m):
         },
     }
     tear_guesses5 = {
-        "flow_vol": {0: 16.70},
+        "flow_vol": {0: 30},
         "conc_mass_comp": {
             (0, "Al"): 2.42,
             (0, "Ca"): 0.68,
@@ -1295,7 +1288,7 @@ def initialize_system(m):
             (0, "Sc"): 1.65e-3,
             (0, "Sm"): 7.88e-2,
             (0, "Y"): 1.17,
-            (0, "H2C2O4"): 1e-6,
+            (0, "H2C2O4"): 4781.93,
         },
     }
 

@@ -1344,6 +1344,11 @@ def initialize_system(m):
         m.fs.solex_cleaner_strip,
     ]
 
+    initializer_precip = OxalatePrecipitatorInitializer()
+    precip_units = [
+        m.fs.precipitator,
+    ]
+
     initializer_bt = BlockTriangularizationInitializer()
 
     def function(unit):
@@ -1365,6 +1370,9 @@ def initialize_system(m):
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
+        elif unit in precip_units:
+            _log.info(f"Initializing {unit}")
+            initializer_precip.initialize(unit)
         else:
             _log.info(f"Initializing {unit}")
             initializer_bt.initialize(unit)

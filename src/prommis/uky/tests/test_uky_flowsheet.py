@@ -351,13 +351,13 @@ def test_solution(system_frame):
     ].value == pytest.approx(39.537047, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "H2C2O4"
-    ].value == pytest.approx(4.293345e-6, 1e-4)
+    ].value == pytest.approx(4.29229e-6, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "SO4"
-    ].value == pytest.approx(5.698696e-6, 1e-4)
+    ].value == pytest.approx(5.69768e-6, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "HSO4"
-    ].value == pytest.approx(5.879417e-6, 1e-4)
+    ].value == pytest.approx(5.877826e-6, 1e-4)
     assert model.fs.solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "Al"
     ].value == pytest.approx(3.3969304, 1e-4)
@@ -466,13 +466,13 @@ def test_solution(system_frame):
     ].value == pytest.approx(41.10369, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "H2C2O4"
-    ].value == pytest.approx(6.02203e-6, 1e-4)
+    ].value == pytest.approx(6.02067e-6, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "H2O"
     ].value == pytest.approx(1000000.0, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "HSO4"
-    ].value == pytest.approx(2.832189e-5, 1e-4)
+    ].value == pytest.approx(2.831812e-5, 1e-4)
     assert model.fs.solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp[
         0, "SO4"
     ].value == pytest.approx(2.734739e-5, 1e-4)
@@ -527,10 +527,10 @@ def test_solution(system_frame):
     ].value == pytest.approx(1000000.0, 1e-4)
     assert model.fs.precipitator.aqueous_outlet.conc_mass_comp[
         0, "HSO4"
-    ].value == pytest.approx(7.41622e-6, 1e-4)
+    ].value == pytest.approx(7.414938e-6, 1e-4)
     assert model.fs.precipitator.aqueous_outlet.conc_mass_comp[
         0, "SO4"
-    ].value == pytest.approx(7.259714e-6, 1e-4)
+    ].value == pytest.approx(7.258652e-6, 1e-4)
     assert model.fs.precipitator.aqueous_outlet.conc_mass_comp[
         0, "La"
     ].value == pytest.approx(0.001157344, 1e-4)
@@ -542,7 +542,7 @@ def test_solution(system_frame):
     ].value == pytest.approx(3.42338e-5, 1e-4)
     assert model.fs.precipitator.aqueous_outlet.conc_mass_comp[
         0, "Sc"
-    ].value == pytest.approx(4.76e-6, 1e-4)
+    ].value == pytest.approx(4.759513e-6, 1e-4)
     assert model.fs.precipitator.aqueous_outlet.conc_mass_comp[
         0, "Sm"
     ].value == pytest.approx(0.000174336, 1e-4)

@@ -735,7 +735,7 @@ def build():
         source=m.fs.sx_oxalic_mixer.outlet,
         destination=m.fs.translator_leaching_to_precipitate.inlet,
     )
-    m.fs.precip_aq_feed = Arc(
+    m.fs.precip_aq_inlet = Arc(
         source=m.fs.translator_leaching_to_precipitate.outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )

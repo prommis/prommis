@@ -114,7 +114,9 @@ class Test_Mixer_Settler_Ex_dynamic_model:
         for k, v in model.fs.mixer_settler_ex.aqueous_outlet.conc_mass_comp.items():
             if k[0] == time_duration:
                 print(f"k is {k}")
-                assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4, abs=1e-5)
+                assert value(v) == pytest.approx(
+                    aqueous_outlet[k[1]], rel=1e-4, abs=1e-5
+                )
 
     @pytest.fixture(scope="class")
     def Mix_Settle_Ex_total_flowsheet(self):

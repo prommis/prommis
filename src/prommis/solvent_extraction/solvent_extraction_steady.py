@@ -194,4 +194,3 @@ number_of_stages = 3
 
 if __name__ == "__main__":
     m, results = main(dosage, number_of_stages)
-    m.fs.solex.aqueous_outlet.display()

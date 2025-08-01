@@ -180,6 +180,7 @@ def set_inputs(m, perturb_time):
     m.fs.leach.mscontactor.liquid[0, :].flow_vol.fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["H"].fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["HSO4"].fix()
+    m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["H2C2O4"].fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["Cl"].fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["Sc"].fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["Y"].fix()
@@ -318,3 +319,5 @@ if __name__ == "__main__":
     plt.title("Solid mass flow rate variation wrt time")
     plt.xlabel("Time (h)")
     plt.ylabel("Solid mass flow rate (kg/h)")
+
+    m.fs.leach.recovery.display()

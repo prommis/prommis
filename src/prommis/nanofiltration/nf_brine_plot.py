@@ -95,7 +95,7 @@ def main():
         )
         print_information(m)
 
-    # create the sensitvity analysis plots using the data collected above
+    # create the sensitivity analysis plots using the data collected above
     plot(
         area,
         li_rejection,

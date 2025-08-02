@@ -103,6 +103,10 @@ sections = "FUTURE,STDLIB,PYOMO,IDAES,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
 extend-exclude = [
     "*.svg",
     "*.json",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "uky_example.ipynb",
 ]
 
 [tool.typos.default.extend-words]
@@ -115,8 +119,9 @@ Theis = "Theis"
 # Atomic elements
 Nd = "Nd"
 Ba = "Ba"
+
 [tool.typos.default]
 extend-ignore-re = [
     # Jupyter notebooks: ignore hexadecimal values in "id" cell metadata field
-    '"id": "[0-9a-f]+",'
+    '"id": "[0-9a-f]+",',
 ]

@@ -13,7 +13,9 @@ Author: Chris Laliwala
 
 import pyomo.environ as pyo
 from pyomo.environ import units as pyunits
-from prommis.superstructure.objective_function_enums import ObjectiveFunction
+
+from idaes.core.scaling import CustomScalerBase
+
 from prommis.superstructure.add_superstructure_blocks import (
     add_byproduct_valorization_cons,
     add_byproduct_valorization_params,
@@ -31,9 +33,9 @@ from prommis.superstructure.add_superstructure_blocks import (
     add_mass_balance_cons,
     add_mass_balance_params,
     add_mass_balance_vars,
+    add_objective_function_choice_param,
     add_operating_cost_cons,
     add_operating_params,
-    add_objective_function_choice_param,
     add_plant_lifetime_params,
     add_profit_cons,
     add_supe_formulation_params,
@@ -48,8 +50,6 @@ from prommis.superstructure.check_superstructure_inputs import (
     check_plant_lifetime_params,
     check_supe_formulation_params,
 )
-from idaes.core.scaling import CustomScalerBase, set_scaling_factor, get_scaling_factor
-from prommis.superstructure.objective_function_enums import ObjectiveFunction
 
 
 class SuperstructureScaler(CustomScalerBase):
@@ -540,15 +540,13 @@ def build_model(
     # Check that plant lifetime parameters are feasible.
     check_plant_lifetime_params(plant_start, plant_lifetime)
     # Create separate block to hold plant lifetime parameters.
-    add_plant_lifetime_params_block(m, plant_start, plant_lifetime)
+    add_plant_lifetime_params(m, plant_start, plant_lifetime)
 
     ### Feed parameters
     # Check that feed parameters are feasible.
     check_feed_params(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
     # Create separate block to hold feed parameters.
-    add_feed_params_block(
-        m, available_feed, collection_rate, tracked_comps, prod_comp_mass
-    )
+    add_feed_params(m, available_feed, collection_rate, tracked_comps, prod_comp_mass)
 
     ### Superstructure formulation parameters
     # Check that superstructure formulation parameters are feasible.

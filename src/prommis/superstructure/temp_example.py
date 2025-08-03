@@ -1,15 +1,15 @@
-import pyomo.environ as pyo
-from pyomo.util.check_units import assert_units_consistent
-from idaes.core.util import DiagnosticsToolbox
-from idaes.core.scaling.util import report_scaling_factors
+# import pyomo.environ as pyo
+# from pyomo.util.check_units import assert_units_consistent
 
+# from idaes.core.scaling.util import report_scaling_factors
 from idaes.core.solvers import get_solver
+# from idaes.core.util import DiagnosticsToolbox
 
 from prommis.superstructure.superstructure_function import (
-    build_model,
+    ObjectiveFunction,
     SuperstructureScaler,
+    build_model,
 )
-from prommis.superstructure.superstructure_function import ObjectiveFunction
 
 #################################################################################################
 ### Choice of objectie function

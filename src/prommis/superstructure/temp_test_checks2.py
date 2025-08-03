@@ -2,6 +2,7 @@
 # from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core.scaling.util import report_scaling_factors
+
 # from idaes.core.solvers import get_solver
 # from idaes.core.util import DiagnosticsToolbox
 

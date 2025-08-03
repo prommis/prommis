@@ -687,7 +687,7 @@ def add_costing_vars(m):
     # if NPV is objective function, build relevant vars
     if (
         pyo.value(m.fs.objective_function_choice)
-        == ObjectiveFunction.net_present_value.value
+        == ObjectiveFunction.NET_PRESENT_VALUE.value
     ):
         m.fs.costing.opt_profit = pyo.Var(
             m.fs.final_opts_set,
@@ -992,7 +992,7 @@ def add_profit_cons(m, consider_byproduct_valorization: bool):
     # Check if NPV is objective function
     if (
         pyo.value(m.fs.objective_function_choice)
-        == ObjectiveFunction.net_present_value.value
+        == ObjectiveFunction.NET_PRESENT_VALUE.value
     ):
 
         @m.fs.costing.Constraint(
@@ -1035,7 +1035,7 @@ def add_profit_cons(m, consider_byproduct_valorization: bool):
         # Check if NPV is objective function
         if (
             pyo.value(m.fs.objective_function_choice)
-            == ObjectiveFunction.net_present_value.value
+            == ObjectiveFunction.NET_PRESENT_VALUE.value
         ):
             # Add profit constraint for when byproduct valorization is considered if so.
             @m.fs.costing.Constraint(
@@ -1074,7 +1074,7 @@ def add_profit_cons(m, consider_byproduct_valorization: bool):
         # Check if NPV is objective function
         if (
             pyo.value(m.fs.objective_function_choice)
-            == ObjectiveFunction.net_present_value.value
+            == ObjectiveFunction.NET_PRESENT_VALUE.value
         ):
 
             @m.fs.costing.Constraint(
@@ -1509,7 +1509,7 @@ def add_costing_objective_functions(m, obj_func: str):
     # Check if NPV is objective function
     if (
         pyo.value(m.fs.objective_function_choice)
-        == ObjectiveFunction.net_present_value.value
+        == ObjectiveFunction.NET_PRESENT_VALUE.value
     ):
         # set objective function
         m.fs.costing.obj = pyo.Objective(

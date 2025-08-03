@@ -4,13 +4,14 @@
 # from idaes.core.scaling.util import report_scaling_factors
 from idaes.core.solvers import get_solver
 
-# from idaes.core.util import DiagnosticsToolbox
-
 from prommis.superstructure.superstructure_function import (
     ObjectiveFunction,
     SuperstructureScaler,
     build_model,
 )
+
+# from idaes.core.util import DiagnosticsToolbox
+
 
 #################################################################################################
 ### Choice of objectie function

@@ -19,5 +19,5 @@ class ObjectiveFunction(Enum):
     Enum of supported objective functions
     """
 
-    net_present_value = 1
-    cost_of_recovery = 2
+    NET_PRESENT_VALUE = 1
+    COST_OF_RECOVERY = 2

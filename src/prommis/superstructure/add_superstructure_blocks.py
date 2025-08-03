@@ -17,8 +17,24 @@ import math
 import pyomo.environ as pyo
 from pyomo.environ import units as pyunits
 
+from prommis.superstructure.objective_function_enums import ObjectiveFunction
 
-def add_plant_lifetime_params_block(m, plant_start, plant_lifetime):
+
+def add_objective_function_choice_param(m, obj_func):
+    """
+    This function adds the choice of objective function as a parameter.
+    """
+    ### Define parameters from user input.
+    ## Create block
+    m.fs = pyo.Block(doc="Main flowsheet.")
+    m.fs.objective_function_choice = pyo.Param(
+        initialize=obj_func.value,
+        mutable=True,
+        doc="Choice of objective function (by integer value from Enum). 1 is net_present_value, 2 is cost_of_recovery.",
+    )
+
+
+def add_plant_lifetime_params(m, plant_start, plant_lifetime):
     """
     This function builds the rest of the plant lifetime parameters from the ones provided by the user.
 
@@ -34,8 +50,6 @@ def add_plant_lifetime_params_block(m, plant_start, plant_lifetime):
     plant_end = plant_start + plant_lifetime - 1
 
     ### Define necessary pyomo parameters.
-    ## Create block
-    m.fs = pyo.Block(doc="Main flowsheet.")
     ## Pyomo parameters
     m.fs.plant_start = pyo.Param(
         initialize=plant_start,
@@ -59,9 +73,7 @@ def add_plant_lifetime_params_block(m, plant_start, plant_lifetime):
     )
 
 
-def add_feed_params_block(
-    m, available_feed, collection_rate, tracked_comps, prod_comp_mass
-):
+def add_feed_params(m, available_feed, collection_rate, tracked_comps, prod_comp_mass):
     """
     This function builds the rest of the feed parameters from the ones provided by the user.
 
@@ -644,7 +656,7 @@ def add_costing_params(m):
     )
 
 
-def add_costing_vars(m, obj_func: str):
+def add_costing_vars(m):
     """
     This function builds the costing variables.
 
@@ -670,11 +682,13 @@ def add_costing_vars(m, obj_func: str):
 
     Args:
         m: pyomo model.
-        obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
     """
     ## Pyomo variables
     # if NPV is objective function, build relevant vars
-    if obj_func == "NPV":
+    if (
+        pyo.value(m.fs.objective_function_choice)
+        == ObjectiveFunction.net_present_value.value
+    ):
         m.fs.costing.opt_profit = pyo.Var(
             m.fs.final_opts_set,
             m.fs.operational_range,
@@ -946,7 +960,7 @@ def add_byproduct_valorization_cons(m):
         )
 
 
-def add_profit_cons(m, obj_func: str, consider_byproduct_valorization: bool):
+def add_profit_cons(m, consider_byproduct_valorization: bool):
     """
     This function builds the profit constraints.
 
@@ -972,12 +986,14 @@ def add_profit_cons(m, obj_func: str, consider_byproduct_valorization: bool):
 
     Args:
         m: pyomo model.
-        obj_func: choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
         consider_byproduct_valorization: (bool) Decide whether or not to consider the valorization of byproducts.
     """
     ## Pyomo constraints
     # Check if NPV is objective function
-    if obj_func == "NPV":
+    if (
+        pyo.value(m.fs.objective_function_choice)
+        == ObjectiveFunction.net_present_value.value
+    ):
 
         @m.fs.costing.Constraint(
             m.fs.final_opts_set,
@@ -1017,7 +1033,10 @@ def add_profit_cons(m, obj_func: str, consider_byproduct_valorization: bool):
             )
 
         # Check if NPV is objective function
-        if obj_func == "NPV":
+        if (
+            pyo.value(m.fs.objective_function_choice)
+            == ObjectiveFunction.net_present_value.value
+        ):
             # Add profit constraint for when byproduct valorization is considered if so.
             @m.fs.costing.Constraint(
                 m.fs.operational_range,
@@ -1053,7 +1072,10 @@ def add_profit_cons(m, obj_func: str, consider_byproduct_valorization: bool):
     # don't include profit from byproducts
     else:
         # Check if NPV is objective function
-        if obj_func == "NPV":
+        if (
+            pyo.value(m.fs.objective_function_choice)
+            == ObjectiveFunction.net_present_value.value
+        ):
 
             @m.fs.costing.Constraint(
                 m.fs.operational_range,
@@ -1485,7 +1507,10 @@ def add_costing_objective_functions(m, obj_func: str):
         )
 
     # Check if NPV is objective function
-    if obj_func == "NPV":
+    if (
+        pyo.value(m.fs.objective_function_choice)
+        == ObjectiveFunction.net_present_value.value
+    ):
         # set objective function
         m.fs.costing.obj = pyo.Objective(
             expr=m.fs.costing.net_present_value,

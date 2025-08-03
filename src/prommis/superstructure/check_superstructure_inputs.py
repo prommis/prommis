@@ -15,6 +15,8 @@ import warnings
 
 import pyomo.environ as pyo
 
+from prommis.superstructure.objective_function_enums import ObjectiveFunction
+
 
 def check_objective_function_choice(obj_func):
     """
@@ -24,16 +26,9 @@ def check_objective_function_choice(obj_func):
         obj_func: (str) Choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
     """
 
-    ### Check types and structure.
-    ## Check that obj_fun is of type str.
-    if not isinstance(obj_func, str):
-        raise TypeError("obj_func is not of type str.")
-
-    ### Run tests
-    if (obj_func != "NPV") and (obj_func != "COR"):
-        raise ValueError(
-            "Invalid choice of objective function. Options are 'NPV' or 'COR'. Selection is case-sensitive."
-        )
+    # Check that obj_func is an instance of ObjectiveFunction
+    if not isinstance(obj_func, ObjectiveFunction):
+        raise TypeError("obj_func is not an ObjectiveFunction Enum")
 
 
 def check_plant_lifetime_params(plant_start, plant_lifetime):

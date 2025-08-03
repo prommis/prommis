@@ -1,5 +1,7 @@
 import pyomo.environ as pyo
 from pyomo.util.check_units import assert_units_consistent
+from idaes.core.util import DiagnosticsToolbox
+from idaes.core.scaling.util import report_scaling_factors
 
 from idaes.core.solvers import get_solver
 
@@ -197,22 +199,10 @@ num_operators = {
     (2, 1): 0.65,
     (2, 2): 0.65,
     (2, 3): 0.65,
-    (2, 4): 0.65,
     (3, 1): 1.6,
     (3, 2): 1.6,
     (3, 3): 1.3,
     (3, 4): 0.45,
-    (3, 5): 0.45,
-    (3, 6): 1.15,
-    (4, 1): 0,
-    (4, 2): 1.3,
-    (4, 3): 0,
-    (4, 4): 0,
-    (5, 1): 1.05,
-    (5, 2): 0.75,
-    (5, 3): 0.75,
-    (5, 4): 1.15,
-    (5, 5): 1.15,
 }
 labor_rate = 8000 * 38.20
 
@@ -768,12 +758,12 @@ m = build_model(
 
 ### Solve model
 # m.fs.environmental_impacts.deactivate()
-solver = get_solver(solver="gurobi")
-solver.options["NumericFocus"] = 2
-results = solver.solve(m, tee="True")
+# solver = get_solver(solver="gurobi")
+# solver.options["NumericFocus"] = 2
+# results = solver.solve(m, tee="True")
 
 ### Print out results
-m.fs.option_binary_var.display()
+# m.fs.option_binary_var.display()
 
 # assert_units_consistent(m.fs)
 # m.fs.option_efficiencies.display()
@@ -785,12 +775,12 @@ m.fs.option_binary_var.display()
 # m.fs.byproduct_valorization.byproduct_producing_opts.display()
 
 # check blocks
-for block in m.component_objects(pyo.Block, descend_into=True):
-    try:
-        assert_units_consistent(block)
-        print(f"Units consistent for block: {block.name}")
-    except TypeError as e:
-        print(f"Skipped block {block.name}: {e}")
+# for block in m.component_objects(pyo.Block, descend_into=True):
+#     try:
+#         assert_units_consistent(block)
+#         print(f"Units consistent for block: {block.name}")
+#     except TypeError as e:
+#         print(f"Skipped block {block.name}: {e}")
 
 # check constraints
 # for constr in m.component_objects(pyo.Constraint, descend_into=True):
@@ -801,8 +791,8 @@ for block in m.component_objects(pyo.Block, descend_into=True):
 #         print(f"Skipped constraint {constr.name}: {e}")
 #     except Exception as e:
 #         print(f"Units inconsistent in constraint {constr.name}: {e}")
-for constr in m.component_objects(pyo.Constraint, descend_into=True):
-    assert_units_consistent(constr)
+# for constr in m.component_objects(pyo.Constraint, descend_into=True):
+#     assert_units_consistent(constr)
 
 # # check expressions
 # for expr in m.component_objects(pyo.Expression, descend_into=True):
@@ -813,8 +803,8 @@ for constr in m.component_objects(pyo.Constraint, descend_into=True):
 #         print(f"Skipped expression {expr.name}: {e}")
 #     except Exception as e:
 #         print(f"Units inconsistent in expression {expr.name}: {e}")
-for expr in m.component_objects(pyo.Expression, descend_into=True):
-    assert_units_consistent(expr)
+# for expr in m.component_objects(pyo.Expression, descend_into=True):
+#     assert_units_consistent(expr)
 
 # m.fs.available_feed.display()
 # m.fs.feed_entering.display()
@@ -855,3 +845,21 @@ for expr in m.component_objects(pyo.Expression, descend_into=True):
 # m.fs.f_stages.display()
 
 # m.fs.option_efficiencies.display()
+
+# dt = DiagnosticsToolbox(m)
+
+# dt.display_components_with_inconsistent_units()
+
+# assert_units_consistent(m)
+
+# for block in m.fs.costing.piecewise_cons.values():
+#     for c in block.component_data_objects(pyo.Constraint, descend_into=True):
+#         c.deactivate()
+
+# Call the scaling report
+report_scaling_factors(m.fs)
+
+# # Reactivate the constraints afterwards
+# for block in m.fs.costing.piecewise_cons.values():
+#     for c in block.component_data_objects(pyo.Constraint, descend_into=True):
+#         c.activate()

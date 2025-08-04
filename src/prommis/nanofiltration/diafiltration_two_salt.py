@@ -15,7 +15,7 @@ This membrane unit model is for the multi-component diafiltration of a two-salt 
 Configuration Arguments
 -----------------------
 
-The Two-Salt Diafiltration model requires a property package that provides the valency (:math:`z_i`), reflection coefficient (:math:`\sigma_i`), partition coefficient (:math:`H_i`), and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams. 
+The Two-Salt Diafiltration model requires a property package that provides the valency (:math:`z_i`), reflection coefficient (:math:`\sigma_i`), partition coefficient (:math:`H_i`), and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams.
 
 Additionally, there are two required arguments, ``NFE_module_length`` and ``NFE_membrane_thickness``, to specfiy the desired number of finite elements across the width and thickness of the membrane, respectively.
 
@@ -119,14 +119,14 @@ Variable                             Description                                
 :math:`j_{\mathrm{Co^{2+}}}`         molar flux of cobalt ion across the membrane    ``mol_flux_cobalt``                                    :math:`\mathrm{mol} \, \mathrm{m}^{-2} \, \mathrm{h}^{-1}` discretized over :math:`\bar{x}`
 :math:`j_{\mathrm{Li^+}}`            molar flux of lithium ion across the membrane   ``mol_flux_lithium``                                   :math:`\mathrm{mol} \, \mathrm{m}^{-2} \, \mathrm{h}^{-1}` discretized over :math:`\bar{x}`
 :math:`J_w`                          water flux across the membrane                  ``volume_flux_water``                                  :math:`\mathrm{m}^3 \, \mathrm{m}^{-2} \, \mathrm{h}^{-1}` discretized over :math:`\bar{x}`
-:math:`L`                            length of the membrane                          ``total_membrane_length``                                    :math:`\mathrm{m}`
+:math:`L`                            length of the membrane                          ``total_membrane_length``                              :math:`\mathrm{m}`
 :math:`\Delta \pi`                   osmotic pressure of feed-side fluid             ``osmotic_pressure``                                   :math:`\mathrm{bar}`                                       discretized over :math:`\bar{x}`
 :math:`\Delta P`                     applied pressure to the membrane                ``applied_pressure``                                   :math:`\mathrm{bar}`
-:math:`q_d`                          volumetic flow rate of the diafiltrate          ``diafiltrate_flow_volume``                            :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t`
-:math:`q_f`                          volumetic flow rate of the feed                 ``feed_flow_volume``                                   :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t`
-:math:`q_p`                          volumetic flow rate of the permeate             ``permeate_flow_volume``                               :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t` and :math:`\bar{x}`
-:math:`q_r`                          volumetic flow rate of the retentate            ``retentate_flow_volume``                              :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t` and :math:`\bar{x}`
-:math:`w`                            length of the membrane module                   ``total_module_length``                                     :math:`\mathrm{m}`
+:math:`q_d`                          volumetric flow rate of the diafiltrate         ``diafiltrate_flow_volume``                            :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t`
+:math:`q_f`                          volumetric flow rate of the feed                ``feed_flow_volume``                                   :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t`
+:math:`q_p`                          volumetric flow rate of the permeate            ``permeate_flow_volume``                               :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t` and :math:`\bar{x}`
+:math:`q_r`                          volumetric flow rate of the retentate           ``retentate_flow_volume``                              :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                    discretized over :math:`t` and :math:`\bar{x}`
+:math:`w`                            length of the membrane module                   ``total_module_length``                                :math:`\mathrm{m}`
 ==================================== =============================================== ====================================================== ========================================================== ====================================================
 
 Derivative Variables

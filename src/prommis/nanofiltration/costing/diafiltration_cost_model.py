@@ -336,11 +336,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             doc="Pump head factor",
             units=units.ft / units.psi,
         )
-        blk.pump_power_factor = Param(
-            initialize=3.6 * 10 ** (6),
-            doc="Pump power factor",
-            units=units.dimensionless,
-        )
         blk.pump_efficiency = Param(
             initialize=0.7,
             doc="Pump efficiency",
@@ -408,10 +403,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             units=units.kWh,
         )
 
-        grav_constant = units.convert(
-            Constants.acceleration_gravity, to_units=units.m / units.hr**2
-        )
-
         @blk.Constraint()
         def pump_power_equation(blk):
             return blk.pump_power == units.convert(
@@ -420,9 +411,8 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                         (
                             inlet_vol_flow
                             * blk.density
-                            * grav_constant
+                            * Constants.acceleration_gravity
                             * blk.pump_head
-                            / blk.pump_power_factor
                             / blk.pump_efficiency
                         ),
                         to_units=units.kW,

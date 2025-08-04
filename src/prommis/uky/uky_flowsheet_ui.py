@@ -355,7 +355,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     category = "precipitator"
     precipitator = flowsheet.precipitator
     exports.add(
-        obj=precipitator.cv_aqueous.properties_out[0].flow_vol,
+        obj=precipitator.aqueous_outlet.flow_vol[0],
         name=f"precipitator aqueous out",
         ui_units=pyo.units.l / pyo.units.hour,
         display_units="liters/hour",
@@ -367,7 +367,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     )
     for c in comp:
         name = f"precipitator aqueous concentration mass composition of {c}"
-        obj = precipitator.cv_aqueous.properties_out[0].conc_mass_comp[c]
+        obj = precipitator.aqueous_outlet.conc_mass_comp[0, c]
         exports.add(
             obj=obj,
             name=name,

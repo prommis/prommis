@@ -1167,7 +1167,7 @@ def initialize_system(m):
             (0, "Sc_o"): 1.74,
             (0, "Sm_o"): 4.91e-3,
             (0, "Y_o"): 4.17,
-            (0, "DEHPA"): 9.7e5 * 0.05,
+            (0, "DEHPA"): 9.8e5 * 0.05,
             (0, "Kerosene"): 8.2e5,
         },
     }

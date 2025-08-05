@@ -291,7 +291,7 @@ class TestDiafiltrationTwoSalt(object):
 
         assert isinstance(diafiltration_two_salt.fs.unit.convection_params, Var)
         assert len(diafiltration_two_salt.fs.unit.convection_params) == 6
-        assert value(diafiltration_two_salt.fs.unit.convection_params["Li", 0]) == 0.260
+        assert value(diafiltration_two_salt.fs.unit.convection_params["Li", 0]) == 0.360
         assert (
             value(diafiltration_two_salt.fs.unit.convection_params["Li", 1]) == 0.00139
         )
@@ -693,47 +693,47 @@ class TestDiafiltrationTwoSalt(object):
         test_dict = {
             "retentate_final": [
                 value(diafiltration_two_salt.fs.unit.retentate_flow_volume[0, 1]),
-                63.0068903198034,
+                62.921824925339564,
             ],
             "lithium_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Li"]
                 ),
-                194.52242748083333,
+                194.37376096912988,
             ],
             "cobalt_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Co"]
                 ),
-                225.1424185144795,
+                225.15904349019235,
             ],
             "chloride_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Cl"]
                 ),
-                644.8072645097923,
+                644.6918479495146,
             ],
             "permeate_final": [
                 value(diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 1]),
-                66.9597457438728,
+                67.04575034966952,
             ],
             "lithium_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Li"]
                 ),
-                190.73846341453725,
+                190.79660117413664,
             ],
             "cobalt_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Co"]
                 ),
-                221.25040068337807,
+                221.252159320974,
             ],
             "chloride_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Cl"]
                 ),
-                633.2392647812934,
+                633.3009198160846,
             ],
         }
 

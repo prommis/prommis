@@ -15,9 +15,9 @@ This membrane unit model is for the multi-component diafiltration of a two-salt 
 Configuration Arguments
 -----------------------
 
-The Two-Salt Diafiltration model requires a property package that provides the valency (:math:`z_i`), reflection coefficient (:math:`\sigma_i`), partition coefficient (:math:`H_i`), and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams.
+The Two-Salt Diafiltration unit model requires a property package that provides the valency (:math:`z_i`), reflection coefficient (:math:`\sigma_i`), partition coefficient (:math:`H_i`), and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams.
 
-Additionally, there are two required arguments, ``NFE_module_length`` and ``NFE_membrane_thickness``, to specfiy the desired number of finite elements across the width and thickness of the membrane, respectively.
+There are two required arguments, ``NFE_module_length`` and ``NFE_membrane_thickness``, to specify the desired number of finite elements across the width and thickness of the membrane, respectively. There is one optional argument, ``charged_membrane``, which is a Boolean (default=``True``) to specify if the membrane has a fixed surface charge.
 
 Degrees of Freedom
 ------------------
@@ -28,7 +28,7 @@ The Two-Salt Diafiltration unit model has three degrees of freedom (variable nam
 #. the length of the membrane (``total_membrane_length``; :math:`40 \, \mathrm{m}`)
 #. the pressure applied to the membrane system (``applied_pressure``; :math:`15 \, \mathrm{bar}`)
 
-To run a simulation (with zero degrees of freedom) in a flowsheet, the additional following variables must be fixed to obtain zero degrees of freedom (variable names and default values are provided in parentheses):
+To run a simulation (with zero degrees of freedom) in a flowsheet, the following variables must be fixed to obtain zero degrees of freedom (variable names and default values are provided in parentheses):
 
 #. the volumetric flow rate of the feed (``feed_flow_volume``; :math:`100 \, \mathrm{m}^3 \, \mathrm{h}^{-1}`)
 #. the lithium concentration in the feed (``feed_conc_mol_comp[t,"Li"]``; :math:`245 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
@@ -40,7 +40,7 @@ To run a simulation (with zero degrees of freedom) in a flowsheet, the additiona
 Model Structure
 ---------------
 
-There are three phases in the Two-Salt Diafiltration model: the retentate, the membrane, and the permeate. The retentate and the permeate are only discretized with respect to :math:`x`, while the membrane is discretized with respect to both :math:`x` and :math:`z`. The resulting system of partial differential algebraic equations is solved by discretizing with the backward finite difference method.
+There are three phases in the Two-Salt Diafiltration model: the retentate, the membrane, and the permeate. The retentate and the permeate are only discretized with respect to :math:`x` (parallel to the membrane surface), while the membrane is discretized with respect to both :math:`x` and :math:`z` (perpendicular to the membrane surface). The resulting system of partial differential algebraic equations is solved by discretizing with the backward finite difference method.
 
 Assumptions
 -----------
@@ -185,7 +185,7 @@ that have the following regressed parameter values when :math:`\chi = 0 mM` (val
 ================== =========================== ============================== ============================================================
 Parameter          Value (:math:`\chi = 0 mM`) Value (:math:`\chi = -140 mM`) Units
 ================== =========================== ============================== ============================================================
-:math:`\omega_0`   :math:`1`                   :math:`0.260`                  :math:`\mathrm{dimensionless}`
+:math:`\omega_0`   :math:`1`                   :math:`0.360`                  :math:`\mathrm{dimensionless}`
 :math:`\omega_1`   :math:`0`                   :math:`0.00139`                :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
 :math:`\omega_2`   :math:`0`                   :math:`0.00314`                :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
 :math:`\omega_3`   :math:`1`                   :math:`0.0860`                 :math:`\mathrm{dimensionless}`
@@ -514,7 +514,7 @@ and used when constructing these,
             if self.config.charged_membrane:
                 # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
                 vals = {
-                    "Li": {0: 0.260, 1: 0.00139, 2: 0.00314},
+                    "Li": {0: 0.360, 1: 0.00139, 2: 0.00314},
                     "Co": {0: 0.0860, 1: 0.00198, 2: 0.00448},
                 }
             else:

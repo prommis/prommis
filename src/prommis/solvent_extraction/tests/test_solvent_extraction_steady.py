@@ -35,6 +35,7 @@ class Test_Solvent_Extraction_steady_model:
     def test_structural_issues(self, SolEx_frame):
         model = SolEx_frame
         dt = DiagnosticsToolbox(model)
+        dt.report_structural_issues()
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -73,6 +74,7 @@ class Test_Solvent_Extraction_steady_model:
             "H": 39.5131,
             "SO4": 2056.395,
             "HSO4": 8023.225,
+            "H2C2O4": 1e-7,
             "Al": 399.95,
             "Ca": 102.336,
             "Cl": 9.9999e-8,

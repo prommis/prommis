@@ -86,6 +86,7 @@ def set_inputs(m, dosage):
     m.fs.mixer_settler_ex.aqueous_inlet.conc_mass_comp[0, "H"].fix(10.75)
     m.fs.mixer_settler_ex.aqueous_inlet.conc_mass_comp[0, "SO4"].fix(100)
     m.fs.mixer_settler_ex.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(1e4)
+    m.fs.mixer_settler_ex.aqueous_inlet.conc_mass_comp[0, "H2C2O4"].fix(1e-7)
     m.fs.mixer_settler_ex.aqueous_inlet.conc_mass_comp[0, "Al"].fix(422.375)
     m.fs.mixer_settler_ex.aqueous_inlet.conc_mass_comp[0, "Ca"].fix(109.542)
     m.fs.mixer_settler_ex.aqueous_inlet.conc_mass_comp[0, "Cl"].fix(1e-7)

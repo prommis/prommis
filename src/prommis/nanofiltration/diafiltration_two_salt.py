@@ -17,7 +17,7 @@ Configuration Arguments
 
 The Two-Salt Diafiltration unit model requires a property package that provides the valency (:math:`z_i`), reflection coefficient (:math:`\sigma_i`), partition coefficient (:math:`H_i`), and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams.
 
-There are two required arguments, ``NFE_module_length`` and ``NFE_membrane_thickness``, to specify the desired number of finite elements across the width and thickness of the membrane, respectively. There is one optional argument, ``charged_membrane``, which is a Boolean (default=``True``) to specify if the membrane has a fixed surface charge.
+There are two required arguments, ``NFE_module_length`` and ``NFE_membrane_thickness``, to specify the desired number of finite elements across the width and thickness of the membrane, respectively. There is one optional argument, ``charged_membrane``, which is a Boolean (default = ``True``) to specify if the membrane has a fixed surface charge.
 
 Degrees of Freedom
 ------------------
@@ -34,8 +34,8 @@ To run a simulation (with zero degrees of freedom) in a flowsheet, the following
 #. the lithium concentration in the feed (``feed_conc_mol_comp[t,"Li"]``; :math:`245 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
 #. the cobalt concentration in the feed (``feed_conc_mol_comp[t,"Co"]``; :math:`288 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
 #. the volumetric flow rate of the diafiltrate (``diafiltrate_flow_volume``; :math:`30 \, \mathrm{m}^3 \, \mathrm{h}^{-1}`)
-#. the lithium concentration in the diafiltrate (``diafiltrate_conc_mol_comp[0,"Li"]``; :math:`14 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
-#. the cobalt concentration in the diafiltrate (``diafiltrate_conc_mol_comp[0,"Co"]``; :math:`3 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
+#. the lithium concentration in the diafiltrate (``diafiltrate_conc_mol_comp[t,"Li"]``; :math:`14 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
+#. the cobalt concentration in the diafiltrate (``diafiltrate_conc_mol_comp[t,"Co"]``; :math:`3 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
 
 Model Structure
 ---------------

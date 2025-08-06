@@ -52,17 +52,17 @@ def test_zero_chi_implementation():
     assert value(m.fs.unit.membrane_fixed_charge) == 0
 
     assert value(m.fs.unit.diffusion_params["Li", "Li", 0]) == -4.07e-06
-    assert value(m.fs.unit.diffusion_params["Li", "Li", 1]) == -3.99e-09
-    assert value(m.fs.unit.diffusion_params["Li", "Li", 2]) == 4.01e-09
-    assert value(m.fs.unit.diffusion_params["Li", "Co", 0]) == -9.62e-07
+    assert value(m.fs.unit.diffusion_params["Li", "Li", 1]) == -3.96e-09
+    assert value(m.fs.unit.diffusion_params["Li", "Li", 2]) == 3.98e-09
+    assert value(m.fs.unit.diffusion_params["Li", "Co", 0]) == -9.63e-07
     assert value(m.fs.unit.diffusion_params["Li", "Co", 1]) == -1.03e-08
-    assert value(m.fs.unit.diffusion_params["Li", "Co", 2]) == 1.04e-08
-    assert value(m.fs.unit.diffusion_params["Co", "Li", 0]) == -5.24e-07
-    assert value(m.fs.unit.diffusion_params["Co", "Li", 1]) == 2.49e-09
-    assert value(m.fs.unit.diffusion_params["Co", "Li", 2]) == -2.50e-09
+    assert value(m.fs.unit.diffusion_params["Li", "Co", 2]) == 1.03e-08
+    assert value(m.fs.unit.diffusion_params["Co", "Li", 0]) == -5.23e-07
+    assert value(m.fs.unit.diffusion_params["Co", "Li", 1]) == 2.47e-09
+    assert value(m.fs.unit.diffusion_params["Co", "Li", 2]) == -2.49e-09
     assert value(m.fs.unit.diffusion_params["Co", "Co", 0]) == -4.00e-06
-    assert value(m.fs.unit.diffusion_params["Co", "Co", 1]) == 6.45e-09
-    assert value(m.fs.unit.diffusion_params["Co", "Co", 2]) == -6.48e-09
+    assert value(m.fs.unit.diffusion_params["Co", "Co", 1]) == 6.40e-09
+    assert value(m.fs.unit.diffusion_params["Co", "Co", 2]) == -6.44e-09
 
     assert value(m.fs.unit.convection_params["Li", 0]) == 1
     assert value(m.fs.unit.convection_params["Li", 1]) == 0
@@ -90,35 +90,35 @@ def test_zero_chi_implementation():
     test_dict_zero_chi = {
         "retentate_final": [
             value(m.fs.unit.retentate_flow_volume[0, 1]),
-            63.61536824357516,
+            63.61237803935321,
         ],
         "lithium_retentate_final": [
             value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Li"]),
-            194.30798840929342,
+            194.30133838387326,
         ],
         "cobalt_retentate_final": [
             value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Co"]),
-            225.74536975562728,
+            225.74684125040622,
         ],
         "chloride_retentate_final": [
             value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Cl"]),
-            645.7987279205479,
+            645.7950208846858,
         ],
         "permeate_final": [
             value(m.fs.unit.permeate_flow_volume[0, 1]),
-            66.34487883878967,
+            66.34792854324294,
         ],
         "lithium_permeate_final": [
             value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Li"]),
-            190.7621361019354,
+            190.7648596069931,
         ],
         "cobalt_permeate_final": [
             value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Co"]),
-            220.97871852414892,
+            220.97849697818972,
         ],
         "chloride_permeate_final": [
             value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Cl"]),
-            632.7195731502333,
+            632.7218535633726,
         ],
     }
 
@@ -246,11 +246,11 @@ class TestDiafiltrationTwoSalt(object):
         )
         assert (
             value(diafiltration_two_salt.fs.unit.diffusion_params["Li", "Li", 1])
-            == -4.25e-09
+            == -4.21e-09
         )
         assert (
             value(diafiltration_two_salt.fs.unit.diffusion_params["Li", "Li", 2])
-            == 5.14e-09
+            == 5.10e-09
         )
         assert (
             value(diafiltration_two_salt.fs.unit.diffusion_params["Li", "Co", 0])
@@ -258,54 +258,54 @@ class TestDiafiltrationTwoSalt(object):
         )
         assert (
             value(diafiltration_two_salt.fs.unit.diffusion_params["Li", "Co", 1])
-            == -1.10e-08
+            == -1.09e-08
         )
         assert (
             value(diafiltration_two_salt.fs.unit.diffusion_params["Li", "Co", 2])
-            == 1.33e-08
+            == 1.32e-08
         )
         assert (
             value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Li", 0])
-            == -1.32e-06
+            == -1.31e-06
         )
         assert (
             value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Li", 1])
-            == 4.72e-09
+            == 4.67e-09
         )
         assert (
             value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Li", 2])
-            == 1.47e-09
+            == 1.43e-09
         )
         assert (
             value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Co", 0])
-            == -6.05e-06
+            == -6.03e-06
         )
         assert (
             value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Co", 1])
-            == 1.22e-08
+            == 1.21e-08
         )
         assert (
             value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Co", 2])
-            == 3.81e-09
+            == 3.69e-09
         )
 
         assert isinstance(diafiltration_two_salt.fs.unit.convection_params, Var)
         assert len(diafiltration_two_salt.fs.unit.convection_params) == 6
-        assert value(diafiltration_two_salt.fs.unit.convection_params["Li", 0]) == 0.360
+        assert value(diafiltration_two_salt.fs.unit.convection_params["Li", 0]) == 0.365
         assert (
-            value(diafiltration_two_salt.fs.unit.convection_params["Li", 1]) == 0.00139
+            value(diafiltration_two_salt.fs.unit.convection_params["Li", 1]) == 0.00137
         )
         assert (
-            value(diafiltration_two_salt.fs.unit.convection_params["Li", 2]) == 0.00314
+            value(diafiltration_two_salt.fs.unit.convection_params["Li", 2]) == 0.00309
         )
         assert (
-            value(diafiltration_two_salt.fs.unit.convection_params["Co", 0]) == 0.0860
+            value(diafiltration_two_salt.fs.unit.convection_params["Co", 0]) == 0.0945
         )
         assert (
-            value(diafiltration_two_salt.fs.unit.convection_params["Co", 1]) == 0.00198
+            value(diafiltration_two_salt.fs.unit.convection_params["Co", 1]) == 0.00195
         )
         assert (
-            value(diafiltration_two_salt.fs.unit.convection_params["Co", 2]) == 0.00448
+            value(diafiltration_two_salt.fs.unit.convection_params["Co", 2]) == 0.00441
         )
 
         assert isinstance(diafiltration_two_salt.fs.unit.volume_flux_water, Var)
@@ -693,47 +693,47 @@ class TestDiafiltrationTwoSalt(object):
         test_dict = {
             "retentate_final": [
                 value(diafiltration_two_salt.fs.unit.retentate_flow_volume[0, 1]),
-                62.921824925339564,
+                62.92573128951248,
             ],
             "lithium_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Li"]
                 ),
-                194.37376096912988,
+                194.37335269356214,
             ],
             "cobalt_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Co"]
                 ),
-                225.15904349019235,
+                225.16242552957172,
             ],
             "chloride_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Cl"]
                 ),
-                644.6918479495146,
+                644.6982037527056,
             ],
             "permeate_final": [
                 value(diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 1]),
-                67.04575034966952,
+                67.04175844764,
             ],
             "lithium_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Li"]
                 ),
-                190.79660117413664,
+                190.79638345768763,
             ],
             "cobalt_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Co"]
                 ),
-                221.252159320974,
+                221.25063745246803,
             ],
             "chloride_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Cl"]
                 ),
-                633.3009198160846,
+                633.2976583626237,
             ],
         }
 

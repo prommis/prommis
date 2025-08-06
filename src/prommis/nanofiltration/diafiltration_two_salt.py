@@ -180,29 +180,29 @@ with linearized convection and cross-diffusion coefficients:
 .. math:: - D_{\mathrm{Co^{2+},Li^+}}(\bar{x},\bar{z}) = \beta_6 + \beta_7 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_8 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
 .. math:: - D_{\mathrm{Co^{2+},Co^{2+}}}(\bar{x},\bar{z}) = \beta_9 + \beta_{10} c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_{11} c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
 
-that have the following regressed parameter values when :math:`\chi = 0 mM` (valid for membrane lithium and cobalt concentration range of :math:`50-80 mM`) and when :math:`\chi = -140 mM` (valid for membrane lithium concentration range of :math:`50-80 mM` and membrane cobalt concentration range of :math:`80-110 mM`):
+that have the following regressed parameter values when :math:`\chi = 0 \mathrm{mM}` (valid for membrane lithium and cobalt concentration range of :math:`50-80 \mathrm{mM}`) and when :math:`\chi = -140 \mathrm{mM}` (valid for membrane lithium concentration range of :math:`50-80 \mathrm{mM}` and membrane cobalt concentration range of :math:`80-110 \mathrm{mM}`):
 
 ================== =========================== ============================== ============================================================
 Parameter          Value (:math:`\chi = 0 mM`) Value (:math:`\chi = -140 mM`) Units
 ================== =========================== ============================== ============================================================
-:math:`\omega_0`   :math:`1`                   :math:`0.360`                  :math:`\mathrm{dimensionless}`
-:math:`\omega_1`   :math:`0`                   :math:`0.00139`                :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
-:math:`\omega_2`   :math:`0`                   :math:`0.00314`                :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
-:math:`\omega_3`   :math:`1`                   :math:`0.0860`                 :math:`\mathrm{dimensionless}`
-:math:`\omega_4`   :math:`0`                   :math:`0.00198`                :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
-:math:`\omega_5`   :math:`0`                   :math:`0.00448`                :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
+:math:`\omega_0`   :math:`1`                   :math:`0.365`                  :math:`\mathrm{dimensionless}`
+:math:`\omega_1`   :math:`0`                   :math:`0.00137`                :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
+:math:`\omega_2`   :math:`0`                   :math:`0.00309`                :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
+:math:`\omega_3`   :math:`1`                   :math:`0.0945`                 :math:`\mathrm{dimensionless}`
+:math:`\omega_4`   :math:`0`                   :math:`0.00195`                :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
+:math:`\omega_5`   :math:`0`                   :math:`0.00441`                :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
 :math:`\beta_0`    :math:`-4.07e-06`           :math:`-4.33e-06`              :math:`\mathrm{m}^2 \, \mathrm{h}^{-1}`
-:math:`\beta_1`    :math:`-3.99e-09`           :math:`-4.25e-09`              :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
-:math:`\beta_2`    :math:`4.01e-09`            :math:`5.14e-09`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
-:math:`\beta_3`    :math:`-9.62e-07`           :math:`-1.63e-06`              :math:`\mathrm{m}^2 \, \mathrm{h}^{-1}`
-:math:`\beta_4`    :math:`-1.03e-08`           :math:`-1.10e-08`              :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
-:math:`\beta_5`    :math:`1.04e-08`            :math:`1.33e-08`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
-:math:`\beta_6`    :math:`-5.24e-07`           :math:`-1.32e-06`              :math:`\mathrm{m}^2 \, \mathrm{h}^{-1}`
-:math:`\beta_7`    :math:`2.49e-09`            :math:`4.72e-09`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
-:math:`\beta_8`    :math:`-2.50e-09`           :math:`1.47e-09`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
-:math:`\beta_9`    :math:`-4.00e-06`           :math:`-6.05e-06`              :math:`\mathrm{m}^2 \, \mathrm{h}^{-1}`
-:math:`\beta_{10}` :math:`6.45e-09`            :math:`1.22e-08`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
-:math:`\beta_{11}` :math:`-6.48e-09`           :math:`3.81e-09`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
+:math:`\beta_1`    :math:`-3.96e-09`           :math:`-4.21e-09`              :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
+:math:`\beta_2`    :math:`3.98e-09`            :math:`5.10e-09`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
+:math:`\beta_3`    :math:`-9.63e-07`           :math:`-1.63e-06`              :math:`\mathrm{m}^2 \, \mathrm{h}^{-1}`
+:math:`\beta_4`    :math:`-1.03e-08`           :math:`-1.09e-08`              :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
+:math:`\beta_5`    :math:`1.03e-08`            :math:`1.32e-08`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
+:math:`\beta_6`    :math:`-5.23e-07`           :math:`-1.31e-06`              :math:`\mathrm{m}^2 \, \mathrm{h}^{-1}`
+:math:`\beta_7`    :math:`2.47e-09`            :math:`4.67e-09`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
+:math:`\beta_8`    :math:`-2.49e-09`           :math:`1.43e-09`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
+:math:`\beta_9`    :math:`-4.00e-06`           :math:`-6.03e-06`              :math:`\mathrm{m}^2 \, \mathrm{h}^{-1}`
+:math:`\beta_{10}` :math:`6.40e-09`            :math:`1.21e-08`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
+:math:`\beta_{11}` :math:`-6.44e-09`           :math:`3.69e-09`               :math:`\mathrm{m}^5 \, \mathrm{mol}^{-1} \, \mathrm{h}^{-1}`
 ================== =========================== ============================== ============================================================
 
 No applied potential on the system:
@@ -479,24 +479,24 @@ and used when constructing these,
                 # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
                 vals = {
                     "Li": {
-                        "Li": {0: -4.33e-06, 1: -4.25e-09, 2: 5.14e-09},
-                        "Co": {0: -1.63e-06, 1: -1.10e-08, 2: 1.33e-08},
+                        "Li": {0: -4.33e-06, 1: -4.21e-09, 2: 5.10e-09},
+                        "Co": {0: -1.63e-06, 1: -1.09e-08, 2: 1.32e-08},
                     },
                     "Co": {
-                        "Li": {0: -1.32e-06, 1: 4.72e-09, 2: 1.47e-09},
-                        "Co": {0: -6.05e-06, 1: 1.22e-08, 2: 3.81e-09},
+                        "Li": {0: -1.31e-06, 1: 4.67e-09, 2: 1.43e-09},
+                        "Co": {0: -6.03e-06, 1: 1.21e-08, 2: 3.69e-09},
                     },
                 }
             else:
                 # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM
                 vals = {
                     "Li": {
-                        "Li": {0: -4.07e-06, 1: -3.99e-09, 2: 4.01e-09},
-                        "Co": {0: -9.62e-07, 1: -1.03e-08, 2: 1.04e-08},
+                        "Li": {0: -4.07e-06, 1: -3.96e-09, 2: 3.98e-09},
+                        "Co": {0: -9.63e-07, 1: -1.03e-08, 2: 1.03e-08},
                     },
                     "Co": {
-                        "Li": {0: -5.24e-07, 1: 2.49e-09, 2: -2.50e-09},
-                        "Co": {0: -4.00e-06, 1: 6.45e-09, 2: -6.48e-09},
+                        "Li": {0: -5.23e-07, 1: 2.47e-09, 2: -2.49e-09},
+                        "Co": {0: -4.00e-06, 1: 6.40e-09, 2: -6.44e-09},
                     },
                 }
             return vals[i][j][k]
@@ -514,8 +514,8 @@ and used when constructing these,
             if self.config.charged_membrane:
                 # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM
                 vals = {
-                    "Li": {0: 0.360, 1: 0.00139, 2: 0.00314},
-                    "Co": {0: 0.0860, 1: 0.00198, 2: 0.00448},
+                    "Li": {0: 0.365, 1: 0.00137, 2: 0.00309},
+                    "Co": {0: 0.0945, 1: 0.00195, 2: 0.00441},
                 }
             else:
                 # these params assume chi=0 mM and lithium & cobalt mem_conc range 50-80 mM

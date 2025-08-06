@@ -27,9 +27,9 @@ from prommis.uky.uky_flowsheet import (
     build,
     initialize_system,
     set_operating_conditions,
-    set_partition_coefficients,
     set_scaling,
     solve_system,
+    calculate_results,
 )
 
 _log = idaeslog.getLogger(__name__)
@@ -43,10 +43,15 @@ def export_to_ui():
         do_build=build_flowsheet,
         do_solve=solve_flowsheet,
         get_diagram=get_diagram,
+        do_kpis=add_kpis,
         requires_idaes_solver=True,
         category=FlowsheetCategory.wastewater,
         build_options={},
     )
+
+
+# I think this is a better name
+flowsheet_interface = export_to_ui
 
 
 def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs):
@@ -85,6 +90,22 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sc2O3",
         "Sm2O3",
         "Y2O3",
+    }
+
+    # Organic components
+    comp_org = {
+        "Al_o",
+        "Ca_o",
+        "Ce_o",
+        "Dy_o",
+        "Fe_o",
+        "Gd_o",
+        "La_o",
+        "Nd_o",
+        "Pr_o",
+        "Sc_o",
+        "Sm_o",
+        "Y_o",
     }
 
     # Liquid chemical components
@@ -297,6 +318,8 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             if stype == "rougher" and ltype == "aqueous":
                 # add aqueous components for the aqueous rougher
                 complist = comp.union(comp_liq)
+            elif ltype == "organic":
+                complist = comp_org
             else:
                 complist = comp
             # export the output for each component
@@ -382,7 +405,6 @@ def build_flowsheet(build_options=None, **kwargs):
     """
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
-    set_partition_coefficients(m)
     set_operating_conditions(m)
     set_scaling(m)
     scaling = pyo.TransformationFactory("core.scale_model")
@@ -390,6 +412,75 @@ def build_flowsheet(build_options=None, **kwargs):
     initialize_system(scaled_model)
     _log.info(f"end/build-flowsheet build_options={build_options}")
     return scaled_model
+
+
+def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
+    fs = flowsheet
+    data = calculate_results(fs)
+
+    def round_recoveries(value):
+        """Round the recovery values to 2 decimal places."""
+        return round(value, 2)
+
+    exports.add_kpi_values(
+        name="stats",
+        labels=["Total REE Recovery", "Product Purity"],
+        units=["%", "%"],
+        values=[
+            round_recoveries(data[key]) for key in ("REE-recovery", "product-purity")
+        ],
+    )
+    element_names = {
+        "al": "Aluminum",
+        "ca": "Calcium",
+        "ce": "Cerium",
+        "dy": "Dysprosium",
+        "fe": "Iron",
+        "gd": "Gadolinium",
+        "la": "Lanthanum",
+        "nd": "Neodymium",
+        "pr": "Praseodymium",
+        "sc": "Scandium",
+        "sm": "Samarium",
+        "yt": "Yttrium",
+    }
+    element_values, element_labels = [], []
+    for element, full_name in element_names.items():
+        element_values.append(data[f"{element}-recovery"])
+        element_labels.append(full_name)
+    exports.add_kpi_barchart(
+        name="element-recovery",
+        values=element_values,
+        labels=element_labels,
+        title="REE Elemental Recovery",
+        xlab="Rare earth elements",
+        ylab="Elemental Recovery",
+        units="%",
+    )
+
+    roaster_values, roaster_labels = [], []
+    roaster_perf = fs.roaster._get_performance_contents()
+    for title, expr in roaster_perf["exprs"].items():
+        # extract element from, e.g., 'Product Al Mass Fraction'
+        words = title.split()
+        element = words[1]
+        roaster_labels.append(element)
+        # get numeric value for expression
+        val = pyo.value(expr)
+        roaster_values.append(val)
+    exports.add_kpi_total(
+        name="roaster-prod",
+        values=roaster_values,
+        labels=roaster_labels,
+        title="Roaster Product (mass fraction)",
+        total_label="Elements",
+        units="mass fraction",
+    )
+
+    exports.set_kpi_default_options(
+        total_type="donut"  # draw part-of-whole graphs as donut charts
+        # the other option is "waffle"
+    )
 
 
 def get_diagram(build_options):
@@ -401,7 +492,6 @@ def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
 
     m = build()
-    set_partition_coefficients(m)
 
     set_operating_conditions(m)
 

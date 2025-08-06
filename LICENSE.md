@@ -1,9 +1,6 @@
 License Agreement
 =================
 
-PrOMMiS Copyright © 2025, by the software owners: The Regents of the University of California,
-through Lawrence Berkeley National Laboratory, et al. All rights reserved.
-
 Redistribution and use in source and binary forms, with or without modification, are permitted
 provided that the following conditions are met:
 
@@ -15,9 +12,11 @@ provided that the following conditions are met:
    distribution.
 
 3. Neither the name of the Process Optimization and Modeling for Minerals Sustainability (“PrOMMiS”)
-   initiative, University of California, Lawrence Berkeley National Laboratory, U.S. Dept. of
-   Energy, nor the names of its contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+   initiative, University of California, Lawrence Berkeley National Laboratory, National Technology
+   & Engineering Solutions of Sandia, LLC through Sandia National Laboratories, U.S. Dept. of
+   Energy, Carnegie Mellon University, University of Notre Dame, West Virginia University Research
+   Corporation, nor the names of its contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND

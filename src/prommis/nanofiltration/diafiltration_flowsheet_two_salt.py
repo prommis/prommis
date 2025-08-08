@@ -131,7 +131,6 @@ def main():
     dt.assert_no_numerical_warnings()
 
     # visualize the results
-    # currently no partitioning in the membrane
     plot_results(m)
     plot_membrane_results(m)
 

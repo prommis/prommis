@@ -300,11 +300,11 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         Costing method for pumps.
 
         References:
-            https://doi.org/10.1016/j.memsci.2015.04.065
-            Volk, Michael. Pump characteristics and applications. CRC Press, 2013.
-            Moran, Seán. "Pump Sizing: Bridging the Gap Between Theory and Practice."
+            [1] Volk, Michael. Pump characteristics and applications. CRC Press, 2013.
+            [2] Moran, Seán. "Pump Sizing: Bridging the Gap Between Theory and Practice."
                 The Best of Equipment Series (2016): 3.
-            https://www.bls.gov/regions/midwest/data/averageenergyprices_selectedareas_table.htm
+            [3] https://www.bls.gov/regions/midwest/data/averageenergyprices_selectedareas_table.htm
+            [4] https://doi.org/10.1016/j.memsci.2015.04.065
 
         Args:
             inlet_pressure: pressure of inlet stream to pump (Pa)

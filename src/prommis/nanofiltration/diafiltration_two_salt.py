@@ -167,20 +167,30 @@ Osmotic pressure:
 
 Nernst-Plank equations for the ion flux through the membrane:
 
-.. math:: j_{\mathrm{Li^+}}(\bar{x}) = \alpha_{Li^+}(\bar{x},\bar{z}) c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) J_w(\bar{x}) - \frac{D_{\mathrm{Li^+,Li^+}}}{l} \frac{\partial c_{\mathrm{Li^+},m}(\bar{x},\bar{z})}{\partial \bar{z}} - \frac{D_{\mathrm{Li^+,Co^{2+}}}}{l} \frac{\partial c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})}{\partial \bar{z}} \qquad \forall \, \bar{z} \neq 0
-.. math:: j_{\mathrm{Co^{2+}}}(\bar{x}) = \alpha_{Li^+}(\bar{x},\bar{z}) c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}) J_w(\bar{x}) - \frac{D_{\mathrm{Co^{2+},Li^+}}}{l} \frac{\partial c_{\mathrm{Li^+},m}(\bar{x},\bar{z})}{\partial \bar{z}} - \frac{D_{\mathrm{Co^{2+},Co^{2+}}}}{l} \frac{\partial c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})}{\partial \bar{z}} \qquad \forall \, \bar{z} \neq 0
+.. math:: j_{\mathrm{Li^+}}(\bar{x}) = \alpha_{Li^+}(\bar{x},\bar{z}) c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) J_w(\bar{x}) + \frac{D_{\mathrm{Li^+,Li^+}}(\bar{x},\bar{z})}{l} \frac{\partial c_{\mathrm{Li^+},m}(\bar{x},\bar{z})}{\partial \bar{z}} + \frac{D_{\mathrm{Li^+,Co^{2+}}}(\bar{x},\bar{z})}{l} \frac{\partial c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})}{\partial \bar{z}} \qquad \forall \, \bar{z} \neq 0
+.. math:: j_{\mathrm{Co^{2+}}}(\bar{x}) = \alpha_{Li^+}(\bar{x},\bar{z}) c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}) J_w(\bar{x}) + \frac{D_{\mathrm{Co^{2+},Li^+}}(\bar{x},\bar{z})}{l} \frac{\partial c_{\mathrm{Li^+},m}(\bar{x},\bar{z})}{\partial \bar{z}} + \frac{D_{\mathrm{Co^{2+},Co^{2+}}}(\bar{x},\bar{z})}{l} \frac{\partial c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})}{\partial \bar{z}} \qquad \forall \, \bar{z} \neq 0
 
-with linearized convection and cross-diffusion coefficients:
+with the convection and cross-diffusion coefficients:
+
+.. math:: \tilde{D}(\bar{x},\bar{z}) = z_{\mathrm{Li^+}}(z_{\mathrm{Li^+}} D_{\mathrm{Li^+}} - z_{\mathrm{Cl^-}} D_{\mathrm{Cl^-}})c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + z_{\mathrm{Co^{2+}}}(z_{\mathrm{Co^{2+}}} D_{\mathrm{Co^{2+}}} - z_{\mathrm{Cl^-}} D_{\mathrm{Cl^-}})c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}) - z_{\mathrm{Cl^-}} D_{\mathrm{Cl^-}} \chi
+.. math:: \alpha_{\mathrm{Li^+}}(\bar{x},\bar{z}) = 1 + \frac{z_{\mathrm{Li^+}} D_{\mathrm{Li^+}} \chi}{\tilde{D}(\bar{x},\bar{z})}
+.. math:: \alpha_{\mathrm{Co^{2+}}}(\bar{x},\bar{z}) = 1 + \frac{z_{\mathrm{Co^{2+}}} D_{\mathrm{Co^{2+}}} \chi}{\tilde{D}(\bar{x},\bar{z})}
+.. math:: D_{\mathrm{Li^+,Li^+}}(\bar{x},\bar{z}) = \frac{z_{\mathrm{Li^+}} D_{\mathrm{Li^+}} D_{\mathrm{Cl^-}}(z_{\mathrm{Cl^-}} - z_{\mathrm{Li^+}})c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + z_{\mathrm{Co^{2+}}} D_{\mathrm{Li^+}}(z_{\mathrm{Cl^-}} D_{\mathrm{Cl^-}} - z_{\mathrm{Co^{2+}}} D_{\mathrm{Co^{2+}}})c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}) + z_{\mathrm{Cl^-}} D_{\mathrm{Li^+}} D_{\mathrm{Cl^-}} \chi}{\tilde{D}(\bar{x},\bar{z})}
+.. math:: D_{\mathrm{Li^+,Co^{2+}}}(\bar{x},\bar{z}) = \frac{z_{\mathrm{Li^+}} z_{\mathrm{Co^{2+}}} D_{\mathrm{Li^+}}(D_{\mathrm{Co^{2+}}} - D_{\mathrm{Cl^-}})c_{\mathrm{Li^+},m}(\bar{x},\bar{z})}{\tilde{D}(\bar{x},\bar{z})}
+.. math:: D_{\mathrm{Co^{2+},Li^+}}(\bar{x},\bar{z}) = \frac{z_{\mathrm{Li^+}} z_{\mathrm{Co^{2+}}} D_{\mathrm{Co^{2+}}}(D_{\mathrm{Li^+}} - D_{\mathrm{Cl^-}})c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})}{\tilde{D}(\bar{x},\bar{z})}
+.. math:: D_{\mathrm{Co^{2+},Co^{2+}}}(\bar{x},\bar{z}) = \frac{z_{\mathrm{Li^+}} D_{\mathrm{Co^{2+}}} (z_{\mathrm{Cl^-}} D_{\mathrm{Cl^-}} - z_{\mathrm{Li^+}} D_{\mathrm{Li^+}})c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + z_{\mathrm{Co^{2+}}} D_{\mathrm{Co^{2+}}} D_{\mathrm{Cl^-}} (z_{\mathrm{Cl^-}} - z_{\mathrm{Co^{2+}}})c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z}) + z_{\mathrm{Cl^-}} D_{\mathrm{Co^{2+}}} D_{\mathrm{Cl^-}} \chi}{\tilde{D}(\bar{x},\bar{z})}
+
+For numerical stability, the convection and cross-diffusion coefficients are linearized:
 
 .. math:: \alpha_{Li^+}(\bar{x},\bar{z}) = \omega_0 + \omega_1 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \omega_2 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
 .. math:: \alpha_{Co^{2+}}(\bar{x},\bar{z}) = \omega_3 + \omega_4 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \omega_5 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
 
-.. math:: - D_{\mathrm{Li^+,Li^+}}(\bar{x},\bar{z}) = \beta_0 + \beta_1 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_2 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
-.. math:: - D_{\mathrm{Li^+,Co^{2+}}}(\bar{x},\bar{z}) = \beta_3 + \beta_4 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_5 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
-.. math:: - D_{\mathrm{Co^{2+},Li^+}}(\bar{x},\bar{z}) = \beta_6 + \beta_7 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_8 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
-.. math:: - D_{\mathrm{Co^{2+},Co^{2+}}}(\bar{x},\bar{z}) = \beta_9 + \beta_{10} c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_{11} c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
+.. math:: D_{\mathrm{Li^+,Li^+}}(\bar{x},\bar{z}) = \beta_0 + \beta_1 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_2 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
+.. math:: D_{\mathrm{Li^+,Co^{2+}}}(\bar{x},\bar{z}) = \beta_3 + \beta_4 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_5 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
+.. math:: D_{\mathrm{Co^{2+},Li^+}}(\bar{x},\bar{z}) = \beta_6 + \beta_7 c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_8 c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
+.. math:: D_{\mathrm{Co^{2+},Co^{2+}}}(\bar{x},\bar{z}) = \beta_9 + \beta_{10} c_{\mathrm{Li^+},m}(\bar{x},\bar{z}) + \beta_{11} c_{\mathrm{Co^{2+}},m}(\bar{x},\bar{z})
 
-that have the following regressed parameter values when :math:`\chi = 0 \mathrm{mM}` (valid for membrane lithium and cobalt concentration range of :math:`50-80 \mathrm{mM}`) and when :math:`\chi = -140 \mathrm{mM}` (valid for membrane lithium concentration range of :math:`50-80 \mathrm{mM}` and membrane cobalt concentration range of :math:`80-110 \mathrm{mM}`):
+and the the following regressed parameter values are obtained when :math:`\chi = 0 \, \mathrm{mM}` (valid for membrane lithium and cobalt concentration range of :math:`50-80 \, \mathrm{mM}`) and when :math:`\chi = -140 \, \mathrm{mM}` (valid for membrane lithium concentration range of :math:`50-80 \, \mathrm{mM}` and membrane cobalt concentration range of :math:`80-110 \, \mathrm{mM}`):
 
 ================== =========================== ============================== ============================================================
 Parameter          Value (:math:`\chi = 0 mM`) Value (:math:`\chi = -140 mM`) Units
@@ -473,7 +483,8 @@ and used when constructing these,
             doc="Mole concentration of solutes in the diafiltrate",
         )
 
-        # add parameters for the linearized relationships to calculate the diffusion and convection coefficients
+        # add parameters for the linearized equations to calculate the diffusion and convection coefficients
+        # these parameters were regressed in pyomo using the full equations provided in the documentation
         def initialize_diffusion_params(m, i, j, k):
             if self.config.charged_membrane:
                 # these params assume chi=-140 mM and lithium mem_conc range 50-80 mM & cobalt mem_conc range 80-110 mM

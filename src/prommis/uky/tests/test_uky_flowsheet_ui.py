@@ -25,4 +25,14 @@ def test_uky_ui_build():
 def test_uky_ui_solve():
     interface = ui.export_to_ui()
     interface.build()
+    assert interface.fs_exp is not None
     interface.solve()
+    assert interface.fs_exp is not None
+
+
+@pytest.mark.component
+def test_uky_ui_kpi():
+    interface = ui.export_to_ui()
+    interface.build()  # solve not needed
+    assert interface.fs_exp is not None
+    ui.add_kpis(exports=interface.fs_exp, flowsheet=interface.fs_exp.m.fs)

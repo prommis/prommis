@@ -228,18 +228,19 @@ def set_scaling(m):
                         m.fs.leach.mscontactor.solid_inlet_state[t].mass_frac_comp[j],
                         1e5,
                     )
-                    set_scaling_factor(
-                        m.fs.leach.mscontactor.heterogeneous_reactions[
-                            t, s
-                        ].reaction_rate[j],
-                        1e5,
-                    )
+
                     set_scaling_factor(
                         m.fs.leach.mscontactor.solid[t, s].conversion_eq[j], 1e3
                     )
                     set_scaling_factor(
                         m.fs.leach.mscontactor.solid_inlet_state[t].conversion_eq[j],
                         1e3,
+                    )
+                    set_scaling_factor(
+                        m.fs.leach.mscontactor.heterogeneous_reactions[
+                            t, s
+                        ].reaction_rate[j],
+                        1e5,
                     )
                     set_scaling_factor(
                         m.fs.leach.mscontactor.heterogeneous_reactions[

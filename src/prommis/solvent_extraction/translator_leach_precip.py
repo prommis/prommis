@@ -63,10 +63,24 @@ class TranslatorDataLeachPrecip(TranslatorData):
 
         @self.Constraint(
             self.flowsheet().time,
-            doc="Equality volumetric flow equation",
+            doc="Volumetric flow equality equation",
         )
         def eq_flow_vol_rule(blk, t):
             return blk.properties_out[t].flow_vol == blk.properties_in[t].flow_vol
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Temperature equality equation",
+        )
+        def eq_temperature_rule(blk, t):
+            return blk.properties_out[t].temperature == blk.properties_in[t].temperature
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Pressure equality equation",
+        )
+        def eq_pressure_rule(blk, t):
+            return blk.properties_out[t].pressure == blk.properties_in[t].pressure
 
         self.components = Set(
             initialize=[
@@ -87,15 +101,16 @@ class TranslatorDataLeachPrecip(TranslatorData):
                 "SO4",
                 "HSO4",
                 "Cl",
+                "H2C2O4",
             ]
         )
 
         @self.Constraint(
             self.flowsheet().time,
             self.components,
-            doc="Equality equation for metal components",
+            doc="Equality equation for mass concentration",
         )
-        def eq_conc_mass_metals(blk, t, i):
+        def eq_conc_mass_comp_rule(blk, t, i):
             return (
                 blk.properties_out[t].conc_mass_comp[i]
                 == blk.properties_in[t].conc_mass_comp[i]

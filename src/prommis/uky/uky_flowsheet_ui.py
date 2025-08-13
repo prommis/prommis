@@ -74,6 +74,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sc",
         "Sm",
         "Y",
+        "H2C2O4",
     }
 
     # Chemical components - oxides
@@ -177,6 +178,21 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         rounding=3,
         ui_units=pyo.units.kg / pyo.units.hour,
         display_units="kg/hr",
+        is_input=True,
+        is_output=False,
+        input_category=category,
+    )
+
+    # Export the oxalic acid feed volumetric flow as an input
+    category = "Oxalic acid"
+    oaf = flowsheet.oxalic_acid_feed
+    exports.add(
+        obj=oaf.flow_vol[0],
+        name="Oxalic acid liquid feed rate",
+        ui_units=pyo.units.l / pyo.units.hour,
+        display_units="L/h",
+        rounding=2,
+        description="Oxalic acid feed volumetric flow rate",
         is_input=True,
         is_output=False,
         input_category=category,
@@ -345,7 +361,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     category = "precipitator"
     precipitator = flowsheet.precipitator
     exports.add(
-        obj=precipitator.cv_aqueous.properties_out[0].flow_vol,
+        obj=precipitator.aqueous_outlet.flow_vol[0],
         name=f"precipitator aqueous out",
         ui_units=pyo.units.l / pyo.units.hour,
         display_units="liters/hour",
@@ -357,7 +373,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     )
     for c in comp:
         name = f"precipitator aqueous concentration mass composition of {c}"
-        obj = precipitator.cv_aqueous.properties_out[0].conc_mass_comp[c]
+        obj = precipitator.aqueous_outlet.conc_mass_comp[0, c]
         exports.add(
             obj=obj,
             name=name,

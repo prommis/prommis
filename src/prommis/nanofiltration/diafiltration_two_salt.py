@@ -15,7 +15,7 @@ This multi-component model for the diafiltration membrane model is a two-salt sy
 Configuration Arguments
 -----------------------
 
-The Two-Salt Diafiltration model requires a property package that provides the number of dissociated ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in solution. When used in a flowsheet, the user must provide property packages for the feed and product streams, where the product streams require the flow rates and concentrations to be indexed over membrane width. 
+The Two-Salt Diafiltration model requires a property package that provides the number of dissociated ions in solution, as well as the valency, molar mass, and reflection coefficient of each ion in solution. When used in a flowsheet, the user must provide property packages for the feed and product streams, where the product streams require the flow rates and concentrations to be indexed over membrane width.
 
 Additionally, there are two required arguments, ``NFEx`` and ``NFEz``, to specfiy the desired number of finite elements across the width and thickness of the membrane, respectively.
 

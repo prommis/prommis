@@ -4,7 +4,8 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-"""
+
+r"""
 Solvent Extraction Model
 
 ========================
@@ -30,6 +31,10 @@ configuration that describes the organic feed's properties.
 The number of stages in the solvent extraction process has to be specified by the user through
 the ``number_of_finite_elements`` configuration. It takes an integer value.
 
+The user must give a heterogeneous reaction package in the ``heterogeneous_reaction_package``
+argument for the extraction reaction between the two phases, and any additional arguments can
+be given in the ``heterogeneous_reaction_package_args`` argument.
+
 
 Stream configurations
 ---------------------
@@ -47,17 +52,21 @@ The user can specify the direction of the flow of the stream through the stages 
 configuration ``flow_direction``. This is a configuration, that uses FlowDirection Enum, which
 can have two possible values.
 
+The stream has two more arguments, ``has_energy_balance`` and ``has_pressure_balance`` in accordance
+with the base MSContactor model. However, our model does not consider energy balance and pressure balance
+yet, so the default arguments will be ``has_energy_balance = False`` and ``has_pressure_balance = False``.
+
 Degrees of freedom
 ------------------
 
 When the solvent extraction model is operated in steady state, the number of degrees of freedom of
-the model is equal to the sum of the number of distribution coefficients of the total components
-involved in the mass transfer operation and the volumes and volume fractions, for all the stages.
+the model is equal to the number of stages in the model. This happens because of the volume of each
+tank in the model, which needs to be fixed by the user.
 
-If the model is operated in dynamic state, the number of degrees of freedom is equal to the sum
-of the distribution coefficient of all components involved in the mass transfer operation, values
-of the state block variables of all the components of the system at the start of the operation, the
-volumes and the volume fractions, for all the stages.
+If the model is operated in dynamic state, the number of degrees of freedom of each stage is equal to
+the sum of all the variables whose values have to be fixed at time=0, and the volume of the tank. Then
+the total degrees of freedom is the degree of freedom of each tank multiplied by the total number of
+tanks.
 
 Model structure
 ---------------
@@ -74,6 +83,32 @@ distribution coefficient is defined in the solvent extraction model.
 The pressure buildup in each of the stages has been defined in the model. For defining the pressure, we
 need the volume of the phases, so the configuration ``has_holdup`` has to be set to True to obtain the
 pressure of the phases.
+
+Additional Parameters
+---------------------
+
+In addition to the MSContactor model, the model creates the following parameters.
+
+1. area_cross_stage = Cross-sectional area of each tank
+2. elevation = Elevation of each tank wrt the valve outlet
+
+Additional Constraints
+----------------------
+
+In addition to the MSContactor model, the model declares the following constraints.
+
+1. distribution_extent_constraint  = This constraint correlates the concentrations in the aqueous
+and organic phases of a particular element with the distribution coefficient of that element.
+
+2. volume_fraction_constraint = This constraint correlates the volume fractions of the two phases
+with the corresponding phase outlet volumetric flowrates. This constraint is deactivated at time t=0,
+since that is the initial point.
+
+3. organic_pressure_constraint = This constraint calculates the pressure at the end of the organic phase.
+
+4. aqueous_pressure_constraint = This constraint calculates the pressure at the end of the aqueous phase,
+ie. at the mixer tank outlet point.
+
 
 """
 
@@ -93,6 +128,8 @@ from idaes.core.util.constants import Constants
 from idaes.core.initialization import ModularInitializerBase
 
 from idaes.models.unit_models.mscontactor import MSContactor
+
+__author__ = "Arkoprabho Dasgupta"
 
 
 class SolventExtractionInitializer(ModularInitializerBase):
@@ -137,8 +174,6 @@ class SolventExtractionInitializer(ModularInitializerBase):
         """
 
         model.mscontactor.heterogeneous_reaction_extent.fix(1e-8)
-
-        model.mscontactor.volume.fix()
         model.mscontactor.volume_frac_stream[:, :, "aqueous"].fix()
 
         # Initialize MSContactor
@@ -149,6 +184,7 @@ class SolventExtractionInitializer(ModularInitializerBase):
         msc_init.initialize(model.mscontactor)
 
         model.mscontactor.heterogeneous_reaction_extent.unfix()
+        model.mscontactor.volume_frac_stream[:, :, "aqueous"].unfix()
 
         solver = self._get_solver()
         results = solver.solve(model)
@@ -252,11 +288,12 @@ class SolventExtractionData(UnitModelBlockData):
         ConfigValue(
             default=None,
             domain=dict,
-            description="Arguments for heterogeneous reaction package for solvent extractiong.",
+            description="Arguments for heterogeneous reaction package for solvent extraction.",
         ),
     )
 
     def build(self):
+
         super().build()
 
         streams_dict = {
@@ -299,9 +336,26 @@ class SolventExtractionData(UnitModelBlockData):
             self.mscontactor.elements,
             units=units.m,
             doc="Height of settler tank base above outflow valve level",
-            initialize=1,
+            initialize=0,
             mutable=True,
         )
+
+        def volume_fraction_rule(b, t, s):
+
+            theta_A = b.mscontactor.volume_frac_stream[t, s, "aqueous"]
+            theta_O = b.mscontactor.volume_frac_stream[t, s, "organic"]
+            v_A = b.mscontactor.aqueous[t, s].flow_vol
+            v_O = b.mscontactor.organic[t, s].flow_vol
+
+            return theta_A * v_O == theta_O * v_A
+
+        self.volume_fraction_constraint = Constraint(
+            self.flowsheet().time, self.mscontactor.elements, rule=volume_fraction_rule
+        )
+
+        if self.config.dynamic is True:
+            t0 = self.flowsheet().time.first()
+            self.volume_fraction_constraint[t0, :].deactivate()
 
         def organic_pressure_calculation(b, t, s):
 

@@ -815,7 +815,9 @@ def set_operating_conditions(m):
         m: pyomo model
     """
     # Constants
-    dehpa_conc = 975.8e3 * units.mg / units.L
+    # Assume a 5% volume-by-volume ratio
+    dosage = 5 / 100
+    dehpa_conc = 975.8e3 * dosage * units.mg / units.L
     kerosene_conc = 8.2e5 * units.mg / units.L
     Temp_room = 303 * units.K
     P_atm = 101235 * units.Pa
@@ -1166,7 +1168,7 @@ def initialize_system(m):
             (0, "Sc_o"): 1.74,
             (0, "Sm_o"): 4.91e-3,
             (0, "Y_o"): 4.17,
-            (0, "DEHPA"): 9.7e5,
+            (0, "DEHPA"): 9.8e5 * 0.05,
             (0, "Kerosene"): 8.2e5,
         },
     }
@@ -1207,7 +1209,7 @@ def initialize_system(m):
             (0, "Sc_o"): 3.97e-3,
             (0, "Sm_o"): 7.87e-4,
             (0, "Y_o"): 1.03,
-            (0, "DEHPA"): 9.8e5,
+            (0, "DEHPA"): 9.8e5 * 0.05,
             (0, "Kerosene"): 8.2e5,
         },
     }

@@ -10,7 +10,7 @@ Initial property package for precipitate.
 Authors: Alejandro Garciadiego
 """
 
-from pyomo.environ import Param, Set, Var, units
+from pyomo.environ import Constraint, Param, Set, Var, units
 
 import idaes.core.util.scaling as iscale
 from idaes.core import (
@@ -64,6 +64,7 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Cl = Component()
         self.HSO4 = Component()
         self.SO4 = Component()
+        self.H2C2O4 = Component()
 
         # REEs
         self.Sc = Component()
@@ -76,29 +77,53 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Gd = Component()
         self.Dy = Component()
 
-        # parameter based on pH 1.28
-        # TODO add surrogate model/equation
-        self.split = Param(
+        # parameter based on pH 1.5
+        self.E_D = Param(
             self.component_list,
-            units=units.kg / units.kg,
+            units=units.dimensionless,
             initialize={
-                "H2O": 1e-20,
-                "Sc": 31.61,
-                "Y": 74.46,
-                "La": 51.51,
-                "Ce": 68.07,
-                "Pr": 78,
-                "Nd": 81.55,
-                "Sm": 87.35,
-                "Gd": 88.01,
-                "Dy": 87.16,
+                "H2O": 100,
+                "Sc": 6.42030,
+                "Y": 4.551786,
+                "La": 4.3717,
+                "Ce": 1.18848,
+                "Pr": 2.09604,
+                "Nd": 1.01030,
+                "Sm": 2.296176,
+                "Gd": 3.07276,
+                "Dy": 4.8608,
+                "Al": 50,
+                "Ca": 14.49274,
+                "Fe": 8.659561,
+                "H": 100,
+                "Cl": 100,
+                "HSO4": 100,
+                "SO4": 100,
+            },
+        )
+
+        # parameter based on pH 1.5
+        self.N_D = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "H2O": 100,
+                "Sc": 6.42030,
+                "Y": 4.67403,
+                "La": 4.6340,
+                "Ce": 2.737238,
+                "Pr": 3.44364,
+                "Nd": 2.419137,
+                "Sm": 3.7201,
+                "Gd": 4.1995,
+                "Dy": 4.73106,
                 "Al": 0.9,
-                "Ca": 20.50,
-                "Fe": 2.44,
-                "H": 1e-20,
-                "Cl": 1e-20,
-                "HSO4": 1e-20,
-                "SO4": 1e-20,
+                "Ca": 4.45302,
+                "Fe": 3.6495,
+                "H": 100,
+                "Cl": 100,
+                "HSO4": 100,
+                "SO4": 100,
             },
         )
 
@@ -123,6 +148,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Cl": 35.453e-3,
                 "HSO4": 97.064e-3,
                 "SO4": 96.056e-3,
+                "H2C2O4": 90.03e-3,
             },
         )
 
@@ -144,6 +170,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Cl",
                 "HSO4",
                 "SO4",
+                "H2C2O4",
                 "H2O",
             ]
         )
@@ -191,7 +218,7 @@ class _AqueousStateBlock(StateBlock):
 
 
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
-class AqueousStateBlockkData(StateBlockData):
+class AqueousStateBlockData(StateBlockData):
     """
     State block for aqueous solution generated in oxalate precipitator.
 
@@ -225,6 +252,20 @@ class AqueousStateBlockkData(StateBlockData):
             bounds=(1e-20, None),
         )
 
+        self.temperature = Var(
+            initialize=298.15,
+            bounds=(298, None),
+            doc="State temperature [K]",
+            units=units.K,
+        )
+
+        self.pressure = Var(
+            initialize=101325.0,
+            bounds=(1e3, 1e6),
+            doc="State pressure [Pa]",
+            units=units.Pa,
+        )
+
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)
         def molar_concentration_constraint(b, j):
@@ -238,18 +279,33 @@ class AqueousStateBlockkData(StateBlockData):
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)
         def flow_mol_constraint(b, j):
-            return (
-                units.convert(
-                    b.flow_vol * b.conc_mass_comp[j] / b.params.mw[j],
-                    to_units=units.mol / units.hour,
+            if j == "H2O":
+                # Assume constant density of 1 kg/L
+                return (
+                    self.flow_vol * self.params.dens_mass / self.params.mw[j]
+                    == b.flow_mol_comp[j]
                 )
-                == b.flow_mol_comp[j]
+            else:
+                return (
+                    units.convert(
+                        b.flow_vol * b.conc_mass_comp[j] / b.params.mw[j],
+                        to_units=units.mol / units.hour,
+                    )
+                    == b.flow_mol_comp[j]
+                )
+
+        if not self.config.defined_state:
+            # Concentration of H2O based on assumed density
+            self.h2o_concentration = Constraint(
+                expr=self.conc_mass_comp["H2O"] == 1e6 * units.mg / units.L
             )
 
-        iscale.set_scaling_factor(self.flow_vol, 1e1)
+        iscale.set_scaling_factor(self.flow_vol, 1e-2)
+        iscale.set_scaling_factor(self.temperature, 1e-2)
+        iscale.set_scaling_factor(self.pressure, 1e5)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
-        iscale.set_scaling_factor(self.conc_mol_comp, 1e5)
+        iscale.set_scaling_factor(self.conc_mol_comp, 1e3)
 
     def _dens_mass(self):
         add_object_reference(self, "dens_mass", self.params.dens_mass)
@@ -273,4 +329,6 @@ class AqueousStateBlockkData(StateBlockData):
         return {
             "flow_vol": self.flow_vol,
             "conc_mass_comp": self.conc_mass_comp,
+            "temperature": self.temperature,
+            "pressure": self.pressure,
         }

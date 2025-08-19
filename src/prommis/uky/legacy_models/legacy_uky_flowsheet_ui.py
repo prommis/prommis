@@ -23,7 +23,7 @@ from idaes import logger as idaeslog
 from idaes_flowsheet_processor.api import FlowsheetCategory, FlowsheetInterface
 
 # package
-from prommis.uky.uky_flowsheet import (
+from prommis.uky.legacy_models.legacy_uky_flowsheet import (
     build,
     initialize_system,
     set_operating_conditions,
@@ -38,7 +38,7 @@ _log = idaeslog.getLogger(__name__)
 def export_to_ui():
     """Hook called by the UI to get the interface to the flowsheet."""
     return FlowsheetInterface(
-        name="UKy",
+        name="UKy (Legacy)",
         do_export=export_variables,
         do_build=build_flowsheet,
         do_solve=solve_flowsheet,
@@ -485,7 +485,7 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
 
 def get_diagram(build_options):
     """Return a diagram to be shown in the UI for this flowsheet."""
-    return "uky_flowsheet_ui.png"
+    return "legacy_uky_flowsheet_ui.png"
 
 
 def solve_flowsheet(flowsheet=None):

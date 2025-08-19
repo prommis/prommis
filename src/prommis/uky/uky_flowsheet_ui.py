@@ -485,7 +485,7 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
 
 def get_diagram(build_options):
     """Return a diagram to be shown in the UI for this flowsheet."""
-    return "uky_flowsheet_ui.png"
+    return "legacy_uky_flowsheet_ui.png"
 
 
 def solve_flowsheet(flowsheet=None):

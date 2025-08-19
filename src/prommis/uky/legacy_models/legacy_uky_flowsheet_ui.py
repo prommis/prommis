@@ -25,6 +25,7 @@ from idaes_flowsheet_processor.api import FlowsheetCategory, FlowsheetInterface
 # package
 from prommis.uky.legacy_models.legacy_uky_flowsheet import (
     build,
+    set_partition_coefficients,
     initialize_system,
     set_operating_conditions,
     set_scaling,
@@ -389,6 +390,7 @@ def build_flowsheet(build_options=None, **kwargs):
     """
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
+    set_partition_coefficients(m)
     set_operating_conditions(m)
     set_scaling(m)
     scaling = pyo.TransformationFactory("core.scale_model")
@@ -478,6 +480,8 @@ def solve_flowsheet(flowsheet=None):
     m = build()
 
     set_operating_conditions(m)
+
+    set_partition_coefficients(m)
 
     set_scaling(m)
 

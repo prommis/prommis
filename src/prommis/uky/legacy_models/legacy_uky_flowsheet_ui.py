@@ -30,6 +30,7 @@ from prommis.uky.legacy_models.legacy_uky_flowsheet import (
     set_operating_conditions,
     set_scaling,
     solve_system,
+    fix_organic_recycle,
     calculate_results,
 )
 
@@ -490,6 +491,10 @@ def solve_flowsheet(flowsheet=None):
 
     initialize_system(scaled_model)
 
-    results = solve_system(scaled_model)
+    solve_system(scaled_model)
+
+    fix_organic_recycle(scaled_model)
+
+    results = scaling.propagate_solution(scaled_model, m)
 
     return results

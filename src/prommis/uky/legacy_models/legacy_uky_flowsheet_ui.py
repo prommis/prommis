@@ -441,7 +441,7 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
         values=element_values,
         labels=element_labels,
         title="Leaching REE Elemental Recovery",
-        xlab="Rare earth elements",
+        xlab="Rare Earth Elements",
         ylab="Elemental Recovery",
         units="%",
     )

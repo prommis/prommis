@@ -32,7 +32,6 @@ from prommis.uky.legacy_models.legacy_uky_flowsheet import (
     solve_system,
     fix_organic_recycle,
     calculate_results,
-    main,
 )
 
 _log = idaeslog.getLogger(__name__)
@@ -386,10 +385,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
 
 
 def build_flowsheet(build_options=None, **kwargs):
-    """Called by the UI to build the flowsheet.
-    Does not solve the flowsheet, but does set operating conditions, scaling, and
-    initialize the system.
-    """
+    """Called by the UI to build the flowsheet."""
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
     set_partition_coefficients(m)
@@ -444,7 +440,7 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
         name="element-recovery",
         values=element_values,
         labels=element_labels,
-        title="REE Elemental Recovery",
+        title="Leaching REE Elemental Recovery",
         xlab="Rare earth elements",
         ylab="Elemental Recovery",
         units="%",
@@ -485,22 +481,5 @@ def solve_flowsheet(flowsheet=None):
 
     fs = flowsheet
     results = solve_system(fs)
-
-    # m = build()
-    #
-    # set_partition_coefficients(m)
-    #
-    # set_operating_conditions(m)
-    #
-    # set_scaling(m)
-    #
-    # scaling = pyo.TransformationFactory("core.scale_model")
-    # scaled_model = scaling.create_using(m, rename=False)
-    #
-    # initialize_system(scaled_model)
-    #
-    # solve_system(scaled_model)
-    #
-    # results = scaling.propagate_solution(scaled_model, m)
 
     return results

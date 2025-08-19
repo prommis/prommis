@@ -85,6 +85,7 @@ known_issues = "prommis._testing_utils.known_issues"
 
 [project.entry-points."prommis.flowsheets"]
 "UKy" = "prommis.uky.uky_flowsheet_ui"
+"UKy Legacy" = "prommis.uky.legacy_models.uky_flowsheet_ui"
 
 [tool.pytest.ini_options]
 addopts = """

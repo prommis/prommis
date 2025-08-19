@@ -39,7 +39,7 @@ _log = idaeslog.getLogger(__name__)
 def export_to_ui():
     """Hook called by the UI to get the interface to the flowsheet."""
     return FlowsheetInterface(
-        name="UKy (Legacy)",
+        name="UKy",
         do_export=export_variables,
         do_build=build_flowsheet,
         do_solve=solve_flowsheet,
@@ -479,9 +479,9 @@ def solve_flowsheet(flowsheet=None):
 
     m = build()
 
-    set_operating_conditions(m)
-
     set_partition_coefficients(m)
+
+    set_operating_conditions(m)
 
     set_scaling(m)
 

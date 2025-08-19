@@ -29,6 +29,7 @@ from prommis.uky.uky_flowsheet import (
     set_operating_conditions,
     set_scaling,
     solve_system,
+    fix_organic_recycle,
     calculate_results,
 )
 
@@ -399,10 +400,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
 
 
 def build_flowsheet(build_options=None, **kwargs):
-    """Called by the UI to build the flowsheet.
-    Does not solve the flowsheet, but does set operating conditions, scaling, and
-    initialize the system.
-    """
+    """Called by the UI to build the flowsheet."""
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
     set_operating_conditions(m)
@@ -410,8 +408,12 @@ def build_flowsheet(build_options=None, **kwargs):
     scaling = pyo.TransformationFactory("core.scale_model")
     scaled_model = scaling.create_using(m, rename=False)
     initialize_system(scaled_model)
+    solve_system(scaled_model)
+    fix_organic_recycle(scaled_model)
+    solve_system(scaled_model)
+    scaling.propagate_solution(scaled_model, m)
     _log.info(f"end/build-flowsheet build_options={build_options}")
-    return scaled_model
+    return m
 
 
 def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
@@ -452,8 +454,8 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
         name="element-recovery",
         values=element_values,
         labels=element_labels,
-        title="REE Elemental Recovery",
-        xlab="Rare earth elements",
+        title="Leaching REE Elemental Recovery",
+        xlab="Rare Earth Elements",
         ylab="Elemental Recovery",
         units="%",
     )
@@ -491,17 +493,7 @@ def get_diagram(build_options):
 def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
 
-    m = build()
-
-    set_operating_conditions(m)
-
-    set_scaling(m)
-
-    scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-
-    initialize_system(scaled_model)
-
-    results = solve_system(scaled_model)
+    fs = flowsheet
+    results = solve_system(fs)
 
     return results

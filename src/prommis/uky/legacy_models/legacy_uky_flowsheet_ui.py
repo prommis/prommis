@@ -493,10 +493,6 @@ def solve_flowsheet(flowsheet=None):
 
     solve_system(scaled_model)
 
-    fix_organic_recycle(scaled_model)
-
-    solve_system(scaled_model)
-
     results = scaling.propagate_solution(scaled_model, m)
 
     return results

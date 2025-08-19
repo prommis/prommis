@@ -32,6 +32,7 @@ from prommis.uky.legacy_models.legacy_uky_flowsheet import (
     solve_system,
     fix_organic_recycle,
     calculate_results,
+    main,
 )
 
 _log = idaeslog.getLogger(__name__)
@@ -397,8 +398,12 @@ def build_flowsheet(build_options=None, **kwargs):
     scaling = pyo.TransformationFactory("core.scale_model")
     scaled_model = scaling.create_using(m, rename=False)
     initialize_system(scaled_model)
+    solve_system(scaled_model)
+    fix_organic_recycle(scaled_model)
+    solve_system(scaled_model)
+    scaling.propagate_solution(scaled_model, m)
     _log.info(f"end/build-flowsheet build_options={build_options}")
-    return scaled_model
+    return m
 
 
 def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
@@ -478,21 +483,24 @@ def get_diagram(build_options):
 def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
 
-    m = build()
+    fs = flowsheet
+    results = solve_system(fs)
 
-    set_partition_coefficients(m)
-
-    set_operating_conditions(m)
-
-    set_scaling(m)
-
-    scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-
-    initialize_system(scaled_model)
-
-    solve_system(scaled_model)
-
-    results = scaling.propagate_solution(scaled_model, m)
+    # m = build()
+    #
+    # set_partition_coefficients(m)
+    #
+    # set_operating_conditions(m)
+    #
+    # set_scaling(m)
+    #
+    # scaling = pyo.TransformationFactory("core.scale_model")
+    # scaled_model = scaling.create_using(m, rename=False)
+    #
+    # initialize_system(scaled_model)
+    #
+    # solve_system(scaled_model)
+    #
+    # results = scaling.propagate_solution(scaled_model, m)
 
     return results

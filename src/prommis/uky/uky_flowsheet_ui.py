@@ -395,6 +395,39 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             is_output=True,
             output_category=category,
         )
+
+    # Export the outputs for the roaster, including product mass flow
+    # and molar flow rates for the oxides in the product stream.
+    category = "roaster"
+    roaster = flowsheet.roaster
+    name = f"roaster product mass flow of total oxides"
+    obj = roaster.flow_mass_product[0]
+    exports.add(
+        obj=obj,
+        name=name,
+        description=f"Mass flow rate of oxides in the roaster product stream",
+        ui_units=pyo.units.kg / pyo.units.s,
+        display_units="kg/s",
+        rounding=10,
+        is_input=False,
+        is_output=True,
+        output_category=category,
+    )
+    for c in comp:
+        name = f"roaster product molar flow of {c} oxide"
+        obj = roaster.flow_mol_comp_product[0, c]
+        exports.add(
+            obj=obj,
+            name=name,
+            description=f"Roaster molar flow rate of {c} oxide in product stream",
+            ui_units=pyo.units.mol / pyo.units.s,
+            display_units="mol/s",
+            rounding=10,
+            is_input=False,
+            is_output=True,
+            output_category=category,
+        )
+
     _log.debug(f"exports:\n{exports.model_dump_json()}")
     _log.info(f"end/setup-UI-exports build_options={build_options}")
 

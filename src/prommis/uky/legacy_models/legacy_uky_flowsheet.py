@@ -191,19 +191,13 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
-# from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.uky.legacy_models.leach_solution_properties import LeachSolutionParameters
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
-# from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.uky.legacy_models.ree_og_distribution import REESolExOgParameters
-# from prommis.solvent_extraction.solvent_extraction import (
-#     SolventExtraction,
-#     SolventExtractionInitializer,
-# )
 from prommis.uky.legacy_models.solvent_extraction import (
     SolventExtraction,
     SolventExtractionInitializer,
@@ -988,8 +982,8 @@ def set_scaling(m):
             sb.set_variable_scaling_factor(var, 1e-2)
         if "pressure" in var.name:
             sb.set_variable_scaling_factor(var, 1e-5)
-        if "flow_mol" in var.name:
-            sb.set_variable_scaling_factor(var, 1e-3)
+        if "conc_mass_comp" in var.name:
+            sb.set_variable_scaling_factor(var, 1e4)
 
     return m
 
@@ -1002,7 +996,7 @@ def set_operating_conditions(m):
         m: pyomo model
     """
     m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
-    m.fs.leach_liquid_feed.conc_mass_comp.fix(1e-10 * units.mg / units.L)
+    m.fs.leach_liquid_feed.conc_mass_comp.fix(1e-8 * units.mg / units.L)
     m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].fix(
         2 * 0.05 * 1e3 * units.mg / units.L
     )

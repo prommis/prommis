@@ -982,8 +982,6 @@ def set_scaling(m):
             sb.set_variable_scaling_factor(var, 1e-2)
         if "pressure" in var.name:
             sb.set_variable_scaling_factor(var, 1e-5)
-        if "conc_mass_comp" in var.name:
-            sb.set_variable_scaling_factor(var, 1e4)
 
     return m
 

@@ -23,12 +23,14 @@ from idaes import logger as idaeslog
 from idaes_flowsheet_processor.api import FlowsheetCategory, FlowsheetInterface
 
 # package
-from prommis.uky.uky_flowsheet import (
+from prommis.uky.legacy_models.legacy_uky_flowsheet import (
     build,
+    set_partition_coefficients,
     initialize_system,
     set_operating_conditions,
     set_scaling,
     solve_system,
+    fix_organic_recycle,
     calculate_results,
 )
 
@@ -90,22 +92,6 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Sc2O3",
         "Sm2O3",
         "Y2O3",
-    }
-
-    # Organic components
-    comp_org = {
-        "Al_o",
-        "Ca_o",
-        "Ce_o",
-        "Dy_o",
-        "Fe_o",
-        "Gd_o",
-        "La_o",
-        "Nd_o",
-        "Pr_o",
-        "Sc_o",
-        "Sm_o",
-        "Y_o",
     }
 
     # Liquid chemical components
@@ -319,7 +305,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
                 # add aqueous components for the aqueous rougher
                 complist = comp.union(comp_liq)
             elif ltype == "organic":
-                complist = comp_org
+                complist = comp
             else:
                 complist = comp
             # export the output for each component
@@ -394,24 +380,59 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             is_output=True,
             output_category=category,
         )
+
+    # Export the outputs for the roaster, including product mass flow
+    # and molar flow rates for the oxides in the product stream.
+    category = "roaster"
+    roaster = flowsheet.roaster
+    name = f"roaster product mass flow of total oxides"
+    obj = roaster.flow_mass_product[0]
+    exports.add(
+        obj=obj,
+        name=name,
+        description=f"Mass flow rate of oxides in the roaster product stream",
+        ui_units=pyo.units.kg / pyo.units.s,
+        display_units="kg/s",
+        rounding=10,
+        is_input=False,
+        is_output=True,
+        output_category=category,
+    )
+    for c in comp:
+        name = f"roaster product molar flow of {c} oxide"
+        obj = roaster.flow_mol_comp_product[0, c]
+        exports.add(
+            obj=obj,
+            name=name,
+            description=f"Roaster molar flow rate of {c} oxide in product stream",
+            ui_units=pyo.units.mol / pyo.units.s,
+            display_units="mol/s",
+            rounding=10,
+            is_input=False,
+            is_output=True,
+            output_category=category,
+        )
+
     _log.debug(f"exports:\n{exports.model_dump_json()}")
     _log.info(f"end/setup-UI-exports build_options={build_options}")
 
 
 def build_flowsheet(build_options=None, **kwargs):
-    """Called by the UI to build the flowsheet.
-    Does not solve the flowsheet, but does set operating conditions, scaling, and
-    initialize the system.
-    """
+    """Called by the UI to build the flowsheet."""
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
+    set_partition_coefficients(m)
     set_operating_conditions(m)
     set_scaling(m)
     scaling = pyo.TransformationFactory("core.scale_model")
     scaled_model = scaling.create_using(m, rename=False)
     initialize_system(scaled_model)
+    solve_system(scaled_model)
+    fix_organic_recycle(scaled_model)
+    solve_system(scaled_model)
+    scaling.propagate_solution(scaled_model, m)
     _log.info(f"end/build-flowsheet build_options={build_options}")
-    return scaled_model
+    return m
 
 
 def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
@@ -452,8 +473,8 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
         name="element-recovery",
         values=element_values,
         labels=element_labels,
-        title="REE Elemental Recovery",
-        xlab="Rare earth elements",
+        title="Leaching REE Elemental Recovery",
+        xlab="Rare Earth Elements",
         ylab="Elemental Recovery",
         units="%",
     )
@@ -491,17 +512,7 @@ def get_diagram(build_options):
 def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
 
-    m = build()
-
-    set_operating_conditions(m)
-
-    set_scaling(m)
-
-    scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-
-    initialize_system(scaled_model)
-
-    results = solve_system(scaled_model)
+    fs = flowsheet
+    results = solve_system(fs)
 
     return results

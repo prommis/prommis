@@ -180,6 +180,7 @@ def set_inputs(m, perturb_time):
     m.fs.leach.mscontactor.liquid[0, :].flow_vol.fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["H"].fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["HSO4"].fix()
+    m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["H2C2O4"].fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["Cl"].fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["Sc"].fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["Y"].fix()
@@ -227,18 +228,19 @@ def set_scaling(m):
                         m.fs.leach.mscontactor.solid_inlet_state[t].mass_frac_comp[j],
                         1e5,
                     )
-                    set_scaling_factor(
-                        m.fs.leach.mscontactor.heterogeneous_reactions[
-                            t, s
-                        ].reaction_rate[j],
-                        1e5,
-                    )
+
                     set_scaling_factor(
                         m.fs.leach.mscontactor.solid[t, s].conversion_eq[j], 1e3
                     )
                     set_scaling_factor(
                         m.fs.leach.mscontactor.solid_inlet_state[t].conversion_eq[j],
                         1e3,
+                    )
+                    set_scaling_factor(
+                        m.fs.leach.mscontactor.heterogeneous_reactions[
+                            t, s
+                        ].reaction_rate[j],
+                        1e5,
                     )
                     set_scaling_factor(
                         m.fs.leach.mscontactor.heterogeneous_reactions[
@@ -318,3 +320,5 @@ if __name__ == "__main__":
     plt.title("Solid mass flow rate variation wrt time")
     plt.xlabel("Time (h)")
     plt.ylabel("Solid mass flow rate (kg/h)")
+
+    m.fs.leach.recovery.display()

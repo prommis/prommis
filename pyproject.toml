@@ -48,6 +48,7 @@ local_scheme = "node-and-date"
 
 [tool.pylint.main]
 py-version = "3.9"
+load-plugins = ["silent_checker"]
 
 [tool.pylint."messages control"]
 disable = [
@@ -68,6 +69,7 @@ enable = [
     "implicit-str-concat",
     "dangerous-default-value",
     "invalid-name",
+    "silent-exception-handling",
 ]
 module-naming-style = "snake_case"
 const-naming-style = "any"

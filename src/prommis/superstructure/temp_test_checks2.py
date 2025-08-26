@@ -1,15 +1,14 @@
 # import pyomo.environ as pyo
 # from pyomo.util.check_units import assert_units_consistent
 
-from idaes.core.scaling.util import report_scaling_factors
-
-from prommis.superstructure.superstructure_function import (
-    build_model,
-    report_superstructure_results_overview
-)
-from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
+# from idaes.core.scaling.util import report_scaling_factors
 from idaes.core.solvers import get_solver
 
+from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
+from prommis.superstructure.superstructure_function import (
+    build_model,
+    report_superstructure_results_overview,
+)
 
 #################################################################################################
 ### Choice of objectie function
@@ -841,4 +840,3 @@ report_superstructure_results_overview(m)
 
 # Call the scaling report
 # report_scaling_factors(m.fs)
-

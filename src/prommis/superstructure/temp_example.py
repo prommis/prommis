@@ -367,7 +367,6 @@ solver.options["NumericFocus"] = 2
 results = solver.solve(m, tee="True")
 
 
-
 # report_scaling_factors(m.fs)
 # report_scaling_factors(m.fs.costing)
 # report_scaling_factors(m.fs.byproduct_valorization)

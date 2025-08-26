@@ -14,7 +14,7 @@ Author: Chris Laliwala
 from enum import Enum
 
 
-class ObjectiveFunction(Enum):
+class ObjectiveFunctionChoice(Enum):
     """
     Enum of supported objective functions
     """

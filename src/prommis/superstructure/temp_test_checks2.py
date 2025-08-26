@@ -3,49 +3,17 @@
 
 from idaes.core.scaling.util import report_scaling_factors
 
-from prommis.superstructure.superstructure_function import build_model
+from prommis.superstructure.superstructure_function import (
+    build_model,
+    report_superstructure_results_overview
+)
+from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
+from idaes.core.solvers import get_solver
 
-# from idaes.core.solvers import get_solver
-# from idaes.core.util import DiagnosticsToolbox
-
-
-# def build_model(
-#     m,
-#     ### Plant lifetime parameters
-#     plant_start,
-#     plant_lifetime,
-#     ### Feed parameters
-#     available_feed,
-#     collection_rate,
-#     tracked_comps,
-#     prod_comp_mass,
-#     ### Superstructure formulation parameters
-#     num_stages,
-#     options_in_stage,
-#     option_outlets,
-#     option_efficiencies,
-#     ### Operating parameters
-#     profit,
-#     opt_var_oc_params,
-#     operators_per_discrete_unit,
-#     yearly_cost_per_unit,
-#     processing_rate,
-#     num_operators,
-#     labor_rate,
-#     ### Discretized costing parameters
-#     discretized_purchased_equipment_cost,
-#     ### Environmental impacts parameters
-#     consider_environmental_impacts,
-#     options_environmental_impacts,
-#     epsilon,
-#     ### Byproduct valorization parameters
-#     consider_byproduct_valorization,
-#     byproduct_values,
-# ):
 
 #################################################################################################
 ### Choice of objectie function
-obj_func = "NPV"
+obj_func = ObjectiveFunctionChoice.NET_PRESENT_VALUE
 
 ### Plant Lifetime Params
 plant_start = 2024
@@ -201,10 +169,22 @@ num_operators = {
     (2, 1): 0.65,
     (2, 2): 0.65,
     (2, 3): 0.65,
+    (2, 4): 0.65,
     (3, 1): 1.6,
     (3, 2): 1.6,
     (3, 3): 1.3,
     (3, 4): 0.45,
+    (3, 5): 0.45,
+    (3, 6): 0.45,
+    (4, 1): 0.45,
+    (4, 2): 0.45,
+    (4, 3): 0.45,
+    (4, 4): 0.45,
+    (5, 1): 0.45,
+    (5, 2): 0.45,
+    (5, 3): 0.45,
+    (5, 4): 0.45,
+    (5, 5): 0.45,
 }
 labor_rate = 8000 * 38.20
 
@@ -668,12 +648,8 @@ discretized_purchased_equipment_cost = {
     },
 }
 
-### Objective Function Parameters
-obj_func = "NPV"
-# obj_func = "COR"
-
 ### Environmnetal Impact Parameters
-consider_environmental_impacts = False
+consider_environmental_impacts = True
 options_environmental_impacts = {
     (1, 1): 0,
     (1, 2): 1000,
@@ -697,11 +673,11 @@ options_environmental_impacts = {
     (5, 4): 800,
     (5, 5): 1000,
 }
-# epsilon = 1e16
-epsilon = 1
+epsilon = 1e16
+# epsilon = 1
 
 ### Byproduct Valorization Parameters
-consider_byproduct_valorization = True
+consider_byproduct_valorization = False
 byproduct_values = {
     "Jarosite": -0.17,
     "Iron oxide": 10,
@@ -758,11 +734,16 @@ m = build_model(
     byproduct_opt_conversions,
 )
 
-### Solve model
-# m.fs.environmental_impacts.deactivate()
-# solver = get_solver(solver="gurobi")
-# solver.options["NumericFocus"] = 2
-# results = solver.solve(m, tee="True")
+## Solve model
+solver = get_solver(solver="gurobi")
+solver.options["NumericFocus"] = 2
+results = solver.solve(m, tee=False)
+
+report_superstructure_results_overview(m)
+
+# m.fs.costing.discrete_units_per_option.display()
+
+# m.fs.costing.obj.display()
 
 ### Print out results
 # m.fs.option_binary_var.display()
@@ -859,9 +840,5 @@ m = build_model(
 #         c.deactivate()
 
 # Call the scaling report
-report_scaling_factors(m.fs)
+# report_scaling_factors(m.fs)
 
-# # Reactivate the constraints afterwards
-# for block in m.fs.costing.piecewise_cons.values():
-#     for c in block.component_data_objects(pyo.Constraint, descend_into=True):
-#         c.activate()

@@ -14,6 +14,8 @@ Author: Chris Laliwala
 import pyomo.environ as pyo
 from pyomo.environ import units as pyunits
 
+import pandas as pd
+
 from idaes.core.scaling import CustomScalerBase
 
 from prommis.superstructure.add_superstructure_blocks import (
@@ -50,6 +52,8 @@ from prommis.superstructure.check_superstructure_inputs import (
     check_plant_lifetime_params,
     check_supe_formulation_params,
 )
+
+from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
 
 
 class SuperstructureScaler(CustomScalerBase):
@@ -637,3 +641,82 @@ def build_model(
 
     ### Return model
     return m
+
+# def report_superstructure_params(m):
+#     ### Report plant lifetime parameters
+#     # Define parameters
+#     plant_lifetime_params = [
+#         ('Plant Start', m.fs.plant_start),
+#         ('Plant End', m.fs.plant_end),
+#     ]
+    
+#     print("\nPlant Lifetime Parameters:")
+#     print("")
+#     print(f"    {'Key':>15} : {'Value':<9} : {'Units':<8}")
+    
+#     for name, param in plant_lifetime_params:
+#         value = pyo.value(param)
+#         unit_str = str(param.get_units())
+#         print(f"    {name:>15} : {value:<9} : {unit_str:<8}")
+
+#     ### Report tracked component parameters
+#     print("\nTracked Component Parameters:")
+#     print("")
+#     print(f"    {'Component':>15} : {'Mass':<12} : {'Units':<15}")
+
+#     # Iterate over tracked components
+#     for comp in m.fs.tracked_comps:
+#         mass_value = pyo.value(m.fs.prod_comp_mass[comp])
+        
+#         # Get units from the parameter
+#         unit_str = str(m.fs.prod_comp_mass.get_units())
+        
+#         print(f"    {comp:>15} : {mass_value:<12.4f} : {unit_str:<15}")
+
+#     ### Report feed parameters
+#     print("\n")
+
+def report_superstructure_results_overview(m):
+    """
+
+    """
+    ## Define parameters necessary for reporting results.
+    # List of options that were chosen by the superstructure.
+    chosen_opts = []
+    # Final value of NPV.
+    NPV_value = pyo.value(m.fs.costing.net_present_value)
+    # Final value of COR.
+    COR_value = pyo.value(m.fs.costing.cost_of_recovery)
+    # Total impacts generated over the lifetime of the plant
+    total_impacts = pyo.value(m.fs.environmental_impacts.total_impacts) 
+
+    ## Report chosen process
+    # List of options that were chosen.
+    for opt in m.fs.all_opts_set:
+        if pyo.value(m.fs.option_binary_var[opt]) == 1:
+            chosen_opts.append(opt)
+
+    # Create the formatted string representation of the chosen options.
+    chosen_opts_str = ' -> '.join(str(opt) for opt in chosen_opts)
+    print(f'\nChosen Pathway: {chosen_opts_str}')
+
+    ## Report NPV if it was chosen as the objective function.
+    if (
+        pyo.value(m.fs.objective_function_choice)
+        == ObjectiveFunctionChoice.NET_PRESENT_VALUE.value
+    ):
+        
+        print(f'\nTotal NPV: {NPV_value:,.2f} USD')
+
+    ## Report COR if it was chosen.
+    else:
+        print(f'\nCost of Recovery: {COR_value:,.2f} USD/kg')
+
+    # Report total environmental impacts if it was chosen to track them.
+    if (
+        pyo.value(m.fs.environmental_impacts.consider_environmental_impacts)
+        == True
+    ):
+        print(f'\nTotal Impacts: {total_impacts:,.2f}')
+
+    

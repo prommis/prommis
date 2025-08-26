@@ -17,7 +17,7 @@ import math
 import pyomo.environ as pyo
 from pyomo.environ import units as pyunits
 
-from prommis.superstructure.objective_function_enums import ObjectiveFunction
+from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
 
 
 def add_objective_function_choice_param(m, obj_func):
@@ -687,7 +687,7 @@ def add_costing_vars(m):
     # if NPV is objective function, build relevant vars
     if (
         pyo.value(m.fs.objective_function_choice)
-        == ObjectiveFunction.NET_PRESENT_VALUE.value
+        == ObjectiveFunctionChoice.NET_PRESENT_VALUE.value
     ):
         m.fs.costing.opt_profit = pyo.Var(
             m.fs.final_opts_set,
@@ -992,7 +992,7 @@ def add_profit_cons(m, consider_byproduct_valorization: bool):
     # Check if NPV is objective function
     if (
         pyo.value(m.fs.objective_function_choice)
-        == ObjectiveFunction.NET_PRESENT_VALUE.value
+        == ObjectiveFunctionChoice.NET_PRESENT_VALUE.value
     ):
 
         @m.fs.costing.Constraint(
@@ -1035,7 +1035,7 @@ def add_profit_cons(m, consider_byproduct_valorization: bool):
         # Check if NPV is objective function
         if (
             pyo.value(m.fs.objective_function_choice)
-            == ObjectiveFunction.NET_PRESENT_VALUE.value
+            == ObjectiveFunctionChoice.NET_PRESENT_VALUE.value
         ):
             # Add profit constraint for when byproduct valorization is considered if so.
             @m.fs.costing.Constraint(
@@ -1074,7 +1074,7 @@ def add_profit_cons(m, consider_byproduct_valorization: bool):
         # Check if NPV is objective function
         if (
             pyo.value(m.fs.objective_function_choice)
-            == ObjectiveFunction.NET_PRESENT_VALUE.value
+            == ObjectiveFunctionChoice.NET_PRESENT_VALUE.value
         ):
 
             @m.fs.costing.Constraint(
@@ -1134,13 +1134,14 @@ def add_capital_cost_cons(m):
     @m.fs.costing.Constraint(
         m.fs.discrete_opts_set,
         doc="Calculates the purchased cost of equipment for all discrete options. "
-        "Done by multiplying the number of discrete units by the capital cost per unit.",
+        "Done by multiplying the number of discrete units by the capital cost per unit by the binary variable indicating if it has been chosen or not.",
     )
     def discrete_opts_equipment_cost_cons(b, j, k):
         return (
             m.fs.costing.equipment_cost[j, k]
             == m.fs.costing.discrete_units_per_option[j, k]
             * m.fs.costing.capital_cost_per_unit[j, k]
+            * m.fs.option_binary_var[j, k]
         )
 
     def piecewise_rule(b, j, k):
@@ -1509,7 +1510,7 @@ def add_costing_objective_functions(m, obj_func: str):
     # Check if NPV is objective function
     if (
         pyo.value(m.fs.objective_function_choice)
-        == ObjectiveFunction.NET_PRESENT_VALUE.value
+        == ObjectiveFunctionChoice.NET_PRESENT_VALUE.value
     ):
         # set objective function
         m.fs.costing.obj = pyo.Objective(

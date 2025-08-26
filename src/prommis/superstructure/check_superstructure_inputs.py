@@ -15,7 +15,7 @@ import warnings
 
 import pyomo.environ as pyo
 
-from prommis.superstructure.objective_function_enums import ObjectiveFunction
+from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
 
 
 def check_objective_function_choice(obj_func):
@@ -26,9 +26,9 @@ def check_objective_function_choice(obj_func):
         obj_func: (str) Choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
     """
 
-    # Check that obj_func is an instance of ObjectiveFunction
-    if not isinstance(obj_func, ObjectiveFunction):
-        raise TypeError("obj_func is not an ObjectiveFunction Enum")
+    # Check that obj_func is an instance of ObjectiveFunctionChoice
+    if not isinstance(obj_func, ObjectiveFunctionChoice):
+        raise TypeError("obj_func is not an ObjectiveFunctionChoice Enum")
 
 
 def check_plant_lifetime_params(plant_start, plant_lifetime):

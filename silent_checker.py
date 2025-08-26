@@ -2,14 +2,13 @@ import astroid
 from astroid import nodes
 from typing import TYPE_CHECKING
 
-from pylint.checkers import BaseChecker, IAstroidChecker
+from pylint.checkers import BaseChecker
 
 if TYPE_CHECKING:
     from pylint.lint import PyLinter
 
 
 class SilentExceptionChecker(BaseChecker):
-    __implements__ = IAstroidChecker
 
     name = "silent-exception"
     msgs = {
@@ -45,6 +44,9 @@ class SilentExceptionChecker(BaseChecker):
         return False
 
 
-def register(linter: "PyLinter") -> None:
-    """This required method auto registers the checker during initialization."""
-    linter.register_checker(SilentExceptionChecker(linter))
+def register(linter):
+    """Register the checker."""
+    print(f"Registering plugin: {__name__}")
+    checker = SilentExceptionChecker(linter)
+    linter.register_checker(checker)
+    print(f"Registered checker: {checker.name}")

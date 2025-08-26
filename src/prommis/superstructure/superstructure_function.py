@@ -16,8 +16,6 @@ from pyomo.environ import units as pyunits
 
 from idaes.core.scaling import CustomScalerBase
 
-import pandas as pd
-
 from prommis.superstructure.add_superstructure_blocks import (
     add_byproduct_valorization_cons,
     add_byproduct_valorization_params,
@@ -642,39 +640,39 @@ def build_model(
     return m
 
 
-def report_superstructure_params(m):
-    ### Report plant lifetime parameters
-    # Define parameters
-    plant_lifetime_params = [
-        ("Plant Start", m.fs.plant_start),
-        ("Plant End", m.fs.plant_end),
-    ]
+# def report_superstructure_params(m):
+#     ### Report plant lifetime parameters
+#     # Define parameters
+#     plant_lifetime_params = [
+#         ("Plant Start", m.fs.plant_start),
+#         ("Plant End", m.fs.plant_end),
+#     ]
 
-    print("\nPlant Lifetime Parameters:")
-    print("")
-    print(f"    {'Key':>15} : {'Value':<9} : {'Units':<8}")
+#     print("\nPlant Lifetime Parameters:")
+#     print("")
+#     print(f"    {'Key':>15} : {'Value':<9} : {'Units':<8}")
 
-    for name, param in plant_lifetime_params:
-        value = pyo.value(param)
-        unit_str = str(param.get_units())
-        print(f"    {name:>15} : {value:<9} : {unit_str:<8}")
+#     for name, param in plant_lifetime_params:
+#         value = pyo.value(param)
+#         unit_str = str(param.get_units())
+#         print(f"    {name:>15} : {value:<9} : {unit_str:<8}")
 
-    ### Report tracked component parameters
-    print("\nTracked Component Parameters:")
-    print("")
-    print(f"    {'Component':>15} : {'Mass':<12} : {'Units':<15}")
+#     ### Report tracked component parameters
+#     print("\nTracked Component Parameters:")
+#     print("")
+#     print(f"    {'Component':>15} : {'Mass':<12} : {'Units':<15}")
 
-    # Iterate over tracked components
-    for comp in m.fs.tracked_comps:
-        mass_value = pyo.value(m.fs.prod_comp_mass[comp])
+#     # Iterate over tracked components
+#     for comp in m.fs.tracked_comps:
+#         mass_value = pyo.value(m.fs.prod_comp_mass[comp])
 
-        # Get units from the parameter
-        unit_str = str(m.fs.prod_comp_mass.get_units())
+#         # Get units from the parameter
+#         unit_str = str(m.fs.prod_comp_mass.get_units())
 
-        print(f"    {comp:>15} : {mass_value:<12.4f} : {unit_str:<15}")
+#         print(f"    {comp:>15} : {mass_value:<12.4f} : {unit_str:<15}")
 
-    ### Report feed parameters
-    print("\n")
+#     ### Report feed parameters
+#     print("\n")
 
 
 def report_superstructure_results_overview(m):

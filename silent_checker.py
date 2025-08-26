@@ -1,6 +1,7 @@
+import sys
+from typing import TYPE_CHECKING
 import astroid
 from astroid import nodes
-from typing import TYPE_CHECKING
 
 from pylint.checkers import BaseChecker
 
@@ -19,34 +20,51 @@ class SilentExceptionChecker(BaseChecker):
         )
     }
 
-    def visit_try(self, node):
-        """This method is called by pylint for every try statement."""
-        self._visit_try_except(node)
+    def visit_module(self, node):
+        print(
+            f"DEBUG: visit_module called for {node.name}", file=sys.stderr, flush=True
+        )
 
-    def _visit_try_except(self, node):
+    def visit_functiondef(self, node):
+        print(
+            f"DEBUG: visit_functiondef called for {node.name}",
+            file=sys.stderr,
+            flush=True,
+        )
+
+    def visit_tryexcept(self, node):
+        import sys
+
+        print(
+            f"DEBUG: visit_tryexcept called at line {node.lineno}",
+            file=sys.stderr,
+            flush=True,
+        )
         for handler in node.handlers:
             if self._is_silent_exception(handler):
                 self.add_message("silent-exception-handling", node=handler)
 
-    def _is_silent_exception(self, handler):
-        # checks bare except
+    def _is_silent_exception(self, handler: astroid.ExceptHandler) -> bool:
+        """Check if exception handler only contains 'pass'."""
+        # Check for bare except: pass
         if not handler.type:  # bare except:
             return len(handler.body) == 1 and isinstance(handler.body[0], astroid.Pass)
 
-        # checks only pass after except
+        # Check for except Exception: pass or except BaseException: pass
         if (
-            isinstance(handler.type, astroid.Name)
+            isinstance(handler.type, nodes.Name)
             and handler.type.name in ("Exception", "BaseException")
             and len(handler.body) == 1
-            and isinstance(handler.body[0], astroid.Pass)
+            and isinstance(handler.body[0], nodes.Pass)
         ):
             return True
+
         return False
 
 
 def register(linter):
     """Register the checker."""
-    print(f"Registering plugin: {__name__}")
+    print(f"Registering plugin: {__name__}", file=sys.stderr)
     checker = SilentExceptionChecker(linter)
     linter.register_checker(checker)
-    print(f"Registered checker: {checker.name}")
+    print(f"Registered checker: {checker.name}", file=sys.stderr)

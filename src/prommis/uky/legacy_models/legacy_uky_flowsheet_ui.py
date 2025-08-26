@@ -152,6 +152,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             obj=lsf.mass_frac_comp[0, compound],
             name=f"Leach solid feed {compound}",
             description=f"Leach solid feed {compound} fractional composition",
+            display_units="fraction",
             rounding=3,
             is_input=True,
             is_output=False,
@@ -183,7 +184,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     )
     exports.add(
         obj=rst.gas_inlet.pressure[0],
-        name="Gas inlet temperature",
+        name="Gas inlet pressure",
         rounding=2,
         ui_units=pyo.units.Pa,
         display_units="Pa",
@@ -226,11 +227,11 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
 
     # Export the leach solid outputs, which includes overall mass flow,
     # and mass fraction of oxides and inerts.
-    category = "solids"
+    category = "Leaching solid outlet"
     leach = flowsheet.leach
     exports.add(
         obj=leach.solid_outlet.flow_mass[0],
-        name=f"solid flow mass",
+        name=f"Leaching solid flow mass",
         rounding=4,
         ui_units=pyo.units.kg / pyo.units.hour,
         display_units="kg/hr",
@@ -258,15 +259,15 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         description=f"leaching solid mass fraction of inert components outlet",
         is_input=False,
         is_output=True,
-        output_category="solid outlet",
+        output_category=category,
     )
 
     # Export leach liquid outputs, which includes the liquid flow
     # and liquid mass compositions
-    category = "leaching"
+    category = "Leaching liquid outlet"
     exports.add(
         obj=leach.liquid_outlet.flow_vol[0],
-        name=f"liquid flow volume",
+        name=f"Leaching liquid flow volume",
         ui_units=pyo.units.l / pyo.units.hour,
         display_units="l/h",
         rounding=4,
@@ -298,7 +299,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "cleaner_load",
         "cleaner_strip",
     }:
-        category = f"solex {stype}"
+        category = f"Solvent extraction ({stype})"
         block = getattr(flowsheet, f"solex_{stype}")
         for ltype in {"organic", "aqueous"}:
             if stype == "rougher" and ltype == "aqueous":
@@ -328,11 +329,11 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     # Export the outputs for the precipitator, including overall flow
     # as well as concentration mass composition for chemical components
     # and precipitate components.
-    category = "precipitator"
+    category = "precipitator aqueous outlet"
     precipitator = flowsheet.precipitator
     exports.add(
         obj=precipitator.cv_aqueous.properties_out[0].flow_vol,
-        name=f"precipitator aqueous out",
+        name=f"precipitator aqueous outlet flow rate",
         ui_units=pyo.units.l / pyo.units.hour,
         display_units="liters/hour",
         rounding=4,
@@ -355,6 +356,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             is_output=True,
             output_category=category,
         )
+        category = "precipitator solid outlet"
     exports.add(
         obj=precipitator.precipitate_outlet.temperature[0],
         name="precipitator outlet temperature",
@@ -383,7 +385,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
 
     # Export the outputs for the roaster, including product mass flow
     # and molar flow rates for the oxides in the product stream.
-    category = "roaster"
+    category = "Roaster product"
     roaster = flowsheet.roaster
     name = f"roaster product mass flow of total oxides"
     obj = roaster.flow_mass_product[0]

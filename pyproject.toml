@@ -35,7 +35,7 @@ dependencies = [
 ]
 [project.optional-dependencies]
 watertap = [
-    "watertap >= 1.4.0rc0",
+    "watertap >= 1.4.0",
 ]
 flowsheet-processor = [
     "idaes-flowsheet-processor >=0.1.dev4",
@@ -103,6 +103,10 @@ sections = "FUTURE,STDLIB,PYOMO,IDAES,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
 extend-exclude = [
     "*.svg",
     "*.json",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "uky_example.ipynb",
 ]
 
 [tool.typos.default.extend-words]
@@ -113,8 +117,9 @@ phase_equil = "phase_equil"
 # Atomic elements
 Nd = "Nd"
 Ba = "Ba"
+
 [tool.typos.default]
 extend-ignore-re = [
     # Jupyter notebooks: ignore hexadecimal values in "id" cell metadata field
-    '"id": "[0-9a-f]+",'
+    '"id": "[0-9a-f]+",',
 ]

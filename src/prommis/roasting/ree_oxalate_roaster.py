@@ -535,12 +535,12 @@ constructed,
             units=pyunits.J / pyunits.mol / pyunits.K**2,
         )
         # Oxalate standard enthalpy available in literature
-        self.enth0_oxalate_list_all[
-            "Al"
-        ] = -3397000  # Kotz et al (2014), anhydrous data
-        self.enth0_oxalate_list_all[
-            "Fe"
-        ] = -2572300  # Wagman et al (1982), anhydrous data
+        self.enth0_oxalate_list_all["Al"] = (
+            -3397000
+        )  # Kotz et al (2014), anhydrous data
+        self.enth0_oxalate_list_all["Fe"] = (
+            -2572300
+        )  # Wagman et al (1982), anhydrous data
         self.enth0_oxalate_list_all["Ca"] = -1674860  # Wagman et al (1982)
         self.enth0_oxalate_list_all["La"] = -5916176  # Not in Wagman et al
         self.enth0_oxalate_list_all["Ce"] = -6782000  # Wagman et al (1982)

@@ -4,25 +4,17 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+import pytest
 from pyomo.environ import (
     ConcreteModel,
     assert_optimal_termination,
     value,
-    Suffix,
     SolverFactory,
-    Suffix,
     TransformationFactory,
 )
-
-from idaes.models.unit_models.mscontactor import (
-    MSContactor,
-    MSContactorInitializer,
-)
-
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
@@ -32,8 +24,6 @@ from idaes.core.util.model_statistics import (
     number_variables,
 )
 from idaes.core.util.scaling import unscaled_variables_generator
-
-import pytest
 
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters

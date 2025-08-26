@@ -102,7 +102,7 @@ def base_model():
         capital_escalation_percentage=3.6,
         capital_loan_interest_percentage=6,
         capital_loan_repayment_period=10,
-        debt_percentage_of_CAPEX=50,
+        debt_percentage_of_capex=50,
         operating_inflation_percentage=3,
         revenue_inflation_percentage=3,
     )
@@ -947,7 +947,7 @@ class TestREECosting(object):
 
     @pytest.mark.unit
     def test_base_model_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.unit
@@ -1157,7 +1157,7 @@ class TestREECosting(object):
 
     @pytest.mark.unit
     def test_full_model_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -1177,7 +1177,7 @@ class TestREECosting(object):
 
     @pytest.mark.component
     def test_solved_model_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -1246,7 +1246,7 @@ class TestREECosting(object):
             CE_index_year=CE_index_year,
         )
 
-        dt = DiagnosticsToolbox(model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -1260,7 +1260,7 @@ class TestREECosting(object):
     @pytest.mark.component
     def test_costing_bounding_solve_diagnostics(self, model):
 
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -1938,12 +1938,12 @@ class TestWaterTAPCosting(object):
         assert_optimal_termination(results)
 
     @pytest.mark.component
-    def test_REE_watertap_costing_results_totalCAPEX(self, model):
+    def test_REE_watertap_costing_results_totalcapex(self, model):
 
         assert value(model.fs.costing.total_BEC) == pytest.approx(50.686, rel=1e-4)
 
     @pytest.mark.component
-    def test_REE_watertap_costing_results_equipmentCAPEX(self, model):
+    def test_REE_watertap_costing_results_equipmentcapex(self, model):
 
         CE_index_year = "UKy_2019"
 
@@ -1992,7 +1992,7 @@ class TestWaterTAPCosting(object):
         ) == pytest.approx(44.308, rel=1e-4)
 
     @pytest.mark.component
-    def test_REE_watertap_costing_results_fixedOPEX(self, model):
+    def test_REE_watertap_costing_results_fixedopex(self, model):
 
         CE_index_year = "UKy_2019"
 
@@ -2051,7 +2051,7 @@ class TestWaterTAPCosting(object):
 
     # TODO commented as no WaterTAP models currently use this, may change in the future
     # @pytest.mark.component
-    # def test_REE_watertap_costing_variableOPEX(self, model):
+    # def test_REE_watertap_costing_variableopex(self, model):
 
     #     assert value(model.fs.costing.watertap_variable_costs) == pytest.approx(
     #         0, abs=1e-4
@@ -2336,7 +2336,7 @@ class TestCustomCosting(object):
         model.fs.power.fix()
 
         # check model structural diagnostics
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
         QGESSCostingData.costing_initialization(model.fs.costing)
@@ -2473,7 +2473,7 @@ class TestDiafiltrationCosting(object):
                 + pyunits.convert(
                     m.fs.cascade.costing.pressure_drop, to_units=pyunits.Pa
                 ),
-                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
+                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump opex
                 * pyunits.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
                 "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # feed
             },
@@ -2787,7 +2787,7 @@ class TestDiafiltrationCosting(object):
         model.fs.power.fix()
 
         # check model structural diagnostics
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
         QGESSCostingData.costing_initialization(model.fs.costing)
@@ -2992,7 +2992,7 @@ class TestHDDRecyclingCosting(object):
             fixed_OM=False,
         )
 
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -3007,7 +3007,7 @@ class TestHDDRecyclingCosting(object):
 
     @pytest.mark.component
     def test_HDD_Recycling_costing_solve_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -3109,7 +3109,7 @@ class TestNPVCostingBlock(object):
         assert isinstance(model.fs.costing.capital_escalation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.capital_loan_interest_percentage, pyo.Param)
         assert isinstance(model.fs.costing.capital_loan_repayment_period, pyo.Param)
-        assert isinstance(model.fs.costing.debt_percentage_of_CAPEX, pyo.Param)
+        assert isinstance(model.fs.costing.debt_percentage_of_capex, pyo.Param)
         assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
@@ -3122,7 +3122,7 @@ class TestNPVCostingBlock(object):
 
     @pytest.mark.unit
     def test_NPV_costingblock_build_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -3137,7 +3137,7 @@ class TestNPVCostingBlock(object):
 
     @pytest.mark.component
     def test_NPV_costingblock_solve_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -3165,7 +3165,7 @@ class TestNPVFixedInputs(object):
         m.fs.costing = QGESSCosting(
             discount_percentage=10,
             plant_lifetime=20,
-            # use CAPEX, OPEX, REVENUE from CostingBlock test to verify results are the same
+            # use capex, opex, revenue from CostingBlock test to verify results are the same
             total_capital_cost=7.461172417869669,
             annual_operating_cost=6.880158261340908,
             annual_revenue=64.38220104959998,
@@ -3196,7 +3196,7 @@ class TestNPVFixedInputs(object):
         assert isinstance(model.fs.costing.capital_escalation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.capital_loan_interest_percentage, pyo.Param)
         assert isinstance(model.fs.costing.capital_loan_repayment_period, pyo.Param)
-        assert isinstance(model.fs.costing.debt_percentage_of_CAPEX, pyo.Param)
+        assert isinstance(model.fs.costing.debt_percentage_of_capex, pyo.Param)
         assert isinstance(model.fs.costing.operating_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.revenue_inflation_percentage, pyo.Param)
         assert isinstance(model.fs.costing.pv_capital_cost_constraint, pyo.Constraint)
@@ -3209,7 +3209,7 @@ class TestNPVFixedInputs(object):
 
     @pytest.mark.unit
     def test_NPV_fixedinputs_build_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
     @pytest.mark.component
@@ -3220,7 +3220,7 @@ class TestNPVFixedInputs(object):
 
     @pytest.mark.component
     def test_NPV_fixedinputs_solve_diagnostics(self, model):
-        dt = DiagnosticsToolbox(model=model, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=model)
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component
@@ -3317,7 +3317,7 @@ def test_REE_costing_CE_index_year():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3485,7 +3485,7 @@ def test_REE_costing_multipleaccountssameparameter():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3572,7 +3572,7 @@ def test_REE_costing_additionalcostingparams_newaccount():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3625,7 +3625,7 @@ def test_REE_costing_additionalcostingparams_overwrite():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3796,7 +3796,7 @@ def test_REE_costing_scaledownparallelequip():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3898,7 +3898,7 @@ def test_REE_costing_usersetTPC_noOM():
         fixed_OM=False,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -3966,7 +3966,7 @@ def test_REE_costing_usersetTPC_withOM():
         ],
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4016,7 +4016,7 @@ def test_REE_costing_useLangfactor():
         fixed_OM=False,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4108,7 +4108,7 @@ def test_REE_costing_optionalexpressionarguments(argument, cost_obj):
         **{argument: getattr(m.fs, argument)},
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4160,7 +4160,7 @@ def test_REE_costing_fixedOM_defaults():
         },
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4624,7 +4624,7 @@ def test_REE_costing_variableOM_defaults():
         ],
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4711,7 +4711,7 @@ def test_REE_costing_variableOM_steadystateflowsheet():
         ],
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -4836,7 +4836,7 @@ def test_REE_costing_variableOM_nofeedinput():
         ],
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5049,7 +5049,7 @@ def test_REE_costing_variableOM_customprices():
         prices={"water": 1.90e-3 * 1e-6 * pyunits.MUSD_2021 / pyunits.gallon},
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5322,7 +5322,7 @@ def test_REE_costing_recovery(recovery_rate_units, expectation):
             recovery_rate_per_year=m.fs.recovery_rate_per_year,
         )
 
-        dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+        dt = DiagnosticsToolbox(model=m)
         dt.assert_no_structural_warnings()
 
         QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5411,7 +5411,7 @@ def test_REE_costing_recovery_passedinmethodcall():
         / pyunits.year,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5512,7 +5512,7 @@ def test_REE_costing_recovery_transportcost(transport_cost_obj):
         transport_cost_per_ton_product=m.fs.transport_cost_per_ton_product,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -5614,7 +5614,7 @@ def test_REE_costing_config_defaults():
     assert m.fs.costing.config.capital_escalation_percentage == 3.6
     assert m.fs.costing.config.capital_loan_interest_percentage == 6
     assert m.fs.costing.config.capital_loan_repayment_period == 10
-    assert m.fs.costing.config.debt_percentage_of_CAPEX == 50
+    assert m.fs.costing.config.debt_percentage_of_capex == 50
     assert m.fs.costing.config.debt_expression is None
     assert m.fs.costing.config.operating_inflation_percentage == 3
     assert m.fs.costing.config.revenue_inflation_percentage == 3
@@ -5637,7 +5637,7 @@ def test_REE_costing_config_kwargs():
         capital_escalation_percentage=2,
         capital_loan_interest_percentage=2,
         capital_loan_repayment_period=2,
-        debt_percentage_of_CAPEX=2,
+        debt_percentage_of_capex=2,
         debt_expression=m.fs.debt_expression,
         operating_inflation_percentage=2,
         revenue_inflation_percentage=2,
@@ -5655,7 +5655,7 @@ def test_REE_costing_config_kwargs():
     assert m.fs.costing.config.capital_escalation_percentage == 2
     assert m.fs.costing.config.capital_loan_interest_percentage == 2
     assert m.fs.costing.config.capital_loan_repayment_period == 2
-    assert m.fs.costing.config.debt_percentage_of_CAPEX == 2
+    assert m.fs.costing.config.debt_percentage_of_capex == 2
     assert isinstance(m.fs.costing.config.debt_expression, pyo.Var)
     assert m.fs.costing.config.operating_inflation_percentage == 2
     assert m.fs.costing.config.revenue_inflation_percentage == 2
@@ -5958,7 +5958,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
         calculate_NPV=True,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
     solver = get_solver()
     results = solver.solve(m, tee=True)
@@ -5980,7 +5980,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesset_solve():
                         * pyunits.percent,
                         to_units=pyunits.dimensionless,
                     )
-                    * m.fs.costing.CAPEX
+                    * m.fs.costing.capex
                     * (  # P/A_year(i) - P/A_year(i-1))
                         series_present_worth_factor(
                             pyunits.convert(
@@ -6059,7 +6059,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
         calculate_NPV=True,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
     solver = get_solver()
     results = solver.solve(m, tee=True)
@@ -6081,7 +6081,7 @@ def test_REE_costing_has_capital_expenditure_period_percentagesnotset_solve():
                         * pyunits.percent,
                         to_units=pyunits.dimensionless,
                     )
-                    * m.fs.costing.CAPEX
+                    * m.fs.costing.capex
                     * (  # P/A_year(i) - P/A_year(i-1))
                         series_present_worth_factor(
                             pyunits.convert(
@@ -6159,7 +6159,7 @@ def test_REE_costing_not_has_capital_expenditure_period_solve():
         calculate_NPV=True,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
     solver = get_solver()
     results = solver.solve(m, tee=True)
@@ -6284,7 +6284,7 @@ def test_REE_costing_debt_expression():
     m.fs.annual_revenue = pyo.Var(initialize=100, units=pyunits.MUSD_2021)
     m.fs.cost_year = "2021"
 
-    # suppose debt is 50% of CAPEX (default), plus 5% of OPEX
+    # suppose debt is 50% of capex (default), plus 5% of opex
     m.fs.debt_formula = pyo.Expression(
         expr=50 / 100 * m.fs.total_capital_cost + 5 / 100 * m.fs.annual_operating_cost
     )
@@ -6322,7 +6322,7 @@ def test_REE_costing_debt_expression_solve():
     m.fs.annual_revenue.fix()
     m.fs.cost_year = "2021"
 
-    # suppose debt is 50% of CAPEX (default), plus 5% of OPEX
+    # suppose debt is 50% of capex (default), plus 5% of opex
     m.fs.debt_formula = pyo.Expression(
         expr=50 / 100 * m.fs.total_capital_cost + 5 / 100 * m.fs.annual_operating_cost
     )
@@ -6342,7 +6342,7 @@ def test_REE_costing_debt_expression_solve():
         calculate_NPV=True,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     solver = get_solver()
@@ -6373,7 +6373,7 @@ def test_REE_costing_economy_of_numbers():
         learning_rate=0.05,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     solver = get_solver()
@@ -6398,7 +6398,7 @@ def test_REE_costing_consider_taxes():
         capital_escalation_percentage=3.6,
         capital_loan_interest_percentage=6,
         capital_loan_repayment_period=10,
-        debt_percentage_of_CAPEX=50,
+        debt_percentage_of_capex=50,
         operating_inflation_percentage=3,
         revenue_inflation_percentage=3,
     )
@@ -6441,10 +6441,14 @@ def test_REE_costing_consider_taxes():
             m.fs.water,
         ],
         consider_taxes=True,
+        income_tax_percentage=26,
+        mineral_depletion_percentage=14,
+        production_incentive_percentage=10,
+        royalty_charge_percentage_of_revenue=6.5,
         calculate_NPV=True,
     )
 
-    dt = DiagnosticsToolbox(model=m, variable_bounds_violation_tolerance=1e-4)
+    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     QGESSCostingData.costing_initialization(m.fs.costing)
@@ -6469,6 +6473,7 @@ def test_REE_costing_consider_taxes():
     assert hasattr(m.fs.costing, "income_tax_percentage")
     assert hasattr(m.fs.costing, "mineral_depletion_percentage")
     assert hasattr(m.fs.costing, "production_incentive_percentage")
+    assert hasattr(m.fs.costing, "royalty_charge_percentage_of_revenue")
     assert hasattr(m.fs.costing, "min_net_tax_owed")
     assert hasattr(m.fs.costing, "net_tax_owed")
     assert hasattr(m.fs.costing, "income_tax")
@@ -6480,6 +6485,7 @@ def test_REE_costing_consider_taxes():
     assert isinstance(m.fs.costing.mineral_depletion_charge, pyo.Expression)
     assert isinstance(m.fs.costing.production_incentive_charge, pyo.Expression)
     assert isinstance(m.fs.costing.income_tax_eq, pyo.Constraint)
+    assert isinstance(m.fs.costing.royalty_charge, pyo.Expression)
     assert isinstance(m.fs.costing.net_tax_owed_eq, pyo.Constraint)
     assert isinstance(m.fs.costing.pv_taxes_constraint, pyo.Constraint)
     assert isinstance(m.fs.costing.npv_constraint, pyo.Constraint)

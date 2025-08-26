@@ -1499,7 +1499,7 @@
                                                 "__id__": 241,
                                                 "fixed": true,
                                                 "stale": false,
-                                                "value": 1000000.0,
+                                                "value": 1e-10,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -1667,7 +1667,7 @@
                                                 "__id__": 260,
                                                 "fixed": false,
                                                 "stale": false,
-                                                "value": 55.55555555555556,
+                                                "value": 5.555555555555556e-15,
                                                 "lb": 1e-20,
                                                 "ub": null
                                               },
@@ -2338,6 +2338,30 @@
                                                 "active": true
                                               }
                                             }
+                                          },
+                                          "scaling_factor": {
+                                            "__type__": "<class 'pyomo.core.base.suffix.Suffix'>",
+                                            "__id__": 353,
+                                            "data": {
+                                              "311": 100000.0,
+                                              "339": 1000.0,
+                                              "312": 100000.0,
+                                              "340": 1000.0,
+                                              "313": 100000.0,
+                                              "341": 1000.0,
+                                              "314": 100000.0,
+                                              "342": 1000.0,
+                                              "315": 100000.0,
+                                              "343": 1000.0,
+                                              "316": 100000.0,
+                                              "344": 1000.0,
+                                              "317": 100000.0,
+                                              "345": 1000.0,
+                                              "318": 100000.0,
+                                              "346": 1000.0,
+                                              "319": 100000.0,
+                                              "347": 1000.0
+                                            }
                                           }
                                         }
                                       }
@@ -2892,6 +2916,7 @@
                                   },
                                   "heterogeneous_reaction_extent": {
                                     "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
+
                                     "__id__": 428,
                                     "data": {
                                       "(0.0, 1, 'Al2O3')": {
@@ -3269,7 +3294,6 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Ca')": {
                                         "__type__": "<class 'pyomo.core.base.constraint.ConstraintData'>",
-                                        "__id__": 478,
                                         "active": true
                                       },
                                       "(0.0, 1, 'liquid', 'Fe')": {
@@ -3434,6 +3458,7 @@
                                       },
                                       "(0.0, 1, 'liquid', 'Fe')": {
                                         "__type__": "<class 'pyomo.core.base.var.VarData'>",
+
                                         "__id__": 498,
                                         "fixed": false,
                                         "stale": false,

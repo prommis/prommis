@@ -14,7 +14,7 @@ class SilentExceptionChecker(BaseChecker):
     name = "silent-exception"
     msgs = {
         "W9006": (
-            "Exception without handling, only pass, detected",
+            "Exception without handling, only pass, detected. If checking if your object is a Reference, use Pyomo's built in is_reference method instead.",
             "silent-exception-handling",
             "Exception blocks should not have a bare pass",
         )
@@ -58,7 +58,6 @@ class SilentExceptionChecker(BaseChecker):
             and isinstance(handler.body[0], nodes.Pass)
         ):
             return True
-
         return False
 
 

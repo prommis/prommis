@@ -46,9 +46,10 @@ flowsheet-processor = [
 version_scheme = "only-version"
 local_scheme = "node-and-date"
 
-[tool.pylint.main]
+[tool.pylint.MAIN]
 py-version = "3.9"
-load-plugins = ["silent_checker"]
+init-hook="import sys; sys.path.append('.pylint')"
+load-plugins=["silent_exception_checker"]
 
 [tool.pylint."messages control"]
 disable = [
@@ -69,7 +70,7 @@ enable = [
     "implicit-str-concat",
     "dangerous-default-value",
     "invalid-name",
-    "silent-exception-handling",
+    "silent-exception-handling"
 ]
 module-naming-style = "snake_case"
 const-naming-style = "any"

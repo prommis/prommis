@@ -13,7 +13,7 @@ from prommis.superstructure.report_superstructure_results import (
     report_superstructure_results_overview,
     report_superstructure_costing,
     report_superstructure_streams,
-    report_superstructure_environmental_impacts
+    report_superstructure_environmental_impacts,
 )
 
 #################################################################################################
@@ -848,6 +848,7 @@ report_superstructure_results_overview(m, results)
 # dt.display_components_with_inconsistent_units()
 
 from pyomo.util.check_units import assert_units_consistent
+
 # assert_units_consistent(m)
 
 # for block in m.fs.costing.piecewise_cons.values():
@@ -856,6 +857,7 @@ from pyomo.util.check_units import assert_units_consistent
 
 # Call the scaling report
 from idaes.core.scaling.util import report_scaling_factors
+
 # report_scaling_factors(m.fs)
 # report_scaling_factors(m.fs.costing)
 # report_scaling_factors(m.fs.byproduct_valorization)

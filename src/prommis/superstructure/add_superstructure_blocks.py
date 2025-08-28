@@ -423,14 +423,14 @@ def add_mass_balance_vars(m):
     m.fs.f_in = pyo.Var(
         m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
         domain=pyo.NonNegativeReals,
-        bounds=(0,500000),
+        bounds=(0, 500000),
         doc="Flow entering each option. See documentation for more details.",
         units=pyunits.kg / pyunits.year,
     )
     m.fs.f_out = pyo.Var(
         m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
         domain=pyo.NonNegativeReals,
-        bounds=(0,500000),
+        bounds=(0, 500000),
         doc="Flow exiting each option. See documentation for more details.",
         units=pyunits.kg / pyunits.year,
     )
@@ -705,17 +705,17 @@ def add_costing_vars(m):
     else:
         m.fs.costing.cost_of_recovery = pyo.Var(
             domain=pyo.NonNegativeReals,
-            bounds=(0,1000),
+            bounds=(0, 1000),
             doc="The cost of recovery.",
             units=pyunits.USD / pyunits.kg,
         )
 
     # build vars that're needed regardless of the objective function.
     m.fs.costing.net_present_value = pyo.Var(
-        domain=pyo.Reals, 
+        domain=pyo.Reals,
         bounds=(-1e9, 1e9),
-        doc="The net present value.", 
-        units=pyunits.USD
+        doc="The net present value.",
+        units=pyunits.USD,
     )
     m.fs.costing.main_product_profit = pyo.Var(
         m.fs.operational_range,
@@ -785,13 +785,13 @@ def add_costing_vars(m):
     m.fs.costing.operators_per_option = pyo.Var(
         m.fs.all_opts_set,
         domain=pyo.NonNegativeReals,
-        bounds=(0,10),
+        bounds=(0, 10),
         doc="The number of operators needed for each option[3].",
         units=pyunits.Operator,
     )
     m.fs.costing.total_operators = pyo.Var(
         domain=pyo.NonNegativeIntegers,
-        bounds=(0,100),
+        bounds=(0, 100),
         doc="The total number of operators needed for the process[3]. Must be an integer value.",
         units=pyunits.Operator,
     )
@@ -803,45 +803,45 @@ def add_costing_vars(m):
     )
     m.fs.costing.m_and_sm = pyo.Var(
         domain=pyo.NonNegativeReals,
-        bounds=(0,1e7),
+        bounds=(0, 1e7),
         doc="Maintenance & Supply Materials (M&SM)[2].",
         units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.sa_and_qa_qc = pyo.Var(
         domain=pyo.NonNegativeReals,
-        bounds=(0,1e7),
+        bounds=(0, 1e7),
         doc="Sample Analysis & Quality Assurance/Quality Control (SA&QA/QC)[2].",
         units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.s_ip_r_and_d = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
-        bounds=(0,1e7),
+        bounds=(0, 1e7),
         doc="Sales, Intellectual Property, and Research & Development (S,IP,R&D)[2].",
         units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.a_and_sl = pyo.Var(
         domain=pyo.NonNegativeReals,
-        bounds=(0,1e7),
+        bounds=(0, 1e7),
         doc="Administrative & Supporting Labor (A&SL)[2].",
         units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.fb = pyo.Var(
         domain=pyo.NonNegativeReals,
-        bounds=(0,1e7),
+        bounds=(0, 1e7),
         doc="Fringe Benefits (FB)[2].",
         units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.pt_and_i = pyo.Var(
         domain=pyo.NonNegativeReals,
-        bounds=(0,1e7),
+        bounds=(0, 1e7),
         doc="Property Taxes & Insurance (PT&I)[2].",
         units=pyunits.USD / pyunits.year,
     )
     m.fs.costing.aggregate_fixed_operating_cost = pyo.Var(
         m.fs.operational_range,
         domain=pyo.NonNegativeReals,
-        bounds=(0,1e8),
+        bounds=(0, 1e8),
         doc="Total yearly fixed operating cost[2].",
         units=pyunits.USD / pyunits.year,
     )
@@ -1593,9 +1593,7 @@ def add_costing_objective_functions(m, obj_func: str):
         )
 
 
-def add_environmental_impact_params(
-    m, options_environmental_impacts, epsilon
-):
+def add_environmental_impact_params(m, options_environmental_impacts, epsilon):
     """
     This function builds the environmental impact parameters.
 

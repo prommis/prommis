@@ -619,9 +619,7 @@ def build_model(
     )
     # only add params, vars, and cons if environmental impacts are considered.
     if consider_environmental_impacts:
-        add_environmental_impact_params(
-            m, options_environmental_impacts, epsilon
-        )
+        add_environmental_impact_params(m, options_environmental_impacts, epsilon)
         add_environmental_impact_vars(m)
         add_environmental_impact_cons(m)
 

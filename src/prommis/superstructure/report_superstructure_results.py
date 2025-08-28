@@ -543,7 +543,9 @@ def report_superstructure_environmental_impacts(m, results=None):
         print(f"    {'-'*6} : {'-'*25} : {'-'*8}")
 
         for t in m.fs.operational_range:
-            total_yearly_impacts = pyo.value(m.fs.environmental_impacts.total_yearly_impacts[t])
+            total_yearly_impacts = pyo.value(
+                m.fs.environmental_impacts.total_yearly_impacts[t]
+            )
 
             # Only display non-zero impacts to keep table manageable
             if not math.isclose(total_yearly_impacts, 0, abs_tol=1e-6):

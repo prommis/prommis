@@ -71,6 +71,8 @@ class SuperstructureScaler(CustomScalerBase):
         # scale costing variables
         for c, v in model.fs.costing.net_present_value.items():
             self.set_variable_scaling_factor(v, 1e-6, overwrite=overwrite)
+        for c, v in model.fs.costing.main_product_profit.items():
+            self.set_variable_scaling_factor(v, 1e-6, overwrite=overwrite)
         for c, v in model.fs.costing.total_profit.items():
             self.set_variable_scaling_factor(v, 1e-6, overwrite=overwrite)
         for c, v in model.fs.costing.piecewise_equipment_cost.items():
@@ -133,10 +135,10 @@ class SuperstructureScaler(CustomScalerBase):
                 self.set_variable_scaling_factor(v, 1e-4, overwrite=overwrite)
         if hasattr(model.fs.costing, "byproduct_profit"):
             for c, v in model.fs.costing.byproduct_profit.items():
-                self.set_variable_scaling_factor(v, 1e-3, overwrite=overwrite)
+                self.set_variable_scaling_factor(v, 1e-4, overwrite=overwrite)
         if hasattr(model.fs.costing, "total_byproduct_profit"):
             for c, v in model.fs.costing.total_byproduct_profit.items():
-                self.set_variable_scaling_factor(v, 1e-3, overwrite=overwrite)
+                self.set_variable_scaling_factor(v, 1e-4, overwrite=overwrite)
 
         # scale var only if NPV is chosen as the objective function
         if hasattr(model.fs.costing, "opt_profit"):
@@ -146,7 +148,7 @@ class SuperstructureScaler(CustomScalerBase):
         # scale var only if COR is chosen as the objective function
         if hasattr(model.fs.costing, "cost_of_recovery"):
             for c, v in model.fs.costing.cost_of_recovery.items():
-                self.set_variable_scaling_factor(v, 1e-2, overwrite=overwrite)
+                self.set_variable_scaling_factor(v, 1, overwrite=overwrite)
 
     def constraint_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
@@ -340,6 +342,12 @@ class SuperstructureScaler(CustomScalerBase):
                 overwrite=overwrite,
             )
         for j, c in model.fs.costing.calculate_net_present_value_con.items():
+            self.scale_constraint_by_nominal_value(
+                c,
+                scheme="inverse_maximum",
+                overwrite=overwrite,
+            )
+        for j, c in model.fs.costing.calculate_main_product_profit_cons.items():
             self.scale_constraint_by_nominal_value(
                 c,
                 scheme="inverse_maximum",
@@ -612,7 +620,7 @@ def build_model(
     # only add params, vars, and cons if environmental impacts are considered.
     if consider_environmental_impacts:
         add_environmental_impact_params(
-            m, consider_environmental_impacts, options_environmental_impacts, epsilon
+            m, options_environmental_impacts, epsilon
         )
         add_environmental_impact_vars(m)
         add_environmental_impact_cons(m)
@@ -638,77 +646,3 @@ def build_model(
 
     ### Return model
     return m
-
-
-# def report_superstructure_params(m):
-#     ### Report plant lifetime parameters
-#     # Define parameters
-#     plant_lifetime_params = [
-#         ("Plant Start", m.fs.plant_start),
-#         ("Plant End", m.fs.plant_end),
-#     ]
-
-#     print("\nPlant Lifetime Parameters:")
-#     print("")
-#     print(f"    {'Key':>15} : {'Value':<9} : {'Units':<8}")
-
-#     for name, param in plant_lifetime_params:
-#         value = pyo.value(param)
-#         unit_str = str(param.get_units())
-#         print(f"    {name:>15} : {value:<9} : {unit_str:<8}")
-
-#     ### Report tracked component parameters
-#     print("\nTracked Component Parameters:")
-#     print("")
-#     print(f"    {'Component':>15} : {'Mass':<12} : {'Units':<15}")
-
-#     # Iterate over tracked components
-#     for comp in m.fs.tracked_comps:
-#         mass_value = pyo.value(m.fs.prod_comp_mass[comp])
-
-#         # Get units from the parameter
-#         unit_str = str(m.fs.prod_comp_mass.get_units())
-
-#         print(f"    {comp:>15} : {mass_value:<12.4f} : {unit_str:<15}")
-
-#     ### Report feed parameters
-#     print("\n")
-
-
-def report_superstructure_results_overview(m):
-    """ """
-    ## Define parameters necessary for reporting results.
-    # List of options that were chosen by the superstructure.
-    chosen_opts = []
-    # Final value of NPV.
-    NPV_value = pyo.value(m.fs.costing.net_present_value)
-    # Final value of COR.
-    COR_value = pyo.value(m.fs.costing.cost_of_recovery)
-    # Total impacts generated over the lifetime of the plant
-    total_impacts = pyo.value(m.fs.environmental_impacts.total_impacts)
-
-    ## Report chosen process
-    # List of options that were chosen.
-    for opt in m.fs.all_opts_set:
-        if pyo.value(m.fs.option_binary_var[opt]) == 1:
-            chosen_opts.append(opt)
-
-    # Create the formatted string representation of the chosen options.
-    chosen_opts_str = " -> ".join(str(opt) for opt in chosen_opts)
-    print(f"\nChosen Pathway: {chosen_opts_str}")
-
-    ## Report NPV if it was chosen as the objective function.
-    if (
-        pyo.value(m.fs.objective_function_choice)
-        == ObjectiveFunctionChoice.NET_PRESENT_VALUE.value
-    ):
-
-        print(f"\nTotal NPV: {NPV_value:,.2f} USD")
-
-    ## Report COR if it was chosen.
-    else:
-        print(f"\nCost of Recovery: {COR_value:,.2f} USD/kg")
-
-    # Report total environmental impacts if it was chosen to track them.
-    if pyo.value(m.fs.environmental_impacts.consider_environmental_impacts) == True:
-        print(f"\nTotal Impacts: {total_impacts:,.2f}")

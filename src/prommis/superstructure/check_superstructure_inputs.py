@@ -5,8 +5,8 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Superstructure Code
-===================
+Check Superstructure Inputs Code
+================================
 
 Author: Chris Laliwala
 """

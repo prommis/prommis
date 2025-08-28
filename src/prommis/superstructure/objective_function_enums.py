@@ -5,8 +5,8 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Superstructure Code
-===================
+Choice of Objective Function Code
+=================================
 
 Author: Chris Laliwala
 """

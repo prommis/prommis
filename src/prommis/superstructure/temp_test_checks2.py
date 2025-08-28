@@ -7,12 +7,19 @@ from idaes.core.solvers import get_solver
 from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
 from prommis.superstructure.superstructure_function import (
     build_model,
+    SuperstructureScaler,
+)
+from prommis.superstructure.report_superstructure_results import (
     report_superstructure_results_overview,
+    report_superstructure_costing,
+    report_superstructure_streams,
+    report_superstructure_environmental_impacts
 )
 
 #################################################################################################
 ### Choice of objectie function
-obj_func = ObjectiveFunctionChoice.NET_PRESENT_VALUE
+# obj_func = ObjectiveFunctionChoice.NET_PRESENT_VALUE
+obj_func = ObjectiveFunctionChoice.COST_OF_RECOVERY
 
 ### Plant Lifetime Params
 plant_start = 2024
@@ -676,7 +683,7 @@ epsilon = 1e16
 # epsilon = 1
 
 ### Byproduct Valorization Parameters
-consider_byproduct_valorization = False
+consider_byproduct_valorization = True
 byproduct_values = {
     "Jarosite": -0.17,
     "Iron oxide": 10,
@@ -733,12 +740,20 @@ m = build_model(
     byproduct_opt_conversions,
 )
 
+## scale model
+scaler = SuperstructureScaler()
+scaler.scale_model(m)
+
+
 ## Solve model
 solver = get_solver(solver="gurobi")
-solver.options["NumericFocus"] = 2
-results = solver.solve(m, tee=False)
+solver.options["NumericFocus"] = 3
+results = solver.solve(m, tee=True)
 
-report_superstructure_results_overview(m)
+report_superstructure_results_overview(m, results)
+# report_superstructure_costing(m, results)
+# report_superstructure_streams(m, results)
+# report_superstructure_environmental_impacts(m, results)
 
 # m.fs.costing.discrete_units_per_option.display()
 
@@ -832,6 +847,7 @@ report_superstructure_results_overview(m)
 
 # dt.display_components_with_inconsistent_units()
 
+from pyomo.util.check_units import assert_units_consistent
 # assert_units_consistent(m)
 
 # for block in m.fs.costing.piecewise_cons.values():
@@ -839,4 +855,26 @@ report_superstructure_results_overview(m)
 #         c.deactivate()
 
 # Call the scaling report
+from idaes.core.scaling.util import report_scaling_factors
 # report_scaling_factors(m.fs)
+# report_scaling_factors(m.fs.costing)
+# report_scaling_factors(m.fs.byproduct_valorization)
+# report_scaling_factors(m.fs.environmental_impacts)
+
+# import logging
+# from io import StringIO
+# from pyomo.environ import Constraint
+# from pyomo.common.log import LoggingIntercept
+# from pyomo.util.infeasible import (
+# log_active_constraints,
+# log_close_to_bounds,
+# log_infeasible_bounds,
+# log_infeasible_constraints,)
+# output = StringIO()
+# with LoggingIntercept(output, "pyomo.util.infeasible", logging.INFO):
+#     log_infeasible_constraints(m)
+# # print(output.getvalue().splitlines())
+# for line in output.getvalue().splitlines():
+#     print(line)
+
+# m.display()

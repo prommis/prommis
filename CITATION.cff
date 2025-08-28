@@ -9,7 +9,7 @@ identifiers:
     type: url
     value: "https://app.knovel.com/hotlink/toc/id:kpXXXIIMP1/impc-international-mineral/impc-international-mineral"
 preferred-citation:
-  type: article
+  type: conference-paper
   authors:
     - family-names: "Tarka"
       given-names: "Thomas"
@@ -29,6 +29,8 @@ preferred-citation:
       given-names: "Carl"
     - family-names: "Gounaris"
       given-names: "Chrysanthos"
+    - family-names: "Torres"
+      given-names: "Ana"
     - family-names: "Bhattacharyya"
       given-names: "Debangsu"
     - family-names: "Siirola"
@@ -37,12 +39,14 @@ preferred-citation:
       given-names: "Daniel"
     - family-names: "Beattie"
       given-names: "Keith"
-    - family-names: "Beattie"
-      given-names: "Sahinidis"
+    - family-names: "Sahinidis"
+      given-names: "Nick"
     - family-names: "Nick"
-  title: "PROMMIS: Applying novel modeling methods to accelerate critical minerals research, development, demonstration, and deployment (RD3)"
-  journal: "XXXI IMPC-International Mineral Processing Congress"
+  conference:
+    name: "XXXI IMPC-International Mineral Processing Congress"
+    date: 2024
+  editor:
+    - name: "Society for Mining, Metallurgy & Exploration Inc."
   publisher: "Society for Mining, Metallurgy, and Exploration (SME)"
   pages: "980-990"
-  year: 2024
-  url: "app.knovel.com/s.v?EwnF13Mh"
+  url: "https://app.knovel.com/hotlink/toc/id:kpXXXIIMP1/impc-international-mineral/impc-international-mineral"

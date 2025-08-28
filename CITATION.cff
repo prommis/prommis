@@ -2,10 +2,11 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
   - name: "PrOMMiS contributors"
-title: "PROMMIS: Applying novel modeling methods to accelerate critical minerals research, development, demonstration, and deployment (RD3)"
+title: "PROMMIS: Accelerating & De-Risking Critical Minerals & Materials (CMM) supply chain development"
 url: "https://github.com/prommis/prommis"
+license-url: "https://github.com/prommis/prommis/blob/main/LICENSE.md"
 identifiers:
-  - description: "Publication in International Mineral Processing Congress"
+  - description: "Confrence paper in International Mineral Processing Congress"
     type: url
     value: "https://app.knovel.com/hotlink/toc/id:kpXXXIIMP1/impc-international-mineral/impc-international-mineral"
 preferred-citation:
@@ -41,12 +42,11 @@ preferred-citation:
       given-names: "Keith"
     - family-names: "Sahinidis"
       given-names: "Nick"
-    - family-names: "Nick"
+  year: 2024
   conference:
     name: "XXXI IMPC-International Mineral Processing Congress"
-    date: 2024
-  editor:
-    - name: "Society for Mining, Metallurgy & Exploration Inc."
-  publisher: "Society for Mining, Metallurgy, and Exploration (SME)"
+  title: "96. PrOMMiS: Applying Novel Modeling Methods to Accelerate Critical Minerals Research, Development, Demonstration, and Deployment (RD3)"
+  publisher: 
+    name: "Society for Mining, Metallurgy, and Exploration (SME)"
   pages: "980-990"
   url: "https://app.knovel.com/hotlink/toc/id:kpXXXIIMP1/impc-international-mineral/impc-international-mineral"

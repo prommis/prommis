@@ -110,6 +110,7 @@ extend-exclude = [
     "*.jpg",
     "*.jpeg",
     "uky_example.ipynb",
+    "custom_pylint"
 ]
 
 [tool.typos.default.extend-words]

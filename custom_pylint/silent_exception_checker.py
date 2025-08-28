@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 
 
 class SilentExceptionChecker(BaseChecker):
-
     name = "silent-exception"
     msgs = {
         "W9006": (

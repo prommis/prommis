@@ -1,6 +1,5 @@
-
-
 import pytest
+
 # from silent_exception_checker import SilentExceptionChecker
 from pylint.testutils import CheckerTestCase, MessageTest
 from custom_pylint.silent_exception_checker import SilentExceptionChecker
@@ -96,7 +95,6 @@ class TestSilentExceptionChecker(CheckerTestCase):
         ):
             self.walk(node)
 
-
     def test_except_baseexception_with_code(self):
         code = """
         try:
@@ -129,7 +127,6 @@ class TestSilentExceptionChecker(CheckerTestCase):
         node = self.get_module_node(code)
         with self.assertNoMessages():
             self.walk(node)
-
 
     def test_except_with_multiple_statements(self):
         code = """

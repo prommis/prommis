@@ -48,7 +48,7 @@ local_scheme = "node-and-date"
 
 [tool.pylint.MAIN]
 py-version = "3.9"
-init-hook="import sys; sys.path.append('.pylint')"
+init-hook="import sys; sys.path.append('custom_pylint')"
 load-plugins=["silent_exception_checker"]
 
 [tool.pylint."messages control"]

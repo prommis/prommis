@@ -6,10 +6,10 @@ from idaes.core.solvers import get_solver
 
 from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
 from prommis.superstructure.report_superstructure_results import (
-    report_superstructure_costing,
-    report_superstructure_environmental_impacts,
+    # report_superstructure_costing,
+    # report_superstructure_environmental_impacts,
     report_superstructure_results_overview,
-    report_superstructure_streams,
+    # report_superstructure_streams,
 )
 from prommis.superstructure.superstructure_function import (
     SuperstructureScaler,

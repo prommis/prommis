@@ -50,7 +50,6 @@ from prommis.superstructure.check_superstructure_inputs import (
     check_plant_lifetime_params,
     check_supe_formulation_params,
 )
-from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
 
 
 class SuperstructureScaler(CustomScalerBase):

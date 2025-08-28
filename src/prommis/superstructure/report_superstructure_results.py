@@ -11,9 +11,11 @@ Report Superstructure Results Code
 Author: Chris Laliwala
 """
 import math
+
 import pyomo.environ as pyo
-from pyomo.opt import SolverStatus, TerminationCondition
 from pyomo.environ import units as pyunits
+from pyomo.opt import SolverStatus, TerminationCondition
+
 from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
 
 

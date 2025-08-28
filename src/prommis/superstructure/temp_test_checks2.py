@@ -5,15 +5,15 @@
 from idaes.core.solvers import get_solver
 
 from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
-from prommis.superstructure.superstructure_function import (
-    build_model,
-    SuperstructureScaler,
-)
 from prommis.superstructure.report_superstructure_results import (
-    report_superstructure_results_overview,
     report_superstructure_costing,
-    report_superstructure_streams,
     report_superstructure_environmental_impacts,
+    report_superstructure_results_overview,
+    report_superstructure_streams,
+)
+from prommis.superstructure.superstructure_function import (
+    SuperstructureScaler,
+    build_model,
 )
 
 #################################################################################################
@@ -847,7 +847,10 @@ report_superstructure_results_overview(m, results)
 
 # dt.display_components_with_inconsistent_units()
 
-from pyomo.util.check_units import assert_units_consistent
+# from pyomo.util.check_units import assert_units_consistent
+
+# # Call the scaling report
+# from idaes.core.scaling.util import report_scaling_factors
 
 # assert_units_consistent(m)
 
@@ -855,8 +858,6 @@ from pyomo.util.check_units import assert_units_consistent
 #     for c in block.component_data_objects(pyo.Constraint, descend_into=True):
 #         c.deactivate()
 
-# Call the scaling report
-from idaes.core.scaling.util import report_scaling_factors
 
 # report_scaling_factors(m.fs)
 # report_scaling_factors(m.fs.costing)

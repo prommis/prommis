@@ -45,8 +45,9 @@ preferred-citation:
   year: 2024
   conference:
     name: "XXXI IMPC-International Mineral Processing Congress"
-  title: "96. PrOMMiS: Applying Novel Modeling Methods to Accelerate Critical Minerals Research, Development, Demonstration, and Deployment (RD3)"
-  publisher: 
+    location: "Society for Mining, Metallurgy & Exploration Inc."
+  title: "PROMMIS: Applying novel modeling methods to accelerate critical minerals research, development, demonstration, and deployment (RD3)"
+  publisher:
     name: "Society for Mining, Metallurgy, and Exploration (SME)"
   pages: "980-990"
   url: "https://app.knovel.com/hotlink/toc/id:kpXXXIIMP1/impc-international-mineral/impc-international-mineral"

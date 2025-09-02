@@ -66,7 +66,7 @@ class Test_Solvent_Extraction_steady_model:
     @pytest.mark.component
     @pytest.mark.solver
     def test_solution(self, SolEx_frame):
-        
+
         model = SolEx_frame
         aqueous_outlet = {
             "H2O": 1000000,

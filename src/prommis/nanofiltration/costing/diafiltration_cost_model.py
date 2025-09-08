@@ -308,11 +308,11 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         Costing methods for pumps. The simple costing method only requires the inlet volume flow.
 
         References for default method:
-            https://doi.org/10.1016/j.memsci.2015.04.065
-            Volk, Michael. Pump characteristics and applications. CRC Press, 2013.
-            Moran, Seán. "Pump Sizing: Bridging the Gap Between Theory and Practice."
+            [1] Volk, Michael. Pump characteristics and applications. CRC Press, 2013.
+            [2] Moran, Seán. "Pump Sizing: Bridging the Gap Between Theory and Practice."
                 The Best of Equipment Series (2016): 3.
-            https://www.bls.gov/regions/midwest/data/averageenergyprices_selectedareas_table.htm
+            [3] https://www.bls.gov/regions/midwest/data/averageenergyprices_selectedareas_table.htm
+            [4] https://doi.org/10.1016/j.memsci.2015.04.065.
 
         References for simple method:
             pump factors: https://pubs.acs.org/doi/10.1021/acsestengg.3c00537
@@ -323,7 +323,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             inlet_vol_flow: volumetric flow rate of inlet stream to pump (m3/h)
             simple_costing: Boolean to determine which costing method is implemented
         """
-
         # default costing method
         if simple_costing == False:
             blk.density = Param(
@@ -350,11 +349,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 initialize=2.31,
                 doc="Pump head factor",
                 units=units.ft / units.psi,
-            )
-            blk.pump_power_factor = Param(
-                initialize=3.6 * 10 ** (6),
-                doc="Pump power factor",
-                units=units.dimensionless,
             )
             blk.pump_efficiency = Param(
                 initialize=0.7,
@@ -423,10 +417,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 units=units.kWh,
             )
 
-            grav_constant = units.convert(
-                Constants.acceleration_gravity, to_units=units.m / units.hr**2
-            )
-
             @blk.Constraint()
             def pump_power_equation(blk):
                 return blk.pump_power == units.convert(
@@ -435,9 +425,8 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                             (
                                 inlet_vol_flow
                                 * blk.density
-                                * grav_constant
+                                * Constants.acceleration_gravity
                                 * blk.pump_head
-                                / blk.pump_power_factor
                                 / blk.pump_efficiency
                             ),
                             to_units=units.kW,

@@ -760,6 +760,8 @@ constructed,
                 / b.flow_mass_product[t]
             )
 
+        self.liquid_in[0].h2o_concentration.deactivate()
+
     def _make_energy_balance(self):
         # molar enthalpy of feed solid
         @self.Constraint(

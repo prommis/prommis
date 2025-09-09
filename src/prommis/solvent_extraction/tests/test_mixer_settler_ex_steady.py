@@ -82,6 +82,7 @@ class Test_Mixer_Settler_EX_steady_model:
             "H": 39.5131,
             "SO4": 2056.395,
             "HSO4": 8023.225,
+            "H2C2O4": 1e-7,
             "Al": 399.95,
             "Ca": 102.336,
             "Cl": 9.9999e-8,

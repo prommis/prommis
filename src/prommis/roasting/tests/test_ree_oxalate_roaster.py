@@ -164,15 +164,17 @@ def test_build(model):
     assert isinstance(model.fs.roaster.deltaP, Var)
     assert isinstance(model.fs.roaster.flow_mol_outlet_eqn, Constraint)
     assert len(model.fs.roaster.flow_mol_outlet_eqn) == 4
-    assert number_variables(model.fs.roaster) == 167
-    assert number_total_constraints(model.fs.roaster) == 115
-    assert number_unused_variables(model.fs.roaster) == 1
+    assert number_variables(model.fs.roaster) == 172
+    assert number_total_constraints(model.fs.roaster) == 118
+    assert number_unused_variables(model.fs.roaster) == 3
     assert_units_consistent(model.fs.roaster)
 
 
 @pytest.mark.unit
 def test_structural_issues(model):
     dt = DiagnosticsToolbox(model)
+    dt.report_structural_issues()
+    dt.display_overconstrained_set()
     dt.assert_no_structural_warnings()
 
 
@@ -349,9 +351,9 @@ def test_build_coal_fired(model_coal_fired):
     assert isinstance(model_coal_fired.fs.roaster.deltaP, Var)
     assert isinstance(model_coal_fired.fs.roaster.flow_mol_outlet_eqn, Constraint)
     assert len(model_coal_fired.fs.roaster.flow_mol_outlet_eqn) == 4
-    assert number_variables(model_coal_fired.fs.roaster) == 167
-    assert number_total_constraints(model_coal_fired.fs.roaster) == 115
-    assert number_unused_variables(model_coal_fired.fs.roaster) == 1
+    assert number_variables(model_coal_fired.fs.roaster) == 172
+    assert number_total_constraints(model_coal_fired.fs.roaster) == 118
+    assert number_unused_variables(model_coal_fired.fs.roaster) == 3
     assert_units_consistent(model_coal_fired.fs.roaster)
 
 
@@ -537,9 +539,9 @@ def test_build_gas_fired(model_gas_fired):
     assert isinstance(model_gas_fired.fs.roaster.deltaP, Var)
     assert isinstance(model_gas_fired.fs.roaster.flow_mol_outlet_eqn, Constraint)
     assert len(model_gas_fired.fs.roaster.flow_mol_outlet_eqn) == 4
-    assert number_variables(model_gas_fired.fs.roaster) == 167
-    assert number_total_constraints(model_gas_fired.fs.roaster) == 115
-    assert number_unused_variables(model_gas_fired.fs.roaster) == 1
+    assert number_variables(model_gas_fired.fs.roaster) == 172
+    assert number_total_constraints(model_gas_fired.fs.roaster) == 118
+    assert number_unused_variables(model_gas_fired.fs.roaster) == 3
     assert_units_consistent(model_gas_fired.fs.roaster)
 
 

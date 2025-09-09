@@ -34,6 +34,7 @@ def test_parameters(model):
             "H2O",
             "H",
             "HSO4",
+            "H2C2O4",
             "SO4",
             "Sc",
             "Y",
@@ -73,6 +74,7 @@ def test_parameters(model):
         ("Ka2", "liquid", "Ca"): 0,
         ("Ka2", "liquid", "Fe"): 0,
         ("Ka2", "liquid", "Cl"): 0,
+        ("Ka2", "liquid", "H2C2O4"): 0,
     }
 
     assert isinstance(model.fs.leach_soln.Ka2, Param)

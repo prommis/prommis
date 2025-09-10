@@ -214,6 +214,7 @@ class TestLiCoDiafiltration:
         net_benefit_value = value(model.recovery_determine.net_benefit)
         assert net_benefit_value == pytest.approx(320373532.81, rel=1e-4)
 
+
         if net_benefit_value > 0:
             expected_message = f"✅ Byproduct recovery is financially viable. Net Benefit: {net_benefit_value:.2f} $/yr"
         else:

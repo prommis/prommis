@@ -10,6 +10,8 @@ import logging
 
 from pyomo.core.base.param import ScalarParam
 from pyomo.core.expr import identify_components
+
+# Pyomo imports
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
@@ -20,20 +22,16 @@ from pyomo.environ import (
     TransformationFactory,
     Var,
     maximize,
-    units,
     value,
 )
 from pyomo.network import Arc
 
+# other imports
 import idaes.logger as idaeslog
-from idaes.core import (
-    FlowsheetBlock,
-    MaterialBalanceType,
-    MomentumBalanceType,
-    UnitModelBlock,
-    UnitModelCostingBlock,
-)
+from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
 from idaes.core.util.initialization import propagate_state
+
+# IDAES imports
 from idaes.core.util.scaling import set_scaling_factor
 from idaes.models.unit_models import (
     EnergySplittingType,
@@ -48,12 +46,10 @@ from idaes.models.unit_models import SeparatorInitializer
 
 import numpy as np
 
-from prommis.nanofiltration.costing.diafiltration_cost_model import (
-    DiafiltrationCosting,
-    DiafiltrationCostingData,
-)
 from prommis.nanofiltration.membrane_cascade_flowsheet.membrane import Membrane
 from prommis.nanofiltration.membrane_cascade_flowsheet.precipitator import Precipitator
+
+# Custom imports
 from prommis.nanofiltration.membrane_cascade_flowsheet.solute_property import (
     SoluteParameters,
 )
@@ -108,9 +104,6 @@ class DiafiltrationModel:
         diafiltrate,
         precipitate_yield,
         precipitate=True,
-        atmospheric_pressure=101325,  # ambient pressure, Pa
-        operating_pressure=145,  # nanofiltration operating pressure, psi
-        simple_costing=False,
         solute_obj="Co",
     ):
         """Store model parameters."""
@@ -123,9 +116,6 @@ class DiafiltrationModel:
         self.diaf = diafiltrate
         self.precipitate = precipitate
         self.perc_precipitate = precipitate_yield
-        self.atmospheric_pressure = atmospheric_pressure
-        self.operating_pressure = operating_pressure
-        self.simple_costing = simple_costing
         self.solute_obj = solute_obj
 
     def build_flowsheet(self, mixing="tube"):
@@ -1096,99 +1086,3 @@ class DiafiltrationModel:
                 set_scaling_factor(con, 1 / 1000)
 
         TransformationFactory("core.scale_model").apply_to(m, rename=False)
-
-    def add_costing(self, m):
-        """
-        Adds custom costing block to the flowsheet
-        """
-        m.fs.costing = DiafiltrationCosting()
-
-        # Create dummy variables to store the UnitModelCostingBlocks
-        # These are needed because the sieving coefficient model does not account for pressure
-        m.fs.cascade = UnitModelBlock()  # to cost the pressure drop
-        m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
-        m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
-
-        m.fs.cascade.costing = UnitModelCostingBlock(
-            flowsheet_costing_block=m.fs.costing,
-            costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
-            costing_method_arguments={
-                "water_flux": self.flux * units.m**3 / units.m**2 / units.h,
-                "vol_flow_feed": self.feed["solvent"]
-                * units.m**3
-                / units.h,  # cascade feed
-                "vol_flow_perm": sum(
-                    m.fs.split_permeate[i].product.flow_vol[0]
-                    for i in RangeSet(self.ns)
-                ),  # cascade permeate
-            },
-        )
-        if self.simple_costing == False:
-            m.fs.feed_pump.costing = UnitModelCostingBlock(
-                flowsheet_costing_block=m.fs.costing,
-                costing_method=DiafiltrationCostingData.cost_pump,
-                costing_method_arguments={
-                    "inlet_pressure": self.atmospheric_pressure * units.Pa
-                    + units.convert(
-                        m.fs.cascade.costing.pressure_drop, to_units=units.Pa
-                    ),
-                    "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
-                    * units.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
-                    "inlet_vol_flow": self.feed["solvent"]
-                    * units.m**3
-                    / units.h,  # feed
-                    "simple_costing": self.simple_costing,
-                },
-            )
-        m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(
-            flowsheet_costing_block=m.fs.costing,
-            costing_method=DiafiltrationCostingData.cost_pump,
-            costing_method_arguments={
-                "inlet_pressure": self.atmospheric_pressure * units.Pa,
-                "outlet_pressure": self.operating_pressure * units.psi,
-                "inlet_vol_flow": self.diaf["solvent"]
-                * units.m**3
-                / units.h,  # diafiltrate
-                "simple_costing": self.simple_costing,
-            },
-        )
-        # membrane stage cost blocks
-        for n in range(1, self.ns + 1):
-            m.fs.stage[n].costing = UnitModelCostingBlock(
-                flowsheet_costing_block=m.fs.costing,
-                costing_method=DiafiltrationCostingData.cost_membranes,
-                costing_method_arguments={
-                    "membrane_length": m.fs.stage[n].length,
-                    "membrane_width": m.fs.stage[n].width,
-                },
-            )
-
-        if self.precipitate:
-            for prod in ["retentate", "permeate"]:
-                m.fs.precipitator[prod].costing = UnitModelCostingBlock(
-                    flowsheet_costing_block=m.fs.costing,
-                    costing_method=DiafiltrationCostingData.cost_precipitator,
-                    costing_method_arguments={
-                        "precip_volume": m.fs.precipitator[prod].V,
-                        "simple_costing": self.simple_costing,
-                    },
-                )
-
-        m.fs.costing.cost_process()
-
-    def add_costing_objectives(self, m):
-        """
-        Method to add cost objective to flowsheet for performing optimization
-
-        Args:
-            m: Pyomo model
-        """
-        m.co_obj.deactivate()
-        m.li_lb.deactivate()
-        m.prec_co_obj.deactivate()
-        m.prec_co_lb.activate()
-
-        def cost_obj(m):
-            return m.fs.costing.total_annualized_cost
-
-        m.cost_objecticve = Objective(rule=cost_obj)

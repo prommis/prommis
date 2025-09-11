@@ -321,7 +321,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             inlet_pressure: pressure of inlet stream to pump (Pa)
             outlet_pressure: pressure of outlet stream from pump (psi)
             inlet_vol_flow: volumetric flow rate of inlet stream to pump (m3/h)
-            simple_costing: Boolean to determine which costing method is implemented
+            simple_costing: Boolean to determine which costing method is implemented (default=False)
         """
         # default costing method
         if simple_costing == False:
@@ -570,7 +570,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         Args:
             precip_volume: volume of the precipitator as calculated by the unit model (m3)
             precip_headaspace: precipitator headspace percentage; default value is 20%
-            simple_costing: Boolean to determine which costing method is implemented
+            simple_costing: Boolean to determine which costing method is implemented (default=False)
         """
 
         if simple_costing == False:

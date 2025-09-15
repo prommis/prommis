@@ -53,6 +53,8 @@ Note: if the `typos` executable is not found, it can be installed by running `co
 ```sh
 pytest                          # run the complete test suite
 pytest -k test_my_flowsheet.py  # run only test defined in the file named test_my_flowsheet.py
+pytest -o addopts= src/prommis/cmi_precipitator/tests/test_aqueous_props.py # Run the tests in test_aqueous_props.py from another directory
+pytest -o addopts= src/prommis/cmi_precipitator/tests # Run all tests in the src/prommis/cmi_precipitator/tests directory
 ```
 
 #### Building documentation

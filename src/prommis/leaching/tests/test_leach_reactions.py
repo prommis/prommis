@@ -11,7 +11,7 @@ from idaes.core import FlowsheetBlock
 
 import pytest
 
-from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 
 RXN_LIST = [
     "Sc2O3",
@@ -47,7 +47,7 @@ def model():
     m.fs.solid[0].params.dens_mass = Var(units=units.kg / units.liter)
 
     # Leaching reaction parameters
-    m.fs.leach_rxns = CoalRefuseLeachingReactions()
+    m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
     return m
 

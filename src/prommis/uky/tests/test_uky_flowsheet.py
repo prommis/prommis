@@ -30,7 +30,7 @@ from idaes.models.unit_models.solid_liquid import SLSeparator
 
 import pytest
 
-from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.leaching.leach_train import LeachingTrain
@@ -77,7 +77,7 @@ def test_build_flowsheet(system_frame):
     # Leaching section property packages and unit models
     assert isinstance(model.fs.leach_soln, LeachSolutionParameters)
     assert isinstance(model.fs.coal, CoalRefuseParameters)
-    assert isinstance(model.fs.leach_rxns, CoalRefuseLeachingReactions)
+    assert isinstance(model.fs.leach_rxns, CoalRefuseLeachingReactionParameterBlock)
 
     assert isinstance(model.fs.leach, LeachingTrain)
     assert isinstance(model.fs.sl_sep1, SLSeparator)

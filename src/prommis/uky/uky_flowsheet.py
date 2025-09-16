@@ -191,7 +191,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     get_prop,
 )
 
-from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
@@ -285,7 +285,7 @@ def build():
     # Leaching property and unit models
     m.fs.leach_soln = LeachSolutionParameters()
     m.fs.coal = CoalRefuseParameters()
-    m.fs.leach_rxns = CoalRefuseLeachingReactions()
+    m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
     m.fs.leach = LeachingTrain(
         number_of_tanks=2,

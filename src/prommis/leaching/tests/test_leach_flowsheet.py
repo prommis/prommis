@@ -12,7 +12,6 @@ from pyomo.environ import (
 )
 
 from idaes.core.util import DiagnosticsToolbox
-from idaes.core.util.exceptions import InitializationError
 
 import pytest
 

@@ -12,6 +12,7 @@ from pyomo.environ import (
 )
 
 from idaes.core.util import DiagnosticsToolbox
+from idaes.core.util.exceptions import InitializationError
 
 import pytest
 
@@ -42,10 +43,7 @@ def test_solve(model):
     scaled_model = scaling.create_using(model, rename=False)
 
     initializer = model.fs.leach.default_initializer()
-    try:
-        initializer.initialize(scaled_model.fs.leach)
-    except:
-        pass
+    initializer.initialize(scaled_model.fs.leach)
 
     # Solve scaled model
     solver = SolverFactory("ipopt")

@@ -105,8 +105,7 @@ def main(args):
         to_json(m, fname="initialized_model_stage_3_10")
 
     df.unfix_dof(m, mixing=mix_style, precipitate=precipitate)
-    m.fs.precipitator["retentate"].volume.fix(500)
-    m.fs.precipitator["permeate"].volume.fix(500)
+    m.fs.split_diafiltrate.inlet.flow_vol.setub(200)
     report_statistics(m)
 
     costing = True
@@ -124,43 +123,36 @@ def main(args):
         )
         add_costing_objectives(m)
 
-    report_statistics(m)
-
     # set recovery lower bounds
     lithium_recovery = 0.8
-    # cobalt_recovery = 0.8
+    cobalt_recovery = 0.8
 
     solve_scaled_model(
         m,
         L=lithium_recovery,
-        # C=cobalt_recovery,
+        C=cobalt_recovery,
         NS=num_s,
         costing=costing,
         simple_costing=simple_costing,
     )
 
-    # TODO: debug solver convergence failures
+    # TODO: debug solver convergence failures for default costing with bounded precipitator dimensions
     dt = DiagnosticsToolbox(m)
     dt.report_numerical_issues()
-    # dt.display_variables_at_or_outside_bounds()
+    dt.display_constraints_with_large_residuals()
+    dt.display_variables_at_or_outside_bounds()
 
-    # m.fs.cascade.costing.display()
-    # m.fs.feed_pump.costing.display()
-    # m.fs.diafiltrate_pump.costing.display()
-    # m.fs.precipitator["retentate"].costing.display()
-    # m.fs.precipitator["permeate"].costing.display()
+    # # NOTE These percent recoveries are for precipitators
+    m.prec_perc_co.display()
+    m.prec_perc_li.display()
 
-    # NOTE These percent recoveries are for precipitators
-    # m.prec_perc_co.display()
-    # m.prec_perc_li.display()
-
-    # m.fs.costing.total_annualized_cost.display()
+    m.fs.costing.total_annualized_cost.display()
 
     # Print all relevant flow information
-    # vals = utils.report_values(m)
-    # utils.visualize_flows(
-    #     num_boxes=num_s, num_sub_boxes=num_t, conf=mix_style, model=vals
-    # )
+    vals = utils.report_values(m)
+    utils.visualize_flows(
+        num_boxes=num_s, num_sub_boxes=num_t, conf=mix_style, model=vals
+    )
 
 
 def add_costing(
@@ -185,20 +177,18 @@ def add_costing(
     m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
     m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
 
-    # TODO: remove for simple costing
-    m.fs.cascade.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
-        costing_method_arguments={
-            "water_flux": flux * units.m**3 / units.m**2 / units.h,
-            "vol_flow_feed": feed["solvent"] * units.m**3 / units.h,  # cascade feed
-            "vol_flow_perm": sum(
-                m.fs.split_permeate[i].product.flow_vol[0] for i in RangeSet(NS)
-            ),  # cascade permeate
-        },
-    )
-    # TODO: add UnitModelCostingBlock for feed_pump for simple costing
     if not simple_costing:
+        m.fs.cascade.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
+            costing_method_arguments={
+                "water_flux": flux * units.m**3 / units.m**2 / units.h,
+                "vol_flow_feed": feed["solvent"] * units.m**3 / units.h,  # cascade feed
+                "vol_flow_perm": sum(
+                    m.fs.split_permeate[i].product.flow_vol[0] for i in RangeSet(NS)
+                ),  # cascade permeate
+            },
+        )
         m.fs.feed_pump.costing = UnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
             costing_method=DiafiltrationCostingData.cost_pump,
@@ -210,6 +200,19 @@ def add_costing(
                 "simple_costing": simple_costing,
             },
         )
+    else:
+        # simple_costing=True
+        m.fs.feed_pump.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_pump,
+            costing_method_arguments={
+                "inlet_pressure": atmospheric_pressure * units.Pa,  # 14.7 psia
+                "outlet_pressure": operating_pressure * units.psi,
+                "inlet_vol_flow": feed["solvent"] * units.m**3 / units.h,  # feed
+                "simple_costing": simple_costing,
+            },
+        )
+
     m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_pump,
@@ -231,6 +234,7 @@ def add_costing(
             },
         )
 
+    # precipitator cost blocks
     if precipitate:
         for prod in ["retentate", "permeate"]:
             m.fs.precipitator[prod].costing = UnitModelCostingBlock(
@@ -249,18 +253,38 @@ def add_costing_objectives(m):
     """
     Method to add cost objective to flowsheet for performing optimization
 
+    Objective choices:
+        m.co_obj  # maximize cobalt recovery
+        m.li_obj
+        m.prec_co_obj # maximize cobalt flow out of precipitator
+        m.prec_li_obj
+    Constraint choices:
+        m.co_lb
+        m.li_lb # set a LB on lithium recovery
+        m.purity_co_lb
+        m.purity_li_lb
+        m.prec_co_lb # set a LB on cobalt recovery out of precipitator
+        m.prec_li_lb # set a LB on cobalt recovery out of precipitator
+
     Args:
         m: Pyomo model
     """
     m.co_obj.deactivate()
-    m.li_lb.deactivate()
+    m.li_obj.deactivate()
     m.prec_co_obj.deactivate()
+    m.prec_li_obj.deactivate()
+
+    m.co_lb.deactivate()
+    m.li_lb.deactivate()
+    m.purity_co_lb.deactivate()
+    m.purity_li_lb.deactivate()
     m.prec_co_lb.activate()
+    m.prec_li_lb.activate()
 
     def cost_obj(m):
         return m.fs.costing.total_annualized_cost
 
-    m.cost_objecticve = Objective(rule=cost_obj)
+    m.cost_objective = Objective(rule=cost_obj)
 
 
 def set_scaling(m, NS, costing, simple_costing):
@@ -272,59 +296,55 @@ def set_scaling(m, NS, costing, simple_costing):
     """
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
-    # TODO: determine appropriate scaling factors
-
     # Add scaling factors for poorly scaled variables
     if costing:
-        m.scaling_factor[m.fs.costing.aggregate_capital_cost] = 1e-6
+        m.scaling_factor[m.fs.costing.aggregate_capital_cost] = 1e-5
         m.scaling_factor[m.fs.costing.aggregate_fixed_operating_cost] = 1e-4
         m.scaling_factor[m.fs.costing.aggregate_variable_operating_cost] = 1e-5
-        m.scaling_factor[m.fs.costing.total_capital_cost] = 1e-6
+        m.scaling_factor[m.fs.costing.total_capital_cost] = 1e-5
         m.scaling_factor[m.fs.costing.total_operating_cost] = 1e-5
-        m.scaling_factor[m.fs.costing.maintenance_labor_chemical_operating_cost] = 1e-5
+        m.scaling_factor[m.fs.costing.maintenance_labor_chemical_operating_cost] = 1e-4
+        m.scaling_factor[m.fs.costing.total_annualized_cost] = 1e-5
 
         for n in range(1, NS + 1):
-            m.scaling_factor[m.fs.stage[n].costing.capital_cost] = 1e-4
+            m.scaling_factor[m.fs.stage[n].costing.capital_cost] = 1e-5
             m.scaling_factor[m.fs.stage[n].costing.fixed_operating_cost] = 1e-4
             m.scaling_factor[m.fs.stage[n].costing.membrane_area] = 1e-3
 
-        m.scaling_factor[m.fs.cascade.costing.variable_operating_cost] = 1e-5
-        m.scaling_factor[m.fs.cascade.costing.pressure_drop] = 1e-2
-        m.scaling_factor[m.fs.cascade.costing.SEC] = 1e1
-
-        # m.scaling_factor[m.fs.feed_pump.costing.capital_cost] = 1e-4
-        # m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e3
-
-        m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost] = 1e-4
-        m.scaling_factor[m.fs.diafiltrate_pump.costing.variable_operating_cost] = 1e-4
+        m.scaling_factor[m.fs.feed_pump.costing.capital_cost] = 1e-4
+        m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost] = 1e-3
+        m.scaling_factor[m.fs.diafiltrate_pump.costing.variable_operating_cost] = 1e-3
 
         if simple_costing:
+            m.scaling_factor[m.fs.feed_pump.costing.pump_power_factor_simple] = 1e-2
+            m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e-4
             m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_power_factor_simple] = (
                 1e-2
             )
 
         if not simple_costing:
-            m.scaling_factor[m.fs.feed_pump.costing.capital_cost] = 1e-4
-            m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e3
+            m.scaling_factor[m.fs.cascade.costing.variable_operating_cost] = 1e-5
+            m.scaling_factor[m.fs.cascade.costing.pressure_drop] = 1e-2
+            m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e-4
             m.scaling_factor[m.fs.feed_pump.costing.pump_head] = 1e6
-            # m.scaling_factor[m.fs.feed_pump.costing.pump_power] = 1e2
+            m.scaling_factor[m.fs.feed_pump.costing.pump_power] = 1e2
             m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_head] = 1e-2
-            # m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_power] = 1e-5
+            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_power] = 1e-5
 
         for prod in ["retentate", "permeate"]:
             m.scaling_factor[m.fs.precipitator[prod].costing.capital_cost] = 1e-5
-            if simple_costing == False:
-                m.scaling_factor[
-                    m.fs.precipitator[prod].costing.precipitator_diameter
-                ] = 1e1
+            if not simple_costing:
+                m.scaling_factor[m.fs.precipitator[prod].costing.base_cost_per_unit] = (
+                    1e-4
+                )
 
     # Add scaling factors for poorly scaled constraints
     constraint_autoscale_large_jac(m)
 
 
-def solve_scaled_model(m, L, NS, costing, simple_costing):
+def solve_scaled_model(m, L, C, NS, costing, simple_costing):
     m.recovery_li = L
-    # m.Rco = C
+    m.recovery_co = C
 
     scaling = TransformationFactory("core.scale_model")
     solver = SolverFactory("ipopt")
@@ -332,7 +352,7 @@ def solve_scaled_model(m, L, NS, costing, simple_costing):
     set_scaling(m, NS, costing=costing, simple_costing=simple_costing)
     scaled_model = scaling.create_using(m, rename=False)
     result = solver.solve(scaled_model, tee=True)
-    # assert_optimal_termination(result)
+    assert_optimal_termination(result)
     # Propagate results back to unscaled model
     scaling.propagate_solution(scaled_model, m)
 

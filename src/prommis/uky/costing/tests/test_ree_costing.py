@@ -4295,7 +4295,6 @@ def test_REE_costing_fixedOM_productratesnotpassed():
     results = solver.solve(m, tee=True)
     assert_optimal_termination(results)
     dt.assert_no_numerical_warnings()
-    
 
     assert value(m.fs.costing.total_sales_revenue) == pytest.approx(0, abs=1e-6)
 

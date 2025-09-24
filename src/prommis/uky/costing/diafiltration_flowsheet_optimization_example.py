@@ -8,50 +8,39 @@
 Example of optimizing a flowsheet using the REE costing library.
 """
 
-__author__ = "Costing Team (B. Paul, A. Fritz, A. Ojo, L. Deng, A. Dasgupta, and M. Zamarripa)"
+__author__ = (
+    "Costing Team (B. Paul, A. Fritz, A. Ojo, L. Deng, A. Dasgupta, and M. Zamarripa)"
+)
 __version__ = "1.0.0"
 
 from pyomo.environ import (
-    Objective,
-    TransformationFactory,
-    SolverFactory,
-    value,
-    minimize,
-    units as pyunits,
-    Constraint,
     Expression,
+    Objective,
     Param,
-    Var,
     Suffix,
-    )
-
-from idaes.core import (
-    FlowsheetBlock,
-    UnitModelBlock,
-    UnitModelCostingBlock,
+    TransformationFactory,
+    minimize,
 )
+from pyomo.environ import units as pyunits
+from pyomo.environ import value
+
+from idaes.core import UnitModelBlock, UnitModelCostingBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox, degrees_of_freedom
 from idaes.core.util.scaling import constraint_autoscale_large_jac
-
-from prommis.nanofiltration.diafiltration import (
-    add_costing,
-    add_product_constraints,
-    build_model,
-    initialize_model,
-    set_scaling,
-    solve_model,
-    unfix_opt_variables,
-)
 
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
     DiafiltrationCosting,
     DiafiltrationCostingData,
 )
-
-from prommis.uky.costing.ree_plant_capcost import (
-    QGESSCosting,
-    QGESSCostingData,
+from prommis.nanofiltration.diafiltration import (
+    add_product_constraints,
+    build_model,
+    initialize_model,
+    solve_model,
+    unfix_opt_variables,
 )
+from prommis.uky.costing.ree_plant_capcost import QGESSCosting
+
 
 def build_costing(m):
 
@@ -129,15 +118,17 @@ def build_costing(m):
 
     m.fs.Li_product = Expression(
         expr=pyunits.convert(
-            m.fs.stage3.permeate_outlet.flow_vol[0] * m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"],
-            to_units=pyunits.kg/pyunits.h
+            m.fs.stage3.permeate_outlet.flow_vol[0]
+            * m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"],
+            to_units=pyunits.kg / pyunits.h,
         )
     )
 
     m.fs.Co_product = Expression(
         expr=pyunits.convert(
-            m.fs.stage3.permeate_outlet.flow_vol[0] * m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Co"],
-            to_units=pyunits.kg/pyunits.h
+            m.fs.stage3.permeate_outlet.flow_vol[0]
+            * m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Co"],
+            to_units=pyunits.kg / pyunits.h,
         )
     )
 
@@ -145,30 +136,30 @@ def build_costing(m):
     hours_per_shift = 8
     shifts_per_day = 3
     operating_days_per_year = 336
-    
+
     m.fs.annual_operating_hours = Param(
         initialize=hours_per_shift * shifts_per_day * operating_days_per_year,
         mutable=True,
         units=pyunits.hours / pyunits.a,
     )
-    
+
     # Define the recovery rate
-    
+
     m.fs.recovery_rate_per_year = Expression(
         expr=pyunits.convert(
-            m.fs.stage3.permeate_outlet.flow_vol[0] *
-            (
+            m.fs.stage3.permeate_outlet.flow_vol[0]
+            * (
                 m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]
                 + m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Co"]
-                ) * m.fs.annual_operating_hours,
-            to_units=pyunits.kg/pyunits.year
+            )
+            * m.fs.annual_operating_hours,
+            to_units=pyunits.kg / pyunits.year,
         )
     )
-    
 
     m.fs.costing.build_process_costs(
         Lang_factor=2,  # includes installation, material, construction
-        labor_types=[], # labor costs already included in maintenance, admin
+        labor_types=[],  # labor costs already included in maintenance, admin
         fixed_OM=True,
         variable_OM=True,
         resources=[],
@@ -243,17 +234,17 @@ if __name__ == "__main__":
     solve_model(m, tee=False)
     dt.assert_no_numerical_warnings()
 
-    print("\nStage lengths prior to optimization: ", [
-        m.fs.stage1.length.value,
-        m.fs.stage2.length.value,
-        m.fs.stage3.length.value
-        ],
-        " ", pyunits.get_units(m.fs.stage1.length)
+    print(
+        "\nStage lengths prior to optimization: ",
+        [m.fs.stage1.length.value, m.fs.stage2.length.value, m.fs.stage3.length.value],
+        " ",
+        pyunits.get_units(m.fs.stage1.length),
     )
-    print("\nTotal length: ", value(
-        m.fs.stage1.length + m.fs.stage2.length + m.fs.stage3.length
-        ),
-        " ", pyunits.get_units(m.fs.stage1.length)
+    print(
+        "\nTotal length: ",
+        value(m.fs.stage1.length + m.fs.stage2.length + m.fs.stage3.length),
+        " ",
+        pyunits.get_units(m.fs.stage1.length),
     )
     print("\nCost results prior to optimization:")
     m.fs.costing.report()
@@ -263,17 +254,17 @@ if __name__ == "__main__":
     scale_and_solve_model(m)
     dt.assert_no_numerical_warnings()
 
-    print("\nStage lengths after optimization: ", [
-        m.fs.stage1.length.value,
-        m.fs.stage2.length.value,
-        m.fs.stage3.length.value
-        ],
-        " ", pyunits.get_units(m.fs.stage1.length)
+    print(
+        "\nStage lengths after optimization: ",
+        [m.fs.stage1.length.value, m.fs.stage2.length.value, m.fs.stage3.length.value],
+        " ",
+        pyunits.get_units(m.fs.stage1.length),
     )
-    print("\nTotal length: ", value(
-        m.fs.stage1.length + m.fs.stage2.length + m.fs.stage3.length
-        ),
-        " ", pyunits.get_units(m.fs.stage1.length)
+    print(
+        "\nTotal length: ",
+        value(m.fs.stage1.length + m.fs.stage2.length + m.fs.stage3.length),
+        " ",
+        pyunits.get_units(m.fs.stage1.length),
     )
     print("\nCost results after optimization:")
     m.fs.costing.report()

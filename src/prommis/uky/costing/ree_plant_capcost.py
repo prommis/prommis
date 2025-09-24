@@ -2250,7 +2250,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     CE_index_units / pyunits.year,
                 )
             else:
-                return (c.annual_operating_labor_cost == 1e-12 * CE_index_units / pyunits.year)
+                return (
+                    c.annual_operating_labor_cost
+                    == 1e-12 * CE_index_units / pyunits.year
+                )
 
         @b.Constraint()
         def annual_technical_labor_cost_eq(c):
@@ -2269,7 +2272,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     CE_index_units / pyunits.year,
                 )
             else:
-                return (c.annual_technical_labor_cost == 1e-12 * CE_index_units / pyunits.year)
+                return (
+                    c.annual_technical_labor_cost
+                    == 1e-12 * CE_index_units / pyunits.year
+                )
 
         @b.Constraint()
         def annual_labor_cost_eq(c):
@@ -2352,27 +2358,26 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         sum(
                             pyunits.convert(
                                 pure_product_output_rates[p] * default_sale_prices[p],
-                                to_units=CE_index_units / pyunits.h
-                                )
-                            for p in pure_product_output_rates.keys()
+                                to_units=CE_index_units / pyunits.h,
                             )
+                            for p in pure_product_output_rates.keys()
+                        )
                         if len(pure_product_output_rates) > 0
                         else 1e-12 * CE_index_units / pyunits.h
-                        )
-                    +
-                    (
+                    )
+                    + (
                         c.mixed_product_sale_price_realization_factor
                         * sum(
                             pyunits.convert(
                                 mixed_product_output_rates[p] * default_sale_prices[p],
-                                to_units=CE_index_units / pyunits.h
-                                )
-                            for p in mixed_product_output_rates.keys()
+                                to_units=CE_index_units / pyunits.h,
                             )
+                            for p in mixed_product_output_rates.keys()
+                        )
                         if len(mixed_product_output_rates) > 0
                         else 1e-12 * CE_index_units / pyunits.h
-                        )
                     )
+                )
                 * c.hours_per_shift
                 * c.shifts_per_day
                 * c.operating_days_per_year

@@ -41,6 +41,84 @@ from prommis.nanofiltration.diafiltration import (
 )
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting
 
+# --- I/O reporting helpers (keeps the script's simple print style) ---
+def _v(x):
+    try:
+        return float(value(x))
+    except Exception:
+        return None
+
+def _purity_mass(stream, li_key="Li", co_key="Co"):
+    """
+    Mass-based purity among Li and Co using conc_mass_solute if available.
+    Returns (purity_Li, purity_Co) or (None, None) if not computable.
+    """
+    try:
+        li = _v(stream.conc_mass_solute[0, li_key])
+        co = _v(stream.conc_mass_solute[0, co_key])
+    except Exception:
+        return None, None
+    if li is None or co is None:
+        return None, None
+    tot = li + co
+    if tot and tot > 0:
+        return li / tot, co / tot
+    return None, None
+
+def print_io_snap(fs, tag="STATE"):
+    """
+    Prints:
+      - Initial FEED flow + Li/Co concentrations (stage3 retentate side-stream @ element 10)
+      - Initial DIAFILTRATE flow + Li/Co concentrations (mix2.inlet_1)
+      - PRODUCT PERMEATE (stage3.permeate_outlet): flow + Li/Co purity
+      - PRODUCT RETENTATE (stage1.retentate_outlet): flow + Li/Co purity
+    """
+    print("\n" + "=" * 72)
+    print(f"I/O SNAPSHOT: {tag}")
+    print("=" * 72)
+
+    # -------- Initial feeds (fixed, not inside any stage loop) --------
+    # FEED: side-stream into stage 3 at element 10
+    feed_state = fs.stage3.retentate_side_stream_state[0, 10]
+    print("[FEED  (initial; stage3.retentate_side_stream_state[0,10])]")
+    print(f"  flow_vol: {_v(feed_state.flow_vol)}")
+    print(f"  conc_Li:  {_v(feed_state.conc_mass_solute['Li'])}")
+    print(f"  conc_Co:  {_v(feed_state.conc_mass_solute['Co'])}")
+
+    # DIAFILTRATE: mixer 2 inlet_1
+    diaf = fs.mix2.inlet_1
+    print("\n[DIAFILTRATE (initial; mix2.inlet_1)]")
+    print(f"  flow_vol: {_v(diaf.flow_vol[0])}")
+    print(f"  conc_Li:  {_v(diaf.conc_mass_solute[0,'Li'])}")
+    print(f"  conc_Co:  {_v(diaf.conc_mass_solute[0,'Co'])}")
+
+    # -------- Product streams (final, not intermediate elements) --------
+    perm = fs.stage3.permeate_outlet     # product permeate (final)
+    ret  = fs.stage1.retentate_outlet    # product retentate (final)
+
+    print("\n[PRODUCT PERMEATE (stage3.permeate_outlet)]")
+    print(f"  flow_vol: {_v(perm.flow_vol[0])}")
+    li_p, co_p = _purity_mass(perm)
+    print(f"  purity_Li: {li_p if li_p is not None else 'N/A'}")
+    print(f"  purity_Co: {co_p if co_p is not None else 'N/A'}")
+
+    print("\n[PRODUCT RETENTATE (stage1.retentate_outlet)]")
+    print(f"  flow_vol: {_v(ret.flow_vol[0])}")
+    li_r, co_r = _purity_mass(ret)
+    print(f"  purity_Li: {li_r if li_r is not None else 'N/A'}")
+    print(f"  purity_Co: {co_r if co_r is not None else 'N/A'}")
+    
+    # --------- Selectivity_coefficient, membrane width, operating pressure ----------
+    sel_Li = _v(fs.sieving_coefficient["Li"]) if hasattr(fs, "sieving_coefficient") else None
+    sel_Co = _v(fs.sieving_coefficient["Co"]) if hasattr(fs, "sieving_coefficient") else None
+    print("\n[PARAMETERS]")
+    print(f"  sieving_coefficient_Li: {sel_Li if sel_Li is not None else 'N/A'}")
+    print(f"  sieving_coefficient_Co: {sel_Co if sel_Co is not None else 'N/A'}")
+    print(f"  membrane_width (m.w):   {_v(m.w) if hasattr(m, 'w') else 'N/A'}")
+    print(f"  operating_pressure:     {_v(m.operating_pressure) if hasattr(m, 'operating_pressure') else 'N/A'}")
+
+    print("=" * 72 + "\n")
+
 
 def build_costing(m):
 
@@ -50,13 +128,13 @@ def build_costing(m):
     m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
     m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
 
-    cost_idx = 1
+    """cost_idx = 1
 
     if cost_idx == 1:
         m.fs.costing = QGESSCosting()
     else:
-        m.fs.costing = DiafiltrationCosting()
-
+        m.fs.costing = DiafiltrationCosting()"""
+    m.fs.costing = QGESSCosting()
     m.fs.stage1.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_membranes,
@@ -233,6 +311,7 @@ if __name__ == "__main__":
 
     solve_model(m, tee=False)
     dt.assert_no_numerical_warnings()
+    print_io_snap(m.fs, tag="BEFORE OPTIMIZATION")
 
     print(
         "\nStage lengths prior to optimization: ",
@@ -253,7 +332,7 @@ if __name__ == "__main__":
 
     scale_and_solve_model(m)
     dt.assert_no_numerical_warnings()
-
+    print_io_snap(m.fs, tag="AFTER OPTIMIZATION")
     print(
         "\nStage lengths after optimization: ",
         [m.fs.stage1.length.value, m.fs.stage2.length.value, m.fs.stage3.length.value],

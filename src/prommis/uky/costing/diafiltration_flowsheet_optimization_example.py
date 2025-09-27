@@ -20,6 +20,8 @@ from pyomo.environ import (
     Suffix,
     TransformationFactory,
     minimize,
+    Var,
+    NonNegativeReals,
 )
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
@@ -115,7 +117,7 @@ def print_io_snap(fs, tag="STATE"):
     print(f"  sieving_coefficient_Li: {sel_Li if sel_Li is not None else 'N/A'}")
     print(f"  sieving_coefficient_Co: {sel_Co if sel_Co is not None else 'N/A'}")
     print(f"  membrane_width (m.w):   {_v(m.w) if hasattr(m, 'w') else 'N/A'}")
-    print(f"  operating_pressure:     {_v(m.operating_pressure) if hasattr(m, 'operating_pressure') else 'N/A'}")
+    print(f"  operating_pressure:     {_v(m.operating_pressure)} psi")
 
     print("=" * 72 + "\n")
 
@@ -240,21 +242,33 @@ def build_costing(m):
         labor_types=[],  # labor costs already included in maintenance, admin
         fixed_OM=True,
         variable_OM=True,
-        resources=[],
-        rates=[],
-        prices={},
+        resources=[], # List of strings of resources.
+        rates=[], # Resource consumption rate.
+        prices={}, # Resource prices is not considered.
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
         CE_index_year="2021",
     )
 
+def apply_length_bounds(m):
+    # Based on paper https://pubs.acs.org/doi/10.1021/acssuschemeng.2c02862.
+    use_units = (pyunits.get_units(m.fs.stage1.length) is not None)
+
+    for st in (m.fs.stage1, m.fs.stage2, m.fs.stage3):
+        if use_units:
+            st.length.setlb(0.1 * pyunits.m)
+            st.length.setub(10000 * pyunits.m)
+        else:
+            st.length.setlb(0.1)
+            st.length.setub(10000.0)
 
 def build_optimization(m):
 
+    apply_length_bounds(m)
+    
     def cost_obj(m):
         return m.fs.costing.cost_of_recovery
-
     m.cost_objective = Objective(rule=cost_obj, sense=minimize)
-
+        
     unfix_opt_variables(m)
     add_product_constraints(m, Li_recovery_bound=0.945, Co_recovery_bound=0.635)
 
@@ -298,7 +312,7 @@ if __name__ == "__main__":
     initialize_model(m)
     solve_model(m, tee=False)
     dt.assert_no_numerical_warnings() 
-
+    
     build_costing(m)
 
     solve_model(m, tee=False)

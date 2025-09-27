@@ -256,7 +256,7 @@ def build_optimization(m):
     m.cost_objective = Objective(rule=cost_obj, sense=minimize)
 
     unfix_opt_variables(m)
-    add_product_constraints(m, Li_recovery_bound=0.95, Co_recovery_bound=0.635)
+    add_product_constraints(m, Li_recovery_bound=0.945, Co_recovery_bound=0.635)
 
 
 def scale_and_solve_model(m):
@@ -297,7 +297,7 @@ if __name__ == "__main__":
 
     initialize_model(m)
     solve_model(m, tee=False)
-    dt.assert_no_numerical_warnings()
+    dt.assert_no_numerical_warnings() 
 
     build_costing(m)
 
@@ -305,9 +305,10 @@ if __name__ == "__main__":
     dt.assert_no_numerical_warnings()
 
     # fix some initial long stage lengths so optimization starts from a feasible place with recovery bounds
-    m.fs.stage1.length.fix(5000)
-    m.fs.stage2.length.fix(1000)
-    m.fs.stage3.length.fix(750)
+    # chose the initial guess based on Multi-Stream Contactor Tutorial (Solution).
+    m.fs.stage1.length.fix(754)
+    m.fs.stage2.length.fix(758)
+    m.fs.stage3.length.fix(756)
 
     solve_model(m, tee=False)
     dt.assert_no_numerical_warnings()
@@ -331,7 +332,7 @@ if __name__ == "__main__":
     build_optimization(m)
 
     scale_and_solve_model(m)
-    dt.assert_no_numerical_warnings()
+    dt.assert_no_numerical_warnings() 
     print_io_snap(m.fs, tag="AFTER OPTIMIZATION")
     print(
         "\nStage lengths after optimization: ",

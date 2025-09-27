@@ -20,8 +20,8 @@ from pyomo.environ import (
     Suffix,
     TransformationFactory,
     minimize,
-    Var,
-    NonNegativeReals,
+    value,
+    Constraint,
 )
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
@@ -249,21 +249,84 @@ def build_costing(m):
         CE_index_year="2021",
     )
 
-def apply_length_bounds(m):
-    # Based on paper https://pubs.acs.org/doi/10.1021/acssuschemeng.2c02862.
-    use_units = (pyunits.get_units(m.fs.stage1.length) is not None)
-
+def apply_design_limits(m,
+                        Lmin=0.1, Lmax=10000.0,
+                        sc_min=0.01, sc_max=0.99): # assume a boundary
+    # 1) Length bounds for each stage
     for st in (m.fs.stage1, m.fs.stage2, m.fs.stage3):
-        if use_units:
-            st.length.setlb(0.1 * pyunits.m)
-            st.length.setub(10000 * pyunits.m)
+        st.length.setlb(Lmin * pyunits.m)
+        st.length.setub(Lmax * pyunits.m)
+
+    # 2) Stage-cut (sc) bounds according to : Q_perm / Q_feed in [sc_min, sc_max]
+    stages = [m.fs.stage1, m.fs.stage2, m.fs.stage3]
+    for i, st in enumerate(stages, start=1):
+        Q_perm = st.permeate_outlet.flow_vol[0]
+        Q_perm = st.permeate_outlet.flow_vol[0]
+        if i < 3:
+            Q_feed = st.retentate_inlet.flow_vol[0]
         else:
-            st.length.setlb(0.1)
-            st.length.setub(10000.0)
+            Q_feed = (st.retentate_inlet.flow_vol[0]
+                      + m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol)
+        m.add_component(f"stage{i}_cut_lb",
+            Constraint(expr= Q_perm >= sc_min * Q_feed))
+        m.add_component(f"stage{i}_cut_ub",
+            Constraint(expr= Q_perm <= sc_max * Q_feed))
+
+def compute_stage_cuts(m, eps=1e-12):
+    # Stage 1
+    Qf1 = m.fs.stage1.retentate_inlet.flow_vol[0]
+    Qp1 = m.fs.stage1.permeate_outlet.flow_vol[0]
+    sc1 = value(Qp1 / Qf1) if abs(value(Qf1)) > eps else float('nan')
+
+    # Stage 2
+    Qf2 = m.fs.stage2.retentate_inlet.flow_vol[0]
+    Qp2 = m.fs.stage2.permeate_outlet.flow_vol[0]
+    sc2 = value(Qp2 / Qf2) if abs(value(Qf2)) > eps else float('nan')
+
+    # Stage 3 (add fresh side-stream @ element 10)
+    Qf3 = (m.fs.stage3.retentate_inlet.flow_vol[0]
+           + m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol)
+    Qp3 = m.fs.stage3.permeate_outlet.flow_vol[0]
+    sc3 = value(Qp3 / Qf3) if abs(value(Qf3)) > eps else float('nan')
+
+    return [sc1, sc2, sc3]
+
+def print_stage_cuts(m, label="STAGE CUTS"):
+    sc = compute_stage_cuts(m)
+    print("\n" + "="*60)
+    print(f"{label}")
+    print("="*60)
+    for i, s in enumerate(sc, start=1):
+        print(f"Stage {i} cut (Q_perm/Q_feed): {s:.6f}")
+    print("="*60 + "\n")
+    
+def apply_sieving_bounds_and_unfix(m,
+                                   li_bounds=(0.75, 1.3),
+                                   co_bounds=(0.05, 0.5),
+                                   li_start=1.3,
+                                   co_start=0.5):
+    sc = m.fs.sieving_coefficient
+    # Li
+    sc["Li"].setlb(li_bounds[0])
+    sc["Li"].setub(li_bounds[1])
+    if li_start is not None:
+        sc["Li"].set_value(li_start)
+    sc["Li"].unfix()
+    # Co
+    sc["Co"].setlb(co_bounds[0])
+    sc["Co"].setub(co_bounds[1])
+    if co_start is not None:
+        sc["Co"].set_value(co_start)
+    sc["Co"].unfix()
+
 
 def build_optimization(m):
-
-    apply_length_bounds(m)
+    apply_design_limits(m, Lmin=0.1, Lmax=10000.0, sc_min=0.01, sc_max=0.99)
+    apply_sieving_bounds_and_unfix(m,
+                                   li_bounds=(0.75, 1.3),
+                                   co_bounds=(0.05, 0.5),
+                                   li_start=1.3,
+                                   co_start=0.5)
     
     def cost_obj(m):
         return m.fs.costing.cost_of_recovery
@@ -327,6 +390,7 @@ if __name__ == "__main__":
     solve_model(m, tee=False)
     dt.assert_no_numerical_warnings()
     print_io_snap(m.fs, tag="BEFORE OPTIMIZATION")
+    print_stage_cuts(m, label="STAGE CUTS — BEFORE OPTIMIZATION")
 
     print(
         "\nStage lengths prior to optimization: ",
@@ -348,6 +412,7 @@ if __name__ == "__main__":
     scale_and_solve_model(m)
     dt.assert_no_numerical_warnings() 
     print_io_snap(m.fs, tag="AFTER OPTIMIZATION")
+    print_stage_cuts(m, label="STAGE CUTS — AFTER OPTIMIZATION")
     print(
         "\nStage lengths after optimization: ",
         [m.fs.stage1.length.value, m.fs.stage2.length.value, m.fs.stage3.length.value],

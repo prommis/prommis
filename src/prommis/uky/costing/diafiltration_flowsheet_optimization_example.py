@@ -30,7 +30,6 @@ from idaes.core.util.model_diagnostics import DiagnosticsToolbox, degrees_of_fre
 from idaes.core.util.scaling import constraint_autoscale_large_jac
 
 from prommis.nanofiltration.costing.diafiltration_cost_model import (
-    DiafiltrationCosting,
     DiafiltrationCostingData,
 )
 from prommis.nanofiltration.diafiltration import (

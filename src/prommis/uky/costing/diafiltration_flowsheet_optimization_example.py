@@ -13,8 +13,6 @@ __author__ = (
 )
 __version__ = "1.0.0"
 
-import argparse
-
 from pyomo.environ import (
     Constraint,
     Expression,
@@ -69,37 +67,6 @@ def _purity_mass(stream, li_key="Li", co_key="Co"):
     if tot and tot > 0:
         return li / tot, co / tot
     return None, None
-
-# Quick way to get expected assert value
-def print_pytest_asserts(m, header):
-    print("\n# =====", header, "=====")
-    # decision variables
-    print(f"assert value(m.fs.stage1.length) == pytest.approx({value(m.fs.stage1.length):.6g}, rel=1e-4)")
-    print(f"assert value(m.fs.stage2.length) == pytest.approx({value(m.fs.stage2.length):.6g}, rel=1e-4)")
-    print(f"assert value(m.fs.stage3.length) == pytest.approx({value(m.fs.stage3.length):.6g}, rel=1e-4)")
-
-    # USD_2021 unit-model costs
-    s1 = m.fs.stage1.costing; s2 = m.fs.stage2.costing; s3 = m.fs.stage3.costing
-    cas = m.fs.cascade.costing; fp = m.fs.feed_pump.costing; dp = m.fs.diafiltrate_pump.costing
-    print(f"assert value(s1.capital_cost) == pytest.approx({value(s1.capital_cost):.6g}, rel=1e-4)")
-    print(f"assert value(s1.fixed_operating_cost) == pytest.approx({value(s1.fixed_operating_cost):.6g}, rel=1e-4)")
-    print(f"assert value(s2.capital_cost) == pytest.approx({value(s2.capital_cost):.6g}, rel=1e-4)")
-    print(f"assert value(s2.fixed_operating_cost) == pytest.approx({value(s2.fixed_operating_cost):.6g}, rel=1e-4)")
-    print(f"assert value(s3.capital_cost) == pytest.approx({value(s3.capital_cost):.6g}, rel=1e-4)")
-    print(f"assert value(s3.fixed_operating_cost) == pytest.approx({value(s3.fixed_operating_cost):.6g}, rel=1e-4)")
-    print(f"assert value(cas.variable_operating_cost) == pytest.approx({value(cas.variable_operating_cost):.6g}, rel=1e-4)")
-    print(f"assert value(fp.capital_cost) == pytest.approx({value(fp.capital_cost):.6g}, rel=1e-4)")
-    print(f"assert value(fp.variable_operating_cost) == pytest.approx({value(fp.variable_operating_cost):.8g}, rel=1e-4)")
-    print(f"assert value(dp.capital_cost) == pytest.approx({value(dp.capital_cost):.6g}, rel=1e-4)")
-    print(f"assert value(dp.variable_operating_cost) == pytest.approx({value(dp.variable_operating_cost):.6g}, rel=1e-4)")
-
-    # MUSD_2021 totals
-    C = m.fs.costing
-    print(f"assert value(C.total_BEC) == pytest.approx({value(C.total_BEC):.6g}, rel=1e-4)")
-    print(f"assert value(C.total_plant_cost) == pytest.approx({value(C.total_plant_cost):.6g}, rel=1e-4)")
-    print(f"assert value(C.total_fixed_OM_cost) == pytest.approx({value(C.total_fixed_OM_cost):.6g}, rel=1e-4)")
-    print(f"assert value(C.total_variable_OM_cost[0]) == pytest.approx({value(C.total_variable_OM_cost[0]):.6g}, rel=1e-4)")
-    print(f"assert value(C.cost_of_recovery) == pytest.approx({value(C.cost_of_recovery):.6g}, rel=1e-4)")
 
 def print_io_snap(fs, tag="STATE"):
     """
@@ -407,12 +374,6 @@ def scale_and_solve_model(m):
 
 
 if __name__ == "__main__":
-    # Quick gain assert value in test file
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--print-asserts", dest="print_asserts", action="store_true",
-                        help="print pytest-style asserts for current results")
-    args = parser.parse_args()
-    
     m = build_model()
 
     dt = DiagnosticsToolbox(m)
@@ -453,17 +414,11 @@ if __name__ == "__main__":
     print("\nCost results prior to optimization:")
     m.fs.costing.report()
 
-    if args.print_asserts:
-        print_pytest_asserts(m, "ASSERTS — BEFORE OPTIMIZATION")
-        
     build_optimization(m)
 
     scale_and_solve_model(m)
     dt.assert_no_numerical_warnings()
-    
-    if args.print_asserts:
-        print_pytest_asserts(m, "ASSERTS — AFTER OPTIMIZATION")
-    
+
     print_io_snap(m.fs, tag="AFTER OPTIMIZATION")
     print_stage_cuts(m, label="STAGE CUTS — AFTER OPTIMIZATION")
     print(

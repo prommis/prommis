@@ -76,6 +76,8 @@ def print_io_snap(fs, tag="STATE"):
       - PRODUCT PERMEATE (stage3.permeate_outlet): flow + Li/Co purity
       - PRODUCT RETENTATE (stage1.retentate_outlet): flow + Li/Co purity
     """
+    root = fs.parent_block()
+    
     print("\n" + "=" * 72)
     print(f"I/O SNAPSHOT: {tag}")
     print("=" * 72)
@@ -121,8 +123,8 @@ def print_io_snap(fs, tag="STATE"):
     print("\n[PARAMETERS]")
     print(f"  sieving_coefficient_Li: {sel_Li if sel_Li is not None else 'N/A'}")
     print(f"  sieving_coefficient_Co: {sel_Co if sel_Co is not None else 'N/A'}")
-    print(f"  membrane_width (m.w):   {_v(m.w) if hasattr(m, 'w') else 'N/A'}")
-    print(f"  operating_pressure:     {_v(m.operating_pressure)} psi")
+    print(f"  membrane_width (m): {_v(getattr(root, 'w', None)) if hasattr(root, 'w') else 'N/A'}")
+    print(f"  operating_pressure (psi): {_v(getattr(root, 'operating_pressure', None)) if hasattr(root,'operating_pressure') else 'N/A'}")
 
     print("=" * 72 + "\n")
 

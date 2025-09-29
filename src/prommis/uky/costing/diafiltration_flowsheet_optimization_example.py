@@ -13,16 +13,15 @@ __author__ = (
 )
 __version__ = "1.0.0"
 
-import argparse
-
 from pyomo.environ import (
-    Constraint,
     Expression,
     Objective,
     Param,
     Suffix,
     TransformationFactory,
     minimize,
+    value,
+    Constraint,
 )
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
@@ -44,14 +43,12 @@ from prommis.nanofiltration.diafiltration import (
 )
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting
 
-
 # --- I/O reporting helpers (keeps the script's simple print style) ---
 def _v(x):
     try:
         return float(value(x))
     except Exception:
         return None
-
 
 def _purity_mass(stream, li_key="Li", co_key="Co"):
     """
@@ -69,37 +66,6 @@ def _purity_mass(stream, li_key="Li", co_key="Co"):
     if tot and tot > 0:
         return li / tot, co / tot
     return None, None
-
-# Quick way to get expected assert value
-def print_pytest_asserts(m, header):
-    print("\n# =====", header, "=====")
-    # decision variables
-    print(f"assert value(m.fs.stage1.length) == pytest.approx({value(m.fs.stage1.length):.6g}, rel=1e-4)")
-    print(f"assert value(m.fs.stage2.length) == pytest.approx({value(m.fs.stage2.length):.6g}, rel=1e-4)")
-    print(f"assert value(m.fs.stage3.length) == pytest.approx({value(m.fs.stage3.length):.6g}, rel=1e-4)")
-
-    # USD_2021 unit-model costs
-    s1 = m.fs.stage1.costing; s2 = m.fs.stage2.costing; s3 = m.fs.stage3.costing
-    cas = m.fs.cascade.costing; fp = m.fs.feed_pump.costing; dp = m.fs.diafiltrate_pump.costing
-    print(f"assert value(s1.capital_cost) == pytest.approx({value(s1.capital_cost):.6g}, rel=1e-4)")
-    print(f"assert value(s1.fixed_operating_cost) == pytest.approx({value(s1.fixed_operating_cost):.6g}, rel=1e-4)")
-    print(f"assert value(s2.capital_cost) == pytest.approx({value(s2.capital_cost):.6g}, rel=1e-4)")
-    print(f"assert value(s2.fixed_operating_cost) == pytest.approx({value(s2.fixed_operating_cost):.6g}, rel=1e-4)")
-    print(f"assert value(s3.capital_cost) == pytest.approx({value(s3.capital_cost):.6g}, rel=1e-4)")
-    print(f"assert value(s3.fixed_operating_cost) == pytest.approx({value(s3.fixed_operating_cost):.6g}, rel=1e-4)")
-    print(f"assert value(cas.variable_operating_cost) == pytest.approx({value(cas.variable_operating_cost):.6g}, rel=1e-4)")
-    print(f"assert value(fp.capital_cost) == pytest.approx({value(fp.capital_cost):.6g}, rel=1e-4)")
-    print(f"assert value(fp.variable_operating_cost) == pytest.approx({value(fp.variable_operating_cost):.8g}, rel=1e-4)")
-    print(f"assert value(dp.capital_cost) == pytest.approx({value(dp.capital_cost):.6g}, rel=1e-4)")
-    print(f"assert value(dp.variable_operating_cost) == pytest.approx({value(dp.variable_operating_cost):.6g}, rel=1e-4)")
-
-    # MUSD_2021 totals
-    C = m.fs.costing
-    print(f"assert value(C.total_BEC) == pytest.approx({value(C.total_BEC):.6g}, rel=1e-4)")
-    print(f"assert value(C.total_plant_cost) == pytest.approx({value(C.total_plant_cost):.6g}, rel=1e-4)")
-    print(f"assert value(C.total_fixed_OM_cost) == pytest.approx({value(C.total_fixed_OM_cost):.6g}, rel=1e-4)")
-    print(f"assert value(C.total_variable_OM_cost[0]) == pytest.approx({value(C.total_variable_OM_cost[0]):.6g}, rel=1e-4)")
-    print(f"assert value(C.cost_of_recovery) == pytest.approx({value(C.cost_of_recovery):.6g}, rel=1e-4)")
 
 def print_io_snap(fs, tag="STATE"):
     """
@@ -129,8 +95,8 @@ def print_io_snap(fs, tag="STATE"):
     print(f"  conc_Co:  {_v(diaf.conc_mass_solute[0,'Co'])}")
 
     # -------- Product streams (final, not intermediate elements) --------
-    perm = fs.stage3.permeate_outlet  # product permeate (final)
-    ret = fs.stage1.retentate_outlet  # product retentate (final)
+    perm = fs.stage3.permeate_outlet     # product permeate (final)
+    ret  = fs.stage1.retentate_outlet    # product retentate (final)
 
     print("\n[PRODUCT PERMEATE (stage3.permeate_outlet)]")
     print(f"  flow_vol: {_v(perm.flow_vol[0])}")
@@ -143,14 +109,10 @@ def print_io_snap(fs, tag="STATE"):
     li_r, co_r = _purity_mass(ret)
     print(f"  purity_Li: {li_r if li_r is not None else 'N/A'}")
     print(f"  purity_Co: {co_r if co_r is not None else 'N/A'}")
-
+    
     # --------- Selectivity_coefficient, membrane width, operating pressure ----------
-    sel_Li = (
-        _v(fs.sieving_coefficient["Li"]) if hasattr(fs, "sieving_coefficient") else None
-    )
-    sel_Co = (
-        _v(fs.sieving_coefficient["Co"]) if hasattr(fs, "sieving_coefficient") else None
-    )
+    sel_Li = _v(fs.sieving_coefficient["Li"]) if hasattr(fs, "sieving_coefficient") else None
+    sel_Co = _v(fs.sieving_coefficient["Co"]) if hasattr(fs, "sieving_coefficient") else None
     print("\n[PARAMETERS]")
     print(f"  sieving_coefficient_Li: {sel_Li if sel_Li is not None else 'N/A'}")
     print(f"  sieving_coefficient_Co: {sel_Co if sel_Co is not None else 'N/A'}")
@@ -280,17 +242,16 @@ def build_costing(m):
         labor_types=[],  # labor costs already included in maintenance, admin
         fixed_OM=True,
         variable_OM=True,
-        resources=[],  # List of strings of resources.
-        rates=[],  # Resource consumption rate.
-        prices={},  # Resource prices is not considered.
+        resources=[], # List of strings of resources.
+        rates=[], # Resource consumption rate.
+        prices={}, # Resource prices is not considered.
         recovery_rate_per_year=m.fs.recovery_rate_per_year,
         CE_index_year="2021",
     )
 
-
-def apply_design_limits(
-    m, Lmin=0.1, Lmax=10000.0, sc_min=0.01, sc_max=0.99
-):  # assume a boundary
+def apply_design_limits(m,
+                        Lmin=0.1, Lmax=10000.0,
+                        sc_min=0.01, sc_max=0.99): # assume a boundary
     # 1) Length bounds for each stage
     for st in (m.fs.stage1, m.fs.stage2, m.fs.stage3):
         st.length.setlb(Lmin * pyunits.m)
@@ -304,49 +265,46 @@ def apply_design_limits(
         if i < 3:
             Q_feed = st.retentate_inlet.flow_vol[0]
         else:
-            Q_feed = (
-                st.retentate_inlet.flow_vol[0]
-                + m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol
-            )
-        m.add_component(f"stage{i}_cut_lb", Constraint(expr=Q_perm >= sc_min * Q_feed))
-        m.add_component(f"stage{i}_cut_ub", Constraint(expr=Q_perm <= sc_max * Q_feed))
-
+            Q_feed = (st.retentate_inlet.flow_vol[0]
+                      + m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol)
+        m.add_component(f"stage{i}_cut_lb",
+            Constraint(expr= Q_perm >= sc_min * Q_feed))
+        m.add_component(f"stage{i}_cut_ub",
+            Constraint(expr= Q_perm <= sc_max * Q_feed))
 
 def compute_stage_cuts(m, eps=1e-12):
     # Stage 1
     Qf1 = m.fs.stage1.retentate_inlet.flow_vol[0]
     Qp1 = m.fs.stage1.permeate_outlet.flow_vol[0]
-    sc1 = value(Qp1 / Qf1) if abs(value(Qf1)) > eps else float("nan")
+    sc1 = value(Qp1 / Qf1) if abs(value(Qf1)) > eps else float('nan')
 
     # Stage 2
     Qf2 = m.fs.stage2.retentate_inlet.flow_vol[0]
     Qp2 = m.fs.stage2.permeate_outlet.flow_vol[0]
-    sc2 = value(Qp2 / Qf2) if abs(value(Qf2)) > eps else float("nan")
+    sc2 = value(Qp2 / Qf2) if abs(value(Qf2)) > eps else float('nan')
 
     # Stage 3 (add fresh side-stream @ element 10)
-    Qf3 = (
-        m.fs.stage3.retentate_inlet.flow_vol[0]
-        + m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol
-    )
+    Qf3 = (m.fs.stage3.retentate_inlet.flow_vol[0]
+           + m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol)
     Qp3 = m.fs.stage3.permeate_outlet.flow_vol[0]
-    sc3 = value(Qp3 / Qf3) if abs(value(Qf3)) > eps else float("nan")
+    sc3 = value(Qp3 / Qf3) if abs(value(Qf3)) > eps else float('nan')
 
     return [sc1, sc2, sc3]
 
-
 def print_stage_cuts(m, label="STAGE CUTS"):
     sc = compute_stage_cuts(m)
-    print("\n" + "=" * 60)
+    print("\n" + "="*60)
     print(f"{label}")
-    print("=" * 60)
+    print("="*60)
     for i, s in enumerate(sc, start=1):
         print(f"Stage {i} cut (Q_perm/Q_feed): {s:.6f}")
-    print("=" * 60 + "\n")
-
-
-def apply_sieving_bounds_and_unfix(
-    m, li_bounds=(0.75, 1.3), co_bounds=(0.05, 0.5), li_start=1.3, co_start=0.5
-):
+    print("="*60 + "\n")
+    
+def apply_sieving_bounds_and_unfix(m,
+                                   li_bounds=(0.75, 1.3),
+                                   co_bounds=(0.05, 0.5),
+                                   li_start=1.3,
+                                   co_start=0.5):
     sc = m.fs.sieving_coefficient
     # Li
     sc["Li"].setlb(li_bounds[0])
@@ -364,15 +322,16 @@ def apply_sieving_bounds_and_unfix(
 
 def build_optimization(m):
     apply_design_limits(m, Lmin=0.1, Lmax=10000.0, sc_min=0.01, sc_max=0.99)
-    apply_sieving_bounds_and_unfix(
-        m, li_bounds=(0.75, 1.3), co_bounds=(0.05, 0.5), li_start=1.3, co_start=0.5
-    )
-
+    apply_sieving_bounds_and_unfix(m,
+                                   li_bounds=(0.75, 1.3),
+                                   co_bounds=(0.05, 0.5),
+                                   li_start=1.3,
+                                   co_start=0.5)
+    
     def cost_obj(m):
         return m.fs.costing.cost_of_recovery
-
     m.cost_objective = Objective(rule=cost_obj, sense=minimize)
-
+        
     unfix_opt_variables(m)
     add_product_constraints(m, Li_recovery_bound=0.945, Co_recovery_bound=0.635)
 
@@ -407,12 +366,7 @@ def scale_and_solve_model(m):
 
 
 if __name__ == "__main__":
-    # Quick gain assert value in test file
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--print-asserts", dest="print_asserts", action="store_true",
-                        help="print pytest-style asserts for current results")
-    args = parser.parse_args()
-    
+
     m = build_model()
 
     dt = DiagnosticsToolbox(m)
@@ -420,8 +374,8 @@ if __name__ == "__main__":
 
     initialize_model(m)
     solve_model(m, tee=False)
-    dt.assert_no_numerical_warnings()
-
+    dt.assert_no_numerical_warnings() 
+    
     build_costing(m)
 
     solve_model(m, tee=False)
@@ -453,17 +407,10 @@ if __name__ == "__main__":
     print("\nCost results prior to optimization:")
     m.fs.costing.report()
 
-    if args.print_asserts:
-        print_pytest_asserts(m, "ASSERTS — BEFORE OPTIMIZATION")
-        
     build_optimization(m)
 
     scale_and_solve_model(m)
-    dt.assert_no_numerical_warnings()
-    
-    if args.print_asserts:
-        print_pytest_asserts(m, "ASSERTS — AFTER OPTIMIZATION")
-    
+    dt.assert_no_numerical_warnings() 
     print_io_snap(m.fs, tag="AFTER OPTIMIZATION")
     print_stage_cuts(m, label="STAGE CUTS — AFTER OPTIMIZATION")
     print(

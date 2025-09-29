@@ -128,6 +128,11 @@ def print_io_snap(fs, tag="STATE"):
 
     print("=" * 72 + "\n")
 
+def apply_baseline_lengths(m, L1=754, L2=758, L3=756):
+    """Fix stage lengths to baseline values (for pre-optimization reporting)."""
+    m.fs.stage1.length.fix(L1)
+    m.fs.stage2.length.fix(L2)
+    m.fs.stage3.length.fix(L3)
 
 def build_costing(m):
 
@@ -390,11 +395,7 @@ if __name__ == "__main__":
     solve_model(m, tee=False)
     dt.assert_no_numerical_warnings()
 
-    # fix some initial long stage lengths so optimization starts from a feasible place with recovery bounds
-    # chose the initial guess based on Multi-Stream Contactor Tutorial (Solution).
-    m.fs.stage1.length.fix(754)
-    m.fs.stage2.length.fix(758)
-    m.fs.stage3.length.fix(756)
+    apply_baseline_lengths(m, L1=754, L2=758, L3=756)
 
     solve_model(m, tee=False)
     dt.assert_no_numerical_warnings()

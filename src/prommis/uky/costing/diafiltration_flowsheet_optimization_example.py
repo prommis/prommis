@@ -68,6 +68,7 @@ def _purity_mass(stream, li_key="Li", co_key="Co"):
         return li / tot, co / tot
     return None, None
 
+
 def print_io_snap(fs, tag="STATE"):
     """
     Prints:

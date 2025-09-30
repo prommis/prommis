@@ -77,7 +77,7 @@ def print_io_snap(fs, tag="STATE"):
       - PRODUCT RETENTATE (stage1.retentate_outlet): flow + Li/Co purity
     """
     root = fs.parent_block()
-    
+
     print("\n" + "=" * 72)
     print(f"I/O SNAPSHOT: {tag}")
     print("=" * 72)
@@ -123,16 +123,22 @@ def print_io_snap(fs, tag="STATE"):
     print("\n[PARAMETERS]")
     print(f"  sieving_coefficient_Li: {sel_Li if sel_Li is not None else 'N/A'}")
     print(f"  sieving_coefficient_Co: {sel_Co if sel_Co is not None else 'N/A'}")
-    print(f"  membrane_width (m): {_v(getattr(root, 'w', None)) if hasattr(root, 'w') else 'N/A'}")
-    print(f"  operating_pressure (psi): {_v(getattr(root, 'operating_pressure', None)) if hasattr(root,'operating_pressure') else 'N/A'}")
+    print(
+        f"  membrane_width (m): {_v(getattr(root, 'w', None)) if hasattr(root, 'w') else 'N/A'}"
+    )
+    print(
+        f"  operating_pressure (psi): {_v(getattr(root, 'operating_pressure', None)) if hasattr(root,'operating_pressure') else 'N/A'}"
+    )
 
     print("=" * 72 + "\n")
+
 
 def apply_baseline_lengths(m, L1=754, L2=758, L3=756):
     """Fix stage lengths to baseline values (for pre-optimization reporting)."""
     m.fs.stage1.length.fix(L1)
     m.fs.stage2.length.fix(L2)
     m.fs.stage3.length.fix(L3)
+
 
 def build_costing(m):
 

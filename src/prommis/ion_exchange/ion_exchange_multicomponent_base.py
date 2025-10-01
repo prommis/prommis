@@ -284,7 +284,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         ConfigValue(
             default=Resin.S950,
             domain=In(Resin),
-            description="Resin used for the calculation of the bed expasion and pressure drop",
+            description="Resin used for the calculation of the bed expansion and pressure drop",
         ),
     )
 

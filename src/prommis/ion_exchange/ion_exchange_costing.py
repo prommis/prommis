@@ -134,7 +134,7 @@ def build_nacl_cost_param_block(blk):
     costing.register_flow_type("NaCl", blk.cost / blk.purity)
 
 
-def build_ion_exhange_cost_param_block(blk):
+def build_ion_exchange_cost_param_block(blk):
     blk.anion_exchange_resin_cost = pyo.Var(
         initialize=205,
         units=pyo.units.USD_2020 / pyo.units.ft**3,
@@ -195,7 +195,7 @@ def build_ion_exhange_cost_param_block(blk):
     blk.annual_resin_replacement_factor = pyo.Var(
         initialize=0.05,
         units=pyo.units.year**-1,
-        doc="Fraction of ion excange resin replaced per year, 4-5% of bed volume - EPA",
+        doc="Fraction of ion exchange resin replaced per year, 4-5% of bed volume - EPA",
     )
     blk.hazardous_min_cost = pyo.Var(
         initialize=3240,
@@ -240,7 +240,7 @@ def build_ion_exhange_cost_param_block(blk):
     parameter_block_name="nacl",
 )
 @register_costing_parameter_block(
-    build_rule=build_ion_exhange_cost_param_block,
+    build_rule=build_ion_exchange_cost_param_block,
     parameter_block_name="ion_exchange",
 )
 def cost_ion_exchange(blk):

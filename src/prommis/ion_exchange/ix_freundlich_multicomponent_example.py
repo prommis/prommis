@@ -23,9 +23,10 @@
 #################################################################################
 
 # Import Python libraries
-import numpy as np
 import json
 import logging
+import numpy as np
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -41,7 +42,6 @@ from idaes.core.util.exceptions import ConfigurationError
 
 # Import WaterTAP models and libraries
 from watertap.costing import WaterTAPCosting
-from watertap.core.util.initialization import check_dof
 from watertap.core.solvers import get_solver
 from watertap.property_models.multicomp_aq_sol_prop_pack import MCASParameterBlock
 

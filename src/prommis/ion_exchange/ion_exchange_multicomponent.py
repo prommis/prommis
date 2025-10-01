@@ -20,17 +20,14 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 
-from copy import deepcopy
-
 # Import Pyomo libraries
 import pyomo.environ as pyo
-from pyomo.common.config import ConfigValue, In
+from pyomo.common.config import ConfigValue
 
 # Import IDAES cores
 from idaes.core import declare_process_block_class
-from idaes.core.util.math import smooth_min, smooth_max
 import idaes.core.util.scaling as iscale
-from idaes.core.util.exceptions import InitializationError, ConfigurationError
+from idaes.core.util.exceptions import ConfigurationError
 
 from prommis.ion_exchange.ion_exchange_multicomponent_base import (
     IonExchangeBaseData,

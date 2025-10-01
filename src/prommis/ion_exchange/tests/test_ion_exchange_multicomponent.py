@@ -22,15 +22,12 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 
-import numpy as np
-import json
 import pytest
 import pyomo.environ as pyo
 
 from idaes.core import FlowsheetBlock, UnitModelCostingBlock
 from idaes.core.scaling.scaling_base import ScalerBase
 from idaes.core.util.testing import initialization_tester
-from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 from watertap.costing import WaterTAPCosting

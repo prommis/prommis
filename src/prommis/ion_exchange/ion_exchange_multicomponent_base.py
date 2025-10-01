@@ -33,7 +33,6 @@ from pyomo.common.config import ConfigBlock, ConfigValue, In
 import idaes.logger as idaeslog
 import idaes.core.util.scaling as iscale
 from idaes.core import (
-    declare_process_block_class,
     MaterialBalanceType,
     EnergyBalanceType,
     MomentumBalanceType,
@@ -44,12 +43,10 @@ from idaes.core.util.tables import create_stream_table_dataframe
 from idaes.core.util.constants import Constants
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.misc import StrEnum
-from idaes.core.util.exceptions import InitializationError, ConfigurationError
 
 # Import WaterTAP libraries
 from watertap.core import ControlVolume0DBlock, InitializationMixin
 from watertap.core.solvers import get_solver
-from watertap.core.util.initialization import interval_initializer
 
 # Import modified version of IX costing model
 from prommis.ion_exchange.ion_exchange_costing import cost_ion_exchange

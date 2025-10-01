@@ -503,10 +503,10 @@ def set_operating_conditions(m, parmest_data=None, target_component=None, resin=
     return m
 
 
-def get_comp_list(blk, comp=pyo.Var, skip_list=[]):
+def get_comp_list(blk, comp=pyo.Var):
     cs = []
     split_name = blk.name + "."
-    skip_list += ["ref", "process_flow", "regeneration"]
+    skip_list = ["ref", "process_flow", "regeneration"]
     for c in blk.component_objects(comp):
         if any(s in c.name for s in skip_list):
             continue

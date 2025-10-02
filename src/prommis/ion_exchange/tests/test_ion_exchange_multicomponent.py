@@ -23,6 +23,7 @@
 #################################################################################
 
 import pytest
+import os
 import pyomo.environ as pyo
 
 from idaes.core import FlowsheetBlock, UnitModelCostingBlock
@@ -46,7 +47,8 @@ modified by: Soraya Rawlings
 @pytest.fixture(scope="module")
 def m(flow_factor=1):
 
-    resin_file = "../data/resin_data.json"
+    path = os.path.dirname(os.path.realpath(__file__))
+    resin_file = os.path.join(path, "..", "data", "resin_data.json")
     resin = "S950"
     target_component = "La"
     regenerant = "single_use"

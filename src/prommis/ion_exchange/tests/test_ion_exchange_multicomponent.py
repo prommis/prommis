@@ -22,8 +22,8 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 
-import pytest
 import os
+import pytest
 import pyomo.environ as pyo
 
 from idaes.core import FlowsheetBlock, UnitModelCostingBlock

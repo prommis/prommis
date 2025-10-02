@@ -31,6 +31,8 @@ from idaes.core.scaling.scaling_base import ScalerBase
 from idaes.core.util.testing import initialization_tester
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
+pytest.importorskip("watertap", reason="WaterTAP dependency not available")
+# pylint: disable-next=wrong-import-position
 from watertap.costing import WaterTAPCosting
 from watertap.core.util.initialization import check_dof
 from watertap.core.solvers import get_solver

@@ -103,12 +103,17 @@ def print_io_snap(fs, tag="STATE"):
 
     print("\n[PRODUCT PERMEATE (stage3.permeate_outlet)]")
     print(f"  flow_vol: {_v(perm.flow_vol[0])}")
+    print(f"  Li concentration (kg/m\u00b3): {_v(perm.conc_mass_solute[0, 'Li'])}")
+    print(f"  Co concentration (kg/m\u00b3): {_v(perm.conc_mass_solute[0, 'Co'])}")
+
     li_p, co_p = _purity_mass(perm)
     print(f"  purity_Li: {li_p if li_p is not None else 'N/A'}")
     print(f"  purity_Co: {co_p if co_p is not None else 'N/A'}")
 
     print("\n[PRODUCT RETENTATE (stage1.retentate_outlet)]")
     print(f"  flow_vol: {_v(ret.flow_vol[0])}")
+    print(f"  Li concentration (kg/m\u00b3): {_v(ret.conc_mass_solute[0, 'Li'])}")
+    print(f"  Co concentration (kg/m\u00b3): {_v(ret.conc_mass_solute[0, 'Co'])}")
     li_r, co_r = _purity_mass(ret)
     print(f"  purity_Li: {li_r if li_r is not None else 'N/A'}")
     print(f"  purity_Co: {co_r if co_r is not None else 'N/A'}")
@@ -123,12 +128,8 @@ def print_io_snap(fs, tag="STATE"):
     print("\n[PARAMETERS]")
     print(f"  sieving_coefficient_Li: {sel_Li if sel_Li is not None else 'N/A'}")
     print(f"  sieving_coefficient_Co: {sel_Co if sel_Co is not None else 'N/A'}")
-    print(
-        f"  membrane_width (m): {_v(getattr(root, 'w', None)) if hasattr(root, 'w') else 'N/A'}"
-    )
-    print(
-        f"  operating_pressure (psi): {_v(getattr(root, 'operating_pressure', None)) if hasattr(root,'operating_pressure') else 'N/A'}"
-    )
+    print(f"  membrane_width (m.w):   {_v(m.w) if hasattr(m, 'w') else 'N/A'}")
+    print(f"  operating_pressure (psi):     {_v(m.operating_pressure)}")
 
     print("=" * 72 + "\n")
 
@@ -148,12 +149,6 @@ def build_costing(m):
     m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
     m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
 
-    """cost_idx = 1
-
-    if cost_idx == 1:
-        m.fs.costing = QGESSCosting()
-    else:
-        m.fs.costing = DiafiltrationCosting()"""
     m.fs.costing = QGESSCosting()
     m.fs.stage1.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -269,14 +264,34 @@ def build_costing(m):
 
 
 def apply_design_limits(
-    m, Lmin=0.1, Lmax=10000.0, sc_min=0.01, sc_max=0.99
+    m,
+    Lmin=0.1,
+    Lmax=10000.0,
+    Li_max=20 * pyunits.kg / pyunits.m**3,
+    Co_max=200 * pyunits.kg / pyunits.m**3,
+    sc_min=0.01,
+    sc_max=0.99,
 ):  # assume a boundary
     # 1) Length bounds for each stage
     for st in (m.fs.stage1, m.fs.stage2, m.fs.stage3):
         st.length.setlb(Lmin * pyunits.m)
         st.length.setub(Lmax * pyunits.m)
 
-    # 2) Stage-cut (sc) bounds according to : Q_perm / Q_feed in [sc_min, sc_max]
+    # 2) Product concentration variable upper bounds
+    #    Permeate product: stage3.permeate_outlet
+    #    Retentate product: stage1.retentate_outlet
+    perm = m.fs.stage3.permeate_outlet
+    ret = m.fs.stage1.retentate_outlet
+
+    # Permeate specs (UB only, keep LB whatever the model already has)
+    perm.conc_mass_solute[0, "Li"].setub(Li_max)
+    perm.conc_mass_solute[0, "Co"].setub(Co_max)
+
+    # Retentate specs
+    ret.conc_mass_solute[0, "Li"].setub(Li_max)
+    ret.conc_mass_solute[0, "Co"].setub(Co_max)
+
+    # 3) Stage-cut (sc) bounds according to : Q_perm / Q_feed in [sc_min, sc_max]
     stages = [m.fs.stage1, m.fs.stage2, m.fs.stage3]
     for i, st in enumerate(stages, start=1):
         Q_perm = st.permeate_outlet.flow_vol[0]
@@ -343,7 +358,15 @@ def apply_sieving_bounds_and_unfix(
 
 
 def build_optimization(m):
-    apply_design_limits(m, Lmin=0.1, Lmax=10000.0, sc_min=0.01, sc_max=0.99)
+    apply_design_limits(
+        m,
+        Lmin=0.1,
+        Lmax=10000.0,
+        Li_max=20 * pyunits.kg / pyunits.m**3,
+        Co_max=200 * pyunits.kg / pyunits.m**3,
+        sc_min=0.01,
+        sc_max=0.99,
+    )
     apply_sieving_bounds_and_unfix(
         m, li_bounds=(0.75, 1.3), co_bounds=(0.05, 0.5), li_start=1.3, co_start=0.5
     )

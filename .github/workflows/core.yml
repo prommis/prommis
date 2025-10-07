@@ -110,7 +110,7 @@ jobs:
           - win64
         include:
           - os: linux
-            runner-image: ubuntu-22.04
+            runner-image: ubuntu-latest
           - os: win64
             runner-image: windows-2022
           - install-variant: dev

@@ -151,10 +151,14 @@ class TestLiCoDiafiltration:
         model = ConcreteModel()
         model.recovery_determine = ByproductRecovery(materials=material_list)
 
+        # annual production rate of material, assume operate 8000 hrs per year
+        annual_Li_recovery_mass = self.Li_recovery_mass * 8000
+        annual_Co_recovery_mass = self.Co_recovery_mass * 8000
+
         # Define input values dynamically based on provided materials
         material_data = {
             "Lithium": {
-                "production": self.Li_recovery_mass,
+                "production": annual_Li_recovery_mass,
                 "market_value": self.Li_price,
                 "waste_disposal": 1,
                 "conversion": 0,
@@ -163,7 +167,7 @@ class TestLiCoDiafiltration:
                 "process_cost": self.total_annualized_cost,
             },
             "Cobalt": {
-                "production": self.Co_recovery_mass,
+                "production": annual_Co_recovery_mass,
                 "market_value": self.Co_price,
                 "waste_disposal": 1,
                 "conversion": 0,
@@ -208,12 +212,12 @@ class TestLiCoDiafiltration:
 
         # Check the output string for financial viability
         net_benefit_value = value(model.recovery_determine.net_benefit)
-        assert net_benefit_value == pytest.approx(-211162.615, rel=1e-4)
+        assert net_benefit_value == pytest.approx(320373532.81, rel=1e-4)
 
         if net_benefit_value > 0:
-            expected_message = f"✅ Byproduct recovery is financially viable. Net Benefit: ${net_benefit_value:.2f}"
+            expected_message = f"✅ Byproduct recovery is financially viable. Net Benefit: {net_benefit_value:.2f} $/yr"
         else:
-            expected_message = f"❌ Byproduct recovery is NOT financially viable. Loss: ${-net_benefit_value:.2f}"
+            expected_message = f"❌ Byproduct recovery is NOT financially viable. Loss: ${-net_benefit_value:.2f} $/yr"
 
         assert (
             determine_result == expected_message
@@ -224,7 +228,7 @@ class TestLiCoDiafiltration:
 
     def test_example_usage(self):
         """
-        Ensure that the example usage from script A runs correctly.
+        Ensure that the example usage from script runs correctly.
         """
         determine_result, net_benefit_value = determine_example_usage()
         assert net_benefit_value == pytest.approx(4920.00, rel=1e-4)

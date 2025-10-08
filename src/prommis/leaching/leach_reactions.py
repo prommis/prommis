@@ -23,8 +23,8 @@ from idaes.core.util.misc import add_object_reference
 
 # -----------------------------------------------------------------------------
 # Leach solution property package
-@declare_process_block_class("CoalRefuseLeachingReactions")
-class CoalRefuseLeachingReactionsData(
+@declare_process_block_class("CoalRefuseLeachingReactionParameterBlock")
+class CoalRefuseLeachingReactionParameterData(
     ProcessBlockData, property_meta.HasPropertyClassMetadata
 ):
     """
@@ -58,7 +58,7 @@ class CoalRefuseLeachingReactionsData(
     def build(self):
         super().build()
 
-        self._reaction_block_class = CoalRefuseLeachingReactionsBlock
+        self._reaction_block_class = CoalRefuseLeachingReactionBlock
 
         self.reaction_idx = Set(
             initialize=[
@@ -215,14 +215,14 @@ class CoalRefuseLeachingReactionsData(
         )
 
 
-class _CoalRefuseLeachingReactionsBlock(ProcessBlock):
+class _CoalRefuseLeachingReactionBlock(ProcessBlock):
     pass
 
 
 @declare_process_block_class(
-    "CoalRefuseLeachingReactionsBlock", block_class=_CoalRefuseLeachingReactionsBlock
+    "CoalRefuseLeachingReactionBlock", block_class=_CoalRefuseLeachingReactionBlock
 )
-class CoalRefuseLeachingReactionsData(ProcessBlockData):
+class CoalRefuseLeachingReactionData(ProcessBlockData):
     # Create Class ConfigBlock
     CONFIG = ProcessBlockData.CONFIG()
     CONFIG.declare(

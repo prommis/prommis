@@ -2469,12 +2469,9 @@ class TestDiafiltrationCosting(object):
             flowsheet_costing_block=m.fs.costing,
             costing_method=DiafiltrationCostingData.cost_pump,
             costing_method_arguments={
-                "inlet_pressure": m.fs.P_atm
-                + pyunits.convert(
-                    m.fs.cascade.costing.pressure_drop, to_units=pyunits.Pa
-                ),
-                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump opex
-                * pyunits.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
+                "inlet_pressure": m.fs.P_atm,  # units of Pa
+                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
+                * pyunits.psi,  # this should make m.fs.feed_pump.costing.variable_operating_cost ~0
                 "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # feed
             },
         )
@@ -2482,8 +2479,10 @@ class TestDiafiltrationCosting(object):
             flowsheet_costing_block=m.fs.costing,
             costing_method=DiafiltrationCostingData.cost_pump,
             costing_method_arguments={
-                "inlet_pressure": m.fs.P_atm,
-                "outlet_pressure": m.fs.P_op,
+                "inlet_pressure": m.fs.P_atm,  # units of Pa
+                "outlet_pressure": pyunits.convert(
+                    m.fs.P_op, to_units=pyunits.psi
+                ),  # units of psi
                 "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # diafiltrate
             },
         )
@@ -2801,7 +2800,7 @@ class TestDiafiltrationCosting(object):
         # check model numerical diagnostics
         dt.assert_no_numerical_warnings()
 
-        assert value(model.fs.costing.total_BEC) == pytest.approx(44.684, rel=1e-4)
+        assert value(model.fs.costing.total_BEC) == pytest.approx(44.351, rel=1e-4)
         assert value(
             pyunits.convert(
                 model.fs.stage1.costing.capital_cost, to_units=CE_index_units
@@ -2821,7 +2820,7 @@ class TestDiafiltrationCosting(object):
             pyunits.convert(
                 model.fs.feed_pump.costing.capital_cost, to_units=CE_index_units
             )
-        ) == pytest.approx(0.34788, rel=1e-4)
+        ) == pytest.approx(0.014780, rel=1e-4)
         assert value(
             pyunits.convert(
                 model.fs.diafiltrate_pump.costing.capital_cost, to_units=CE_index_units
@@ -2870,7 +2869,7 @@ class TestDiafiltrationCosting(object):
         )
 
         assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(
-            10.95225, rel=1e-4
+            10.92257, rel=1e-4
         )
 
         assert value(
@@ -2884,20 +2883,20 @@ class TestDiafiltrationCosting(object):
                 model.fs.feed_pump.costing.variable_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
-        ) == pytest.approx(8.09845e-17, rel=1e-4)
+        ) == pytest.approx(2.91544e-10, rel=1e-4)
         assert value(
             pyunits.convert(
                 model.fs.diafiltrate_pump.costing.variable_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
-        ) == pytest.approx(2.36473e-10, rel=1e-4)
+        ) == pytest.approx(8.51301e-4, rel=1e-4)
 
         assert value(model.fs.costing.custom_variable_costs) == pytest.approx(
-            2.36473e-10, rel=1e-4
+            8.51302e-4, rel=1e-4
         )
 
         assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
-            525.7185, rel=1e-4
+            525.7135, rel=1e-4
         )
 
 

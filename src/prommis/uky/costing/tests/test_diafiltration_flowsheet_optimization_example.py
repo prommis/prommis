@@ -11,10 +11,10 @@ This is a test file for testing flowsheet optimization with PrOMMiS REE Costing.
 process is referenced from literature: Wamble, N.P., Eugene, E.A., Phillip, W.A., Dowling, A.W., 'Optimal Diafiltration Membrane Cascades Enable Green Recycling of Spent Lithium-Ion 
 Batteries', ACS Sustainable Chem. Eng. 2022, 10, 12207−12225. 
 
-The steps to test this framework including:
+The steps to test this framework include:
 1. Import packages
-2. Build the li-co diafiltration recovery flowsheet
-3. add costing
+2. Build the Li-Co diafiltration recovery flowsheet
+3. Add costing
 4. Solve and display results
 5. Optimize stage lengths to minimize cost of recovery and display results
 
@@ -56,7 +56,6 @@ class TestDiafiltrationOptimization:
         dt = DiagnosticsToolbox(model)
         dt.report_structural_issues()
         dt.display_potential_evaluation_errors()
-        # TODO address unbounded solute sieving expressions inside log functions
         dt.assert_no_structural_warnings(ignore_evaluation_errors=True)
 
     @pytest.mark.component

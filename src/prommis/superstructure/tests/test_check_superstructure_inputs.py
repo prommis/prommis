@@ -905,7 +905,7 @@ def test_check_supe_formulation_params():
             option_efficiencies,
         )
 
-    ## test incorrect inputs 27 - value in option_outlets is an empty list 
+    ## test incorrect inputs 27 - value in option_outlets is an empty list
     incorrect_option_outlets27 = {
         (1, 1): [],
         (2, 1): [1],

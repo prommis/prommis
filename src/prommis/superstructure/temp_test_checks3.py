@@ -6,6 +6,7 @@ from idaes.core.solvers import get_solver
 
 from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
 from prommis.superstructure.report_superstructure_results import (  # report_superstructure_costing,; report_superstructure_environmental_impacts,; report_superstructure_streams,
+    report_superstructure_costing,
     report_superstructure_results_overview,
 )
 from prommis.superstructure.superstructure_function import (
@@ -52,31 +53,29 @@ num_stages = 5
 options_in_stage = {
     1: 2,
     2: 4,
-    3: 6,
+    3: 4,
     4: 4,
-    5: 5,
+    5: 4,
 }
 option_outlets = {
     # level 1
     (1, 1): [1, 2, 3, 4],
     (1, 2): [1, 2, 3, 4],
     # level 2
-    (2, 1): [1, 2, 3, 6],
-    (2, 2): [1, 2, 3, 6],
-    (2, 3): [1, 2, 3, 6],
-    (2, 4): [4, 5],
+    (2, 1): [1, 2, 4],
+    (2, 2): [1, 2, 4],
+    (2, 3): [1, 2, 4],
+    (2, 4): [3],
     # level 3
     (3, 1): [1],
-    (3, 2): [1],
+    (3, 2): [2, 3],
     (3, 3): [2, 3],
-    (3, 4): [2, 3],
-    (3, 5): [2, 3],
-    (3, 6): [4],
+    (3, 4): [4],
     # level 4
     (4, 1): [1],
     (4, 2): [2],
     (4, 3): [3],
-    (4, 4): [4, 5],
+    (4, 4): [4],
 }
 option_efficiencies = {
     # Level 1 yields
@@ -89,34 +88,23 @@ option_efficiencies = {
     (2, 4): {"Nd": 1, "Dy": 1, "Fe": 1},
     # level 3 yields
     (3, 1): {"Nd": 0.985, "Dy": 0.985, "Fe": 0},
-    (3, 2): {"Nd": 0.985, "Dy": 0.985, "Fe": 0},
-    (3, 3): {"Nd": 0.925, "Dy": 0.98, "Fe": 0},
-    (3, 4): {"Nd": 1, "Dy": 1, "Fe": 0},
-    (3, 5): {"Nd": 1, "Dy": 1, "Fe": 0},
-    (3, 6): {"Nd": 1, "Dy": 1, "Fe": 0.403},
+    (3, 2): {"Nd": 0.925, "Dy": 0.98, "Fe": 0},
+    (3, 3): {"Nd": 1, "Dy": 1, "Fe": 0},
+    (3, 4): {"Nd": 1, "Dy": 1, "Fe": 1},
     # level 4 yields
     (4, 1): {"Nd": 1, "Dy": 1, "Fe": 1},
     (4, 2): {"Nd": 1, "Dy": 0.899, "Fe": 0},
     (4, 3): {"Nd": 1, "Dy": 1, "Fe": 1},
     (4, 4): {"Nd": 1, "Dy": 1, "Fe": 1},
     # level 5 yields
-    (5, 1): {
-        "Nd": 1,
-        "Dy": 1,
-        "Fe": 0,
-    },
+    (5, 1): {"Nd": 1, "Dy": 1, "Fe": 0},  # grouped together with hydrom. extract.
     (5, 2): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
     (5, 3): {"Nd": 0.98, "Dy": 0.98, "Fe": 0},
     (5, 4): {
         "Nd": 0.98,
         "Dy": 0.98,
         "Fe": 0,
-    },
-    (5, 5): {
-        "Nd": 0.98,
-        "Dy": 0.98,
-        "Fe": 0,
-    },
+    },  # grouped together with Cu(NO3)2 diss.
 }
 
 ### Operating Parameters
@@ -125,32 +113,28 @@ profit = {
     (5, 2): {"Nd": 69.888, "Dy": 263.81, "Fe": 0},
     (5, 3): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
     (5, 4): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
-    (5, 5): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
 }
 opt_var_oc_params = {
     # level 2
-    (2, 1): {"a": 0.0053, "b": 7929.7},
-    (2, 2): {"a": 0.0015, "b": 2233.16},
-    (2, 3): {"a": 0.0034, "b": 0},
-    (2, 4): {"a": 0.0117, "b": 0},
+    (2, 1): {"a": 0.0061, "b": 0},
+    (2, 2): {"a": 0.0017, "b": 0},
+    (2, 3): {"a": 0.0205, "b": 0},
+    (2, 4): {"a": 54192, "b": 0},
     # level 3
-    (3, 1): {"a": 15.594, "b": 4e6},
-    (3, 2): {"a": 35.58463, "b": 4e6},
-    (3, 3): {"a": 1.8359, "b": 0},
-    (3, 4): {"a": 3.7414, "b": 2378.6},
-    (3, 5): {"a": 10.35427, "b": 2378.6},
-    (3, 6): {"a": 1.58, "b": 0},
+    (3, 1): {"a": 15.987, "b": 0},
+    (3, 2): {"a": 1.8359, "b": 0},
+    (3, 3): {"a": 3.7416, "b": 0},
+    (3, 4): {"a": 1.58, "b": 0},
     # level 4
     (4, 1): {"a": 0, "b": 0},
-    (4, 2): {"a": 111.09, "b": 254606},
+    (4, 2): {"a": 111.11, "b": 0},
     (4, 3): {"a": 0, "b": 0},
     (4, 4): {"a": 0, "b": 0},
     # level 5
-    (5, 1): {"a": 0.4997, "b": 89832},
-    (5, 2): {"a": 9.8127, "b": 964921},
-    (5, 3): {"a": 9.8127, "b": 964921},
+    (5, 1): {"a": 0.5093, "b": 0},
+    (5, 2): {"a": 8.6505, "b": 0},
+    (5, 3): {"a": 8.6505, "b": 0},
     (5, 4): {"a": 2.17, "b": 0},
-    (5, 5): {"a": 6.7063559004, "b": 0},
 }
 operators_per_discrete_unit = {
     (1, 1): 1,
@@ -174,20 +158,17 @@ num_operators = {
     (2, 3): 0.65,
     (2, 4): 0.65,
     (3, 1): 1.6,
-    (3, 2): 1.6,
-    (3, 3): 1.3,
-    (3, 4): 0.45,
-    (3, 5): 0.45,
-    (3, 6): 0.45,
-    (4, 1): 0.45,
-    (4, 2): 0.45,
-    (4, 3): 0.45,
-    (4, 4): 0.45,
-    (5, 1): 0.45,
-    (5, 2): 0.45,
-    (5, 3): 0.45,
-    (5, 4): 0.45,
-    (5, 5): 0.45,
+    (3, 2): 1.3,
+    (3, 3): 0.45,
+    (3, 4): 1.15,
+    (4, 1): 0,
+    (4, 2): 1.3,
+    (4, 3): 0,
+    (4, 4): 0,
+    (5, 1): 1.05,
+    (5, 2): 0.75,
+    (5, 3): 0.75,
+    (5, 4): 1.15,
 }
 labor_rate = 8000 * 38.20
 
@@ -327,30 +308,6 @@ discretized_purchased_equipment_cost = {
         ],
         "Costs": [
             0.0,
-            643228.652,
-            782425.4684,
-            918182.0594,
-            1043750.2902,
-            1144443.0443,
-            1278479.5225,
-            1483834.522,
-            1740660.587,
-        ],
-    },
-    (3, 3): {
-        "Flowrates": [
-            0.0,
-            36480.0,
-            634240.0,
-            1434800.0,
-            2083760.0,
-            3171200.0,
-            6342400.0,
-            9513600.0,
-            14270400.0,
-        ],
-        "Costs": [
-            0.0,
             423074.7216,
             3042779.121,
             5348359.01,
@@ -361,7 +318,7 @@ discretized_purchased_equipment_cost = {
             26151302.79,
         ],
     },
-    (3, 4): {
+    (3, 3): {
         "Flowrates": [
             0.0,
             36480.0,
@@ -385,31 +342,7 @@ discretized_purchased_equipment_cost = {
             5323087.0,
         ],
     },
-    (3, 5): {
-        "Flowrates": [
-            0.0,
-            36480.0,
-            634240.0,
-            1434800.0,
-            2083760.0,
-            3171200.0,
-            6342400.0,
-            9513600.0,
-            14270400.0,
-        ],
-        "Costs": [
-            0.0,
-            476790.0,
-            696435.0,
-            963714.0,
-            1520105.0,
-            1791353.0,
-            3170751.0,
-            3902064.0,
-            5573087.0,
-        ],
-    },
-    (3, 6): {
+    (3, 4): {
         "Flowrates": [
             0.0,
             36480.0,
@@ -625,34 +558,10 @@ discretized_purchased_equipment_cost = {
             5557458.0,
         ],
     },
-    (5, 5): {
-        "Flowrates": [
-            0.0,
-            36480.0,
-            634240.0,
-            1434800.0,
-            2083760.0,
-            3171200.0,
-            6342400.0,
-            9513600.0,
-            14270400.0,
-        ],
-        "Costs": [
-            0.0,
-            404685.0,
-            1108157.0,
-            1650520.0,
-            2001956.0,
-            2503973.0,
-            3666384.0,
-            4607340.0,
-            5807458.0,
-        ],
-    },
 }
 
 ### Environmnetal Impact Parameters
-consider_environmental_impacts = True
+consider_environmental_impacts = False
 options_environmental_impacts = {
     (1, 1): 0,
     (1, 2): 1000,
@@ -664,8 +573,6 @@ options_environmental_impacts = {
     (3, 2): 0,
     (3, 3): 600,
     (3, 4): 800,
-    (3, 5): 800,
-    (3, 6): 1000,
     (4, 1): 0,
     (4, 2): 800,
     (4, 3): 600,
@@ -674,13 +581,12 @@ options_environmental_impacts = {
     (5, 2): 800,
     (5, 3): 600,
     (5, 4): 800,
-    (5, 5): 1000,
 }
 epsilon = 1e16
 # epsilon = 1
 
 ### Byproduct Valorization Parameters
-consider_byproduct_valorization = True
+consider_byproduct_valorization = False
 byproduct_values = {
     "Jarosite": -0.17,
     "Iron oxide": 10,
@@ -692,10 +598,7 @@ byproduct_opt_conversions = {
     (3, 2): {"Iron oxide": 1},
     (3, 3): {"Residue": 0.25},
     (3, 4): {"Iron hydroxide": 0.5},
-    (3, 5): {"Iron oxide": 1},
-    (3, 6): {"Iron oxide": 1},
     (5, 4): {"Iron hydroxide": 0.5},
-    (5, 5): {"Iron oxide": 1},
 }
 
 #################################################################################################
@@ -748,7 +651,7 @@ solver.options["NumericFocus"] = 3
 results = solver.solve(m, tee=True)
 
 report_superstructure_results_overview(m, results)
-# report_superstructure_costing(m, results)
+report_superstructure_costing(m, results)
 # report_superstructure_streams(m, results)
 # report_superstructure_environmental_impacts(m, results)
 

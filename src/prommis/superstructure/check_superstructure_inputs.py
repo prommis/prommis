@@ -275,19 +275,26 @@ def check_supe_formulation_params(
     num_stages_set = set(pyo.RangeSet(num_stages).data())
     # Define a set for the keys of the options_in_stage dict.
     options_in_stage_keys_set = set(options_in_stage.keys())
-    # Define a set for all the options in the superstructure. Test that structure options_in_stage is correct at the same time.
-    try:
-        all_opts_set = {
-            (j, k)
-            for j in range(1, num_stages + 1)
-            for k in range(1, options_in_stage[j] + 1)
-        }
-    except:
-        raise ValueError(
-            "Stages must start at 1 and count up. Each stage must contain at least 1 option. options_in_stage does not follow this convention. "
-            f"Expected keys: {num_stages_set}, "
-            f"but got: {options_in_stage_keys_set}"
-        )
+
+    # Check that keys options_in_stage specified for each stage in num_stages
+    for j in num_stages_set:
+        if j not in options_in_stage_keys_set:
+            raise ValueError(f"options_in_stage not provided for for stage {j}")
+
+    # Check that keys in options_in_stage are not specified for stages that don't exist in num_stages
+    for j in options_in_stage_keys_set:
+        if j not in num_stages_set:
+            raise ValueError(
+                f"options_in_stage for stage {j} which doesn't exist in num_stages"
+            )
+
+    # Define a set for all the options in the superstructure.
+    # Test that structure options_in_stage is correct at the same time (options in each stage).
+    all_opts_set = {
+        (j, k)
+        for j in range(1, num_stages + 1)
+        for k in range(1, options_in_stage[j] + 1)
+    }
 
     # Define a set for all the tracked components.
     tracked_comps = set(m.fs.tracked_comps.data())
@@ -322,24 +329,6 @@ def check_supe_formulation_params(
     ## Check that there is at least 2 stages.
     if num_stages < 2:
         raise ValueError("There must be at least 2 processing stages.")
-
-    ## Check that outlets are defined for all options in the superstructure (except the last stage). i.e. check that each option in stage j is
-    # connected to an option in stage j+1.
-    # Find the options whose outlets are not defined.
-    undefined_opt_outlets = initial_and_intermediate_opts_set - option_outlets_keys
-    # Raise error if any are found.
-    if undefined_opt_outlets:
-        raise ValueError(
-            f"The following options don't have defined outlets in option_outlets: {undefined_opt_outlets}"
-        )
-
-    ## Check that all options whose outlets are specified exist in the superstructure (as defined by options_in_stage).
-    # Find the options that don't exist in the superstructure (as defined by options_in_stage).
-    undefined_opts = option_outlets_keys - initial_and_intermediate_opts_set
-    if undefined_opts:
-        raise ValueError(
-            f"The following options have defined outlets, but don't exist in the superstructure, as defined by options_in_stage: {undefined_opts}"
-        )
 
     # Check that each option in stage j is connected to an option in the preceding stage, stage j-1.
     # Iterate over stages starting from 2 (since stage 1 has no predecessors).
@@ -433,79 +422,6 @@ def check_supe_formulation_params(
                 raise ValueError(
                     f"component {comp} for option {opt} in option_efficiencies is not defined as a tracked component."
                 )
-
-
-### Operating Parameters
-profit = {
-    (5, 1): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
-    (5, 2): {"Nd": 69.888, "Dy": 263.81, "Fe": 0},
-    (5, 3): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
-    (5, 4): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
-    (5, 5): {"Nd": 45.4272, "Dy": 171.4765, "Fe": 0},
-}
-opt_var_oc_params = {
-    # level 2
-    (2, 1): {"a": 0.0053, "b": 7929.7},
-    (2, 2): {"a": 0.0015, "b": 2233.16},
-    (2, 3): {"a": 0.0034, "b": 0},
-    (2, 4): {"a": 0.0117, "b": 0},
-    # level 3
-    (3, 1): {"a": 15.594, "b": 4e6},
-    (3, 2): {"a": 35.58463, "b": 4e6},
-    (3, 3): {"a": 1.8359, "b": 0},
-    (3, 4): {"a": 3.7414, "b": 2378.6},
-    (3, 5): {"a": 10.35427, "b": 2378.6},
-    (3, 6): {"a": 1.58, "b": 0},
-    # level 4
-    (4, 1): {"a": 0, "b": 0},
-    (4, 2): {"a": 111.09, "b": 254606},
-    (4, 3): {"a": 0, "b": 0},
-    (4, 4): {"a": 0, "b": 0},
-    # level 5
-    (5, 1): {"a": 0.4997, "b": 89832},
-    (5, 2): {"a": 9.8127, "b": 964921},
-    (5, 3): {"a": 9.8127, "b": 964921},
-    (5, 4): {"a": 2.17, "b": 0},
-    (5, 5): {"a": 6.7063559004, "b": 0},
-}
-operators_per_discrete_unit = {
-    (1, 1): 1,
-    (1, 2): 0,
-}
-yearly_cost_per_unit = {
-    (1, 1): 0,
-    (1, 2): 280,
-}
-capital_cost_per_unit = {
-    (1, 1): 0,
-    (1, 2): 200000,
-}
-processing_rate = {
-    (1, 1): 7868,
-    (1, 2): 52453,
-}
-num_operators = {
-    (2, 1): 0.65,
-    (2, 2): 0.65,
-    (2, 3): 0.65,
-    (2, 4): 0.65,
-    (3, 1): 1.6,
-    (3, 2): 1.6,
-    (3, 3): 1.3,
-    (3, 4): 0.45,
-    (3, 5): 0.45,
-    (3, 6): 1.15,
-    (4, 1): 0,
-    (4, 2): 1.3,
-    (4, 3): 0,
-    (4, 4): 0,
-    (5, 1): 1.05,
-    (5, 2): 0.75,
-    (5, 3): 0.75,
-    (5, 4): 1.15,
-    (5, 5): 1.15,
-}
-labor_rate = 8000 * 38.20
 
 
 def check_operating_params(
@@ -740,7 +656,7 @@ def check_operating_params(
         raise ValueError(msg)
     # Raise error if there are options with negative profits per tracked component defined.
     if negative_profit_comps:
-        msg = "Profits some tracked components are listed as negative in the following options\n"
+        msg = "Profits for some tracked components are listed as negative in the following options\n"
         msg += "\n".join(
             f"  Option ({j}, {k}) negative components: {negative}"
             for j, k, negative in negative_profit_comps
@@ -866,6 +782,10 @@ def check_discretized_costing_params(m, discretized_equipment_cost):
     if not isinstance(discretized_equipment_cost, dict):
         raise TypeError("discretized_equipment_cost is not of type dict.")
 
+    ## Check that discretized_equipment_cost is not an empty dict.
+    if not discretized_equipment_cost:
+        raise TypeError("discretized_equipment_cost is an empty dict.")
+
     ## Check structure of discretized_equipment_cost.
     for opt, inner_dict in discretized_equipment_cost.items():
         if not isinstance(opt, tuple):
@@ -978,6 +898,10 @@ def check_environmental_impact_params(
         if not isinstance(options_environmental_impacts, dict):
             raise TypeError("options_environmental_impacts is not of type dict.")
 
+        ## Check that options_environmental_impcts is not an empty dict
+        if not options_environmental_impacts:
+            raise ValueError("options_environmental_impacts is an empty dict")
+
         ## Check that structure of options_environmental_impacts is correct.
         for opt, val in options_environmental_impacts.items():
             if not isinstance(opt, tuple):
@@ -1029,6 +953,10 @@ def check_byproduct_valorization_params(
     ### Only need to check feasibility of parameters if user wants to consider environmental impacts (consider_byprod_val is True).
     if consider_byproduct_valorization:
         ### Check typos and structure.
+        ## Check that byproduct_values is of type dict.
+        if not isinstance(byproduct_values, dict):
+            raise TypeError("byproduct_values is not of type dict")
+
         ## Check that byproduct_values is not empty.
         if not byproduct_values:
             raise TypeError("byproduct_values is an empty dict.")
@@ -1041,6 +969,10 @@ def check_byproduct_valorization_params(
                 raise TypeError(
                     f"value {val} in byproduct_values is not of type int or float."
                 )
+
+        ## Check that byproduct_opt_conversions is of type dict.
+        if not isinstance(byproduct_opt_conversions, dict):
+            raise TypeError("byproduct_opt_conversions is not of type dict.")
 
         ## Check that byproduct_opt_conversions is not empty.
         if not byproduct_opt_conversions:
@@ -1084,20 +1016,6 @@ def check_byproduct_valorization_params(
         produced_byproducts = []
 
         ### Run tests
-        ## Check that a value of type int or float is defined for each byproduct.
-        for byprod, val in byproduct_values.items():
-            # Track the byproducts for which incorrect value is defined.
-            if not isinstance(val, (int, float)):
-                incorrect_byproduct_values.append(byprod)
-
-        # Raise an error if there are byproducts for which values are incorrectly defined.
-        if incorrect_byproduct_values:
-            msg = "Values incorrectly specified for the following byproducts (should be of type int or float):\n"
-            msg += "\n".join(
-                f"  {incorrect}" for incorrect in incorrect_byproduct_values
-            )
-            raise ValueError(msg)
-
         ## Check that the set of options that produce byproducts is feasible (i.e. they exist within the superstructure).
         for opt in byproduct_producing_options:
             # Keep track of the infeasible options.
@@ -1144,4 +1062,4 @@ def check_byproduct_valorization_params(
             missing = byproducts_considered - produced_byproducts_set
             msg = "The following considered byproducts are not being produced by any options:\n"
             msg += "\n".join(f"{byprod}" for byprod in missing)
-            raise ValueError(msg)
+            warnings.warn(msg)

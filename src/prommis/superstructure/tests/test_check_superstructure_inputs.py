@@ -3,35 +3,33 @@ import pyomo.environ as pyo
 import pytest
 
 from prommis.superstructure.add_superstructure_blocks import (
-    add_objective_function_choice_param,
-    add_plant_lifetime_params,
-    add_feed_params,
-    add_supe_formulation_params,
-    add_operating_params,
-    add_discretized_costing_params,
-    add_mass_balance_params,
-    add_mass_balance_vars,
-    add_mass_balance_cons,
     add_costing_params,
     add_costing_vars,
+    add_discretized_costing_params,
+    add_environmental_impact_cons,
     add_environmental_impact_params,
     add_environmental_impact_vars,
-    add_environmental_impact_cons,
+    add_feed_params,
+    add_mass_balance_cons,
+    add_mass_balance_params,
+    add_mass_balance_vars,
+    add_objective_function_choice_param,
+    add_operating_params,
+    add_plant_lifetime_params,
+    add_supe_formulation_params,
 )
-
 from prommis.superstructure.check_superstructure_inputs import (
-    check_objective_function_choice,
-    check_plant_lifetime_params,
-    check_feed_params,
-    check_supe_formulation_params,
-    check_operating_params,
+    check_byproduct_valorization_params,
     check_discretized_costing_params,
     check_environmental_impact_params,
-    check_byproduct_valorization_params,
+    check_feed_params,
+    check_objective_function_choice,
+    check_operating_params,
+    check_plant_lifetime_params,
+    check_supe_formulation_params,
 )
-
-from prommis.superstructure.superstructure_function import define_custom_units
 from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
+from prommis.superstructure.superstructure_function import define_custom_units
 
 ### Define correct parameters
 # define custom units

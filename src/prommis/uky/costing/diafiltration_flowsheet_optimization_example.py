@@ -76,6 +76,8 @@ def print_io_snap(fs, tag="STATE"):
       - PRODUCT PERMEATE (stage3.permeate_outlet): flow + Li/Co purity
       - PRODUCT RETENTATE (stage1.retentate_outlet): flow + Li/Co purity
     """
+    root = fs.parent_block()
+
     print("\n" + "=" * 72)
     print(f"I/O SNAPSHOT: {tag}")
     print("=" * 72)
@@ -84,23 +86,23 @@ def print_io_snap(fs, tag="STATE"):
     # FEED: side-stream into stage 3 at element 10
     feed_state = fs.stage3.retentate_side_stream_state[0, 10]
     print("[FEED  (initial; stage3.retentate_side_stream_state[0,10])]")
-    print(f"  flow_vol: {_v(feed_state.flow_vol)}")
-    print(f"  conc_Li:  {_v(feed_state.conc_mass_solute['Li'])}")
-    print(f"  conc_Co:  {_v(feed_state.conc_mass_solute['Co'])}")
+    print(f"  flow_vol (m\u00b3/hr): {_v(feed_state.flow_vol)}")
+    print(f"  conc_Li (kg/m\u00b3):  {_v(feed_state.conc_mass_solute['Li'])}")
+    print(f"  conc_Co (kg/m\u00b3):  {_v(feed_state.conc_mass_solute['Co'])}")
 
     # DIAFILTRATE: mixer 2 inlet_1
     diaf = fs.mix2.inlet_1
     print("\n[DIAFILTRATE (initial; mix2.inlet_1)]")
-    print(f"  flow_vol: {_v(diaf.flow_vol[0])}")
-    print(f"  conc_Li:  {_v(diaf.conc_mass_solute[0,'Li'])}")
-    print(f"  conc_Co:  {_v(diaf.conc_mass_solute[0,'Co'])}")
+    print(f"  flow_vol (m\u00b3/hr): {_v(diaf.flow_vol[0])}")
+    print(f"  conc_Li (kg/m\u00b3):  {_v(diaf.conc_mass_solute[0,'Li'])}")
+    print(f"  conc_Co (kg/m\u00b3):  {_v(diaf.conc_mass_solute[0,'Co'])}")
 
     # -------- Product streams (final, not intermediate elements) --------
     perm = fs.stage3.permeate_outlet  # product permeate (final)
     ret = fs.stage1.retentate_outlet  # product retentate (final)
 
     print("\n[PRODUCT PERMEATE (stage3.permeate_outlet)]")
-    print(f"  flow_vol: {_v(perm.flow_vol[0])}")
+    print(f"  flow_vol (m\u00b3/hr): {_v(perm.flow_vol[0])}")
     print(f"  Li concentration (kg/m\u00b3): {_v(perm.conc_mass_solute[0, 'Li'])}")
     print(f"  Co concentration (kg/m\u00b3): {_v(perm.conc_mass_solute[0, 'Co'])}")
 
@@ -109,7 +111,7 @@ def print_io_snap(fs, tag="STATE"):
     print(f"  purity_Co: {co_p if co_p is not None else 'N/A'}")
 
     print("\n[PRODUCT RETENTATE (stage1.retentate_outlet)]")
-    print(f"  flow_vol: {_v(ret.flow_vol[0])}")
+    print(f"  flow_vol (m\u00b3/hr): {_v(ret.flow_vol[0])}")
     print(f"  Li concentration (kg/m\u00b3): {_v(ret.conc_mass_solute[0, 'Li'])}")
     print(f"  Co concentration (kg/m\u00b3): {_v(ret.conc_mass_solute[0, 'Co'])}")
     li_r, co_r = _purity_mass(ret)
@@ -124,10 +126,10 @@ def print_io_snap(fs, tag="STATE"):
         _v(fs.sieving_coefficient["Co"]) if hasattr(fs, "sieving_coefficient") else None
     )
     print("\n[PARAMETERS]")
-    print(f"  sieving_coefficient_Li: {sel_Li if sel_Li is not None else 'N/A'}")
+    print(f"  sieving_coefficient_Li : {sel_Li if sel_Li is not None else 'N/A'}")
     print(f"  sieving_coefficient_Co: {sel_Co if sel_Co is not None else 'N/A'}")
-    print(f"  membrane_width (m.w):   {_v(m.w) if hasattr(m, 'w') else 'N/A'}")
-    print(f"  operating_pressure (psi):     {_v(m.operating_pressure)}")
+    print(f"  membrane_width (m.w): {_v(getattr(root, 'w', None)) if hasattr(root, 'w') else 'N/A'}")
+    print(f"  operating_pressure (psi): {_v(getattr(root, 'operating_pressure', None)) if hasattr(root,'operating_pressure') else 'N/A'}")
 
     print("=" * 72 + "\n")
 

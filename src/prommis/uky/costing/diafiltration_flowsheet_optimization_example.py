@@ -128,8 +128,12 @@ def print_io_snap(fs, tag="STATE"):
     print("\n[PARAMETERS]")
     print(f"  sieving_coefficient_Li : {sel_Li if sel_Li is not None else 'N/A'}")
     print(f"  sieving_coefficient_Co: {sel_Co if sel_Co is not None else 'N/A'}")
-    print(f"  membrane_width (m.w): {_v(getattr(root, 'w', None)) if hasattr(root, 'w') else 'N/A'}")
-    print(f"  operating_pressure (psi): {_v(getattr(root, 'operating_pressure', None)) if hasattr(root,'operating_pressure') else 'N/A'}")
+    print(
+        f"  membrane_width (m.w): {_v(getattr(root, 'w', None)) if hasattr(root, 'w') else 'N/A'}"
+    )
+    print(
+        f"  operating_pressure (psi): {_v(getattr(root, 'operating_pressure', None)) if hasattr(root,'operating_pressure') else 'N/A'}"
+    )
 
     print("=" * 72 + "\n")
 

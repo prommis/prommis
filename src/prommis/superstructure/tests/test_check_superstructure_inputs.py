@@ -257,11 +257,9 @@ def test_check_plant_lifetime_params():
     ## Define necessary parameters
     # incorrect plant_start
     incorrect_plant_start = 2020.0
-    # correct plant_lifetime
-    correct_plant_lifetime = 15
 
     ## test correct input
-    check_plant_lifetime_params(plant_start, correct_plant_lifetime)
+    check_plant_lifetime_params(plant_start, plant_lifetime)
 
     ## test incorrect inputs 1 - plant_lifetime not int
     incorrect_plant_lifetime1 = 15.0
@@ -272,6 +270,11 @@ def test_check_plant_lifetime_params():
     incorrect_plant_lifetime2 = 2
     with pytest.raises(ValueError):
         check_plant_lifetime_params(plant_start, incorrect_plant_lifetime2)
+
+    ## test incorrect inputs 3 - plant_start is not of type int
+    incorrect_plant_start3 = 2024.0
+    with pytest.raises(TypeError):
+        check_plant_lifetime_params(incorrect_plant_start3, plant_lifetime)
 
 
 def test_check_feed_params():
@@ -870,6 +873,66 @@ def test_check_supe_formulation_params():
             options_in_stage,
             option_outlets,
             incorrect_option_efficiencies24,
+        )
+
+    ## test incorrect inputs 25 - key in option_outlets is not of type tuple
+    incorrect_option_outlets25 = {
+        1: [1, 2],
+        (2, 1): [1],
+        (2, 2): [2, 3],
+    }
+    with pytest.raises(TypeError):
+        check_supe_formulation_params(
+            m,
+            num_stages,
+            options_in_stage,
+            incorrect_option_outlets25,
+            option_efficiencies,
+        )
+
+    ## test incorrect inputs 26 - value in option_outlets is not of type list
+    incorrect_option_outlets26 = {
+        (1, 1): {1, 2},
+        (2, 1): [1],
+        (2, 2): [2, 3],
+    }
+    with pytest.raises(TypeError):
+        check_supe_formulation_params(
+            m,
+            num_stages,
+            options_in_stage,
+            incorrect_option_outlets26,
+            option_efficiencies,
+        )
+
+    ## test incorrect inputs 27 - value in option_outlets is an empty list 
+    incorrect_option_outlets27 = {
+        (1, 1): [],
+        (2, 1): [1],
+        (2, 2): [2, 3],
+    }
+    with pytest.raises(ValueError):
+        check_supe_formulation_params(
+            m,
+            num_stages,
+            options_in_stage,
+            incorrect_option_outlets27,
+            option_efficiencies,
+        )
+
+    ## test incorrect inputs 28 - option_outlets list doesn't contain all positive integers
+    incorrect_option_outlets28 = {
+        (1, 1): [1, -2],
+        (2, 1): [1],
+        (2, 2): [2, 3],
+    }
+    with pytest.raises(TypeError):
+        check_supe_formulation_params(
+            m,
+            num_stages,
+            options_in_stage,
+            incorrect_option_outlets28,
+            option_efficiencies,
         )
 
 
@@ -1691,6 +1754,27 @@ def test_check_operating_params():
             incorrect_labor_rate46,
         )
 
+    ## test incorrect inputs 47 - value for inner dict of opt_var_oc_params not of type int or float.
+    incorrect_opt_var_oc_params47 = {
+        (2, 1): {"a": "0.0053", "b": 7929.7},
+        (2, 2): {"a": 0.0015, "b": 2233.16},
+        (3, 1): {"a": 15.594, "b": 4e6},
+        (3, 2): {"a": 35.58463, "b": 4e6},
+        (3, 3): {"a": 1.8359, "b": 0},
+    }
+    with pytest.raises(TypeError):
+        check_operating_params(
+            m,
+            profit,
+            incorrect_opt_var_oc_params47,
+            operators_per_discrete_unit,
+            yearly_cost_per_unit,
+            capital_cost_per_unit,
+            processing_rate,
+            num_operators,
+            labor_rate,
+        )
+
 
 def test_check_discretized_costing_params():
     # create new model
@@ -2288,6 +2372,132 @@ def test_check_discretized_costing_params():
     with pytest.raises(ValueError):
         check_discretized_costing_params(m, incorrect_discretized_equipment_cost11)
 
+    ## test incorrect inputs 12 - discretized_equipment_cost contains values for some discrete options
+    incorrect_discretized_equipment_cost12 = {
+        (2, 1): {
+            "Costs": [
+                0.0,
+                10130.08515,
+                31353.21173,
+                48788.84678,
+                60305.81927,
+                77063.4884,
+                117214.7546,
+                151018.0699,
+                195698.5419,
+            ],
+            "Flowrates": [
+                0.0,
+                36480.0,
+                634240.0,
+                1434800.0,
+                2083760.0,
+                3171200.0,
+                6342400.0,
+                9513600.0,
+                14270400.0,
+            ],
+        },
+        (2, 2): {
+            "Flowrates": [
+                0.0,
+                36480.0,
+                634240.0,
+                1434800.0,
+                2083760.0,
+                3171200.0,
+                6342400.0,
+                9513600.0,
+                14270400.0,
+            ],
+            "Costs": [
+                0.0,
+                11702.08515,
+                39023.21173,
+                62134.84678,
+                77539.81927,
+                100113.4884,
+                154792.7546,
+                201326.0699,
+                263374.5419,
+            ],
+        },
+        (3, 1): {
+            "Flowrates": [
+                0.0,
+                36480.0,
+                634240.0,
+                1434800.0,
+                2083760.0,
+                3171200.0,
+                6342400.0,
+                9513600.0,
+                14270400.0,
+            ],
+            "Costs": [
+                0.0,
+                343228.652,
+                482425.4684,
+                618182.0594,
+                743750.2902,
+                844443.0443,
+                978479.5225,
+                1183834.522,
+                1440660.587,
+            ],
+        },
+        (3, 2): {
+            "Flowrates": [
+                0.0,
+                36480.0,
+                634240.0,
+                1434800.0,
+                2083760.0,
+                3171200.0,
+                6342400.0,
+                9513600.0,
+                14270400.0,
+            ],
+            "Costs": [
+                0.0,
+                643228.652,
+                782425.4684,
+                918182.0594,
+                1043750.2902,
+                1144443.0443,
+                1278479.5225,
+                1483834.522,
+                1740660.587,
+            ],
+        },
+        (3, 3): {
+            "Flowrates": [
+                0.0,
+                36480.0,
+                634240.0,
+                1434800.0,
+                2083760.0,
+                3171200.0,
+                6342400.0,
+                9513600.0,
+                14270400.0,
+            ],
+            "Costs": [
+                0.0,
+                423074.7216,
+                3042779.121,
+                5348359.01,
+                6921261.68,
+                9251002.61,
+                14933803.33,
+                19762044.75,
+                26151302.79,
+            ],
+        },
+    }
+    with pytest.raises(ValueError):
+        check_discretized_costing_params(m, incorrect_discretized_equipment_cost12)
+
 
 def test_check_environmental_impact_params():
     # create new model
@@ -2507,9 +2717,9 @@ def test_check_byproduct_valorization_params():
 
     ## test incorrect inputs 4 - key in byproduct_values is not of type str
     incorrect_byproduct_values4 = {
-        (3, 1): {1: 0.75},
-        (3, 2): {"Iron oxide": 1},
-        (3, 3): {"Residue": 0.25},
+        1: 0.75,
+        "Iron oxide": 1,
+        "Residue": 0.25,
     }
     with pytest.raises(TypeError):
         check_byproduct_valorization_params(
@@ -2521,9 +2731,9 @@ def test_check_byproduct_valorization_params():
 
     ## test incorrect inputs 5 - value in byproduct_values is not of type int or float
     incorrect_byproduct_values5 = {
-        (3, 1): {"Jarosite": "0.75"},
-        (3, 2): {"Iron oxide": 1},
-        (3, 3): {"Residue": 0.25},
+        "Jarosite": "0.75",
+        "Iron oxide": 1,
+        "Residue": 0.25,
     }
     with pytest.raises(TypeError):
         check_byproduct_valorization_params(

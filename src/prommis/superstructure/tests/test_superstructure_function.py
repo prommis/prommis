@@ -1468,19 +1468,6 @@ class TestCOR(object):
         )
 
 
-import pyomo.environ as pyo
-
-from idaes.core.scaling import get_scaling_factor
-
-import pytest
-
-from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
-from prommis.superstructure.superstructure_function import (
-    SuperstructureScaler,
-    build_model,
-)
-
-
 class TestSuperstructureScaler:
     """Test class for SuperstructureScaler functionality."""
 

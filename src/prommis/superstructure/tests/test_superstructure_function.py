@@ -4,12 +4,10 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-import pyomo.environ as pyo
 from pyomo.environ import (
     Block,
     ConcreteModel,
     Constraint,
-    Objective,
     Param,
     RangeSet,
     Set,
@@ -23,32 +21,6 @@ from idaes.core.solvers import get_solver
 
 import pytest
 
-from prommis.superstructure.add_superstructure_blocks import (
-    add_costing_params,
-    add_costing_vars,
-    add_discretized_costing_params,
-    add_environmental_impact_cons,
-    add_environmental_impact_params,
-    add_environmental_impact_vars,
-    add_feed_params,
-    add_mass_balance_cons,
-    add_mass_balance_params,
-    add_mass_balance_vars,
-    add_objective_function_choice_param,
-    add_operating_params,
-    add_plant_lifetime_params,
-    add_supe_formulation_params,
-)
-from prommis.superstructure.check_superstructure_inputs import (
-    check_byproduct_valorization_params,
-    check_discretized_costing_params,
-    check_environmental_impact_params,
-    check_feed_params,
-    check_objective_function_choice,
-    check_operating_params,
-    check_plant_lifetime_params,
-    check_supe_formulation_params,
-)
 from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
 from prommis.superstructure.superstructure_function import (
     SuperstructureScaler,

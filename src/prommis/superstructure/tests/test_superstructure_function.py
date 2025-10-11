@@ -5,6 +5,21 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 import pyomo.environ as pyo
+from pyomo.environ import (
+    Block,
+    ConcreteModel,
+    Constraint,
+    Objective,
+    Param,
+    RangeSet,
+    Set,
+    SolverFactory,
+    Var,
+    assert_optimal_termination,
+    value,
+)
+
+from idaes.core.solvers import get_solver
 
 import pytest
 
@@ -37,25 +52,9 @@ from prommis.superstructure.check_superstructure_inputs import (
 from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
 from prommis.superstructure.superstructure_function import (
     SuperstructureScaler,
-    define_custom_units,
     build_model,
+    define_custom_units,
 )
-
-from pyomo.environ import (
-    Block,
-    ConcreteModel,
-    Constraint,
-    Objective,
-    Param,
-    RangeSet,
-    Set,
-    SolverFactory,
-    Var,
-    assert_optimal_termination,
-    value,
-)
-
-from idaes.core.solvers import get_solver
 
 solver_available = SolverFactory("gurobi").available()
 if solver_available:
@@ -312,7 +311,7 @@ class TestNPV(object):
         )
 
         return m
-    
+
     def test_build(self, NPV_model):
         assert isinstance(NPV_model, ConcreteModel)
 
@@ -358,7 +357,9 @@ class TestNPV(object):
 
         # add_discretized_costing_params
         assert isinstance(NPV_model.fs.costing.discrete_units_per_option, Param)
-        assert isinstance(NPV_model.fs.continuous_opts_discretized_costing_data_points, Set)
+        assert isinstance(
+            NPV_model.fs.continuous_opts_discretized_costing_data_points, Set
+        )
         assert isinstance(NPV_model.fs.costing.flowrates_data, Param)
         assert isinstance(NPV_model.fs.costing.costs_data, Param)
 
@@ -398,7 +399,9 @@ class TestNPV(object):
         assert isinstance(NPV_model.fs.costing.a_and_sl_costing_factor, Param)
         assert isinstance(NPV_model.fs.costing.fb_costing_factor, Param)
         assert isinstance(NPV_model.fs.costing.pt_and_i_costing_factor, Param)
-        assert isinstance(NPV_model.fs.costing.total_overnight_capital_fraction_expended, Param)
+        assert isinstance(
+            NPV_model.fs.costing.total_overnight_capital_fraction_expended, Param
+        )
         assert isinstance(NPV_model.fs.costing.plant_overhead_factor, Param)
 
         # add_costing_vars
@@ -409,7 +412,7 @@ class TestNPV(object):
         assert isinstance(NPV_model.fs.costing.piecewise_equipment_cost, Var)
         assert isinstance(NPV_model.fs.costing.equipment_cost, Var)
         assert isinstance(NPV_model.fs.costing.total_plant_cost, Var)
-        assert isinstance(NPV_model.fs.costing.financing , Var)
+        assert isinstance(NPV_model.fs.costing.financing, Var)
         assert isinstance(NPV_model.fs.costing.other_costs, Var)
         assert isinstance(NPV_model.fs.costing.total_overnight_cost, Var)
         assert isinstance(NPV_model.fs.costing.opt_variable_operating_cost, Var)
@@ -430,24 +433,43 @@ class TestNPV(object):
         assert isinstance(NPV_model.fs.costing.cash_flow, Var)
 
         # add_profit_cons
-        assert isinstance(NPV_model.fs.costing.calculate_final_opts_profit_cons, Constraint)
-        assert isinstance(NPV_model.fs.costing.calculate_main_product_profit_cons, Constraint)
+        assert isinstance(
+            NPV_model.fs.costing.calculate_final_opts_profit_cons, Constraint
+        )
+        assert isinstance(
+            NPV_model.fs.costing.calculate_main_product_profit_cons, Constraint
+        )
         assert isinstance(NPV_model.fs.costing.calculate_total_profit_cons, Constraint)
 
         # add_capital_cost_cons
-        assert isinstance(NPV_model.fs.costing.discrete_opts_equipment_cost_cons, Constraint)
+        assert isinstance(
+            NPV_model.fs.costing.discrete_opts_equipment_cost_cons, Constraint
+        )
         assert isinstance(NPV_model.fs.costing.piecewise_cons, Block)
         assert isinstance(NPV_model.fs.costing.add_units_to_piecewise_costs, Constraint)
-        assert isinstance(NPV_model.fs.costing.calculate_total_plant_cost_con, Constraint)
+        assert isinstance(
+            NPV_model.fs.costing.calculate_total_plant_cost_con, Constraint
+        )
         assert isinstance(NPV_model.fs.costing.calculate_financing_cost_con, Constraint)
         assert isinstance(NPV_model.fs.costing.calculate_other_costs_con, Constraint)
-        assert isinstance(NPV_model.fs.costing.calculate_total_overnight_cost_con, Constraint)
+        assert isinstance(
+            NPV_model.fs.costing.calculate_total_overnight_cost_con, Constraint
+        )
 
         # add_operating_cost_cons
-        assert isinstance(NPV_model.fs.costing.calculate_opt_yearly_variable_expense_cons, Constraint)
-        assert isinstance(NPV_model.fs.costing.calculate_total_yearly_variable_operating_costs_cons, Constraint)
-        assert isinstance(NPV_model.fs.costing.calculate_operators_per_option_cons, Constraint)
-        assert isinstance(NPV_model.fs.costing.calculate_total_operators_cons, Constraint)
+        assert isinstance(
+            NPV_model.fs.costing.calculate_opt_yearly_variable_expense_cons, Constraint
+        )
+        assert isinstance(
+            NPV_model.fs.costing.calculate_total_yearly_variable_operating_costs_cons,
+            Constraint,
+        )
+        assert isinstance(
+            NPV_model.fs.costing.calculate_operators_per_option_cons, Constraint
+        )
+        assert isinstance(
+            NPV_model.fs.costing.calculate_total_operators_cons, Constraint
+        )
         assert isinstance(NPV_model.fs.costing.calculate_cost_of_labor_con, Constraint)
         assert isinstance(NPV_model.fs.costing.calculate_m_and_sm_con, Constraint)
         assert isinstance(NPV_model.fs.costing.calculate_sa_and_qa_qc_con, Constraint)
@@ -455,16 +477,28 @@ class TestNPV(object):
         assert isinstance(NPV_model.fs.costing.calculate_a_and_sl_con, Constraint)
         assert isinstance(NPV_model.fs.costing.calculate_fb_con, Constraint)
         assert isinstance(NPV_model.fs.costing.calculate_pt_and_i_con, Constraint)
-        assert isinstance(NPV_model.fs.costing.calculate_total_yearly_fixed_operating_costs_cons, Constraint)
+        assert isinstance(
+            NPV_model.fs.costing.calculate_total_yearly_fixed_operating_costs_cons,
+            Constraint,
+        )
 
         # add_cash_flow_cons
-        assert isinstance(NPV_model.fs.costing.calculate_total_overnight_cost_expended_cons, Constraint)
-        assert isinstance(NPV_model.fs.costing.calculate_plant_overhead_cons, Constraint)
-        assert isinstance(NPV_model.fs.costing.calculate_total_operating_expense_cons, Constraint)
+        assert isinstance(
+            NPV_model.fs.costing.calculate_total_overnight_cost_expended_cons,
+            Constraint,
+        )
+        assert isinstance(
+            NPV_model.fs.costing.calculate_plant_overhead_cons, Constraint
+        )
+        assert isinstance(
+            NPV_model.fs.costing.calculate_total_operating_expense_cons, Constraint
+        )
         assert isinstance(NPV_model.fs.costing.calculate_cash_flows, Constraint)
 
         # add_costing_objective_functions
-        assert isinstance(NPV_model.fs.costing.calculate_net_present_value_con, Constraint)
+        assert isinstance(
+            NPV_model.fs.costing.calculate_net_present_value_con, Constraint
+        )
 
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
@@ -494,124 +528,124 @@ class TestNPV(object):
         ## Store correct values for all variables
         # flow entering each stage (except the last stage).
         f_dict = {
-            (1, 'Fe', 2025): 60173.5929,
-            (1, 'Fe', 2026): 56934.5304,
-            (1, 'Fe', 2027): 59393.9376,
-            (1, 'Fe', 2028): 101124.8787,
-            (1, 'Nd', 2025): 17938.8714,
-            (1, 'Nd', 2026): 16973.2464,
-            (1, 'Nd', 2027): 17706.441600000002,
-            (1, 'Nd', 2028): 30147.214200000002,
-            (2, 'Fe', 2025): 60173.5929,
-            (2, 'Fe', 2026): 56934.5304,
-            (2, 'Fe', 2027): 59393.9376,
-            (2, 'Fe', 2028): 101124.8787,
-            (2, 'Nd', 2025): 17938.8714,
-            (2, 'Nd', 2026): 16973.2464,
-            (2, 'Nd', 2027): 17706.441600000002,
-            (2, 'Nd', 2028): 30147.214200000002
+            (1, "Fe", 2025): 60173.5929,
+            (1, "Fe", 2026): 56934.5304,
+            (1, "Fe", 2027): 59393.9376,
+            (1, "Fe", 2028): 101124.8787,
+            (1, "Nd", 2025): 17938.8714,
+            (1, "Nd", 2026): 16973.2464,
+            (1, "Nd", 2027): 17706.441600000002,
+            (1, "Nd", 2028): 30147.214200000002,
+            (2, "Fe", 2025): 60173.5929,
+            (2, "Fe", 2026): 56934.5304,
+            (2, "Fe", 2027): 59393.9376,
+            (2, "Fe", 2028): 101124.8787,
+            (2, "Nd", 2025): 17938.8714,
+            (2, "Nd", 2026): 16973.2464,
+            (2, "Nd", 2027): 17706.441600000002,
+            (2, "Nd", 2028): 30147.214200000002,
         }
         # flow entering each option.
         f_in_dict = {
-            (1, 1, 'Fe', 2025): 60173.5929,
-            (1, 1, 'Fe', 2026): 56934.5304,
-            (1, 1, 'Fe', 2027): 59393.9376,
-            (1, 1, 'Fe', 2028): 101124.8787,
-            (1, 1, 'Nd', 2025): 17938.8714,
-            (1, 1, 'Nd', 2026): 16973.2464,
-            (1, 1, 'Nd', 2027): 17706.441600000002,
-            (1, 1, 'Nd', 2028): 30147.214200000002,
-            (2, 1, 'Fe', 2025): 0.0,
-            (2, 1, 'Fe', 2026): 0.0,
-            (2, 1, 'Fe', 2027): 0.0,
-            (2, 1, 'Fe', 2028): 0.0,
-            (2, 1, 'Nd', 2025): 0.0,
-            (2, 1, 'Nd', 2026): 0.0,
-            (2, 1, 'Nd', 2027): 0.0,
-            (2, 1, 'Nd', 2028): 0.0,
-            (2, 2, 'Fe', 2025): 60173.592899999996,
-            (2, 2, 'Fe', 2026): 56934.530399999996,
-            (2, 2, 'Fe', 2027): 59393.937600000005,
-            (2, 2, 'Fe', 2028): 101124.8787,
-            (2, 2, 'Nd', 2025): 17938.871400000004,
-            (2, 2, 'Nd', 2026): 16973.246400000004,
-            (2, 2, 'Nd', 2027): 17706.441600000006,
-            (2, 2, 'Nd', 2028): 30147.214200000002,
-            (3, 1, 'Fe', 2025): 0.0,
-            (3, 1, 'Fe', 2026): 0.0,
-            (3, 1, 'Fe', 2027): 0.0,
-            (3, 1, 'Fe', 2028): 0.0,
-            (3, 1, 'Nd', 2025): 0.0,
-            (3, 1, 'Nd', 2026): 0.0,
-            (3, 1, 'Nd', 2027): 0.0,
-            (3, 1, 'Nd', 2028): 0.0,
-            (3, 2, 'Fe', 2025): 0.0,
-            (3, 2, 'Fe', 2026): 0.0,
-            (3, 2, 'Fe', 2027): 0.0,
-            (3, 2, 'Fe', 2028): 0.0,
-            (3, 2, 'Nd', 2025): 0.0,
-            (3, 2, 'Nd', 2026): 0.0,
-            (3, 2, 'Nd', 2027): 0.0,
-            (3, 2, 'Nd', 2028): 0.0,
-            (3, 3, 'Fe', 2025): 60173.592899999974,
-            (3, 3, 'Fe', 2026): 56934.530399999974,
-            (3, 3, 'Fe', 2027): 59393.937599999976,
-            (3, 3, 'Fe', 2028): 101124.87869999999,
-            (3, 3, 'Nd', 2025): 17938.871399999993,
-            (3, 3, 'Nd', 2026): 16973.246399999996,
-            (3, 3, 'Nd', 2027): 17706.441599999995,
-            (3, 3, 'Nd', 2028): 30147.214200000002
+            (1, 1, "Fe", 2025): 60173.5929,
+            (1, 1, "Fe", 2026): 56934.5304,
+            (1, 1, "Fe", 2027): 59393.9376,
+            (1, 1, "Fe", 2028): 101124.8787,
+            (1, 1, "Nd", 2025): 17938.8714,
+            (1, 1, "Nd", 2026): 16973.2464,
+            (1, 1, "Nd", 2027): 17706.441600000002,
+            (1, 1, "Nd", 2028): 30147.214200000002,
+            (2, 1, "Fe", 2025): 0.0,
+            (2, 1, "Fe", 2026): 0.0,
+            (2, 1, "Fe", 2027): 0.0,
+            (2, 1, "Fe", 2028): 0.0,
+            (2, 1, "Nd", 2025): 0.0,
+            (2, 1, "Nd", 2026): 0.0,
+            (2, 1, "Nd", 2027): 0.0,
+            (2, 1, "Nd", 2028): 0.0,
+            (2, 2, "Fe", 2025): 60173.592899999996,
+            (2, 2, "Fe", 2026): 56934.530399999996,
+            (2, 2, "Fe", 2027): 59393.937600000005,
+            (2, 2, "Fe", 2028): 101124.8787,
+            (2, 2, "Nd", 2025): 17938.871400000004,
+            (2, 2, "Nd", 2026): 16973.246400000004,
+            (2, 2, "Nd", 2027): 17706.441600000006,
+            (2, 2, "Nd", 2028): 30147.214200000002,
+            (3, 1, "Fe", 2025): 0.0,
+            (3, 1, "Fe", 2026): 0.0,
+            (3, 1, "Fe", 2027): 0.0,
+            (3, 1, "Fe", 2028): 0.0,
+            (3, 1, "Nd", 2025): 0.0,
+            (3, 1, "Nd", 2026): 0.0,
+            (3, 1, "Nd", 2027): 0.0,
+            (3, 1, "Nd", 2028): 0.0,
+            (3, 2, "Fe", 2025): 0.0,
+            (3, 2, "Fe", 2026): 0.0,
+            (3, 2, "Fe", 2027): 0.0,
+            (3, 2, "Fe", 2028): 0.0,
+            (3, 2, "Nd", 2025): 0.0,
+            (3, 2, "Nd", 2026): 0.0,
+            (3, 2, "Nd", 2027): 0.0,
+            (3, 2, "Nd", 2028): 0.0,
+            (3, 3, "Fe", 2025): 60173.592899999974,
+            (3, 3, "Fe", 2026): 56934.530399999974,
+            (3, 3, "Fe", 2027): 59393.937599999976,
+            (3, 3, "Fe", 2028): 101124.87869999999,
+            (3, 3, "Nd", 2025): 17938.871399999993,
+            (3, 3, "Nd", 2026): 16973.246399999996,
+            (3, 3, "Nd", 2027): 17706.441599999995,
+            (3, 3, "Nd", 2028): 30147.214200000002,
         }
         # flow exiting each option.
         f_out_dict = {
-            (1, 1, 'Fe', 2025): 60173.5929,
-            (1, 1, 'Fe', 2026): 56934.5304,
-            (1, 1, 'Fe', 2027): 59393.9376,
-            (1, 1, 'Fe', 2028): 101124.8787,
-            (1, 1, 'Nd', 2025): 17938.8714,
-            (1, 1, 'Nd', 2026): 16973.2464,
-            (1, 1, 'Nd', 2027): 17706.441600000002,
-            (1, 1, 'Nd', 2028): 30147.214200000002,
-            (2, 1, 'Fe', 2025): 0.0,
-            (2, 1, 'Fe', 2026): 0.0,
-            (2, 1, 'Fe', 2027): 0.0,
-            (2, 1, 'Fe', 2028): 0.0,
-            (2, 1, 'Nd', 2025): 0.0,
-            (2, 1, 'Nd', 2026): 0.0,
-            (2, 1, 'Nd', 2027): 0.0,
-            (2, 1, 'Nd', 2028): 0.0,
-            (2, 2, 'Fe', 2025): 60173.592899999996,
-            (2, 2, 'Fe', 2026): 56934.530399999996,
-            (2, 2, 'Fe', 2027): 59393.937600000005,
-            (2, 2, 'Fe', 2028): 101124.8787,
-            (2, 2, 'Nd', 2025): 17938.871400000004,
-            (2, 2, 'Nd', 2026): 16973.246400000004,
-            (2, 2, 'Nd', 2027): 17706.441600000006,
-            (2, 2, 'Nd', 2028): 30147.214200000002,
-            (3, 1, 'Fe', 2025): 0.0,
-            (3, 1, 'Fe', 2026): 0.0,
-            (3, 1, 'Fe', 2027): 0.0,
-            (3, 1, 'Fe', 2028): 0.0,
-            (3, 1, 'Nd', 2025): 0.0,
-            (3, 1, 'Nd', 2026): 0.0,
-            (3, 1, 'Nd', 2027): 0.0,
-            (3, 1, 'Nd', 2028): 0.0,
-            (3, 2, 'Fe', 2025): 0.0,
-            (3, 2, 'Fe', 2026): 0.0,
-            (3, 2, 'Fe', 2027): 0.0,
-            (3, 2, 'Fe', 2028): 0.0,
-            (3, 2, 'Nd', 2025): 0.0,
-            (3, 2, 'Nd', 2026): 0.0,
-            (3, 2, 'Nd', 2027): 0.0,
-            (3, 2, 'Nd', 2028): 0.0,
-            (3, 3, 'Fe', 2025): 0.0,
-            (3, 3, 'Fe', 2026): 0.0,
-            (3, 3, 'Fe', 2027): 0.0,
-            (3, 3, 'Fe', 2028): 0.0,
-            (3, 3, 'Nd', 2025): 17938.871399999993,
-            (3, 3, 'Nd', 2026): 16973.246399999996,
-            (3, 3, 'Nd', 2027): 17706.441599999995,
-            (3, 3, 'Nd', 2028): 30147.214200000002
+            (1, 1, "Fe", 2025): 60173.5929,
+            (1, 1, "Fe", 2026): 56934.5304,
+            (1, 1, "Fe", 2027): 59393.9376,
+            (1, 1, "Fe", 2028): 101124.8787,
+            (1, 1, "Nd", 2025): 17938.8714,
+            (1, 1, "Nd", 2026): 16973.2464,
+            (1, 1, "Nd", 2027): 17706.441600000002,
+            (1, 1, "Nd", 2028): 30147.214200000002,
+            (2, 1, "Fe", 2025): 0.0,
+            (2, 1, "Fe", 2026): 0.0,
+            (2, 1, "Fe", 2027): 0.0,
+            (2, 1, "Fe", 2028): 0.0,
+            (2, 1, "Nd", 2025): 0.0,
+            (2, 1, "Nd", 2026): 0.0,
+            (2, 1, "Nd", 2027): 0.0,
+            (2, 1, "Nd", 2028): 0.0,
+            (2, 2, "Fe", 2025): 60173.592899999996,
+            (2, 2, "Fe", 2026): 56934.530399999996,
+            (2, 2, "Fe", 2027): 59393.937600000005,
+            (2, 2, "Fe", 2028): 101124.8787,
+            (2, 2, "Nd", 2025): 17938.871400000004,
+            (2, 2, "Nd", 2026): 16973.246400000004,
+            (2, 2, "Nd", 2027): 17706.441600000006,
+            (2, 2, "Nd", 2028): 30147.214200000002,
+            (3, 1, "Fe", 2025): 0.0,
+            (3, 1, "Fe", 2026): 0.0,
+            (3, 1, "Fe", 2027): 0.0,
+            (3, 1, "Fe", 2028): 0.0,
+            (3, 1, "Nd", 2025): 0.0,
+            (3, 1, "Nd", 2026): 0.0,
+            (3, 1, "Nd", 2027): 0.0,
+            (3, 1, "Nd", 2028): 0.0,
+            (3, 2, "Fe", 2025): 0.0,
+            (3, 2, "Fe", 2026): 0.0,
+            (3, 2, "Fe", 2027): 0.0,
+            (3, 2, "Fe", 2028): 0.0,
+            (3, 2, "Nd", 2025): 0.0,
+            (3, 2, "Nd", 2026): 0.0,
+            (3, 2, "Nd", 2027): 0.0,
+            (3, 2, "Nd", 2028): 0.0,
+            (3, 3, "Fe", 2025): 0.0,
+            (3, 3, "Fe", 2026): 0.0,
+            (3, 3, "Fe", 2027): 0.0,
+            (3, 3, "Fe", 2028): 0.0,
+            (3, 3, "Nd", 2025): 17938.871399999993,
+            (3, 3, "Nd", 2026): 16973.246399999996,
+            (3, 3, "Nd", 2027): 17706.441599999995,
+            (3, 3, "Nd", 2028): 30147.214200000002,
         }
         # Binary variables to indicate whether or not an option has been selected.
         option_binary_var_dict = {
@@ -620,7 +654,7 @@ class TestNPV(object):
             (2, 2): 1.0,
             (3, 1): 0.0,
             (3, 2): 0.0,
-            (3, 3): 1.0
+            (3, 3): 1.0,
         }
         # The max total flow that enters each continuous option over the lifetime of the plant.
         piecewise_flow_entering_dict = {
@@ -628,85 +662,140 @@ class TestNPV(object):
             (2, 2): 131272.0929,
             (3, 1): 0.0,
             (3, 2): 0.0,
-            (3, 3): 131272.09289999993
+            (3, 3): 131272.09289999993,
         }
         # Profit generated by each option in final processing stage
         opt_profit_dict = {
-            (3, 1, 2025): 0.0, (3, 1, 2026): 0.0, (3, 1, 2027): 0.0, (3, 1, 2028): 0.0,
-            (3, 2, 2025): 0.0, (3, 2, 2026): 0.0, (3, 2, 2027): 0.0, (3, 2, 2028): 0.0,
-            (3, 3, 2025): 814912.6988620796, (3, 3, 2026): 771047.0588620799,
-            (3, 3, 2027): 804354.0638515197, (3, 3, 2028): 1369503.5289062401
+            (3, 1, 2025): 0.0,
+            (3, 1, 2026): 0.0,
+            (3, 1, 2027): 0.0,
+            (3, 1, 2028): 0.0,
+            (3, 2, 2025): 0.0,
+            (3, 2, 2026): 0.0,
+            (3, 2, 2027): 0.0,
+            (3, 2, 2028): 0.0,
+            (3, 3, 2025): 814912.6988620796,
+            (3, 3, 2026): 771047.0588620799,
+            (3, 3, 2027): 804354.0638515197,
+            (3, 3, 2028): 1369503.5289062401,
         }
         # Total profit from main product each year
         main_product_profit_dict = {
-            2025: 814912.6988620803, 2026: 771047.0588620801,
-            2027: 804354.0638515205, 2028: 1369503.5289062406
+            2025: 814912.6988620803,
+            2026: 771047.0588620801,
+            2027: 804354.0638515205,
+            2028: 1369503.5289062406,
         }
         # Total profit generated by plant each year
         total_profit_dict = {
-            2025: 814912.6988620803, 2026: 771047.0588620801,
-            2027: 804354.0638515205, 2028: 1369503.5289062406
+            2025: 814912.6988620803,
+            2026: 771047.0588620801,
+            2027: 804354.0638515205,
+            2028: 1369503.5289062406,
         }
         # Cost of purchased equipment (dimensionless for piecewise constraints)
         piecewise_equipment_cost_dict = {
-            (2, 1): 0.0, (2, 2): 16034.63796200485,
-            (3, 1): 0.0, (3, 2): 0.0, (3, 3): 8430.18510092596
+            (2, 1): 0.0,
+            (2, 2): 16034.63796200485,
+            (3, 1): 0.0,
+            (3, 2): 0.0,
+            (3, 3): 8430.18510092596,
         }
         # Cost of purchased equipment with units
         equipment_cost_dict = {
-            (1, 1): 0.0, (2, 1): 0.0, (2, 2): 16034.63796200485,
-            (3, 1): 0.0, (3, 2): 0.0, (3, 3): 8430.18510092596
+            (1, 1): 0.0,
+            (2, 1): 0.0,
+            (2, 2): 16034.63796200485,
+            (3, 1): 0.0,
+            (3, 2): 0.0,
+            (3, 3): 8430.18510092596,
         }
         # Yearly variable operating expense for each option
         opt_variable_operating_cost_dict = {
-            (1, 1, 2025): 0.0, (1, 1, 2026): 0.0, (1, 1, 2027): 0.0, (1, 1, 2028): 0.0,
-            (2, 1, 2025): 0.0, (2, 1, 2026): 0.0, (2, 1, 2027): 0.0, (2, 1, 2028): 0.0,
-            (2, 2, 2025): 2350.32869645, (2, 2, 2026): 2344.0216652,
-            (2, 2, 2027): 2348.8105688, (2, 2, 2028): 2430.06813935,
-            (3, 1, 2025): 0.0, (3, 1, 2026): 0.0, (3, 1, 2027): 0.0, (3, 1, 2028): 0.0,
-            (3, 2, 2025): 0.0, (3, 2, 2026): 0.0, (3, 2, 2027): 0.0, (3, 2, 2028): 0.0,
-            (3, 3, 2025): 123417.69359399995, (3, 3, 2026): 116774.28734399995,
-            (3, 3, 2027): 121818.59913599996, (3, 3, 2028): 207409.90678199998
+            (1, 1, 2025): 0.0,
+            (1, 1, 2026): 0.0,
+            (1, 1, 2027): 0.0,
+            (1, 1, 2028): 0.0,
+            (2, 1, 2025): 0.0,
+            (2, 1, 2026): 0.0,
+            (2, 1, 2027): 0.0,
+            (2, 1, 2028): 0.0,
+            (2, 2, 2025): 2350.32869645,
+            (2, 2, 2026): 2344.0216652,
+            (2, 2, 2027): 2348.8105688,
+            (2, 2, 2028): 2430.06813935,
+            (3, 1, 2025): 0.0,
+            (3, 1, 2026): 0.0,
+            (3, 1, 2027): 0.0,
+            (3, 1, 2028): 0.0,
+            (3, 2, 2025): 0.0,
+            (3, 2, 2026): 0.0,
+            (3, 2, 2027): 0.0,
+            (3, 2, 2028): 0.0,
+            (3, 3, 2025): 123417.69359399995,
+            (3, 3, 2026): 116774.28734399995,
+            (3, 3, 2027): 121818.59913599996,
+            (3, 3, 2028): 207409.90678199998,
         }
         # Total yearly variable operating expense
         aggregate_variable_operating_cost_dict = {
-            2025: 125768.02229044959, 2026: 119118.30900919996,
-            2027: 124167.4097048007, 2028: 209839.9749213513
+            2025: 125768.02229044959,
+            2026: 119118.30900919996,
+            2027: 124167.4097048007,
+            2028: 209839.9749213513,
         }
         # Total yearly fixed operating cost
         aggregate_fixed_operating_cost_dict = {
-            2025: 4273448.942723528, 2026: 4273010.286323528,
-            2027: 4273343.356373422, 2028: 4278994.851023969
+            2025: 4273448.942723528,
+            2026: 4273010.286323528,
+            2027: 4273343.356373422,
+            2028: 4278994.851023969,
         }
         # Number of operators needed for each option
         operators_per_option_dict = {
-            (1, 1): 7.0, (2, 1): 0.0, (2, 2): 0.65,
-            (3, 1): 0.0, (3, 2): 0.0, (3, 3): 1.3
+            (1, 1): 7.0,
+            (2, 1): 0.0,
+            (2, 2): 0.65,
+            (3, 1): 0.0,
+            (3, 2): 0.0,
+            (3, 3): 1.3,
         }
         # Sales, IP, R&D expenses
         s_ip_r_and_d_dict = {
-            2025: 8149.126988620804, 2026: 7710.470588620801,
-            2027: 8043.5406385152055, 2028: 13695.035289062405
+            2025: 8149.126988620804,
+            2026: 7710.470588620801,
+            2027: 8043.5406385152055,
+            2028: 13695.035289062405,
         }
         # Total overnight cost expended each year
         total_overnight_cost_expended_dict = {
-            2024: 8552.14373328566, 2025: 51312.86239971396, 2026: 25656.43119985698,
-            2027: 0.0, 2028: 0.0
+            2024: 8552.14373328566,
+            2025: 51312.86239971396,
+            2026: 25656.43119985698,
+            2027: 0.0,
+            2028: 0.0,
         }
         # Yearly plant overhead
         plant_overhead_dict = {
-            2025: 879843.3930027956, 2026: 878425.7190665458,
-            2027: 879502.1532156446, 2028: 897766.9651890642
+            2025: 879843.3930027956,
+            2026: 878425.7190665458,
+            2027: 879502.1532156446,
+            2028: 897766.9651890642,
         }
         # Total operating expense each year
         total_operating_expense_dict = {
-            2025: 5279060.358016773, 2026: 5270554.314399274,
-            2027: 5277012.919293867, 2028: 5386601.791134384
+            2025: 5279060.358016773,
+            2026: 5270554.314399274,
+            2027: 5277012.919293867,
+            2028: 5386601.791134384,
         }
         # Yearly cash flow (negative = investment/cost, positive = profit)
         cash_flow_dict = {
-            2024: -8552.14373328566, 2025: -4651232.214375437,
-            2026: -4801064.19238049, 2027: -4887395.093130949, 2028: -4521279.484773466
+            2024: -8552.14373328566,
+            2025: -4651232.214375437,
+            2026: -4801064.19238049,
+            2027: -4887395.093130949,
+            2028: -4521279.484773466,
         }
         # Net present value
         net_present_value = -16440490.52395555
@@ -748,94 +837,142 @@ class TestNPV(object):
 
         # test binary variables to indicate whether or not an option has been selected
         for key, val in option_binary_var_dict.items():
-            assert value(NPV_model.fs.option_binary_var[key]) == pytest.approx(val, rel=1e-8)
+            assert value(NPV_model.fs.option_binary_var[key]) == pytest.approx(
+                val, rel=1e-8
+            )
 
         # test max total flow that enters each continuous option over the lifetime of the plant.
         for key, val in piecewise_flow_entering_dict.items():
-            assert value(NPV_model.fs.piecewise_flow_entering[key]) == pytest.approx(val, rel=1e-8)
+            assert value(NPV_model.fs.piecewise_flow_entering[key]) == pytest.approx(
+                val, rel=1e-8
+            )
 
-                # test profit generated by each option in final processing stage
+            # test profit generated by each option in final processing stage
         for key, val in opt_profit_dict.items():
-            assert value(NPV_model.fs.costing.opt_profit[key]) == pytest.approx(val, rel=1e-8)
+            assert value(NPV_model.fs.costing.opt_profit[key]) == pytest.approx(
+                val, rel=1e-8
+            )
 
         # test total profit from main product each year
         for key, val in main_product_profit_dict.items():
-            assert value(NPV_model.fs.costing.main_product_profit[key]) == pytest.approx(val, rel=1e-8)
+            assert value(
+                NPV_model.fs.costing.main_product_profit[key]
+            ) == pytest.approx(val, rel=1e-8)
 
         # test total profit generated by plant each year
         for key, val in total_profit_dict.items():
-            assert value(NPV_model.fs.costing.total_profit[key]) == pytest.approx(val, rel=1e-8)
+            assert value(NPV_model.fs.costing.total_profit[key]) == pytest.approx(
+                val, rel=1e-8
+            )
 
         # test cost of purchased equipment (dimensionless for piecewise constraints)
         for key, val in piecewise_equipment_cost_dict.items():
-            assert value(NPV_model.fs.costing.piecewise_equipment_cost[key]) == pytest.approx(val, rel=1e-8)
+            assert value(
+                NPV_model.fs.costing.piecewise_equipment_cost[key]
+            ) == pytest.approx(val, rel=1e-8)
 
         # test cost of purchased equipment with units
         for key, val in equipment_cost_dict.items():
-            assert value(NPV_model.fs.costing.equipment_cost[key]) == pytest.approx(val, rel=1e-8)
+            assert value(NPV_model.fs.costing.equipment_cost[key]) == pytest.approx(
+                val, rel=1e-8
+            )
 
         # test yearly variable operating expense for each option
         for key, val in opt_variable_operating_cost_dict.items():
-            assert value(NPV_model.fs.costing.opt_variable_operating_cost[key]) == pytest.approx(val, rel=1e-8)
+            assert value(
+                NPV_model.fs.costing.opt_variable_operating_cost[key]
+            ) == pytest.approx(val, rel=1e-8)
 
         # test total yearly variable operating expense
         for key, val in aggregate_variable_operating_cost_dict.items():
-            assert value(NPV_model.fs.costing.aggregate_variable_operating_cost[key]) == pytest.approx(val, rel=1e-8)
+            assert value(
+                NPV_model.fs.costing.aggregate_variable_operating_cost[key]
+            ) == pytest.approx(val, rel=1e-8)
 
         # test total yearly fixed operating cost
         for key, val in aggregate_fixed_operating_cost_dict.items():
-            assert value(NPV_model.fs.costing.aggregate_fixed_operating_cost[key]) == pytest.approx(val, rel=1e-8)
+            assert value(
+                NPV_model.fs.costing.aggregate_fixed_operating_cost[key]
+            ) == pytest.approx(val, rel=1e-8)
 
         # test number of operators needed for each option
         for key, val in operators_per_option_dict.items():
-            assert value(NPV_model.fs.costing.operators_per_option[key]) == pytest.approx(val, rel=1e-8)
+            assert value(
+                NPV_model.fs.costing.operators_per_option[key]
+            ) == pytest.approx(val, rel=1e-8)
 
         # test sales, IP, R&D expenses
         for key, val in s_ip_r_and_d_dict.items():
-            assert value(NPV_model.fs.costing.s_ip_r_and_d[key]) == pytest.approx(val, rel=1e-8)
+            assert value(NPV_model.fs.costing.s_ip_r_and_d[key]) == pytest.approx(
+                val, rel=1e-8
+            )
 
         # test total overnight cost expended each year
         for key, val in total_overnight_cost_expended_dict.items():
-            assert value(NPV_model.fs.costing.total_overnight_cost_expended[key]) == pytest.approx(val, rel=1e-8)
+            assert value(
+                NPV_model.fs.costing.total_overnight_cost_expended[key]
+            ) == pytest.approx(val, rel=1e-8)
 
         # test yearly plant overhead
         for key, val in plant_overhead_dict.items():
-            assert value(NPV_model.fs.costing.plant_overhead[key]) == pytest.approx(val, rel=1e-8)
+            assert value(NPV_model.fs.costing.plant_overhead[key]) == pytest.approx(
+                val, rel=1e-8
+            )
 
         # test total operating expense each year
         for key, val in total_operating_expense_dict.items():
-            assert value(NPV_model.fs.costing.total_operating_expense[key]) == pytest.approx(val, rel=1e-8)
+            assert value(
+                NPV_model.fs.costing.total_operating_expense[key]
+            ) == pytest.approx(val, rel=1e-8)
 
         # test yearly cash flow
         for key, val in cash_flow_dict.items():
-            assert value(NPV_model.fs.costing.cash_flow[key]) == pytest.approx(val, rel=1e-8)
+            assert value(NPV_model.fs.costing.cash_flow[key]) == pytest.approx(
+                val, rel=1e-8
+            )
 
         # test net present value
-        assert value(NPV_model.fs.costing.net_present_value) == pytest.approx(net_present_value, rel=1e-8)
+        assert value(NPV_model.fs.costing.net_present_value) == pytest.approx(
+            net_present_value, rel=1e-8
+        )
 
         # test total plant cost
-        assert value(NPV_model.fs.costing.total_plant_cost) == pytest.approx(total_plant_cost, rel=1e-8)
+        assert value(NPV_model.fs.costing.total_plant_cost) == pytest.approx(
+            total_plant_cost, rel=1e-8
+        )
 
         # test financing cost
-        assert value(NPV_model.fs.costing.financing) == pytest.approx(financing, rel=1e-8)
+        assert value(NPV_model.fs.costing.financing) == pytest.approx(
+            financing, rel=1e-8
+        )
 
         # test other costs
-        assert value(NPV_model.fs.costing.other_costs) == pytest.approx(other_costs, rel=1e-8)
+        assert value(NPV_model.fs.costing.other_costs) == pytest.approx(
+            other_costs, rel=1e-8
+        )
 
         # test total overnight cost
-        assert value(NPV_model.fs.costing.total_overnight_cost) == pytest.approx(total_overnight_cost, rel=1e-8)
+        assert value(NPV_model.fs.costing.total_overnight_cost) == pytest.approx(
+            total_overnight_cost, rel=1e-8
+        )
 
         # test total number of operators
-        assert value(NPV_model.fs.costing.total_operators) == pytest.approx(total_operators, rel=1e-8)
+        assert value(NPV_model.fs.costing.total_operators) == pytest.approx(
+            total_operators, rel=1e-8
+        )
 
         # test cost of labor
-        assert value(NPV_model.fs.costing.cost_of_labor) == pytest.approx(cost_of_labor, rel=1e-8)
+        assert value(NPV_model.fs.costing.cost_of_labor) == pytest.approx(
+            cost_of_labor, rel=1e-8
+        )
 
         # test maintenance & supply materials
         assert value(NPV_model.fs.costing.m_and_sm) == pytest.approx(m_and_sm, rel=1e-8)
 
         # test sample analysis & quality assurance/quality control
-        assert value(NPV_model.fs.costing.sa_and_qa_qc) == pytest.approx(sa_and_qa_qc, rel=1e-8)
+        assert value(NPV_model.fs.costing.sa_and_qa_qc) == pytest.approx(
+            sa_and_qa_qc, rel=1e-8
+        )
 
         # test administrative & supporting labor
         assert value(NPV_model.fs.costing.a_and_sl) == pytest.approx(a_and_sl, rel=1e-8)
@@ -847,7 +984,10 @@ class TestNPV(object):
         assert value(NPV_model.fs.costing.pt_and_i) == pytest.approx(pt_and_i, rel=1e-8)
 
         # test objective function
-        assert value(NPV_model.fs.costing.obj) == pytest.approx(net_present_value, rel=1e-8)
+        assert value(NPV_model.fs.costing.obj) == pytest.approx(
+            net_present_value, rel=1e-8
+        )
+
 
 class TestByproductValorization(object):
     @pytest.fixture(scope="class")
@@ -890,7 +1030,7 @@ class TestByproductValorization(object):
         )
 
         return m
-    
+
     def test_build(self, BV_model):
         # add_byproduct_valorization_params
         assert isinstance(BV_model.fs.byproduct_valorization, Block)
@@ -905,13 +1045,21 @@ class TestByproductValorization(object):
         assert isinstance(BV_model.fs.costing.total_byproduct_profit, Var)
 
         # add_byproduct_valorization_cons
-        assert isinstance(BV_model.fs.byproduct_valorization.calculate_byproduct_produced_cons, Constraint)
+        assert isinstance(
+            BV_model.fs.byproduct_valorization.calculate_byproduct_produced_cons,
+            Constraint,
+        )
 
         # add_profit_cons
-        assert isinstance(BV_model.fs.costing.calculate_byproduct_profit_cons, Constraint)
+        assert isinstance(
+            BV_model.fs.costing.calculate_byproduct_profit_cons, Constraint
+        )
         assert isinstance(BV_model.fs.costing.calculate_opt_byprod_val_cons, Constraint)
         assert isinstance(BV_model.fs.costing.calculate_total_profit_cons, Constraint)
-        assert isinstance(BV_model.fs.byproduct_valorization.calculate_byproduct_produced_cons, Constraint)
+        assert isinstance(
+            BV_model.fs.byproduct_valorization.calculate_byproduct_produced_cons,
+            Constraint,
+        )
 
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
@@ -941,40 +1089,40 @@ class TestByproductValorization(object):
         ## Store correct values for all variables
         # Amount of each byproduct produced each year (kg/a)
         byproduct_produced_dict = {
-            ('Iron oxide', 2025): 0.0,
-            ('Iron oxide', 2026): 0.0,
-            ('Iron oxide', 2027): 0.0,
-            ('Iron oxide', 2028): 0.0,
-            ('Jarosite', 2025): 0.0,
-            ('Jarosite', 2026): 0.0,
-            ('Jarosite', 2027): 0.0,
-            ('Jarosite', 2028): 0.0,
-            ('Residue', 2025): 19528.11607499999,
-            ('Residue', 2026): 18476.94419999999,
-            ('Residue', 2027): 19275.09479999999,
-            ('Residue', 2028): 32818.023225
+            ("Iron oxide", 2025): 0.0,
+            ("Iron oxide", 2026): 0.0,
+            ("Iron oxide", 2027): 0.0,
+            ("Iron oxide", 2028): 0.0,
+            ("Jarosite", 2025): 0.0,
+            ("Jarosite", 2026): 0.0,
+            ("Jarosite", 2027): 0.0,
+            ("Jarosite", 2028): 0.0,
+            ("Residue", 2025): 19528.11607499999,
+            ("Residue", 2026): 18476.94419999999,
+            ("Residue", 2027): 19275.09479999999,
+            ("Residue", 2028): 32818.023225,
         }
         # Amount of profit generated from each byproduct each year (USD/a)
         byproduct_profit_dict = {
-            ('Iron oxide', 2025): 0.0,
-            ('Iron oxide', 2026): 0.0,
-            ('Iron oxide', 2027): 0.0,
-            ('Iron oxide', 2028): 0.0,
-            ('Jarosite', 2025): 0.0,
-            ('Jarosite', 2026): 0.0,
-            ('Jarosite', 2027): 0.0,
-            ('Jarosite', 2028): 0.0,
-            ('Residue', 2025): -3319.779732749999,
-            ('Residue', 2026): -3141.080513999999,
-            ('Residue', 2027): -3276.766115999999,
-            ('Residue', 2028): -5579.06394825
+            ("Iron oxide", 2025): 0.0,
+            ("Iron oxide", 2026): 0.0,
+            ("Iron oxide", 2027): 0.0,
+            ("Iron oxide", 2028): 0.0,
+            ("Jarosite", 2025): 0.0,
+            ("Jarosite", 2026): 0.0,
+            ("Jarosite", 2027): 0.0,
+            ("Jarosite", 2028): 0.0,
+            ("Residue", 2025): -3319.779732749999,
+            ("Residue", 2026): -3141.080513999999,
+            ("Residue", 2027): -3276.766115999999,
+            ("Residue", 2028): -5579.06394825,
         }
         # Total profit generated by the plant each year from byproduct valorization (USD/a)
         total_byproduct_profit_dict = {
             2025: -3319.7797327500302,
             2026: -3141.0805140000302,
             2027: -3276.7661160000134,
-            2028: -5579.06394824991
+            2028: -5579.06394824991,
         }
         # objective function value
         objective_value = -16454574.208341438
@@ -982,14 +1130,21 @@ class TestByproductValorization(object):
         ## Test Variables
         # test amount of each byproduct produced each year
         for key, val in byproduct_produced_dict.items():
-            assert value(BV_model.fs.byproduct_valorization.byproduct_produced[key]) == pytest.approx(val, rel=1e-8)
+            assert value(
+                BV_model.fs.byproduct_valorization.byproduct_produced[key]
+            ) == pytest.approx(val, rel=1e-8)
 
         # test amount of profit generated from each byproduct each year
         for key, val in byproduct_profit_dict.items():
-            assert value(BV_model.fs.costing.byproduct_profit[key]) == pytest.approx(val, rel=1e-8)
+            assert value(BV_model.fs.costing.byproduct_profit[key]) == pytest.approx(
+                val, rel=1e-8
+            )
 
         # test objective function
-        assert value(BV_model.fs.costing.obj) == pytest.approx(objective_value, rel=1e-8)
+        assert value(BV_model.fs.costing.obj) == pytest.approx(
+            objective_value, rel=1e-8
+        )
+
 
 class TestEnvironmentalImpacts(object):
     @pytest.fixture(scope="class")
@@ -1032,11 +1187,13 @@ class TestEnvironmentalImpacts(object):
         )
 
         return m
-    
+
     def test_build(self, EI_model):
         # add_environmental_impact_params
         assert isinstance(EI_model.fs.environmental_impacts, Block)
-        assert isinstance(EI_model.fs.environmental_impacts.options_environmental_impacts, Param)
+        assert isinstance(
+            EI_model.fs.environmental_impacts.options_environmental_impacts, Param
+        )
         assert isinstance(EI_model.fs.environmental_impacts.epsilon, Param)
 
         # add_environmental_impact_vars
@@ -1045,9 +1202,16 @@ class TestEnvironmentalImpacts(object):
         assert isinstance(EI_model.fs.environmental_impacts.total_impacts, Var)
 
         # add_environmental_impact_cons
-        assert isinstance(EI_model.fs.environmental_impacts.calculate_opt_yearly_impacts_con, Constraint)
-        assert isinstance(EI_model.fs.environmental_impacts.calculate_yearly_impacts_con, Constraint)
-        assert isinstance(EI_model.fs.environmental_impacts.calculate_total_impacts_con, Constraint)
+        assert isinstance(
+            EI_model.fs.environmental_impacts.calculate_opt_yearly_impacts_con,
+            Constraint,
+        )
+        assert isinstance(
+            EI_model.fs.environmental_impacts.calculate_yearly_impacts_con, Constraint
+        )
+        assert isinstance(
+            EI_model.fs.environmental_impacts.calculate_total_impacts_con, Constraint
+        )
         assert isinstance(EI_model.fs.environmental_impacts.epsilon_con, Constraint)
 
     @pytest.mark.solver
@@ -1078,20 +1242,33 @@ class TestEnvironmentalImpacts(object):
         ## Store correct values for all variables
         # Yearly environmental impacts generated by each option (1/a)
         option_yearly_impacts_dict = {
-            (1, 1, 2025): 0.0, (1, 1, 2026): 0.0, (1, 1, 2027): 0.0, (1, 1, 2028): 0.0,
-            (2, 1, 2025): 0.0, (2, 1, 2026): 0.0, (2, 1, 2027): 0.0, (2, 1, 2028): 0.0,
-            (2, 2, 2025): 0.0, (2, 2, 2026): 0.0, (2, 2, 2027): 0.0, (2, 2, 2028): 0.0,
-            (3, 1, 2025): 0.0, (3, 1, 2026): 0.0, (3, 1, 2027): 0.0, (3, 1, 2028): 0.0,
-            (3, 2, 2025): 0.0, (3, 2, 2026): 0.0, (3, 2, 2027): 0.0, (3, 2, 2028): 0.0,
-            (3, 3, 2025): 0.0, (3, 3, 2026): 0.0, (3, 3, 2027): 0.0, (3, 3, 2028): 0.0
+            (1, 1, 2025): 0.0,
+            (1, 1, 2026): 0.0,
+            (1, 1, 2027): 0.0,
+            (1, 1, 2028): 0.0,
+            (2, 1, 2025): 0.0,
+            (2, 1, 2026): 0.0,
+            (2, 1, 2027): 0.0,
+            (2, 1, 2028): 0.0,
+            (2, 2, 2025): 0.0,
+            (2, 2, 2026): 0.0,
+            (2, 2, 2027): 0.0,
+            (2, 2, 2028): 0.0,
+            (3, 1, 2025): 0.0,
+            (3, 1, 2026): 0.0,
+            (3, 1, 2027): 0.0,
+            (3, 1, 2028): 0.0,
+            (3, 2, 2025): 0.0,
+            (3, 2, 2026): 0.0,
+            (3, 2, 2027): 0.0,
+            (3, 2, 2028): 0.0,
+            (3, 3, 2025): 0.0,
+            (3, 3, 2026): 0.0,
+            (3, 3, 2027): 0.0,
+            (3, 3, 2028): 0.0,
         }
         # Total yearly environmental impacts generated by the process (1/a)
-        total_yearly_impacts_dict = {
-            2025: 0.0,
-            2026: 0.0,
-            2027: 0.0,
-            2028: 0.0
-        }
+        total_yearly_impacts_dict = {2025: 0.0, 2026: 0.0, 2027: 0.0, 2028: 0.0}
         # The total environmental impacts generated by the process over its entire lifetime.
         total_impacts = 0
         # objective function value
@@ -1100,17 +1277,25 @@ class TestEnvironmentalImpacts(object):
         ## Test Variables
         # test yearly environmental impacts generated by each option
         for key, val in option_yearly_impacts_dict.items():
-            assert value(EI_model.fs.environmental_impacts.option_yearly_impacts[key]) == pytest.approx(val, rel=1e-8)
+            assert value(
+                EI_model.fs.environmental_impacts.option_yearly_impacts[key]
+            ) == pytest.approx(val, rel=1e-8)
 
         # test total yearly environmental impacts generated by the process
         for key, val in total_yearly_impacts_dict.items():
-            assert value(EI_model.fs.environmental_impacts.total_yearly_impacts[key]) == pytest.approx(val, rel=1e-8)
+            assert value(
+                EI_model.fs.environmental_impacts.total_yearly_impacts[key]
+            ) == pytest.approx(val, rel=1e-8)
 
         # test total environmental impacts generated by the process over its entire lifetime
-        assert value(EI_model.fs.environmental_impacts.total_impacts) == pytest.approx(total_impacts, rel=1e-8)
+        assert value(EI_model.fs.environmental_impacts.total_impacts) == pytest.approx(
+            total_impacts, rel=1e-8
+        )
 
         # test objective function
-        assert value(EI_model.fs.costing.obj) == pytest.approx(objective_value, rel=1e-8)
+        assert value(EI_model.fs.costing.obj) == pytest.approx(
+            objective_value, rel=1e-8
+        )
 
 
 class TestCOR(object):
@@ -1154,17 +1339,21 @@ class TestCOR(object):
         )
 
         return m
-    
+
     def test_build(self, COR_model):
         # add_costing_vars
         assert isinstance(COR_model.fs.costing.cost_of_recovery, Var)
 
         # add_profit_cons
-        assert isinstance(COR_model.fs.costing.calculate_main_product_profit_cons, Constraint)
+        assert isinstance(
+            COR_model.fs.costing.calculate_main_product_profit_cons, Constraint
+        )
         assert isinstance(COR_model.fs.costing.calculate_total_profit_cons, Constraint)
 
         # add_costing_objective_functions
-        assert isinstance(COR_model.fs.costing.set_net_present_value_to_zero_con, Constraint)
+        assert isinstance(
+            COR_model.fs.costing.set_net_present_value_to_zero_con, Constraint
+        )
 
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
@@ -1198,9 +1387,13 @@ class TestCOR(object):
         objective_value = 261.6415514638381
 
         ## Test Variables
-        assert value(COR_model.fs.costing.cost_of_recovery) == pytest.approx(cost_of_recovery, rel=1e-8)
-        assert value(COR_model.fs.costing.obj) == pytest.approx(objective_value, rel=1e-8)
-    
+        assert value(COR_model.fs.costing.cost_of_recovery) == pytest.approx(
+            cost_of_recovery, rel=1e-8
+        )
+        assert value(COR_model.fs.costing.obj) == pytest.approx(
+            objective_value, rel=1e-8
+        )
+
     @pytest.fixture(scope="class")
     def COR_model2(self):
         m = build_model(
@@ -1278,5 +1471,9 @@ class TestCOR(object):
         objective_value = 261.45649078422645
 
         ## Test Variables
-        assert value(COR_model2.fs.costing.cost_of_recovery) == pytest.approx(cost_of_recovery, rel=1e-8)
-        assert value(COR_model2.fs.costing.obj) == pytest.approx(objective_value, rel=1e-8)
+        assert value(COR_model2.fs.costing.cost_of_recovery) == pytest.approx(
+            cost_of_recovery, rel=1e-8
+        )
+        assert value(COR_model2.fs.costing.obj) == pytest.approx(
+            objective_value, rel=1e-8
+        )

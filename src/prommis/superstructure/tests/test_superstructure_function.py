@@ -22,6 +22,7 @@ from idaes.core.solvers import get_solver
 import pytest
 
 from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
+from prommis.superstructure.report_superstructure_results import report_superstructure_costing, report_superstructure_environmental_impacts, report_superstructure_results_overview, report_superstructure_streams
 from prommis.superstructure.superstructure_function import (
     SuperstructureScaler,
     build_model,
@@ -1269,6 +1270,16 @@ class TestEnvironmentalImpacts(object):
             objective_value, rel=1e-8
         )
 
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    def test_report_superstructure_results(self, EI_model):
+        results = solver.solve(EI_model, tee=True)
+
+        report_superstructure_results_overview(EI_model, results)
+        report_superstructure_costing(EI_model, results)
+        report_superstructure_streams(EI_model, results)
+        report_superstructure_environmental_impacts(EI_model, results)
 
 class TestCOR(object):
     @pytest.fixture(scope="class")
@@ -1449,3 +1460,249 @@ class TestCOR(object):
         assert value(COR_model2.fs.costing.obj) == pytest.approx(
             objective_value, rel=1e-8
         )
+
+
+import pytest
+import pyomo.environ as pyo
+from idaes.core.scaling import get_scaling_factor
+from prommis.superstructure.superstructure_function import SuperstructureScaler, build_model
+from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
+
+
+class TestSuperstructureScaler:
+    """Test class for SuperstructureScaler functionality."""
+
+    @pytest.fixture
+    def sample_model(self):
+        """Create a sample model for testing scaling."""
+        # Use your existing model building function with minimal parameters
+        model = build_model(
+            ### Choice of objective function
+            obj_func=obj_func,
+            ### Plant lifetime parameters
+            plant_start=plant_start,
+            plant_lifetime=plant_lifetime,
+            ### Feed parameters
+            available_feed=available_feed,
+            collection_rate=collection_rate,
+            tracked_comps=tracked_comps,
+            prod_comp_mass=prod_comp_mass,
+            ### Superstructure formulation parameters
+            num_stages=num_stages,
+            options_in_stage=options_in_stage,
+            option_outlets=option_outlets,
+            option_efficiencies=option_efficiencies,
+            ### Operating parameters
+            profit=profit,
+            opt_var_oc_params=opt_var_oc_params,
+            operators_per_discrete_unit=operators_per_discrete_unit,
+            yearly_cost_per_unit=yearly_cost_per_unit,
+            capital_cost_per_unit=capital_cost_per_unit,
+            processing_rate=processing_rate,
+            num_operators=num_operators,
+            labor_rate=labor_rate,
+            ### Discretized costing parameters
+            discretized_purchased_equipment_cost=discretized_purchased_equipment_cost,
+            ### Environmental impacts parameters
+            consider_environmental_impacts=False,
+            options_environmental_impacts=[],
+            epsilon=[],
+            ### Byproduct valorization parameters
+            consider_byproduct_valorization=False,
+            byproduct_values=[],
+            byproduct_opt_conversions=[],
+        )
+
+        return model
+
+    def test_scaler_initialization(self):
+        """Test that SuperstructureScaler can be initialized."""
+        scaler = SuperstructureScaler()
+        assert isinstance(scaler, SuperstructureScaler)
+
+    def test_scale_model_runs_without_error(self, sample_model):
+        """Test that scale_model runs without throwing errors."""
+        scaler = SuperstructureScaler()
+        
+        # This should not raise any exceptions
+        scaler.scale_model(sample_model)
+
+    def test_flow_variable_scaling(self, sample_model):
+        """Test that flow variables are scaled correctly."""
+        scaler = SuperstructureScaler()
+        scaler.scale_model(sample_model)
+
+        # Check that flow variables have the expected scaling factors
+        for var in sample_model.fs.f.values():
+            scaling_factor = get_scaling_factor(var)
+            assert scaling_factor == 1e-4, f"Flow variable scaling should be 1e-4, got {scaling_factor}"
+
+        for var in sample_model.fs.f_in.values():
+            scaling_factor = get_scaling_factor(var)
+            assert scaling_factor == 1e-4, f"Flow input variable scaling should be 1e-4, got {scaling_factor}"
+
+        for var in sample_model.fs.f_out.values():
+            scaling_factor = get_scaling_factor(var)
+            assert scaling_factor == 1e-4, f"Flow output variable scaling should be 1e-4, got {scaling_factor}"
+
+    def test_piecewise_flow_scaling(self, sample_model):
+        """Test that piecewise flow variables are scaled correctly."""
+        scaler = SuperstructureScaler()
+        scaler.scale_model(sample_model)
+
+        for var in sample_model.fs.piecewise_flow_entering.values():
+            scaling_factor = get_scaling_factor(var)
+            assert scaling_factor == 1e-5, f"Piecewise flow scaling should be 1e-5, got {scaling_factor}"
+
+    def test_costing_variable_scaling(self, sample_model):
+        """Test that costing variables are scaled correctly."""
+        scaler = SuperstructureScaler()
+        scaler.scale_model(sample_model)
+
+        # Test specific costing variable scaling factors
+        expected_scalings = {
+            'net_present_value': 1e-6,
+            'main_product_profit': 1e-6,
+            'total_profit': 1e-6,
+            'piecewise_equipment_cost': 1e-5,
+            'equipment_cost': 1e-4,
+            'total_plant_cost': 1e-6,
+            'financing': 1e-4,
+            'other_costs': 1e-5,
+            'total_overnight_cost': 1e-5,
+            'opt_variable_operating_cost': 1e-3,
+            'aggregate_variable_operating_cost': 1e-5,
+            'operators_per_option': 1e1,
+            'cost_of_labor': 1e-5
+        }
+
+        for var_name, expected_scaling in expected_scalings.items():
+            if hasattr(sample_model.fs.costing, var_name):
+                var = getattr(sample_model.fs.costing, var_name)
+                if hasattr(var, 'values'):  # Indexed variable
+                    for v in var.values():
+                        scaling_factor = get_scaling_factor(v)
+                        assert scaling_factor == expected_scaling, \
+                            f"{var_name} scaling should be {expected_scaling}, got {scaling_factor}"
+                else:  # Scalar variable
+                    scaling_factor = get_scaling_factor(var)
+                    assert scaling_factor == expected_scaling, \
+                        f"{var_name} scaling should be {expected_scaling}, got {scaling_factor}"
+
+    def test_constraint_scaling(self, sample_model):
+        """Test that constraints are scaled using the nominal value method."""
+        scaler = SuperstructureScaler()
+        scaler.scale_model(sample_model)
+
+        # Check that constraints have scaling factors applied
+        # Test a few key constraints
+        constraint_sets = [
+            'inlet_flow_cons',
+            'init_flow_cons',
+            'intermediate_flow_cons',
+            'outlet_flow_cons'
+        ]
+
+        for constraint_name in constraint_sets:
+            if hasattr(sample_model.fs, constraint_name):
+                constraint_set = getattr(sample_model.fs, constraint_name)
+                for constraint in constraint_set.values():
+                    scaling_factor = get_scaling_factor(constraint)
+                    assert scaling_factor is not None, \
+                        f"Constraint {constraint_name} should have a scaling factor"
+
+    def test_environmental_impacts_scaling(self):
+        """Test scaling when environmental impacts are considered."""
+        model_with_env = build_model(
+            ### Choice of objective function
+            obj_func=obj_func,
+            ### Plant lifetime parameters
+            plant_start=plant_start,
+            plant_lifetime=plant_lifetime,
+            ### Feed parameters
+            available_feed=available_feed,
+            collection_rate=collection_rate,
+            tracked_comps=tracked_comps,
+            prod_comp_mass=prod_comp_mass,
+            ### Superstructure formulation parameters
+            num_stages=num_stages,
+            options_in_stage=options_in_stage,
+            option_outlets=option_outlets,
+            option_efficiencies=option_efficiencies,
+            ### Operating parameters
+            profit=profit,
+            opt_var_oc_params=opt_var_oc_params,
+            operators_per_discrete_unit=operators_per_discrete_unit,
+            yearly_cost_per_unit=yearly_cost_per_unit,
+            capital_cost_per_unit=capital_cost_per_unit,
+            processing_rate=processing_rate,
+            num_operators=num_operators,
+            labor_rate=labor_rate,
+            ### Discretized costing parameters
+            discretized_purchased_equipment_cost=discretized_purchased_equipment_cost,
+            ### Environmental impacts parameters
+            consider_environmental_impacts=True,
+            options_environmental_impacts=options_environmental_impacts,
+            epsilon=epsilon,
+            ### Byproduct valorization parameters
+            consider_byproduct_valorization=False,
+            byproduct_values=[],
+            byproduct_opt_conversions=[],
+        )
+
+        scaler = SuperstructureScaler()
+        scaler.scale_model(model_with_env)
+
+        # Test environmental impact variable scaling
+        if hasattr(model_with_env.fs, 'environmental_impacts'):
+            for var in model_with_env.fs.environmental_impacts.option_yearly_impacts.values():
+                scaling_factor = get_scaling_factor(var)
+                assert scaling_factor == 1e-7
+
+    def test_byproduct_valorization_scaling(self):
+        """Test scaling when byproduct valorization is considered."""
+        model_with_byproducts = build_model(
+            ### Choice of objective function
+            obj_func=obj_func,
+            ### Plant lifetime parameters
+            plant_start=plant_start,
+            plant_lifetime=plant_lifetime,
+            ### Feed parameters
+            available_feed=available_feed,
+            collection_rate=collection_rate,
+            tracked_comps=tracked_comps,
+            prod_comp_mass=prod_comp_mass,
+            ### Superstructure formulation parameters
+            num_stages=num_stages,
+            options_in_stage=options_in_stage,
+            option_outlets=option_outlets,
+            option_efficiencies=option_efficiencies,
+            ### Operating parameters
+            profit=profit,
+            opt_var_oc_params=opt_var_oc_params,
+            operators_per_discrete_unit=operators_per_discrete_unit,
+            yearly_cost_per_unit=yearly_cost_per_unit,
+            capital_cost_per_unit=capital_cost_per_unit,
+            processing_rate=processing_rate,
+            num_operators=num_operators,
+            labor_rate=labor_rate,
+            ### Discretized costing parameters
+            discretized_purchased_equipment_cost=discretized_purchased_equipment_cost,
+            ### Environmental impacts parameters
+            consider_environmental_impacts=False,
+            options_environmental_impacts=[],
+            epsilon=[],
+            ### Byproduct valorization parameters
+            consider_byproduct_valorization=True,
+            byproduct_values=byproduct_values,
+            byproduct_opt_conversions=byproduct_opt_conversions,
+        )
+
+        scaler = SuperstructureScaler()
+        scaler.scale_model(model_with_byproducts)
+
+        # Test byproduct variable scaling
+        if hasattr(model_with_byproducts.fs, 'byproduct_valorization'):
+            for var in model_with_byproducts.fs.byproduct_valorization.byproduct_produced.values():
+                scaling_factor = get_scaling_factor(var)
+                assert scaling_factor == 1e-4

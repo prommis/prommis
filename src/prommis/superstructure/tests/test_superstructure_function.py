@@ -17,6 +17,7 @@ from pyomo.environ import (
     value,
 )
 
+from idaes.core.scaling import get_scaling_factor
 from idaes.core.solvers import get_solver
 
 import pytest

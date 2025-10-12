@@ -395,7 +395,7 @@ def add_mass_balance_params(m):
     m.fs.big_m_val = pyo.Param(
         m.fs.tracked_comps,
         initialize=m_val,
-        doc="Big-M parameters used in Equations (7) and (8) from the documentation.",
+        doc="Big-M parameters.",
         units=pyunits.kg / pyunits.year,
     )
     m.fs.max_flow_upper_bound = pyo.Param(
@@ -417,21 +417,21 @@ def add_mass_balance_vars(m):
         m.fs.f_stages * m.fs.tracked_comps * m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         bounds=(0, 500000),
-        doc="Flow entering each stage (except the last stage). See documentation for more details.",
+        doc="Flow entering each stage (except the last stage).",
         units=pyunits.kg / pyunits.year,
     )
     m.fs.f_in = pyo.Var(
         m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         bounds=(0, 500000),
-        doc="Flow entering each option. See documentation for more details.",
+        doc="Flow entering each option.",
         units=pyunits.kg / pyunits.year,
     )
     m.fs.f_out = pyo.Var(
         m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
         domain=pyo.NonNegativeReals,
         bounds=(0, 500000),
-        doc="Flow exiting each option. See documentation for more details.",
+        doc="Flow exiting each option.",
         units=pyunits.kg / pyunits.year,
     )
     m.fs.option_binary_var = pyo.Var(
@@ -460,7 +460,7 @@ def add_mass_balance_cons(m):
         m.fs.stages_set,
         m.fs.tracked_comps,
         m.fs.operational_range,
-        doc="Equation (1) from the documentation. This constraint ensures that the sum of the inlet streams is equal to the upstream flow from the previous stage.",
+        doc="This constraint ensures that the sum of the inlet streams is equal to the upstream flow from the previous stage.",
     )
     def inlet_flow_cons(b, j, c, t):
         if j == 1:
@@ -474,7 +474,7 @@ def add_mass_balance_cons(m):
         m.fs.stages_set,
         m.fs.tracked_comps,
         m.fs.operational_range,
-        doc="Equation (2) from the documentation. The flow of each component entering the plant each year is equal to the number of EOL products the plant processes multiplied by the amount of the component per EOL product.",
+        doc="The flow of each component entering the plant each year is equal to the number of EOL products the plant processes multiplied by the amount of the component per EOL product.",
     )
     def init_flow_cons(b, j, c, t):
         if j == 1:
@@ -488,7 +488,7 @@ def add_mass_balance_cons(m):
 
     @m.fs.Constraint(
         m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
-        doc="Equation (3) from the documentation. The steam exiting an option is related to the inlet stream by an efficiency parameter.",
+        doc="The steam exiting an option is related to the inlet stream by an efficiency parameter.",
     )
     def intermediate_flow_cons(b, j, k, c, t):
         alpha = b.option_efficiencies[j, k, c]
@@ -498,7 +498,7 @@ def add_mass_balance_cons(m):
         m.fs.stages_set,
         m.fs.tracked_comps,
         m.fs.operational_range,
-        doc="Equation (4) from the documentation. The flow exiting a stage is equal to the sume of the outlet streams.",
+        doc="The flow exiting a stage is equal to the sume of the outlet streams.",
     )
     def outlet_flow_cons(b, j, c, t):
         if j != b.num_stages:
@@ -510,7 +510,7 @@ def add_mass_balance_cons(m):
 
     @m.fs.Constraint(
         m.fs.stages_set,
-        doc="Equation (5) from the documentation. Ensures that only one option per stage is chosen.",
+        doc="Ensures that only one option per stage is chosen.",
     )
     def stage_binary_cons(b, j):
         # Extract all the options available in stage 'j'
@@ -532,14 +532,14 @@ def add_mass_balance_cons(m):
 
     @m.fs.Constraint(
         m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
-        doc="Equation (7) from the documentation. Big-M constraint for inlet streams. Inlet streams must be zero if the option is not chosen.",
+        doc="Big-M constraint for inlet streams. Inlet streams must be zero if the option is not chosen.",
     )
     def f_in_big_m_cons(b, j, k, c, t):
         return b.f_in[j, k, c, t] <= b.option_binary_var[j, k] * b.big_m_val[c]
 
     @m.fs.Constraint(
         m.fs.all_opts_set * m.fs.tracked_comps * m.fs.operational_range,
-        doc="Equation (8) from the documentation. Big-M constraint for outlet streams. Outlet streams must be zero if the option is not chosen.",
+        doc="Big-M constraint for outlet streams. Outlet streams must be zero if the option is not chosen.",
     )
     def f_out_big_m_cons(b, j, k, c, t):
         return b.f_out[j, k, c, t] <= b.option_binary_var[j, k] * b.big_m_val[c]

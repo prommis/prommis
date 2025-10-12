@@ -1723,3 +1723,217 @@ class TestSuperstructureScaler:
             ):
                 scaling_factor = get_scaling_factor(var)
                 assert scaling_factor == 1e-4
+
+    def test_cost_of_recovery_variable_scaling(self):
+        """Test scaling when Cost of Recovery is chosen as objective function."""
+        model_with_cor = build_model(
+            ### Choice of objective function - Use COR instead of NPV
+            obj_func=ObjectiveFunctionChoice.COST_OF_RECOVERY,  # This triggers the COR-specific scaling
+            ### Plant lifetime parameters
+            plant_start=plant_start,
+            plant_lifetime=plant_lifetime,
+            ### Feed parameters
+            available_feed=available_feed,
+            collection_rate=collection_rate,
+            tracked_comps=tracked_comps,
+            prod_comp_mass=prod_comp_mass,
+            ### Superstructure formulation parameters
+            num_stages=num_stages,
+            options_in_stage=options_in_stage,
+            option_outlets=option_outlets,
+            option_efficiencies=option_efficiencies,
+            ### Operating parameters
+            profit=profit,
+            opt_var_oc_params=opt_var_oc_params,
+            operators_per_discrete_unit=operators_per_discrete_unit,
+            yearly_cost_per_unit=yearly_cost_per_unit,
+            capital_cost_per_unit=capital_cost_per_unit,
+            processing_rate=processing_rate,
+            num_operators=num_operators,
+            labor_rate=labor_rate,
+            ### Discretized costing parameters
+            discretized_purchased_equipment_cost=discretized_purchased_equipment_cost,
+            ### Environmental impacts parameters
+            consider_environmental_impacts=False,
+            options_environmental_impacts=[],
+            epsilon=[],
+            ### Byproduct valorization parameters
+            consider_byproduct_valorization=False,
+            byproduct_values=[],
+            byproduct_opt_conversions=[],
+        )
+
+        scaler = SuperstructureScaler()
+        scaler.scale_model(model_with_cor)
+
+        # Test that cost_of_recovery variable is scaled with factor 1
+        if hasattr(model_with_cor.fs.costing, "cost_of_recovery"):
+            for var in model_with_cor.fs.costing.cost_of_recovery.values():
+                scaling_factor = get_scaling_factor(var)
+                assert (
+                    scaling_factor == 1
+                ), f"Cost of recovery scaling should be 1, got {scaling_factor}"
+
+    def test_npv_zero_constraint_scaling(self):
+        """Test scaling of NPV zero constraint when COR is objective function."""
+        model_with_cor = build_model(
+            ### Choice of objective function - Use COR instead of NPV
+            obj_func=ObjectiveFunctionChoice.COST_OF_RECOVERY,  # This triggers the NPV zero constraint
+            ### Plant lifetime parameters
+            plant_start=plant_start,
+            plant_lifetime=plant_lifetime,
+            ### Feed parameters
+            available_feed=available_feed,
+            collection_rate=collection_rate,
+            tracked_comps=tracked_comps,
+            prod_comp_mass=prod_comp_mass,
+            ### Superstructure formulation parameters
+            num_stages=num_stages,
+            options_in_stage=options_in_stage,
+            option_outlets=option_outlets,
+            option_efficiencies=option_efficiencies,
+            ### Operating parameters
+            profit=profit,
+            opt_var_oc_params=opt_var_oc_params,
+            operators_per_discrete_unit=operators_per_discrete_unit,
+            yearly_cost_per_unit=yearly_cost_per_unit,
+            capital_cost_per_unit=capital_cost_per_unit,
+            processing_rate=processing_rate,
+            num_operators=num_operators,
+            labor_rate=labor_rate,
+            ### Discretized costing parameters
+            discretized_purchased_equipment_cost=discretized_purchased_equipment_cost,
+            ### Environmental impacts parameters
+            consider_environmental_impacts=False,
+            options_environmental_impacts=[],
+            epsilon=[],
+            ### Byproduct valorization parameters
+            consider_byproduct_valorization=False,
+            byproduct_values=[],
+            byproduct_opt_conversions=[],
+        )
+
+        scaler = SuperstructureScaler()
+        scaler.scale_model(model_with_cor)
+
+        # Test that set_net_present_value_to_zero_con constraint is scaled
+        if hasattr(model_with_cor.fs.costing, "set_net_present_value_to_zero_con"):
+            for (
+                constraint
+            ) in model_with_cor.fs.costing.set_net_present_value_to_zero_con.values():
+                scaling_factor = get_scaling_factor(constraint)
+                assert (
+                    scaling_factor is not None
+                ), "NPV zero constraint should have a scaling factor"
+
+    def test_combined_cor_with_environmental_impacts(self):
+        """Test COR objective function combined with environmental impacts."""
+        model_cor_env = build_model(
+            ### Choice of objective function
+            obj_func=ObjectiveFunctionChoice.COST_OF_RECOVERY,  # COR objective
+            ### Plant lifetime parameters
+            plant_start=plant_start,
+            plant_lifetime=plant_lifetime,
+            ### Feed parameters
+            available_feed=available_feed,
+            collection_rate=collection_rate,
+            tracked_comps=tracked_comps,
+            prod_comp_mass=prod_comp_mass,
+            ### Superstructure formulation parameters
+            num_stages=num_stages,
+            options_in_stage=options_in_stage,
+            option_outlets=option_outlets,
+            option_efficiencies=option_efficiencies,
+            ### Operating parameters
+            profit=profit,
+            opt_var_oc_params=opt_var_oc_params,
+            operators_per_discrete_unit=operators_per_discrete_unit,
+            yearly_cost_per_unit=yearly_cost_per_unit,
+            capital_cost_per_unit=capital_cost_per_unit,
+            processing_rate=processing_rate,
+            num_operators=num_operators,
+            labor_rate=labor_rate,
+            ### Discretized costing parameters
+            discretized_purchased_equipment_cost=discretized_purchased_equipment_cost,
+            ### Environmental impacts parameters
+            consider_environmental_impacts=True,
+            options_environmental_impacts=options_environmental_impacts,
+            epsilon=epsilon,
+            ### Byproduct valorization parameters
+            consider_byproduct_valorization=False,
+            byproduct_values=[],
+            byproduct_opt_conversions=[],
+        )
+
+        scaler = SuperstructureScaler()
+        scaler.scale_model(model_cor_env)
+
+        # Test both COR-specific and environmental impact scaling
+        if hasattr(model_cor_env.fs.costing, "cost_of_recovery"):
+            for var in model_cor_env.fs.costing.cost_of_recovery.values():
+                scaling_factor = get_scaling_factor(var)
+                assert scaling_factor == 1
+
+        if hasattr(model_cor_env.fs, "environmental_impacts"):
+            for (
+                var
+            ) in model_cor_env.fs.environmental_impacts.option_yearly_impacts.values():
+                scaling_factor = get_scaling_factor(var)
+                assert scaling_factor == 1e-7
+
+    def test_combined_cor_with_byproducts(self):
+        """Test COR objective function combined with byproduct valorization."""
+        model_cor_byproduct = build_model(
+            ### Choice of objective function
+            obj_func=ObjectiveFunctionChoice.COST_OF_RECOVERY,  # COR objective
+            ### Plant lifetime parameters
+            plant_start=plant_start,
+            plant_lifetime=plant_lifetime,
+            ### Feed parameters
+            available_feed=available_feed,
+            collection_rate=collection_rate,
+            tracked_comps=tracked_comps,
+            prod_comp_mass=prod_comp_mass,
+            ### Superstructure formulation parameters
+            num_stages=num_stages,
+            options_in_stage=options_in_stage,
+            option_outlets=option_outlets,
+            option_efficiencies=option_efficiencies,
+            ### Operating parameters
+            profit=profit,
+            opt_var_oc_params=opt_var_oc_params,
+            operators_per_discrete_unit=operators_per_discrete_unit,
+            yearly_cost_per_unit=yearly_cost_per_unit,
+            capital_cost_per_unit=capital_cost_per_unit,
+            processing_rate=processing_rate,
+            num_operators=num_operators,
+            labor_rate=labor_rate,
+            ### Discretized costing parameters
+            discretized_purchased_equipment_cost=discretized_purchased_equipment_cost,
+            ### Environmental impacts parameters
+            consider_environmental_impacts=False,
+            options_environmental_impacts=[],
+            epsilon=[],
+            ### Byproduct valorization parameters
+            consider_byproduct_valorization=True,
+            byproduct_values=byproduct_values,
+            byproduct_opt_conversions=byproduct_opt_conversions,
+        )
+
+        scaler = SuperstructureScaler()
+        scaler.scale_model(model_cor_byproduct)
+
+        # Test both COR-specific and byproduct scaling
+        if hasattr(model_cor_byproduct.fs.costing, "cost_of_recovery"):
+            for var in model_cor_byproduct.fs.costing.cost_of_recovery.values():
+                scaling_factor = get_scaling_factor(var)
+                assert scaling_factor == 1
+
+        if hasattr(model_cor_byproduct.fs, "byproduct_valorization"):
+            for (
+                var
+            ) in (
+                model_cor_byproduct.fs.byproduct_valorization.byproduct_produced.values()
+            ):
+                scaling_factor = get_scaling_factor(var)
+                assert scaling_factor == 1e-4

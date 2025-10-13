@@ -237,8 +237,7 @@ def build_costing(m):
 
     m.fs.recovery_rate_per_year = Expression(
         expr=pyunits.convert(
-            (m.fs.Li_product + m.fs.Co_product)
-            * m.fs.annual_operating_hours,
+            (m.fs.Li_product + m.fs.Co_product) * m.fs.annual_operating_hours,
             to_units=pyunits.kg / pyunits.year,
         )
     )

@@ -140,7 +140,7 @@ class TestDiafiltrationOptimization:
             0.15684, rel=1e-4
         )
         assert value(model.fs.costing.cost_of_recovery) == pytest.approx(
-            11.56977, rel=1e-4
+            0.0128629, rel=1e-4
         )
 
     @pytest.mark.component
@@ -201,7 +201,7 @@ class TestDiafiltrationOptimization:
             0.231946, rel=1e-4
         )
         assert value(model.fs.costing.cost_of_recovery) == pytest.approx(
-            0.0542449, rel=1e-4
+            0.017800, rel=1e-4
         )
 
     @pytest.mark.component
@@ -214,28 +214,28 @@ class TestDiafiltrationOptimization:
         dt.assert_no_numerical_warnings()
 
         # decision variables
-        assert value(model.fs.stage1.length) == pytest.approx(1.39234, rel=1e-4)
-        assert value(model.fs.stage2.length) == pytest.approx(514.675, rel=1e-4)
-        assert value(model.fs.stage3.length) == pytest.approx(794.046, rel=1e-4)
+        assert value(model.fs.stage1.length) == pytest.approx(9.0937, rel=1e-4)
+        assert value(model.fs.stage2.length) == pytest.approx(4472.8, rel=1e-4)
+        assert value(model.fs.stage3.length) == pytest.approx(830.55, rel=1e-4)
 
         # results in USD_2021
         assert value(model.fs.stage1.costing.capital_cost) == pytest.approx(
-            104.426, rel=1e-4
+            682.03, rel=1e-4
         )
         assert value(model.fs.stage1.costing.fixed_operating_cost) == pytest.approx(
-            20.8852, rel=1e-4
+            136.41, rel=1e-4
         )
         assert value(model.fs.stage2.costing.capital_cost) == pytest.approx(
-            38600.6, rel=1e-4
+            335456, rel=1e-4
         )
         assert value(model.fs.stage2.costing.fixed_operating_cost) == pytest.approx(
-            7720.13, rel=1e-4
+            67091, rel=1e-4
         )
         assert value(model.fs.stage3.costing.capital_cost) == pytest.approx(
-            59553.5, rel=1e-4
+            62291, rel=1e-4
         )
         assert value(model.fs.stage3.costing.fixed_operating_cost) == pytest.approx(
-            11910.7, rel=1e-4
+            12458, rel=1e-4
         )
         assert value(model.fs.cascade.costing.variable_operating_cost) == pytest.approx(
             114445, rel=1e-4
@@ -247,23 +247,23 @@ class TestDiafiltrationOptimization:
             model.fs.feed_pump.costing.variable_operating_cost
         ) == pytest.approx(0.00338663, rel=1e-4)
         assert value(model.fs.diafiltrate_pump.costing.capital_cost) == pytest.approx(
-            43303.3, rel=1e-4
+            90064, rel=1e-4
         )
         assert value(
             model.fs.diafiltrate_pump.costing.variable_operating_cost
-        ) == pytest.approx(52642.4, rel=1e-4)
+        ) == pytest.approx(344191, rel=1e-4)
 
         # results in MUSD_2021
-        assert value(model.fs.costing.total_BEC) == pytest.approx(0.183706, rel=1e-4)
+        assert value(model.fs.costing.total_BEC) == pytest.approx(0.53064, rel=1e-4)
         assert value(model.fs.costing.total_plant_cost) == pytest.approx(
-            0.367413, rel=1e-4
+            1.0613, rel=1e-4
         )
         assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(
-            0.0306741, rel=1e-4
+            0.11152, rel=1e-4
         )
         assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
-            0.20664, rel=1e-4
+            0.57267, rel=1e-4
         )
         assert value(model.fs.costing.cost_of_recovery) == pytest.approx(
-            0.0440763, rel=1e-4
+            0.011288, rel=1e-4
         )

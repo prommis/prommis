@@ -216,8 +216,8 @@ def build_costing(m):
 
     m.fs.Co_product = Expression(
         expr=pyunits.convert(
-            m.fs.stage3.permeate_outlet.flow_vol[0]
-            * m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Co"],
+            m.fs.stage3.retentate_outlet.flow_vol[0]
+            * m.fs.stage3.retentate_outlet.conc_mass_solute[0, "Co"],
             to_units=pyunits.kg / pyunits.h,
         )
     )
@@ -237,11 +237,7 @@ def build_costing(m):
 
     m.fs.recovery_rate_per_year = Expression(
         expr=pyunits.convert(
-            m.fs.stage3.permeate_outlet.flow_vol[0]
-            * (
-                m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]
-                + m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Co"]
-            )
+            (m.fs.Li_product + m.fs.Co_product)
             * m.fs.annual_operating_hours,
             to_units=pyunits.kg / pyunits.year,
         )

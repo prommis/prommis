@@ -287,7 +287,6 @@ def apply_design_limits(
     stages = [m.fs.stage1, m.fs.stage2, m.fs.stage3]
     for i, st in enumerate(stages, start=1):
         Q_perm = st.permeate_outlet.flow_vol[0]
-        Q_perm = st.permeate_outlet.flow_vol[0]
         if i < 3:
             Q_feed = st.retentate_inlet.flow_vol[0]
         else:

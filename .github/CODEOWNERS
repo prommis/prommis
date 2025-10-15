@@ -1,19 +1,19 @@
-/.github/ @lbianchi-lbl
-/.readthedocs.yml @lbianchi-lbl
-/pyproject.toml @lbianchi-lbl
-/requirements-dev.txt @lbianchi-lbl
-/codecov.yml @lbianchi-lbl
+/.github/ @sufikaur
+/.readthedocs.yml @sufikaur
+/pyproject.toml @sufikaur
+/requirements-dev.txt @sufikaur
+/codecov.yml @sufikaur
 
 /.addheader.yml @ksbeattie
 /COPYRIGHT.md @ksbeattie
 /LICENSE.md @ksbeattie
 /copyright_header.txt @ksbeattie
 
-/docs/ @agarciadiego @lbianchi-lbl
-/README.md @agarciadiego @lbianchi-lbl
+/docs/ @agarciadiego @sufikaur
+/README.md @agarciadiego @sufikaur
 
-/src/prommis/_sphinx_extensions/ @lbianchi-lbl
-/src/prommis/_testing_utils/ @lbianchi-lbl
+/src/prommis/_sphinx_extensions/ @sufikaur @ksbeattie
+/src/prommis/_testing_utils/ @sufikaur @ksbeattie
 
 **/conftest.py @lbianchi-lbl
 

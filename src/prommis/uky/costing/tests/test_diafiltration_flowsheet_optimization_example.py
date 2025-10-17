@@ -36,6 +36,9 @@ from prommis.uky.costing.diafiltration_flowsheet_optimization_example import (
     build_costing,
     build_optimization,
     scale_and_solve_model,
+    print_io_snap,
+    print_stage_cuts
+    
 )
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting
 
@@ -267,3 +270,8 @@ class TestDiafiltrationOptimization:
         assert value(model.fs.costing.cost_of_recovery) == pytest.approx(
             0.011288, rel=1e-4
         )
+
+    @pytest.mark.component
+    def test_print_methods(self, model):
+        print_io_snap(model.fs, tag="AFTER OPTIMIZATION")
+        print_stage_cuts(model, label="STAGE CUTS — AFTER OPTIMIZATION")

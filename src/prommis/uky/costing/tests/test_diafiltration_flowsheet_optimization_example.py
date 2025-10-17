@@ -35,10 +35,9 @@ from prommis.nanofiltration.diafiltration import (
 from prommis.uky.costing.diafiltration_flowsheet_optimization_example import (
     build_costing,
     build_optimization,
-    scale_and_solve_model,
     print_io_snap,
-    print_stage_cuts
-    
+    print_stage_cuts,
+    scale_and_solve_model,
 )
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting
 

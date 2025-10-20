@@ -191,7 +191,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     get_prop,
 )
 
-from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
@@ -285,7 +285,7 @@ def build():
     # Leaching property and unit models
     m.fs.leach_soln = LeachSolutionParameters()
     m.fs.coal = CoalRefuseParameters()
-    m.fs.leach_rxns = CoalRefuseLeachingReactions()
+    m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
     m.fs.leach = LeachingTrain(
         number_of_tanks=2,
@@ -426,7 +426,7 @@ def build():
         energy_split_basis=EnergySplittingType.none,
     )
 
-    m.fs.sc_circuit_purge = Product(property_package=m.fs.prop_o)
+    m.fs.rougher_organic_purge = Product(property_package=m.fs.prop_o)
 
     m.fs.solex_cleaner_load = SolventExtraction(
         number_of_finite_elements=3,
@@ -496,7 +496,7 @@ def build():
     )
 
     m.fs.acid_feed3 = Feed(property_package=m.fs.leach_soln)
-    m.fs.cleaner_purge = Product(property_package=m.fs.prop_o)
+    m.fs.cleaner_organic_purge = Product(property_package=m.fs.prop_o)
 
     # --------------------------------------------------------------------------------------------------------------
     # Precipitation property and unit models
@@ -651,7 +651,7 @@ def build():
         destination=m.fs.rougher_sep.inlet,
     )
     m.fs.sx_rougher_strip_org_purge = Arc(
-        source=m.fs.rougher_sep.purge, destination=m.fs.sc_circuit_purge.inlet
+        source=m.fs.rougher_sep.purge, destination=m.fs.rougher_organic_purge.inlet
     )
     m.fs.sx_rougher_strip_org_recycle = Arc(
         source=m.fs.rougher_sep.recycle, destination=m.fs.rougher_mixer.recycle
@@ -688,7 +688,7 @@ def build():
         destination=m.fs.cleaner_sep.inlet,
     )
     m.fs.sx_cleaner_strip_org_purge = Arc(
-        source=m.fs.cleaner_sep.purge, destination=m.fs.cleaner_purge.inlet
+        source=m.fs.cleaner_sep.purge, destination=m.fs.cleaner_organic_purge.inlet
     )
     m.fs.sx_cleaner_strip_org_recycle = Arc(
         source=m.fs.cleaner_sep.recycle, destination=m.fs.cleaner_mixer.recycle
@@ -1258,8 +1258,8 @@ def initialize_system(m):
     product_units = [
         m.fs.leach_filter_cake,
         m.fs.leach_filter_cake_liquid,
-        m.fs.cleaner_purge,
-        m.fs.sc_circuit_purge,
+        m.fs.cleaner_organic_purge,
+        m.fs.rougher_organic_purge,
         m.fs.precip_purge,
     ]
 

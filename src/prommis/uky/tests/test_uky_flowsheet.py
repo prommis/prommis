@@ -30,7 +30,7 @@ from idaes.models.unit_models.solid_liquid import SLSeparator
 
 import pytest
 
-from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.leaching.leach_train import LeachingTrain
@@ -77,7 +77,7 @@ def test_build_flowsheet(system_frame):
     # Leaching section property packages and unit models
     assert isinstance(model.fs.leach_soln, LeachSolutionParameters)
     assert isinstance(model.fs.coal, CoalRefuseParameters)
-    assert isinstance(model.fs.leach_rxns, CoalRefuseLeachingReactions)
+    assert isinstance(model.fs.leach_rxns, CoalRefuseLeachingReactionParameterBlock)
 
     assert isinstance(model.fs.leach, LeachingTrain)
     assert isinstance(model.fs.sl_sep1, SLSeparator)
@@ -102,8 +102,8 @@ def test_build_flowsheet(system_frame):
     assert isinstance(model.fs.rougher_mixer, Mixer)
     assert isinstance(model.fs.cleaner_mixer, Mixer)
     assert isinstance(model.fs.leach_sx_mixer, Mixer)
-    assert isinstance(model.fs.sc_circuit_purge, Product)
-    assert isinstance(model.fs.cleaner_purge, Product)
+    assert isinstance(model.fs.rougher_organic_purge, Product)
+    assert isinstance(model.fs.cleaner_organic_purge, Product)
     assert isinstance(model.fs.cleaner_org_make_up, Feed)
     assert isinstance(model.fs.rougher_org_make_up, Feed)
     assert isinstance(model.fs.acid_feed1, Feed)
@@ -616,7 +616,7 @@ def test_solution(system_frame):
     assert model.fs.load_sep.inlet.flow_vol[0].value == pytest.approx(621.9757, 1e-4)
     assert model.fs.scrub_sep.inlet.flow_vol[0].value == pytest.approx(90, 1e-4)
     assert model.fs.rougher_mixer.outlet.flow_vol[0].value == pytest.approx(62.01, 1e-4)
-    assert model.fs.sc_circuit_purge.inlet.flow_vol[0].value == pytest.approx(
+    assert model.fs.rougher_organic_purge.inlet.flow_vol[0].value == pytest.approx(
         6.201, 1e-4
     )
     assert model.fs.solex_cleaner_load.mscontactor.aqueous_outlet.flow_vol[
@@ -633,7 +633,9 @@ def test_solution(system_frame):
     assert model.fs.leach_sx_mixer.outlet.flow_vol[0].value == pytest.approx(
         621.97569, 1e-4
     )
-    assert model.fs.cleaner_purge.inlet.flow_vol[0].value == pytest.approx(6.201, 1e-4)
+    assert model.fs.cleaner_organic_purge.inlet.flow_vol[0].value == pytest.approx(
+        6.201, 1e-4
+    )
     assert model.fs.sl_sep1.recovered_liquid_outlet.flow_vol[0].value == pytest.approx(
         605.68569, 1e-4
     )

@@ -10,28 +10,17 @@
 import sys
 
 from pyomo.environ import (
-    Objective,
-    RangeSet,
     SolverFactory,
     Suffix,
     TransformationFactory,
     assert_optimal_termination,
-    units,
 )
 
-from idaes.core import (
-    UnitModelBlock,
-    UnitModelCostingBlock,
-)
 from idaes.core.util import to_json, from_json
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import report_statistics
 from idaes.core.util.scaling import constraint_autoscale_large_jac
 
-from prommis.nanofiltration.costing.diafiltration_cost_model import (
-    DiafiltrationCosting,
-    DiafiltrationCostingData,
-)
 from prommis.nanofiltration.membrane_cascade_flowsheet import utils
 from prommis.nanofiltration.membrane_cascade_flowsheet.diafiltration_flowsheet_model import (
     DiafiltrationModel,
@@ -74,9 +63,6 @@ def main(args):
         "Co": 0.2 * 30,  # kg/hr
     }
     precipitate = True
-    atmospheric_pressure = 101325  # ambient pressure, Pa
-    operating_pressure = 145  # nanofiltration operating pressure, psi
-    simple_costing = True
 
     # setup for diafiltration model
     df = DiafiltrationModel(
@@ -109,8 +95,11 @@ def main(args):
     report_statistics(m)
 
     costing = True
+    atmospheric_pressure = 101325  # ambient pressure, Pa
+    operating_pressure = 145  # nanofiltration operating pressure, psi
+    simple_costing = False
     if costing:
-        add_costing(
+        df.add_costing(
             m,
             NS=num_s,
             flux=flux,
@@ -121,7 +110,7 @@ def main(args):
             operating_pressure=operating_pressure,
             simple_costing=simple_costing,
         )
-        add_costing_objectives(m)
+        df.add_costing_objectives(m)
 
     # set recovery lower bounds
     lithium_recovery = 0.8
@@ -136,13 +125,11 @@ def main(args):
         simple_costing=simple_costing,
     )
 
-    # TODO: debug solver convergence failures for default costing with bounded precipitator dimensions
     dt = DiagnosticsToolbox(m)
+    # some flows are at their bounds of zero
     dt.report_numerical_issues()
-    dt.display_constraints_with_large_residuals()
-    dt.display_variables_at_or_outside_bounds()
 
-    # # NOTE These percent recoveries are for precipitators
+    # NOTE These percent recoveries are for precipitators
     m.prec_perc_co.display()
     m.prec_perc_li.display()
 
@@ -153,138 +140,6 @@ def main(args):
     utils.visualize_flows(
         num_boxes=num_s, num_sub_boxes=num_t, conf=mix_style, model=vals
     )
-
-
-def add_costing(
-    m,
-    NS,
-    flux,
-    feed,
-    diaf,
-    precipitate,
-    atmospheric_pressure,
-    operating_pressure,
-    simple_costing,
-):
-    """
-    Adds custom costing block to the flowsheet
-    """
-    m.fs.costing = DiafiltrationCosting()
-
-    # Create dummy variables to store the UnitModelCostingBlocks
-    # These are needed because the sieving coefficient model does not account for pressure
-    m.fs.cascade = UnitModelBlock()  # to cost the pressure drop
-    m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
-    m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
-
-    if not simple_costing:
-        m.fs.cascade.costing = UnitModelCostingBlock(
-            flowsheet_costing_block=m.fs.costing,
-            costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
-            costing_method_arguments={
-                "water_flux": flux * units.m**3 / units.m**2 / units.h,
-                "vol_flow_feed": feed["solvent"] * units.m**3 / units.h,  # cascade feed
-                "vol_flow_perm": sum(
-                    m.fs.split_permeate[i].product.flow_vol[0] for i in RangeSet(NS)
-                ),  # cascade permeate
-            },
-        )
-        m.fs.feed_pump.costing = UnitModelCostingBlock(
-            flowsheet_costing_block=m.fs.costing,
-            costing_method=DiafiltrationCostingData.cost_pump,
-            costing_method_arguments={
-                "inlet_pressure": atmospheric_pressure * units.Pa,  # 14.7 psia
-                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
-                * units.psi,  # this should make m.fs.feed_pump.costing.variable_operating_cost ~0
-                "inlet_vol_flow": feed["solvent"] * units.m**3 / units.h,  # feed
-                "simple_costing": simple_costing,
-            },
-        )
-    else:
-        # simple_costing=True
-        m.fs.feed_pump.costing = UnitModelCostingBlock(
-            flowsheet_costing_block=m.fs.costing,
-            costing_method=DiafiltrationCostingData.cost_pump,
-            costing_method_arguments={
-                "inlet_pressure": atmospheric_pressure * units.Pa,  # 14.7 psia
-                "outlet_pressure": operating_pressure * units.psi,
-                "inlet_vol_flow": feed["solvent"] * units.m**3 / units.h,  # feed
-                "simple_costing": simple_costing,
-            },
-        )
-
-    m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=DiafiltrationCostingData.cost_pump,
-        costing_method_arguments={
-            "inlet_pressure": atmospheric_pressure * units.Pa,  # 14.7 psia
-            "outlet_pressure": operating_pressure * units.psi,
-            "inlet_vol_flow": diaf["solvent"] * units.m**3 / units.h,  # diafiltrate
-            "simple_costing": simple_costing,
-        },
-    )
-    # membrane stage cost blocks
-    for n in range(1, NS + 1):
-        m.fs.stage[n].costing = UnitModelCostingBlock(
-            flowsheet_costing_block=m.fs.costing,
-            costing_method=DiafiltrationCostingData.cost_membranes,
-            costing_method_arguments={
-                "membrane_length": m.fs.stage[n].length,
-                "membrane_width": m.fs.stage[n].width,
-            },
-        )
-
-    # precipitator cost blocks
-    if precipitate:
-        for prod in ["retentate", "permeate"]:
-            m.fs.precipitator[prod].costing = UnitModelCostingBlock(
-                flowsheet_costing_block=m.fs.costing,
-                costing_method=DiafiltrationCostingData.cost_precipitator,
-                costing_method_arguments={
-                    "precip_volume": m.fs.precipitator[prod].volume,
-                    "simple_costing": simple_costing,
-                },
-            )
-
-    m.fs.costing.cost_process()
-
-
-def add_costing_objectives(m):
-    """
-    Method to add cost objective to flowsheet for performing optimization
-
-    Objective choices:
-        m.co_obj  # maximize cobalt recovery
-        m.li_obj
-        m.prec_co_obj # maximize cobalt flow out of precipitator
-        m.prec_li_obj
-    Constraint choices:
-        m.co_lb
-        m.li_lb # set a LB on lithium recovery
-        m.purity_co_lb
-        m.purity_li_lb
-        m.prec_co_lb # set a LB on cobalt recovery out of precipitator
-        m.prec_li_lb # set a LB on cobalt recovery out of precipitator
-
-    Args:
-        m: Pyomo model
-    """
-    m.co_obj.deactivate()
-    m.li_obj.deactivate()
-    m.prec_co_obj.deactivate()
-    m.prec_li_obj.deactivate()
-
-    m.co_lb.deactivate()
-    m.li_lb.deactivate()
-    m.purity_co_lb.deactivate()
-    m.purity_li_lb.deactivate()
-    m.prec_co_lb.activate()
-    m.prec_li_lb.activate()
-
-    def cost_obj(m):
-        return m.fs.costing.total_annualized_cost
-
-    m.cost_objective = Objective(rule=cost_obj)
 
 
 def set_scaling(m, NS, costing, simple_costing):

@@ -182,7 +182,8 @@ class TestDiafiltrationOptimization:
             42145, rel=1e-4
         )
         assert value(
-            model.fs.feed_pump.costing.variable_operating_cost) == pytest.approx(0.00338663, rel=1e-4)
+            model.fs.feed_pump.costing.variable_operating_cost
+        ) == pytest.approx(0.00338663, rel=1e-4)
         assert value(model.fs.diafiltrate_pump.costing.capital_cost) == pytest.approx(
             48545.7, rel=1e-4
         )

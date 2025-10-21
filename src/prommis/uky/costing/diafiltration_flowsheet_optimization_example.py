@@ -73,8 +73,8 @@ def print_io_snap(fs, tag="STATE"):
     Prints:
       - Initial FEED flow + Li/Co concentrations (stage3 retentate side-stream @ element 10)
       - Initial DIAFILTRATE flow + Li/Co concentrations (mix2.inlet_1)
-      - PRODUCT PERMEATE (stage3.permeate_outlet): flow + Li/Co purity
-      - PRODUCT RETENTATE (stage1.retentate_outlet): flow + Li/Co purity
+      - PRODUCT PERMEATE (stage3.permeate_outlet): flow + Li/Co purity + Li recovery fraction
+      - PRODUCT RETENTATE (stage1.retentate_outlet): flow + Li/Co purity + Co recovery fraction
     """
     root = fs.parent_block()
 
@@ -86,39 +86,42 @@ def print_io_snap(fs, tag="STATE"):
     # FEED: side-stream into stage 3 at element 10
     feed_state = fs.stage3.retentate_side_stream_state[0, 10]
     print("[FEED  (initial; stage3.retentate_side_stream_state[0,10])]")
-    print(f"  flow_vol: {_v(feed_state.flow_vol)}")
-    print(f"  conc_Li:  {_v(feed_state.conc_mass_solute['Li'])}")
-    print(f"  conc_Co:  {_v(feed_state.conc_mass_solute['Co'])}")
+    print(f"  flow_vol (m\u00b3/hr): {_v(feed_state.flow_vol)}")
+    print(f"  conc_Li (kg/m\u00b3):  {_v(feed_state.conc_mass_solute['Li'])}")
+    print(f"  conc_Co (kg/m\u00b3):  {_v(feed_state.conc_mass_solute['Co'])}")
 
     # DIAFILTRATE: mixer 2 inlet_1
     diaf = fs.mix2.inlet_1
     print("\n[DIAFILTRATE (initial; mix2.inlet_1)]")
-    print(f"  flow_vol: {_v(diaf.flow_vol[0])}")
-    print(f"  conc_Li:  {_v(diaf.conc_mass_solute[0,'Li'])}")
-    print(f"  conc_Co:  {_v(diaf.conc_mass_solute[0,'Co'])}")
+    print(f"  flow_vol (m\u00b3/hr): {_v(diaf.flow_vol[0])}")
+    print(f"  conc_Li (kg/m\u00b3):  {_v(diaf.conc_mass_solute[0,'Li'])}")
+    print(f"  conc_Co (kg/m\u00b3):  {_v(diaf.conc_mass_solute[0,'Co'])}")
 
     # -------- Product streams (final, not intermediate elements) --------
     perm = fs.stage3.permeate_outlet  # product permeate (final)
     ret = fs.stage1.retentate_outlet  # product retentate (final)
 
     print("\n[PRODUCT PERMEATE (stage3.permeate_outlet)]")
-    print(f"  flow_vol: {_v(perm.flow_vol[0])}")
+    print(f"  flow_vol (m\u00b3/hr): {_v(perm.flow_vol[0])}")
     print(f"  Li concentration (kg/m\u00b3): {_v(perm.conc_mass_solute[0, 'Li'])}")
     print(f"  Co concentration (kg/m\u00b3): {_v(perm.conc_mass_solute[0, 'Co'])}")
+    print(f"  Li recovery fraction: {_v(fs.Li_recovery)}")
 
     li_p, co_p = _purity_mass(perm)
     print(f"  purity_Li: {li_p if li_p is not None else 'N/A'}")
     print(f"  purity_Co: {co_p if co_p is not None else 'N/A'}")
 
     print("\n[PRODUCT RETENTATE (stage1.retentate_outlet)]")
-    print(f"  flow_vol: {_v(ret.flow_vol[0])}")
+    print(f"  flow_vol (m\u00b3/hr): {_v(ret.flow_vol[0])}")
     print(f"  Li concentration (kg/m\u00b3): {_v(ret.conc_mass_solute[0, 'Li'])}")
     print(f"  Co concentration (kg/m\u00b3): {_v(ret.conc_mass_solute[0, 'Co'])}")
+    print(f"  Co recovery fraction: {_v(fs.Co_recovery)}")
     li_r, co_r = _purity_mass(ret)
     print(f"  purity_Li: {li_r if li_r is not None else 'N/A'}")
     print(f"  purity_Co: {co_r if co_r is not None else 'N/A'}")
 
-    # --------- Selectivity_coefficient, membrane width, operating pressure ----------
+    # --------- Sieving coefficient, membrane width, operating pressure ----------
+    print("\n[PARAMETERS]")
     sel_Li = (
         _v(fs.sieving_coefficient["Li"]) if hasattr(fs, "sieving_coefficient") else None
     )
@@ -126,8 +129,8 @@ def print_io_snap(fs, tag="STATE"):
         _v(fs.sieving_coefficient["Co"]) if hasattr(fs, "sieving_coefficient") else None
     )
     print("\n[PARAMETERS]")
-    print(f"  sieving_coefficient_Li: {sel_Li if sel_Li is not None else 'N/A'}")
-    print(f"  sieving_coefficient_Co: {sel_Co if sel_Co is not None else 'N/A'}")
+    print(f"  sieving_coefficient_Li : {sel_Li if sel_Li is not None else 'N/A'}")
+    print(f"  sieving_coefficient_Co : {sel_Co if sel_Co is not None else 'N/A'}")
     print(
         f"  membrane_width (m.w): {_v(getattr(root, 'w', None)) if hasattr(root, 'w') else 'N/A'}"
     )
@@ -223,11 +226,30 @@ def build_costing(m):
 
     m.fs.Co_product = Expression(
         expr=pyunits.convert(
-            m.fs.stage3.permeate_outlet.flow_vol[0]
-            * m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Co"],
+            m.fs.stage1.retentate_outlet.flow_vol[0]
+            * m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"],
             to_units=pyunits.kg / pyunits.h,
         )
     )
+
+    m.fs.Li_feed = Expression(
+        expr=pyunits.convert(
+            m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol
+            * m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"],
+            to_units=pyunits.kg / pyunits.h,
+        )
+    )
+
+    m.fs.Co_feed = Expression(
+        expr=pyunits.convert(
+            m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol
+            * m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"],
+            to_units=pyunits.kg / pyunits.h,
+        )
+    )
+
+    m.fs.Li_recovery = Expression(expr=m.fs.Li_product / m.fs.Li_feed)
+    m.fs.Co_recovery = Expression(expr=m.fs.Co_product / m.fs.Co_feed)
 
     # Operation parameters to use later
     hours_per_shift = 8
@@ -244,12 +266,7 @@ def build_costing(m):
 
     m.fs.recovery_rate_per_year = Expression(
         expr=pyunits.convert(
-            m.fs.stage3.permeate_outlet.flow_vol[0]
-            * (
-                m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]
-                + m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Co"]
-            )
-            * m.fs.annual_operating_hours,
+            (m.fs.Li_product + m.fs.Co_product) * m.fs.annual_operating_hours,
             to_units=pyunits.kg / pyunits.year,
         )
     )
@@ -299,7 +316,6 @@ def apply_design_limits(
     stages = [m.fs.stage1, m.fs.stage2, m.fs.stage3]
     for i, st in enumerate(stages, start=1):
         Q_perm = st.permeate_outlet.flow_vol[0]
-        Q_perm = st.permeate_outlet.flow_vol[0]
         if i < 3:
             Q_feed = st.retentate_inlet.flow_vol[0]
         else:
@@ -343,24 +359,6 @@ def print_stage_cuts(m, label="STAGE CUTS"):
     print("=" * 60 + "\n")
 
 
-def apply_sieving_bounds_and_unfix(
-    m, li_bounds=(0.75, 1.3), co_bounds=(0.05, 0.5), li_start=1.3, co_start=0.5
-):
-    sc = m.fs.sieving_coefficient
-    # Li
-    sc["Li"].setlb(li_bounds[0])
-    sc["Li"].setub(li_bounds[1])
-    if li_start is not None:
-        sc["Li"].set_value(li_start)
-    sc["Li"].unfix()
-    # Co
-    sc["Co"].setlb(co_bounds[0])
-    sc["Co"].setub(co_bounds[1])
-    if co_start is not None:
-        sc["Co"].set_value(co_start)
-    sc["Co"].unfix()
-
-
 def build_optimization(m):
     apply_design_limits(
         m,
@@ -370,9 +368,6 @@ def build_optimization(m):
         Co_max=200 * pyunits.kg / pyunits.m**3,
         sc_min=0.01,
         sc_max=0.99,
-    )
-    apply_sieving_bounds_and_unfix(
-        m, li_bounds=(0.75, 1.3), co_bounds=(0.05, 0.5), li_start=1.3, co_start=0.5
     )
 
     def cost_obj(m):

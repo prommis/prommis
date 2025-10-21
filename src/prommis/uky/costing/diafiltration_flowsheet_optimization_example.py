@@ -73,8 +73,8 @@ def print_io_snap(fs, tag="STATE"):
     Prints:
       - Initial FEED flow + Li/Co concentrations (stage3 retentate side-stream @ element 10)
       - Initial DIAFILTRATE flow + Li/Co concentrations (mix2.inlet_1)
-      - PRODUCT PERMEATE (stage3.permeate_outlet): flow + Li/Co purity + Li recovery rate
-      - PRODUCT RETENTATE (stage1.retentate_outlet): flow + Li/Co purity + Co recovery rate
+      - PRODUCT PERMEATE (stage3.permeate_outlet): flow + Li/Co purity + Li recovery fraction
+      - PRODUCT RETENTATE (stage1.retentate_outlet): flow + Li/Co purity + Co recovery fraction
     """
     root = fs.parent_block()
 
@@ -105,6 +105,7 @@ def print_io_snap(fs, tag="STATE"):
     print(f"  flow_vol (m\u00b3/hr): {_v(perm.flow_vol[0])}")
     print(f"  Li concentration (kg/m\u00b3): {_v(perm.conc_mass_solute[0, 'Li'])}")
     print(f"  Co concentration (kg/m\u00b3): {_v(perm.conc_mass_solute[0, 'Co'])}")
+    print(f"  Li recovery fraction: {_v(fs.Li_recovery)}")
 
     li_p, co_p = _purity_mass(perm)
     print(f"  purity_Li: {li_p if li_p is not None else 'N/A'}")
@@ -114,6 +115,7 @@ def print_io_snap(fs, tag="STATE"):
     print(f"  flow_vol (m\u00b3/hr): {_v(ret.flow_vol[0])}")
     print(f"  Li concentration (kg/m\u00b3): {_v(ret.conc_mass_solute[0, 'Li'])}")
     print(f"  Co concentration (kg/m\u00b3): {_v(ret.conc_mass_solute[0, 'Co'])}")
+    print(f"  Co recovery fraction: {_v(fs.Co_recovery)}")
     li_r, co_r = _purity_mass(ret)
     print(f"  purity_Li: {li_r if li_r is not None else 'N/A'}")
     print(f"  purity_Co: {co_r if co_r is not None else 'N/A'}")
@@ -221,6 +223,26 @@ def build_costing(m):
             to_units=pyunits.kg / pyunits.h,
         )
     )
+
+    m.fs.Li_feed = Expression(
+        expr=pyunits.convert(
+            m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol
+            * m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"],
+            to_units=pyunits.kg/pyunits.h,
+        )
+    )
+
+    m.fs.Co_feed = Expression(
+        expr=pyunits.convert(
+            m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol
+            * m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"],
+            to_units=pyunits.kg/pyunits.h,
+        )
+    )
+
+    m.fs.Li_recovery = Expression(expr=m.fs.Li_product / m.fs.Li_feed)
+    m.fs.Co_recovery = Expression(expr=m.fs.Co_product / m.fs.Co_feed)
+
 
     # Operation parameters to use later
     hours_per_shift = 8

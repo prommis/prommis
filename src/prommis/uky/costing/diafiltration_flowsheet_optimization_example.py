@@ -73,8 +73,8 @@ def print_io_snap(fs, tag="STATE"):
     Prints:
       - Initial FEED flow + Li/Co concentrations (stage3 retentate side-stream @ element 10)
       - Initial DIAFILTRATE flow + Li/Co concentrations (mix2.inlet_1)
-      - PRODUCT PERMEATE (stage3.permeate_outlet): flow + Li/Co purity
-      - PRODUCT RETENTATE (stage1.retentate_outlet): flow + Li/Co purity
+      - PRODUCT PERMEATE (stage3.permeate_outlet): flow + Li/Co purity + Li recovery rate
+      - PRODUCT RETENTATE (stage1.retentate_outlet): flow + Li/Co purity + Co recovery rate
     """
     root = fs.parent_block()
 
@@ -216,8 +216,8 @@ def build_costing(m):
 
     m.fs.Co_product = Expression(
         expr=pyunits.convert(
-            m.fs.stage3.retentate_outlet.flow_vol[0]
-            * m.fs.stage3.retentate_outlet.conc_mass_solute[0, "Co"],
+            m.fs.stage1.retentate_outlet.flow_vol[0]
+            * m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"],
             to_units=pyunits.kg / pyunits.h,
         )
     )

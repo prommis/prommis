@@ -399,7 +399,6 @@ def scale_and_solve_model(m):
     # Propagate results back to unscaled model
     scaling.propagate_solution(scaled_model, m)
 
-
 if __name__ == "__main__":
     m = build_model()
 

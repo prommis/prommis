@@ -4,6 +4,8 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+from unittest.mock import patch
+
 from pyomo.environ import (
     Block,
     ConcreteModel,
@@ -34,7 +36,6 @@ from prommis.superstructure.superstructure_function import (
     build_model,
     define_custom_units,
 )
-from unittest.mock import patch
 
 solver_available = SolverFactory("gurobi").available()
 if solver_available:

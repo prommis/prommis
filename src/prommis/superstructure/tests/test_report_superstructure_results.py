@@ -1,477 +1,713 @@
-from unittest.mock import MagicMock, patch
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+from pyomo.environ import (
+    Block,
+    ConcreteModel,
+    Constraint,
+    Param,
+    RangeSet,
+    Set,
+    SolverFactory,
+    Var,
+    assert_optimal_termination,
+    value,
+)
 
-from pyomo.opt import SolverStatus, TerminationCondition
+from idaes.core.scaling import get_scaling_factor
+from idaes.core.solvers import get_solver
 
 import pytest
 
 from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
-
-# Import the module using the correct path for your project structure
 from prommis.superstructure.report_superstructure_results import (
     report_superstructure_costing,
     report_superstructure_environmental_impacts,
     report_superstructure_results_overview,
     report_superstructure_streams,
 )
-
-# --- Fixtures for common mock objects ---
-
-
-@pytest.fixture
-def mock_model():
-    m = MagicMock()
-    m.fs = MagicMock()
-    m.fs.all_opts_set = ["A", "B"]
-    m.fs.option_binary_var = {"A": MagicMock(), "B": MagicMock()}
-    m.fs.objective_function_choice = MagicMock()
-    m.fs.costing = MagicMock()
-    m.fs.environmental_impacts = MagicMock()
-    m.fs.plant_life_range = [2025, 2026]
-    m.fs.operational_range = [2025, 2026]
-    m.fs.tracked_comps = ["comp1"]
-    m.fs.f_stages = ["stage1"]
-
-    # Complete f dictionary for all combinations
-    m.fs.f = {
-        ("stage1", "comp1", 2025): MagicMock(),
-        ("stage1", "comp1", 2026): MagicMock(),
-    }
-
-    # Complete f_in dictionary for all combinations
-    m.fs.f_in = {
-        ("A", "comp1", 2025): MagicMock(),
-        ("A", "comp1", 2026): MagicMock(),
-        ("B", "comp1", 2025): MagicMock(),
-        ("B", "comp1", 2026): MagicMock(),
-    }
-
-    # Complete f_out dictionary for all combinations
-    m.fs.f_out = {
-        ("A", "comp1", 2025): MagicMock(),
-        ("A", "comp1", 2026): MagicMock(),
-        ("B", "comp1", 2025): MagicMock(),
-        ("B", "comp1", 2026): MagicMock(),
-    }
-
-    # Byproduct valorization
-    m.fs.byproduct_valorization = MagicMock()
-    m.fs.byproduct_valorization.byproducts_set = ["byprod1"]
-    m.fs.byproduct_valorization.byproduct_produced = {
-        ("byprod1", 2025): MagicMock(),
-        ("byprod1", 2026): MagicMock(),
-    }
-
-    # Environmental impacts - complete dictionaries
-    m.fs.environmental_impacts.total_impacts = MagicMock()
-    m.fs.environmental_impacts.epsilon = MagicMock()
-    m.fs.environmental_impacts.total_yearly_impacts = {
-        2025: MagicMock(),
-        2026: MagicMock(),
-    }
-    m.fs.environmental_impacts.option_yearly_impacts = {
-        ("A", 2025): MagicMock(),
-        ("A", 2026): MagicMock(),
-        ("B", 2025): MagicMock(),
-        ("B", 2026): MagicMock(),
-    }
-
-    # Costing - complete dictionaries
-    m.fs.costing.net_present_value = MagicMock()
-    m.fs.costing.cost_of_recovery = MagicMock()
-    m.fs.costing.discount_factor = MagicMock()
-    m.fs.costing.cash_flow = {2025: MagicMock(), 2026: MagicMock()}
-    m.fs.costing.i_operating_expense_escalation = MagicMock()
-    m.fs.costing.i_capital_escalation = MagicMock()
-    m.fs.costing.main_product_profit = {2025: MagicMock(), 2026: MagicMock()}
-    m.fs.costing.total_profit = {2025: MagicMock(), 2026: MagicMock()}
-    m.fs.costing.total_byproduct_profit = {2025: MagicMock(), 2026: MagicMock()}
-    m.fs.costing.equipment_cost = {"A": MagicMock(), "B": MagicMock()}
-    m.fs.costing.total_plant_cost = MagicMock()
-    m.fs.costing.lang_factor = MagicMock()
-    m.fs.costing.total_overnight_cost = MagicMock()
-    m.fs.costing.financing_factor = MagicMock()
-    m.fs.costing.other_costs_factor = MagicMock()
-    m.fs.costing.total_overnight_cost_expended = {2025: MagicMock(), 2026: MagicMock()}
-    m.fs.costing.total_operators = MagicMock()
-    m.fs.costing.aggregate_variable_operating_cost = {
-        2025: MagicMock(),
-        2026: MagicMock(),
-    }
-    m.fs.costing.aggregate_fixed_operating_cost = {2025: MagicMock(), 2026: MagicMock()}
-    m.fs.costing.total_operating_expense = {2025: MagicMock(), 2026: MagicMock()}
-    m.fs.costing.cost_of_labor = MagicMock()
-    m.fs.costing.m_and_sm = MagicMock()
-    m.fs.costing.sa_and_qa_qc = MagicMock()
-    m.fs.costing.s_ip_r_and_d = {2025: MagicMock(), 2026: MagicMock()}
-    m.fs.costing.a_and_sl = MagicMock()
-    m.fs.costing.fb = MagicMock()
-    m.fs.costing.pt_and_i = MagicMock()
-
-    # Mock get_units for all variables
-    all_vars = (
-        list(m.fs.costing.cash_flow.values())
-        + list(m.fs.costing.main_product_profit.values())
-        + list(m.fs.costing.total_profit.values())
-        + list(m.fs.costing.total_byproduct_profit.values())
-        + list(m.fs.costing.equipment_cost.values())
-        + list(m.fs.costing.total_overnight_cost_expended.values())
-        + list(m.fs.costing.aggregate_variable_operating_cost.values())
-        + list(m.fs.costing.aggregate_fixed_operating_cost.values())
-        + list(m.fs.costing.total_operating_expense.values())
-        + list(m.fs.f.values())
-        + list(m.fs.f_in.values())
-        + list(m.fs.f_out.values())
-        + list(m.fs.byproduct_valorization.byproduct_produced.values())
-        + list(m.fs.environmental_impacts.total_yearly_impacts.values())
-        + list(m.fs.environmental_impacts.option_yearly_impacts.values())
-    )
-
-    for var in all_vars:
-        var.get_units.return_value = "kg"
-
-    return m
-
-
-@pytest.fixture
-def mock_results():
-    results = MagicMock()
-    results.solver.status = MagicMock()
-    results.solver.termination_condition = MagicMock()
-    return results
-
-
-# --- Test all branches and outputs of each function ---
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-@patch("prommis.superstructure.report_superstructure_results.pyo.value")
-def test_overview_optimal_status(mock_pyo_value, mock_print, mock_model, mock_results):
-    # Model solved optimally, NPV objective
-    def value_side_effect(obj):
-        if obj is mock_model.fs.option_binary_var["A"]:
-            return 1
-        elif obj is mock_model.fs.option_binary_var["B"]:
-            return 0
-        elif obj is mock_model.fs.objective_function_choice:
-            return ObjectiveFunctionChoice.NET_PRESENT_VALUE.value
-        elif obj is mock_model.fs.costing.net_present_value:
-            return 10000.0
-        elif obj is mock_model.fs.environmental_impacts.total_impacts:
-            return 55.0
-        return 0.0
-
-    mock_pyo_value.side_effect = value_side_effect
-    mock_results.solver.status = SolverStatus.ok
-    mock_results.solver.termination_condition = TerminationCondition.optimal
-
-    report_superstructure_results_overview(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("Chosen Pathway" in arg for arg in print_args)
-    assert any("NPV" in arg for arg in print_args)
-    assert any("Total Impacts" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-@patch("prommis.superstructure.report_superstructure_results.pyo.value")
-def test_overview_COR_objective(mock_pyo_value, mock_print, mock_model, mock_results):
-    # Model solved optimally, COR objective (not NET_PRESENT_VALUE)
-    # First, let's get the actual NET_PRESENT_VALUE.value and use a different value
-    npv_value = ObjectiveFunctionChoice.NET_PRESENT_VALUE.value
-    cor_objective_value = npv_value + 1  # Ensure it's different
-
-    def value_side_effect(obj):
-        if obj is mock_model.fs.option_binary_var["A"]:
-            return 0
-        elif obj is mock_model.fs.objective_function_choice:
-            return (
-                cor_objective_value  # Use different value than NET_PRESENT_VALUE.value
-            )
-        elif obj is mock_model.fs.costing.cost_of_recovery:
-            return 2.0
-        elif obj is mock_model.fs.environmental_impacts.total_impacts:
-            return 30.0
-        return 0.0
-
-    mock_pyo_value.side_effect = value_side_effect
-    mock_results.solver.status = SolverStatus.ok
-    mock_results.solver.termination_condition = TerminationCondition.optimal
-
-    report_superstructure_results_overview(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    # The actual print statement is "Cost of Recovery: {value}"
-    assert any("Cost of Recovery:" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-def test_overview_not_optimal(mock_print, mock_model, mock_results):
-    # Model NOT solved optimally
-    mock_results.solver.status = SolverStatus.error
-    mock_results.solver.termination_condition = TerminationCondition.infeasible
-
-    report_superstructure_results_overview(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("Model was not solved optimally" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-def test_overview_no_results(mock_print, mock_model):
-    # No solver results
-    report_superstructure_results_overview(mock_model, None)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("No solver results" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-@patch("prommis.superstructure.report_superstructure_results.pyo.value")
-def test_costing_full(mock_pyo_value, mock_print, mock_model, mock_results):
-    def value_side_effect(obj):
-        value_map = {
-            mock_model.fs.objective_function_choice: ObjectiveFunctionChoice.NET_PRESENT_VALUE.value,
-            mock_model.fs.costing.net_present_value: 10000.0,
-            mock_model.fs.costing.discount_factor: 0.09,
-            mock_model.fs.costing.i_operating_expense_escalation: 0.03,
-            mock_model.fs.costing.i_capital_escalation: 0.02,
-            mock_model.fs.costing.main_product_profit[2025]: 42.0,
-            mock_model.fs.costing.total_profit[2025]: 52.0,
-            mock_model.fs.costing.total_byproduct_profit[2025]: 12.0,
-            mock_model.fs.costing.equipment_cost["A"]: 100.0,
-            mock_model.fs.costing.equipment_cost["B"]: 0.0,
-            mock_model.fs.costing.total_plant_cost: 99.0,
-            mock_model.fs.costing.lang_factor: 1.5,
-            mock_model.fs.costing.total_overnight_cost: 199.0,
-            mock_model.fs.costing.financing_factor: 0.05,
-            mock_model.fs.costing.other_costs_factor: 0.03,
-            mock_model.fs.costing.total_overnight_cost_expended[2025]: 87.0,
-            mock_model.fs.costing.total_operators: 5,
-            mock_model.fs.costing.aggregate_variable_operating_cost[2025]: 17.0,
-            mock_model.fs.costing.aggregate_fixed_operating_cost[2025]: 6.0,
-            mock_model.fs.costing.total_operating_expense[2025]: 23.0,
-            mock_model.fs.costing.cost_of_labor: 999.0,
-            mock_model.fs.costing.m_and_sm: 89.0,
-            mock_model.fs.costing.sa_and_qa_qc: 77.0,
-            mock_model.fs.costing.s_ip_r_and_d[2025]: 45.0,
-            mock_model.fs.costing.a_and_sl: 61.0,
-            mock_model.fs.costing.fb: 39.0,
-            mock_model.fs.costing.pt_and_i: 22.0,
-        }
-        return value_map.get(obj, 0.0)
-
-    mock_pyo_value.side_effect = value_side_effect
-    mock_results.solver.status = SolverStatus.ok
-    mock_results.solver.termination_condition = TerminationCondition.optimal
-
-    report_superstructure_costing(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("NPV" in arg for arg in print_args)
-    assert any("Cash Flows" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-def test_costing_not_optimal(mock_print, mock_model, mock_results):
-    mock_results.solver.status = SolverStatus.error
-    mock_results.solver.termination_condition = TerminationCondition.infeasible
-
-    report_superstructure_costing(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("Model was not solved optimally" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-def test_costing_no_results(mock_print, mock_model):
-    report_superstructure_costing(mock_model, None)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("No solver results" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-@patch("prommis.superstructure.report_superstructure_results.pyo.value")
-def test_streams_full(mock_pyo_value, mock_print, mock_model, mock_results):
-    def value_side_effect(obj):
-        value_map = {
-            mock_model.fs.f[("stage1", "comp1", 2025)]: 10.0,
-            mock_model.fs.f_in[("A", "comp1", 2025)]: 5.0,
-            mock_model.fs.f_out[("A", "comp1", 2025)]: 2.0,
-            mock_model.fs.byproduct_valorization.byproduct_produced[
-                ("byprod1", 2025)
-            ]: 4.0,
-        }
-        return value_map.get(obj, 0.0)
-
-    mock_pyo_value.side_effect = value_side_effect
-    mock_results.solver.status = SolverStatus.ok
-    mock_results.solver.termination_condition = TerminationCondition.optimal
-
-    report_superstructure_streams(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("Superstructure Streams" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-def test_streams_not_optimal(mock_print, mock_model, mock_results):
-    mock_results.solver.status = SolverStatus.error
-    mock_results.solver.termination_condition = TerminationCondition.infeasible
-
-    report_superstructure_streams(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("Model was not solved optimally" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-def test_streams_no_results(mock_print, mock_model):
-    report_superstructure_streams(mock_model, None)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("No solver results" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-@patch("prommis.superstructure.report_superstructure_results.pyo.value")
-def test_envimpacts_full(mock_pyo_value, mock_print, mock_model, mock_results):
-    def value_side_effect(obj):
-        value_map = {
-            mock_model.fs.environmental_impacts.total_impacts: 80.0,
-            mock_model.fs.environmental_impacts.epsilon: 1.1,
-            mock_model.fs.environmental_impacts.total_yearly_impacts[2025]: 1.7,
-            mock_model.fs.environmental_impacts.option_yearly_impacts[("A", 2025)]: 2.3,
-        }
-        return value_map.get(obj, 0.0)
-
-    mock_pyo_value.side_effect = value_side_effect
-    mock_results.solver.status = SolverStatus.ok
-    mock_results.solver.termination_condition = TerminationCondition.optimal
-
-    report_superstructure_environmental_impacts(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("Superstructure Environmental Impacts" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-def test_envimpacts_not_optimal(mock_print, mock_model, mock_results):
-    mock_results.solver.status = SolverStatus.error
-    mock_results.solver.termination_condition = TerminationCondition.infeasible
-
-    report_superstructure_environmental_impacts(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("Model was not solved optimally" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-def test_envimpacts_no_results(mock_print, mock_model):
-    report_superstructure_environmental_impacts(mock_model, None)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("No solver results" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-def test_envimpacts_not_tracked(mock_print, mock_model, mock_results):
-    # Remove environmental_impacts to test not tracked case
-    del mock_model.fs.environmental_impacts
-    mock_results.solver.status = SolverStatus.ok
-    mock_results.solver.termination_condition = TerminationCondition.optimal
-
-    report_superstructure_environmental_impacts(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any(
-        "User has not specified model to track environmental impacts" in arg
-        for arg in print_args
-    )
-
-
-# Additional edge case tests for better coverage
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-@patch("prommis.superstructure.report_superstructure_results.pyo.value")
-def test_overview_value_error_handling(
-    mock_pyo_value, mock_print, mock_model, mock_results
-):
-    # Test ValueError handling in option binary variable checking
-    def value_side_effect(obj):
-        if obj is mock_model.fs.option_binary_var["A"]:
-            raise ValueError("Model not solved")
-        return 0.0
-
-    mock_pyo_value.side_effect = value_side_effect
-    mock_results.solver.status = SolverStatus.ok
-    mock_results.solver.termination_condition = TerminationCondition.optimal
-
-    report_superstructure_results_overview(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("Results Overview" in arg for arg in print_args)
-
-
-@patch("prommis.superstructure.report_superstructure_results.print")
-@patch("prommis.superstructure.report_superstructure_results.pyo.value")
-def test_costing_missing_byproduct(
-    mock_pyo_value, mock_print, mock_model, mock_results
-):
-    # Test case where total_byproduct_profit doesn't exist
-    del mock_model.fs.costing.total_byproduct_profit
-
-    def value_side_effect(obj):
-        return 10.0
-
-    mock_pyo_value.side_effect = value_side_effect
-    mock_results.solver.status = SolverStatus.ok
-    mock_results.solver.termination_condition = TerminationCondition.optimal
-
-    report_superstructure_costing(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("Costing" in arg for arg in print_args)
-
-
-# Test for COR objective in costing function as well
-@patch("prommis.superstructure.report_superstructure_results.print")
-@patch("prommis.superstructure.report_superstructure_results.pyo.value")
-def test_costing_COR_objective(mock_pyo_value, mock_print, mock_model, mock_results):
-    # Test Cost of Recovery objective in costing function
-    npv_value = ObjectiveFunctionChoice.NET_PRESENT_VALUE.value
-    cor_objective_value = npv_value + 1  # Ensure it's different
-
-    def value_side_effect(obj):
-        if obj is mock_model.fs.objective_function_choice:
-            return cor_objective_value  # Not NET_PRESENT_VALUE
-        elif obj is mock_model.fs.costing.cost_of_recovery:
-            return 3.5
-        return 10.0
-
-    mock_pyo_value.side_effect = value_side_effect
-    mock_results.solver.status = SolverStatus.ok
-    mock_results.solver.termination_condition = TerminationCondition.optimal
-
-    report_superstructure_costing(mock_model, mock_results)
-
-    assert mock_print.called
-    print_args = [str(call[0][0]) for call in mock_print.call_args_list]
-    assert any("Cost of Recovery:" in arg for arg in print_args)
+from prommis.superstructure.superstructure_function import (
+    SuperstructureScaler,
+    build_model,
+    define_custom_units,
+)
+from unittest.mock import patch
+
+solver_available = SolverFactory("gurobi").available()
+if solver_available:
+    solver = get_solver(solver="gurobi")
+else:
+    solver = None
+
+### Define common parameters
+# define custom units
+define_custom_units()
+obj_func = ObjectiveFunctionChoice.NET_PRESENT_VALUE
+
+plant_start = 2024
+plant_lifetime = 5
+
+available_feed = {
+    2025: 290273,
+    2026: 274648,
+    2027: 286512,
+    2028: 487819,
+}
+collection_rate = 0.1
+tracked_comps = ["Nd", "Fe"]
+prod_comp_mass = {
+    "Nd": 0.206 * 3,
+    "Fe": 0.691 * 3,
+}
+
+num_stages = 3
+options_in_stage = {1: 1, 2: 2, 3: 3}
+option_outlets = {
+    (1, 1): [1, 2],
+    (2, 1): [1],
+    (2, 2): [2, 3],
+}
+
+option_efficiencies = {
+    (1, 1): {"Nd": 1, "Fe": 1},
+    (2, 1): {"Nd": 1, "Fe": 1},
+    (2, 2): {"Nd": 1, "Fe": 1},
+    (3, 1): {"Nd": 0.985, "Fe": 0},
+    (3, 2): {"Nd": 0.985, "Fe": 0},
+    (3, 3): {"Nd": 1, "Fe": 0},
+}
+
+profit = {
+    (3, 1): {"Nd": 45.4272, "Fe": 0},
+    (3, 2): {"Nd": 69.888, "Fe": 0},
+    (3, 3): {"Nd": 45.4272, "Fe": 0},
+}
+opt_var_oc_params = {
+    (2, 1): {"a": 0.0053, "b": 7929.7},
+    (2, 2): {"a": 0.0015, "b": 2233.16},
+    (3, 1): {"a": 15.594, "b": 4e6},
+    (3, 2): {"a": 35.58463, "b": 4e6},
+    (3, 3): {"a": 1.58, "b": 0},
+}
+operators_per_discrete_unit = {(1, 1): 1}
+yearly_cost_per_unit = {(1, 1): 0}
+capital_cost_per_unit = {(1, 1): 0}
+processing_rate = {(1, 1): 7868}
+num_operators = {
+    (2, 1): 0.65,
+    (2, 2): 0.65,
+    (3, 1): 1.6,
+    (3, 2): 1.6,
+    (3, 3): 1.3,
+}
+labor_rate = 8000 * 38.20
+
+discretized_purchased_equipment_cost = {
+    (2, 1): {
+        "Flowrates": [
+            0.0,
+            36480.0,
+            634240.0,
+            1434800.0,
+            2083760.0,
+            3171200.0,
+            6342400.0,
+            9513600.0,
+            14270400.0,
+        ],
+        "Costs": [
+            0.0,
+            10130.08515,
+            31353.21173,
+            48788.84678,
+            60305.81927,
+            77063.4884,
+            117214.7546,
+            151018.0699,
+            195698.5419,
+        ],
+    },
+    (2, 2): {
+        "Flowrates": [
+            0.0,
+            36480.0,
+            634240.0,
+            1434800.0,
+            2083760.0,
+            3171200.0,
+            6342400.0,
+            9513600.0,
+            14270400.0,
+        ],
+        "Costs": [
+            0.0,
+            11702.08515,
+            39023.21173,
+            62134.84678,
+            77539.81927,
+            100113.4884,
+            154792.7546,
+            201326.0699,
+            263374.5419,
+        ],
+    },
+    (3, 1): {
+        "Flowrates": [
+            0.0,
+            36480.0,
+            634240.0,
+            1434800.0,
+            2083760.0,
+            3171200.0,
+            6342400.0,
+            9513600.0,
+            14270400.0,
+        ],
+        "Costs": [
+            0.0,
+            343228.652,
+            482425.4684,
+            618182.0594,
+            743750.2902,
+            844443.0443,
+            978479.5225,
+            1183834.522,
+            1440660.587,
+        ],
+    },
+    (3, 2): {
+        "Flowrates": [
+            0.0,
+            36480.0,
+            634240.0,
+            1434800.0,
+            2083760.0,
+            3171200.0,
+            6342400.0,
+            9513600.0,
+            14270400.0,
+        ],
+        "Costs": [
+            0.0,
+            643228.652,
+            782425.4684,
+            918182.0594,
+            1043750.2902,
+            1144443.0443,
+            1278479.5225,
+            1483834.522,
+            1740660.587,
+        ],
+    },
+    (3, 3): {
+        "Flowrates": [
+            0.0,
+            36480.0,
+            634240.0,
+            1434800.0,
+            2083760.0,
+            3171200.0,
+            6342400.0,
+            9513600.0,
+            14270400.0,
+        ],
+        "Costs": [
+            0.0,
+            4274.7216,
+            30479.121,
+            53459.01,
+            69261.68,
+            92510.61,
+            143803.33,
+            197644.75,
+            261513.79,
+        ],
+    },
+}
+
+options_environmental_impacts = {
+    (1, 1): 10,
+    (2, 1): 1000,
+    (2, 2): 10,
+    (3, 1): 600,
+    (3, 2): 600,
+    (3, 3): 10,
+}
+epsilon = 1e16
+
+byproduct_values = {
+    "Jarosite": -0.17,
+    "Iron oxide": 10,
+    "Residue": -0.17,
+}
+byproduct_opt_conversions = {
+    (3, 1): {"Jarosite": 0.75},
+    (3, 2): {"Iron oxide": 1},
+    (3, 3): {"Residue": 0.25},
+}
+
+
+class TestNPVPrintout(object):
+    @pytest.fixture(scope="class")
+    def model_and_results(self):
+        m = build_model(
+            ### Choice of objective function
+            obj_func=obj_func,
+            ### Plant lifetime parameters
+            plant_start=plant_start,
+            plant_lifetime=plant_lifetime,
+            ### Feed parameters
+            available_feed=available_feed,
+            collection_rate=collection_rate,
+            tracked_comps=tracked_comps,
+            prod_comp_mass=prod_comp_mass,
+            ### Superstructure formulation parameters
+            num_stages=num_stages,
+            options_in_stage=options_in_stage,
+            option_outlets=option_outlets,
+            option_efficiencies=option_efficiencies,
+            ### Operating parameters
+            profit=profit,
+            opt_var_oc_params=opt_var_oc_params,
+            operators_per_discrete_unit=operators_per_discrete_unit,
+            yearly_cost_per_unit=yearly_cost_per_unit,
+            capital_cost_per_unit=capital_cost_per_unit,
+            processing_rate=processing_rate,
+            num_operators=num_operators,
+            labor_rate=labor_rate,
+            ### Discretized costing parameters
+            discretized_purchased_equipment_cost=discretized_purchased_equipment_cost,
+            ### Environmental impacts parameters
+            consider_environmental_impacts=False,
+            options_environmental_impacts=[],
+            epsilon=[],
+            ### Byproduct valorization parameters
+            consider_byproduct_valorization=False,
+            byproduct_values=[],
+            byproduct_opt_conversions=[],
+        )
+
+        # Set tolerance parameters
+        solver.options["OptimalityTol"] = 1e-9  # Primal feasibility tolerance
+        solver.options["FeasibilityTol"] = 1e-9  # Dual feasibility tolerance
+        solver.options["NumericFocus"] = 3  # focus on getting correct solution
+
+        # For MIP problems, you may also want:
+        solver.options["MIPGap"] = 1e-9  # Relative MIP optimality gap
+        solver.options["MIPGapAbs"] = 1e-9  # Absolute MIP optimality gap
+        solver.options["IntFeasTol"] = 1e-9  # Integer feasibility tolerance
+
+        # Create and apply the scaler
+        scaler = SuperstructureScaler()
+        scaler.scale_model(m)
+
+        results = solver.solve(m, tee=True)
+
+        return m, results
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("builtins.print")
+    def test_report_superstructure_results_overview(
+        self, mock_print, model_and_results
+    ):
+        model, results = model_and_results
+        report_superstructure_results_overview(model, results)
+
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+        assert "Superstructure Results Overview:" in printed_text
+        assert "Chosen Pathway: (1, 1) -> (2, 2) -> (3, 3)" in printed_text
+        assert "NPV: -16,440,490.52 USD" in printed_text
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @patch("builtins.print")
+    def test_report_superstructure_costing(self, mock_print, model_and_results):
+        model, results = model_and_results
+        report_superstructure_costing(model, results)
+
+        printed_output = "\n".join(call.args[0] for call in mock_print.call_args_list)
+
+        # Check header
+        assert "Superstructure Costing:" in printed_output
+
+        # Check Net Present Value line (formatted number with comma and 2 decimals)
+        assert "NPV: -16,440,490.52 USD" in printed_output
+
+        # Check discount factor line
+        assert "discount factor: 5.77%" in printed_output
+
+        # Check Cash Flows section and example entry line
+        assert "Cash Flows:" in printed_output
+        assert "Year   : Cash Flow       : Units" in printed_output
+        assert "2024   : -8,552.14       USD/a" in printed_output
+
+        # Check Cash Flow Interest Rates header and example line
+        assert "Cash Flow Interest Rates:" in printed_output
+        assert "OPEX escalation rate   : 3.00%  : None" in printed_output
+        assert "CAPEX escalation rate  : 3.60%  : None" in printed_output
+
+        # Check Revenue section and example line
+        assert "Revenue:" in printed_output
+        assert (
+            "Year   : Main Product Revenue : Byproduct Revenue    : Total Revenue        : Units"
+            in printed_output
+        )
+        assert (
+            "2025   : 814,912.70           : 0.00                 : 814,912.70"
+            in printed_output
+        )
+
+        # Check Capital Expenses and Equipment Cost Breakdown sections
+        assert "Capital Expenses:" in printed_output
+        assert "Equipment Cost Breakdown:" in printed_output
+        assert "Opt        : Equip. Cost  : Units" in printed_output
+        assert "(2, 2)     :    16,034.64 : USD" in printed_output
+        assert "(3, 3)     :     8,430.19 : USD" in printed_output
+        assert "TOTAL      :    24,464.82 : USD" in printed_output
+        assert "Total Plant Cost: 72,660.52 USD" in printed_output
+        assert "Lang Factor: 2.97" in printed_output
+        assert "Total Overnight Cost: 85,521.44 USD" in printed_output
+        assert "financing factor: 2.70%" in printed_output
+        assert "other costs factor: 15.00%" in printed_output
+
+        # Check Total Overnight Cost Expended section and example line
+        assert "Total Overnight Cost Expended:" in printed_output
+        assert "2024       : 8,552.14                       : USD/a" in printed_output
+
+        # Check Operating Expenses section and total operators
+        assert "Operating Expenses:" in printed_output
+        assert "Total Number of Operators: 9" in printed_output
+
+        # Check Breakdown of Yearly Operating Expenses section and example line
+        assert "Breakdown of Yearly Operating Expenses:" in printed_output
+        assert (
+            "2025       : 125,768.02                     : 4,273,448.94                   : 5,279,060.36                   : USD/a"
+            in printed_output
+        )
+
+        # Check Further Breakdown of Yearly Fixed Operating Expenses section and example lines
+        assert "Further Breakdown of Yearly Fixed Operating Expenses:" in printed_output
+        assert (
+            "Year   : Cost of Labor   : M & SM          : SA & QA/QC      : S, IP, R & D    : A & SL          : FB              : PT & I          : Units"
+            in printed_output
+        )
+        assert (
+            "2025   : 2,750,400.00    : 1,453.21        : 275,040.00      : 8,149.13        : 550,080.00      : 687,600.00      : 726.61          : USD/a"
+            in printed_output
+        )
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @patch("builtins.print")
+    def test_report_superstructure_streams(self, mock_print, model_and_results):
+        model, results = model_and_results
+        report_superstructure_streams(model, results)
+
+        printed_output = "\n".join(call.args[0] for call in mock_print.call_args_list)
+
+        # Check main header
+        assert "Superstructure Streams:" in printed_output
+
+        # Flow Entering Stage Variables header and sample flow entries
+        assert "Flow Entering Stage Variables (f):" in printed_output
+        assert "Year   : Stage    : Component    : Flow" in printed_output
+        # For example, check a known flow value
+        assert "2025   : 1        : Nd           : 17,938.87" in printed_output
+        assert "2025   : 1        : Fe           : 60,173.59" in printed_output
+
+        # Flow In Option Variables header and sample lines
+        assert "Flow In Option Variables (f_in):" in printed_output
+        assert "Year   : Option       : Component    : Flow In" in printed_output
+        assert "2025   : (1, 1)       : Nd           : 17,938.87" in printed_output
+        assert "2025   : (1, 1)       : Fe           : 60,173.59" in printed_output
+
+        # Flow Out Option Variables header and sample lines
+        assert "Flow Out Option Variables (f_out):" in printed_output
+        assert "Year   : Option       : Component    : Flow Out" in printed_output
+        assert "2025   : (1, 1)       : Nd           : 17,938.87" in printed_output
+        assert "2025   : (1, 1)       : Fe           : 60,173.59" in printed_output
+
+
+class TestCORPrintout(object):
+    @pytest.fixture(scope="class")
+    def model_and_results(self):
+        m = build_model(
+            ### Choice of objective function
+            obj_func=ObjectiveFunctionChoice.COST_OF_RECOVERY,
+            ### Plant lifetime parameters
+            plant_start=plant_start,
+            plant_lifetime=plant_lifetime,
+            ### Feed parameters
+            available_feed=available_feed,
+            collection_rate=collection_rate,
+            tracked_comps=tracked_comps,
+            prod_comp_mass=prod_comp_mass,
+            ### Superstructure formulation parameters
+            num_stages=num_stages,
+            options_in_stage=options_in_stage,
+            option_outlets=option_outlets,
+            option_efficiencies=option_efficiencies,
+            ### Operating parameters
+            profit=profit,
+            opt_var_oc_params=opt_var_oc_params,
+            operators_per_discrete_unit=operators_per_discrete_unit,
+            yearly_cost_per_unit=yearly_cost_per_unit,
+            capital_cost_per_unit=capital_cost_per_unit,
+            processing_rate=processing_rate,
+            num_operators=num_operators,
+            labor_rate=labor_rate,
+            ### Discretized costing parameters
+            discretized_purchased_equipment_cost=discretized_purchased_equipment_cost,
+            ### Environmental impacts parameters
+            consider_environmental_impacts=False,
+            options_environmental_impacts=[],
+            epsilon=[],
+            ### Byproduct valorization parameters
+            consider_byproduct_valorization=False,
+            byproduct_values=[],
+            byproduct_opt_conversions=[],
+        )
+
+        # Set tolerance parameters
+        solver.options["OptimalityTol"] = 1e-9  # Primal feasibility tolerance
+        solver.options["FeasibilityTol"] = 1e-9  # Dual feasibility tolerance
+        solver.options["NumericFocus"] = 3  # focus on getting correct solution
+
+        # For MIP problems, you may also want:
+        solver.options["MIPGap"] = 1e-9  # Relative MIP optimality gap
+        solver.options["MIPGapAbs"] = 1e-9  # Absolute MIP optimality gap
+        solver.options["IntFeasTol"] = 1e-9  # Integer feasibility tolerance
+
+        # Create and apply the scaler
+        scaler = SuperstructureScaler()
+        scaler.scale_model(m)
+
+        results = solver.solve(m, tee=True)
+
+        return m, results
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("builtins.print")
+    def test_report_superstructure_results_overview(
+        self, mock_print, model_and_results
+    ):
+        model, results = model_and_results
+        report_superstructure_results_overview(model, results)
+
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+        assert "Cost of Recovery: 261.46 USD/kg" in printed_text
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("builtins.print")
+    def test_report_superstructure_costing(self, mock_print, model_and_results):
+        model, results = model_and_results
+        report_superstructure_costing(model, results)
+
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+        assert "Cost of Recovery: 261.46 USD/kg" in printed_text
+
+
+class TestByprodValPrintout(object):
+    @pytest.fixture(scope="class")
+    def model_and_results(self):
+        m = build_model(
+            ### Choice of objective function
+            obj_func=obj_func,
+            ### Plant lifetime parameters
+            plant_start=plant_start,
+            plant_lifetime=plant_lifetime,
+            ### Feed parameters
+            available_feed=available_feed,
+            collection_rate=collection_rate,
+            tracked_comps=tracked_comps,
+            prod_comp_mass=prod_comp_mass,
+            ### Superstructure formulation parameters
+            num_stages=num_stages,
+            options_in_stage=options_in_stage,
+            option_outlets=option_outlets,
+            option_efficiencies=option_efficiencies,
+            ### Operating parameters
+            profit=profit,
+            opt_var_oc_params=opt_var_oc_params,
+            operators_per_discrete_unit=operators_per_discrete_unit,
+            yearly_cost_per_unit=yearly_cost_per_unit,
+            capital_cost_per_unit=capital_cost_per_unit,
+            processing_rate=processing_rate,
+            num_operators=num_operators,
+            labor_rate=labor_rate,
+            ### Discretized costing parameters
+            discretized_purchased_equipment_cost=discretized_purchased_equipment_cost,
+            ### Environmental impacts parameters
+            consider_environmental_impacts=False,
+            options_environmental_impacts=[],
+            epsilon=[],
+            ### Byproduct valorization parameters
+            consider_byproduct_valorization=True,
+            byproduct_values=byproduct_values,
+            byproduct_opt_conversions=byproduct_opt_conversions,
+        )
+
+        # Set tolerance parameters
+        solver.options["OptimalityTol"] = 1e-9  # Primal feasibility tolerance
+        solver.options["FeasibilityTol"] = 1e-9  # Dual feasibility tolerance
+        solver.options["NumericFocus"] = 3  # focus on getting correct solution
+
+        # For MIP problems, you may also want:
+        solver.options["MIPGap"] = 1e-9  # Relative MIP optimality gap
+        solver.options["MIPGapAbs"] = 1e-9  # Absolute MIP optimality gap
+        solver.options["IntFeasTol"] = 1e-9  # Integer feasibility tolerance
+
+        # Create and apply the scaler
+        scaler = SuperstructureScaler()
+        scaler.scale_model(m)
+
+        results = solver.solve(m, tee=True)
+
+        return m, results
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("builtins.print")
+    def test_report_superstructure_streams(self, mock_print, model_and_results):
+        model, results = model_and_results
+        report_superstructure_streams(model, results)
+
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+
+        # Check header for byproduct section
+        assert "Byproduct Produced Variables:" in printed_text
+
+        # Check header columns in byproduct section
+        assert "Year   : Byproduct       : Amount Produced    : Units" in printed_text
+
+        # Check line separator in byproduct section
+        assert (
+            "------ : --------------- : ------------------ : --------" in printed_text
+        )
+
+        # Check example byproduct production lines
+        assert "2025   : Residue         : 19,528.12          : kg/a" in printed_text
+        assert "2026   : Residue         : 18,476.94          : kg/a" in printed_text
+        assert "2027   : Residue         : 19,275.09          : kg/a" in printed_text
+        assert "2028   : Residue         : 32,818.02          : kg/a" in printed_text
+
+
+class TestEnvironImpactsPrintout(object):
+    @pytest.fixture(scope="class")
+    def model_and_results(self):
+        m = build_model(
+            ### Choice of objective function
+            obj_func=obj_func,
+            ### Plant lifetime parameters
+            plant_start=plant_start,
+            plant_lifetime=plant_lifetime,
+            ### Feed parameters
+            available_feed=available_feed,
+            collection_rate=collection_rate,
+            tracked_comps=tracked_comps,
+            prod_comp_mass=prod_comp_mass,
+            ### Superstructure formulation parameters
+            num_stages=num_stages,
+            options_in_stage=options_in_stage,
+            option_outlets=option_outlets,
+            option_efficiencies=option_efficiencies,
+            ### Operating parameters
+            profit=profit,
+            opt_var_oc_params=opt_var_oc_params,
+            operators_per_discrete_unit=operators_per_discrete_unit,
+            yearly_cost_per_unit=yearly_cost_per_unit,
+            capital_cost_per_unit=capital_cost_per_unit,
+            processing_rate=processing_rate,
+            num_operators=num_operators,
+            labor_rate=labor_rate,
+            ### Discretized costing parameters
+            discretized_purchased_equipment_cost=discretized_purchased_equipment_cost,
+            ### Environmental impacts parameters
+            consider_environmental_impacts=True,
+            options_environmental_impacts=options_environmental_impacts,
+            epsilon=epsilon,
+            ### Byproduct valorization parameters
+            consider_byproduct_valorization=True,
+            byproduct_values=byproduct_values,
+            byproduct_opt_conversions=byproduct_opt_conversions,
+        )
+
+        # Set tolerance parameters
+        solver.options["OptimalityTol"] = 1e-9  # Primal feasibility tolerance
+        solver.options["FeasibilityTol"] = 1e-9  # Dual feasibility tolerance
+        solver.options["NumericFocus"] = 3  # focus on getting correct solution
+
+        # For MIP problems, you may also want:
+        solver.options["MIPGap"] = 1e-9  # Relative MIP optimality gap
+        solver.options["MIPGapAbs"] = 1e-9  # Absolute MIP optimality gap
+        solver.options["IntFeasTol"] = 1e-9  # Integer feasibility tolerance
+
+        # Create and apply the scaler
+        scaler = SuperstructureScaler()
+        scaler.scale_model(m)
+
+        results = solver.solve(m, tee=True)
+
+        return m, results
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("builtins.print")
+    def test_report_superstructure_results_overview(
+        self, mock_print, model_and_results
+    ):
+        model, results = model_and_results
+        report_superstructure_results_overview(model, results)
+
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+        assert "Total Impacts: 10,811,781.40" in printed_text
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("builtins.print")
+    def test_report_superstructure_environmental_impacts(
+        self, mock_print, model_and_results
+    ):
+        model, results = model_and_results
+        report_superstructure_environmental_impacts(model, results)
+
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+
+        assert "Superstructure Environmental Impacts:" in printed_text
+        assert "Total Impacts: 10,811,781.40" in printed_text
+        assert "Epsilon factor: 10,000,000,000,000,000.00" in printed_text
+
+        assert "Impacts broken down by year:" in printed_text
+        assert "Year   : Total Environmental Impact : Units" in printed_text
+        assert "2025   : 2,343,373.9290            : 1/a" in printed_text
+        assert "2026   : 2,217,233.3040            : 1/a" in printed_text
+        assert "2027   : 2,313,011.3760            : 1/a" in printed_text
+        assert "2028   : 3,938,162.7870            : 1/a" in printed_text
+
+        assert "Impacts broken down by year and option:" in printed_text
+        assert "Year   : Option       : Environmental Impact : Units" in printed_text
+        # Check some known lines for different years and options
+        assert "2025   : (1, 1)       : 781,124.6430         : 1/a" in printed_text
+        assert "2025   : (2, 2)       : 781,124.6430         : 1/a" in printed_text
+        assert "2025   : (3, 3)       : 781,124.6430         : 1/a" in printed_text
+        assert "2026   : (1, 1)       : 739,077.7680         : 1/a" in printed_text
+        assert "2026   : (2, 2)       : 739,077.7680         : 1/a" in printed_text
+        assert "2026   : (3, 3)       : 739,077.7680         : 1/a" in printed_text
+        assert "2027   : (1, 1)       : 771,003.7920         : 1/a" in printed_text
+        assert "2027   : (2, 2)       : 771,003.7920         : 1/a" in printed_text
+        assert "2027   : (3, 3)       : 771,003.7920         : 1/a" in printed_text
+        assert "2028   : (1, 1)       : 1,312,720.9290       : 1/a" in printed_text
+        assert "2028   : (2, 2)       : 1,312,720.9290       : 1/a" in printed_text
+        assert "2028   : (3, 3)       : 1,312,720.9290       : 1/a" in printed_text

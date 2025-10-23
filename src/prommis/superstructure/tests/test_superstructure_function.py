@@ -1539,17 +1539,38 @@ class TestSuperstructureScaler:
                 scaling_factor == 1e-4
             ), f"Flow variable scaling should be 1e-4, got {scaling_factor}"
 
+            # Test that scaled value is between 1e-2 and 1e2
+            if var.value is not None:
+                scaled_value = abs(var.value * scaling_factor)
+                assert (
+                    1e-2 <= scaled_value <= 1e2
+                ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"
+
         for var in sample_model.fs.f_in.values():
             scaling_factor = get_scaling_factor(var)
             assert (
                 scaling_factor == 1e-4
             ), f"Flow input variable scaling should be 1e-4, got {scaling_factor}"
 
+            # Test that scaled value is between 1e-2 and 1e2
+            if var.value is not None:
+                scaled_value = abs(var.value * scaling_factor)
+                assert (
+                    1e-2 <= scaled_value <= 1e2
+                ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"
+
         for var in sample_model.fs.f_out.values():
             scaling_factor = get_scaling_factor(var)
             assert (
                 scaling_factor == 1e-4
             ), f"Flow output variable scaling should be 1e-4, got {scaling_factor}"
+
+            # Test that scaled value is between 1e-2 and 1e2
+            if var.value is not None:
+                scaled_value = abs(var.value * scaling_factor)
+                assert (
+                    1e-2 <= scaled_value <= 1e2
+                ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"
 
     def test_piecewise_flow_scaling(self, sample_model):
         """Test that piecewise flow variables are scaled correctly."""
@@ -1561,6 +1582,13 @@ class TestSuperstructureScaler:
             assert (
                 scaling_factor == 1e-5
             ), f"Piecewise flow scaling should be 1e-5, got {scaling_factor}"
+
+            # Test that scaled value is between 1e-2 and 1e2
+            if var.value is not None:
+                scaled_value = abs(var.value * scaling_factor)
+                assert (
+                    1e-2 <= scaled_value <= 1e2
+                ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"
 
     def test_costing_variable_scaling(self, sample_model):
         """Test that costing variables are scaled correctly."""
@@ -1593,11 +1621,26 @@ class TestSuperstructureScaler:
                         assert (
                             scaling_factor == expected_scaling
                         ), f"{var_name} scaling should be {expected_scaling}, got {scaling_factor}"
+
+                        # Test that scaled value is between 1e-2 and 1e2
+                        if v.value is not None:
+                            scaled_value = abs(v.value * scaling_factor)
+                            assert (
+                                1e-2 <= scaled_value <= 1e2
+                            ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {v.name}"
+
                 else:  # Scalar variable
                     scaling_factor = get_scaling_factor(var)
                     assert (
                         scaling_factor == expected_scaling
                     ), f"{var_name} scaling should be {expected_scaling}, got {scaling_factor}"
+
+                    # Test that scaled value is between 1e-2 and 1e2
+                    if var.value is not None:
+                        scaled_value = abs(var.value * scaling_factor)
+                        assert (
+                            1e-2 <= scaled_value <= 1e2
+                        ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"
 
     def test_constraint_scaling(self, sample_model):
         """Test that constraints are scaled using the nominal value method."""
@@ -1672,6 +1715,13 @@ class TestSuperstructureScaler:
                 scaling_factor = get_scaling_factor(var)
                 assert scaling_factor == 1e-7
 
+                # Test that scaled value is between 1e-2 and 1e2
+                if var.value is not None:
+                    scaled_value = abs(var.value * scaling_factor)
+                    assert (
+                        1e-2 <= scaled_value <= 1e2
+                    ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"
+
     def test_byproduct_valorization_scaling(self):
         """Test scaling when byproduct valorization is considered."""
         model_with_byproducts = build_model(
@@ -1724,6 +1774,13 @@ class TestSuperstructureScaler:
                 scaling_factor = get_scaling_factor(var)
                 assert scaling_factor == 1e-4
 
+                # Test that scaled value is between 1e-2 and 1e2
+                if var.value is not None:
+                    scaled_value = abs(var.value * scaling_factor)
+                    assert (
+                        1e-2 <= scaled_value <= 1e2
+                    ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"
+
     def test_cost_of_recovery_variable_scaling(self):
         """Test scaling when Cost of Recovery is chosen as objective function."""
         model_with_cor = build_model(
@@ -1773,6 +1830,13 @@ class TestSuperstructureScaler:
                 assert (
                     scaling_factor == 1
                 ), f"Cost of recovery scaling should be 1, got {scaling_factor}"
+
+                # Test that scaled value is between 1e-2 and 1e2
+                if var.value is not None:
+                    scaled_value = abs(var.value * scaling_factor)
+                    assert (
+                        1e-2 <= scaled_value <= 1e2
+                    ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"
 
     def test_npv_zero_constraint_scaling(self):
         """Test scaling of NPV zero constraint when COR is objective function."""
@@ -1874,12 +1938,26 @@ class TestSuperstructureScaler:
                 scaling_factor = get_scaling_factor(var)
                 assert scaling_factor == 1
 
+                # Test that scaled value is between 1e-2 and 1e2
+                if var.value is not None:
+                    scaled_value = abs(var.value * scaling_factor)
+                    assert (
+                        1e-2 <= scaled_value <= 1e2
+                    ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"
+
         if hasattr(model_cor_env.fs, "environmental_impacts"):
             for (
                 var
             ) in model_cor_env.fs.environmental_impacts.option_yearly_impacts.values():
                 scaling_factor = get_scaling_factor(var)
                 assert scaling_factor == 1e-7
+
+                # Test that scaled value is between 1e-2 and 1e2
+                if var.value is not None:
+                    scaled_value = abs(var.value * scaling_factor)
+                    assert (
+                        1e-2 <= scaled_value <= 1e2
+                    ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"
 
     def test_combined_cor_with_byproducts(self):
         """Test COR objective function combined with byproduct valorization."""
@@ -1929,6 +2007,13 @@ class TestSuperstructureScaler:
                 scaling_factor = get_scaling_factor(var)
                 assert scaling_factor == 1
 
+                # Test that scaled value is between 1e-2 and 1e2
+                if var.value is not None:
+                    scaled_value = abs(var.value * scaling_factor)
+                    assert (
+                        1e-2 <= scaled_value <= 1e2
+                    ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"
+
         if hasattr(model_cor_byproduct.fs, "byproduct_valorization"):
             for (
                 var
@@ -1937,3 +2022,10 @@ class TestSuperstructureScaler:
             ):
                 scaling_factor = get_scaling_factor(var)
                 assert scaling_factor == 1e-4
+
+                # Test that scaled value is between 1e-2 and 1e2
+                if var.value is not None:
+                    scaled_value = abs(var.value * scaling_factor)
+                    assert (
+                        1e-2 <= scaled_value <= 1e2
+                    ), f"Scaled value {scaled_value:.2e} outside range [1e-2, 1e2] for {var.name}"

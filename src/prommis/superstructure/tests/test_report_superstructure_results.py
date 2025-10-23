@@ -25,6 +25,10 @@ from prommis.superstructure.superstructure_function import (
     define_custom_units,
 )
 
+from types import SimpleNamespace
+
+from pyomo.opt import SolverStatus, TerminationCondition
+
 solver_available = SolverFactory("gurobi").available()
 if solver_available:
     solver = get_solver(solver="gurobi")
@@ -297,10 +301,28 @@ class TestNPVPrintout(object):
 
         return m, results
 
+    @pytest.fixture(scope="function")
+    def non_optimal_results(self, model_and_results):
+        """Fixture that provides non-optimal results for error handling tests"""
+        model, results = model_and_results
+        # Save original values
+        original_status = results.solver.status
+        original_termination = results.solver.termination_condition
+
+        # Modify to non-optimal
+        results.solver.status = "error"
+        results.solver.termination_condition = "infeasible"
+
+        yield model, results
+
+        # Restore original values after test
+        results.solver.status = original_status
+        results.solver.termination_condition = original_termination
+
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
     @pytest.mark.component
-    @patch("builtins.print")
+    @patch("prommis.superstructure.report_superstructure_results.print")
     def test_report_superstructure_results_overview(
         self, mock_print, model_and_results
     ):
@@ -314,7 +336,39 @@ class TestNPVPrintout(object):
 
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
-    @patch("builtins.print")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
+    def test_report_overview_no_results(self, mock_print, model_and_results):
+        model, _ = model_and_results
+        report_superstructure_results_overview(model, results=None)
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+        assert "No solver results provided" in printed_text
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
+    def test_report_overview_not_optimal(self, mock_print, non_optimal_results):
+        model, results = non_optimal_results
+
+        # Call the function
+        result = report_superstructure_results_overview(model, results)
+
+        # Verify it returned None (early exit)
+        assert result is None
+
+        # Verify the error messages were printed
+        printed_text = "\n".join(
+            str(call.args[0]) for call in mock_print.call_args_list
+        )
+        assert "Model was not solved optimally" in printed_text
+        assert "Status:" in printed_text
+        assert "Termination:" in printed_text
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
     def test_report_superstructure_costing(self, mock_print, model_and_results):
         model, results = model_and_results
         report_superstructure_costing(model, results)
@@ -392,7 +446,39 @@ class TestNPVPrintout(object):
 
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
-    @patch("builtins.print")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
+    def test_report_costing_no_results(self, mock_print, model_and_results):
+        model, _ = model_and_results
+        report_superstructure_costing(model, results=None)
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+        assert "No solver results provided" in printed_text
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
+    def test_report_costing_not_optimal(self, mock_print, non_optimal_results):
+        model, results = non_optimal_results
+
+        # Call the function
+        result = report_superstructure_costing(model, results)
+
+        # Verify it returned None (early exit)
+        assert result is None
+
+        # Verify the error messages were printed
+        printed_text = "\n".join(
+            str(call.args[0]) for call in mock_print.call_args_list
+        )
+        assert "Model was not solved optimally" in printed_text
+        assert "Status:" in printed_text
+        assert "Termination:" in printed_text
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
     def test_report_superstructure_streams(self, mock_print, model_and_results):
         model, results = model_and_results
         report_superstructure_streams(model, results)
@@ -420,6 +506,41 @@ class TestNPVPrintout(object):
         assert "Year   : Option       : Component    : Flow Out" in printed_output
         assert "2025   : (1, 1)       : Nd           : 17,938.87" in printed_output
         assert "2025   : (1, 1)       : Fe           : 60,173.59" in printed_output
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
+    def test_report_streams_no_results(self, mock_print, model_and_results):
+        model, _ = model_and_results
+        report_superstructure_streams(model, results=None)
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+        assert "No solver results provided" in printed_text
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
+    def test_report_streams_not_optimal(self, mock_print, non_optimal_results):
+        model, results = non_optimal_results
+        report_superstructure_streams(model, results)
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+        assert "Model was not solved optimally." in printed_text
+        assert "Status" in printed_text
+        assert "Termination" in printed_text
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
+    def test_track_environ_impacts_not_specified(self, mock_print, model_and_results):
+        model, results = model_and_results
+        report_superstructure_environmental_impacts(model, results)
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+        assert (
+            "\n\tUser has not specified model to track environmental impacts."
+            in printed_text
+        )
 
 
 class TestCORPrintout(object):
@@ -483,7 +604,7 @@ class TestCORPrintout(object):
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
     @pytest.mark.component
-    @patch("builtins.print")
+    @patch("prommis.superstructure.report_superstructure_results.print")
     def test_report_superstructure_results_overview(
         self, mock_print, model_and_results
     ):
@@ -496,7 +617,7 @@ class TestCORPrintout(object):
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
     @pytest.mark.component
-    @patch("builtins.print")
+    @patch("prommis.superstructure.report_superstructure_results.print")
     def test_report_superstructure_costing(self, mock_print, model_and_results):
         model, results = model_and_results
         report_superstructure_costing(model, results)
@@ -566,7 +687,26 @@ class TestByprodValPrintout(object):
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
     @pytest.mark.component
-    @patch("builtins.print")
+    @patch("prommis.superstructure.report_superstructure_results.print")
+    def test_report_superstructure_costing(self, mock_print, model_and_results):
+        """Test that byproduct revenue is reported correctly (covers line 237)"""
+        model, results = model_and_results
+        report_superstructure_costing(model, results)
+
+        printed_output = "\n".join(call.args[0] for call in mock_print.call_args_list)
+
+        # Check that Revenue section with byproduct column is present
+        assert "Revenue:" in printed_output
+        assert "Byproduct Revenue" in printed_output
+
+        # Verify the revenue table header includes all three columns
+        assert "Main Product Revenue" in printed_output
+        assert "Total Revenue" in printed_output
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
     def test_report_superstructure_streams(self, mock_print, model_and_results):
         model, results = model_and_results
         report_superstructure_streams(model, results)
@@ -649,10 +789,28 @@ class TestEnvironImpactsPrintout(object):
 
         return m, results
 
+    @pytest.fixture(scope="function")
+    def non_optimal_results(self, model_and_results):
+        """Fixture that provides non-optimal results for error handling tests"""
+        model, results = model_and_results
+        # Save original values
+        original_status = results.solver.status
+        original_termination = results.solver.termination_condition
+
+        # Modify to non-optimal
+        results.solver.status = "error"
+        results.solver.termination_condition = "infeasible"
+
+        yield model, results
+
+        # Restore original values after test
+        results.solver.status = original_status
+        results.solver.termination_condition = original_termination
+
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
     @pytest.mark.component
-    @patch("builtins.print")
+    @patch("prommis.superstructure.report_superstructure_results.print")
     def test_report_superstructure_results_overview(
         self, mock_print, model_and_results
     ):
@@ -665,7 +823,7 @@ class TestEnvironImpactsPrintout(object):
     @pytest.mark.solver
     @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
     @pytest.mark.component
-    @patch("builtins.print")
+    @patch("prommis.superstructure.report_superstructure_results.print")
     def test_report_superstructure_environmental_impacts(
         self, mock_print, model_and_results
     ):
@@ -700,3 +858,25 @@ class TestEnvironImpactsPrintout(object):
         assert "2028   : (1, 1)       : 1,312,720.9290       : 1/a" in printed_text
         assert "2028   : (2, 2)       : 1,312,720.9290       : 1/a" in printed_text
         assert "2028   : (3, 3)       : 1,312,720.9290       : 1/a" in printed_text
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
+    def test_report_environ_impacts_no_results(self, mock_print, model_and_results):
+        model, _ = model_and_results
+        report_superstructure_environmental_impacts(model, results=None)
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+        assert "No solver results provided" in printed_text
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(not solver_available, reason="Gurobi solver not available")
+    @pytest.mark.component
+    @patch("prommis.superstructure.report_superstructure_results.print")
+    def test_report_environ_impacts_not_optimal(self, mock_print, non_optimal_results):
+        model, results = non_optimal_results
+        report_superstructure_environmental_impacts(model, results)
+        printed_text = "".join(call.args[0] for call in mock_print.call_args_list)
+        assert "Model was not solved optimally." in printed_text
+        assert "Status" in printed_text
+        assert "Termination" in printed_text

@@ -54,12 +54,8 @@ def report_superstructure_results_overview(m, results=None):
     # List of options that were chosen.
     for opt in m.fs.all_opts_set:
         if hasattr(m.fs, "option_binary_var") and opt in m.fs.option_binary_var:
-            try:
-                if pyo.value(m.fs.option_binary_var[opt]) == 1:
-                    chosen_opts.append(opt)
-            except ValueError:
-                # Model hasn't been solved yet
-                pass
+            if pyo.value(m.fs.option_binary_var[opt]) == 1:
+                chosen_opts.append(opt)
 
     # Create the formatted string representation of the chosen options.
     chosen_opts_str = " -> ".join(str(opt) for opt in chosen_opts)

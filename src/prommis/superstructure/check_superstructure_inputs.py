@@ -31,29 +31,24 @@ def check_objective_function_choice(obj_func):
         raise TypeError("obj_func is not an ObjectiveFunctionChoice Enum")
 
 
-def check_plant_lifetime_params(plant_start, plant_lifetime):
+def check_plant_lifetime_params(plant_start: int, plant_lifetime: int):
     """
     This function checks that the lifetime parameters are feasible.
 
     Args:
         plant_lifetime: (int) The total lifetime of the plant, including plant construction. Must be at least three years.
     """
-    ### Check types and structure.
-    ## Check that plant_start is of type int.
-    if not isinstance(plant_start, int):
-        raise TypeError("plant_start is not of type int.")
-
-    ## Check that plant_lifetime is of type int.
-    if not isinstance(plant_lifetime, int):
-        raise TypeError("plant_lifetime is not of type int.")
-
     ## Check that plant lifetime is at least three years.
     if plant_lifetime < 3:
         raise ValueError("Plant lifetime must be a minimum of three years.")
 
 
 def check_feed_params(
-    m, available_feed, collection_rate, tracked_comps, prod_comp_mass
+    m,
+    available_feed: dict,
+    collection_rate: float,
+    tracked_comps: list,
+    prod_comp_mass: dict,
 ):
     """
     The function checks that the feed parameter inputs are feasible.
@@ -79,22 +74,10 @@ def check_feed_params(
                 f"value {value} in available_feed dict is not of type int or float."
             )
 
-    ## Check that collection rate is of type int or float.
-    if not isinstance(collection_rate, (int, float)):
-        raise TypeError(f"collection_rate is not of type int or float.")
-
-    ## Check that tracked_comps is a list.
-    if not isinstance(tracked_comps, list):
-        raise TypeError(f"tracked_comps is not of type list.")
-
     ## Check that all components in tracked_comps are of type str.
     for c in tracked_comps:
         if not isinstance(c, str):
             raise TypeError(f"Value {c} in tracked_comps is not of type str.")
-
-    ## Check that prod_comp_mass is of type dict.
-    if not isinstance(prod_comp_mass, dict):
-        raise TypeError(f"prod_comp_mass is not of type dict.")
 
     ## Check that structure of prod_comp_mass is correct.
     for key, value in prod_comp_mass.items():
@@ -104,6 +87,7 @@ def check_feed_params(
             raise TypeError(
                 f"value {value} in prod_comp_mass dict is not of type int or float."
             )
+
     ### Define parameters necessary for tests.
     # Define a set for the years in which the amount of available feed is defined.
     feed_years = set(available_feed.keys())
@@ -181,7 +165,11 @@ def check_feed_params(
 
 
 def check_supe_formulation_params(
-    m, num_stages, options_in_stage, option_outlets, option_efficiencies
+    m,
+    num_stages: int,
+    options_in_stage: dict,
+    option_outlets: dict,
+    option_efficiencies: dict,
 ):
     """
     The function checks that the superstructure formulation parameter inputs are feasible.
@@ -194,13 +182,6 @@ def check_supe_formulation_params(
         option_efficiencies: (dict) Tracked component retention efficiency for each option.
     """
     ### Check types and structure.
-    ## Check that num_stages is of type int.
-    if not isinstance(num_stages, int):
-        raise TypeError("num_stages is not of type int.")
-
-    ## Check that options_in_stage is of type dict.
-    if not isinstance(options_in_stage, dict):
-        raise TypeError("options_in_stage is not of type dict.")
 
     ## Check that options_in_stage is not an empty.
     if not options_in_stage:
@@ -216,10 +197,6 @@ def check_supe_formulation_params(
             raise ValueError(
                 f"number of options in stage {key} is infeasible. Number of options must be a positive int."
             )
-
-    ## Check that option_outlets is of type dict.
-    if not isinstance(option_outlets, dict):
-        raise TypeError("option_outlets is not of type dict.")
 
     ## Check that option_outlets is not empty.
     if not option_outlets:
@@ -239,10 +216,6 @@ def check_supe_formulation_params(
             raise TypeError(
                 f"value for option {key} in option_outlets incorrectly defined. All elements must be positive integers."
             )
-
-    ## Check that option_efficiencies is of type dict.
-    if not isinstance(option_efficiencies, dict):
-        raise TypeError("option_efficiencies is not of type dict.")
 
     ## Check that option_efficiencies is not an empty dict.
     if not option_efficiencies:
@@ -426,14 +399,14 @@ def check_supe_formulation_params(
 
 def check_operating_params(
     m,
-    profit,
-    opt_var_oc_params,
-    operators_per_discrete_unit,
-    yearly_cost_per_unit,
-    capital_cost_per_unit,
-    processing_rate,
-    num_operators,
-    labor_rate,
+    profit: dict,
+    opt_var_oc_params: dict,
+    operators_per_discrete_unit: dict,
+    yearly_cost_per_unit: dict,
+    capital_cost_per_unit: dict,
+    processing_rate: dict,
+    num_operators: dict,
+    labor_rate: float,
 ):
     """
     This function checks that all the operating parameters are feasible.
@@ -450,10 +423,6 @@ def check_operating_params(
         labor_rate: (float) Yearly wage per operator.
     """
     ### Check types and structure.
-    ## Check that profit is of type dict.
-    if not isinstance(profit, dict):
-        raise TypeError("profit is not of type dict.")
-
     ## Check that profit is not empty.
     if not profit:
         raise TypeError("profit is an empty dict.")
@@ -560,10 +529,6 @@ def check_operating_params(
             raise TypeError(
                 f"value {value} of num_operators[{key}] is not of type int or float."
             )
-
-    ## Check that labor_rate is of type int or float.
-    if not isinstance(labor_rate, (int, float)):
-        raise TypeError("labor_rate is not of type int or float.")
 
     ### Define parameters necessary for tests.
     # Define a set of all the keys in profit dict.
@@ -769,7 +734,7 @@ def check_operating_params(
         raise ValueError("labor rate must be non-negative.")
 
 
-def check_discretized_costing_params(m, discretized_equipment_cost):
+def check_discretized_costing_params(m, discretized_equipment_cost: dict):
     """
     This function checks that all the costing parameters are feasible.
 
@@ -778,10 +743,6 @@ def check_discretized_costing_params(m, discretized_equipment_cost):
         discretized_equipment_cost: (dict) Discretized cost by flows entering for each continuous option.
     """
     ### Check types and structure.
-    ## Check that discretized_equipment_cost is of type dict.
-    if not isinstance(discretized_equipment_cost, dict):
-        raise TypeError("discretized_equipment_cost is not of type dict.")
-
     ## Check that discretized_equipment_cost is not an empty dict.
     if not discretized_equipment_cost:
         raise TypeError("discretized_equipment_cost is an empty dict.")
@@ -876,7 +837,10 @@ def check_discretized_costing_params(m, discretized_equipment_cost):
 
 
 def check_environmental_impact_params(
-    m, consider_environmental_impacts, options_environmental_impacts, epsilon
+    m,
+    consider_environmental_impacts: bool,
+    options_environmental_impacts: dict,
+    epsilon: float,
 ):
     """
     This function checks that all the environmental impact parameters are feasible.
@@ -887,17 +851,10 @@ def check_environmental_impact_params(
         options_environmental_impacts: (dict) Environmental impacts matrix. Unit chosen indicator per unit of incoming flowrate.
         epsilon: (float) Epsilon factor for generating the Pareto front.
     """
-    ## Check that consider_environmental_impacts is of type bool. Must be provided regardless on whether or not environmental impacts are considered.
-    if not isinstance(consider_environmental_impacts, bool):
-        raise TypeError("consider_environmental_impacts is not of type bool.")
     ### Only need to check feasibility of the rest of the parameters if user wants to consider environmental impacts
     # (consider_environmental_impacts is True).
     if consider_environmental_impacts:
         ### Check types and structure.
-        ## Check that options_environmental_impacts is of type dict.
-        if not isinstance(options_environmental_impacts, dict):
-            raise TypeError("options_environmental_impacts is not of type dict.")
-
         ## Check that options_environmental_impcts is not an empty dict
         if not options_environmental_impacts:
             raise ValueError("options_environmental_impacts is an empty dict")
@@ -912,10 +869,6 @@ def check_environmental_impact_params(
                 raise TypeError(
                     f"value of options_environmental_impacts[{opt}] is not of type int or float."
                 )
-
-        ## Check that epsilon is of type int or float.
-        if not isinstance(epsilon, (int, float)):
-            raise TypeError("epsilon is not of type int or float.")
 
         ### Define parameters necessary for tests.
         # Define a set for all the options in the superstructure.
@@ -934,7 +887,10 @@ def check_environmental_impact_params(
 
 
 def check_byproduct_valorization_params(
-    m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
+    m,
+    consider_byproduct_valorization: bool,
+    byproduct_values: dict,
+    byproduct_opt_conversions: dict,
 ):
     """
     This function checks that all the byproduct valorization parameters are feasible.
@@ -945,18 +901,9 @@ def check_byproduct_valorization_params(
         byproduct_values: (dict) Byproducts considered, and their value ($/kg).
         byproduct_opt_conversions: (dict) Defines the conversion factors for different byproducts for different options.
     """
-
-    ## Check that consider_byproduct_valorization is of type bool.
-    if not isinstance(consider_byproduct_valorization, bool):
-        raise TypeError("consider_byproduct_valorization not of type bool.")
-
     ### Only need to check feasibility of parameters if user wants to consider environmental impacts (consider_byprod_val is True).
     if consider_byproduct_valorization:
         ### Check typos and structure.
-        ## Check that byproduct_values is of type dict.
-        if not isinstance(byproduct_values, dict):
-            raise TypeError("byproduct_values is not of type dict")
-
         ## Check that byproduct_values is not empty.
         if not byproduct_values:
             raise TypeError("byproduct_values is an empty dict.")
@@ -969,10 +916,6 @@ def check_byproduct_valorization_params(
                 raise TypeError(
                     f"value {val} in byproduct_values is not of type int or float."
                 )
-
-        ## Check that byproduct_opt_conversions is of type dict.
-        if not isinstance(byproduct_opt_conversions, dict):
-            raise TypeError("byproduct_opt_conversions is not of type dict.")
 
         ## Check that byproduct_opt_conversions is not empty.
         if not byproduct_opt_conversions:

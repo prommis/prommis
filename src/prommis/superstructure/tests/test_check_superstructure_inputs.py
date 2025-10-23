@@ -267,20 +267,10 @@ def test_check_plant_lifetime_params():
     ## test correct input
     check_plant_lifetime_params(plant_start, plant_lifetime)
 
-    ## test incorrect inputs 1 - plant_lifetime not int
-    incorrect_plant_lifetime1 = 15.0
-    with pytest.raises(TypeError):
-        check_plant_lifetime_params(plant_start, incorrect_plant_lifetime1)
-
-    ## test incorrect inputs 2 - plant_lifetime not at least 3
-    incorrect_plant_lifetime2 = 2
+    ## test incorrect inputs 1 - plant_lifetime not at least 3
+    incorrect_plant_lifetime1 = 2
     with pytest.raises(ValueError):
-        check_plant_lifetime_params(plant_start, incorrect_plant_lifetime2)
-
-    ## test incorrect inputs 3 - plant_start is not of type int
-    incorrect_plant_start3 = 2024.0
-    with pytest.raises(TypeError):
-        check_plant_lifetime_params(incorrect_plant_start3, plant_lifetime)
+        check_plant_lifetime_params(plant_start, incorrect_plant_lifetime1)
 
 
 def test_check_feed_params():
@@ -352,17 +342,6 @@ def test_check_feed_params():
             collection_rate,
             incorrect_tracked_comps6,
             prod_comp_mass,
-        )
-
-    ## test incorrect inputs 7 - prod_comp_mass not a dict
-    incorrect_prod_comp_mass7 = 7
-    with pytest.raises(TypeError):
-        check_feed_params(
-            m,
-            available_feed,
-            collection_rate,
-            tracked_comps,
-            incorrect_prod_comp_mass7,
         )
 
     ## test incorrect inputs 8 - key of prod_comp_mass is not a str
@@ -530,17 +509,6 @@ def test_check_supe_formulation_params():
             option_efficiencies,
         )
 
-    ## test incorrect inputs 2 - options_in_stage is not a dict
-    incorrect_options_in_stage2 = "test"
-    with pytest.raises(TypeError):
-        check_supe_formulation_params(
-            m,
-            num_stages,
-            incorrect_options_in_stage2,
-            option_outlets,
-            option_efficiencies,
-        )
-
     ## test incorrect inputs 3 - options_in_stage is empty
     incorrect_options_in_stage3 = {}
     with pytest.raises(TypeError):
@@ -585,17 +553,6 @@ def test_check_supe_formulation_params():
             option_efficiencies,
         )
 
-    ## test incorrect inputs 7 - option_outlets is not a dict
-    incorrect_option_outlets7 = 7
-    with pytest.raises(TypeError):
-        check_supe_formulation_params(
-            m,
-            num_stages,
-            options_in_stage,
-            incorrect_option_outlets7,
-            option_efficiencies,
-        )
-
     ## test incorrect inputs 8 - option_outlets is an empty dict
     incorrect_option_outlets8 = {}
     with pytest.raises(TypeError):
@@ -605,17 +562,6 @@ def test_check_supe_formulation_params():
             options_in_stage,
             incorrect_option_outlets8,
             option_efficiencies,
-        )
-
-    ## test incorrect inputs 9 - option_efficiencies is not a dict
-    incorrect_option_efficiencies9 = 9
-    with pytest.raises(TypeError):
-        check_supe_formulation_params(
-            m,
-            num_stages,
-            options_in_stage,
-            option_outlets,
-            incorrect_option_efficiencies9,
         )
 
     ## test incorrect inputs 10 - option_efficiencies is an empty dict
@@ -1811,18 +1757,13 @@ def test_check_discretized_costing_params():
     ## test correct inputs
     check_discretized_costing_params(m, discretized_equipment_cost)
 
-    ## test incorrect inputs 1 - discretized_equipment_cost is not of type dict
-    incorrect_discretized_equipment_cost1 = 5
+    ## test incorrect inputs 1 - discretized_equipment_cost is an empty dict
+    incorrect_discretized_equipment_cost1 = {}
     with pytest.raises(TypeError):
         check_discretized_costing_params(m, incorrect_discretized_equipment_cost1)
 
-    ## test incorrect inputs 2 - discretized_equipment_cost is an empty dict
-    incorrect_discretized_equipment_cost2 = {}
-    with pytest.raises(TypeError):
-        check_discretized_costing_params(m, incorrect_discretized_equipment_cost2)
-
-    ## test incorrect inputs 3 - key in discretized_equipment_cost is not of type tuple
-    incorrect_discretized_equipment_cost3 = {
+    ## test incorrect inputs 2 - key in discretized_equipment_cost is not of type tuple
+    incorrect_discretized_equipment_cost2 = {
         2: {
             "Flowrates": [
                 0.0,
@@ -1849,10 +1790,10 @@ def test_check_discretized_costing_params():
         }
     }
     with pytest.raises(TypeError):
-        check_discretized_costing_params(m, incorrect_discretized_equipment_cost3)
+        check_discretized_costing_params(m, incorrect_discretized_equipment_cost2)
 
-    ## test incorrect inputs 4 - discretized_equipment_cost has incorrect structure. no inner dict
-    incorrect_discretized_equipment_cost4 = {
+    ## test incorrect inputs 3 - discretized_equipment_cost has incorrect structure. no inner dict
+    incorrect_discretized_equipment_cost3 = {
         (2, 1): [
             0.0,
             36480.0,
@@ -1866,15 +1807,15 @@ def test_check_discretized_costing_params():
         ]
     }
     with pytest.raises(TypeError):
+        check_discretized_costing_params(m, incorrect_discretized_equipment_cost3)
+
+    ## test incorrect inputs 4 - discretized_equipment_cost has incorrect structure. inner dict is empty
+    incorrect_discretized_equipment_cost4 = {(2, 1): {}}
+    with pytest.raises(ValueError):
         check_discretized_costing_params(m, incorrect_discretized_equipment_cost4)
 
-    ## test incorrect inputs 5 - discretized_equipment_cost has incorrect structure. inner dict is empty
-    incorrect_discretized_equipment_cost5 = {(2, 1): {}}
-    with pytest.raises(ValueError):
-        check_discretized_costing_params(m, incorrect_discretized_equipment_cost5)
-
-    ## test incorrect inputs 6 - discretized_equipment_cost has incorrect structure. value for inner dict not of type list
-    incorrect_discretized_equipment_cost6 = {
+    ## test incorrect inputs 5 - discretized_equipment_cost has incorrect structure. value for inner dict not of type list
+    incorrect_discretized_equipment_cost5 = {
         (2, 1): {
             "Flowrates": {
                 0.0,
@@ -1901,10 +1842,10 @@ def test_check_discretized_costing_params():
         },
     }
     with pytest.raises(TypeError):
-        check_discretized_costing_params(m, incorrect_discretized_equipment_cost6)
+        check_discretized_costing_params(m, incorrect_discretized_equipment_cost5)
 
-    ## test incorrect inputs 7 - discretized_equipment_cost has incorrect structure. value for inner dict is empty list
-    incorrect_discretized_equipment_cost7 = {
+    ## test incorrect inputs 6 - discretized_equipment_cost has incorrect structure. value for inner dict is empty list
+    incorrect_discretized_equipment_cost6 = {
         (2, 1): {
             "Flowrates": [
                 0.0,
@@ -1921,10 +1862,10 @@ def test_check_discretized_costing_params():
         },
     }
     with pytest.raises(ValueError):
-        check_discretized_costing_params(m, incorrect_discretized_equipment_cost7)
+        check_discretized_costing_params(m, incorrect_discretized_equipment_cost6)
 
-    ## test incorrect inputs 8 - discretized_equipment_cost missing values for some continuous options
-    incorrect_discretized_equipment_cost8 = {
+    ## test incorrect inputs 7 - discretized_equipment_cost missing values for some continuous options
+    incorrect_discretized_equipment_cost7 = {
         (2, 1): {
             "Flowrates": [
                 0.0,
@@ -1951,10 +1892,10 @@ def test_check_discretized_costing_params():
         }
     }
     with pytest.raises(ValueError):
-        check_discretized_costing_params(m, incorrect_discretized_equipment_cost8)
+        check_discretized_costing_params(m, incorrect_discretized_equipment_cost7)
 
-    ## test incorrect inputs 9 - discretized_equipment_cost contains values for some discrete options
-    incorrect_discretized_equipment_cost9 = {
+    ## test incorrect inputs 8 - discretized_equipment_cost contains values for some discrete options
+    incorrect_discretized_equipment_cost8 = {
         (1, 1): {
             "Flowrates": [
                 0.0,
@@ -2101,10 +2042,10 @@ def test_check_discretized_costing_params():
         },
     }
     with pytest.raises(ValueError):
-        check_discretized_costing_params(m, incorrect_discretized_equipment_cost9)
+        check_discretized_costing_params(m, incorrect_discretized_equipment_cost8)
 
-    ## test incorrect inputs 10 - discretized_equipment_cost contains values for non-existent continuous options
-    incorrect_discretized_equipment_cost10 = {
+    ## test incorrect inputs 9 - discretized_equipment_cost contains values for non-existent continuous options
+    incorrect_discretized_equipment_cost9 = {
         (2, 1): {
             "Flowrates": [
                 0.0,
@@ -2251,10 +2192,10 @@ def test_check_discretized_costing_params():
         },
     }
     with pytest.raises(ValueError):
-        check_discretized_costing_params(m, incorrect_discretized_equipment_cost10)
+        check_discretized_costing_params(m, incorrect_discretized_equipment_cost9)
 
-    ## test incorrect inputs 11 - discretized_equipment_cost contains different number of discretized data points between flowrates and costs for some options
-    incorrect_discretized_equipment_cost11 = {
+    ## test incorrect inputs 10 - discretized_equipment_cost contains different number of discretized data points between flowrates and costs for some options
+    incorrect_discretized_equipment_cost10 = {
         (2, 1): {
             "Flowrates": [
                 0.0,
@@ -2376,10 +2317,10 @@ def test_check_discretized_costing_params():
         },
     }
     with pytest.raises(ValueError):
-        check_discretized_costing_params(m, incorrect_discretized_equipment_cost11)
+        check_discretized_costing_params(m, incorrect_discretized_equipment_cost10)
 
-    ## test incorrect inputs 12 - discretized_equipment_cost contains values for some discrete options
-    incorrect_discretized_equipment_cost12 = {
+    ## test incorrect inputs 11 - discretized_equipment_cost contains values for some discrete options
+    incorrect_discretized_equipment_cost11 = {
         (2, 1): {
             "Costs": [
                 0.0,
@@ -2502,7 +2443,7 @@ def test_check_discretized_costing_params():
         },
     }
     with pytest.raises(ValueError):
-        check_discretized_costing_params(m, incorrect_discretized_equipment_cost12)
+        check_discretized_costing_params(m, incorrect_discretized_equipment_cost11)
 
 
 def test_check_environmental_impact_params():
@@ -2550,38 +2491,18 @@ def test_check_environmental_impact_params():
         m, consider_environmental_impacts, options_environmental_impacts, epsilon
     )
 
-    ## test incorrect inputs 1 - consider_environmental_impacts is not of type bool
-    incorrect_consider_environmental_impacts1 = "True"
-    with pytest.raises(TypeError):
-        check_environmental_impact_params(
-            m,
-            incorrect_consider_environmental_impacts1,
-            options_environmental_impacts,
-            epsilon,
-        )
-
-    ## test incorrect inputs 2 - options_environmental_impacts is not of type dict
-    incorrect_options_environmental_impacts2 = []
-    with pytest.raises(TypeError):
-        check_environmental_impact_params(
-            m,
-            consider_environmental_impacts,
-            incorrect_options_environmental_impacts2,
-            epsilon,
-        )
-
-    ## test incorrect inputs 3 - options_environmental_impcts is an empty dict
-    incorrect_options_environmental_impacts3 = {}
+    ## test incorrect inputs 1 - options_environmental_impcts is an empty dict
+    incorrect_options_environmental_impacts1 = {}
     with pytest.raises(ValueError):
         check_environmental_impact_params(
             m,
             consider_environmental_impacts,
-            incorrect_options_environmental_impacts3,
+            incorrect_options_environmental_impacts1,
             epsilon,
         )
 
-    ## test incorrect inputs 4 - key in options_environmental_impcts is not of type tuple
-    incorrect_options_environmental_impacts4 = {
+    ## test incorrect inputs 2 - key in options_environmental_impcts is not of type tuple
+    incorrect_options_environmental_impacts2 = {
         1: 0,
         (2, 1): 0,
         (2, 2): 1000,
@@ -2593,12 +2514,12 @@ def test_check_environmental_impact_params():
         check_environmental_impact_params(
             m,
             consider_environmental_impacts,
-            incorrect_options_environmental_impacts4,
+            incorrect_options_environmental_impacts2,
             epsilon,
         )
 
-    ## test incorrect inputs 5 - value in options_environmental_impcts is not of type int or float
-    incorrect_options_environmental_impacts5 = {
+    ## test incorrect inputs 3 - value in options_environmental_impcts is not of type int or float
+    incorrect_options_environmental_impacts3 = {
         (1, 1): "0",
         (2, 1): 0,
         (2, 2): 1000,
@@ -2610,22 +2531,12 @@ def test_check_environmental_impact_params():
         check_environmental_impact_params(
             m,
             consider_environmental_impacts,
-            incorrect_options_environmental_impacts5,
+            incorrect_options_environmental_impacts3,
             epsilon,
         )
 
-    ## test incorrect inputs 6 - epsilon is not of type int or float
-    incorrect_epsilon6 = "1"
-    with pytest.raises(TypeError):
-        check_environmental_impact_params(
-            m,
-            consider_environmental_impacts,
-            options_environmental_impacts,
-            incorrect_epsilon6,
-        )
-
-    ## test incorrect inputs 7 - environmental impacts matrix doesn't contain entries for all options in the superstructure
-    incorrect_options_environmental_impacts7 = {
+    ## test incorrect inputs 4 - environmental impacts matrix doesn't contain entries for all options in the superstructure
+    incorrect_options_environmental_impacts4 = {
         (2, 1): 0,
         (2, 2): 1000,
         (3, 1): 600,
@@ -2636,7 +2547,7 @@ def test_check_environmental_impact_params():
         check_environmental_impact_params(
             m,
             consider_environmental_impacts,
-            incorrect_options_environmental_impacts7,
+            incorrect_options_environmental_impacts4,
             epsilon,
         )
 
@@ -2691,26 +2602,6 @@ def test_check_byproduct_valorization_params():
         m, consider_byproduct_valorization, byproduct_values, byproduct_opt_conversions
     )
 
-    ## test incorrect inputs 1 - consider_byproduct_valorization is not of type bool.
-    incorrect_consider_byproduct_valorization1 = "True"
-    with pytest.raises(TypeError):
-        check_byproduct_valorization_params(
-            m,
-            incorrect_consider_byproduct_valorization1,
-            byproduct_values,
-            byproduct_opt_conversions,
-        )
-
-    ## test incorrect inputs 2 - byproduct_values is not of type dict
-    incorrect_byproduct_values2 = []
-    with pytest.raises(TypeError):
-        check_byproduct_valorization_params(
-            m,
-            consider_byproduct_valorization,
-            incorrect_byproduct_values2,
-            byproduct_opt_conversions,
-        )
-
     ## test incorrect inputs 3 - byproduct_values is an empty dict
     incorrect_byproduct_values3 = {}
     with pytest.raises(TypeError):
@@ -2747,16 +2638,6 @@ def test_check_byproduct_valorization_params():
             consider_byproduct_valorization,
             incorrect_byproduct_values5,
             byproduct_opt_conversions,
-        )
-
-    ## test incorrect inputs 6 - byproduct_opt_conversions is not of type dict
-    incorrect_byproduct_opt_conversions6 = []
-    with pytest.raises(TypeError):
-        check_byproduct_valorization_params(
-            m,
-            consider_byproduct_valorization,
-            byproduct_values,
-            incorrect_byproduct_opt_conversions6,
         )
 
     ## test incorrect inputs 7 - byproduct_opt_conversions is an empty dict

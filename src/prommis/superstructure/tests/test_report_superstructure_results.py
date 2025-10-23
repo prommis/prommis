@@ -5,9 +5,13 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 from unittest.mock import patch
+
 from pyomo.environ import SolverFactory
+
 from idaes.core.solvers import get_solver
+
 import pytest
+
 from prommis.superstructure.objective_function_enums import ObjectiveFunctionChoice
 from prommis.superstructure.report_superstructure_results import (
     report_superstructure_costing,

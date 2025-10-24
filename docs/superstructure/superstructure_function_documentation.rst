@@ -19,6 +19,112 @@ are demonstrated in [EVLaliwala2024]_ and [HDDLaliwala2024]_. Users can
 optionally consider byproduct valorization and environmental impacts in
 their pathway selection.
 
+Superstructure Arguments
+========================
+
+To build a superstructure model, 
+The arguments that must be passed to build the 
+superstructure model are shown in :numref:`Table:build_model_args`:
+
+.. table:: Arguments for the build_model function
+   :name: Table:build_model_args
+
+   +---------------------------------------+------------+--------------------------------------------------+
+   | **Argument**                          | **Type**   | **Description**                                  |
+   +=======================================+============+==================================================+
+   | **Objective Function**                                                                                      |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``obj_func``                          | Objective  | Choice of objective function. Options are        |
+   |                                       | Function   | ``ObjectiveFunctionChoice.NET_PRESENT_VALUE``    |
+   |                                       | Choice     | or ``ObjectiveFunctionChoice.COST_OF_RECOVERY``. |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | **Plant Lifetime Parameters**                                                                               |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``plant_start``                       | int        | The year that plant construction begins.         |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``plant_lifetime``                    | int        | The total lifetime of the plant, including plant |
+   |                                       |            | construction. Must be at least three years.      |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | **Feed Parameters**                                                                                         |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``available_feed``                    | dict       | Total feedstock available (number of EOL         |
+   |                                       |            | products) for recycling each year.               |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``collection_rate``                   | float      | Collection rate for how much available feed is   |
+   |                                       |            | processed by the plant each year.                |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``tracked_comps``                     | list       | List of tracked components.                      |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``prod_comp_mass``                    | dict       | Mass of tracked components per EOL product       |
+   |                                       |            | (kg / EOL product).                              |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | **Superstructure Formulation Parameters**                                                                   |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``num_stages``                        | int        | Number of total stages.                          |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``options_in_stage``                  | dict       | Number of options in each stage.                 |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``option_outlets``                    | dict       | Set of options k' in stage j+1 connected to      |
+   |                                       |            | option k in stage j.                             |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``option_efficiencies``               | dict       | Tracked component retention efficiency for each  |
+   |                                       |            | option.                                          |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | **Operating Parameters**                                                                                    |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``profit``                            | dict       | Profit per unit of product in terms of tracked   |
+   |                                       |            | components ($/kg tracked component).             |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``opt_var_oc_params``                 | dict       | Variable operating cost parameters for options   |
+   |                                       |            | that are continuous. Variable operating costs    |
+   |                                       |            | assumed to be proportional to the feed entering  |
+   |                                       |            | the option.                                      |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``operators_per_discrete_unit``       | dict       | Number of operators needed per discrete unit for |
+   |                                       |            | options that utilize discrete units.             |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``yearly_cost_per_unit``              | dict       | Yearly operating costs per unit ($/year) for     |
+   |                                       |            | options which utilize discrete units.            |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``capital_cost_per_unit``             | dict       | Cost per unit ($) for options which utilize      |
+   |                                       |            | discrete units.                                  |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``processing_rate``                   | dict       | Processing rate per unit for options that        |
+   |                                       |            | utilize discrete units. In terms of end-of-life  |
+   |                                       |            | products disassembled per year per unit (number  |
+   |                                       |            | of EOL products / year).                         |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``num_operators``                     | dict       | Number of operators needed for each continuous   |
+   |                                       |            | option.                                          |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``labor_rate``                        | float      | Yearly wage per operator ($ / year).             |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | **Discretized Costing Parameters**                                                                          |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``discretized_purchased_equipment_``  | dict       | Discretized cost by flows entering for each      |
+   | ``cost``                              |            | continuous option ($/kg).                        |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | **Environmental Impacts Parameters**                                                                        |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``consider_environmental_impacts``    | bool       | Choice of whether or not to consider             |
+   |                                       |            | environmental impacts.                           |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``options_environmental_impacts``     | dict       | Environmental impacts matrix. Unit chosen        |
+   |                                       |            | indicator per unit of incoming flowrate.         |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``epsilon``                           | float      | Epsilon factor for generating the Pareto front.  |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | **Byproduct Valorization Parameters**                                                                       |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``consider_byproduct_valorization``   | bool       | Decide whether or not to consider the            |
+   |                                       |            | valorization of byproducts.                      |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``byproduct_values``                  | dict       | Byproducts considered, and their value ($/kg).   |
+   +---------------------------------------+------------+--------------------------------------------------+
+   | ``byproduct_opt_conversions``         | dict       | Conversion factors for each byproduct for each   |
+   |                                       |            | option.                                          |
+   +---------------------------------------+------------+--------------------------------------------------+
+
 Model Formulation
 =================
 
@@ -542,6 +648,33 @@ Consideration of environmental impacts leads to the formation of a
 multi-criteria optimization problem. This function utilizes the
 :math:`\epsilon`-constraint method. By calling the function for varying
 values of :math:`\epsilon`, the user can construct the Pareto front.
+
+Class Documentation
+===================
+
+ObjectiveFunctionChoice
+-----------------------
+
+.. autoclass:: prommis.superstructure.objective_function_enums.ObjectiveFunctionChoice
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Superstructure Function
+------------------------
+
+.. automodule:: prommis.superstructure.superstructure_function
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Report Superstructure Results
+------------------------------
+
+.. automodule:: prommis.superstructure.report_superstructure_results
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 References
 ==========

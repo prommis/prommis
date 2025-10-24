@@ -489,7 +489,7 @@ def build_model(
     This function builds a superstructure model based on specifications from the user.
 
     Args:
-        obj_func: (str) Choice of objective function. Options are 'NPV' or 'COR'. Case sensitive.
+        obj_func: Choice of objective function. Options are custom enums: ObjectiveFunctionChoice.NET_PRESENT_VALUE or ObjectiveFunctionChoice.COST_OF_RECOVERY.
 
         # Plant lifetime parameters
         plant_start: (int) The year that plant construction begins.

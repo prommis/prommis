@@ -442,7 +442,7 @@ def define_custom_units():
     """
     This function defines custom units that are needed throughout the model.
     """
-    # Define custom units.
+    # Define custom units
     pyunits.load_definitions_from_strings(["EOL_Product = [item]"])
     pyunits.load_definitions_from_strings(["Operator = [item]"])
     pyunits.load_definitions_from_strings(["Disassembly_Unit = [item]"])

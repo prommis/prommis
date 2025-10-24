@@ -351,7 +351,7 @@ def report_superstructure_streams(m, results=None):
     """
     This function reports the yearly values of the flow variables within the model.
     This includes flows entering each stage (f), flows entering each option (f_in),
-    and flows exiting each option (f_out). If byproduct valorization is considered, 
+    and flows exiting each option (f_out). If byproduct valorization is considered,
     then the yearly flows of byproducts produced are also reported.
 
     Args:

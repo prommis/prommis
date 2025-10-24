@@ -278,7 +278,7 @@ Example usage::
     report_optimal_pathway(model, results)
 
 For detailed documentation of all reporting functions, see the 
-Class Documnetation section below.
+Class Documentation section below.
 
 Model Formulation
 =================

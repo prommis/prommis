@@ -489,46 +489,56 @@ def build_model(
     This function builds a superstructure model based on specifications from the user.
 
     Args:
-        obj_func: Choice of objective function. Options are custom enums: ObjectiveFunctionChoice.NET_PRESENT_VALUE or ObjectiveFunctionChoice.COST_OF_RECOVERY.
+        obj_func (ObjectiveFunctionChoice): Choice of objective function. Options are 
+            ``ObjectiveFunctionChoice.NET_PRESENT_VALUE`` or 
+            ``ObjectiveFunctionChoice.COST_OF_RECOVERY``.
+        plant_start (int): The year that plant construction begins.
+        plant_lifetime (int): The total lifetime of the plant, including plant 
+            construction. Must be at least three years.
+        available_feed (dict): Total feedstock available (number of EOL products) 
+            for recycling each year.
+        collection_rate (float): Collection rate for how much available feed is 
+            processed by the plant each year.
+        tracked_comps (list): List of tracked components.
+        prod_comp_mass (dict): Mass of tracked components per EOL product 
+            (kg / EOL product).
+        num_stages (int): Number of total stages.
+        options_in_stage (dict): Number of options in each stage.
+        option_outlets (dict): Set of options k' in stage j+1 connected to 
+            option k in stage j.
+        option_efficiencies (dict): Tracked component retention efficiency for 
+            each option.
+        profit (dict): Profit per unit of product in terms of tracked components 
+            ($/kg tracked component).
+        opt_var_oc_params (dict): Variable operating cost parameters for options 
+            that are continuous. Variable operating costs assumed to be proportional 
+            to the feed entering the option.
+        operators_per_discrete_unit (dict): Number of operators needed per discrete 
+            unit for options that utilize discrete units.
+        yearly_cost_per_unit (dict): Yearly operating costs per unit ($/year) for 
+            options which utilize discrete units.
+        capital_cost_per_unit (dict): Cost per unit ($) for options which utilize 
+            discrete units.
+        processing_rate (dict): Processing rate per unit for options that utilize 
+            discrete units. In terms of end-of-life products disassembled per year 
+            per unit (number of EOL products / year).
+        num_operators (dict): Number of operators needed for each continuous option.
+        labor_rate (float): Yearly wage per operator ($ / year).
+        discretized_purchased_equipment_cost (dict): Discretized cost by flows 
+            entering for each continuous option ($/kg).
+        consider_environmental_impacts (bool): Choice of whether or not to consider 
+            environmental impacts.
+        options_environmental_impacts (dict): Environmental impacts matrix. Unit 
+            chosen indicator per unit of incoming flowrate.
+        epsilon (float): Epsilon factor for generating the Pareto front.
+        consider_byproduct_valorization (bool): Decide whether or not to consider 
+            the valorization of byproducts.
+        byproduct_values (dict): Byproducts considered, and their value ($/kg).
+        byproduct_opt_conversions (dict): Conversion factors for each byproduct 
+            for each option.
 
-        # Plant lifetime parameters
-        plant_start: (int) The year that plant construction begins.
-        plant_lifetime: (int) The total lifetime of the plant, including plant construction. Must be at least three years.
-
-        # Feed parameters
-        available_feed: (dict) Total feedstock available (number of EOL products) for recycling each year.
-        collection_rate: (float) Collection rate for how much available feed is processed by the plant each year.
-        tracked_comps: (list) List of tracked components.
-        prod_comp_mass: (dict) Mass of tracked components per EOL product (kg / EOL product).
-
-        # Superstructure formulation parameters
-        num_stages: (int) Number of total stages.
-        options_in_stage: (dict) Number of options in each stage.
-        option_outlets: (dict) Set of options k' in stage j+1 connected to option k in stage j.
-        option_efficiencies: (dict) Tracked component retention efficiency for each option.
-
-        # Operating parameters
-        profit: (dict) Profit per unit of product in terms of tracked components ($/kg tracked component).
-        opt_var_oc_params: (dict) Holds the variable operating cost param for options that are continuous. Variable operating costs assumed to be proportional to the feed entering the option.
-        operators_per_discrete_unit: (dict) Number of operators needed per discrete unit for options that utilize discrete units.
-        yearly_cost_per_unit: (dict) Yearly operating costs per unit ($/year) for options which utilize discrete units.
-        capital_cost_per_unit: (dict) Cost per unit ($) for options which utilize discrete units.
-        processing_rate: (dict) Processing rate per unit for options that utilize discrete units. In terms of end-of-life products disassembled per year per unit (number of EOL products / year).
-        num_operators: (dict) Number of operators needed for each continuous option.
-        labor_rate: (float) Yearly wage per operator ($ / year).
-
-        # Discretized costing parameters
-        discretized_equipment_cost: (dict) Discretized cost by flows entering for each continuous option ($/kg).
-
-        # Environmental impacts parameters
-        consider_environmental_impacts: (bool) Choice of whether or not to consider environmental impacts.
-        options_environmental_impacts: (dict) Environmental impacts matrix. Unit chosen indicator per unit of incoming flowrate.
-        epsilon: (float) Epsilon factor for generating the Pareto front.
-
-        # Byproduct valorization parameters
-        consider_byproduct_valorization: (bool) Decide whether or not to consider the valorization of byproducts.
-        byproduct_values: (dict) Byproducts considered, and their value ($/kg).
-        byproduct_opt_conversions: (dict) Conversion factors for each byproduct for each option.
+    Returns:
+        ConcreteModel: Pyomo superstructure model.
     """
 
     #################################################################################################

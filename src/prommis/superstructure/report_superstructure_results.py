@@ -20,6 +20,10 @@ from prommis.superstructure.objective_function_enums import ObjectiveFunctionCho
 
 def report_superstructure_results_overview(m, results=None):
     """
+    This function reports an overview of the results of solving the superstructure.
+    This includes the optimal pathway, the objective function value, and the total environmental
+    impacts if the user chose to track them.
+
     Args:
         m: Pyomo model
         results: Solver results object
@@ -82,6 +86,10 @@ def report_superstructure_results_overview(m, results=None):
 
 def report_superstructure_costing(m, results=None):
     """
+    This function reports the costing results of the superstructure. This includes the
+    objective function value, the yearly cash flows, revenues, capital expenses,
+    and operating expenses. Relevant costing parameters are also reported.
+
     Args:
         m: Pyomo model
         results: Solver results object
@@ -341,6 +349,11 @@ def report_superstructure_costing(m, results=None):
 
 def report_superstructure_streams(m, results=None):
     """
+    This function reports the yearly values of the flow variables within the model.
+    This includes flows entering each stage (f), flows entering each option (f_in),
+    and flows exiting each option (f_out). If byproduct valorization is considered, 
+    then the yearly flows of byproducts produced are also reported.
+
     Args:
         m: Pyomo model
         results: Solver results object
@@ -484,6 +497,10 @@ def report_superstructure_streams(m, results=None):
 
 def report_superstructure_environmental_impacts(m, results=None):
     """
+    This function reports the yearly, and total environmental impacts
+    produced by the process. The user must specify the superstructure
+    model to track environmental impacts for this function to work.
+
     Args:
         m: Pyomo model
         results: Solver results object

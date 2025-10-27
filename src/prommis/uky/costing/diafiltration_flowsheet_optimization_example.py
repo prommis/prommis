@@ -400,7 +400,7 @@ def scale_and_solve_model(m):
     scaling.propagate_solution(scaled_model, m)
 
 
-if __name__ == "__main__":
+def main():
     m = build_model()
 
     dt = DiagnosticsToolbox(m)
@@ -462,3 +462,8 @@ if __name__ == "__main__":
     )
     print("\nCost results after optimization:")
     m.fs.costing.report()
+
+    return m
+
+if __name__ == "__main__":
+    m = main()

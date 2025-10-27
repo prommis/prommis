@@ -35,6 +35,7 @@ from prommis.nanofiltration.diafiltration import (
 from prommis.uky.costing.diafiltration_flowsheet_optimization_example import (
     build_costing,
     build_optimization,
+    main,
     print_io_snap,
     print_stage_cuts,
     scale_and_solve_model,
@@ -274,3 +275,7 @@ class TestDiafiltrationOptimization:
     def test_print_methods(self, model):
         print_io_snap(model.fs, tag="AFTER OPTIMIZATION")
         print_stage_cuts(model, label="STAGE CUTS — AFTER OPTIMIZATION")
+
+    @pytest.mark.component
+    def test_main(self, model):
+        main()

@@ -46,7 +46,9 @@ from prommis.uky.costing.ree_plant_capcost import QGESSCosting
 def _v(x):
     try:
         return float(value(x))
-    except Exception:
+    except (
+        ValueError or TypeError
+    ):  # fails to return value or type that can't be made float
         return None
 
 
@@ -58,7 +60,9 @@ def _purity_mass(stream, li_key="Li", co_key="Co"):
     try:
         li = _v(stream.conc_mass_solute[0, li_key])
         co = _v(stream.conc_mass_solute[0, co_key])
-    except Exception:
+    except (
+        ValueError or TypeError
+    ):  # fails to return value or type that can't be made float
         return None, None
     if li is None or co is None:
         return None, None
@@ -464,6 +468,7 @@ def main():
     m.fs.costing.report()
 
     return m
+
 
 if __name__ == "__main__":
     m = main()

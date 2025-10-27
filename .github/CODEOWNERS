@@ -15,10 +15,10 @@
 /src/prommis/_sphinx_extensions/ @sufikaur @ksbeattie
 /src/prommis/_testing_utils/ @sufikaur @ksbeattie
 
-**/conftest.py @lbianchi-lbl
+**/conftest.py @sufikaur
 
-/src/prommis/evaporation_pond/ @andrewlee94
-/src/prommis/leaching/ @andrewlee94
+/src/prommis/evaporation_pond/ @dallan-keylogic 
+/src/prommis/leaching/ @dallan-keylogic @MarcusHolly
 /src/prommis/nanofiltration/ @mollydougher
 /src/prommis/precipitate/ @agarciadiego
 /src/prommis/roasting/ @jinliangma 

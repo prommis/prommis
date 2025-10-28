@@ -119,6 +119,7 @@ class TestLiCoDiafiltration:
         dt.display_potential_evaluation_errors()
 
     # 3. Access product price.
+    @pytest.mark.component
     def test_import_product_prices(self):
         """Test case for importing and verifying product prices."""
 
@@ -143,6 +144,7 @@ class TestLiCoDiafiltration:
         print(f"Co price: {self.Co_price}")
 
     # 4. Test framework to determine if the byproduct should be recovered
+    @pytest.mark.component
     def test_determine_byproduct_recovery(self):
         self.build_LiCoDiafiltration_model()  # Ensure model is built first
         self.test_import_product_prices()  # Ensure prices are loaded
@@ -226,6 +228,7 @@ class TestLiCoDiafiltration:
         print("\n--- Byproduct Recovery Decision ---")
         print(determine_result)
 
+    @pytest.mark.component
     def test_example_usage(self):
         """
         Ensure that the example usage from script runs correctly.
@@ -244,6 +247,7 @@ class TestLiCoDiafiltration:
             "❌ Byproduct recovery is NOT financially viable."
         ), f"Unexpected output: {determine_result}"
 
+    @pytest.mark.component
     def test_results(self):
         """Check expected numerical and string outputs."""
         self.build_LiCoDiafiltration_model()  # Ensure model is built first
@@ -258,6 +262,7 @@ class TestLiCoDiafiltration:
             value(self.Li_recovery_mass) > 0
         ), "Lithium recovery mass should be positive."
 
+    @pytest.mark.unit
     def test_edge_case_empty_material_list(self):
         # Test that an empty material list raises the correct ValueError
         with pytest.raises(

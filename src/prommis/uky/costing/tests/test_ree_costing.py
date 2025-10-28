@@ -2892,11 +2892,11 @@ class TestDiafiltrationCosting(object):
         ) == pytest.approx(8.51301e-4, rel=1e-4)
 
         assert value(model.fs.costing.custom_variable_costs) == pytest.approx(
-            8.51302e-4, rel=1e-4
+            0.986072, rel=1e-4
         )
 
         assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
-            525.7135, rel=1e-4
+            526.8958, rel=1e-4
         )
 
 
@@ -4262,8 +4262,8 @@ def test_REE_costing_fixedOM_twiceonsamemodel():
         )
 
 
-@pytest.mark.unit
-def test_REE_costing_fixedOM_pureproductnotpassed():
+@pytest.mark.component
+def test_REE_costing_fixedOM_productratesnotpassed():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -4283,11 +4283,20 @@ def test_REE_costing_fixedOM_pureproductnotpassed():
         },
     )
 
-    with pytest.raises(
-        TypeError,
-        match="product_output_rates argument must be a dict",
-    ):
-        m.fs.costing.build_process_costs()
+    m.fs.costing.build_process_costs()
+
+    dt = DiagnosticsToolbox(model=m)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    assert value(m.fs.costing.total_sales_revenue) == pytest.approx(0, abs=1e-6)
 
 
 @pytest.mark.unit
@@ -4319,38 +4328,6 @@ def test_REE_costing_fixedOM_pureproductnotadict():
             pure_product_output_rates=[
                 1.9 * pyunits.kg / pyunits.hr,
             ],
-        )
-
-
-@pytest.mark.unit
-def test_REE_costing_fixedOM_mixedproductnotpassed():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    with pytest.raises(
-        TypeError,
-        match="product_output_rates argument must be a dict",
-    ):
-        m.fs.costing.build_process_costs(
-            pure_product_output_rates={
-                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-            },
         )
 
 

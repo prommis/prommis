@@ -12,3 +12,4 @@ chapters:
   - file: tutorials/costing_uky_flowsheet-solution
   - file: api.rst
   - file: examples/cmi_process.rst
+  - file: superstructure/superstructure_function_documentation.rst

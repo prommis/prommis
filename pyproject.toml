@@ -35,7 +35,7 @@ dependencies = [
 ]
 [project.optional-dependencies]
 watertap = [
-    "git+https://github.com/watertap-org/watertap.git@main",
+    "git+https://github.com/watertap-org/watertap.git@sufikaur:pylint-test",
 ]
 flowsheet-processor = [
     "idaes-flowsheet-processor >=0.1.dev4",

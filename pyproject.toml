@@ -38,7 +38,7 @@ watertap = [
     "watertap @ git+https://github.com/sufikaur/watertap.git@pylint-test",
 ]
 flowsheet-processor = [
-    "idaes-flowsheet-processor @ git@github.com:prommis/idaes-flowsheet-processor.git@main",
+    "idaes-flowsheet-processor >=0.1.dev4",
 ]
 
 [tool.setuptools_scm]

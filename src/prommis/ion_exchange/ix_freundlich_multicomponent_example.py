@@ -116,6 +116,7 @@ def main():
     c_trap_min = 1e-3
     regenerant = "single_use"
     save_plot = False
+    hazardous_waste = False
 
     # Build the model by calling the Pyomo ConcreteModel() component
     m = build_model()
@@ -142,6 +143,7 @@ def main():
         num_traps=num_traps,
         c_trap_min=c_trap_min,
         resin_file=resin_file,
+        hazardous_waste=hazardous_waste,
     )
 
     # Add lower and upper bounds to relevant variables in the IX model
@@ -185,6 +187,10 @@ def main():
 
     # Solve and re-initialize the model including the costing variables
     initialize_with_costing(m)
+
+    dt = DiagnosticsToolbox(model=m)
+    dt.assert_no_structural_warnings()
+
     init_costing_results = model_solve(m, solver=solver)
     pyo.assert_optimal_termination(init_costing_results)
 
@@ -247,11 +253,9 @@ def add_data(
         "service_flow_rate",
         "ebct",
         "N_Re",
-        "N_Sc",
         "N_Sh",
         "N_Pe_bed",
         "N_Pe_particle",
-        "bv",
     ]
 
     # Read data for resins, properties of components, and calculated
@@ -302,6 +306,7 @@ def build_clark(
     num_traps=None,
     c_trap_min=None,
     resin_file=None,
+    hazardous_waste=None,
 ):
 
     # Add sets for solvent and ion species
@@ -338,6 +343,7 @@ def build_clark(
     ix_config = {
         "property_package": m.fs.ix_properties,
         "regenerant": regenerant,
+        "hazardous_waste": hazardous_waste,
         "target_component": target_component,
         "reactive_ions": m.list_reactive_ions,
         "number_traps": num_traps,
@@ -379,7 +385,6 @@ def set_bounds(m):
     ix.service_flow_rate.setlb(1e-10)
     ix.process_flow.properties_in[0.0].visc_k_phase["Liq"].setlb(1e-16)
     ix.process_flow.properties_in[0].flow_vol_phase["Liq"].setlb(1e-16)
-    ix.N_Sc.setlb(1e-16)
     for c in m.fs.set_reactive_ions:
         ix.process_flow.properties_in[0.0].diffus_phase_comp["Liq", c].setlb(1e-16)
         ix.bv_50[c].setlb(1e-3)
@@ -485,20 +490,12 @@ def set_operating_conditions(m, parmest_data=None, target_component=None, resin=
     # Equilibrium parameters
     for c in m.fs.set_reactive_ions:
 
-        # Add bounds for bed volume
-        ix.bv[c].setub(400)
-        ix.bv[c].set_value(10)
-
         # Fix Freundlich parameters using the data from parameter
         # estimation
         ix.freundlich_n[c].fix(parmest_data["freundlich_n"][c])
         ix.mass_transfer_coeff[c].fix(parmest_data["mass_transfer_coeff"][c])
         ix.bv_50[c].fix(parmest_data["bv_50"][c])
-
-        if c == target_component:
-            ix.c_norm[c].fix(0.99)
-        else:
-            ix.c_norm[c].fix(0.99)
+        ix.c_norm[c].fix(0.99)
 
     return m
 
@@ -662,6 +659,9 @@ def add_costing(m, target_component=None):
             * m.fs.operational_daily_hours
             * m.fs.operational_yearly_days
         )
+
+    m.fs.unit_ix.target_breakthrough_time.setlb(1e-3)
+    m.fs.unit_ix.target_breakthrough_time.setub(1e10)
 
 
 def initialize_with_costing(m, solver=None):

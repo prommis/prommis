@@ -354,7 +354,7 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
                 return left_side - right_side == 0
 
         # [ESR WIP: Try to make changes in the normalization term in
-        # eq_traps to see if that imporves the breakthrough time
+        # eq_traps to see if that improves the breakthrough time
         # calculation. This normalization helps to express each
         # trapezoid’s width as a fraction of the total interval. This
         # normalization helps ensure that the integrated output (when

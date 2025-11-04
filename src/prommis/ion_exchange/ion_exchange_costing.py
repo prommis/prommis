@@ -260,18 +260,6 @@ def cost_ion_exchange(blk):
     bed_vol_ft3 = pyo.units.convert(blk.unit_model.bed_volume, to_units=pyo.units.ft**3)
 
     ix_type = blk.unit_model.ion_exchange_type
-    blk.regen_soln_dens = pyo.Param(
-        initialize=1000,
-        units=pyo.units.kg / pyo.units.m**3,
-        mutable=True,
-        doc="Density of regeneration solution",
-    )
-    blk.regen_dose = pyo.Param(
-        initialize=300,
-        units=pyo.units.kg / pyo.units.m**3,
-        mutable=True,
-        doc="Regenerant dose required for regeneration per volume of resin [kg regenerant/m3 resin]",
-    )
     blk.capital_cost_vessel = pyo.Var(
         initialize=1e5,
         domain=pyo.NonNegativeReals,
@@ -283,12 +271,6 @@ def cost_ion_exchange(blk):
         domain=pyo.NonNegativeReals,
         units=blk.costing_package.base_currency,
         doc="Capital cost for resin for one vessel",
-    )
-    blk.capital_cost_regen_tank = pyo.Var(
-        initialize=1e5,
-        domain=pyo.NonNegativeReals,
-        units=blk.costing_package.base_currency,
-        doc="Capital cost for regeneration solution tank",
     )
     blk.capital_cost_backwash_tank = pyo.Var(
         initialize=1e5,
@@ -302,12 +284,6 @@ def cost_ion_exchange(blk):
         units=blk.costing_package.base_currency / blk.costing_package.base_period,
         doc="Operating cost for hazardous waste disposal",
     )
-    blk.flow_mass_regen_soln = pyo.Var(
-        initialize=1,
-        domain=pyo.NonNegativeReals,
-        units=pyo.units.kg / pyo.units.year,
-        doc="Regeneration solution flow",
-    )
     blk.total_pumping_power = pyo.Var(
         initialize=1,
         domain=pyo.NonNegativeReals,
@@ -315,19 +291,54 @@ def cost_ion_exchange(blk):
         doc="Total pumping power required",
     )
 
+    if blk.unit_model.config.regenerant != "single_use":
+        blk.regen_soln_dens = pyo.Param(
+            initialize=1000,
+            units=pyo.units.kg / pyo.units.m**3,
+            mutable=True,
+            doc="Density of regeneration solution",
+        )
+        blk.regen_dose = pyo.Param(
+            initialize=300,
+            units=pyo.units.kg / pyo.units.m**3,
+            mutable=True,
+            doc="Regenerant dose required for regeneration per volume of resin [kg regenerant/m3 resin]",
+        )
+        blk.capital_cost_regen_tank = pyo.Var(
+            initialize=1e5,
+            domain=pyo.NonNegativeReals,
+            units=blk.costing_package.base_currency,
+            doc="Capital cost for regeneration solution tank",
+        )
+        blk.flow_mass_regen_soln = pyo.Var(
+            initialize=1,
+            domain=pyo.NonNegativeReals,
+            units=pyo.units.kg / pyo.units.year,
+            doc="Regeneration solution flow",
+        )
+
     if ix_type == "cation":
         resin_cost = ion_exchange_params.cation_exchange_resin_cost
-
-    elif ix_type == "anion":
-        resin_cost = ion_exchange_params.anion_exchange_resin_cost
-
-    elif ix_type == "demineralize":
-        resin_cost = (
-            ion_exchange_params.cation_exchange_resin_cost
-            * blk.unit_model.charge_ratio_cx
-            + ion_exchange_params.anion_exchange_resin_cost
-            * blk.unit_model.charge_ratio_ax
+    else:
+        # [ESR WIP: The current ion exchange model is used for the
+        # separation of rare earth elements (REEs), which implies a
+        # cation exchange type. We commented other types for now. We
+        # will consider if we need to integrate the alternative types
+        # in future iterations.]
+        raise ConfigurationError(
+            "The current ion exchange model is limited to cation exchange methods and alternative techniques are not addressed at this time."
         )
+
+    # elif ix_type == "anion":
+    #     resin_cost = ion_exchange_params.anion_exchange_resin_cost
+
+    # elif ix_type == "demineralize":
+    #     resin_cost = (
+    #         ion_exchange_params.cation_exchange_resin_cost
+    #         * blk.unit_model.charge_ratio_cx
+    #         + ion_exchange_params.anion_exchange_resin_cost
+    #         * blk.unit_model.charge_ratio_ax
+    #     )
 
     blk.capital_cost_vessel_constraint = pyo.Constraint(
         expr=blk.capital_cost_vessel
@@ -346,14 +357,11 @@ def cost_ion_exchange(blk):
         )
     )
 
+    backwash_tank_vol_expr = (
+        blk.unit_model.backwash_flow_rate * blk.unit_model.backwash_time
+    )
+
     if blk.unit_model.config.regenerant == "single_use":
-
-        blk.capital_cost_regen_tank.fix(0)
-        blk.flow_mass_regen_soln.fix(0)
-
-        # [ESR updates: Add missing DOF since I moved the constraints
-        # to calculate them to the "else" case.]
-        blk.capital_cost_backwash_tank.fix(0)
 
         blk.flow_vol_resin = pyo.Var(
             initialize=1e5,
@@ -383,6 +391,7 @@ def cost_ion_exchange(blk):
             blk.flow_vol_resin * blk.unit_model.resin_density,
             to_units=pyo.units.ton / blk.costing_package.base_period,
         )
+
     else:
 
         blk.regeneration_tank_vol = pyo.Expression(
@@ -402,41 +411,52 @@ def cost_ion_exchange(blk):
             )
         )
 
-        # [ESR updates: Move inside if since bw_flow is included when
-        # "single_use" is not selected.]
-        blk.backwash_tank_vol = pyo.Expression(
-            expr=pyo.units.convert(
-                (
-                    blk.unit_model.bw_flow * blk.unit_model.backwash_time
-                    + blk.unit_model.rinse_flow * blk.unit_model.rinse_time
-                ),
-                to_units=pyo.units.gal,
-            )
+        backwash_tank_vol_expr += (
+            blk.unit_model.rinse_flow_rate * blk.unit_model.rinse_time
         )
 
-        blk.capital_cost_backwash_tank_constraint = pyo.Constraint(
-            expr=blk.capital_cost_backwash_tank
-            == pyo.units.convert(
-                ion_exchange_params.backwash_tank_A_coeff
-                * (blk.backwash_tank_vol / pyo.units.gallon)
-                ** ion_exchange_params.backwash_tank_b_coeff,
+    blk.backwash_tank_vol = pyo.Expression(
+        expr=pyo.units.convert(backwash_tank_vol_expr, to_units=pyo.units.gal)
+    )
+
+    blk.capital_cost_backwash_tank_constraint = pyo.Constraint(
+        expr=blk.capital_cost_backwash_tank
+        == pyo.units.convert(
+            ion_exchange_params.backwash_tank_A_coeff
+            * (blk.backwash_tank_vol / pyo.units.gallon)
+            ** ion_exchange_params.backwash_tank_b_coeff,
+            to_units=blk.costing_package.base_currency,
+        )
+    )
+
+    blk.costing_package.add_cost_factor(blk, "TIC")
+
+    if blk.unit_model.config.regenerant == "single_use":
+
+        blk.capital_cost_constraint = pyo.Constraint(
+            expr=blk.capital_cost
+            == blk.cost_factor
+            * pyo.units.convert(
+                (blk.capital_cost_vessel + blk.capital_cost_resin) * tot_num_col,
                 to_units=blk.costing_package.base_currency,
             )
         )
 
-    blk.costing_package.add_cost_factor(blk, "TIC")
-    blk.capital_cost_constraint = pyo.Constraint(
-        expr=blk.capital_cost
-        == blk.cost_factor
-        * pyo.units.convert(
-            (
-                ((blk.capital_cost_vessel + blk.capital_cost_resin) * tot_num_col)
-                + blk.capital_cost_backwash_tank
-                + blk.capital_cost_regen_tank
-            ),
-            to_units=blk.costing_package.base_currency,
+    else:
+
+        blk.capital_cost_constraint = pyo.Constraint(
+            expr=blk.capital_cost
+            == blk.cost_factor
+            * pyo.units.convert(
+                (
+                    ((blk.capital_cost_vessel + blk.capital_cost_resin) * tot_num_col)
+                    + blk.capital_cost_backwash_tank
+                    + blk.capital_cost_regen_tank
+                ),
+                to_units=blk.costing_package.base_currency,
+            )
         )
-    )
+
     if blk.unit_model.config.hazardous_waste:
 
         if blk.unit_model.config.regenerant == "single_use":
@@ -515,7 +535,7 @@ def cost_ion_exchange(blk):
             == pyo.units.convert(
                 (
                     (blk.regen_dose * blk.unit_model.bed_volume * tot_num_col)
-                    / (blk.unit_model.t_cycle)
+                    / (blk.unit_model.cycle_time)
                 )
                 / ion_exchange_params.regen_recycle,
                 to_units=pyo.units.kg / pyo.units.year,
@@ -526,26 +546,16 @@ def cost_ion_exchange(blk):
             blk.flow_mass_regen_soln, blk.unit_model.config.regenerant
         )
 
+    # [ESR updates: Remove regeneration terms and add them inside "if"
+    # statement.]
+    power_expr = blk.unit_model.main_pump_power + blk.unit_model.backwash_pump_power
+
     if blk.unit_model.config.regenerant != "single_use":
 
-        # [ESR updates: Move inside if since bw_flow is included when
-        # not single-use is selected.]
-        power_expr = (
-            blk.unit_model.main_pump_power
-            + blk.unit_model.bw_pump_power
-            + blk.unit_model.rinse_pump_power
-        )
+        power_expr += blk.unit_model.rinse_pump_power + blk.unit_model.regen_pump_power
 
-        power_expr += blk.unit_model.regen_pump_power
-
-        # [ESR updates: Move inside if since bw_flow is included when
-        # not single-use is selected.]
-        blk.total_pumping_power_constr = pyo.Constraint(
-            expr=blk.total_pumping_power == power_expr
-        )
-    else:
-        # [ESR updates: Add since I included this inside the if when
-        # not single use is specified.]
-        blk.total_pumping_power.fix(0)
+    blk.total_pumping_power_constr = pyo.Constraint(
+        expr=blk.total_pumping_power == power_expr
+    )
 
     blk.costing_package.cost_flow(blk.total_pumping_power, "electricity")

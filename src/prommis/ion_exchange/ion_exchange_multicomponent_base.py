@@ -96,9 +96,14 @@ _log = idaeslog.getLogger(__name__)
 
 
 class IonExchangeType(StrEnum):
-    anion = "anion"
     cation = "cation"
-    demineralize = "demineralize"
+    # [ESR WIP: The current ion exchange model is used for the
+    # separation of rare earth elements (REEs), which implies a cation
+    # exchange type. We commented other types for now. We will
+    # consider if we need to integrate the alternative types in future
+    # iterations.]
+    # anion = "anion"
+    # demineralize = "demineralize"
 
 
 class RegenerantChem(StrEnum):
@@ -313,14 +318,18 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         ),
     )
 
-    CONFIG.declare(
-        "add_steady_state_approximation",
-        ConfigValue(
-            default=False,
-            domain=bool,
-            description="Designates whether to add the variables and constraints necessary to estimate steady-state effluent concentration with trapezoid method.",
-        ),
-    )
+    # [ESR WIP: The ion_exchange_multicomponent model (Clark)
+    # incorporates the trapezoidal rule within the model. For now, we
+    # will comment this out and evaluate whether to keep it in the
+    # base model in future iterations.]
+    # CONFIG.declare(
+    #     "add_steady_state_approximation",
+    #     ConfigValue(
+    #         default=False,
+    #         domain=bool,
+    #         description="Designates whether to add the variables and constraints necessary to estimate steady-state effluent concentration with trapezoid method.",
+    #     ),
+    # )
 
     def build(self):
         super().build()
@@ -331,12 +340,23 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         if target_component != "":
             if self.config.property_package.charge_comp[target_component].value > 0:
                 self.ion_exchange_type = IonExchangeType.cation
-            elif self.config.property_package.charge_comp[target_component].value < 0:
-                self.ion_exchange_type = IonExchangeType.anion
             else:
-                assert target_component in ["TDS", "Alkalinity"]
-                self.ion_exchange_type = IonExchangeType.demineralize
-                # raise ConfigurationError("Target ion must have non-zero charge.")
+                # [ESR WIP: The current ion exchange model is used for
+                # the separation of rare earth elements (REEs), which
+                # implies a cation exchange type. We commented other
+                # types for now. We will consider if we need to
+                # integrate the alternative types in future
+                # iterations.]
+                raise ConfigurationError(
+                    "The current ion exchange model is limited to cation exchange methods and alternative techniques are not addressed at this time."
+                )
+
+            # elif self.config.property_package.charge_comp[target_component].value < 0:
+            #     self.ion_exchange_type = IonExchangeType.anion
+            # else:
+            #     assert target_component in ["TDS", "Alkalinity"]
+            #     self.ion_exchange_type = IonExchangeType.demineralize
+            #     # raise ConfigurationError("Target ion must have non-zero charge.")
 
         self.scaling_factor = pyo.Suffix(direction=pyo.Suffix.EXPORT)
 
@@ -444,7 +464,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
             doc="Sherwood equation exponent C",
         )
 
-        # ==========IX parameters==========
+        # ==========PARAMETERS==========
 
         self.pump_efficiency = pyo.Param(
             initialize=0.8,
@@ -453,47 +473,70 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
             doc="Pump efficiency",
         )
 
-        # Add regeneration-related variables only when regeneration is
-        # True (or not "single_use")
+        # Add regeneration-related parameters only when regeneration
+        # is True (or not "single_use"). [ESR TODO: Refine these
+        # parameters once we include the regeneration stage.]
         if self.config.regenerant != RegenerantChem.single_use:
 
-            self.regeneration_time = pyo.Param(
-                initialize=1800,
+            self.regen_dose = pyo.Param(
+                initialize=300,
+                units=pyo.units.kg / pyo.units.m**3,  # kg regenerant / m3 resin
                 mutable=True,
-                units=pyo.units.s,
-                doc="Regeneration time",
+                doc="Regenerant dose required for regeneration per volume of resin",
             )
 
-            self.service_to_regen_flow_ratio = pyo.Param(
-                initialize=3,
+            self.regen_soln_conc = pyo.Param(
+                initialize=107,
+                units=pyo.units.kg / pyo.units.m**3,  # kg regenerant / m3 solution
                 mutable=True,
+                doc="Concentration of regeneration solution",
+            )
+
+            # For NaCl, saturation concentration is 372 kg/m3
+            self.regen_soln_conc_sat = pyo.Param(
+                initialize=372,  # default is for NaCl
+                units=pyo.units.kg / pyo.units.m**3,  # kg regenerant / m3 solution
+                mutable=True,
+                doc="Concentration of regeneration solution at saturation",
+            )
+
+            # For NaCl solutions, density for 8-14% wt is ~1050-1100
+            # see: https://www.handymath.com/cgi-bin/nacltble.cgi?submit=Entry
+            self.regen_soln_dens = pyo.Param(
+                initialize=1080,
+                units=pyo.units.kg / pyo.units.m**3,  # kg solution / m3 solution
+                mutable=True,
+                doc="Density of regeneration solution",
+            )
+
+            self.regen_recycle = pyo.Param(
+                initialize=1,
                 units=pyo.units.dimensionless,
-                doc="Ratio of service flow rate to regeneration flow rate",
+                mutable=True,
+                doc="Number of cycles the regenerant can be reused before disposal",
             )
 
-            # [TODO: Refine the following parameters once we include
-            # the regeneration stage.]
+            self.regen_rate = pyo.Param(
+                initialize=2.4,  # EPA-WBS: 0.25-0.4 gpm/ft3 resin; 2.0-3.2 (m3/hr)/m3 resin
+                mutable=True,
+                units=pyo.units.hr**-1,
+                doc="Regeneration flow rate per resin volume",
+            )
 
-            # Rinse, Regen, Backwashing params
+            self.num_regen_columns = pyo.Param(
+                initialize=1,  # next integer above waste_time / breakthrough_time
+                units=pyo.units.dimensionless,
+                mutable=True,
+                doc="Number of columns regenerated at a time",
+            )
+
             self.rinse_bed_volumes = pyo.Param(
                 initialize=5,
                 mutable=True,
                 doc="Number of bed volumes for rinse step",
             )
 
-            @self.Expression(doc="Rinse time")
-            def rinse_time(b):
-                return b.ebct * b.rinse_bed_volumes
-
-            @self.Expression(doc="Waste time")
-            def waste_time(b):
-                return b.regeneration_time + b.backwash_time + b.rinse_time
-
-            @self.Expression(doc="Cycle time")
-            def cycle_time(b):
-                return b.target_breakthrough_time + b.waste_time
-
-        self.backwashing_rate = pyo.Param(
+        self.backwash_loading_rate = pyo.Param(
             initialize=5,
             mutable=True,
             units=pyo.units.m / pyo.units.hour,
@@ -517,42 +560,42 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         self.resin_diam = pyo.Var(
             initialize=7e-4,
             bounds=(0, 5e-3),  # add bounds valid for resins for REEs recovery
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.m,
             doc="Resin bead diameter",
         )
         self.resin_density = pyo.Var(
             initialize=700,
             bounds=(100, 2000),  # add bounds valid for resins for REEs recovery
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.kg / pyo.units.m**3,
             doc="Resin bulk density",
         )
         self.bed_volume = pyo.Var(
             initialize=2,
             bounds=(0, None),
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.m**3,
             doc="Bed volume per column",
         )
         self.bed_volume_total = pyo.Var(
             initialize=2,
             bounds=(0, None),
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.m**3,
             doc="Total bed volume",
         )
         self.bed_depth = pyo.Var(
             initialize=1,
             bounds=(0.75, 2),  # from ref[7] EPA-WBS guidance
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.m,
             doc="Bed depth",
         )
         self.bed_porosity = pyo.Var(
             initialize=0.4,
             bounds=(0.3, 0.8),
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.dimensionless,
             doc="Bed porosity",
         )
@@ -560,14 +603,14 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         self.column_height = pyo.Var(
             initialize=2,
             bounds=(0, 4.26),  # from ref[7] EPA-WBS guidance
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.m,
             doc="Column height",
         )
         self.bed_diameter = pyo.Var(
             initialize=1,
             bounds=(0.75, 4.26),  # from ref[7] EPA-WBS guidance
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.m,
             doc="Column diameter",
         )
@@ -575,34 +618,34 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         self.number_columns = pyo.Var(
             initialize=2,
             bounds=(1, None),
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.dimensionless,
             doc="Number of operational columns for ion exchange process",
         )
         self.number_columns_redundant = pyo.Var(
             initialize=1,
             bounds=(0, None),
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.dimensionless,
             doc="Number of redundant columns for ion exchange process",
         )
 
-        # For the multicomponent model, add a new variable to save the
+        # When multicomponent, define a new variable to save the
         # breakthrough time for the target component and use it
-        # instead of the original breakthrough_time. [TODO: Figure out
-        # a way to calculate the maximum breakthrough. For now we use
-        # the target component.]
+        # instead of the original breakthrough_time. [ESR TODO: Figure
+        # out a way to calculate the maximum breakthrough. For now we
+        # use the target component.]
         self.target_breakthrough_time = pyo.Var(
             initialize=1e5,  # DOW, ~7 weeks max breakthru time
             bounds=(0, None),
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.s,
             doc="(Max) Breakthrough time of target component",
         )
         self.ebct = pyo.Var(
             initialize=520,
             bounds=(90, None),
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.s,
             doc="Empty bed contact time",
         )
@@ -612,14 +655,14 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         self.loading_rate = pyo.Var(
             initialize=0.0086,
             bounds=(0, 0.01),  # ref[1], [2], and [7] (MWH, Perry's, and EPA-WBS)
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.m / pyo.units.s,
             doc="Superficial velocity through bed",
         )
         self.service_flow_rate = pyo.Var(
             initialize=10,
             bounds=(1, 40),
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.hr**-1,
             doc="Service flow rate [BV/hr]",
         )
@@ -629,24 +672,27 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         self.N_Re = pyo.Var(
             initialize=4.3,
             bounds=(0.001, 60),  # ref[1] Perry's - bounds relevant to N_Sh regression
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.dimensionless,
             doc="Reynolds number",
         )
         self.N_Pe_particle = pyo.Var(
             initialize=0.1,
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.dimensionless,
             doc="Peclet particle number",
         )
         self.N_Pe_bed = pyo.Var(
             initialize=1000,  # ref[4] Inamuddin/Luqman - N_Pe_bed > ~100 considered to be plug flow
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.dimensionless,
             doc="Peclet bed number",
         )
 
         # ==========EXPRESSIONS==========
+
+        # Add resin-specific properties
+        self.add_properties_resin()
 
         @self.Expression(doc="Flow per column")
         def flow_per_column(b):
@@ -658,55 +704,113 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
                 Constants.pi * (b.bed_diameter / 2) ** 2, to_units=pyo.units.m**2
             )
 
+        # [ESR WIP: Define waste time expression that depends only on
+        # variables when "single_use" is selected.]
+        waste_time_expr = self.backwash_time
+
         if self.config.regenerant != RegenerantChem.single_use:
 
-            # Add regeneration variables/expressions when the resin is
-            # not "single_use" and regeneration is needed. [TODO: Check
-            # if all these expressions/variables should be included in
-            # this "if" when including the regeneration stage.]
+            # Add regeneration expressions when regeneration is needed
+            # (or resin is not "single_use"). [ESR TODO: Confirm these
+            # expressions should be included in this "if" when
+            # including the regeneration stage.]
             @self.Expression(doc="Rinse time")
             def rinse_time(b):
                 return b.ebct * b.rinse_bed_volumes
 
-            @self.Expression(doc="Waste time")
-            def waste_time(b):
-                return b.regeneration_time + b.backwash_time + b.rinse_time
+            @self.Expression(doc="Regen time")
+            def regeneration_time(b):
+                return pyo.units.convert(
+                    b.regen_dose / b.regen_soln_conc / b.regen_rate,
+                    to_units=pyo.units.s,
+                )
+
+            waste_time_expr += self.regeneration_time + self.rinse_time
+
+            @self.Expression(doc="Rinse flow rate")
+            def rinse_flow_rate(b):
+                return b.loading_rate * b.bed_area * b.number_columns
+
+            @self.Expression(doc="Regen flow rate")
+            def regen_flow_rate(b):
+                return pyo.units.convert(
+                    b.bed_volume * b.number_columns * b.regen_rate,
+                    to_units=pyo.units.m**3 / pyo.units.s,
+                )
+
+        @self.Expression(doc="Waste time")
+        def waste_time(b):
+            return waste_time_expr
 
         @self.Expression(doc="Cycle time")
         def cycle_time(b):
-            if self.config.regenerant == RegenerantChem.single_use:
-                return b.target_breakthrough_time
-            else:
-                return b.target_breakthrough_time + b.waste_time
+            return b.target_breakthrough_time + b.waste_time
 
-        # Add resin-specific properties
-        self.add_properties_resin()
+        @self.Expression(doc="Fraction of cycle time for regen + backwash + rinse")
+        def frac_waste_time(b):
+            return b.waste_time / b.cycle_time
 
-        if self.config.regenerant != RegenerantChem.single_use:
+        @self.Expression(doc="Backwashing flow rate")
+        def backwash_flow_rate(b):
+            return (
+                pyo.units.convert(
+                    b.backwash_loading_rate, to_units=pyo.units.m / pyo.units.s
+                )
+                * b.bed_area
+                * b.number_columns
+            )
 
-            # If resin is not single use, add regeneration
-            # units. [TODO: Confirm these expressions are correct once
-            # we add the regeneration stage.]
+        @self.Expression(doc="Backwash pump power")
+        def backwash_pump_power(b):
+            return pyo.units.convert(
+                (b.pressure_drop * b.backwash_flow_rate) / b.pump_efficiency,
+                to_units=pyo.units.kilowatts,
+            ) * (b.backwash_time / b.cycle_time)
+
+        @self.Expression(doc="Main pump power")
+        def main_pump_power(b):
+            return pyo.units.convert(
+                (b.pressure_drop * prop_in.flow_vol_phase["Liq"]) / b.pump_efficiency,
+                to_units=pyo.units.kilowatts,
+            ) * (b.target_breakthrough_time / b.cycle_time)
+
+        # Add regen terms when regeneration is needed (or not
+        # "single_use")
+        if self.config.regenerant != "single_use":
+
+            @self.Expression(doc="Rinse pump power")
+            def rinse_pump_power(b):
+                return pyo.units.convert(
+                    (b.pressure_drop * b.rinse_flow_rate) / b.pump_efficiency,
+                    to_units=pyo.units.kilowatts,
+                ) * (b.rinse_time / b.cycle_time)
 
             @self.Expression(doc="Regen pump power")
             def regen_pump_power(b):
                 return pyo.units.convert(
-                    (
-                        b.pressure_drop
-                        * (
-                            prop_in.flow_vol_phase["Liq"]
-                            / b.service_to_regen_flow_ratio
-                        )
-                    )
+                    (b.pressure_drop * b.regen_flow_rate * b.regen_recycle)
                     / b.pump_efficiency,
                     to_units=pyo.units.kilowatts,
                 ) * (b.regeneration_time / b.cycle_time)
 
             @self.Expression(doc="Regen tank volume")
             def regen_tank_vol(b):
-                return (
-                    prop_in.flow_vol_phase["Liq"] / b.service_to_regen_flow_ratio
-                ) * b.regeneration_time
+                # Large enough to hold saturated regen solution for
+                # one regeneration cycle
+                return pyo.units.convert(
+                    b.num_regen_columns
+                    * ((b.bed_volume * b.regen_dose) / b.regen_soln_conc_sat),
+                    to_units=pyo.units.m**3,
+                )
+
+            @self.Expression(doc="Total residuals volume: backwash + regen + rinse")
+            def total_residuals_vol(b):
+                return pyo.units.convert(
+                    b.backwash_flow_rate * b.backwash_time
+                    + b.regen_flow_rate * b.regeneration_time
+                    + b.rinse_flow_rate * b.rinse_time,
+                    to_units=pyo.units.m**3,
+                )
 
             @self.Constraint(
                 doc="Isothermal assumption for regen stream",
@@ -719,47 +823,6 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
             )
             def eq_isobaric_regen_stream(b):
                 return prop_in.pressure == regen.pressure
-
-        @self.Expression(doc="Backwashing flow rate")
-        def bw_flow(b):
-            return (
-                pyo.units.convert(
-                    b.backwashing_rate, to_units=pyo.units.m / pyo.units.s
-                )
-                * b.bed_area
-                * b.number_columns
-            )
-
-        @self.Expression(doc="Rinse flow rate")
-        def rinse_flow(b):
-            return b.loading_rate * b.bed_area * b.number_columns
-
-        # Add regen terms when regeneration is needed (or not
-        # "single_use")
-        if self.config.regenerant != "single_use":
-
-            @self.Expression(doc="Backwash pump power")
-            def bw_pump_power(b):
-                return pyo.units.convert(
-                    (b.pressure_drop * b.bw_flow) / b.pump_efficiency,
-                    to_units=pyo.units.kilowatts,
-                ) * (b.backwash_time / b.cycle_time)
-
-            @self.Expression(doc="Rinse pump power")
-            def rinse_pump_power(b):
-                time = b.rinse_time / b.cycle_time
-                return pyo.units.convert(
-                    (b.pressure_drop * b.rinse_flow) / b.pump_efficiency,
-                    to_units=pyo.units.kilowatts,
-                ) * (b.rinse_time / b.cycle_time)
-
-            @self.Expression(doc="Main pump power")
-            def main_pump_power(b):
-                return pyo.units.convert(
-                    (b.pressure_drop * prop_in.flow_vol_phase["Liq"])
-                    / b.pump_efficiency,
-                    to_units=pyo.units.kilowatts,
-                ) * (b.target_breakthrough_time / b.cycle_time)
 
         @self.Expression(doc="Bed expansion from backwashing")
         def bed_expansion_h(b):
@@ -789,6 +852,8 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         def number_columns_total(b):
             return b.number_columns + b.number_columns_redundant
 
+        # =========== CONSTRAINTS ===========
+
         @self.Constraint(doc="Reynolds number")
         def eq_Re(b):  # Eq. 3.358, ref[5] Inglezakis + Poulopoulos
             return b.N_Re * prop_in.visc_k_phase["Liq"] == (
@@ -803,13 +868,13 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         def eq_Pe_p(b):  # Eq. 3.313, Inglezakis + Poulopoulos, for downflow
             return b.N_Pe_particle == b.Pe_p_A * b.N_Re**b.Pe_p_exp
 
-        # =========== RESIN & COLUMN ===========
+        # =========== CONSTRAINTS RESIN & COLUMN ===========
 
         @self.Constraint(doc="Empty bed contact time")
         def eq_ebct(b):
-            # NOTE: Replace original equation, since units were not
-            # consistent
-            return b.ebct == b.bed_volume / b.flow_per_column
+            # [ESR NOTE: Replace original equation since units were
+            # not consistent.]
+            return b.ebct * b.flow_per_column == b.bed_volume
 
         @self.Constraint(doc="Loading rate")
         def eq_loading_rate(b):
@@ -833,106 +898,6 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         @self.Constraint(doc="Column height")
         def eq_column_height(b):
             return b.column_height == b.bed_depth + b.free_board
-
-    def add_ss_approximation(self, ix_model_type=None):
-
-        prop_in = self.process_flow.properties_in[0]
-        self.num_traps = self.config.number_traps
-        self.trap_disc = range(self.num_traps + 1)
-        self.trap_index = self.trap_disc[1:]
-
-        # Read c_trap_min from its configuration value. The c_trap_min
-        # is the minimum relative breakthrough concentration for
-        # estimating area under curve. [TODO: Check if this is enough
-        # for the case of multiple components.]
-        self.c_trap_min = float(self.config.c_trap_min)
-
-        self.c_traps = pyo.Var(
-            self.trap_disc,
-            initialize=0.5,
-            bounds=(0, 1),
-            units=pyo.units.dimensionless,
-            doc="Normalized breakthrough concentrations for estimating area under breakthrough curve",
-        )
-        self.tb_traps = pyo.Var(
-            self.trap_disc,
-            initialize=1e6,
-            bounds=(0, None),
-            units=pyo.units.second,
-            doc="Breakthrough times for estimating area under breakthrough curve",
-        )
-        self.traps = pyo.Var(
-            self.trap_index,
-            initialize=0.01,
-            bounds=(0, 1),
-            units=pyo.units.dimensionless,
-            doc="Trapezoid areas for estimating area under breakthrough curve",
-        )
-        self.c_norm_avg = pyo.Var(
-            self.target_component_set,
-            initialize=0.25,
-            bounds=(0, 2),
-            units=pyo.units.dimensionless,
-            doc="Sum of trapezoid areas",
-        )
-
-        # Fix conditions at initial point in the trapezoids
-        self.c_traps[0].fix(0)
-        self.tb_traps[0].fix(0)
-
-        @self.Constraint(
-            self.target_component_set,
-            self.trap_index,
-            doc="Evenly spaced c_norm for trapezoids",
-        )
-        def eq_c_traps(b, j, k):
-            return b.c_traps[k] * (b.num_traps - 1) == (
-                b.c_trap_min * (b.num_traps - 1)
-                + (b.trap_disc[k] - 1) * (b.c_norm[j] - b.c_trap_min)
-            )
-
-        @self.Constraint(
-            self.trap_index,
-            doc="Breakthru time calc for trapezoids",
-        )
-        def eq_tb_traps(b, k):
-            if ix_model_type == "clark":
-                bv_traps = (b.tb_traps[k] * b.loading_rate) / b.bed_depth
-                left_side = pyo.exp(
-                    (
-                        (b.mass_transfer_coeff * b.bed_depth * (b.freundlich_n - 1))
-                        / (b.bv_50 * b.loading_rate)
-                    )
-                    * (b.bv_50 - bv_traps)
-                )
-                right_side = ((1 / b.c_traps[k]) ** (b.freundlich_n - 1) - 1) / (
-                    2 ** (b.freundlich_n - 1) - 1
-                )
-                return left_side - right_side == 0
-            else:
-                return Constraint.Skip
-
-        @self.Constraint(self.trap_index, doc="Area of trapezoids")
-        def eq_traps(b, k):
-            return b.traps[k] * b.tb_traps[self.num_traps] == (
-                (b.tb_traps[k] - b.tb_traps[k - 1])
-                * ((b.c_traps[k] + b.c_traps[k - 1]) / 2)
-            )
-
-        @self.Constraint(
-            self.target_component_set, doc="Average relative effluent concentration"
-        )
-        def eq_c_norm_avg(b, j):
-            return b.c_norm_avg[j] == sum(b.traps[k] for k in b.trap_index)
-
-        @self.Constraint(
-            self.target_component_set,
-            doc="CV mass transfer term",
-        )
-        def eq_mass_transfer_term(b, j):
-            return (1 - b.c_norm_avg[j]) * prop_in.get_material_flow_terms(
-                "Liq", j
-            ) == -b.process_flow.mass_transfer_term[0, "Liq", j]
 
     # Add resin parameters and expressions in separate functions that
     # read data from a .json file
@@ -1009,6 +974,9 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         # Pressure drop (psi/m of resin bed depth) is a function of
         # loading rate (loading_rate) in m/hr following the equation:
         # p_drop (psi/m) = p_drop_A + p_drop_B * loading_rate + p_drop_C * loading_rate**2
+
+        # [ESR NOTE: Make sure the pressure ratio has positive values
+        # even at low loading rate values.]
         @self.Expression(doc="Pressure drop")
         def pressure_drop(b):
             loading_rate_conv = pyo.units.convert(
@@ -1030,8 +998,8 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         def bed_expansion_frac(b):
             return (
                 b.bed_expansion_frac_param_A
-                + b.bed_expansion_frac_param_B * b.backwashing_rate
-                + b.bed_expansion_frac_param_C * b.backwashing_rate**2
+                + b.bed_expansion_frac_param_B * b.backwash_loading_rate
+                + b.bed_expansion_frac_param_C * b.backwash_loading_rate**2
             )
 
     def initialize_build(
@@ -1170,9 +1138,6 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         if iscale.get_scaling_factor(self.loading_rate) is None:
             iscale.set_scaling_factor(self.loading_rate, 1e3)
 
-        if iscale.get_scaling_factor(self.bv) is None:
-            iscale.set_scaling_factor(self.bv, 1e-4)
-
     def _get_stream_table_contents(self, time_point=0):
 
         if self.config.regenerant != "single_use":
@@ -1218,3 +1183,195 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
     @property
     def default_costing_method(self):
         return cost_ion_exchange
+
+
+# [ESR WIP: The ion_exchange_multicomponent model (Clark) incorporates
+# the trapezoidal rule within the model. For now, we will comment this
+# out and evaluate whether to retain it in the base model.]
+
+# def add_ss_approximation(blk, ix_model_type=None):
+
+#     prop_in = blk.process_flow.properties_in[0]
+#     blk.num_traps = slf.config.number_traps
+#     blk.trap_disc = range(blk.num_traps + 1)
+#     blk.trap_index = blk.trap_disc[1:]
+
+#     blk.c_trap_min = Param(  # TODO: make CONFIG option
+#         initialize=0.01,
+#         default=0.01,
+#         mutable=True,
+#         units=pyunits.dimensionless,
+#         doc="Minimum relative breakthrough concentration for estimating area under curve",
+#     )
+
+#     blk.c_traps = Var(
+#         blk.reactive_component_set,
+#         blk.trap_disc,
+#         initialize=0.5,
+#         bounds=(0, 1),
+#         units=pyunits.dimensionless,
+#         doc="Normalized breakthrough concentrations for estimating area under breakthrough curve",
+#     )
+
+#     blk.tb_traps = Var(
+#         blk.reactive_component_set,
+#         blk.trap_disc,
+#         initialize=1e6,
+#         bounds=(0, None),
+#         units=pyunits.second,
+#         doc="Breakthrough times for estimating area under breakthrough curve",
+#     )
+
+#     blk.traps = Var(
+#         blk.reactive_component_set,
+#         blk.trap_index,
+#         initialize=0.01,
+#         bounds=(0, 1),
+#         units=pyunits.dimensionless,
+#         doc="Trapezoid areas for estimating area under breakthrough curve",
+#     )
+
+#     for c in blk.reactive_component_set:
+#         blk.c_traps[(c, 0)].fix(0)
+#         blk.tb_traps[(c, 0)].fix(0)
+
+#     blk.c_norm_avg = Var(
+#         blk.reactive_component_set,
+#         initialize=0.25,
+#         bounds=(0, 2),
+#         units=pyunits.dimensionless,
+#         doc="Sum of trapezoid areas",
+#     )
+
+#     if ix_model_type == "cphsdm":
+
+#         blk.min_tb_traps = Var(
+#             blk.trap_index,
+#             initialize=1e8,
+#             bounds=(0, None),
+#             units=pyunits.s,
+#             doc="Minimum operational time of the bed by discrete element",
+#         )
+
+#         blk.throughput_traps = Var(
+#             blk.trap_index,
+#             initialize=1,
+#             bounds=(0, None),
+#             units=pyunits.dimensionless,
+#             doc="Specific throughput of the bed by discrete element",
+#         )
+
+#         @blk.Constraint(
+#             blk.trap_index,
+#             doc="Minimum operational time of the bed from fresh to achieve a constant pattern solution by discrete element",
+#         )
+#         def eq_min_tb_traps(b, k):
+#             return (
+#                 b.min_tb_traps[k]
+#                 == b.min_t_contact * (b.solute_dist_param + 1) * b.throughput_traps[k]
+#             )
+
+#         if blk.config.cphsdm_calculation_method == "surrogate":
+
+#             blk.throughput_surrogate_traps = SurrogateBlock(
+#                 blk.trap_index, concrete=True
+#             )
+#             for j in blk.reactive_component_set:
+#                 for tr in blk.trap_index:
+#                     blk.throughput_surrogate_traps[tr].build_model(
+#                         blk.throughput_surrogate,
+#                         input_vars=[
+#                             blk.freundlich_ninv,
+#                             blk.N_Bi,
+#                             blk.c_traps[j, tr],
+#                         ],
+#                         output_vars=[blk.throughput_traps[tr]],
+#                     )
+
+#         elif blk.config.cphsdm_calculation_method == "input":
+
+#             @blk.Constraint(
+#                 blk.reactive_component_set,
+#                 blk.trap_index,
+#                 doc="Throughput constraint based on empirical 5-parameter regression by discretized element",
+#             )
+#             def eq_throughput_traps(b, j, k):
+#                 return b.throughput_traps[k] == b.b0 + b.b1 * (
+#                     b.c_traps[j, k] ** b.b2
+#                 ) + b.b3 / (1.01 - b.c_traps[j, k] ** b.b4)
+
+#     @blk.Constraint(
+#         blk.reactive_component_set,
+#         blk.trap_index,
+#         doc="Evenly spaced c_norm for trapezoids",
+#     )
+#     def eq_c_traps(b, j, k):
+#         return b.c_traps[j, k] == smooth_max(
+#             1e-5,
+#             b.c_trap_min
+#             + (b.trap_disc[k] - 1) * ((b.c_norm[j] - b.c_trap_min) / (b.num_traps - 1)),
+#         )
+
+#     @blk.Constraint(
+#         blk.reactive_component_set,
+#         blk.trap_index,
+#         doc="Breakthrough time calc for trapezoids",
+#     )
+#     def eq_tb_traps(b, j, k):
+#         if ix_model_type == "clark":
+#             bv_traps = (b.tb_traps[j, k] * b.loading_rate) / b.bed_depth
+#             left_side = (
+#                 (b.mass_transfer_coeff[j] * b.bed_depth * (b.freundlich_n[j] - 1))
+#                 / (b.bv_50[j] * b.loading_rate)
+#             ) * (b.bv_50[j] - bv_traps)
+
+#             right_side = log(
+#                 ((1 / b.c_traps[j, k]) ** (b.freundlich_n[j] - 1) - 1)
+#                 / (2 ** (b.freundlich_n[j] - 1) - 1)
+#             )
+#             return left_side - right_side == 0
+#         elif ix_model_type == "cphsdm":
+#             return b.tb_traps[j, k] == b.min_tb_traps[k] + (
+#                 b.t_contact - b.min_t_contact
+#             ) * (b.solute_dist_param + 1)
+#         else:
+#             return Constraint.Skip
+
+#     @blk.Constraint(
+#         blk.reactive_component_set, blk.trap_index, doc="Area of trapezoids"
+#     )
+#     def eq_traps(b, j, k):
+#         return b.traps[j, k] == (b.tb_traps[j, k] - b.tb_traps[j, k - 1]) / b.tb_traps[
+#             j, b.num_traps
+#         ] * ((b.c_traps[j, k] + b.c_traps[j, k - 1]) / 2)
+
+#     @blk.Constraint(
+#         blk.reactive_component_set, doc="Average relative effluent concentration"
+#     )
+#     def eq_c_norm_avg(b, j):
+#         return b.c_norm_avg[j] == sum(b.traps[j, k] for k in b.trap_index)
+
+#     @blk.Constraint(
+#         blk.reactive_component_set,
+#         doc="CV mass transfer term",
+#     )
+#     def eq_mass_transfer_term(b, j):
+#         return (1 - b.c_norm_avg[j]) * prop_in.get_material_flow_terms(
+#             "Liq", j
+#         ) == -b.process_flow.mass_transfer_term[0, "Liq", j]
+
+#     @blk.Constraint(blk.reactive_component_set, doc="Regeneration stream mass flow")
+#     def eq_mass_transfer_regen(b, j):
+#         return (
+#             b.regeneration_stream[0].get_material_flow_terms("Liq", j)
+#             == -b.process_flow.mass_transfer_term[0, "Liq", j]
+#         )
+
+#     @blk.Constraint(doc="Regeneration stream flow rate")
+#     def eq_regen_flow_rate(b):
+#         return b.regeneration_stream[0].flow_vol_phase["Liq"] == pyunits.convert(
+#             b.rinse_flow_rate * (b.rinse_time / b.cycle_time)
+#             + b.backwash_flow_rate * (b.backwash_time / b.cycle_time)
+#             + b.regen_flow_rate * (b.regeneration_time / b.cycle_time),
+#             to_units=pyunits.m**3 / pyunits.s,
+#         )

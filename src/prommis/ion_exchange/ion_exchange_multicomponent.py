@@ -87,25 +87,22 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
 
         prop_in = self.process_flow.properties_in[0]
 
+        # [ESR WIP: Add regen terms when regeneration is needed]
         if self.config.regenerant != "single_use":
-            # [WIP: Add regen terms when regeneration is needed]
             regen = self.regeneration_stream[0]
 
         comps = self.config.property_package.component_list
-        target_component = self.config.target_component
-
         target_component = self.config.target_component
         reactive_ions = self.config.reactive_ions
 
         assert target_component in reactive_ions
         self.target_component_set = pyo.Set(initialize=[target_component])
 
-        # [ESR WIP: Define if this is needed in future
-        # cases. Commented for now since it is not used in our cases]
+        # [ESR WIP: Define if inerts are needed in future
+        # cases. Commented for now since it is not used in our current
+        # case.]
         # inerts = comps - self.target_component_set
-
         self.reactive_ion_set = pyo.Set(initialize=reactive_ions)
-
         self.inert_set = pyo.Set(initialize=comps - self.reactive_ion_set)
 
         if len(self.target_component_set) > 1:
@@ -114,25 +111,33 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
             )
         if self.config.property_package.charge_comp[target_component].value > 0:
             self.ion_exchange_type = IonExchangeType.cation
-        elif self.config.property_package.charge_comp[target_component].value < 0:
-            self.ion_exchange_type = IonExchangeType.anion
         else:
-            raise ConfigurationError("Target ion must have non-zero charge.")
+            # [ESR WIP: The current ion exchange model is used for the
+            # separation of rare earth elements (REEs), which implies
+            # a cation exchange type. We commented other types for
+            # now. We will consider if we need to integrate the
+            # alternative types in future iterations.]
+            raise ConfigurationError(
+                "The current ion exchange model is limited to cation exchange methods and alternative techniques are not addressed at this time."
+            )
+
+        # elif self.config.property_package.charge_comp[target_component].value < 0:
+        #     self.ion_exchange_type = IonExchangeType.anion
+        # else:
+        #     raise ConfigurationError("Target ion must have non-zero charge.")
 
         # [ESR update: Change the inerts for the ones in the set.]
         for j in self.inert_set:
             self.process_flow.mass_transfer_term[:, "Liq", j].fix(0)
 
             if self.config.regenerant != "single_use":
-                # [ESR WIP: Uncomment regen terms]
                 regen.get_material_flow_terms("Liq", j).fix(0)
 
-        self.num_traps = int(self.config.number_traps)
-
+        # [ESR WIP: Define terms for trapezoidal rule. NOTE: the
         # trap_disc is a discretization index/parameter that defines
-        # how the range between c_trap_min and c_norm is broken up.
+        # how the range between c_trap_min and c_norm is broken up.]
+        self.num_traps = int(self.config.number_traps)
         self.trap_disc = range(self.num_traps + 1)
-
         self.trap_index = self.trap_disc[1:]
 
         self.eps = pyo.Param(initialize=1e-4, mutable=True)
@@ -141,26 +146,19 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         for i in self.reactive_ion_set:
             self.c_trap_min[i] = float(self.config.c_trap_min)
 
-        # [ESR WIP: Bring breathrough time and bv here from base model
-        # since these variables depend on each ion. Also, add a
-        # constraint to calculate the maximum breakthrough time. For
-        # now, this maximum time is for the target component. Think if
-        # there is a better way to do this.]
+        # [ESR WIP: Bring breakthrough time and bv here from base model
+        # since these variables depend on the set of reactive
+        # ions. Also, add a constraint to calculate the maximum
+        # breakthrough time. For now, this maximum time is for the
+        # target component. Think if there is a better way to do
+        # this.]
         self.breakthrough_time = pyo.Var(
             self.reactive_ion_set,
             initialize=1e5,  # DOW, ~7 weeks max breakthru time
             bounds=(0, None),
-            # domain=NonNegativeReals,
+            domain=pyo.NonNegativeReals,
             units=pyo.units.s,
             doc="Breakthrough time",
-        )
-        self.bv = pyo.Var(  # BV
-            self.reactive_ion_set,
-            initialize=1e5,
-            bounds=(0, None),
-            # domain=NonNegativeReals,
-            units=pyo.units.dimensionless,
-            doc="Bed volumes of feed at breakthru concentration",
         )
 
         @self.Constraint()
@@ -170,14 +168,7 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
                 == self.breakthrough_time[target_component]
             )
 
-        # Add variables for dimensionless numbers
-        self.N_Sc = pyo.Var(
-            self.reactive_ion_set,
-            initialize=700,
-            units=pyo.units.dimensionless,
-            doc="Schmidt number",
-        )
-
+        # Add variables for dimensionless number
         self.N_Sh = pyo.Var(
             self.reactive_ion_set,
             initialize=30,
@@ -261,13 +252,10 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         def c_breakthru(b, j):
             return b.c_norm[j] * prop_in.conc_mass_phase_comp["Liq", j]
 
-        # Add constraints to calculate dimensionless numbers
-        @self.Constraint(self.reactive_ion_set, doc="Schmidt number")
-        def eq_Sc(b, j):  # Eq. 3.359, ref[1] Inglezakis + Poulopoulos
-            return (
-                b.N_Sc[j]
-                == prop_in.visc_k_phase["Liq"] / prop_in.diffus_phase_comp["Liq", j]
-            )
+        # Add Expression/Constraint to calculate dimensionless numbers
+        @self.Expression(self.reactive_ion_set, doc="Schmidt number")
+        def N_Sc(b, j):  # Eq. 3.359, ref[1] Inglezakis + Poulopoulos
+            return prop_in.visc_k_phase["Liq"] / prop_in.diffus_phase_comp["Liq", j]
 
         @self.Constraint(self.reactive_ion_set, doc="Sherwood number")
         def eq_Sh(b, j):  # Eq. 3.346, ref[1] Inglezakis + Poulopoulos
@@ -283,9 +271,8 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         # constraint ONLY for the target component since it was adding
         # 1 degree of freedom when solving for multiple ions. [TODO:
         # Review this change once we add the regeneration stage.]
-
         if self.config.regenerant != "single_use":
-            # [ESR WIP: Uncomment regen terms]
+
             @self.Constraint(
                 self.reactive_ion_set, doc="Mass transfer for regeneration stream"
             )
@@ -297,9 +284,9 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
 
         # [ESR updates: Add multicomponent set for breakthrough_time
         # and bv]
-        @self.Constraint(self.reactive_ion_set, doc="Bed volumes at breakthrough")
-        def eq_bv(b, r):
-            return b.breakthrough_time[r] * b.loading_rate == b.bv[r] * b.bed_depth
+        @self.Expression(self.reactive_ion_set, doc="Bed volumes at breakthrough")
+        def bv(b, r):
+            return b.breakthrough_time[r] * b.loading_rate / b.bed_depth
 
         @self.Constraint(
             self.reactive_ion_set, doc="Clark equation with fundamental constants"
@@ -367,8 +354,8 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
                 return left_side - right_side == 0
 
         # [ESR WIP: Try to make changes in the normalization term in
-        # eq_traps to see if that corrects the breakthrough time
-        # differences. This normalization helps to express each
+        # eq_traps to see if that imporves the breakthrough time
+        # calculation. This normalization helps to express each
         # trapezoid’s width as a fraction of the total interval. This
         # normalization helps ensure that the integrated output (when
         # all trapezoidal areas are summed) gives a proper,
@@ -405,7 +392,7 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         def eq_c_norm_avg(b, j):
             return b.c_norm_avg[j] == sum(b.traps[j, k] for k in b.trap_index)
 
-        # [ESR WIP: Separate term]
+        # [ESR WIP: Define total_mass_removed as an Expression.]
         @self.Expression(
             self.reactive_ion_set, doc="Total mass of ion removed from the liquid phase"
         )

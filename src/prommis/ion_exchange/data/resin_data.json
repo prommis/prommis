@@ -43,16 +43,16 @@
 	    "units": "fraction",
 	    "temperature_ref": 20,
 	    "temperature_units": "C",
-	    "param_a": -0.0002,
-	    "param_b": 0.0597,
-	    "param_c": -5e-5
+	    "param_a": 0,
+	    "param_b": 0.0596,
+	    "param_c": -4e-5
 	},
 	"pressure_drop": {
 	    "units": "psi/m",
 	    "temperature_ref": 20,
 	    "temperature_units": "C",
-	    "param_a": -0.1534,
-	    "param_b": 0.1768,
+	    "param_a": 0,
+	    "param_b": 0.1668,
 	    "param_c": 2e-4
 	},
 	"diameter": {

@@ -615,7 +615,7 @@ def add_useful_expressions(m):
     )
 
 
-def solve_model(m):
+def solve_model(m, tee=True):
     """
     Method to solve the diafiltration flowsheet
 
@@ -624,7 +624,7 @@ def solve_model(m):
     """
     solver = get_solver()
     solver.options = {"max_iter": 3000}
-    results = solver.solve(m, tee=True)
+    results = solver.solve(m, tee=tee)
     if results.solver.termination_condition != "optimal":
         raise ValueError("The solver did not return optimal termination")
 

@@ -31,6 +31,7 @@ from pyomo.environ import Set
 
 # Import IDAES cores
 from idaes.core import declare_process_block_class
+from idaes.core.scaling import ConstraintScalingScheme, CustomScalerBase
 from idaes.models.unit_models.translator import TranslatorData
 
 import idaes.logger as idaeslog
@@ -42,6 +43,52 @@ __author__ = "Arkoprabho Dasgupta"
 _log = idaeslog.getLogger(__name__)
 
 
+class TranslatorDataLeachPrecipScaler(CustomScalerBase):
+    """
+    Scaler for blocks with a single state (Feed, Product, StateJunction)
+    """
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        self.call_submodel_scaler_method(
+            submodel=model.properties_in,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+        self.call_submodel_scaler_method(
+            submodel=model.properties_out,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        self.call_submodel_scaler_method(
+            submodel=model.properties_in,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+        self.call_submodel_scaler_method(
+            submodel=model.properties_out,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+        for con in model.flow_vol_eqn.values():
+            self.scale_constraint_by_nominal_value(
+                con, scheme=ConstraintScalingScheme.inverseMaximum, overwrite=overwrite
+            )
+        for con in model.conc_mass_metals_eqn.values():
+            self.scale_constraint_by_nominal_value(
+                con, scheme=ConstraintScalingScheme.inverseMaximum, overwrite=overwrite
+            )
+
+
 @declare_process_block_class("TranslatorLeachPrecip")
 class TranslatorDataLeachPrecip(TranslatorData):
     """
@@ -49,6 +96,8 @@ class TranslatorDataLeachPrecip(TranslatorData):
     package and the precipitation liquid property package.
 
     """
+
+    default_scaler = TranslatorDataLeachPrecipScaler
 
     def build(self):
         """

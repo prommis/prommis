@@ -18,7 +18,27 @@ from pyomo.environ import Constraint, Param, Set, Var, units
 
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
 from idaes.core.base import property_meta
+from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.misc import add_object_reference
+
+
+class LeachReactionScaler(CustomScalerBase):
+    """
+    Scaler for the leach reaction package.
+    No variables or constraints, so no need for scaling.
+    """
+
+    DEFAULT_SCALING_FACTORS = {}
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        pass
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        pass
 
 
 # -----------------------------------------------------------------------------
@@ -223,6 +243,7 @@ class _CoalRefuseLeachingReactionBlock(ProcessBlock):
     "CoalRefuseLeachingReactionBlock", block_class=_CoalRefuseLeachingReactionBlock
 )
 class CoalRefuseLeachingReactionData(ProcessBlockData):
+    default_scaler = LeachReactionScaler
     # Create Class ConfigBlock
     CONFIG = ProcessBlockData.CONFIG()
     CONFIG.declare(

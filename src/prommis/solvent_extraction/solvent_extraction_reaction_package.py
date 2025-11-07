@@ -22,8 +22,41 @@ from pyomo.environ import Constraint, Param, Set, Var, units, log10
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
 from idaes.core.base import property_meta
 from idaes.core.util.misc import add_object_reference
+from idaes.core.scaling import CustomScalerBase
 
 __author__ = "Arkoprabho Dasgupta"
+
+
+class SolventExtractionReactionScaler(CustomScalerBase):
+    """
+    Scaler for the solvent extraction reaction package.
+    """
+
+    DEFAULT_SCALING_FACTORS = {}
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        aq_block = model.parent_block().aqueous[model.index()]
+        org_block = model.parent_block().organic[model.index()]
+        for e in model.params.element_list:
+            sf_aq = self.get_scaling_factor(aq_block.conc_mol_comp[e], default=1)
+            sf_org = self.get_scaling_factor(
+                org_block.conc_mol_comp[e + "_o"], default=1
+            )
+            self.set_variable_scaling_factor(
+                model.distribution_coefficient[e], sf_org / sf_aq, overwrite=overwrite
+            )
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        for e in model.params.element_list:
+            self.scale_constraint_by_component(
+                model.distribution_constraint[e],
+                model.distribution_coefficient[e],
+                overwrite=overwrite,
+            )
 
 
 # -----------------------------------------------------------------------------

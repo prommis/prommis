@@ -13,11 +13,12 @@ Authors: Andrew Lee
 from pyomo.environ import (
     Constraint,
     Param,
-    Set,
-    Var,
-    units,
     PositiveReals,
     Reals,
+    Set,
+    units,
+    Var,
+    value,
 )
 
 from idaes.core import (
@@ -31,6 +32,81 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
+from idaes.core.scaling import CustomScalerBase
+
+contaminant_list = ["Fe", "Al", "Ca"]
+ree_list = ["Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
+
+
+class LeachSolutionPropertiesScaler(CustomScalerBase):
+    """
+    Scaler for leach solution property package.
+    """
+
+    CONFIG = CustomScalerBase.CONFIG
+
+    DEFAULT_SCALING_FACTORS = {
+        "flow_vol": 1e-2,
+        "pressure": 1e-5,
+        "temperature": 1 / 300,
+        "conc_mass_comp[H2O]": 1e-6,
+        "conc_mass_comp[H]": 1e-1,
+        "conc_mass_comp[SO4]": 1e-2,
+        "conc_mass_comp[HSO4]": 1e-3,
+        "conc_mass_comp[Cl]": 1e-3,
+    }
+    for ree in ree_list:
+        DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 10
+    for contaminant in contaminant_list:
+        DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{contaminant}]"] = 1e-2
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        # Scale state variables
+        self.scale_variable_by_default(model.flow_vol, overwrite=overwrite)
+        self.scale_variable_by_default(model.pressure, overwrite=overwrite)
+        self.scale_variable_by_default(model.temperature, overwrite=overwrite)
+        for idx, var in model.conc_mass_comp.items():
+            self.scale_variable_by_default(var, overwrite=overwrite)
+
+        # Scale other variables
+        params = model.params
+
+        self.set_variable_scaling_factor(
+            model.pH_phase["liquid"], 10, overwrite=overwrite
+        )
+        for idx, var in model.conc_mol_comp.items():
+            sf = self.get_scaling_factor(model.conc_mass_comp[idx]) * value(
+                units.convert(params.mw[idx], to_units=units.mg / units.mol)
+            )
+            self.set_variable_scaling_factor(var, sf, overwrite=overwrite)
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        for idx, condata in model.molar_concentration_constraint.items():
+            self.scale_constraint_by_component(
+                condata, model.conc_mass_comp[idx], overwrite=overwrite
+            )
+        self.scale_constraint_by_component(
+            model.pH_constraint["liquid"], model.conc_mol_comp["H"], overwrite=overwrite
+        )
+
+        if model.is_property_constructed("h2o_concentration"):
+            self.scale_constraint_by_component(
+                model.h2o_concentration,
+                model.conc_mass_comp["H2O"],
+                overwrite=overwrite,
+            )
+
+        if model.is_property_constructed("hso4_dissociation"):
+            sf = self.get_scaling_factor(
+                model.conc_mol_comp["H"]
+            ) * self.get_scaling_factor(model.conc_mol_comp["SO4"])
+            self.set_constraint_scaling_factor(
+                model.hso4_dissociation, sf, overwrite=overwrite
+            )
 
 
 # -----------------------------------------------------------------------------
@@ -181,6 +257,8 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
 
 
 class _LeachSolutionStateBlock(StateBlock):
+    default_scaler = LeachSolutionPropertiesScaler
+
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -206,6 +284,8 @@ class LeachSolutionStateBlockData(StateBlockData):
     State block for leach solution of West Kentucky No. 13 coal by H2SO4.
 
     """
+
+    default_scaler = LeachSolutionPropertiesScaler
 
     def build(self):
         super().build()

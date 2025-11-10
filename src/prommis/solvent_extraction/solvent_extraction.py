@@ -113,7 +113,7 @@ ie. at the mixer tank outlet point.
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Param, Block, units
+from pyomo.environ import Block, Constraint, Param, units, value
 from pyomo.network import Port
 
 from idaes.core import (
@@ -154,6 +154,12 @@ class SolventExtractionScaler(CustomScalerBase):
         if submodel_scalers is None:
             submodel_scalers = {}
 
+        # The MSContactor scaler expects volume to be scaled
+        for vardata in model.mscontactor.volume.values():
+            self.set_variable_scaling_factor(
+                vardata, 1 / value(vardata), overwrite=overwrite
+            )
+
         # There are no Vars besides those created by the MSContactor
         self.call_submodel_scaler_method(
             submodel=model.mscontactor,
@@ -184,10 +190,10 @@ class SolventExtractionScaler(CustomScalerBase):
             overwrite=overwrite,
         )
         for idx, con in model.distribution_extent_constraint.items():
-            t, e, _, j_o = idx
+            t, e, j = idx
             self.scale_constraint_by_component(
                 con,
-                model.mscontactor.organic[t, e].conc_mol_comp[j_o],
+                model.mscontactor.organic[t, e].conc_mol_comp[f"{j}_o"],
                 overwrite=overwrite,
             )
 

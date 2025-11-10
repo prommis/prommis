@@ -5,9 +5,10 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 
-from pyomo.environ import check_optimal_termination, value
+from pyomo.environ import check_optimal_termination, ComponentMap, value
 
 from idaes.core.initialization import InitializationStatus
+from idaes.core.scaling.util import jacobian_cond
 from idaes.core.solvers import get_solver
 from idaes.core.util import DiagnosticsToolbox
 
@@ -63,6 +64,10 @@ class Test_Solvent_Extraction_steady_model:
         dt = DiagnosticsToolbox(model)
         dt.assert_no_numerical_warnings()
 
+        assert jacobian_cond(model, scaled=False) == pytest.approx(8.415018e12, rel=1e-3)
+        # TODO it looks like the holdup constraints aren't as well-scaled as we'd like.
+        assert jacobian_cond(model, scaled=True) == pytest.approx(2.91496e6, rel=1e-3)
+
     @pytest.mark.component
     @pytest.mark.solver
     def test_solution(self, SolEx_frame):
@@ -85,7 +90,7 @@ class Test_Solvent_Extraction_steady_model:
             "Pr": 0.27631,
             "Sc": 0.0027415,
             "Sm": 0.08669,
-            "Y": 4.27601e-06,
+            "Y": 4.27506e-06,
         }
 
         organic_outlet = {

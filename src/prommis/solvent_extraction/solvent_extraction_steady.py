@@ -6,6 +6,7 @@
 #####################################################################################################
 
 from pyomo.environ import (
+    ComponentMap,
     ConcreteModel,
     units,
 )
@@ -129,6 +130,27 @@ def set_inputs(m, dosage):
     m.fs.solex.mscontactor.organic_inlet_state[:].temperature.fix(305.15 * units.K)
 
 
+def scale_model(m):
+    """
+    Apply scaling factors to improve solver performance.
+    """
+
+    aqueous_scaler = m.fs.solex.mscontactor.aqueous.default_scaler()
+    aqueous_scaler.default_scaling_factors["flow_vol"] = 1 / 62.01
+
+    organic_scaler = m.fs.solex.mscontactor.organic.default_scaler()
+    organic_scaler.default_scaling_factors["flow_vol"] = 1 / 62.01
+
+    submodel_scalers = ComponentMap()
+    submodel_scalers[m.fs.solex.mscontactor.aqueous_inlet_state] = aqueous_scaler
+    submodel_scalers[m.fs.solex.mscontactor.aqueous] = aqueous_scaler
+    submodel_scalers[m.fs.solex.mscontactor.organic_inlet_state] = organic_scaler
+    submodel_scalers[m.fs.solex.mscontactor.organic] = organic_scaler
+
+    scaler_obj = m.fs.solex.default_scaler()
+    scaler_obj.scale_model(m.fs.solex, submodel_scalers=submodel_scalers)
+
+
 def model_buildup_and_set_inputs(dosage, number_of_stages):
     """
     A function to build up the solvent extraction model and set inlet streams
@@ -141,6 +163,7 @@ def model_buildup_and_set_inputs(dosage, number_of_stages):
     """
     m = build_model(dosage, number_of_stages)
     set_inputs(m, dosage)
+    scale_model(m)
 
     return m
 

@@ -12,7 +12,6 @@ Authors: Alejandro Garciadiego
 
 from pyomo.environ import Param, Set, value, Var, units
 
-import idaes.core.util.scaling as iscale
 from idaes.core import (
     Component,
     MaterialFlowBasis,
@@ -22,7 +21,7 @@ from idaes.core import (
     StateBlockData,
     declare_process_block_class,
 )
-from idaes.core.scaling import CustomScalerBase
+from idaes.core.scaling import CustomScalerBase, DefaultScalingRecommendation
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
 
@@ -56,7 +55,7 @@ class HClStrippingPropertiesScaler(CustomScalerBase):
     CONFIG = CustomScalerBase.CONFIG
 
     DEFAULT_SCALING_FACTORS = {
-        "flow_vol": 1e-2,
+        "flow_vol": DefaultScalingRecommendation.userInputRequired,
         "conc_mass_comp[H2O]": 1e-6,
         "conc_mass_comp[H]": 1e-1,
         "conc_mass_comp[SO4]": 1e-2,

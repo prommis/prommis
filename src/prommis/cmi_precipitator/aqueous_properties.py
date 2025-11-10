@@ -26,8 +26,8 @@ from idaes.core import (
 from idaes.core.util.initialization import fix_state_vars
 
 
-@declare_process_block_class("AqueousParameter")
-class AqueousParameterData(PhysicalParameterBlock):
+@declare_process_block_class("HClStrippingParameterBlock")
+class HClStrippingParameterBlockData(PhysicalParameterBlock):
     """
     Property package for aqueous species.
 

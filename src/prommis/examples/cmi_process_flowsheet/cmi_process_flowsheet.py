@@ -47,7 +47,7 @@ import prommis.examples.cmi_process_flowsheet.cmi_process_adjustment_rxn_prop_pa
 import prommis.examples.cmi_process_flowsheet.cmi_process_dissolution_rxn_prop_pack as dissolution_reaction_props
 import prommis.examples.cmi_process_flowsheet.cmi_process_precipitation_rxn_prop_pack as precipitation_reaction_props
 import prommis.examples.cmi_process_flowsheet.cmi_process_prop_pack as thermo_props
-from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
+from prommis.precipitate.precipitate_liquid_properties import HClStrippingParameterBlock
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 
@@ -119,7 +119,7 @@ def build():
         doc="gas property",
     )
     m.fs.prop_solid = PrecipitateParameters()
-    m.fs.prop_liquid = AqueousParameter()
+    m.fs.prop_liquid = HClStrippingParameterBlock()
 
     ### Feed Stream (entering stage 1)
     m.fs.FEED = Feed(property_package=m.fs.thermo_params)

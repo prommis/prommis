@@ -125,8 +125,7 @@ are not defined as outlet streams and their flow rates are defined as model vari
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
 # Additional import for the unit operation
-from pyomo.environ import Param, Set, Var
-from pyomo.environ import units as pyunits
+from pyomo.environ import Param, Set, units as pyunits, value, Var
 
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
@@ -172,9 +171,8 @@ class REEOxalateRoasterScaler(CustomScalerBase):
             overwrite=overwrite,
         )
         self.propagate_state_scaling(
-            target=model.gas_out,
-            source=model.gas_in,
-            method="variable_scaling_routine",
+            target_state=model.gas_out,
+            source_state=model.gas_in,
             overwrite=overwrite,
         )
         self.call_submodel_scaler_method(
@@ -242,7 +240,9 @@ class REEOxalateRoasterScaler(CustomScalerBase):
         # more appropriate?
         for (t, j), vardata in model.enth_mol_comp_feed.items():
             self.set_variable_scaling_factor(
-                vardata, abs(model.enth0_oxide_list_all[j]), overwrite=overwrite
+                vardata,
+                1 / abs(value(model.enth0_oxide_list_all[j])),
+                overwrite=overwrite,
             )
 
         # model.enth_mol_comp_product ("molar enthalpy of individual species of solid oxide product")
@@ -251,7 +251,9 @@ class REEOxalateRoasterScaler(CustomScalerBase):
         # more appropriate?
         for (t, j), vardata in model.enth_mol_comp_product.items():
             self.set_variable_scaling_factor(
-                vardata, abs(model.enth0_oxide_list_all[j]), overwrite=overwrite
+                vardata,
+                1 / abs(value(model.enth0_oxide_list_all[j])),
+                overwrite=overwrite,
             )
 
         # model.heat_duty
@@ -293,9 +295,8 @@ class REEOxalateRoasterScaler(CustomScalerBase):
             overwrite=overwrite,
         )
         self.propagate_state_scaling(
-            target=model.gas_out,
-            source=model.gas_in,
-            method="constraint_scaling_routine",
+            target_state=model.gas_out,
+            source_state=model.gas_in,
             overwrite=overwrite,
         )
         self.call_submodel_scaler_method(
@@ -361,6 +362,7 @@ class REEOxalateRoasterScaler(CustomScalerBase):
                 condata, model.enth_mol_comp_product[idx], overwrite=overwrite
             )
 
+        # import pdb; pdb.set_trace()
         for idx, condata in model.energy_balance_eqn.items():
             self.scale_constraint_by_nominal_value(condata, overwrite=overwrite)
 

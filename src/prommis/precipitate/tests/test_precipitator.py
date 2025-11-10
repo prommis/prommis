@@ -4,7 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-from pyomo.environ import ConcreteModel, assert_optimal_termination, value
+from pyomo.environ import ComponentMap, ConcreteModel, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
@@ -94,8 +94,15 @@ class TestPrec(object):
 
         m.fs.unit.precipitate_state_block[0].temperature.fix(348.15)
 
+        HCl_scaler = m.fs.unit.cv_aqueous.properties_in.default_scaler()
+        HCl_scaler.default_scaling_factors["flow_vol"] = 1 / 100
+
+        submodel_scalers = ComponentMap()
+        submodel_scalers[m.fs.unit.cv_aqueous.properties_in] = HCl_scaler
+        submodel_scalers[m.fs.unit.cv_aqueous.properties_out] = HCl_scaler
+
         scaler_obj = m.fs.unit.default_scaler()
-        scaler_obj.scale_model(m.fs.unit)
+        scaler_obj.scale_model(m.fs.unit, submodel_scalers=submodel_scalers)
 
         return m
 

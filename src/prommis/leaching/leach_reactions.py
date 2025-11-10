@@ -14,7 +14,7 @@ LeachTrain unit model.
 
 """
 from pyomo.common.config import ConfigValue
-from pyomo.environ import Constraint, Param, Set, Var, units
+from pyomo.environ import Constraint, Expression, Param, Set, Var, units
 
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
 from idaes.core.base import property_meta
@@ -265,13 +265,7 @@ class CoalRefuseLeachingReactionData(ProcessBlockData):
 
         add_object_reference(self, "_params", self.config.parameters)
 
-        self.reaction_rate = Var(
-            self.params.reaction_idx,
-            initialize=0,
-            units=units.mol / units.litre / units.hour,
-        )
-
-        def rule_reaction_rate_eq(b, r):
+        def rule_reaction_rate(b, r):
             l_block = b.parent_block().liquid[b.index()]
             s_block = b.parent_block().solid[b.index()]
 
@@ -286,15 +280,15 @@ class CoalRefuseLeachingReactionData(ProcessBlockData):
 
             # Empirical correlation with varying exponent,
             # strip units from acid concentration for simplicity
-            return b.reaction_rate[r] == (
+            return (
                 eps
                 * b.params.B[r]
                 * (h_conc / (units.mol / units.L)) ** b.params.A[r]
                 * (1 - s_block.conversion[r]) ** (2 / 3)
             )
 
-        self.reaction_rate_eq = Constraint(
-            self.params.reaction_idx, rule=rule_reaction_rate_eq
+        self.reaction_rate = Expression(
+            self.params.reaction_idx, rule=rule_reaction_rate
         )
 
     @property

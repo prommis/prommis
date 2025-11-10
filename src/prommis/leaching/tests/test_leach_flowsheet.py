@@ -5,12 +5,13 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 from pyomo.environ import (
-    SolverFactory,
-    TransformationFactory,
     assert_optimal_termination,
+    ComponentMap,
+    SolverFactory,
     value,
 )
 
+from idaes.core.scaling.util import jacobian_cond
 from idaes.core.util import DiagnosticsToolbox
 
 import pytest
@@ -37,19 +38,13 @@ def test_structural_issues(model):
 @pytest.mark.solver
 def test_solve(model):
     set_scaling(model)
-    # Create a scaled version of the model to solve
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(model, rename=False)
 
     initializer = model.fs.leach.default_initializer()
-    initializer.initialize(scaled_model.fs.leach)
+    initializer.initialize(model.fs.leach)
 
     # Solve scaled model
-    solver = SolverFactory("ipopt")
-    results = solver.solve(scaled_model, tee=False)
-
-    # Propagate results back to unscaled model
-    scaling.propagate_solution(scaled_model, model)
+    solver = SolverFactory("ipopt_v2")
+    results = solver.solve(model, tee=False)
 
     assert_optimal_termination(results)
 
@@ -60,6 +55,8 @@ def test_numerical_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.assert_no_numerical_warnings()
 
+    assert jacobian_cond(model, scaled=False) == pytest.approx(6.23693e12, rel=1e-3)
+    assert jacobian_cond(model, scaled=True) == pytest.approx(69938.8, rel=1e-3)
 
 @pytest.mark.component
 @pytest.mark.solver

@@ -10,7 +10,10 @@ from idaes.core import FlowsheetBlock
 
 import pytest
 
-from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitate_solids_properties import (
+    PrecipitateParameters,
+    PrecipitateScaler,
+)
 
 
 @pytest.mark.unit
@@ -32,3 +35,5 @@ def test_build():
 
     for j in m.fs.prec_solid.component_list:
         assert m.fs.state[0].flow_mol_comp[j].fixed
+
+    assert m.fs.state[0].default_scaler is PrecipitateScaler

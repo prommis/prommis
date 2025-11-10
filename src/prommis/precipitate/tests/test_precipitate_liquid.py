@@ -10,7 +10,10 @@ from idaes.core import FlowsheetBlock
 
 import pytest
 
-from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
+from prommis.precipitate.precipitate_liquid_properties import (
+    HClStrippingParameterBlock,
+    HClStrippingPropertiesScaler,
+)
 
 
 @pytest.mark.unit
@@ -18,7 +21,7 @@ def test_build():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.prec_sol = AqueousParameter()
+    m.fs.prec_sol = HClStrippingParameterBlock()
 
     m.fs.state = m.fs.prec_sol.build_state_block(m.fs.time)
 
@@ -43,3 +46,5 @@ def test_build():
         assert not m.fs.state[0].flow_mol_comp[j].fixed
 
         assert m.fs.state[0].flow_mol_constraint[j].active
+
+    assert m.fs.state[0].default_scaler is HClStrippingPropertiesScaler

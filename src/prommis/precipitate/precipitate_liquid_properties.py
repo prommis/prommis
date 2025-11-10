@@ -10,7 +10,7 @@ Initial property package for precipitate.
 Authors: Alejandro Garciadiego
 """
 
-from pyomo.environ import Param, Set, Var, units
+from pyomo.environ import Param, Set, value, Var, units
 
 import idaes.core.util.scaling as iscale
 from idaes.core import (
@@ -22,16 +22,98 @@ from idaes.core import (
     StateBlockData,
     declare_process_block_class,
 )
+from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
 
-
 # -----------------------------------------------------------------------------
 # Precipitate solution property package
-@declare_process_block_class("AqueousParameter")
-class AqueousParameterData(PhysicalParameterBlock):
+_ree_list = [
+    "Sc",
+    "Y",
+    "La",
+    "Ce",
+    "Pr",
+    "Nd",
+    "Sm",
+    "Gd",
+    "Dy",
+]
+_gangue_list = [
+    "Al",
+    "Ca",
+    "Fe",
+]
+_solvent_list = ["H2O", "H", "Cl"]
+_comp_list = _gangue_list + _ree_list + _solvent_list
+
+
+class HClStrippingPropertiesScaler(CustomScalerBase):
     """
-    Property package for aqueous solution generated in oxalate precipitator.
+    Scaler for REE precipiate liquid property package.
+    """
+
+    CONFIG = CustomScalerBase.CONFIG
+
+    DEFAULT_SCALING_FACTORS = {
+        "flow_vol": 1e-2,
+        "conc_mass_comp[H2O]": 1e-6,
+        "conc_mass_comp[H]": 1e-1,
+        "conc_mass_comp[SO4]": 1e-2,
+        "conc_mass_comp[HSO4]": 1e-3,
+        "conc_mass_comp[Cl]": 1e-3,
+    }
+    for ree in _ree_list:
+        DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 0.1
+    for contaminant in _gangue_list:
+        DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{contaminant}]"] = 0.1
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        # Scale state variables
+        self.scale_variable_by_default(model.flow_vol, overwrite=overwrite)
+        for idx, var in model.conc_mass_comp.items():
+            self.scale_variable_by_default(var, overwrite=overwrite)
+
+        # Scale other variables
+        params = model.params
+
+        for idx, vardata in model.conc_mol_comp.items():
+            self.scale_variable_by_definition_constraint(
+                vardata, model.molar_concentration_constraint[idx], overwrite=overwrite
+            )
+
+        for idx, vardata in model.flow_mol_comp.items():
+            self.scale_variable_by_definition_constraint(
+                vardata, model.flow_mol_constraint[idx], overwrite=overwrite
+            )
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        for idx, condata in model.molar_concentration_constraint.items():
+            self.scale_constraint_by_component(
+                condata, model.conc_mass_comp[idx], overwrite=overwrite
+            )
+        for idx, condata in model.flow_mol_constraint.items():
+            self.scale_constraint_by_component(
+                condata, model.flow_mol_comp[idx], overwrite=overwrite
+            )
+
+        # Why is this constraint not present in this property package?
+        # if model.is_property_constructed("h2o_concentration"):
+        #     self.scale_constraint_by_component(
+        #         model.h2o_concentration,
+        #         model.conc_mass_comp["H2O"],
+        #         overwrite=overwrite,
+        #     )
+
+
+@declare_process_block_class("HClStrippingParameterBlock")
+class HClStrippingParameterData(PhysicalParameterBlock):
+    """
+    Property package for HCl solution generated in oxalate precipitator.
 
     Includes the following components:
 
@@ -62,8 +144,6 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Fe = Component()
         self.H = Component()
         self.Cl = Component()
-        self.HSO4 = Component()
-        self.SO4 = Component()
 
         # REEs
         self.Sc = Component()
@@ -97,8 +177,6 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Fe": 2.44,
                 "H": 1e-20,
                 "Cl": 1e-20,
-                "HSO4": 1e-20,
-                "SO4": 1e-20,
             },
         )
 
@@ -121,32 +199,10 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Fe": 55.845e-3,
                 "H": 1.008e-3,
                 "Cl": 35.453e-3,
-                "HSO4": 97.064e-3,
-                "SO4": 96.056e-3,
             },
         )
 
-        self.dissolved_elements = Set(
-            initialize=[
-                "Al",
-                "Ca",
-                "Fe",
-                "Sc",
-                "Y",
-                "La",
-                "Ce",
-                "Pr",
-                "Nd",
-                "Sm",
-                "Gd",
-                "Dy",
-                "H",
-                "Cl",
-                "HSO4",
-                "SO4",
-                "H2O",
-            ]
-        )
+        self.dissolved_elements = Set(initialize=_comp_list)
 
         # Assume dilute acid, density of pure water
         self.dens_mass = Param(
@@ -155,7 +211,7 @@ class AqueousParameterData(PhysicalParameterBlock):
             mutable=True,
         )
 
-        self._state_block_class = AqueousStateBlock
+        self._state_block_class = HClStrippingStateBlock
 
     @classmethod
     def define_metadata(cls, obj):
@@ -178,7 +234,9 @@ class AqueousParameterData(PhysicalParameterBlock):
         )
 
 
-class _AqueousStateBlock(StateBlock):
+class _HClStrippingStateBlock(StateBlock):
+    default_scaler = HClStrippingPropertiesScaler
+
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -190,12 +248,16 @@ class _AqueousStateBlock(StateBlock):
         fix_state_vars(self)
 
 
-@declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
-class AqueousStateBlockkData(StateBlockData):
+@declare_process_block_class(
+    "HClStrippingStateBlock", block_class=_HClStrippingStateBlock
+)
+class HClStrippingStateBlockkData(StateBlockData):
     """
-    State block for aqueous solution generated in oxalate precipitator.
+    State block for HCl solution generated in oxalate precipitator.
 
     """
+
+    default_scaler = HClStrippingPropertiesScaler
 
     def build(self):
         super().build()
@@ -245,11 +307,6 @@ class AqueousStateBlockkData(StateBlockData):
                 )
                 == b.flow_mol_comp[j]
             )
-
-        iscale.set_scaling_factor(self.flow_vol, 1e1)
-        iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
-        iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
-        iscale.set_scaling_factor(self.conc_mol_comp, 1e5)
 
     def _dens_mass(self):
         add_object_reference(self, "dens_mass", self.params.dens_mass)

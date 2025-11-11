@@ -126,6 +126,7 @@ from idaes.core.initialization import ModularInitializerBase
 from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.constants import Constants
+from idaes.core.util.exceptions import ConfigurationError
 
 from idaes.models.unit_models.mscontactor import MSContactor
 
@@ -155,10 +156,11 @@ class SolventExtractionScaler(CustomScalerBase):
             submodel_scalers = {}
 
         # The MSContactor scaler expects volume to be scaled
-        for vardata in model.mscontactor.volume.values():
-            self.set_variable_scaling_factor(
-                vardata, 1 / value(vardata), overwrite=overwrite
-            )
+        if hasattr(model.mscontactor, "volume"):
+            for vardata in model.mscontactor.volume.values():
+                self.set_variable_scaling_factor(
+                    vardata, 1 / value(vardata), overwrite=overwrite
+                )
 
         # There are no Vars besides those created by the MSContactor
         self.call_submodel_scaler_method(
@@ -197,16 +199,18 @@ class SolventExtractionScaler(CustomScalerBase):
                 overwrite=overwrite,
             )
 
-        for idx, con in model.aqueous_pressure_constraint.items():
-            t, e = idx
-            self.scale_constraint_by_component(
-                con, model.mscontactor.aqueous[t, e].pressure, overwrite=overwrite
-            )
-        for idx, con in model.organic_pressure_constraint.items():
-            t, e = idx
-            self.scale_constraint_by_component(
-                con, model.mscontactor.organic[t, e].pressure, overwrite=overwrite
-            )
+        if hasattr(model, "aqueous_pressure_constraint"):
+            for idx, con in model.aqueous_pressure_constraint.items():
+                t, e = idx
+                self.scale_constraint_by_component(
+                    con, model.mscontactor.aqueous[t, e].pressure, overwrite=overwrite
+                )
+        if hasattr(model, "organic_pressure_constraint"):
+            for idx, con in model.organic_pressure_constraint.items():
+                t, e = idx
+                self.scale_constraint_by_component(
+                    con, model.mscontactor.organic[t, e].pressure, overwrite=overwrite
+                )
 
 
 class SolventExtractionInitializer(ModularInitializerBase):
@@ -251,7 +255,8 @@ class SolventExtractionInitializer(ModularInitializerBase):
         """
 
         model.mscontactor.heterogeneous_reaction_extent.fix(1e-8)
-        model.mscontactor.volume_frac_stream[:, :, "aqueous"].fix()
+        if hasattr(model.mscontactor, "volume_frac_stream"):
+            model.mscontactor.volume_frac_stream[:, :, "aqueous"].fix()
 
         # Initialize MSContactor
         msc_init = model.mscontactor.default_initializer(
@@ -261,7 +266,8 @@ class SolventExtractionInitializer(ModularInitializerBase):
         msc_init.initialize(model.mscontactor)
 
         model.mscontactor.heterogeneous_reaction_extent.unfix()
-        model.mscontactor.volume_frac_stream[:, :, "aqueous"].unfix()
+        if hasattr(model.mscontactor, "volume_frac_stream"):
+            model.mscontactor.volume_frac_stream[:, :, "aqueous"].unfix()
 
         solver = self._get_solver()
         results = solver.solve(model)
@@ -369,10 +375,24 @@ class SolventExtractionData(UnitModelBlockData):
             description="Arguments for heterogeneous reaction package for solvent extraction.",
         ),
     )
+    CONFIG.declare(
+        "create_hydrostatic_pressure_terms",
+        ConfigValue(
+            default=False,
+            domain=Bool,
+            description="Arguments for heterogeneous reaction package for solvent extraction.",
+        ),
+    )
 
     def build(self):
 
         super().build()
+
+        if self.config.create_hydrostatic_pressure_terms and not self.config.has_holdup:
+            raise ConfigurationError(
+                "Material holdup terms must be created in order to "
+                "add hydrostatic pressure terms."
+            )
 
         streams_dict = {
             "aqueous": self.config.aqueous_stream,
@@ -384,6 +404,7 @@ class SolventExtractionData(UnitModelBlockData):
             heterogeneous_reactions=self.config.heterogeneous_reaction_package,
             heterogeneous_reactions_args=self.config.heterogeneous_reaction_package_args,
             has_holdup=self.config.has_holdup,
+            dynamic=self.config.dynamic,
         )
 
         def distribution_ratio_rule(b, t, s, e):
@@ -418,77 +439,86 @@ class SolventExtractionData(UnitModelBlockData):
             mutable=True,
         )
 
-        def volume_fraction_rule(b, t, s):
+        if self.config.has_holdup:
+            # TODO this constraint doesn't seem right.
+            # Because the aqueous and organic phases exit
+            # through separate ports, the volumetric holdup
+            # should be independent of the volumentric flow rate.
+            def volume_fraction_rule(b, t, s):
 
-            theta_A = b.mscontactor.volume_frac_stream[t, s, "aqueous"]
-            theta_O = b.mscontactor.volume_frac_stream[t, s, "organic"]
-            v_A = b.mscontactor.aqueous[t, s].flow_vol
-            v_O = b.mscontactor.organic[t, s].flow_vol
+                theta_A = b.mscontactor.volume_frac_stream[t, s, "aqueous"]
+                theta_O = b.mscontactor.volume_frac_stream[t, s, "organic"]
+                v_A = b.mscontactor.aqueous[t, s].flow_vol
+                v_O = b.mscontactor.organic[t, s].flow_vol
 
-            return theta_A * v_O == theta_O * v_A
+                return theta_A * v_O == theta_O * v_A
 
-        self.volume_fraction_constraint = Constraint(
-            self.flowsheet().time, self.mscontactor.elements, rule=volume_fraction_rule
-        )
-
-        if self.config.dynamic is True:
-            t0 = self.flowsheet().time.first()
-            self.volume_fraction_constraint[t0, :].deactivate()
-
-        def organic_pressure_calculation(b, t, s):
-
-            g = Constants.acceleration_gravity
-            P_atm = 101325 * units.Pa
-
-            rho_og = b.config.organic_stream["property_package"].dens_mass
-
-            P_org = units.convert(
-                (
-                    rho_og
-                    * g
-                    * b.mscontactor.volume[s]
-                    * b.mscontactor.volume_frac_stream[t, s, "organic"]
-                    / b.area_cross_stage[s]
-                ),
-                to_units=units.Pa,
+            self.volume_fraction_constraint = Constraint(
+                self.flowsheet().time,
+                self.mscontactor.elements,
+                rule=volume_fraction_rule,
             )
 
-            return b.mscontactor.organic[t, s].pressure == P_org + P_atm
+            if self.config.dynamic is True:
+                t0 = self.flowsheet().time.first()
+                self.volume_fraction_constraint[t0, :].deactivate()
 
-        self.organic_pressure_constraint = Constraint(
-            self.flowsheet().time,
-            self.mscontactor.elements,
-            rule=organic_pressure_calculation,
-        )
+        if self.config.create_hydrostatic_pressure_terms:
 
-        def aqueous_pressure_calculation(b, t, s):
-            g = Constants.acceleration_gravity
+            def organic_pressure_calculation(b, t, s):
 
-            rho_aq = b.config.aqueous_stream["property_package"].dens_mass
-            P_aq = units.convert(
-                (
-                    rho_aq
-                    * g
-                    * (
-                        b.mscontactor.volume[s]
-                        * b.mscontactor.volume_frac_stream[t, s, "aqueous"]
+                g = Constants.acceleration_gravity
+                P_atm = 101325 * units.Pa
+
+                rho_og = b.config.organic_stream["property_package"].dens_mass
+
+                P_org = units.convert(
+                    (
+                        rho_og
+                        * g
+                        * b.mscontactor.volume[s]
+                        * b.mscontactor.volume_frac_stream[t, s, "organic"]
                         / b.area_cross_stage[s]
-                        + b.elevation[s]
-                    )
-                ),
-                to_units=units.Pa,
+                    ),
+                    to_units=units.Pa,
+                )
+
+                return b.mscontactor.organic[t, s].pressure == P_org + P_atm
+
+            self.organic_pressure_constraint = Constraint(
+                self.flowsheet().time,
+                self.mscontactor.elements,
+                rule=organic_pressure_calculation,
             )
 
-            return (
-                b.mscontactor.aqueous[t, s].pressure
-                == P_aq + b.mscontactor.organic[t, s].pressure
-            )
+            def aqueous_pressure_calculation(b, t, s):
+                g = Constants.acceleration_gravity
 
-        self.aqueous_pressure_constraint = Constraint(
-            self.flowsheet().time,
-            self.mscontactor.elements,
-            rule=aqueous_pressure_calculation,
-        )
+                rho_aq = b.config.aqueous_stream["property_package"].dens_mass
+                P_aq = units.convert(
+                    (
+                        rho_aq
+                        * g
+                        * (
+                            b.mscontactor.volume[s]
+                            * b.mscontactor.volume_frac_stream[t, s, "aqueous"]
+                            / b.area_cross_stage[s]
+                            + b.elevation[s]
+                        )
+                    ),
+                    to_units=units.Pa,
+                )
+
+                return (
+                    b.mscontactor.aqueous[t, s].pressure
+                    == P_aq + b.mscontactor.organic[t, s].pressure
+                )
+
+            self.aqueous_pressure_constraint = Constraint(
+                self.flowsheet().time,
+                self.mscontactor.elements,
+                rule=aqueous_pressure_calculation,
+            )
 
         self.aqueous_inlet = Port(extends=self.mscontactor.aqueous_inlet)
         self.aqueous_outlet = Port(extends=self.mscontactor.aqueous_outlet)

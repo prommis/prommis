@@ -282,7 +282,8 @@ class _LeachSolutionStateBlock(StateBlock):
         # Fix state variables
         fix_state_vars(self)
 
-        # Deactivate inherent reactions
+        # Deactivate inherent reaction
+        # and water density constraints
         for sbd in self.values():
             if not sbd.config.defined_state:
                 sbd.h2o_concentration.deactivate()

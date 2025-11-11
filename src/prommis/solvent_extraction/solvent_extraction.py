@@ -254,7 +254,7 @@ class SolventExtractionInitializer(ModularInitializerBase):
             None
         """
 
-        model.mscontactor.heterogeneous_reaction_extent.fix(1e-8)
+        model.mscontactor.heterogeneous_reaction_extent.fix(0)
         if hasattr(model.mscontactor, "volume_frac_stream"):
             model.mscontactor.volume_frac_stream[:, :, "aqueous"].fix()
 

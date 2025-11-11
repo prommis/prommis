@@ -10,7 +10,7 @@ Initial property package for precipitate.
 Authors: Alejandro Garciadiego
 """
 
-from pyomo.environ import Param, Set, value, Var, units
+from pyomo.environ import Constraint, Param, Set, value, Var, units
 
 from idaes.core import (
     Component,
@@ -115,12 +115,12 @@ class HClStrippingPropertiesScaler(CustomScalerBase):
             )
 
         # Why is this constraint not present in this property package?
-        # if model.is_property_constructed("h2o_concentration"):
-        #     self.scale_constraint_by_component(
-        #         model.h2o_concentration,
-        #         model.conc_mass_comp["H2O"],
-        #         overwrite=overwrite,
-        #     )
+        if model.is_property_constructed("h2o_concentration"):
+            self.scale_constraint_by_component(
+                model.h2o_concentration,
+                model.conc_mass_comp["H2O"],
+                overwrite=overwrite,
+            )
 
 
 @declare_process_block_class("HClStrippingParameterBlock")
@@ -265,6 +265,10 @@ class _HClStrippingStateBlock(StateBlock):
         # Fix state variables
         fix_state_vars(self)
 
+        for sbd in self.values():
+            if not sbd.config.defined_state:
+                sbd.h2o_concentration.deactivate()
+
 
 @declare_process_block_class(
     "HClStrippingStateBlock", block_class=_HClStrippingStateBlock
@@ -289,20 +293,20 @@ class HClStrippingStateBlockkData(StateBlockData):
             self.params.dissolved_elements,
             units=units.mg / units.L,
             initialize=1e-5,
-            bounds=(1e-20, None),
+            bounds=(1e-30, None),
         )
         self.flow_mol_comp = Var(
             self.params.dissolved_elements,
             units=units.mol / units.hour,
             initialize=1e-5,
-            bounds=(1e-20, None),
+            bounds=(1e-30, None),
         )
 
         self.conc_mol_comp = Var(
             self.params.dissolved_elements,
             units=units.mol / units.L,
             initialize=1e-5,
-            bounds=(1e-20, None),
+            bounds=(1e-30, None),
         )
 
         # Concentration conversion constraint
@@ -324,6 +328,12 @@ class HClStrippingStateBlockkData(StateBlockData):
                     to_units=units.mol / units.hour,
                 )
                 == b.flow_mol_comp[j]
+            )
+
+        if not self.config.defined_state:
+            # Concentration of H2O based on assumed density
+            self.h2o_concentration = Constraint(
+                expr=self.conc_mass_comp["H2O"] == 1e6 * units.mg / units.L
             )
 
     def _dens_mass(self):

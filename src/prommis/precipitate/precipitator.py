@@ -43,6 +43,7 @@ solved by a surrogate or a model equation.
 """
 
 # Import Pyomo libraries
+from pyomo.environ import Constraint
 from pyomo.common.collections import ComponentMap
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
@@ -60,6 +61,7 @@ from idaes.core.util.config import (
     is_physical_parameter_block,
     is_reaction_parameter_block,
 )
+from idaes.core.util.exceptions import ConfigurationError
 
 _log = idaeslog.getLogger(__name__)
 
@@ -340,6 +342,9 @@ see reaction package for documentation.}""",
             doc="Mass balance equations aqueous.",
         )
         def aqueous_depletion(blk, t, comp):
+            if comp == "H2O":
+                # H2O conservation is taken care of by vol_balance constraint
+                return Constraint.Skip
             return blk.cv_aqueous.properties_out[t].conc_mass_comp[
                 comp
             ] * blk.cv_aqueous.properties_out[t].flow_vol == (

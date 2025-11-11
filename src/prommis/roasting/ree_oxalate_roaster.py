@@ -566,6 +566,7 @@ constructed,
         self.liquid_in = (
             self.config.property_package_precipitate_liquid.build_state_block(
                 self.flowsheet().time,
+                defined_state=True,
                 **self.config.property_package_args_precipitate_liquid,
             )
         )

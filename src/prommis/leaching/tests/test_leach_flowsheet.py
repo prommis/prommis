@@ -56,7 +56,7 @@ def test_numerical_issues(model):
     dt.assert_no_numerical_warnings()
 
     assert jacobian_cond(model, scaled=False) == pytest.approx(6.23693e12, rel=1e-3)
-    assert jacobian_cond(model, scaled=True) == pytest.approx(69938.8, rel=1e-3)
+    assert jacobian_cond(model, scaled=True) == pytest.approx(69758.9, rel=1e-3)
 
 @pytest.mark.component
 @pytest.mark.solver

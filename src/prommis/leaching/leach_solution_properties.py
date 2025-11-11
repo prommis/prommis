@@ -54,6 +54,10 @@ class LeachSolutionPropertiesScaler(CustomScalerBase):
         "conc_mass_comp[SO4]": 1e-2,
         "conc_mass_comp[HSO4]": 1e-3,
         "conc_mass_comp[Cl]": 1e-3,
+        # Use a large scaling factor for pH
+        # to encourage the solver to take
+        # smaller steps
+        "pH_phase": 10,
     }
     for ree in ree_list:
         DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 10
@@ -72,10 +76,10 @@ class LeachSolutionPropertiesScaler(CustomScalerBase):
 
         # Scale other variables
         params = model.params
-
-        self.set_variable_scaling_factor(
-            model.pH_phase["liquid"], 10, overwrite=overwrite
-        )
+        if model.is_property_constructed("pH_phase"):
+            self.scale_variable_by_default(
+                model.pH_phase["liquid"], overwrite=overwrite
+            )
         for idx, var in model.conc_mol_comp.items():
             sf = self.get_scaling_factor(model.conc_mass_comp[idx]) * value(
                 units.convert(params.mw[idx], to_units=units.mg / units.mol)
@@ -89,9 +93,13 @@ class LeachSolutionPropertiesScaler(CustomScalerBase):
             self.scale_constraint_by_component(
                 condata, model.conc_mass_comp[idx], overwrite=overwrite
             )
-        self.scale_constraint_by_component(
-            model.pH_constraint["liquid"], model.conc_mol_comp["H"], overwrite=overwrite
-        )
+
+        if model.is_property_constructed("pH_phase"):
+            self.scale_constraint_by_component(
+                model.pH_constraint["liquid"],
+                model.conc_mol_comp["H"],
+                overwrite=overwrite,
+            )
 
         if model.is_property_constructed("h2o_concentration"):
             self.scale_constraint_by_component(
@@ -245,6 +253,11 @@ class LeachSolutionParameterData(PhysicalParameterBlock):
                 "dens_mass": {"method": "_dens_mass"},
             }
         )
+        obj.define_custom_properties(
+            {
+                "pH_phase": {"method": "_pH_phase"},
+            }
+        )
         obj.add_default_units(
             {
                 "time": units.hour,
@@ -323,14 +336,6 @@ class LeachSolutionStateBlockData(StateBlockData):
             units=units.Pa,
         )
 
-        self.pH_phase = Var(
-            self.params.phase_list, domain=Reals, initialize=2, doc="pH of the solution"
-        )
-
-        @self.Constraint(self.phase_list)
-        def pH_constraint(b, p):
-            return 10 ** (-b.pH_phase[p]) == b.conc_mol_comp["H"] * units.L / units.mol
-
         # Concentration conversion constraint
         @self.Constraint(self.params.component_list)
         def molar_concentration_constraint(b, j):
@@ -354,6 +359,15 @@ class LeachSolutionStateBlockData(StateBlockData):
 
     def _dens_mass(self):
         add_object_reference(self, "dens_mass", self.params.dens_mass)
+
+    def _pH_phase(self):
+        self.pH_phase = Var(
+            self.params.phase_list, initialize=2, doc="pH of the solution"
+        )
+
+        @self.Constraint(self.phase_list)
+        def pH_constraint(b, p):
+            return 10 ** (-b.pH_phase[p]) == b.conc_mol_comp["H"] * units.L / units.mol
 
     def get_material_flow_terms(self, p, j):
         # Note conversion to mol/hour

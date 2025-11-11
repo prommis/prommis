@@ -61,6 +61,10 @@ class HClStrippingPropertiesScaler(CustomScalerBase):
         "conc_mass_comp[SO4]": 1e-2,
         "conc_mass_comp[HSO4]": 1e-3,
         "conc_mass_comp[Cl]": 1e-3,
+        # Use a large scaling factor for pH
+        # to encourage the solver to take
+        # smaller steps
+        "pH_phase": 10,
     }
     for ree in _ree_list:
         DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 0.1
@@ -76,7 +80,10 @@ class HClStrippingPropertiesScaler(CustomScalerBase):
             self.scale_variable_by_default(var, overwrite=overwrite)
 
         # Scale other variables
-        params = model.params
+        if model.is_property_constructed("pH_phase"):
+            self.scale_variable_by_default(
+                model.pH_phase["liquid"], overwrite=overwrite
+            )
 
         for idx, vardata in model.conc_mol_comp.items():
             self.scale_variable_by_definition_constraint(
@@ -98,6 +105,13 @@ class HClStrippingPropertiesScaler(CustomScalerBase):
         for idx, condata in model.flow_mol_constraint.items():
             self.scale_constraint_by_component(
                 condata, model.flow_mol_comp[idx], overwrite=overwrite
+            )
+
+        if model.is_property_constructed("pH_phase"):
+            self.scale_constraint_by_component(
+                model.pH_constraint["liquid"],
+                model.conc_mol_comp["H"],
+                overwrite=overwrite,
             )
 
         # Why is this constraint not present in this property package?
@@ -222,6 +236,11 @@ class HClStrippingParameterData(PhysicalParameterBlock):
                 "flow_mol_comp": {"method": None},
             }
         )
+        obj.define_custom_properties(
+            {
+                "pH_phase": {"method": "_pH_phase"},
+            }
+        )
         obj.add_default_units(
             {
                 "time": units.hour,
@@ -309,6 +328,15 @@ class HClStrippingStateBlockkData(StateBlockData):
 
     def _dens_mass(self):
         add_object_reference(self, "dens_mass", self.params.dens_mass)
+
+    def _pH_phase(self):
+        self.pH_phase = Var(
+            self.params.phase_list, initialize=2, doc="pH of the solution"
+        )
+
+        @self.Constraint(self.phase_list)
+        def pH_constraint(b, p):
+            return 10 ** (-b.pH_phase[p]) == b.conc_mol_comp["H"] * units.L / units.mol
 
     def get_material_flow_terms(self, p, j):
         # Note conversion to mol/hour

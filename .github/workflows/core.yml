@@ -124,7 +124,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Ensure pytest is installed
         run: |
-          pip install pytest
+          pip install pytest==7.*
           pip show pytest
       - name: Add coverage options
         if: matrix.coverage

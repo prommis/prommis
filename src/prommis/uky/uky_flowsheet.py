@@ -1493,6 +1493,99 @@ def add_result_expressions(m):
         )
 
     @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Mass flow rate of metals leaving process in "
+        "the leach filter cake solids",
+    )
+    def metal_leach_filter_cake_solids_flow(b, t, j):
+        if j == "Ca":
+            j_oxide = "CaO"
+        else:
+            j_oxide = f"{j}2O3"
+        return units.convert(
+            +b.leach_filter_cake.flow_mass[t]
+            * b.leach_filter_cake.mass_frac_comp[t, j_oxide]
+            * metal_mass_frac[j_oxide],
+            to_units=units.kg / units.hr,
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Mass flow rate of metals leaving process in "
+        "liquid entrained in the filter cake",
+    )
+    def metal_leach_filter_cake_liquid_flow(b, t, j):
+        return units.convert(
+            b.leach_filter_cake_liquid.flow_vol[t]
+            * b.leach_filter_cake_liquid.conc_mass_comp[t, j],
+            to_units=units.kg / units.hr,
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Mass flow rate of metals leaving process in "
+        "the rougher load aqueous purge stream",
+    )
+    def metal_rougher_load_aqueous_purge_flow(b, t, j):
+        return units.convert(
+            b.load_sep.purge.flow_vol[t] * b.load_sep.purge.conc_mass_comp[t, j],
+            to_units=units.kg / units.hr,
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Mass flow rate of metals leaving process in "
+        "the rougher scrub aqueous purge stream",
+    )
+    def metal_rougher_scrub_aqueous_purge_flow(b, t, j):
+        return units.convert(
+            b.scrub_sep.purge.flow_vol[t] * b.scrub_sep.purge.conc_mass_comp[t, j],
+            to_units=units.kg / units.hr,
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Mass flow rate of metals leaving process in "
+        "the rougher organic purge stream",
+    )
+    def metal_rougher_organic_purge_flow(b, t, j):
+        return units.convert(
+            b.rougher_sep.purge.flow_vol[t]
+            * b.rougher_sep.purge.conc_mass_comp[t, f"{j}_o"],
+            to_units=units.kg / units.hr,
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Mass flow rate of metals leaving process in "
+        "the cleaner aqueous purge stream",
+    )
+    def metal_cleaner_aqueous_purge_flow(b, t, j):
+        return units.convert(
+            b.precip_sep.purge.flow_vol[t] * b.precip_sep.purge.conc_mass_comp[t, j],
+            to_units=units.kg / units.hr,
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Mass flow rate of metals leaving process in "
+        "the cleaner organic purge stream",
+    )
+    def metal_cleaner_organic_purge_flow(b, t, j):
+        return units.convert(
+            b.cleaner_sep.purge.flow_vol[t]
+            * b.cleaner_sep.purge.conc_mass_comp[t, f"{j}_o"],
+            to_units=units.kg / units.hr,
+        )
+
+    @fs.Expression(
         fs.time, fs.metal_set, doc="Single-pass recovery for each metal in leaching"
     )
     def leaching_metal_recovery_percentage(b, t, j):
@@ -1507,6 +1600,77 @@ def add_result_expressions(m):
     )
     def overall_metal_recovery_percentage(b, t, j):
         return 100 * b.metal_product_flow[t, j] / b.metal_feed_flow[t, j]
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Percent of metal rejected in the " "leach filter cake solids.",
+    )
+    def leach_filter_cake_solids_percent_rejected(b, t, j):
+        return (
+            100 * b.metal_leach_filter_cake_solids_flow[t, j] / b.metal_feed_flow[t, j]
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Percent of metal rejected in the "
+        "liquid entrained in leach filter cake.",
+    )
+    def leach_filter_cake_liquid_percent_rejected(b, t, j):
+        return (
+            100 * b.metal_leach_filter_cake_liquid_flow[t, j] / b.metal_feed_flow[t, j]
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Percent of metal rejected through the rougher "
+        "load aqueous purge streams",
+    )
+    def metal_rougher_load_aqueous_percent_rejected(b, t, j):
+        return (
+            100
+            * b.metal_rougher_load_aqueous_purge_flow[t, j]
+            / b.metal_feed_flow[t, j]
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Percent of metal rejected through the rougher "
+        "scrub aqueous purge streams",
+    )
+    def metal_rougher_scrub_aqueous_percent_rejected(b, t, j):
+        return (
+            100
+            * b.metal_rougher_scrub_aqueous_purge_flow[t, j]
+            / b.metal_feed_flow[t, j]
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Percent of metal rejected through the rougher " "organic purge stream",
+    )
+    def metal_rougher_organic_percent_rejected(b, t, j):
+        return 100 * b.metal_rougher_organic_purge_flow[t, j] / b.metal_feed_flow[t, j]
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Percent of metal rejected through the cleaner " "aqueous purge stream",
+    )
+    def metal_cleaner_aqueous_percent_rejected(b, t, j):
+        return 100 * b.metal_cleaner_aqueous_purge_flow[t, j] / b.metal_feed_flow[t, j]
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Percent of metal rejected through the cleaner " "organic purge stream",
+    )
+    def metal_cleaner_organic_percent_rejected(b, t, j):
+        return 100 * b.metal_cleaner_organic_purge_flow[t, j] / b.metal_feed_flow[t, j]
 
     @fs.Expression(fs.time, doc="Total mass flow rate of all REEs into process.")
     def ree_feed_flow(b, t):
@@ -1554,28 +1718,63 @@ def display_results(m):
         "Fe": "iron",
         "Ca": "calcium",
     }
+
+    def print_element_report(j):
+        name = metal_name_dict[j]
+        leach_recovery_percent = value(m.fs.leaching_metal_recovery_percentage[0, j])
+        overall_recovery_percent = value(m.fs.overall_metal_recovery_percentage[0, j])
+        lfcs_reject = value(m.fs.leach_filter_cake_solids_percent_rejected[0, j])
+        lfcl_reject = value(m.fs.leach_filter_cake_liquid_percent_rejected[0, j])
+        ral_reject = value(m.fs.metal_rougher_load_aqueous_percent_rejected[0, j])
+        ras_reject = value(m.fs.metal_rougher_scrub_aqueous_percent_rejected[0, j])
+        ro_reject = value(m.fs.metal_rougher_organic_percent_rejected[0, j])
+        ca_reject = value(m.fs.metal_cleaner_aqueous_percent_rejected[0, j])
+        co_reject = value(m.fs.metal_cleaner_organic_percent_rejected[0, j])
+        total = (
+            overall_recovery_percent
+            + lfcs_reject
+            + lfcl_reject
+            + ral_reject
+            + ras_reject
+            + ro_reject
+            + ca_reject
+            + co_reject
+        )
+        print(f"\nLeaching {name} recovery is {leach_recovery_percent} %")
+        print(f"Overall {name} recovery is {overall_recovery_percent} %")
+        print(
+            f"{name.capitalize()} rejected in leach filter cake solids is {lfcs_reject} %"
+        )
+        print(
+            f"{name.capitalize()} rejected in leach filter cake entrained liquid is {lfcl_reject} %"
+        )
+        print(
+            f"{name.capitalize()} rejected in rougher load aqueous purge is {ral_reject} %"
+        )
+        print(
+            f"{name.capitalize()} rejected in rougher scrub aqueous purge is {ras_reject} %"
+        )
+        print(f"{name.capitalize()} rejected in rougher organic purge is {ro_reject} %")
+        print(f"{name.capitalize()} rejected in cleaner aqueous purge is {ca_reject} %")
+        print(f"{name.capitalize()} rejected in cleaner organic purge is {co_reject} %")
+        print(f"{name.capitalize()} accounted for is {total} %")
+        print("")
+
     m.fs.roaster.report()
     print(f"REE product mass flow is {value(m.fs.ree_product_flow[0])} kg/hr")
     print(f"REE feed mass flow is {value(m.fs.ree_feed_flow[0])} kg/hr")
     print(f"Total REE recovery is {value(m.fs.overall_ree_recovery_percentage[0])} %")
     print(f"Product purity is {value(m.fs.ree_product_purity_percentage[0])} % REE")
     print("")
+    print("")
     print("REE element recovery:")
     for j in m.fs.ree_set:
-        name = metal_name_dict[j]
-        leach_recovery_percent = value(m.fs.leaching_metal_recovery_percentage[0, j])
-        overall_recovery_percent = value(m.fs.overall_metal_recovery_percentage[0, j])
-        print(f"\nLeaching {name} recovery is {leach_recovery_percent} %")
-        print(f"Overall {name} recovery is {overall_recovery_percent} %")
-
+        print_element_report(j)
     print("")
     print("Gangue recovery:")
     for j in m.fs.gangue_set:
-        name = metal_name_dict[j]
-        leach_recovery_percent = value(m.fs.leaching_metal_recovery_percentage[0, j])
-        overall_recovery_percent = value(m.fs.overall_metal_recovery_percentage[0, j])
-        print(f"\nLeaching {name} recovery is {leach_recovery_percent} %")
-        print(f"Overall {name} recovery is {overall_recovery_percent} %")
+        print_element_report(j)
+    print("")
 
 
 def calculate_results(fs):
@@ -3065,8 +3264,7 @@ def display_costing(m):
     QGESSCostingData.display_flowsheet_cost(m.fs.costing)
 
 
-def add_surrogate_cost(m):
-    m.obj = Objective()
+# def add_surrogate_cost(m):
 
 
 if __name__ == "__main__":
@@ -3077,3 +3275,38 @@ if __name__ == "__main__":
     # warn(
     #     "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
     # )
+    m.obj = Objective(
+        expr=(
+            0.01
+            * (
+                m.fs.leach_liquid_feed.flow_vol[0]
+                + m.fs.acid_feed1.flow_vol[0]
+                + m.fs.acid_feed2.flow_vol[0]
+                + m.fs.acid_feed3.flow_vol[0]
+            )
+            + 1e5
+            * (
+                -m.fs.ree_product_flow[0]
+                + m.fs.metal_product_flow[0, "Al"]
+                + m.fs.metal_product_flow[0, "Ca"]
+                + m.fs.metal_product_flow[0, "Fe"]
+            )
+        )
+    )
+    m.fs.leach_liquid_feed.flow_vol.unfix()
+    m.fs.acid_feed1.flow_vol.unfix()
+    m.fs.acid_feed2.flow_vol.unfix()
+    m.fs.acid_feed3.flow_vol.unfix()
+
+    solver = get_solver("ipopt_v2")
+    solver.options.constr_viol_tol = 1e-8
+    solver.options.max_iter = 300
+
+    m.fs.solex_rougher_scrub.mscontactor.aqueous[0.0, 1].pH_phase["liquid"].setub(6)
+
+    results = solver.solve(m, tee=True)
+
+    if check_optimal_termination(results):
+        display_results(m)
+    else:
+        print("Flowsheet optimization did not converge.")

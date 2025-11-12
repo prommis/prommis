@@ -53,7 +53,7 @@ class SolventExtractionReactionScaler(CustomScalerBase):
     ):
         for e in model.params.element_list:
             self.scale_constraint_by_component(
-                model.distribution_constraint[e],
+                model.distribution_expression_constraint[e],
                 model.distribution_coefficient[e],
                 overwrite=overwrite,
             )
@@ -311,13 +311,15 @@ class SolventExtractionReactionsData(
 
 
 class _SolventExtractionReactionsBlock(ProcessBlock):
-    pass
+    default_scaler = SolventExtractionReactionScaler
 
 
 @declare_process_block_class(
     "SolventExtractionReactionsBlock", block_class=_SolventExtractionReactionsBlock
 )
 class SolventExtractionReactionsData(ProcessBlockData):
+    default_scaler = SolventExtractionReactionScaler
+
     # Create Class ConfigBlock
     CONFIG = ProcessBlockData.CONFIG()
     CONFIG.declare(

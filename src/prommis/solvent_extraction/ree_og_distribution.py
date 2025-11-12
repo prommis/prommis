@@ -52,7 +52,7 @@ class OrganicSolventPropertiesScaler(CustomScalerBase):
         "conc_mass_comp[Fe_o]": 1e-1,
     }
     for ree in ree_list:
-        DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 10
+        DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 1e-2
 
     def variable_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None

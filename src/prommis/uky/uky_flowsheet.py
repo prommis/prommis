@@ -143,7 +143,9 @@ from pyomo.environ import (
     ConcreteModel,
     Constraint,
     Expression,
+    Objective,
     Param,
+    Set,
     TransformationFactory,
     Var,
     check_optimal_termination,
@@ -163,11 +165,15 @@ from idaes.core import (
     UnitModelCostingBlock,
 )
 from idaes.core.initialization import BlockTriangularizationInitializer
-from idaes.core.scaling import CustomScalerBase, ConstraintScalingScheme
+from idaes.core.scaling import AutoScaler, CustomScalerBase, ConstraintScalingScheme
 from idaes.core.solvers import get_solver
+from idaes.core.util.exceptions import InitializationError
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util.exceptions import InitializationError
+from idaes.core.util.scaling import (
+    unscaled_variables_generator,
+    unscaled_constraints_generator,
+)
 
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
@@ -255,24 +261,38 @@ def main():
         raise RuntimeError(
             "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
         )
-
+    add_result_expressions(m)
     display_results(m)
 
-    add_costing(m)
+    # csb = CustomScalerBase()
+    # for var in unscaled_variables_generator(m):
+    #     csb.set_variable_scaling_factor(var, 1)
+    # for con in unscaled_constraints_generator(m):
+    #     csb.set_constraint_scaling_factor(con, 1)
+
+    # add_costing(m)
 
     # diagnostics, initialize, and solve
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+    # auto = AutoScaler()
+    # auto.scale_variables_by_magnitude(m)
+    # auto.scale_constraints_by_jacobian_norm(m)
+
+    # QGESSCostingData.costing_initialization(m.fs.costing)
+    # QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    # QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+
+    # from idaes.core.scaling.util import jacobian_cond
+
+    # print(jacobian_cond(m))
 
     solve_system(m, tee=True)
 
     dt.assert_no_numerical_warnings()
 
-    display_costing(m)
+    # display_costing(m)
 
     return m, results
 
@@ -1357,6 +1377,162 @@ def fix_organic_recycle(m):
     m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
 
 
+def add_result_expressions(m):
+    fs = m.fs
+    ree_list = ["Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
+    gangue_list = [
+        "Al",
+        "Fe",
+        "Ca",
+    ]
+    fs.ree_set = Set(initialize=ree_list)
+    fs.gangue_set = Set(initialize=gangue_list)
+    fs.metal_set = Set(initialize=ree_list + gangue_list)
+
+    metal_mass_frac = {
+        "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),
+        "Fe2O3": 55.845 * 2 / (55.845 * 2 + 16 * 3),
+        "CaO": 40.078 / (40.078 + 16),
+        "Sc2O3": 44.956 * 2 / (44.956 * 2 + 16 * 3),
+        "Y2O3": 88.906 * 2 / (88.906 * 2 + 16 * 3),
+        "La2O3": 138.91 * 2 / (138.91 * 2 + 16 * 3),
+        "Ce2O3": 140.12 * 2 / (140.12 * 2 + 16 * 3),
+        "Pr2O3": 140.91 * 2 / (140.91 * 2 + 16 * 3),
+        "Nd2O3": 144.24 * 2 / (144.24 * 2 + 16 * 3),
+        "Sm2O3": 150.36 * 2 / (150.36 * 2 + 16 * 3),
+        "Gd2O3": 157.25 * 2 / (157.25 * 2 + 16 * 3),
+        "Dy2O3": 162.5 * 2 / (162.5 * 2 + 16 * 3),
+    }
+
+    molar_mass = {
+        "Al2O3": (26.98 * 2 + 16 * 3) * units.g / units.mol,
+        "Fe2O3": (55.845 * 2 + 16 * 3) * units.g / units.mol,
+        "CaO": (40.078 + 16) * units.g / units.mol,
+        "Sc2O3": (44.956 * 2 + 16 * 3) * units.g / units.mol,
+        "Y2O3": (88.906 * 2 + 16 * 3) * units.g / units.mol,
+        "La2O3": (138.91 * 2 + 16 * 3) * units.g / units.mol,
+        "Ce2O3": (140.12 * 2 + 16 * 3) * units.g / units.mol,
+        "Pr2O3": (140.91 * 2 + 16 * 3) * units.g / units.mol,
+        "Nd2O3": (144.24 * 2 + 16 * 3) * units.g / units.mol,
+        "Sm2O3": (150.36 * 2 + 16 * 3) * units.g / units.mol,
+        "Gd2O3": (157.25 * 2 + 16 * 3) * units.g / units.mol,
+        "Dy2O3": (162.5 * 2 + 16 * 3) * units.g / units.mol,
+    }
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Mass flow rate of metals into leaching. "
+        "Includes metals from both the coal refuse solids "
+        "and the solvent extraction recycle stream",
+    )
+    def leaching_metal_inlet_flow(b, t, j):
+        if j == "Ca":
+            j_oxide = "CaO"
+        else:
+            j_oxide = f"{j}2O3"
+
+        return units.convert(
+            b.leach_solid_feed.flow_mass[t]
+            * b.leach_solid_feed.mass_frac_comp[t, j_oxide]
+            * metal_mass_frac[j_oxide],
+            to_units=units.kg / units.hr,
+        ) + units.convert(
+            b.leach.mscontactor.liquid_inlet_state[t].conc_mass_comp[j]
+            * b.leach.mscontactor.liquid_inlet_state[t].flow_vol,
+            to_units=units.kg / units.hr,
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Mass flow rate of metals fed into the overall process",
+    )
+    def metal_feed_flow(b, t, j):
+        if j == "Ca":
+            j_oxide = "CaO"
+        else:
+            j_oxide = f"{j}2O3"
+
+        return units.convert(
+            b.leach_solid_feed.flow_mass[t]
+            * b.leach_solid_feed.mass_frac_comp[t, j_oxide]
+            * metal_mass_frac[j_oxide],
+            to_units=units.kg / units.hr,
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Mass flow rate of metals leaving sl_sep1 to go " "to solvent extraction.",
+    )
+    def leaching_metal_recovery_flow(b, t, j):
+        return units.convert(
+            b.sl_sep1.recovered_liquid_outlet.conc_mass_comp[t, j]
+            * b.sl_sep1.recovered_liquid_outlet.flow_vol[t],
+            to_units=units.kg / units.hr,
+        )
+
+    @fs.Expression(
+        fs.time,
+        fs.metal_set,
+        doc="Mass flow rate of metals leaving process in "
+        "the flowsheet product stream.",
+    )
+    def metal_product_flow(b, t, j):
+        if j == "Ca":
+            j_oxide = "CaO"
+        else:
+            j_oxide = f"{j}2O3"
+
+        return units.convert(
+            b.roaster.flow_mol_comp_product[t, j]
+            * molar_mass[j_oxide]
+            * metal_mass_frac[j_oxide],
+            to_units=units.kg / units.hr,
+        )
+
+    @fs.Expression(
+        fs.time, fs.metal_set, doc="Single-pass recovery for each metal in leaching"
+    )
+    def leaching_metal_recovery_percentage(b, t, j):
+        return (
+            100
+            * b.leaching_metal_recovery_flow[t, j]
+            / b.leaching_metal_inlet_flow[t, j]
+        )
+
+    @fs.Expression(
+        fs.time, fs.metal_set, doc="Overall recovery of each metal for the flowsheet"
+    )
+    def overall_metal_recovery_percentage(b, t, j):
+        return 100 * b.metal_product_flow[t, j] / b.metal_feed_flow[t, j]
+
+    @fs.Expression(fs.time, doc="Total mass flow rate of all REEs into process.")
+    def ree_feed_flow(b, t):
+        return sum(b.metal_feed_flow[t, i] for i in b.ree_set)
+
+    @fs.Expression(
+        fs.time, doc="Total mass flow rate of all REEs in flowsheet product stream."
+    )
+    def ree_product_flow(b, t):
+        return sum(b.metal_product_flow[t, i] for i in b.ree_set)
+
+    @fs.Expression(fs.time)
+    def overall_ree_recovery_percentage(b, t):
+        return 100 * b.ree_product_flow[t] / b.ree_feed_flow[t]
+
+    @fs.Expression(fs.time)
+    def ree_product_purity_percentage(b, t):
+        return (
+            100
+            * b.ree_product_flow[t]
+            / units.convert(
+                b.roaster.flow_mass_product[0], to_units=units.kg / units.hr
+            )
+        )
+
+
 def display_results(m):
     """
     Print key flowsheet outputs.
@@ -1364,36 +1540,42 @@ def display_results(m):
     Args:
         m: pyomo model
     """
+    metal_name_dict = {
+        "Sc": "scandium",
+        "Y": "yttrium",
+        "La": "lanthanum",
+        "Ce": "cerium",
+        "Pr": "praseodymium",
+        "Nd": "neodynium",
+        "Sm": "samarium",
+        "Gd": "gadolinium",
+        "Dy": "dysprosium",
+        "Al": "aluminum",
+        "Fe": "iron",
+        "Ca": "calcium",
+    }
     m.fs.roaster.report()
-    data = calculate_results(m.fs)
-    print(f"REE product mass flow is {data['REE-product']} kg/hr")
-    print(f"REE feed mass flow is {data['REE-feed']} kg/hr")
-    print(f"Total REE recovery is {data['REE-recovery']} %")
-    print(f"Product purity is {data['product-purity']} % REE")
-    print(f"\nLeaching Aluminum recovery is {data['al-recovery']} %")
-    print(f"Total aluminum recovery is {data['total-al-recovery']} %")
-    print(f"\nLeaching Calcium recovery is {data['ca-recovery']} %")
-    print(f"Total Calcium recovery is {data['total-ca-recovery']} %")
-    print(f"\nLeaching Cerium recovery is {data['ce-recovery']} %")
-    print(f"Total Cerium recovery is {data['total-ce-recovery']} %")
-    print(f"\nLeaching Dysprosium recovery is {data['dy-recovery']} %")
-    print(f"Total Dysprosium recovery is {data['total-dy-recovery']} %")
-    print(f"\nLeaching Iron recovery is {data['fe-recovery']} %")
-    print(f"Total Iron recovery is {data['total-fe-recovery']} %")
-    print(f"\nLeaching Gadolinium recovery is {data['gd-recovery']} %")
-    print(f"Total Gadolinium recovery is {data['total-gd-recovery']} %")
-    print(f"\nLeaching Lanthanum recovery is {data['la-recovery']} %")
-    print(f"Total Lanthanum recovery is {data['total-la-recovery']} %")
-    print(f"\nLeaching Neodymium recovery is {data['nd-recovery']} %")
-    print(f"Total Neodymium recovery is {data['total-nd-recovery']} %")
-    print(f"\nLeaching Praseodymium recovery is {data['pr-recovery']} %")
-    print(f"Total Praseodymium recovery is {data['total-pr-recovery']} %")
-    print(f"\nLeaching Scandium recovery is {data['sc-recovery']} %")
-    print(f"Total Scandium recovery is {data['total-sc-recovery']} %")
-    print(f"\nLeaching Samarium recovery is {data['sm-recovery']} %")
-    print(f"Total Samarium recovery is {data['total-sm-recovery']} %")
-    print(f"\nLeaching Yttrium recovery is {data['yt-recovery']} %")
-    print(f"Total Yttrium recovery is {data['total-yt-recovery']} %")
+    print(f"REE product mass flow is {value(m.fs.ree_product_flow[0])} kg/hr")
+    print(f"REE feed mass flow is {value(m.fs.ree_feed_flow[0])} kg/hr")
+    print(f"Total REE recovery is {value(m.fs.overall_ree_recovery_percentage[0])} %")
+    print(f"Product purity is {value(m.fs.ree_product_purity_percentage[0])} % REE")
+    print("")
+    print("REE element recovery:")
+    for j in m.fs.ree_set:
+        name = metal_name_dict[j]
+        leach_recovery_percent = value(m.fs.leaching_metal_recovery_percentage[0, j])
+        overall_recovery_percent = value(m.fs.overall_metal_recovery_percentage[0, j])
+        print(f"\nLeaching {name} recovery is {leach_recovery_percent} %")
+        print(f"Overall {name} recovery is {overall_recovery_percent} %")
+
+    print("")
+    print("Gangue recovery:")
+    for j in m.fs.gangue_set:
+        name = metal_name_dict[j]
+        leach_recovery_percent = value(m.fs.leaching_metal_recovery_percentage[0, j])
+        overall_recovery_percent = value(m.fs.overall_metal_recovery_percentage[0, j])
+        print(f"\nLeaching {name} recovery is {leach_recovery_percent} %")
+        print(f"Overall {name} recovery is {overall_recovery_percent} %")
 
 
 def calculate_results(fs):
@@ -1403,6 +1585,7 @@ def calculate_results(fs):
     Args:
         fs: Flowsheet
     """
+    # TODO this function can be deprecated
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),
         "Fe2O3": 55.845 * 2 / (55.845 * 2 + 16 * 3),
@@ -2651,6 +2834,7 @@ def add_costing(m):
         "Sc2O3": 44.96 * 2 + 16 * 3,
     }
 
+    # TODO Why are these Params and not Expressions?
     m.fs.Ce_product = Param(
         default=units.convert(
             m.fs.roaster.flow_mol_comp_product[0, "Ce"]
@@ -2881,11 +3065,15 @@ def display_costing(m):
     QGESSCostingData.display_flowsheet_cost(m.fs.costing)
 
 
+def add_surrogate_cost(m):
+    m.obj = Objective()
+
+
 if __name__ == "__main__":
     m, results = main()
-    warn(
-        "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
-    )
-    warn(
-        "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
-    )
+    # warn(
+    #     "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
+    # )
+    # warn(
+    #     "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
+    # )

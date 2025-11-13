@@ -166,6 +166,7 @@ from idaes.core import (
 )
 from idaes.core.initialization import BlockTriangularizationInitializer
 from idaes.core.scaling import AutoScaler, CustomScalerBase, ConstraintScalingScheme
+from idaes.core.scaling.util import get_scaling_factor, set_scaling_factor
 from idaes.core.solvers import get_solver
 from idaes.core.util.exceptions import InitializationError
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
@@ -3293,10 +3294,77 @@ if __name__ == "__main__":
             )
         )
     )
+    # Unfix the H2SO4 feed rate and feed concentration
     m.fs.leach_liquid_feed.flow_vol.unfix()
-    m.fs.acid_feed1.flow_vol.unfix()
-    m.fs.acid_feed2.flow_vol.unfix()
-    m.fs.acid_feed3.flow_vol.unfix()
+
+    m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].unfix()
+    m.fs.leach_liquid_feed.conc_mass_comp[0, "HSO4"].unfix()
+    m.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"].unfix()
+
+    @m.fs.leach_liquid_feed.Constraint(m.fs.time)
+    def H2SO4_stoich_eqn(b, t):
+        return (
+            b.properties[t].conc_mol_comp["H"]
+            == 0.5 * b.properties[t].conc_mol_comp["SO4"]
+            + b.properties[t].conc_mol_comp["HSO4"]
+        )
+
+    for condata in m.fs.leach_liquid_feed.H2SO4_stoich_eqn.values():
+        set_scaling_factor(condata, 10)
+
+    # Because we have defined_state=True for the feed
+    # block, we need to create the dissociation
+    # equilibrium manually
+    # TODO maybe we should convert it into a FeedFlash?
+    @m.fs.leach_liquid_feed.Constraint(m.fs.time)
+    def HSO4_dissociation(b, t):
+        return (
+            b.properties[t].params.Ka2 * b.properties[t].conc_mol_comp["HSO4"]
+            == b.properties[t].conc_mol_comp["SO4"] * b.properties[t].conc_mol_comp["H"]
+        )
+
+    sf = get_scaling_factor(m.fs.leach.mscontactor.liquid[0, 1].hso4_dissociation)
+    for condata in m.fs.leach_liquid_feed.HSO4_dissociation.values():
+        set_scaling_factor(condata, sf)
+
+    # According to Wikipedia, pH values of less than 0 are
+    # impossible in an aqueous solution
+    m.fs.leach_liquid_feed.properties[0].pH_phase["liquid"].setlb(0)
+
+    # IPOPT wanted to use a liquid feed of 13.7 L/hr, which would be
+    # far too low to let the leach solids move as a slurry.
+    # The original flow rate is 224.3 L/hr, so use 100 as a rough
+    # estimate for a lower bound.
+    m.fs.leach_liquid_feed.properties[0].flow_vol.setlb(100)
+
+    # The true figure of merit is probably the volumetric flow rate
+    # out of the mixer, which is 68.3 L/hr in the case without a lower
+    # bound. In the case before optimization, the mixer outlet flow
+    # rate is 865 L/hr. In the case with a lower bound of 100, the
+    # mixer outlet flow rate is 291 L/hr.
+    #
+    # We probably also need a performance equation for the filter
+    # press  (sl_sep1) to determine the fraction of fluid entrained
+    # as a function of the liquid to solid ratio.
+
+    # Unfix HCl feed flow rates and concentrations
+    for feed in [m.fs.acid_feed1, m.fs.acid_feed2, m.fs.acid_feed3]:
+        feed.flow_vol.unfix()
+        feed.conc_mass_comp[0, "H"].unfix()
+        feed.conc_mass_comp[0, "Cl"].unfix()
+        # According to Wikipedia, pH values of less than 0 are
+        # impossible in an aqueous solution
+        feed.properties[0].pH_phase["liquid"].setlb(0)
+
+        @feed.Constraint(m.fs.time)
+        def HCl_stoich_eqn(b, t):
+            return (
+                b.properties[t].conc_mol_comp["H"]
+                == b.properties[t].conc_mol_comp["Cl"]
+            )
+
+        for condata in feed.HCl_stoich_eqn.values():
+            set_scaling_factor(condata, 10)
 
     solver = get_solver("ipopt_v2")
     solver.options.constr_viol_tol = 1e-8

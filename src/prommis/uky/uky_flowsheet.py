@@ -3305,7 +3305,7 @@ if __name__ == "__main__":
     def H2SO4_stoich_eqn(b, t):
         return (
             b.properties[t].conc_mol_comp["H"]
-            == 0.5 * b.properties[t].conc_mol_comp["SO4"]
+            == 2 * b.properties[t].conc_mol_comp["SO4"]
             + b.properties[t].conc_mol_comp["HSO4"]
         )
 

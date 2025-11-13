@@ -72,7 +72,7 @@ class TestPrec(object):
             "E3": {"FeOH3": -1},
         }
 
-        m.fs.aqueous_properties = aqueous_thermo_prop_pack.AqueousParameter(
+        m.fs.aqueous_properties = aqueous_thermo_prop_pack.HClStrippingParameterBlock(
             aqueous_comp_list=aqueous_comp_list,
             logkeq_dict=aqueous_log_keq_dict,
             stoich_dict=aqueous_stoich_dict,

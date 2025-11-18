@@ -13,3 +13,4 @@ chapters:
   - file: api.rst
   - file: examples/cmi_process.rst
   - file: superstructure/superstructure_function_documentation.rst
+  - file: tutorials/diafiltration_flowsheet_optimization_tutorial-solution

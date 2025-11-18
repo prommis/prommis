@@ -523,7 +523,7 @@ workers (since workers can be responsible for multiple parts of a
 process), the following methodology is followed to calculate the total
 number of workers needed as an integer. First, the number of workers
 needed :math:`workers_{j,k}`, in fractional form for all stages besides
-the disassembly stage can be calculating using:
+the disassembly stage can be calculated using:
 
 .. math::
    :label: eq:workers1

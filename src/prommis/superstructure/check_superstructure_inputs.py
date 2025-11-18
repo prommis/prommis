@@ -414,7 +414,7 @@ def check_operating_params(
     Args:
         m: pyomo model.
         profit: (dict) Profit per unit of product in terms of tracked components.
-        opt_var_oc_params: (dict) Holds the variable operating cost param for options that are continuous. Variable operating costs assumed to be proportional to the feed entering the option.
+        opt_var_oc_params: (dict) Holds the variable operating cost param for options that are continuous. Variable operating costs are assumed to be proportional to the feed entering the option.
         operators_per_discrete_unit: (dict) Number of operators needed per discrete unit for options that utilize discrete units.
         yearly_cost_per_unit: (dict) Yearly operating costs per unit for options which utilize discrete units.
         capital_cost_per_unit: (dict) Cost per unit for options which utilize discrete units.

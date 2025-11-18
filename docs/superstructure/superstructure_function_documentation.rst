@@ -564,7 +564,7 @@ total workers :math:`i` are employed in the plant, and
 :math:`max \: workers` is a parameter representing the maximum number of
 workers that can be employed.
 
-To ensure only a single number of workers are employed, :eq:`eq:workers4` is formulated:
+To ensure only a single number of workers is employed, :eq:`eq:workers4` is formulated:
 
 .. math::
    :label: eq:workers4

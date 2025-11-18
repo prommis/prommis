@@ -37,7 +37,6 @@ def mock_model():
     m.fs.f_stages = ["stage1"]
 
     # Complete f dictionary for all combinations
-
     m.fs.f = {
         ("stage1", "comp1", 2025): MagicMock(),
         ("stage1", "comp1", 2026): MagicMock(),

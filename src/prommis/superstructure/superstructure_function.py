@@ -511,7 +511,7 @@ def build_model(
         profit (dict): Profit per unit of product in terms of tracked components
             ($/kg tracked component).
         opt_var_oc_params (dict): Variable operating cost parameters for options
-            that are continuous. Variable operating costs assumed to be proportional
+            that are continuous. Variable operating costs are assumed to be proportional
             to the feed entering the option.
         operators_per_discrete_unit (dict): Number of operators needed per discrete
             unit for options that utilize discrete units.

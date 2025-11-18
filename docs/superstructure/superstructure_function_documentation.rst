@@ -609,7 +609,7 @@ The NPV is given by:
 
    NPV = \sum_{t \in T} \frac{CF_t}{(1 + IR)^t}
 
-where :math:`CF_t` is the cash flow in year :math:`t`, and :math:`IR` is
+Where :math:`CF_t` is the cash flow in year :math:`t`, and :math:`IR` is
 the interest rate. The cash flow was calculated using the methodology
 discussed in Seider et al. (2017) [Seider2017]_. We
 modify the methodology to account for the assumptions for capital

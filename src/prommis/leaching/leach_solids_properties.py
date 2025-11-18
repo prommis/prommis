@@ -22,6 +22,68 @@ from idaes.core import (
     declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
+from idaes.core.scaling import CustomScalerBase
+
+reo_list = [
+    "Sc2O3",
+    "Y2O3",
+    "La2O3",
+    "Ce2O3",
+    "Pr2O3",
+    "Nd2O3",
+    "Sm2O3",
+    "Gd2O3",
+    "Dy2O3",
+]
+
+
+class CoalRefusePropertiesScaler(CustomScalerBase):
+    """
+    Scaler for coal refuse solids.
+    """
+
+    CONFIG = CustomScalerBase.CONFIG
+
+    DEFAULT_SCALING_FACTORS = {
+        "flow_mass": 1e-1,
+        "conversion": 1,
+        "mass_frac_comp[inerts]": 1,
+        "mass_frac_comp[Al2O3]": 3,
+        "mass_frac_comp[Fe2O3]": 30,
+        "mass_frac_comp[CaO]": 300,
+    }
+    for reo in reo_list:
+        if reo == "Ce2O3":
+            DEFAULT_SCALING_FACTORS[f"mass_frac_comp[{reo}]"] = 1e4
+        else:
+            DEFAULT_SCALING_FACTORS[f"mass_frac_comp[{reo}]"] = 1e5
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        # Scale state variables
+        self.scale_variable_by_default(model.flow_mass, overwrite=overwrite)
+        # self.scale_variable_by_default(model.pressure, overwrite=overwrite)
+        # self.scale_variable_by_default(model.temperature, overwrite=overwrite)
+        for var in model.mass_frac_comp.values():
+            self.scale_variable_by_default(var, overwrite=overwrite)
+
+        # Scale other variables
+        for var in model.conversion.values():
+            self.scale_variable_by_default(var, overwrite=overwrite)
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        for idx, condata in model.conversion_eq.items():
+            self.scale_constraint_by_component(
+                condata, model.mass_frac_comp[idx], overwrite=overwrite
+            )
+
+        if model.is_property_constructed("sum_mass_frac"):
+            self.set_constraint_scaling_factor(
+                model.sum_mass_frac, 1, overwrite=overwrite
+            )
 
 
 # -----------------------------------------------------------------------------
@@ -132,6 +194,8 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
 
 
 class _CoalRefuseStateBlock(StateBlock):
+    default_scaler = CoalRefusePropertiesScaler
+
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -153,6 +217,8 @@ class CoalRefuseStateBlockData(StateBlockData):
     State block for solid West Kentucky No. 13 coal waste.
 
     """
+
+    default_scaler = CoalRefusePropertiesScaler
 
     def build(self):
         super().build()

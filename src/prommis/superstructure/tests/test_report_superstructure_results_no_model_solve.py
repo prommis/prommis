@@ -21,8 +21,6 @@ from prommis.superstructure.report_superstructure_results import (
 )
 
 # --- Fixtures for common mock objects ---
-
-
 @pytest.fixture
 def mock_model():
     m = MagicMock()

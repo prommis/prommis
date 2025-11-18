@@ -682,7 +682,7 @@ parameter representing the maximum number of units/workers for node
 :math:`k` in the disassembly stage :math:`j=1` that could be
 utilized/employed.
 
-To ensure only a single number of units/workers are utilized/employed,
+To ensure only a single number of units/workers is utilized/employed,
 :eq:`eq:Disunits2` is formulated:
 
 .. math::

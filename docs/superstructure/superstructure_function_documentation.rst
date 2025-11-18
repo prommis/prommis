@@ -516,7 +516,7 @@ year [Seider2017]_. For the hourly wage per worker, we
 refer the user to [BLS2024]_, and for estimating the
 number of workers needed per option we refer them to
 [Ulrich2004]_ (in this methodology, the number of
-workers needed are independent on equipment sizing).
+workers needed is independent of equipment sizing).
 
 Since [Ulrich2004]_ methodology allows for fractions of
 workers (since workers can be responsible for multiple parts of a

@@ -561,7 +561,7 @@ number of workers employed as a whole number, :eq:`eq:workers3` is utilized:
 
 Where :math:`y^{workers}_{i}` is a binary variable representing how many
 total workers :math:`i` are employed in the plant, and
-:math:`max \: workers` is a parameter representing the max number of
+:math:`max \: workers` is a parameter representing the maximum number of
 workers that can be employed.
 
 To ensure only a single number of workers are employed, :eq:`eq:workers4` is formulated:

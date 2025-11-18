@@ -418,7 +418,7 @@ values are required. Next, the Total Plant Cost (:math:`TPC`) is
 calculated by multiplying the updated total cost of purchased equipment
 by a Lang Factor (:math:`LF`) [Keim2019]_ for each
 process node in all stages besides the disassembly stages and then
-summing them. For nodes in the disassembly stage, no Lang Factor are
+summing them. For nodes in the disassembly stage, no Lang Factor is
 used. Thus, the TPC is computed as:
 
 .. math::

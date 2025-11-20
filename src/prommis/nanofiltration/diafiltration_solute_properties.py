@@ -58,6 +58,18 @@ class SoluteParameterData(PhysicalParameterBlock):
             },
         )
 
+        # add single solute diffusion coefficient
+        # source: https://www.aqion.de/site/diffusion-coefficients
+        self.diffusion_coefficient = Param(
+            self.component_list,
+            units=units.mm**2 / units.h,  # Note the units of mm^2 / hr
+            initialize={
+                "Li": 3.71,
+                "Co": 2.64,
+                "Cl": 7.31,
+            },
+        )
+
         # add thermal reflection coefficient, related to solute rejection
         self.sigma = Param(
             self.component_list,

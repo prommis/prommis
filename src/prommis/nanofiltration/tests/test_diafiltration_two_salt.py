@@ -51,26 +51,6 @@ def test_zero_chi_implementation():
 
     assert value(m.fs.unit.membrane_fixed_charge) == 0
 
-    assert value(m.fs.unit.diffusion_params["Li", "Li", 0]) == -4.07e-06
-    assert value(m.fs.unit.diffusion_params["Li", "Li", 1]) == -3.96e-09
-    assert value(m.fs.unit.diffusion_params["Li", "Li", 2]) == 3.98e-09
-    assert value(m.fs.unit.diffusion_params["Li", "Co", 0]) == -9.63e-07
-    assert value(m.fs.unit.diffusion_params["Li", "Co", 1]) == -1.03e-08
-    assert value(m.fs.unit.diffusion_params["Li", "Co", 2]) == 1.03e-08
-    assert value(m.fs.unit.diffusion_params["Co", "Li", 0]) == -5.23e-07
-    assert value(m.fs.unit.diffusion_params["Co", "Li", 1]) == 2.47e-09
-    assert value(m.fs.unit.diffusion_params["Co", "Li", 2]) == -2.49e-09
-    assert value(m.fs.unit.diffusion_params["Co", "Co", 0]) == -4.00e-06
-    assert value(m.fs.unit.diffusion_params["Co", "Co", 1]) == 6.40e-09
-    assert value(m.fs.unit.diffusion_params["Co", "Co", 2]) == -6.44e-09
-
-    assert value(m.fs.unit.convection_params["Li", 0]) == 1
-    assert value(m.fs.unit.convection_params["Li", 1]) == 0
-    assert value(m.fs.unit.convection_params["Li", 2]) == 0
-    assert value(m.fs.unit.convection_params["Co", 0]) == 1
-    assert value(m.fs.unit.convection_params["Co", 1]) == 0
-    assert value(m.fs.unit.convection_params["Co", 2]) == 0
-
     m.fs.unit.total_module_length.fix(4)
     m.fs.unit.total_membrane_length.fix(40)
     m.fs.unit.applied_pressure.fix(15)
@@ -90,35 +70,35 @@ def test_zero_chi_implementation():
     test_dict_zero_chi = {
         "retentate_final": [
             value(m.fs.unit.retentate_flow_volume[0, 1]),
-            63.61237803935321,
+            63.611183365466104,
         ],
         "lithium_retentate_final": [
             value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Li"]),
-            194.30133838387326,
+            194.301852498677,
         ],
         "cobalt_retentate_final": [
             value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Co"]),
-            225.74684125040622,
+            225.74562980118742,
         ],
         "chloride_retentate_final": [
             value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Cl"]),
-            645.7950208846858,
+            645.7931121010519,
         ],
         "permeate_final": [
             value(m.fs.unit.permeate_flow_volume[0, 1]),
-            66.34792854324294,
+            66.34902874896852,
         ],
         "lithium_permeate_final": [
             value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Li"]),
-            190.7648596069931,
+            190.76586206212184,
         ],
         "cobalt_permeate_final": [
             value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Co"]),
-            220.97849697818972,
+            220.97832802910682,
         ],
         "chloride_permeate_final": [
             value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Cl"]),
-            632.7218535633726,
+            632.7225181203355,
         ],
     }
 
@@ -238,75 +218,110 @@ class TestDiafiltrationTwoSalt(object):
         assert isinstance(diafiltration_two_salt.fs.unit.diafiltrate_conc_mol_comp, Var)
         assert len(diafiltration_two_salt.fs.unit.diafiltrate_conc_mol_comp) == 3
 
-        assert isinstance(diafiltration_two_salt.fs.unit.diffusion_params, Var)
-        assert len(diafiltration_two_salt.fs.unit.diffusion_params) == 12
-        assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Li", "Li", 0])
-            == -4.33e-06
+        assert isinstance(diafiltration_two_salt.fs.unit.D_tilde, Var)
+        assert len(diafiltration_two_salt.fs.unit.D_tilde) == 66
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_lithium_bilinear,
+            Var,
         )
         assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Li", "Li", 1])
-            == -4.21e-09
-        )
-        assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Li", "Li", 2])
-            == 5.10e-09
-        )
-        assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Li", "Co", 0])
-            == -1.63e-06
-        )
-        assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Li", "Co", 1])
-            == -1.09e-08
-        )
-        assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Li", "Co", 2])
-            == 1.32e-08
-        )
-        assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Li", 0])
-            == -1.31e-06
-        )
-        assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Li", 1])
-            == 4.67e-09
-        )
-        assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Li", 2])
-            == 1.43e-09
-        )
-        assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Co", 0])
-            == -6.03e-06
-        )
-        assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Co", 1])
-            == 1.21e-08
-        )
-        assert (
-            value(diafiltration_two_salt.fs.unit.diffusion_params["Co", "Co", 2])
-            == 3.69e-09
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_lithium_bilinear
+            )
+            == 66
         )
 
-        assert isinstance(diafiltration_two_salt.fs.unit.convection_params, Var)
-        assert len(diafiltration_two_salt.fs.unit.convection_params) == 6
-        assert value(diafiltration_two_salt.fs.unit.convection_params["Li", 0]) == 0.365
-        assert (
-            value(diafiltration_two_salt.fs.unit.convection_params["Li", 1]) == 0.00137
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_cobalt_bilinear,
+            Var,
         )
         assert (
-            value(diafiltration_two_salt.fs.unit.convection_params["Li", 2]) == 0.00309
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_cobalt_bilinear
+            )
+            == 66
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_lithium_bilinear,
+            Var,
         )
         assert (
-            value(diafiltration_two_salt.fs.unit.convection_params["Co", 0]) == 0.0945
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_lithium_bilinear
+            )
+            == 66
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_cobalt_bilinear,
+            Var,
         )
         assert (
-            value(diafiltration_two_salt.fs.unit.convection_params["Co", 1]) == 0.00195
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_cobalt_bilinear
+            )
+            == 66
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.convection_coefficient_lithium_bilinear, Var
         )
         assert (
-            value(diafiltration_two_salt.fs.unit.convection_params["Co", 2]) == 0.00441
+            len(diafiltration_two_salt.fs.unit.convection_coefficient_lithium_bilinear)
+            == 66
         )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.convection_coefficient_cobalt_bilinear, Var
+        )
+        assert (
+            len(diafiltration_two_salt.fs.unit.convection_coefficient_cobalt_bilinear)
+            == 66
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_lithium, Var
+        )
+        assert (
+            len(diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_lithium)
+            == 66
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_cobalt, Var
+        )
+        assert (
+            len(diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_cobalt)
+            == 66
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_lithium, Var
+        )
+        assert (
+            len(diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_lithium)
+            == 66
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_cobalt, Var
+        )
+        assert (
+            len(diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_cobalt)
+            == 66
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.convection_coefficient_lithium, Var
+        )
+        assert len(diafiltration_two_salt.fs.unit.convection_coefficient_lithium) == 66
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.convection_coefficient_cobalt, Var
+        )
+        assert len(diafiltration_two_salt.fs.unit.convection_coefficient_cobalt) == 66
 
         assert isinstance(diafiltration_two_salt.fs.unit.volume_flux_water, Var)
         assert len(diafiltration_two_salt.fs.unit.volume_flux_water) == 11
@@ -345,18 +360,6 @@ class TestDiafiltrationTwoSalt(object):
             diafiltration_two_salt.fs.unit.membrane_conc_mol_chloride, Var
         )
         assert len(diafiltration_two_salt.fs.unit.membrane_conc_mol_chloride) == 66
-
-        assert isinstance(diafiltration_two_salt.fs.unit.D_lithium_lithium, Var)
-        assert len(diafiltration_two_salt.fs.unit.D_lithium_lithium) == 66
-
-        assert isinstance(diafiltration_two_salt.fs.unit.D_lithium_cobalt, Var)
-        assert len(diafiltration_two_salt.fs.unit.D_lithium_cobalt) == 66
-
-        assert isinstance(diafiltration_two_salt.fs.unit.D_cobalt_lithium, Var)
-        assert len(diafiltration_two_salt.fs.unit.D_cobalt_lithium) == 66
-
-        assert isinstance(diafiltration_two_salt.fs.unit.D_cobalt_cobalt, Var)
-        assert len(diafiltration_two_salt.fs.unit.D_cobalt_cobalt) == 66
 
         assert isinstance(
             diafiltration_two_salt.fs.unit.convection_coefficient_lithium, Var
@@ -405,19 +408,19 @@ class TestDiafiltrationTwoSalt(object):
         assert len(diafiltration_two_salt.fs.unit.cobalt_mol_balance) == 10
 
         assert isinstance(
-            diafiltration_two_salt.fs.unit.geometric_flux_equation_overall, Constraint
+            diafiltration_two_salt.fs.unit.bulk_flux_equation_overall, Constraint
         )
-        assert len(diafiltration_two_salt.fs.unit.geometric_flux_equation_overall) == 10
+        assert len(diafiltration_two_salt.fs.unit.bulk_flux_equation_overall) == 10
 
         assert isinstance(
-            diafiltration_two_salt.fs.unit.geometric_flux_equation_lithium, Constraint
+            diafiltration_two_salt.fs.unit.bulk_flux_equation_lithium, Constraint
         )
-        assert len(diafiltration_two_salt.fs.unit.geometric_flux_equation_lithium) == 10
+        assert len(diafiltration_two_salt.fs.unit.bulk_flux_equation_lithium) == 10
 
         assert isinstance(
-            diafiltration_two_salt.fs.unit.geometric_flux_equation_cobalt, Constraint
+            diafiltration_two_salt.fs.unit.bulk_flux_equation_cobalt, Constraint
         )
-        assert len(diafiltration_two_salt.fs.unit.geometric_flux_equation_cobalt) == 10
+        assert len(diafiltration_two_salt.fs.unit.bulk_flux_equation_cobalt) == 10
 
         assert isinstance(diafiltration_two_salt.fs.unit.lumped_water_flux, Constraint)
         assert len(diafiltration_two_salt.fs.unit.lumped_water_flux) == 10
@@ -478,24 +481,119 @@ class TestDiafiltrationTwoSalt(object):
         )
 
         assert isinstance(
-            diafiltration_two_salt.fs.unit.D_lithium_lithium_calculation, Constraint
+            diafiltration_two_salt.fs.unit.D_tilde_calculation, Constraint
         )
-        assert len(diafiltration_two_salt.fs.unit.D_lithium_lithium_calculation) == 66
+        assert len(diafiltration_two_salt.fs.unit.D_tilde_calculation) == 60
 
         assert isinstance(
-            diafiltration_two_salt.fs.unit.D_lithium_cobalt_calculation, Constraint
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_lithium_bilinear_calculation,
+            Constraint,
         )
-        assert len(diafiltration_two_salt.fs.unit.D_lithium_cobalt_calculation) == 66
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_lithium_bilinear_calculation
+            )
+            == 60
+        )
 
         assert isinstance(
-            diafiltration_two_salt.fs.unit.D_cobalt_lithium_calculation, Constraint
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_cobalt_bilinear_calculation,
+            Constraint,
         )
-        assert len(diafiltration_two_salt.fs.unit.D_cobalt_lithium_calculation) == 66
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_cobalt_bilinear_calculation
+            )
+            == 60
+        )
 
         assert isinstance(
-            diafiltration_two_salt.fs.unit.D_cobalt_cobalt_calculation, Constraint
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_lithium_bilinear_calculation,
+            Constraint,
         )
-        assert len(diafiltration_two_salt.fs.unit.D_cobalt_cobalt_calculation) == 66
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_lithium_bilinear_calculation
+            )
+            == 60
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_cobalt_bilinear_calculation,
+            Constraint,
+        )
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_cobalt_bilinear_calculation
+            )
+            == 60
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.convection_coefficient_lithium_bilinear_calculation,
+            Constraint,
+        )
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.convection_coefficient_lithium_bilinear_calculation
+            )
+            == 60
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.convection_coefficient_cobalt_bilinear_calculation,
+            Constraint,
+        )
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.convection_coefficient_cobalt_bilinear_calculation
+            )
+            == 60
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_lithium_calculation,
+            Constraint,
+        )
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_lithium_calculation
+            )
+            == 60
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_cobalt_calculation,
+            Constraint,
+        )
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_lithium_cobalt_calculation
+            )
+            == 60
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_lithium_calculation,
+            Constraint,
+        )
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_lithium_calculation
+            )
+            == 60
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_cobalt_calculation,
+            Constraint,
+        )
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.diffusion_coefficient_cobalt_cobalt_calculation
+            )
+            == 60
+        )
 
         assert isinstance(
             diafiltration_two_salt.fs.unit.convection_coefficient_lithium_calculation,
@@ -505,7 +603,7 @@ class TestDiafiltrationTwoSalt(object):
             len(
                 diafiltration_two_salt.fs.unit.convection_coefficient_lithium_calculation
             )
-            == 66
+            == 60
         )
 
         assert isinstance(
@@ -516,7 +614,7 @@ class TestDiafiltrationTwoSalt(object):
             len(
                 diafiltration_two_salt.fs.unit.convection_coefficient_cobalt_calculation
             )
-            == 66
+            == 60
         )
 
         assert isinstance(
@@ -693,47 +791,47 @@ class TestDiafiltrationTwoSalt(object):
         test_dict = {
             "retentate_final": [
                 value(diafiltration_two_salt.fs.unit.retentate_flow_volume[0, 1]),
-                62.92573128951248,
+                62.92841852411947,
             ],
             "lithium_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Li"]
                 ),
-                194.37335269356214,
+                194.36923603496942,
             ],
             "cobalt_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Co"]
                 ),
-                225.16242552957172,
+                225.16701476590612,
             ],
             "chloride_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Cl"]
                 ),
-                644.6982037527056,
+                644.7032655667816,
             ],
             "permeate_final": [
                 value(diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 1]),
-                67.04175844764,
+                67.03837350202173,
             ],
             "lithium_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Li"]
                 ),
-                190.79638345768763,
+                190.79711736219883,
             ],
             "cobalt_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Co"]
                 ),
-                221.25063745246803,
+                221.2483889890605,
             ],
             "chloride_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Cl"]
                 ),
-                633.2976583626237,
+                633.2938953403198,
             ],
         }
 

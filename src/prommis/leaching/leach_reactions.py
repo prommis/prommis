@@ -284,7 +284,7 @@ class CoalRefuseLeachingReactionData(ProcessBlockData):
                 eps
                 * b.params.B[r]
                 * (h_conc / (units.mol / units.L)) ** b.params.A[r]
-                * (1 - s_block.conversion[r]) ** (2 / 3)
+                * (1 - s_block.conversion_comp[r]) ** (2 / 3)
             )
 
         self.reaction_rate = Expression(

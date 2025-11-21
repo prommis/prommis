@@ -23,6 +23,8 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.scaling import CustomScalerBase
+from idaes.core.util.misc import add_object_reference
+
 
 reo_list = [
     "Sc2O3",
@@ -46,7 +48,7 @@ class CoalRefusePropertiesScaler(CustomScalerBase):
 
     DEFAULT_SCALING_FACTORS = {
         "flow_mass": 1e-1,
-        "conversion": 1,
+        "conversion_comp": 1,
         "mass_frac_comp[inerts]": 1,
         "mass_frac_comp[Al2O3]": 3,
         "mass_frac_comp[Fe2O3]": 30,
@@ -69,13 +71,13 @@ class CoalRefusePropertiesScaler(CustomScalerBase):
             self.scale_variable_by_default(var, overwrite=overwrite)
 
         # Scale other variables
-        for var in model.conversion.values():
+        for var in model.conversion_comp.values():
             self.scale_variable_by_default(var, overwrite=overwrite)
 
     def constraint_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
     ):
-        for idx, condata in model.conversion_eq.items():
+        for idx, condata in model.conversion_comp_eqn.items():
             self.scale_constraint_by_component(
                 condata, model.mass_frac_comp[idx], overwrite=overwrite
             )
@@ -177,11 +179,30 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
             initialize=2.4,
             mutable=True,
         )
+        self.eps = Param(
+            initialize=1e-6,
+            mutable=True,
+            doc="Perturbation to avoid conversion values "
+            "hitting their lower bound."
+        )
 
         self._state_block_class = CoalRefuseStateBlock
 
     @classmethod
     def define_metadata(cls, obj):
+        obj.add_properties(
+            {
+                "flow_mass": {"method": None},
+                "mass_frac_comp": {"method": None},
+                "dens_mass": {"method": "_dens_mass"},
+                "flow_vol": {"method": "_flow_vol"}
+            }
+        )
+        obj.define_custom_properties(
+            {
+                "conversion_comp": {"method": "_conversion_comp"},
+            }
+        )
         obj.add_default_units(
             {
                 "time": units.hour,
@@ -230,22 +251,29 @@ class CoalRefuseStateBlockData(StateBlockData):
         self.mass_frac_comp = Var(
             self.params.component_list,
             units=units.kg / units.kg,
-            bounds=(1e-8, None),
+            bounds=(1e-12, 1.01),
+        )
+        if not self.config.defined_state:
+            self.sum_mass_frac = Constraint(
+                expr=1 == sum(self.mass_frac_comp[j] for j in self.component_list)
+            )
+
+    def _conversion_comp(self):
+        self.conversion_comp = Var(
+            self.params.component_list,
+            initialize=0.01,
+            units=units.dimensionless,
+            bounds=(0, 1 - 1e-8),
         )
 
-        # TODO: This really should have a _comp suffix
-        self.conversion = Var(
-            self.params.component_list,
-            initialize=0,
-            units=units.dimensionless,
-            bounds=(None, 0.999999),
-        )
 
         @self.Constraint(self.params.component_list)
-        def conversion_eq(b, j):
+        def conversion_comp_eqn(b, j):
             if j == "inerts":
-                return b.conversion[j] == 0
-            return (1 - b.conversion[j]) * b.params.mass_frac_comp_initial[
+                return b.conversion_comp[j] == b.params.eps
+            # Fudge the initial mass fraction of non-inerts
+            # so that the initial conversion isn't exactly on its bounds
+            return (1 - b.conversion_comp[j]) * (1 + b.params.eps)* b.params.mass_frac_comp_initial[
                 j
             ] * b.mass_frac_comp["inerts"] == b.mass_frac_comp[
                 j
@@ -253,10 +281,13 @@ class CoalRefuseStateBlockData(StateBlockData):
                 "inerts"
             ]
 
-        if not self.config.defined_state:
-            self.sum_mass_frac = Constraint(
-                expr=1 == sum(self.mass_frac_comp[j] for j in self.component_list)
-            )
+    def _dens_mass(self):
+        add_object_reference(self, "dens_mass", self.params.dens_mass)
+
+    def _flow_vol(self):
+        @self.Expression()
+        def flow_vol(b):
+            return b.flow_mass / b.dens_mass
 
     def get_material_flow_terms(self, p, j):
         return units.convert(

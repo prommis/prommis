@@ -54,6 +54,7 @@ def build_model():
             "has_pressure_balance": False,
         },
         reaction_package=m.fs.leach_rxns,
+        has_holdup=True,
     )
 
     return m
@@ -109,8 +110,11 @@ def set_inputs(m):
     m.fs.leach.solid_inlet.mass_frac_comp[0, "Dy2O3"].fix(
         7.54827e-06 * units.kg / units.kg
     )
-
+    
     m.fs.leach.volume.fix(100 * units.gallon)
+    
+    if m.fs.leach.config.has_holdup:
+        m.fs.leach.liquid_solid_residence_time_ratio.fix(32)
 
 
 def set_scaling(m):

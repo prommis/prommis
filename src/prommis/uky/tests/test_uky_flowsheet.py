@@ -34,7 +34,7 @@ from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameter
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.leaching.leach_train import LeachingTrain
-from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
+from prommis.precipitate.precipitate_liquid_properties import HClStrippingParameterBlock
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
@@ -111,7 +111,7 @@ def test_build_flowsheet(system_frame):
     assert isinstance(model.fs.acid_feed3, Feed)
 
     # Precipitation property packages and unit models
-    assert isinstance(model.fs.properties_aq, AqueousParameter)
+    assert isinstance(model.fs.properties_aq, HClStrippingParameterBlock)
     assert isinstance(model.fs.properties_solid, PrecipitateParameters)
 
     assert isinstance(model.fs.precipitator, Precipitator)

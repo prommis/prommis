@@ -34,9 +34,7 @@ dependencies = [
     "pyomo >=6.7.0",
 ]
 [project.optional-dependencies]
-watertap = [
-    "watertap >= 1.4.0",
-]
+
 flowsheet-processor = [
     "idaes-flowsheet-processor >=0.1.dev4",
 ]

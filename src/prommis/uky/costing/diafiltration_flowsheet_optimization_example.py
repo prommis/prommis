@@ -132,6 +132,7 @@ def print_io_snap(fs, tag="STATE"):
     sel_Co = (
         _v(fs.sieving_coefficient["Co"]) if hasattr(fs, "sieving_coefficient") else None
     )
+    print("\n[PARAMETERS]")
     print(f"  sieving_coefficient_Li : {sel_Li if sel_Li is not None else 'N/A'}")
     print(f"  sieving_coefficient_Co : {sel_Co if sel_Co is not None else 'N/A'}")
     print(
@@ -142,6 +143,13 @@ def print_io_snap(fs, tag="STATE"):
     )
 
     print("=" * 72 + "\n")
+
+
+def apply_baseline_lengths(m, L1=754, L2=758, L3=756):
+    """Fix stage lengths to baseline values (for pre-optimization reporting)."""
+    m.fs.stage1.length.fix(L1)
+    m.fs.stage2.length.fix(L2)
+    m.fs.stage3.length.fix(L3)
 
 
 def build_costing(m):
@@ -419,11 +427,7 @@ def main():
     solve_model(m, tee=False)
     dt.assert_no_numerical_warnings()
 
-    # fix some initial long stage lengths so optimization starts from a feasible place with recovery bounds
-    # chose the initial guess based on Multi-Stream Contactor Tutorial (Solution).
-    m.fs.stage1.length.fix(754)
-    m.fs.stage2.length.fix(758)
-    m.fs.stage3.length.fix(756)
+    apply_baseline_lengths(m, L1=754, L2=758, L3=756)
 
     solve_model(m, tee=False)
     dt.assert_no_numerical_warnings()

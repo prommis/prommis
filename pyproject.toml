@@ -47,7 +47,7 @@ version_scheme = "only-version"
 local_scheme = "node-and-date"
 
 [tool.pylint.main]
-py-version = "3.9"
+py-version = "3.11"
 
 [tool.pylint."messages control"]
 disable = [

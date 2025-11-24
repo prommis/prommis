@@ -90,6 +90,8 @@ known_issues = "prommis._testing_utils.known_issues"
 addopts = """
 --pyargs prommis
 --import-mode=importlib
+--cov=prommis
+--cov-config .coveragerc
 -rsx
 """
 

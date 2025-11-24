@@ -556,7 +556,7 @@ and used when constructing these,
             initialize=1,
             units=units.bar,
             bounds=[1e-11, None],
-            doc="Osmostic pressure of the feed-side fluid",
+            doc="Osmostic pressure difference across the membrane",
         )
 
         # add variables dependent on dimensionless_module_length and dimensionless_membrane_thickness
@@ -1307,8 +1307,8 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                blk.config.property_package.partition_coefficient["Li"]
-                * blk.config.property_package.partition_coefficient["Cl"]
+                blk.config.property_package.partition_coefficient_retentate["Li"]
+                * blk.config.property_package.partition_coefficient_retentate["Cl"]
                 * blk.retentate_conc_mol_comp[0, x, "Li"]
                 * blk.retentate_conc_mol_comp[0, x, "Cl"]
             ) == (
@@ -1324,8 +1324,8 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                blk.config.property_package.partition_coefficient["Co"]
-                * blk.config.property_package.partition_coefficient["Cl"]
+                blk.config.property_package.partition_coefficient_retentate["Co"]
+                * blk.config.property_package.partition_coefficient_retentate["Cl"]
                 ** blk.config.property_package.charge["Co"]
                 * blk.retentate_conc_mol_comp[0, x, "Co"]
                 * blk.retentate_conc_mol_comp[0, x, "Cl"]
@@ -1344,8 +1344,8 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                blk.config.property_package.partition_coefficient["Li"]
-                * blk.config.property_package.partition_coefficient["Cl"]
+                blk.config.property_package.partition_coefficient_permeate["Li"]
+                * blk.config.property_package.partition_coefficient_permeate["Cl"]
                 * blk.permeate_conc_mol_comp[0, x, "Li"]
                 * blk.permeate_conc_mol_comp[0, x, "Cl"]
             ) == (
@@ -1361,8 +1361,8 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                blk.config.property_package.partition_coefficient["Co"]
-                * blk.config.property_package.partition_coefficient["Cl"]
+                blk.config.property_package.partition_coefficient_permeate["Co"]
+                * blk.config.property_package.partition_coefficient_permeate["Cl"]
                 ** blk.config.property_package.charge["Co"]
                 * blk.permeate_conc_mol_comp[0, x, "Co"]
                 * blk.permeate_conc_mol_comp[0, x, "Cl"]

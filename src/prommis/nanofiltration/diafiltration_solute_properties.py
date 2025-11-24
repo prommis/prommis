@@ -81,10 +81,22 @@ class SoluteParameterData(PhysicalParameterBlock):
             },
         )
 
-        # add partition coefficient
+        # add partition coefficient at the retentate-membrane interface
         # currently H,Li is based on https://doi.org/10.1021/acs.iecr.4c04763
         # H,Co and H,Cl are arbitrarily chosen to be the same value
-        self.partition_coefficient = Param(
+        self.partition_coefficient_retentate = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "Li": 0.3,
+                "Co": 0.3,
+                "Cl": 0.3,
+            },
+        )
+
+        # add partition coefficient at the membrane-permeate interface
+        # TODO: sensitivity analysis on partitioning parameters
+        self.partition_coefficient_permeate = Param(
             self.component_list,
             units=units.dimensionless,
             initialize={

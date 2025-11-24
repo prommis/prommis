@@ -42,7 +42,8 @@ def test_parameters(model):
         ]
         assert j in model.fs.product_properties.charge
         assert j in model.fs.product_properties.sigma
-        assert j in model.fs.product_properties.partition_coefficient
+        assert j in model.fs.product_properties.partition_coefficient_retentate
+        assert j in model.fs.product_properties.partition_coefficient_permeate
         assert j in model.fs.product_properties.num_solutes
 
 

@@ -23,9 +23,57 @@ from idaes.core import (
     declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
+from idaes.core.scaling import CustomScalerBase
 
 # -----------------------------------------------------------------------------
 # Precipitate solution property package
+_ree_list = [
+    "Sc2(C2O4)3(s)",
+    "Y2(C2O4)3(s)",
+    "La2(C2O4)3(s)",
+    "Ce2(C2O4)3(s)",
+    "Pr2(C2O4)3(s)",
+    "Nd2(C2O4)3(s)",
+    "Sm2(C2O4)3(s)",
+    "Gd2(C2O4)3(s)",
+    "Dy2(C2O4)3(s)",
+]
+_gangue_list = [
+    "Al2(C2O4)3(s)",
+    "Ca(C2O4)(s)",
+    "Fe2(C2O4)3(s)",
+]
+_comp_list = _gangue_list + _ree_list
+
+
+class PrecipitateScaler(CustomScalerBase):
+    """
+    Scaler for REE precipitate solid.
+    """
+
+    CONFIG = CustomScalerBase.CONFIG
+
+    DEFAULT_SCALING_FACTORS = {"temperature": 1 / 300}
+    for sp in _ree_list:
+        DEFAULT_SCALING_FACTORS[f"flow_mol_comp[{sp}]"] = 1e3
+    for sp in _gangue_list:
+        DEFAULT_SCALING_FACTORS[f"flow_mol_comp[{sp}]"] = 1e4
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        # Scale state variables
+
+        self.scale_variable_by_default(model.temperature, overwrite=overwrite)
+
+        for var in model.flow_mol_comp.values():
+            self.scale_variable_by_default(var, overwrite=overwrite)
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        # No constraints to scale
+        pass
 
 
 def _config_blk_build(blk):
@@ -67,22 +115,7 @@ class PrecipitateParametersData(PhysicalParameterBlock):
 
         self.solid = Phase()
 
-        comp_list = [
-            "Al2(C2O4)3(s)",
-            "Ca(C2O4)(s)",
-            "Fe2(C2O4)3(s)",
-            "Sc2(C2O4)3(s)",
-            "Y2(C2O4)3(s)",
-            "La2(C2O4)3(s)",
-            "Ce2(C2O4)3(s)",
-            "Pr2(C2O4)3(s)",
-            "Nd2(C2O4)3(s)",
-            "Sm2(C2O4)3(s)",
-            "Gd2(C2O4)3(s)",
-            "Dy2(C2O4)3(s)",
-        ]
-
-        self.component_list = comp_list
+        self.component_list = _comp_list
 
         self.react = {
             "Sc2(C2O4)3(s)": "Sc",
@@ -159,6 +192,8 @@ class PrecipitateParametersData(PhysicalParameterBlock):
 
 
 class _PrecipitateBlock(StateBlock):
+    default_scaler = PrecipitateScaler
+
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -175,6 +210,8 @@ class PrecipitateStateBlockData(StateBlockData):
     """
     State block for solid REE oxalate.
     """
+
+    default_scaler = PrecipitateScaler
 
     def build(self):
         super().build()
@@ -194,6 +231,7 @@ class PrecipitateStateBlockData(StateBlockData):
             bounds=(1e-20, None),
         )
 
+        # TODO remove
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
         iscale.set_scaling_factor(self.temperature, 1e1)
 

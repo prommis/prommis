@@ -4,7 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-from pyomo.environ import ConcreteModel, assert_optimal_termination, value
+from pyomo.environ import ComponentMap, ConcreteModel, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
@@ -12,6 +12,7 @@ from idaes.core.initialization import (
     BlockTriangularizationInitializer,
     InitializationStatus,
 )
+from idaes.core.scaling.util import jacobian_cond
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
@@ -20,13 +21,13 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
-from idaes.core.util.scaling import unscaled_variables_generator
+from idaes.core.scaling.util import unscaled_variables_generator
 
 import pytest
 
-from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
+from prommis.precipitate.precipitate_liquid_properties import HClStrippingParameterBlock
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-from prommis.precipitate.precipitator import Precipitator
+from prommis.precipitate.precipitator import Precipitator, PrecipitatorScaler
 
 # -----------------------------------------------------------------------------
 # Get default solver for testing
@@ -38,7 +39,7 @@ solver = get_solver()
 def test_config():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.properties_aq = AqueousParameter()
+    m.fs.properties_aq = HClStrippingParameterBlock()
     m.fs.properties_solid = PrecipitateParameters()
 
     m.fs.unit = Precipitator(
@@ -56,6 +57,8 @@ def test_config():
     assert m.fs.unit.config.property_package_aqueous is m.fs.properties_aq
     assert m.fs.unit.config.property_package_precipitate is m.fs.properties_solid
 
+    assert m.fs.unit.default_scaler is PrecipitatorScaler
+
 
 # -----------------------------------------------------------------------------
 class TestPrec(object):
@@ -63,7 +66,7 @@ class TestPrec(object):
     def prec(self):
         m = ConcreteModel()
         m.fs = FlowsheetBlock(dynamic=False)
-        m.fs.properties_aq = AqueousParameter()
+        m.fs.properties_aq = HClStrippingParameterBlock()
         m.fs.properties_solid = PrecipitateParameters()
 
         m.fs.unit = Precipitator(
@@ -87,11 +90,19 @@ class TestPrec(object):
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Dy"].fix(10)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H"].fix(1e-9)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Cl"].fix(1e-9)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "SO4"].fix(1e-9)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(1e-9)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1000000)
 
-        m.fs.unit.cv_precipitate[0].temperature.fix(348.15)
+        m.fs.unit.precipitate_state_block[0].temperature.fix(348.15)
+
+        HCl_scaler = m.fs.unit.cv_aqueous.properties_in.default_scaler()
+        HCl_scaler.default_scaling_factors["flow_vol"] = 1 / 100
+
+        submodel_scalers = ComponentMap()
+        submodel_scalers[m.fs.unit.cv_aqueous.properties_in] = HCl_scaler
+        submodel_scalers[m.fs.unit.cv_aqueous.properties_out] = HCl_scaler
+
+        scaler_obj = m.fs.unit.default_scaler()
+        scaler_obj.scale_model(m.fs.unit, submodel_scalers=submodel_scalers)
 
         return m
 
@@ -117,8 +128,8 @@ class TestPrec(object):
         assert hasattr(prec.fs.unit, "aqueous_depletion")
         assert hasattr(prec.fs.unit, "vol_balance")
 
-        assert number_variables(prec.fs.unit) == 117
-        assert number_total_constraints(prec.fs.unit) == 98
+        assert number_variables(prec.fs.unit) == 105
+        assert number_total_constraints(prec.fs.unit) == 88
         assert number_unused_variables(prec.fs.unit) == 1
 
     @pytest.mark.component
@@ -126,10 +137,7 @@ class TestPrec(object):
         assert_units_consistent(prec.fs.unit)
 
         dt = DiagnosticsToolbox(model=prec)
-        dt.report_structural_issues()
-        dt.display_underconstrained_set()
-        dt.display_overconstrained_set()
-        assert degrees_of_freedom(prec) == 0
+        dt.assert_no_structural_warnings()
 
     @pytest.mark.unit
     def test_dof(self, prec):
@@ -161,6 +169,9 @@ class TestPrec(object):
         dt = DiagnosticsToolbox(prec)
         dt.assert_no_numerical_warnings()
         dt.assert_no_structural_warnings()
+
+        assert jacobian_cond(prec, scaled=False) == pytest.approx(1.1578e10, rel=1e-3)
+        assert jacobian_cond(prec, scaled=True) == pytest.approx(3270.98, rel=1e-3)
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
@@ -261,7 +272,7 @@ class TestPrec(object):
         )
 
         reversed_react = dict(map(reversed, prec.fs.properties_solid.react.items()))
-        pass_through_elements = ["H", "Cl", "SO4", "H2O", "HSO4"]
+        pass_through_elements = ["H", "Cl", "H2O"]
         for j in prec.fs.properties_aq.dissolved_elements:
             if j in pass_through_elements:
                 assert value(

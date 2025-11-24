@@ -277,13 +277,13 @@ def main():
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 
-    # auto = AutoScaler()
-    # auto.scale_variables_by_magnitude(m)
-    # auto.scale_constraints_by_jacobian_norm(m)
-
     # QGESSCostingData.costing_initialization(m.fs.costing)
     # QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     # QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+
+    # auto = AutoScaler()
+    # auto.scale_variables_by_magnitude(m)
+    # auto.scale_constraints_by_jacobian_norm(m)
 
     # from idaes.core.scaling.util import jacobian_cond
 
@@ -3265,17 +3265,7 @@ def display_costing(m):
     QGESSCostingData.display_flowsheet_cost(m.fs.costing)
 
 
-# def add_surrogate_cost(m):
-
-
-if __name__ == "__main__":
-    m, results = main()
-    # warn(
-    #     "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
-    # )
-    # warn(
-    #     "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
-    # )
+def optimize_model(m):
     m.obj = Objective(
         expr=(
             0.01
@@ -3366,11 +3356,22 @@ if __name__ == "__main__":
         for condata in feed.HCl_stoich_eqn.values():
             set_scaling_factor(condata, 10)
 
+    # Make extractant dosage a decision variable
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
+    m.fs.rougher_org_make_up.properties[0].extractant_dosage.bounds=(3, 10)
+    # m.fs.rougher_org_make_up.properties[0].extractant_dosage.fix(5)
+
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
+    m.fs.cleaner_org_make_up.properties[0].extractant_dosage.bounds=(3, 10)
+    # m.fs.cleaner_org_make_up.properties[0].extractant_dosage.fix(5)
+
+    # If the pH in the rougher scrub goes above 5 or 6, the equations get
+    # extremely ill conditioned.
+    m.fs.solex_rougher_scrub.mscontactor.aqueous[0.0, 1].pH_phase["liquid"].setub(6)
+
     solver = get_solver("ipopt_v2")
     solver.options.constr_viol_tol = 1e-8
     solver.options.max_iter = 300
-
-    m.fs.solex_rougher_scrub.mscontactor.aqueous[0.0, 1].pH_phase["liquid"].setub(6)
 
     results = solver.solve(m, tee=True)
 
@@ -3378,3 +3379,30 @@ if __name__ == "__main__":
         display_results(m)
     else:
         print("Flowsheet optimization did not converge.")
+
+def data_reconcilliation(m):
+    m.fs.acid_feed1.flow_vol.unfix()
+    m.obj = Objective(expr = m.fs.acid_feed1.flow_vol[0])
+    m.fs.solex_rougher_scrub.mscontactor.aqueous[0.0, 1].pH_phase["liquid"].setub(3)
+
+    solver = get_solver("ipopt_v2")
+    solver.options.constr_viol_tol = 1e-8
+    solver.options.max_iter = 300
+
+    results = solver.solve(m, tee=True)
+
+    if check_optimal_termination(results):
+        display_results(m)
+    else:
+        print("Data reconcilliation optimization did not converge.")
+
+if __name__ == "__main__":
+    m, results = main()
+    # warn(
+    #     "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
+    # )
+    # warn(
+    #     "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
+    # )
+    # optimize_model(m)
+    data_reconcilliation(m)

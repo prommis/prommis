@@ -16,8 +16,7 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
-from idaes.core.util.scaling import (
-    constraint_scaling_transform,
+from idaes.core.scaling.util import (
     get_scaling_factor,
     set_scaling_factor,
 )
@@ -177,13 +176,8 @@ class TestPrec(object):
         set_scaling_factor(
             prec.fs.unit.log_q_precipitate_equilibrium_rxn_eqns[0.0, "E3"], 1e-10
         )
-        for con in prec.fs.component_data_objects(Constraint, active=True):
-            scaling_factor = get_scaling_factor(con, default=None)
-            if scaling_factor is not None:
-                constraint_scaling_transform(con, scaling_factor)
 
         solver = get_solver()
-        solver.options["nlp_scaling_method"] = "user-scaling"
         results = solver.solve(prec)
 
         assert_optimal_termination(results)

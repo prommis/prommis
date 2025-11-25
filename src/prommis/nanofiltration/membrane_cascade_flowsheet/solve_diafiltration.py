@@ -14,6 +14,7 @@ from pyomo.environ import (
     Suffix,
     TransformationFactory,
     assert_optimal_termination,
+    value,
 )
 
 from idaes.core.util import to_json, from_json
@@ -128,6 +129,16 @@ def main(args):
     dt = DiagnosticsToolbox(m)
     # some flows are at their bounds of zero
     dt.report_numerical_issues()
+
+    if costing:
+        # Verify the feed pump operating pressure workaround is valid
+        # assume this additional cost is less than half a cent
+        if value(m.fs.feed_pump.costing.variable_operating_cost) >= 0.005:
+            raise ValueError(
+                "The variable  operating cost of the feed pump as calculated in the feed"
+                "pump costing block is not negligible. This operating cost is already"
+                "accounted for via the membrane's pressure drop specific energy consumption."
+            )
 
     # NOTE These percent recoveries are for precipitators
     m.prec_perc_co.display()

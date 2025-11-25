@@ -2035,6 +2035,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"1990 to 2020."
             )
 
+        # let product rates be optional
+        if pure_product_output_rates is None:
+            pure_product_output_rates = {}
+        if mixed_product_output_rates is None:
+            mixed_product_output_rates = {}
+
         # check that required product arguments were passed
         if not isinstance(pure_product_output_rates, dict):
             raise TypeError("product_output_rates argument must be a dict")
@@ -2229,35 +2235,47 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # calculated from labor rate, labor burden, and operators per shift
         @b.Constraint()
         def annual_operating_labor_cost_eq(c):
-            return c.annual_operating_labor_cost == pyunits.convert(
-                (
-                    sum(
-                        c.operators_per_shift[i] * c.labor_rate[i]
-                        for i in operating_labor_types
-                    )
-                    * (1 + c.labor_burden / 100)
-                    * c.hours_per_shift
-                    * c.shifts_per_day
-                    * c.operating_days_per_year
-                ),
-                CE_index_units / pyunits.year,
-            )
+            if len(operating_labor_types) > 0:
+                return c.annual_operating_labor_cost == pyunits.convert(
+                    (
+                        sum(
+                            c.operators_per_shift[i] * c.labor_rate[i]
+                            for i in operating_labor_types
+                        )
+                        * (1 + c.labor_burden / 100)
+                        * c.hours_per_shift
+                        * c.shifts_per_day
+                        * c.operating_days_per_year
+                    ),
+                    CE_index_units / pyunits.year,
+                )
+            else:
+                return (
+                    c.annual_operating_labor_cost
+                    == 1e-12 * CE_index_units / pyunits.year
+                )
 
         @b.Constraint()
         def annual_technical_labor_cost_eq(c):
-            return c.annual_technical_labor_cost == pyunits.convert(
-                (
-                    sum(
-                        c.operators_per_shift[i] * c.labor_rate[i]
-                        for i in technical_labor_types
-                    )
-                    * (1 + c.labor_burden / 100)
-                    * c.hours_per_shift
-                    * c.shifts_per_day
-                    * c.operating_days_per_year
-                ),
-                CE_index_units / pyunits.year,
-            )
+            if len(technical_labor_types) > 0:
+                return c.annual_technical_labor_cost == pyunits.convert(
+                    (
+                        sum(
+                            c.operators_per_shift[i] * c.labor_rate[i]
+                            for i in technical_labor_types
+                        )
+                        * (1 + c.labor_burden / 100)
+                        * c.hours_per_shift
+                        * c.shifts_per_day
+                        * c.operating_days_per_year
+                    ),
+                    CE_index_units / pyunits.year,
+                )
+            else:
+                return (
+                    c.annual_technical_labor_cost
+                    == 1e-12 * CE_index_units / pyunits.year
+                )
 
         @b.Constraint()
         def annual_labor_cost_eq(c):
@@ -2334,24 +2352,35 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         @b.Constraint()
         def total_sales_revenue_eq(c):
-            return c.total_sales_revenue == pyunits.convert(
+            return c.total_sales_revenue == (
                 (
                     (
                         sum(
-                            pure_product_output_rates[p] * default_sale_prices[p]
+                            pyunits.convert(
+                                pure_product_output_rates[p] * default_sale_prices[p],
+                                to_units=CE_index_units / pyunits.h,
+                            )
                             for p in pure_product_output_rates.keys()
                         )
-                        + c.mixed_product_sale_price_realization_factor
+                        if len(pure_product_output_rates) > 0
+                        else 1e-12 * CE_index_units / pyunits.h
+                    )
+                    + (
+                        c.mixed_product_sale_price_realization_factor
                         * sum(
-                            mixed_product_output_rates[p] * default_sale_prices[p]
+                            pyunits.convert(
+                                mixed_product_output_rates[p] * default_sale_prices[p],
+                                to_units=CE_index_units / pyunits.h,
+                            )
                             for p in mixed_product_output_rates.keys()
                         )
+                        if len(mixed_product_output_rates) > 0
+                        else 1e-12 * CE_index_units / pyunits.h
                     )
-                    * c.hours_per_shift
-                    * c.shifts_per_day
-                    * c.operating_days_per_year
-                ),
-                CE_index_units / pyunits.year,
+                )
+                * c.hours_per_shift
+                * c.shifts_per_day
+                * c.operating_days_per_year
             )
 
     def get_variable_OM_costs(
@@ -2743,20 +2772,20 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     b.BEC_list.append(
                         pyunits.convert(o.capital_cost, to_units=CE_index_units)
                     )
-                    if hasattr(o, "fixed_operating_cost"):
-                        b.custom_fixed_costs_list.append(
-                            pyunits.convert(
-                                o.fixed_operating_cost,
-                                to_units=CE_index_units / pyunits.year,
-                            )
+                if hasattr(o, "fixed_operating_cost"):
+                    b.custom_fixed_costs_list.append(
+                        pyunits.convert(
+                            o.fixed_operating_cost,
+                            to_units=CE_index_units / pyunits.year,
                         )
-                    if hasattr(o, "variable_operating_cost"):
-                        b.custom_variable_costs_list.append(
-                            pyunits.convert(
-                                o.variable_operating_cost,
-                                to_units=CE_index_units / pyunits.year,
-                            )
+                    )
+                if hasattr(o, "variable_operating_cost"):
+                    b.custom_variable_costs_list.append(
+                        pyunits.convert(
+                            o.variable_operating_cost,
+                            to_units=CE_index_units / pyunits.year,
                         )
+                    )
         from idaes.core.util.model_diagnostics import degrees_of_freedom
 
         if watertap_blocks is not None:  # added from WaterTAP

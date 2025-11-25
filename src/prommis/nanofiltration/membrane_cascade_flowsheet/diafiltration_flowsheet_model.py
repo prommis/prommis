@@ -1124,7 +1124,7 @@ class DiafiltrationModel:
         if not simple_costing:
             m.fs.cascade.costing = UnitModelCostingBlock(
                 flowsheet_costing_block=m.fs.costing,
-                costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
+                costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop_utility,
                 costing_method_arguments={
                     "water_flux": flux * units.m**3 / units.m**2 / units.h,
                     "vol_flow_feed": feed["solvent"]

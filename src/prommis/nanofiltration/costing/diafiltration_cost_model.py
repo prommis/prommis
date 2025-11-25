@@ -208,14 +208,14 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 / blk.costing_package.base_period,
             )
 
-    def cost_membrane_pressure_drop(
+    def cost_membrane_pressure_drop_utility(
         blk,
         water_flux,
         vol_flow_feed,
         vol_flow_perm,
     ):
         """
-        Costing method for membrane pressure drop.
+        Costing method for membrane’s utility cost due to pressure drop.
         Not intended to be called when using the simple costing option.
 
         Args:

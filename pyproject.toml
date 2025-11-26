@@ -36,7 +36,7 @@ dependencies = [
 [project.optional-dependencies]
 watertap = [
     "watertap >= 1.4.0"
-#    "watertap @ git+https://github.com/dallan-keylogic/watertap.git@new_scaling_changes",
+    "watertap @ git+https://github.com/dallan-keylogic/watertap.git@new_scaling_changes",
 ]
 
 

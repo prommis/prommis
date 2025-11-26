@@ -316,6 +316,9 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
         References for simple method:
             pump factors: https://pubs.acs.org/doi/10.1021/acsestengg.3c00537
+            Jason L. Yao, Molly Dougher, Andrew Lee, Alejandro Garciadiego, Thomas J. Tarka, Alexander
+                W. Dowling, and Chrysanthos E. Gounaris. Robust Optimization of Flexible Diafiltration
+                Systems for Critical Mineral Separations. Under Review.
 
         Args:
             inlet_pressure: pressure of inlet stream to pump (kPa)
@@ -568,6 +571,9 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         Reference for simple method:
             H.P. Loh, Jennifer Lyons, and Charles W. White, III. Process Equipment Cost
                 Estimation Final Report. DOE/NETL-2002/1169. January 2002.
+            Jason L. Yao, Molly Dougher, Andrew Lee, Alejandro Garciadiego, Thomas J. Tarka, Alexander
+                W. Dowling, and Chrysanthos E. Gounaris. Robust Optimization of Flexible Diafiltration
+                Systems for Critical Mineral Separations. Under Review.
 
         Args:
             precip_volume: volume of the precipitator as calculated by the unit model (m3)

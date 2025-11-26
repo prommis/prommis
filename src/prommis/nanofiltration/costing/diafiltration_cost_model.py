@@ -49,6 +49,8 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
     ):
         """
         Builds the process-wide costing
+
+        Costing method is based off of the WaterTAP costing methods
         """
         # initialize the common global parameters
         self._build_common_global_params()

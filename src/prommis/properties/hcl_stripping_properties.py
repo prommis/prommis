@@ -5,9 +5,9 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Initial property package for precipitate.
+Property package for HCl used to strip metals from the organic phase in solvent extraction.
 
-Authors: Alejandro Garciadiego
+Authors: Alejandro Garciadiego, Douglas Allan
 """
 
 from pyomo.environ import Constraint, Param, Set, value, Var, units
@@ -87,37 +87,36 @@ class HClStrippingPropertiesScaler(CustomScalerBase):
 
         for idx, vardata in model.conc_mol_comp.items():
             self.scale_variable_by_definition_constraint(
-                vardata, model.molar_concentration_constraint[idx], overwrite=overwrite
+                vardata, model.conc_mol_comp_eqn[idx], overwrite=overwrite
             )
 
         for idx, vardata in model.flow_mol_comp.items():
             self.scale_variable_by_definition_constraint(
-                vardata, model.flow_mol_constraint[idx], overwrite=overwrite
+                vardata, model.flow_mol_comp_eqn[idx], overwrite=overwrite
             )
 
     def constraint_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
     ):
-        for idx, condata in model.molar_concentration_constraint.items():
+        for idx, condata in model.conc_mol_comp_eqn.items():
             self.scale_constraint_by_component(
                 condata, model.conc_mass_comp[idx], overwrite=overwrite
             )
-        for idx, condata in model.flow_mol_constraint.items():
+        for idx, condata in model.flow_mol_comp_eqn.items():
             self.scale_constraint_by_component(
                 condata, model.flow_mol_comp[idx], overwrite=overwrite
             )
 
         if model.is_property_constructed("pH_phase"):
             self.scale_constraint_by_component(
-                model.pH_constraint["liquid"],
+                model.pH_phase_eqn["liquid"],
                 model.conc_mol_comp["H"],
                 overwrite=overwrite,
             )
 
-        # Why is this constraint not present in this property package?
-        if model.is_property_constructed("h2o_concentration"):
+        if model.is_property_constructed("h2o_concentration_eqn"):
             self.scale_constraint_by_component(
-                model.h2o_concentration,
+                model.h2o_concentration_eqn,
                 model.conc_mass_comp["H2O"],
                 overwrite=overwrite,
             )
@@ -267,7 +266,7 @@ class _HClStrippingStateBlock(StateBlock):
 
         for sbd in self.values():
             if not sbd.config.defined_state:
-                sbd.h2o_concentration.deactivate()
+                sbd.h2o_concentration_eqn.deactivate()
 
 
 @declare_process_block_class(
@@ -311,7 +310,7 @@ class HClStrippingStateBlockkData(StateBlockData):
 
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)
-        def molar_concentration_constraint(b, j):
+        def conc_mol_comp_eqn(b, j):
             return (
                 units.convert(
                     b.conc_mol_comp[j] * b.params.mw[j], to_units=units.mg / units.litre
@@ -321,7 +320,7 @@ class HClStrippingStateBlockkData(StateBlockData):
 
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)
-        def flow_mol_constraint(b, j):
+        def flow_mol_comp_eqn(b, j):
             return (
                 units.convert(
                     b.flow_vol * b.conc_mass_comp[j] / b.params.mw[j],
@@ -332,7 +331,7 @@ class HClStrippingStateBlockkData(StateBlockData):
 
         if not self.config.defined_state:
             # Concentration of H2O based on assumed density
-            self.h2o_concentration = Constraint(
+            self.h2o_concentration_eqn = Constraint(
                 expr=self.conc_mass_comp["H2O"] == 1e6 * units.mg / units.L
             )
 
@@ -345,7 +344,7 @@ class HClStrippingStateBlockkData(StateBlockData):
         )
 
         @self.Constraint(self.phase_list)
-        def pH_constraint(b, p):
+        def pH_phase_eqn(b, p):
             return 10 ** (-b.pH_phase[p]) == b.conc_mol_comp["H"] * units.L / units.mol
 
     def get_material_flow_terms(self, p, j):

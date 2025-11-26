@@ -7,6 +7,7 @@ idaes-pse @ git+https://github.com/IDAES/idaes-pse@main
 isort
 nbmake==1.4.6
 sphinx_design==0.6.0
+watertap @ git+https://github.com/watertap-org/watertap@refs/pull/1695/merge
 git+https://github.com/prommis/idaes-flowsheet-processor.git
 
 --editable .[watertap,flowsheet-processor]

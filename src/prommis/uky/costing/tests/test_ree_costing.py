@@ -2469,7 +2469,7 @@ class TestDiafiltrationCosting(object):
             flowsheet_costing_block=m.fs.costing,
             costing_method=DiafiltrationCostingData.cost_pump,
             costing_method_arguments={
-                "inlet_pressure": m.fs.P_atm,  # units of Pa
+                "inlet_pressure": pyunits.convert(m.fs.P_atm, to_units=pyunits.kPa),  # units of kPa
                 "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
                 * pyunits.psi,  # this should make m.fs.feed_pump.costing.variable_operating_cost ~0
                 "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # feed
@@ -2479,7 +2479,7 @@ class TestDiafiltrationCosting(object):
             flowsheet_costing_block=m.fs.costing,
             costing_method=DiafiltrationCostingData.cost_pump,
             costing_method_arguments={
-                "inlet_pressure": m.fs.P_atm,  # units of Pa
+                "inlet_pressure": pyunits.convert(m.fs.P_atm, to_units=pyunits.kPa),  # units of kPa
                 "outlet_pressure": pyunits.convert(
                     m.fs.P_op, to_units=pyunits.psi
                 ),  # units of psi

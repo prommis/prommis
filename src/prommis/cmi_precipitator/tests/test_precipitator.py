@@ -4,7 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-from pyomo.environ import ConcreteModel, Constraint, assert_optimal_termination, value
+from pyomo.environ import ConcreteModel, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
@@ -17,7 +17,6 @@ from idaes.core.util.model_statistics import (
     number_variables,
 )
 from idaes.core.scaling.util import (
-    get_scaling_factor,
     set_scaling_factor,
 )
 

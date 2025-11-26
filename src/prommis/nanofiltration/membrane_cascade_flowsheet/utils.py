@@ -110,7 +110,7 @@ def report_values(m, prec=True):
                 data["Co product flows"].append(
                     pyo.value(m.fs.split_retentate[i].product.flow_mass_solute[0, sol])
                 )
-        except:
+        except ValueError:
             print("no Co product here")
             data["Co product flows"].append(0)
 
@@ -128,7 +128,7 @@ def report_values(m, prec=True):
                 data["Li product flows"].append(
                     pyo.value(m.fs.split_permeate[i].product.flow_mass_solute[0, sol])
                 )
-        except:
+        except ValueError:
             print("no Li product here")
             data["Li product flows"].append(0)
 

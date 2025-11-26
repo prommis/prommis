@@ -6,7 +6,15 @@
 #####################################################################################################
 import re
 
-from pyomo.environ import Objective, Var, assert_optimal_termination, value
+from pyomo.environ import (
+    Objective,
+    SolverFactory,
+    Suffix,
+    TransformationFactory,
+    Var,
+    assert_optimal_termination,
+    value,
+)
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core.solvers import get_solver
@@ -419,3 +427,387 @@ class TestFlowsheet(object):
                 rel=1e-6,
                 abs=1e-6,
             )
+
+
+# -----------------------------------------------------------------------------
+@pytest.fixture(scope="module")
+def flowsheet_with_costing():
+    """Construct a flowsheet for a membrane cascade with diafiltration and downstream precipitators."""
+    flowsheet_with_costing_setup = DiafiltrationModel(
+        NS=3,
+        NT=10,
+        solutes=solutes,
+        flux=flux,
+        sieving_coefficient=sieving_coefficient,
+        feed=feed,
+        diafiltrate=diaf,
+        precipitate=use_precipitators,
+        precipitate_yield=yields,
+    )
+
+    return flowsheet_with_costing_setup
+
+
+class TestFlowsheetCosting(object):
+    @pytest.mark.component
+    def test_simple_costing(self, flowsheet_with_costing):
+        # build a 3x10 stage mixing cascade with simple costing
+        mix_style = "stage"
+        m_simple = flowsheet_with_costing.build_flowsheet(mixing=mix_style)
+        flowsheet_with_costing.initialize(
+            m_simple, mixing=mix_style, precipitate=use_precipitators
+        )
+        flowsheet_with_costing.unfix_dof(
+            m_simple, mixing=mix_style, precipitate=use_precipitators
+        )
+        m_simple.fs.split_diafiltrate.inlet.flow_vol.setub(200)
+        flowsheet_with_costing.add_costing(
+            m_simple,
+            NS=3,
+            flux=flux,
+            feed=feed,
+            diaf=diaf,
+            precipitate=use_precipitators,
+            atmospheric_pressure=101.325,  # ambient pressure, kPa
+            operating_pressure=145,  # nanofiltration operating pressure, psi
+            simple_costing=True,
+        )
+        flowsheet_with_costing.add_costing_objectives(m_simple)
+
+        assert_units_consistent(m_simple)
+
+        # set recovery lower bounds
+        m_simple.recovery_li = 0.8
+        m_simple.recovery_co = 0.8
+
+        # set additional scaling
+        m_simple.scaling_factor = Suffix(direction=Suffix.EXPORT)
+        m_simple.scaling_factor[m_simple.fs.costing.aggregate_capital_cost] = 1e-5
+        m_simple.scaling_factor[m_simple.fs.costing.aggregate_fixed_operating_cost] = (
+            1e-4
+        )
+        m_simple.scaling_factor[
+            m_simple.fs.costing.aggregate_variable_operating_cost
+        ] = 1e-5
+        m_simple.scaling_factor[m_simple.fs.costing.total_capital_cost] = 1e-5
+        m_simple.scaling_factor[m_simple.fs.costing.total_operating_cost] = 1e-5
+        m_simple.scaling_factor[
+            m_simple.fs.costing.maintenance_labor_chemical_operating_cost
+        ] = 1e-4
+        m_simple.scaling_factor[m_simple.fs.costing.total_annualized_cost] = 1e-5
+
+        for n in range(1, 3 + 1):
+            m_simple.scaling_factor[m_simple.fs.stage[n].costing.capital_cost] = 1e-5
+            m_simple.scaling_factor[
+                m_simple.fs.stage[n].costing.fixed_operating_cost
+            ] = 1e-4
+            m_simple.scaling_factor[m_simple.fs.stage[n].costing.membrane_area] = 1e-3
+
+        m_simple.scaling_factor[m_simple.fs.feed_pump.costing.capital_cost] = 1e-4
+        m_simple.scaling_factor[m_simple.fs.diafiltrate_pump.costing.capital_cost] = (
+            1e-3
+        )
+        m_simple.scaling_factor[
+            m_simple.fs.diafiltrate_pump.costing.variable_operating_cost
+        ] = 1e-3
+
+        m_simple.scaling_factor[
+            m_simple.fs.feed_pump.costing.pump_power_factor_simple
+        ] = 1e-2
+        m_simple.scaling_factor[
+            m_simple.fs.feed_pump.costing.variable_operating_cost
+        ] = 1e-4
+        m_simple.scaling_factor[
+            m_simple.fs.diafiltrate_pump.costing.pump_power_factor_simple
+        ] = 1e-2
+
+        for prod in ["retentate", "permeate"]:
+            m_simple.scaling_factor[
+                m_simple.fs.precipitator[prod].costing.capital_cost
+            ] = 1e-5
+
+        # solve scaled model
+        scaling = TransformationFactory("core.scale_model")
+        solver = SolverFactory("ipopt")
+        scaled_model = scaling.create_using(m_simple, rename=False)
+        result = solver.solve(scaled_model, tee=True)
+        assert_optimal_termination(result)
+        scaling.propagate_solution(scaled_model, m_simple)
+
+        dt = DiagnosticsToolbox(m_simple)
+        # some flows are at their bounds of zero
+        with pytest.raises(
+            AssertionError, match=re.escape("Numerical issues found (1).")
+        ):
+            dt.assert_no_numerical_warnings()
+
+        # check key results
+        test_dict = {
+            "lithium_recovery": [value(m_simple.prec_perc_li), 0.8],
+            "cobalt_recovery": [value(m_simple.prec_perc_co), 0.8],
+            "stage_1_area": [value(m_simple.fs.stage[1].length), 998.59],
+            "stage_2_area": [value(m_simple.fs.stage[2].length), 998.59],
+            "stage_3_area": [value(m_simple.fs.stage[3].length), 998.59],
+            "retentate_precipitator_volume": [
+                value(m_simple.fs.precipitator["retentate"].volume),
+                108.76,
+            ],
+            "permeate_precipitator_volume": [
+                value(m_simple.fs.precipitator["permeate"].volume),
+                150.38,
+            ],
+            "stage_1_capex": [
+                value(m_simple.fs.stage[1].costing.capital_cost),
+                49929.58,
+            ],
+            "stage_2_capex": [
+                value(m_simple.fs.stage[2].costing.capital_cost),
+                49929.58,
+            ],
+            "stage_3_capex": [
+                value(m_simple.fs.stage[3].costing.capital_cost),
+                49929.58,
+            ],
+            "stage_1_opex": [
+                value(m_simple.fs.stage[1].costing.fixed_operating_cost),
+                9985.92,
+            ],
+            "stage_2_opex": [
+                value(m_simple.fs.stage[2].costing.fixed_operating_cost),
+                9985.92,
+            ],
+            "stage_3_opex": [
+                value(m_simple.fs.stage[3].costing.fixed_operating_cost),
+                9985.92,
+            ],
+            "feed_pump_capex": [
+                value(m_simple.fs.feed_pump.costing.capital_cost),
+                20507.67,
+            ],
+            "diafiltrate_pump_capex": [
+                value(m_simple.fs.diafiltrate_pump.costing.capital_cost),
+                6152.30,
+            ],
+            "feed_pump_opex": [
+                value(m_simple.fs.feed_pump.costing.variable_operating_cost),
+                16406.14,
+            ],
+            "diafiltrate_pump_opex": [
+                value(m_simple.fs.diafiltrate_pump.costing.variable_operating_cost),
+                4921.84,
+            ],
+            "retentate_precipitator_capex": [
+                value(m_simple.fs.precipitator["retentate"].costing.capital_cost),
+                219508.89,
+            ],
+            "permeate_precipitator_capex": [
+                value(m_simple.fs.precipitator["permeate"].costing.capital_cost),
+                295163.46,
+            ],
+            "mainentance_and_labor": [
+                value(m_simple.fs.costing.maintenance_labor_chemical_operating_cost),
+                41467.26,
+            ],
+            "total_capex": [
+                value(m_simple.fs.costing.total_capital_cost),
+                1382242.11,
+            ],
+            "total_opex": [
+                value(m_simple.fs.costing.total_operating_cost),
+                92752.99,
+            ],
+            "total_annualized_cost": [
+                value(m_simple.fs.costing.total_annualized_cost),
+                230977.20,
+            ],
+        }
+
+        for model_result, test_val in test_dict.values():
+            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+
+    @pytest.mark.component
+    def test_default_costing(self, flowsheet_with_costing):
+        # build a 3x10 stage mixing cascade with default costing
+        mix_style = "stage"
+        m_default = flowsheet_with_costing.build_flowsheet(mixing=mix_style)
+        flowsheet_with_costing.initialize(
+            m_default, mixing=mix_style, precipitate=use_precipitators
+        )
+        flowsheet_with_costing.unfix_dof(
+            m_default, mixing=mix_style, precipitate=use_precipitators
+        )
+        m_default.fs.split_diafiltrate.inlet.flow_vol.setub(200)
+        flowsheet_with_costing.add_costing(
+            m_default,
+            NS=3,
+            flux=flux,
+            feed=feed,
+            diaf=diaf,
+            precipitate=use_precipitators,
+            atmospheric_pressure=101.325,  # ambient pressure, kPa
+            operating_pressure=145,  # nanofiltration operating pressure, psi
+            simple_costing=False,
+        )
+        flowsheet_with_costing.add_costing_objectives(m_default)
+
+        assert_units_consistent(m_default)
+
+        # set recovery lower bounds
+        m_default.recovery_li = 0.8
+        m_default.recovery_co = 0.8
+
+        # set additional scaling
+        m_default.scaling_factor = Suffix(direction=Suffix.EXPORT)
+        m_default.scaling_factor[m_default.fs.costing.aggregate_capital_cost] = 1e-5
+        m_default.scaling_factor[
+            m_default.fs.costing.aggregate_fixed_operating_cost
+        ] = 1e-4
+        m_default.scaling_factor[
+            m_default.fs.costing.aggregate_variable_operating_cost
+        ] = 1e-5
+        m_default.scaling_factor[m_default.fs.costing.total_capital_cost] = 1e-5
+        m_default.scaling_factor[m_default.fs.costing.total_operating_cost] = 1e-5
+        m_default.scaling_factor[
+            m_default.fs.costing.maintenance_labor_chemical_operating_cost
+        ] = 1e-4
+        m_default.scaling_factor[m_default.fs.costing.total_annualized_cost] = 1e-5
+
+        for n in range(1, 3 + 1):
+            m_default.scaling_factor[m_default.fs.stage[n].costing.capital_cost] = 1e-5
+            m_default.scaling_factor[
+                m_default.fs.stage[n].costing.fixed_operating_cost
+            ] = 1e-4
+            m_default.scaling_factor[m_default.fs.stage[n].costing.membrane_area] = 1e-3
+
+        m_default.scaling_factor[m_default.fs.feed_pump.costing.capital_cost] = 1e-4
+        m_default.scaling_factor[m_default.fs.diafiltrate_pump.costing.capital_cost] = (
+            1e-3
+        )
+        m_default.scaling_factor[
+            m_default.fs.diafiltrate_pump.costing.variable_operating_cost
+        ] = 1e-3
+
+        m_default.scaling_factor[
+            m_default.fs.cascade.costing.variable_operating_cost
+        ] = 1e-5
+        m_default.scaling_factor[m_default.fs.cascade.costing.pressure_drop] = 1e-2
+        m_default.scaling_factor[
+            m_default.fs.feed_pump.costing.variable_operating_cost
+        ] = 1e-4
+        m_default.scaling_factor[m_default.fs.feed_pump.costing.pump_head] = 1e6
+        m_default.scaling_factor[m_default.fs.feed_pump.costing.pump_power] = 1e2
+        m_default.scaling_factor[m_default.fs.diafiltrate_pump.costing.pump_head] = 1e-2
+        m_default.scaling_factor[m_default.fs.diafiltrate_pump.costing.pump_power] = (
+            1e-5
+        )
+
+        for prod in ["retentate", "permeate"]:
+            m_default.scaling_factor[
+                m_default.fs.precipitator[prod].costing.capital_cost
+            ] = 1e-5
+            m_default.scaling_factor[
+                m_default.fs.precipitator[prod].costing.base_cost_per_unit
+            ] = 1e-4
+
+        # solve scaled model
+        scaling = TransformationFactory("core.scale_model")
+        solver = SolverFactory("ipopt")
+        scaled_model = scaling.create_using(m_default, rename=False)
+        result = solver.solve(scaled_model, tee=True)
+        assert_optimal_termination(result)
+        scaling.propagate_solution(scaled_model, m_default)
+
+        dt = DiagnosticsToolbox(m_default)
+        # some flows are at their bounds of zero
+        with pytest.raises(
+            AssertionError, match=re.escape("Numerical issues found (1).")
+        ):
+            dt.assert_no_numerical_warnings()
+
+        # check key results
+        test_dict = {
+            "lithium_recovery": [value(m_default.prec_perc_li), 0.8],
+            "cobalt_recovery": [value(m_default.prec_perc_co), 0.8],
+            "stage_1_area": [value(m_default.fs.stage[1].length), 1106.92],
+            "stage_2_area": [value(m_default.fs.stage[2].length), 1106.92],
+            "stage_3_area": [value(m_default.fs.stage[3].length), 1106.92],
+            "retentate_precipitator_volume": [
+                value(m_default.fs.precipitator["retentate"].volume),
+                88.733,
+            ],
+            "permeate_precipitator_volume": [
+                value(m_default.fs.precipitator["permeate"].volume),
+                112.44,
+            ],
+            "stage_1_capex": [
+                value(m_default.fs.stage[1].costing.capital_cost),
+                55346.07,
+            ],
+            "stage_2_capex": [
+                value(m_default.fs.stage[2].costing.capital_cost),
+                55346.07,
+            ],
+            "stage_3_capex": [
+                value(m_default.fs.stage[3].costing.capital_cost),
+                55346.07,
+            ],
+            "stage_1_opex": [
+                value(m_default.fs.stage[1].costing.fixed_operating_cost),
+                11069.21,
+            ],
+            "stage_2_opex": [
+                value(m_default.fs.stage[2].costing.fixed_operating_cost),
+                11069.21,
+            ],
+            "stage_3_opex": [
+                value(m_default.fs.stage[3].costing.fixed_operating_cost),
+                11069.21,
+            ],
+            "casacde_opex": [
+                value(m_default.fs.cascade.costing.variable_operating_cost),
+                114445.00,
+            ],
+            "feed_pump_capex": [
+                value(m_default.fs.feed_pump.costing.capital_cost),
+                42144.68,
+            ],
+            "diafiltrate_pump_capex": [
+                value(m_default.fs.diafiltrate_pump.costing.capital_cost),
+                26352.39,
+            ],
+            "feed_pump_opex": [
+                value(m_default.fs.feed_pump.costing.variable_operating_cost),
+                0.0033866,
+            ],
+            "diafiltrate_pump_opex": [
+                value(m_default.fs.diafiltrate_pump.costing.variable_operating_cost),
+                14731.84,
+            ],
+            "retentate_precipitator_capex": [
+                value(m_default.fs.precipitator["retentate"].costing.capital_cost),
+                209492.90,
+            ],
+            "permeate_precipitator_capex": [
+                value(m_default.fs.precipitator["permeate"].costing.capital_cost),
+                251679.20,
+            ],
+            "mainentance_and_labor": [
+                value(m_default.fs.costing.maintenance_labor_chemical_operating_cost),
+                53253.30,
+            ],
+            "total_capex": [
+                value(m_default.fs.costing.total_capital_cost),
+                1775109.96,
+            ],
+            "total_opex": [
+                value(m_default.fs.costing.total_operating_cost),
+                215637.78,
+            ],
+            "total_annualized_cost": [
+                value(m_default.fs.costing.total_annualized_cost),
+                393148.78,
+            ],
+        }
+
+        for model_result, test_val in test_dict.values():
+            assert pytest.approx(test_val, rel=1e-4) == value(model_result)

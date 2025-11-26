@@ -1139,7 +1139,7 @@ class DiafiltrationModel:
                 flowsheet_costing_block=m.fs.costing,
                 costing_method=DiafiltrationCostingData.cost_pump,
                 costing_method_arguments={
-                    "inlet_pressure": atmospheric_pressure * units.Pa,  # 14.7 psia
+                    "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
                     "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
                     * units.psi,  # this should make m.fs.feed_pump.costing.variable_operating_cost ~0
                     "inlet_vol_flow": feed["solvent"] * units.m**3 / units.h,  # feed
@@ -1151,7 +1151,7 @@ class DiafiltrationModel:
                 flowsheet_costing_block=m.fs.costing,
                 costing_method=DiafiltrationCostingData.cost_pump,
                 costing_method_arguments={
-                    "inlet_pressure": atmospheric_pressure * units.Pa,  # 14.7 psia
+                    "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
                     "outlet_pressure": operating_pressure * units.psi,
                     "inlet_vol_flow": feed["solvent"] * units.m**3 / units.h,  # feed
                     "simple_costing": simple_costing,
@@ -1162,7 +1162,7 @@ class DiafiltrationModel:
             flowsheet_costing_block=m.fs.costing,
             costing_method=DiafiltrationCostingData.cost_pump,
             costing_method_arguments={
-                "inlet_pressure": atmospheric_pressure * units.Pa,  # 14.7 psia
+                "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
                 "outlet_pressure": operating_pressure * units.psi,
                 "inlet_vol_flow": diaf["solvent"] * units.m**3 / units.h,  # diafiltrate
                 "simple_costing": simple_costing,

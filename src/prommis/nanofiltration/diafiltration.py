@@ -170,9 +170,9 @@ def add_global_flowsheet_parameters(m):
         units=units.m,
     )
     m.atmospheric_pressure = Param(
-        initialize=101325,
-        doc="Atmospheric pressure in Pascal",
-        units=units.Pa,
+        initialize=101.325,
+        doc="Atmospheric pressure in kilo-Pascal",
+        units=units.kPa,
     )
     m.operating_pressure = Param(
         initialize=145,

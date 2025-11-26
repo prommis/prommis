@@ -318,7 +318,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             pump factors: https://pubs.acs.org/doi/10.1021/acsestengg.3c00537
 
         Args:
-            inlet_pressure: pressure of inlet stream to pump (Pa)
+            inlet_pressure: pressure of inlet stream to pump (kPa)
             outlet_pressure: pressure of outlet stream from pump (psi)
             inlet_vol_flow: volumetric flow rate of inlet stream to pump (m3/h)
             simple_costing: Boolean to determine which costing method is implemented (default=False)
@@ -335,9 +335,9 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 doc="Operating fluid specific gravity",
                 units=units.dimensionless,
             )
-            blk.pump_correlation_factor = Param(
+            blk.base_pump_cost = Param(
                 initialize=622.59,
-                doc="Pump correlation factor (constant)",
+                doc="Base cost of stainless steel, centrifugal pump",
                 units=units.USD_1996 / (units.kPa * units.m**3 / units.hr) ** 0.39,
             )
             blk.pump_exponential_factor = Param(
@@ -386,10 +386,12 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 doc="Unit variable operating cost",
             )
 
+            # Ref [4] Eqn 5
+            # assumes stainless steel centrifugal pumps
             @blk.Constraint()
             def capital_cost_constraint(blk):
                 return blk.capital_cost == units.convert(
-                    blk.pump_correlation_factor
+                    blk.base_pump_cost
                     * (inlet_vol_flow * inlet_pressure) ** blk.pump_exponential_factor,
                     to_units=blk.costing_package.base_currency,
                 )

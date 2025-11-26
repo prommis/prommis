@@ -468,7 +468,7 @@ class TestFlowsheetCosting(object):
             feed=feed,
             diaf=diaf,
             precipitate=use_precipitators,
-            atmospheric_pressure=101325,  # ambient pressure, Pa
+            atmospheric_pressure=101.325,  # ambient pressure, kPa
             operating_pressure=145,  # nanofiltration operating pressure, psi
             simple_costing=True,
         )
@@ -644,7 +644,7 @@ class TestFlowsheetCosting(object):
             feed=feed,
             diaf=diaf,
             precipitate=use_precipitators,
-            atmospheric_pressure=101325,  # ambient pressure, Pa
+            atmospheric_pressure=101.325,  # ambient pressure, kPa
             operating_pressure=145,  # nanofiltration operating pressure, psi
             simple_costing=False,
         )

@@ -36,7 +36,7 @@ dependencies = [
 [project.optional-dependencies]
 watertap = [
 #    "watertap >= 1.4.0"
-    "watertap @ watertap @ git+https://github.com/watertap-org/watertap@refs/pull/1695/merge",
+    "watertap @ git+https://github.com/watertap-org/watertap@refs/pull/1695/merge",
 ]
 
 

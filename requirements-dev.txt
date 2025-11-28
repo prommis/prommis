@@ -3,11 +3,11 @@ pylint==3.3.9
 astroid==3.3.11
 pytest-cov
 jupyter-book==1.0.*
-# idaes-pse @ git+https://github.com/IDAES/idaes-pse@main
+idaes-pse @ git+https://github.com/IDAES/idaes-pse.git@2.10.0rc0
 isort
 nbmake==1.4.6
 sphinx_design==0.6.0
-# watertap @ git+https://github.com/watertap-org/watertap@refs/pull/1695/merge
+watertap @ git+https://github.com/watertap-org/watertap@refs/pull/1695/merge
 git+https://github.com/dallan-keylogic/idaes-flowsheet-processor.git@change_req
 
 --editable .[watertap,flowsheet-processor]

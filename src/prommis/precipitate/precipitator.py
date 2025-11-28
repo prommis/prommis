@@ -43,7 +43,6 @@ solved by a surrogate or a model equation.
 """
 
 # Import Pyomo libraries
-from pyomo.environ import Constraint
 from pyomo.common.collections import ComponentMap
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 

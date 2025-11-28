@@ -10,7 +10,7 @@ Property package for HCl used to strip metals from the organic phase in solvent 
 Authors: Alejandro Garciadiego, Douglas Allan
 """
 
-from pyomo.environ import Constraint, Param, Set, value, Var, units
+from pyomo.environ import Constraint, Param, Set, Var, units
 
 from idaes.core import (
     Component,

@@ -13,7 +13,6 @@ Authors: Alejandro Garciadiego, Douglas Allan
 from pyomo.common.config import ConfigValue
 from pyomo.environ import Param, Var, units
 
-import idaes.core.util.scaling as iscale
 from idaes.core import (
     MaterialFlowBasis,
     Phase,

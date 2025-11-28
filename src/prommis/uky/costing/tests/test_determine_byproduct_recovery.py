@@ -26,7 +26,6 @@ from pyomo.environ import (
     ConcreteModel,
     Expression,
     Param,
-    TransformationFactory,
     Var,
     value,
 )
@@ -75,7 +74,7 @@ class TestLiCoDiafiltration:
         add_objective(self.m)
         set_scaling(self.m)
         solve_model(self.m)
-        
+
         # Ensure feed pump OPEX is negligible
         assert (
             value(self.m.fs.feed_pump.costing.variable_operating_cost) < 0.005

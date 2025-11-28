@@ -30,13 +30,13 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-#    "idaes-pse @ git+https://github.com/idaes/idaes-pse.git", # TODO update
+    "idaes-pse @ git+https://github.com/IDAES/idaes-pse.git@2.10.0rc0", # TODO update
     "pyomo >=6.9.5",
 ]
 [project.optional-dependencies]
 watertap = [
 #    "watertap >= 1.4.0"
-    "watertap @ git+https://github.com/dallan-keylogic/watertap.git@new_scaling_changes",
+    "watertap @ watertap @ git+https://github.com/watertap-org/watertap@refs/pull/1695/merge",
 ]
 
 

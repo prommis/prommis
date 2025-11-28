@@ -5,6 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 from pyomo.environ import (
+    ComponentMap,
     ConcreteModel,
     Constraint,
     SolverFactory,
@@ -20,6 +21,7 @@ from idaes.core.initialization import (
     BlockTriangularizationInitializer,
     InitializationStatus,
 )
+from idaes.core.scaling.util import jacobian_cond
 from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
     number_total_constraints,
@@ -36,9 +38,11 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 
 import pytest
 
-from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
-from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
+from prommis.properties import HClStrippingParameterBlock, REEOxalateParameterBlock
+from prommis.roasting.ree_oxalate_roaster import (
+    REEOxalateRoaster,
+    REEOxalateRoasterScaler,
+)
 
 """"
 Reference:
@@ -61,31 +65,31 @@ def model():
         **get_prop(gas_species, ["Vap"], EosType.IDEAL),
         doc="gas property",
     )
-    m.fs.prop_gas.set_default_scaling("enth_mol_phase", 1e-3)
-    m.fs.prop_gas.set_default_scaling("pressure", 1e-5)
-    m.fs.prop_gas.set_default_scaling("temperature", 1e-2)
-    m.fs.prop_gas.set_default_scaling("flow_mol", 1e1)
-    m.fs.prop_gas.set_default_scaling("flow_mol_phase", 1e1)
-    m.fs.prop_gas.set_default_scaling("_energy_density_term", 1e-4)
-    m.fs.prop_gas.set_default_scaling("phase_frac", 1)
+    # m.fs.prop_gas.set_default_scaling("enth_mol_phase", 1e-3)
+    # m.fs.prop_gas.set_default_scaling("pressure", 1e-5)
+    # m.fs.prop_gas.set_default_scaling("temperature", 1e-2)
+    # m.fs.prop_gas.set_default_scaling("flow_mol", 1e1)
+    # m.fs.prop_gas.set_default_scaling("flow_mol_phase", 1e1)
+    # m.fs.prop_gas.set_default_scaling("_energy_density_term", 1e-4)
+    # m.fs.prop_gas.set_default_scaling("phase_frac", 1)
 
-    _mf_scale = {
-        "O2": 5,
-        "CO2": 10,
-        "H2O": 5,
-        "N2": 1,
-    }
-    for comp, s in _mf_scale.items():
-        m.fs.prop_gas.set_default_scaling("mole_frac_comp", s, index=comp)
-        m.fs.prop_gas.set_default_scaling(
-            "mole_frac_phase_comp", s, index=("Vap", comp)
-        )
-        m.fs.prop_gas.set_default_scaling(
-            "flow_mol_phase_comp", s * 1e1, index=("Vap", comp)
-        )
+    # _mf_scale = {
+    #     "O2": 5,
+    #     "CO2": 10,
+    #     "H2O": 5,
+    #     "N2": 1,
+    # }
+    # for comp, s in _mf_scale.items():
+    #     m.fs.prop_gas.set_default_scaling("mole_frac_comp", s, index=comp)
+    #     m.fs.prop_gas.set_default_scaling(
+    #         "mole_frac_phase_comp", s, index=("Vap", comp)
+    #     )
+    #     m.fs.prop_gas.set_default_scaling(
+    #         "flow_mol_phase_comp", s * 1e1, index=("Vap", comp)
+    #     )
 
-    m.fs.prop_solid = PrecipitateParameters()
-    m.fs.prop_liquid = AqueousParameter()
+    m.fs.prop_solid = REEOxalateParameterBlock()
+    m.fs.prop_liquid = HClStrippingParameterBlock()
     m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
         property_package_precipitate_solid=m.fs.prop_solid,
@@ -137,6 +141,22 @@ def model():
     m.fs.roaster.liquid_in[0].conc_mass_comp["H2O"].fix(1e6)  # mg/L
     m.fs.roaster.frac_comp_recovery.fix(0.95)
 
+    generic_prop_scaler = m.fs.roaster.gas_in.default_scaler()
+    generic_prop_scaler.default_scaling_factors["flow_mol_phase"] = 1 / fgas
+
+    HCl_prop_scaler = m.fs.roaster.liquid_in.default_scaler()
+    HCl_prop_scaler.default_scaling_factors["flow_vol"] = 1 / (6.75e-4 * 0.018 * 3600)
+
+    submodel_scalers = ComponentMap()
+    submodel_scalers[m.fs.roaster.gas_in] = generic_prop_scaler
+    submodel_scalers[m.fs.roaster.gas_out] = generic_prop_scaler
+
+    submodel_scalers[m.fs.roaster.liquid_in] = HCl_prop_scaler
+
+    roaster_scaler = m.fs.roaster.default_scaler()
+
+    roaster_scaler.scale_model(m.fs.roaster, submodel_scalers=submodel_scalers)
+
     return m
 
 
@@ -164,10 +184,12 @@ def test_build(model):
     assert isinstance(model.fs.roaster.deltaP, Var)
     assert isinstance(model.fs.roaster.flow_mol_outlet_eqn, Constraint)
     assert len(model.fs.roaster.flow_mol_outlet_eqn) == 4
-    assert number_variables(model.fs.roaster) == 167
-    assert number_total_constraints(model.fs.roaster) == 115
+    assert number_variables(model.fs.roaster) == 161
+    assert number_total_constraints(model.fs.roaster) == 111
     assert number_unused_variables(model.fs.roaster) == 1
     assert_units_consistent(model.fs.roaster)
+
+    assert model.fs.roaster.default_scaler == REEOxalateRoasterScaler
 
 
 @pytest.mark.unit
@@ -193,6 +215,9 @@ def test_initialize_and_solve(model):
 def test_numerical_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.assert_no_numerical_warnings()
+
+    assert jacobian_cond(model, scaled=False) == pytest.approx(1.6981e14, rel=1e-3)
+    assert jacobian_cond(model, scaled=True) == pytest.approx(2103.0, rel=1e-3)
 
 
 @pytest.mark.component
@@ -266,8 +291,8 @@ def model_coal_fired():
             "flow_mol_phase_comp", s * 1e1, index=("Vap", comp)
         )
 
-    m.fs.prop_solid = PrecipitateParameters()
-    m.fs.prop_liquid = AqueousParameter()
+    m.fs.prop_solid = REEOxalateParameterBlock()
+    m.fs.prop_liquid = HClStrippingParameterBlock()
     m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
         property_package_precipitate_solid=m.fs.prop_solid,
@@ -349,8 +374,8 @@ def test_build_coal_fired(model_coal_fired):
     assert isinstance(model_coal_fired.fs.roaster.deltaP, Var)
     assert isinstance(model_coal_fired.fs.roaster.flow_mol_outlet_eqn, Constraint)
     assert len(model_coal_fired.fs.roaster.flow_mol_outlet_eqn) == 4
-    assert number_variables(model_coal_fired.fs.roaster) == 167
-    assert number_total_constraints(model_coal_fired.fs.roaster) == 115
+    assert number_variables(model_coal_fired.fs.roaster) == 161
+    assert number_total_constraints(model_coal_fired.fs.roaster) == 111
     assert number_unused_variables(model_coal_fired.fs.roaster) == 1
     assert_units_consistent(model_coal_fired.fs.roaster)
 
@@ -454,8 +479,8 @@ def model_gas_fired():
             "flow_mol_phase_comp", s * 1e1, index=("Vap", comp)
         )
 
-    m.fs.prop_solid = PrecipitateParameters()
-    m.fs.prop_liquid = AqueousParameter()
+    m.fs.prop_solid = REEOxalateParameterBlock()
+    m.fs.prop_liquid = HClStrippingParameterBlock()
     m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
         property_package_precipitate_solid=m.fs.prop_solid,
@@ -537,8 +562,8 @@ def test_build_gas_fired(model_gas_fired):
     assert isinstance(model_gas_fired.fs.roaster.deltaP, Var)
     assert isinstance(model_gas_fired.fs.roaster.flow_mol_outlet_eqn, Constraint)
     assert len(model_gas_fired.fs.roaster.flow_mol_outlet_eqn) == 4
-    assert number_variables(model_gas_fired.fs.roaster) == 167
-    assert number_total_constraints(model_gas_fired.fs.roaster) == 115
+    assert number_variables(model_gas_fired.fs.roaster) == 161
+    assert number_total_constraints(model_gas_fired.fs.roaster) == 111
     assert number_unused_variables(model_gas_fired.fs.roaster) == 1
     assert_units_consistent(model_gas_fired.fs.roaster)
 

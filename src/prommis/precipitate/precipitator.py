@@ -8,7 +8,7 @@ r"""
 Preliminary Precipitator Unit Model
 ===================================
 
-Author: Alejandro Garciadiego
+Authors: Alejandro Garciadiego, Douglas Allan
 
 The Precipitator Unit Model represents an Equilibrium reactor unit model with fixed partition coefficients.
 
@@ -43,6 +43,8 @@ solved by a surrogate or a model equation.
 """
 
 # Import Pyomo libraries
+from pyomo.environ import Constraint
+from pyomo.common.collections import ComponentMap
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
 import idaes.logger as idaeslog
@@ -54,17 +56,97 @@ from idaes.core import (
     declare_process_block_class,
     useDefault,
 )
+from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.config import (
     is_physical_parameter_block,
     is_reaction_parameter_block,
 )
+from idaes.core.util.exceptions import ConfigurationError
 
 _log = idaeslog.getLogger(__name__)
+
+
+class PrecipitatorScaler(CustomScalerBase):
+    """
+    Scaler for the Precipitator unit model.
+    """
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: ComponentMap = None
+    ):
+        """
+        Variable scaling routine for Precipitator.
+
+        Args:
+            model: instance of Precipitator to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: ComponentMap of Scalers to use for sub-models, keyed by submodel local name
+
+        Returns:
+            None
+        """
+        self.call_submodel_scaler_method(
+            submodel=model.cv_aqueous,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+        self.call_submodel_scaler_method(
+            submodel=model.precipitate_state_block,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+        # No unit model level variables
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: ComponentMap = None
+    ):
+        """
+        Constraint scaling routine for Precipitator.
+
+        Args:
+            model: instance of Precipitator to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: ComponentMap of Scalers to use for sub-models, keyed by submodel local name
+
+        Returns:
+            None
+        """
+        self.call_submodel_scaler_method(
+            submodel=model.cv_aqueous,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+        self.call_submodel_scaler_method(
+            submodel=model.precipitate_state_block,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        # TODO remove when old precipitate liquid properties are removed
+        if hasattr(model, "vol_balance"):
+            for condata in model.vol_balance.values():
+                self.scale_constraint_by_nominal_value(condata, overwrite=overwrite)
+
+        for (t, j), condata in model.precipitate_generation.items():
+            self.scale_constraint_by_component(
+                condata,
+                model.precipitate_state_block[t].flow_mol_comp[j],
+                overwrite=overwrite,
+            )
+
+        for condata in model.aqueous_depletion.values():
+            self.scale_constraint_by_nominal_value(condata, overwrite=overwrite)
 
 
 @declare_process_block_class("Precipitator")
 class PrecipitatorData(UnitModelBlockData):
     """ """
+
+    default_scaler = PrecipitatorScaler
 
     CONFIG = UnitModelBlockData.CONFIG()
 
@@ -185,6 +267,16 @@ and used when constructing these,
 see reaction package for documentation.}""",
         ),
     )
+    # TODO remove when old precipitate liquid properties are removed
+    CONFIG.declare(
+        "make_volume_balance_constraint",
+        ConfigValue(
+            default=False,
+            domain=Bool,
+            description="Flag whether to create volume balance constraint",
+            doc="Flag whether to create legacy volume balance constraint",
+        ),
+    )
 
     def build(self):
         """
@@ -208,7 +300,7 @@ see reaction package for documentation.}""",
         tmp_dict = dict(**self.config.property_package_args_precipitate)
         tmp_dict["has_phase_equilibrium"] = False
         tmp_dict["defined_state"] = False
-        self.cv_precipitate = (
+        self.precipitate_state_block = (
             self.config.property_package_precipitate.build_state_block(
                 self.flowsheet().time, doc="Vapor phase properties", **tmp_dict
             )
@@ -219,7 +311,7 @@ see reaction package for documentation.}""",
         # TODO : Could add code to convert flow bases, but not now
         t_init = self.flowsheet().time.first()
         if (
-            self.cv_precipitate[t_init].get_material_flow_basis()
+            self.precipitate_state_block[t_init].get_material_flow_basis()
             != self.cv_aqueous.properties_out[t_init].get_material_flow_basis()
         ):
             raise ConfigurationError(
@@ -230,16 +322,21 @@ see reaction package for documentation.}""",
         # add ports
         self.add_inlet_port(block=self.cv_aqueous, name="aqueous_inlet")
         self.add_outlet_port(block=self.cv_aqueous, name="aqueous_outlet")
-        self.add_outlet_port(block=self.cv_precipitate, name="precipitate_outlet")
+        self.add_outlet_port(
+            block=self.precipitate_state_block, name="precipitate_outlet"
+        )
 
         prop_aq = self.config.property_package_aqueous
         prop_s = self.config.property_package_precipitate
 
-        @self.Constraint(self.flowsheet().time, doc="volume balance equation.")
-        def vol_balance(blk, t):
-            return blk.cv_aqueous.properties_out[t].flow_vol == (
-                blk.cv_aqueous.properties_in[t].flow_vol
-            )
+        # TODO remove when old precipitate liquid properties are removed
+        if self.config.make_volume_balance_constraint:
+
+            @self.Constraint(self.flowsheet().time, doc="volume balance equation.")
+            def vol_balance(blk, t):
+                return blk.cv_aqueous.properties_out[t].flow_vol == (
+                    blk.cv_aqueous.properties_in[t].flow_vol
+                )
 
         @self.Constraint(
             self.flowsheet().time,
@@ -247,7 +344,7 @@ see reaction package for documentation.}""",
             doc="Mass balance equations precipitate.",
         )
         def precipitate_generation(blk, t, comp):
-            return blk.cv_precipitate[t].flow_mol_comp[comp] == (
+            return blk.precipitate_state_block[t].flow_mol_comp[comp] == (
                 (
                     blk.cv_aqueous.properties_in[t].flow_mol_comp[prop_s.react[comp]]
                     - blk.cv_aqueous.properties_out[t].flow_mol_comp[prop_s.react[comp]]
@@ -261,6 +358,9 @@ see reaction package for documentation.}""",
             doc="Mass balance equations aqueous.",
         )
         def aqueous_depletion(blk, t, comp):
+            # if comp == "H2O":
+            #     # H2O conservation is taken care of by vol_balance constraint
+            #     return Constraint.Skip
             return blk.cv_aqueous.properties_out[t].conc_mass_comp[
                 comp
             ] * blk.cv_aqueous.properties_out[t].flow_vol == (

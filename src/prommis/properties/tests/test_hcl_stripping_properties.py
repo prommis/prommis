@@ -12,7 +12,7 @@ from idaes.core import FlowsheetBlock
 from idaes.core.scaling.util import (
     jacobian_cond,
     list_unscaled_constraints,
-    list_unscaled_variables
+    list_unscaled_variables,
 )
 from idaes.core.util.model_statistics import degrees_of_freedom
 
@@ -23,6 +23,7 @@ from prommis.properties.hcl_stripping_properties import (
     HClStrippingPropertiesScaler,
 )
 
+
 class TestDefinedStateTrue(object):
     @pytest.fixture(scope="class")
     def frame(self):
@@ -32,7 +33,7 @@ class TestDefinedStateTrue(object):
         m.fs.prec_sol = HClStrippingParameterBlock()
 
         m.fs.state = m.fs.prec_sol.build_state_block(m.fs.time, defined_state=True)
-        
+
         return m
 
     @pytest.mark.unit
@@ -82,10 +83,10 @@ class TestDefinedStateTrue(object):
                 "This scaler requires the user to provide a default scaling "
                 "factor for fs.state[0.0].flow_vol, but no default scaling "
                 "factor was set."
-            )
+            ),
         ):
             scaler_obj.scale_model(m.fs.state[0])
-        
+
         scaler_obj.default_scaling_factors["flow_vol"] = 0.1
         scaler_obj.scale_model(m.fs.state[0])
 
@@ -100,6 +101,7 @@ class TestDefinedStateTrue(object):
         assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.401271e6)
         assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(36.685066)
 
+
 class TestDefinedStateFalse(object):
     @pytest.fixture(scope="class")
     def frame(self):
@@ -109,7 +111,7 @@ class TestDefinedStateFalse(object):
         m.fs.prec_sol = HClStrippingParameterBlock()
 
         m.fs.state = m.fs.prec_sol.build_state_block(m.fs.time, defined_state=False)
-        
+
         return m
 
     @pytest.mark.unit
@@ -123,13 +125,11 @@ class TestDefinedStateFalse(object):
         assert isinstance(m.fs.state[0].flow_mol_comp, Var)
         assert not m.fs.state[0].is_property_constructed("pH_phase")
 
-
         assert isinstance(m.fs.state[0].flow_mol_comp_eqn, Constraint)
         assert isinstance(m.fs.state[0].conc_mol_comp_eqn, Constraint)
         assert isinstance(m.fs.state[0].h2o_concentration_eqn, Constraint)
         assert m.fs.state[0].h2o_concentration_eqn.active
         assert not m.fs.state[0].is_property_constructed("pH_phase_eqn")
-
 
         m.fs.state[0].flow_vol.set_value(10)
         for i in m.fs.prec_sol.dissolved_elements:
@@ -163,10 +163,10 @@ class TestDefinedStateFalse(object):
                 "This scaler requires the user to provide a default scaling "
                 "factor for fs.state[0.0].flow_vol, but no default scaling "
                 "factor was set."
-            )
+            ),
         ):
             scaler_obj.scale_model(m.fs.state[0])
-        
+
         scaler_obj.default_scaling_factors["flow_vol"] = 0.1
         scaler_obj.scale_model(m.fs.state[0])
 

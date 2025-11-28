@@ -272,7 +272,7 @@ class _HClStrippingStateBlock(StateBlock):
 @declare_process_block_class(
     "HClStrippingStateBlock", block_class=_HClStrippingStateBlock
 )
-class HClStrippingStateBlockkData(StateBlockData):
+class HClStrippingStateBlockData(StateBlockData):
     """
     State block for HCl solution generated in oxalate precipitator.
 

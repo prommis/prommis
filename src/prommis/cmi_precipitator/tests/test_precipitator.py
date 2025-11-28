@@ -4,7 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-from pyomo.environ import ConcreteModel, Constraint, assert_optimal_termination, value
+from pyomo.environ import ConcreteModel, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
@@ -16,9 +16,7 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
-from idaes.core.util.scaling import (
-    constraint_scaling_transform,
-    get_scaling_factor,
+from idaes.core.scaling.util import (
     set_scaling_factor,
 )
 
@@ -177,13 +175,8 @@ class TestPrec(object):
         set_scaling_factor(
             prec.fs.unit.log_q_precipitate_equilibrium_rxn_eqns[0.0, "E3"], 1e-10
         )
-        for con in prec.fs.component_data_objects(Constraint, active=True):
-            scaling_factor = get_scaling_factor(con, default=None)
-            if scaling_factor is not None:
-                constraint_scaling_transform(con, scaling_factor)
 
         solver = get_solver()
-        solver.options["nlp_scaling_method"] = "user-scaling"
         results = solver.solve(prec)
 
         assert_optimal_termination(results)

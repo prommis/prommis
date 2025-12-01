@@ -347,7 +347,11 @@ class TestFlowsheet(object):
             m.fs.split_precipitate_recycle.waste.flow_mass_solute[0, "Li"]
         )
 
-        # system recoveries
+        # membrane cascade recoveries
+        assert pytest.approx(0.5178, abs=1e-4) == value(m.rec_perc_co)
+        assert pytest.approx(0.9353, abs=1e-4) == value(m.rec_perc_li)
+
+        # overall system recoveries
         assert pytest.approx(0.525, abs=1e-3) == value(value(m.prec_perc_co))
         assert pytest.approx(0.799, abs=1e-3) == value(value(m.prec_perc_li))
 

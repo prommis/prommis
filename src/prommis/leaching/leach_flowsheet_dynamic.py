@@ -26,7 +26,7 @@ from idaes.core.util.scaling import set_scaling_factor
 from idaes.core.solvers import get_solver
 
 from prommis.leaching.leach_train import LeachingTrain
-from prommis.leaching.leach_reactions import CoalRefuseLeachingReactions
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 
@@ -49,7 +49,7 @@ def build_model(time_duration, number_of_tanks):
 
     m.fs.leach_soln = LeachSolutionParameters()
     m.fs.coal = CoalRefuseParameters()
-    m.fs.leach_rxns = CoalRefuseLeachingReactions()
+    m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
     m.fs.leach = LeachingTrain(
         number_of_tanks=number_of_tanks,

@@ -1,3 +1,10 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+
 from pyomo.environ import (
     ConcreteModel,
     units,
@@ -13,10 +20,8 @@ from idaes.core.solvers import get_solver
 
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import (
-    SolventExtraction,
-    SolventExtractionInitializer,
-)
+from prommis.solvent_extraction.solvent_extraction import SolventExtraction
+
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,
 )
@@ -24,8 +29,14 @@ from prommis.solvent_extraction.solvent_extraction_reaction_package import (
 
 def build_model(dosage, number_of_stages):
     """
-    Build model with dosage and number of stages as arguments
+    Method to build a steady state model for solvent extraction
+    Args:
+        dosage: percentage dosage of extractant to the system.
+        number_of_stages: number of stages in the model.
+    Returns:
+        m: ConcreteModel object with the solvent extraction system.
     """
+
     m = ConcreteModel()
 
     m.fs = FlowsheetBlock(dynamic=False)
@@ -59,11 +70,17 @@ def build_model(dosage, number_of_stages):
 
 def set_inputs(m, dosage):
     """
-    Set feed values to the model
+    Set inlet conditions to the solvent extraction model and fixing the parameters
+    of the model.
+    Args:
+        m: ConcreteModel object with the solvent extraction system.
+        dosage: percentage dosage of extractant to the system.
+    Returns:
+        None
+
     """
 
     m.fs.solex.mscontactor.volume[:].fix(0.4 * units.m**3)
-    m.fs.solex.mscontactor.volume_frac_stream[:, :, "aqueous"].fix(0.5)
     m.fs.solex.area_cross_stage[:] = 1
     m.fs.solex.elevation[:] = 0
 
@@ -112,9 +129,15 @@ def set_inputs(m, dosage):
     m.fs.solex.mscontactor.organic_inlet_state[:].temperature.fix(305.15 * units.K)
 
 
-def main(dosage, number_of_stages):
+def model_buildup_and_set_inputs(dosage, number_of_stages):
     """
-    Main function to run the model.
+    A function to build up the solvent extraction model and set inlet streams
+    to the model.
+    Args:
+        dosage: percentage dosage of extractant to the system.
+        number_of_stages: Number of stages in the model.
+    Returns:
+        m: ConcreteModel object with the solvent extraction system.
     """
     m = build_model(dosage, number_of_stages)
     set_inputs(m, dosage)
@@ -122,13 +145,51 @@ def main(dosage, number_of_stages):
     return m
 
 
+def initialize_steady_model(m):
+    """
+    A function to initialize the solvent extraction model with the default initializer
+    after setting input conditions.
+    Args:
+        m: ConcreteModel object with the solvent extraction system.
+    Returns:
+        None
+    """
+    initializer = m.fs.solex.default_initializer()
+    initializer.initialize(m.fs.solex)
+
+
+def solve_model(m):
+    """
+    A function to solve the initialized solvent extraction model.
+    Args:
+        m: ConcreteModel object with the solvent extraction system.
+    Returns:
+        None
+    """
+    solver = get_solver("ipopt_v2")
+    results = solver.solve(m, tee=True)
+    return results
+
+
+def main(dosage, number_of_stages):
+    """
+    The main function used to build a solvent extraction model, set inlets to the model,
+    initialize the model, solve the model and export the results to a json file.
+    Args:
+        dosage: percentage dosage of extractant to the system.
+        number_of_stages: Number of stages in the model.
+    Returns:
+        m: ConcreteModel object with the solvent extraction system.
+    """
+    m = model_buildup_and_set_inputs(dosage, number_of_stages)
+    initialize_steady_model(m)
+    results = solve_model(m)
+
+    return m, results
+
+
 dosage = 5
 number_of_stages = 3
 
-m = main(dosage, number_of_stages)
-
-initializer = SolventExtractionInitializer()
-initializer.initialize(m.fs.solex)
-
-solver = get_solver(solver="ipopt_v2")
-solver.solve(m, tee=True)
+if __name__ == "__main__":
+    m, results = main(dosage, number_of_stages)

@@ -357,9 +357,6 @@ see reaction package for documentation.}""",
             doc="Mass balance equations aqueous.",
         )
         def aqueous_depletion(blk, t, comp):
-            # if comp == "H2O":
-            #     # H2O conservation is taken care of by vol_balance constraint
-            #     return Constraint.Skip
             return blk.cv_aqueous.properties_out[t].conc_mass_comp[
                 comp
             ] * blk.cv_aqueous.properties_out[t].flow_vol == (

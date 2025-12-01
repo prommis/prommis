@@ -663,10 +663,18 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             )
 
         if simple_costing == True:
-            blk.precipitator_factor_capital = Param(
-                initialize=1000,
+            # Ref: page 6 of Loh et al; approximate slope of 150 psig line
+            blk.precipitator_volume_factor_capital = Param(
+                initialize=500,
                 doc="Precipitator factor (capital) for simple costing",
                 units=units.USD_1998 / units.m**3,
+            )
+
+            # Ref: page 6 of Loh et al; approximate minimum cost using 150 psig line
+            blk.precipitator_base_cost_capital = Param(
+                initialize=6000,
+                doc="Precipitator base cost for simple costing",
+                units=units.USD_1998,
             )
 
             # create the capital cost variable
@@ -680,7 +688,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             @blk.Constraint()
             def capital_cost_constraint(blk):
                 return blk.capital_cost == units.convert(
-                    blk.precipitator_factor_capital * precip_volume
-                    + 12000 * units.USD_1998,
+                    blk.precipitator_volume_factor_capital * precip_volume
+                    + blk.precipitator_base_cost_capital,
                     to_units=blk.costing_package.base_currency,
                 )

@@ -65,28 +65,6 @@ def model():
         **get_prop(gas_species, ["Vap"], EosType.IDEAL),
         doc="gas property",
     )
-    # m.fs.prop_gas.set_default_scaling("enth_mol_phase", 1e-3)
-    # m.fs.prop_gas.set_default_scaling("pressure", 1e-5)
-    # m.fs.prop_gas.set_default_scaling("temperature", 1e-2)
-    # m.fs.prop_gas.set_default_scaling("flow_mol", 1e1)
-    # m.fs.prop_gas.set_default_scaling("flow_mol_phase", 1e1)
-    # m.fs.prop_gas.set_default_scaling("_energy_density_term", 1e-4)
-    # m.fs.prop_gas.set_default_scaling("phase_frac", 1)
-
-    # _mf_scale = {
-    #     "O2": 5,
-    #     "CO2": 10,
-    #     "H2O": 5,
-    #     "N2": 1,
-    # }
-    # for comp, s in _mf_scale.items():
-    #     m.fs.prop_gas.set_default_scaling("mole_frac_comp", s, index=comp)
-    #     m.fs.prop_gas.set_default_scaling(
-    #         "mole_frac_phase_comp", s, index=("Vap", comp)
-    #     )
-    #     m.fs.prop_gas.set_default_scaling(
-    #         "flow_mol_phase_comp", s * 1e1, index=("Vap", comp)
-    #     )
 
     m.fs.prop_solid = REEOxalateParameterBlock()
     m.fs.prop_liquid = HClStrippingParameterBlock()

@@ -336,12 +336,6 @@ and used when constructing these,
             doc="Number of discretization points in the z-direction (across membrane thickness)",
         ),
     )
-    CONFIG.declare(
-        "charged_membrane",
-        ConfigValue(
-            default=True, doc="Boolean argument if the membrane has a surface charge"
-        ),
-    )
 
     def build(self):
         """
@@ -376,20 +370,12 @@ and used when constructing these,
             units=units.m,
             doc="Thickness of membrane (z-direction)",
         )
-        if self.config.charged_membrane:
-            self.membrane_fixed_charge = Param(
-                initialize=-140,
-                mutable=True,
-                units=units.mol / units.m**3,  # mM
-                doc="Fixed charge on the membrane",
-            )
-        else:
-            self.membrane_fixed_charge = Param(
-                initialize=0,
-                mutable=True,
-                units=units.mol / units.m**3,  # mM
-                doc="Fixed charge on the membrane",
-            )
+        self.membrane_fixed_charge = Param(
+            initialize=-140,
+            mutable=True,
+            units=units.mol / units.m**3,  # mM
+            doc="Fixed charge on the membrane",
+        )
         self.membrane_permeability = Param(
             initialize=0.03,
             mutable=True,

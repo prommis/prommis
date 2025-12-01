@@ -55,7 +55,6 @@ def main():
         property_package=m.fs.properties,
         NFE_module_length=10,
         NFE_membrane_thickness=5,
-        charged_membrane=True,
     )
 
     # add product blocks for retentate and permeate

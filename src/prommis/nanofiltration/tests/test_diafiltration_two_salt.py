@@ -46,14 +46,12 @@ def test_zero_chi_implementation():
         property_package=m.fs.properties,
         NFE_module_length=10,
         NFE_membrane_thickness=5,
-        charged_membrane=False,
     )
-
-    assert value(m.fs.unit.membrane_fixed_charge) == 0
 
     m.fs.unit.total_module_length.fix(4)
     m.fs.unit.total_membrane_length.fix(40)
     m.fs.unit.applied_pressure.fix(15)
+    m.fs.unit.membrane_fixed_charge.set_value(0)
 
     dt = DiagnosticsToolbox(m.fs.unit)
     dt.assert_no_structural_warnings()
@@ -119,7 +117,6 @@ def diafiltration_two_salt():
         property_package=m.fs.properties,
         NFE_module_length=10,
         NFE_membrane_thickness=5,
-        charged_membrane=True,
     )
 
     assert value(m.fs.unit.membrane_fixed_charge) == -140
@@ -137,7 +134,7 @@ def diafiltration_two_salt():
 
 @pytest.mark.unit
 def test_config(diafiltration_two_salt):
-    assert len(diafiltration_two_salt.fs.unit.config) == 7
+    assert len(diafiltration_two_salt.fs.unit.config) == 6
 
     assert not diafiltration_two_salt.fs.unit.config.dynamic
     assert not diafiltration_two_salt.fs.unit.config.has_holdup
@@ -148,7 +145,6 @@ def test_config(diafiltration_two_salt):
     )
     assert diafiltration_two_salt.fs.unit.config.NFE_module_length is 10
     assert diafiltration_two_salt.fs.unit.config.NFE_membrane_thickness is 5
-    assert diafiltration_two_salt.fs.unit.config.charged_membrane is True
 
 
 class TestDiafiltrationTwoSalt(object):

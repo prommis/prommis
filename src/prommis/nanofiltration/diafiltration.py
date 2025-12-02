@@ -38,7 +38,6 @@ from idaes.core.solvers import get_solver
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util.scaling import constraint_autoscale_large_jac
 from idaes.models.unit_models import (
     Mixer,
     MixerInitializer,
@@ -91,13 +90,8 @@ def main():
     add_product_constraints(m, Li_recovery_bound=0.95, Co_recovery_bound=0.635)
     add_objective(m)
 
-    # Create a scaled version of the model to solve
     set_scaling(m)
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-    solve_model(scaled_model)
-    # Propagate results back to unscaled model
-    scaling.propagate_solution(scaled_model, m)
+    solve_model(m, tee=False)
 
     # TODO: add Boolean variable to calculate pump OPEX
     # Verify the feed pump operating pressure workaround is valid
@@ -784,9 +778,6 @@ def set_scaling(m):
         m: Pyomo model
     """
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
-
-    # Add scaling factors for poorly scaled constraints
-    constraint_autoscale_large_jac(m)
 
     # Add scaling factors for poorly scaled variables
     m.scaling_factor[m.fs.cascade.costing.variable_operating_cost] = 1e-5

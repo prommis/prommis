@@ -362,7 +362,6 @@ class REEOxalateRoasterScaler(CustomScalerBase):
                 condata, model.enth_mol_comp_product[idx], overwrite=overwrite
             )
 
-        # import pdb; pdb.set_trace()
         for idx, condata in model.energy_balance_eqn.items():
             self.scale_constraint_by_nominal_value(condata, overwrite=overwrite)
 

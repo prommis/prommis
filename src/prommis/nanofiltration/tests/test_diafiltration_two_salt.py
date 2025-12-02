@@ -429,7 +429,7 @@ class TestDiafiltrationTwoSalt(object):
         assert isinstance(
             diafiltration_two_salt.fs.unit.osmotic_pressure_calculation, Constraint
         )
-        assert len(diafiltration_two_salt.fs.unit.osmotic_pressure_calculation) == 11
+        assert len(diafiltration_two_salt.fs.unit.osmotic_pressure_calculation) == 10
 
         assert isinstance(
             diafiltration_two_salt.fs.unit.electroneutrality_retentate, Constraint

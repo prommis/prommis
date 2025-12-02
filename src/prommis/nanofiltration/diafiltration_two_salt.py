@@ -316,9 +316,16 @@ and used when constructing these,
 
     def add_mutable_parameters(self):
         """
-        Adds parameters for the two salt diafiltration unit model.
+        Adds default parameters for the two salt diafiltration unit model.
 
-        Assigns default values that can be changed by the user during implementation.
+        Values can be changed by the user during implementation.
+
+        Assumes membrane thickness of 100 nm.
+
+        Membrane permeability and fixed charged are estimated from
+        Liu, Xinhong, et al. "Characterizing Transport Properties of Surface
+            Charged Nanofiltration Membranes via Model-Based Data Analytics."
+            Industrial & Engineering Chemistry Research (2025).
         """
         self.numerical_zero_tolerance = Param(
             initialize=1e-10,
@@ -338,7 +345,7 @@ and used when constructing these,
             doc="Fixed charge on the membrane",
         )
         self.membrane_permeability = Param(
-            initialize=0.03,
+            initialize=0.01,
             mutable=True,
             units=units.m / units.h / units.bar,
             doc="Hydraulic permeability coefficient",
@@ -353,6 +360,11 @@ and used when constructing these,
     def add_variables(self):
         """
         Adds variables for the two salt diafiltration unit model.
+
+        Membrane module dimensions and maximum flowrate (17 m3/h) are
+        estimated from NF270-440 modules.
+
+        Assumes 4 modules in series.
         """
         # define length scales
         self.dimensionless_module_length = ContinuousSet(bounds=(0, 1))
@@ -367,26 +379,26 @@ and used when constructing these,
 
         # add global variables
         self.total_module_length = Var(
-            initialize=4,
+            initialize=4,  # 4 tubes that are ~1m long each (NF270-440)
             units=units.m,
             bounds=[1e-11, None],
             doc="Width of the membrane (x-direction)",
         )
         self.total_membrane_length = Var(
-            initialize=40,
+            initialize=41,  # 41 m of length in each tube (NF270-440)
             units=units.m,
             bounds=[1e-11, None],
             doc="Length of the membrane, wound radially",
         )
         self.applied_pressure = Var(
-            initialize=15,
+            initialize=7.5,
             units=units.bar,
-            bounds=[1e-11, None],
+            bounds=[1e-11, 41],  # maximum operating presssure (NF270-440)
             doc="Pressure applied to membrane",
         )
         self.feed_flow_volume = Var(
             self.time,
-            initialize=100,
+            initialize=12.5,
             units=units.m**3 / units.h,
             bounds=[1e-11, None],
             doc="Volumetric flow rate of the feed",
@@ -406,7 +418,7 @@ and used when constructing these,
         )
         self.diafiltrate_flow_volume = Var(
             self.time,
-            initialize=30,
+            initialize=3.75,
             units=units.m**3 / units.h,
             bounds=[1e-11, None],
             doc="Volumetric flow rate of the diafiltrate",
@@ -435,21 +447,21 @@ and used when constructing these,
         )
         self.mol_flux_lithium = Var(
             self.dimensionless_module_length,
-            initialize=50,
+            initialize=5,
             units=units.mol / units.m**2 / units.h,
             bounds=[1e-11, None],
             doc="Mole flux of lithium across the membrane (z-direction, x-dependent)",
         )
         self.mol_flux_cobalt = Var(
             self.dimensionless_module_length,
-            initialize=60,
+            initialize=6,
             units=units.mol / units.m**2 / units.h,
             bounds=[1e-11, None],
             doc="Mole flux of cobalt across the membrane (z-direction, x-dependent)",
         )
         self.mol_flux_chloride = Var(
             self.dimensionless_module_length,
-            initialize=170,
+            initialize=17,
             units=units.mol / units.m**2 / units.h,
             bounds=[1e-11, None],
             doc="Mole flux of chloride across the membrane (z-direction, x-dependent)",
@@ -457,7 +469,7 @@ and used when constructing these,
         self.retentate_flow_volume = Var(
             self.time,
             self.dimensionless_module_length,
-            initialize=100,
+            initialize=4.25,
             units=units.m**3 / units.h,
             bounds=[1e-11, None],
             doc="Volumetric flow rate of the retentate, x-dependent",
@@ -479,7 +491,7 @@ and used when constructing these,
         self.permeate_flow_volume = Var(
             self.time,
             self.dimensionless_module_length,
-            initialize=30,
+            initialize=12,
             units=units.m**3 / units.h,
             bounds=[1e-11, None],
             doc="Volumetric flow rate of the permeate, x-dependent",
@@ -1256,13 +1268,31 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                blk.config.property_package.partition_coefficient_retentate["Li"]
-                * blk.config.property_package.partition_coefficient_retentate["Cl"]
-                * blk.retentate_conc_mol_comp[0, x, "Li"]
-                * blk.retentate_conc_mol_comp[0, x, "Cl"]
+                (
+                    blk.config.property_package.partition_coefficient_retentate["Li"]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.config.property_package.partition_coefficient_retentate["Cl"]
+                    ** blk.config.property_package.charge["Li"]
+                )
+                * (
+                    blk.retentate_conc_mol_comp[0, x, "Li"]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.retentate_conc_mol_comp[0, x, "Cl"]
+                    ** blk.config.property_package.charge["Li"]
+                )
             ) == (
-                blk.membrane_conc_mol_lithium[x, 0]
-                * blk.membrane_conc_mol_chloride[x, 0]
+                (
+                    blk.membrane_conc_mol_lithium[x, 0]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.membrane_conc_mol_chloride[x, 0]
+                    ** blk.config.property_package.charge["Li"]
+                )
             )
 
         self.retentate_membrane_interface_lithium = Constraint(
@@ -1273,16 +1303,31 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                blk.config.property_package.partition_coefficient_retentate["Co"]
-                * blk.config.property_package.partition_coefficient_retentate["Cl"]
-                ** blk.config.property_package.charge["Co"]
-                * blk.retentate_conc_mol_comp[0, x, "Co"]
-                * blk.retentate_conc_mol_comp[0, x, "Cl"]
-                ** blk.config.property_package.charge["Co"]
+                (
+                    blk.config.property_package.partition_coefficient_retentate["Co"]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.config.property_package.partition_coefficient_retentate["Cl"]
+                    ** blk.config.property_package.charge["Co"]
+                )
+                * (
+                    blk.retentate_conc_mol_comp[0, x, "Co"]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.retentate_conc_mol_comp[0, x, "Cl"]
+                    ** blk.config.property_package.charge["Co"]
+                )
             ) == (
-                blk.membrane_conc_mol_cobalt[x, 0]
-                * blk.membrane_conc_mol_chloride[x, 0]
-                ** blk.config.property_package.charge["Co"]
+                (
+                    blk.membrane_conc_mol_cobalt[x, 0]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.membrane_conc_mol_chloride[x, 0]
+                    ** blk.config.property_package.charge["Co"]
+                )
             )
 
         self.retentate_membrane_interface_cobalt = Constraint(
@@ -1293,13 +1338,31 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                blk.config.property_package.partition_coefficient_permeate["Li"]
-                * blk.config.property_package.partition_coefficient_permeate["Cl"]
-                * blk.permeate_conc_mol_comp[0, x, "Li"]
-                * blk.permeate_conc_mol_comp[0, x, "Cl"]
+                (
+                    blk.config.property_package.partition_coefficient_permeate["Li"]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.config.property_package.partition_coefficient_permeate["Cl"]
+                    ** blk.config.property_package.charge["Li"]
+                )
+                * (
+                    blk.permeate_conc_mol_comp[0, x, "Li"]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.permeate_conc_mol_comp[0, x, "Cl"]
+                    ** blk.config.property_package.charge["Li"]
+                )
             ) == (
-                blk.membrane_conc_mol_lithium[x, 1]
-                * blk.membrane_conc_mol_chloride[x, 1]
+                (
+                    blk.membrane_conc_mol_lithium[x, 1]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.membrane_conc_mol_chloride[x, 1]
+                    ** blk.config.property_package.charge["Li"]
+                )
             )
 
         self.membrane_permeate_interface_lithium = Constraint(
@@ -1310,16 +1373,31 @@ and used when constructing these,
             if x == 0:
                 return Constraint.Skip
             return (
-                blk.config.property_package.partition_coefficient_permeate["Co"]
-                * blk.config.property_package.partition_coefficient_permeate["Cl"]
-                ** blk.config.property_package.charge["Co"]
-                * blk.permeate_conc_mol_comp[0, x, "Co"]
-                * blk.permeate_conc_mol_comp[0, x, "Cl"]
-                ** blk.config.property_package.charge["Co"]
+                (
+                    blk.config.property_package.partition_coefficient_permeate["Co"]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.config.property_package.partition_coefficient_permeate["Cl"]
+                    ** blk.config.property_package.charge["Co"]
+                )
+                * (
+                    blk.permeate_conc_mol_comp[0, x, "Co"]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.permeate_conc_mol_comp[0, x, "Cl"]
+                    ** blk.config.property_package.charge["Co"]
+                )
             ) == (
-                blk.membrane_conc_mol_cobalt[x, 1]
-                * blk.membrane_conc_mol_chloride[x, 1]
-                ** blk.config.property_package.charge["Co"]
+                (
+                    blk.membrane_conc_mol_cobalt[x, 1]
+                    ** (-blk.config.property_package.charge["Cl"])
+                )
+                * (
+                    blk.membrane_conc_mol_chloride[x, 1]
+                    ** blk.config.property_package.charge["Co"]
+                )
             )
 
         self.membrane_permeate_interface_cobalt = Constraint(

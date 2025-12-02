@@ -48,9 +48,9 @@ def test_zero_chi_implementation():
         NFE_membrane_thickness=5,
     )
 
-    m.fs.unit.total_module_length.fix(4)
-    m.fs.unit.total_membrane_length.fix(40)
-    m.fs.unit.applied_pressure.fix(15)
+    m.fs.unit.total_module_length.fix()
+    m.fs.unit.total_membrane_length.fix()
+    m.fs.unit.applied_pressure.fix()
     m.fs.unit.membrane_fixed_charge.set_value(0)
 
     dt = DiagnosticsToolbox(m.fs.unit)
@@ -68,35 +68,35 @@ def test_zero_chi_implementation():
     test_dict_zero_chi = {
         "retentate_final": [
             value(m.fs.unit.retentate_flow_volume[0, 1]),
-            63.611183365466104,
+            4.2918725888627725,
         ],
         "lithium_retentate_final": [
             value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Li"]),
-            194.301852498677,
+            192.59324298587342,
         ],
         "cobalt_retentate_final": [
             value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Co"]),
-            225.74562980118742,
+            223.44760568527482,
         ],
         "chloride_retentate_final": [
             value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Cl"]),
-            645.7931121010519,
+            639.4884543564231,
         ],
         "permeate_final": [
             value(m.fs.unit.permeate_flow_volume[0, 1]),
-            66.34902874896852,
+            11.957147777311302,
         ],
         "lithium_permeate_final": [
             value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Li"]),
-            190.76586206212184,
+            191.96627751421204,
         ],
         "cobalt_permeate_final": [
             value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Co"]),
-            220.97832802910682,
+            222.60051761723855,
         ],
         "chloride_permeate_final": [
             value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Cl"]),
-            632.7225181203355,
+            637.1673127486891,
         ],
     }
 
@@ -123,9 +123,9 @@ def diafiltration_two_salt():
 
     assert degrees_of_freedom(m.fs.unit) == 3
 
-    m.fs.unit.total_module_length.fix(4)
-    m.fs.unit.total_membrane_length.fix(40)
-    m.fs.unit.applied_pressure.fix(15)
+    m.fs.unit.total_module_length.fix()
+    m.fs.unit.total_membrane_length.fix()
+    m.fs.unit.applied_pressure.fix()
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -166,7 +166,7 @@ class TestDiafiltrationTwoSalt(object):
         assert value(diafiltration_two_salt.fs.unit.membrane_fixed_charge) == -140
 
         assert isinstance(diafiltration_two_salt.fs.unit.membrane_permeability, Param)
-        assert value(diafiltration_two_salt.fs.unit.membrane_permeability) == 0.03
+        assert value(diafiltration_two_salt.fs.unit.membrane_permeability) == 0.01
 
         assert isinstance(diafiltration_two_salt.fs.unit.temperature, Param)
         assert value(diafiltration_two_salt.fs.unit.temperature) == 298
@@ -787,47 +787,47 @@ class TestDiafiltrationTwoSalt(object):
         test_dict = {
             "retentate_final": [
                 value(diafiltration_two_salt.fs.unit.retentate_flow_volume[0, 1]),
-                62.92841852411947,
+                4.247958521740219,
             ],
             "lithium_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Li"]
                 ),
-                194.36923603496942,
+                192.6044474143687,
             ],
             "cobalt_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Co"]
                 ),
-                225.16701476590612,
+                223.2315850704493,
             ],
             "chloride_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Cl"]
                 ),
-                644.7032655667816,
+                639.0676175552672,
             ],
             "permeate_final": [
                 value(diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 1]),
-                67.03837350202173,
+                12.001247151436175,
             ],
             "lithium_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Li"]
                 ),
-                190.79711736219883,
+                191.975023527502,
             ],
             "cobalt_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Co"]
                 ),
-                221.2483889890605,
+                222.54094050056483,
             ],
             "chloride_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Cl"]
                 ),
-                633.2938953403198,
+                637.0569045286317,
             ],
         }
 

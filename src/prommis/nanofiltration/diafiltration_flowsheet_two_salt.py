@@ -239,7 +239,10 @@ def plot_results(m):
             percent_recovery.append(
                 (
                     value(m.fs.membrane.permeate_flow_volume[0, x_val])
-                    / value(m.fs.membrane.feed_flow_volume[0])
+                    / (
+                        value(m.fs.membrane.feed_flow_volume[0])
+                        + value(m.fs.membrane.diafiltrate_flow_volume[0])
+                    )
                     * 100
                 )
             )

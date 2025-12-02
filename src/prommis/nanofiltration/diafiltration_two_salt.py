@@ -322,10 +322,8 @@ and used when constructing these,
 
         Assumes membrane thickness of 100 nm.
 
-        Membrane permeability and fixed charged are estimated from
-        Liu, Xinhong, et al. "Characterizing Transport Properties of Surface
-            Charged Nanofiltration Membranes via Model-Based Data Analytics."
-            Industrial & Engineering Chemistry Research (2025).
+        Membrane permeability and fixed charged are estimated from:
+        Liu, Xinhong, et al. (2025) https://doi.org/10.1021/acs.iecr.4c04763
         """
         self.numerical_zero_tolerance = Param(
             initialize=1e-10,

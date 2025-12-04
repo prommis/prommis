@@ -30,15 +30,19 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse >=2.8.0",
+    "idaes-pse @ git+https://github.com/IDAES/idaes-pse.git@2.10.0rc0", # TODO update
     "pyomo >=6.9.5",
 ]
 [project.optional-dependencies]
 watertap = [
-    "watertap >= 1.4.0",
+#    "watertap >= 1.4.0"
+    "watertap @ git+https://github.com/watertap-org/watertap@refs/pull/1695/merge",
 ]
+
+
 flowsheet-processor = [
-    "idaes-flowsheet-processor >=0.1.dev4",
+#    "idaes-flowsheet-processor >=0.1.dev4",
+    "idaes-flowsheet-processor @ git+https://github.com/dallan-keylogic/idaes-flowsheet-processor.git@change_req",
 ]
 
 [tool.setuptools_scm]
@@ -47,7 +51,7 @@ version_scheme = "only-version"
 local_scheme = "node-and-date"
 
 [tool.pylint.main]
-py-version = "3.9"
+py-version = "3.11"
 
 [tool.pylint."messages control"]
 disable = [

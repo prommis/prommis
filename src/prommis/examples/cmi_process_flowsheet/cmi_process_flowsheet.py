@@ -7,7 +7,6 @@
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
-    SolverFactory,
     TransformationFactory,
     Var,
     check_optimal_termination,
@@ -24,7 +23,9 @@ from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
 )
-from idaes.core.util.scaling import constraint_scaling_transform, set_scaling_factor
+from idaes.core.scaling.util import set_scaling_factor
+from idaes.core.solvers import get_solver
+
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
@@ -579,17 +580,11 @@ def set_scaling(m):
         m.fs.PrecipMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "Nd_3+"], 1e4
     )
 
-    constraint_scaling_transform(
-        m.fs.Dissolution.control_volume.enthalpy_balances[0.0], 1e-6
-    )
-    constraint_scaling_transform(
-        m.fs.Adjustment.control_volume.enthalpy_balances[0.0], 1e-6
-    )
-    constraint_scaling_transform(m.fs.AdjMixer.enthalpy_mixing_equations[0.0], 1e-6)
-    constraint_scaling_transform(m.fs.PrecipMixer.enthalpy_mixing_equations[0.0], 1e-6)
-    constraint_scaling_transform(
-        m.fs.Precipitation.control_volume.enthalpy_balances[0.0], 1e-6
-    )
+    set_scaling_factor(m.fs.Dissolution.control_volume.enthalpy_balances[0.0], 1e-6)
+    set_scaling_factor(m.fs.Adjustment.control_volume.enthalpy_balances[0.0], 1e-6)
+    set_scaling_factor(m.fs.AdjMixer.enthalpy_mixing_equations[0.0], 1e-6)
+    set_scaling_factor(m.fs.PrecipMixer.enthalpy_mixing_equations[0.0], 1e-6)
+    set_scaling_factor(m.fs.Precipitation.control_volume.enthalpy_balances[0.0], 1e-6)
 
     set_scaling_factor(
         m.fs.AdjMixer.mixed_state[0.0].mole_frac_phase_comp["Aq", "H2C2O4"], 1e4
@@ -720,14 +715,7 @@ def solve_system(m, tee=False):
         tee: boolean indicator to stream IPOPT solution
     """
     # Solve flowsheet
-    solver_obj = SolverFactory(
-        "ipopt",
-        options={
-            "nlp_scaling_method": "user-scaling",
-            "tol": 1e-6,
-            "max_iter": 1000,
-        },
-    )
+    solver_obj = get_solver()
 
     results = solver_obj.solve(m, tee=tee)
 

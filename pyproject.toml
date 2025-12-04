@@ -30,7 +30,7 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse @ git+https://github.com/IDAES/idaes-pse.git@2.10.0rc0", # TODO update
+    "idaes-pse==2.10.0rc0", # TODO update
     "pyomo >=6.9.5",
 ]
 [project.optional-dependencies]

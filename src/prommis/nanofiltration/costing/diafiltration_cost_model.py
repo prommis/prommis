@@ -485,13 +485,12 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                     to_units=units.kJ / units.m**3,
                 )
 
-            # TODO: use an installation power for CAPEX
-            # blk.pump_installation_power_simple = Var(
-            #     initialize=10,
-            #     domain=NonNegativeReals,
-            #     units=units.kW,
-            #     doc="Pump installation power for simple capital costing",
-            # )
+            blk.pump_installation_power_simple = Var(
+                initialize=10,
+                domain=NonNegativeReals,
+                units=units.kW,
+                doc="Pump installation power for simple capital costing",
+            )
 
             blk.pump_operating_power_simple = Var(
                 initialize=10,
@@ -512,12 +511,13 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 blk.pump_power_simple_equation,
             )
 
-            # @blk.Constraint()  # TODO: determine why this constraint is not being enforced
-            # def pump_installation_power_constraint(blk):
-            #     return (
-            #         blk.pump_installation_power_simple
-            #         >= blk.pump_operating_power_simple
-            #     )
+            @blk.Constraint()
+            def pump_installation_power_constraint(blk):
+                return (
+                    0
+                    >= blk.pump_operating_power_simple
+                    - blk.pump_installation_power_simple
+                )
 
             # create the capital and operating cost variables
             blk.capital_cost = Var(
@@ -537,7 +537,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             @blk.Constraint()
             def capital_cost_constraint(blk):
                 return blk.capital_cost == units.convert(
-                    blk.pump_factor_capital * blk.pump_operating_power_simple,
+                    blk.pump_factor_capital * blk.pump_installation_power_simple,
                     to_units=blk.costing_package.base_currency,
                 )
 

@@ -545,40 +545,40 @@ class TestFlowsheetCosting(object):
         test_dict = {
             "lithium_recovery": [value(m_simple.prec_perc_li), 0.8],
             "cobalt_recovery": [value(m_simple.prec_perc_co), 0.8],
-            "stage_1_area": [value(m_simple.fs.stage[1].length), 916.71],
-            "stage_2_area": [value(m_simple.fs.stage[2].length), 916.71],
-            "stage_3_area": [value(m_simple.fs.stage[3].length), 916.71],
+            "stage_1_area": [value(m_simple.fs.stage[1].length), 863.52],
+            "stage_2_area": [value(m_simple.fs.stage[2].length), 863.52],
+            "stage_3_area": [value(m_simple.fs.stage[3].length), 863.52],
             "retentate_precipitator_volume": [
                 value(m_simple.fs.precipitator["retentate"].volume),
-                116.89,
+                123.26,
             ],
             "permeate_precipitator_volume": [
                 value(m_simple.fs.precipitator["permeate"].volume),
-                142.63,
+                161.76,
             ],
             "stage_1_capex": [
                 value(m_simple.fs.stage[1].costing.capital_cost),
-                45835.74,
+                43176.19,
             ],
             "stage_2_capex": [
                 value(m_simple.fs.stage[2].costing.capital_cost),
-                45835.74,
+                43176.19,
             ],
             "stage_3_capex": [
                 value(m_simple.fs.stage[3].costing.capital_cost),
-                45835.74,
+                43176.19,
             ],
             "stage_1_opex": [
                 value(m_simple.fs.stage[1].costing.fixed_operating_cost),
-                9167.15,
+                8635.24,
             ],
             "stage_2_opex": [
                 value(m_simple.fs.stage[2].costing.fixed_operating_cost),
-                9167.15,
+                8635.24,
             ],
             "stage_3_opex": [
                 value(m_simple.fs.stage[3].costing.fixed_operating_cost),
-                9167.15,
+                8635.24,
             ],
             "feed_pump_capex": [
                 value(m_simple.fs.feed_pump.costing.capital_cost),
@@ -598,27 +598,27 @@ class TestFlowsheetCosting(object):
             ],
             "retentate_precipitator_capex": [
                 value(m_simple.fs.precipitator["retentate"].costing.capital_cost),
-                117145.45,
+                122936.46,
             ],
             "permeate_precipitator_capex": [
                 value(m_simple.fs.precipitator["permeate"].costing.capital_cost),
-                140532.70,
+                157927.27,
             ],
             "mainentance_and_labor": [
                 value(m_simple.fs.costing.maintenance_labor_chemical_operating_cost),
-                25310.72,
+                26223.14,
             ],
             "total_capex": [
                 value(m_simple.fs.costing.total_capital_cost),
-                843690.70,
+                874104.54,
             ],
             "total_opex": [
                 value(m_simple.fs.costing.total_operating_cost),
-                74140.15,
+                73456.83,
             ],
             "total_annualized_cost": [
                 value(m_simple.fs.costing.total_annualized_cost),
-                158509.22,
+                160867.28,
             ],
         }
 

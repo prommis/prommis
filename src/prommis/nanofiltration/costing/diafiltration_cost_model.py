@@ -542,7 +542,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 )
 
             @blk.Constraint()
-            def variable_operaitng_cost_constraint(blk):
+            def variable_operating_cost_constraint(blk):
                 return blk.variable_operating_cost == units.convert(
                     blk.pump_factor_operating * blk.pump_operating_power_simple,
                     to_units=blk.costing_package.base_currency
@@ -579,7 +579,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
         Args:
             precip_volume: volume of the precipitator as calculated by the unit model (m3)
-            precip_headaspace: precipitator headspace percentage; default value is 20%
+            precip_headspace: precipitator headspace percentage; default value is 20%
             simple_costing: Boolean to determine which costing method is implemented (default=False)
         """
 
@@ -601,7 +601,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
             # include a length and diameter constraint
             # TODO: enforce D and L bounds once the concentrator is added to the flowsheet
-            # the concentrator unit will go before the precipitator, enbling smaller volumes
+            # the concentrator unit will go before the precipitator, enabling smaller volumes
             blk.precipitator_diameter = Var(
                 initialize=6,
                 # bounds=(1, 12),

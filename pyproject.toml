@@ -116,6 +116,8 @@ extend-exclude = [
 IDAES = "IDAES"
 # ignore phase_equil
 phase_equil = "phase_equil"
+# ignore author last name Theis
+Theis = "Theis"
 # Atomic elements
 Nd = "Nd"
 Ba = "Ba"

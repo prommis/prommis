@@ -230,9 +230,6 @@ class REEOxalateStateBlockData(StateBlockData):
             bounds=(1e-20, None),
         )
 
-    # def calculate_scaling_factors(self):
-    #     iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
-    #     iscale.set_scaling_factor(self.temperature, 1e1)
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar

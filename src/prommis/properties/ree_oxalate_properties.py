@@ -230,7 +230,6 @@ class REEOxalateStateBlockData(StateBlockData):
             bounds=(1e-20, None),
         )
 
-
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar
 

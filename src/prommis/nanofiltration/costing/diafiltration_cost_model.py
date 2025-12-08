@@ -44,6 +44,21 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         # Set a base period for all operating costs
         self.base_period = units.year
 
+        self.electricity_cost = Var(
+            initialize=0.141,
+            domain=NonNegativeReals,
+            doc="Unit cost of electricity",
+            units=units.USD_2021 / units.kWh,
+        )
+        self.electricity_cost.fix()
+        self.operating_hours_per_year = Var(
+            initialize=8000,
+            domain=NonNegativeReals,
+            doc="Opearing hours per year",
+            units=units.hr / units.year,
+        )
+        self.operating_hours_per_year.fix()
+
     def build_process_costs(
         self,
     ):
@@ -245,7 +260,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 initialize=value(blk.costing_package.electricity_cost),
                 domain=NonNegativeReals,
                 doc="Unit cost of electricity",
-                units=blk.costing_package.electricity_cost.units,
+                units=blk.costing_package.electricity_cost.get_units(),
             )
         blk.electricity_cost.fix()
 
@@ -328,6 +343,23 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             inlet_vol_flow: volumetric flow rate of inlet stream to pump (m3/h)
             simple_costing: Boolean to determine which costing method is implemented (default=False)
         """
+        if not (hasattr(blk.costing_package, "electricity_cost")):
+            blk.electricity_cost = Var(
+                initialize=0.141,
+                domain=NonNegativeReals,
+                doc="Unit cost of electricity",
+                units=units.USD_2021 / units.kWh,
+            )
+
+        else:
+            blk.electricity_cost = Var(
+                initialize=value(blk.costing_package.electricity_cost),
+                domain=NonNegativeReals,
+                doc="Unit cost of electricity",
+                units=blk.costing_package.electricity_cost.get_units(),
+            )
+        blk.electricity_cost.fix()
+
         # default costing method
         if simple_costing == False:
             blk.density = Param(
@@ -360,21 +392,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 doc="Pump efficiency",
                 units=units.dimensionless,
             )
-            if not (hasattr(blk.costing_package, "electricity_cost")):
-                blk.electricity_cost = Var(
-                    initialize=0.141,
-                    domain=NonNegativeReals,
-                    doc="Unit cost of electricity",
-                    units=units.USD_2021 / units.kWh,
-                )
-            else:
-                blk.electricity_cost = Var(
-                    initialize=value(blk.costing_package.electricity_cost),
-                    domain=NonNegativeReals,
-                    doc="Unit cost of electricity",
-                    units=blk.costing_package.electricity_cost.units,
-                )
-            blk.electricity_cost.fix()
 
             # create the capital and operating cost variables
             blk.capital_cost = Var(
@@ -460,11 +477,6 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 doc="Pump factor (capital) for simple costing",
                 units=units.USD_2018 / units.kW,
             )
-            blk.pump_factor_operating = Param(
-                initialize=560,  # assumes electricity at $0.07/kWh and operating for 8000 hr/yr
-                doc="Pump factor (operating) for simple costing",
-                units=units.USD_2018 / units.kW / units.yr,
-            )
             blk.pump_power_factor_simple = Var(
                 initialize=898,  # for 145 psi operational pressure
                 units=units.kJ / units.m**3,
@@ -485,15 +497,16 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                     to_units=units.kJ / units.m**3,
                 )
 
+            # installation power is a design decision and should be fixed for simulation
             blk.pump_installation_power_simple = Var(
-                initialize=10,
+                initialize=25,
                 domain=NonNegativeReals,
                 units=units.kW,
                 doc="Pump installation power for simple capital costing",
             )
 
             blk.pump_operating_power_simple = Var(
-                initialize=10,
+                initialize=25,
                 domain=NonNegativeReals,
                 units=units.kW,
                 doc="Pump operating power for simple operational costing",
@@ -544,7 +557,9 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             @blk.Constraint()
             def variable_operating_cost_constraint(blk):
                 return blk.variable_operating_cost == units.convert(
-                    blk.pump_factor_operating * blk.pump_operating_power_simple,
+                    blk.electricity_cost
+                    * blk.costing_package.operating_hours_per_year
+                    * blk.pump_operating_power_simple,
                     to_units=blk.costing_package.base_currency
                     / blk.costing_package.base_period,
                 )

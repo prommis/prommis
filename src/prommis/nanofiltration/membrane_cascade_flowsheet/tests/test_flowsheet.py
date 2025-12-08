@@ -590,11 +590,11 @@ class TestFlowsheetCosting(object):
             ],
             "feed_pump_opex": [
                 value(m_simple.fs.feed_pump.costing.variable_operating_cost),
-                16406.14,
+                28150.33,
             ],
             "diafiltrate_pump_opex": [
                 value(m_simple.fs.diafiltrate_pump.costing.variable_operating_cost),
-                4921.84,
+                8445.10,
             ],
             "retentate_precipitator_capex": [
                 value(m_simple.fs.precipitator["retentate"].costing.capital_cost),
@@ -614,11 +614,11 @@ class TestFlowsheetCosting(object):
             ],
             "total_opex": [
                 value(m_simple.fs.costing.total_operating_cost),
-                73456.83,
+                88724.28,
             ],
             "total_annualized_cost": [
                 value(m_simple.fs.costing.total_annualized_cost),
-                160867.28,
+                176134.73,
             ],
         }
 

@@ -230,6 +230,9 @@ def test_simple_costing():
         },
     )
 
+    # fix pump installation power (design decision) for simulation
+    m.fs.pump.costing.pump_installation_power_simple.fix()
+
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 

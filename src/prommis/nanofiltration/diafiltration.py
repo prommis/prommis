@@ -38,6 +38,7 @@ from idaes.core.solvers import get_solver
 from idaes.core.util.initialization import propagate_state
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.core.util.scaling import constraint_autoscale_large_jac
 from idaes.models.unit_models import (
     Mixer,
     MixerInitializer,
@@ -778,6 +779,9 @@ def set_scaling(m):
         m: Pyomo model
     """
     m.scaling_factor = Suffix(direction=Suffix.EXPORT)
+
+    # Add scaling factors for poorly scaled constraints
+    constraint_autoscale_large_jac(m)
 
     # Add scaling factors for poorly scaled variables
     m.scaling_factor[m.fs.cascade.costing.variable_operating_cost] = 1e-5

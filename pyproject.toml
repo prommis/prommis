@@ -94,6 +94,8 @@ known_issues = "prommis._testing_utils.known_issues"
 addopts = """
 --pyargs prommis
 --import-mode=importlib
+--cov=prommis
+--cov-config .coveragerc
 -rsx
 """
 
@@ -118,6 +120,8 @@ extend-exclude = [
 IDAES = "IDAES"
 # ignore phase_equil
 phase_equil = "phase_equil"
+# ignore author last name Theis
+Theis = "Theis"
 # Atomic elements
 Nd = "Nd"
 Ba = "Ba"

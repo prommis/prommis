@@ -9,7 +9,6 @@ import re
 from pyomo.environ import (
     Objective,
     SolverFactory,
-    Suffix,
     TransformationFactory,
     Var,
     assert_optimal_termination,

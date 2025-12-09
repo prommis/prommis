@@ -11,7 +11,6 @@ import sys
 
 from pyomo.environ import (
     SolverFactory,
-    Suffix,
     TransformationFactory,
     assert_optimal_termination,
     value,
@@ -20,7 +19,6 @@ from pyomo.environ import (
 from idaes.core.util import to_json, from_json
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import report_statistics
-from idaes.core.util.scaling import constraint_autoscale_large_jac
 
 from prommis.nanofiltration.membrane_cascade_flowsheet import utils
 from prommis.nanofiltration.membrane_cascade_flowsheet.diafiltration_flowsheet_model import (
@@ -112,6 +110,7 @@ def main(args):
             simple_costing=simple_costing,
         )
         df.add_costing_objectives(m)
+        df.add_costing_scaling(m, NS=num_s, simple_costing=simple_costing)
 
     # set recovery lower bounds
     lithium_recovery = 0.8
@@ -121,9 +120,6 @@ def main(args):
         m,
         L=lithium_recovery,
         C=cobalt_recovery,
-        NS=num_s,
-        costing=costing,
-        simple_costing=simple_costing,
     )
 
     dt = DiagnosticsToolbox(m)
@@ -154,69 +150,13 @@ def main(args):
     )
 
 
-def set_scaling(m, NS, costing, simple_costing):
-    """
-    Apply scaling factors to certain constraints to improve solver performance
-
-    Args:
-        m: Pyomo model
-    """
-    m.scaling_factor = Suffix(direction=Suffix.EXPORT)
-
-    # Add scaling factors for poorly scaled variables
-    if costing:
-        m.scaling_factor[m.fs.costing.aggregate_capital_cost] = 1e-5
-        m.scaling_factor[m.fs.costing.aggregate_fixed_operating_cost] = 1e-4
-        m.scaling_factor[m.fs.costing.aggregate_variable_operating_cost] = 1e-5
-        m.scaling_factor[m.fs.costing.total_capital_cost] = 1e-5
-        m.scaling_factor[m.fs.costing.total_operating_cost] = 1e-5
-        m.scaling_factor[m.fs.costing.maintenance_labor_chemical_operating_cost] = 1e-4
-        m.scaling_factor[m.fs.costing.total_annualized_cost] = 1e-5
-
-        for n in range(1, NS + 1):
-            m.scaling_factor[m.fs.stage[n].costing.capital_cost] = 1e-5
-            m.scaling_factor[m.fs.stage[n].costing.fixed_operating_cost] = 1e-4
-            m.scaling_factor[m.fs.stage[n].costing.membrane_area] = 1e-3
-
-        m.scaling_factor[m.fs.feed_pump.costing.capital_cost] = 1e-4
-        m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost] = 1e-3
-        m.scaling_factor[m.fs.diafiltrate_pump.costing.variable_operating_cost] = 1e-3
-
-        if simple_costing:
-            m.scaling_factor[m.fs.feed_pump.costing.pump_power_factor_simple] = 1e-2
-            m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e-4
-            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_power_factor_simple] = (
-                1e-2
-            )
-
-        if not simple_costing:
-            m.scaling_factor[m.fs.cascade.costing.variable_operating_cost] = 1e-5
-            m.scaling_factor[m.fs.cascade.costing.pressure_drop] = 1e-2
-            m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e-4
-            m.scaling_factor[m.fs.feed_pump.costing.pump_head] = 1e6
-            m.scaling_factor[m.fs.feed_pump.costing.pump_power] = 1e2
-            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_head] = 1e-2
-            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_power] = 1e-5
-
-        for prod in ["retentate", "permeate"]:
-            m.scaling_factor[m.fs.precipitator[prod].costing.capital_cost] = 1e-5
-            if not simple_costing:
-                m.scaling_factor[m.fs.precipitator[prod].costing.base_cost_per_unit] = (
-                    1e-4
-                )
-
-    # Add scaling factors for poorly scaled constraints
-    constraint_autoscale_large_jac(m)
-
-
-def solve_scaled_model(m, L, C, NS, costing, simple_costing):
+def solve_scaled_model(m, L, C):
     m.recovery_li = L
     m.recovery_co = C
 
     scaling = TransformationFactory("core.scale_model")
     solver = SolverFactory("ipopt")
 
-    set_scaling(m, NS, costing=costing, simple_costing=simple_costing)
     scaled_model = scaling.create_using(m, rename=False)
     result = solver.solve(scaled_model, tee=True)
     assert_optimal_termination(result)

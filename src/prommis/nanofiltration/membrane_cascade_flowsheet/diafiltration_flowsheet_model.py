@@ -19,6 +19,7 @@ from pyomo.environ import (
     Param,
     RangeSet,
     Set,
+    Suffix,
     TransformationFactory,
     Var,
     maximize,
@@ -37,6 +38,7 @@ from idaes.core import (
     UnitModelCostingBlock,
 )
 from idaes.core.util.initialization import propagate_state
+from idaes.core.util.scaling import constraint_autoscale_large_jac
 
 # IDAES imports
 from idaes.core.util.scaling import set_scaling_factor
@@ -1192,6 +1194,59 @@ class DiafiltrationModel:
                 )
 
         m.fs.costing.cost_process()
+
+    def add_costing_scaling(self, m, NS, simple_costing):
+        """
+        Apply scaling factors to certain constraints to improve solver performance
+
+        Args:
+            m: Pyomo model
+        """
+        m.scaling_factor = Suffix(direction=Suffix.EXPORT)
+
+        # Add scaling factors for poorly scaled variables
+        m.scaling_factor[m.fs.costing.aggregate_capital_cost] = 1e-5
+        m.scaling_factor[m.fs.costing.aggregate_fixed_operating_cost] = 1e-4
+        m.scaling_factor[m.fs.costing.aggregate_variable_operating_cost] = 1e-5
+        m.scaling_factor[m.fs.costing.total_capital_cost] = 1e-5
+        m.scaling_factor[m.fs.costing.total_operating_cost] = 1e-5
+        m.scaling_factor[m.fs.costing.maintenance_labor_chemical_operating_cost] = 1e-4
+        m.scaling_factor[m.fs.costing.total_annualized_cost] = 1e-5
+
+        for n in range(1, NS + 1):
+            m.scaling_factor[m.fs.stage[n].costing.capital_cost] = 1e-5
+            m.scaling_factor[m.fs.stage[n].costing.fixed_operating_cost] = 1e-4
+            m.scaling_factor[m.fs.stage[n].costing.membrane_area] = 1e-3
+
+        m.scaling_factor[m.fs.feed_pump.costing.capital_cost] = 1e-4
+        m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost] = 1e-3
+        m.scaling_factor[m.fs.diafiltrate_pump.costing.variable_operating_cost] = 1e-3
+
+        if simple_costing:
+            m.scaling_factor[m.fs.feed_pump.costing.pump_power_factor_simple] = 1e-2
+            m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e-4
+            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_power_factor_simple] = (
+                1e-2
+            )
+
+        if not simple_costing:
+            m.scaling_factor[m.fs.cascade.costing.variable_operating_cost] = 1e-5
+            m.scaling_factor[m.fs.cascade.costing.pressure_drop] = 1e-2
+            m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e-4
+            m.scaling_factor[m.fs.feed_pump.costing.pump_head] = 1e6
+            m.scaling_factor[m.fs.feed_pump.costing.pump_power] = 1e2
+            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_head] = 1e-2
+            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_power] = 1e-5
+
+        for prod in ["retentate", "permeate"]:
+            m.scaling_factor[m.fs.precipitator[prod].costing.capital_cost] = 1e-5
+            if not simple_costing:
+                m.scaling_factor[m.fs.precipitator[prod].costing.base_cost_per_unit] = (
+                    1e-4
+                )
+
+        # Add scaling factors for poorly scaled constraints
+        constraint_autoscale_large_jac(m)
 
     def add_costing_objectives(self, m):
         """

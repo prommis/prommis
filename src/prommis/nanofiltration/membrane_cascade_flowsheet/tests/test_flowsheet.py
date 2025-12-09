@@ -473,6 +473,7 @@ class TestFlowsheetCosting(object):
             simple_costing=True,
         )
         flowsheet_with_costing.add_costing_objectives(m_simple)
+        flowsheet_with_costing.add_costing_scaling(m_simple, NS=3, simple_costing=True)
 
         assert_units_consistent(m_simple)
 
@@ -480,51 +481,86 @@ class TestFlowsheetCosting(object):
         m_simple.recovery_li = 0.8
         m_simple.recovery_co = 0.8
 
-        # set additional scaling
-        m_simple.scaling_factor = Suffix(direction=Suffix.EXPORT)
-        m_simple.scaling_factor[m_simple.fs.costing.aggregate_capital_cost] = 1e-5
-        m_simple.scaling_factor[m_simple.fs.costing.aggregate_fixed_operating_cost] = (
-            1e-4
+        # check scaling factors
+        assert (
+            m_simple.scaling_factor[m_simple.fs.costing.aggregate_capital_cost] == 1e-5
         )
-        m_simple.scaling_factor[
-            m_simple.fs.costing.aggregate_variable_operating_cost
-        ] = 1e-5
-        m_simple.scaling_factor[m_simple.fs.costing.total_capital_cost] = 1e-5
-        m_simple.scaling_factor[m_simple.fs.costing.total_operating_cost] = 1e-5
-        m_simple.scaling_factor[
-            m_simple.fs.costing.maintenance_labor_chemical_operating_cost
-        ] = 1e-4
-        m_simple.scaling_factor[m_simple.fs.costing.total_annualized_cost] = 1e-5
+        assert m_simple.scaling_factor[
+            m_simple.fs.costing.aggregate_fixed_operating_cost
+        ] == (1e-4)
+        assert (
+            m_simple.scaling_factor[
+                m_simple.fs.costing.aggregate_variable_operating_cost
+            ]
+            == 1e-5
+        )
+        assert m_simple.scaling_factor[m_simple.fs.costing.total_capital_cost] == 1e-5
+        assert m_simple.scaling_factor[m_simple.fs.costing.total_operating_cost] == 1e-5
+        assert (
+            m_simple.scaling_factor[
+                m_simple.fs.costing.maintenance_labor_chemical_operating_cost
+            ]
+            == 1e-4
+        )
+        assert (
+            m_simple.scaling_factor[m_simple.fs.costing.total_annualized_cost] == 1e-5
+        )
 
         for n in range(1, 3 + 1):
-            m_simple.scaling_factor[m_simple.fs.stage[n].costing.capital_cost] = 1e-5
-            m_simple.scaling_factor[
-                m_simple.fs.stage[n].costing.fixed_operating_cost
-            ] = 1e-4
-            m_simple.scaling_factor[m_simple.fs.stage[n].costing.membrane_area] = 1e-3
+            assert (
+                m_simple.scaling_factor[m_simple.fs.stage[n].costing.capital_cost]
+                == 1e-5
+            )
+            assert (
+                m_simple.scaling_factor[
+                    m_simple.fs.stage[n].costing.fixed_operating_cost
+                ]
+                == 1e-4
+            )
+            assert (
+                m_simple.scaling_factor[m_simple.fs.stage[n].costing.membrane_area]
+                == 1e-3
+            )
 
-        m_simple.scaling_factor[m_simple.fs.feed_pump.costing.capital_cost] = 1e-4
-        m_simple.scaling_factor[m_simple.fs.diafiltrate_pump.costing.capital_cost] = (
-            1e-3
+        assert (
+            m_simple.scaling_factor[m_simple.fs.feed_pump.costing.capital_cost] == 1e-4
         )
-        m_simple.scaling_factor[
-            m_simple.fs.diafiltrate_pump.costing.variable_operating_cost
-        ] = 1e-3
+        assert m_simple.scaling_factor[
+            m_simple.fs.diafiltrate_pump.costing.capital_cost
+        ] == (1e-3)
+        assert (
+            m_simple.scaling_factor[
+                m_simple.fs.diafiltrate_pump.costing.variable_operating_cost
+            ]
+            == 1e-3
+        )
 
-        m_simple.scaling_factor[
-            m_simple.fs.feed_pump.costing.pump_power_factor_simple
-        ] = 1e-2
-        m_simple.scaling_factor[
-            m_simple.fs.feed_pump.costing.variable_operating_cost
-        ] = 1e-4
-        m_simple.scaling_factor[
-            m_simple.fs.diafiltrate_pump.costing.pump_power_factor_simple
-        ] = 1e-2
+        assert (
+            m_simple.scaling_factor[
+                m_simple.fs.feed_pump.costing.pump_power_factor_simple
+            ]
+            == 1e-2
+        )
+        assert (
+            m_simple.scaling_factor[
+                m_simple.fs.feed_pump.costing.variable_operating_cost
+            ]
+            == 1e-4
+        )
+        assert (
+            m_simple.scaling_factor[
+                m_simple.fs.diafiltrate_pump.costing.pump_power_factor_simple
+            ]
+            == 1e-2
+        )
 
         for prod in ["retentate", "permeate"]:
-            m_simple.scaling_factor[
-                m_simple.fs.precipitator[prod].costing.capital_cost
-            ] = 1e-5
+            assert (
+                m_simple.scaling_factor[
+                    m_simple.fs.precipitator[prod].costing.capital_cost
+                ]
+                == 1e-5
+            )
 
         # solve scaled model
         scaling = TransformationFactory("core.scale_model")
@@ -649,6 +685,9 @@ class TestFlowsheetCosting(object):
             simple_costing=False,
         )
         flowsheet_with_costing.add_costing_objectives(m_default)
+        flowsheet_with_costing.add_costing_scaling(
+            m_default, NS=3, simple_costing=False
+        )
 
         assert_units_consistent(m_default)
 
@@ -656,58 +695,107 @@ class TestFlowsheetCosting(object):
         m_default.recovery_li = 0.8
         m_default.recovery_co = 0.8
 
-        # set additional scaling
-        m_default.scaling_factor = Suffix(direction=Suffix.EXPORT)
-        m_default.scaling_factor[m_default.fs.costing.aggregate_capital_cost] = 1e-5
-        m_default.scaling_factor[
-            m_default.fs.costing.aggregate_fixed_operating_cost
-        ] = 1e-4
-        m_default.scaling_factor[
-            m_default.fs.costing.aggregate_variable_operating_cost
-        ] = 1e-5
-        m_default.scaling_factor[m_default.fs.costing.total_capital_cost] = 1e-5
-        m_default.scaling_factor[m_default.fs.costing.total_operating_cost] = 1e-5
-        m_default.scaling_factor[
-            m_default.fs.costing.maintenance_labor_chemical_operating_cost
-        ] = 1e-4
-        m_default.scaling_factor[m_default.fs.costing.total_annualized_cost] = 1e-5
+        # check scaling
+        assert (
+            m_default.scaling_factor[m_default.fs.costing.aggregate_capital_cost]
+            == 1e-5
+        )
+        assert (
+            m_default.scaling_factor[
+                m_default.fs.costing.aggregate_fixed_operating_cost
+            ]
+            == 1e-4
+        )
+        assert (
+            m_default.scaling_factor[
+                m_default.fs.costing.aggregate_variable_operating_cost
+            ]
+            == 1e-5
+        )
+        assert m_default.scaling_factor[m_default.fs.costing.total_capital_cost] == 1e-5
+        assert (
+            m_default.scaling_factor[m_default.fs.costing.total_operating_cost] == 1e-5
+        )
+        assert (
+            m_default.scaling_factor[
+                m_default.fs.costing.maintenance_labor_chemical_operating_cost
+            ]
+            == 1e-4
+        )
+        assert (
+            m_default.scaling_factor[m_default.fs.costing.total_annualized_cost] == 1e-5
+        )
 
         for n in range(1, 3 + 1):
-            m_default.scaling_factor[m_default.fs.stage[n].costing.capital_cost] = 1e-5
+            assert (
+                m_default.scaling_factor[m_default.fs.stage[n].costing.capital_cost]
+                == 1e-5
+            )
+            assert (
+                m_default.scaling_factor[
+                    m_default.fs.stage[n].costing.fixed_operating_cost
+                ]
+                == 1e-4
+            )
+            assert (
+                m_default.scaling_factor[m_default.fs.stage[n].costing.membrane_area]
+                == 1e-3
+            )
+
+        assert (
+            m_default.scaling_factor[m_default.fs.feed_pump.costing.capital_cost]
+            == 1e-4
+        )
+        assert m_default.scaling_factor[
+            m_default.fs.diafiltrate_pump.costing.capital_cost
+        ] == (1e-3)
+        assert (
             m_default.scaling_factor[
-                m_default.fs.stage[n].costing.fixed_operating_cost
-            ] = 1e-4
-            m_default.scaling_factor[m_default.fs.stage[n].costing.membrane_area] = 1e-3
-
-        m_default.scaling_factor[m_default.fs.feed_pump.costing.capital_cost] = 1e-4
-        m_default.scaling_factor[m_default.fs.diafiltrate_pump.costing.capital_cost] = (
-            1e-3
+                m_default.fs.diafiltrate_pump.costing.variable_operating_cost
+            ]
+            == 1e-3
         )
-        m_default.scaling_factor[
-            m_default.fs.diafiltrate_pump.costing.variable_operating_cost
-        ] = 1e-3
 
-        m_default.scaling_factor[
-            m_default.fs.cascade.costing.variable_operating_cost
-        ] = 1e-5
-        m_default.scaling_factor[m_default.fs.cascade.costing.pressure_drop] = 1e-2
-        m_default.scaling_factor[
-            m_default.fs.feed_pump.costing.variable_operating_cost
-        ] = 1e-4
-        m_default.scaling_factor[m_default.fs.feed_pump.costing.pump_head] = 1e6
-        m_default.scaling_factor[m_default.fs.feed_pump.costing.pump_power] = 1e2
-        m_default.scaling_factor[m_default.fs.diafiltrate_pump.costing.pump_head] = 1e-2
-        m_default.scaling_factor[m_default.fs.diafiltrate_pump.costing.pump_power] = (
-            1e-5
+        assert (
+            m_default.scaling_factor[
+                m_default.fs.cascade.costing.variable_operating_cost
+            ]
+            == 1e-5
         )
+        assert (
+            m_default.scaling_factor[m_default.fs.cascade.costing.pressure_drop] == 1e-2
+        )
+        assert (
+            m_default.scaling_factor[
+                m_default.fs.feed_pump.costing.variable_operating_cost
+            ]
+            == 1e-4
+        )
+        assert m_default.scaling_factor[m_default.fs.feed_pump.costing.pump_head] == 1e6
+        assert (
+            m_default.scaling_factor[m_default.fs.feed_pump.costing.pump_power] == 1e2
+        )
+        assert (
+            m_default.scaling_factor[m_default.fs.diafiltrate_pump.costing.pump_head]
+            == 1e-2
+        )
+        assert m_default.scaling_factor[
+            m_default.fs.diafiltrate_pump.costing.pump_power
+        ] == (1e-5)
 
         for prod in ["retentate", "permeate"]:
-            m_default.scaling_factor[
-                m_default.fs.precipitator[prod].costing.capital_cost
-            ] = 1e-5
-            m_default.scaling_factor[
-                m_default.fs.precipitator[prod].costing.base_cost_per_unit
-            ] = 1e-4
+            assert (
+                m_default.scaling_factor[
+                    m_default.fs.precipitator[prod].costing.capital_cost
+                ]
+                == 1e-5
+            )
+            assert (
+                m_default.scaling_factor[
+                    m_default.fs.precipitator[prod].costing.base_cost_per_unit
+                ]
+                == 1e-4
+            )
 
         # solve scaled model
         scaling = TransformationFactory("core.scale_model")

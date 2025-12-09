@@ -44,7 +44,6 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.SO4 = Component()
         self.HCO3 = Component()
 
-
         self.split = Param(
             self.component_list,
             units=units.kg / units.kg,
@@ -58,6 +57,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "HCO3": 1e-20,
                 "H2O": 1e-20,
             },
+            mutable=True,
         )
 
         self.mw = Param(
@@ -65,9 +65,9 @@ class AqueousParameterData(PhysicalParameterBlock):
             units=units.kg / units.mol,
             initialize={
                 "Ca": 40.078e-3,
-                "Na" :22.989769e-3,
-                "K" :39.0983e-3,
-                "Mg" :24.305e-3,
+                "Na": 22.989769e-3,
+                "K": 39.0983e-3,
+                "Mg": 24.305e-3,
                 "Cl": 35.453e-3,
                 "SO4": 96.06e-3,
                 "HCO3": 61.0168e-3,

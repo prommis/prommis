@@ -8,7 +8,7 @@
 Tests the diafiltration cost model
 """
 
-from pyomo.environ import ConcreteModel, Param, SolverFactory, Var, units
+from pyomo.environ import ConcreteModel, SolverFactory, Var, units
 
 from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
@@ -28,43 +28,6 @@ def test_diafiltration_costing():
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.costing = DiafiltrationCosting()
 
-    # define global parameters
-    m.w = Param(
-        initialize=1.5,
-        mutable=True,
-        doc="Membrane width (module/tube length)",
-        units=units.m,
-    )
-    m.Jw = Param(
-        initialize=0.1,
-        mutable=True,
-        doc="Water flux",
-        units=units.m**3 / units.m**2 / units.h,
-    )
-    m.atmospheric_pressure = Param(
-        initialize=101325,
-        doc="Atmospheric pressure in Pascal",
-        units=units.Pa,
-    )
-    m.operating_pressure = Param(
-        initialize=145,
-        mutable=True,
-        doc="Membrane operating pressure",
-        units=units.psi,
-    )
-    m.Q_feed = Param(
-        initialize=100,
-        mutable=True,
-        doc="Cascade feed flow",
-        units=units.m**3 / units.h,
-    )
-    m.Q_perm = Param(
-        initialize=110,
-        mutable=True,
-        doc="Cascade permeate flow",
-        units=units.m**3 / units.h,
-    )
-
     # create unit models to cost
     m.fs.membrane = UnitModelBlock()
     m.fs.membrane.length = Var(
@@ -73,8 +36,47 @@ def test_diafiltration_costing():
         units=units.m,
     )
     m.fs.membrane.length.fix()
+    m.fs.membrane.width = Var(
+        initialize=1.5,
+        doc="Membrane width (module/tube length)",
+        units=units.m,
+    )
+    m.fs.membrane.width.fix()
+    m.fs.membrane.water_flux = Var(
+        initialize=0.1,
+        doc="Water flux through membrane",
+        units=units.m**3 / units.m**2 / units.h,
+    )
+    m.fs.membrane.water_flux.fix()
+
     m.fs.cascade = UnitModelBlock()
+    m.fs.cascade.feed_volume_flow = Var(
+        initialize=100,
+        doc="Volumetric flow rate of feed",
+        units=units.m**3 / units.h,
+    )
+    m.fs.cascade.feed_volume_flow.fix()
+    m.fs.cascade.permeate_volume_flow = Var(
+        initialize=110,
+        doc="Volumetric flow rate of permeate",
+        units=units.m**3 / units.h,
+    )
+    m.fs.cascade.permeate_volume_flow.fix()
+
     m.fs.pump = UnitModelBlock()
+    m.fs.pump.atmospheric_pressure = Var(
+        initialize=101.325,
+        doc="Atmospheric pressure in kilo Pascal",
+        units=units.kPa,
+    )
+    m.fs.pump.atmospheric_pressure.fix()
+    m.fs.pump.operating_pressure = Var(
+        initialize=145,
+        doc="Membrane operating pressure",
+        units=units.psi,
+    )
+    m.fs.pump.operating_pressure.fix()
+
     m.fs.precipitator = UnitModelBlock()
     m.fs.precipitator.V = Var(
         initialize=20,
@@ -88,25 +90,25 @@ def test_diafiltration_costing():
         costing_method=DiafiltrationCostingData.cost_membranes,
         costing_method_arguments={
             "membrane_length": m.fs.membrane.length,
-            "membrane_width": m.w,
+            "membrane_width": m.fs.membrane.width,
         },
     )
     m.fs.cascade.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop_utility,
         costing_method_arguments={
-            "water_flux": m.Jw,
-            "vol_flow_feed": m.Q_feed,
-            "vol_flow_perm": m.Q_perm,
+            "water_flux": m.fs.membrane.water_flux,
+            "vol_flow_feed": m.fs.cascade.feed_volume_flow,
+            "vol_flow_perm": m.fs.cascade.permeate_volume_flow,
         },
     )
     m.fs.pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_pump,
         costing_method_arguments={
-            "inlet_pressure": m.atmospheric_pressure,
-            "outlet_pressure": m.operating_pressure,
-            "inlet_vol_flow": m.Q_feed,
+            "inlet_pressure": m.fs.pump.atmospheric_pressure,
+            "outlet_pressure": m.fs.pump.operating_pressure,
+            "inlet_vol_flow": m.fs.cascade.feed_volume_flow,
         },
     )
     m.fs.precipitator.costing = UnitModelCostingBlock(
@@ -139,43 +141,6 @@ def test_simple_costing():
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.costing = DiafiltrationCosting()
 
-    # define global parameters
-    m.w = Param(
-        initialize=1.5,
-        mutable=True,
-        doc="Membrane module length",
-        units=units.m,
-    )
-    m.Jw = Param(
-        initialize=0.1,
-        mutable=True,
-        doc="Water flux",
-        units=units.m**3 / units.m**2 / units.h,
-    )
-    m.atmospheric_pressure = Param(
-        initialize=101325,
-        doc="Atmospheric pressure in Pascal",
-        units=units.Pa,
-    )
-    m.operating_pressure = Param(
-        initialize=145,
-        mutable=True,
-        doc="Membrane operating pressure",
-        units=units.psi,
-    )
-    m.Q_feed = Param(
-        initialize=100,
-        mutable=True,
-        doc="Cascade feed flow",
-        units=units.m**3 / units.h,
-    )
-    m.Q_perm = Param(
-        initialize=110,
-        mutable=True,
-        doc="Cascade permeate flow",
-        units=units.m**3 / units.h,
-    )
-
     # create unit models to cost
     m.fs.membrane = UnitModelBlock()
     m.fs.membrane.length = Var(
@@ -184,8 +149,47 @@ def test_simple_costing():
         units=units.m,
     )
     m.fs.membrane.length.fix()
+    m.fs.membrane.width = Var(
+        initialize=1.5,
+        doc="Membrane width (module/tube length)",
+        units=units.m,
+    )
+    m.fs.membrane.width.fix()
+    m.fs.membrane.water_flux = Var(
+        initialize=0.1,
+        doc="Water flux through membrane",
+        units=units.m**3 / units.m**2 / units.h,
+    )
+    m.fs.membrane.water_flux.fix()
+
     m.fs.cascade = UnitModelBlock()
+    m.fs.cascade.feed_volume_flow = Var(
+        initialize=100,
+        doc="Volumetric flow rate of feed",
+        units=units.m**3 / units.h,
+    )
+    m.fs.cascade.feed_volume_flow.fix()
+    m.fs.cascade.permeate_volume_flow = Var(
+        initialize=110,
+        doc="Volumetric flow rate of permeate",
+        units=units.m**3 / units.h,
+    )
+    m.fs.cascade.permeate_volume_flow.fix()
+
     m.fs.pump = UnitModelBlock()
+    m.fs.pump.atmospheric_pressure = Var(
+        initialize=101.325,
+        doc="Atmospheric pressure in kilo Pascal",
+        units=units.kPa,
+    )
+    m.fs.pump.atmospheric_pressure.fix()
+    m.fs.pump.operating_pressure = Var(
+        initialize=145,
+        doc="Membrane operating pressure",
+        units=units.psi,
+    )
+    m.fs.pump.operating_pressure.fix()
+
     m.fs.precipitator = UnitModelBlock()
     m.fs.precipitator.V = Var(
         initialize=50,
@@ -199,25 +203,25 @@ def test_simple_costing():
         costing_method=DiafiltrationCostingData.cost_membranes,
         costing_method_arguments={
             "membrane_length": m.fs.membrane.length,
-            "membrane_width": m.w,
+            "membrane_width": m.fs.membrane.width,
         },
     )
     m.fs.cascade.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop_utility,
         costing_method_arguments={
-            "water_flux": m.Jw,
-            "vol_flow_feed": m.Q_feed,
-            "vol_flow_perm": m.Q_perm,
+            "water_flux": m.fs.membrane.water_flux,
+            "vol_flow_feed": m.fs.cascade.feed_volume_flow,
+            "vol_flow_perm": m.fs.cascade.permeate_volume_flow,
         },
     )
     m.fs.pump.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=DiafiltrationCostingData.cost_pump,
         costing_method_arguments={
-            "inlet_pressure": m.atmospheric_pressure,
-            "outlet_pressure": m.operating_pressure,
-            "inlet_vol_flow": m.Q_feed,
+            "inlet_pressure": m.fs.pump.atmospheric_pressure,
+            "outlet_pressure": m.fs.pump.operating_pressure,
+            "inlet_vol_flow": m.fs.cascade.feed_volume_flow,
             "simple_costing": True,
         },
     )

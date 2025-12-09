@@ -19,17 +19,26 @@ from pyomo.environ import (
     Param,
     RangeSet,
     Set,
+    Suffix,
     TransformationFactory,
     Var,
     maximize,
+    units,
     value,
 )
 from pyomo.network import Arc
 
 # other imports
 import idaes.logger as idaeslog
-from idaes.core import FlowsheetBlock, MaterialBalanceType, MomentumBalanceType
+from idaes.core import (
+    FlowsheetBlock,
+    MaterialBalanceType,
+    MomentumBalanceType,
+    UnitModelBlock,
+    UnitModelCostingBlock,
+)
 from idaes.core.util.initialization import propagate_state
+from idaes.core.util.scaling import constraint_autoscale_large_jac
 
 # IDAES imports
 from idaes.core.util.scaling import set_scaling_factor
@@ -46,6 +55,10 @@ from idaes.models.unit_models import SeparatorInitializer
 
 import numpy as np
 
+from prommis.nanofiltration.costing.diafiltration_cost_model import (
+    DiafiltrationCosting,
+    DiafiltrationCostingData,
+)
 from prommis.nanofiltration.membrane_cascade_flowsheet.membrane import Membrane
 from prommis.nanofiltration.membrane_cascade_flowsheet.precipitator import Precipitator
 
@@ -1086,3 +1099,188 @@ class DiafiltrationModel:
                 set_scaling_factor(con, 1 / 1000)
 
         TransformationFactory("core.scale_model").apply_to(m, rename=False)
+
+    def add_costing(
+        self,
+        m,
+        NS,
+        flux,
+        feed,
+        diaf,
+        precipitate,
+        atmospheric_pressure,
+        operating_pressure,
+        simple_costing,
+    ):
+        """
+        Adds custom costing block to the flowsheet
+        """
+        m.fs.costing = DiafiltrationCosting()
+
+        # Create dummy variables to store the UnitModelCostingBlocks
+        # These are needed because the sieving coefficient model does not account for pressure
+        m.fs.cascade = UnitModelBlock()  # to cost the pressure drop
+        m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
+        m.fs.diafiltrate_pump = UnitModelBlock()  # to cost diafiltrate pump
+
+        if not simple_costing:
+            m.fs.cascade.costing = UnitModelCostingBlock(
+                flowsheet_costing_block=m.fs.costing,
+                costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop_utility,
+                costing_method_arguments={
+                    "water_flux": flux * units.m**3 / units.m**2 / units.h,
+                    "vol_flow_feed": feed["solvent"]
+                    * units.m**3
+                    / units.h,  # cascade feed
+                    "vol_flow_perm": sum(
+                        m.fs.split_permeate[i].product.flow_vol[0] for i in RangeSet(NS)
+                    ),  # cascade permeate
+                },
+            )
+            m.fs.feed_pump.costing = UnitModelCostingBlock(
+                flowsheet_costing_block=m.fs.costing,
+                costing_method=DiafiltrationCostingData.cost_pump,
+                costing_method_arguments={
+                    "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
+                    "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
+                    * units.psi,  # this should make m.fs.feed_pump.costing.variable_operating_cost ~0
+                    "inlet_vol_flow": feed["solvent"] * units.m**3 / units.h,  # feed
+                    "simple_costing": simple_costing,
+                },
+            )
+        else:
+            m.fs.feed_pump.costing = UnitModelCostingBlock(
+                flowsheet_costing_block=m.fs.costing,
+                costing_method=DiafiltrationCostingData.cost_pump,
+                costing_method_arguments={
+                    "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
+                    "outlet_pressure": operating_pressure * units.psi,
+                    "inlet_vol_flow": feed["solvent"] * units.m**3 / units.h,  # feed
+                    "simple_costing": simple_costing,
+                },
+            )
+
+        m.fs.diafiltrate_pump.costing = UnitModelCostingBlock(
+            flowsheet_costing_block=m.fs.costing,
+            costing_method=DiafiltrationCostingData.cost_pump,
+            costing_method_arguments={
+                "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
+                "outlet_pressure": operating_pressure * units.psi,
+                "inlet_vol_flow": diaf["solvent"] * units.m**3 / units.h,  # diafiltrate
+                "simple_costing": simple_costing,
+            },
+        )
+        # membrane stage cost blocks
+        for n in range(1, NS + 1):
+            m.fs.stage[n].costing = UnitModelCostingBlock(
+                flowsheet_costing_block=m.fs.costing,
+                costing_method=DiafiltrationCostingData.cost_membranes,
+                costing_method_arguments={
+                    "membrane_length": m.fs.stage[n].length,
+                    "membrane_width": m.fs.stage[n].width,
+                },
+            )
+
+        # precipitator cost blocks
+        if precipitate:
+            for prod in ["retentate", "permeate"]:
+                m.fs.precipitator[prod].costing = UnitModelCostingBlock(
+                    flowsheet_costing_block=m.fs.costing,
+                    costing_method=DiafiltrationCostingData.cost_precipitator,
+                    costing_method_arguments={
+                        "precip_volume": m.fs.precipitator[prod].volume,
+                        "simple_costing": simple_costing,
+                    },
+                )
+
+        m.fs.costing.cost_process()
+
+    def add_costing_scaling(self, m, NS, simple_costing):
+        """
+        Apply scaling factors to certain constraints to improve solver performance
+
+        Args:
+            m: Pyomo model
+        """
+        m.scaling_factor = Suffix(direction=Suffix.EXPORT)
+
+        # Add scaling factors for poorly scaled variables
+        m.scaling_factor[m.fs.costing.aggregate_capital_cost] = 1e-5
+        m.scaling_factor[m.fs.costing.aggregate_fixed_operating_cost] = 1e-4
+        m.scaling_factor[m.fs.costing.aggregate_variable_operating_cost] = 1e-5
+        m.scaling_factor[m.fs.costing.total_capital_cost] = 1e-5
+        m.scaling_factor[m.fs.costing.total_operating_cost] = 1e-5
+        m.scaling_factor[m.fs.costing.maintenance_labor_chemical_operating_cost] = 1e-4
+        m.scaling_factor[m.fs.costing.total_annualized_cost] = 1e-5
+
+        for n in range(1, NS + 1):
+            m.scaling_factor[m.fs.stage[n].costing.capital_cost] = 1e-5
+            m.scaling_factor[m.fs.stage[n].costing.fixed_operating_cost] = 1e-4
+            m.scaling_factor[m.fs.stage[n].costing.membrane_area] = 1e-3
+
+        m.scaling_factor[m.fs.feed_pump.costing.capital_cost] = 1e-4
+        m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost] = 1e-3
+        m.scaling_factor[m.fs.diafiltrate_pump.costing.variable_operating_cost] = 1e-3
+
+        if simple_costing:
+            m.scaling_factor[m.fs.feed_pump.costing.pump_power_factor_simple] = 1e-2
+            m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e-4
+            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_power_factor_simple] = (
+                1e-2
+            )
+
+        if not simple_costing:
+            m.scaling_factor[m.fs.cascade.costing.variable_operating_cost] = 1e-5
+            m.scaling_factor[m.fs.cascade.costing.pressure_drop] = 1e-2
+            m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e-4
+            m.scaling_factor[m.fs.feed_pump.costing.pump_head] = 1e6
+            m.scaling_factor[m.fs.feed_pump.costing.pump_power] = 1e2
+            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_head] = 1e-2
+            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_power] = 1e-5
+
+        for prod in ["retentate", "permeate"]:
+            m.scaling_factor[m.fs.precipitator[prod].costing.capital_cost] = 1e-5
+            if not simple_costing:
+                m.scaling_factor[m.fs.precipitator[prod].costing.base_cost_per_unit] = (
+                    1e-4
+                )
+
+        # Add scaling factors for poorly scaled constraints
+        constraint_autoscale_large_jac(m)
+
+    def add_costing_objectives(self, m):
+        """
+        Method to add cost objective to flowsheet for performing optimization
+
+        Objective choices:
+            m.co_obj  # maximize cobalt recovery
+            m.li_obj
+            m.prec_co_obj # maximize cobalt flow out of precipitator
+            m.prec_li_obj
+        Constraint choices:
+            m.co_lb
+            m.li_lb # set a LB on lithium recovery
+            m.purity_co_lb
+            m.purity_li_lb
+            m.prec_co_lb # set a LB on cobalt recovery out of precipitator
+            m.prec_li_lb # set a LB on cobalt recovery out of precipitator
+
+        Args:
+            m: Pyomo model
+        """
+        m.co_obj.deactivate()
+        m.li_obj.deactivate()
+        m.prec_co_obj.deactivate()
+        m.prec_li_obj.deactivate()
+
+        m.co_lb.deactivate()
+        m.li_lb.deactivate()
+        m.purity_co_lb.deactivate()
+        m.purity_li_lb.deactivate()
+        m.prec_co_lb.activate()
+        m.prec_li_lb.activate()
+
+        def cost_obj(m):
+            return m.fs.costing.total_annualized_cost
+
+        m.cost_objective = Objective(rule=cost_obj)

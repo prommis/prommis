@@ -27,8 +27,72 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
+from idaes.core.scaling import CustomScalerBase
 
 __author__ = "Arkoprabho Dasgupta"
+
+ree_list = ["Sc_o", "Y_o", "La_o", "Ce_o", "Pr_o", "Nd_o", "Sm_o", "Gd_o", "Dy_o"]
+
+
+class OrganicSolventPropertiesScaler(CustomScalerBase):
+    """
+    Scaler for organic solvent solution.
+    """
+
+    CONFIG = CustomScalerBase.CONFIG
+
+    DEFAULT_SCALING_FACTORS = {
+        "extractant_dosage": 1 / 5,
+        "flow_vol": 1e-2,
+        "pressure": 1e-5,
+        "temperature": 1 / 300,
+        "conc_mass_comp[Kerosene]": 1e-6,
+        "conc_mass_comp[DEHPA]": 1e-5,
+        "conc_mass_comp[Al_o]": 1e-1,
+        "conc_mass_comp[Ca_o]": 1e-1,
+        "conc_mass_comp[Fe_o]": 1e-1,
+    }
+    for ree in ree_list:
+        DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 1e-2
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        # Scale state variables
+        self.scale_variable_by_default(model.flow_vol, overwrite=overwrite)
+        self.scale_variable_by_default(model.pressure, overwrite=overwrite)
+        self.scale_variable_by_default(model.temperature, overwrite=overwrite)
+        for idx, var in model.conc_mass_comp.items():
+            self.scale_variable_by_default(var, overwrite=overwrite)
+
+        # Scale other variables
+        if model.is_property_constructed("extractant_dosage"):
+            self.scale_variable_by_default(model.extractant_dosage, overwrite=overwrite)
+
+        for idx, vardata in model.conc_mol_comp.items():
+            self.scale_variable_by_definition_constraint(
+                vardata, model.molar_concentration_constraint[idx], overwrite=overwrite
+            )
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        for idx, condata in model.molar_concentration_constraint.items():
+            self.scale_constraint_by_component(
+                condata, model.conc_mass_comp[idx], overwrite=overwrite
+            )
+
+        if model.is_property_constructed("extractant_dosage"):
+            sf = self.get_scaling_factor(model.extractant_dosage)
+            self.set_constraint_scaling_factor(
+                model.extractant_dosage_eqn, sf, overwrite=overwrite
+            )
+
+        if model.is_property_constructed("kerosene_concentration"):
+            sf = self.get_scaling_factor(model.conc_mass_comp["Kerosene"])
+            self.set_constraint_scaling_factor(
+                model.kerosene_concentration, sf, overwrite=overwrite
+            )
 
 
 @declare_process_block_class("REESolExOgParameters")
@@ -143,6 +207,8 @@ class REESolExOgParameterData(PhysicalParameterBlock):
 
 
 class _REESolExOgStateBlock(StateBlock):
+    default_scaler = OrganicSolventPropertiesScaler
+
     def fix_initialization_states(self):
         fix_state_vars(self)
 
@@ -154,6 +220,8 @@ class REESolExOgStateBlockData(StateBlockData):
 
     """
 
+    default_scaler = OrganicSolventPropertiesScaler
+
     def build(self):
         super().build()
 
@@ -164,7 +232,7 @@ class REESolExOgStateBlockData(StateBlockData):
             bounds=(1e-20, None),
         )
 
-        self.flow_vol = Var(units=units.L / units.hour, bounds=(1e-8, None))
+        self.flow_vol = Var(units=units.L / units.hour, initialize=1e-5, bounds=(1e-8, None))
 
         self.conc_mol_comp = Var(
             self.params.component_list,
@@ -188,7 +256,19 @@ class REESolExOgStateBlockData(StateBlockData):
             doc="State pressure [Pa]",
             units=units.Pa,
         )
-
+        self.extractant_dosage = Var(
+            domain=Reals,
+            initialize=1.0,
+            bounds=(1e-8, None),
+            doc="Extractant dosage v/v%",
+            units=units.dimensionless,
+        )
+        @self.Constraint()
+        def extractant_dosage_eqn(b):
+            return (
+                b.extractant_dosage
+                == (b.conc_mass_comp["DEHPA"] / (975.8e3 * units.mg / units.L)) * 100
+            )
         # Concentration conversion constraint
         @self.Constraint(self.params.component_list)
         def molar_concentration_constraint(b, j):

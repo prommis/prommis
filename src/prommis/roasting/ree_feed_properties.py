@@ -22,7 +22,7 @@ from idaes.core import (
     declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
-from idaes.core.scaling import CustomScalerBase, get_scaling_factor
+from idaes.core.scaling import CustomScalerBase
 
 ree_sp_list = [
     "Ree2X",
@@ -86,8 +86,8 @@ class ReeFeedPropertiesScaler(CustomScalerBase):
         params = model.params
         for idx, var in model.flow_mol_comp.items():
             sf = (
-                get_scaling_factor(model.mass_frac_comp[idx])
-                * get_scaling_factor(model.flow_mass)
+                self.get_scaling_factor(model.mass_frac_comp[idx])
+                * self.get_scaling_factor(model.flow_mass)
                 * value(params.mw_comp[idx])
             )
             self.set_variable_scaling_factor(var, sf, overwrite=overwrite)
@@ -98,8 +98,9 @@ class ReeFeedPropertiesScaler(CustomScalerBase):
         self, model, overwrite: bool = False, submodel_scalers: dict = None
     ):
         for idx, con in model.flow_mol_comp_constraint.items():
-            sf = get_scaling_factor(model.flow_mol_comp[idx])
-            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+            self.scale_constraint_by_component(
+                con, model.flow_mol_comp[idx], overwrite=overwrite
+            )
 
         if model.is_property_constructed("sum_mass_frac"):
             self.set_constraint_scaling_factor(
@@ -107,17 +108,16 @@ class ReeFeedPropertiesScaler(CustomScalerBase):
             )
 
         for idx, con in model.enth_mol_comp_constraint.items():
-            sf = get_scaling_factor(model.enth_mol_comp[idx])
-            self.set_constraint_scaling_factor(con, sf, overwrite=overwrite)
+            self.scale_constraint_by_component(
+                con, model.enth_mol_comp[idx], overwrite=overwrite
+            )
 
-        sf = get_scaling_factor(model.enth_mol)
-        self.set_constraint_scaling_factor(
-            model.enth_mol_constraint, sf, overwrite=overwrite
+        self.scale_constraint_by_component(
+            model.enth_mol_constraint, model.enth_mol, overwrite=overwrite
         )
 
-        sf = get_scaling_factor(model.enth_mass)
-        self.set_constraint_scaling_factor(
-            model.enth_mass_constraint, sf, overwrite=overwrite
+        self.scale_constraint_by_component(
+            model.enth_mass_constraint, model.enth_mass, overwrite=overwrite
         )
 
 

@@ -25,15 +25,15 @@ Degrees of Freedom
 The Two-Salt Diafiltration unit model has three degrees of freedom (variable names and default values are provided in parentheses):
 
 #. the length of the membrane module (``total_module_length``; :math:`4 \, \mathrm{m}`)
-#. the length of the membrane (``total_membrane_length``; :math:`40 \, \mathrm{m}`)
-#. the pressure applied to the membrane system (``applied_pressure``; :math:`15 \, \mathrm{bar}`)
+#. the length of the membrane (``total_membrane_length``; :math:`41 \, \mathrm{m}`)
+#. the pressure applied to the membrane system (``applied_pressure``; :math:`10 \, \mathrm{bar}`)
 
 To run a simulation (with zero degrees of freedom) in a flowsheet, the following variables must be fixed to obtain zero degrees of freedom (variable names and default values are provided in parentheses):
 
-#. the volumetric flow rate of the feed (``feed_flow_volume``; :math:`100 \, \mathrm{m}^3 \, \mathrm{h}^{-1}`)
+#. the volumetric flow rate of the feed (``feed_flow_volume``; :math:`12.5 \, \mathrm{m}^3 \, \mathrm{h}^{-1}`)
 #. the lithium concentration in the feed (``feed_conc_mol_comp[t,"Li"]``; :math:`245 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
 #. the cobalt concentration in the feed (``feed_conc_mol_comp[t,"Co"]``; :math:`288 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
-#. the volumetric flow rate of the diafiltrate (``diafiltrate_flow_volume``; :math:`30 \, \mathrm{m}^3 \, \mathrm{h}^{-1}`)
+#. the volumetric flow rate of the diafiltrate (``diafiltrate_flow_volume``; :math:`3.75 \, \mathrm{m}^3 \, \mathrm{h}^{-1}`)
 #. the lithium concentration in the diafiltrate (``diafiltrate_conc_mol_comp[t,"Li"]``; :math:`14 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
 #. the cobalt concentration in the diafiltrate (``diafiltrate_conc_mol_comp[t,"Co"]``; :math:`3 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
 
@@ -45,15 +45,21 @@ There are three phases in the Two-Salt Diafiltration model: the retentate, the m
 Assumptions
 -----------
 
-The partition coefficient relationships, which describe how the solutes partition across the solution-membrane interfaces, are derived assuming Donnan equilibrium.
+The membrane module dimensions, maximum applied pressure, and inlet flow rates assume that one tube (one instance of this model) consists of 4 NF270-440 membranes in series.
 
-The default value for the membrane's surface charge (:math:`-140 \, \mathrm{mM}`), was calculated using zeta potential measurements for NF270 membranes. (See `this reference <https://doi.org/10.1021/acs.iecr.4c04763>`_).
+The partitioning relationships, which describe how the solutes transition (partition) across the solution-membrane interfaces, are derived assuming Donnan equilibrium. The partitioning coefficients incorporate both steric and Donnan effects.
+
+The default value for the membrane's surface charge (:math:`-140 \, \mathrm{mM}`), was calculated using zeta potential measurements for NF270 membranes. (See `this reference <https://doi.org/10.1021/acs.iecr.4c04763>`_). Currently, the default property package only supports negatively charged membranes.
+
+The membrane is assumed to be :math:`100 \, \mathrm{nm}` thick.
+
+The default value for the membrane permeability (:math:`0.01 \, \mathrm{m} \, \mathrm{h}^{-1} \, \mathrm{bar}^{-1}``) is based off of parameter estimation results from `this reference <https://doi.org/10.1021/acs.iecr.4c04763>` for NF270 membranes.
 
 The formation of a boundary layer at the membrane surface due to concentration polarization is neglected for mathematical simplicity.
 
 The dominating transport mechanism within the bulk/retentate solution is convection in the :math:`x`-direction (parallel to the membrane surface). The dominating transport mechanism within the permeate solution is convection in the :math:`z`-direction (perpendicular to the membrane surface).
 
-The transport mechanisms modeled within the membrane are convection, diffusion, and electromigration. Diffusion within the membrane that is normal to the pore walls is ignored, meaning the concentration gradient of ion :math:`i` within the membrane only has a :math:`z`-component (perpendicular to the membrane surface).
+The transport mechanisms modeled within the mebrane are convection, diffusion, and electromigration. Diffusion within the membrane that is normal to the pore walls is ignored, meaning the concentration gradient of ion :math:`i` within the membrane only has a :math:`z`-component (perpendicular to the membrane surface).
 
 Sets
 ----
@@ -82,7 +88,7 @@ Parameter        Description                                     Name           
 ================ =============================================== ============================ ============= ==========================================================
 :math:`\epsilon` numerical tolerance for zero values             ``numerical_zero_tolerance`` 1e-10
 :math:`l`        thickness of the membrane                       ``total_membrane_thickness`` 1e-07         :math:`\mathrm{m}`
-:math:`L_p`      hydraulic permeability of the membrane          ``membrane_permeability``    0.03          :math:`\mathrm{m} \, \mathrm{h}^{-1} \, \mathrm{bar}^{-1}`
+:math:`L_p`      hydraulic permeability of the membrane          ``membrane_permeability``    0.01          :math:`\mathrm{m} \, \mathrm{h}^{-1} \, \mathrm{bar}^{-1}`
 :math:`T`        temperature of the system                       ``temperature``              298           :math:`\mathrm{K}`
 :math:`\chi`     concentration of surface charge on the membrane ``membrane_fixed_charge``    -140          :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
 ================ =============================================== ============================ ============= ==========================================================

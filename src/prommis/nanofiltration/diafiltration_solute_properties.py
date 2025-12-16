@@ -82,27 +82,32 @@ class SoluteParameterData(PhysicalParameterBlock):
         )
 
         # add partition coefficient at the retentate-membrane interface
-        # currently H,Li is based on https://doi.org/10.1021/acs.iecr.4c04763
-        # H,Co and H,Cl are arbitrarily chosen to be the same value
+        # Reference: https://doi.org/10.1126/sciadv.adu8302
+        # Assumptions:
+        # membrane fixed charge is negative (Donnan effects are incorporated)
+        # monovalent ions of similar size (i.e., Na and Li) behave similarly
+        # H,Li is estimated from the data in Fig 1D (Na) of above reference at 200 mM
+        # H,Co (divalent) is estimated as one order of magnitude smaller than H,Li (monovalent)
+        # H,Cl is estimated from the data in Fig 1C of above reference at 200 mM
         self.partition_coefficient_retentate = Param(
             self.component_list,
             units=units.dimensionless,
             initialize={
-                "Li": 0.3,
-                "Co": 0.3,
-                "Cl": 0.3,
+                "Li": 0.4,
+                "Co": 0.04,
+                "Cl": 0.01,
             },
         )
 
         # add partition coefficient at the membrane-permeate interface
-        # TODO: sensitivity analysis on partitioning parameters
+        # while these parameters can be different, here we take them to be the same
         self.partition_coefficient_permeate = Param(
             self.component_list,
             units=units.dimensionless,
             initialize={
-                "Li": 0.3,
-                "Co": 0.3,
-                "Cl": 0.3,
+                "Li": 0.4,
+                "Co": 0.04,
+                "Cl": 0.01,
             },
         )
 

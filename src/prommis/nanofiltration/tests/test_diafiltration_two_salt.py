@@ -35,73 +35,8 @@ from prommis.nanofiltration.diafiltration_solute_properties import (
 )
 from prommis.nanofiltration.diafiltration_two_salt import TwoSaltDiafiltration
 
-
-@pytest.mark.unit
-def test_zero_chi_implementation():
-    m = ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.properties = SoluteParameter()
-
-    m.fs.unit = TwoSaltDiafiltration(
-        property_package=m.fs.properties,
-        NFE_module_length=10,
-        NFE_membrane_thickness=5,
-    )
-
-    m.fs.unit.total_module_length.fix()
-    m.fs.unit.total_membrane_length.fix()
-    m.fs.unit.applied_pressure.fix()
-    m.fs.unit.membrane_fixed_charge.set_value(0)
-
-    dt = DiagnosticsToolbox(m.fs.unit)
-    dt.assert_no_structural_warnings()
-
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-    solver = SolverFactory("ipopt")
-    results = solver.solve(scaled_model, tee=True)
-    scaling.propagate_solution(scaled_model, m)
-
-    assert_optimal_termination(results)
-    dt.assert_no_numerical_warnings()
-
-    test_dict_zero_chi = {
-        "retentate_final": [
-            value(m.fs.unit.retentate_flow_volume[0, 1]),
-            4.2918725888627725,
-        ],
-        "lithium_retentate_final": [
-            value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Li"]),
-            192.59324298587342,
-        ],
-        "cobalt_retentate_final": [
-            value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Co"]),
-            223.44760568527482,
-        ],
-        "chloride_retentate_final": [
-            value(m.fs.unit.retentate_conc_mol_comp[0, 1, "Cl"]),
-            639.4884543564231,
-        ],
-        "permeate_final": [
-            value(m.fs.unit.permeate_flow_volume[0, 1]),
-            11.957147777311302,
-        ],
-        "lithium_permeate_final": [
-            value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Li"]),
-            191.96627751421204,
-        ],
-        "cobalt_permeate_final": [
-            value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Co"]),
-            222.60051761723855,
-        ],
-        "chloride_permeate_final": [
-            value(m.fs.unit.permeate_conc_mol_comp[0, 1, "Cl"]),
-            637.1673127486891,
-        ],
-    }
-
-    for model_result, test_val in test_dict_zero_chi.values():
-        assert pytest.approx(test_val, rel=1e-5) == value(model_result)
+# TODO: test positive and neutral membrane cases
+# currently, the propery package only supports a negative fixed charge
 
 
 @pytest.fixture(scope="module")
@@ -143,8 +78,8 @@ def test_config(diafiltration_two_salt):
         diafiltration_two_salt.fs.unit.config.property_package
         is diafiltration_two_salt.fs.properties
     )
-    assert diafiltration_two_salt.fs.unit.config.NFE_module_length is 10
-    assert diafiltration_two_salt.fs.unit.config.NFE_membrane_thickness is 5
+    assert diafiltration_two_salt.fs.unit.config.NFE_module_length == 10
+    assert diafiltration_two_salt.fs.unit.config.NFE_membrane_thickness == 5
 
 
 class TestDiafiltrationTwoSalt(object):
@@ -439,7 +374,7 @@ class TestDiafiltrationTwoSalt(object):
         assert isinstance(
             diafiltration_two_salt.fs.unit.electroneutrality_permeate, Constraint
         )
-        assert len(diafiltration_two_salt.fs.unit.electroneutrality_permeate) == 11
+        assert len(diafiltration_two_salt.fs.unit.electroneutrality_permeate) == 10
 
         assert isinstance(
             diafiltration_two_salt.fs.unit.retentate_membrane_interface_lithium,
@@ -787,52 +722,52 @@ class TestDiafiltrationTwoSalt(object):
         test_dict = {
             "retentate_final": [
                 value(diafiltration_two_salt.fs.unit.retentate_flow_volume[0, 1]),
-                4.247958521740219,
+                6.6914,
             ],
             "lithium_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Li"]
                 ),
-                192.6044474143687,
+                197.90,
             ],
             "cobalt_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Co"]
                 ),
-                223.2315850704493,
+                241.11,
             ],
             "chloride_retentate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[0, 1, "Cl"]
                 ),
-                639.0676175552672,
+                680.12,
             ],
             "permeate_final": [
                 value(diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 1]),
-                12.001247151436175,
+                9.4615,
             ],
             "lithium_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Li"]
                 ),
-                191.975023527502,
+                191.35,
             ],
             "cobalt_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Co"]
                 ),
-                222.54094050056483,
+                220.46,
             ],
             "chloride_permeate_final": [
                 value(
                     diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "Cl"]
                 ),
-                637.0569045286317,
+                632.27,
             ],
         }
 
         for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-5) == value(model_result)
+            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
     def test_numerical_issues(self, diafiltration_two_salt):

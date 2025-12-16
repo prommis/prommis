@@ -389,7 +389,7 @@ and used when constructing these,
             doc="Length of the membrane, wound radially",
         )
         self.applied_pressure = Var(
-            initialize=7.5,
+            initialize=10,
             units=units.bar,
             bounds=[1e-11, 41],  # maximum operating presssure (NF270-440)
             doc="Pressure applied to membrane",
@@ -1248,6 +1248,8 @@ and used when constructing these,
         )
 
         def _electroneutrality_permeate(blk, x):
+            if x == 0:
+                return Constraint.Skip
             return 0 == (
                 blk.config.property_package.charge["Li"]
                 * blk.permeate_conc_mol_comp[0, x, "Li"]
@@ -1458,6 +1460,9 @@ and used when constructing these,
             value(self.numerical_zero_tolerance)
         )
         self.permeate_conc_mol_comp[0, 0, "Co"].fix(
+            value(self.numerical_zero_tolerance)
+        )
+        self.permeate_conc_mol_comp[0, 0, "Cl"].fix(
             value(self.numerical_zero_tolerance)
         )
         for z in self.dimensionless_membrane_thickness:

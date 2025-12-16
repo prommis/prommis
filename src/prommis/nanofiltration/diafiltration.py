@@ -91,13 +91,8 @@ def main():
     add_product_constraints(m, Li_recovery_bound=0.95, Co_recovery_bound=0.635)
     add_objective(m)
 
-    # Create a scaled version of the model to solve
     set_scaling(m)
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-    solve_model(scaled_model)
-    # Propagate results back to unscaled model
-    scaling.propagate_solution(scaled_model, m)
+    solve_model(m, tee=False)
 
     # TODO: add Boolean variable to calculate pump OPEX
     # Verify the feed pump operating pressure workaround is valid

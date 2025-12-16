@@ -36,7 +36,7 @@ from prommis.nanofiltration.diafiltration_solute_properties import (
 from prommis.nanofiltration.diafiltration_two_salt import TwoSaltDiafiltration
 
 # TODO: test positive and neutral membrane cases
-# currently, the propery package only supports a negative fixed charge
+# currently, the property package only supports a negative fixed charge
 
 
 @pytest.fixture(scope="module")

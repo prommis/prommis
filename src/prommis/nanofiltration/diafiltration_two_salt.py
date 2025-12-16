@@ -53,13 +53,13 @@ The default value for the membrane's surface charge (:math:`-140 \, \mathrm{mM}`
 
 The membrane is assumed to be :math:`100 \, \mathrm{nm}` thick.
 
-The default value for the membrane permeability (:math:`0.01 \, \mathrm{m} \, \mathrm{h}^{-1} \, \mathrm{bar}^{-1}``) is based off of parameter estimation results from `this reference <https://doi.org/10.1021/acs.iecr.4c04763>` for NF270 membranes.
+The default value for the membrane permeability (:math:`0.01 \, \mathrm{m} \, \mathrm{h}^{-1} \, \mathrm{bar}^{-1}`) is based off of parameter estimation results from `this reference <https://doi.org/10.1021/acs.iecr.4c04763>`_ for NF270 membranes.
 
 The formation of a boundary layer at the membrane surface due to concentration polarization is neglected for mathematical simplicity.
 
 The dominating transport mechanism within the bulk/retentate solution is convection in the :math:`x`-direction (parallel to the membrane surface). The dominating transport mechanism within the permeate solution is convection in the :math:`z`-direction (perpendicular to the membrane surface).
 
-The transport mechanisms modeled within the mebrane are convection, diffusion, and electromigration. Diffusion within the membrane that is normal to the pore walls is ignored, meaning the concentration gradient of ion :math:`i` within the membrane only has a :math:`z`-component (perpendicular to the membrane surface).
+The transport mechanisms modeled within the membrane are convection, diffusion, and electromigration. Diffusion within the membrane that is normal to the pore walls is ignored, meaning the concentration gradient of ion :math:`i` within the membrane only has a :math:`z`-component (perpendicular to the membrane surface).
 
 Sets
 ----

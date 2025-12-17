@@ -41,6 +41,7 @@ def test_parameters(model):
             "Cl",
         ]
         assert j in model.fs.product_properties.charge
+        assert j in model.fs.product_properties.diffusion_coefficient
         assert j in model.fs.product_properties.sigma
         assert j in model.fs.product_properties.partition_coefficient_retentate
         assert j in model.fs.product_properties.partition_coefficient_permeate

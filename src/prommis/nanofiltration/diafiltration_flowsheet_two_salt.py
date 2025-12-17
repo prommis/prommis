@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Sample flowsheet for the diafiltration cascade.
+Sample flowsheet for the two-salt diafiltration cascade.
 
 Author: Molly Dougher
 """
@@ -33,7 +33,7 @@ from prommis.nanofiltration.diafiltration_solute_properties import SoluteParamet
 from prommis.nanofiltration.diafiltration_two_salt import TwoSaltDiafiltration
 
 
-def main():
+def main(visualize=True):
     """
     Builds and solves flowsheet with two-salt diafiltration unit model.
     """
@@ -77,9 +77,12 @@ def main():
     # check numerical warnings
     dt.assert_no_numerical_warnings()
 
-    # visualize the results
-    plot_results(m)
-    plot_membrane_results(m)
+    if visualize:
+        # visualize the results
+        plot_results(m)
+        plot_membrane_results(m)
+
+    return m
 
 
 def build_membrane_parameters(m):

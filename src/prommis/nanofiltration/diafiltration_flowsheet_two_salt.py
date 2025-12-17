@@ -33,7 +33,7 @@ from prommis.nanofiltration.diafiltration_solute_properties import SoluteParamet
 from prommis.nanofiltration.diafiltration_two_salt import TwoSaltDiafiltration
 
 
-def main(visualize=True):
+def main():
     """
     Builds and solves flowsheet with two-salt diafiltration unit model.
     """
@@ -77,12 +77,13 @@ def main(visualize=True):
     # check numerical warnings
     dt.assert_no_numerical_warnings()
 
-    if visualize:
-        # visualize the results
-        plot_results(m)
-        plot_membrane_results(m)
+    # visualize the results
+    overall_results_plot = plot_results(m)
+    membrane_results_plot = plot_membrane_results(m)
 
-    return m
+    print(overall_results_plot)
+
+    return (m, overall_results_plot, membrane_results_plot)
 
 
 def build_membrane_parameters(m):
@@ -250,7 +251,7 @@ def plot_results(m):
                 )
             )
 
-    fig1, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(
+    fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(
         3, 2, dpi=100, figsize=(12, 10)
     )
 
@@ -297,6 +298,8 @@ def plot_results(m):
     ax6.tick_params(direction="in", labelsize=10)
 
     plt.show()
+
+    return fig
 
 
 def plot_membrane_results(m):
@@ -387,6 +390,8 @@ def plot_membrane_results(m):
     fig.colorbar(chloride_plot, ax=ax3)
 
     plt.show()
+
+    return fig
 
 
 if __name__ == "__main__":

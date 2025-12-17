@@ -13,6 +13,8 @@ from pyomo.environ import value
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.models.unit_models import Feed, Product
 
+import matplotlib.pyplot as plt
+
 import pytest
 
 from prommis.nanofiltration.diafiltration_flowsheet_two_salt import main
@@ -23,7 +25,7 @@ def test_main():
     """
     Tests the execution of the main function in diafiltration.py
     """
-    m = main(visualize=False)
+    (m, overall_results_plot, membrane_results_plot) = main()
     dt = DiagnosticsToolbox(m)
     dt.assert_no_numerical_warnings()
 
@@ -36,6 +38,23 @@ def test_main():
     assert hasattr(m.fs, "diafiltrate_stream")
     assert hasattr(m.fs, "retentate_stream")
     assert hasattr(m.fs, "permeate_stream")
+
+    # verify necessary variables are fixed
+    assert m.fs.membrane.total_module_length.fixed
+    assert m.fs.membrane.total_membrane_length.fixed
+    assert m.fs.membrane.applied_pressure.fixed
+    assert m.fs.membrane.feed_flow_volume[0].fixed
+    assert m.fs.membrane.feed_conc_mol_comp[0, "Li"].fixed
+    assert m.fs.membrane.feed_conc_mol_comp[0, "Co"].fixed
+    assert m.fs.membrane.feed_conc_mol_comp[0, "Cl"].fixed
+    assert m.fs.membrane.diafiltrate_flow_volume[0].fixed
+    assert m.fs.membrane.diafiltrate_conc_mol_comp[0, "Li"].fixed
+    assert m.fs.membrane.diafiltrate_conc_mol_comp[0, "Co"].fixed
+    assert m.fs.membrane.diafiltrate_conc_mol_comp[0, "Cl"].fixed
+
+    # verify plots exist
+    assert isinstance(overall_results_plot, plt.Figure)
+    assert isinstance(membrane_results_plot, plt.Figure)
 
     test_dict = {
         "retentate_final": [

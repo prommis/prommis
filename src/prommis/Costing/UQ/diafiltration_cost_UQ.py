@@ -30,6 +30,7 @@ import math
 import os
 
 import pyomo.environ as pyo
+from pyomo.core.base.param import ScalarParam
 
 from idaes.core import UnitModelBlock, UnitModelCostingBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox, degrees_of_freedom
@@ -49,6 +50,10 @@ from prommis.nanofiltration.diafiltration import (
 )
 from prommis.uky.costing.costing_dictionaries import load_default_sale_prices
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting
+
+# Make sure ScalarParam has attribute units
+if not hasattr(ScalarParam, "units"):
+    ScalarParam.units = property(lambda self: pyo.units.get_units(self))
 
 
 def get_script_dir():

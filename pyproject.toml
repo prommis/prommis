@@ -30,15 +30,17 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse >=2.8.0",
-    "pyomo >=6.7.0",
+    "idaes-pse>=2.10.0",
+    "pyomo >=6.9.5",
 ]
 [project.optional-dependencies]
 watertap = [
-    "watertap >= 1.4.0",
+    "watertap >= 1.5.0"
 ]
+
+
 flowsheet-processor = [
-    "idaes-flowsheet-processor >=0.1.dev4",
+    "idaes-flowsheet-processor >=0.2",
 ]
 
 [tool.setuptools_scm]

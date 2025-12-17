@@ -32,7 +32,7 @@ from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 import pytest
 
-from prommis.Costing.UQ.diafiltration_cost_UQ import (
+from prommis.costing.uq.diafiltration_cost_uq import (
     build_diafiltration_model,
     build_uncertainty_specs,
     identify_uncertain_params,

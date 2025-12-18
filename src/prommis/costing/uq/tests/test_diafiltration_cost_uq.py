@@ -33,12 +33,17 @@ from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 import numpy as np
 import pytest
 
+import prommis.costing.uq.diafiltration_cost_uq as uq
 from prommis.costing.uq.diafiltration_cost_uq import (
+    analyze_sensitivity,
     build_diafiltration_model,
     build_uncertainty_specs,
     decision_variables_bounds,
     estimate_lognormal_params_from_data,
     identify_uncertain_params,
+    lhs_unit,
+    plot_distributions_by_technology,
+    triangular_icdf,
     main,
 )
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting
@@ -112,8 +117,53 @@ class TestDiafiltrationCostUQStructure:
         assert mu == pytest.approx(1.0158, rel=1e-3)
         assert sigma == pytest.approx(0.7657, rel=1e-3)
 
-    # Test load income tax from csv
+    # Test LHS sampling method
+    @pytest.mark.unit
+    def test_lhs_unit_shape_bounds(self):
+        n, d = 10, 3
+        rng = np.random.default_rng(123)
 
+        U = lhs_unit(n_samples=n, n_dim=d, rng=rng)
+        X2 = lhs_unit(n_samples=n, n_dim=d, rng=rng)
+
+        assert isinstance(U, np.ndarray)
+        assert U.shape == (n, d)
+
+        # In [0,1]
+        assert np.all(U >= 0.0)
+        assert np.all(U <= 1.0)
+    @pytest.mark.unit
+    def test_lhs_unit_reproducible_with_seed(self):
+        n, d, seed = 10, 3, 123
+
+        X1 = lhs_unit(n_samples=n, n_dim=d, rng=np.random.default_rng(seed))
+        X2 = lhs_unit(n_samples=n, n_dim=d, rng=np.random.default_rng(seed))
+        assert np.allclose(X1, X2)
+
+    @pytest.mark.unit
+    def test_triangular_icdf_endpoints_and_mode(self):
+        low, mode, high = 2.0, 5.0, 10.0
+        Fc = (mode - low) / (high - low)
+
+        # endpoints
+        assert triangular_icdf(0.0, low, mode, high) == pytest.approx(low)
+        assert triangular_icdf(1.0, low, mode, high) == pytest.approx(high)
+
+        # exactly at CDF at mode -> returns mode
+        assert triangular_icdf(Fc, low, mode, high) == pytest.approx(mode)
+    
+    @pytest.mark.unit
+    def test_triangular_icdf_monotone_in_u(self):
+        low, mode, high = 0.0, 1.0, 3.0
+        us = np.array([0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
+
+        xs = np.array([triangular_icdf(float(u), low, mode, high) for u in us])
+
+        # nondecreasing and within bounds
+        assert np.all(xs >= low - 1e-12)
+        assert np.all(xs <= high + 1e-12)
+        assert np.all(np.diff(xs) >= -1e-12)
+    
     def test_uncertain_params_and_distributions(self, model):
         m = model
         cp = m.fs.costing
@@ -264,7 +314,7 @@ class TestDiafiltrationCostUQStructure:
             assert "values" in tax_spec
             assert isinstance(tax_spec["values"], np.ndarray)
             assert tax_spec["values"].size == 0
-
+    
     # Identify_uncertain_params is stable / repeatable
     @pytest.mark.unit
     def test_identify_uncertain_params_repeatable(self, model):
@@ -334,10 +384,107 @@ class TestDiafiltrationCostUQStructure:
         assert obj.expr is m.fs.costing.cost_of_recovery
 
     @pytest.mark.unit
-    def test_main(self):
+    def test_plot_distributions_by_technology_raises_on_empty(self):
+        with pytest.raises(ValueError, match="results_by_technology is empty"):
+            plot_distributions_by_technology({})
+    
+    @pytest.mark.unit
+    def test_plot_distributions_by_technology_smoke(self, monkeypatch, tmp_path, capsys):
+        # Avoid writing files / GUI side effects
+        monkeypatch.setattr(uq, "get_script_dir", lambda: str(tmp_path))
+        monkeypatch.setattr(uq.plt, "savefig", lambda *a, **k: None)
+        monkeypatch.setattr(uq.plt, "close", lambda *a, **k: None)
+
+        results_by_technology = {
+            "tech_A": {
+                "samples_first_param": np.array([1.0, 2.0, 3.0]),
+                "recovery_cost_samples": np.array([10.0, 11.0, 12.0, np.nan]),  # valid.size>0
+            },
+            "tech_B": {
+                "samples_first_param": np.array([9.0, 9.5, 10.0]),  # not used (only first case used)
+                "recovery_cost_samples": np.array([20.0, 21.0, 22.0]),          # valid.size>0
+            },
+        }
+
+        uq.plot_distributions_by_technology(results_by_technology)
+
+        out = capsys.readouterr().out
+        assert "Saved plot to:" in out
+    
+    @pytest.mark.unit
+    def test_analyze_sensitivity_covers_main_path(self, capsys):
+        X = np.array([
+            [1.0, 0.0, 10.0],
+            [1.0, 1.0, 11.0],
+            [1.0, 2.0, 12.0],
+            [1.0, 3.0, 13.0],
+            [1.0, 4.0, 14.0],
+            [1.0, 5.0, 15.0],
+        ], dtype=float)
+        
+        y = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0], dtype=float)
+        
+        names = ["const_col", "x1", "x2"]
+
+        analyze_sensitivity(X, y, names, technology_name="tech_ok")
+
+        # Captures everything printed to the terminal
+        out = capsys.readouterr().out
+        assert "Sensitivity ranking (standardized linear coefficients)" in out
+        assert "Sensitivity ranking (|Pearson correlation|)" in out
+    
+    @pytest.mark.unit
+    def test_plot_stage_length_histograms_by_technology_raises_on_empty(self):
+        with pytest.raises(ValueError, match="results_by_technology is empty"):
+            uq.plot_stage_length_histograms_by_technology({})
+
+
+    @pytest.mark.unit
+    def test_plot_stage_length_histograms_by_technology_smoke(self, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(uq, "get_script_dir", lambda: str(tmp_path))
+        monkeypatch.setattr(uq.plt, "savefig", lambda *a, **k: None)
+        monkeypatch.setattr(uq.plt, "close", lambda *a, **k: None)
+
+        results_by_technology = {
+            "tech_A": {
+                "recovery_cost_samples": np.array([1.0, np.nan, 2.0, 3.0]),
+                "stage1_len": np.array([10.0, 11.0, np.nan, 13.0]),
+                "stage2_len": np.array([20.0, np.nan, 22.0, 23.0]),
+                "stage3_len": np.array([30.0, 31.0, 32.0, np.nan]),
+            },
+            "tech_B": {
+                "recovery_cost_samples": np.array([5.0, 6.0, np.nan]),
+                "stage1_len": np.array([1.0, np.nan, 3.0]),
+                "stage2_len": np.array([4.0, 5.0, 6.0]),
+                "stage3_len": np.array([7.0, 8.0, np.nan]),
+            },
+        }
+
+        uq.plot_stage_length_histograms_by_technology(results_by_technology)
+
+        out = capsys.readouterr().out
+        assert "Saved stage-length histogram plot to:" in out
+    
+    @pytest.mark.unit
+    def test_main_monte_carlo(self, tmp_path):
         main(
             n_samples=3,
             use_lhs=False,
-            run_plots=False,
-            run_stage1_cost=False,
+            run_plots=True,
+            run_stage1_cost=True,
+            save_plots=False,
+            output_dir=str(tmp_path),
         )
+        
+    @pytest.mark.component
+    def test_main_smoke_lhs(self, tmp_path):
+        main(
+            n_samples=3,
+            use_lhs=True,
+            run_plots=True,
+            run_stage1_cost=True,
+            save_plots=False,
+            output_dir=str(tmp_path),
+        )
+        
+

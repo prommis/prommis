@@ -85,14 +85,16 @@ class TestDiafiltrationCostUQStructure:
     # Decision variable bounds
     @pytest.mark.unit
     def test_decision_variables_bounds(self):
-        m = build_diafiltration_model(sieving_coeffs=(1.3, 0.5), technology_name="tech_test")
+        m = build_diafiltration_model(
+            sieving_coeffs=(1.3, 0.5), technology_name="tech_test"
+        )
         decision_variables_bounds(m)
         dv = [
             m.fs.stage1.length,
             m.fs.stage2.length,
             m.fs.stage3.length,
         ]
-        
+
         for v in dv:
             assert isinstance(v, pyo.Var)
             assert v.lb is not None
@@ -100,18 +102,18 @@ class TestDiafiltrationCostUQStructure:
             assert pyo.value(v.lb) <= pyo.value(v.ub)
             assert pyo.value(v.lb) == pytest.approx(0.1)
             assert pyo.value(v.ub) == pytest.approx(10000)
-        
+
     # 1. Uncertain parameters and distribution specs
     @pytest.mark.unit
     def test_estimate_lognormal_params_from_data_basic(self):
-        data = np.array([1.0, np.e, np.e**2], dtype=float)   # logs = [0,1,2]
+        data = np.array([1.0, np.e, np.e**2], dtype=float)  # logs = [0,1,2]
         mu, sigma = estimate_lognormal_params_from_data(data)
 
         assert mu == pytest.approx(1.0158, rel=1e-3)
         assert sigma == pytest.approx(0.7657, rel=1e-3)
-    
+
     # Test load income tax from csv
-    
+
     def test_uncertain_params_and_distributions(self, model):
         m = model
         cp = m.fs.costing

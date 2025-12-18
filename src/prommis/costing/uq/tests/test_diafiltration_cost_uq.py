@@ -30,6 +30,7 @@ import pyomo.environ as pyo
 from idaes.core import UnitModelCostingBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
+import numpy as np
 import pytest
 
 from prommis.costing.uq.diafiltration_cost_uq import (
@@ -177,6 +178,69 @@ class TestDiafiltrationCostUQStructure:
         _check_lognormal_mean_matches_nominal(cp.electricity_cost)
         _check_lognormal_mean_matches_nominal(cp.Li_price)
         _check_lognormal_mean_matches_nominal(cp.Co_price)
+
+    # Customized lognormal params
+    @pytest.mark.unit
+    def test_build_undertainty_specs_uses_custom_lognormal_params(self, model):
+        m = model
+        cp = m.fs.costing
+
+        custom = {
+            cp.electricity_cost.getname(): {"mu": -3.0, "sigma": 0.2},
+            cp.Li_price.getname(): {"mu":  1.5, "sigma": 0.1},
+            cp.Co_price.getname(): {"mu":  2.0, "sigma": 0.3},
+        }
+
+        specs = build_uncertainty_specs(
+            m,
+            lognormal_params=custom,
+            income_tax_samples=[21.0, 24.0, 30.5],
+        )
+
+        for pname, ms in custom.items():
+            assert specs[pname]["type"] == "lognormal"
+            assert float(specs[pname]["mu"]) == pytest.approx(ms["mu"])
+            assert float(specs[pname]["sigma"]) == pytest.approx(ms["sigma"])
+    
+    # Income-tax fallback behavior (None / empty samples)        
+    @pytest.mark.unit
+    @pytest.mark.parametrize("samples", [None, []])
+    def test_income_tax_samples_behavior(self, model, samples):
+        m = model
+        cp = m.fs.costing
+
+        specs = build_uncertainty_specs(
+            m,
+            lognormal_params=None,
+            income_tax_samples=samples,
+        )
+
+        tax_name = cp.income_tax_percentage.getname()
+        tax_spec = specs[tax_name]
+
+        if samples is None:
+            # Fallback uniform path (explicit in implementation)
+            assert tax_spec["type"] == "uniform"
+            assert tax_spec["low"] == pytest.approx(21.0)
+            assert tax_spec["high"] == pytest.approx(37.5)
+            assert tax_spec["low"] < tax_spec["high"]
+        else:
+            # Discrete path, even if empty
+            assert tax_spec["type"] == "discrete"
+            assert "values" in tax_spec
+            assert isinstance(tax_spec["values"], np.ndarray)
+            assert tax_spec["values"].size == 0
+
+    
+    # Identify_uncertain_params is stable / repeatable   
+    @pytest.mark.unit
+    def test_identify_uncertain_params_repeatable(self, model):
+        p1 = identify_uncertain_params(model)
+        p2 = identify_uncertain_params(model)
+
+        # Same objects, same order (or at least same set)
+        assert [id(p) for p in p1] == [id(p) for p in p2]
+        assert {p.getname() for p in p1} == {p.getname() for p in p2}
 
     # 2. Flowsheet & costing structure (constraints from diafiltration + QGESS)
     def test_flowsheet_and_costing_structure(self, model):

@@ -1158,7 +1158,17 @@ def plot_stage_length_histograms_by_technology(results_by_technology):
 
 
 # 8. Main driver
-def main():
+def main(
+    n_samples=200,
+    use_lhs=False,
+    random_seed=1,
+    run_plots=True,
+    run_stage1_cost=True,
+    solver_name="ipopt",
+    max_iter=5000,
+    tol=1e-6,
+    acceptable_tol=1e-5,
+):
     technologies = {
         "Li_sc=1.3, Co_sc=0.5": (1.3, 0.5),
         "Li_sc=1.5, Co_sc=0.8": (1.5, 0.8),
@@ -1166,15 +1176,14 @@ def main():
 
     results_by_technology = {}
 
-    N_SAMPLES = 200  # Sample size
-    USE_LHS = False  # Sampling method
-    random_seed = 1
+    N_SAMPLES = n_samples  # Sample size
+    USE_LHS = use_lhs  # Sampling method
 
     # Set up solver
-    local_solver = pyo.SolverFactory("ipopt")
-    local_solver.options["max_iter"] = 5000
-    local_solver.options["tol"] = 1e-6
-    local_solver.options["acceptable_tol"] = 1e-5  # acceptable stopping tolerance
+    local_solver = pyo.SolverFactory(solver_name)
+    local_solver.options["max_iter"] = max_iter
+    local_solver.options["tol"] = tol
+    local_solver.options["acceptable_tol"] = acceptable_tol
 
     for technology_name, sieving_coeffs in technologies.items():
         print(f"\n===Running technology {technology_name} ===")
@@ -1254,7 +1263,7 @@ def main():
         )
 
         # Run sampling
-        if USE_LHS:
+        if use_lhs:
             print(f"Running LHS with {N_SAMPLES} samples...")
             (
                 samples_first_param,
@@ -1322,18 +1331,20 @@ def main():
         }
 
         # Stage 1 membrane BEC:
-        analyze_stage1_membrane_cost(
-            m,
-            technology_name=technology_name.replace("=", "")
-            .replace(",", "_")
-            .replace(" ", ""),
-            n_lengths=50,
-            n_samples_per_length=50,
-        )
+        if run_stage1_cost:
+            analyze_stage1_membrane_cost(
+                m,
+                technology_name=technology_name.replace("=", "")
+                .replace(",", "_")
+                .replace(" ", ""),
+                n_lengths=50,
+                n_samples_per_length=50,
+            )
 
     # Cross-case comparison plot
-    plot_distributions_by_technology(results_by_technology)
-    plot_stage_length_histograms_by_technology(results_by_technology)
+    if run_plots:
+        plot_distributions_by_technology(results_by_technology)
+        plot_stage_length_histograms_by_technology(results_by_technology)
 
 
 if __name__ == "__main__":

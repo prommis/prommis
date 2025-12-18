@@ -36,7 +36,10 @@ import pytest
 from prommis.costing.uq.diafiltration_cost_uq import (
     build_diafiltration_model,
     build_uncertainty_specs,
+    decision_variables_bounds,
+    estimate_lognormal_params_from_data,
     identify_uncertain_params,
+    main,
 )
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting
 
@@ -79,7 +82,36 @@ class TestDiafiltrationCostUQStructure:
             m_b.fs.sieving_coefficient["Co"]
         )
 
+    # Decision variable bounds
+    @pytest.mark.unit
+    def test_decision_variables_bounds(self):
+        m = build_diafiltration_model(sieving_coeffs=(1.3, 0.5), technology_name="tech_test")
+        decision_variables_bounds(m)
+        dv = [
+            m.fs.stage1.length,
+            m.fs.stage2.length,
+            m.fs.stage3.length,
+        ]
+        
+        for v in dv:
+            assert isinstance(v, pyo.Var)
+            assert v.lb is not None
+            assert v.ub is not None
+            assert pyo.value(v.lb) <= pyo.value(v.ub)
+            assert pyo.value(v.lb) == pytest.approx(0.1)
+            assert pyo.value(v.ub) == pytest.approx(10000)
+        
     # 1. Uncertain parameters and distribution specs
+    @pytest.mark.unit
+    def test_estimate_lognormal_params_from_data_basic(self):
+        data = np.array([1.0, np.e, np.e**2], dtype=float)   # logs = [0,1,2]
+        mu, sigma = estimate_lognormal_params_from_data(data)
+
+        assert mu == pytest.approx(1.0158, rel=1e-3)
+        assert sigma == pytest.approx(0.7657, rel=1e-3)
+    
+    # Test load income tax from csv
+    
     def test_uncertain_params_and_distributions(self, model):
         m = model
         cp = m.fs.costing
@@ -298,3 +330,12 @@ class TestDiafiltrationCostUQStructure:
         obj = objs[0]
         assert obj is m.obj
         assert obj.expr is m.fs.costing.cost_of_recovery
+
+    @pytest.mark.unit
+    def test_main(self):
+        main(
+            n_samples=3,
+            use_lhs=False,
+            run_plots=False,
+            run_stage1_cost=False,
+        )

@@ -42,9 +42,9 @@ from prommis.costing.uq.diafiltration_cost_uq import (
     estimate_lognormal_params_from_data,
     identify_uncertain_params,
     lhs_unit,
+    main,
     plot_distributions_by_technology,
     triangular_icdf,
-    main,
 )
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting
 
@@ -132,6 +132,7 @@ class TestDiafiltrationCostUQStructure:
         # In [0,1]
         assert np.all(U >= 0.0)
         assert np.all(U <= 1.0)
+
     @pytest.mark.unit
     def test_lhs_unit_reproducible_with_seed(self):
         n, d, seed = 10, 3, 123
@@ -151,7 +152,7 @@ class TestDiafiltrationCostUQStructure:
 
         # exactly at CDF at mode -> returns mode
         assert triangular_icdf(Fc, low, mode, high) == pytest.approx(mode)
-    
+
     @pytest.mark.unit
     def test_triangular_icdf_monotone_in_u(self):
         low, mode, high = 0.0, 1.0, 3.0
@@ -163,7 +164,7 @@ class TestDiafiltrationCostUQStructure:
         assert np.all(xs >= low - 1e-12)
         assert np.all(xs <= high + 1e-12)
         assert np.all(np.diff(xs) >= -1e-12)
-    
+
     def test_uncertain_params_and_distributions(self, model):
         m = model
         cp = m.fs.costing
@@ -314,7 +315,7 @@ class TestDiafiltrationCostUQStructure:
             assert "values" in tax_spec
             assert isinstance(tax_spec["values"], np.ndarray)
             assert tax_spec["values"].size == 0
-    
+
     # Identify_uncertain_params is stable / repeatable
     @pytest.mark.unit
     def test_identify_uncertain_params_repeatable(self, model):
@@ -387,9 +388,11 @@ class TestDiafiltrationCostUQStructure:
     def test_plot_distributions_by_technology_raises_on_empty(self):
         with pytest.raises(ValueError, match="results_by_technology is empty"):
             plot_distributions_by_technology({})
-    
+
     @pytest.mark.unit
-    def test_plot_distributions_by_technology_smoke(self, monkeypatch, tmp_path, capsys):
+    def test_plot_distributions_by_technology_smoke(
+        self, monkeypatch, tmp_path, capsys
+    ):
         # Avoid writing files / GUI side effects
         monkeypatch.setattr(uq, "get_script_dir", lambda: str(tmp_path))
         monkeypatch.setattr(uq.plt, "savefig", lambda *a, **k: None)
@@ -398,11 +401,15 @@ class TestDiafiltrationCostUQStructure:
         results_by_technology = {
             "tech_A": {
                 "samples_first_param": np.array([1.0, 2.0, 3.0]),
-                "recovery_cost_samples": np.array([10.0, 11.0, 12.0, np.nan]),  # valid.size>0
+                "recovery_cost_samples": np.array(
+                    [10.0, 11.0, 12.0, np.nan]
+                ),  # valid.size>0
             },
             "tech_B": {
-                "samples_first_param": np.array([9.0, 9.5, 10.0]),  # not used (only first case used)
-                "recovery_cost_samples": np.array([20.0, 21.0, 22.0]),          # valid.size>0
+                "samples_first_param": np.array(
+                    [9.0, 9.5, 10.0]
+                ),  # not used (only first case used)
+                "recovery_cost_samples": np.array([20.0, 21.0, 22.0]),  # valid.size>0
             },
         }
 
@@ -410,20 +417,23 @@ class TestDiafiltrationCostUQStructure:
 
         out = capsys.readouterr().out
         assert "Saved plot to:" in out
-    
+
     @pytest.mark.unit
     def test_analyze_sensitivity_covers_main_path(self, capsys):
-        X = np.array([
-            [1.0, 0.0, 10.0],
-            [1.0, 1.0, 11.0],
-            [1.0, 2.0, 12.0],
-            [1.0, 3.0, 13.0],
-            [1.0, 4.0, 14.0],
-            [1.0, 5.0, 15.0],
-        ], dtype=float)
-        
+        X = np.array(
+            [
+                [1.0, 0.0, 10.0],
+                [1.0, 1.0, 11.0],
+                [1.0, 2.0, 12.0],
+                [1.0, 3.0, 13.0],
+                [1.0, 4.0, 14.0],
+                [1.0, 5.0, 15.0],
+            ],
+            dtype=float,
+        )
+
         y = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0], dtype=float)
-        
+
         names = ["const_col", "x1", "x2"]
 
         analyze_sensitivity(X, y, names, technology_name="tech_ok")
@@ -432,15 +442,16 @@ class TestDiafiltrationCostUQStructure:
         out = capsys.readouterr().out
         assert "Sensitivity ranking (standardized linear coefficients)" in out
         assert "Sensitivity ranking (|Pearson correlation|)" in out
-    
+
     @pytest.mark.unit
     def test_plot_stage_length_histograms_by_technology_raises_on_empty(self):
         with pytest.raises(ValueError, match="results_by_technology is empty"):
             uq.plot_stage_length_histograms_by_technology({})
 
-
     @pytest.mark.unit
-    def test_plot_stage_length_histograms_by_technology_smoke(self, monkeypatch, tmp_path, capsys):
+    def test_plot_stage_length_histograms_by_technology_smoke(
+        self, monkeypatch, tmp_path, capsys
+    ):
         monkeypatch.setattr(uq, "get_script_dir", lambda: str(tmp_path))
         monkeypatch.setattr(uq.plt, "savefig", lambda *a, **k: None)
         monkeypatch.setattr(uq.plt, "close", lambda *a, **k: None)
@@ -464,7 +475,7 @@ class TestDiafiltrationCostUQStructure:
 
         out = capsys.readouterr().out
         assert "Saved stage-length histogram plot to:" in out
-    
+
     @pytest.mark.unit
     def test_main_monte_carlo(self, tmp_path):
         main(
@@ -475,7 +486,7 @@ class TestDiafiltrationCostUQStructure:
             save_plots=False,
             output_dir=str(tmp_path),
         )
-        
+
     @pytest.mark.component
     def test_main_smoke_lhs(self, tmp_path):
         main(
@@ -486,5 +497,3 @@ class TestDiafiltrationCostUQStructure:
             save_plots=False,
             output_dir=str(tmp_path),
         )
-        
-

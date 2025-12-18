@@ -919,7 +919,9 @@ def analyze_sensitivity(
 
 
 # 6. Plotting inputs and outputs
-def plot_distributions_by_technology(results_by_technology, save_plot=True, output_dir=None):
+def plot_distributions_by_technology(
+    results_by_technology, save_plot=True, output_dir=None
+):
     """
     - Histogram of the fist uncertain parameter
     - Histogram of cost_of_recovery (ignoring NaNs)
@@ -977,11 +979,12 @@ def plot_distributions_by_technology(results_by_technology, save_plot=True, outp
     out_file = os.path.join(
         script_dir, f"uncertainty_distributions_by_sieving_case ({suffix}).png"
     )
-    
+
     if save_plot:
         plt.savefig(out_file, dpi=200)
         print(f"Saved plot to: {out_file}", flush=True)
     plt.close(fig)
+
 
 # 7. Single membrane (stage1) with Lang factor considered confidence interval analysis
 def analyze_stage1_membrane_cost(
@@ -991,7 +994,7 @@ def analyze_stage1_membrane_cost(
     n_samples_per_length=50,  # number of uncertainty samples per length
     random_seed=1,
     save_plot=True,
-    output_dir=None
+    output_dir=None,
 ):
     """Explore stage 1 membrane capital cost vs membrane length.
 
@@ -1120,7 +1123,9 @@ def analyze_stage1_membrane_cost(
 
 
 # Plot memebran length histogram
-def plot_stage_length_histograms_by_technology(results_by_technology, save_plot=True, output_dir=None ):
+def plot_stage_length_histograms_by_technology(
+    results_by_technology, save_plot=True, output_dir=None
+):
     if not results_by_technology:
         raise ValueError("results_by_technology is empty")
 
@@ -1154,13 +1159,14 @@ def plot_stage_length_histograms_by_technology(results_by_technology, save_plot=
         axes[r, 2].set_ylabel("Density")
 
     fig.tight_layout()
-    
+
     script_dir = output_dir if output_dir is not None else get_script_dir()
     out_file = os.path.join(script_dir, "stage_lengths_histogram_by_sieving_case.png")
     if save_plot:
         plt.savefig(out_file, dpi=200)
         print(f"Saved stage-length histogram plot to: {out_file}", flush=True)
     plt.close(fig)
+
 
 # 8. Main driver
 def main(
@@ -1180,7 +1186,7 @@ def main(
         "Li_sc=1.3, Co_sc=0.5": (1.3, 0.5),
         "Li_sc=1.5, Co_sc=0.8": (1.5, 0.8),
     }
-    
+
     script_dir = output_dir if output_dir is not None else get_script_dir()
 
     results_by_technology = {}
@@ -1359,12 +1365,12 @@ def main(
             results_by_technology,
             save_plot=save_plots,
             output_dir=script_dir,
-            )
+        )
         plot_stage_length_histograms_by_technology(
             results_by_technology,
             save_plot=save_plots,
             output_dir=script_dir,
-            )
+        )
 
 
 if __name__ == "__main__":

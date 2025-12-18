@@ -187,8 +187,8 @@ class TestDiafiltrationCostUQStructure:
 
         custom = {
             cp.electricity_cost.getname(): {"mu": -3.0, "sigma": 0.2},
-            cp.Li_price.getname(): {"mu":  1.5, "sigma": 0.1},
-            cp.Co_price.getname(): {"mu":  2.0, "sigma": 0.3},
+            cp.Li_price.getname(): {"mu": 1.5, "sigma": 0.1},
+            cp.Co_price.getname(): {"mu": 2.0, "sigma": 0.3},
         }
 
         specs = build_uncertainty_specs(
@@ -201,8 +201,8 @@ class TestDiafiltrationCostUQStructure:
             assert specs[pname]["type"] == "lognormal"
             assert float(specs[pname]["mu"]) == pytest.approx(ms["mu"])
             assert float(specs[pname]["sigma"]) == pytest.approx(ms["sigma"])
-    
-    # Income-tax fallback behavior (None / empty samples)        
+
+    # Income-tax fallback behavior (None / empty samples)
     @pytest.mark.unit
     @pytest.mark.parametrize("samples", [None, []])
     def test_income_tax_samples_behavior(self, model, samples):
@@ -231,8 +231,7 @@ class TestDiafiltrationCostUQStructure:
             assert isinstance(tax_spec["values"], np.ndarray)
             assert tax_spec["values"].size == 0
 
-    
-    # Identify_uncertain_params is stable / repeatable   
+    # Identify_uncertain_params is stable / repeatable
     @pytest.mark.unit
     def test_identify_uncertain_params_repeatable(self, model):
         p1 = identify_uncertain_params(model)

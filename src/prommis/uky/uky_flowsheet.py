@@ -133,8 +133,8 @@ of the unit model capacity parameters have been scaled down accordingly by unit 
 
 References:
 
-[1] Steven Keim, "Production of salable rare earths products from coal and coal byproducts in the U.S.
-using advanced separation processes", 2019
+[1] Keim, Steven Anthony and Naumann, Hans. "Production of Salable Rare Earths Products from Coal and Coal Byproducts
+ in the U.S. Using Advanced Separation Processes (Final Technical Report)." , Sep. 2019. https://doi.org/10.2172/1569277
 
 """
 import logging
@@ -507,6 +507,7 @@ def build():
     m.fs.precipitator = Precipitator(
         property_package_aqueous=m.fs.properties_aq,
         property_package_precipitate=m.fs.properties_solid,
+        make_volume_balance_constraint=True,
     )
 
     m.fs.sl_sep2 = SLSeparator(
@@ -1046,7 +1047,7 @@ def set_operating_conditions(m):
     m.fs.translator_precipitate_to_leaching.outlet.pressure.fix(P_atm)
     m.fs.translator_precipitate_to_leaching.outlet.temperature.fix(Temp_room)
 
-    m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
+    m.fs.precipitator.precipitate_state_block[0].temperature.fix(348.15 * units.K)
 
     m.fs.precip_sep.split_fraction[:, "recycle"].fix(0.9)
     m.fs.precip_sep.purge_state[0.0].pressure.fix(P_atm)
@@ -1103,8 +1104,8 @@ def set_operating_conditions(m):
     m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol
     m.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp
 
-    m.fs.precipitator.cv_precipitate[0].temperature
-    m.fs.precipitator.cv_precipitate[0].flow_mol_comp
+    m.fs.precipitator.precipitate_state_block[0].temperature
+    m.fs.precipitator.precipitate_state_block[0].flow_mol_comp
 
 
 def initialize_system(m):

@@ -91,13 +91,8 @@ def main():
     add_product_constraints(m, Li_recovery_bound=0.95, Co_recovery_bound=0.635)
     add_objective(m)
 
-    # Create a scaled version of the model to solve
     set_scaling(m)
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-    solve_model(scaled_model)
-    # Propagate results back to unscaled model
-    scaling.propagate_solution(scaled_model, m)
+    solve_model(m, tee=False)
 
     # TODO: add Boolean variable to calculate pump OPEX
     # Verify the feed pump operating pressure workaround is valid
@@ -170,9 +165,9 @@ def add_global_flowsheet_parameters(m):
         units=units.m,
     )
     m.atmospheric_pressure = Param(
-        initialize=101325,
-        doc="Atmospheric pressure in Pascal",
-        units=units.Pa,
+        initialize=101.325,
+        doc="Atmospheric pressure in kilo-Pascal",
+        units=units.kPa,
     )
     m.operating_pressure = Param(
         initialize=145,
@@ -671,7 +666,7 @@ def add_costing(m):
     )
     m.fs.cascade.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
-        costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
+        costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop_utility,
         costing_method_arguments={
             "water_flux": m.Jw,
             "vol_flow_feed": m.fs.stage3.retentate_side_stream_state[

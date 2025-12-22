@@ -165,9 +165,9 @@ def add_global_flowsheet_parameters(m):
         units=units.m,
     )
     m.atmospheric_pressure = Param(
-        initialize=101325,
-        doc="Atmospheric pressure in Pascal",
-        units=units.Pa,
+        initialize=101.325,
+        doc="Atmospheric pressure in kilo-Pascal",
+        units=units.kPa,
     )
     m.operating_pressure = Param(
         initialize=145,
@@ -666,7 +666,7 @@ def add_costing(m):
     )
     m.fs.cascade.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
-        costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
+        costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop_utility,
         costing_method_arguments={
             "water_flux": m.Jw,
             "vol_flow_feed": m.fs.stage3.retentate_side_stream_state[

@@ -526,7 +526,8 @@ def build_uncertainty_specs(m, lognormal_params=None, income_tax_samples=None):
         return {"type": "lognormal", "mu": mu, "sigma": sigma}
 
     specs[cp.electricity_cost.getname()] = _lognormal_spec_for_param(
-        cp.electricity_cost)
+        cp.electricity_cost
+    )
 
     specs[cp.Li_price.getname()] = _lognormal_spec_for_param(cp.Li_price)
 
@@ -1117,7 +1118,7 @@ def analyze_stage1_membrane_cost(
     plt.close(fig)
 
 
-# Plot membran length histogram
+# Plot membrane length histogram
 def plot_stage_length_histograms_by_technology(
     results_by_technology, save_plot=True, output_dir=None
 ):

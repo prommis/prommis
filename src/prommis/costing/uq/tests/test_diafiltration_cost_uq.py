@@ -53,7 +53,7 @@ class TestDiafiltrationCostUQStructure:
     @pytest.fixture(scope="class")
     def model(self):
         """Build a fresh diafiltration UQ model for all tests."""
-        m = build_diafiltration_model()
+        m = build_diafiltration_model(sieving_coeffs=(1.3, 0.5), technology_name=None)
         return m
 
     # 0. Sieving coefficient options (technology comparison)

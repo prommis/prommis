@@ -85,12 +85,8 @@ def set_sieving_coefficients(m, li_sc, co_sc):
     overridden here, to avoid modifying the underlying flowsheet implementation.
     """
     sc = m.fs.sieving_coefficient
-    sc["Li"].unfix()
-    sc["Co"].unfix()
-    sc["Li"].set_value(li_sc)
-    sc["Co"].set_value(co_sc)
-    sc["Li"].fix()
-    sc["Co"].fix()
+    sc["Li"].fix(li_sc)
+    sc["Co"].fix(co_sc)
 
 
 # 1. Build the flowsheet + costing
@@ -509,8 +505,8 @@ def build_uncertainty_specs(m, lognormal_params=None, income_tax_samples=None):
     # --- 3. Lognormal distributions ---
 
     # Helper to build a lognormal spec either from provided (mu, sigma)
-    # or from a nominal value with assumed coefficient of varition (CV).
-    def _lognormal_spec_for_param(param, fallback_label):
+    # or from a nominal value with assumed coefficient of variation (CV).
+    def _lognormal_spec_for_param(param):
         name = param.getname()
         nominal = float(pyo.value(param))
 
@@ -530,12 +526,11 @@ def build_uncertainty_specs(m, lognormal_params=None, income_tax_samples=None):
         return {"type": "lognormal", "mu": mu, "sigma": sigma}
 
     specs[cp.electricity_cost.getname()] = _lognormal_spec_for_param(
-        cp.electricity_cost, "electricity_cost"
-    )
+        cp.electricity_cost)
 
-    specs[cp.Li_price.getname()] = _lognormal_spec_for_param(cp.Li_price, "Li_price")
+    specs[cp.Li_price.getname()] = _lognormal_spec_for_param(cp.Li_price)
 
-    specs[cp.Co_price.getname()] = _lognormal_spec_for_param(cp.Co_price, "Co_price")
+    specs[cp.Co_price.getname()] = _lognormal_spec_for_param(cp.Co_price)
 
     return specs
 
@@ -1033,7 +1028,7 @@ def analyze_stage1_membrane_cost(
     Lang_factor_nominal = 4.0  # dimensionless
 
     # Uncertainty ranges
-    memebrane_cost_low, memebrane_cost_mode, memebrane_cost_high = 36.0, 50.0, 450.0
+    membrane_cost_low, membrane_cost_mode, membrane_cost_high = 36.0, 50.0, 450.0
     Lang_factor_low, Lang_factor_high = 2.0, 5.93
 
     nominal_costs = []
@@ -1052,17 +1047,17 @@ def analyze_stage1_membrane_cost(
         nominal_costs.append(cost_nominal)
 
         # Sample uncertainty for this membrane length
-        memembrane_samples = rng.triangular(
-            memebrane_cost_low,
-            memebrane_cost_mode,
-            memebrane_cost_high,
+        memmbrane_samples = rng.triangular(
+            membrane_cost_low,
+            membrane_cost_mode,
+            membrane_cost_high,
             size=n_samples_per_length,
         )
         lang_factor_samples = rng.uniform(
             Lang_factor_low, Lang_factor_high, size=n_samples_per_length
         )
 
-        cost_samples = area * memembrane_samples * lang_factor_samples
+        cost_samples = area * memmbrane_samples * lang_factor_samples
 
         scatter_lengths.extend([L] * n_samples_per_length)
         scatter_costs.extend(cost_samples)
@@ -1122,7 +1117,7 @@ def analyze_stage1_membrane_cost(
     plt.close(fig)
 
 
-# Plot memebran length histogram
+# Plot membran length histogram
 def plot_stage_length_histograms_by_technology(
     results_by_technology, save_plot=True, output_dir=None
 ):

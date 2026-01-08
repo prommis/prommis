@@ -35,7 +35,7 @@ from prommis.examples.cmi_process_flowsheet.cmi_process_flowsheet import (
     set_scaling,
     solve_system,
 )
-from prommis.precipitate.precipitate_liquid_properties import HClStrippingParameterBlock
+from prommis.properties import HClStrippingParameterBlock
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 

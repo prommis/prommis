@@ -1,0 +1,12 @@
+# Code coverage configuration
+# See: https://coverage.readthedocs.io/
+[run]
+source = prommis
+omit =
+    # skip test directories
+    */tests/*
+
+branch = True
+
+[report]
+show_missing = True

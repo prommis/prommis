@@ -25,8 +25,7 @@ from idaes.core.scaling.util import unscaled_variables_generator
 
 import pytest
 
-from prommis.precipitate.precipitate_liquid_properties import HClStrippingParameterBlock
-from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.properties import HClStrippingParameterBlock, REEOxalateParameterBlock
 from prommis.precipitate.precipitator import Precipitator, PrecipitatorScaler
 
 # -----------------------------------------------------------------------------
@@ -40,20 +39,21 @@ def test_config():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties_aq = HClStrippingParameterBlock()
-    m.fs.properties_solid = PrecipitateParameters()
+    m.fs.properties_solid = REEOxalateParameterBlock()
 
     m.fs.unit = Precipitator(
         property_package_aqueous=m.fs.properties_aq,
         property_package_precipitate=m.fs.properties_solid,
     )
 
-    assert len(m.fs.unit.config) == 11
+    assert len(m.fs.unit.config) == 12
 
     assert not m.fs.unit.config.dynamic
     assert not m.fs.unit.config.has_holdup
     assert not m.fs.unit.config.has_equilibrium_reactions
     assert not m.fs.unit.config.has_phase_equilibrium
     assert not m.fs.unit.config.has_heat_of_reaction
+    assert not m.fs.unit.config.make_volume_balance_constraint
     assert m.fs.unit.config.property_package_aqueous is m.fs.properties_aq
     assert m.fs.unit.config.property_package_precipitate is m.fs.properties_solid
 
@@ -67,7 +67,7 @@ class TestPrec(object):
         m = ConcreteModel()
         m.fs = FlowsheetBlock(dynamic=False)
         m.fs.properties_aq = HClStrippingParameterBlock()
-        m.fs.properties_solid = PrecipitateParameters()
+        m.fs.properties_solid = REEOxalateParameterBlock()
 
         m.fs.unit = Precipitator(
             property_package_aqueous=m.fs.properties_aq,
@@ -97,9 +97,13 @@ class TestPrec(object):
         HCl_scaler = m.fs.unit.cv_aqueous.properties_in.default_scaler()
         HCl_scaler.default_scaling_factors["flow_vol"] = 1 / 100
 
+        solid_scaler = m.fs.unit.precipitate_state_block.default_scaler()
+        solid_scaler.default_scaling_factors["flow_mol_comp['Ca(C2O4)(s)']"] = 1e3
+
         submodel_scalers = ComponentMap()
         submodel_scalers[m.fs.unit.cv_aqueous.properties_in] = HCl_scaler
         submodel_scalers[m.fs.unit.cv_aqueous.properties_out] = HCl_scaler
+        submodel_scalers[m.fs.unit.precipitate_state_block] = solid_scaler
 
         scaler_obj = m.fs.unit.default_scaler()
         scaler_obj.scale_model(m.fs.unit, submodel_scalers=submodel_scalers)
@@ -126,7 +130,7 @@ class TestPrec(object):
 
         assert hasattr(prec.fs.unit, "precipitate_generation")
         assert hasattr(prec.fs.unit, "aqueous_depletion")
-        assert hasattr(prec.fs.unit, "vol_balance")
+        assert not hasattr(prec.fs.unit, "vol_balance")
 
         assert number_variables(prec.fs.unit) == 105
         assert number_total_constraints(prec.fs.unit) == 88
@@ -170,8 +174,10 @@ class TestPrec(object):
         dt.assert_no_numerical_warnings()
         dt.assert_no_structural_warnings()
 
-        assert jacobian_cond(prec, scaled=False) == pytest.approx(1.1578e10, rel=1e-3)
-        assert jacobian_cond(prec, scaled=True) == pytest.approx(3270.98, rel=1e-3)
+        # We could do better scaling than this, but it's better to save our effort
+        # for the predictive precipitator model
+        assert jacobian_cond(prec, scaled=False) == pytest.approx(8.228064e6, rel=1e-3)
+        assert jacobian_cond(prec, scaled=True) == pytest.approx(1.05985e5, rel=1e-3)
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")

@@ -8,7 +8,7 @@ r"""
 Preliminary Precipitator Unit Model
 ===================================
 
-Author: Alejandro Garciadiego
+Authors: Alejandro Garciadiego, Douglas Allan
 
 The Precipitator Unit Model represents an Equilibrium reactor unit model with fixed partition coefficients.
 
@@ -43,7 +43,6 @@ solved by a surrogate or a model equation.
 """
 
 # Import Pyomo libraries
-from pyomo.environ import Constraint
 from pyomo.common.collections import ComponentMap
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
@@ -126,8 +125,11 @@ class PrecipitatorScaler(CustomScalerBase):
             overwrite=overwrite,
         )
 
-        for condata in model.vol_balance.values():
-            self.scale_constraint_by_nominal_value(condata, overwrite=overwrite)
+        # TODO remove when old precipitate liquid properties are removed
+        if hasattr(model, "vol_balance"):
+            for condata in model.vol_balance.values():
+                self.scale_constraint_by_nominal_value(condata, overwrite=overwrite)
+
         for (t, j), condata in model.precipitate_generation.items():
             self.scale_constraint_by_component(
                 condata,
@@ -264,6 +266,16 @@ and used when constructing these,
 see reaction package for documentation.}""",
         ),
     )
+    # TODO remove when old precipitate liquid properties are removed
+    CONFIG.declare(
+        "make_volume_balance_constraint",
+        ConfigValue(
+            default=False,
+            domain=Bool,
+            description="Flag whether to create volume balance constraint",
+            doc="Flag whether to create legacy volume balance constraint",
+        ),
+    )
 
     def build(self):
         """
@@ -316,11 +328,14 @@ see reaction package for documentation.}""",
         prop_aq = self.config.property_package_aqueous
         prop_s = self.config.property_package_precipitate
 
-        @self.Constraint(self.flowsheet().time, doc="volume balance equation.")
-        def vol_balance(blk, t):
-            return blk.cv_aqueous.properties_out[t].flow_vol == (
-                blk.cv_aqueous.properties_in[t].flow_vol
-            )
+        # TODO remove when old precipitate liquid properties are removed
+        if self.config.make_volume_balance_constraint:
+
+            @self.Constraint(self.flowsheet().time, doc="volume balance equation.")
+            def vol_balance(blk, t):
+                return blk.cv_aqueous.properties_out[t].flow_vol == (
+                    blk.cv_aqueous.properties_in[t].flow_vol
+                )
 
         @self.Constraint(
             self.flowsheet().time,
@@ -342,9 +357,6 @@ see reaction package for documentation.}""",
             doc="Mass balance equations aqueous.",
         )
         def aqueous_depletion(blk, t, comp):
-            if comp == "H2O":
-                # H2O conservation is taken care of by vol_balance constraint
-                return Constraint.Skip
             return blk.cv_aqueous.properties_out[t].conc_mass_comp[
                 comp
             ] * blk.cv_aqueous.properties_out[t].flow_vol == (

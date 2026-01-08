@@ -133,8 +133,8 @@ of the unit model capacity parameters have been scaled down accordingly by unit 
 
 References:
 
-[1] Steven Keim, "Production of salable rare earths products from coal and coal byproducts in the U.S.
-using advanced separation processes", 2019
+[1] Keim, Steven Anthony and Naumann, Hans. "Production of Salable Rare Earths Products from Coal and Coal Byproducts
+ in the U.S. Using Advanced Separation Processes (Final Technical Report)." , Sep. 2019. https://doi.org/10.2172/1569277
 
 """
 import logging
@@ -146,6 +146,7 @@ from pyomo.environ import (
     Objective,
     Param,
     Set,
+    Suffix,
     TransformationFactory,
     Var,
     check_optimal_termination,
@@ -204,10 +205,8 @@ from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameter
 from prommis.leaching.leach_solids_properties import CoalRefuseParameters
 from prommis.leaching.leach_solution_properties import LeachSolutionParameters
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
-from prommis.precipitate.precipitate_liquid_properties import (
-    HClStrippingParameterBlock,
-    HClStrippingPropertiesScaler,
-)
+from prommis.properties import HClStrippingParameterBlock
+from prommis.properties.hcl_stripping_properties import HClStrippingPropertiesScaler
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
@@ -545,6 +544,7 @@ def build():
     m.fs.precipitator = Precipitator(
         property_package_aqueous=m.fs.HClStrippingParams,
         property_package_precipitate=m.fs.properties_solid,
+        make_volume_balance_constraint=False,
     )
 
     m.fs.sl_sep2 = SLSeparator(

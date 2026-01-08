@@ -110,7 +110,7 @@ def report_values(m, prec=True):
                 data["Co product flows"].append(
                     pyo.value(m.fs.split_retentate[i].product.flow_mass_solute[0, sol])
                 )
-        except:
+        except ValueError:
             print("no Co product here")
             data["Co product flows"].append(0)
 
@@ -128,7 +128,7 @@ def report_values(m, prec=True):
                 data["Li product flows"].append(
                     pyo.value(m.fs.split_permeate[i].product.flow_mass_solute[0, sol])
                 )
-        except:
+        except ValueError:
             print("no Li product here")
             data["Li product flows"].append(0)
 
@@ -306,41 +306,44 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
         ax.add_patch(outer_box)
 
         if i != num_boxes - 1:
-            # Draw arrows from bottom of box to top of next box
-            ax.arrow(
-                x_start + box_size + 0.03,  # Start X position (shifted further right)
-                y_start + 0.05,  # Y position (above bottom border)
-                (spacing - 0.12) / 2,  # X direction (shorter arrow)
-                0,  # Y direction
-                head_width=0.02,
-                head_length=0.03,
-                fc=to_rgba("black"),
-                ec=to_rgba("black"),
-            )
-            ax.arrow(
-                x_start
-                + box_size
-                + (spacing) / 2,  # Start X position (shifted further right)
-                y_start + 0.05,  # Y position (above bottom border)
-                0,  # X direction (shorter arrow)
-                box_size - 0.13,  # Y direction
-                head_width=0.02,
-                head_length=0.03,
-                fc=to_rgba("black"),
-                ec=to_rgba("black"),
-            )
-            ax.arrow(
-                x_start
-                + box_size
-                + (spacing) / 2,  # Start X position (shifted further right)
-                y_start + box_size - 0.05,  # Y position (above bottom border)
-                (spacing - 0.07) / 2,  # X direction (shorter arrow)
-                0,  # Y direction
-                head_width=0.02,
-                head_length=0.03,
-                fc=to_rgba("black"),
-                ec=to_rgba("black"),
-            )
+            if model["Membrane Area"][i] * 0.1 - model["Li product flows"][i * 3] > tol:
+                # Draw arrows from bottom of box to top of next box
+                ax.arrow(
+                    x_start
+                    + box_size
+                    + 0.03,  # Start X position (shifted further right)
+                    y_start + 0.05,  # Y position (above bottom border)
+                    (spacing - 0.12) / 2,  # X direction (shorter arrow)
+                    0,  # Y direction
+                    head_width=0.02,
+                    head_length=0.03,
+                    fc=to_rgba("black"),
+                    ec=to_rgba("black"),
+                )
+                ax.arrow(
+                    x_start
+                    + box_size
+                    + (spacing) / 2,  # Start X position (shifted further right)
+                    y_start + 0.05,  # Y position (above bottom border)
+                    0,  # X direction (shorter arrow)
+                    box_size - 0.13,  # Y direction
+                    head_width=0.02,
+                    head_length=0.03,
+                    fc=to_rgba("black"),
+                    ec=to_rgba("black"),
+                )
+                ax.arrow(
+                    x_start
+                    + box_size
+                    + (spacing) / 2,  # Start X position (shifted further right)
+                    y_start + box_size - 0.05,  # Y position (above bottom border)
+                    (spacing - 0.07) / 2,  # X direction (shorter arrow)
+                    0,  # Y direction
+                    head_width=0.02,
+                    head_length=0.03,
+                    fc=to_rgba("black"),
+                    ec=to_rgba("black"),
+                )
 
         # Draw arrows for product streams
         if i == num_boxes - 1 or conf != "classic":

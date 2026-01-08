@@ -12,9 +12,9 @@ Authors: Andrew Lee
 """
 
 from pyomo.environ import (
+    ComponentMap,
     ConcreteModel,
     SolverFactory,
-    Suffix,
     TransformationFactory,
     units,
 )
@@ -54,6 +54,7 @@ def build_model():
             "has_pressure_balance": False,
         },
         reaction_package=m.fs.leach_rxns,
+        has_holdup=True,
     )
 
     return m
@@ -109,40 +110,32 @@ def set_inputs(m):
     m.fs.leach.solid_inlet.mass_frac_comp[0, "Dy2O3"].fix(
         7.54827e-06 * units.kg / units.kg
     )
-
+    
     m.fs.leach.volume.fix(100 * units.gallon)
+    
+    if m.fs.leach.config.has_holdup:
+        m.fs.leach.liquid_solid_residence_time_ratio.fix(32)
 
 
 def set_scaling(m):
     """
     Apply scaling factors to improve solver performance.
     """
-    m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
-    for j in m.fs.coal.component_list:
-        if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
-            set_scaling_factor(
-                m.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j], 1e5
-            )
-            set_scaling_factor(
-                m.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j], 1e5
-            )
-            set_scaling_factor(
-                m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate[j],
-                1e5,
-            )
-            set_scaling_factor(
-                m.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j], 1e3
-            )
-            set_scaling_factor(
-                m.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j], 1e3
-            )
-            set_scaling_factor(
-                m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate_eq[
-                    j
-                ],
-                1e5,
-            )
+    solid_scaler = m.fs.leach.mscontactor.solid.default_scaler()
+    solid_scaler.default_scaling_factors["flow_mass"] = 1 / 22.68
+
+    liquid_scaler = m.fs.leach.mscontactor.liquid.default_scaler()
+    liquid_scaler.default_scaling_factors["flow_vol"] = 1 / 224.3
+
+    submodel_scalers = ComponentMap()
+    submodel_scalers[m.fs.leach.mscontactor.liquid_inlet_state] = liquid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.liquid] = liquid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.solid_inlet_state] = solid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.solid] = solid_scaler
+
+    scaler_obj = m.fs.leach.default_scaler()
+    scaler_obj.scale_model(m.fs.leach, submodel_scalers=submodel_scalers)
 
 
 # -------------------------------------------------------------------------------------
@@ -152,21 +145,14 @@ if __name__ == "__main__":
     set_inputs(m)
     set_scaling(m)
 
-    # Create a scaled version of the model to solve
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-
     # Initialize model
     # This is likely to fail to converge, but gives a good enough starting point
     initializer = LeachingTrainInitializer()
-    initializer.initialize(scaled_model.fs.leach)
+    initializer.initialize(m.fs.leach)
 
     # Solve scaled model
-    solver = SolverFactory("ipopt")
-    solver.solve(scaled_model, tee=True)
-
-    # Propagate results back to unscaled model
-    scaling.propagate_solution(scaled_model, m)
+    solver = SolverFactory("ipopt_v2")
+    solver.solve(m, tee=True)
 
     # Store steady state values in a json file
     to_json(m, fname="leaching.json", human_read=True)

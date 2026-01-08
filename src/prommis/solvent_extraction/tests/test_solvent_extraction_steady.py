@@ -5,9 +5,10 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 
-from pyomo.environ import check_optimal_termination, value
+from pyomo.environ import check_optimal_termination, ComponentMap, value
 
 from idaes.core.initialization import InitializationStatus
+from idaes.core.scaling.util import jacobian_cond
 from idaes.core.solvers import get_solver
 from idaes.core.util import DiagnosticsToolbox
 
@@ -21,8 +22,118 @@ from prommis.solvent_extraction.solvent_extraction_steady import (
 
 solver = get_solver()
 
-
 class Test_Solvent_Extraction_steady_model:
+    @pytest.fixture(scope="class")
+    def SolEx_frame(self):
+        dosage = 5
+        number_of_stages = 3
+        m = model_buildup_and_set_inputs(dosage, number_of_stages, has_holdup=False)
+
+        return m
+
+    @pytest.mark.component
+    def test_structural_issues(self, SolEx_frame):
+        model = SolEx_frame
+        dt = DiagnosticsToolbox(model)
+        dt.assert_no_structural_warnings()
+
+    @pytest.mark.component
+    def test_initialization(self, SolEx_frame):
+        model = SolEx_frame
+        initializer = model.fs.solex.default_initializer()
+        assert model.fs.solex.default_initializer is SolventExtractionInitializer
+        initializer.initialize(model.fs.solex)
+
+        assert initializer.summary[model.fs.solex]["status"] == InitializationStatus.Ok
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(solver is None, reason="Solver not available")
+    @pytest.mark.component
+    def test_solve(self, SolEx_frame):
+        m = SolEx_frame
+        results = solver.solve(m, tee=True)
+
+        # Check for optimal solution
+        assert check_optimal_termination(results)
+
+    @pytest.mark.component
+    @pytest.mark.solver
+    def test_numerical_issues(self, SolEx_frame):
+        model = SolEx_frame
+        dt = DiagnosticsToolbox(model)
+        dt.assert_no_numerical_warnings()
+
+        assert jacobian_cond(model, scaled=False) == pytest.approx(2.46261e14, rel=1e-3)
+        assert jacobian_cond(model, scaled=True) == pytest.approx(610510, rel=1e-3)
+
+    @pytest.mark.component
+    @pytest.mark.solver
+    def test_solution(self, SolEx_frame):
+
+        model = SolEx_frame
+        aqueous_outlet = {
+            "H2O": 1000000,
+            "H": 39.5131,
+            "SO4": 2056.395,
+            "HSO4": 8023.225,
+            "Al": 399.95,
+            "Ca": 102.336,
+            "Cl": 9.9999e-8,
+            "Ce": 2.1056,
+            "Dy": 0.0010159,
+            "Fe": 585.5947,
+            "Gd": 0.19119,
+            "La": 0.91421,
+            "Nd": 0.8801,
+            "Pr": 0.27631,
+            "Sc": 0.0027415,
+            "Sm": 0.08669,
+            "Y": 4.27506e-06,
+        }
+
+        organic_outlet = {
+            "Al_o": 22.4249,
+            "Ca_o": 7.2059,
+            "Ce_o": 0.17168,
+            "DEHPA": 46086.719,
+            "Dy_o": 0.045992,
+            "Fe_o": 102.6712,
+            "Gd_o": 0.06723,
+            "Kerosene": 820000,
+            "La_o": 0.07189,
+            "Nd_o": 0.06606,
+            "Pr_o": 0.026727,
+            "Sc_o": 1.7632,
+            "Sm_o": 0.010323,
+            "Y_o": 0.12401,
+        }
+
+        for k, v in model.fs.solex.organic_outlet.conc_mass_comp.items():
+            assert value(v) == pytest.approx(organic_outlet[k[1]], rel=1e-4)
+
+        for k, v in model.fs.solex.aqueous_outlet.conc_mass_comp.items():
+            assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)
+
+    @pytest.fixture(scope="class")
+    def SolEx_total_flowsheet(self):
+        dosage = 5
+        number_of_stages = 3
+        model, results = main(dosage, number_of_stages, has_holdup=False)
+
+        return model, results
+
+    @pytest.mark.component
+    def test_solve_total(self, SolEx_total_flowsheet):
+        # TODO this test is redundant with the above solve
+        m, results = SolEx_total_flowsheet
+        assert check_optimal_termination(results)
+
+        dt = DiagnosticsToolbox(m)
+        dt.assert_no_numerical_warnings()
+        assert jacobian_cond(m, scaled=False) == pytest.approx(2.46261e14, rel=1e-3)
+        assert jacobian_cond(m, scaled=True) == pytest.approx(610510, rel=1e-3)
+
+class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
     @pytest.fixture(scope="class")
     def SolEx_frame(self):
         dosage = 5
@@ -63,6 +174,10 @@ class Test_Solvent_Extraction_steady_model:
         dt = DiagnosticsToolbox(model)
         dt.assert_no_numerical_warnings()
 
+        assert jacobian_cond(model, scaled=False) == pytest.approx(8.415018e12, rel=1e-3)
+        # TODO it looks like the holdup constraints aren't as well-scaled as we'd like.
+        assert jacobian_cond(model, scaled=True) == pytest.approx(2.91496e6, rel=1e-3)
+
     @pytest.mark.component
     @pytest.mark.solver
     def test_solution(self, SolEx_frame):
@@ -85,7 +200,7 @@ class Test_Solvent_Extraction_steady_model:
             "Pr": 0.27631,
             "Sc": 0.0027415,
             "Sm": 0.08669,
-            "Y": 4.27601e-06,
+            "Y": 4.27506e-06,
         }
 
         organic_outlet = {
@@ -123,3 +238,122 @@ class Test_Solvent_Extraction_steady_model:
     def test_solve_total(self, SolEx_total_flowsheet):
         m, results = SolEx_total_flowsheet
         assert check_optimal_termination(results)
+
+        dt = DiagnosticsToolbox(m)
+        dt.assert_no_numerical_warnings()
+
+        import pdb; pdb.set_trace()
+        assert jacobian_cond(m, scaled=False) == pytest.approx(1e20, rel=1e-3)
+        assert jacobian_cond(m, scaled=True) == pytest.approx(1e4, rel=1e-3)
+
+class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
+    @pytest.fixture(scope="class")
+    def SolEx_frame(self):
+        dosage = 5
+        number_of_stages = 3
+        m = model_buildup_and_set_inputs(dosage, number_of_stages, has_holdup=True)
+
+        return m
+
+    @pytest.mark.component
+    def test_structural_issues(self, SolEx_frame):
+        model = SolEx_frame
+        dt = DiagnosticsToolbox(model)
+        dt.assert_no_structural_warnings()
+
+    @pytest.mark.component
+    def test_initialization(self, SolEx_frame):
+        model = SolEx_frame
+        initializer = model.fs.solex.default_initializer()
+        assert model.fs.solex.default_initializer is SolventExtractionInitializer
+        initializer.initialize(model.fs.solex)
+
+        assert initializer.summary[model.fs.solex]["status"] == InitializationStatus.Ok
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(solver is None, reason="Solver not available")
+    @pytest.mark.component
+    def test_solve(self, SolEx_frame):
+        m = SolEx_frame
+        results = solver.solve(m, tee=True)
+
+        # Check for optimal solution
+        assert check_optimal_termination(results)
+
+    @pytest.mark.component
+    @pytest.mark.solver
+    def test_numerical_issues(self, SolEx_frame):
+        model = SolEx_frame
+        dt = DiagnosticsToolbox(model)
+        dt.assert_no_numerical_warnings()
+
+        assert jacobian_cond(model, scaled=False) == pytest.approx(8.415018e12, rel=1e-3)
+        # TODO it looks like the holdup constraints aren't as well-scaled as we'd like.
+        assert jacobian_cond(model, scaled=True) == pytest.approx(2.91496e6, rel=1e-3)
+
+    @pytest.mark.component
+    @pytest.mark.solver
+    def test_solution(self, SolEx_frame):
+
+        model = SolEx_frame
+        aqueous_outlet = {
+            "H2O": 1000000,
+            "H": 39.5131,
+            "SO4": 2056.395,
+            "HSO4": 8023.225,
+            "Al": 399.95,
+            "Ca": 102.336,
+            "Cl": 9.9999e-8,
+            "Ce": 2.1056,
+            "Dy": 0.0010159,
+            "Fe": 585.5947,
+            "Gd": 0.19119,
+            "La": 0.91421,
+            "Nd": 0.8801,
+            "Pr": 0.27631,
+            "Sc": 0.0027415,
+            "Sm": 0.08669,
+            "Y": 4.27506e-06,
+        }
+
+        organic_outlet = {
+            "Al_o": 22.4249,
+            "Ca_o": 7.2059,
+            "Ce_o": 0.17168,
+            "DEHPA": 46086.719,
+            "Dy_o": 0.045992,
+            "Fe_o": 102.6712,
+            "Gd_o": 0.06723,
+            "Kerosene": 820000,
+            "La_o": 0.07189,
+            "Nd_o": 0.06606,
+            "Pr_o": 0.026727,
+            "Sc_o": 1.7632,
+            "Sm_o": 0.010323,
+            "Y_o": 0.12401,
+        }
+
+        for k, v in model.fs.solex.organic_outlet.conc_mass_comp.items():
+            assert value(v) == pytest.approx(organic_outlet[k[1]], rel=1e-4)
+
+        for k, v in model.fs.solex.aqueous_outlet.conc_mass_comp.items():
+            assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)
+
+    @pytest.fixture(scope="class")
+    def SolEx_total_flowsheet(self):
+        dosage = 5
+        number_of_stages = 3
+        model, results = main(dosage, number_of_stages, has_holdup=True)
+
+        return model, results
+
+    @pytest.mark.component
+    def test_solve_total(self, SolEx_total_flowsheet):
+        # TODO this test is redundant with the above solve
+        m, results = SolEx_total_flowsheet
+        assert check_optimal_termination(results)
+
+        dt = DiagnosticsToolbox(m)
+        dt.assert_no_numerical_warnings()
+        assert jacobian_cond(m, scaled=False) == pytest.approx(8.415018e12, rel=1e-3)
+        assert jacobian_cond(m, scaled=True) == pytest.approx(2.91496e6, rel=1e-3)

@@ -762,16 +762,6 @@ def set_scaling(m):
 
     # Apply scaling to constraints
     csb.scale_constraint_by_nominal_value(
-        m.fs.leach.mscontactor.heterogeneous_reactions[0, 1].reaction_rate_eq["Sc2O3"],
-        scheme=ConstraintScalingScheme.inverseMaximum,
-        overwrite=False,
-    )
-    csb.scale_constraint_by_nominal_value(
-        m.fs.leach.mscontactor.heterogeneous_reactions[0, 2].reaction_rate_eq["Sc2O3"],
-        scheme=ConstraintScalingScheme.inverseMaximum,
-        overwrite=False,
-    )
-    csb.scale_constraint_by_nominal_value(
         m.fs.solex_rougher_load.distribution_extent_constraint[0, 1, "Ca"],
         scheme=ConstraintScalingScheme.inverseMaximum,
         overwrite=False,

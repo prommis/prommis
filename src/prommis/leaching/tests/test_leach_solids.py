@@ -60,9 +60,9 @@ def test_build_state(model):
 
     assert isinstance(model.fs.state[0].flow_mass, Var)
     assert isinstance(model.fs.state[0].mass_frac_comp, Var)
-    assert isinstance(model.fs.state[0].conversion, Var)
+    assert isinstance(model.fs.state[0].conversion_comp, Var)
 
-    assert isinstance(model.fs.state[0].conversion_eq, Constraint)
+    assert isinstance(model.fs.state[0].conversion_comp_eqn, Constraint)
     assert isinstance(model.fs.state[0].sum_mass_frac, Constraint)
 
 
@@ -72,15 +72,15 @@ def test_fix_state(model):
 
     model.fs.state[0].flow_mass.set_value(10)
     model.fs.state[0].mass_frac_comp[:].set_value(0.1)
-    model.fs.state[0].conversion[:].set_value(0.5)
+    model.fs.state[0].conversion_comp[:].set_value(0.5)
 
     model.fs.state.fix_initialization_states()
 
     assert model.fs.state[0].flow_mass.fixed
     for j in model.fs.leach_sol.component_list:
         assert model.fs.state[0].mass_frac_comp[j].fixed
-        assert not model.fs.state[0].conversion[j].fixed
+        assert not model.fs.state[0].conversion_comp[j].fixed
 
-        assert model.fs.state[0].conversion_eq[j].active
+        assert model.fs.state[0].conversion_comp_eqn[j].active
 
         assert not model.fs.state[0].sum_mass_frac.active

@@ -2132,7 +2132,7 @@
                                               }
                                             }
                                           },
-                                          "conversion": {
+                                          "conversion_comp": {
                                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                                             "__id__": 323,
                                             "data": {
@@ -2255,7 +2255,7 @@
                                               }
                                             }
                                           },
-                                          "conversion_eq": {
+                                          "conversion_comp_eqn": {
                                             "__type__": "<class 'pyomo.core.base.constraint.IndexedConstraint'>",
                                             "__id__": 337,
                                             "active": true,
@@ -2515,7 +2515,7 @@
                                               }
                                             }
                                           },
-                                          "conversion": {
+                                          "conversion_comp": {
                                             "__type__": "<class 'pyomo.core.base.var.IndexedVar'>",
                                             "__id__": 372,
                                             "data": {
@@ -2638,7 +2638,7 @@
                                               }
                                             }
                                           },
-                                          "conversion_eq": {
+                                          "conversion_comp_eqn": {
                                             "__type__": "<class 'pyomo.core.base.constraint.IndexedConstraint'>",
                                             "__id__": 386,
                                             "active": true,

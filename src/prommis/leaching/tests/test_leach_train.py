@@ -179,7 +179,7 @@ def test_numerical_issues(model):
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution(model):
-    conversion = {
+    conversion_comp = {
         "Al2O3": 0.03003765546930494,
         "CaO": 0.5145052459223426,
         "Ce2O3": 0.4207435931354908,
@@ -210,7 +210,7 @@ def test_solution(model):
         "Fe2O3": 16.33850709753919,
     }
 
-    for k, v in model.fs.leach.mscontactor.solid[0, 1].conversion.items():
+    for k, v in model.fs.leach.mscontactor.solid[0, 1].conversion_comp.items():
         f_in = model.fs.leach.solid_inlet.flow_mass[0]
         f_out = model.fs.leach.solid_outlet.flow_mass[0]
         x_in = model.fs.leach.solid_inlet.mass_frac_comp[0, k]
@@ -218,7 +218,7 @@ def test_solution(model):
 
         r = value(1 - f_out * x_out / (f_in * x_in)) * 100
 
-        assert value(v) == pytest.approx(conversion[k], rel=1e-5, abs=1e-6)
+        assert value(v) == pytest.approx(conversion_comp[k], rel=1e-5, abs=1e-6)
         assert r == pytest.approx(recovery[k], rel=1e-5, abs=1e-6)
 
 
@@ -371,7 +371,7 @@ def test_numerical_issues_ub(model_ub):
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution_ub(model_ub):
-    conversion = {
+    conversion_comp = {
         "Al2O3": 0.06978566878752633,
         "CaO": 0.5383218112983164,
         "Ce2O3": 0.5210043955569409,
@@ -402,7 +402,7 @@ def test_solution_ub(model_ub):
         "Fe2O3": 25.429914729256087,
     }
 
-    for k, v in model_ub.fs.leach.mscontactor.solid[0, 1].conversion.items():
+    for k, v in model_ub.fs.leach.mscontactor.solid[0, 1].conversion_comp.items():
         f_in = model_ub.fs.leach.solid_inlet.flow_mass[0]
         f_out = model_ub.fs.leach.solid_outlet.flow_mass[0]
         x_in = model_ub.fs.leach.solid_inlet.mass_frac_comp[0, k]
@@ -410,7 +410,7 @@ def test_solution_ub(model_ub):
 
         r = value(1 - f_out * x_out / (f_in * x_in)) * 100
 
-        assert value(v) == pytest.approx(conversion[k], rel=1e-5, abs=1e-6)
+        assert value(v) == pytest.approx(conversion_comp[k], rel=1e-5, abs=1e-6)
         assert r == pytest.approx(recovery[k], rel=1e-5, abs=1e-6)
 
 
@@ -562,7 +562,7 @@ def test_numerical_issues_lb(model_lb):
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution_lb(model_lb):
-    conversion = {
+    conversion_comp = {
         "Al2O3": 0.011710026041552567,
         "CaO": 0.4863262517984512,
         "Ce2O3": 0.32058357157752987,
@@ -593,7 +593,7 @@ def test_solution_lb(model_lb):
         "Fe2O3": 9.69999886819004,
     }
 
-    for k, v in model_lb.fs.leach.mscontactor.solid[0, 1].conversion.items():
+    for k, v in model_lb.fs.leach.mscontactor.solid[0, 1].conversion_comp.items():
         f_in = model_lb.fs.leach.solid_inlet.flow_mass[0]
         f_out = model_lb.fs.leach.solid_outlet.flow_mass[0]
         x_in = model_lb.fs.leach.solid_inlet.mass_frac_comp[0, k]
@@ -601,5 +601,5 @@ def test_solution_lb(model_lb):
 
         r = value(1 - f_out * x_out / (f_in * x_in)) * 100
 
-        assert value(v) == pytest.approx(conversion[k], rel=1e-5, abs=1e-6)
+        assert value(v) == pytest.approx(conversion_comp[k], rel=1e-5, abs=1e-6)
         assert r == pytest.approx(recovery[k], rel=1e-5, abs=1e-6)

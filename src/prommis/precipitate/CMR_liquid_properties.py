@@ -56,27 +56,27 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.liquid = Phase()
 
         # Solvents
-        self.H2O = Component()
+        self.H2O = Solvent()
 
         # Contaminants
-        self.Ca = Component()
-        self.Co = Component()
-        self.Fe = Component()
-        self.Mg = Component()
-        self.Mn = Component()
-        self.Na = Component()
-        self.Ni = Component()
-        self.Zn = Component()
+        self.Ca = Solute()
+        self.Co = Solute()
+        self.Fe = Solute()
+        self.Mg = Solute()
+        self.Mn = Solute()
+        self.Na = Solute()
+        self.Ni = Solute()
+        self.Zn = Solute()
 
         # REE
-        self.Dy = Component()
-        self.Gd = Component()
-        self.Nd = Component()
-        self.Pr = Component()
+        self.Dy = Solute()
+        self.Gd = Solute()
+        self.Nd = Solute()
+        self.Pr = Solute()
 
         # anions
-        self.SO4 = Component()
-        self.OH = Component()
+        self.SO4 = Solute()
+        self.OH = Solute()
 
         # parameter based on pH 7
         # TODO add surrogate model/equation
@@ -140,7 +140,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "Pr",
                 "SO4",
                 "OH",
-                "H2O",
+                # "H2O",
             ]
         )
 

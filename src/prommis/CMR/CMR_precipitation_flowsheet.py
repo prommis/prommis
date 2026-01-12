@@ -56,7 +56,7 @@ def build_flowsheet():
     m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Pr"].fix(134.4078)
     m.fs.unit.aqueous_inlet.conc_mass_comp[0, "SO4"].fix(1762.2)
     m.fs.unit.aqueous_inlet.conc_mass_comp[0, "OH"].fix(69.12e-2)
-    m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1000)
+    # m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1000)
 
     m.fs.unit.cv_precipitate[0].temperature.fix(298.15)
 

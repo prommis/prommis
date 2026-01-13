@@ -139,8 +139,11 @@ def test_build(model):
         len(model.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint) == 12
     )
 
-    assert number_variables(model.fs.leach) == 191
-    assert number_total_constraints(model.fs.leach) == 154
+    # Down from 203 because we are no longer constructing pH,
+    # reaction rates were converted from Vars to Expressions,
+    # and solid phase conversion was converted to an on-demand property
+    assert number_variables(model.fs.leach) == 176
+    assert number_total_constraints(model.fs.leach) == 139
     assert number_unused_variables(model.fs.leach) == 4
 
     assert model.fs.leach.default_scaler is LeachingTrainScaler
@@ -173,7 +176,7 @@ def test_numerical_issues(model):
     dt.assert_no_numerical_warnings()
 
     assert jacobian_cond(model, scaled=False) == pytest.approx(6.23693e12, rel=1e-3)
-    assert jacobian_cond(model, scaled=True) == pytest.approx(69938.8, rel=1e-3)
+    assert jacobian_cond(model, scaled=True) == pytest.approx(69758.8, rel=1e-3)
 
 
 @pytest.mark.component
@@ -333,8 +336,8 @@ def test_build_ub(model_ub):
         == 12
     )
 
-    assert number_variables(model_ub.fs.leach) == 191
-    assert number_total_constraints(model_ub.fs.leach) == 154
+    assert number_variables(model_ub.fs.leach) == 176
+    assert number_total_constraints(model_ub.fs.leach) == 139
     assert number_unused_variables(model_ub.fs.leach) == 4
 
 
@@ -366,7 +369,7 @@ def test_numerical_issues_ub(model_ub):
     dt.assert_no_numerical_warnings()
 
     assert jacobian_cond(model_ub, scaled=False) == pytest.approx(5.27968e12, rel=1e-3)
-    assert jacobian_cond(model_ub, scaled=True) == pytest.approx(96984.4, rel=1e-3)
+    assert jacobian_cond(model_ub, scaled=True) == pytest.approx(96858.8, rel=1e-3)
 
 @pytest.mark.component
 @pytest.mark.solver
@@ -524,8 +527,8 @@ def test_build_lb(model_lb):
         == 12
     )
 
-    assert number_variables(model_lb.fs.leach) == 191
-    assert number_total_constraints(model_lb.fs.leach) == 154
+    assert number_variables(model_lb.fs.leach) == 176
+    assert number_total_constraints(model_lb.fs.leach) == 139
     assert number_unused_variables(model_lb.fs.leach) == 4
 
 
@@ -557,7 +560,7 @@ def test_numerical_issues_lb(model_lb):
     dt.assert_no_numerical_warnings()
 
     assert jacobian_cond(model_lb, scaled=False) == pytest.approx(7.004012e12, rel=1e-3)
-    assert jacobian_cond(model_lb, scaled=True) == pytest.approx(62627.4, rel=1e-3)
+    assert jacobian_cond(model_lb, scaled=True) == pytest.approx(61717.1, rel=1e-3)
 
 @pytest.mark.component
 @pytest.mark.solver

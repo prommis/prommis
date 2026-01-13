@@ -114,7 +114,7 @@ def set_inputs(m):
     m.fs.leach.volume.fix(100 * units.gallon)
     
     if m.fs.leach.config.has_holdup:
-        m.fs.leach.liquid_solid_residence_time_ratio.fix(32)
+        m.fs.leach.liquid_solid_residence_time_ratio.fix(1/32)
 
 
 def set_scaling(m):
@@ -127,6 +127,10 @@ def set_scaling(m):
 
     liquid_scaler = m.fs.leach.mscontactor.liquid.default_scaler()
     liquid_scaler.default_scaling_factors["flow_vol"] = 1 / 224.3
+    liquid_scaler.default_scaling_factors["conc_mass_comp[Ce]"] = 1 / 5
+    liquid_scaler.default_scaling_factors["conc_mass_comp[Nd]"] = 1 / 2
+    liquid_scaler.default_scaling_factors["conc_mass_comp[La]"] = 1
+    liquid_scaler.default_scaling_factors["conc_mass_comp[SO4]"] = 1e-3
 
     submodel_scalers = ComponentMap()
     submodel_scalers[m.fs.leach.mscontactor.liquid_inlet_state] = liquid_scaler
@@ -135,6 +139,8 @@ def set_scaling(m):
     submodel_scalers[m.fs.leach.mscontactor.solid] = solid_scaler
 
     scaler_obj = m.fs.leach.default_scaler()
+    scaler_obj.default_scaling_factors["liquid_phase_fraction"] = 1
+    scaler_obj.default_scaling_factors["solid_phase_fraction"] = 1
     scaler_obj.scale_model(m.fs.leach, submodel_scalers=submodel_scalers)
 
 

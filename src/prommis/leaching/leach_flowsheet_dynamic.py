@@ -236,10 +236,6 @@ def set_scaling(m):
                     set_scaling_factor(
                         m.fs.leach.mscontactor.solid[t, s].conversion_comp_eqn[j], 1e3
                     )
-                    set_scaling_factor(
-                        m.fs.leach.mscontactor.solid_inlet_state[t].conversion_comp_eqn[j],
-                        1e3,
-                    )
 
             for j in m.fs.leach_soln.component_list:
                 if j not in ["H2O"]:

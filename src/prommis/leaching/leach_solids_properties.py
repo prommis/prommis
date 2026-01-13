@@ -71,16 +71,18 @@ class CoalRefusePropertiesScaler(CustomScalerBase):
             self.scale_variable_by_default(var, overwrite=overwrite)
 
         # Scale other variables
-        for var in model.conversion_comp.values():
-            self.scale_variable_by_default(var, overwrite=overwrite)
+        if model.is_property_constructed("conversion_comp"):
+            for var in model.conversion_comp.values():
+                self.scale_variable_by_default(var, overwrite=overwrite)
 
     def constraint_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
     ):
-        for idx, condata in model.conversion_comp_eqn.items():
-            self.scale_constraint_by_component(
-                condata, model.mass_frac_comp[idx], overwrite=overwrite
-            )
+        if model.is_property_constructed("conversion_comp"):
+            for idx, condata in model.conversion_comp_eqn.items():
+                self.scale_constraint_by_component(
+                    condata, model.mass_frac_comp[idx], overwrite=overwrite
+                )
 
         if model.is_property_constructed("sum_mass_frac"):
             self.set_constraint_scaling_factor(

@@ -1,13 +1,14 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2024 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 r"""
-Simple oxalate preciptation model for West Kentucky No. 13 coal refuse.
+Reaction package for heterogeneous reactions involved in oxalate precipitation of  
+REEs from solid West Kentucky No. 13 coal refuse using oxalic acid.  
 
-Authors: Alejandro Garciadiego
+Authors: Alejandro Garciadiego, Bo-Xun Wang
 
 This is an example of how to write a custom heterogeneous reaction package for use with the
 precipitation unit model.
@@ -24,7 +25,7 @@ import idaes.core.util.scaling as iscale
 
 
 # -----------------------------------------------------------------------------
-# Leach solution property package
+# Precipitation property package
 @declare_process_block_class("OxalatePrecipitationReactions")
 class OxalatePrecipitationLeachingReactionsData(
     ProcessBlockData, property_meta.HasPropertyClassMetadata
@@ -39,6 +40,15 @@ class OxalatePrecipitationLeachingReactionsData(
     Reaction parameters fitted to a shrinking core model using data from:
 
     visual Minteq
+
+    Assumes the equilibrium reaction can be described by the equilibrium equation.
+
+    .. math:: Conversion_{c} = \exp(-\frac{\epsilon}{Oxalic Acid Dosage}^{n_{DA}})
+
+    where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters 
+    estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
+
+    The details for obtaining the equilibrium parameters can be found at the Jupyter notebook, "Parameter estimation tutorial.ipynb".
 
     """
 
@@ -115,7 +125,7 @@ class OxalatePrecipitationLeachingReactionsData(
             ("Dy2(C2O4)3(s)", "liquid", "H"): -6,
         }
 
-        # parameter based on pH 1.5
+        # Equilibrium parameter (\epsilon) based on pH 1.5
         self.E_D = Param(
             self.reaction_idx,
             initialize={
@@ -136,7 +146,7 @@ class OxalatePrecipitationLeachingReactionsData(
             mutable=True,
         )
 
-        # parameter based on pH 1.5
+        # Equilibrium parameter (n_{DA}) based on pH 1.5
         self.N_D = Param(
             self.reaction_idx,
             initialize={
@@ -227,7 +237,7 @@ class OxalatePrecipitationReactionsData(ProcessBlockData):
 
     def build(self):
         """
-        Reaction block for leaching of West Kentucky No. 13 coal refuse in H2SO4.
+        Reaction block for precipitation of West Kentucky No. 13 coal refuse using oxalic acid.
 
         """
         super().build()

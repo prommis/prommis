@@ -355,7 +355,6 @@ def test_initialize_and_solve_ub(model_ub):
     initializer = model_ub.fs.leach.default_initializer()
     initializer.initialize(model_ub.fs.leach)
 
-    # Solve scaled model
     solver = SolverFactory("ipopt_v2")
     results = solver.solve(model_ub, tee=False)
 
@@ -546,7 +545,6 @@ def test_initialize_and_solve_lb(model_lb):
     initializer = model_lb.fs.leach.default_initializer()
     initializer.initialize(model_lb.fs.leach)
 
-    # Solve scaled model
     solver = SolverFactory("ipopt_v2")
     results = solver.solve(model_lb, tee=False)
 

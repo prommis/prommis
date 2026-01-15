@@ -74,11 +74,6 @@ def test_build_reaction_block(model):
     for k in model.fs.rxns[0].reaction_rate:
         assert k in RXN_LIST
 
-    # assert isinstance(model.fs.rxns[0].reaction_rate_eq, Constraint)
-    # assert len(model.fs.rxns[0].reaction_rate_eq) == 12
-    # for k in model.fs.rxns[0].reaction_rate_eq:
-    #     assert k in RXN_LIST
-
 
 @pytest.mark.unit
 def test_unit_consistency(model):

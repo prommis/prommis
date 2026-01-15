@@ -65,8 +65,6 @@ class CoalRefusePropertiesScaler(CustomScalerBase):
     ):
         # Scale state variables
         self.scale_variable_by_default(model.flow_mass, overwrite=overwrite)
-        # self.scale_variable_by_default(model.pressure, overwrite=overwrite)
-        # self.scale_variable_by_default(model.temperature, overwrite=overwrite)
         for var in model.mass_frac_comp.values():
             self.scale_variable_by_default(var, overwrite=overwrite)
 

@@ -358,6 +358,7 @@ class LeachingTrainData(UnitModelBlockData):
         else:
             # Reactor volume
             self.volume = Var(
+                self.flowsheet().time,
                 self.mscontactor.elements,
                 initialize=1,
                 units=uom.VOLUME,
@@ -366,7 +367,7 @@ class LeachingTrainData(UnitModelBlockData):
 
         # Note that this is being added to the MSContactor block
         def rule_heterogeneous_reaction_extent(b, t, s, r):
-            volume = b.parent_block().volume
+            volume = b.parent_block().get_volume(t, s)
 
             if flow_basis == MaterialFlowBasis.mass:
                 m_units = uom.MASS
@@ -381,7 +382,7 @@ class LeachingTrainData(UnitModelBlockData):
             return units.convert(
                 b.heterogeneous_reaction_extent[t, s, r], to_units=x_units
             ) == units.convert(
-                b.heterogeneous_reactions[t, s].reaction_rate[r] * volume[s],
+                b.heterogeneous_reactions[t, s].reaction_rate[r] * volume,
                 to_units=x_units,
             )
 
@@ -433,6 +434,12 @@ class LeachingTrainData(UnitModelBlockData):
             x_out = b.solid_outlet.mass_frac_comp[t, j]
 
             return (1 - f_out * x_out / (f_in * x_in)) * 100
+
+    def get_volume(b, t, s):
+        # TODO change when MSContactor can handle volume varying with time
+        if self.config.has_holdup:
+            return b.volume[s]
+        return b.volume[t, s]
 
     def _get_stream_table_contents(self, time_point=0):
         return self.mscontactor._get_stream_table_contents(time_point)

@@ -64,6 +64,7 @@ def assert_solution_equivalent(blk, expected_results):
         else:
             failure_msg = f"  - Error: object {name} is not a Var or Expression\n"
             failures.append(failure_msg)
+            continue
 
         for index, (expected_value, rel, abs) in expected_values_dict.items():
             component_to_test = obj if index is None else obj[index]

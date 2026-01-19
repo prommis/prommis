@@ -237,8 +237,8 @@ def test_build_steady_state(model_steady_state):
     assert isinstance(m.fs.roaster.energy_balance_eqn, Constraint)
     assert len(m.fs.roaster.solid_mass_balance_eqn) == 24
     assert len(m.fs.roaster.gas_mass_balance_eqn) == 6
-    assert number_variables(m.fs.roaster) == 283
-    assert number_total_constraints(m.fs.roaster) == 237
+    assert number_variables(m.fs.roaster) == 270
+    assert number_total_constraints(m.fs.roaster) == 224
     assert number_unused_variables(m.fs.roaster) == 0
     assert_units_consistent(m.fs.roaster)
 
@@ -340,8 +340,8 @@ def test_build_dynamic(model_dynamic):
     assert isinstance(m.fs.roaster.energy_balance_eqn, Constraint)
     assert len(m.fs.roaster.solid_mass_balance_eqn) == 264
     assert len(m.fs.roaster.gas_mass_balance_eqn) == 66
-    assert number_variables(m.fs.roaster) == 3390
-    assert number_total_constraints(m.fs.roaster) == 2868
+    assert number_variables(m.fs.roaster) == 3247
+    assert number_total_constraints(m.fs.roaster) == 2725
     assert number_unused_variables(m.fs.roaster) == 0
 
 

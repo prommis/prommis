@@ -31,10 +31,14 @@ from prommis.properties.sulfuric_acid_leaching_properties import (
 )
 
 
-def build_model():
+def build_model(n_tanks=1):
     """
     Method to build a single stage leaching system using data for
     West Kentucky No. 13 coal refuse.
+    Args:
+        n_tanks: Number of tanks in leaching train
+    Returns:
+        m: ConcreteModel containing the leaching flowsheet
     """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -44,7 +48,7 @@ def build_model():
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
     m.fs.leach = LeachingTrain(
-        number_of_tanks=1,
+        number_of_tanks=n_tanks,
         liquid_phase={
             "property_package": m.fs.leach_soln,
             "has_energy_balance": False,
@@ -149,7 +153,7 @@ def set_scaling(m):
 # -------------------------------------------------------------------------------------
 if __name__ == "__main__":
     # Call build model function
-    m = build_model()
+    m = build_model(n_tanks=1)
     set_inputs(m)
     set_scaling(m)
 
@@ -170,3 +174,27 @@ if __name__ == "__main__":
     m.fs.leach.solid_outlet.display()
 
     m.fs.leach.report()
+
+    # Call build model function
+    m2 = build_model(n_tanks=2)
+    set_inputs(m2)
+    m2.fs.leach.volume = 50 * units.gallon
+    set_scaling(m2)
+
+    # Initialize model
+    # This is likely to fail to converge, but gives a good enough starting point
+    initializer = LeachingTrainInitializer()
+    initializer.initialize(m2.fs.leach)
+
+    # Solve scaled model
+    solver = SolverFactory("ipopt_v2")
+    solver.solve(m2, tee=True)
+
+    # Store steady state values in a json file
+    to_json(m2, fname="leaching2.json", human_read=True)
+
+    # Display some results
+    m2.fs.leach.liquid_outlet.display()
+    m2.fs.leach.solid_outlet.display()
+
+    m2.fs.leach.report()

@@ -56,11 +56,13 @@ def model():
 
     return m
 
+
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.unit
 def test_structural_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.assert_no_structural_warnings(ignore_unit_consistency=True)
+
 
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
@@ -77,6 +79,7 @@ def test_solve(model):
 
     assert_optimal_termination(results)
 
+
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
@@ -84,40 +87,41 @@ def test_numerical_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.assert_no_numerical_warnings()
 
+
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution(model):
     time_duration = 24
     conversion_comp = {
-        "Al2O3": 0.0355181940608198,
-        "CaO": 0.4995144924025545,
-        "Ce2O3": 0.43107111613774735,
-        "Dy2O3": 0.22437005073278507,
-        "Fe2O3": 0.17529336473370566,
-        "Gd2O3": 0.6565721684072603,
-        "La2O3": 0.3851408193127902,
-        "Nd2O3": 0.4749501283359911,
-        "Pr2O3": 0.48959926690601413,
-        "Sc2O3": 0.05777096543627356,
-        "Sm2O3": 0.23932037012182222,
-        "Y2O3": 0.15465402409264634,
-        "inerts": 1e-6,
+        "Al2O3": 0.035523368912626425,
+        "CaO": 0.49951987950562093,
+        "Ce2O3": 0.43109282303257274,
+        "Dy2O3": 0.22437815815700637,
+        "Fe2O3": 0.17530897212240829,
+        "Gd2O3": 0.6566220817040254,
+        "La2O3": 0.3851549024054763,
+        "Nd2O3": 0.4749778158614026,
+        "Pr2O3": 0.4896186750243384,
+        "Sc2O3": 0.057774577216526755,
+        "Sm2O3": 0.2393326878812612,
+        "Y2O3": 0.15466192001917345,
+        "inerts": 0.0,
     }
     recovery = {
-        "inerts": -8.35084156178796,
-        "Sc2O3": -2.0914109302357486,
-        "Y2O3": 8.405960505624089,
-        "La2O3": 33.37942371004168,
-        "Ce2O3": 38.35601500079665,
-        "Pr2O3": 44.697595733104656,
-        "Nd2O3": 43.110347653703165,
-        "Sm2O3": 17.579639523490776,
-        "Gd2O3": 62.789268219398494,
-        "Dy2O3": 15.959758216112995,
-        "Al2O3": -4.502519846955044,
-        "CaO": 45.7719198343315,
-        "Fe2O3": 10.642252669700325,
+        "inerts": -8.3507324036455,
+        "Sc2O3": -2.0908146478730183,
+        "Y2O3": 8.406999905502143,
+        "La2O3": 33.38108336095833,
+        "Ce2O3": 38.35849070605989,
+        "Pr2O3": 44.69980963389247,
+        "Nd2O3": 43.11346182063255,
+        "Sm2O3": 17.581139616526485,
+        "Gd2O3": 62.79475106171382,
+        "Dy2O3": 15.960805368118269,
+        "Al2O3": -4.501749365178709,
+        "CaO": 45.77261318664691,
+        "Fe2O3": 10.644123141800089,
     }
 
     for k, v in model.fs.leach.mscontactor.solid[
@@ -166,11 +170,13 @@ def model2():
 
     return m
 
+
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.unit
 def test_structural_issues2(model2):
     dt = DiagnosticsToolbox(model2)
     dt.assert_no_structural_warnings()
+
 
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
@@ -194,12 +200,14 @@ def test_solve2(model2):
 
     assert_optimal_termination(results)
 
+
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_numerical_issues2(model2):
     dt = DiagnosticsToolbox(model2)
     dt.assert_no_numerical_warnings()
+
 
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
@@ -266,11 +274,13 @@ def model3():
 
     return m
 
+
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.unit
 def test_structural_issues3(model3):
     dt = DiagnosticsToolbox(model3)
     dt.assert_no_structural_warnings(ignore_unit_consistency=True)
+
 
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
@@ -288,12 +298,14 @@ def test_solve3(model3):
 
     assert_optimal_termination(results)
 
+
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_numerical_issues3(model3):
     dt = DiagnosticsToolbox(model3)
     dt.assert_no_numerical_warnings()
+
 
 @pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component

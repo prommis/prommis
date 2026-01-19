@@ -43,6 +43,7 @@ from idaes.core.util.tables import create_stream_table_dataframe
 from idaes.core.util.constants import Constants
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.misc import StrEnum
+from idaes.core.util.exceptions import ConfigurationError
 
 # Import WaterTAP libraries
 from watertap.core import ControlVolume0DBlock, InitializationMixin
@@ -1090,50 +1091,21 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
     def calculate_scaling_factors(self):
         super().calculate_scaling_factors()
 
-        if iscale.get_scaling_factor(self.target_breakthrough_time) is None:
-            iscale.set_scaling_factor(self.target_breakthrough_time, 1e-6)
-
-        if iscale.get_scaling_factor(self.N_Re) is None:
-            iscale.set_scaling_factor(self.N_Re, 1)
-
-        if iscale.get_scaling_factor(self.N_Pe_particle) is None:
-            iscale.set_scaling_factor(self.N_Pe_particle, 1e2)
-
-        if iscale.get_scaling_factor(self.N_Pe_bed) is None:
-            iscale.set_scaling_factor(self.N_Pe_bed, 1e-3)
-
-        if iscale.get_scaling_factor(self.number_columns) is None:
-            iscale.set_scaling_factor(self.number_columns, 1)
-
-        if iscale.get_scaling_factor(self.resin_diam) is None:
-            iscale.set_scaling_factor(self.resin_diam, 1e4)
-
-        if iscale.get_scaling_factor(self.resin_density) is None:
-            iscale.set_scaling_factor(self.resin_density, 1e-3)
-
-        if iscale.get_scaling_factor(self.bed_volume_total) is None:
-            iscale.set_scaling_factor(self.bed_volume_total, 0.1)
-
-        if iscale.get_scaling_factor(self.bed_depth) is None:
-            iscale.set_scaling_factor(self.bed_depth, 1)
-
-        if iscale.get_scaling_factor(self.bed_porosity) is None:
-            iscale.set_scaling_factor(self.bed_porosity, 10)
-
-        if iscale.get_scaling_factor(self.column_height) is None:
-            iscale.set_scaling_factor(self.column_height, 1)
-
-        if iscale.get_scaling_factor(self.bed_diameter) is None:
-            iscale.set_scaling_factor(self.bed_diameter, 1)
-
-        if iscale.get_scaling_factor(self.service_flow_rate) is None:
-            iscale.set_scaling_factor(self.service_flow_rate, 0.1)
-
-        if iscale.get_scaling_factor(self.ebct) is None:
-            iscale.set_scaling_factor(self.ebct, 1e-2)
-
-        if iscale.get_scaling_factor(self.loading_rate) is None:
-            iscale.set_scaling_factor(self.loading_rate, 1e3)
+        iscale.set_scaling_factor(self.target_breakthrough_time, 1e-6)
+        iscale.set_scaling_factor(self.N_Re, 1)
+        iscale.set_scaling_factor(self.N_Pe_particle, 1e2)
+        iscale.set_scaling_factor(self.N_Pe_bed, 1e-3)
+        iscale.set_scaling_factor(self.number_columns, 1)
+        iscale.set_scaling_factor(self.resin_diam, 1e4)
+        iscale.set_scaling_factor(self.resin_density, 1e-3)
+        iscale.set_scaling_factor(self.bed_volume_total, 0.1)
+        iscale.set_scaling_factor(self.bed_depth, 1)
+        iscale.set_scaling_factor(self.bed_porosity, 10)
+        iscale.set_scaling_factor(self.column_height, 1)
+        iscale.set_scaling_factor(self.bed_diameter, 1)
+        iscale.set_scaling_factor(self.service_flow_rate, 0.1)
+        iscale.set_scaling_factor(self.ebct, 1e-2)
+        iscale.set_scaling_factor(self.loading_rate, 1e3)
 
     def _get_stream_table_contents(self, time_point=0):
 

@@ -394,7 +394,7 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
 
         if len(self.target_component_set) > 1:
             raise ConfigurationError(
-                f"IonExchange0D can only accept a single target ion but {len(self.target_component_set)} were provided."
+                f"IonExchangeMultiComp can only accept a single target ion but {len(self.target_component_set)} were provided."
             )
         if self.config.property_package.charge_comp[target_component].value > 0:
             self.ion_exchange_type = IonExchangeType.cation
@@ -704,33 +704,18 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         super().calculate_scaling_factors()
 
         # [ESR updates: Add new variables from base model.]
-        if iscale.get_scaling_factor(self.breakthrough_time) is None:
-            iscale.set_scaling_factor(self.breakthrough_time, 1e-4)
+        iscale.set_scaling_factor(self.breakthrough_time, 1e-4)
+        iscale.set_scaling_factor(self.bv, 1e-1)
+        iscale.set_scaling_factor(self.freundlich_n, 1)
+        iscale.set_scaling_factor(self.mass_transfer_coeff, 1e2)
+        iscale.set_scaling_factor(self.bv_50, 1e-3)
 
-        if iscale.get_scaling_factor(self.bv) is None:
-            iscale.set_scaling_factor(self.bv, 1e-1)
+        sf = iscale.get_scaling_factor(self.breakthrough_time)
+        iscale.set_scaling_factor(self.tb_traps, sf)
 
-        if iscale.get_scaling_factor(self.freundlich_n) is None:
-            iscale.set_scaling_factor(self.freundlich_n, 1)
-
-        if iscale.get_scaling_factor(self.mass_transfer_coeff) is None:
-            iscale.set_scaling_factor(self.mass_transfer_coeff, 1e2)
-
-        if iscale.get_scaling_factor(self.bv_50) is None:
-            iscale.set_scaling_factor(self.bv_50, 1e-3)
-
-        if iscale.get_scaling_factor(self.tb_traps) is None:
-            sf = iscale.get_scaling_factor(self.breakthrough_time)
-            iscale.set_scaling_factor(self.tb_traps, sf)
-
-        if iscale.get_scaling_factor(self.c_traps) is None:
-            iscale.set_scaling_factor(self.c_traps, 1)
-
-        if iscale.get_scaling_factor(self.traps) is None:
-            iscale.set_scaling_factor(self.traps, 1e3)
-
-        if iscale.get_scaling_factor(self.c_norm_avg) is None:
-            iscale.set_scaling_factor(self.c_norm_avg, 1e2)
+        iscale.set_scaling_factor(self.c_traps, 1)
+        iscale.set_scaling_factor(self.traps, 1e3)
+        iscale.set_scaling_factor(self.c_norm_avg, 1e2)
 
         for ind, c in self.eq_clark.items():
             if iscale.get_scaling_factor(c) is None:

@@ -668,22 +668,6 @@ def add_costing(m, regenerant=None, target_component=None):
     m.fs.unit_ix.target_breakthrough_time.setub(1e10)
 
 
-def initialize_with_costing(m, solver=None):
-
-    ix = m.fs.unit_ix
-
-    ix.initialize()
-
-    # Check and raise an error if the degrees of freedom are not 0
-    if degrees_of_freedom(m) != 0:
-        raise ConfigurationError(
-            "The degrees of freedom after building the model are not 0. "
-            "You have {} degrees of freedom. "
-            "Please check your inputs to ensure a square problem "
-            "before initializing the model.".format(degrees_of_freedom(m))
-        )
-
-
 def run_optimization(m, target_component=None):
     """This method unfixes variables and add constraints to solve an
     optimization problem

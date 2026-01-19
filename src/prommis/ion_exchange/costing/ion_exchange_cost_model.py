@@ -49,22 +49,6 @@ def build_regenerant_cost_param_block(blk, regenerant):
         cost_value = 0.09
         purity_value = 1.0
         year_value = pyo.units.USD_2020
-    elif regenerant == "MeOH":
-        cost_value = 3.395  # for 100% purity - ICIS
-        purity_value = 1
-        year_value = pyo.units.USD_2008
-    elif regenerant == "NaOH":
-        cost_value = 0.59  # for 30% sol'n - iDST
-        purity_value = 0.30
-        year_value = pyo.units.USD_2020
-    elif regenerant == "H2SO4":
-        cost_value = 0.119  # from ref[1]
-        purity_value = 1
-        year_value = pyo.units.USD_2019
-    elif regenerant == "HCl":
-        cost_value = 0.17  # for 37% sol'n - CatCost v 1.0.4
-        purity_value = 0.37
-        year_value = pyo.units.USD_2020
     else:
         raise ValueError(f"Unsupported regenerant type: {regenerant}")
 

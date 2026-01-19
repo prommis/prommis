@@ -23,6 +23,7 @@
 #################################################################################
 
 # Import Python libraries
+import os
 import json
 import logging
 import numpy as np
@@ -99,13 +100,19 @@ def main():
     # components, and calculated parameters from Parmest model
     # solution. The pressure drop and bed expansion parameters in the
     # resin_data file where obtained using ref[2].
-    resin_file = "data/resin_data.json"
-    comp_prop_file = "data/properties_data.json"
-    parmest_file = "data/parmest_data.json"
+    # curr_dir = dirname(abspath(__file__))
+    # data_path = abspath(join(curr_dir, "data"))
+    # print(data_ptah)
+
+    path = os.path.dirname(os.path.realpath(__file__))
+    resin_file = os.path.join(path, "data", "resin_data.json")
+    comp_prop_file = os.path.join(path, "data", "properties_data.json")
+    parmest_file = os.path.join(path, "data", "parmest_data.json")
+
 
     # Read original breakthrough data for multiple components. The
     # data is from ref[1], Figure 4, using ref[2].
-    curve_file = "data/breakthrough_literature_data.csv"
+    curve_file = os.path.join(path, "data", "breakthrough_literature_data.csv")
     curve_data = pd.read_csv(curve_file)
 
     # Define solver to use from WaterTAP

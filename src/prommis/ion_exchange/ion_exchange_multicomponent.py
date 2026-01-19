@@ -25,13 +25,6 @@ r"""
 Ion Exchange Multicomponent (IXMC) Model for Rare Elements Removal
 ==================================================================
 
-.. code-block:: python
-
-   from prommis.ion_exchange.ion_exchange_multicomponent import IonExchangeMultiComp
-
-.. index::
-   pair: prommis.ion_exchange.ion_exchange_multicomponent;ion_exchange_multicomponent
-
 The Ion Exchange Multicomponent (IXMC) model extends the WaterTAP Ion
 Exchange (IX) unit model to improve the recovery of critical minerals
 and rare earth elements (REEs) from multicomponent systems, including

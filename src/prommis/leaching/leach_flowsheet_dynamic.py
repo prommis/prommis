@@ -168,16 +168,6 @@ def set_inputs(m, perturb_time):
     m.fs.leach.volume.fix(100 * units.gallon)
     m.fs.leach.mscontactor.volume.fix(100 * units.gallon)
 
-    @m.Constraint(m.fs.time, m.fs.leach.mscontactor.elements)
-    def volume_fraction_rule(m, t, s):
-
-        theta_s = m.fs.leach.mscontactor.volume_frac_stream[t, s, "solid"]
-        theta_l = m.fs.leach.mscontactor.volume_frac_stream[t, s, "liquid"]
-        v_l = m.fs.leach.mscontactor.liquid[t, s].flow_vol
-        solid_dens_mass = m.fs.leach.config.solid_phase["property_package"].dens_mass
-        v_s = m.fs.leach.mscontactor.solid[t, s].flow_mass / solid_dens_mass
-        return theta_l * v_s == theta_s * v_l * m.liquid_solid_residence_time_ratio
-
     # Fixing the variable values at t=0
     m.fs.leach.mscontactor.liquid[0, :].flow_vol.fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["H"].fix()

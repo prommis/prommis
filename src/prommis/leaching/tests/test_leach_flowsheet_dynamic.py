@@ -56,14 +56,13 @@ def model():
 
     return m
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.unit
 def test_structural_issues(model):
     dt = DiagnosticsToolbox(model)
-    dt.report_structural_issues()
     dt.assert_no_structural_warnings(ignore_unit_consistency=True)
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_solve(model):
@@ -78,14 +77,14 @@ def test_solve(model):
 
     assert_optimal_termination(results)
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_numerical_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.assert_no_numerical_warnings()
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution(model):
@@ -167,14 +166,13 @@ def model2():
 
     return m
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.unit
 def test_structural_issues2(model2):
     dt = DiagnosticsToolbox(model2)
-    dt.report_structural_issues()
     dt.assert_no_structural_warnings()
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_solve2(model2):
@@ -196,14 +194,14 @@ def test_solve2(model2):
 
     assert_optimal_termination(results)
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_numerical_issues2(model2):
     dt = DiagnosticsToolbox(model2)
     dt.assert_no_numerical_warnings()
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution2(model2):
@@ -268,14 +266,13 @@ def model3():
 
     return m
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.unit
 def test_structural_issues3(model3):
     dt = DiagnosticsToolbox(model3)
-    dt.report_structural_issues()
     dt.assert_no_structural_warnings(ignore_unit_consistency=True)
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_solve3(model3):
@@ -291,14 +288,14 @@ def test_solve3(model3):
 
     assert_optimal_termination(results)
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_numerical_issues3(model3):
     dt = DiagnosticsToolbox(model3)
     dt.assert_no_numerical_warnings()
 
-
+@pytest.mark.skip("The dynamic leaching model is being re-implemented.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution3(model3):

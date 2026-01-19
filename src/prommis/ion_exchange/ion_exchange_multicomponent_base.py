@@ -22,6 +22,27 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 
+r"""
+
+Ion Exchange Multicomponent (IXMC) Base Model
+=============================================
+
+The Ion Exchange Multicomponent (IXMC) base model addresses the
+following specific aspects of the ion exchange process:
+
+- Provides the foundational structure for the IXMC model, ensuring
+  consistency across all calculations and enabling users to define
+  global key variables and parameters.
+
+- Contains all global variables and parameters required for modeling
+  the ion exchange column, including terms related to column geometry
+  and resin properties. Most of these variables, parameters, and
+  expressions are included under the **Model Components** Table in the
+  `WaterTAP IX documentation
+  <https://watertap.readthedocs.io/en/stable/technical_reference/unit_models/ion_exchange_0D.html>`_.
+
+"""
+
 import json
 from copy import deepcopy
 

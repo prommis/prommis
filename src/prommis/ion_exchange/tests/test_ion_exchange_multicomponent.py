@@ -47,7 +47,7 @@ from prommis.ion_exchange.costing.ion_exchange_cost_model import (
     IXCosting,
     IXCostingData,
 )
-
+import prommis.ion_exchange.ix_freundlich_multicomponent_example as ix_example
 
 """
 modified by: Soraya Rawlings
@@ -1111,3 +1111,10 @@ def test_get_stream_table_contents_nacl(m_nacl):
     )
 
     pd.testing.assert_frame_equal(stable, expected, rtol=1e-4, atol=1e-4)
+
+
+@pytest.mark.component
+def test_ix_example():
+    """Tests the execution of main function in example script."""
+
+    m = ix_example.main()

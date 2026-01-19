@@ -31,11 +31,13 @@ from prommis.properties.sulfuric_acid_leaching_properties import (
 )
 
 
-def build_model(n_tanks=1):
+def build_model(has_holdup=True, n_tanks=1):
     """
     Method to build a single stage leaching system using data for
     West Kentucky No. 13 coal refuse.
     Args:
+        has_holdup: Boolean flag to determine whether to create
+            material holdup terms
         n_tanks: Number of tanks in leaching train
     Returns:
         m: ConcreteModel containing the leaching flowsheet
@@ -60,7 +62,7 @@ def build_model(n_tanks=1):
             "has_pressure_balance": False,
         },
         reaction_package=m.fs.leach_rxns,
-        has_holdup=True,
+        has_holdup=has_holdup,
     )
 
     return m
@@ -153,7 +155,7 @@ def set_scaling(m):
 # -------------------------------------------------------------------------------------
 if __name__ == "__main__":
     # Call build model function
-    m = build_model(n_tanks=1)
+    m = build_model(has_holdup=True, n_tanks=1)
     set_inputs(m)
     set_scaling(m)
 
@@ -176,9 +178,9 @@ if __name__ == "__main__":
     m.fs.leach.report()
 
     # Call build model function
-    m2 = build_model(n_tanks=2)
+    m2 = build_model(has_holdup=True, n_tanks=2)
     set_inputs(m2)
-    m2.fs.leach.volume = 50 * units.gallon
+    m2.fs.leach.volume[:].set_value(50 * units.gallon)
     set_scaling(m2)
 
     # Initialize model

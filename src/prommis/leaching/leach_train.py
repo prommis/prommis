@@ -79,7 +79,7 @@ from idaes.core import (
 from idaes.core.initialization import ModularInitializerBase
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.models.unit_models.mscontactor import MSContactor
-from idaes.core.scaling import CustomScalerBase, DefaultScalingRecommendation
+from idaes.core.scaling import CustomScalerBase
 
 
 class LeachingTrainScaler(CustomScalerBase):
@@ -87,7 +87,12 @@ class LeachingTrainScaler(CustomScalerBase):
     Scaler for the LeachingTrain unit model.
     """
 
-    DEFAULT_SCALING_FACTORS = {"liquid_solid_residence_time_ratio": 32}
+    DEFAULT_SCALING_FACTORS = {
+        "liquid_solid_residence_time_ratio": 32,
+        # If no scaling factor for volume is provided, then the
+        # inverse of its current value is used as a scaling factor
+        "volume": None,
+    }
 
     def variable_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None

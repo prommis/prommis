@@ -6,7 +6,6 @@
 #####################################################################################################
 from pyomo.environ import (
     assert_optimal_termination,
-    ComponentMap,
     SolverFactory,
     value,
 )

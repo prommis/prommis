@@ -182,8 +182,7 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
         self.eps = Param(
             initialize=1e-8,
             mutable=True,
-            doc="Perturbation to avoid conversion values "
-            "hitting their lower bound."
+            doc="Perturbation to avoid conversion values " "hitting their lower bound.",
         )
 
         self._state_block_class = CoalRefuseStateBlock
@@ -195,7 +194,7 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
                 "flow_mass": {"method": None},
                 "mass_frac_comp": {"method": None},
                 "dens_mass": {"method": "_dens_mass"},
-                "flow_vol": {"method": "_flow_vol"}
+                "flow_vol": {"method": "_flow_vol"},
             }
         )
         obj.define_custom_properties(
@@ -266,16 +265,17 @@ class CoalRefuseStateBlockData(StateBlockData):
             bounds=(0, 1 - 1e-8),
         )
 
-
         @self.Constraint(self.params.component_list)
         def conversion_comp_eqn(b, j):
             if j == "inerts":
                 return b.conversion_comp[j] == b.params.eps
             # Fudge the initial mass fraction of non-inerts
             # so that the initial conversion isn't exactly on its bounds
-            return (1 - b.conversion_comp[j]) * (1 + b.params.eps)* b.params.mass_frac_comp_initial[
-                j
-            ] * b.mass_frac_comp["inerts"] == b.mass_frac_comp[
+            return (1 - b.conversion_comp[j]) * (
+                1 + b.params.eps
+            ) * b.params.mass_frac_comp_initial[j] * b.mass_frac_comp[
+                "inerts"
+            ] == b.mass_frac_comp[
                 j
             ] * b.params.mass_frac_comp_initial[
                 "inerts"

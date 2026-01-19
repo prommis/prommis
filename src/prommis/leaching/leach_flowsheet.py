@@ -15,13 +15,11 @@ from pyomo.environ import (
     ComponentMap,
     ConcreteModel,
     SolverFactory,
-    TransformationFactory,
     units,
 )
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util import to_json
-from idaes.core.util.scaling import set_scaling_factor
 
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock

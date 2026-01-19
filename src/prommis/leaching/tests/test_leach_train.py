@@ -9,8 +9,6 @@ from pyomo.environ import (
     ConcreteModel,
     Constraint,
     SolverFactory,
-    Suffix,
-    TransformationFactory,
     Var,
     assert_optimal_termination,
     units,

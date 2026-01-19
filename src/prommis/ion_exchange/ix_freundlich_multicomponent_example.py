@@ -109,7 +109,6 @@ def main():
     comp_prop_file = os.path.join(path, "data", "properties_data.json")
     parmest_file = os.path.join(path, "data", "parmest_data.json")
 
-
     # Read original breakthrough data for multiple components. The
     # data is from ref[1], Figure 4, using ref[2].
     curve_file = os.path.join(path, "data", "breakthrough_literature_data.csv")

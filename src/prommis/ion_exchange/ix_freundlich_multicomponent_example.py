@@ -41,7 +41,6 @@ from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.exceptions import ConfigurationError
 
 # Import WaterTAP models and libraries
-from watertap.costing import WaterTAPCosting
 from watertap.core.solvers import get_solver
 from watertap.property_models.multicomp_aq_sol_prop_pack import MCASParameterBlock
 
@@ -49,6 +48,11 @@ from watertap.property_models.multicomp_aq_sol_prop_pack import MCASParameterBlo
 from prommis.ion_exchange.ion_exchange_multicomponent import (
     IonExchangeMultiComp,
 )
+from prommis.ion_exchange.costing.ion_exchange_cost_model import (
+    IXCosting,
+    IXCostingData,
+)
+
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pyomo.repn.plugins.nl_writer").setLevel(logging.ERROR)
@@ -180,13 +184,13 @@ def main():
     print("=========== End initialization")
 
     # Add relevant costing metrics for the IX model
-    add_costing(m, target_component=target_component)
+    add_costing(m, regenerant=regenerant, target_component=target_component)
 
     print()
     print("=========== Re-run initialization with costing")
 
-    # Solve and re-initialize the model including the costing variables
-    initialize_with_costing(m)
+    # Solve and re-initialize the model after adding costing variables
+    initialize_system(m, solver=solver)
 
     dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
@@ -584,32 +588,32 @@ def initialize_system(
         )
 
 
-def add_costing(m, target_component=None):
+def add_costing(m, regenerant=None, target_component=None):
 
     flow_out = m.fs.unit_ix.process_flow.properties_out[0].flow_vol_phase["Liq"]
 
-    m.fs.costing = WaterTAPCosting()
+    m.fs.costing = IXCosting()
     m.fs.costing.base_currency = pyo.units.USD_2021
     m.fs.costing.base_period = pyo.units.year
-    m.fs.costing.utilization_factor.fix(1)
 
     # Add costs related only to IX unit
-    m.fs.unit_ix.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
-
-    # Touch costing properties
-    m.fs.unit_ix.costing.capital_cost
-    m.fs.unit_ix.costing.capital_cost_resin
+    m.fs.unit_ix.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=IXCostingData.cost_ion_exchange,
+    )
 
     # Calculate costs of entire process
     m.fs.costing.cost_process()
-    m.fs.costing.add_LCOW(flow_out)
-    m.fs.costing.add_annual_water_production(flow_out)
-    m.fs.costing.add_specific_energy_consumption(flow_out)
+    m.fs.costing.utilization_factor.fix(1)
     m.fs.costing.aggregate_fixed_operating_cost()
     m.fs.costing.aggregate_variable_operating_cost()
     m.fs.costing.aggregate_flow_electricity()
+    m.fs.costing.aggregate_capital_cost()
     m.fs.costing.total_capital_cost()
     m.fs.costing.total_operating_cost()
+
+    # Touch relevant cost variable
+    m.fs.costing.total_annualized_cost
 
     # Add costs for REEs. References are: [a]
     # https://www.metal.com/Rare-Earth-Metals/ and [b]
@@ -669,7 +673,6 @@ def initialize_with_costing(m, solver=None):
     ix = m.fs.unit_ix
 
     ix.initialize()
-    m.fs.costing.initialize()
 
     # Check and raise an error if the degrees of freedom are not 0
     if degrees_of_freedom(m) != 0:

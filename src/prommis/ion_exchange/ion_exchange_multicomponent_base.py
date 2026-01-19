@@ -48,9 +48,6 @@ from idaes.core.util.misc import StrEnum
 from watertap.core import ControlVolume0DBlock, InitializationMixin
 from watertap.core.solvers import get_solver
 
-# Import modified version of IX costing model
-from prommis.ion_exchange.ion_exchange_costing import cost_ion_exchange
-
 
 """ This is the Ion Exchange (IX) base model that contains relevant
 general equations of the IX unit. This model calls a specific
@@ -1179,10 +1176,6 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         var_dict["Peclet Number (particle)"] = self.N_Pe_particle
 
         return {"vars": var_dict}
-
-    @property
-    def default_costing_method(self):
-        return cost_ion_exchange
 
 
 # [ESR WIP: The ion_exchange_multicomponent model (Clark) incorporates

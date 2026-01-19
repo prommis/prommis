@@ -35,13 +35,18 @@ from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 pytest.importorskip("watertap", reason="WaterTAP dependency not available")
 
 # pylint: disable=wrong-import-position
-from watertap.costing import WaterTAPCosting
 from watertap.core.util.initialization import check_dof
 from watertap.core.solvers import get_solver
 from watertap.property_models.multicomp_aq_sol_prop_pack import MCASParameterBlock
+
 from prommis.ion_exchange.ion_exchange_multicomponent import (
     IonExchangeMultiComp,
 )
+from prommis.ion_exchange.costing.ion_exchange_cost_model import (
+    IXCosting,
+    IXCostingData,
+)
+
 
 """
 modified by: Soraya Rawlings
@@ -59,6 +64,8 @@ def m():
     list_solvent = ["H2O"]
     list_reactive_ions = ["La", "Dy", "Ho", "Er", "Yb", "Sm"]
     hazardous_waste = False
+    num_traps = 30
+    c_trap_min = 1e-3
 
     # Add sets for solvent and ion species
     m = pyo.ConcreteModel()
@@ -105,8 +112,8 @@ def m():
         "regenerant": regenerant,
         "target_component": target_component,
         "reactive_ions": list_reactive_ions,
-        "number_traps": 30,
-        "c_trap_min": 1e-3,  # initial concentration in kg/m3
+        "number_traps": num_traps,
+        "c_trap_min": c_trap_min,
         "resin_data_path": resin_file,
         "resin": resin,
         "hazardous_waste": hazardous_waste,
@@ -221,64 +228,45 @@ def m():
             else:
                 sb.set_variable_scaling_factor(var, 1e8)
 
-    # for v in get_comp_list(ix):
-    #     ixv = getattr(ix, v)
-    #     if ixv.is_indexed():
-    #         idx = [*ixv.index_set()]
-    #         for i in idx:
-    #             if ixv[i].is_fixed():
-    #                 if ixv[i]() == 0:
-    #                     continue
-    #                 sb.set_variable_scaling_factor(ixv[i], 1 / ixv[i]())
-    #     else:
-    #         if ixv.is_fixed():
-    #             if ixv() == 0:
-    #                 continue
-    #             sb.set_variable_scaling_factor(ixv, 1 / ixv())
-
-    # for v in scale_from_value:
-    #     ixv = getattr(ix, v)
-    #     if ixv.is_indexed():
-    #         idx = [*ixv.index_set()]
-    #         for i in idx:
-    #             if ixv[i]() == 0:
-    #                 continue
-    #             sb.set_variable_scaling_factor(ixv[i], 1 / ixv[i]())
-    #     else:
-    #         if ixv() == 0:
-    #             continue
-    #         sb.set_variable_scaling_factor(ixv, 1 / ixv())
-
     return m
 
 
-def build_clark_with_costing(m):
+def build_clark_with_costing(m, regenerant_included=False):
 
     ix = m.fs.unit
     flow_out = ix.process_flow.properties_out[0].flow_vol_phase["Liq"]
 
-    m.fs.costing = WaterTAPCosting()
+    m.fs.costing = IXCosting()
     m.fs.costing.base_currency = pyo.units.USD_2021
     m.fs.costing.base_period = pyo.units.year
-    m.fs.costing.utilization_factor.fix(1)
 
     # Add costs related to IX unit
-    ix.costing = ix_cost = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
+    ix.costing = ix_cost = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=IXCostingData.cost_ion_exchange,
+    )
 
-    # Touch costing properties
-    m.fs.unit.costing.capital_cost
-    m.fs.unit.costing.capital_cost_resin
-
-    # Calculate costs of entireprocess
+    # Calculate costs of entire process
     m.fs.costing.cost_process()
-    m.fs.costing.add_LCOW(flow_out)
-    m.fs.costing.add_annual_water_production(flow_out)
-    m.fs.costing.add_specific_energy_consumption(flow_out)
+    m.fs.costing.utilization_factor.fix(1)
     m.fs.costing.aggregate_fixed_operating_cost()
     m.fs.costing.aggregate_variable_operating_cost()
     m.fs.costing.aggregate_flow_electricity()
+    m.fs.costing.aggregate_capital_cost()
     m.fs.costing.total_capital_cost()
     m.fs.costing.total_operating_cost()
+
+    # Set values for variables needed during the test for staticmethod
+    # in the costing model file.
+    m.fs.costing.aggregate_capital_cost.set_value(1e3)
+    m.fs.costing.aggregate_fixed_operating_cost.set_value(1e3)
+    m.fs.costing.aggregate_variable_operating_cost.set_value(1e3)
+    m.fs.costing.aggregate_flow_costs["electricity"].set_value(1e-3)
+    if regenerant_included:
+        m.fs.costing.aggregate_flow_costs["NaCl"].set_value(1e3)
+    m.fs.costing.total_capital_cost.set_value(1e3)
+    m.fs.costing.total_operating_cost.set_value(1e3)
+    m.fs.costing.initialize_build(m.fs.costing)
 
     # Add costs for REEs. References are: [a]
     # https://www.metal.com/Rare-Earth-Metals/ and [b]
@@ -444,7 +432,8 @@ def test_optimization_single_use(m):
     # Propagate the solution back to the original model
     init_scaling.propagate_solution(scaled_model, m)
 
-    build_clark_with_costing(m)
+    build_clark_with_costing(m, regenerant_included=False)
+
     check_dof(m, fail_flag=True)
 
     # Solve scaled model
@@ -517,17 +506,20 @@ def test_optimization_single_use(m):
 
     # Expected results for system costs
     sys_cost_results = {
-        # "electrical_carbon_intensity": 0.475,
-        # "plant_lifetime": 30,
-        "wacc": 0.09307339771758533,
-        "capital_recovery_factor": 0.1,
+        "utilization_factor": 1,
         "TPEC": 4.121212121212121,
         "TIC": 2.0,
-        "aggregate_fixed_operating_cost": 15.615588480652844,
+        "total_capital_cost": 2398.5398832175597,
+        "total_operating_cost": 88.9915519881193,
+        "electricity_cost": 0.07,
+        "aggregate_capital_cost": 2398.5398832175597,
+        "aggregate_fixed_operating_cost": 17.03535548053501,
         "aggregate_variable_operating_cost": 0.0,
-        "aggregate_flow_electricity": 4.144591042194013e-08,
-        "total_capital_cost": 2398.1275209105806,
-        "total_operating_cost": 87.55944396352325,
+        "aggregate_flow_electricity": 4.1445910422021544e-08,
+        "aggregate_flow_costs": {
+            "electricity": 2.5432039553160866e-05,
+        },
+        "maintenance_labor_chemical_operating_cost": 71.95619649459807,
     }
 
     for v, r in sys_cost_results.items():
@@ -541,15 +533,16 @@ def test_optimization_single_use(m):
     # Expected results for ion exchange costs considering "single_use"
     # for regenerant use
     ix_cost_results = {
-        "capital_cost": 2398.1275209105806,
-        "fixed_operating_cost": 15.615588480652844,
-        "capital_cost_vessel": 598.3980182741337,
-        "capital_cost_resin": 1.1338619535114787,
+        "capital_cost": 2398.539883153269,
+        "fixed_operating_cost": 17.03535548053501,
+        "capital_cost_vessel": 598.398018274306,
+        "capital_cost_resin": 1.2369525140112791,
         "capital_cost_backwash_tank": 47.95379556887687,
         "operating_cost_hazardous": 0,
-        "total_pumping_power": 4.144591042194013e-08,
-        "flow_vol_resin": 0.002433719526800687,
-        "single_use_resin_replacement_cost": 15.615588480652844,
+        "total_pumping_power": 4.1445910422021544e-08,
+        "flow_vol_resin": 0.0024337195286942945,
+        "single_use_resin_replacement_cost": 17.03535548053501,
+        "cost_factor": 2.0,
     }
 
     for v, r in ix_cost_results.items():
@@ -664,6 +657,8 @@ def m_nacl():
     hazardous_waste = True
     list_solvent = ["H2O"]
     list_reactive_ions = ["La", "Dy", "Ho", "Er", "Yb", "Sm"]
+    num_traps = 30
+    c_trap_min = 1e-3
 
     # Add sets for solvent and ion species
     m = pyo.ConcreteModel()
@@ -710,8 +705,8 @@ def m_nacl():
         "regenerant": regenerant,
         "target_component": target_component,
         "reactive_ions": list_reactive_ions,
-        "number_traps": 30,
-        "c_trap_min": 1e-3,  # initial concentration in kg/m3
+        "number_traps": num_traps,
+        "c_trap_min": c_trap_min,
         "resin_data_path": resin_file,
         "resin": resin,
         "hazardous_waste": hazardous_waste,
@@ -735,7 +730,6 @@ def m_nacl():
     ix.service_flow_rate.setlb(1e-10)
     ix.process_flow.properties_in[0.0].visc_k_phase["Liq"].setlb(1e-16)
     ix.process_flow.properties_in[0].flow_vol_phase["Liq"].setlb(1e-16)
-    # ix.N_Sc.setlb(1e-16)
     for c in m.fs.set_reactive_ions:
         ix.process_flow.properties_in[0.0].diffus_phase_comp["Liq", c].setlb(1e-16)
         ix.bv_50[c].setlb(1e-3)
@@ -849,7 +843,7 @@ def test_optimization_nacl(m_nacl):
     # Propagate the solution back to the original model
     init_scaling.propagate_solution(scaled_model, m_nacl)
 
-    m = build_clark_with_costing(m_nacl)
+    m = build_clark_with_costing(m_nacl, regenerant_included=True)
 
     check_dof(m, fail_flag=True)
 
@@ -898,21 +892,21 @@ def test_optimization_nacl(m_nacl):
     ix_vars_results = {
         "resin_diam": 0.00075,
         "resin_density": 1126.61,
-        "bed_volume": 0.0001767145682993849,
-        "bed_volume_total": 0.00017671456829938486,
-        "bed_depth": 2.2499997646075194,
+        "bed_volume": 0.00017671456829883997,
+        "bed_volume_total": 0.00017671456829883997,
+        "bed_depth": 2.2499997646005814,
         "bed_porosity": 0.8,
-        "column_height": 3.918249694695952,
+        "column_height": 3.918249694686954,
         "bed_diameter": 0.010000000000640615,
         "number_columns": 1.0,
         "number_columns_redundant": 1.0,
-        "target_breakthrough_time": 2291425.783593316,
-        "ebct": 10581.68970370088,
+        "target_breakthrough_time": 2291425.7741685435,
+        "ebct": 10581.689703668251,
         "loading_rate": 0.00021263142537817904,
-        "service_flow_rate": 0.3402103161975088,
-        "N_Re": 0.15947356903363433,
+        "service_flow_rate": 0.34021031619855785,
+        "N_Re": 0.15947356903363427,
         "N_Pe_particle": 0.020713838554897324,
-        "N_Pe_bed": 62.141509163516176,
+        "N_Pe_bed": 62.14150916332458,
     }
 
     for v, r in ix_vars_results.items():
@@ -933,17 +927,22 @@ def test_optimization_nacl(m_nacl):
 
     # Expected results for system costs
     sys_cost_results = {
-        # "electrical_carbon_intensity": 0.475,
-        # "plant_lifetime": 30,
-        "wacc": 0.09307339771758533,
-        "capital_recovery_factor": 0.1,
+        "utilization_factor": 1,
         "TPEC": 4.121212121212121,
         "TIC": 2.0,
-        "aggregate_fixed_operating_cost": 3849.316840381578,
+        "total_capital_cost": 2777.5679769146095,
+        "total_operating_cost": 3932.8064452419,
+        "electricity_cost": 0.07,
+        "NaCl_cost": 0.09,
+        "aggregate_capital_cost": 2777.5679769146095,
+        "aggregate_fixed_operating_cost": 3849.3271494414466,
         "aggregate_variable_operating_cost": 0.0,
-        "aggregate_flow_electricity": 4.189304216871192e-08,
-        "total_capital_cost": 2777.15561467569,
-        "total_operating_cost": 3932.7837697879577,
+        "aggregate_flow_electricity": 4.189304217061552e-08,
+        "aggregate_flow_costs": {
+            "NaCl": 0.1522307890750307,
+            "electricity": 2.5706408536733103e-05,
+        },
+        "maintenance_labor_chemical_operating_cost": 83.32703930743828,
     }
 
     for v, r in sys_cost_results.items():
@@ -957,15 +956,16 @@ def test_optimization_nacl(m_nacl):
     # Expected results for ion exchange costs considering "single_use"
     # for regenerant use
     ix_cost_results = {
-        "capital_cost": 2777.15561467569,
-        "fixed_operating_cost": 3849.316840381578,
-        "capital_cost_vessel": 598.3980182741337,
-        "capital_cost_resin": 1.1338619535114787,
-        "capital_cost_backwash_tank": 183.32063690580352,
-        "operating_cost_hazardous": 3849.2034541862204,
-        "total_pumping_power": 4.189304216871192e-08,
-        "capital_cost_regen_tank": 6.193409944370675,
-        "flow_mass_regen_soln": 1.4243564984726436,
+        "capital_cost": 2777.5679769146095,
+        "fixed_operating_cost": 3849.3271494414466,
+        "capital_cost_vessel": 598.398018289634,
+        "capital_cost_resin": 1.2369525140701472,
+        "capital_cost_backwash_tank": 183.3206369055396,
+        "operating_cost_hazardous": 3849.2034541900457,
+        "total_pumping_power": 4.189304217061552e-08,
+        "capital_cost_regen_tank": 6.193409944356747,
+        "flow_mass_regen_soln": 1.4243565041828834,
+        "cost_factor": 2.0,
     }
 
     for v, r in ix_cost_results.items():

@@ -31,6 +31,7 @@ from idaes.core import FlowsheetBlock, UnitModelCostingBlock
 from idaes.core.scaling.scaling_base import ScalerBase
 from idaes.core.util.testing import initialization_tester
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.exceptions import ConfigurationError
 
 pytest.importorskip("watertap", reason="WaterTAP dependency not available")
 
@@ -323,6 +324,70 @@ def build_clark_with_costing(m, regenerant_included=False):
     m.fs.unit.target_breakthrough_time.setub(1e10)
 
     return m
+
+
+@pytest.mark.unit
+def test_config_error_in_ix_type():
+
+    # Set up the model with parameters that will trigger the ConfigurationError
+    with pytest.raises(
+        ConfigurationError,
+        match="The current ion exchange model is limited to cation exchange methods and alternative techniques are not addressed at this time.",
+    ):
+
+        path = os.path.dirname(os.path.realpath(__file__))
+        resin_file = os.path.join(path, "..", "data", "resin_data.json")
+        resin = "S950"
+        target_component = "Cl"
+        regenerant = "single_use"
+        list_solvent = ["H2O"]
+        list_reactive_ions = ["Cl"]
+        hazardous_waste = False
+        num_traps = 30
+        c_trap_min = 1e-3
+
+        # Add sets for solvent and ion species
+        m = pyo.ConcreteModel()
+        m.fs = FlowsheetBlock(dynamic=False)
+
+        m.fs.set_solvent = pyo.Set(initialize=list_solvent)
+        m.fs.set_reactive_ions = pyo.Set(initialize=list_reactive_ions)
+        m.fs.set_all = pyo.Set(initialize=list_solvent + list_reactive_ions)
+
+        ion_props = {
+            "solute_list": [],
+            "diffusivity_data": {},
+            "molar_volume_data": {},
+            "mw_data": {},  # in kg/mol
+            "charge": {},
+        }
+
+        ion_props["solute_list"] = list_reactive_ions
+        ion_props["diffusivity_data"] = {}
+        ion_props["molar_volume_data"] = {
+            ("Liq", "Cl"): 0.0006818,
+        }
+        ion_props["mw_data"] = {
+            "H2O": 0.018,
+            "Cl": 0.035453,
+        }
+        ion_props["charge"] = {"Cl": -1}
+        ion_props["diffus_calculation"] = "HaydukLaudie"
+        m.fs.properties = MCASParameterBlock(**ion_props)
+
+        ix_config = {
+            "property_package": m.fs.properties,
+            "regenerant": regenerant,
+            "target_component": target_component,
+            "reactive_ions": list_reactive_ions,
+            "number_traps": num_traps,
+            "c_trap_min": c_trap_min,
+            "resin_data_path": resin_file,
+            "resin": resin,
+            "hazardous_waste": hazardous_waste,
+        }
+
+        m.fs.unit = ix = IonExchangeMultiComp(**ix_config)
 
 
 @pytest.mark.unit
@@ -975,3 +1040,74 @@ def test_optimization_nacl(m_nacl):
                 assert pytest.approx(s, rel=1e-3) == pyo.value(mv[i])
         else:
             assert pytest.approx(r, rel=1e-3) == pyo.value(mv)
+
+
+@pytest.mark.unit
+def test_get_stream_table_contents_nacl(m_nacl):
+
+    stable = m_nacl.fs.unit._get_stream_table_contents()
+
+    expected = pd.DataFrame.from_dict(
+        {
+            "Units": {
+                "flow_mol_phase_comp ('Liq', 'H2O')": getattr(
+                    pyo.units.pint_registry, "mole / second"
+                ),
+                "flow_mol_phase_comp ('Liq', 'La')": getattr(
+                    pyo.units.pint_registry, "mole / second"
+                ),
+                "flow_mol_phase_comp ('Liq', 'Dy')": getattr(
+                    pyo.units.pint_registry, "mole / second"
+                ),
+                "flow_mol_phase_comp ('Liq', 'Ho')": getattr(
+                    pyo.units.pint_registry, "mole / second"
+                ),
+                "flow_mol_phase_comp ('Liq', 'Er')": getattr(
+                    pyo.units.pint_registry, "mole / second"
+                ),
+                "flow_mol_phase_comp ('Liq', 'Yb')": getattr(
+                    pyo.units.pint_registry, "mole / second"
+                ),
+                "flow_mol_phase_comp ('Liq', 'Sm')": getattr(
+                    pyo.units.pint_registry, "mole / second"
+                ),
+                "temperature": getattr(pyo.units.pint_registry, "kelvin"),
+                "pressure": getattr(pyo.units.pint_registry, "pascal"),
+            },
+            "Feed Inlet": {
+                "flow_mol_phase_comp ('Liq', 'H2O')": 0.00092778,
+                "flow_mol_phase_comp ('Liq', 'La')": 1.2023e-10,
+                "flow_mol_phase_comp ('Liq', 'Dy')": 3.2886e-11,
+                "flow_mol_phase_comp ('Liq', 'Ho')": 5.2653e-12,
+                "flow_mol_phase_comp ('Liq', 'Er')": 1.1981e-11,
+                "flow_mol_phase_comp ('Liq', 'Yb')": 7.7203e-12,
+                "flow_mol_phase_comp ('Liq', 'Sm')": 4.5537e-11,
+                "temperature": 298.15,
+                "pressure": 1.0132e5,
+            },
+            "Liquid Outlet": {
+                "flow_mol_phase_comp ('Liq', 'H2O')": 0.00092778,
+                "flow_mol_phase_comp ('Liq', 'La')": 8.5727e-11,
+                "flow_mol_phase_comp ('Liq', 'Dy')": 1.3930e-11,
+                "flow_mol_phase_comp ('Liq', 'Ho')": 2.1721e-12,
+                "flow_mol_phase_comp ('Liq', 'Er')": 5.0967e-12,
+                "flow_mol_phase_comp ('Liq', 'Yb')": 3.2839e-12,
+                "flow_mol_phase_comp ('Liq', 'Sm')": 1.9374e-11,
+                "temperature": 298.15,
+                "pressure": 1.0132e5,
+            },
+            "Regen Outlet": {
+                "flow_mol_phase_comp ('Liq', 'H2O')": 0.0000,
+                "flow_mol_phase_comp ('Liq', 'La')": 3.4499e-11,
+                "flow_mol_phase_comp ('Liq', 'Dy')": 1.8956e-11,
+                "flow_mol_phase_comp ('Liq', 'Ho')": 3.0931e-12,
+                "flow_mol_phase_comp ('Liq', 'Er')": 6.8847e-12,
+                "flow_mol_phase_comp ('Liq', 'Yb')": 4.4365e-12,
+                "flow_mol_phase_comp ('Liq', 'Sm')": 2.6163e-11,
+                "temperature": 298.15,
+                "pressure": 1.0132e5,
+            },
+        }
+    )
+
+    pd.testing.assert_frame_equal(stable, expected, rtol=1e-4, atol=1e-4)

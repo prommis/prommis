@@ -22,8 +22,8 @@
 
 r"""
 
-Ion Exchange Multicomponent (IXMC) Model for Rare Elements Removal
-==================================================================
+Ion Exchange Multicomponent (IXMC) Model
+========================================
 
 The Ion Exchange Multicomponent (IXMC) model extends the WaterTAP Ion
 Exchange (IX) unit model to improve the recovery of critical minerals
@@ -36,8 +36,8 @@ assumptions and methodologies of the original IX model. Refer to the
 assumptions, equations, and implementation.
 
 
-Key Features of the IXMC Model
-------------------------------
+Key Features
+------------
 The IXMC model introduces new key features, including:
 
 1. **Multicomponent separation**:
@@ -224,7 +224,7 @@ the IXMC model to accurately predict hydrodynamic behavior and
 operational performance, ensuring compatibility with multiple resin
 types.
 
-.. csv-table:: Table 1: Resin-Specific Equations for Pressure Drop and Bed Expansion.
+.. csv-table:: Resin-Specific Equations for Pressure Drop and Bed Expansion.
    :header: "Description", "Equation"
 
    "Pressure drop (psi/m)", ":math:`p_{drop} = p_{drop, A} + p_{drop,B}u_{bed} + p_{drop, C}u_{bed}^{2}`"
@@ -248,14 +248,14 @@ for the available resins. Note that most of the key values for these
 properties can be found in the resin data sheets provided by the
 manufacturer.
 
-.. csv-table:: Table 2: Resin names and their types included in the resin JSON file.
+.. csv-table:: Resin names and their types included in the resin JSON file.
    :header: "Resin Name", "Resin Type"
    :name: resin_table
 	    
    "A850", "Strong-base Type I Acrylic Anion Exchange :math:`[1]`"
    "S950", "Chelating Polystyrene-Divinylbenzene :math:`[2]`"
 
-.. csv-table:: Table 3: Overview of the key properties included for each resin in the JSON file and their units.
+.. csv-table:: Overview of the key properties included for each resin in the JSON file and their units.
    :header: "Property", "Units"
 
    "Functional Group", "N/A"
@@ -274,7 +274,7 @@ The IXMC model modifies variables, parameters, and expressions to
 support multicomponent systems. Table 4 summarizes some of the key
 terms that were modified in the model.
 
-.. csv-table::  Table 4: Key Parameters Needed in the IXMC Model
+.. csv-table::  Key Parameters Needed in the IXMC Model
    :header: "Type", "Name", "Symbol", "Description"
 
    Variable, "``Empty Bed Contact Time``", ":math:`ebct`", "The time the liquid remains in contact with the resin, calculated as :math:`\frac{V_{res}}{flow_{col}}` where :math:`V_{res}` is the bed volume and :math:`flow_{col}` is the volumetric flow per column."

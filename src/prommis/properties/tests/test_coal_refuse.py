@@ -10,7 +10,7 @@ from idaes.core import FlowsheetBlock
 
 import pytest
 
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
+from prommis.properties.coal_refuse_properties import CoalRefuseParameters
 
 
 @pytest.fixture

@@ -86,9 +86,8 @@ class LeachingTrainScaler(CustomScalerBase):
     """
     Scaler for the LeachingTrain unit model.
     """
-    DEFAULT_SCALING_FACTORS = {
-        "liquid_solid_residence_time_ratio": 32
-    }
+
+    DEFAULT_SCALING_FACTORS = {"liquid_solid_residence_time_ratio": 32}
 
     def variable_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
@@ -108,13 +107,15 @@ class LeachingTrainScaler(CustomScalerBase):
             submodel_scalers = {}
 
         # MSContactor scaler expects volume to be scaled. Since this
-        # unit model has no geometry constraints, we can scale 
+        # unit model has no geometry constraints, we can scale
         # volume by its current magnitude.
         for vardata in model.volume.values():
             if self.get_default_scaling_factor(vardata) is not None:
                 self.scale_variable_by_default(vardata, overwrite=overwrite)
             else:
-                self.set_variable_scaling_factor(vardata, 1 / vardata.value, overwrite=overwrite)
+                self.set_variable_scaling_factor(
+                    vardata, 1 / vardata.value, overwrite=overwrite
+                )
         if hasattr(model.mscontactor, "liquid_solid_residence_time_ratio"):
             for vardata in model.mscontactor.liquid_solid_residence_time_ratio.values():
                 self.scale_variable_by_default(vardata, overwrite=overwrite)
@@ -400,20 +401,25 @@ class LeachingTrainData(UnitModelBlockData):
                 self.flowsheet().time,
                 self.mscontactor.elements,
                 initialize=1 / 32,
-                units=units.dimensionless
+                units=units.dimensionless,
             )
             self.liquid_solid_residence_time_ratio = Reference(
                 self.mscontactor.liquid_solid_residence_time_ratio
             )
 
-            @self.mscontactor.Constraint(self.flowsheet().time, self.mscontactor.elements)
+            @self.mscontactor.Constraint(
+                self.flowsheet().time, self.mscontactor.elements
+            )
             def outlet_flow_rate_eqn(b, t, s):
                 theta_s = b.volume_frac_stream[t, s, "solid"]
                 theta_l = b.volume_frac_stream[t, s, "liquid"]
                 v_l = b.liquid[t, s].flow_vol
                 v_s = b.solid[t, s].flow_vol
 
-                return theta_l * v_s == theta_s * v_l * b.liquid_solid_residence_time_ratio[t, s]        
+                return (
+                    theta_l * v_s
+                    == theta_s * v_l * b.liquid_solid_residence_time_ratio[t, s]
+                )
 
         # Create unit level Ports
         self.liquid_inlet = Port(extends=self.mscontactor.liquid_inlet)
@@ -435,11 +441,11 @@ class LeachingTrainData(UnitModelBlockData):
 
             return (1 - f_out * x_out / (f_in * x_in)) * 100
 
-    def get_volume(b, t, s):
+    def get_volume(self, t, s):
         # TODO change when MSContactor can handle volume varying with time
         if self.config.has_holdup:
-            return b.volume[s]
-        return b.volume[t, s]
+            return self.volume[s]
+        return self.volume[t, s]
 
     def _get_stream_table_contents(self, time_point=0):
         return self.mscontactor._get_stream_table_contents(time_point)

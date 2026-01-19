@@ -18,7 +18,9 @@ from idaes.core import (
 from idaes.core.solvers import get_solver
 
 
-from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingParameters,
+)
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
@@ -42,7 +44,7 @@ def build_model(dosage, number_of_stages):
     m.fs = FlowsheetBlock(dynamic=False)
 
     m.fs.prop_o = REESolExOgParameters()
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.reaxn = SolventExtractionReactions()
 
     m.fs.reaxn.extractant_dosage = dosage

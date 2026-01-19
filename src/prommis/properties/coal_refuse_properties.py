@@ -7,7 +7,7 @@
 """
 Initial property package for West Kentucky No. 13 coal refuse.
 
-Authors: Andrew Lee
+Authors: Andrew Lee, Douglas Allan
 """
 
 from pyomo.environ import Constraint, Param, Var, units
@@ -180,7 +180,7 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
             mutable=True,
         )
         self.eps = Param(
-            initialize=1e-6,
+            initialize=1e-8,
             mutable=True,
             doc="Perturbation to avoid conversion values "
             "hitting their lower bound."

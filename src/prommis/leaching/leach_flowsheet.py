@@ -25,8 +25,10 @@ from idaes.core.util.scaling import set_scaling_factor
 
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
-from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingParameters,
+)
 
 
 def build_model():
@@ -37,7 +39,7 @@ def build_model():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
@@ -110,11 +112,11 @@ def set_inputs(m):
     m.fs.leach.solid_inlet.mass_frac_comp[0, "Dy2O3"].fix(
         7.54827e-06 * units.kg / units.kg
     )
-    
+
     m.fs.leach.volume.fix(100 * units.gallon)
-    
+
     if m.fs.leach.config.has_holdup:
-        m.fs.leach.liquid_solid_residence_time_ratio.fix(1/32)
+        m.fs.leach.liquid_solid_residence_time_ratio.fix(1 / 32)
 
 
 def set_scaling(m):

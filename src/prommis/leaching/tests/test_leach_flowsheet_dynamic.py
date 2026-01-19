@@ -23,8 +23,10 @@ import pytest
 
 from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
-from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingParameters,
+)
 from prommis.leaching.leach_flowsheet_dynamic import (
     build_model,
     discretization,
@@ -119,7 +121,9 @@ def test_solution(model):
         "Fe2O3": 10.642252669700325,
     }
 
-    for k, v in model.fs.leach.mscontactor.solid[time_duration, 1].conversion_comp.items():
+    for k, v in model.fs.leach.mscontactor.solid[
+        time_duration, 1
+    ].conversion_comp.items():
         f_in = model.fs.leach.solid_inlet.flow_mass[time_duration]
         f_out = model.fs.leach.solid_outlet.flow_mass[time_duration]
         x_in = model.fs.leach.solid_inlet.mass_frac_comp[time_duration, k]
@@ -137,7 +141,7 @@ def model2():
 
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
@@ -330,7 +334,9 @@ def test_solution3(model3):
         "Fe2O3": 10.711762549599014,
     }
 
-    for k, v in model3.fs.leach.mscontactor.solid[time_duration, 2].conversion_comp.items():
+    for k, v in model3.fs.leach.mscontactor.solid[
+        time_duration, 2
+    ].conversion_comp.items():
         f_in = model3.fs.leach.solid_inlet.flow_mass[time_duration]
         f_out = model3.fs.leach.solid_outlet.flow_mass[time_duration]
         x_in = model3.fs.leach.solid_inlet.mass_frac_comp[time_duration, k]

@@ -30,8 +30,10 @@ from idaes.models.unit_models import MSContactor
 import pytest
 
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
-from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingParameters,
+)
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainScaler
 
 
@@ -40,7 +42,7 @@ def model():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
@@ -234,7 +236,7 @@ def model_ub():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
@@ -316,7 +318,6 @@ def model_ub():
     scaler_obj = m.fs.leach.default_scaler()
     scaler_obj.scale_model(m.fs.leach, submodel_scalers=submodel_scalers)
 
-
     return m
 
 
@@ -369,6 +370,7 @@ def test_numerical_issues_ub(model_ub):
 
     assert jacobian_cond(model_ub, scaled=False) == pytest.approx(5.27968e12, rel=1e-3)
     assert jacobian_cond(model_ub, scaled=True) == pytest.approx(96858.8, rel=1e-3)
+
 
 @pytest.mark.component
 @pytest.mark.solver
@@ -425,7 +427,7 @@ def model_lb():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
@@ -559,6 +561,7 @@ def test_numerical_issues_lb(model_lb):
 
     assert jacobian_cond(model_lb, scaled=False) == pytest.approx(7.004012e12, rel=1e-3)
     assert jacobian_cond(model_lb, scaled=True) == pytest.approx(61717.1, rel=1e-3)
+
 
 @pytest.mark.component
 @pytest.mark.solver

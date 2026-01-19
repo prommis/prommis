@@ -192,8 +192,10 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 )
 
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
-from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingParameters,
+)
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
@@ -283,7 +285,7 @@ def build():
     m.fs = FlowsheetBlock(dynamic=False)
 
     # Leaching property and unit models
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 

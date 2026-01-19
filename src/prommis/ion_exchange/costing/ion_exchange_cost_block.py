@@ -67,8 +67,6 @@ class IXCostingBlockData(FlowsheetCostingBlockData):
         )
         self.electricity_cost.fix()
 
-        # self.flow_type = pyo.Set()
-        # self.flow_types.add("electricity")
         self.defined_flows["electricity"] = self.electricity_cost
 
     def _build_common_global_params(self):

@@ -22,8 +22,41 @@ from pyomo.environ import Constraint, Param, Set, Var, units, log10
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
 from idaes.core.base import property_meta
 from idaes.core.util.misc import add_object_reference
+from idaes.core.scaling import CustomScalerBase
 
 __author__ = "Arkoprabho Dasgupta"
+
+
+class SolventExtractionReactionScaler(CustomScalerBase):
+    """
+    Scaler for the solvent extraction reaction package.
+    """
+
+    DEFAULT_SCALING_FACTORS = {}
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        aq_block = model.parent_block().aqueous[model.index()]
+        org_block = model.parent_block().organic[model.index()]
+        for e in model.params.element_list:
+            sf_aq = self.get_scaling_factor(aq_block.conc_mol_comp[e], default=1)
+            sf_org = self.get_scaling_factor(
+                org_block.conc_mol_comp[e + "_o"], default=1
+            )
+            self.set_variable_scaling_factor(
+                model.distribution_coefficient[e], sf_org / sf_aq, overwrite=overwrite
+            )
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        for e in model.params.element_list:
+            self.scale_constraint_by_component(
+                model.distribution_expression_constraint[e],
+                model.distribution_coefficient[e],
+                overwrite=overwrite,
+            )
 
 
 # -----------------------------------------------------------------------------
@@ -125,14 +158,14 @@ class SolventExtractionReactionsData(
         self.m0 = Param(
             self.element_list,
             initialize={
-                "Ce": 0.30916,
-                "Y": 1.63166,
-                "Gd": 1.0225,
-                "Dy": 1.70783,
-                "Sm": 0.81233,
-                "Nd": 0.31183,
-                "La": 0.54,
-                "Pr": 0.29,
+                "Ce": 0.409,
+                "Y": 1.923,
+                "Gd": 1.096,
+                "Dy": 1.689,
+                "Sm": 0.764,
+                "Nd": 0.319,
+                "La": 0.541,
+                "Pr": 0.553,
                 "Sc": 0,
                 "Al": 0,
                 "Ca": 0,
@@ -143,12 +176,12 @@ class SolventExtractionReactionsData(
         self.m1 = Param(
             self.element_list,
             initialize={
-                "Ce": 0.04816,
-                "Y": 0.15166,
-                "Gd": 0.0195,
-                "Dy": 0.06443,
-                "Sm": -0.02247,
-                "Nd": 0.03763,
+                "Ce": 0.0218,
+                "Y": 0.0748,
+                "Gd": 5.8e-9,
+                "Dy": 0.05774,
+                "Sm": 0.0218,
+                "Nd": 0.00294,
                 "La": 0,
                 "Pr": 0,
                 "Sc": 0,
@@ -161,14 +194,14 @@ class SolventExtractionReactionsData(
         self.B0 = Param(
             self.element_list,
             initialize={
-                "Ce": -1.66021,
-                "Y": -2.12601,
-                "Gd": -2.24143,
-                "Dy": -2.42226,
-                "Sm": -2.12172,
-                "Nd": -1.62372,
-                "La": -1.93,
-                "Pr": -1.48,
+                "Ce": -1.908,
+                "Y": -2.186,
+                "Gd": -2.316,
+                "Dy": -2.354,
+                "Sm": -2.153,
+                "Nd": -1.82,
+                "La": -2.51,
+                "Pr": -3.015,
                 "Sc": 0,
                 "Al": 0,
                 "Ca": 0,
@@ -179,14 +212,14 @@ class SolventExtractionReactionsData(
         self.B1 = Param(
             self.element_list,
             initialize={
-                "Ce": -0.38599,
-                "Y": 0.26612,
-                "Gd": 0.03065,
-                "Dy": -0.02538,
-                "Sm": 0.17414,
-                "Nd": -0.38096,
-                "La": 0,
-                "Pr": 0,
+                "Ce": 0.04,
+                "Y": 6.28e-7,
+                "Gd": 0.208,
+                "Dy": 1.09e-6,
+                "Sm": 0.0086,
+                "Nd": 4.32e-6,
+                "La": 0.814,
+                "Pr": 1.533,
                 "Sc": 0,
                 "Al": 0,
                 "Ca": 0,
@@ -278,13 +311,15 @@ class SolventExtractionReactionsData(
 
 
 class _SolventExtractionReactionsBlock(ProcessBlock):
-    pass
+    default_scaler = SolventExtractionReactionScaler
 
 
 @declare_process_block_class(
     "SolventExtractionReactionsBlock", block_class=_SolventExtractionReactionsBlock
 )
 class SolventExtractionReactionsData(ProcessBlockData):
+    default_scaler = SolventExtractionReactionScaler
+
     # Create Class ConfigBlock
     CONFIG = ProcessBlockData.CONFIG()
     CONFIG.declare(
@@ -313,11 +348,14 @@ class SolventExtractionReactionsData(ProcessBlockData):
 
         def distribution_expression(b, e):
             aq_block = b.parent_block().aqueous[b.index()]
+            org_block = b.parent_block().organic[b.index()]
 
             pH = aq_block.pH_phase["liquid"]
+            dosage = org_block.extractant_dosage
+
             return (b.distribution_coefficient[e]) == 10 ** (
-                (b.params.m0[e] + b.params.extractant_dosage * b.params.m1[e]) * pH
-                + (b.params.B0[e] + b.params.B1[e] * log10(b.params.extractant_dosage))
+                (b.params.m0[e] + dosage * b.params.m1[e]) * pH
+                + (b.params.B0[e] + b.params.B1[e] * log10(dosage))
             ) * (1 - b.params.K_corr[e]) + b.params.K_corr[e] * b.params.K1[e]
 
         self.distribution_expression_constraint = Constraint(

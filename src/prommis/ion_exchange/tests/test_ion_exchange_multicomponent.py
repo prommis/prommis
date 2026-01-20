@@ -75,7 +75,7 @@ def m():
     curve_data = pd.read_csv(curve_file)
 
     solver = get_solver()
-    
+
     resin = "S950"
     target_component = "La"
     num_traps = 30
@@ -115,7 +115,7 @@ def m():
     )
 
     set_scaling(m)
-    
+
     return m
 
 
@@ -307,7 +307,9 @@ def test_optimization_single_use(m):
     # Propagate the solution back to the original model
     init_scaling.propagate_solution(scaled_model, m)
 
-    build_clark_with_costing(m, regenerant=regenerant, target_component=target_component)
+    build_clark_with_costing(
+        m, regenerant=regenerant, target_component=target_component
+    )
 
     check_dof(m, fail_flag=True)
 
@@ -507,7 +509,7 @@ def m_nacl():
     curve_data = pd.read_csv(curve_file)
 
     solver = get_solver()
-    
+
     resin = "S950"
     target_component = "La"
     num_traps = 30
@@ -547,7 +549,7 @@ def m_nacl():
     )
 
     set_scaling(m)
-    
+
     return m
 
 
@@ -571,7 +573,9 @@ def test_optimization_nacl(m_nacl):
     # Propagate the solution back to the original model
     init_scaling.propagate_solution(scaled_model, m_nacl)
 
-    m = build_clark_with_costing(m_nacl, regenerant=regenerant, target_component=target_component)
+    m = build_clark_with_costing(
+        m_nacl, regenerant=regenerant, target_component=target_component
+    )
 
     check_dof(m, fail_flag=True)
 

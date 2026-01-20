@@ -27,9 +27,6 @@ import pytest
 import pandas as pd
 import pyomo.environ as pyo
 
-from idaes.core import FlowsheetBlock, UnitModelCostingBlock
-from idaes.core.scaling.scaling_base import ScalerBase
-from idaes.core.util.testing import initialization_tester
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.exceptions import ConfigurationError
 
@@ -42,10 +39,6 @@ from watertap.property_models.multicomp_aq_sol_prop_pack import MCASParameterBlo
 
 from prommis.ion_exchange.ion_exchange_multicomponent import (
     IonExchangeMultiComp,
-)
-from prommis.ion_exchange.costing.ion_exchange_cost_model import (
-    IXCosting,
-    IXCostingData,
 )
 from prommis.ion_exchange.ix_freundlich_multicomponent_example import (
     main,

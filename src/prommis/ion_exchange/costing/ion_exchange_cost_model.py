@@ -31,6 +31,7 @@ from pyomo.util.calc_var_value import calculate_variable_from_constraint
 from idaes.core import declare_process_block_class, register_idaes_currency_units
 from idaes.core.util.constants import Constants
 from idaes.models.costing.SSLW import SSLWCostingData
+from idaes.core.util.exceptions import ConfigurationError
 
 from prommis.ion_exchange.costing.ion_exchange_cost_block import (
     IXCostingBlockData,
@@ -50,7 +51,7 @@ def build_regenerant_cost_param_block(blk, regenerant):
         purity_value = 1.0
         year_value = pyo.units.USD_2020
     else:
-        raise ValueError(f"Unsupported regenerant type: {regenerant}")
+        raise ConfigurationError(f"Unsupported regenerant type: {regenerant}")
 
     # Register cost and purity parameters
     blk.cost = pyo.Param(

@@ -750,7 +750,7 @@ def test_main_in_ix_example():
 
 @pytest.mark.unit
 def test_config_error_regen_in_costing():
-    
+
     # Set up the model with parameters that will trigger the
     # ConfigurationError
     with pytest.raises(
@@ -762,11 +762,13 @@ def test_config_error_regen_in_costing():
         resin_file = os.path.join(path, "..", "data", "resin_data.json")
         comp_prop_file = os.path.join(path, "..", "data", "properties_data.json")
         parmest_file = os.path.join(path, "..", "data", "parmest_data.json")
-        curve_file = os.path.join(path, "..", "data", "breakthrough_literature_data.csv")
+        curve_file = os.path.join(
+            path, "..", "data", "breakthrough_literature_data.csv"
+        )
         curve_data = pd.read_csv(curve_file)
 
         solver = get_solver()
-        
+
         resin = "S950"
         target_component = "La"
         num_traps = 30
@@ -776,7 +778,7 @@ def test_config_error_regen_in_costing():
 
         # Add sets for solvent and ion species
         m = build_model()
-        
+
         add_data(
             m,
             resin=resin,

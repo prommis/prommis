@@ -23,8 +23,9 @@
 #################################################################################
 
 """
-Flowsheet costing block for diafiltration flowsheet model
+Flowsheet costing block for ion exchange multicomponent model
 """
+
 import pyomo.environ as pyo
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 

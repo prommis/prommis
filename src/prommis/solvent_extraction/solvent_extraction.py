@@ -440,10 +440,6 @@ class SolventExtractionData(UnitModelBlockData):
         )
 
         if self.config.has_holdup:
-            # TODO this constraint doesn't seem right.
-            # Because the aqueous and organic phases exit
-            # through separate ports, the volumetric holdup
-            # should be independent of the volumentric flow rate.
             def volume_fraction_rule(b, t, s):
 
                 theta_A = b.mscontactor.volume_frac_stream[t, s, "aqueous"]

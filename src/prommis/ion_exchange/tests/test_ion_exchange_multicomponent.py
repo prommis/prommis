@@ -47,7 +47,17 @@ from prommis.ion_exchange.costing.ion_exchange_cost_model import (
     IXCosting,
     IXCostingData,
 )
-import prommis.ion_exchange.ix_freundlich_multicomponent_example as ix_example
+from prommis.ion_exchange.ix_freundlich_multicomponent_example import (
+    main,
+    build_model,
+    add_data,
+    build_clark,
+    set_bounds,
+    set_operating_conditions,
+    set_scaling,
+    add_costing,
+    run_optimization,
+)
 
 """
 modified by: Soraya Rawlings
@@ -59,203 +69,59 @@ def m():
 
     path = os.path.dirname(os.path.realpath(__file__))
     resin_file = os.path.join(path, "..", "data", "resin_data.json")
+    comp_prop_file = os.path.join(path, "..", "data", "properties_data.json")
+    parmest_file = os.path.join(path, "..", "data", "parmest_data.json")
+    curve_file = os.path.join(path, "..", "data", "breakthrough_literature_data.csv")
+    curve_data = pd.read_csv(curve_file)
+
+    solver = get_solver()
+    
     resin = "S950"
     target_component = "La"
-    regenerant = "single_use"
-    list_solvent = ["H2O"]
-    list_reactive_ions = ["La", "Dy", "Ho", "Er", "Yb", "Sm"]
-    hazardous_waste = False
     num_traps = 30
     c_trap_min = 1e-3
+    regenerant = "single_use"
+    hazardous_waste = False
 
     # Add sets for solvent and ion species
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=False)
+    m = build_model()
 
-    m.fs.set_solvent = pyo.Set(initialize=list_solvent)
-    m.fs.set_reactive_ions = pyo.Set(initialize=list_reactive_ions)
-    m.fs.set_all = pyo.Set(initialize=list_solvent + list_reactive_ions)
-
-    ion_props = {
-        "solute_list": [],
-        "diffusivity_data": {},
-        "molar_volume_data": {},
-        "mw_data": {},  # in kg/mol
-        "charge": {},
-    }
-
-    ion_props["solute_list"] = list_reactive_ions
-    ion_props["diffusivity_data"] = {
-        ("Liq", "La"): 6.19e-10,
-        ("Liq", "Dy"): 5.82e-10,
-        ("Liq", "Sm"): 6.08e-10,
-    }
-    ion_props["molar_volume_data"] = {
-        ("Liq", "Ho"): 1.8753e-05,
-        ("Liq", "Er"): 1.8449e-05,
-        ("Liq", "Yb"): 2.484e-05,
-    }
-    ion_props["mw_data"] = {
-        "H2O": 0.018,
-        "La": 0.138905,
-        "Dy": 0.1625,
-        "Ho": 0.16493,
-        "Er": 0.16726,
-        "Yb": 0.17305,
-        "Sm": 0.15036,
-    }
-    ion_props["charge"] = {"La": +3, "Dy": +3, "Ho": +3, "Er": +3, "Yb": +3, "Sm": +3}
-    ion_props["diffus_calculation"] = "HaydukLaudie"
-    m.fs.properties = MCASParameterBlock(**ion_props)
-
-    ix_config = {
-        "property_package": m.fs.properties,
-        "regenerant": regenerant,
-        "target_component": target_component,
-        "reactive_ions": list_reactive_ions,
-        "number_traps": num_traps,
-        "c_trap_min": c_trap_min,
-        "resin_data_path": resin_file,
-        "resin": resin,
-        "hazardous_waste": hazardous_waste,
-    }
-
-    m.fs.unit = ix = IonExchangeMultiComp(**ix_config)
-
-    @m.fs.unit.Expression(
-        m.fs.set_reactive_ions, doc="Percentage of recovery for all the REEs"
+    add_data(
+        m,
+        target_component=target_component,
+        resin=resin,
+        curve_data=curve_data,
+        resin_file=resin_file,
+        comp_prop_file=comp_prop_file,
+        parmest_file=parmest_file,
     )
-    def recovery_comp(b, s):
-        conc_in = b.process_flow.properties_in[0].conc_mass_phase_comp["Liq", s]
-        conc_out = b.process_flow.properties_out[0].conc_mass_phase_comp["Liq", s]
-        return ((conc_in - conc_out) / conc_in) * 100
 
-    # Add bounds
-    ix.bed_diameter.setlb(0.01)
-    ix.bed_diameter.setub(100)
-    ix.bed_depth.setlb(0.01)
-    ix.bed_depth.setub(100)
-    ix.service_flow_rate.setlb(1e-10)
-    ix.process_flow.properties_in[0.0].visc_k_phase["Liq"].setlb(1e-16)
-    ix.process_flow.properties_in[0].flow_vol_phase["Liq"].setlb(1e-16)
-    for c in m.fs.set_reactive_ions:
-        ix.process_flow.properties_in[0.0].diffus_phase_comp["Liq", c].setlb(1e-16)
-        ix.bv_50[c].setlb(1e-3)
-        ix.loading_rate.setlb(1e-16)
-        ix.process_flow.properties_in[0].flow_mass_phase_comp["Liq", c].setlb(1e-16)
-        ix.process_flow.properties_out[0].flow_mass_phase_comp["Liq", c].setlb(1e-16)
-        for i in range(1, ix.num_traps + 1):
-            ix.c_traps[c, i].setlb(1e-16)
+    parmest_data = m.fs.parmest_data
+    build_clark(
+        m,
+        resin=resin,
+        regenerant=regenerant,
+        target_component=target_component,
+        num_traps=num_traps,
+        c_trap_min=c_trap_min,
+        resin_file=resin_file,
+        hazardous_waste=hazardous_waste,
+    )
 
-    # Set operating conditions
-    flow_mol = {  # in mol/s
-        "H2O": 0.0009277777777777778,
-        "La": 1.2022605377776176e-10,
-        "Dy": 3.288615384615384e-11,
-        "Ho": 5.2652640514157516e-12,
-        "Er": 1.1981346406791819e-11,
-        "Yb": 7.720312048540882e-12,
-        "Sm": 4.553737696195796e-11,
-    }
+    set_bounds(m)
 
-    ix.process_flow.properties_in[0].pressure.fix(101325)
-    ix.process_flow.properties_in[0].temperature.fix(298.15)
-    for i in m.fs.set_all:
-        ix.process_flow.properties_in[0].flow_mol_phase_comp["Liq", i].fix(flow_mol[i])
+    set_operating_conditions(
+        m, parmest_data=parmest_data, target_component=target_component, resin=resin
+    )
 
-    ix.resin_diam.fix(0.00075)
-    ix.resin_density.fix(1126.61)
-    ix.bed_depth.fix(1)
-    ix.bed_diameter.fix(0.015)
-    ix.bed_porosity.fix(0.80)
-    ix.number_columns.fix(1)
-    ix.number_columns_redundant.fix(1)
-
-    # Set initial values
-    ix.loading_rate.set_value(9.43138198040347e-05)
-    ix.ebct.set_value(10581.711782300948)  # in seconds
-
-    # Equilibrium parameters
-    parmest_data = {
-        "mass_transfer_coeff": {
-            "La": 83.22416280992222,
-            "Dy": 59.484016710115064,
-            "Er": 1.7286360467604134,
-            "Ho": 75.60499429888984,
-            "Sm": 77.67086243578649,
-            "Yb": 41.26897106783112,
-        },
-        "freundlich_n": {
-            "La": 1.0000026107532496,
-            "Dy": 1.000003681926298,
-            "Er": 1.0001257362841591,
-            "Ho": 1.0000030377701503,
-            "Sm": 1.0000027974184122,
-            "Yb": 1.0000052673068462,
-        },
-        "bv_50": {
-            "La": 56.32137778092139,
-            "Dy": 64.1931100064633,
-            "Er": 79.5742013052232,
-            "Ho": 54.08209908870865,
-            "Sm": 67.48274394895874,
-            "Yb": 53.16220908663995,
-        },
-    }
-
-    for c in m.fs.set_reactive_ions:
-
-        ix.freundlich_n[c].fix(parmest_data["freundlich_n"][c])
-        ix.mass_transfer_coeff[c].fix(parmest_data["mass_transfer_coeff"][c])
-        ix.bv_50[c].fix(parmest_data["bv_50"][c])
-        ix.c_norm[c].fix(0.99)
-
-    # Scaling
-    m.scaling_factor = pyo.Suffix(direction=pyo.Suffix.EXPORT)
-
-    sb = ScalerBase()
-
-    # Apply scaling to variables
-    for var in m.fs.component_data_objects(pyo.Var, descend_into=True):
-        if "temperature" in var.name:
-            sb.set_variable_scaling_factor(var, 1e-1, overwrite=True)
-        if "pressure" in var.name:
-            sb.set_variable_scaling_factor(var, 1e-5)
-        if "flow_vol" in var.name:
-            sb.set_variable_scaling_factor(var, 1e8)
-        if "flow_mol_phase_comp" in var.name:
-            if "H2O" in var.name:
-                sb.set_variable_scaling_factor(var, 1e4)
-            else:
-                sb.set_variable_scaling_factor(var, 1e8)
-
+    set_scaling(m)
+    
     return m
 
 
-def build_clark_with_costing(m, regenerant_included=False):
+def build_clark_with_costing(m, regenerant, target_component):
 
-    ix = m.fs.unit
-    flow_out = ix.process_flow.properties_out[0].flow_vol_phase["Liq"]
-
-    m.fs.costing = IXCosting()
-    m.fs.costing.base_currency = pyo.units.USD_2021
-    m.fs.costing.base_period = pyo.units.year
-
-    # Add costs related to IX unit
-    ix.costing = ix_cost = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=IXCostingData.cost_ion_exchange,
-    )
-
-    # Calculate costs of entire process
-    m.fs.costing.cost_process()
-    m.fs.costing.utilization_factor.fix(1)
-    m.fs.costing.aggregate_fixed_operating_cost()
-    m.fs.costing.aggregate_variable_operating_cost()
-    m.fs.costing.aggregate_flow_electricity()
-    m.fs.costing.aggregate_capital_cost()
-    m.fs.costing.total_capital_cost()
-    m.fs.costing.total_operating_cost()
+    add_costing(m, regenerant=regenerant, target_component=target_component)
 
     # Set values for variables needed during the test for staticmethod
     # in the costing model file.
@@ -263,65 +129,11 @@ def build_clark_with_costing(m, regenerant_included=False):
     m.fs.costing.aggregate_fixed_operating_cost.set_value(1e3)
     m.fs.costing.aggregate_variable_operating_cost.set_value(1e3)
     m.fs.costing.aggregate_flow_costs["electricity"].set_value(1e-3)
-    if regenerant_included:
+    if regenerant != "single_use":
         m.fs.costing.aggregate_flow_costs["NaCl"].set_value(1e3)
     m.fs.costing.total_capital_cost.set_value(1e3)
     m.fs.costing.total_operating_cost.set_value(1e3)
     m.fs.costing.initialize_build(m.fs.costing)
-
-    # Add costs for REEs. References are: [a]
-    # https://www.metal.com/Rare-Earth-Metals/ and [b]
-    # https://www.metal.com/price/Rare%20Earth/Rare-Earth-Oxides.
-    market_prices = {
-        # From ref[a]
-        "La": 2.642,
-        "Dy": 247.07,
-        "Ho": 63.610,
-        # From ref[b]
-        "Er": 39.641,
-        "Yb": 12.291,
-        "Sm": 8.973,
-    }
-    m.fs.market_price = pyo.Param(
-        m.fs.set_reactive_ions,
-        initialize=market_prices,
-        units=pyo.units.USD_2021 / pyo.units.kg,
-        doc="Market price for REEs",
-    )
-
-    m.fs.operational_daily_hours = pyo.Param(
-        initialize=8, units=pyo.units.hours / pyo.units.day, doc="IX operational hours"
-    )
-    m.fs.operational_yearly_days = pyo.Param(
-        initialize=365, units=pyo.units.day / pyo.units.year, doc="IX operational hours"
-    )
-    m.fs.ix_lifetime = pyo.Param(
-        initialize=15, units=pyo.units.years, doc="IX lifetime"
-    )
-
-    @m.fs.unit.Expression()
-    def expected_annual_profit_ree(b):
-        return (
-            sum(
-                m.fs.market_price[s]
-                * pyo.units.convert(
-                    (
-                        b.process_flow.properties_in[0.0].flow_mass_phase_comp["Liq", s]
-                        - b.process_flow.properties_out[0.0].flow_mass_phase_comp[
-                            "Liq", s
-                        ]
-                    ),
-                    to_units=pyo.units.kg / pyo.units.hour,
-                )
-                for s in m.fs.set_reactive_ions
-            )
-            * m.fs.operational_daily_hours
-            * m.fs.operational_yearly_days
-        )
-
-    # Add bounds for breakthrough time
-    m.fs.unit.target_breakthrough_time.setlb(1e-3)
-    m.fs.unit.target_breakthrough_time.setub(1e10)
 
     return m
 
@@ -329,7 +141,8 @@ def build_clark_with_costing(m, regenerant_included=False):
 @pytest.mark.unit
 def test_config_error_in_ix_type():
 
-    # Set up the model with parameters that will trigger the ConfigurationError
+    # Set up the model with parameters that will trigger the
+    # ConfigurationError
     with pytest.raises(
         ConfigurationError,
         match="The current ion exchange model is limited to cation exchange methods and alternative techniques are not addressed at this time.",
@@ -347,8 +160,7 @@ def test_config_error_in_ix_type():
         c_trap_min = 1e-3
 
         # Add sets for solvent and ion species
-        m = pyo.ConcreteModel()
-        m.fs = FlowsheetBlock(dynamic=False)
+        m = build_model()
 
         m.fs.set_solvent = pyo.Set(initialize=list_solvent)
         m.fs.set_reactive_ions = pyo.Set(initialize=list_reactive_ions)
@@ -400,7 +212,7 @@ def test_structural_issues(m):
 @pytest.mark.component
 def test_resin_specific_data(m):
 
-    ix = m.fs.unit
+    ix = m.fs.unit_ix
     resin = "S950"
 
     # Test that data coming from .json file is correct
@@ -438,7 +250,6 @@ def test_initialization(m):
     # Scale model
     init_scaling = pyo.TransformationFactory("core.scale_model")
     scaled_model = init_scaling.create_using(m, rename=False)
-    initialization_tester(scaled_model)
 
     check_dof(m, fail_flag=True)
 
@@ -468,8 +279,7 @@ def test_initialization(m):
     }
 
     for v, r in ix_vars_results.items():
-        mv = getattr(m.fs.unit, v)
-        print(f"mv={mv}")
+        mv = getattr(m.fs.unit_ix, v)
         if mv.is_indexed():
             for i, s in r.items():
                 assert pytest.approx(s, rel=1e-3) == pyo.value(mv[i])
@@ -480,61 +290,33 @@ def test_initialization(m):
 @pytest.mark.component
 def test_optimization_single_use(m):
 
+    regenerant = "single_use"
     target_component = "La"
+    solver = get_solver()
 
     # Scale model
     init_scaling = pyo.TransformationFactory("core.scale_model")
     scaled_model = init_scaling.create_using(m, rename=False)
-    initialization_tester(scaled_model)
 
     check_dof(m, fail_flag=True)
 
     # Solve scaled model with zero degrees of freedom
-    solver = get_solver()
     scaled_results = solver.solve(scaled_model)
     pyo.assert_optimal_termination(scaled_results)
 
     # Propagate the solution back to the original model
     init_scaling.propagate_solution(scaled_model, m)
 
-    build_clark_with_costing(m, regenerant_included=False)
+    build_clark_with_costing(m, regenerant=regenerant, target_component=target_component)
 
     check_dof(m, fail_flag=True)
 
     # Solve scaled model
-    solver = get_solver()
     results = solver.solve(m)
     pyo.assert_optimal_termination(results)
 
-    # Unfix variables to solve optimization model
-    ix = m.fs.unit
-    ix.bed_depth.unfix()
-    ix.bed_diameter.unfix()
-    for c in m.fs.set_reactive_ions:
-        ix.c_norm[c].unfix()
+    run_optimization(m, target_component=target_component)
 
-    # For this example, we are optimizing the model to have an
-    # effluent with a very small concentration of the multiple REEs
-    @m.fs.unit.Constraint(m.fs.set_reactive_ions)
-    def components_specifications(b, c):
-        if c == target_component:
-            return b.c_norm[c] == 0.999
-        else:
-            return b.c_norm[c] >= 0.9
-
-    @m.fs.unit.costing.Expression()
-    def annualized_capital_cost(b):
-        return b.capital_cost / m.fs.ix_lifetime
-
-    m.fs.obj = pyo.Objective(
-        expr=(
-            ix.costing.annualized_capital_cost
-            + ix.costing.fixed_operating_cost
-            - ix.expected_annual_profit_ree
-        )
-    )
-
-    solver = get_solver()
     results_opt = solver.solve(m)
     pyo.assert_optimal_termination(results_opt)
 
@@ -562,7 +344,7 @@ def test_optimization_single_use(m):
     }
 
     for v, r in ix_vars_results.items():
-        mv = getattr(m.fs.unit, v)
+        mv = getattr(m.fs.unit_ix, v)
         if mv.is_indexed():
             for i, s in r.items():
                 assert pytest.approx(s, rel=1e-3) == pyo.value(mv[i])
@@ -611,7 +393,7 @@ def test_optimization_single_use(m):
     }
 
     for v, r in ix_cost_results.items():
-        mv = getattr(m.fs.unit.costing, v)
+        mv = getattr(m.fs.unit_ix.costing, v)
         if mv.is_indexed():
             for i, s in r.items():
                 assert pytest.approx(s, rel=1e-3) == pyo.value(mv[i])
@@ -622,13 +404,13 @@ def test_optimization_single_use(m):
 @pytest.mark.component
 def test_scaling(m):
 
-    m.fs.unit.calculate_scaling_factors()
+    m.fs.unit_ix.calculate_scaling_factors()
 
 
 @pytest.mark.unit
 def test_get_stream_table_contents(m):
 
-    stable = m.fs.unit._get_stream_table_contents()
+    stable = m.fs.unit_ix._get_stream_table_contents()
 
     expected = pd.DataFrame.from_dict(
         {
@@ -687,23 +469,26 @@ def test_get_stream_table_contents(m):
 
 @pytest.mark.unit
 def test_get_performance_contents(m):
-    perf_dict = m.fs.unit._get_performance_contents()
+
+    ix = m.fs.unit_ix
+
+    perf_dict = ix._get_performance_contents()
 
     assert perf_dict == {
         "vars": {
-            "Max Breakthrough Time": m.fs.unit.target_breakthrough_time,
-            "EBCT": m.fs.unit.ebct,
-            "Number Columns": m.fs.unit.number_columns,
-            "Bed Volume Total": m.fs.unit.bed_volume_total,
-            "Bed Depth": m.fs.unit.bed_depth,
-            "Bed Porosity": m.fs.unit.bed_porosity,
-            "Service Flow Rate [BV/hr]": m.fs.unit.service_flow_rate,
-            "Bed Velocity": m.fs.unit.loading_rate,
-            "Resin Particle Diameter": m.fs.unit.resin_diam,
-            "Resin Bulk Density": m.fs.unit.resin_density,
-            "Reynolds Number": m.fs.unit.N_Re,
-            "Peclet Number (bed)": m.fs.unit.N_Pe_bed,
-            "Peclet Number (particle)": m.fs.unit.N_Pe_particle,
+            "Max Breakthrough Time": ix.target_breakthrough_time,
+            "EBCT": ix.ebct,
+            "Number Columns": ix.number_columns,
+            "Bed Volume Total": ix.bed_volume_total,
+            "Bed Depth": ix.bed_depth,
+            "Bed Porosity": ix.bed_porosity,
+            "Service Flow Rate [BV/hr]": ix.service_flow_rate,
+            "Bed Velocity": ix.loading_rate,
+            "Resin Particle Diameter": ix.resin_diam,
+            "Resin Bulk Density": ix.resin_density,
+            "Reynolds Number": ix.N_Re,
+            "Peclet Number (bed)": ix.N_Pe_bed,
+            "Peclet Number (particle)": ix.N_Pe_particle,
         }
     }
 
@@ -716,238 +501,86 @@ def m_nacl():
 
     path = os.path.dirname(os.path.realpath(__file__))
     resin_file = os.path.join(path, "..", "data", "resin_data.json")
+    comp_prop_file = os.path.join(path, "..", "data", "properties_data.json")
+    parmest_file = os.path.join(path, "..", "data", "parmest_data.json")
+    curve_file = os.path.join(path, "..", "data", "breakthrough_literature_data.csv")
+    curve_data = pd.read_csv(curve_file)
+
+    solver = get_solver()
+    
     resin = "S950"
     target_component = "La"
-    regenerant = "NaCl"
-    hazardous_waste = True
-    list_solvent = ["H2O"]
-    list_reactive_ions = ["La", "Dy", "Ho", "Er", "Yb", "Sm"]
     num_traps = 30
     c_trap_min = 1e-3
+    regenerant = "NaCl"
+    hazardous_waste = True
 
     # Add sets for solvent and ion species
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=False)
+    m = build_model()
 
-    m.fs.set_solvent = pyo.Set(initialize=list_solvent)
-    m.fs.set_reactive_ions = pyo.Set(initialize=list_reactive_ions)
-    m.fs.set_all = pyo.Set(initialize=list_solvent + list_reactive_ions)
-
-    ion_props = {
-        "solute_list": [],
-        "diffusivity_data": {},
-        "molar_volume_data": {},
-        "mw_data": {},  # in kg/mol
-        "charge": {},
-    }
-
-    ion_props["solute_list"] = list_reactive_ions
-    ion_props["diffusivity_data"] = {
-        ("Liq", "La"): 6.19e-10,
-        ("Liq", "Dy"): 5.82e-10,
-        ("Liq", "Sm"): 6.08e-10,
-    }
-    ion_props["molar_volume_data"] = {
-        ("Liq", "Ho"): 1.8753e-05,
-        ("Liq", "Er"): 1.8449e-05,
-        ("Liq", "Yb"): 2.484e-05,
-    }
-    ion_props["mw_data"] = {
-        "H2O": 0.018,
-        "La": 0.138905,
-        "Dy": 0.1625,
-        "Ho": 0.16493,
-        "Er": 0.16726,
-        "Yb": 0.17305,
-        "Sm": 0.15036,
-    }
-    ion_props["charge"] = {"La": +3, "Dy": +3, "Ho": +3, "Er": +3, "Yb": +3, "Sm": +3}
-    ion_props["diffus_calculation"] = "HaydukLaudie"
-    m.fs.properties = MCASParameterBlock(**ion_props)
-
-    ix_config = {
-        "property_package": m.fs.properties,
-        "regenerant": regenerant,
-        "target_component": target_component,
-        "reactive_ions": list_reactive_ions,
-        "number_traps": num_traps,
-        "c_trap_min": c_trap_min,
-        "resin_data_path": resin_file,
-        "resin": resin,
-        "hazardous_waste": hazardous_waste,
-    }
-
-    m.fs.unit = ix = IonExchangeMultiComp(**ix_config)
-
-    @m.fs.unit.Expression(
-        m.fs.set_reactive_ions, doc="Percentage of recovery for all the REEs"
+    add_data(
+        m,
+        target_component=target_component,
+        resin=resin,
+        curve_data=curve_data,
+        resin_file=resin_file,
+        comp_prop_file=comp_prop_file,
+        parmest_file=parmest_file,
     )
-    def recovery_comp(b, s):
-        conc_in = b.process_flow.properties_in[0].conc_mass_phase_comp["Liq", s]
-        conc_out = b.process_flow.properties_out[0].conc_mass_phase_comp["Liq", s]
-        return ((conc_in - conc_out) / conc_in) * 100
 
-    # Add bounds
-    ix.bed_diameter.setlb(0.01)
-    ix.bed_diameter.setub(100)
-    ix.bed_depth.setlb(0.01)
-    ix.bed_depth.setub(100)
-    ix.service_flow_rate.setlb(1e-10)
-    ix.process_flow.properties_in[0.0].visc_k_phase["Liq"].setlb(1e-16)
-    ix.process_flow.properties_in[0].flow_vol_phase["Liq"].setlb(1e-16)
-    for c in m.fs.set_reactive_ions:
-        ix.process_flow.properties_in[0.0].diffus_phase_comp["Liq", c].setlb(1e-16)
-        ix.bv_50[c].setlb(1e-3)
-        ix.loading_rate.setlb(1e-16)
-        ix.process_flow.properties_in[0].flow_mass_phase_comp["Liq", c].setlb(1e-16)
-        ix.process_flow.properties_out[0].flow_mass_phase_comp["Liq", c].setlb(1e-16)
-        for i in range(1, ix.num_traps + 1):
-            ix.c_traps[c, i].setlb(1e-16)
+    parmest_data = m.fs.parmest_data
+    build_clark(
+        m,
+        resin=resin,
+        regenerant=regenerant,
+        target_component=target_component,
+        num_traps=num_traps,
+        c_trap_min=c_trap_min,
+        resin_file=resin_file,
+        hazardous_waste=hazardous_waste,
+    )
 
-    # Set operating conditions
-    flow_mol = {  # in mol/s
-        "H2O": 0.0009277777777777778,
-        "La": 1.2022605377776176e-10,
-        "Dy": 3.288615384615384e-11,
-        "Ho": 5.2652640514157516e-12,
-        "Er": 1.1981346406791819e-11,
-        "Yb": 7.720312048540882e-12,
-        "Sm": 4.553737696195796e-11,
-    }
+    set_bounds(m)
 
-    ix.process_flow.properties_in[0].pressure.fix(101325)
-    ix.process_flow.properties_in[0].temperature.fix(298.15)
-    for i in m.fs.set_all:
-        ix.process_flow.properties_in[0].flow_mol_phase_comp["Liq", i].fix(flow_mol[i])
+    set_operating_conditions(
+        m, parmest_data=parmest_data, target_component=target_component, resin=resin
+    )
 
-    ix.resin_diam.fix(0.00075)
-    ix.resin_density.fix(1126.61)
-    ix.bed_depth.fix(1)
-    ix.bed_diameter.fix(0.015)
-    ix.bed_porosity.fix(0.80)
-    ix.number_columns.fix(1)
-    ix.number_columns_redundant.fix(1)
-
-    # Set initial values
-    ix.loading_rate.set_value(9.43138198040347e-05)
-    ix.ebct.set_value(10581.711782300948)  # in seconds
-
-    # Equilibrium parameters
-    parmest_data = {
-        "mass_transfer_coeff": {
-            "La": 83.22416280992222,
-            "Dy": 59.484016710115064,
-            "Er": 1.7286360467604134,
-            "Ho": 75.60499429888984,
-            "Sm": 77.67086243578649,
-            "Yb": 41.26897106783112,
-        },
-        "freundlich_n": {
-            "La": 1.0000026107532496,
-            "Dy": 1.000003681926298,
-            "Er": 1.0001257362841591,
-            "Ho": 1.0000030377701503,
-            "Sm": 1.0000027974184122,
-            "Yb": 1.0000052673068462,
-        },
-        "bv_50": {
-            "La": 56.32137778092139,
-            "Dy": 64.1931100064633,
-            "Er": 79.5742013052232,
-            "Ho": 54.08209908870865,
-            "Sm": 67.48274394895874,
-            "Yb": 53.16220908663995,
-        },
-    }
-    for c in m.fs.set_reactive_ions:
-
-        ix.freundlich_n[c].fix(parmest_data["freundlich_n"][c])
-        ix.mass_transfer_coeff[c].fix(parmest_data["mass_transfer_coeff"][c])
-        ix.bv_50[c].fix(parmest_data["bv_50"][c])
-        ix.c_norm[c].fix(0.99)
-
-    # Scaling
-    m.scaling_factor = pyo.Suffix(direction=pyo.Suffix.EXPORT)
-
-    sb = ScalerBase()
-
-    # Apply scaling to variables
-    for var in m.fs.component_data_objects(pyo.Var, descend_into=True):
-        if "temperature" in var.name:
-            sb.set_variable_scaling_factor(var, 1e-1, overwrite=True)
-        if "pressure" in var.name:
-            sb.set_variable_scaling_factor(var, 1e-5)
-        if "flow_vol" in var.name:
-            sb.set_variable_scaling_factor(var, 1e8)
-        if "flow_mol_phase_comp" in var.name:
-            if "H2O" in var.name:
-                sb.set_variable_scaling_factor(var, 1e4)
-            else:
-                sb.set_variable_scaling_factor(var, 1e8)
-
+    set_scaling(m)
+    
     return m
 
 
 @pytest.mark.component
 def test_optimization_nacl(m_nacl):
 
+    regenerant = "NaCl"
     target_component = "La"
+    solver = get_solver()
 
     # Scale model
     init_scaling = pyo.TransformationFactory("core.scale_model")
     scaled_model = init_scaling.create_using(m_nacl, rename=False)
-    initialization_tester(scaled_model)
 
     check_dof(scaled_model, fail_flag=True)
 
     # Solve scaled model with zero degrees of freedom
-    solver = get_solver()
     scaled_results = solver.solve(scaled_model)
     pyo.assert_optimal_termination(scaled_results)
 
     # Propagate the solution back to the original model
     init_scaling.propagate_solution(scaled_model, m_nacl)
 
-    m = build_clark_with_costing(m_nacl, regenerant_included=True)
+    m = build_clark_with_costing(m_nacl, regenerant=regenerant, target_component=target_component)
 
     check_dof(m, fail_flag=True)
 
-    initialization_tester(m)
-
     # Solve scaled model
-    solver = get_solver()
     results = solver.solve(m)
     pyo.assert_optimal_termination(results)
 
-    # Unfix variables to solve optimization model
-    ix = m.fs.unit
-    ix.bed_depth.unfix()
-    ix.bed_diameter.unfix()
-    for c in m.fs.set_reactive_ions:
-        ix.c_norm[c].unfix()
+    run_optimization(m, target_component=target_component)
 
-    # For this example, we are optimizing the model to have an
-    # effluent with a very small concentration of the multiple REEs
-    @m.fs.unit.Constraint(m.fs.set_reactive_ions)
-    def components_specifications(b, c):
-        if c == target_component:
-            return b.c_norm[c] == 0.999
-        else:
-            return b.c_norm[c] >= 0.9
-
-    @m.fs.unit.costing.Expression()
-    def annualized_capital_cost(b):
-        return b.capital_cost / m.fs.ix_lifetime
-
-    m.fs.obj = pyo.Objective(
-        expr=(
-            ix.costing.annualized_capital_cost
-            + ix.costing.fixed_operating_cost
-            - ix.expected_annual_profit_ree
-        )
-    )
-
-    solver = get_solver()
     results_opt = solver.solve(m)
     pyo.assert_optimal_termination(results_opt)
 
@@ -975,7 +608,7 @@ def test_optimization_nacl(m_nacl):
     }
 
     for v, r in ix_vars_results.items():
-        mv = getattr(m.fs.unit, v)
+        mv = getattr(m.fs.unit_ix, v)
         if mv.is_indexed():
             for i, s in r.items():
                 assert pytest.approx(s, rel=1e-3) == pyo.value(mv[i])
@@ -983,7 +616,7 @@ def test_optimization_nacl(m_nacl):
             assert pytest.approx(r, rel=1e-6) == pyo.value(mv)
 
     for v, r in ix_vars_results.items():
-        mv = getattr(m.fs.unit, v)
+        mv = getattr(m.fs.unit_ix, v)
         if mv.is_indexed():
             for i, s in r.items():
                 assert pytest.approx(s, rel=1e-3) == pyo.value(mv[i])
@@ -1034,7 +667,7 @@ def test_optimization_nacl(m_nacl):
     }
 
     for v, r in ix_cost_results.items():
-        mv = getattr(m.fs.unit.costing, v)
+        mv = getattr(m.fs.unit_ix.costing, v)
         if mv.is_indexed():
             for i, s in r.items():
                 assert pytest.approx(s, rel=1e-3) == pyo.value(mv[i])
@@ -1045,7 +678,7 @@ def test_optimization_nacl(m_nacl):
 @pytest.mark.unit
 def test_get_stream_table_contents_nacl(m_nacl):
 
-    stable = m_nacl.fs.unit._get_stream_table_contents()
+    stable = m_nacl.fs.unit_ix._get_stream_table_contents()
 
     expected = pd.DataFrame.from_dict(
         {
@@ -1114,7 +747,7 @@ def test_get_stream_table_contents_nacl(m_nacl):
 
 
 @pytest.mark.component
-def test_ix_example():
+def test_main_in_ix_example():
     """Tests the execution of main function in example script."""
 
-    m = ix_example.main()
+    m = main()

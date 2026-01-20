@@ -81,7 +81,6 @@ def m():
 
     add_data(
         m,
-        target_component=target_component,
         resin=resin,
         curve_data=curve_data,
         resin_file=resin_file,
@@ -114,7 +113,7 @@ def m():
 
 def build_clark_with_costing(m, regenerant, target_component):
 
-    add_costing(m, regenerant=regenerant, target_component=target_component)
+    add_costing(m)
 
     # Set values for variables needed during the test for staticmethod
     # in the costing model file.
@@ -515,7 +514,6 @@ def m_nacl():
 
     add_data(
         m,
-        target_component=target_component,
         resin=resin,
         curve_data=curve_data,
         resin_file=resin_file,
@@ -748,3 +746,64 @@ def test_main_in_ix_example():
     """Tests the execution of main function in example script."""
 
     m = main()
+
+
+@pytest.mark.unit
+def test_config_error_regen_in_costing():
+    
+    # Set up the model with parameters that will trigger the
+    # ConfigurationError
+    with pytest.raises(
+        ConfigurationError,
+        match="Unsupported regenerant type: HCl",
+    ):
+
+        path = os.path.dirname(os.path.realpath(__file__))
+        resin_file = os.path.join(path, "..", "data", "resin_data.json")
+        comp_prop_file = os.path.join(path, "..", "data", "properties_data.json")
+        parmest_file = os.path.join(path, "..", "data", "parmest_data.json")
+        curve_file = os.path.join(path, "..", "data", "breakthrough_literature_data.csv")
+        curve_data = pd.read_csv(curve_file)
+
+        solver = get_solver()
+        
+        resin = "S950"
+        target_component = "La"
+        num_traps = 30
+        c_trap_min = 1e-3
+        regenerant = "HCl"
+        hazardous_waste = True
+
+        # Add sets for solvent and ion species
+        m = build_model()
+        
+        add_data(
+            m,
+            resin=resin,
+            curve_data=curve_data,
+            resin_file=resin_file,
+            comp_prop_file=comp_prop_file,
+            parmest_file=parmest_file,
+        )
+
+        parmest_data = m.fs.parmest_data
+        build_clark(
+            m,
+            resin=resin,
+            regenerant=regenerant,
+            target_component=target_component,
+            num_traps=num_traps,
+            c_trap_min=c_trap_min,
+            resin_file=resin_file,
+            hazardous_waste=hazardous_waste,
+        )
+
+        set_bounds(m)
+
+        set_operating_conditions(
+            m, parmest_data=parmest_data, target_component=target_component, resin=resin
+        )
+
+        set_scaling(m)
+
+        add_costing(m)

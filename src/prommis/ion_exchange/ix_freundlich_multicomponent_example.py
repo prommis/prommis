@@ -22,6 +22,11 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 
+r"""This model is an example on how to use the ion exchange multicomponent
+model (IXMC) for the removal of REEs.
+
+"""
+
 # Import Python libraries
 import os
 import json
@@ -134,7 +139,6 @@ def main():
     # Add all relevant data
     add_data(
         m,
-        target_component=target_component,
         resin=resin,
         curve_data=curve_data,
         resin_file=resin_file,
@@ -189,7 +193,7 @@ def main():
     print("=========== End initialization")
 
     # Add relevant costing metrics for the IX model
-    add_costing(m, regenerant=regenerant, target_component=target_component)
+    add_costing(m)
 
     print()
     print("=========== Re-run initialization with costing")
@@ -233,7 +237,6 @@ def main():
 
 def add_data(
     m,
-    target_component=None,
     resin=None,
     curve_data=None,
     resin_file=None,
@@ -593,7 +596,7 @@ def initialize_system(
         )
 
 
-def add_costing(m, regenerant=None, target_component=None):
+def add_costing(m):
 
     flow_out = m.fs.unit_ix.process_flow.properties_out[0].flow_vol_phase["Liq"]
 

@@ -156,7 +156,14 @@ def scale_model(m):
     submodel_scalers[m.fs.solex.mscontactor.organic_inlet_state] = organic_scaler
     submodel_scalers[m.fs.solex.mscontactor.organic] = organic_scaler
 
-    scaler_obj = m.fs.solex.default_scaler()
+    scaler_obj = m.fs.solex.default_scaler(
+        max_variable_scaling_factor=1e12,
+        max_constraint_scaling_factor=1e12,
+        max_expression_scaling_hint=1e12,
+        min_variable_scaling_factor=1e-12,
+        min_constraint_scaling_factor=1e-12,
+        min_expression_scaling_hint=1e-12,
+    )
     scaler_obj.scale_model(m.fs.solex, submodel_scalers=submodel_scalers)
 
 

@@ -148,7 +148,6 @@ def main():
         m,
         resin=resin,
         regenerant=regenerant,
-        parmest_data=parmest_data,
         target_component=target_component,
         num_traps=num_traps,
         c_trap_min=c_trap_min,
@@ -228,6 +227,7 @@ def main():
         curve_data=curve_data,
         output_plot=output_plot,
         save_plot=save_plot,
+        show_plot=False,
     )
 
 
@@ -311,7 +311,6 @@ def build_clark(
     m,
     resin=None,
     regenerant=None,
-    parmest_data=None,
     target_component=None,
     num_traps=None,
     c_trap_min=None,
@@ -711,7 +710,9 @@ def run_optimization(m, target_component=None):
     )
 
 
-def plot_traps(m, results=None, curve_data=None, output_plot=None, save_plot=None):
+def plot_traps(
+    m, results=None, curve_data=None, output_plot=None, save_plot=None, show_plot=None
+):
 
     distinct_colors = [
         "#1f77b4",  # Blue
@@ -789,7 +790,8 @@ def plot_traps(m, results=None, curve_data=None, output_plot=None, save_plot=Non
     )
     if save_plot:
         plt.savefig("breakthru_trapezoidal_all_components.png", bbox_inches="tight")
-    plt.show()
+    if show_plot:
+        plt.show()
     plt.close()
 
 

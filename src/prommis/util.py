@@ -7,10 +7,10 @@
 """
 Temporary home for assert_solution_equivalent until it gets moved to IDAES
 """
-
+from math import ceil
 import textwrap
 import pytest
-from pyomo.environ import Var, Expression, value
+from pyomo.environ import Var, Expression, log10, value
 
 
 def assert_solution_equivalent(blk, expected_results):
@@ -77,11 +77,19 @@ def assert_solution_equivalent(blk, expected_results):
 
             # If the comparison fails, record the details
             if not is_close:
+                if rel is not None:
+                    n_sig_figs = ceil(-log10(rel)) + 1
+                    format_spec = "." + str(n_sig_figs) + "e"
+                elif abs is not None:
+                    n_sig_figs = ceil(-log10(abs)) + 1
+                    format_spec = "." + str(n_sig_figs) + "f"
+                else:
+                    format_spec = ".7e"
                 failure_msg = (
                     f"  - {obj_type}: {name}\n"
                     f"    Index:    {index}\n"
-                    f"    Expected: {expected_value}\n"
-                    f"    Actual:   {actual_value}"
+                    f"    Expected: {expected_value:{format_spec}}\n"
+                    f"    Actual:   {actual_value:{format_spec}}"
                 )
                 failures.append(failure_msg)
 

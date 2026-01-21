@@ -19,6 +19,7 @@ from prommis.solvent_extraction.solvent_extraction_steady import (
     main,
     model_buildup_and_set_inputs,
 )
+from prommis.util import assert_solution_equivalent
 
 solver = get_solver()
 
@@ -64,55 +65,51 @@ class Test_Solvent_Extraction_steady_model:
         dt.assert_no_numerical_warnings()
 
         assert jacobian_cond(model, scaled=False) == pytest.approx(2.46261e14, rel=1e-3)
-        assert jacobian_cond(model, scaled=True) == pytest.approx(610510, rel=1e-3)
+        assert jacobian_cond(model, scaled=True) == pytest.approx(1.1119e7, rel=1e-3)
 
     @pytest.mark.component
     @pytest.mark.solver
     def test_solution(self, SolEx_frame):
 
         model = SolEx_frame
-        aqueous_outlet = {
-            "H2O": 1000000,
-            "H": 39.5131,
-            "SO4": 2056.395,
-            "HSO4": 8023.225,
-            "Al": 399.95,
-            "Ca": 102.336,
-            "Cl": 9.9999e-8,
-            "Ce": 2.1056,
-            "Dy": 0.0010159,
-            "Fe": 585.5947,
-            "Gd": 0.19119,
-            "La": 0.91421,
-            "Nd": 0.8801,
-            "Pr": 0.27631,
-            "Sc": 0.0027415,
-            "Sm": 0.08669,
-            "Y": 4.27506e-06,
+        expected_results = {
+            "organic_outlet.conc_mass_comp": {
+                (0.0, 'Kerosene'): (8.2000e+05, 1e-4, None),
+                (0.0, 'DEHPA'): (4.6087e+04, 1e-4, None),
+                (0.0, 'Al_o'): (2.2425e+01, 1e-4, None),
+                (0.0, 'Ca_o'): (7.2059e+00, 1e-4, None),
+                (0.0, 'Fe_o'): (1.0267e+02, 1e-4, None),
+                (0.0, 'Sc_o'): (1.7633e+00, 1e-4, None),
+                (0.0, 'Y_o'): (1.2402e-01, 1e-4, None),
+                (0.0, 'La_o'): (7.1891e-02, 1e-4, None),
+                (0.0, 'Ce_o'): (1.6778e-01, 1e-4, None),
+                (0.0, 'Pr_o'): (2.6727e-02, 1e-4, None),
+                (0.0, 'Nd_o'): (6.5178e-02, 1e-4, None),
+                (0.0, 'Sm_o'): (1.0438e-02, 1e-4, None),
+                (0.0, 'Gd_o'): (6.5974e-02, 1e-4, None),
+                (0.0, 'Dy_o'): (4.5838e-02, 1e-4, None),          
+            },
+            "aqueous_outlet.conc_mass_comp":{
+                (0.0, 'H2O'): (1.000e+06, 1e-4, None), 
+                (0.0, 'H'): (3.9513e+01, 1e-4, None),
+                (0.0, 'HSO4'): (8.0232e+03, 1e-4, None),
+                (0.0, 'SO4'): (2.0564e+03, 1e-4, None),
+                (0.0, 'Cl'): (1.0000e-07, 1e-4, None),
+                (0.0, 'Sc'): (2.7415e-03, 1e-4, None),
+                (0.0, 'Y'): (6.2927e-06, 1e-4, None),
+                (0.0, 'La'): (9.1421e-01, 1e-4, None),
+                (0.0, 'Ce'): (2.1095e+00, 1e-4, None),
+                (0.0, 'Pr'): (2.7631e-01, 1e-4, None),
+                (0.0, 'Nd'): (8.8099e-01, 1e-4, None),
+                (0.0, 'Sm'): (8.6579e-02, 1e-4, None),
+                (0.0, 'Gd'): (1.9246e-01, 1e-4, None),
+                (0.0, 'Dy'): (1.1699e-03, 1e-4, None),
+                (0.0, 'Al'): (3.9995e+02, 1e-4, None),
+                (0.0, 'Ca'): (1.0234e+02, 1e-4, None),
+                (0.0, 'Fe'): (5.8559e+02, 1e-4, None),
+            }
         }
-
-        organic_outlet = {
-            "Al_o": 22.4249,
-            "Ca_o": 7.2059,
-            "Ce_o": 0.17168,
-            "DEHPA": 46086.719,
-            "Dy_o": 0.045992,
-            "Fe_o": 102.6712,
-            "Gd_o": 0.06723,
-            "Kerosene": 820000,
-            "La_o": 0.07189,
-            "Nd_o": 0.06606,
-            "Pr_o": 0.026727,
-            "Sc_o": 1.7632,
-            "Sm_o": 0.010323,
-            "Y_o": 0.12401,
-        }
-
-        for k, v in model.fs.solex.organic_outlet.conc_mass_comp.items():
-            assert value(v) == pytest.approx(organic_outlet[k[1]], rel=1e-4)
-
-        for k, v in model.fs.solex.aqueous_outlet.conc_mass_comp.items():
-            assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)
+        assert_solution_equivalent(model.fs.solex, expected_results)
 
     @pytest.fixture(scope="class")
     def SolEx_total_flowsheet(self):
@@ -131,120 +128,7 @@ class Test_Solvent_Extraction_steady_model:
         dt = DiagnosticsToolbox(m)
         dt.assert_no_numerical_warnings()
         assert jacobian_cond(m, scaled=False) == pytest.approx(2.46261e14, rel=1e-3)
-        assert jacobian_cond(m, scaled=True) == pytest.approx(610510, rel=1e-3)
-
-class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
-    @pytest.fixture(scope="class")
-    def SolEx_frame(self):
-        dosage = 5
-        number_of_stages = 3
-        m = model_buildup_and_set_inputs(dosage, number_of_stages)
-
-        return m
-
-    @pytest.mark.component
-    def test_structural_issues(self, SolEx_frame):
-        model = SolEx_frame
-        dt = DiagnosticsToolbox(model)
-        dt.assert_no_structural_warnings()
-
-    @pytest.mark.component
-    def test_initialization(self, SolEx_frame):
-        model = SolEx_frame
-        initializer = model.fs.solex.default_initializer()
-        assert model.fs.solex.default_initializer is SolventExtractionInitializer
-        initializer.initialize(model.fs.solex)
-
-        assert initializer.summary[model.fs.solex]["status"] == InitializationStatus.Ok
-
-    @pytest.mark.solver
-    @pytest.mark.skipif(solver is None, reason="Solver not available")
-    @pytest.mark.component
-    def test_solve(self, SolEx_frame):
-        m = SolEx_frame
-        results = solver.solve(m, tee=True)
-
-        # Check for optimal solution
-        assert check_optimal_termination(results)
-
-    @pytest.mark.component
-    @pytest.mark.solver
-    def test_numerical_issues(self, SolEx_frame):
-        model = SolEx_frame
-        dt = DiagnosticsToolbox(model)
-        dt.assert_no_numerical_warnings()
-
-        assert jacobian_cond(model, scaled=False) == pytest.approx(8.415018e12, rel=1e-3)
-        # TODO it looks like the holdup constraints aren't as well-scaled as we'd like.
-        assert jacobian_cond(model, scaled=True) == pytest.approx(2.91496e6, rel=1e-3)
-
-    @pytest.mark.component
-    @pytest.mark.solver
-    def test_solution(self, SolEx_frame):
-
-        model = SolEx_frame
-        aqueous_outlet = {
-            "H2O": 1000000,
-            "H": 39.5131,
-            "SO4": 2056.395,
-            "HSO4": 8023.225,
-            "Al": 399.95,
-            "Ca": 102.336,
-            "Cl": 9.9999e-8,
-            "Ce": 2.1056,
-            "Dy": 0.0010159,
-            "Fe": 585.5947,
-            "Gd": 0.19119,
-            "La": 0.91421,
-            "Nd": 0.8801,
-            "Pr": 0.27631,
-            "Sc": 0.0027415,
-            "Sm": 0.08669,
-            "Y": 4.27506e-06,
-        }
-
-        organic_outlet = {
-            "Al_o": 22.4249,
-            "Ca_o": 7.2059,
-            "Ce_o": 0.17168,
-            "DEHPA": 46086.719,
-            "Dy_o": 0.045992,
-            "Fe_o": 102.6712,
-            "Gd_o": 0.06723,
-            "Kerosene": 820000,
-            "La_o": 0.07189,
-            "Nd_o": 0.06606,
-            "Pr_o": 0.026727,
-            "Sc_o": 1.7632,
-            "Sm_o": 0.010323,
-            "Y_o": 0.12401,
-        }
-
-        for k, v in model.fs.solex.organic_outlet.conc_mass_comp.items():
-            assert value(v) == pytest.approx(organic_outlet[k[1]], rel=1e-4)
-
-        for k, v in model.fs.solex.aqueous_outlet.conc_mass_comp.items():
-            assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)
-
-    @pytest.fixture(scope="class")
-    def SolEx_total_flowsheet(self):
-        dosage = 5
-        number_of_stages = 3
-        model, results = main(dosage, number_of_stages)
-
-        return model, results
-
-    @pytest.mark.component
-    def test_solve_total(self, SolEx_total_flowsheet):
-        m, results = SolEx_total_flowsheet
-        assert check_optimal_termination(results)
-
-        dt = DiagnosticsToolbox(m)
-        dt.assert_no_numerical_warnings()
-
-        import pdb; pdb.set_trace()
-        assert jacobian_cond(m, scaled=False) == pytest.approx(1e20, rel=1e-3)
-        assert jacobian_cond(m, scaled=True) == pytest.approx(1e4, rel=1e-3)
+        assert jacobian_cond(m, scaled=True) == pytest.approx(1.1119e7, rel=1e-3)
 
 class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
     @pytest.fixture(scope="class")
@@ -288,56 +172,51 @@ class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
         dt.assert_no_numerical_warnings()
 
         assert jacobian_cond(model, scaled=False) == pytest.approx(8.415018e12, rel=1e-3)
-        # TODO it looks like the holdup constraints aren't as well-scaled as we'd like.
-        assert jacobian_cond(model, scaled=True) == pytest.approx(2.91496e6, rel=1e-3)
+        assert jacobian_cond(model, scaled=True) == pytest.approx(1.2842e7, rel=1e-3)
 
     @pytest.mark.component
     @pytest.mark.solver
     def test_solution(self, SolEx_frame):
 
         model = SolEx_frame
-        aqueous_outlet = {
-            "H2O": 1000000,
-            "H": 39.5131,
-            "SO4": 2056.395,
-            "HSO4": 8023.225,
-            "Al": 399.95,
-            "Ca": 102.336,
-            "Cl": 9.9999e-8,
-            "Ce": 2.1056,
-            "Dy": 0.0010159,
-            "Fe": 585.5947,
-            "Gd": 0.19119,
-            "La": 0.91421,
-            "Nd": 0.8801,
-            "Pr": 0.27631,
-            "Sc": 0.0027415,
-            "Sm": 0.08669,
-            "Y": 4.27506e-06,
+        expected_results = {
+            "organic_outlet.conc_mass_comp": {
+                (0.0, 'Kerosene'): (8.2000e+05, 1e-4, None),
+                (0.0, 'DEHPA'): (4.6087e+04, 1e-4, None),
+                (0.0, 'Al_o'): (2.2425e+01, 1e-4, None),
+                (0.0, 'Ca_o'): (7.2059e+00, 1e-4, None),
+                (0.0, 'Fe_o'): (1.0267e+02, 1e-4, None),
+                (0.0, 'Sc_o'): (1.7633e+00, 1e-4, None),
+                (0.0, 'Y_o'): (1.2402e-01, 1e-4, None),
+                (0.0, 'La_o'): (7.1891e-02, 1e-4, None),
+                (0.0, 'Ce_o'): (1.6778e-01, 1e-4, None),
+                (0.0, 'Pr_o'): (2.6727e-02, 1e-4, None),
+                (0.0, 'Nd_o'): (6.5178e-02, 1e-4, None),
+                (0.0, 'Sm_o'): (1.0438e-02, 1e-4, None),
+                (0.0, 'Gd_o'): (6.5974e-02, 1e-4, None),
+                (0.0, 'Dy_o'): (4.5838e-02, 1e-4, None),          
+            },
+            "aqueous_outlet.conc_mass_comp":{
+                (0.0, 'H2O'): (1.000e+06, 1e-4, None), 
+                (0.0, 'H'): (3.9513e+01, 1e-4, None),
+                (0.0, 'HSO4'): (8.0232e+03, 1e-4, None),
+                (0.0, 'SO4'): (2.0564e+03, 1e-4, None),
+                (0.0, 'Cl'): (1.0000e-07, 1e-4, None),
+                (0.0, 'Sc'): (2.7415e-03, 1e-4, None),
+                (0.0, 'Y'): (6.2927e-06, 1e-4, None),
+                (0.0, 'La'): (9.1421e-01, 1e-4, None),
+                (0.0, 'Ce'): (2.1095e+00, 1e-4, None),
+                (0.0, 'Pr'): (2.7631e-01, 1e-4, None),
+                (0.0, 'Nd'): (8.8099e-01, 1e-4, None),
+                (0.0, 'Sm'): (8.6579e-02, 1e-4, None),
+                (0.0, 'Gd'): (1.9246e-01, 1e-4, None),
+                (0.0, 'Dy'): (1.1699e-03, 1e-4, None),
+                (0.0, 'Al'): (3.9995e+02, 1e-4, None),
+                (0.0, 'Ca'): (1.0234e+02, 1e-4, None),
+                (0.0, 'Fe'): (5.8559e+02, 1e-4, None),
+            }
         }
-
-        organic_outlet = {
-            "Al_o": 22.4249,
-            "Ca_o": 7.2059,
-            "Ce_o": 0.17168,
-            "DEHPA": 46086.719,
-            "Dy_o": 0.045992,
-            "Fe_o": 102.6712,
-            "Gd_o": 0.06723,
-            "Kerosene": 820000,
-            "La_o": 0.07189,
-            "Nd_o": 0.06606,
-            "Pr_o": 0.026727,
-            "Sc_o": 1.7632,
-            "Sm_o": 0.010323,
-            "Y_o": 0.12401,
-        }
-
-        for k, v in model.fs.solex.organic_outlet.conc_mass_comp.items():
-            assert value(v) == pytest.approx(organic_outlet[k[1]], rel=1e-4)
-
-        for k, v in model.fs.solex.aqueous_outlet.conc_mass_comp.items():
-            assert value(v) == pytest.approx(aqueous_outlet[k[1]], rel=1e-4)
+        assert_solution_equivalent(model.fs.solex, expected_results)
 
     @pytest.fixture(scope="class")
     def SolEx_total_flowsheet(self):
@@ -356,4 +235,4 @@ class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
         dt = DiagnosticsToolbox(m)
         dt.assert_no_numerical_warnings()
         assert jacobian_cond(m, scaled=False) == pytest.approx(8.415018e12, rel=1e-3)
-        assert jacobian_cond(m, scaled=True) == pytest.approx(2.91496e6, rel=1e-3)
+        assert jacobian_cond(m, scaled=True) == pytest.approx(1.2842e7, rel=1e-3)

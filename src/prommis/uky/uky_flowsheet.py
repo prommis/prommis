@@ -137,6 +137,7 @@ References:
  in the U.S. Using Advanced Separation Processes (Final Technical Report)." , Sep. 2019. https://doi.org/10.2172/1569277
 
 """
+
 import logging
 from warnings import warn
 from pyomo.environ import (

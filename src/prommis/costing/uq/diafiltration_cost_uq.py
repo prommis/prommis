@@ -13,7 +13,7 @@ alternative technologies, defined by distinct combinations of lithium and cobalt
 Overview of the workflow:
 - Solve a deterministic diafiltration + QGESS cost flowsheet to get an optimal baseline design.
 - Identify a subset of QGESS cost parameters and model them as uncertain.
-- Samples uncertain parameters from specified probability distributions (triangular, uniform, discrete, 
+- Samples uncertain parameters from specified probability distributions (triangular, uniform, discrete,
    or lognormal) using Monte Carlo or Latin Hypercube sampling.
 - Re-solve the flowsheet for each sampled parameter set and record the resulting cost_of_recovery.
 - Produces summary outputs, including:

@@ -4,12 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-from pyomo.environ import (
-    Constraint,
-    Param,
-    Var,
-    value,
-)
+from pyomo.environ import Constraint, Param, Var, value
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core.util import DiagnosticsToolbox

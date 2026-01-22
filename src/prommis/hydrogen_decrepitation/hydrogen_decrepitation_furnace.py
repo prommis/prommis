@@ -351,7 +351,9 @@ constructed,
 
         # molecular weights of compounds
         self.mw_Nd2Fe14B = Param(
-            initialize=self.am_Nd * self.NdFeB_ratio["Nd"] + self.am_Fe * self.NdFeB_ratio["Fe"] + self.am_B * self.NdFeB_ratio["B"],
+            initialize=self.am_Nd * self.NdFeB_ratio["Nd"]
+            + self.am_Fe * self.NdFeB_ratio["Fe"]
+            + self.am_B * self.NdFeB_ratio["B"],
             units=pyunits.kg / pyunits.mol,
         )
 
@@ -870,7 +872,9 @@ constructed,
             self.flowsheet().config.time, doc="Radius of the furnace chamber"
         )
         def radius_chamber(b, t):
-            return (b.furnace_chamber_volume[t] / (b.aspect_ratio * Constants.pi)) ** (1 / 3)
+            return (b.furnace_chamber_volume[t] / (b.aspect_ratio * Constants.pi)) ** (
+                1 / 3
+            )
 
         @self.Expression(
             self.flowsheet().config.time, doc="Length of the furnace chamber"
@@ -1260,19 +1264,25 @@ constructed,
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
                     * b.flow_mass_product_recovered[t]
-                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_Nd * self.NdFeB_ratio["Nd"]
+                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"]
+                    * b.am_Nd
+                    * self.NdFeB_ratio["Nd"]
                 )
             elif i == "Fe":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
                     * b.flow_mass_product_recovered[t]
-                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_Fe * self.NdFeB_ratio["Fe"]
+                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"]
+                    * b.am_Fe
+                    * self.NdFeB_ratio["Fe"]
                 )
             elif i == "B":
                 return (
                     b.mass_frac_comp_impurity_ele_product[t, i]
                     * b.flow_mass_product_recovered[t]
-                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"] * b.am_B * self.NdFeB_ratio["B"]
+                    == b.flow_mol_comp_product_recovered[t, "Nd2Fe14B"]
+                    * b.am_B
+                    * self.NdFeB_ratio["B"]
                 )
 
         # solid product with 13 species defined in REPMParameters
@@ -1303,9 +1313,7 @@ constructed,
             return (
                 b.enth0_comp_impurity[i]
                 + b.cp0_comp_impurity[i] * (b.temp_feed[t] - b.temp_ref)
-                + 0.5
-                * b.cp1_comp_impurity[i]
-                * (b.temp_feed[t] ** 2 - b.temp_ref ** 2)
+                + 0.5 * b.cp1_comp_impurity[i] * (b.temp_feed[t] ** 2 - b.temp_ref**2)
             )
 
         # molar enthalpy of minerals in solid product
@@ -1318,9 +1326,7 @@ constructed,
             return (
                 b.enth0_comp_product[i]
                 + b.cp0_comp_product[i] * (b.temp_prod[t] - b.temp_ref)
-                + 0.5
-                * b.cp1_comp_product[i]
-                * (b.temp_prod[t] ** 2 - b.temp_ref ** 2)
+                + 0.5 * b.cp1_comp_product[i] * (b.temp_prod[t] ** 2 - b.temp_ref**2)
             )
 
         # enthalpy in + heat in == enthalpy out
@@ -1377,7 +1383,7 @@ constructed,
             return b.heat_loss[t] == 0.50 * 2 * Constants.pi * b.radius_chamber[
                 t
             ] * b.length_chamber[t] * Constants.stefan_constant * (
-                (b.max_temperature ** 4) - (b.temperature_insulation_material1[t] ** 4)
+                (b.max_temperature**4) - (b.temperature_insulation_material1[t] ** 4)
             )
 
         # relative thickness and heat loss of insulation material 1
@@ -1534,7 +1540,9 @@ constructed,
         solver=None,
         optarg=None,
     ):
-        return NotImplementedError("Please use the new initialization API using the BlockTriangularizationInitializer method.")
+        return NotImplementedError(
+            "Please use the new initialization API using the BlockTriangularizationInitializer method."
+        )
 
     def calculate_scaling_factors(self):
         super().calculate_scaling_factors()

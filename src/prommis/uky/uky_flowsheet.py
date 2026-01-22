@@ -166,6 +166,7 @@ from idaes.core.initialization import BlockTriangularizationInitializer
 from idaes.core.scaling.scaling_base import ScalerBase
 from idaes.core.scaling import CustomScalerBase, ConstraintScalingScheme
 from idaes.core.solvers import get_solver
+from idaes.core.util.exceptions import InitializationError
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.properties.modular_properties.base.generic_property import (
@@ -350,6 +351,7 @@ def build():
         },
         heterogeneous_reaction_package=m.fs.reaxn,
         has_holdup=True,
+        create_hydrostatic_pressure_terms=True,
     )
 
     m.fs.acid_feed1 = Feed(property_package=m.fs.leach_soln)
@@ -371,6 +373,7 @@ def build():
         },
         heterogeneous_reaction_package=m.fs.reaxn,
         has_holdup=True,
+        create_hydrostatic_pressure_terms=True,
     )
 
     m.fs.acid_feed2 = Feed(property_package=m.fs.leach_soln)
@@ -392,6 +395,7 @@ def build():
         },
         heterogeneous_reaction_package=m.fs.reaxn,
         has_holdup=True,
+        create_hydrostatic_pressure_terms=True,
     )
 
     m.fs.rougher_sep = Separator(
@@ -447,6 +451,7 @@ def build():
         },
         heterogeneous_reaction_package=m.fs.reaxn,
         has_holdup=True,
+        create_hydrostatic_pressure_terms=True,
     )
 
     m.fs.solex_cleaner_strip = SolventExtraction(
@@ -466,6 +471,7 @@ def build():
         },
         heterogeneous_reaction_package=m.fs.reaxn,
         has_holdup=True,
+        create_hydrostatic_pressure_terms=True,
     )
 
     m.fs.cleaner_org_make_up = Feed(property_package=m.fs.prop_o)
@@ -1283,28 +1289,36 @@ def initialize_system(m):
 
     initializer_bt = BlockTriangularizationInitializer()
 
+    solver_obj = get_solver()
+
     def function(unit):
-        if unit in feed_units:
-            _log.info(f"Initializing {unit}")
-            initializer_feed.initialize(unit)
-        elif unit in product_units:
-            _log.info(f"Initializing {unit}")
-            initializer_product.initialize(unit)
-        elif unit in sep_units:
-            _log.info(f"Initializing {unit}")
-            initializer_sep.initialize(unit)
-        elif unit in mix_units:
-            _log.info(f"Initializing {unit}")
-            initializer_mix.initialize(unit)
-        elif unit in leach_units:
-            _log.info(f"Initializing {unit}")
-            initializer_leach.initialize(unit)
-        elif unit in sx_units:
-            _log.info(f"Initializing {unit}")
-            initializer_sx.initialize(unit)
-        else:
-            _log.info(f"Initializing {unit}")
-            initializer_bt.initialize(unit)
+        try:
+            if unit in feed_units:
+                _log.info(f"Initializing {unit}")
+                initializer_feed.initialize(unit)
+            elif unit in product_units:
+                _log.info(f"Initializing {unit}")
+                initializer_product.initialize(unit)
+            elif unit in sep_units:
+                _log.info(f"Initializing {unit}")
+                initializer_sep.initialize(unit)
+            elif unit in mix_units:
+                _log.info(f"Initializing {unit}")
+                initializer_mix.initialize(unit)
+            elif unit in leach_units:
+                _log.info(f"Initializing {unit}")
+                initializer_leach.initialize(unit)
+            elif unit in sx_units:
+                _log.info(f"Initializing {unit}")
+                initializer_sx.initialize(unit)
+            else:
+                _log.info(f"Initializing {unit}")
+                initializer_bt.initialize(unit)
+        except InitializationError as err:
+            # TODO revert this after scaling is applied to the UKy flowsheet
+            results = solver_obj.solve(unit)
+            if not check_optimal_termination(results):
+                raise InitializationError(f"Initialization of unit {unit.name} failed.") from err
 
     seq.run(m, function)
 

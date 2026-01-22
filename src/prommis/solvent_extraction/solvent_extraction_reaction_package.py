@@ -106,8 +106,7 @@ class SolventExtractionReactionsData(
     m[i] = m0[i] + m1[i]*dosage
     B[i] = B0[i] + B1[i]*log(dosage)
 
-    If a system has x% DEHPA, then set `blk.extractant_dosage`=x, for example for 5% DEHPA system,
-    set `blk.extractant_dosage`=5
+    The dosage is set by the extractant_dosage variable on the organic state block.
 
     The data points for these empirical correlations have been taken from the phase 1 report.
     Certain rare earth elements do not have adequate data, hence certain functionalities could
@@ -150,10 +149,6 @@ class SolventExtractionReactionsData(
                 reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -3
 
         self.reaction_stoichiometry = reaction_stoichiometry
-
-        self.extractant_dosage = Param(
-            doc="Extractant dosage of the system", initialize=1, mutable=True
-        )
 
         self.m0 = Param(
             self.element_list,

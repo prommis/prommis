@@ -67,6 +67,7 @@ def assert_solution_equivalent(blk, expected_results):
             continue
 
         for index, (expected_value, rel, abs) in expected_values_dict.items():
+            recorded_var = False
             component_to_test = obj if index is None else obj[index]
             actual_value = value(component_to_test)
 
@@ -77,6 +78,9 @@ def assert_solution_equivalent(blk, expected_results):
 
             # If the comparison fails, record the details
             if not is_close:
+                if not recorded_var:
+                    failures.append(f"  - {obj_type}: {name}\n")
+                    recorded_var = True
                 if rel is not None:
                     n_sig_figs = ceil(-log10(rel)) + 1
                     format_spec = "." + str(n_sig_figs) + "e"
@@ -86,7 +90,6 @@ def assert_solution_equivalent(blk, expected_results):
                 else:
                     format_spec = ".7e"
                 failure_msg = (
-                    f"  - {obj_type}: {name}\n"
                     f"    Index:    {index}\n"
                     f"    Expected: {expected_value:{format_spec}}\n"
                     f"    Actual:   {actual_value:{format_spec}}"

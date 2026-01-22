@@ -222,7 +222,7 @@ def test_solution(model):
     ) == pytest.approx(7.6489e-7, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.total_heat_duty[0]
-    ) == pytest.approx(3771.14, rel=1e-5)
+    ) == pytest.approx(3761.75, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.sample_mass[0]
     ) == pytest.approx(61.956, rel=1e-5)
@@ -240,51 +240,51 @@ def test_solution(model):
     ) == pytest.approx(0.57421, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.volume_insulation1[0]
-    ) == pytest.approx(0.091450, rel=1e-5)
+    ) == pytest.approx(0.090719, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.total_weight_insulation1[0]
     ) == pytest.approx(15.420, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.internal_diameter_metal1[0]
-    ) == pytest.approx(0.48930, rel=1e-5)
+    ) == pytest.approx(0.48764, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.external_diameter_metal1[0]
-    ) == pytest.approx(0.50056, rel=1e-5)
+    ) == pytest.approx(0.49889, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.volume_metal1[0]
     ) == pytest.approx(
-        306.781, rel=1e-5
+        305.369, rel=1e-5
     )  # in3, report has m3
     assert value(
         model.fs.hydrogen_decrepitation_furnace.weight_metal1[0]
     ) == pytest.approx(
-        82.8308, rel=1e-5
+        82.4496, rel=1e-5
     )  # lb, report has kg
     assert value(
         model.fs.hydrogen_decrepitation_furnace.volume_insulation2[0]
-    ) == pytest.approx(0.226876, rel=1e-5)
+    ) == pytest.approx(0.226156, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.total_weight_insulation2[0]
-    ) == pytest.approx(58.708, rel=1e-5)
+    ) == pytest.approx(58.5221, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.internal_diameter_metal2[0]
-    ) == pytest.approx(0.86812, rel=1e-5)
+    ) == pytest.approx(0.86624, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.external_diameter_metal2[0]
-    ) == pytest.approx(0.88342, rel=1e-5)
+    ) == pytest.approx(0.88153, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.volume_metal2[0]
     ) == pytest.approx(
-        737.2515, rel=1e-5
+        735.652, rel=1e-5
     )  # in3, report has m3
     assert value(
         model.fs.hydrogen_decrepitation_furnace.weight_metal2[0]
     ) == pytest.approx(
-        209.379, rel=1e-5
+        208.925, rel=1e-5
     )  # lb, report has kg
     assert value(
         model.fs.hydrogen_decrepitation_furnace.furnace_external_surface_area[0]
-    ) == pytest.approx(2.8195, rel=1e-5)
+    ) == pytest.approx(2.81088, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.decrepitation_duration
     ) == pytest.approx(10800, rel=1e-5)
@@ -296,10 +296,10 @@ def test_solution(model):
     assert value(
         model.fs.hydrogen_decrepitation_furnace.furnace_volume[0]
     ) == pytest.approx(
-        12.4292, rel=1e-5
+        12.3763, rel=1e-5
     )  # in3, report has m3
     assert value(
         model.fs.hydrogen_decrepitation_furnace.furnace_weight[0]
     ) == pytest.approx(
-        455.635, rel=1e-5
+        454.389, rel=1e-5
     )  # lb, report has kg

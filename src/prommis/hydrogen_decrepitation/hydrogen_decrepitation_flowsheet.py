@@ -213,6 +213,8 @@ def main():
 
     initialize_and_solve(m)
 
+    return m
+
 
 if __name__ == "__main__":
     m = main()

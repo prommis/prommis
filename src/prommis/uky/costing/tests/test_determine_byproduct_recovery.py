@@ -26,7 +26,6 @@ from pyomo.environ import (
     ConcreteModel,
     Expression,
     Param,
-    TransformationFactory,
     Var,
     value,
 )
@@ -74,11 +73,7 @@ class TestLiCoDiafiltration:
         add_product_constraints(self.m, Li_recovery_bound=0.95, Co_recovery_bound=0.635)
         add_objective(self.m)
         set_scaling(self.m)
-        scaling = TransformationFactory("core.scale_model")
-        scaled_model = scaling.create_using(self.m, rename=False)
-        solve_model(scaled_model)
-        # Propagate results back to unscaled model
-        scaling.propagate_solution(scaled_model, self.m)
+        solve_model(self.m)
 
         # Ensure feed pump OPEX is negligible
         assert (
@@ -119,6 +114,7 @@ class TestLiCoDiafiltration:
         dt.display_potential_evaluation_errors()
 
     # 3. Access product price.
+    @pytest.mark.component
     def test_import_product_prices(self):
         """Test case for importing and verifying product prices."""
 
@@ -143,6 +139,7 @@ class TestLiCoDiafiltration:
         print(f"Co price: {self.Co_price}")
 
     # 4. Test framework to determine if the byproduct should be recovered
+    @pytest.mark.component
     def test_determine_byproduct_recovery(self):
         self.build_LiCoDiafiltration_model()  # Ensure model is built first
         self.test_import_product_prices()  # Ensure prices are loaded
@@ -151,10 +148,14 @@ class TestLiCoDiafiltration:
         model = ConcreteModel()
         model.recovery_determine = ByproductRecovery(materials=material_list)
 
+        # annual production rate of material, assume operate 8000 hrs per year
+        annual_Li_recovery_mass = self.Li_recovery_mass * 8000
+        annual_Co_recovery_mass = self.Co_recovery_mass * 8000
+
         # Define input values dynamically based on provided materials
         material_data = {
             "Lithium": {
-                "production": self.Li_recovery_mass,
+                "production": annual_Li_recovery_mass,
                 "market_value": self.Li_price,
                 "waste_disposal": 1,
                 "conversion": 0,
@@ -163,7 +164,7 @@ class TestLiCoDiafiltration:
                 "process_cost": self.total_annualized_cost,
             },
             "Cobalt": {
-                "production": self.Co_recovery_mass,
+                "production": annual_Co_recovery_mass,
                 "market_value": self.Co_price,
                 "waste_disposal": 1,
                 "conversion": 0,
@@ -208,12 +209,12 @@ class TestLiCoDiafiltration:
 
         # Check the output string for financial viability
         net_benefit_value = value(model.recovery_determine.net_benefit)
-        assert net_benefit_value == pytest.approx(-211162.615, rel=1e-4)
+        assert net_benefit_value == pytest.approx(320373532.81, rel=1e-4)
 
         if net_benefit_value > 0:
-            expected_message = f"✅ Byproduct recovery is financially viable. Net Benefit: ${net_benefit_value:.2f}"
+            expected_message = f"✅ Byproduct recovery is financially viable. Net Benefit: {net_benefit_value:.2f} $/yr"
         else:
-            expected_message = f"❌ Byproduct recovery is NOT financially viable. Loss: ${-net_benefit_value:.2f}"
+            expected_message = f"❌ Byproduct recovery is NOT financially viable. Loss: ${-net_benefit_value:.2f} $/yr"
 
         assert (
             determine_result == expected_message
@@ -222,9 +223,10 @@ class TestLiCoDiafiltration:
         print("\n--- Byproduct Recovery Decision ---")
         print(determine_result)
 
+    @pytest.mark.component
     def test_example_usage(self):
         """
-        Ensure that the example usage from script A runs correctly.
+        Ensure that the example usage from script runs correctly.
         """
         determine_result, net_benefit_value = determine_example_usage()
         assert net_benefit_value == pytest.approx(4920.00, rel=1e-4)
@@ -240,6 +242,7 @@ class TestLiCoDiafiltration:
             "❌ Byproduct recovery is NOT financially viable."
         ), f"Unexpected output: {determine_result}"
 
+    @pytest.mark.component
     def test_results(self):
         """Check expected numerical and string outputs."""
         self.build_LiCoDiafiltration_model()  # Ensure model is built first
@@ -254,6 +257,7 @@ class TestLiCoDiafiltration:
             value(self.Li_recovery_mass) > 0
         ), "Lithium recovery mass should be positive."
 
+    @pytest.mark.unit
     def test_edge_case_empty_material_list(self):
         # Test that an empty material list raises the correct ValueError
         with pytest.raises(

@@ -29,6 +29,8 @@ from prommis.uky.uky_flowsheet import (
     set_operating_conditions,
     set_scaling,
     solve_system,
+    fix_organic_recycle,
+    calculate_results,
 )
 
 _log = idaeslog.getLogger(__name__)
@@ -42,10 +44,15 @@ def export_to_ui():
         do_build=build_flowsheet,
         do_solve=solve_flowsheet,
         get_diagram=get_diagram,
+        do_kpis=add_kpis,
         requires_idaes_solver=True,
         category=FlowsheetCategory.wastewater,
         build_options={},
     )
+
+
+# I think this is a better name
+flowsheet_interface = export_to_ui
 
 
 def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs):
@@ -160,6 +167,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             obj=lsf.mass_frac_comp[0, compound],
             name=f"Leach solid feed {compound}",
             description=f"Leach solid feed {compound} fractional composition",
+            display_units="fraction",
             rounding=3,
             is_input=True,
             is_output=False,
@@ -191,7 +199,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     )
     exports.add(
         obj=rst.gas_inlet.pressure[0],
-        name="Gas inlet temperature",
+        name="Gas inlet pressure",
         rounding=2,
         ui_units=pyo.units.Pa,
         display_units="Pa",
@@ -234,7 +242,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
 
     # Export the leach solid outputs, which includes overall mass flow,
     # and mass fraction of oxides and inerts.
-    category = "solids"
+    category = "leaching solid outlet"
     leach = flowsheet.leach
     exports.add(
         obj=leach.solid_outlet.flow_mass[0],
@@ -242,7 +250,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         rounding=4,
         ui_units=pyo.units.kg / pyo.units.hour,
         display_units="kg/hr",
-        description=f"solid flow mass",
+        description=f"Leaching solid flow mass",
         is_input=False,
         is_output=True,
         output_category=category,
@@ -266,15 +274,15 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         description=f"leaching solid mass fraction of inert components outlet",
         is_input=False,
         is_output=True,
-        output_category="solid outlet",
+        output_category=category,
     )
 
     # Export leach liquid outputs, which includes the liquid flow
     # and liquid mass compositions
-    category = "leaching"
+    category = "Leaching liquid outlet"
     exports.add(
         obj=leach.liquid_outlet.flow_vol[0],
-        name=f"liquid flow volume",
+        name=f"Leaching liquid flow volume",
         ui_units=pyo.units.l / pyo.units.hour,
         display_units="l/h",
         rounding=4,
@@ -306,7 +314,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "cleaner_load",
         "cleaner_strip",
     }:
-        category = f"solex {stype}"
+        category = f"Solvent extraction {stype}"
         block = getattr(flowsheet, f"solex_{stype}")
         for ltype in {"organic", "aqueous"}:
             if stype == "rougher" and ltype == "aqueous":
@@ -336,11 +344,11 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     # Export the outputs for the precipitator, including overall flow
     # as well as concentration mass composition for chemical components
     # and precipitate components.
-    category = "precipitator"
+    category = "precipitator aqueous outlet"
     precipitator = flowsheet.precipitator
     exports.add(
         obj=precipitator.cv_aqueous.properties_out[0].flow_vol,
-        name=f"precipitator aqueous out",
+        name=f"precipitator aqueous outlet flow rate",
         ui_units=pyo.units.l / pyo.units.hour,
         display_units="liters/hour",
         rounding=4,
@@ -363,6 +371,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             is_output=True,
             output_category=category,
         )
+    category = "precipitator solid outlet"
     exports.add(
         obj=precipitator.precipitate_outlet.temperature[0],
         name="precipitator outlet temperature",
@@ -388,15 +397,45 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             is_output=True,
             output_category=category,
         )
+
+    # Export the outputs for the roaster, including product mass flow
+    # and molar flow rates for the oxides in the product stream.
+    category = "Roaster product"
+    roaster = flowsheet.roaster
+    name = f"roaster product mass flow of total oxides"
+    obj = roaster.flow_mass_product[0]
+    exports.add(
+        obj=obj,
+        name=name,
+        description=f"Mass flow rate of oxides in the roaster product stream",
+        ui_units=pyo.units.kg / pyo.units.s,
+        display_units="kg/s",
+        rounding=10,
+        is_input=False,
+        is_output=True,
+        output_category=category,
+    )
+    for c in comp:
+        name = f"roaster product molar flow of {c} oxide"
+        obj = roaster.flow_mol_comp_product[0, c]
+        exports.add(
+            obj=obj,
+            name=name,
+            description=f"Roaster molar flow rate of {c} oxide in product stream",
+            ui_units=pyo.units.mol / pyo.units.s,
+            display_units="mol/s",
+            rounding=10,
+            is_input=False,
+            is_output=True,
+            output_category=category,
+        )
+
     _log.debug(f"exports:\n{exports.model_dump_json()}")
     _log.info(f"end/setup-UI-exports build_options={build_options}")
 
 
 def build_flowsheet(build_options=None, **kwargs):
-    """Called by the UI to build the flowsheet.
-    Does not solve the flowsheet, but does set operating conditions, scaling, and
-    initialize the system.
-    """
+    """Called by the UI to build the flowsheet."""
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
     set_operating_conditions(m)
@@ -404,8 +443,81 @@ def build_flowsheet(build_options=None, **kwargs):
     scaling = pyo.TransformationFactory("core.scale_model")
     scaled_model = scaling.create_using(m, rename=False)
     initialize_system(scaled_model)
+    solve_system(scaled_model)
+    fix_organic_recycle(scaled_model)
+    solve_system(scaled_model)
+    scaling.propagate_solution(scaled_model, m)
     _log.info(f"end/build-flowsheet build_options={build_options}")
-    return scaled_model
+    return m
+
+
+def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
+    fs = flowsheet
+    data = calculate_results(fs)
+
+    def round_recoveries(value):
+        """Round the recovery values to 2 decimal places."""
+        return round(value, 2)
+
+    exports.add_kpi_values(
+        name="stats",
+        labels=["Total REE Recovery", "Product Purity"],
+        units=["%", "%"],
+        values=[
+            round_recoveries(data[key]) for key in ("REE-recovery", "product-purity")
+        ],
+    )
+    element_names = {
+        "al": "Aluminum",
+        "ca": "Calcium",
+        "ce": "Cerium",
+        "dy": "Dysprosium",
+        "fe": "Iron",
+        "gd": "Gadolinium",
+        "la": "Lanthanum",
+        "nd": "Neodymium",
+        "pr": "Praseodymium",
+        "sc": "Scandium",
+        "sm": "Samarium",
+        "yt": "Yttrium",
+    }
+    element_values, element_labels = [], []
+    for element, full_name in element_names.items():
+        element_values.append(data[f"{element}-recovery"])
+        element_labels.append(full_name)
+    exports.add_kpi_barchart(
+        name="element-recovery",
+        values=element_values,
+        labels=element_labels,
+        title="Leaching REE Elemental Recovery",
+        xlab="Rare Earth Elements",
+        ylab="Elemental Recovery",
+        units="%",
+    )
+
+    roaster_values, roaster_labels = [], []
+    roaster_perf = fs.roaster._get_performance_contents()
+    for title, expr in roaster_perf["exprs"].items():
+        # extract element from, e.g., 'Product Al Mass Fraction'
+        words = title.split()
+        element = words[1]
+        roaster_labels.append(element)
+        # get numeric value for expression
+        val = pyo.value(expr)
+        roaster_values.append(val)
+    exports.add_kpi_total(
+        name="roaster-prod",
+        values=roaster_values,
+        labels=roaster_labels,
+        title="Roaster Product (mass fraction)",
+        total_label="Elements",
+        units="mass fraction",
+    )
+
+    exports.set_kpi_default_options(
+        total_type="donut"  # draw part-of-whole graphs as donut charts
+        # the other option is "waffle"
+    )
 
 
 def get_diagram(build_options):
@@ -416,17 +528,7 @@ def get_diagram(build_options):
 def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
 
-    m = build()
-
-    set_operating_conditions(m)
-
-    set_scaling(m)
-
-    scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-
-    initialize_system(scaled_model)
-
-    results = solve_system(scaled_model)
+    fs = flowsheet
+    results = solve_system(fs)
 
     return results

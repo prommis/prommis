@@ -227,7 +227,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         ),
     )
     CONFIG.declare(
-        "debt_percentage_of_CAPEX",
+        "debt_percentage_of_capex",
         ConfigValue(
             default=50,
             domain=float,
@@ -1096,11 +1096,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         doc="Percentage of revenue charged as royalties",
                         units=pyunits.percent,
                     )
-                    self.min_net_tax_owed = Param(
-                        initialize=0,
-                        doc="Minimum net tax owed in millions USD",
-                        units=CE_index_units / pyunits.year,
-                    )
+
                     self.eps = Param(
                         initialize=1e-4,
                         units=CE_index_units / pyunits.year,
@@ -1128,6 +1124,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         units=CE_index_units / pyunits.year,
                     )
                     self.additional_tax_owed.fix(1e-12)
+
+                    self.min_net_tax_owed = Var(
+                        initialize=0,
+                        doc="Minimum net tax owed in millions USD",
+                        units=CE_index_units / pyunits.year,
+                    )
+                    self.min_net_tax_owed.fix(1e-12)
 
                     self.royalty_charge = Expression(
                         expr=pyunits.convert(
@@ -1306,10 +1309,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
     def report(self, export=False):
         var_dict = {}
-        var_dict["Plant Cost Units"] = str(pyunits.get_units(self.total_plant_cost))
 
         if hasattr(self, "total_plant_cost"):
+            var_dict["Plant Cost Units"] = str(pyunits.get_units(self.total_plant_cost))
             var_dict["Total Plant Cost"] = value(self.total_plant_cost)
+        elif hasattr(self, "npv"):
+            var_dict["Plant Cost Units"] = str(pyunits.get_units(self.npv))
 
         if hasattr(self, "total_BEC"):
             var_dict["Total Bare Erected Cost"] = value(self.total_BEC)
@@ -1455,7 +1460,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             var_dict["Total Other Fixed Costs"] = value(self.other_fixed_costs)
 
         if hasattr(self, "variable_operating_costs"):
+
             if (0, "power") in self.variable_operating_costs.id_index_map().values():
+
                 var_dict["Total Variable Power Cost"] = value(
                     self.variable_operating_costs[0, "power"]
                 )
@@ -1519,8 +1526,17 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if hasattr(self, "income_tax"):
             var_dict["Income Tax"] = value(self.income_tax)
 
+        if hasattr(self, "additional_tax_owed"):
+            var_dict["Additional Tax Owed"] = value(self.additional_tax_owed)
+
+        if hasattr(self, "additional_tax_credit"):
+            var_dict["Additional Tax Credit"] = value(self.additional_tax_credit)
+
         if hasattr(self, "net_tax_owed"):
             var_dict["Net Tax Owed"] = value(self.net_tax_owed)
+
+        if hasattr(self, "cost_of_recovery"):
+            var_dict["Cost of Recovery (USD/kg REE)"] = value(self.cost_of_recovery)
 
         report_dir = {}
         report_dir["Value"] = {}
@@ -2019,6 +2035,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"1990 to 2020."
             )
 
+        # let product rates be optional
+        if pure_product_output_rates is None:
+            pure_product_output_rates = {}
+        if mixed_product_output_rates is None:
+            mixed_product_output_rates = {}
+
         # check that required product arguments were passed
         if not isinstance(pure_product_output_rates, dict):
             raise TypeError("product_output_rates argument must be a dict")
@@ -2181,7 +2203,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.watertap_fixed_costs = Var(
             initialize=0,
             bounds=(0, None),
-            doc="Watertap fixed costs",
+            doc="WaterTAP fixed costs",
             units=CE_index_units / pyunits.year,
         )
 
@@ -2213,35 +2235,47 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # calculated from labor rate, labor burden, and operators per shift
         @b.Constraint()
         def annual_operating_labor_cost_eq(c):
-            return c.annual_operating_labor_cost == pyunits.convert(
-                (
-                    sum(
-                        c.operators_per_shift[i] * c.labor_rate[i]
-                        for i in operating_labor_types
-                    )
-                    * (1 + c.labor_burden / 100)
-                    * c.hours_per_shift
-                    * c.shifts_per_day
-                    * c.operating_days_per_year
-                ),
-                CE_index_units / pyunits.year,
-            )
+            if len(operating_labor_types) > 0:
+                return c.annual_operating_labor_cost == pyunits.convert(
+                    (
+                        sum(
+                            c.operators_per_shift[i] * c.labor_rate[i]
+                            for i in operating_labor_types
+                        )
+                        * (1 + c.labor_burden / 100)
+                        * c.hours_per_shift
+                        * c.shifts_per_day
+                        * c.operating_days_per_year
+                    ),
+                    CE_index_units / pyunits.year,
+                )
+            else:
+                return (
+                    c.annual_operating_labor_cost
+                    == 1e-12 * CE_index_units / pyunits.year
+                )
 
         @b.Constraint()
         def annual_technical_labor_cost_eq(c):
-            return c.annual_technical_labor_cost == pyunits.convert(
-                (
-                    sum(
-                        c.operators_per_shift[i] * c.labor_rate[i]
-                        for i in technical_labor_types
-                    )
-                    * (1 + c.labor_burden / 100)
-                    * c.hours_per_shift
-                    * c.shifts_per_day
-                    * c.operating_days_per_year
-                ),
-                CE_index_units / pyunits.year,
-            )
+            if len(technical_labor_types) > 0:
+                return c.annual_technical_labor_cost == pyunits.convert(
+                    (
+                        sum(
+                            c.operators_per_shift[i] * c.labor_rate[i]
+                            for i in technical_labor_types
+                        )
+                        * (1 + c.labor_burden / 100)
+                        * c.hours_per_shift
+                        * c.shifts_per_day
+                        * c.operating_days_per_year
+                    ),
+                    CE_index_units / pyunits.year,
+                )
+            else:
+                return (
+                    c.annual_technical_labor_cost
+                    == 1e-12 * CE_index_units / pyunits.year
+                )
 
         @b.Constraint()
         def annual_labor_cost_eq(c):
@@ -2286,7 +2320,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         # sum of fixed O&M costs
 
-        # sum of fixed operating costs of watertap units
+        # sum of fixed operating costs of WaterTAP units
         @b.Constraint()
         def sum_watertap_fixed_costs(c):
             if len(c.watertap_fixed_costs_list) == 0:
@@ -2318,24 +2352,35 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         @b.Constraint()
         def total_sales_revenue_eq(c):
-            return c.total_sales_revenue == pyunits.convert(
+            return c.total_sales_revenue == (
                 (
                     (
                         sum(
-                            pure_product_output_rates[p] * default_sale_prices[p]
+                            pyunits.convert(
+                                pure_product_output_rates[p] * default_sale_prices[p],
+                                to_units=CE_index_units / pyunits.h,
+                            )
                             for p in pure_product_output_rates.keys()
                         )
-                        + c.mixed_product_sale_price_realization_factor
+                        if len(pure_product_output_rates) > 0
+                        else 1e-12 * CE_index_units / pyunits.h
+                    )
+                    + (
+                        c.mixed_product_sale_price_realization_factor
                         * sum(
-                            mixed_product_output_rates[p] * default_sale_prices[p]
+                            pyunits.convert(
+                                mixed_product_output_rates[p] * default_sale_prices[p],
+                                to_units=CE_index_units / pyunits.h,
+                            )
                             for p in mixed_product_output_rates.keys()
                         )
+                        if len(mixed_product_output_rates) > 0
+                        else 1e-12 * CE_index_units / pyunits.h
                     )
-                    * c.hours_per_shift
-                    * c.shifts_per_day
-                    * c.operating_days_per_year
-                ),
-                CE_index_units / pyunits.year,
+                )
+                * c.hours_per_shift
+                * c.shifts_per_day
+                * c.operating_days_per_year
             )
 
     def get_variable_OM_costs(
@@ -2438,12 +2483,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.other_variable_costs.fix(1e-12)
 
         # TODO commented as no WaterTAP models currently use this, may change in the future
-        # variable for user to assign watertap variable costs to,
+        # variable for user to assign WaterTAP variable costs to,
         # constraint sets to sum of list, which is 0 for empty list
         # b.watertap_variable_costs = Var(
         #     initialize=0,
         #     bounds=(0, None),
-        #     doc="Watertap variable costs",
+        #     doc="WaterTAP variable costs",
         #     units=CE_index_units / pyunits.year,
         # )
 
@@ -2484,7 +2529,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
 
         # TODO commented as no WaterTAP models currently use this, may change in the future
-        # sum of variable operating costs of watertap units
+        # sum of variable operating costs of WaterTAP units
         # @b.Constraint()
         # def sum_watertap_variable_costs(c):
         #     if len(c.watertap_variable_costs_list) == 0:
@@ -2666,7 +2711,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
 
     def display_total_plant_costs(b):
-        print("-----Total Plant Costs-----")
+        print("-----Total Plant Costs (MUSD)-----")
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
             if o.name in [
@@ -2683,7 +2728,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
 
     def display_bare_erected_costs(b):
-        print("-----Bare Erected Costs-----")
+        print("-----Bare Erected Costs (MUSD)-----")
         for o in b.parent_block().component_objects(descend_into=True):
             # look for costing blocks
             if o.name in [
@@ -2727,20 +2772,21 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     b.BEC_list.append(
                         pyunits.convert(o.capital_cost, to_units=CE_index_units)
                     )
-                    if hasattr(o, "fixed_operating_cost"):
-                        b.custom_fixed_costs_list.append(
-                            pyunits.convert(
-                                o.fixed_operating_cost,
-                                to_units=CE_index_units / pyunits.year,
-                            )
+                if hasattr(o, "fixed_operating_cost"):
+                    b.custom_fixed_costs_list.append(
+                        pyunits.convert(
+                            o.fixed_operating_cost,
+                            to_units=CE_index_units / pyunits.year,
                         )
-                    if hasattr(o, "variable_operating_cost"):
-                        b.custom_variable_costs_list.append(
-                            pyunits.convert(
-                                o.variable_operating_cost,
-                                to_units=CE_index_units / pyunits.year,
-                            )
+                    )
+                if hasattr(o, "variable_operating_cost"):
+                    b.custom_variable_costs_list.append(
+                        pyunits.convert(
+                            o.variable_operating_cost,
+                            to_units=CE_index_units / pyunits.year,
                         )
+                    )
+        from idaes.core.util.model_diagnostics import degrees_of_freedom
 
         if watertap_blocks is not None:  # added from WaterTAP
             for w in watertap_blocks:
@@ -2750,7 +2796,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     m.fs.costing = ZeroOrderCosting()
                 else:
                     m.fs.costing = WaterTAPCosting()
-                w.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
+                if not hasattr(
+                    w, "costing"
+                ):  # this will only create a costing block if one doesn't already exist
+                    w.costing = UnitModelCostingBlock(
+                        flowsheet_costing_block=m.fs.costing
+                    )
                 b.BEC_list.append(
                     pyunits.convert(w.costing.capital_cost, to_units=CE_index_units)
                 )
@@ -2786,30 +2837,35 @@ class QGESSCostingData(FlowsheetCostingBlockData):
     def display_flowsheet_cost(b):
         # This method accepts a flowsheet-level costing block
         print("\n")
-        print("Total bare erected cost: %.3f" % value(b.total_BEC))
+        print("Total bare erected cost (MUSD): %.3f" % value(b.total_BEC))
         if hasattr(b, "total_overnight_capital"):
             print(
                 "Total overnight (installed) equipment cost: %.3f"
                 % value(b.total_overnight_capital)
             )
         if hasattr(b, "annualized_cost"):
-            print("Total annualized capital cost: %.3f" % value(b.annualized_cost))
+            print(
+                "Total annualized capital cost (MUSD): %.3f" % value(b.annualized_cost)
+            )
         print()
         if hasattr(b, "total_fixed_OM_cost"):
-            print("Total annual fixed O&M cost: %.3f" % value(b.total_fixed_OM_cost))
+            print(
+                "Total annual fixed O&M cost (MUSD): %.3f"
+                % value(b.total_fixed_OM_cost)
+            )
         if hasattr(b, "total_variable_OM_cost"):
             print(
-                "Total annual variable O&M cost: %.3f"
+                "Total annual variable O&M cost (MUSD): %.3f"
                 % value(b.total_variable_OM_cost[0])
             )
         if hasattr(b, "total_fixed_OM_cost") and hasattr(b, "total_variable_OM_cost"):
             print(
-                "Total annual O&M cost: %.3f"
+                "Total annual O&M cost (MUSD): %.3f"
                 % value(b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
             )
             if hasattr(b, "feed_input_rate"):
                 print(
-                    "Total annual O&M cost per ton feed processed: %.3f"
+                    "Total annual O&M cost per ton feed processed (USD/ton): %.3f"
                     % value(
                         (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
                         * 1e6
@@ -2825,7 +2881,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 )
             if hasattr(b, "recovery_rate_per_year"):
                 print(
-                    "Total annual O&M cost per kg REE recovered: %.3f"
+                    "Total annual O&M cost per kg REE recovered (USD/kg): %.3f"
                     % value(
                         (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
                         * 1e6
@@ -2844,7 +2900,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             and hasattr(b, "total_variable_OM_cost")
         ):
             print(
-                "Total annualized plant cost: %.3f"
+                "Total annualized plant cost (MUSD): %.3f"
                 % value(
                     b.annualized_cost
                     + (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
@@ -2853,7 +2909,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
         if hasattr(b, "recovery_rate_per_year"):
             print(
-                "Annual rate of recovery: %.3f kg/year REE recovered"
+                "Annual rate of recovery (kg/year): %.3f"
                 % value(
                     pyunits.convert(
                         b.recovery_rate_per_year, to_units=pyunits.kg / pyunits.year
@@ -2862,13 +2918,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
         if hasattr(b, "cost_of_recovery"):
             print(
-                "Cost of recovery per kg REE recovered: %.3f"
+                "Cost of recovery per kg REE recovered (USD/kg): %.3f"
                 % value(b.cost_of_recovery)
             )
         print()
 
         if hasattr(b, "npv"):
-            print("Net present value: %.3f" % value(b.npv))
+            print("Net present value (MUSD): %.3f" % value(b.npv))
         print("\n")
 
     def calculate_REE_costing_bounds(
@@ -3084,13 +3140,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         cash flows.
 
         This method supports capital expenditure, loan repayment, inflation,
-        and royalties. The NPV formulation assumes that negative cash flows
-        consists capital and operating costs scaled to a constant present
-        value. The general NPV formula with 100% of capital expenditure
-        upfront at the start of the operating period and no capital or
-        operating growth rate is
+        and taxes if previously calculated. The NPV formulation assumes that
+        negative cash flows consists capital and operating costs scaled to a
+        constant present value. The general NPV formula with 100% of capital
+        expenditure upfront at the start of the operating period and no capital
+        or operating growth rate is
 
-        NPV = [(REVENUE - OPEX - ROYALTIES) * P/A(r, N)] - CAPEX
+        NPV = [(REVENUE - OPEX - TAXES) * P/A(r, N)] - CAPEX
 
         where P/A(r, N) is the series present worth factor; this factor scales
         a future cost to its present value from a known discount rate r and
@@ -3101,8 +3157,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         where r is expressed as a decimal and N is expressed in years. In the
         NPV expression above, REVENUE is the constant annual revenue, OPEX is
-        the constant annual operating cost, and CAPEX is the total capital cost.
-        ROYALTIES are charged based on revenue, usually a fixed percentage.
+        the constant annual operating cost, CAPEX is the total capital cost,
+        and TAXES are the total net tax liability including income tax,
+        royalties, depletion rights, and incentives.
 
         Operating costs and revenues are adjusted based on predicted annuity
         growth to obtain the present value. These expressions are implemented
@@ -3123,7 +3180,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         a constant proportional growth rate expressed as an escalation or
         inflation percentage. The general formulation is given by
 
-        NPV = PV_Revenue - PV_Operating_Cost - PV_Royalties
+        NPV = PV_Revenue - PV_Operating_Cost - PV_Taxes
               - PV_Capital_Cost - PV_Loan_Interest
 
         For costs escalating at a constant rate for the project lifetime, the
@@ -3159,7 +3216,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         is the loan repayment period, and iLoan_% is the capital equipment loan interest
         rate expressed as a decimal.
 
-        Revenue, operating costs and royalties based on revenue escalate with
+        Revenue, operating costs and taxes based on revenue escalate with
         standard inflation. Notably, these cash flows occur after any capital
         expenditure period, meaning that the annuity growth must be offset by
         the length of the capital expenditure period. This yields the expressions
@@ -3168,17 +3225,18 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         PV_Operating_Cost = OPEX * [ P/A(r, gOp, NOp+NCap) - P/A(r, gOp, NCap) ]
 
-        PV_Royalties = iRoy_% * REVENUE * [ P/A(r, gRev, NOp+NCap) - P/A(r, gRev, NCap) ]
+        PV_Taxes = TAXES * [ P/A(r, 0, NOp+NCap) - P/A(r, gRev, NCap) ]
 
         where REVENUE is the annual revenue, OPEX is the annual operating cost,
-        gRev is the inflation or growth rate of revenue year-on-year expressed as
-        a decimal, gOp is the inflation or growth rate of operating costs year-on-year
-        expressed as a decimal, NOp is the length of the operating period or plant
-        lifetime, NCap is the length of the capital expenditure period, and iRoy_%
-        is the percentage of the revenue charged as royalties expressed as a decimal.
-        The expressions above take the annuity growth during the entire analysis
-        period (NOp+NCap) and subtract the capital expenditure period (NCap) as there
-        is no operation or production during that time.
+        TAXES is the annual net tax liability, gRev is the inflation or growth
+        rate of revenue year-on-year expressed as a decimal, gOp is the inflation
+        or growth rate of operating costs year-on-year expressed as a decimal,
+        NOp is the length of the operating period or plant lifetime, and NCap is
+        the length of the capital expenditure period. The expressions above take
+        the annuity growth during the entire analysis period (NOp+NCap) and subtract
+        the capital expenditure period (NCap) as there is no operation or production
+        during that time. Note that the taxes do not include inflation growth, as future
+        tax rates are difficult to predict and do not rise proportionally with inflation.
 
         Args:
             b: costing block to retrieve total plant cost (capital), total plant
@@ -3237,35 +3295,35 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # build variables
 
         b.pv_capital_cost = Var(
-            initialize=-b.CAPEX,
+            initialize=-b.capex,
             bounds=(None, 0),
             doc="Present value of total lifetime capital costs; negative cash flow",
             units=b.cost_units,
         )
 
         b.loan_debt = Var(
-            initialize=b.CAPEX,
+            initialize=b.capex,
             bounds=(0, 1e4),
             doc="total debt from loans in $MM",
             units=b.cost_units,
         )
 
         b.pv_loan_interest = Var(
-            initialize=-b.CAPEX,
+            initialize=-b.capex,
             bounds=(-1e4, 1e4),
             doc="present value of total lifetime loan interest in $MM; normally a negative cash flow, but can be positive depending on the discount and interest rates",
             units=b.cost_units,
         )
 
         b.pv_operating_cost = Var(
-            initialize=-b.OPEX * b.config.plant_lifetime,
+            initialize=-b.opex * b.config.plant_lifetime,
             bounds=(None, 0),
             doc="Present value of total lifetime operating costs; negative cash flow",
             units=b.cost_units,
         )
 
         b.pv_revenue = Var(
-            initialize=b.REVENUE * b.config.plant_lifetime,
+            initialize=b.revenue * b.config.plant_lifetime,
             bounds=(0, None),
             doc="Present value of total lifetime sales revenue; positive cash flow",
             units=b.cost_units,
@@ -3274,13 +3332,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         if consider_taxes:
             b.pv_taxes = Var(
                 initialize=-b.net_tax_owed * pyunits.year * b.config.plant_lifetime,
-                bounds=(None, 0),
-                doc="Present value of total lifetime tax owed; negative cash flow",
+                bounds=(None, None),
+                doc="Present value of total lifetime tax owed; typically negative cash flow, positive in the case of an effective negative tax rate",
                 units=b.cost_units,
             )
 
         b.npv = Var(
-            initialize=(-b.CAPEX + (b.REVENUE - b.OPEX) * b.config.plant_lifetime),
+            initialize=(-b.capex + (b.revenue - b.opex) * b.config.plant_lifetime),
             bounds=(None, None),
             doc="Present value of plant over entire capital and operation lifetime",
             units=b.cost_units,
@@ -3318,8 +3376,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=b.config.capital_loan_repayment_period, units=pyunits.years
         )
 
-        b.debt_percentage_of_CAPEX = Param(
-            initialize=b.config.debt_percentage_of_CAPEX, units=pyunits.percent
+        b.debt_percentage_of_capex = Param(
+            initialize=b.config.debt_percentage_of_capex, units=pyunits.percent
         )
 
         b.operating_inflation_percentage = Param(
@@ -3363,7 +3421,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             * pyunits.percent,
                             to_units=pyunits.dimensionless,
                         )
-                        * c.CAPEX
+                        * c.capex
                         * (  # P/A_year(i) - P/A_year(i-1))
                             series_present_worth_factor(
                                 pyunits.convert(
@@ -3401,7 +3459,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 # PV_Capital_Cost = - CAPEX
 
                 return c.pv_capital_cost == -pyunits.convert(
-                    c.CAPEX,
+                    c.capex,
                     to_units=c.cost_units,
                 )
 
@@ -3413,9 +3471,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
                 return c.loan_debt == pyunits.convert(
                     pyunits.convert(
-                        c.debt_percentage_of_CAPEX, to_units=pyunits.dimensionless
+                        c.debt_percentage_of_capex, to_units=pyunits.dimensionless
                     )
-                    * c.CAPEX,
+                    * c.capex,
                     to_units=c.cost_units,
                 )
 
@@ -3489,7 +3547,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # PV_Operating_Cost = - OPEX * [ P/A(r, g, OPEX_end_year) - P/A(r, g, CAPEX_end_year) ]
 
             return c.pv_operating_cost == -pyunits.convert(
-                c.OPEX
+                c.opex
                 * (
                     series_present_worth_factor(
                         pyunits.convert(
@@ -3522,7 +3580,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             # PV_Revenue = - REVENUE * [ P/A(r, g, Revenue_end_year) - P/A(r, g, CAPEX_end_year) ]
 
             return c.pv_revenue == pyunits.convert(
-                c.REVENUE
+                c.revenue
                 * (
                     series_present_worth_factor(
                         pyunits.convert(
@@ -3602,15 +3660,15 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         Verify that parent block for NPV calculations has expected attributes.
         """
         try:
-            b.CAPEX = b.total_BEC + b.total_installation_cost + b.other_plant_costs
-            b.OPEX = (
+            b.capex = b.total_BEC + b.total_installation_cost + b.other_plant_costs
+            b.opex = (
                 b.total_fixed_OM_cost * pyunits.year
                 + b.total_variable_OM_cost[0] * pyunits.year
                 + b.land_cost
             )
-            b.REVENUE = Reference(b.total_sales_revenue)[None] * pyunits.year
+            b.revenue = Reference(b.total_sales_revenue)[None] * pyunits.year
 
-            b.cost_units = pyunits.get_units(b.CAPEX)
+            b.cost_units = pyunits.get_units(b.capex)
 
         except AttributeError:
             raise AttributeError(
@@ -3653,9 +3711,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         else:
             # check if the cost arguments are variables or expressions with units and handle appropriately
             costs = {
-                "CAPEX": b.config.total_capital_cost,
-                "OPEX": b.config.annual_operating_cost,
-                "REVENUE": b.config.annual_revenue,
+                "capex": b.config.total_capital_cost,
+                "opex": b.config.annual_operating_cost,
+                "revenue": b.config.annual_revenue,
             }
             b.cost_units = getattr(pyunits, "MUSD_" + b.config.cost_year)
 
@@ -3682,9 +3740,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         )
 
             # store for later use
-            b.CAPEX = costs["CAPEX"]
-            b.OPEX = costs["OPEX"]
-            b.REVENUE = costs["REVENUE"]
+            b.capex = costs["capex"]
+            b.opex = costs["opex"]
+            b.revenue = costs["revenue"]
 
     def assert_config_argument_set(b, name):
         """

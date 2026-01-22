@@ -38,7 +38,7 @@ from prommis.hydrogen_decrepitation.hydrogen_decrepitation_furnace import (
 from prommis.hydrogen_decrepitation.repm_solids_properties import REPMParameters
 
 
-def main():
+def build_flowsheet():
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -207,8 +207,10 @@ def initialize_and_solve(m):
     m.fs.shredder.report()
     m.fs.hydrogen_decrepitation_furnace.report()
 
+def main():
+    m = build_flowsheet()
+
+    initialize_and_solve(m)
 
 if __name__ == "__main__":
     m = main()
-
-    initialize_and_solve(m)

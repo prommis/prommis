@@ -96,7 +96,7 @@ The gas phase properties are calculated based on user configured property packag
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue, In
 
 # Additional import for the unit operation
-from pyomo.environ import Param, PositiveReals, Set, Var, exp
+from pyomo.environ import Param, Set, Var, exp
 from pyomo.environ import units as pyunits
 
 import idaes.core.util.scaling as iscale
@@ -104,7 +104,6 @@ import idaes.logger as idaeslog
 
 # Import IDAES cores
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
-from idaes.core.solvers import get_solver
 from idaes.core.util.config import DefaultBool, is_physical_parameter_block
 from idaes.core.util.constants import Constants
 from idaes.core.util.math import smooth_max
@@ -1292,8 +1291,6 @@ constructed,
                     == b.flow_mol_comp_product_recovered[t, i]
                     * b.config.solid_property_package.mw[i]
                 )
-            else:
-                pass
 
     def _make_energy_balance(self):
         # molar enthalpy of impurity minerals in solid feed
@@ -1369,9 +1366,15 @@ constructed,
             )
 
         # heat loss from radiation
+        # per Mark's Mechanical Engineering Handbook p. 4-65 "Radiative Exchange
+        # Between Surfaces of Solids", "Case 10" for a row of tubes and a parallel plane,
+        # the view factor between the heating coil loops and the insulation wall is given by
+        # F = 1 - D/C * (sin^-1 (D/C) + sqrt((C/D)^2 - 1) - pi/2)
+        # where D is the heating coil wire diameter and C is the coil pitch
+        # if C >> D (thin wire compared to coil spacing), F >> 0.5
         @self.Constraint(self.flowsheet().config.time, doc="heat loss from radiation")
         def heat_loss_radiation(b, t):
-            return b.heat_loss[t] == 0.70 * 2 * Constants.pi * b.radius_chamber[
+            return b.heat_loss[t] == 0.50 * 2 * Constants.pi * b.radius_chamber[
                 t
             ] * b.length_chamber[t] * Constants.stefan_constant * (
                 (b.max_temperature ** 4) - (b.temperature_insulation_material1[t] ** 4)

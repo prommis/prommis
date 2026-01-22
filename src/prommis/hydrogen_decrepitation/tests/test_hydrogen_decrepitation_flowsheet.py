@@ -19,6 +19,7 @@ from idaes.models.unit_models import Feed
 import pytest
 
 from prommis.hydrogen_decrepitation.hydrogen_decrepitation_flowsheet import (
+    build_flowsheet,
     initialize_and_solve,
     main,
 )
@@ -29,7 +30,7 @@ from prommis.hydrogen_decrepitation.hydrogen_decrepitation_furnace import (
 
 @pytest.fixture(scope="module")
 def model():
-    m = main()
+    m = build_flowsheet()
 
     return m
 
@@ -104,3 +105,10 @@ def test_solution(model):
     assert value(
         model.fs.hydrogen_decrepitation_furnace.gas_out[0].pressure
     ) == pytest.approx(1.01325e5, rel=1e-5)
+
+
+@pytest.mark.component
+@pytest.mark.solver
+def test_main():
+    m = main()
+    m.fs.hydrogen_decrepitation_furnace.report()

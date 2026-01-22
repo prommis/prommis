@@ -10,6 +10,7 @@ parameters and data for West Kentucky No. 13 coal refuse.
 
 Authors: Arkoprabho Dasgupta, Akintomiwa Ojo
 """
+
 import matplotlib.pyplot as plt
 from pyomo.environ import (
     ConcreteModel,

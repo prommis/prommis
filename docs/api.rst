@@ -10,8 +10,8 @@ Leaching
 
    prommis.leaching.leach_train
    prommis.leaching.leach_reactions
-   prommis.leaching.leach_solids_properties
-   prommis.leaching.leach_solution_properties
+   prommis.properties.coal_refuse_properties
+   prommis.properties.sulfuric_acid_leaching_properties
 
 Roasting
 --------

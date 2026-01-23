@@ -12,37 +12,43 @@ Authors: Andrew Lee
 """
 
 from pyomo.environ import (
+    ComponentMap,
     ConcreteModel,
     SolverFactory,
-    Suffix,
-    TransformationFactory,
     units,
 )
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util import to_json
-from idaes.core.util.scaling import set_scaling_factor
 
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
-from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingParameters,
+)
 
 
-def build_model():
+def build_model(has_holdup=True, n_tanks=1):
     """
     Method to build a single stage leaching system using data for
     West Kentucky No. 13 coal refuse.
+    Args:
+        has_holdup: Boolean flag to determine whether to create
+            material holdup terms
+        n_tanks: Number of tanks in leaching train
+    Returns:
+        m: ConcreteModel containing the leaching flowsheet
     """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
     m.fs.leach = LeachingTrain(
-        number_of_tanks=1,
+        number_of_tanks=n_tanks,
         liquid_phase={
             "property_package": m.fs.leach_soln,
             "has_energy_balance": False,
@@ -54,6 +60,7 @@ def build_model():
             "has_pressure_balance": False,
         },
         reaction_package=m.fs.leach_rxns,
+        has_holdup=has_holdup,
     )
 
     return m
@@ -112,61 +119,52 @@ def set_inputs(m):
 
     m.fs.leach.volume.fix(100 * units.gallon)
 
+    if m.fs.leach.config.has_holdup:
+        m.fs.leach.liquid_solid_residence_time_ratio.fix(1 / 32)
+
 
 def set_scaling(m):
     """
     Apply scaling factors to improve solver performance.
     """
-    m.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
-    for j in m.fs.coal.component_list:
-        if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
-            set_scaling_factor(
-                m.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j], 1e5
-            )
-            set_scaling_factor(
-                m.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j], 1e5
-            )
-            set_scaling_factor(
-                m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate[j],
-                1e5,
-            )
-            set_scaling_factor(
-                m.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j], 1e3
-            )
-            set_scaling_factor(
-                m.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j], 1e3
-            )
-            set_scaling_factor(
-                m.fs.leach.mscontactor.heterogeneous_reactions[0.0, 1].reaction_rate_eq[
-                    j
-                ],
-                1e5,
-            )
+    solid_scaler = m.fs.leach.mscontactor.solid.default_scaler()
+    solid_scaler.default_scaling_factors["flow_mass"] = 1 / 22.68
+
+    liquid_scaler = m.fs.leach.mscontactor.liquid.default_scaler()
+    liquid_scaler.default_scaling_factors["flow_vol"] = 1 / 224.3
+    liquid_scaler.default_scaling_factors["conc_mass_comp[Ce]"] = 1 / 5
+    liquid_scaler.default_scaling_factors["conc_mass_comp[Nd]"] = 1 / 2
+    liquid_scaler.default_scaling_factors["conc_mass_comp[La]"] = 1
+    liquid_scaler.default_scaling_factors["conc_mass_comp[SO4]"] = 1e-3
+
+    submodel_scalers = ComponentMap()
+    submodel_scalers[m.fs.leach.mscontactor.liquid_inlet_state] = liquid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.liquid] = liquid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.solid_inlet_state] = solid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.solid] = solid_scaler
+
+    scaler_obj = m.fs.leach.default_scaler()
+    scaler_obj.default_scaling_factors["liquid_phase_fraction"] = 1
+    scaler_obj.default_scaling_factors["solid_phase_fraction"] = 1
+    scaler_obj.scale_model(m.fs.leach, submodel_scalers=submodel_scalers)
 
 
 # -------------------------------------------------------------------------------------
 if __name__ == "__main__":
     # Call build model function
-    m = build_model()
+    m = build_model(has_holdup=True, n_tanks=1)
     set_inputs(m)
     set_scaling(m)
-
-    # Create a scaled version of the model to solve
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
 
     # Initialize model
     # This is likely to fail to converge, but gives a good enough starting point
     initializer = LeachingTrainInitializer()
-    initializer.initialize(scaled_model.fs.leach)
+    initializer.initialize(m.fs.leach)
 
     # Solve scaled model
-    solver = SolverFactory("ipopt")
-    solver.solve(scaled_model, tee=True)
-
-    # Propagate results back to unscaled model
-    scaling.propagate_solution(scaled_model, m)
+    solver = SolverFactory("ipopt_v2")
+    solver.solve(m, tee=True)
 
     # Store steady state values in a json file
     to_json(m, fname="leaching.json", human_read=True)
@@ -176,3 +174,27 @@ if __name__ == "__main__":
     m.fs.leach.solid_outlet.display()
 
     m.fs.leach.report()
+
+    # Call build model function
+    m2 = build_model(has_holdup=True, n_tanks=2)
+    set_inputs(m2)
+    m2.fs.leach.volume[:].set_value(50 * units.gallon)
+    set_scaling(m2)
+
+    # Initialize model
+    # This is likely to fail to converge, but gives a good enough starting point
+    initializer = LeachingTrainInitializer()
+    initializer.initialize(m2.fs.leach)
+
+    # Solve scaled model
+    solver = SolverFactory("ipopt_v2")
+    solver.solve(m2, tee=True)
+
+    # Store steady state values in a json file
+    to_json(m2, fname="leaching2.json", human_read=True)
+
+    # Display some results
+    m2.fs.leach.liquid_outlet.display()
+    m2.fs.leach.solid_outlet.display()
+
+    m2.fs.leach.report()

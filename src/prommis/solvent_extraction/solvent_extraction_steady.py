@@ -22,7 +22,10 @@ from idaes.core.solvers import get_solver
 from prommis.properties.sulfuric_acid_leaching_properties import (
     SulfuricAcidLeachingParameters,
 )
-from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters, ree_list
+from prommis.solvent_extraction.ree_og_distribution import (
+    REESolExOgParameters,
+    ree_list,
+)
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (

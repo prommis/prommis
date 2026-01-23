@@ -440,6 +440,7 @@ class SolventExtractionData(UnitModelBlockData):
         )
 
         if self.config.has_holdup:
+
             def volume_fraction_rule(b, t, s):
 
                 theta_A = b.mscontactor.volume_frac_stream[t, s, "aqueous"]

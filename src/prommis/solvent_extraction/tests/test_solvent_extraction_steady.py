@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 
-from pyomo.environ import check_optimal_termination, ComponentMap, value
+from pyomo.environ import check_optimal_termination
 
 from idaes.core.initialization import InitializationStatus
 from idaes.core.scaling.util import jacobian_cond
@@ -22,6 +22,7 @@ from prommis.solvent_extraction.solvent_extraction_steady import (
 from prommis.util import assert_solution_equivalent
 
 solver = get_solver()
+
 
 class Test_Solvent_Extraction_steady_model:
     @pytest.fixture(scope="class")
@@ -74,40 +75,40 @@ class Test_Solvent_Extraction_steady_model:
         model = SolEx_frame
         expected_results = {
             "organic_outlet.conc_mass_comp": {
-                (0.0, 'Kerosene'): (8.2000e+05, 1e-4, None),
-                (0.0, 'DEHPA'): (4.6087e+04, 1e-4, None),
-                (0.0, 'Al_o'): (2.2425e+01, 1e-4, None),
-                (0.0, 'Ca_o'): (7.2059e+00, 1e-4, None),
-                (0.0, 'Fe_o'): (1.0267e+02, 1e-4, None),
-                (0.0, 'Sc_o'): (1.7633e+00, 1e-4, None),
-                (0.0, 'Y_o'): (1.2402e-01, 1e-4, None),
-                (0.0, 'La_o'): (7.1891e-02, 1e-4, None),
-                (0.0, 'Ce_o'): (1.6778e-01, 1e-4, None),
-                (0.0, 'Pr_o'): (2.6727e-02, 1e-4, None),
-                (0.0, 'Nd_o'): (6.5178e-02, 1e-4, None),
-                (0.0, 'Sm_o'): (1.0438e-02, 1e-4, None),
-                (0.0, 'Gd_o'): (6.5974e-02, 1e-4, None),
-                (0.0, 'Dy_o'): (4.5838e-02, 1e-4, None),          
+                (0.0, "Kerosene"): (8.2000e05, 1e-4, None),
+                (0.0, "DEHPA"): (4.6087e04, 1e-4, None),
+                (0.0, "Al_o"): (2.2425e01, 1e-4, None),
+                (0.0, "Ca_o"): (7.2059e00, 1e-4, None),
+                (0.0, "Fe_o"): (1.0267e02, 1e-4, None),
+                (0.0, "Sc_o"): (1.7633e00, 1e-4, None),
+                (0.0, "Y_o"): (1.2402e-01, 1e-4, None),
+                (0.0, "La_o"): (7.1891e-02, 1e-4, None),
+                (0.0, "Ce_o"): (1.6778e-01, 1e-4, None),
+                (0.0, "Pr_o"): (2.6727e-02, 1e-4, None),
+                (0.0, "Nd_o"): (6.5178e-02, 1e-4, None),
+                (0.0, "Sm_o"): (1.0438e-02, 1e-4, None),
+                (0.0, "Gd_o"): (6.5974e-02, 1e-4, None),
+                (0.0, "Dy_o"): (4.5838e-02, 1e-4, None),
             },
-            "aqueous_outlet.conc_mass_comp":{
-                (0.0, 'H2O'): (1.000e+06, 1e-4, None), 
-                (0.0, 'H'): (3.9513e+01, 1e-4, None),
-                (0.0, 'HSO4'): (8.0232e+03, 1e-4, None),
-                (0.0, 'SO4'): (2.0564e+03, 1e-4, None),
-                (0.0, 'Cl'): (1.0000e-07, 1e-4, None),
-                (0.0, 'Sc'): (2.7415e-03, 1e-4, None),
-                (0.0, 'Y'): (6.2927e-06, 1e-4, None),
-                (0.0, 'La'): (9.1421e-01, 1e-4, None),
-                (0.0, 'Ce'): (2.1095e+00, 1e-4, None),
-                (0.0, 'Pr'): (2.7631e-01, 1e-4, None),
-                (0.0, 'Nd'): (8.8099e-01, 1e-4, None),
-                (0.0, 'Sm'): (8.6579e-02, 1e-4, None),
-                (0.0, 'Gd'): (1.9246e-01, 1e-4, None),
-                (0.0, 'Dy'): (1.1699e-03, 1e-4, None),
-                (0.0, 'Al'): (3.9995e+02, 1e-4, None),
-                (0.0, 'Ca'): (1.0234e+02, 1e-4, None),
-                (0.0, 'Fe'): (5.8559e+02, 1e-4, None),
-            }
+            "aqueous_outlet.conc_mass_comp": {
+                (0.0, "H2O"): (1.000e06, 1e-4, None),
+                (0.0, "H"): (3.9513e01, 1e-4, None),
+                (0.0, "HSO4"): (8.0232e03, 1e-4, None),
+                (0.0, "SO4"): (2.0564e03, 1e-4, None),
+                (0.0, "Cl"): (1.0000e-07, 1e-4, None),
+                (0.0, "Sc"): (2.7415e-03, 1e-4, None),
+                (0.0, "Y"): (6.2927e-06, 1e-4, None),
+                (0.0, "La"): (9.1421e-01, 1e-4, None),
+                (0.0, "Ce"): (2.1095e00, 1e-4, None),
+                (0.0, "Pr"): (2.7631e-01, 1e-4, None),
+                (0.0, "Nd"): (8.8099e-01, 1e-4, None),
+                (0.0, "Sm"): (8.6579e-02, 1e-4, None),
+                (0.0, "Gd"): (1.9246e-01, 1e-4, None),
+                (0.0, "Dy"): (1.1699e-03, 1e-4, None),
+                (0.0, "Al"): (3.9995e02, 1e-4, None),
+                (0.0, "Ca"): (1.0234e02, 1e-4, None),
+                (0.0, "Fe"): (5.8559e02, 1e-4, None),
+            },
         }
         assert_solution_equivalent(model.fs.solex, expected_results)
 
@@ -129,6 +130,7 @@ class Test_Solvent_Extraction_steady_model:
         dt.assert_no_numerical_warnings()
         assert jacobian_cond(m, scaled=False) == pytest.approx(2.46261e14, rel=1e-3)
         assert jacobian_cond(m, scaled=True) == pytest.approx(1.1119e7, rel=1e-3)
+
 
 class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
     @pytest.fixture(scope="class")
@@ -171,7 +173,9 @@ class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
         dt = DiagnosticsToolbox(model)
         dt.assert_no_numerical_warnings()
 
-        assert jacobian_cond(model, scaled=False) == pytest.approx(8.415018e12, rel=1e-3)
+        assert jacobian_cond(model, scaled=False) == pytest.approx(
+            8.415018e12, rel=1e-3
+        )
         assert jacobian_cond(model, scaled=True) == pytest.approx(1.2842e7, rel=1e-3)
 
     @pytest.mark.component
@@ -181,40 +185,40 @@ class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
         model = SolEx_frame
         expected_results = {
             "organic_outlet.conc_mass_comp": {
-                (0.0, 'Kerosene'): (8.2000e+05, 1e-4, None),
-                (0.0, 'DEHPA'): (4.6087e+04, 1e-4, None),
-                (0.0, 'Al_o'): (2.2425e+01, 1e-4, None),
-                (0.0, 'Ca_o'): (7.2059e+00, 1e-4, None),
-                (0.0, 'Fe_o'): (1.0267e+02, 1e-4, None),
-                (0.0, 'Sc_o'): (1.7633e+00, 1e-4, None),
-                (0.0, 'Y_o'): (1.2402e-01, 1e-4, None),
-                (0.0, 'La_o'): (7.1891e-02, 1e-4, None),
-                (0.0, 'Ce_o'): (1.6778e-01, 1e-4, None),
-                (0.0, 'Pr_o'): (2.6727e-02, 1e-4, None),
-                (0.0, 'Nd_o'): (6.5178e-02, 1e-4, None),
-                (0.0, 'Sm_o'): (1.0438e-02, 1e-4, None),
-                (0.0, 'Gd_o'): (6.5974e-02, 1e-4, None),
-                (0.0, 'Dy_o'): (4.5838e-02, 1e-4, None),          
+                (0.0, "Kerosene"): (8.2000e05, 1e-4, None),
+                (0.0, "DEHPA"): (4.6087e04, 1e-4, None),
+                (0.0, "Al_o"): (2.2425e01, 1e-4, None),
+                (0.0, "Ca_o"): (7.2059e00, 1e-4, None),
+                (0.0, "Fe_o"): (1.0267e02, 1e-4, None),
+                (0.0, "Sc_o"): (1.7633e00, 1e-4, None),
+                (0.0, "Y_o"): (1.2402e-01, 1e-4, None),
+                (0.0, "La_o"): (7.1891e-02, 1e-4, None),
+                (0.0, "Ce_o"): (1.6778e-01, 1e-4, None),
+                (0.0, "Pr_o"): (2.6727e-02, 1e-4, None),
+                (0.0, "Nd_o"): (6.5178e-02, 1e-4, None),
+                (0.0, "Sm_o"): (1.0438e-02, 1e-4, None),
+                (0.0, "Gd_o"): (6.5974e-02, 1e-4, None),
+                (0.0, "Dy_o"): (4.5838e-02, 1e-4, None),
             },
-            "aqueous_outlet.conc_mass_comp":{
-                (0.0, 'H2O'): (1.000e+06, 1e-4, None), 
-                (0.0, 'H'): (3.9513e+01, 1e-4, None),
-                (0.0, 'HSO4'): (8.0232e+03, 1e-4, None),
-                (0.0, 'SO4'): (2.0564e+03, 1e-4, None),
-                (0.0, 'Cl'): (1.0000e-07, 1e-4, None),
-                (0.0, 'Sc'): (2.7415e-03, 1e-4, None),
-                (0.0, 'Y'): (6.2927e-06, 1e-4, None),
-                (0.0, 'La'): (9.1421e-01, 1e-4, None),
-                (0.0, 'Ce'): (2.1095e+00, 1e-4, None),
-                (0.0, 'Pr'): (2.7631e-01, 1e-4, None),
-                (0.0, 'Nd'): (8.8099e-01, 1e-4, None),
-                (0.0, 'Sm'): (8.6579e-02, 1e-4, None),
-                (0.0, 'Gd'): (1.9246e-01, 1e-4, None),
-                (0.0, 'Dy'): (1.1699e-03, 1e-4, None),
-                (0.0, 'Al'): (3.9995e+02, 1e-4, None),
-                (0.0, 'Ca'): (1.0234e+02, 1e-4, None),
-                (0.0, 'Fe'): (5.8559e+02, 1e-4, None),
-            }
+            "aqueous_outlet.conc_mass_comp": {
+                (0.0, "H2O"): (1.000e06, 1e-4, None),
+                (0.0, "H"): (3.9513e01, 1e-4, None),
+                (0.0, "HSO4"): (8.0232e03, 1e-4, None),
+                (0.0, "SO4"): (2.0564e03, 1e-4, None),
+                (0.0, "Cl"): (1.0000e-07, 1e-4, None),
+                (0.0, "Sc"): (2.7415e-03, 1e-4, None),
+                (0.0, "Y"): (6.2927e-06, 1e-4, None),
+                (0.0, "La"): (9.1421e-01, 1e-4, None),
+                (0.0, "Ce"): (2.1095e00, 1e-4, None),
+                (0.0, "Pr"): (2.7631e-01, 1e-4, None),
+                (0.0, "Nd"): (8.8099e-01, 1e-4, None),
+                (0.0, "Sm"): (8.6579e-02, 1e-4, None),
+                (0.0, "Gd"): (1.9246e-01, 1e-4, None),
+                (0.0, "Dy"): (1.1699e-03, 1e-4, None),
+                (0.0, "Al"): (3.9995e02, 1e-4, None),
+                (0.0, "Ca"): (1.0234e02, 1e-4, None),
+                (0.0, "Fe"): (5.8559e02, 1e-4, None),
+            },
         }
         assert_solution_equivalent(model.fs.solex, expected_results)
 

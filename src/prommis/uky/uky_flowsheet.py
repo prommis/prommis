@@ -1318,7 +1318,9 @@ def initialize_system(m):
             # TODO revert this after scaling is applied to the UKy flowsheet
             results = solver_obj.solve(unit)
             if not check_optimal_termination(results):
-                raise InitializationError(f"Initialization of unit {unit.name} failed.") from err
+                raise InitializationError(
+                    f"Initialization of unit {unit.name} failed."
+                ) from err
 
     seq.run(m, function)
 

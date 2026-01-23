@@ -6,7 +6,7 @@
 #####################################################################################################
 
 import os
-from pyomo.environ import check_optimal_termination, value
+from pyomo.environ import check_optimal_termination
 
 from idaes.core.solvers import get_solver
 from idaes.core.util import DiagnosticsToolbox
@@ -71,40 +71,40 @@ class Test_Mixer_Settler_Ex_dynamic_model:
         model = Mix_Settle_Ex_frame
         expected_results = {
             "organic_outlet.conc_mass_comp": {
-                (12, 'Kerosene'): (8.2000e+05, 1e-4, None),
-                (12, 'DEHPA'): (4.6087e+04, 1e-4, None),
-                (12, 'Al_o'): (2.2425e+01, 1e-4, None),
-                (12, 'Ca_o'): (7.2059e+00, 1e-4, None),
-                (12, 'Fe_o'): (1.0267e+02, 1e-4, None),
-                (12, 'Sc_o'): (1.76417e+00, 1e-4, None),
-                (12, 'Y_o'): (1.27672e-01, 1e-4, None),
-                (12, 'La_o'): (7.1891e-02, 1e-4, None),
-                (12, 'Ce_o'): (1.6778e-01, 1e-4, None),
-                (12, 'Pr_o'): (2.6727e-02, 1e-4, None),
-                (12, 'Nd_o'): (6.5178e-02, 1e-4, None),
-                (12, 'Sm_o'): (1.04399e-02, 1e-4, None),
-                (12, 'Gd_o'): (6.60131e-02, 1e-4, None),
-                (12, 'Dy_o'): (4.66250e-02, 1e-4, None),          
+                (12, "Kerosene"): (8.2000e05, 1e-4, None),
+                (12, "DEHPA"): (4.6087e04, 1e-4, None),
+                (12, "Al_o"): (2.2425e01, 1e-4, None),
+                (12, "Ca_o"): (7.2059e00, 1e-4, None),
+                (12, "Fe_o"): (1.0267e02, 1e-4, None),
+                (12, "Sc_o"): (1.76417e00, 1e-4, None),
+                (12, "Y_o"): (1.27672e-01, 1e-4, None),
+                (12, "La_o"): (7.1891e-02, 1e-4, None),
+                (12, "Ce_o"): (1.6778e-01, 1e-4, None),
+                (12, "Pr_o"): (2.6727e-02, 1e-4, None),
+                (12, "Nd_o"): (6.5178e-02, 1e-4, None),
+                (12, "Sm_o"): (1.04399e-02, 1e-4, None),
+                (12, "Gd_o"): (6.60131e-02, 1e-4, None),
+                (12, "Dy_o"): (4.66250e-02, 1e-4, None),
             },
-            "aqueous_outlet.conc_mass_comp":{
-                (12, 'H2O'): (1.000e+06, 1e-4, None), 
-                (12, 'H'): (3.93625e+01, 1e-4, None),
-                (12, 'HSO4'): (8.01691e+03, 1e-4, None),
-                (12, 'SO4'): (2.06264e+03, 1e-4, None),
-                (12, 'Cl'): (1.0000e-07, 1e-4, 1e-6),
-                (12, 'Sc'): (2.7415e-03, 1e-4, None),
-                (12, 'Y'): (1.23779e-05, 1e-4, None),
-                (12, 'La'): (9.15961e-01, 1e-4, None),
-                (12, 'Ce'): (2.11362e+00, 1e-4, None),
-                (12, 'Pr'): (2.76983e-01, 1e-4, None),
-                (12, 'Nd'): (8.82605e-01, 1e-4, None),
-                (12, 'Sm'): (8.68056e-02, 1e-4, None),
-                (12, 'Gd'): (1.93454e-01, 1e-4, None),
-                (12, 'Dy'): (1.19203e-03, 1e-4, None),
-                (12, 'Al'): (4.00601e+02, 1e-4, None),
-                (12, 'Ca'): (1.02540e+02, 1e-4, None),
-                (12, 'Fe'): (5.88068e+02, 1e-4, None),
-            }
+            "aqueous_outlet.conc_mass_comp": {
+                (12, "H2O"): (1.000e06, 1e-4, None),
+                (12, "H"): (3.93625e01, 1e-4, None),
+                (12, "HSO4"): (8.01691e03, 1e-4, None),
+                (12, "SO4"): (2.06264e03, 1e-4, None),
+                (12, "Cl"): (1.0000e-07, 1e-4, 1e-6),
+                (12, "Sc"): (2.7415e-03, 1e-4, None),
+                (12, "Y"): (1.23779e-05, 1e-4, None),
+                (12, "La"): (9.15961e-01, 1e-4, None),
+                (12, "Ce"): (2.11362e00, 1e-4, None),
+                (12, "Pr"): (2.76983e-01, 1e-4, None),
+                (12, "Nd"): (8.82605e-01, 1e-4, None),
+                (12, "Sm"): (8.68056e-02, 1e-4, None),
+                (12, "Gd"): (1.93454e-01, 1e-4, None),
+                (12, "Dy"): (1.19203e-03, 1e-4, None),
+                (12, "Al"): (4.00601e02, 1e-4, None),
+                (12, "Ca"): (1.02540e02, 1e-4, None),
+                (12, "Fe"): (5.88068e02, 1e-4, None),
+            },
         }
         assert_solution_equivalent(model.fs.mixer_settler_ex, expected_results)
 

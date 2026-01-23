@@ -232,7 +232,9 @@ class REESolExOgStateBlockData(StateBlockData):
             bounds=(1e-20, None),
         )
 
-        self.flow_vol = Var(units=units.L / units.hour, initialize=1e-5, bounds=(1e-8, None))
+        self.flow_vol = Var(
+            units=units.L / units.hour, initialize=1e-5, bounds=(1e-8, None)
+        )
 
         self.conc_mol_comp = Var(
             self.params.component_list,
@@ -263,12 +265,14 @@ class REESolExOgStateBlockData(StateBlockData):
             doc="Extractant dosage v/v%",
             units=units.dimensionless,
         )
+
         @self.Constraint()
         def extractant_dosage_eqn(b):
             return (
                 b.extractant_dosage
                 == (b.conc_mass_comp["DEHPA"] / (975.8e3 * units.mg / units.L)) * 100
             )
+
         # Concentration conversion constraint
         @self.Constraint(self.params.component_list)
         def molar_concentration_constraint(b, j):

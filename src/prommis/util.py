@@ -45,6 +45,7 @@ def assert_solution_equivalent(blk, expected_results):
     failures = []
 
     for name, expected_values_dict in expected_results.items():
+        recorded_var = False
         obj = blk.find_component(name)
         if obj is None:
             blk_name = blk.name
@@ -67,7 +68,6 @@ def assert_solution_equivalent(blk, expected_results):
             continue
 
         for index, (expected_value, rel, abs) in expected_values_dict.items():
-            recorded_var = False
             component_to_test = obj if index is None else obj[index]
             actual_value = value(component_to_test)
 

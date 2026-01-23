@@ -182,7 +182,7 @@ class CoalRefuseParameterData(PhysicalParameterBlock):
         self.eps = Param(
             initialize=1e-8,
             mutable=True,
-            doc="Perturbation to avoid conversion values " "hitting their lower bound.",
+            doc="Perturbation to avoid conversion values hitting their lower bound.",
         )
 
         self._state_block_class = CoalRefuseStateBlock

@@ -10,7 +10,9 @@ from idaes.core import FlowsheetBlock
 
 import pytest
 
-from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingParameters,
+)
 
 
 @pytest.fixture
@@ -18,7 +20,7 @@ def model():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
 
     return m
 

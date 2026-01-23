@@ -1530,18 +1530,7 @@ class TestWaterTAPCosting(object):
 
         calculate_scaling_factors(model.fs_membrane)
 
-        # check that all variables have scaling factors
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.nfunit))
-        assert len(unscaled_var_list) == 0
-
         model.fs_membrane.nfunit.initialize(optarg=solver.options)
-
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.nfunit, small=1e-5, zero=1e-12)
-        )
-        for var, val in badly_scaled_var_lst:
-            print(var.name, val)
-        assert len(badly_scaled_var_lst) == 0
 
         results = solver.solve(model.fs_membrane, tee=True)
 
@@ -1604,16 +1593,7 @@ class TestWaterTAPCosting(object):
 
         calculate_scaling_factors(model.fs_membrane)
 
-        # check that all variables have scaling factors
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.rounit))
-        assert len(unscaled_var_list) == 0
-
         model.fs_membrane.rounit.initialize(optarg=solver.options)
-
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.rounit)
-        )
-        assert badly_scaled_var_lst == []
 
         results = solver.solve(model.fs_membrane, tee=True)
 
@@ -1674,16 +1654,7 @@ class TestWaterTAPCosting(object):
 
         calculate_scaling_factors(model.fs_membrane)
 
-        # check that all variables have scaling factors
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.ixunit))
-        assert len(unscaled_var_list) == 0
-
         model.fs_membrane.ixunit.initialize(optarg=solver.options)
-
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.ixunit)
-        )
-        assert badly_scaled_var_lst == []
 
         results = solver.solve(model.fs_membrane, tee=True)
 
@@ -1715,6 +1686,36 @@ class TestWaterTAPCosting(object):
         assert_optimal_termination(results)
 
         return model
+
+    # TODO replace with test of condition number
+    @pytest.mark.component
+    def test_scaling(self, model):
+        # Nanofiltration
+        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.nfunit))
+        assert len(unscaled_var_list) == 0
+
+        badly_scaled_var_lst = list(
+            badly_scaled_var_generator(model.fs_membrane.nfunit, small=1e-5, zero=1e-12)
+        )
+        assert len(badly_scaled_var_lst) == 0
+
+        # RO unit
+        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.rounit))
+        assert len(unscaled_var_list) == 0
+
+        badly_scaled_var_lst = list(
+            badly_scaled_var_generator(model.fs_membrane.rounit)
+        )
+        assert len(badly_scaled_var_lst) == 0
+
+        # Ion exchange
+        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.ixunit))
+        assert len(unscaled_var_list) == 0
+
+        badly_scaled_var_lst = list(
+            badly_scaled_var_generator(model.fs_membrane.ixunit)
+        )
+        assert len(badly_scaled_var_lst) == 0
 
     @pytest.mark.component
     def test_REE_watertap_costing(self, model):

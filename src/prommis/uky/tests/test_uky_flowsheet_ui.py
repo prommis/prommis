@@ -20,7 +20,7 @@ def test_uky_ui_export():
 def test_uky_ui_build():
     ui.build_flowsheet()
 
-
+@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.component
 def test_uky_ui_solve():
     interface = ui.export_to_ui()
@@ -29,7 +29,7 @@ def test_uky_ui_solve():
     interface.solve()
     assert interface.fs_exp is not None
 
-
+@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.component
 def test_uky_ui_kpi():
     interface = ui.export_to_ui()

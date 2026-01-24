@@ -169,7 +169,6 @@ def test_build_flowsheet(system_frame):
     assert isinstance(model.fs.sl_sep2_aq_recycle, Arc)
 
 
-@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_solve(system_frame):
@@ -193,7 +192,6 @@ def test_solve(system_frame):
     assert_optimal_termination(results)
 
 
-@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution(system_frame):
@@ -424,7 +422,6 @@ def test_solution(system_frame):
     assert_solution_equivalent(model.fs, expected_results)
 
 
-@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_conservation(system_frame):
@@ -580,7 +577,6 @@ def test_conservation(system_frame):
         )
 
 
-@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_costing(system_frame):
@@ -588,7 +584,6 @@ def test_costing(system_frame):
     add_costing(model)
 
 
-@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_costing_diagnostics(system_frame):
@@ -597,7 +592,6 @@ def test_costing_diagnostics(system_frame):
     dt.assert_no_structural_warnings()
 
 
-@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_costing_initialize(system_frame):
@@ -607,7 +601,6 @@ def test_costing_initialize(system_frame):
     QGESSCostingData.initialize_variable_OM_costs(model.fs.costing)
 
 
-@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_costing_solve(system_frame):
@@ -616,7 +609,6 @@ def test_costing_solve(system_frame):
     assert_optimal_termination(results)
 
 
-@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_costing_solution(system_frame):
@@ -636,7 +628,6 @@ def test_costing_solution(system_frame):
     assert_solution_equivalent(model.fs, expected_results)
 
 
-@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.component
 @pytest.mark.solver
 def test_costing_solution_diagnostics(system_frame):
@@ -646,7 +637,6 @@ def test_costing_solution_diagnostics(system_frame):
     dt.assert_no_numerical_warnings()
 
 
-@pytest.mark.skip("Skip until entire flowsheet is overhauled.")
 @pytest.mark.unit
 def test_display(system_frame):
     model = system_frame

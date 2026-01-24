@@ -139,6 +139,7 @@ References:
 """
 import logging
 from warnings import warn
+from pyomo.common.collections import ComponentMap, ComponentSet
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
@@ -267,19 +268,20 @@ def main():
     display_results(m)
 
 
-    # add_costing(m)
+    add_costing(m)
+    initialize_costing(m)
 
     # diagnostics, initialize, and solve
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 
-    # QGESSCostingData.costing_initialization(m.fs.costing)
-    # QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    # QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+    auto = AutoScaler()
+    auto.scale_variables_by_magnitude(m)
+    auto.scale_constraints_by_jacobian_norm(m)
 
-    # auto = AutoScaler()
-    # auto.scale_variables_by_magnitude(m)
-    # auto.scale_constraints_by_jacobian_norm(m)
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
 
     # from idaes.core.scaling.util import jacobian_cond
 
@@ -289,7 +291,7 @@ def main():
 
     dt.assert_no_numerical_warnings()
 
-    # display_costing(m)
+    display_costing(m)
 
     return m, results
 
@@ -2349,6 +2351,8 @@ def add_costing(m):
         m: pyomo model
     """
 
+    m.fs.scaling_constraints = ComponentMap()
+
     m.fs.costing = QGESSCosting()
     CE_index_year = "UKy_2019"
 
@@ -2396,6 +2400,7 @@ def add_costing(m):
             ),
             to_units=units.hp,
         )
+    m.fs.scaling_constraints[m.fs.leach_mixer.power] = m.fs.leach_mixer.power_scaling_constraint
 
     m.fs.leach_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2443,6 +2448,8 @@ def add_costing(m):
             ),
             to_units=units.ft**2,
         )
+    
+    m.fs.scaling_constraints[m.fs.leach_sx_mixer.area] = m.fs.leach_sx_mixer.area_scaling_constraint
 
     m.fs.leach_sx_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2472,6 +2479,8 @@ def add_costing(m):
             ),
             to_units=units.ft**3,
         )
+
+    m.fs.scaling_constraints[m.fs.sl_sep1.volume] = m.fs.sl_sep1.volume_scaling_constraint
 
     m.fs.sl_sep1.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2505,6 +2514,8 @@ def add_costing(m):
             ),
             to_units=units.MBTU / units.hr,
         )
+    
+    m.fs.scaling_constraints[m.fs.leach_solution_heater.duty] = m.fs.leach_solution_heater.duty_scaling_constraint
 
     m.fs.leach_solution_heater.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2538,6 +2549,7 @@ def add_costing(m):
             ),
             to_units=units.gal,
         )
+    m.fs.scaling_constraints[m.fs.rougher_solex_tank.volume] = m.fs.rougher_solex_tank.volume_scaling_constraint
 
     m.fs.rougher_solex_tank.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2567,6 +2579,8 @@ def add_costing(m):
             ),
             to_units=units.hp,
         )
+    
+    m.fs.scaling_constraints[m.fs.rougher_mixer.power] = m.fs.rougher_mixer.power_scaling_constraint
 
     m.fs.rougher_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2617,6 +2631,8 @@ def add_costing(m):
             ),
             to_units=units.gal,
         )
+    
+    m.fs.scaling_constraints[m.fs.rougher_solex_settler.volume] = m.fs.rougher_solex_settler.volume_scaling_constraint
 
     m.fs.rougher_solex_settler.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2649,6 +2665,8 @@ def add_costing(m):
             ),
             to_units=units.gal,
         )
+    
+    m.fs.scaling_constraints[m.fs.cleaner_solex_tank.volume] = m.fs.cleaner_solex_tank.volume_scaling_constraint
 
     m.fs.cleaner_solex_tank.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2678,6 +2696,8 @@ def add_costing(m):
             ),
             to_units=units.hp,
         )
+    
+    m.fs.scaling_constraints[m.fs.cleaner_mixer.power] = m.fs.cleaner_mixer.power_scaling_constraint
 
     m.fs.cleaner_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2728,6 +2748,8 @@ def add_costing(m):
             ),
             to_units=units.gal,
         )
+    
+    m.fs.scaling_constraints[m.fs.cleaner_solex_settler.volume] = m.fs.cleaner_solex_settler.volume_scaling_constraint
 
     m.fs.cleaner_solex_settler.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2758,6 +2780,8 @@ def add_costing(m):
             ),
             to_units=units.gal,
         )
+    
+    m.fs.scaling_constraints[m.fs.precipitator.volume] = m.fs.precipitator.volume_scaling_constraint
 
     m.fs.precipitator.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2790,6 +2814,8 @@ def add_costing(m):
             ),
             to_units=units.hp,
         )
+    
+    m.fs.scaling_constraints[m.fs.precipitator_mixer.power] = m.fs.precipitator_mixer.power_scaling_constraint
 
     m.fs.precipitator_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2835,6 +2861,8 @@ def add_costing(m):
             ),
             to_units=units.ft**3,
         )
+    
+    m.fs.scaling_constraints[m.fs.sl_sep2.volume] = m.fs.sl_sep2.volume_scaling_constraint
 
     m.fs.sl_sep2.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2892,6 +2920,8 @@ def add_costing(m):
         )
     )
 
+    m.fs.scaling_constraints[m.fs.feed_input] = m.fs.feed_input_constraint
+
     m.fs.feed_grade = Var(initialize=318.015, units=units.ppm, bounds=(0, None))
     m.fs.feed_grade_constraint = Constraint(
         expr=m.fs.feed_grade
@@ -2899,6 +2929,8 @@ def add_costing(m):
             feed_REE / m.fs.leach_solid_feed.flow_mass[0], to_units=units.ppm
         )
     )
+
+    m.fs.scaling_constraints[m.fs.feed_grade] = m.fs.feed_grade_constraint
 
     hours_per_shift = 8
     shifts_per_day = 3
@@ -2921,6 +2953,8 @@ def add_costing(m):
             to_units=units.kg / units.yr,
         )
     )
+
+    m.fs.scaling_constraints[m.fs.recovery_rate_per_year] = m.fs.recovery_rate_per_year_constraint
 
     # the land cost is the lease cost, or refining cost of REO produced
     m.fs.land_cost = Expression(
@@ -2947,6 +2981,9 @@ def add_costing(m):
         )
     )
 
+    m.fs.scaling_constraints[m.fs.solid_waste] = m.fs.solid_waste_constraint
+
+    # TODO where is the corresponding constraint for this Var?
     m.fs.precipitate = Var(
         m.fs.time, initialize=1e-8, units=units.ton / units.hr, bounds=(0, None)
     )  # non-hazardous precipitate
@@ -2958,6 +2995,7 @@ def add_costing(m):
         expr=m.fs.dust_and_volatiles[0]
         == units.convert(m.fs.roaster.flow_mass_dust[0], to_units=units.ton / units.hr)
     )
+    m.fs.scaling_constraints[m.fs.dust_and_volatiles] = m.fs.dust_and_volatiles_constraint
 
     m.fs.power = Var(m.fs.time, initialize=7, units=units.hp, bounds=(0, None))
     m.fs.power_constraint = Constraint(
@@ -2970,6 +3008,8 @@ def add_costing(m):
             to_units=units.hp,
         )
     )
+
+    m.fs.scaling_constraints[m.fs.power] = m.fs.power_constraint
 
     resources = [
         "nonhazardous_solid_waste",
@@ -3215,6 +3255,16 @@ def add_costing(m):
     m.fs.precipitate.fix()
 
     return m
+
+def initialize_costing(m):
+    """
+    Initializes costing by calling block triangularization on the entire flowsheet.
+
+    Args:
+        m: Model containing flowsheet with already-initialized unit models.
+    """
+    init = BlockTriangularizationInitializer()
+    init.initialize(m)
 
 
 def display_costing(m):

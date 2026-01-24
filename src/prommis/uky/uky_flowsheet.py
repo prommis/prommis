@@ -219,7 +219,7 @@ from prommis.solvent_extraction.solvent_extraction import (
 )
 
 # from prommis.solvent_extraction.translator_leach_precip import TranslatorLeachPrecip
-from prommis.solvent_extraction.translator_HCl_leach import TranslatorHClLeach
+from prommis.properties.translator_HCl_leach import TranslatorHClLeach
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,
 )

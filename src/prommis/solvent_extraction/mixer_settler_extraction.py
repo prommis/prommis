@@ -499,6 +499,7 @@ class MixerSettlerExtractionData(UnitModelBlockData):
                 heterogeneous_reaction_package=self.config.heterogeneous_reaction_package,
                 heterogeneous_reaction_package_args=self.config.heterogeneous_reaction_package_args,
                 has_holdup=self.config.has_holdup,
+                create_hydrostatic_pressure_terms=True,
             )
 
             # Declare aqueous settler tank

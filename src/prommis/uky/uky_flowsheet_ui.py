@@ -24,6 +24,7 @@ from idaes_flowsheet_processor.api import FlowsheetCategory, FlowsheetInterface
 
 # package
 from prommis.uky.uky_flowsheet import (
+    add_result_expressions,
     build,
     initialize_system,
     set_operating_conditions,
@@ -439,6 +440,7 @@ def build_flowsheet(build_options=None, **kwargs):
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
     set_operating_conditions(m)
+    add_result_expressions(m)
     set_scaling(m)
     initialize_system(m)
     solve_system(m)
@@ -465,18 +467,18 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
         ],
     )
     element_names = {
-        "al": "Aluminum",
-        "ca": "Calcium",
-        "ce": "Cerium",
-        "dy": "Dysprosium",
-        "fe": "Iron",
-        "gd": "Gadolinium",
-        "la": "Lanthanum",
-        "nd": "Neodymium",
-        "pr": "Praseodymium",
-        "sc": "Scandium",
-        "sm": "Samarium",
-        "yt": "Yttrium",
+        "Al": "Aluminum",
+        "Ca": "Calcium",
+        "Ce": "Cerium",
+        "Dy": "Dysprosium",
+        "Fe": "Iron",
+        "Gd": "Gadolinium",
+        "La": "Lanthanum",
+        "Nd": "Neodymium",
+        "Pr": "Praseodymium",
+        "Sc": "Scandium",
+        "Sm": "Samarium",
+        "Y": "Yttrium",
     }
     element_values, element_labels = [], []
     for element, full_name in element_names.items():

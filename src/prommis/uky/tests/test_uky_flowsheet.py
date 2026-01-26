@@ -11,7 +11,6 @@ Tests for UKy flowsheet.
 import pytest
 
 from pyomo.environ import (
-    TransformationFactory,
     assert_optimal_termination,
     units,
     value,

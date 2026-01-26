@@ -138,8 +138,7 @@ References:
 
 """
 import logging
-from warnings import warn
-from pyomo.common.collections import ComponentMap, ComponentSet
+from pyomo.common.collections import ComponentMap
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
@@ -147,7 +146,6 @@ from pyomo.environ import (
     Objective,
     Param,
     Set,
-    Suffix,
     TransformationFactory,
     Var,
     check_optimal_termination,
@@ -170,13 +168,8 @@ from idaes.core.initialization import BlockTriangularizationInitializer
 from idaes.core.scaling import AutoScaler, CustomScalerBase, ConstraintScalingScheme
 from idaes.core.scaling.util import get_scaling_factor, set_scaling_factor
 from idaes.core.solvers import get_solver
-from idaes.core.util.exceptions import InitializationError
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util.scaling import (
-    unscaled_variables_generator,
-    unscaled_constraints_generator,
-)
 
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,

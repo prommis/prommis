@@ -102,7 +102,6 @@ def fix_variables(m):
     m.fs.membrane.total_membrane_length.fix()
     m.fs.membrane.applied_pressure.fix()
 
-    # fix degrees of freedom in the flowsheet
     m.fs.membrane.feed_flow_volume.fix()
     m.fs.membrane.feed_conc_mol_comp[0, "Li"].fix()
     m.fs.membrane.feed_conc_mol_comp[0, "Co"].fix()
@@ -204,8 +203,8 @@ def plot_results(m):
                 value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
             )
 
-            water_flux.append(value(m.fs.membrane.volume_flux_water[x_val]))
-            lithium_flux.append(value(m.fs.membrane.mol_flux_lithium[x_val]))
+            water_flux.append(value(m.fs.membrane.volume_flux_water[0, x_val]))
+            lithium_flux.append(value(m.fs.membrane.molar_ion_flux[0, x_val, "Li"]))
 
             lithium_rejection.append(
                 (
@@ -333,13 +332,13 @@ def plot_membrane_results(m):
         for x_val in m.fs.membrane.dimensionless_module_length:
             if x_val != 0:
                 conc_mem_lith.append(
-                    value(m.fs.membrane.membrane_conc_mol_lithium[x_val, z_val])
+                    value(m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Li"])
                 )
                 conc_mem_cob.append(
-                    value(m.fs.membrane.membrane_conc_mol_cobalt[x_val, z_val])
+                    value(m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Co"])
                 )
                 conc_mem_chl.append(
-                    value(m.fs.membrane.membrane_conc_mol_chloride[x_val, z_val])
+                    value(m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Cl"])
                 )
 
         conc_mem_lith_dict[f"{z_val}"] = conc_mem_lith

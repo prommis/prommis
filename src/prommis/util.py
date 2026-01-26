@@ -88,9 +88,7 @@ def assert_solution_equivalent(blk, expected_results):
                 failures.append(f"  - {obj_type}: {name}")
                 recorded_var = True
             if absent_index:
-                failure_msg = (
-                    f"    Index:    {index} is absent"
-                )
+                failure_msg = f"    Index:    {index} is absent"
                 failures.append(failure_msg)
                 n_failures += 1
                 continue

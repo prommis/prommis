@@ -440,13 +440,10 @@ def build_flowsheet(build_options=None, **kwargs):
     m = build()
     set_operating_conditions(m)
     set_scaling(m)
-    scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-    initialize_system(scaled_model)
-    solve_system(scaled_model)
-    fix_organic_recycle(scaled_model)
-    solve_system(scaled_model)
-    scaling.propagate_solution(scaled_model, m)
+    initialize_system(m)
+    solve_system(m)
+    fix_organic_recycle(m)
+    solve_system(m)
     _log.info(f"end/build-flowsheet build_options={build_options}")
     return m
 

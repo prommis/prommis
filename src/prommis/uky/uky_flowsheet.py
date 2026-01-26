@@ -267,7 +267,6 @@ def main():
     add_result_expressions(m)
     display_results(m)
 
-
     add_costing(m)
     initialize_costing(m)
 
@@ -307,7 +306,7 @@ def build():
     m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
-    m.fs.HClStrippingParams = HClStrippingParameterBlock()
+    m.fs.HCl_stripping_params = HClStrippingParameterBlock()
 
     m.fs.leach = LeachingTrain(
         number_of_tanks=2,
@@ -333,7 +332,7 @@ def build():
     )
 
     m.fs.scrubber_HCl_leach_translator = TranslatorHClLeach(
-        inlet_property_package=m.fs.HClStrippingParams,
+        inlet_property_package=m.fs.HCl_stripping_params,
         outlet_property_package=m.fs.leach_soln,
     )
 
@@ -378,13 +377,13 @@ def build():
         create_hydrostatic_pressure_terms=False,
     )
 
-    m.fs.acid_feed1 = Feed(property_package=m.fs.HClStrippingParams)
+    m.fs.acid_feed1 = Feed(property_package=m.fs.HCl_stripping_params)
 
     m.fs.solex_rougher_scrub = SolventExtraction(
         number_of_finite_elements=1,
         dynamic=False,
         aqueous_stream={
-            "property_package": m.fs.HClStrippingParams,
+            "property_package": m.fs.HCl_stripping_params,
             "flow_direction": FlowDirection.backward,
             "has_energy_balance": False,
             "has_pressure_balance": False,
@@ -400,13 +399,13 @@ def build():
         create_hydrostatic_pressure_terms=False,
     )
 
-    m.fs.acid_feed2 = Feed(property_package=m.fs.HClStrippingParams)
+    m.fs.acid_feed2 = Feed(property_package=m.fs.HCl_stripping_params)
 
     m.fs.solex_rougher_strip = SolventExtraction(
         number_of_finite_elements=2,
         dynamic=False,
         aqueous_stream={
-            "property_package": m.fs.HClStrippingParams,
+            "property_package": m.fs.HCl_stripping_params,
             "flow_direction": FlowDirection.backward,
             "has_energy_balance": False,
             "has_pressure_balance": False,
@@ -448,7 +447,7 @@ def build():
         energy_split_basis=EnergySplittingType.none,
     )
     m.fs.scrub_sep = Separator(
-        property_package=m.fs.HClStrippingParams,
+        property_package=m.fs.HCl_stripping_params,
         outlet_list=["recycle", "purge"],
         split_basis=SplittingType.totalFlow,
         material_balance_type=MaterialBalanceType.componentTotal,
@@ -462,7 +461,7 @@ def build():
         number_of_finite_elements=3,
         dynamic=False,
         aqueous_stream={
-            "property_package": m.fs.HClStrippingParams,
+            "property_package": m.fs.HCl_stripping_params,
             "flow_direction": FlowDirection.forward,
             "has_energy_balance": False,
             "has_pressure_balance": False,
@@ -482,7 +481,7 @@ def build():
         number_of_finite_elements=3,
         dynamic=False,
         aqueous_stream={
-            "property_package": m.fs.HClStrippingParams,
+            "property_package": m.fs.HCl_stripping_params,
             "flow_direction": FlowDirection.backward,
             "has_energy_balance": False,
             "has_pressure_balance": False,
@@ -519,7 +518,7 @@ def build():
     )
 
     m.fs.cleaner_HCl_leach_translator = TranslatorHClLeach(
-        inlet_property_package=m.fs.HClStrippingParams,
+        inlet_property_package=m.fs.HCl_stripping_params,
         outlet_property_package=m.fs.leach_soln,
     )
 
@@ -532,7 +531,7 @@ def build():
         momentum_mixing_type=MomentumMixingType.none,
     )
 
-    m.fs.acid_feed3 = Feed(property_package=m.fs.HClStrippingParams)
+    m.fs.acid_feed3 = Feed(property_package=m.fs.HCl_stripping_params)
     m.fs.cleaner_organic_purge = Product(property_package=m.fs.prop_o)
 
     # --------------------------------------------------------------------------------------------------------------
@@ -541,21 +540,21 @@ def build():
     m.fs.properties_solid = PrecipitateParameters()
 
     m.fs.precipitator = Precipitator(
-        property_package_aqueous=m.fs.HClStrippingParams,
+        property_package_aqueous=m.fs.HCl_stripping_params,
         property_package_precipitate=m.fs.properties_solid,
         make_volume_balance_constraint=False,
     )
 
     m.fs.sl_sep2 = SLSeparator(
         solid_property_package=m.fs.properties_solid,
-        liquid_property_package=m.fs.HClStrippingParams,
+        liquid_property_package=m.fs.HCl_stripping_params,
         material_balance_type=MaterialBalanceType.componentTotal,
         momentum_balance_type=MomentumBalanceType.none,
         energy_split_basis=EnergySplittingType.none,
     )
 
     m.fs.precip_sep = Separator(
-        property_package=m.fs.HClStrippingParams,
+        property_package=m.fs.HCl_stripping_params,
         outlet_list=["recycle", "purge"],
         split_basis=SplittingType.totalFlow,
         material_balance_type=MaterialBalanceType.componentTotal,
@@ -564,7 +563,7 @@ def build():
     )
 
     m.fs.precip_sx_mixer = Mixer(
-        property_package=m.fs.HClStrippingParams,
+        property_package=m.fs.HCl_stripping_params,
         num_inlets=2,
         inlet_list=["precip", "rougher"],
         material_balance_type=MaterialBalanceType.componentTotal,
@@ -572,7 +571,7 @@ def build():
         momentum_mixing_type=MomentumMixingType.none,
     )
 
-    m.fs.precip_purge = Product(property_package=m.fs.HClStrippingParams)
+    m.fs.precip_purge = Product(property_package=m.fs.HCl_stripping_params)
     # -----------------------------------------------------------------------------------------------------------------
     # Roasting property and unit models
 
@@ -587,7 +586,7 @@ def build():
     m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
         property_package_precipitate_solid=m.fs.prop_solid,
-        property_package_precipitate_liquid=m.fs.HClStrippingParams,
+        property_package_precipitate_liquid=m.fs.HCl_stripping_params,
         has_holdup=False,
         has_heat_transfer=True,
         has_pressure_change=True,
@@ -598,19 +597,19 @@ def build():
 
     # m.fs.translator_leaching_to_precipitate = TranslatorLeachPrecip(
     #     inlet_property_package=m.fs.leach_soln,
-    #     outlet_property_package=m.fs.HClStrippingParams,
+    #     outlet_property_package=m.fs.HCl_stripping_params,
     # )
     # m.fs.translator_precipitate_to_leaching = TranslatorLeachPrecip(
-    #     inlet_property_package=m.fs.HClStrippingParams,
+    #     inlet_property_package=m.fs.HCl_stripping_params,
     #     outlet_property_package=m.fs.leach_soln,
     # )
     # m.fs.translator_sep_to_roast = TranslatorLeachPrecip(
     #     inlet_property_package=m.fs.leach_soln,
-    #     outlet_property_package=m.fs.HClStrippingParams,
+    #     outlet_property_package=m.fs.HCl_stripping_params,
     # )
     # m.fs.translator_precip_sep_to_purge = TranslatorLeachPrecip(
     #     inlet_property_package=m.fs.leach_soln,
-    #     outlet_property_package=m.fs.HClStrippingParams,
+    #     outlet_property_package=m.fs.HCl_stripping_params,
     # )
 
     # -----------------------------------------------------------------------------------------------------------------
@@ -739,7 +738,7 @@ def build():
     m.fs.sx_cleaner_strip_org_recycle = Arc(
         source=m.fs.cleaner_sep.recycle, destination=m.fs.cleaner_mixer.recycle
     )
-    m.fs.sx_cleaner_strip_precip = Arc(
+    m.fs.sx_cleaner_strip_aq_precip = Arc(
         source=m.fs.solex_cleaner_strip.aqueous_outlet,
         destination=m.fs.precipitator.aqueous_inlet,
     )
@@ -1280,7 +1279,6 @@ def initialize_system(m):
     ]
 
     initializer_bt = BlockTriangularizationInitializer()
-
 
     def function(unit):
         if unit in feed_units:
@@ -2400,7 +2398,10 @@ def add_costing(m):
             ),
             to_units=units.hp,
         )
-    m.fs.scaling_constraints[m.fs.leach_mixer.power] = m.fs.leach_mixer.power_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.leach_mixer.power] = (
+        m.fs.leach_mixer.power_scaling_constraint
+    )
 
     m.fs.leach_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2448,8 +2449,10 @@ def add_costing(m):
             ),
             to_units=units.ft**2,
         )
-    
-    m.fs.scaling_constraints[m.fs.leach_sx_mixer.area] = m.fs.leach_sx_mixer.area_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.leach_sx_mixer.area] = (
+        m.fs.leach_sx_mixer.area_scaling_constraint
+    )
 
     m.fs.leach_sx_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2480,7 +2483,9 @@ def add_costing(m):
             to_units=units.ft**3,
         )
 
-    m.fs.scaling_constraints[m.fs.sl_sep1.volume] = m.fs.sl_sep1.volume_scaling_constraint
+    m.fs.scaling_constraints[m.fs.sl_sep1.volume] = (
+        m.fs.sl_sep1.volume_scaling_constraint
+    )
 
     m.fs.sl_sep1.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2514,8 +2519,10 @@ def add_costing(m):
             ),
             to_units=units.MBTU / units.hr,
         )
-    
-    m.fs.scaling_constraints[m.fs.leach_solution_heater.duty] = m.fs.leach_solution_heater.duty_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.leach_solution_heater.duty] = (
+        m.fs.leach_solution_heater.duty_scaling_constraint
+    )
 
     m.fs.leach_solution_heater.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2549,7 +2556,10 @@ def add_costing(m):
             ),
             to_units=units.gal,
         )
-    m.fs.scaling_constraints[m.fs.rougher_solex_tank.volume] = m.fs.rougher_solex_tank.volume_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.rougher_solex_tank.volume] = (
+        m.fs.rougher_solex_tank.volume_scaling_constraint
+    )
 
     m.fs.rougher_solex_tank.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2579,8 +2589,10 @@ def add_costing(m):
             ),
             to_units=units.hp,
         )
-    
-    m.fs.scaling_constraints[m.fs.rougher_mixer.power] = m.fs.rougher_mixer.power_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.rougher_mixer.power] = (
+        m.fs.rougher_mixer.power_scaling_constraint
+    )
 
     m.fs.rougher_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2631,8 +2643,10 @@ def add_costing(m):
             ),
             to_units=units.gal,
         )
-    
-    m.fs.scaling_constraints[m.fs.rougher_solex_settler.volume] = m.fs.rougher_solex_settler.volume_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.rougher_solex_settler.volume] = (
+        m.fs.rougher_solex_settler.volume_scaling_constraint
+    )
 
     m.fs.rougher_solex_settler.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2665,8 +2679,10 @@ def add_costing(m):
             ),
             to_units=units.gal,
         )
-    
-    m.fs.scaling_constraints[m.fs.cleaner_solex_tank.volume] = m.fs.cleaner_solex_tank.volume_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.cleaner_solex_tank.volume] = (
+        m.fs.cleaner_solex_tank.volume_scaling_constraint
+    )
 
     m.fs.cleaner_solex_tank.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2696,8 +2712,10 @@ def add_costing(m):
             ),
             to_units=units.hp,
         )
-    
-    m.fs.scaling_constraints[m.fs.cleaner_mixer.power] = m.fs.cleaner_mixer.power_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.cleaner_mixer.power] = (
+        m.fs.cleaner_mixer.power_scaling_constraint
+    )
 
     m.fs.cleaner_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2748,8 +2766,10 @@ def add_costing(m):
             ),
             to_units=units.gal,
         )
-    
-    m.fs.scaling_constraints[m.fs.cleaner_solex_settler.volume] = m.fs.cleaner_solex_settler.volume_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.cleaner_solex_settler.volume] = (
+        m.fs.cleaner_solex_settler.volume_scaling_constraint
+    )
 
     m.fs.cleaner_solex_settler.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2780,8 +2800,10 @@ def add_costing(m):
             ),
             to_units=units.gal,
         )
-    
-    m.fs.scaling_constraints[m.fs.precipitator.volume] = m.fs.precipitator.volume_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.precipitator.volume] = (
+        m.fs.precipitator.volume_scaling_constraint
+    )
 
     m.fs.precipitator.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2814,8 +2836,10 @@ def add_costing(m):
             ),
             to_units=units.hp,
         )
-    
-    m.fs.scaling_constraints[m.fs.precipitator_mixer.power] = m.fs.precipitator_mixer.power_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.precipitator_mixer.power] = (
+        m.fs.precipitator_mixer.power_scaling_constraint
+    )
 
     m.fs.precipitator_mixer.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2861,8 +2885,10 @@ def add_costing(m):
             ),
             to_units=units.ft**3,
         )
-    
-    m.fs.scaling_constraints[m.fs.sl_sep2.volume] = m.fs.sl_sep2.volume_scaling_constraint
+
+    m.fs.scaling_constraints[m.fs.sl_sep2.volume] = (
+        m.fs.sl_sep2.volume_scaling_constraint
+    )
 
     m.fs.sl_sep2.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
@@ -2954,7 +2980,9 @@ def add_costing(m):
         )
     )
 
-    m.fs.scaling_constraints[m.fs.recovery_rate_per_year] = m.fs.recovery_rate_per_year_constraint
+    m.fs.scaling_constraints[m.fs.recovery_rate_per_year] = (
+        m.fs.recovery_rate_per_year_constraint
+    )
 
     # the land cost is the lease cost, or refining cost of REO produced
     m.fs.land_cost = Expression(
@@ -2995,7 +3023,9 @@ def add_costing(m):
         expr=m.fs.dust_and_volatiles[0]
         == units.convert(m.fs.roaster.flow_mass_dust[0], to_units=units.ton / units.hr)
     )
-    m.fs.scaling_constraints[m.fs.dust_and_volatiles] = m.fs.dust_and_volatiles_constraint
+    m.fs.scaling_constraints[m.fs.dust_and_volatiles] = (
+        m.fs.dust_and_volatiles_constraint
+    )
 
     m.fs.power = Var(m.fs.time, initialize=7, units=units.hp, bounds=(0, None))
     m.fs.power_constraint = Constraint(
@@ -3256,6 +3286,7 @@ def add_costing(m):
 
     return m
 
+
 def initialize_costing(m):
     """
     Initializes costing by calling block triangularization on the entire flowsheet.
@@ -3373,11 +3404,11 @@ def optimize_model(m):
 
     # Make extractant dosage a decision variable
     m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
-    m.fs.rougher_org_make_up.properties[0].extractant_dosage.bounds=(3, 10)
+    m.fs.rougher_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
     # m.fs.rougher_org_make_up.properties[0].extractant_dosage.fix(5)
 
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
-    m.fs.cleaner_org_make_up.properties[0].extractant_dosage.bounds=(3, 10)
+    m.fs.cleaner_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
     # m.fs.cleaner_org_make_up.properties[0].extractant_dosage.fix(5)
 
     # If the pH in the rougher scrub goes above 5 or 6, the equations get
@@ -3395,9 +3426,10 @@ def optimize_model(m):
     else:
         print("Flowsheet optimization did not converge.")
 
+
 def data_reconcilliation(m):
     m.fs.acid_feed1.flow_vol.unfix()
-    m.obj = Objective(expr = m.fs.acid_feed1.flow_vol[0])
+    m.obj = Objective(expr=m.fs.acid_feed1.flow_vol[0])
     m.fs.solex_rougher_scrub.mscontactor.aqueous[0.0, 1].pH_phase["liquid"].setub(3)
 
     solver = get_solver("ipopt_v2")
@@ -3410,6 +3442,7 @@ def data_reconcilliation(m):
         display_results(m)
     else:
         print("Data reconcilliation optimization did not converge.")
+
 
 if __name__ == "__main__":
     m, results = main()

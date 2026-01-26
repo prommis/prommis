@@ -70,6 +70,7 @@ is the extent of reaction :math:`r`, :math:`I_{aq}` is the set of all aqueous sp
 [1] Allan M.M. Leal, Dmitrii A. Kulik, William R. Smith, and Martin O. Saar. An overview of computational methods for chemical equilibrium and kinetic calculations for
 geochemical and reactive transport modeling. *Pure Appl. Chem.*, 89:597-643, 2017.
 """
+
 # Import Pyomo libraries
 import pyomo.environ as pyo
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue

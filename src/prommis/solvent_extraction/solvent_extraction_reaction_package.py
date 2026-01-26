@@ -16,6 +16,7 @@ This is an example of how to write a reaction package for rare earth elements in
 solvent extraction.
 
 """
+
 from pyomo.common.config import ConfigValue
 from pyomo.environ import Constraint, Param, Set, Var, units, log10
 

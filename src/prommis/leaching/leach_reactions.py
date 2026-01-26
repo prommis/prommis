@@ -13,6 +13,7 @@ This is an example of how to write a custom heterogeneous reaction package for u
 LeachTrain unit model.
 
 """
+
 from pyomo.common.config import ConfigValue
 from pyomo.environ import Expression, Param, Set, units
 

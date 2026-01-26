@@ -8,6 +8,7 @@
 Tests for UKy flowsheet.
 
 """
+
 import pytest
 
 from pyomo.environ import (

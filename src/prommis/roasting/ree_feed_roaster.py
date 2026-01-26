@@ -16,7 +16,7 @@ Reactions
 The reactions of impurities involved are listed below:
 
 1. Kaolinite calcination:
-   
+
    .. ce::
       Al2O3 \cdot 2SiO2 \cdot 2H2O -> Al2O3 + 2 SiO2 + 2 H2O (g)
 

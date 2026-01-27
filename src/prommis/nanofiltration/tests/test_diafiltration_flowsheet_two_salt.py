@@ -42,15 +42,13 @@ def test_main():
     # verify necessary variables are fixed
     assert m.fs.membrane.total_module_length.fixed
     assert m.fs.membrane.total_membrane_length.fixed
-    assert m.fs.membrane.applied_pressure.fixed
-    assert m.fs.membrane.feed_flow_volume[0].fixed
-    assert m.fs.membrane.feed_conc_mol_comp[0, "Li"].fixed
-    assert m.fs.membrane.feed_conc_mol_comp[0, "Co"].fixed
-    assert m.fs.membrane.feed_conc_mol_comp[0, "Cl"].fixed
-    assert m.fs.membrane.diafiltrate_flow_volume[0].fixed
-    assert m.fs.membrane.diafiltrate_conc_mol_comp[0, "Li"].fixed
-    assert m.fs.membrane.diafiltrate_conc_mol_comp[0, "Co"].fixed
-    assert m.fs.membrane.diafiltrate_conc_mol_comp[0, "Cl"].fixed
+    for t in m.fs.membrane.time:
+        assert m.fs.membrane.applied_pressure[t].fixed
+        assert m.fs.membrane.feed_flow_volume[t].fixed
+        assert m.fs.membrane.diafiltrate_flow_volume[t].fixed
+        for j in m.fs.membrane.solutes:
+            assert m.fs.membrane.feed_conc_mol_comp[t, j].fixed
+            assert m.fs.membrane.diafiltrate_conc_mol_comp[t, j].fixed
 
     # verify plots exist
     assert isinstance(overall_results_plot, plt.Figure)

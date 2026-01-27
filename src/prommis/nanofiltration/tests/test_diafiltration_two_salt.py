@@ -62,11 +62,9 @@ def diafiltration_two_salt():
     m.fs.unit.total_membrane_length.fix()
     m.fs.unit.applied_pressure.fix()
     m.fs.unit.feed_flow_volume.fix()
-    m.fs.unit.feed_conc_mol_comp[0, "Li"].fix()
-    m.fs.unit.feed_conc_mol_comp[0, "Co"].fix()
+    m.fs.unit.feed_conc_mol_comp.fix()
     m.fs.unit.diafiltrate_flow_volume.fix()
-    m.fs.unit.diafiltrate_conc_mol_comp[0, "Li"].fix()
-    m.fs.unit.diafiltrate_conc_mol_comp[0, "Co"].fix()
+    m.fs.unit.diafiltrate_conc_mol_comp.fix()
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -303,12 +301,12 @@ class TestDiafiltrationTwoSalt(object):
         assert len(diafiltration_two_salt.fs.unit.membrane_D_tilde_calculation) == 60
 
         assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_diffusion_coefficient_bilinear_calculation,
+            diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient_bilinear_calculation,
             Constraint,
         )
         assert (
             len(
-                diafiltration_two_salt.fs.unit.membrane_diffusion_coefficient_bilinear_calculation
+                diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient_bilinear_calculation
             )
             == 240
         )
@@ -325,12 +323,12 @@ class TestDiafiltrationTwoSalt(object):
         )
 
         assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_diffusion_coefficient_calculation,
+            diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient_calculation,
             Constraint,
         )
         assert (
             len(
-                diafiltration_two_salt.fs.unit.membrane_diffusion_coefficient_calculation
+                diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient_calculation
             )
             == 240
         )
@@ -376,126 +374,99 @@ class TestDiafiltrationTwoSalt(object):
             == 2
         )
 
-        for x in diafiltration_two_salt.fs.unit.dimensionless_module_length:
-            assert diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[
-                0, x, "Cl"
-            ].fixed
-            if x != 0:
-                assert not diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx_disc_eq[
-                    0, x, "Cl"
-                ].active
+        for t in diafiltration_two_salt.fs.unit.time:
+            for x in diafiltration_two_salt.fs.unit.dimensionless_module_length:
+                assert diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[
+                    t, x, "Cl"
+                ].fixed
+                if x != 0:
+                    assert not diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx_disc_eq[
+                        t, x, "Cl"
+                    ].active
 
-        assert diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 0].fixed
-        assert value(
-            diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 0]
-        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
-
-        assert diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 0, "Li"].fixed
-        assert value(
-            diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 0, "Li"]
-        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
-
-        assert diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 0, "Co"].fixed
-        assert value(
-            diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 0, "Co"]
-        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
-
-        for z in diafiltration_two_salt.fs.unit.dimensionless_membrane_thickness:
-            assert diafiltration_two_salt.fs.unit.membrane_conc_mol_comp[
-                0, 0, z, "Li"
-            ].fixed
+            assert diafiltration_two_salt.fs.unit.permeate_flow_volume[t, 0].fixed
             assert value(
-                diafiltration_two_salt.fs.unit.membrane_conc_mol_comp[0, 0, z, "Li"]
+                diafiltration_two_salt.fs.unit.permeate_flow_volume[t, 0]
             ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
-            assert diafiltration_two_salt.fs.unit.membrane_conc_mol_comp[
-                0, 0, z, "Co"
-            ].fixed
+            assert diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx[t, 0].fixed
             assert value(
-                diafiltration_two_salt.fs.unit.membrane_conc_mol_comp[0, 0, z, "Co"]
+                diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx[t, 0]
             ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
-            assert diafiltration_two_salt.fs.unit.membrane_conc_mol_comp[
-                0, 0, z, "Cl"
-            ].fixed
+            assert diafiltration_two_salt.fs.unit.volume_flux_water[t, 0].fixed
             assert value(
-                diafiltration_two_salt.fs.unit.membrane_conc_mol_comp[0, 0, z, "Cl"]
+                diafiltration_two_salt.fs.unit.volume_flux_water[t, 0]
             ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
-        assert diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[
-            0, 0, "Li"
-        ].fixed
-        assert value(
-            diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[0, 0, "Li"]
-        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+            for k in diafiltration_two_salt.fs.unit.cations:
+                assert diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[
+                    t, 0, k
+                ].fixed
+                assert value(
+                    diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[t, 0, k]
+                ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
-        assert diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[
-            0, 0, "Co"
-        ].fixed
-        assert value(
-            diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[0, 0, "Co"]
-        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+                assert diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[
+                    t, 0, k
+                ].fixed
+                assert value(
+                    diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[t, 0, k]
+                ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
-        assert diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx[0, 0].fixed
-        assert value(
-            diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx[0, 0]
-        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+            for j in diafiltration_two_salt.fs.unit.solutes:
+                assert diafiltration_two_salt.fs.unit.molar_ion_flux[t, 0, j].fixed
+                assert value(
+                    diafiltration_two_salt.fs.unit.molar_ion_flux[t, 0, j]
+                ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
-        assert diafiltration_two_salt.fs.unit.volume_flux_water[0, 0].fixed
-        assert value(diafiltration_two_salt.fs.unit.volume_flux_water[0, 0]) == value(
-            diafiltration_two_salt.fs.unit.numerical_zero_tolerance
-        )
-
-        assert diafiltration_two_salt.fs.unit.molar_ion_flux[0, 0, "Li"].fixed
-        assert value(
-            diafiltration_two_salt.fs.unit.molar_ion_flux[0, 0, "Li"]
-        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
-
-        assert diafiltration_two_salt.fs.unit.molar_ion_flux[0, 0, "Co"].fixed
-        assert value(
-            diafiltration_two_salt.fs.unit.molar_ion_flux[0, 0, "Co"]
-        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
-
-        assert diafiltration_two_salt.fs.unit.molar_ion_flux[0, 0, "Cl"].fixed
-        assert value(
-            diafiltration_two_salt.fs.unit.molar_ion_flux[0, 0, "Cl"]
-        ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+            for z in diafiltration_two_salt.fs.unit.dimensionless_membrane_thickness:
+                for j in diafiltration_two_salt.fs.unit.solutes:
+                    assert diafiltration_two_salt.fs.unit.membrane_conc_mol_comp[
+                        t, 0, z, j
+                    ].fixed
+                    assert value(
+                        diafiltration_two_salt.fs.unit.membrane_conc_mol_comp[
+                            t, 0, z, j
+                        ]
+                    ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
 
         # scaling factors
-        for x in diafiltration_two_salt.fs.unit.dimensionless_module_length:
-            if x != 0:
-                assert (
-                    diafiltration_two_salt.fs.unit.scaling_factor[
-                        diafiltration_two_salt.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                            x, "Co"
+        for t in diafiltration_two_salt.fs.unit.time:
+            for x in diafiltration_two_salt.fs.unit.dimensionless_module_length:
+                if x != 0:
+                    assert (
+                        diafiltration_two_salt.fs.unit.scaling_factor[
+                            diafiltration_two_salt.fs.unit.cation_equilibrium_retentate_membrane_interface[
+                                t, x, "Co"
+                            ]
                         ]
-                    ]
-                    == 1e-5
-                )
-                assert (
-                    diafiltration_two_salt.fs.unit.scaling_factor[
-                        diafiltration_two_salt.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                            x, "Li"
+                        == 1e-5
+                    )
+                    assert (
+                        diafiltration_two_salt.fs.unit.scaling_factor[
+                            diafiltration_two_salt.fs.unit.cation_equilibrium_retentate_membrane_interface[
+                                t, x, "Li"
+                            ]
                         ]
-                    ]
-                    == 1e-3
-                )
-                assert (
-                    diafiltration_two_salt.fs.unit.scaling_factor[
-                        diafiltration_two_salt.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                            x, "Co"
+                        == 1e-3
+                    )
+                    assert (
+                        diafiltration_two_salt.fs.unit.scaling_factor[
+                            diafiltration_two_salt.fs.unit.cation_equilibrium_membrane_permeate_interface[
+                                t, x, "Co"
+                            ]
                         ]
-                    ]
-                    == 1e-5
-                )
-                assert (
-                    diafiltration_two_salt.fs.unit.scaling_factor[
-                        diafiltration_two_salt.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                            x, "Li"
+                        == 1e-5
+                    )
+                    assert (
+                        diafiltration_two_salt.fs.unit.scaling_factor[
+                            diafiltration_two_salt.fs.unit.cation_equilibrium_membrane_permeate_interface[
+                                t, x, "Li"
+                            ]
                         ]
-                    ]
-                    == 1e-3
-                )
+                        == 1e-3
+                    )
 
         # ports
         assert isinstance(diafiltration_two_salt.fs.unit.feed_inlet, Port)

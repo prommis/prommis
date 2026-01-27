@@ -97,20 +97,14 @@ def build_membrane_parameters(m):
 
 
 def fix_variables(m):
-    # fix degrees of freedom in the membrane
+    # fix the nine degrees of freedom in the membrane
     m.fs.membrane.total_module_length.fix()
     m.fs.membrane.total_membrane_length.fix()
     m.fs.membrane.applied_pressure.fix()
-
     m.fs.membrane.feed_flow_volume.fix()
-    m.fs.membrane.feed_conc_mol_comp[0, "Li"].fix()
-    m.fs.membrane.feed_conc_mol_comp[0, "Co"].fix()
-    m.fs.membrane.feed_conc_mol_comp[0, "Cl"].fix()
-
     m.fs.membrane.diafiltrate_flow_volume.fix()
-    m.fs.membrane.diafiltrate_conc_mol_comp[0, "Li"].fix()
-    m.fs.membrane.diafiltrate_conc_mol_comp[0, "Co"].fix()
-    m.fs.membrane.diafiltrate_conc_mol_comp[0, "Cl"].fix()
+    m.fs.membrane.feed_conc_mol_comp.fix()
+    m.fs.membrane.diafiltrate_conc_mol_comp.fix()
 
 
 def add_and_connect_streams(m):

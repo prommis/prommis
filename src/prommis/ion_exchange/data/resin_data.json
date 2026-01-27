@@ -1,0 +1,86 @@
+{
+    "A850": {
+	"type": "Strong-base Type I Acrylic Anion Exchange",
+	"bed_expansion": {
+	    "units": "fraction",
+	    "temperature_ref": 20,
+	    "temperature_units": "C",
+	    "param_a": 1.23e2,
+	    "param_b": 1.02e1,
+	    "param_c": 1.35e3
+	},
+	"pressure_drop": {
+	    "units": "psi/m",
+	    "temperature_ref": 20,
+	    "temperature_units": "C",
+	    "param_a": 0.609,
+	    "param_b": 0.173,
+	    "param_c": 8.28e4
+	},
+	"diameter": {
+	    "units": "m",
+	    "lb": 5e-4,
+	    "ub": 1.5e-3
+	},
+	"density": {
+	    "units": "kg/L"
+	},
+	"bulk_density": {
+	    "units": "kg/L",
+	    "lb": 0.65,
+	    "ub": 0.95
+	},
+	"reference": [
+	    " John C. Crittenden, R. Rhodes Trussell, David W. Hand, Kerry J. Howe, George Tchobanoglous",
+	    " MWHs Water Treatment: Principles and Design. Chapter 16, Figures 16-14 and 16-15.",
+	    " Third Edition"
+	]
+    },
+    "S950": {
+	"functional_group": "Aminophosphonic",
+	"type": "Chelating Polystyrene-Divinylbenzene",
+	"bed_expansion": {
+	    "units": "fraction",
+	    "temperature_ref": 20,
+	    "temperature_units": "C",
+	    "param_a": 0,
+	    "param_b": 0.0596,
+	    "param_c": -4e-5
+	},
+	"pressure_drop": {
+	    "units": "psi/m",
+	    "temperature_ref": 20,
+	    "temperature_units": "C",
+	    "param_a": 0,
+	    "param_b": 0.1668,
+	    "param_c": 2e-4
+	},
+	"diameter": {
+	    "units": "m",
+	    "value": 750e-6,
+	    "lb": 0,
+	    "ub": 2.5e-3
+	},
+	"density": {
+	    "units": "kg/L",
+	    "value": 1.12661
+	},
+	"density_kgm3": {
+	    "value": 1126.61
+	},
+	"bulk_density": {
+	    "units": "kg/L",
+	    "lb": 0.2,
+	    "ub": 1.5
+	},
+	"porosity": {
+	    "value": 0.8
+	},
+	"reference": [
+	    " M. Hermassi, M. Granados, C. Valderrama, N. Skoglund, C. Ayora, J.L. Cortina,",
+	    " Impact of functional group types in ion exchange resins on rare earth element recovery from treated acid mine waters.",
+	    " Journal of Cleaner Production 379 (2022) 134742.",
+	    " Product data sheet: URL: https://www.purolite.com/product/mts9500"
+	]
+    }
+}

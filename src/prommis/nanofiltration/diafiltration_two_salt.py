@@ -15,21 +15,18 @@ This membrane unit model is for the multi-component diafiltration of a two-salt 
 Configuration Arguments
 -----------------------
 
-The Two-Salt Diafiltration unit model requires a property package that provides the valency (:math:`z_i`), single solute diffusion coefficient (:math:`D_i`) in :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1}`, reflection coefficient (:math:`\sigma_i`), partition coefficient (:math:`H_i`) at the solution-membrane interface(s), and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams.
+The Two-Salt Diafiltration unit model requires a property package that provides the valency (:math:`z_i`), single solute diffusion coefficient (:math:`D_i`) in :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1}`, reflection coefficient (:math:`\sigma_i`), partition coefficients (:math:`H_{i,r}` and :math:`H_{i,p}`) at the retentate-membrane and membrane-permeate interfaces, and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams.
 
 There are two required arguments, ``NFE_module_length`` and ``NFE_membrane_thickness``, to specify the desired number of finite elements across the width (module length) and thickness of the membrane, respectively.
 
 Degrees of Freedom
 ------------------
 
-The Two-Salt Diafiltration unit model has three degrees of freedom (variable names and default values are provided in parentheses):
+The Two-Salt Diafiltration unit model has nine degrees of freedom (variable names and default values are provided in parentheses):
 
 #. the length of the membrane module (``total_module_length``; :math:`4 \, \mathrm{m}`)
 #. the length of the membrane (``total_membrane_length``; :math:`41 \, \mathrm{m}`)
 #. the pressure applied to the membrane system (``applied_pressure``; :math:`10 \, \mathrm{bar}`)
-
-To run a simulation (with zero degrees of freedom) in a flowsheet, the following variables must be fixed to obtain zero degrees of freedom (variable names and default values are provided in parentheses):
-
 #. the volumetric flow rate of the feed (``feed_flow_volume``; :math:`12.5 \, \mathrm{m}^3 \, \mathrm{h}^{-1}`)
 #. the lithium concentration in the feed (``feed_conc_mol_comp[t,"Li"]``; :math:`245 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
 #. the cobalt concentration in the feed (``feed_conc_mol_comp[t,"Co"]``; :math:`288 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
@@ -64,7 +61,7 @@ The transport mechanisms modeled within the membrane are convection, diffusion, 
 Sets
 ----
 
-The Two-Salt Diafiltration model defines the following discrete sets for ions and cations in the system, respectively:
+The Two-Salt Diafiltration model defines the following discrete sets for solutes and cations in the system, respectively:
 
 .. math:: \mathcal{I}=\{\mathrm{Li,Co,Cl}\}
 .. math:: \mathcal{K}=\{\mathrm{Li,Co}\}

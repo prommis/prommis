@@ -25,6 +25,7 @@ from pyomo.dae.flatten import flatten_dae_components
 
 from idaes.core import FlowsheetBlockData, declare_process_block_class
 from idaes.core.initialization import ModularInitializerBase
+from idaes.core.scaling import CustomScalerBase
 from idaes.core.util import to_json, from_json
 
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
@@ -33,6 +34,7 @@ from prommis.properties.coal_refuse_properties import CoalRefuseParameters
 from prommis.properties.sulfuric_acid_leaching_properties import (
     SulfuricAcidLeachingParameters,
 )
+from prommis.util import scale_time_discretization_equations
 
 
 def copy_first_steady_state(m):
@@ -243,43 +245,118 @@ class CocurrentSlurryLeachingFlowsheetData(FlowsheetBlockData):
             7.54827e-06 * units.kg / units.kg
         )
 
-    def fix_initial_conditions(self, t=None):
-        if t is None:
-            t = self.time.first()
+    def reduce_dae_index(self, t0=None):
+        if t0 is None:
+            t0 = self.time.first()
+        self.leach.mscontactor.dC_dt = Var(
+            self.time,
+            self.leach.mscontactor.elements,
+            self.leach_soln.component_list,
+            initialize=0,
+            units=units.mol / units.L / units.hour,
+        )
 
-        self.leach.mscontactor.liquid[t, :].flow_vol.fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["H"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["HSO4"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Cl"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Sc"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Y"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["La"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Ce"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Pr"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Nd"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Sm"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Gd"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Dy"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Al"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Ca"].fix()
-        self.leach.mscontactor.liquid[t, :].conc_mass_comp["Fe"].fix()
+        self.leach.mscontactor.dthetaL_dt = Var(
+            self.time,
+            self.leach.mscontactor.elements,
+            initialize=0,
+            units=1 / units.hour,
+        )
 
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["inerts"].fix()
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["Y2O3"].fix()
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["La2O3"].fix()
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["Ce2O3"].fix()
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["Pr2O3"].fix()
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["Nd2O3"].fix()
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["Sm2O3"].fix()
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["Gd2O3"].fix()
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["Dy2O3"].fix()
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["Al2O3"].fix()
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["CaO"].fix()
-        self.leach.mscontactor.solid[t, :].mass_frac_comp["Fe2O3"].fix()
-        self.leach.mscontactor.solid[t, :].flow_mass.fix()
+        @self.leach.mscontactor.Constraint(self.time, self.leach.mscontactor.elements, self.leach_soln.component_list)
+        def material_accumulation_eqn(b, t, s, j):
+            return (
+                b.liquid_material_accumulation[t, s, "liquid", j]
+                == b.dC_dt[t, s, j]
+                * units.convert(b.volume[s], to_units=units.L)
+                * b.volume_frac_stream[t, s, "liquid"]
+                + units.convert(b.volume[s], to_units=units.L)
+                * b.liquid[t, s].conc_mol_comp[j]
+                * b.dthetaL_dt[t, s]
+            )
+        @self.leach.mscontactor.Constraint(self.time, self.leach.mscontactor.elements)
+        def constant_water_density_eqn(b, t, s):
+            return b.dC_dt[t, s, "H2O"] == 0
 
-        self.leach.mscontactor.liquid_inherent_reaction_extent[t, :, "Ka2"].fix()
+        for t in self.time:
+            for s in self.leach.mscontactor.elements:
+                if t != t0:
+                    self.leach.mscontactor.liquid_material_accumulation_disc_eq[
+                        t, s, "liquid", "SO4"
+                    ].deactivate()
 
+        @self.leach.mscontactor.Constraint(self.time, self.leach.mscontactor.elements)
+        def hso4_dissociation_eqn(b, t, s):
+            return (
+                b.liquid[t, s].params.Ka2 * b.dC_dt[t, s, "HSO4"]
+                == b.dC_dt[t, s, "H"]
+                * b.liquid[t, s].conc_mol_comp["SO4"]
+                + b.liquid[t, s].conc_mol_comp["H"]
+                * b.dC_dt[t, s, "SO4"]
+            )
+
+        # deactivating discretization equation for H2O
+        for t in self.time:
+            for s in self.leach.mscontactor.elements:
+                if t != t0:
+                    self.leach.mscontactor.liquid_material_accumulation_disc_eq[
+                        t, s, "liquid", "H2O"
+                    ].deactivate()
+
+        self.leach.mscontactor.dthetaS_dt = Var(
+            self.time,
+            self.leach.mscontactor.elements,
+            initialize=0,
+            units=1 / units.hour,
+        )
+
+        self.leach.mscontactor.dx_dt = Var(
+            self.time,
+            self.leach.mscontactor.elements,
+            self.coal.component_list,
+            initialize=0,
+            units=1 / units.hour,
+        )
+
+        @self.leach.mscontactor.Constraint(self.time, self.leach.mscontactor.elements)
+        def volume_fraction_derivative_eqn(b, t, s):
+            return b.dthetaS_dt[t, s] + b.dthetaL_dt[t, s] == 0
+
+        @self.leach.mscontactor.Constraint(self.time, self.leach.mscontactor.elements, self.coal.component_list)
+        def solid_material_accumulation_eqn(b, t, s, e):
+
+            return b.solid_material_accumulation[
+                t, s, "solid", e
+            ] == units.convert(
+                (b.solid[t, s].params.dens_mass / b.solid[t, s].params.mw[e]) * b.volume[s],
+                to_units=units.mol,
+            ) * (
+                b.volume_frac_stream[t, s, "solid"]
+                * b.dx_dt[t, s, e]
+                + b.dthetaS_dt[t, s]
+                * b.solid[t, s].mass_frac_comp[e]
+            )
+
+        @self.leach.mscontactor.Constraint(self.time, self.leach.mscontactor.elements)
+        def mass_fraction_derivative_eqn(b, t, s):
+            return (
+                sum(b.dx_dt[t, s, j] for j in b.solid[t, s].params.component_list)
+                == 0
+            )
+
+    def fix_initial_conditions(self, t0=None):
+        if t0 is None:
+            t0 = self.time.first()
+
+        for k in self.leach_soln.component_list:
+            if k not in [
+                "H2O",
+                "SO4",
+            ]:
+                self.leach.mscontactor.liquid_material_holdup[t0, 1, "liquid", k].fix()
+
+        self.leach.mscontactor.solid_material_holdup[t0,:, :, :].fix()
+    
     def scale_model(self):
         """
         Apply scaling factors to improve solver performance.
@@ -306,27 +383,55 @@ class CocurrentSlurryLeachingFlowsheetData(FlowsheetBlockData):
         scaler_obj.default_scaling_factors["solid_phase_fraction"] = 1
         scaler_obj.scale_model(self.leach, submodel_scalers=submodel_scalers)
 
+    def scale_dynamics(self, sf_t):
+        scale_time_discretization_equations(self, self.time, sf_t)
 
-def plot_results(m, perturb_time):
-    # Plotting the results for REE oxides
-    REE_set = m.fs.coal.component_list - ["inerts", "Al2O3", "Fe2O3", "CaO"]
-    for e in REE_set:
-        plt.plot(m.fs.time, m.fs.leach.recovery[:, e]())
-    plt.legend(REE_set)
-    plt.xlabel("Time (h)")
-    plt.ylabel("Recovery %")
-    plt.axvline(
-        x=perturb_time,
-        color="r",
-        linestyle="--",
-        label=f"Perturbation at t={perturb_time}h",
-    )
-    plt.title("REE oxide recovery variation wrt time, with perturbation at t=12 ")
-    plt.figure()
-    plt.plot(m.fs.time, m.fs.leach.mscontactor.solid[:, :].flow_mass())
-    plt.title("Solid mass flow rate variation wrt time")
-    plt.xlabel("Time (h)")
-    plt.ylabel("Solid mass flow rate (kg/h)")
+        csb = CustomScalerBase(
+            max_variable_scaling_factor = 1e20,
+            min_variable_scaling_factor = 1e-20,
+            max_constraint_scaling_factor = 1e20,
+            min_constraint_scaling_factor = 1e-20,
+        )
+
+        for (t, s, j), vardata in self.leach.mscontactor.dC_dt.items():
+            sf_C_j = csb.get_scaling_factor(self.leach.mscontactor.liquid[t, s].conc_mol_comp[j])
+            csb.set_variable_scaling_factor(vardata, sf_C_j / sf_t)
+
+        for (t, s), vardata in self.leach.mscontactor.dthetaL_dt.items():
+            sf_theta = csb.get_scaling_factor(self.leach.mscontactor.volume_frac_stream[t, s, "liquid"])
+            csb.set_variable_scaling_factor(vardata, sf_theta / sf_t)
+
+        for (t, s, j), condata in self.leach.mscontactor.material_accumulation_eqn.items():
+            csb.scale_constraint_by_component(
+                condata,
+                self.leach.mscontactor.liquid_material_accumulation[t, s, "liquid", j]
+            )
+
+        for (t, s), condata in self.leach.mscontactor.constant_water_density_eqn.items():
+            csb.scale_constraint_by_component(
+                condata, 
+                self.leach.mscontactor.dC_dt[t, s, "H2O"]
+            )
+        for condata in self.leach.mscontactor.hso4_dissociation_eqn.values():
+            csb.scale_constraint_by_nominal_value(condata)
+
+        for (t, s), vardata in self.leach.mscontactor.dthetaS_dt.items():
+            sf_theta = csb.get_scaling_factor(self.leach.mscontactor.volume_frac_stream[t, s, "solid"])
+            csb.set_variable_scaling_factor(vardata, sf_theta / sf_t)
+
+        for (t, s, j), vardata in self.leach.mscontactor.dx_dt.items():
+            sf_x_j = csb.get_scaling_factor(self.leach.mscontactor.solid[t, s].mass_frac_comp[j])
+            csb.set_variable_scaling_factor(vardata, sf_x_j / sf_t)
+
+        for condata in self.leach.mscontactor.volume_fraction_derivative_eqn.values():
+            csb.scale_constraint_by_nominal_value(condata)
+
+        for condata in self.leach.mscontactor.solid_material_accumulation_eqn.values():
+            csb.scale_constraint_by_nominal_value(condata)
+        
+        for condata in self.leach.mscontactor.mass_fraction_derivative_eqn.values():
+            csb.scale_constraint_by_nominal_value(condata)
+
 
 
 def create_one_tank_json():

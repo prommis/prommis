@@ -7,12 +7,12 @@
 """
 Temporary home for assert_solution_equivalent until it gets moved to IDAES
 """
-
+from math import ceil
 import textwrap
 import pytest
 
 from pyomo.common.collections import ComponentSet
-from pyomo.environ import Expression, Reference, value, Var
+from pyomo.environ import Expression, log10, Reference, value, Var
 from pyomo.dae import DerivativeVar
 from pyomo.dae.flatten import flatten_dae_components, slice_component_along_sets
 
@@ -50,9 +50,11 @@ def assert_solution_equivalent(blk, expected_results):
         }
     """
 
+    n_failures = 0
     failures = []
 
     for name, expected_values_dict in expected_results.items():
+        recorded_var = False
         obj = blk.find_component(name)
         if obj is None:
             blk_name = blk.name
@@ -75,23 +77,51 @@ def assert_solution_equivalent(blk, expected_results):
             continue
 
         for index, (expected_value, rel, abs) in expected_values_dict.items():
-            component_to_test = obj if index is None else obj[index]
-            actual_value = value(component_to_test)
-
-            # Determine if the values are approximately equal
+            absent_index = False
             is_close = False
-            if actual_value == pytest.approx(expected_value, rel=rel, abs=abs):
-                is_close = True
+            if index is None:
+                component_to_test = obj
+            else:
+                if index in obj:
+                    component_to_test = obj[index]
+                else:
+                    absent_index = True
+            if not absent_index:
+                actual_value = value(component_to_test)
+
+                # Determine if the values are approximately equal
+                if actual_value == pytest.approx(expected_value, rel=rel, abs=abs):
+                    is_close = True
+            if (absent_index or not is_close) and not recorded_var:
+                failures.append(f"  - {obj_type}: {name}")
+                recorded_var = True
+            if absent_index:
+                failure_msg = f"    Index:    {index} is absent"
+                failures.append(failure_msg)
+                n_failures += 1
+                continue
 
             # If the comparison fails, record the details
             if not is_close:
+                if rel is not None:
+                    n_sig_figs = ceil(-log10(rel)) + 1
+                    format_spec = "." + str(n_sig_figs) + "e"
+                elif abs is not None:
+                    n_sig_figs = ceil(-log10(abs)) + 1
+                    format_spec = "." + str(n_sig_figs) + "f"
+                else:
+                    format_spec = ".7e"
                 failure_msg = (
-                    f"  - {obj_type}: {name}\n"
                     f"    Index:    {index}\n"
-                    f"    Expected: {expected_value}\n"
-                    f"    Actual:   {actual_value}"
+                    f"    Expected: {expected_value:{format_spec}}\n"
+                    f"    Actual:   {actual_value:{format_spec}}"
                 )
                 failures.append(failure_msg)
+                n_failures += 1
+
+        if recorded_var:
+            # Extra space between variables
+            failures[-1] = failures[-1] + "\n"
 
     # --- Final Assertion and Report Generation ---
     if len(failures) > 0:
@@ -99,7 +129,7 @@ def assert_solution_equivalent(blk, expected_results):
         report_header = textwrap.dedent(
             f"""
         =========================== Test Value Mismatches ============================
-        Found {len(failures)} mismatch(es) between expected and actual model values.
+        Found {n_failures} mismatch(es) between expected and actual model values.
         Please review the values below and update the test suite if necessary.
         ==============================================================================
         """

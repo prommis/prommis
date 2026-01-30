@@ -4,19 +4,13 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-from copy import deepcopy
-
 from pyomo.environ import (
     assert_optimal_termination,
     ConcreteModel,
-    SolverFactory,
-    value,
     Var,
-    units
+    units,
 )
-from pyomo.common.fileutils import this_file_dir
 
-from idaes.core.initialization import BlockTriangularizationInitializer
 from idaes.core.solvers import get_solver
 from idaes.core.scaling.util import jacobian_cond
 from idaes.core.util import DiagnosticsToolbox, from_json, StoreSpec
@@ -24,7 +18,7 @@ from idaes.core.util import DiagnosticsToolbox, from_json, StoreSpec
 import pytest
 
 from prommis.util import assert_solution_equivalent, copy_first_steady_state
-from prommis.leaching.leach_flowsheet_merged import CocurrentSlurryLeachingFlowsheet
+from prommis.leaching.leach_flowsheet import CocurrentSlurryLeachingFlowsheet
 
 _expected_results_steady_one_tank = {}
 _rel = 1e-5
@@ -45,7 +39,9 @@ _expected_results_steady_one_tank["recovery"] = {
     "CaO": (51.45052459223044, _rel, _abs),
     "Fe2O3": (16.33850709753919, _rel, _abs),
 }
-_expected_results_steady_one_tank["fs.leach.mscontactor.solid[0, 1].conversion_comp"] = {
+_expected_results_steady_one_tank[
+    "fs.leach.mscontactor.solid[0, 1].conversion_comp"
+] = {
     "Al2O3": (0.03003765546930494, _rel, _abs),
     "CaO": (0.5145052459223426, _rel, _abs),
     "Ce2O3": (0.4207435931354908, _rel, _abs),
@@ -69,7 +65,9 @@ _expected_results_steady_two_tanks[
     "fs.leach.mscontactor.solid[0, 1].conversion_comp"
 ]
 
-_expected_results_steady_two_tanks["fs.leach.mscontactor.solid[0, 2].conversion_comp"] = {
+_expected_results_steady_two_tanks[
+    "fs.leach.mscontactor.solid[0, 2].conversion_comp"
+] = {
     "Al2O3": (3.117560e-02, _rel, _abs),
     "CaO": (7.481940e-01, _rel, _abs),
     "Ce2O3": (5.202264e-01, _rel, _abs),
@@ -87,19 +85,20 @@ _expected_results_steady_two_tanks["fs.leach.mscontactor.solid[0, 2].conversion_
 
 _expected_results_steady_two_tanks["recovery"] = {
     "inerts": (0, _rel, _abs),
-    "Sc2O3": (6.510992e+00, _rel, _abs),
-    "Y2O3": (1.918858e+01, _rel, _abs),
-    "La2O3": (5.083381e+01, _rel, _abs),
-    "Ce2O3": (5.202264e+01, _rel, _abs),
-    "Pr2O3": (6.166401e+01, _rel, _abs),
-    "Nd2O3": (5.454125e+01, _rel, _abs),
-    "Sm2O3": (2.960138e+01, _rel, _abs),
-    "Gd2O3": (6.646174e+01, _rel, _abs),
-    "Dy2O3": (3.049849e+01, _rel, _abs),
-    "Al2O3": (3.117559e+00, _rel, _abs),
-    "CaO": (7.481940e+01, _rel, _abs),
-    "Fe2O3": (1.856473e+01, _rel, _abs),
+    "Sc2O3": (6.510992e00, _rel, _abs),
+    "Y2O3": (1.918858e01, _rel, _abs),
+    "La2O3": (5.083381e01, _rel, _abs),
+    "Ce2O3": (5.202264e01, _rel, _abs),
+    "Pr2O3": (6.166401e01, _rel, _abs),
+    "Nd2O3": (5.454125e01, _rel, _abs),
+    "Sm2O3": (2.960138e01, _rel, _abs),
+    "Gd2O3": (6.646174e01, _rel, _abs),
+    "Dy2O3": (3.049849e01, _rel, _abs),
+    "Al2O3": (3.117559e00, _rel, _abs),
+    "CaO": (7.481940e01, _rel, _abs),
+    "Fe2O3": (1.856473e01, _rel, _abs),
 }
+
 
 class TestSteadyStateModel:
     @pytest.fixture(scope="class")
@@ -110,12 +109,10 @@ class TestSteadyStateModel:
 
         return m
 
-
     @pytest.mark.unit
     def test_structural_issues(self, model):
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
-
 
     @pytest.mark.component
     @pytest.mark.solver
@@ -128,7 +125,6 @@ class TestSteadyStateModel:
         results = solver.solve(model, tee=False)
 
         assert_optimal_termination(results)
-
 
     @pytest.mark.component
     @pytest.mark.solver
@@ -139,10 +135,7 @@ class TestSteadyStateModel:
         assert jacobian_cond(model, scaled=False) == pytest.approx(
             6.234582e12, rel=1e-3
         )
-        assert jacobian_cond(model, scaled=True) == pytest.approx(
-            3827.42, rel=1e-3
-        )
-
+        assert jacobian_cond(model, scaled=True) == pytest.approx(3827.42, rel=1e-3)
 
     @pytest.mark.component
     @pytest.mark.solver
@@ -158,25 +151,24 @@ class TestSteadyStateModel:
 
             return (1 - f_out * x_out / (f_in * x_in)) * 100
 
-        assert_solution_equivalent(m, expected_results=_expected_results_steady_one_tank)
+        assert_solution_equivalent(
+            m, expected_results=_expected_results_steady_one_tank
+        )
+
 
 class TestSteadyStateModelTwoTanks:
     @pytest.fixture(scope="class")
     def model(self):
         m = ConcreteModel()
-        m.fs = CocurrentSlurryLeachingFlowsheet(
-            number_of_tanks = 2
-        )
+        m.fs = CocurrentSlurryLeachingFlowsheet(number_of_tanks=2)
         m.fs.scale_model()
 
         return m
-
 
     @pytest.mark.unit
     def test_structural_issues(self, model):
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
-
 
     @pytest.mark.component
     @pytest.mark.solver
@@ -190,20 +182,14 @@ class TestSteadyStateModelTwoTanks:
 
         assert_optimal_termination(results)
 
-
     @pytest.mark.component
     @pytest.mark.solver
     def test_numerical_issues(self, model):
         dt = DiagnosticsToolbox(model)
         dt.assert_no_numerical_warnings()
 
-        assert jacobian_cond(model, scaled=False) == pytest.approx(
-            1.14913e13, rel=1e-3
-        )
-        assert jacobian_cond(model, scaled=True) == pytest.approx(
-            9657.39, rel=1e-3
-        )
-
+        assert jacobian_cond(model, scaled=False) == pytest.approx(1.14913e13, rel=1e-3)
+        assert jacobian_cond(model, scaled=True) == pytest.approx(9657.39, rel=1e-3)
 
     @pytest.mark.component
     @pytest.mark.solver
@@ -219,7 +205,10 @@ class TestSteadyStateModelTwoTanks:
 
             return (1 - f_out * x_out / (f_in * x_in)) * 100
 
-        assert_solution_equivalent(m, expected_results=_expected_results_steady_two_tanks)
+        assert_solution_equivalent(
+            m, expected_results=_expected_results_steady_two_tanks
+        )
+
 
 class TestSteadyStateModelWithHoldup:
     @pytest.fixture(scope="class")
@@ -230,12 +219,10 @@ class TestSteadyStateModelWithHoldup:
 
         return m
 
-
     @pytest.mark.unit
     def test_structural_issues(self, model):
         dt = DiagnosticsToolbox(model)
         dt.assert_no_structural_warnings()
-
 
     @pytest.mark.component
     @pytest.mark.solver
@@ -248,7 +235,6 @@ class TestSteadyStateModelWithHoldup:
         results = solver.solve(model, tee=False)
 
         assert_optimal_termination(results)
-
 
     @pytest.mark.component
     @pytest.mark.solver
@@ -261,7 +247,6 @@ class TestSteadyStateModelWithHoldup:
         )
         assert jacobian_cond(model, scaled=True) == pytest.approx(59103.1, rel=1e-3)
 
-
     @pytest.mark.component
     @pytest.mark.solver
     def test_solution(self, model):
@@ -276,7 +261,9 @@ class TestSteadyStateModelWithHoldup:
 
             return (1 - f_out * x_out / (f_in * x_in)) * 100
 
-        assert_solution_equivalent(m, expected_results=_expected_results_steady_one_tank)
+        assert_solution_equivalent(
+            m, expected_results=_expected_results_steady_one_tank
+        )
 
 
 class TestDynamicOneTank:
@@ -290,8 +277,8 @@ class TestDynamicOneTank:
             dynamic=True,
             time_set=range(25),
             time_units=units.hr,
-        )   
-        
+        )
+
         m.fs.scale_model()
         from_json(m, fname="leaching_one_tank.json", wts=StoreSpec.value())
 
@@ -310,7 +297,6 @@ class TestDynamicOneTank:
                 m.fs.leach.liquid_inlet.flow_vol[t].fix(224.3 * units.L / units.hour)
             else:
                 m.fs.leach.liquid_inlet.flow_vol[t].fix(300 * units.L / units.hour)
-            
 
         return m
 
@@ -336,19 +322,22 @@ class TestDynamicOneTank:
         for t in model.fs.time:
             for e in model.fs.leach.mscontactor.elements:
                 if (
-                model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].value
-                == model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].lb
+                    model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].value
+                    == model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].lb
                 ):
-                    model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].value = (
-                        1.01 * model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].value
+                    model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp[
+                        "Cl"
+                    ].value = (
+                        1.01
+                        * model.fs.leach.mscontactor.liquid[t, e]
+                        .conc_mol_comp["Cl"]
+                        .value
                     )
 
         dt = DiagnosticsToolbox(model)
         dt.assert_no_numerical_warnings()
 
-        assert jacobian_cond(model, scaled=False) == pytest.approx(
-            3.4449e14, rel=1e-3
-        )
+        assert jacobian_cond(model, scaled=False) == pytest.approx(3.4449e14, rel=1e-3)
         assert jacobian_cond(model, scaled=True) == pytest.approx(9.8495e6, rel=1e-3)
 
     @pytest.mark.component
@@ -359,18 +348,18 @@ class TestDynamicOneTank:
         _abs = None
         _rel = 1e-2
         expected_results = {
-            "fs.leach.mscontactor.liquid[24.0,1].conc_mass_comp":{
+            "fs.leach.mscontactor.liquid[24.0,1].conc_mass_comp": {
                 "Sc": (8.0802607e-02, _rel, _abs),
                 "Y": (2.9420954e-01, _rel, _abs),
-                "La": (1.5865103e+00, _rel, _abs),
-                "Ce": (4.2327277e+00, _rel, _abs),
+                "La": (1.5865103e00, _rel, _abs),
+                "Ce": (4.2327277e00, _rel, _abs),
                 "Pr": (5.1833345e-01, _rel, _abs),
-                "Nd": (2.0665492e+00, _rel, _abs),
+                "Nd": (2.0665492e00, _rel, _abs),
                 "Sm": (2.2415357e-01, _rel, _abs),
                 "Gd": (4.6155189e-01, _rel, _abs),
                 "Dy": (1.0447770e-01, _rel, _abs),
             },
-            "fs.leach.mscontactor.solid[24.0,1].conversion_comp":{
+            "fs.leach.mscontactor.solid[24.0,1].conversion_comp": {
                 "Sc2O3": (5.8234784e-02, _rel, _abs),
                 "Y2O3": (1.5362446e-01, _rel, _abs),
                 "La2O3": (3.7899544e-01, _rel, _abs),
@@ -380,9 +369,10 @@ class TestDynamicOneTank:
                 "Sm2O3": (2.3762900e-01, _rel, _abs),
                 "Gd2O3": (6.6387387e-01, _rel, _abs),
                 "Dy2O3": (2.2042091e-01, _rel, _abs),
-            }
+            },
         }
         assert_solution_equivalent(model, expected_results)
+
 
 class TestDynamicTwoTanks:
     @pytest.fixture(scope="class")
@@ -396,8 +386,8 @@ class TestDynamicTwoTanks:
             time_set=range(25),
             time_units=units.hr,
             number_of_tanks=2,
-        )   
-        
+        )
+
         m.fs.scale_model()
         from_json(m, fname="leaching_two_tanks.json", wts=StoreSpec.value())
 
@@ -416,7 +406,6 @@ class TestDynamicTwoTanks:
                 m.fs.leach.liquid_inlet.flow_vol[t].fix(224.3 * units.L / units.hour)
             else:
                 m.fs.leach.liquid_inlet.flow_vol[t].fix(300 * units.L / units.hour)
-            
 
         return m
 
@@ -442,11 +431,16 @@ class TestDynamicTwoTanks:
         for t in model.fs.time:
             for e in model.fs.leach.mscontactor.elements:
                 if (
-                model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].value
-                == model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].lb
+                    model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].value
+                    == model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].lb
                 ):
-                    model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].value = (
-                        1.01 * model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp["Cl"].value
+                    model.fs.leach.mscontactor.liquid[t, e].conc_mol_comp[
+                        "Cl"
+                    ].value = (
+                        1.01
+                        * model.fs.leach.mscontactor.liquid[t, e]
+                        .conc_mol_comp["Cl"]
+                        .value
                     )
 
         dt = DiagnosticsToolbox(model)
@@ -465,18 +459,18 @@ class TestDynamicTwoTanks:
         _abs = None
         _rel = 1e-2
         expected_results = {
-            "fs.leach.mscontactor.liquid[24.0,1].conc_mass_comp":{
+            "fs.leach.mscontactor.liquid[24.0,1].conc_mass_comp": {
                 "Sc": (8.0802607e-02, _rel, _abs),
                 "Y": (2.9420954e-01, _rel, _abs),
-                "La": (1.5865103e+00, _rel, _abs),
-                "Ce": (4.2327277e+00, _rel, _abs),
+                "La": (1.5865103e00, _rel, _abs),
+                "Ce": (4.2327277e00, _rel, _abs),
                 "Pr": (5.1833345e-01, _rel, _abs),
-                "Nd": (2.0665492e+00, _rel, _abs),
+                "Nd": (2.0665492e00, _rel, _abs),
                 "Sm": (2.2415357e-01, _rel, _abs),
                 "Gd": (4.6155189e-01, _rel, _abs),
                 "Dy": (1.0447770e-01, _rel, _abs),
             },
-            "fs.leach.mscontactor.solid[24.0,1].conversion_comp":{
+            "fs.leach.mscontactor.solid[24.0,1].conversion_comp": {
                 "Sc2O3": (5.8234784e-02, _rel, _abs),
                 "Y2O3": (1.5362446e-01, _rel, _abs),
                 "La2O3": (3.7899544e-01, _rel, _abs),
@@ -487,18 +481,18 @@ class TestDynamicTwoTanks:
                 "Gd2O3": (6.6387387e-01, _rel, _abs),
                 "Dy2O3": (2.2042091e-01, _rel, _abs),
             },
-            "fs.leach.mscontactor.liquid[24.0,2].conc_mass_comp":{
+            "fs.leach.mscontactor.liquid[24.0,2].conc_mass_comp": {
                 "Sc": (1.0301485e-01, _rel, _abs),
                 "Y": (4.0293409e-01, _rel, _abs),
-                "La": (2.2431474e+00, _rel, _abs),
-                "Ce": (5.5868604e+00, _rel, _abs),
+                "La": (2.2431474e00, _rel, _abs),
+                "Ce": (5.5868604e00, _rel, _abs),
                 "Pr": (7.0096265e-01, _rel, _abs),
-                "Nd": (2.6234931e+00, _rel, _abs),
+                "Nd": (2.6234931e00, _rel, _abs),
                 "Sm": (3.0508031e-01, _rel, _abs),
                 "Gd": (5.2969391e-01, _rel, _abs),
                 "Dy": (1.5290345e-01, _rel, _abs),
             },
-            "fs.leach.mscontactor.solid[24.0,2].conversion_comp":{
+            "fs.leach.mscontactor.solid[24.0,2].conversion_comp": {
                 "Sc2O3": (6.9370858e-02, _rel, _abs),
                 "Y2O3": (1.9983959e-01, _rel, _abs),
                 "La2O3": (5.1766375e-01, _rel, _abs),
@@ -508,6 +502,6 @@ class TestDynamicTwoTanks:
                 "Sm2O3": (3.0782506e-01, _rel, _abs),
                 "Gd2O3": (7.1232093e-01, _rel, _abs),
                 "Dy2O3": (3.1047217e-01, _rel, _abs),
-            }
+            },
         }
         assert_solution_equivalent(model, expected_results)

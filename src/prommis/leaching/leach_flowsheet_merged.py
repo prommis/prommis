@@ -10,7 +10,8 @@ parameters and data for West Kentucky No. 13 coal refuse.
 
 Authors: Andrew Lee, Arkoprabho Dasgupta, Akintomiwa Ojo, Douglas Allan
 """
-import matplotlib.pyplot as plt
+import os
+
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In, PositiveInt
 from pyomo.environ import (
     Block,
@@ -28,7 +29,7 @@ from idaes.core.initialization import ModularInitializerBase
 from idaes.core.scaling import CustomScalerBase
 from idaes.core.util import to_json, from_json
 
-from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
+from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 from prommis.properties.coal_refuse_properties import CoalRefuseParameters
 from prommis.properties.sulfuric_acid_leaching_properties import (
@@ -353,7 +354,7 @@ class CocurrentSlurryLeachingFlowsheetData(FlowsheetBlockData):
                 "H2O",
                 "SO4",
             ]:
-                self.leach.mscontactor.liquid_material_holdup[t0, 1, "liquid", k].fix()
+                self.leach.mscontactor.liquid_material_holdup[t0, :, "liquid", k].fix()
 
         self.leach.mscontactor.solid_material_holdup[t0,:, :, :].fix()
     
@@ -443,7 +444,8 @@ def create_one_tank_json():
     m.fs.scale_model()
     init_obj = m.fs.default_initializer()
     init_obj.initialize(m.fs)
-    to_json(m, fname="leaching_one_tank.json", human_read=True)
+    path_name = os.path.join("tests", "leaching_one_tank.json")
+    to_json(m, fname=path_name, human_read=True)
     return m
 
 
@@ -453,11 +455,11 @@ def create_two_tanks_json():
         has_holdup=True,
         number_of_tanks=2,
     )
-    m.fs.leach.volume[:].fix(50 * units.gallon)
     m.fs.scale_model()
     init_obj = m.fs.default_initializer()
     init_obj.initialize(m.fs)
-    to_json(m, fname="leaching_two_tanks.json", human_read=True)
+    path_name = os.path.join("tests", "leaching_two_tanks.json")
+    to_json(m, fname=path_name, human_read=True)
     return m
 
 

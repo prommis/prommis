@@ -4,18 +4,20 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+import os
+import pytest
+
 from pyomo.environ import (
     assert_optimal_termination,
     ConcreteModel,
     Var,
     units,
 )
+from pyomo.common.fileutils import this_file_dir
 
 from idaes.core.solvers import get_solver
 from idaes.core.scaling.util import jacobian_cond
 from idaes.core.util import DiagnosticsToolbox, from_json, StoreSpec
-
-import pytest
 
 from prommis.util import assert_solution_equivalent, copy_first_steady_state
 from prommis.leaching.leach_flowsheet import CocurrentSlurryLeachingFlowsheet
@@ -280,7 +282,8 @@ class TestDynamicOneTank:
         )
 
         m.fs.scale_model()
-        from_json(m, fname="leaching_one_tank.json", wts=StoreSpec.value())
+        path = os.path.join(this_file_dir(), "leaching_one_tank.json")
+        from_json(m, fname=path, wts=StoreSpec.value())
 
         m.fs.reduce_dae_index()
         m.fs.scale_dynamics(15)
@@ -389,7 +392,8 @@ class TestDynamicTwoTanks:
         )
 
         m.fs.scale_model()
-        from_json(m, fname="leaching_two_tanks.json", wts=StoreSpec.value())
+        path = os.path.join(this_file_dir(), "leaching_two_tanks.json")
+        from_json(m, fname=path, wts=StoreSpec.value())
 
         m.fs.reduce_dae_index()
         m.fs.scale_dynamics(15)

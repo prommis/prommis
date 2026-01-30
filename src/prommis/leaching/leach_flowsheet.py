@@ -20,14 +20,13 @@ from pyomo.environ import (
     TransformationFactory,
     units,
     Var,
-    Param,
 )
 from pyomo.dae.flatten import flatten_dae_components
 
 from idaes.core import FlowsheetBlockData, declare_process_block_class
 from idaes.core.initialization import ModularInitializerBase
 from idaes.core.scaling import CustomScalerBase
-from idaes.core.util import to_json, from_json
+from idaes.core.util import to_json
 
 from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock

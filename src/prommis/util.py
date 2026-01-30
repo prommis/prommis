@@ -21,6 +21,7 @@ from idaes.core.scaling.util import get_scaling_factor, set_scaling_factor
 
 _log = idaeslog.getLogger(__name__)
 
+
 def assert_solution_equivalent(blk, expected_results):
     """
     Method to iterate through a structured dictionary of variables/expressions, values,
@@ -141,6 +142,7 @@ def assert_solution_equivalent(blk, expected_results):
         # Raise a single AssertionError with the complete report
         raise AssertionError(full_report)
 
+
 def copy_first_steady_state(blk, time):
     """
     Function that propagates initial steady state guess to future time points.
@@ -240,17 +242,13 @@ def scale_time_discretization_equations(blk, time_set, time_scaling_factor):
                                     # both (which means the user needs to provide additional equations)
                                     pass
                             else:
-                                set_scaling_factor(
-                                    disc[t], s_deriv, overwrite=False
-                                )
+                                set_scaling_factor(disc[t], s_deriv, overwrite=False)
                         else:
                             # Lagrange-Legendre is a pain, because it has continuity equations on the edges of finite
                             # instead of discretization equations, but no intermediate continuity equations, so we have
                             # to look for both at every timepoint
                             try:
-                                set_scaling_factor(
-                                    disc[t], s_deriv, overwrite=False
-                                )
+                                set_scaling_factor(disc[t], s_deriv, overwrite=False)
                             except KeyError:
                                 if t != time_set.first():
                                     set_scaling_factor(

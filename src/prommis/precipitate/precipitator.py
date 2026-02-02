@@ -8,15 +8,15 @@ r"""
 Oxalate Precipitator Unit Model
 ===================================
 
-Author: Alejandro Garciadiego
+Author: Alejandro Garciadiego, Bo-Xun Wang
 
-The Precipitator Unit Model represents an Equilibrium reactor unit model with fixed partition coefficients.
+The Precipitator Unit Model represents an Equilibrium reactor unit model with the equilibrium equation derived from Minteq data.
 
 Configuration Arguments
 -----------------------
 
 The precipitator unit model needs an aqueous property package which includes stoichiometric values for solids being
-created in the precipitator and fixed separation coefficients of the solids.
+created in the precipitator and the parameters used in the equilibrium equation.
 
 Model Structure
 ---------------
@@ -27,18 +27,12 @@ model also has one inlet and two outlets named ``aqueous_inlet``, ``aqueous_outl
 Additional Constraints
 ----------------------
 
-The Precipitator unit adds two additional constraint to define the stochiometry and separation.
+The Precipitator unit adds one additional constraint to define the conversion.
 
-.. math:: n_{t,prec,c} = \frac{n_{t,aq_in,c} - n_{t,aq_out,c}}{S_{comp}} 
+.. math:: Conversion_{c} = \exp(-\frac{\epsilon}{Oxalic Acid Dosage}^{n_{DA}})
 
-where :math:`n_{t,prec,c}` is the outlet precipitation of component c, :math:`n_{t,aq_in,c}` is the inlet of component c in 
-the aqueous phase, :math:`n_{t,aq_in,c}` is the outlet of component c in the aqueous phase at time :math:`t`, divided by the
-stoichiometric parameter of component c :math:`S_{comp}`
-
-.. math:: n_{t,aq_out,c} = n_{t,aq_in,c} * (1 - split_{c})
-
-where :math:`split_{c}` is the fixed recovery fraction of component c; this factor can be a parameter or ideally a variable
-solved by a surrogate or a model equation.
+where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters 
+estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
 
 """
 
@@ -126,7 +120,7 @@ class OxalatePrecipitatorInitializer(ModularInitializerBase):
         except:
             pass
 
-        model.mscontactor.heterogeneous_reaction_extent.unfix()
+        model.mscontactor.heterogeneous_.unfix()
 
         solver = self._get_solver()
         results = solver.solve(model, tee=True)
@@ -217,7 +211,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
         ),
     )
     CONFIG.declare(
-        "number_of_tanks",
+        "number_of_2s",
         ConfigValue(
             default=1, domain=int, description="Number of tanks in precipitaction"
         ),

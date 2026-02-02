@@ -299,7 +299,7 @@ and used when constructing these,
         self.add_variables()
         self.add_constraints()
         self.discretize_model()
-        self.fix_boundary_values()
+        self.deactivate_unnecessary_objects()
         self.add_scaling_factors()
         self.add_ports()
 
@@ -1104,6 +1104,85 @@ and used when constructing these,
             self.time, self.cations, rule=_retentate_conc_mol_comp_boundary_condition
         )
 
+        def _membrane_conc_mol_comp_boundary_condition(blk, t, z, k):
+            return (
+                blk.membrane_conc_mol_comp[t, 0, z, k]
+                == value(self.numerical_zero_tolerance) * units.mol / units.m**3
+            )
+
+        self.membrane_conc_mol_comp_boundary_condition = Constraint(
+            self.time,
+            self.dimensionless_membrane_thickness,
+            self.cations,
+            rule=_membrane_conc_mol_comp_boundary_condition,
+        )
+
+        # constraints to improve numerical stability
+        def _permeate_flow_volume_boundary_condition(blk, t):
+            return (
+                blk.permeate_flow_volume[t, 0]
+                == value(self.numerical_zero_tolerance) * units.m**3 / units.h
+            )
+
+        self.permeate_flow_volume_boundary_condition = Constraint(
+            self.time, rule=_permeate_flow_volume_boundary_condition
+        )
+
+        def _permeate_conc_mol_comp_boundary_condition(blk, t, j):
+            return (
+                blk.permeate_conc_mol_comp[t, 0, j]
+                == value(self.numerical_zero_tolerance) * units.mol / units.m**3
+            )
+
+        self.permeate_conc_mol_comp_boundary_condition = Constraint(
+            self.time, self.solutes, rule=_permeate_conc_mol_comp_boundary_condition
+        )
+
+        def _d_retentate_flow_volume_dx_boundary_condition(blk, t):
+            return (
+                blk.d_retentate_flow_volume_dx[t, 0]
+                == value(self.numerical_zero_tolerance) * units.m**3 / units.h
+            )
+
+        self.d_retentate_flow_volume_dx_boundary_condition = Constraint(
+            self.time, rule=_d_retentate_flow_volume_dx_boundary_condition
+        )
+
+        def _d_retentate_conc_mol_comp_dx_boundary_condition(blk, t, k):
+            return (
+                blk.d_retentate_conc_mol_comp_dx[t, 0, k]
+                == value(self.numerical_zero_tolerance) * units.mol / units.m**3
+            )
+
+        self.d_retentate_conc_mol_comp_dx_boundary_condition = Constraint(
+            self.time,
+            self.cations,
+            rule=_d_retentate_conc_mol_comp_dx_boundary_condition,
+        )
+
+        def _volume_flux_water_boundary_condition(blk, t):
+            return (
+                blk.volume_flux_water[t, 0]
+                == value(self.numerical_zero_tolerance) * units.m / units.h
+            )
+
+        self.volume_flux_water_boundary_condition = Constraint(
+            self.time, rule=_volume_flux_water_boundary_condition
+        )
+
+        def _molar_ion_flux_boundary_condition(blk, t, j):
+            return (
+                blk.molar_ion_flux[t, 0, j]
+                == value(self.numerical_zero_tolerance)
+                * units.mol
+                / units.m**2
+                / units.h
+            )
+
+        self.molar_ion_flux_boundary_condition = Constraint(
+            self.time, self.solutes, rule=_molar_ion_flux_boundary_condition
+        )
+
     def discretize_model(self):
         discretizer = TransformationFactory("dae.finite_difference")
         discretizer.apply_to(
@@ -1119,9 +1198,9 @@ and used when constructing these,
             scheme="BACKWARD",
         )
 
-    def fix_boundary_values(self):
+    def deactivate_unnecessary_objects(self):
         """
-        Fix boundary values for the two salt diafiltration unit model.
+        Deactivates variables and constraints not needed in the two salt diafiltration unit model.
         """
         for t in self.time:
             for x in self.dimensionless_module_length:
@@ -1134,31 +1213,17 @@ and used when constructing these,
                 if x != 0:
                     self.d_retentate_conc_mol_comp_dx_disc_eq[t, x, "Cl"].deactivate()
 
-            # set "zero" boundary values to a sufficiently small value
-            # these quantities are known to be zero
-            # setting them to (numerical) zero improves numerical stability
-            self.permeate_flow_volume[t, 0].fix(value(self.numerical_zero_tolerance))
-            self.d_retentate_flow_volume_dx[t, 0].fix(
-                value(self.numerical_zero_tolerance)
-            )
-            self.volume_flux_water[t, 0].fix(value(self.numerical_zero_tolerance))
-
-            for j in self.solutes:
-                self.permeate_conc_mol_comp[t, 0, j].fix(
-                    value(self.numerical_zero_tolerance)
-                )
-                self.molar_ion_flux[t, 0, j].fix(value(self.numerical_zero_tolerance))
-
-            for z in self.dimensionless_membrane_thickness:
-                for j in self.solutes:
-                    self.membrane_conc_mol_comp[t, 0, z, j].fix(
+                for z in self.dimensionless_membrane_thickness:
+                    # chloride concentration gradient in membrane variable is created by default but
+                    # is not needed in model; fix to reduce number of variables
+                    self.d_membrane_conc_mol_comp_dz[t, x, z, "Cl"].fix(
                         value(self.numerical_zero_tolerance)
                     )
-
-            for k in self.cations:
-                self.d_retentate_conc_mol_comp_dx[t, 0, k].fix(
-                    value(self.numerical_zero_tolerance)
-                )
+                    # associated discretization equation not needed in model
+                    if z != 0:
+                        self.d_membrane_conc_mol_comp_dz_disc_eq[
+                            t, x, z, "Cl"
+                        ].deactivate()
 
     def add_scaling_factors(self):
         """

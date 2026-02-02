@@ -374,6 +374,75 @@ class TestDiafiltrationTwoSalt(object):
             == 2
         )
 
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.membrane_conc_mol_comp_boundary_condition,
+            Constraint,
+        )
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.membrane_conc_mol_comp_boundary_condition
+            )
+            == 12
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.permeate_flow_volume_boundary_condition,
+            Constraint,
+        )
+        assert (
+            len(diafiltration_two_salt.fs.unit.permeate_flow_volume_boundary_condition)
+            == 1
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.permeate_conc_mol_comp_boundary_condition,
+            Constraint,
+        )
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.permeate_conc_mol_comp_boundary_condition
+            )
+            == 3
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx_boundary_condition,
+            Constraint,
+        )
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx_boundary_condition
+            )
+            == 1
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx_boundary_condition,
+            Constraint,
+        )
+        assert (
+            len(
+                diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx_boundary_condition
+            )
+            == 2
+        )
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.volume_flux_water_boundary_condition,
+            Constraint,
+        )
+        assert (
+            len(diafiltration_two_salt.fs.unit.volume_flux_water_boundary_condition)
+            == 1
+        )
+
+        assert isinstance(
+            diafiltration_two_salt.fs.unit.molar_ion_flux_boundary_condition,
+            Constraint,
+        )
+        assert (
+            len(diafiltration_two_salt.fs.unit.molar_ion_flux_boundary_condition) == 3
+        )
+
         for t in diafiltration_two_salt.fs.unit.time:
             for x in diafiltration_two_salt.fs.unit.dimensionless_module_length:
                 assert diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[
@@ -384,52 +453,16 @@ class TestDiafiltrationTwoSalt(object):
                         t, x, "Cl"
                     ].active
 
-            assert diafiltration_two_salt.fs.unit.permeate_flow_volume[t, 0].fixed
-            assert value(
-                diafiltration_two_salt.fs.unit.permeate_flow_volume[t, 0]
-            ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
-
-            assert diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx[t, 0].fixed
-            assert value(
-                diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx[t, 0]
-            ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
-
-            assert diafiltration_two_salt.fs.unit.volume_flux_water[t, 0].fixed
-            assert value(
-                diafiltration_two_salt.fs.unit.volume_flux_water[t, 0]
-            ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
-
-            for k in diafiltration_two_salt.fs.unit.cations:
-                assert diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[
-                    t, 0, k
-                ].fixed
-                assert value(
-                    diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[t, 0, k]
-                ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
-
-                assert diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[
-                    t, 0, k
-                ].fixed
-                assert value(
-                    diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[t, 0, k]
-                ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
-
-            for j in diafiltration_two_salt.fs.unit.solutes:
-                assert diafiltration_two_salt.fs.unit.molar_ion_flux[t, 0, j].fixed
-                assert value(
-                    diafiltration_two_salt.fs.unit.molar_ion_flux[t, 0, j]
-                ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
-
-            for z in diafiltration_two_salt.fs.unit.dimensionless_membrane_thickness:
-                for j in diafiltration_two_salt.fs.unit.solutes:
-                    assert diafiltration_two_salt.fs.unit.membrane_conc_mol_comp[
-                        t, 0, z, j
+                for (
+                    z
+                ) in diafiltration_two_salt.fs.unit.dimensionless_membrane_thickness:
+                    assert diafiltration_two_salt.fs.unit.d_membrane_conc_mol_comp_dz[
+                        t, x, z, "Cl"
                     ].fixed
-                    assert value(
-                        diafiltration_two_salt.fs.unit.membrane_conc_mol_comp[
-                            t, 0, z, j
-                        ]
-                    ) == value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance)
+                    if x != 0:
+                        assert not diafiltration_two_salt.fs.unit.d_membrane_conc_mol_comp_dz_disc_eq[
+                            t, x, z, "Cl"
+                        ].active
 
         # scaling factors
         for t in diafiltration_two_salt.fs.unit.time:

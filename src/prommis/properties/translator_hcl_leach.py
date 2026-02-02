@@ -112,6 +112,7 @@ class TranslatorHClLeachData(TranslatorData):
     property package, which does contain sulfate species.
 
     """
+
     CONFIG = TranslatorData.CONFIG()
 
     CONFIG._data.pop("outlet_state_defined")
@@ -122,14 +123,14 @@ class TranslatorHClLeachData(TranslatorData):
         ConfigValue(
             default=True,
             domain=In([True]),
-        )
+        ),
     )
     CONFIG.declare(
         "has_phase_equilibrium",
         ConfigValue(
             default=False,
             domain=In([False]),
-        )
+        ),
     )
 
     default_scaler = TranslatorHClLeachScaler

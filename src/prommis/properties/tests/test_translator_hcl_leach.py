@@ -5,27 +5,34 @@ from pyomo.util.check_units import assert_units_equivalent
 
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import BlockTriangularizationInitializer
-from idaes.core.scaling.util import get_jacobian
+from idaes.core.scaling.util import jacobian_cond
+from idaes.core.solvers import get_solver
 from idaes.core.util import DiagnosticsToolbox
 
 from prommis.properties import (
     HClStrippingParameterBlock,
     SulfuricAcidLeachingParameters,
-    TranslatorHClLeach
+    TranslatorHClLeach,
 )
-from prommis.properties.hcl_stripping_properties import HClStrippingStateBlock, HClStrippingPropertiesScaler
-from prommis.properties.sulfuric_acid_leaching_properties import SulfuricAcidLeachingStateBlock, SulfuricAcidLeachingPropertiesScaler
+from prommis.properties.hcl_stripping_properties import (
+    HClStrippingStateBlock,
+    HClStrippingPropertiesScaler,
+)
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingStateBlock,
+    SulfuricAcidLeachingPropertiesScaler,
+)
 from prommis.properties.translator_hcl_leach import TranslatorHClLeachScaler
 
-@pytest.fixture
+
+@pytest.fixture(scope="module")
 def model():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock()
     m.fs.hcl = HClStrippingParameterBlock()
     m.fs.h2so4 = SulfuricAcidLeachingParameters()
     m.fs.unit = TranslatorHClLeach(
-        inlet_property_package=m.fs.hcl,
-        outlet_property_package=m.fs.h2so4
+        inlet_property_package=m.fs.hcl, outlet_property_package=m.fs.h2so4
     )
 
     # Taken from tear guess in UKy flowsheet
@@ -68,7 +75,7 @@ def model():
     scaler_obj.scale_model(m.fs.unit, submodel_scalers=submodel_scalers)
 
     return m
-    
+
 
 @pytest.mark.unit
 def test_build(model):
@@ -76,10 +83,10 @@ def test_build(model):
 
     assert isinstance(unit.properties_in, HClStrippingStateBlock)
     assert len(unit.properties_in) == 1
-    
+
     assert isinstance(unit.properties_out, SulfuricAcidLeachingStateBlock)
     assert len(unit.properties_out) == 1
-    
+
     assert unit.default_scaler is TranslatorHClLeachScaler
     assert unit.default_initializer is BlockTriangularizationInitializer
 
@@ -99,26 +106,34 @@ def test_build(model):
 
     assert isinstance(unit.conc_mass_comp_hcl_eqn, pyo.Constraint)
     assert len(unit.conc_mass_comp_hcl_eqn) == 15
-    
+
     assert isinstance(unit.conc_mass_sulfates_eqn, pyo.Constraint)
     assert len(unit.conc_mass_sulfates_eqn) == 2
+
 
 @pytest.mark.unit
 def test_no_structural_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.assert_no_structural_warnings()
 
-@pytest.mark.unit
-@pytest.mark.solver
-def test_initialize_model(model):
-    init_obj = model.default_initializer()
-    init_obj.initialize(model)
 
-@pytest.mark.unit
+@pytest.mark.component
+@pytest.mark.solver
+def test_initialize_and_solve_model(model):
+    init_obj = model.fs.unit.default_initializer()
+    init_obj.initialize(model.fs.unit)
+
+    solver_obj = get_solver("ipopt_v2")
+    results = solver_obj.solve(model.fs.unit)
+
+    pyo.assert_optimal_termination(results)
+
+
+@pytest.mark.component
 @pytest.mark.solver
 def test_no_numerical_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.assert_no_numerical_warnings()
 
-    assert get_jacobian(model, scaled=False) == pytest.approx(1e12, rel=1e-3)
-    assert get_jacobian(model, scaled=True) == pytest.approx(1e14, rel=1e-3)
+    assert jacobian_cond(model, scaled=False) == pytest.approx(3.4429e6, rel=1e-3)
+    assert jacobian_cond(model, scaled=True) == pytest.approx(3.6256e3, rel=1e-3)

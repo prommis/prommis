@@ -138,6 +138,7 @@ References:
 
 """
 import logging
+from warnings import warn
 from pyomo.common.collections import ComponentMap
 from pyomo.environ import (
     ConcreteModel,
@@ -2783,8 +2784,7 @@ def optimize_model(m):
     for condata in m.fs.leach_liquid_feed.HSO4_dissociation.values():
         set_scaling_factor(condata, sf)
 
-    # According to Wikipedia, pH values of less than 0 are
-    # impossible in an aqueous solution
+    # We should think about how strong of acid we can use for leaching
     m.fs.leach_liquid_feed.properties[0].pH_phase["liquid"].setlb(0)
 
     # IPOPT wanted to use a liquid feed of 13.7 L/hr, which would be
@@ -2808,8 +2808,7 @@ def optimize_model(m):
         feed.flow_vol.unfix()
         feed.conc_mass_comp[0, "H"].unfix()
         feed.conc_mass_comp[0, "Cl"].unfix()
-        # According to Wikipedia, pH values of less than 0 are
-        # impossible in an aqueous solution
+        # Revisit how strong of an acid we can use
         feed.properties[0].pH_phase["liquid"].setlb(0)
 
         @feed.Constraint(m.fs.time)
@@ -2823,13 +2822,17 @@ def optimize_model(m):
             set_scaling_factor(condata, 10)
 
     # Make extractant dosage a decision variable
-    m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
-    m.fs.rougher_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
-    # m.fs.rougher_org_make_up.properties[0].extractant_dosage.fix(5)
+    # m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
+    # m.fs.rougher_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
 
-    m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
-    m.fs.cleaner_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
-    # m.fs.cleaner_org_make_up.properties[0].extractant_dosage.fix(5)
+    # m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
+    # m.fs.cleaner_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
+
+    # We can't make extractant dosage a decision variable until we have a
+    # correlation for how impurity (Fe, Al, Ca) distribution coefficients
+    # vary with dosage
+    m.fs.rougher_org_make_up.properties[0].extractant_dosage.fix(5)
+    m.fs.cleaner_org_make_up.properties[0].extractant_dosage.fix(5)
 
     # If the pH in the rougher scrub goes above 5 or 6, the equations get
     # extremely ill conditioned.
@@ -2866,11 +2869,11 @@ def data_reconcilliation(m):
 
 if __name__ == "__main__":
     m, results = main()
-     warn(
-         "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
-     )
-     warn(
-         "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
-     )
-     optimize_model(m)
+    warn(
+        "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
+    )
+    warn(
+        "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
+    )
+    # optimize_model(m)
     data_reconcilliation(m)

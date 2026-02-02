@@ -6,24 +6,28 @@
 #####################################################################################################
 
 r"""
-Translator block representing the precipitation/leaching interface.
+Translator block between sulfuric acid leaching and HCl stripping properties
 
 ========================================================================
 
-Author: Arkoprabho Dasgupta
+Author: Douglas Allan
 
 Model description
 -----------------
 
-This translator block helps to translate between the property packages of leaching solution phase and
-precipitation liquid phase. This block is built upon the traditional Translator block with some
-additional constraints.
+This block takes a stream using the HCl stripping properties to the H2SO4 leaching properties.
+
+Parameter:
+----------
+eps_conc_mass: Near-zero mass concentration (initialized at 1e-15 mg/L) to use for sulfate concentration.
+
 
 Additional constraints
 ----------------------
 
-1. eq_flow_vol_rule = Constraint which equates the inlet and the outlet volumetric flowrates.
-2. eq_conc_mass_metals = Constraint which equates the inlet and the outlet concentrations of the elements.
+1. eq_flow_vol_rule: Inlet and outlet volumetric flow rates are equal
+2. conc_mass_comp_hcl_eqn: The concentrations of components in the HCl property package are equal
+3. conc_mass_sulfates_eqn: Sulfate components have near-zero concentration, defined by eps_conc_mass
 
 """
 
@@ -85,7 +89,7 @@ class TranslatorHClLeachScaler(CustomScalerBase):
                 scheme=ConstraintScalingScheme.inverseMaximum,
                 overwrite=overwrite,
             )
-        for condata in model.conc_mass_metals_eqn.values():
+        for condata in model.conc_mass_comp_hcl_eqn.values():
             self.scale_constraint_by_nominal_value(
                 condata,
                 scheme=ConstraintScalingScheme.inverseMaximum,
@@ -160,9 +164,9 @@ class TranslatorHClLeachData(TranslatorData):
         @self.Constraint(
             self.flowsheet().time,
             self.HCl_components,
-            doc="Equality equation for metal components",
+            doc="Defines mass concentration of components from HCl properties",
         )
-        def conc_mass_metals_eqn(blk, t, i):
+        def conc_mass_comp_hcl_eqn(blk, t, i):
             return (
                 blk.properties_out[t].conc_mass_comp[i]
                 == blk.properties_in[t].conc_mass_comp[i]

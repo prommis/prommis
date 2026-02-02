@@ -53,6 +53,8 @@ from prommis.uky.uky_flowsheet import (
     set_operating_conditions,
     set_scaling,
     solve_system,
+    data_reconcilliation,
+    optimize_model,
 )
 
 
@@ -634,3 +636,16 @@ def test_display(system_frame):
     model = system_frame
     display_results(model)
     display_costing(model)
+
+
+# Smoke tests to make sure data reconcilliation and optimization solve
+@pytest.mark.integration
+@pytest.mark.solver
+def test_data_reconcilliation(system_frame):
+    data_reconcilliation(system_frame)
+
+
+@pytest.mark.integration
+@pytest.mark.solver
+def test_optimize_model(system_frame):
+    optimize_model(system_frame)

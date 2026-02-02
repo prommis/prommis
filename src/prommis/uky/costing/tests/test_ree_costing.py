@@ -1530,18 +1530,7 @@ class TestWaterTAPCosting(object):
 
         calculate_scaling_factors(model.fs_membrane)
 
-        # check that all variables have scaling factors
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.nfunit))
-        assert len(unscaled_var_list) == 0
-
         model.fs_membrane.nfunit.initialize(optarg=solver.options)
-
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.nfunit, small=1e-5, zero=1e-12)
-        )
-        for var, val in badly_scaled_var_lst:
-            print(var.name, val)
-        assert len(badly_scaled_var_lst) == 0
 
         results = solver.solve(model.fs_membrane, tee=True)
 
@@ -1604,16 +1593,7 @@ class TestWaterTAPCosting(object):
 
         calculate_scaling_factors(model.fs_membrane)
 
-        # check that all variables have scaling factors
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.rounit))
-        assert len(unscaled_var_list) == 0
-
         model.fs_membrane.rounit.initialize(optarg=solver.options)
-
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.rounit)
-        )
-        assert badly_scaled_var_lst == []
 
         results = solver.solve(model.fs_membrane, tee=True)
 
@@ -1674,16 +1654,7 @@ class TestWaterTAPCosting(object):
 
         calculate_scaling_factors(model.fs_membrane)
 
-        # check that all variables have scaling factors
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.ixunit))
-        assert len(unscaled_var_list) == 0
-
         model.fs_membrane.ixunit.initialize(optarg=solver.options)
-
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.ixunit)
-        )
-        assert badly_scaled_var_lst == []
 
         results = solver.solve(model.fs_membrane, tee=True)
 
@@ -1715,6 +1686,36 @@ class TestWaterTAPCosting(object):
         assert_optimal_termination(results)
 
         return model
+
+    # TODO replace with test of condition number
+    @pytest.mark.component
+    def test_scaling(self, model):
+        # Nanofiltration
+        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.nfunit))
+        assert len(unscaled_var_list) == 0
+
+        badly_scaled_var_lst = list(
+            badly_scaled_var_generator(model.fs_membrane.nfunit, small=1e-5, zero=1e-12)
+        )
+        assert len(badly_scaled_var_lst) == 0
+
+        # RO unit
+        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.rounit))
+        assert len(unscaled_var_list) == 0
+
+        badly_scaled_var_lst = list(
+            badly_scaled_var_generator(model.fs_membrane.rounit)
+        )
+        assert len(badly_scaled_var_lst) == 0
+
+        # Ion exchange
+        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.ixunit))
+        assert len(unscaled_var_list) == 0
+
+        badly_scaled_var_lst = list(
+            badly_scaled_var_generator(model.fs_membrane.ixunit)
+        )
+        assert len(badly_scaled_var_lst) == 0
 
     @pytest.mark.component
     def test_REE_watertap_costing(self, model):
@@ -2458,7 +2459,7 @@ class TestDiafiltrationCosting(object):
         )
         m.fs.cascade.costing = UnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
-            costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
+            costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop_utility,
             costing_method_arguments={
                 "water_flux": m.fs.Jw,
                 "vol_flow_feed": m.fs.stage3.retentate_flow_vol,  # cascade feed
@@ -2469,7 +2470,9 @@ class TestDiafiltrationCosting(object):
             flowsheet_costing_block=m.fs.costing,
             costing_method=DiafiltrationCostingData.cost_pump,
             costing_method_arguments={
-                "inlet_pressure": m.fs.P_atm,  # units of Pa
+                "inlet_pressure": pyunits.convert(
+                    m.fs.P_atm, to_units=pyunits.kPa
+                ),  # units of kPa
                 "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
                 * pyunits.psi,  # this should make m.fs.feed_pump.costing.variable_operating_cost ~0
                 "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # feed
@@ -2479,7 +2482,9 @@ class TestDiafiltrationCosting(object):
             flowsheet_costing_block=m.fs.costing,
             costing_method=DiafiltrationCostingData.cost_pump,
             costing_method_arguments={
-                "inlet_pressure": m.fs.P_atm,  # units of Pa
+                "inlet_pressure": pyunits.convert(
+                    m.fs.P_atm, to_units=pyunits.kPa
+                ),  # units of kPa
                 "outlet_pressure": pyunits.convert(
                     m.fs.P_op, to_units=pyunits.psi
                 ),  # units of psi

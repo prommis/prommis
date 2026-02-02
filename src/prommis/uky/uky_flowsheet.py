@@ -133,8 +133,8 @@ of the unit model capacity parameters have been scaled down accordingly by unit 
 
 References:
 
-[1] Steven Keim, "Production of salable rare earths products from coal and coal byproducts in the U.S.
-using advanced separation processes", 2019
+[1] Keim, Steven Anthony and Naumann, Hans. "Production of Salable Rare Earths Products from Coal and Coal Byproducts
+ in the U.S. Using Advanced Separation Processes (Final Technical Report)." , Sep. 2019. https://doi.org/10.2172/1569277
 
 """
 import logging
@@ -192,8 +192,10 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 )
 
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
-from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingParameters,
+)
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
@@ -283,7 +285,7 @@ def build():
     m.fs = FlowsheetBlock(dynamic=False)
 
     # Leaching property and unit models
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
@@ -507,6 +509,7 @@ def build():
     m.fs.precipitator = Precipitator(
         property_package_aqueous=m.fs.properties_aq,
         property_package_precipitate=m.fs.properties_solid,
+        make_volume_balance_constraint=True,
     )
 
     m.fs.sl_sep2 = SLSeparator(
@@ -760,16 +763,6 @@ def set_scaling(m):
     csb = CustomScalerBase()
 
     # Apply scaling to constraints
-    csb.scale_constraint_by_nominal_value(
-        m.fs.leach.mscontactor.heterogeneous_reactions[0, 1].reaction_rate_eq["Sc2O3"],
-        scheme=ConstraintScalingScheme.inverseMaximum,
-        overwrite=False,
-    )
-    csb.scale_constraint_by_nominal_value(
-        m.fs.leach.mscontactor.heterogeneous_reactions[0, 2].reaction_rate_eq["Sc2O3"],
-        scheme=ConstraintScalingScheme.inverseMaximum,
-        overwrite=False,
-    )
     csb.scale_constraint_by_nominal_value(
         m.fs.solex_rougher_load.distribution_extent_constraint[0, 1, "Ca"],
         scheme=ConstraintScalingScheme.inverseMaximum,
@@ -1046,7 +1039,7 @@ def set_operating_conditions(m):
     m.fs.translator_precipitate_to_leaching.outlet.pressure.fix(P_atm)
     m.fs.translator_precipitate_to_leaching.outlet.temperature.fix(Temp_room)
 
-    m.fs.precipitator.cv_precipitate[0].temperature.fix(348.15 * units.K)
+    m.fs.precipitator.precipitate_state_block[0].temperature.fix(348.15 * units.K)
 
     m.fs.precip_sep.split_fraction[:, "recycle"].fix(0.9)
     m.fs.precip_sep.purge_state[0.0].pressure.fix(P_atm)
@@ -1103,8 +1096,8 @@ def set_operating_conditions(m):
     m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol
     m.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp
 
-    m.fs.precipitator.cv_precipitate[0].temperature
-    m.fs.precipitator.cv_precipitate[0].flow_mol_comp
+    m.fs.precipitator.precipitate_state_block[0].temperature
+    m.fs.precipitator.precipitate_state_block[0].flow_mol_comp
 
 
 def initialize_system(m):

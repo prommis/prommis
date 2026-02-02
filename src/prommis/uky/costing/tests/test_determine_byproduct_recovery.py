@@ -26,7 +26,6 @@ from pyomo.environ import (
     ConcreteModel,
     Expression,
     Param,
-    TransformationFactory,
     Var,
     value,
 )
@@ -74,11 +73,7 @@ class TestLiCoDiafiltration:
         add_product_constraints(self.m, Li_recovery_bound=0.95, Co_recovery_bound=0.635)
         add_objective(self.m)
         set_scaling(self.m)
-        scaling = TransformationFactory("core.scale_model")
-        scaled_model = scaling.create_using(self.m, rename=False)
-        solve_model(scaled_model)
-        # Propagate results back to unscaled model
-        scaling.propagate_solution(scaled_model, self.m)
+        solve_model(self.m)
 
         # Ensure feed pump OPEX is negligible
         assert (

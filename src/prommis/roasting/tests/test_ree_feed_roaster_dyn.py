@@ -37,7 +37,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     get_prop,
 )
 import idaes.logger as idaeslog
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
+from prommis.properties.coal_refuse_properties import CoalRefuseParameters
 from prommis.roasting.ree_feed_properties import (
     ReeFeedParameters,
     ReeFeedPropertiesScaler,
@@ -169,22 +169,25 @@ def get_model(
         "max_constraint_scaling_factor": float("inf"),
         "min_constraint_scaling_factor": 0,
     }
+    gas_scaler = m.fs.roaster.gas_in.default_scaler()
+    gas_scaler.default_scaling_factors["flow_mol_phase"] = 1 / 80
     feed_scaler = ReeFeedPropertiesScaler(**scaler_config)
     prod_scaler = ReeRoastPropertiesScaler(**scaler_config)
     roaster_scaler = REEFeedRoasterScaler(**scaler_config)
     submodel_scalers = ComponentMap()
     submodel_scalers[m.fs.roaster.solid_in] = feed_scaler
     submodel_scalers[m.fs.roaster.solid_out] = prod_scaler
+    submodel_scalers[m.fs.roaster.gas_in] = gas_scaler
+    submodel_scalers[m.fs.roaster.gas_out] = gas_scaler
     roaster_scaler.scale_model(m.fs.roaster, submodel_scalers=submodel_scalers)
-    m_scaled = TransformationFactory("core.scale_model").create_using(m, rename=False)
 
     if dynamic == False:
         solver = get_solver(options={"max_iter": 50})
         initializer = REEFeedRoasterInitializer()
-        initializer.initialize(m_scaled.fs.roaster)
-        result = solver.solve(m_scaled, tee=True)
-        TransformationFactory("core.scale_model").propagate_solution(m_scaled, m)
-    return m, m_scaled
+        initializer.initialize(m.fs.roaster)
+        result = solver.solve(m, tee=True)
+        assert_optimal_termination(result)
+    return m
 
 
 @pytest.fixture(scope="module")
@@ -194,82 +197,70 @@ def model_steady_state():
 
 @pytest.fixture(scope="module")
 def model_dynamic():
-    m_ss, m_ss_scaled = get_model(dynamic=False)
-    m_dyn, m_dyn_scaled = get_model(dynamic=True)
+    m_ss = get_model(dynamic=False)
+    m_dyn = get_model(dynamic=True)
     copy_non_time_indexed_values(
-        m_dyn_scaled.fs, m_ss_scaled.fs, copy_fixed=True, outlvl=idaeslog.ERROR
+        m_dyn.fs, m_ss.fs, copy_fixed=True, outlvl=idaeslog.ERROR
     )
-    for t in m_dyn_scaled.fs.time:
+    for t in m_dyn.fs.time:
         copy_values_at_time(
-            m_dyn_scaled.fs,
-            m_ss_scaled.fs,
+            m_dyn.fs,
+            m_ss.fs,
             t,
             0.0,
             copy_fixed=True,
             outlvl=idaeslog.ERROR,
         )
-    return m_dyn, m_dyn_scaled
+    return m_dyn
 
 
 @pytest.mark.unit
 def test_build_steady_state(model_steady_state):
-    m_scaled = model_steady_state[1]
-    assert hasattr(m_scaled.fs, "roaster")
-    assert isinstance(m_scaled.fs.roaster, REEFeedRoaster)
-    assert len(m_scaled.fs.roaster.config) == 12
-    assert not m_scaled.fs.roaster.config.dynamic
-    assert m_scaled.fs.roaster.config.has_holdup
-    assert m_scaled.fs.roaster.config.has_heat_transfer
-    assert not m_scaled.fs.roaster.config.has_pressure_change
-    assert m_scaled.fs.roaster.config.gas_property_package is m_scaled.fs.prop_gas
-    assert (
-        m_scaled.fs.roaster.config.solid_feed_property_package
-        is m_scaled.fs.ree_feed_prop
-    )
-    assert (
-        m_scaled.fs.roaster.config.solid_product_property_package
-        is m_scaled.fs.ree_roast_prop
-    )
-    assert (
-        m_scaled.fs.roaster.config.leach_solids_property_package
-        is m_scaled.fs.leach_solid_prop
-    )
-    assert len(m_scaled.fs.prop_gas.component_list) == 6
-    assert isinstance(m_scaled.fs.roaster.heat_duty, Var)
-    assert isinstance(m_scaled.fs.roaster.volume, Var)
-    assert isinstance(m_scaled.fs.roaster.voidage, Var)
-    assert isinstance(m_scaled.fs.roaster.solid_mass_balance_eqn, Constraint)
-    assert isinstance(m_scaled.fs.roaster.gas_mass_balance_eqn, Constraint)
-    assert isinstance(m_scaled.fs.roaster.energy_balance_eqn, Constraint)
-    assert len(m_scaled.fs.roaster.solid_mass_balance_eqn) == 24
-    assert len(m_scaled.fs.roaster.gas_mass_balance_eqn) == 6
-    assert number_variables(m_scaled.fs.roaster) == 283
-    assert number_total_constraints(m_scaled.fs.roaster) == 237
-    assert number_unused_variables(m_scaled.fs.roaster) == 0
-    assert_units_consistent(m_scaled.fs.roaster)
+    m = model_steady_state
+    assert hasattr(m.fs, "roaster")
+    assert isinstance(m.fs.roaster, REEFeedRoaster)
+    assert len(m.fs.roaster.config) == 12
+    assert not m.fs.roaster.config.dynamic
+    assert m.fs.roaster.config.has_holdup
+    assert m.fs.roaster.config.has_heat_transfer
+    assert not m.fs.roaster.config.has_pressure_change
+    assert m.fs.roaster.config.gas_property_package is m.fs.prop_gas
+    assert m.fs.roaster.config.solid_feed_property_package is m.fs.ree_feed_prop
+    assert m.fs.roaster.config.solid_product_property_package is m.fs.ree_roast_prop
+    assert m.fs.roaster.config.leach_solids_property_package is m.fs.leach_solid_prop
+    assert len(m.fs.prop_gas.component_list) == 6
+    assert isinstance(m.fs.roaster.heat_duty, Var)
+    assert isinstance(m.fs.roaster.volume, Var)
+    assert isinstance(m.fs.roaster.voidage, Var)
+    assert isinstance(m.fs.roaster.solid_mass_balance_eqn, Constraint)
+    assert isinstance(m.fs.roaster.gas_mass_balance_eqn, Constraint)
+    assert isinstance(m.fs.roaster.energy_balance_eqn, Constraint)
+    assert len(m.fs.roaster.solid_mass_balance_eqn) == 24
+    assert len(m.fs.roaster.gas_mass_balance_eqn) == 6
+    assert number_variables(m.fs.roaster) == 270
+    assert number_total_constraints(m.fs.roaster) == 224
+    assert number_unused_variables(m.fs.roaster) == 0
+    assert_units_consistent(m.fs.roaster)
 
 
 @pytest.mark.unit
 def test_structural_issues_steady_state(model_steady_state):
-    m_scaled = model_steady_state[1]
-    dt = DiagnosticsToolbox(m_scaled)
+    dt = DiagnosticsToolbox(model_steady_state)
     dt.assert_no_structural_warnings()
 
 
 @pytest.mark.component
 @pytest.mark.solver
 def test_solve_steady_state(model_steady_state):
-    m_scaled = model_steady_state[1]
-    solver = SolverFactory("ipopt")
-    results = solver.solve(m_scaled, tee=False)
+    solver = get_solver()
+    results = solver.solve(model_steady_state, tee=False)
     assert_optimal_termination(results)
 
 
 @pytest.mark.component
 @pytest.mark.solver
 def test_numerical_issues_steady_state(model_steady_state):
-    m_scaled = model_steady_state[1]
-    dt = DiagnosticsToolbox(m_scaled)
+    dt = DiagnosticsToolbox(model_steady_state)
     dt.assert_no_numerical_warnings()
     dt.report_numerical_issues()
 
@@ -277,9 +268,7 @@ def test_numerical_issues_steady_state(model_steady_state):
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution_steady_state(model_steady_state):
-    m = model_steady_state[0]
-    m_scaled = model_steady_state[1]
-    TransformationFactory("core.scale_model").propagate_solution(m_scaled, m)
+    m = model_steady_state
     assert value(m.fs.roaster.gas_out[0].flow_mol) == pytest.approx(
         81.98495217241386, rel=1e-5, abs=1e-6
     )
@@ -329,48 +318,38 @@ def test_solution_steady_state(model_steady_state):
 
 @pytest.mark.unit
 def test_build_dynamic(model_dynamic):
-    m_scaled = model_dynamic[1]
-    assert hasattr(m_scaled.fs, "roaster")
-    assert isinstance(m_scaled.fs.roaster, REEFeedRoaster)
-    assert len(m_scaled.fs.roaster.config) == 12
-    assert m_scaled.fs.roaster.config.dynamic
-    assert m_scaled.fs.roaster.config.has_holdup
-    assert m_scaled.fs.roaster.config.has_heat_transfer
-    assert m_scaled.fs.roaster.config.has_pressure_change
-    assert m_scaled.fs.roaster.config.gas_property_package is m_scaled.fs.prop_gas
-    assert (
-        m_scaled.fs.roaster.config.solid_feed_property_package
-        is m_scaled.fs.ree_feed_prop
-    )
-    assert (
-        m_scaled.fs.roaster.config.solid_product_property_package
-        is m_scaled.fs.ree_roast_prop
-    )
-    assert (
-        m_scaled.fs.roaster.config.leach_solids_property_package
-        is m_scaled.fs.leach_solid_prop
-    )
-    assert len(m_scaled.fs.prop_gas.component_list) == 6
-    assert isinstance(m_scaled.fs.roaster.heat_duty, Var)
-    assert isinstance(m_scaled.fs.roaster.deltaP, Var)
-    assert isinstance(m_scaled.fs.roaster.volume, Var)
-    assert isinstance(m_scaled.fs.roaster.voidage, Var)
-    assert isinstance(m_scaled.fs.roaster.solid_mass_balance_eqn, Constraint)
-    assert isinstance(m_scaled.fs.roaster.gas_mass_balance_eqn, Constraint)
-    assert isinstance(m_scaled.fs.roaster.energy_balance_eqn, Constraint)
-    assert len(m_scaled.fs.roaster.solid_mass_balance_eqn) == 264
-    assert len(m_scaled.fs.roaster.gas_mass_balance_eqn) == 66
-    assert number_variables(m_scaled.fs.roaster) == 3390
-    assert number_total_constraints(m_scaled.fs.roaster) == 2868
-    assert number_unused_variables(m_scaled.fs.roaster) == 0
+    m = model_dynamic
+    assert hasattr(m.fs, "roaster")
+    assert isinstance(m.fs.roaster, REEFeedRoaster)
+    assert len(m.fs.roaster.config) == 12
+    assert m.fs.roaster.config.dynamic
+    assert m.fs.roaster.config.has_holdup
+    assert m.fs.roaster.config.has_heat_transfer
+    assert m.fs.roaster.config.has_pressure_change
+    assert m.fs.roaster.config.gas_property_package is m.fs.prop_gas
+    assert m.fs.roaster.config.solid_feed_property_package is m.fs.ree_feed_prop
+    assert m.fs.roaster.config.solid_product_property_package is m.fs.ree_roast_prop
+    assert m.fs.roaster.config.leach_solids_property_package is m.fs.leach_solid_prop
+    assert len(m.fs.prop_gas.component_list) == 6
+    assert isinstance(m.fs.roaster.heat_duty, Var)
+    assert isinstance(m.fs.roaster.deltaP, Var)
+    assert isinstance(m.fs.roaster.volume, Var)
+    assert isinstance(m.fs.roaster.voidage, Var)
+    assert isinstance(m.fs.roaster.solid_mass_balance_eqn, Constraint)
+    assert isinstance(m.fs.roaster.gas_mass_balance_eqn, Constraint)
+    assert isinstance(m.fs.roaster.energy_balance_eqn, Constraint)
+    assert len(m.fs.roaster.solid_mass_balance_eqn) == 264
+    assert len(m.fs.roaster.gas_mass_balance_eqn) == 66
+    assert number_variables(m.fs.roaster) == 3247
+    assert number_total_constraints(m.fs.roaster) == 2725
+    assert number_unused_variables(m.fs.roaster) == 0
 
 
 # Currently there is a structure warning related to unit of measure
 # Structure assertion test is commented out
 # @pytest.mark.unit
 # def test_structural_issues_dynamic(model_dynamic):
-#    m_scaled = model_dynamic[1]
-#    dt = DiagnosticsToolbox(m_scaled)
+#    dt = DiagnosticsToolbox(model_dynamic)
 #    The unit consistency is not checked since Pyomo.Dae has not fixed the bug for time domain unit
 #    dt.assert_no_structural_warnings(ignore_unit_consistency=True)
 
@@ -378,29 +357,25 @@ def test_build_dynamic(model_dynamic):
 @pytest.mark.component
 @pytest.mark.solver
 def test_initialize_and_solve_dynamic(model_dynamic):
-    m_scaled = model_dynamic[1]
-    solver = SolverFactory("ipopt")
-    result = solver.solve(m_scaled, tee=False)
+    m = model_dynamic
+    solver = get_solver()
+    result = solver.solve(m, tee=False)
     assert_optimal_termination(result)
     # Add disturbance and solve dynamic model
-    temp0 = m_scaled.fs.roaster.solid_inlet.temperature[0].value
-    sf = get_scaling_factor(m_scaled.fs.roaster.solid_inlet.temperature[0])
+    temp0 = m.fs.roaster.solid_inlet.temperature[0].value
     # solid inlet temperature ramp rate for unscaled model
     dTdt = 0.2
-    # solid inlet temperature ramp rate for scaled model
-    dTdt_scaled = dTdt * sf
-    for t in m_scaled.fs.time:
+    for t in m.fs.time:
         if t > 30:
-            m_scaled.fs.roaster.solid_inlet.temperature[t].fix(temp0 + dTdt_scaled * t)
-    result = solver.solve(m_scaled, tee=False)
+            m.fs.roaster.solid_inlet.temperature[t].fix(temp0 + dTdt * t)
+    result = solver.solve(m, tee=False)
     assert_optimal_termination(result)
 
 
 @pytest.mark.component
 @pytest.mark.solver
 def test_numerical_issues_dynamic(model_dynamic):
-    m_scaled = model_dynamic[1]
-    dt = DiagnosticsToolbox(m_scaled)
+    dt = DiagnosticsToolbox(model_dynamic)
     dt.assert_no_numerical_warnings()
     dt.report_numerical_issues()
 
@@ -408,9 +383,7 @@ def test_numerical_issues_dynamic(model_dynamic):
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution_dynamic(model_dynamic):
-    m = model_dynamic[0]
-    m_scaled = model_dynamic[1]
-    TransformationFactory("core.scale_model").propagate_solution(m_scaled, m)
+    m = model_dynamic
     t = 400
     assert value(m.fs.roaster.gas_out[t].flow_mol) == pytest.approx(
         82.03953211409154, rel=1e-5, abs=1e-6

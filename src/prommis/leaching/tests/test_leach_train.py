@@ -5,11 +5,10 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 from pyomo.environ import (
+    ComponentMap,
     ConcreteModel,
     Constraint,
     SolverFactory,
-    Suffix,
-    TransformationFactory,
     Var,
     assert_optimal_termination,
     units,
@@ -17,6 +16,7 @@ from pyomo.environ import (
 )
 
 from idaes.core import FlowsheetBlock
+from idaes.core.scaling.util import jacobian_cond
 from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
     number_total_constraints,
@@ -28,9 +28,11 @@ from idaes.models.unit_models import MSContactor
 import pytest
 
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
-from prommis.leaching.leach_solution_properties import LeachSolutionParameters
-from prommis.leaching.leach_train import LeachingTrain
+from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingParameters,
+)
+from prommis.leaching.leach_train import LeachingTrain, LeachingTrainScaler
 
 
 @pytest.fixture(scope="module")
@@ -38,7 +40,7 @@ def model():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
@@ -105,6 +107,21 @@ def model():
 
     m.fs.leach.volume.fix(100 * units.gallon)
 
+    solid_scaler = m.fs.leach.mscontactor.solid.default_scaler()
+    solid_scaler.default_scaling_factors["flow_mass"] = 1 / 22.68
+
+    liquid_scaler = m.fs.leach.mscontactor.liquid.default_scaler()
+    liquid_scaler.default_scaling_factors["flow_vol"] = 1 / 224.3
+
+    submodel_scalers = ComponentMap()
+    submodel_scalers[m.fs.leach.mscontactor.liquid_inlet_state] = liquid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.liquid] = liquid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.solid_inlet_state] = solid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.solid] = solid_scaler
+
+    scaler_obj = m.fs.leach.default_scaler()
+    scaler_obj.scale_model(m.fs.leach, submodel_scalers=submodel_scalers)
+
     return m
 
 
@@ -122,9 +139,14 @@ def test_build(model):
         len(model.fs.leach.mscontactor.heterogeneous_reaction_extent_constraint) == 12
     )
 
-    assert number_variables(model.fs.leach) == 203
-    assert number_total_constraints(model.fs.leach) == 166
+    # Down from 203 because we are no longer constructing pH,
+    # reaction rates were converted from Vars to Expressions,
+    # and solid phase conversion was converted to an on-demand property
+    assert number_variables(model.fs.leach) == 176
+    assert number_total_constraints(model.fs.leach) == 139
     assert number_unused_variables(model.fs.leach) == 4
+
+    assert model.fs.leach.default_scaler is LeachingTrainScaler
 
 
 @pytest.mark.unit
@@ -137,46 +159,12 @@ def test_structural_issues(model):
 @pytest.mark.solver
 def test_initialize_and_solve(model):
     # Cannot separate initialization, as it fails to converge in first pass
-    model.scaling_factor = Suffix(direction=Suffix.EXPORT)
-
-    for j in model.fs.coal.component_list:
-        if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
-            model.scaling_factor[
-                model.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j]
-            ] = 1e5
-            model.scaling_factor[
-                model.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j]
-            ] = 1e5
-            model.scaling_factor[
-                model.fs.leach.mscontactor.heterogeneous_reactions[
-                    0.0, 1
-                ].reaction_rate[j]
-            ] = 1e5
-            model.scaling_factor[
-                model.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j]
-            ] = 1e3
-            model.scaling_factor[
-                model.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j]
-            ] = 1e3
-            model.scaling_factor[
-                model.fs.leach.mscontactor.heterogeneous_reactions[
-                    0.0, 1
-                ].reaction_rate_eq[j]
-            ] = 1e5
-
-    # Create a scaled version of the model to solve
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(model, rename=False)
-
     initializer = model.fs.leach.default_initializer()
-    initializer.initialize(scaled_model.fs.leach)
+    initializer.initialize(model.fs.leach)
 
     # Solve scaled model
-    solver = SolverFactory("ipopt")
-    results = solver.solve(scaled_model, tee=False)
-
-    # Propagate results back to unscaled model
-    scaling.propagate_solution(scaled_model, model)
+    solver = SolverFactory("ipopt_v2")
+    results = solver.solve(model, tee=False)
 
     assert_optimal_termination(results)
 
@@ -187,11 +175,14 @@ def test_numerical_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.assert_no_numerical_warnings()
 
+    assert jacobian_cond(model, scaled=False) == pytest.approx(6.23693e12, rel=1e-3)
+    assert jacobian_cond(model, scaled=True) == pytest.approx(69758.8, rel=1e-3)
+
 
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution(model):
-    conversion = {
+    conversion_comp = {
         "Al2O3": 0.03003765546930494,
         "CaO": 0.5145052459223426,
         "Ce2O3": 0.4207435931354908,
@@ -222,7 +213,7 @@ def test_solution(model):
         "Fe2O3": 16.33850709753919,
     }
 
-    for k, v in model.fs.leach.mscontactor.solid[0, 1].conversion.items():
+    for k, v in model.fs.leach.mscontactor.solid[0, 1].conversion_comp.items():
         f_in = model.fs.leach.solid_inlet.flow_mass[0]
         f_out = model.fs.leach.solid_outlet.flow_mass[0]
         x_in = model.fs.leach.solid_inlet.mass_frac_comp[0, k]
@@ -230,7 +221,7 @@ def test_solution(model):
 
         r = value(1 - f_out * x_out / (f_in * x_in)) * 100
 
-        assert value(v) == pytest.approx(conversion[k], rel=1e-5, abs=1e-6)
+        assert value(v) == pytest.approx(conversion_comp[k], rel=1e-5, abs=1e-6)
         assert r == pytest.approx(recovery[k], rel=1e-5, abs=1e-6)
 
 
@@ -243,7 +234,7 @@ def model_ub():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
@@ -310,6 +301,21 @@ def model_ub():
 
     m.fs.leach.volume.fix(100 * 2 * units.gallon)
 
+    solid_scaler = m.fs.leach.mscontactor.solid.default_scaler()
+    solid_scaler.default_scaling_factors["flow_mass"] = 1 / (22.68 * 2)
+
+    liquid_scaler = m.fs.leach.mscontactor.liquid.default_scaler()
+    liquid_scaler.default_scaling_factors["flow_vol"] = 1 / (224.3 * 2)
+
+    submodel_scalers = ComponentMap()
+    submodel_scalers[m.fs.leach.mscontactor.liquid_inlet_state] = liquid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.liquid] = liquid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.solid_inlet_state] = solid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.solid] = solid_scaler
+
+    scaler_obj = m.fs.leach.default_scaler()
+    scaler_obj.scale_model(m.fs.leach, submodel_scalers=submodel_scalers)
+
     return m
 
 
@@ -329,8 +335,8 @@ def test_build_ub(model_ub):
         == 12
     )
 
-    assert number_variables(model_ub.fs.leach) == 203
-    assert number_total_constraints(model_ub.fs.leach) == 166
+    assert number_variables(model_ub.fs.leach) == 176
+    assert number_total_constraints(model_ub.fs.leach) == 139
     assert number_unused_variables(model_ub.fs.leach) == 4
 
 
@@ -344,46 +350,12 @@ def test_structural_issues_ub(model_ub):
 @pytest.mark.solver
 def test_initialize_and_solve_ub(model_ub):
     # Cannot separate initialization, as it fails to converge in first pass
-    model_ub.scaling_factor = Suffix(direction=Suffix.EXPORT)
-
-    for j in model_ub.fs.coal.component_list:
-        if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
-            model_ub.scaling_factor[
-                model_ub.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j]
-            ] = 1e5
-            model_ub.scaling_factor[
-                model_ub.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j]
-            ] = 1e5
-            model_ub.scaling_factor[
-                model_ub.fs.leach.mscontactor.heterogeneous_reactions[
-                    0.0, 1
-                ].reaction_rate[j]
-            ] = 1e5
-            model_ub.scaling_factor[
-                model_ub.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j]
-            ] = 1e3
-            model_ub.scaling_factor[
-                model_ub.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j]
-            ] = 1e3
-            model_ub.scaling_factor[
-                model_ub.fs.leach.mscontactor.heterogeneous_reactions[
-                    0.0, 1
-                ].reaction_rate_eq[j]
-            ] = 1e5
-
-    # Create a scaled version of the model to solve
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(model_ub, rename=False)
 
     initializer = model_ub.fs.leach.default_initializer()
-    initializer.initialize(scaled_model.fs.leach)
+    initializer.initialize(model_ub.fs.leach)
 
-    # Solve scaled model
-    solver = SolverFactory("ipopt")
-    results = solver.solve(scaled_model, tee=False)
-
-    # Propagate results back to unscaled model
-    scaling.propagate_solution(scaled_model, model_ub)
+    solver = SolverFactory("ipopt_v2")
+    results = solver.solve(model_ub, tee=False)
 
     assert_optimal_termination(results)
 
@@ -394,11 +366,14 @@ def test_numerical_issues_ub(model_ub):
     dt = DiagnosticsToolbox(model_ub)
     dt.assert_no_numerical_warnings()
 
+    assert jacobian_cond(model_ub, scaled=False) == pytest.approx(5.27968e12, rel=1e-3)
+    assert jacobian_cond(model_ub, scaled=True) == pytest.approx(96858.8, rel=1e-3)
+
 
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution_ub(model_ub):
-    conversion = {
+    conversion_comp = {
         "Al2O3": 0.06978566878752633,
         "CaO": 0.5383218112983164,
         "Ce2O3": 0.5210043955569409,
@@ -429,7 +404,7 @@ def test_solution_ub(model_ub):
         "Fe2O3": 25.429914729256087,
     }
 
-    for k, v in model_ub.fs.leach.mscontactor.solid[0, 1].conversion.items():
+    for k, v in model_ub.fs.leach.mscontactor.solid[0, 1].conversion_comp.items():
         f_in = model_ub.fs.leach.solid_inlet.flow_mass[0]
         f_out = model_ub.fs.leach.solid_outlet.flow_mass[0]
         x_in = model_ub.fs.leach.solid_inlet.mass_frac_comp[0, k]
@@ -437,7 +412,7 @@ def test_solution_ub(model_ub):
 
         r = value(1 - f_out * x_out / (f_in * x_in)) * 100
 
-        assert value(v) == pytest.approx(conversion[k], rel=1e-5, abs=1e-6)
+        assert value(v) == pytest.approx(conversion_comp[k], rel=1e-5, abs=1e-6)
         assert r == pytest.approx(recovery[k], rel=1e-5, abs=1e-6)
 
 
@@ -450,7 +425,7 @@ def model_lb():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
@@ -517,6 +492,21 @@ def model_lb():
 
     m.fs.leach.volume.fix(100 * units.gallon)
 
+    solid_scaler = m.fs.leach.mscontactor.solid.default_scaler()
+    solid_scaler.default_scaling_factors["flow_mass"] = 1 / 22.68
+
+    liquid_scaler = m.fs.leach.mscontactor.liquid.default_scaler()
+    liquid_scaler.default_scaling_factors["flow_vol"] = 1 / 224.3
+
+    submodel_scalers = ComponentMap()
+    submodel_scalers[m.fs.leach.mscontactor.liquid_inlet_state] = liquid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.liquid] = liquid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.solid_inlet_state] = solid_scaler
+    submodel_scalers[m.fs.leach.mscontactor.solid] = solid_scaler
+
+    scaler_obj = m.fs.leach.default_scaler()
+    scaler_obj.scale_model(m.fs.leach, submodel_scalers=submodel_scalers)
+
     return m
 
 
@@ -536,8 +526,8 @@ def test_build_lb(model_lb):
         == 12
     )
 
-    assert number_variables(model_lb.fs.leach) == 203
-    assert number_total_constraints(model_lb.fs.leach) == 166
+    assert number_variables(model_lb.fs.leach) == 176
+    assert number_total_constraints(model_lb.fs.leach) == 139
     assert number_unused_variables(model_lb.fs.leach) == 4
 
 
@@ -551,46 +541,12 @@ def test_structural_issues_lb(model_lb):
 @pytest.mark.solver
 def test_initialize_and_solve_lb(model_lb):
     # Cannot separate initialization, as it fails to converge in first pass
-    model_lb.scaling_factor = Suffix(direction=Suffix.EXPORT)
-
-    for j in model_lb.fs.coal.component_list:
-        if j not in ["Al2O3", "Fe2O3", "CaO", "inerts"]:
-            model_lb.scaling_factor[
-                model_lb.fs.leach.mscontactor.solid[0.0, 1].mass_frac_comp[j]
-            ] = 1e5
-            model_lb.scaling_factor[
-                model_lb.fs.leach.mscontactor.solid_inlet_state[0.0].mass_frac_comp[j]
-            ] = 1e5
-            model_lb.scaling_factor[
-                model_lb.fs.leach.mscontactor.heterogeneous_reactions[
-                    0.0, 1
-                ].reaction_rate[j]
-            ] = 1e5
-            model_lb.scaling_factor[
-                model_lb.fs.leach.mscontactor.solid[0.0, 1].conversion_eq[j]
-            ] = 1e3
-            model_lb.scaling_factor[
-                model_lb.fs.leach.mscontactor.solid_inlet_state[0.0].conversion_eq[j]
-            ] = 1e3
-            model_lb.scaling_factor[
-                model_lb.fs.leach.mscontactor.heterogeneous_reactions[
-                    0.0, 1
-                ].reaction_rate_eq[j]
-            ] = 1e5
-
-    # Create a scaled version of the model to solve
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(model_lb, rename=False)
 
     initializer = model_lb.fs.leach.default_initializer()
-    initializer.initialize(scaled_model.fs.leach)
+    initializer.initialize(model_lb.fs.leach)
 
-    # Solve scaled model
-    solver = SolverFactory("ipopt")
-    results = solver.solve(scaled_model, tee=False)
-
-    # Propagate results back to unscaled model
-    scaling.propagate_solution(scaled_model, model_lb)
+    solver = SolverFactory("ipopt_v2")
+    results = solver.solve(model_lb, tee=False)
 
     assert_optimal_termination(results)
 
@@ -601,11 +557,14 @@ def test_numerical_issues_lb(model_lb):
     dt = DiagnosticsToolbox(model_lb)
     dt.assert_no_numerical_warnings()
 
+    assert jacobian_cond(model_lb, scaled=False) == pytest.approx(7.004012e12, rel=1e-3)
+    assert jacobian_cond(model_lb, scaled=True) == pytest.approx(61717.1, rel=1e-3)
+
 
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution_lb(model_lb):
-    conversion = {
+    conversion_comp = {
         "Al2O3": 0.011710026041552567,
         "CaO": 0.4863262517984512,
         "Ce2O3": 0.32058357157752987,
@@ -636,7 +595,7 @@ def test_solution_lb(model_lb):
         "Fe2O3": 9.69999886819004,
     }
 
-    for k, v in model_lb.fs.leach.mscontactor.solid[0, 1].conversion.items():
+    for k, v in model_lb.fs.leach.mscontactor.solid[0, 1].conversion_comp.items():
         f_in = model_lb.fs.leach.solid_inlet.flow_mass[0]
         f_out = model_lb.fs.leach.solid_outlet.flow_mass[0]
         x_in = model_lb.fs.leach.solid_inlet.mass_frac_comp[0, k]
@@ -644,5 +603,5 @@ def test_solution_lb(model_lb):
 
         r = value(1 - f_out * x_out / (f_in * x_in)) * 100
 
-        assert value(v) == pytest.approx(conversion[k], rel=1e-5, abs=1e-6)
+        assert value(v) == pytest.approx(conversion_comp[k], rel=1e-5, abs=1e-6)
         assert r == pytest.approx(recovery[k], rel=1e-5, abs=1e-6)

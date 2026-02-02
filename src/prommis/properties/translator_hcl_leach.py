@@ -31,6 +31,7 @@ Additional constraints
 
 """
 
+from pyomo.common.config import ConfigValue, In
 from pyomo.environ import Set, Param, units as pyunits
 
 # Import IDAES cores
@@ -111,6 +112,25 @@ class TranslatorHClLeachData(TranslatorData):
     property package, which does contain sulfate species.
 
     """
+    CONFIG = TranslatorData.CONFIG()
+
+    CONFIG._data.pop("outlet_state_defined")
+    CONFIG._data.pop("has_phase_equilibrium")
+
+    CONFIG.declare(
+        "outlet_state_defined",
+        ConfigValue(
+            default=True,
+            domain=In([True]),
+        )
+    )
+    CONFIG.declare(
+        "has_phase_equilibrium",
+        ConfigValue(
+            default=False,
+            domain=In([False]),
+        )
+    )
 
     default_scaler = TranslatorHClLeachScaler
 
@@ -179,3 +199,5 @@ class TranslatorHClLeachData(TranslatorData):
         )
         def conc_mass_sulfates_eqn(blk, t, i):
             return blk.properties_out[t].conc_mass_comp[i] == blk.eps_conc_mass
+
+        # TODO what about temperature and pressure?

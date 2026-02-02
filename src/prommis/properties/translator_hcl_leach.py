@@ -31,15 +31,15 @@ Additional constraints
 
 """
 
-from pyomo.common.config import ConfigBlock, ConfigValue, In
+from pyomo.common.config import ConfigValue, In
 from pyomo.environ import Set, Param, units as pyunits
 
-# Import IDAES
-import idaes.logger as idaeslog
+# Import IDAES cores
 from idaes.core import declare_process_block_class
 from idaes.core.scaling import ConstraintScalingScheme, CustomScalerBase
-from idaes.core.util.config import is_physical_parameter_block
 from idaes.models.unit_models.translator import TranslatorData
+
+import idaes.logger as idaeslog
 
 __author__ = "Douglas Allan"
 
@@ -113,31 +113,16 @@ class TranslatorHClLeachData(TranslatorData):
 
     """
 
-    CONFIG = ConfigBlock()
-    CONFIG.declare(
-        "dynamic",
-        ConfigValue(
-            domain=In([False]),
-            default=False,
-            description="Dynamic model flag - must be False",
-            doc="""Translator blocks are always steady-state.""",
-        ),
-    )
-    CONFIG.declare(
-        "has_holdup",
-        ConfigValue(
-            default=False,
-            domain=In([False]),
-            description="Holdup construction flag - must be False",
-            doc="""Translator blocks do not contain holdup.""",
-        ),
-    )
+    CONFIG = TranslatorData.CONFIG()
+
+    CONFIG._data.pop("outlet_state_defined")
+    CONFIG._data.pop("has_phase_equilibrium")
+
     CONFIG.declare(
         "outlet_state_defined",
         ConfigValue(
             default=True,
             domain=In([True]),
-            description="The output state is fully defined by the translator constraints.",
         ),
     )
     CONFIG.declare(
@@ -145,59 +130,6 @@ class TranslatorHClLeachData(TranslatorData):
         ConfigValue(
             default=False,
             domain=In([False]),
-            description="There is no phase equilibrium in either property package.",
-        ),
-    )
-    CONFIG.declare(
-        "inlet_property_package",
-        ConfigValue(
-            default=None,
-            domain=is_physical_parameter_block,
-            description="Property package to use for incoming stream",
-            doc="""Property parameter object used to define property
-calculations for the incoming stream,
-**default** - None.
-**Valid values:** {
-**PhysicalParameterObject** - a PhysicalParameterBlock object.}""",
-        ),
-    )
-    CONFIG.declare(
-        "inlet_property_package_args",
-        ConfigBlock(
-            implicit=True,
-            description="Arguments to use for constructing property package "
-            "of the incoming stream",
-            doc="""A ConfigBlock with arguments to be passed to the property
-block associated with the incoming stream,
-**default** - None.
-**Valid values:** {
-see property package for documentation.}""",
-        ),
-    )
-    CONFIG.declare(
-        "outlet_property_package",
-        ConfigValue(
-            default=None,
-            domain=is_physical_parameter_block,
-            description="Property package to use for outgoing stream",
-            doc="""Property parameter object used to define property
-calculations for the outgoing stream,
-**default** - None.
-**Valid values:** {
-**PhysicalParameterObject** - a PhysicalParameterBlock object.}""",
-        ),
-    )
-    CONFIG.declare(
-        "outlet_property_package_args",
-        ConfigBlock(
-            implicit=True,
-            description="Arguments to use for constructing property package "
-            "of the outgoing stream",
-            doc="""A ConfigBlock with arguments to be passed to the property
-block associated with the outgoing stream,
-**default** - None.
-**Valid values:** {
-see property package for documentation.}""",
         ),
     )
 

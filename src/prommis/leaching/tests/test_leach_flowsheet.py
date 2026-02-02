@@ -5,12 +5,12 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 from pyomo.environ import (
-    SolverFactory,
-    TransformationFactory,
     assert_optimal_termination,
+    SolverFactory,
     value,
 )
 
+from idaes.core.scaling.util import jacobian_cond
 from idaes.core.util import DiagnosticsToolbox
 
 import pytest
@@ -37,19 +37,13 @@ def test_structural_issues(model):
 @pytest.mark.solver
 def test_solve(model):
     set_scaling(model)
-    # Create a scaled version of the model to solve
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(model, rename=False)
 
     initializer = model.fs.leach.default_initializer()
-    initializer.initialize(scaled_model.fs.leach)
+    initializer.initialize(model.fs.leach)
 
     # Solve scaled model
-    solver = SolverFactory("ipopt")
-    results = solver.solve(scaled_model, tee=False)
-
-    # Propagate results back to unscaled model
-    scaling.propagate_solution(scaled_model, model)
+    solver = SolverFactory("ipopt_v2")
+    results = solver.solve(model, tee=False)
 
     assert_optimal_termination(results)
 
@@ -60,11 +54,14 @@ def test_numerical_issues(model):
     dt = DiagnosticsToolbox(model)
     dt.assert_no_numerical_warnings()
 
+    assert jacobian_cond(model, scaled=False) == pytest.approx(6.243792e12, rel=1e-3)
+    assert jacobian_cond(model, scaled=True) == pytest.approx(59103.1, rel=1e-3)
+
 
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution(model):
-    conversion = {
+    conversion_comp = {
         "Al2O3": 0.03003765546930494,
         "CaO": 0.5145052459223426,
         "Ce2O3": 0.4207435931354908,
@@ -95,7 +92,7 @@ def test_solution(model):
         "Fe2O3": 16.33850709753919,
     }
 
-    for k, v in model.fs.leach.mscontactor.solid[0, 1].conversion.items():
+    for k, v in model.fs.leach.mscontactor.solid[0, 1].conversion_comp.items():
         f_in = model.fs.leach.solid_inlet.flow_mass[0]
         f_out = model.fs.leach.solid_outlet.flow_mass[0]
         x_in = model.fs.leach.solid_inlet.mass_frac_comp[0, k]
@@ -103,5 +100,5 @@ def test_solution(model):
 
         r = value(1 - f_out * x_out / (f_in * x_in)) * 100
 
-        assert value(v) == pytest.approx(conversion[k], rel=1e-5, abs=1e-6)
+        assert value(v) == pytest.approx(conversion_comp[k], rel=1e-5, abs=1e-6)
         assert r == pytest.approx(recovery[k], rel=1e-5, abs=1e-6)

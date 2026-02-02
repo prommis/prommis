@@ -28,8 +28,10 @@ from idaes.core.solvers import get_solver
 
 from prommis.leaching.leach_train import LeachingTrain
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
-from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingParameters,
+)
 
 
 def build_model(time_duration, number_of_tanks):
@@ -48,7 +50,7 @@ def build_model(time_duration, number_of_tanks):
         dynamic=True, time_set=[0, time_duration], time_units=units.hour
     )
 
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.coal = CoalRefuseParameters()
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
@@ -167,16 +169,6 @@ def set_inputs(m, perturb_time):
     m.fs.leach.volume.fix(100 * units.gallon)
     m.fs.leach.mscontactor.volume.fix(100 * units.gallon)
 
-    @m.Constraint(m.fs.time, m.fs.leach.mscontactor.elements)
-    def volume_fraction_rule(m, t, s):
-
-        theta_s = m.fs.leach.mscontactor.volume_frac_stream[t, s, "solid"]
-        theta_l = m.fs.leach.mscontactor.volume_frac_stream[t, s, "liquid"]
-        v_l = m.fs.leach.mscontactor.liquid[t, s].flow_vol
-        solid_dens_mass = m.fs.leach.config.solid_phase["property_package"].dens_mass
-        v_s = m.fs.leach.mscontactor.solid[t, s].flow_mass / solid_dens_mass
-        return theta_l * v_s == theta_s * v_l * m.liquid_solid_residence_time_ratio
-
     # Fixing the variable values at t=0
     m.fs.leach.mscontactor.liquid[0, :].flow_vol.fix()
     m.fs.leach.mscontactor.liquid[0, :].conc_mass_comp["H"].fix()
@@ -235,18 +227,9 @@ def set_scaling(m):
                         1e5,
                     )
                     set_scaling_factor(
-                        m.fs.leach.mscontactor.solid[t, s].conversion_eq[j], 1e3
+                        m.fs.leach.mscontactor.solid[t, s].conversion_comp_eqn[j], 1e3
                     )
-                    set_scaling_factor(
-                        m.fs.leach.mscontactor.solid_inlet_state[t].conversion_eq[j],
-                        1e3,
-                    )
-                    set_scaling_factor(
-                        m.fs.leach.mscontactor.heterogeneous_reactions[
-                            t, s
-                        ].reaction_rate_eq[j],
-                        1e5,
-                    )
+
             for j in m.fs.leach_soln.component_list:
                 if j not in ["H2O"]:
                     set_scaling_factor(

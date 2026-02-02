@@ -100,7 +100,7 @@ Assumptions
 - Material balance of the REE is considered for the element only; the forms of the RE compounds (in salt or oxide forms) are not considered.
 - If the product temperature is specified as a user input, the heat duty will be calculated. If the heat duty is given, the product temperature will be calculated.
 - Temperatures of solid and gas products are assumed to be the same.
-- No port for the solid inlet stream is used. The mass flow rate and composition of the solid reactant are specified as input variables inside the model. The mass flow rate and the composition of the solid product and dust streams are also declared as model variables. When mapping the solid products to the ``solid_outlet`` port, only the components defined in the :mod:`prommis.leaching.leach_solids_properties` module are mapped. The other species are discarded.
+- No port for the solid inlet stream is used. The mass flow rate and composition of the solid reactant are specified as input variables inside the model. The mass flow rate and the composition of the solid product and dust streams are also declared as model variables. When mapping the solid products to the ``solid_outlet`` port, only the components defined in the :mod:`prommis.properties.coal_refuse_properties` module are mapped. The other species are discarded.
 
 """
 

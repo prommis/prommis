@@ -29,7 +29,7 @@ from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
 from idaes.core.scaling import CustomScalerBase
 
-__author__ = "Arkoprabho Dasgupta"
+__author__ = "Arkoprabho Dasgupta, Douglas Allan"
 
 ree_list = ["Sc_o", "Y_o", "La_o", "Ce_o", "Pr_o", "Nd_o", "Sm_o", "Gd_o", "Dy_o"]
 

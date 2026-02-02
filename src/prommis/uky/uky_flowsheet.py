@@ -2866,11 +2866,11 @@ def data_reconcilliation(m):
 
 if __name__ == "__main__":
     m, results = main()
-    # warn(
-    #     "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
-    # )
-    # warn(
-    #     "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
-    # )
-    # optimize_model(m)
+     warn(
+         "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
+     )
+     warn(
+         "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
+     )
+     optimize_model(m)
     data_reconcilliation(m)

@@ -130,7 +130,7 @@ from idaes.core.util.exceptions import ConfigurationError
 
 from idaes.models.unit_models.mscontactor import MSContactor
 
-__author__ = "Arkoprabho Dasgupta"
+__author__ = "Arkoprabho Dasgupta, Douglas Allan"
 
 
 class SolventExtractionScaler(CustomScalerBase):

@@ -24,7 +24,7 @@ from idaes.core.base import property_meta
 from idaes.core.util.misc import add_object_reference
 from idaes.core.scaling import CustomScalerBase
 
-__author__ = "Arkoprabho Dasgupta"
+__author__ = "Arkoprabho Dasgupta, Douglas Allan"
 
 
 class SolventExtractionReactionScaler(CustomScalerBase):

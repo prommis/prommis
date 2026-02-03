@@ -112,25 +112,6 @@ class Test_Solvent_Extraction_steady_model:
         }
         assert_solution_equivalent(model.fs.solex, expected_results)
 
-    @pytest.fixture(scope="class")
-    def SolEx_total_flowsheet(self):
-        dosage = 5
-        number_of_stages = 3
-        model, results = main(dosage, number_of_stages, has_holdup=False)
-
-        return model, results
-
-    @pytest.mark.component
-    def test_solve_total(self, SolEx_total_flowsheet):
-        # TODO this test is redundant with the above solve
-        m, results = SolEx_total_flowsheet
-        assert check_optimal_termination(results)
-
-        dt = DiagnosticsToolbox(m)
-        dt.assert_no_numerical_warnings()
-        assert jacobian_cond(m, scaled=False) == pytest.approx(2.46261e14, rel=1e-3)
-        assert jacobian_cond(m, scaled=True) == pytest.approx(1.1119e7, rel=1e-3)
-
 
 class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
     @pytest.fixture(scope="class")
@@ -221,22 +202,3 @@ class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
             },
         }
         assert_solution_equivalent(model.fs.solex, expected_results)
-
-    @pytest.fixture(scope="class")
-    def SolEx_total_flowsheet(self):
-        dosage = 5
-        number_of_stages = 3
-        model, results = main(dosage, number_of_stages, has_holdup=True)
-
-        return model, results
-
-    @pytest.mark.component
-    def test_solve_total(self, SolEx_total_flowsheet):
-        # TODO this test is redundant with the above solve
-        m, results = SolEx_total_flowsheet
-        assert check_optimal_termination(results)
-
-        dt = DiagnosticsToolbox(m)
-        dt.assert_no_numerical_warnings()
-        assert jacobian_cond(m, scaled=False) == pytest.approx(8.415018e12, rel=1e-3)
-        assert jacobian_cond(m, scaled=True) == pytest.approx(1.2842e7, rel=1e-3)

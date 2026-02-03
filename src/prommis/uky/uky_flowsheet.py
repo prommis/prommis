@@ -141,6 +141,7 @@ import logging
 from warnings import warn
 from pyomo.common.collections import ComponentMap
 from pyomo.environ import (
+    Block,
     ConcreteModel,
     Constraint,
     Expression,
@@ -213,7 +214,6 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 
-# from prommis.solvent_extraction.translator_leach_precip import TranslatorLeachPrecip
 from prommis.properties.translator_hcl_leach import TranslatorHClLeach
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,
@@ -775,22 +775,22 @@ def set_scaling(m):
 
     csb = CustomScalerBase()
 
-    for blk in m.fs.block_data_objects(descend_into=True):
-        if blk.parent_block() is m.fs:
-            if isinstance(blk, UnitModelBlockData):
-                if hasattr(blk, "default_scaler") and blk.default_scaler is not None:
-                    print(f"Scaling {blk.name}")
-                    scaler = blk.default_scaler()
-                    scaler.scale_model(blk)
-                else:
-                    print(f"No default scaler for unit model {blk.name}")
-            elif "_expanded" in blk.name:
+    for blk in m.fs.component_data_objects(ctype=Block, descend_into=False):
+        # if blk.parent_block() is m.fs:
+        if isinstance(blk, UnitModelBlockData):
+            if hasattr(blk, "default_scaler") and blk.default_scaler is not None:
                 print(f"Scaling {blk.name}")
-                # Expanded arc block
-                for con in blk.component_data_objects(Constraint):
-                    csb.scale_constraint_by_nominal_value(
-                        con, scheme=ConstraintScalingScheme.inverseMaximum
-                    )
+                scaler = blk.default_scaler()
+                scaler.scale_model(blk)
+            else:
+                print(f"No default scaler for unit model {blk.name}")
+        elif "_expanded" in blk.name:
+            print(f"Scaling {blk.name}")
+            # Expanded arc block
+            for con in blk.component_data_objects(Constraint):
+                csb.scale_constraint_by_nominal_value(
+                    con, scheme=ConstraintScalingScheme.inverseMaximum
+                )
 
 
 def set_operating_conditions(m):
@@ -1274,23 +1274,21 @@ def initialize_system(m):
     seq.run(m, function)
 
 
-def solve_system(m, solver=None, tee=False):
+def solve_system(m, solver_obj=None, tee=False):
     """
     Solve the model.
 
     Args:
         m: pyomo model
-        solver: optimization solver
+        solver_obj: Pyomo solver object to use
         tee: boolean indicator to stream IPOPT solution
     """
-    if hasattr(solver, "solve"):
-        solver = solver
-    else:
+    if solver_obj is None:
         # Why isn't it getting ipopt_v2 automatically?
-        solver = get_solver("ipopt_v2")
-    solver.options.constr_viol_tol = 1e-8
+        solver_obj = get_solver("ipopt_v2")
+    solver_obj.options.constr_viol_tol = 1e-8
 
-    results = solver.solve(m, tee=tee)
+    results = solver_obj.solve(m, tee=tee)
 
     return results
 

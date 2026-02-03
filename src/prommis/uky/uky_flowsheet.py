@@ -8,7 +8,7 @@ r"""
 University of Kentucky REE Processing Plant
 ===========================================
 
-Author: Marcus Holly
+Authors: Marcus Holly, Brandon Paul, Douglas Allan
 
 The University of Kentucky (UKy) rare earth element (REE) processing plant is designed to extract salable rare earth oxides
 from domestic U.S. coal and coal byproducts. While this implementation of the plant does not take into account

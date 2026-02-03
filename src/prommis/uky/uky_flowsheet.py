@@ -276,9 +276,6 @@ def main():
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
 
-    # from idaes.core.scaling.util import jacobian_cond
-
-    # print(jacobian_cond(m))
 
     solve_system(m, tee=True)
 

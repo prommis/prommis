@@ -459,7 +459,7 @@ class TestDiafiltrationTwoSalt(object):
                     assert diafiltration_two_salt.fs.unit.d_membrane_conc_mol_comp_dz[
                         t, x, z, "Cl"
                     ].fixed
-                    if x != 0:
+                    if z != 0:
                         assert not diafiltration_two_salt.fs.unit.d_membrane_conc_mol_comp_dz_disc_eq[
                             t, x, z, "Cl"
                         ].active

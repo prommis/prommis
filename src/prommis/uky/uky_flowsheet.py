@@ -589,22 +589,6 @@ def build():
     # -----------------------------------------------------------------------------------------------------------------
     # Translator blocks
 
-    # m.fs.translator_leaching_to_precipitate = TranslatorLeachPrecip(
-    #     inlet_property_package=m.fs.leach_soln,
-    #     outlet_property_package=m.fs.HCl_stripping_params,
-    # )
-    # m.fs.translator_precipitate_to_leaching = TranslatorLeachPrecip(
-    #     inlet_property_package=m.fs.HCl_stripping_params,
-    #     outlet_property_package=m.fs.leach_soln,
-    # )
-    # m.fs.translator_sep_to_roast = TranslatorLeachPrecip(
-    #     inlet_property_package=m.fs.leach_soln,
-    #     outlet_property_package=m.fs.HCl_stripping_params,
-    # )
-    # m.fs.translator_precip_sep_to_purge = TranslatorLeachPrecip(
-    #     inlet_property_package=m.fs.leach_soln,
-    #     outlet_property_package=m.fs.HCl_stripping_params,
-    # )
 
     # -----------------------------------------------------------------------------------------------------------------
 

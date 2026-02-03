@@ -36,8 +36,8 @@ def test_parameters(model):
         ]
         assert k in model.fs.repm_sol.mw
 
-    assert isinstance(model.fs.repm_sol.dens_mass, Param)
-    assert value(model.fs.repm_sol.dens_mass) == pytest.approx(7500, rel=1e-8)
+    # assert isinstance(model.fs.repm_sol.dens_mass, Param)
+    # assert value(model.fs.repm_sol.dens_mass) == pytest.approx(7500, rel=1e-8)
 
 
 @pytest.mark.unit

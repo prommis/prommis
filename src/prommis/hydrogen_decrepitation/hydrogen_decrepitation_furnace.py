@@ -8,7 +8,7 @@ r"""
 Hydrogen Decrepitation Unit Model
 ==================================
 
-This model represents a gas-fired or electrically-heated hydrogen decrepitation unit for Rare Earth Permanent Magnet (REPM) feedstocks, specifically recycling hard drive disks (HDDs) containing neodymium compounds.
+This model represents a gas-fired or electrically-heated hydrogen decrepitation unit for Rare Earth Permanent Magnet (REPM) feedstocks, specifically recycling hard disk drives (HDDs) containing neodymium compounds.
 
 The process and reactions modeled are described by
 
@@ -75,7 +75,7 @@ Streams
 Thermal Properties
 ------------------
 
-The properties of components involved are defined as parameters in this model. The default values of those parameters are obtained from two sources as listed below:
+The properties of components involved are defined as parameters in this model. The default values of those parameters are obtained from the sources listed below:
 
 1. NIST Chemistry WebBook
 2. Neodymium (Nd) (chemicalaid.com) https://periodictable.chemicalaid.com/element.php/Nd
@@ -86,7 +86,6 @@ The data from NIST WebBook provides the atomic masses of elements present in the
 The data from Chemical Aid provides the standard enthalpy of formation of Nd.
 The data from Gibson and Harvey provides molar heat capacities of Nd and Nd2Fe14B as linear functions of temperature.
 The data from Morishita, et al. provides the standard enthalpy of formation of Nd2Fe14B.
-The data from Biegański provides the molar heat capacity of NdH2.
 The gas phase properties are calculated based on user configured property package.
 
 
@@ -1183,11 +1182,10 @@ constructed,
             doc="mole flow rate of total product",
         )
         def flow_mol_comp_product_total_eqn(b, t, i):
-            if i == "Nd" or i == "Nd2Fe14B":
-                return (
-                    b.flow_mol_comp_product_total[t, i]
-                    == b.flow_mol_comp_impurity_feed[t, i]
-                )
+            return (
+                b.flow_mol_comp_product_total[t, i]
+                == b.flow_mol_comp_impurity_feed[t, i]
+            )
 
         # mole flow rate of recovered solid product stream
         @self.Constraint(
@@ -1212,17 +1210,16 @@ constructed,
         # mass fraction of impurity metal in the solid feed stream
         @self.Expression(
             self.flowsheet().config.time,
-            self.impurity_ele_list,
+            ["Fe",],
             doc="mass fraction of impurity element in solid feed stream",
         )
         def mass_frac_comp_impurity_ele_feed(b, t, i):
-            if i == "Fe":
-                return (
-                    b.flow_mol_comp_impurity_feed[t, "Nd2Fe14B"]
-                    * b.am_Fe
-                    * self.NdFeB_ratio["Fe"]
-                    / b.flow_mass_impurity_feed[t]
-                )
+            return (
+                b.flow_mol_comp_impurity_feed[t, "Nd2Fe14B"]
+                * b.am_Fe
+                * self.NdFeB_ratio["Fe"]
+                / b.flow_mass_impurity_feed[t]
+            )
 
         # mass fraction of impurity metal in the product stream
         @self.Constraint(
@@ -1255,6 +1252,13 @@ constructed,
                     * b.am_B
                     * self.NdFeB_ratio["B"]
                 )
+            else:
+                # there aren't any components left, this shouldn't happen
+                print("the component is ", i)
+                assert False
+                raise BurntToast(
+                    "This should not occur. Please contact the PrOMMiS developers if this message is displayed."
+                    )
 
         # solid product with 13 species defined in REPMParameters
         @self.Constraint(
@@ -1272,6 +1276,13 @@ constructed,
                     == b.flow_mol_comp_product_recovered[t, i]
                     * b.config.solid_property_package.mw[i]
                 )
+            else:
+                # there aren't any components left, this shouldn't happen
+                print("the component is ", i)
+                assert False
+                raise BurntToast(
+                    "This should not occur. Please contact the PrOMMiS developers if this message is displayed."
+                    )
 
     def _make_energy_balance(self):
         # molar enthalpy of impurity minerals in solid feed

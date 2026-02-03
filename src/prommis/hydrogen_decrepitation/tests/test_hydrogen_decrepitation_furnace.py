@@ -108,8 +108,8 @@ def model():
         10800 * pyunits.s
     )
     m.fs.hydrogen_decrepitation_furnace.sample_density.set_value(
-        m.fs.prop_solid.dens_mass
-    )  # 7500 kg/m3
+        7500 * pyunits.kg/pyunits.m**3
+    )
     m.fs.hydrogen_decrepitation_furnace.chamber_to_sample_ratio.set_value(2)
     m.fs.hydrogen_decrepitation_furnace.aspect_ratio.set_value(6)
 

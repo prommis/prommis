@@ -30,7 +30,7 @@ from idaes.core.util.initialization import fix_state_vars
 class REPMParameterData(PhysicalParameterBlock):
     """
     Solid phase property package for rare earth permanent magnets, specifically
-    recycling neodymium materials from hard drive disks (HDDs).
+    recycling neodymium materials from hard disk drives (HDDs).
 
 
     Includes the following components: Nd, Nd2Fe14B
@@ -55,11 +55,11 @@ class REPMParameterData(PhysicalParameterBlock):
         )
 
         # TODO do i need this?
-        self.dens_mass = Param(
-            units=units.kg / units.m**3,
-            initialize=7500,
-            mutable=True,
-        )
+        # self.dens_mass = Param(
+        #     units=units.kg / units.m**3,
+        #     initialize=7500,
+        #     mutable=True,
+        # )
 
         self._state_block_class = REPMStateBlock
 

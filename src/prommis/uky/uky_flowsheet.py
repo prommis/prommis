@@ -276,7 +276,6 @@ def main():
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
 
-
     solve_system(m, tee=True)
 
     dt.assert_no_numerical_warnings()
@@ -585,7 +584,6 @@ def build():
 
     # -----------------------------------------------------------------------------------------------------------------
     # Translator blocks
-
 
     # -----------------------------------------------------------------------------------------------------------------
 

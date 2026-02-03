@@ -1065,10 +1065,6 @@ def set_operating_conditions(m):
     m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol
     m.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp
 
-    # TODO is temperature actually used in the AI?
-    # This state block got switched to the HCl properties
-    # which does not have temperature as a state variable
-    # m.fs.precipitator.precipitate_state_block[0].temperature
     m.fs.precipitator.precipitate_state_block[0].flow_mol_comp
 
 

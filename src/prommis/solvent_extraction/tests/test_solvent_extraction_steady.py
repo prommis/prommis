@@ -16,7 +16,6 @@ import pytest
 
 from prommis.solvent_extraction.solvent_extraction import SolventExtractionInitializer
 from prommis.solvent_extraction.solvent_extraction_steady import (
-    main,
     model_buildup_and_set_inputs,
 )
 from prommis.util import assert_solution_equivalent

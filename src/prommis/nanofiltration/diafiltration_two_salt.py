@@ -1107,7 +1107,7 @@ and used when constructing these,
         def _membrane_conc_mol_comp_boundary_condition(blk, t, z, k):
             return (
                 blk.membrane_conc_mol_comp[t, 0, z, k]
-                == value(self.numerical_zero_tolerance) * units.mol / units.m**3
+                == self.numerical_zero_tolerance * units.mol / units.m**3
             )
 
         self.membrane_conc_mol_comp_boundary_condition = Constraint(
@@ -1121,7 +1121,7 @@ and used when constructing these,
         def _permeate_flow_volume_boundary_condition(blk, t):
             return (
                 blk.permeate_flow_volume[t, 0]
-                == value(self.numerical_zero_tolerance) * units.m**3 / units.h
+                == self.numerical_zero_tolerance * units.m**3 / units.h
             )
 
         self.permeate_flow_volume_boundary_condition = Constraint(
@@ -1131,7 +1131,7 @@ and used when constructing these,
         def _permeate_conc_mol_comp_boundary_condition(blk, t, j):
             return (
                 blk.permeate_conc_mol_comp[t, 0, j]
-                == value(self.numerical_zero_tolerance) * units.mol / units.m**3
+                == self.numerical_zero_tolerance * units.mol / units.m**3
             )
 
         self.permeate_conc_mol_comp_boundary_condition = Constraint(
@@ -1141,7 +1141,7 @@ and used when constructing these,
         def _d_retentate_flow_volume_dx_boundary_condition(blk, t):
             return (
                 blk.d_retentate_flow_volume_dx[t, 0]
-                == value(self.numerical_zero_tolerance) * units.m**3 / units.h
+                == self.numerical_zero_tolerance * units.m**3 / units.h
             )
 
         self.d_retentate_flow_volume_dx_boundary_condition = Constraint(
@@ -1151,7 +1151,7 @@ and used when constructing these,
         def _d_retentate_conc_mol_comp_dx_boundary_condition(blk, t, k):
             return (
                 blk.d_retentate_conc_mol_comp_dx[t, 0, k]
-                == value(self.numerical_zero_tolerance) * units.mol / units.m**3
+                == self.numerical_zero_tolerance * units.mol / units.m**3
             )
 
         self.d_retentate_conc_mol_comp_dx_boundary_condition = Constraint(
@@ -1163,7 +1163,7 @@ and used when constructing these,
         def _volume_flux_water_boundary_condition(blk, t):
             return (
                 blk.volume_flux_water[t, 0]
-                == value(self.numerical_zero_tolerance) * units.m / units.h
+                == self.numerical_zero_tolerance * units.m / units.h
             )
 
         self.volume_flux_water_boundary_condition = Constraint(
@@ -1173,10 +1173,7 @@ and used when constructing these,
         def _molar_ion_flux_boundary_condition(blk, t, j):
             return (
                 blk.molar_ion_flux[t, 0, j]
-                == value(self.numerical_zero_tolerance)
-                * units.mol
-                / units.m**2
-                / units.h
+                == self.numerical_zero_tolerance * units.mol / units.m**2 / units.h
             )
 
         self.molar_ion_flux_boundary_condition = Constraint(

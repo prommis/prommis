@@ -108,9 +108,7 @@ def build_flowsheet():
         )
 
     m.fs.shredder.mass_frac_comp[0, "Nd2Fe14B"].fix(0.99)
-
-    # don't fix, already have mole frac balance so just need initial value
-    m.fs.shredder.mass_frac_comp[0, "Nd"] = 0.01
+    m.fs.shredder.mass_frac_comp[0, "Nd"].fix(0.01)
 
     m.fs.hydrogen_decrepitation_furnace = REPMHydrogenDecrepitationFurnace(
         gas_property_package=m.fs.prop_gas,
@@ -123,7 +121,6 @@ def build_flowsheet():
         number_of_units=1,
     )
 
-    # don't fix, already have mole frac balance so just need initial value
     m.fs.hydrogen_decrepitation_furnace.gas_inlet.mole_frac_comp[0, "H2"].fix(1)
 
     # inlet flue gas mole flow rate, stoichiometric on molar basis with REPM
@@ -179,17 +176,11 @@ def initialize_and_solve(m):
     initializer.initialize(m.fs.shredder)
     propagate_state(m.fs.shredded_REPM)
 
-    # m.fs.hydrogen_decrepitation_furnace.gas_outlet.temperature.unfix()
     m.fs.hydrogen_decrepitation_furnace.flow_mol_gas_constraint.deactivate()  # flow mol will be fixed by initializer
-    m.fs.hydrogen_decrepitation_furnace.solid_in[
-        0
-    ].sum_mass_frac.deactivate()  # mass frac will be fixed by initializer
 
     initializer.initialize(m.fs.hydrogen_decrepitation_furnace)
 
-    # m.fs.hydrogen_decrepitation_furnace.gas_outlet.temperature.fix()
     m.fs.hydrogen_decrepitation_furnace.flow_mol_gas_constraint.activate()
-    m.fs.hydrogen_decrepitation_furnace.solid_in[0].sum_mass_frac.activate()
 
     assert (
         initializer.summary[m.fs.hydrogen_decrepitation_furnace]["status"]

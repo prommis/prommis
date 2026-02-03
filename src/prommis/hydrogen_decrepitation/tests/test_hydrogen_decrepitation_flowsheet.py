@@ -52,7 +52,7 @@ def test_build(model):
     )
 
     assert number_variables(model.fs) == 68
-    assert number_total_constraints(model.fs) == 43
+    assert number_total_constraints(model.fs) == 42
     assert_units_consistent(model.fs)
 
 

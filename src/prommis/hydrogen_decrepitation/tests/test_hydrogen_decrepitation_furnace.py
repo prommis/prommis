@@ -86,9 +86,8 @@ def model():
         0.0057367 * pyunits.kg / pyunits.s
     )
     m.fs.hydrogen_decrepitation_furnace.solid_in[0].mass_frac_comp["Nd2Fe14B"].fix(0.99)
-    m.fs.hydrogen_decrepitation_furnace.solid_in[0].mass_frac_comp["Nd"] = 0.01
+    m.fs.hydrogen_decrepitation_furnace.solid_in[0].mass_frac_comp["Nd"].fix(0.01)
 
-    # don't fix, already have mole frac balance so just need initial value
     m.fs.hydrogen_decrepitation_furnace.gas_inlet.mole_frac_comp[0, "H2"].fix(1)
 
     # inlet flue gas mole flow rate, stoichiometric on molar basis with REPM
@@ -147,7 +146,7 @@ def test_build(model):
     assert len(model.fs.hydrogen_decrepitation_furnace.ree_list) == 1
 
     assert number_variables(model.fs.hydrogen_decrepitation_furnace) == 47
-    assert number_total_constraints(model.fs.hydrogen_decrepitation_furnace) == 39
+    assert number_total_constraints(model.fs.hydrogen_decrepitation_furnace) == 38
     assert number_unused_variables(model.fs.hydrogen_decrepitation_furnace) == 0
     assert_units_consistent(model.fs.hydrogen_decrepitation_furnace)
 
@@ -164,14 +163,10 @@ def test_initialize_and_solve(model):
     initializer = BlockTriangularizationInitializer()
 
     model.fs.hydrogen_decrepitation_furnace.flow_mol_gas_constraint.deactivate()  # flow mol will be fixed by initializer
-    model.fs.hydrogen_decrepitation_furnace.solid_in[
-        0
-    ].sum_mass_frac.deactivate()  # mass frac will be fixed by initializer
 
     initializer.initialize(model.fs.hydrogen_decrepitation_furnace)
 
     model.fs.hydrogen_decrepitation_furnace.flow_mol_gas_constraint.activate()
-    model.fs.hydrogen_decrepitation_furnace.solid_in[0].sum_mass_frac.activate()
 
     assert (
         initializer.summary[model.fs.hydrogen_decrepitation_furnace]["status"]

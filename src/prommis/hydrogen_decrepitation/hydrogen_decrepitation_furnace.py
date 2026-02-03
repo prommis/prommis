@@ -257,15 +257,19 @@ constructed,
         )
         # gas phase outlet stream
         self.gas_out = self.config.gas_property_package.build_state_block(
-            self.flowsheet().time, **self.config.gas_property_package_args
+            self.flowsheet().time,
+            **self.config.gas_property_package_args
         )
         # solid phase inlet stream
         self.solid_in = self.config.solid_property_package.build_state_block(
-            self.flowsheet().time, **self.config.solid_property_package_args
+            self.flowsheet().time,
+            defined_state=True,
+            **self.config.solid_property_package_args
         )
         # solid phase product stream
         self.solid_out = self.config.solid_property_package.build_state_block(
-            self.flowsheet().time, **self.config.solid_property_package_args
+            self.flowsheet().time,
+            **self.config.solid_property_package_args
         )
 
         self.add_port("gas_inlet", self.gas_in)

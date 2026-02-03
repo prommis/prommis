@@ -115,8 +115,8 @@ class TranslatorHClLeachData(TranslatorData):
 
     CONFIG = TranslatorData.CONFIG()
 
-    CONFIG._data.pop("outlet_state_defined")
-    CONFIG._data.pop("has_phase_equilibrium")
+    del CONFIG["outlet_state_defined"]
+    del CONFIG["has_phase_equilibrium"]
 
     CONFIG.declare(
         "outlet_state_defined",

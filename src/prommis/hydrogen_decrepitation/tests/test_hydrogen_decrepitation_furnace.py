@@ -108,7 +108,7 @@ def model():
         10800 * pyunits.s
     )
     m.fs.hydrogen_decrepitation_furnace.sample_density.set_value(
-        7500 * pyunits.kg/pyunits.m**3
+        7500 * pyunits.kg / pyunits.m**3
     )
     m.fs.hydrogen_decrepitation_furnace.chamber_to_sample_ratio.set_value(2)
     m.fs.hydrogen_decrepitation_furnace.aspect_ratio.set_value(6)
@@ -218,9 +218,9 @@ def test_solution(model):
     assert value(
         model.fs.hydrogen_decrepitation_furnace.total_heat_duty
     ) == pytest.approx(3761.75, rel=1e-5)
-    assert value(
-        model.fs.hydrogen_decrepitation_furnace.sample_mass
-    ) == pytest.approx(61.956, rel=1e-5)
+    assert value(model.fs.hydrogen_decrepitation_furnace.sample_mass) == pytest.approx(
+        61.956, rel=1e-5
+    )
     assert value(
         model.fs.hydrogen_decrepitation_furnace.sample_volume
     ) == pytest.approx(0.0082608, rel=1e-5)

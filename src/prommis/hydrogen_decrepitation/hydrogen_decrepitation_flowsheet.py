@@ -63,12 +63,8 @@ def build_flowsheet():
     m.fs.prop_gas.set_default_scaling("phase_frac", 1)
 
     m.fs.prop_gas.set_default_scaling("mole_frac_comp", 1, index="H2")
-    m.fs.prop_gas.set_default_scaling(
-        "mole_frac_phase_comp", 1, index=("Vap", "H2")
-    )
-    m.fs.prop_gas.set_default_scaling(
-        "flow_mol_phase_comp", 1e1, index=("Vap", "H2")
-    )
+    m.fs.prop_gas.set_default_scaling("mole_frac_phase_comp", 1, index=("Vap", "H2"))
+    m.fs.prop_gas.set_default_scaling("flow_mol_phase_comp", 1e1, index=("Vap", "H2"))
 
     # shredder and HDD feed to define REPM flow into hydrogen decrepitation furnace
     m.fs.shredder = Feed(property_package=m.fs.prop_solid)
@@ -138,7 +134,7 @@ def build_flowsheet():
         10800 * pyunits.s
     )
     m.fs.hydrogen_decrepitation_furnace.sample_density.set_value(
-        7500 * pyunits.kg/pyunits.m**3
+        7500 * pyunits.kg / pyunits.m**3
     )
     m.fs.hydrogen_decrepitation_furnace.chamber_to_sample_ratio.set_value(2)
 

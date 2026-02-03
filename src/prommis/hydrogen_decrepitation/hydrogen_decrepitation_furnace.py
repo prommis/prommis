@@ -256,8 +256,7 @@ constructed,
         )
         # gas phase outlet stream
         self.gas_out = self.config.gas_property_package.build_state_block(
-            self.flowsheet().time,
-            **self.config.gas_property_package_args
+            self.flowsheet().time, **self.config.gas_property_package_args
         )
         # solid phase inlet stream
         self.solid_in = self.config.solid_property_package.build_state_block(
@@ -267,8 +266,7 @@ constructed,
         )
         # solid phase product stream
         self.solid_out = self.config.solid_property_package.build_state_block(
-            self.flowsheet().time,
-            **self.config.solid_property_package_args
+            self.flowsheet().time, **self.config.solid_property_package_args
         )
 
         self.add_port("gas_inlet", self.gas_in)
@@ -850,31 +848,25 @@ constructed,
                 b.chamber_to_sample_ratio * b.sample_volume, to_units=pyunits.m**3
             )
 
-        @self.Expression(
-            doc="Radius of the furnace chamber"
-        )
+        @self.Expression(doc="Radius of the furnace chamber")
         def radius_chamber(b):
             return (b.furnace_chamber_volume / (b.aspect_ratio * Constants.pi)) ** (
                 1 / 3
             )
 
-        @self.Expression(
-            doc="Length of the furnace chamber"
-        )
+        @self.Expression(doc="Length of the furnace chamber")
         def length_chamber(b, t):
             # 3 times the diameter = 6 times the radius
             return b.aspect_ratio * b.radius_chamber
 
-        @self.Expression(
-            doc="Volume of insulation material 1"
-        )
+        @self.Expression(doc="Volume of insulation material 1")
         def volume_insulation1(b):
             return (
                 Constants.pi
                 * b.length_chamber
                 * (
                     ((b.radius_chamber + b.thickness_insulation_material1) ** 2)
-                    - (b.radius_chamber ** 2)
+                    - (b.radius_chamber**2)
                 )
             )
 
@@ -894,9 +886,7 @@ constructed,
                 ),
             )
 
-        @self.Expression(
-            doc="Total weight of insulation material 1"
-        )
+        @self.Expression(doc="Total weight of insulation material 1")
         def total_weight_insulation1(b):
             return b.quantity_insulation1 * b.weight_insulation1
 
@@ -916,16 +906,14 @@ constructed,
                 + b.thickness_metal_material1
             )
 
-        @self.Expression(
-            doc="Required volume of metal material 1"
-        )
+        @self.Expression(doc="Required volume of metal material 1")
         def volume_metal1(b):
             return pyunits.convert(
                 (
                     Constants.pi
                     * (
-                        (b.external_diameter_metal1 ** 2)
-                        - (b.internal_diameter_metal1 ** 2)
+                        (b.external_diameter_metal1**2)
+                        - (b.internal_diameter_metal1**2)
                     )
                     * b.length_chamber
                 )
@@ -939,9 +927,7 @@ constructed,
                 b.density_metal1, to_units=pyunits.pound / (pyunits.inches**3)
             )
 
-        @self.Expression(
-            doc="Volume of insulation material 2"
-        )
+        @self.Expression(doc="Volume of insulation material 2")
         def volume_insulation2(b):
             return (
                 Constants.pi
@@ -983,9 +969,7 @@ constructed,
                 ),
             )
 
-        @self.Expression(
-            doc="Total weight of insulation material 2"
-        )
+        @self.Expression(doc="Total weight of insulation material 2")
         def total_weight_insulation2(b):
             return b.quantity_insulation2 * b.weight_insulation2
 
@@ -1012,15 +996,14 @@ constructed,
                 + b.thickness_metal_material2
             )
 
-        @self.Expression(doc="Required volume of metal material 2"
-        )
+        @self.Expression(doc="Required volume of metal material 2")
         def volume_metal2(b):
             return pyunits.convert(
                 (
                     Constants.pi
                     * (
-                        (b.external_diameter_metal2 ** 2)
-                        - (b.internal_diameter_metal2 ** 2)
+                        (b.external_diameter_metal2**2)
+                        - (b.internal_diameter_metal2**2)
                     )
                     * b.length_chamber
                 )
@@ -1034,13 +1017,11 @@ constructed,
                 b.density_metal2, to_units=pyunits.pound / (pyunits.inches**3)
             )
 
-        @self.Expression(
-            doc="External surface area of the furnace"
-        )
+        @self.Expression(doc="External surface area of the furnace")
         def furnace_external_surface_area(b):
-            return (
-                Constants.pi * b.external_diameter_metal2 * b.length_chamber
-            ) + ((Constants.pi * (b.external_diameter_metal2 ** 2)) / 2)
+            return (Constants.pi * b.external_diameter_metal2 * b.length_chamber) + (
+                (Constants.pi * (b.external_diameter_metal2**2)) / 2
+            )
 
         @self.Expression(doc="Total weight of furnace")
         def furnace_weight(b):
@@ -1054,10 +1035,7 @@ constructed,
         @self.Expression(doc="Volume of the furnace")
         def furnace_volume(b):
             return pyunits.convert(
-                Constants.pi
-                * (b.external_diameter_metal2 ** 2)
-                * b.length_chamber
-                / 4,
+                Constants.pi * (b.external_diameter_metal2**2) * b.length_chamber / 4,
                 to_units=pyunits.ft**3,
             )
 
@@ -1110,9 +1088,7 @@ constructed,
         @self.Expression(doc="Total heat duty needed")
         def total_heat(b):
             return (
-                b.heat_furnace_material
-                + b.energy_consumption
-                + b.heat_sample_material
+                b.heat_furnace_material + b.energy_consumption + b.heat_sample_material
             )
 
         @self.Expression(
@@ -1210,7 +1186,9 @@ constructed,
         # mass fraction of impurity metal in the solid feed stream
         @self.Expression(
             self.flowsheet().config.time,
-            ["Fe",],
+            [
+                "Fe",
+            ],
             doc="mass fraction of impurity element in solid feed stream",
         )
         def mass_frac_comp_impurity_ele_feed(b, t, i):
@@ -1258,7 +1236,7 @@ constructed,
                 assert False
                 raise BurntToast(
                     "This should not occur. Please contact the PrOMMiS developers if this message is displayed."
-                    )
+                )
 
         # solid product with 13 species defined in REPMParameters
         @self.Constraint(
@@ -1282,7 +1260,7 @@ constructed,
                 assert False
                 raise BurntToast(
                     "This should not occur. Please contact the PrOMMiS developers if this message is displayed."
-                    )
+                )
 
     def _make_energy_balance(self):
         # molar enthalpy of impurity minerals in solid feed
@@ -1295,7 +1273,7 @@ constructed,
             return (
                 b.enth0_comp_impurity[i]
                 + b.cp0_comp_impurity[i] * (b.temp_feed - b.temp_ref)
-                + 0.5 * b.cp1_comp_impurity[i] * (b.temp_feed ** 2 - b.temp_ref**2)
+                + 0.5 * b.cp1_comp_impurity[i] * (b.temp_feed**2 - b.temp_ref**2)
             )
 
         # molar enthalpy of minerals in solid product
@@ -1308,7 +1286,7 @@ constructed,
             return (
                 b.enth0_comp_product[i]
                 + b.cp0_comp_product[i] * (b.temp_prod - b.temp_ref)
-                + 0.5 * b.cp1_comp_product[i] * (b.temp_prod ** 2 - b.temp_ref**2)
+                + 0.5 * b.cp1_comp_product[i] * (b.temp_prod**2 - b.temp_ref**2)
             )
 
         # enthalpy in + heat in == enthalpy out
@@ -1362,11 +1340,14 @@ constructed,
         @self.Constraint(doc="heat loss from radiation")
         def heat_loss_radiation(b):
             return b.heat_loss == (
-                0.50 * 2 * Constants.pi * b.radius_chamber* b.length_chamber
-                * Constants.stefan_constant * (
-                (b.max_temperature**4) - (b.temperature_insulation_material1 ** 4)
+                0.50
+                * 2
+                * Constants.pi
+                * b.radius_chamber
+                * b.length_chamber
+                * Constants.stefan_constant
+                * ((b.max_temperature**4) - (b.temperature_insulation_material1**4))
             )
-                )
 
         # relative thickness and heat loss of insulation material 1
         @self.Constraint(
@@ -1379,25 +1360,18 @@ constructed,
                 / b.radius_chamber
             )
 
-        @self.Constraint(
-            doc="heat loss of insulation material 1"
-        )
+        @self.Constraint(doc="heat loss of insulation material 1")
         def heat_loss_insulation_material1(b):
             return b.heat_loss * b.relative_thickness_ratio_insulation_material1 == (
                 2
                 * Constants.pi
                 * b.thermal_cond_insulation_material1
                 * b.length_chamber
-                * (
-                    b.temperature_insulation_material1
-                    - b.temperature_metal_material1
-                )
+                * (b.temperature_insulation_material1 - b.temperature_metal_material1)
             )
 
         # relative thickness and heat loss of metal material 1
-        @self.Constraint(
-            doc="relative thickness of metal material 1"
-        )
+        @self.Constraint(doc="relative thickness of metal material 1")
         def relative_thickness_metal_material1(b):
             return exp(b.relative_thickness_ratio_metal_material1) == (
                 b.radius_chamber
@@ -1405,9 +1379,7 @@ constructed,
                 + b.thickness_metal_material1
             ) / (b.radius_chamber + b.thickness_insulation_material1)
 
-        @self.Constraint(
-            doc="heat loss of metal material 1"
-        )
+        @self.Constraint(doc="heat loss of metal material 1")
         def heat_loss_metal_material1(b):
             return b.heat_loss * b.relative_thickness_ratio_metal_material1 == (
                 2
@@ -1432,9 +1404,7 @@ constructed,
                 + b.thickness_metal_material1
             )
 
-        @self.Constraint(
-            doc="heat loss of insulation material 2"
-        )
+        @self.Constraint(doc="heat loss of insulation material 2")
         def heat_loss_insulation_material2(b):
             return b.heat_loss * b.relative_thickness_ratio_insulation_material2 == (
                 (
@@ -1447,9 +1417,7 @@ constructed,
             )
 
         # relative thickness and heat loss of metal material 2
-        @self.Constraint(
-            doc="relative thickness of metal material 2"
-        )
+        @self.Constraint(doc="relative thickness of metal material 2")
         def relative_thickness_metal_material2(b):
             return exp(b.relative_thickness_ratio_metal_material2) == (
                 b.radius_chamber
@@ -1464,9 +1432,7 @@ constructed,
                 + b.thickness_insulation_material2
             )
 
-        @self.Constraint(
-            doc="heat loss of metal material 2"
-        )
+        @self.Constraint(doc="heat loss of metal material 2")
         def heat_loss_metal_material2(b):
             return b.heat_loss * b.relative_thickness_ratio_metal_material2 == (
                 2

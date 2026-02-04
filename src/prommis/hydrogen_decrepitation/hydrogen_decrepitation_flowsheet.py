@@ -136,7 +136,7 @@ def build_flowsheet():
     m.fs.hydrogen_decrepitation_furnace.sample_density.set_value(
         7500 * pyunits.kg / pyunits.m**3
     )
-    m.fs.hydrogen_decrepitation_furnace.chamber_to_sample_ratio.set_value(2)
+    m.fs.hydrogen_decrepitation_furnace.chamber_to_sample_ratio[0].set_value(2)
 
     # solid temperature, cools back to inlet temperature during shutdown
     m.fs.hydrogen_decrepitation_furnace.temp_feed.fix(298.15)
@@ -146,7 +146,7 @@ def build_flowsheet():
     m.fs.hydrogen_decrepitation_furnace.gas_in[0].temperature.fix(443.15)
 
     # no additional heat is supplied other than what's required for decrepitation
-    m.fs.hydrogen_decrepitation_furnace.supplied_heat_duty.fix(0)
+    m.fs.hydrogen_decrepitation_furnace.supplied_heat_duty[0].fix(0)
 
     # connect shredder and furnace
     m.fs.shredded_REPM = Arc(

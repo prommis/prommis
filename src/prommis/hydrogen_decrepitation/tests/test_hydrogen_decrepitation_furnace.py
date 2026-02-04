@@ -110,7 +110,7 @@ def model():
     m.fs.hydrogen_decrepitation_furnace.sample_density.set_value(
         7500 * pyunits.kg / pyunits.m**3
     )
-    m.fs.hydrogen_decrepitation_furnace.chamber_to_sample_ratio.set_value(2)
+    m.fs.hydrogen_decrepitation_furnace.chamber_to_sample_ratio[0].set_value(2)
     m.fs.hydrogen_decrepitation_furnace.aspect_ratio.set_value(6)
 
     # solid temperature, cools back to inlet temperature during shutdown
@@ -216,13 +216,13 @@ def test_solution(model):
         model.fs.hydrogen_decrepitation_furnace.flow_vol_feed[0]
     ) == pytest.approx(7.6489e-7, rel=1e-5)
     assert value(
-        model.fs.hydrogen_decrepitation_furnace.total_heat_duty
+        model.fs.hydrogen_decrepitation_furnace.total_heat_duty[0]
     ) == pytest.approx(3761.75, rel=1e-5)
-    assert value(model.fs.hydrogen_decrepitation_furnace.sample_mass) == pytest.approx(
-        61.956, rel=1e-5
-    )
     assert value(
-        model.fs.hydrogen_decrepitation_furnace.sample_volume
+        model.fs.hydrogen_decrepitation_furnace.sample_mass[0]
+    ) == pytest.approx(61.956, rel=1e-5)
+    assert value(
+        model.fs.hydrogen_decrepitation_furnace.sample_volume[0]
     ) == pytest.approx(0.0082608, rel=1e-5)
     assert value(
         model.fs.hydrogen_decrepitation_furnace.furnace_chamber_volume

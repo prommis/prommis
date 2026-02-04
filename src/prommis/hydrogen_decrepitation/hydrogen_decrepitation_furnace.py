@@ -105,6 +105,7 @@ import idaes.logger as idaeslog
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.util.config import DefaultBool, is_physical_parameter_block
 from idaes.core.util.constants import Constants
+from idaes.core.util.exceptions import BurntToast
 from idaes.core.util.math import smooth_max
 from idaes.core.util.tables import create_stream_table_dataframe
 
@@ -471,6 +472,7 @@ constructed,
             doc="Mass density of the sample",
         )
         self.chamber_to_sample_ratio = Param(
+            self.flowsheet().config.time,
             initialize=2,
             units=pyunits.dimensionless,
             mutable=True,
@@ -708,18 +710,21 @@ constructed,
 
         # operating variables
         self.sample_heat_capacity = Var(
+            self.flowsheet().config.time,
             initialize=0.44,
             units=pyunits.kJ / (pyunits.kg * pyunits.K),
             doc="heat capacity of the sample",
         )
 
         self.sample_mass = Var(
+            self.flowsheet().config.time,
             initialize=62.025,
             units=pyunits.kg,
             doc="mass of the sample",
         )
 
         self.sample_volume = Var(
+            self.flowsheet().config.time,
             initialize=0.002,
             units=pyunits.m**3,
             doc="volume of the sample",
@@ -803,6 +808,7 @@ constructed,
         )
 
         self.total_heat_duty = Var(
+            self.flowsheet().config.time,
             initialize=3500,
             units=pyunits.W,
             bounds=(0, None),
@@ -824,28 +830,31 @@ constructed,
             )
 
         @self.Constraint(
+            self.flowsheet().config.time,
             doc="mass of solid feed",
         )
-        def sample_mass_eqn(b):
-            return b.sample_mass == pyunits.convert(
-                b.solid_in[0].flow_mass * b.decrepitation_duration, to_units=pyunits.kg
+        def sample_mass_eqn(b, t):
+            return b.sample_mass[t] == pyunits.convert(
+                b.solid_in[t].flow_mass * b.decrepitation_duration, to_units=pyunits.kg
             )
 
         @self.Constraint(
+            self.flowsheet().config.time,
             doc="volume of solid feed",
         )
-        def sample_volume_eqn(b):
-            return b.sample_volume == pyunits.convert(
-                b.flow_vol_feed[0] * b.decrepitation_duration, to_units=pyunits.m**3
+        def sample_volume_eqn(b, t):
+            return b.sample_volume[t] == pyunits.convert(
+                b.flow_vol_feed[t] * b.decrepitation_duration, to_units=pyunits.m**3
             )
 
         # furnace chamber dimensions
         @self.Constraint(
+            self.flowsheet().config.time,
             doc="internal volume of the furnace",
         )
-        def furnace_chamber_volume_eqn(b):
+        def furnace_chamber_volume_eqn(b, t):
             return b.furnace_chamber_volume == pyunits.convert(
-                b.chamber_to_sample_ratio * b.sample_volume, to_units=pyunits.m**3
+                b.chamber_to_sample_ratio[t] * b.sample_volume[t], to_units=pyunits.m**3
             )
 
         @self.Expression(doc="Radius of the furnace chamber")
@@ -1076,19 +1085,22 @@ constructed,
             )
 
         @self.Expression(
+            self.flowsheet().config.time,
             doc="Energy required to raise the temperature of sample to operating temperature",
         )
-        def heat_sample_material(b):
+        def heat_sample_material(b, t):
             return (
-                b.sample_mass
-                * b.sample_heat_capacity
+                b.sample_mass[t]
+                * b.sample_heat_capacity[t]
                 * (b.operating_temperature - b.ref_temp)
             )
 
-        @self.Expression(doc="Total heat duty needed")
-        def total_heat(b):
+        @self.Expression(self.flowsheet().config.time, doc="Total heat duty needed")
+        def total_heat(b, t):
             return (
-                b.heat_furnace_material + b.energy_consumption + b.heat_sample_material
+                b.heat_furnace_material
+                + b.energy_consumption
+                + b.heat_sample_material[t]
             )
 
         @self.Expression(
@@ -1103,11 +1115,12 @@ constructed,
             )
 
         @self.Constraint(
+            self.flowsheet().config.time,
             doc="Total heat duty required for decrepitation",
         )
-        def total_heat_duty_constraint(b):
-            return b.total_heat_duty == pyunits.convert(
-                b.total_heat / b.processing_time, to_units=pyunits.W
+        def total_heat_duty_constraint(b, t):
+            return b.total_heat_duty[t] == pyunits.convert(
+                b.total_heat[t] / b.processing_time, to_units=pyunits.W
             )
 
     def _make_mass_balance(self):
@@ -1232,8 +1245,6 @@ constructed,
                 )
             else:
                 # there aren't any components left, this shouldn't happen
-                print("the component is ", i)
-                assert False
                 raise BurntToast(
                     "This should not occur. Please contact the PrOMMiS developers if this message is displayed."
                 )
@@ -1256,8 +1267,6 @@ constructed,
                 )
             else:
                 # there aren't any components left, this shouldn't happen
-                print("the component is ", i)
-                assert False
                 raise BurntToast(
                     "This should not occur. Please contact the PrOMMiS developers if this message is displayed."
                 )
@@ -1316,15 +1325,16 @@ constructed,
 
         # sample heat capacity
         @self.Constraint(
+            self.flowsheet().config.time,
             doc="solid sample heat capacity",
         )
-        def sample_heat_capacity_eqn(b):
+        def sample_heat_capacity_eqn(b, t):
             # lever rule, Cp = sum(mass_frac_i * Cp_mol_i / mw_i for all components i)
-            return b.sample_heat_capacity == pyunits.convert(
-                b.solid_in[0].mass_frac_comp["Nd2Fe14B"]
+            return b.sample_heat_capacity[t] == pyunits.convert(
+                b.solid_in[t].mass_frac_comp["Nd2Fe14B"]
                 * (b.cp0_Nd2Fe14B + b.cp1_Nd2Fe14B * b.temp_feed)
                 / b.mw_Nd2Fe14B
-                + b.solid_in[0].mass_frac_comp["Nd"]
+                + b.solid_in[t].mass_frac_comp["Nd"]
                 * (b.cp0_Nd + b.cp1_Nd * b.temp_feed)
                 / b.am_Nd,
                 to_units=pyunits.J / (pyunits.g * pyunits.K),
@@ -1515,10 +1525,10 @@ constructed,
 
     def _get_performance_contents(self, time_point=0):
         exprs = {}
-        exprs["Volumetric Feed Flow"] = self.flow_vol_feed[0]
-        exprs["Heat Duty For Decrepitation"] = self.total_heat_duty
-        exprs["Sample Mass"] = self.sample_mass
-        exprs["Sample Volume"] = self.sample_volume
+        exprs["Volumetric Feed Flow"] = self.flow_vol_feed[time_point]
+        exprs["Heat Duty For Decrepitation"] = self.total_heat_duty[time_point]
+        exprs["Sample Mass"] = self.sample_mass[time_point]
+        exprs["Sample Volume"] = self.sample_volume[time_point]
         exprs["Furnace Chamber Volume"] = self.furnace_chamber_volume
         exprs["Furnace Chamber Radius"] = self.radius_chamber
         exprs["Furnace Chamber Length"] = self.length_chamber
@@ -1542,6 +1552,6 @@ constructed,
 
         if hasattr(self, "supplied_heat_duty"):
             exprs["Heat Duty Supplemental To Decrepitation"] = self.supplied_heat_duty[
-                0
+                time_point
             ]
         return {"exprs": exprs}

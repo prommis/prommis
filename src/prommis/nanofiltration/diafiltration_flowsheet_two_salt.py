@@ -29,7 +29,7 @@ from pandas import DataFrame
 from prommis.nanofiltration.diafiltration_stream_properties import (
     DiafiltrationStreamParameter,
 )
-from prommis.nanofiltration.diafiltration_solute_properties import SoluteParameter
+from prommis.nanofiltration.multi_component_diafiltration_solute_properties import SoluteParameter
 from prommis.nanofiltration.multi_component_diafiltration import TwoSaltDiafiltration
 
 

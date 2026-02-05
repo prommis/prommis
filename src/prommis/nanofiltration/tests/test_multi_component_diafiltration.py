@@ -30,7 +30,7 @@ from idaes.core.util.model_statistics import degrees_of_freedom
 
 import pytest
 
-from prommis.nanofiltration.diafiltration_solute_properties import (
+from prommis.nanofiltration.multi_component_diafiltration_solute_properties import (
     SoluteParameter,
 )
 from prommis.nanofiltration.multi_component_diafiltration import TwoSaltDiafiltration

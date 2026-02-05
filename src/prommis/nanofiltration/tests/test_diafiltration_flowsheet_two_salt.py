@@ -25,7 +25,7 @@ def test_main():
     """
     Tests the execution of the main function in diafiltration.py
     """
-    (m, overall_results_plot, membrane_results_plot) = main()
+    m, overall_results_plot, membrane_results_plot = main()
     dt = DiagnosticsToolbox(m)
     dt.assert_no_numerical_warnings()
 

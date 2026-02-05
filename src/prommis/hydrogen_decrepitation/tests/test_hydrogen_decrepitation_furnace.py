@@ -77,9 +77,6 @@ def model():
         solid_property_package=m.fs.prop_solid,
         has_heat_transfer=False,
         has_pressure_change=False,
-        ree_list=[
-            "Nd",
-        ],
     )
 
     m.fs.hydrogen_decrepitation_furnace.solid_in[0].flow_mass.fix(
@@ -129,7 +126,7 @@ def test_build(model):
     assert isinstance(
         model.fs.hydrogen_decrepitation_furnace, REPMHydrogenDecrepitationFurnace
     )
-    assert len(model.fs.hydrogen_decrepitation_furnace.config) == 10
+    assert len(model.fs.hydrogen_decrepitation_furnace.config) == 9
     assert not model.fs.hydrogen_decrepitation_furnace.config.dynamic
     assert not model.fs.hydrogen_decrepitation_furnace.config.has_holdup
     assert not model.fs.hydrogen_decrepitation_furnace.config.has_heat_transfer
@@ -143,7 +140,6 @@ def test_build(model):
         is model.fs.prop_solid
     )
     assert len(model.fs.prop_gas.component_list) == 1
-    assert len(model.fs.hydrogen_decrepitation_furnace.ree_list) == 1
 
     assert number_variables(model.fs.hydrogen_decrepitation_furnace) == 47
     assert number_total_constraints(model.fs.hydrogen_decrepitation_furnace) == 38

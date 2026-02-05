@@ -107,9 +107,6 @@ def build_flowsheet():
         solid_property_package=m.fs.prop_solid,
         has_heat_transfer=True,
         has_pressure_change=True,
-        ree_list=[
-            "Nd",
-        ],
         number_of_units=1,
     )
 

@@ -49,14 +49,14 @@ def test_build(model):
     assert len(model.fs.state) == 1
 
     assert isinstance(model.fs.state[0].flow_vol, Var)
-    assert isinstance(model.fs.state[0].conc_mass_comp, Var)
+    assert isinstance(model.fs.state[0].conc_mol_comp, Var)
 
     model.fs.state[0].flow_vol.set_value(10)
     for j in model.fs.feed_properties.component_list:
-        model.fs.state[0].conc_mass_comp[j].set_value(1)
+        model.fs.state[0].conc_mol_comp[j].set_value(1)
 
     model.fs.state.fix_initialization_states()
 
     assert model.fs.state[0].flow_vol.fixed
     for j in model.fs.feed_properties.component_list:
-        assert model.fs.state[0].conc_mass_comp[j].fixed
+        assert model.fs.state[0].conc_mol_comp[j].fixed

@@ -42,11 +42,11 @@ class MultiComponentDiafiltrationStreamParameterData(PhysicalParameterBlock):
         self.liquid = Phase()
 
         # add cations
-        self.Li = Component()
-        self.Co = Component()
+        self.cation_1 = Component()
+        self.cation_2 = Component()
 
         # add anions
-        self.Cl = Component()
+        self.anion = Component()
 
         self._state_block_class = MultiComponentDiafiltrationStreamStateBlock
 

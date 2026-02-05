@@ -363,8 +363,8 @@ and used when constructing these,
         self.time = Set(initialize=[0])
 
         # add components
-        self.solutes = Set(initialize=["Li", "Co", "Cl"])
-        self.cations = Set(initialize=["Li", "Co"])
+        self.solutes = Set(initialize=["cation_1", "cation_2", "anion"])
+        self.cations = Set(initialize=["cation_1", "cation_2"])
 
         # add global variables
         self.total_module_length = Var(
@@ -395,7 +395,7 @@ and used when constructing these,
         )
 
         def initialize_feed_conc_mol_comp(m, t, j):
-            vals = {"Li": 245, "Co": 288, "Cl": 822}
+            vals = {"cation_1": 245, "cation_2": 288, "anion": 822}
             return vals[j]
 
         self.feed_conc_mol_comp = Var(
@@ -415,7 +415,7 @@ and used when constructing these,
         )
 
         def initialize_diafiltrate_conc_mol_comp(m, t, j):
-            vals = {"Li": 14, "Co": 3, "Cl": 21}
+            vals = {"cation_1": 14, "cation_2": 3, "anion": 21}
             return vals[j]
 
         self.diafiltrate_conc_mol_comp = Var(
@@ -438,7 +438,7 @@ and used when constructing these,
         )
 
         def initialize_molar_ion_flux(m, t, w, j):
-            vals = {"Li": 11, "Co": 13, "Cl": 37}
+            vals = {"cation_1": 11, "cation_2": 13, "anion": 37}
             return vals[j]
 
         self.molar_ion_flux = Var(
@@ -460,7 +460,7 @@ and used when constructing these,
         )
 
         def initialize_retentate_conc_mol_comp(m, t, w, j):
-            vals = {"Li": 198, "Co": 241, "Cl": 680}
+            vals = {"cation_1": 198, "cation_2": 241, "anion": 680}
             return vals[j]
 
         self.retentate_conc_mol_comp = Var(
@@ -482,7 +482,7 @@ and used when constructing these,
         )
 
         def initialize_permeate_conc_mol_comp(m, t, w, j):
-            vals = {"Li": 191, "Co": 220, "Cl": 632}
+            vals = {"cation_1": 191, "cation_2": 220, "anion": 632}
             return vals[j]
 
         self.permeate_conc_mol_comp = Var(
@@ -505,7 +505,7 @@ and used when constructing these,
 
         # add variables dependent on dimensionless_module_length and dimensionless_membrane_thickness
         def initialize_membrane_conc_mol_comp(m, t, w, l, j):
-            vals = {"Li": 109, "Co": 18, "Cl": 4.5}
+            vals = {"cation_1": 109, "cation_2": 18, "anion": 4.5}
             return vals[j]
 
         self.membrane_conc_mol_comp = Var(
@@ -528,7 +528,10 @@ and used when constructing these,
         )
 
         def initialize_membrane_cross_diffusion_coefficient_bilinear(m, t, w, l, j, k):
-            vals = {"Li": {"Li": -3800, "Co": -3800}, "Co": {"Li": -340, "Co": -2500}}
+            vals = {
+                "cation_1": {"cation_1": -3800, "cation_2": -3800},
+                "cation_2": {"cation_1": -340, "cation_2": -2500},
+            }
             return vals[j][k]
 
         self.membrane_cross_diffusion_coefficient_bilinear = Var(
@@ -544,7 +547,7 @@ and used when constructing these,
         )
 
         def initialize_membrane_convection_coefficient_bilinear(m, t, w, l, j):
-            vals = {"Li": 105, "Co": -115}
+            vals = {"cation_1": 105, "cation_2": -115}
             return vals[j]
 
         self.membrane_convection_coefficient_bilinear = Var(
@@ -558,7 +561,10 @@ and used when constructing these,
         )
 
         def initialize_membrane_cross_diffusion_coefficient(m, t, w, l, j, k):
-            vals = {"Li": {"Li": -6, "Co": -6}, "Co": {"Li": -0.5, "Co": -4}}
+            vals = {
+                "cation_1": {"cation_1": -6, "cation_2": -6},
+                "cation_2": {"cation_1": -0.5, "cation_2": -4},
+            }
             return vals[j][k]
 
         self.membrane_cross_diffusion_coefficient = Var(
@@ -573,7 +579,7 @@ and used when constructing these,
         )
 
         def initialize_membrane_convection_coefficient(m, t, w, l, j):
-            vals = {"Li": 0.17, "Co": -0.18}
+            vals = {"cation_1": 0.17, "cation_2": -0.18}
             return vals[j]
 
         self.membrane_convection_coefficient = Var(
@@ -705,9 +711,9 @@ and used when constructing these,
                             )
                             - (
                                 blk.config.property_package.charge[k]
-                                * blk.config.property_package.charge["Cl"]
+                                * blk.config.property_package.charge["anion"]
                                 * blk.config.property_package.diffusion_coefficient[
-                                    "Cl"
+                                    "anion"
                                 ]
                             )
                         )
@@ -716,8 +722,8 @@ and used when constructing these,
                     for k in blk.cations
                 )
                 - (
-                    blk.config.property_package.charge["Cl"]
-                    * blk.config.property_package.diffusion_coefficient["Cl"]
+                    blk.config.property_package.charge["anion"]
+                    * blk.config.property_package.diffusion_coefficient["anion"]
                     * blk.membrane_fixed_charge
                 )
             )
@@ -785,7 +791,7 @@ and used when constructing these,
                             blk.config.property_package.charge[k]
                             * blk.config.property_package.charge[j]
                             * blk.config.property_package.diffusion_coefficient[k]
-                            * blk.config.property_package.diffusion_coefficient["Cl"]
+                            * blk.config.property_package.diffusion_coefficient["anion"]
                         )
                     )
                     * blk.membrane_conc_mol_comp[t, x, z, k]
@@ -800,12 +806,12 @@ and used when constructing these,
                             (
                                 (
                                     blk.config.property_package.charge[i]
-                                    * blk.config.property_package.charge["Cl"]
+                                    * blk.config.property_package.charge["anion"]
                                     * blk.config.property_package.diffusion_coefficient[
                                         k
                                     ]
                                     * blk.config.property_package.diffusion_coefficient[
-                                        "Cl"
+                                        "anion"
                                     ]
                                 )
                                 - (
@@ -828,12 +834,12 @@ and used when constructing these,
                             (
                                 (
                                     blk.config.property_package.charge[i]
-                                    * blk.config.property_package.charge["Cl"]
+                                    * blk.config.property_package.charge["anion"]
                                     * blk.config.property_package.diffusion_coefficient[
                                         k
                                     ]
                                     * blk.config.property_package.diffusion_coefficient[
-                                        "Cl"
+                                        "anion"
                                     ]
                                 )
                                 - (
@@ -842,7 +848,7 @@ and used when constructing these,
                                         i
                                     ]
                                     * blk.config.property_package.diffusion_coefficient[
-                                        "Cl"
+                                        "anion"
                                     ]
                                 )
                             )
@@ -851,9 +857,9 @@ and used when constructing these,
                         for i in blk.cations
                         if k == i
                     )
-                    + blk.config.property_package.charge["Cl"]
+                    + blk.config.property_package.charge["anion"]
                     * blk.config.property_package.diffusion_coefficient[k]
-                    * blk.config.property_package.diffusion_coefficient["Cl"]
+                    * blk.config.property_package.diffusion_coefficient["anion"]
                     * blk.membrane_fixed_charge
                 )
 
@@ -1011,27 +1017,27 @@ and used when constructing these,
             return (
                 (
                     blk.config.property_package.partition_coefficient_retentate[k]
-                    ** (-blk.config.property_package.charge["Cl"])
+                    ** (-blk.config.property_package.charge["anion"])
                 )
                 * (
-                    blk.config.property_package.partition_coefficient_retentate["Cl"]
+                    blk.config.property_package.partition_coefficient_retentate["anion"]
                     ** blk.config.property_package.charge[k]
                 )
                 * (
                     blk.retentate_conc_mol_comp[t, x, k]
-                    ** (-blk.config.property_package.charge["Cl"])
+                    ** (-blk.config.property_package.charge["anion"])
                 )
                 * (
-                    blk.retentate_conc_mol_comp[t, x, "Cl"]
+                    blk.retentate_conc_mol_comp[t, x, "anion"]
                     ** blk.config.property_package.charge[k]
                 )
             ) == (
                 (
                     blk.membrane_conc_mol_comp[t, x, 0, k]
-                    ** (-blk.config.property_package.charge["Cl"])
+                    ** (-blk.config.property_package.charge["anion"])
                 )
                 * (
-                    blk.membrane_conc_mol_comp[t, x, 0, "Cl"]
+                    blk.membrane_conc_mol_comp[t, x, 0, "anion"]
                     ** blk.config.property_package.charge[k]
                 )
             )
@@ -1049,27 +1055,27 @@ and used when constructing these,
             return (
                 (
                     blk.config.property_package.partition_coefficient_permeate[k]
-                    ** (-blk.config.property_package.charge["Cl"])
+                    ** (-blk.config.property_package.charge["anion"])
                 )
                 * (
-                    blk.config.property_package.partition_coefficient_permeate["Cl"]
+                    blk.config.property_package.partition_coefficient_permeate["anion"]
                     ** blk.config.property_package.charge[k]
                 )
                 * (
                     blk.permeate_conc_mol_comp[t, x, k]
-                    ** (-blk.config.property_package.charge["Cl"])
+                    ** (-blk.config.property_package.charge["anion"])
                 )
                 * (
-                    blk.permeate_conc_mol_comp[t, x, "Cl"]
+                    blk.permeate_conc_mol_comp[t, x, "anion"]
                     ** blk.config.property_package.charge[k]
                 )
             ) == (
                 (
                     blk.membrane_conc_mol_comp[t, x, 1, k]
-                    ** (-blk.config.property_package.charge["Cl"])
+                    ** (-blk.config.property_package.charge["anion"])
                 )
                 * (
-                    blk.membrane_conc_mol_comp[t, x, 1, "Cl"]
+                    blk.membrane_conc_mol_comp[t, x, 1, "anion"]
                     ** blk.config.property_package.charge[k]
                 )
             )
@@ -1206,23 +1212,25 @@ and used when constructing these,
             for x in self.dimensionless_module_length:
                 # chloride concentration gradient in retentate variable is created by default but
                 # is not needed in model; fix to reduce number of variables
-                self.d_retentate_conc_mol_comp_dx[t, x, "Cl"].fix(
+                self.d_retentate_conc_mol_comp_dx[t, x, "anion"].fix(
                     value(self.numerical_zero_tolerance)
                 )
                 # associated discretization equation not needed in model
                 if x != 0:
-                    self.d_retentate_conc_mol_comp_dx_disc_eq[t, x, "Cl"].deactivate()
+                    self.d_retentate_conc_mol_comp_dx_disc_eq[
+                        t, x, "anion"
+                    ].deactivate()
 
                 for z in self.dimensionless_membrane_thickness:
                     # chloride concentration gradient in membrane variable is created by default but
                     # is not needed in model; fix to reduce number of variables
-                    self.d_membrane_conc_mol_comp_dz[t, x, z, "Cl"].fix(
+                    self.d_membrane_conc_mol_comp_dz[t, x, z, "anion"].fix(
                         value(self.numerical_zero_tolerance)
                     )
                     # associated discretization equation not needed in model
                     if z != 0:
                         self.d_membrane_conc_mol_comp_dz_disc_eq[
-                            t, x, z, "Cl"
+                            t, x, z, "anion"
                         ].deactivate()
 
     def add_scaling_factors(self):
@@ -1236,16 +1244,24 @@ and used when constructing these,
             for x in self.dimensionless_module_length:
                 if x != 0:
                     self.scaling_factor[
-                        self.cation_equilibrium_retentate_membrane_interface[t, x, "Co"]
+                        self.cation_equilibrium_retentate_membrane_interface[
+                            t, x, "cation_2"
+                        ]
                     ] = 1e-5
                     self.scaling_factor[
-                        self.cation_equilibrium_retentate_membrane_interface[t, x, "Li"]
+                        self.cation_equilibrium_retentate_membrane_interface[
+                            t, x, "cation_1"
+                        ]
                     ] = 1e-3
                     self.scaling_factor[
-                        self.cation_equilibrium_membrane_permeate_interface[t, x, "Co"]
+                        self.cation_equilibrium_membrane_permeate_interface[
+                            t, x, "cation_2"
+                        ]
                     ] = 1e-5
                     self.scaling_factor[
-                        self.cation_equilibrium_membrane_permeate_interface[t, x, "Li"]
+                        self.cation_equilibrium_membrane_permeate_interface[
+                            t, x, "cation_1"
+                        ]
                     ] = 1e-3
 
     def add_ports(self):

@@ -10,6 +10,7 @@ Property package for the multi-component diafiltration membrane.
 Author: Molly Dougher
 """
 
+from pyomo.common.config import ConfigValue
 from pyomo.environ import Param, Var, units
 
 from idaes.core import (
@@ -35,53 +36,51 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
         Cl- (chloride ion)
     """
 
+    CONFIG = PhysicalParameterBlock.CONFIG()
+
+    CONFIG.declare(
+        "salt_system",
+        ConfigValue(
+            default="lithium_cobalt_chloride",
+            doc="Name of the salt system to be modeled",
+        ),
+    )
+
     def build(self):
         super().build()
 
         self.liquid = Phase()
 
         # add cations
-        self.Li = Component()
-        self.Co = Component()
+        self.cation_1 = Component()
+        self.cation_2 = Component()
 
         # add anions
-        self.Cl = Component()
+        self.anion = Component()
 
-        # add valence
-        self.charge = Param(
-            self.component_list,
-            units=units.dimensionless,
-            initialize={
-                "Li": 1,
-                "Co": 2,
-                "Cl": -1,
-            },
-        )
+        # ion valence
+        charge_dict = {
+            "Li": 1,
+            "Co": 2,
+            "Cl": -1,
+        }
 
-        # add single solute diffusion coefficient
+        # infinite dilution solute diffusion coefficient
         # source: https://www.aqion.de/site/diffusion-coefficients
-        self.diffusion_coefficient = Param(
-            self.component_list,
-            units=units.mm**2 / units.h,  # Note the units of mm^2 / hr
-            initialize={
-                "Li": 3.71,
-                "Co": 2.64,
-                "Cl": 7.31,
-            },
-        )
+        diffusion_coefficient_dict = {
+            "Li": 3.71,  # mm2 / h
+            "Co": 2.64,  # mm2 / h
+            "Cl": 7.31,  # mm2 / h
+        }
 
-        # add thermal reflection coefficient, related to solute rejection
-        self.sigma = Param(
-            self.component_list,
-            units=units.dimensionless,
-            initialize={
-                "Li": 1,
-                "Co": 1,
-                "Cl": 1,
-            },
-        )
+        # thermal reflection coefficient, related to solute rejection
+        sigma_dict = {
+            "Li": 1,
+            "Co": 1,
+            "Cl": 1,
+        }
 
-        # add partition coefficient at the retentate-membrane interface
+        # partition coefficient at the solution-membrane interfaces
         # Reference: https://doi.org/10.1126/sciadv.adu8302
         # Assumptions:
         # membrane fixed charge is negative (Donnan effects are incorporated)
@@ -89,25 +88,80 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
         # H,Li is estimated from the data in Fig 1D (Na) of above reference at 200 mM
         # H,Co (divalent) is estimated as one order of magnitude smaller than H,Li (monovalent)
         # H,Cl is estimated from the data in Fig 1C of above reference at 200 mM
-        self.partition_coefficient_retentate = Param(
-            self.component_list,
-            units=units.dimensionless,
-            initialize={
+        # while H on the retentate and permeate sides can differ, we assume them to be equal for now
+        partition_coefficient_dict = {
+            "retentate": {
                 "Li": 0.4,
                 "Co": 0.04,
                 "Cl": 0.01,
             },
+            "permeate": {
+                "Li": 0.4,
+                "Co": 0.04,
+                "Cl": 0.01,
+            },
+        }
+
+        num_solutes_dict = {
+            "lithium_cobalt_chloride": {
+                "Li": 1,
+                "Co": 1,
+                "Cl": 3,
+            }
+        }
+
+        if self.config.salt_system == "lithium_cobalt_chloride":
+            cation_1 = "Li"
+            cation_2 = "Co"
+            anion = "Cl"
+
+        self.charge = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "cation_1": charge_dict[cation_1],
+                "cation_2": charge_dict[cation_2],
+                "anion": charge_dict[anion],
+            },
         )
 
-        # add partition coefficient at the membrane-permeate interface
-        # while these parameters can be different, here we take them to be the same
+        self.diffusion_coefficient = Param(
+            self.component_list,
+            units=units.mm**2 / units.h,
+            initialize={
+                "cation_1": diffusion_coefficient_dict[cation_1],
+                "cation_2": diffusion_coefficient_dict[cation_2],
+                "anion": diffusion_coefficient_dict[anion],
+            },
+        )
+
+        self.sigma = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "cation_1": sigma_dict[cation_1],
+                "cation_2": sigma_dict[cation_2],
+                "anion": sigma_dict[anion],
+            },
+        )
+
+        self.partition_coefficient_retentate = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "cation_1": partition_coefficient_dict["retentate"][cation_1],
+                "cation_2": partition_coefficient_dict["retentate"][cation_2],
+                "anion": partition_coefficient_dict["retentate"][anion],
+            },
+        )
+
         self.partition_coefficient_permeate = Param(
             self.component_list,
             units=units.dimensionless,
             initialize={
-                "Li": 0.4,
-                "Co": 0.04,
-                "Cl": 0.01,
+                "cation_1": partition_coefficient_dict["permeate"][cation_1],
+                "cation_2": partition_coefficient_dict["permeate"][cation_2],
+                "anion": partition_coefficient_dict["permeate"][anion],
             },
         )
 
@@ -115,11 +169,11 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
             self.component_list,
             units=units.dimensionless,
             initialize={
-                "Li": 1,
-                "Co": 1,
-                "Cl": 3,
+                "cation_1": num_solutes_dict[self.config.salt_system][cation_1],
+                "cation_2": num_solutes_dict[self.config.salt_system][cation_2],
+                "anion": num_solutes_dict[self.config.salt_system][anion],
             },
-            doc="Moles of ions dissociated in solution per mole of lithium and cobalt chloride",
+            doc="Moles of ions dissociated in solution per mole of salt(s)",
         )
 
         self._state_block_class = MultiComponentDiafiltrationSoluteStateBlock

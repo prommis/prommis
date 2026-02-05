@@ -39,13 +39,15 @@ from prommis.nanofiltration.multi_component_diafiltration import (
 
 def main():
     """
-    Builds and solves flowsheet with multi-component diafiltration unit model.
+    Builds and solves flowsheet with multi-component diafiltration unit model
+    for a two-salt (lithium chloride and cobalt chloride) solution.
     """
     # build flowsheet
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter()
+    m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(num_salts=2)
     m.fs.properties = MultiComponentDiafiltrationSoluteParameter(
+        num_salts=2,
         salt_system="lithium_cobalt_chloride"
     )
 
@@ -59,6 +61,7 @@ def main():
     # add the membrane unit model
     m.fs.membrane = MultiComponentDiafiltration(
         property_package=m.fs.properties,
+        num_salts=2,
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )

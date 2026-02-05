@@ -10,6 +10,7 @@ Property package for the inlet and outlet streams of the multi-component diafilt
 Author: Molly Dougher
 """
 
+from pyomo.common.config import ConfigValue
 from pyomo.environ import Var, units
 
 from idaes.core import (
@@ -36,6 +37,16 @@ class MultiComponentDiafiltrationStreamParameterData(PhysicalParameterBlock):
         Cl- (chloride ion)
     """
 
+    CONFIG = PhysicalParameterBlock.CONFIG()
+
+    CONFIG.declare(
+        "num_salts",
+        ConfigValue(
+            default=2,
+            doc="Number of salts to be modeled",
+        ),
+    )
+
     def build(self):
         super().build()
 
@@ -43,9 +54,12 @@ class MultiComponentDiafiltrationStreamParameterData(PhysicalParameterBlock):
 
         # add cations
         self.cation_1 = Component()
-        self.cation_2 = Component()
+        if self.config.num_salts > 1:
+            self.cation_2 = Component()
+        if self.config.num_salts > 2:
+            self.cation_3 = Component()
 
-        # add anions
+        # add anion
         self.anion = Component()
 
         self._state_block_class = MultiComponentDiafiltrationStreamStateBlock

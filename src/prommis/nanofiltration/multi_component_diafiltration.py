@@ -277,6 +277,13 @@ and used when constructing these,
         ),
     )
     CONFIG.declare(
+        "num_salts",
+        ConfigValue(
+            default=2,
+            doc="Number of salts",
+        ),
+    )
+    CONFIG.declare(
         "NFE_module_length",
         ConfigValue(
             doc="Number of discretization points in the x-direction (across module length)",
@@ -294,8 +301,6 @@ and used when constructing these,
         Build method for the multi-component diafiltration unit model.
         """
         super().build()
-
-        # TODO: generalize to any 2 cations and 1 anion
 
         self.add_mutable_parameters()
         self.add_variables()
@@ -363,8 +368,15 @@ and used when constructing these,
         self.time = Set(initialize=[0])
 
         # add components
-        self.solutes = Set(initialize=["cation_1", "cation_2", "anion"])
-        self.cations = Set(initialize=["cation_1", "cation_2"])
+        if self.config.num_salts == 1:
+            self.solutes = Set(initialize=["cation_1", "anion"])
+            self.cations = Set(initialize=["cation_1"])
+        if self.config.num_salts == 2:
+            self.solutes = Set(initialize=["cation_1", "cation_2", "anion"])
+            self.cations = Set(initialize=["cation_1", "cation_2"])
+        if self.config.num_salts == 3:
+            self.solutes = Set(initialize=["cation_1", "cation_2", "cation_3", "anion"])
+            self.cations = Set(initialize=["cation_1", "cation_2", "cation_3"])
 
         # add global variables
         self.total_module_length = Var(

@@ -20,7 +20,7 @@ This test suite checks that:
 
 3. The diafiltration flowsheet and QGESS costing structure/constraints are
    present (adapted from `prommis.nanofiltration.diafiltration` and QGESS
-   costing).  
+   costing).
 """
 
 import math

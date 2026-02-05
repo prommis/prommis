@@ -25,7 +25,6 @@ from idaes.core.util.initialization import fix_state_vars
 from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.misc import add_object_reference
 
-
 reo_list = [
     "Sc2O3",
     "Y2O3",

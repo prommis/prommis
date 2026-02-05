@@ -7,6 +7,7 @@
 """
 Temporary home for assert_solution_equivalent until it gets moved to IDAES
 """
+
 from math import ceil
 import textwrap
 import pytest

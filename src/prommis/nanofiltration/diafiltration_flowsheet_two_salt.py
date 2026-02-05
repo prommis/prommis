@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Sample flowsheet for the two-salt diafiltration cascade.
+Sample flowsheet for the multi-component diafiltration cascade.
 
 Author: Molly Dougher
 """
@@ -27,21 +27,25 @@ import matplotlib.pyplot as plt
 from pandas import DataFrame
 
 from prommis.nanofiltration.multi_component_diafiltration_stream_properties import (
-    DiafiltrationStreamParameter,
+    MultiComponentDiafiltrationStreamParameter,
 )
-from prommis.nanofiltration.multi_component_diafiltration_solute_properties import SoluteParameter
-from prommis.nanofiltration.multi_component_diafiltration import TwoSaltDiafiltration
+from prommis.nanofiltration.multi_component_diafiltration_solute_properties import (
+    MultiComponentDiafiltrationSoluteParameter,
+)
+from prommis.nanofiltration.multi_component_diafiltration import (
+    MultiComponentDiafiltration,
+)
 
 
 def main():
     """
-    Builds and solves flowsheet with two-salt diafiltration unit model.
+    Builds and solves flowsheet with multi-component diafiltration unit model.
     """
     # build flowsheet
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.stream_properties = DiafiltrationStreamParameter()
-    m.fs.properties = SoluteParameter()
+    m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter()
+    m.fs.properties = MultiComponentDiafiltrationSoluteParameter()
 
     # update parameter inputs if desired
     build_membrane_parameters(m)
@@ -51,7 +55,7 @@ def main():
     m.fs.diafiltrate_block = Feed(property_package=m.fs.stream_properties)
 
     # add the membrane unit model
-    m.fs.membrane = TwoSaltDiafiltration(
+    m.fs.membrane = MultiComponentDiafiltration(
         property_package=m.fs.properties,
         NFE_module_length=10,
         NFE_membrane_thickness=5,
@@ -88,7 +92,7 @@ def main():
 
 def build_membrane_parameters(m):
     """
-    Updates parameters needed in two salt diafiltration unit model if desired
+    Updates parameters needed in multi-component diafiltration unit model if desired.
 
     Args:
         m: Pyomo model

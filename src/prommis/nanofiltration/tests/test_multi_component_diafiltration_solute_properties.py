@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Diagnostic tests for the two-salt diafiltration property model for feed streams.
+Diagnostic tests for the multi-component diafiltration property model for feed streams.
 """
 
 from pyomo.environ import ConcreteModel, Var
@@ -15,7 +15,7 @@ from idaes.core import FlowsheetBlock
 import pytest
 
 from prommis.nanofiltration.multi_component_diafiltration_solute_properties import (
-    SoluteParameter,
+    MultiComponentDiafiltrationSoluteParameter,
 )
 
 
@@ -23,7 +23,7 @@ from prommis.nanofiltration.multi_component_diafiltration_solute_properties impo
 def model():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.product_properties = SoluteParameter()
+    m.fs.product_properties = MultiComponentDiafiltrationSoluteParameter()
 
     return m
 

@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Property package for the inlet and outlet streams of the two-salt diafiltration membrane.
+Property package for the inlet and outlet streams of the multi-component diafiltration membrane.
 
 Author: Molly Dougher
 """
@@ -24,11 +24,11 @@ from idaes.core import (
 from idaes.core.util.initialization import fix_state_vars
 
 
-@declare_process_block_class("DiafiltrationStreamParameter")
-class DiafiltrationStreamParameterData(PhysicalParameterBlock):
+@declare_process_block_class("MultiComponentDiafiltrationStreamParameter")
+class MultiComponentDiafiltrationStreamParameterData(PhysicalParameterBlock):
     """
-    Property Package for the feed and product streams in the
-    two-salt diafiltration membrane.
+    Property Package for the feed and product streams in the multi-component
+    diafiltration membrane.
 
     Currently includes the following solutes:
         Li+ (lithium ion)
@@ -48,7 +48,7 @@ class DiafiltrationStreamParameterData(PhysicalParameterBlock):
         # add anions
         self.Cl = Component()
 
-        self._state_block_class = DiafiltrationStreamStateBlock
+        self._state_block_class = MultiComponentDiafiltrationStreamStateBlock
 
     @classmethod
     def define_metadata(cls, obj):
@@ -70,7 +70,7 @@ class DiafiltrationStreamParameterData(PhysicalParameterBlock):
         )
 
 
-class _DiafiltrationStreamStateBlock(StateBlock):
+class _MultiComponentDiafiltrationStreamStateBlock(StateBlock):
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -82,12 +82,13 @@ class _DiafiltrationStreamStateBlock(StateBlock):
 
 
 @declare_process_block_class(
-    "DiafiltrationStreamStateBlock", block_class=_DiafiltrationStreamStateBlock
+    "MultiComponentDiafiltrationStreamStateBlock",
+    block_class=_MultiComponentDiafiltrationStreamStateBlock,
 )
-class DiafiltrationStreamStateBlockData(StateBlockData):
+class MultiComponentDiafiltrationStreamStateBlockData(StateBlockData):
     """
-    State block for the feed and product streams in the
-    two-salt diafiltration membrane.
+    State block for the feed and product streams in the multi-component
+    diafiltration membrane.
     """
 
     def build(self):

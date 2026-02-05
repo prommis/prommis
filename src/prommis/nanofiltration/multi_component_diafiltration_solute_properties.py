@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Property package for the multi-salt diafiltration membrane.
+Property package for the multi-component diafiltration membrane.
 
 Author: Molly Dougher
 """
@@ -24,10 +24,10 @@ from idaes.core import (
 from idaes.core.util.initialization import fix_state_vars
 
 
-@declare_process_block_class("SoluteParameter")
-class SoluteParameterData(PhysicalParameterBlock):
+@declare_process_block_class("MultiComponentDiafiltrationSoluteParameter")
+class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
     """
-    Property Package for the multi-salt diafiltration membrane.
+    Property Package for the multi-component diafiltration membrane.
 
     Currently includes the following solutes:
         Li+ (lithium ion)
@@ -122,7 +122,7 @@ class SoluteParameterData(PhysicalParameterBlock):
             doc="Moles of ions dissociated in solution per mole of lithium and cobalt chloride",
         )
 
-        self._state_block_class = SoluteStateBlock
+        self._state_block_class = MultiComponentDiafiltrationSoluteStateBlock
 
     @classmethod
     def define_metadata(cls, obj):
@@ -144,7 +144,7 @@ class SoluteParameterData(PhysicalParameterBlock):
         )
 
 
-class _SoluteStateBlock(StateBlock):
+class _MultiComponentDiafiltrationSoluteStateBlock(StateBlock):
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -155,10 +155,13 @@ class _SoluteStateBlock(StateBlock):
         fix_state_vars(self)
 
 
-@declare_process_block_class("SoluteStateBlock", block_class=_SoluteStateBlock)
-class SoluteStateBlockData(StateBlockData):
+@declare_process_block_class(
+    "MultiComponentDiafiltrationSoluteStateBlock",
+    block_class=_MultiComponentDiafiltrationSoluteStateBlock,
+)
+class MultiComponentDiafiltrationSoluteStateBlockData(StateBlockData):
     """
-    State block for multi-salt diafiltration membrane
+    State block for multi-component diafiltration membrane
     """
 
     def build(self):

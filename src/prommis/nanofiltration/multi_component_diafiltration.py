@@ -220,6 +220,8 @@ The following boundary conditions (which are expected to be zero) are fixed to i
 .. math:: j_{\mathrm{Cl}}(\bar{x}=0) = \epsilon
 """
 
+# TODO: update documentation
+
 from pyomo.common.config import ConfigBlock, ConfigValue
 from pyomo.dae import ContinuousSet, DerivativeVar
 from pyomo.environ import (
@@ -240,10 +242,10 @@ from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.constants import Constants
 
 
-@declare_process_block_class("TwoSaltDiafiltration")
-class TwoSaltDiafiltrationData(UnitModelBlockData):
+@declare_process_block_class("MultiComponentDiafiltration")
+class MultiComponentDiafiltrationData(UnitModelBlockData):
     """
-    Two-Salt Diafiltration Unit Model Class.
+    Multi-Component Diafiltration Unit Model Class.
     """
 
     CONFIG = UnitModelBlockData.CONFIG()
@@ -289,7 +291,7 @@ and used when constructing these,
 
     def build(self):
         """
-        Build method for the two salt diafiltration unit model
+        Build method for the multi-component diafiltration unit model.
         """
         super().build()
 
@@ -305,7 +307,7 @@ and used when constructing these,
 
     def add_mutable_parameters(self):
         """
-        Adds default parameters for the two salt diafiltration unit model.
+        Adds default parameters for the multi-component diafiltration unit model.
 
         Values can be changed by the user during implementation.
 
@@ -346,7 +348,7 @@ and used when constructing these,
 
     def add_variables(self):
         """
-        Adds variables for the two salt diafiltration unit model.
+        Adds variables for the multi-component diafiltration unit model.
 
         Membrane module dimensions and maximum flowrate (17 m3/h) are
         estimated from NF270-440 modules.
@@ -606,7 +608,7 @@ and used when constructing these,
 
     def add_constraints(self):
         """
-        Adds model constraints for the two salt diafiltration unit model.
+        Adds model constraints for the multi-component diafiltration unit model.
         """
 
         # mol balance constraints
@@ -1197,7 +1199,8 @@ and used when constructing these,
 
     def deactivate_unnecessary_objects(self):
         """
-        Deactivates variables and constraints not needed in the two salt diafiltration unit model.
+        Deactivates variables and constraints not needed in the multi-component
+        diafiltration unit model.
         """
         for t in self.time:
             for x in self.dimensionless_module_length:

@@ -31,9 +31,11 @@ from idaes.core.util.model_statistics import degrees_of_freedom
 import pytest
 
 from prommis.nanofiltration.multi_component_diafiltration_solute_properties import (
-    SoluteParameter,
+    MultiComponentDiafiltrationSoluteParameter,
 )
-from prommis.nanofiltration.multi_component_diafiltration import TwoSaltDiafiltration
+from prommis.nanofiltration.multi_component_diafiltration import (
+    MultiComponentDiafiltration,
+)
 
 # TODO: test positive and neutral membrane cases
 # currently, the property package only supports a negative fixed charge
@@ -46,9 +48,9 @@ def diafiltration_two_salt():
     """
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.properties = SoluteParameter()
+    m.fs.properties = MultiComponentDiafiltrationSoluteParameter()
 
-    m.fs.unit = TwoSaltDiafiltration(
+    m.fs.unit = MultiComponentDiafiltration(
         property_package=m.fs.properties,
         NFE_module_length=10,
         NFE_membrane_thickness=5,

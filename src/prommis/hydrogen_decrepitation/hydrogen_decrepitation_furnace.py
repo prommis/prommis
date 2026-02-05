@@ -35,14 +35,14 @@ The hydrogen decrepitation and dehydrogenation process consists of the two react
    Occurs during downstream processing at high temperatures, e.g. heating, leaching, sintering. This model assumes that this reaction occurs inside the hydrogen decrepitation unit due to heat released during the process.
 
 Therefore, the net reaction in this process is:
-   
+
    .. ce::
       Nd2Fe14B (s) + H2 (g) + \Delta H -> Nd2Fe14B (powder) + H2 (g)
 
 Two additional reactions can occur if an Nd-rich phase exists:
 
 3. Hydrogenation of Nd-rich phase:
-   
+
    .. ce::
       Nd (s) + H2 (g) -> Nd \cdot H2 (powder)
 

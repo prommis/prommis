@@ -14,7 +14,7 @@ from idaes.core import FlowsheetBlock
 
 import pytest
 
-from prommis.nanofiltration.diafiltration_stream_properties import (
+from prommis.nanofiltration.multi_component_diafiltration_stream_properties import (
     DiafiltrationStreamParameter,
 )
 

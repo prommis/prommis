@@ -32,7 +32,7 @@ class SoluteParameterData(PhysicalParameterBlock):
     Currently includes the following solutes:
         Li+ (lithium ion)
         Co2+ (cobalt ion)
-        Cl- (chlorine ion)
+        Cl- (chloride ion)
     """
 
     def build(self):
@@ -58,18 +58,19 @@ class SoluteParameterData(PhysicalParameterBlock):
             },
         )
 
-        # add molecular weight
-        self.molar_mass = Param(
+        # add single solute diffusion coefficient
+        # source: https://www.aqion.de/site/diffusion-coefficients
+        self.diffusion_coefficient = Param(
             self.component_list,
-            units=units.kg / units.mol,
+            units=units.mm**2 / units.h,  # Note the units of mm^2 / hr
             initialize={
-                "Li": 0.006941,
-                "Co": 0.05893,
-                "Cl": 0.03545,
+                "Li": 3.71,
+                "Co": 2.64,
+                "Cl": 7.31,
             },
         )
 
-        # add thermal reflection coefficient, where 1 represents ideal behavior
+        # add thermal reflection coefficient, related to solute rejection
         self.sigma = Param(
             self.component_list,
             units=units.dimensionless,
@@ -80,10 +81,45 @@ class SoluteParameterData(PhysicalParameterBlock):
             },
         )
 
-        self.num_solutes = Param(
-            initialize=5,
+        # add partition coefficient at the retentate-membrane interface
+        # Reference: https://doi.org/10.1126/sciadv.adu8302
+        # Assumptions:
+        # membrane fixed charge is negative (Donnan effects are incorporated)
+        # monovalent ions of similar size (i.e., Na and Li) behave similarly
+        # H,Li is estimated from the data in Fig 1D (Na) of above reference at 200 mM
+        # H,Co (divalent) is estimated as one order of magnitude smaller than H,Li (monovalent)
+        # H,Cl is estimated from the data in Fig 1C of above reference at 200 mM
+        self.partition_coefficient_retentate = Param(
+            self.component_list,
             units=units.dimensionless,
-            doc="Number of dissociated ions in solution",
+            initialize={
+                "Li": 0.4,
+                "Co": 0.04,
+                "Cl": 0.01,
+            },
+        )
+
+        # add partition coefficient at the membrane-permeate interface
+        # while these parameters can be different, here we take them to be the same
+        self.partition_coefficient_permeate = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "Li": 0.4,
+                "Co": 0.04,
+                "Cl": 0.01,
+            },
+        )
+
+        self.num_solutes = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "Li": 1,
+                "Co": 1,
+                "Cl": 3,
+            },
+            doc="Moles of ions dissociated in solution per mole of lithium and cobalt chloride",
         )
 
         self._state_block_class = SoluteStateBlock
@@ -93,7 +129,7 @@ class SoluteParameterData(PhysicalParameterBlock):
         obj.add_properties(
             {
                 "flow_vol": {"method": None},
-                "conc_mass_comp": {"method": None},
+                "conc_mol_comp": {"method": None},
                 "flow_mol_comp": {"method": None},
             }
         )
@@ -133,18 +169,18 @@ class SoluteStateBlockData(StateBlockData):
             initialize=10,
             bounds=(1e-20, None),
         )
-        self.conc_mass_comp = Var(
+        self.conc_mol_comp = Var(
             self.component_list,
-            units=units.kg / units.m**3,
+            units=units.mol / units.m**3,
             initialize=1e-5,
             bounds=(1e-20, None),
         )
 
     def get_material_flow_terms(self, p, j):
-        return self.flow_vol * self.conc_mass_comp[j]
+        return self.flow_vol * self.conc_mol_comp[j]
 
     def get_material_flow_basis(self):
-        return MaterialFlowBasis.mass
+        return MaterialFlowBasis.mole
 
     def define_state_vars(self):
-        return {"flow_vol": self.flow_vol, "conc_mass_comp": self.conc_mass_comp}
+        return {"flow_vol": self.flow_vol, "conc_mol_comp": self.conc_mol_comp}

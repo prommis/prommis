@@ -22,7 +22,6 @@ from prommis.solvent_extraction.mixer_settler_ex_flowsheet_steady import (
 )
 from prommis.util import assert_solution_equivalent
 
-
 solver = get_solver()
 
 

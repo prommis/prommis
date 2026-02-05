@@ -95,7 +95,7 @@ The gas phase properties are calculated based on user configured property packag
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue, In
 
 # Additional import for the unit operation
-from pyomo.environ import Param, Set, Var, exp
+from pyomo.environ import Param, Var, exp
 from pyomo.environ import units as pyunits
 
 import idaes.core.util.scaling as iscale

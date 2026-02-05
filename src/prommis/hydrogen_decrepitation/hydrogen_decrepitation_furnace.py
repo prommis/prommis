@@ -223,17 +223,6 @@ constructed,
         ),
     )
     CONFIG.declare(
-        "ree_list",
-        ConfigValue(
-            domain=list,
-            description="List of RE elements in solid feed stream",
-            doc="""A dict of the components of interest in the mixture.
-        Keys are component names and values are configuration arguments to
-        be passed to Component on construction.
-        """,
-        ),
-    )
-    CONFIG.declare(
         "number_of_units",
         ConfigValue(
             default=1,
@@ -306,11 +295,6 @@ constructed,
         # reference temperature at standard condition
         self.temp_ref = Param(initialize=298.15, units=pyunits.K)
 
-        # list of all possible REE
-        self.ree_list_all = [
-            "Nd",
-        ]
-
         # list of considered impurity mineral species in solid feed stream
         self.impurity_list = [
             "Nd",
@@ -333,23 +317,11 @@ constructed,
         # stoichiometry dictionary
         self.NdFeB_ratio = dict(zip(self.impurity_ele_list, [2, 14, 1]))
 
-        # user-specified list of rare earth elements
-        self.ree_list = Set(
-            initialize=self.config.ree_list,
-            doc="List of rare earth elements in solid feed stream",
-        )
-
         # atomic mass of elements involved in reactions in kg/mol [1]
         self.am_H = Param(initialize=0.0010078, units=pyunits.kg / pyunits.mol)
         self.am_Nd = Param(initialize=0.14424, units=pyunits.kg / pyunits.mol)
         self.am_Fe = Param(initialize=0.055845, units=pyunits.kg / pyunits.mol)
         self.am_B = Param(initialize=0.010811, units=pyunits.kg / pyunits.mol)
-
-        # atomic mass of REE
-        self.am_ree_list_all = Param(
-            self.ree_list_all, mutable=True, units=pyunits.kg / pyunits.mol
-        )
-        self.am_ree_list_all["Nd"] = self.am_Nd
 
         # molecular weights of compounds
         self.mw_Nd2Fe14B = Param(

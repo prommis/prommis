@@ -54,13 +54,6 @@ class REPMParameterData(PhysicalParameterBlock):
             },
         )
 
-        # TODO do i need this?
-        # self.dens_mass = Param(
-        #     units=units.kg / units.m**3,
-        #     initialize=7500,
-        #     mutable=True,
-        # )
-
         self._state_block_class = REPMStateBlock
 
     @classmethod

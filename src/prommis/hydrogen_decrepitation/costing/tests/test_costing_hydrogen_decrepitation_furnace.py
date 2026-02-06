@@ -74,21 +74,16 @@ def base_model():
     m.fs.hydrogen_decrepitation_furnace = REPMHydrogenDecrepitationFurnace(
         gas_property_package=m.fs.prop_gas,
         solid_property_package=m.fs.prop_solid,
-        has_holdup=False,
-        has_heat_transfer=True,
-        has_pressure_change=True,
-        ree_list=[
-            "Nd",
-        ],
+        has_heat_transfer=False,
+        has_pressure_change=False,
     )
 
     m.fs.hydrogen_decrepitation_furnace.solid_in[0].flow_mass.fix(
         0.0057367 * pyunits.kg / pyunits.s
     )
     m.fs.hydrogen_decrepitation_furnace.solid_in[0].mass_frac_comp["Nd2Fe14B"].fix(0.99)
-    m.fs.hydrogen_decrepitation_furnace.solid_in[0].mass_frac_comp["Nd"] = 0.01
+    m.fs.hydrogen_decrepitation_furnace.solid_in[0].mass_frac_comp["Nd"].fix(0.01)
 
-    # don't fix, already have mole frac balance so just need initial value
     m.fs.hydrogen_decrepitation_furnace.gas_inlet.mole_frac_comp[0, "H2"].fix(1)
 
     # inlet flue gas mole flow rate, stoichiometric on molar basis with REPM
@@ -102,7 +97,6 @@ def base_model():
         )
 
     # operating parameters
-    m.fs.hydrogen_decrepitation_furnace.deltaP.fix(0)
     m.fs.hydrogen_decrepitation_furnace.operating_temperature.fix(443.15)
     m.fs.hydrogen_decrepitation_furnace.gas_inlet.pressure.fix(101325)
 
@@ -110,9 +104,10 @@ def base_model():
         10800 * pyunits.s
     )
     m.fs.hydrogen_decrepitation_furnace.sample_density.set_value(
-        m.fs.prop_solid.dens_mass
-    )  # 7500 kg/m3
-    m.fs.hydrogen_decrepitation_furnace.chamber_to_sample_ratio.set_value(2)
+        7500 * pyunits.kg / pyunits.m**3
+    )
+    m.fs.hydrogen_decrepitation_furnace.chamber_to_sample_ratio[0].set_value(2)
+    m.fs.hydrogen_decrepitation_furnace.aspect_ratio.set_value(6)
 
     # solid temperature, cools back to inlet temperature during shutdown
     m.fs.hydrogen_decrepitation_furnace.temp_feed.fix(298.15)
@@ -120,9 +115,6 @@ def base_model():
 
     # gas temperature, assume comes in at operating temperature
     m.fs.hydrogen_decrepitation_furnace.gas_in[0].temperature.fix(443.15)
-
-    # no additional heat is supplied other than what's required for decrepitation
-    m.fs.hydrogen_decrepitation_furnace.supplied_heat_duty.fix(0)
 
     return m
 
@@ -461,16 +453,16 @@ class TestHydrogenDecrepitationCostingGasFired:
 
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.capital_cost
-        ) == pytest.approx(6581.66, rel=1e-4)
+        ) == pytest.approx(6567.89, rel=1e-4)
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.base_cost_per_unit
-        ) == pytest.approx(6581.66, rel=1e-4)
+        ) == pytest.approx(6567.89, rel=1e-4)
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.variable_operating_cost_per_unit
-        ) == pytest.approx(2592.89, rel=1e-4)
+        ) == pytest.approx(2586.43, rel=1e-4)
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.variable_operating_cost
-        ) == pytest.approx(2592.89, rel=1e-4)
+        ) == pytest.approx(2586.43, rel=1e-4)
 
 
 class TestHydrogenDecrepitationCostingElectric:
@@ -807,16 +799,16 @@ class TestHydrogenDecrepitationCostingElectric:
 
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.capital_cost
-        ) == pytest.approx(7014.91, rel=1e-4)
+        ) == pytest.approx(6999.51, rel=1e-4)
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.base_cost_per_unit
-        ) == pytest.approx(7014.91, rel=1e-4)
+        ) == pytest.approx(6999.51, rel=1e-4)
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.variable_operating_cost_per_unit
-        ) == pytest.approx(2592.89, rel=1e-4)
+        ) == pytest.approx(2586.43, rel=1e-4)
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.variable_operating_cost
-        ) == pytest.approx(2592.89, rel=1e-4)
+        ) == pytest.approx(2586.43, rel=1e-4)
 
 
 @pytest.mark.unit
@@ -878,9 +870,6 @@ def test_invalid_heating_mode():
         has_holdup=False,
         has_heat_transfer=True,
         has_pressure_change=True,
-        ree_list=[
-            "Nd",
-        ],
     )
 
     with pytest.raises(

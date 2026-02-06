@@ -216,7 +216,6 @@ class TestHydrogenDecrepitationQGESS:
 
     @pytest.mark.component
     def test_results(self, model):
-
         assert (
             pyunits.get_units(model.fs.shredder.costing.bare_erected_cost["2.1"])
             == pyunits.MUSD_Jan_2024
@@ -235,29 +234,28 @@ class TestHydrogenDecrepitationQGESS:
 
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.capital_cost
-        ) == pytest.approx(6581.66, rel=1e-4)
+        ) == pytest.approx(6567.89, rel=1e-4)
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.base_cost_per_unit
-        ) == pytest.approx(6581.66, rel=1e-4)
+        ) == pytest.approx(6567.89, rel=1e-4)
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.variable_operating_cost_per_unit
-        ) == pytest.approx(2592.89, rel=1e-4)
+        ) == pytest.approx(2586.43, rel=1e-4)
         assert value(
             model.fs.hydrogen_decrepitation_furnace.costing.variable_operating_cost
-        ) == pytest.approx(2592.89, rel=1e-4)
+        ) == pytest.approx(2586.43, rel=1e-4)
 
         assert (
             pyunits.get_units(model.fs.costing.total_plant_cost)
             == pyunits.MUSD_Jan_2024
         )
-        model.fs.costing.report()
 
         assert value(model.fs.costing.total_plant_cost) == pytest.approx(
-            0.21398, rel=1e-4
+            0.21394, rel=1e-4
         )
-        assert value(model.fs.costing.total_BEC) == pytest.approx(0.072047, rel=1e-4)
+        assert value(model.fs.costing.total_BEC) == pytest.approx(0.072033, rel=1e-4)
         assert value(model.fs.costing.total_installation_cost) == pytest.approx(
-            0.14193, rel=1e-4
+            0.14190, rel=1e-4
         )
         assert value(model.fs.costing.other_plant_costs) == pytest.approx(
             1.0000e-12, rel=1e-4
@@ -272,7 +270,7 @@ class TestHydrogenDecrepitationQGESS:
             0.77011, rel=1e-4
         )
         assert value(model.fs.costing.maintenance_and_material_cost) == pytest.approx(
-            0.0042796, rel=1e-4
+            0.0042788, rel=1e-4
         )
         assert value(
             model.fs.costing.quality_assurance_and_control_cost
@@ -285,7 +283,7 @@ class TestHydrogenDecrepitationQGESS:
         )
         assert value(
             model.fs.costing.property_taxes_and_insurance_cost
-        ) == pytest.approx(0.0021398, rel=1e-4)
+        ) == pytest.approx(0.0021394, rel=1e-4)
         assert value(model.fs.costing.other_fixed_costs) == pytest.approx(
             1.0000e-12, rel=1e-4
         )

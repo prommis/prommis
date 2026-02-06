@@ -16,6 +16,7 @@ This is an example of how to write a reaction package for rare earth elements in
 solvent extraction.
 
 """
+
 from pyomo.common.config import ConfigValue
 from pyomo.environ import Constraint, Param, Set, Var, units, log10
 
@@ -24,7 +25,7 @@ from idaes.core.base import property_meta
 from idaes.core.util.misc import add_object_reference
 from idaes.core.scaling import CustomScalerBase
 
-__author__ = "Arkoprabho Dasgupta"
+__author__ = "Arkoprabho Dasgupta, Douglas Allan"
 
 
 class SolventExtractionReactionScaler(CustomScalerBase):

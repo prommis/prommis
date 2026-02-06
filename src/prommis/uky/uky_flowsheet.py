@@ -8,7 +8,7 @@ r"""
 University of Kentucky REE Processing Plant
 ===========================================
 
-Author: Marcus Holly
+Authors: Marcus Holly, Brandon Paul, Douglas Allan
 
 The University of Kentucky (UKy) rare earth element (REE) processing plant is designed to extract salable rare earth oxides
 from domestic U.S. coal and coal byproducts. While this implementation of the plant does not take into account
@@ -137,9 +137,12 @@ References:
  in the U.S. Using Advanced Separation Processes (Final Technical Report)." , Sep. 2019. https://doi.org/10.2172/1569277
 
 """
+
 import logging
+from warnings import warn
 from pyomo.common.collections import ComponentMap
 from pyomo.environ import (
+    Block,
     ConcreteModel,
     Constraint,
     Expression,
@@ -212,7 +215,6 @@ from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
 
-# from prommis.solvent_extraction.translator_leach_precip import TranslatorLeachPrecip
 from prommis.properties.translator_hcl_leach import TranslatorHClLeach
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,
@@ -274,10 +276,6 @@ def main():
     QGESSCostingData.costing_initialization(m.fs.costing)
     QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
     QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-
-    # from idaes.core.scaling.util import jacobian_cond
-
-    # print(jacobian_cond(m))
 
     solve_system(m, tee=True)
 
@@ -588,23 +586,6 @@ def build():
     # -----------------------------------------------------------------------------------------------------------------
     # Translator blocks
 
-    # m.fs.translator_leaching_to_precipitate = TranslatorLeachPrecip(
-    #     inlet_property_package=m.fs.leach_soln,
-    #     outlet_property_package=m.fs.HCl_stripping_params,
-    # )
-    # m.fs.translator_precipitate_to_leaching = TranslatorLeachPrecip(
-    #     inlet_property_package=m.fs.HCl_stripping_params,
-    #     outlet_property_package=m.fs.leach_soln,
-    # )
-    # m.fs.translator_sep_to_roast = TranslatorLeachPrecip(
-    #     inlet_property_package=m.fs.leach_soln,
-    #     outlet_property_package=m.fs.HCl_stripping_params,
-    # )
-    # m.fs.translator_precip_sep_to_purge = TranslatorLeachPrecip(
-    #     inlet_property_package=m.fs.leach_soln,
-    #     outlet_property_package=m.fs.HCl_stripping_params,
-    # )
-
     # -----------------------------------------------------------------------------------------------------------------
 
     # UKy flowsheet connections
@@ -795,22 +776,22 @@ def set_scaling(m):
 
     csb = CustomScalerBase()
 
-    for blk in m.fs.block_data_objects(descend_into=True):
-        if blk.parent_block() is m.fs:
-            if isinstance(blk, UnitModelBlockData):
-                if hasattr(blk, "default_scaler") and blk.default_scaler is not None:
-                    print(f"Scaling {blk.name}")
-                    scaler = blk.default_scaler()
-                    scaler.scale_model(blk)
-                else:
-                    print(f"No default scaler for unit model {blk.name}")
-            elif "_expanded" in blk.name:
+    for blk in m.fs.component_data_objects(ctype=Block, descend_into=False):
+        # if blk.parent_block() is m.fs:
+        if isinstance(blk, UnitModelBlockData):
+            if hasattr(blk, "default_scaler") and blk.default_scaler is not None:
                 print(f"Scaling {blk.name}")
-                # Expanded arc block
-                for con in blk.component_data_objects(Constraint):
-                    csb.scale_constraint_by_nominal_value(
-                        con, scheme=ConstraintScalingScheme.inverseMaximum
-                    )
+                scaler = blk.default_scaler()
+                scaler.scale_model(blk)
+            else:
+                print(f"No default scaler for unit model {blk.name}")
+        elif "_expanded" in blk.name:
+            print(f"Scaling {blk.name}")
+            # Expanded arc block
+            for con in blk.component_data_objects(Constraint):
+                csb.scale_constraint_by_nominal_value(
+                    con, scheme=ConstraintScalingScheme.inverseMaximum
+                )
 
 
 def set_operating_conditions(m):
@@ -1083,10 +1064,6 @@ def set_operating_conditions(m):
     m.fs.precipitator.cv_aqueous.properties_out[0].flow_vol
     m.fs.precipitator.cv_aqueous.properties_out[0].conc_mass_comp
 
-    # TODO is temperature actually used in the AI?
-    # This state block got switched to the HCl properties
-    # which does not have temperature as a state variable
-    # m.fs.precipitator.precipitate_state_block[0].temperature
     m.fs.precipitator.precipitate_state_block[0].flow_mol_comp
 
 
@@ -1208,11 +1185,9 @@ def initialize_system(m):
             (0, "Gd"): 1.01,
             (0, "H"): 39.81,
             (0, "H2O"): 1000000,
-            # (0, "HSO4"): 2.88e-6,
             (0, "La"): 0.13,
             (0, "Nd"): 8.52e-2,
             (0, "Pr"): 2.10e-2,
-            # (0, "SO4"): 2.54e-6,
             (0, "Sc"): 1.65e-3,
             (0, "Sm"): 7.88e-2,
             (0, "Y"): 1.17,
@@ -1300,23 +1275,21 @@ def initialize_system(m):
     seq.run(m, function)
 
 
-def solve_system(m, solver=None, tee=False):
+def solve_system(m, solver_obj=None, tee=False):
     """
     Solve the model.
 
     Args:
         m: pyomo model
-        solver: optimization solver
+        solver_obj: Pyomo solver object to use
         tee: boolean indicator to stream IPOPT solution
     """
-    if hasattr(solver, "solve"):
-        solver = solver
-    else:
+    if solver_obj is None:
         # Why isn't it getting ipopt_v2 automatically?
-        solver = get_solver("ipopt_v2")
-    solver.options.constr_viol_tol = 1e-8
+        solver_obj = get_solver("ipopt_v2")
+    solver_obj.options.constr_viol_tol = 1e-8
 
-    results = solver.solve(m, tee=tee)
+    results = solver_obj.solve(m, tee=tee)
 
     return results
 
@@ -2783,8 +2756,7 @@ def optimize_model(m):
     for condata in m.fs.leach_liquid_feed.HSO4_dissociation.values():
         set_scaling_factor(condata, sf)
 
-    # According to Wikipedia, pH values of less than 0 are
-    # impossible in an aqueous solution
+    # We should think about how strong of acid we can use for leaching
     m.fs.leach_liquid_feed.properties[0].pH_phase["liquid"].setlb(0)
 
     # IPOPT wanted to use a liquid feed of 13.7 L/hr, which would be
@@ -2808,8 +2780,7 @@ def optimize_model(m):
         feed.flow_vol.unfix()
         feed.conc_mass_comp[0, "H"].unfix()
         feed.conc_mass_comp[0, "Cl"].unfix()
-        # According to Wikipedia, pH values of less than 0 are
-        # impossible in an aqueous solution
+        # Revisit how strong of an acid we can use
         feed.properties[0].pH_phase["liquid"].setlb(0)
 
         @feed.Constraint(m.fs.time)
@@ -2823,13 +2794,17 @@ def optimize_model(m):
             set_scaling_factor(condata, 10)
 
     # Make extractant dosage a decision variable
-    m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
-    m.fs.rougher_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
-    # m.fs.rougher_org_make_up.properties[0].extractant_dosage.fix(5)
+    # m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
+    # m.fs.rougher_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
 
-    m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
-    m.fs.cleaner_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
-    # m.fs.cleaner_org_make_up.properties[0].extractant_dosage.fix(5)
+    # m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
+    # m.fs.cleaner_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
+
+    # We can't make extractant dosage a decision variable until we have a
+    # correlation for how impurity (Fe, Al, Ca) distribution coefficients
+    # vary with dosage
+    m.fs.rougher_org_make_up.properties[0].extractant_dosage.fix(5)
+    m.fs.cleaner_org_make_up.properties[0].extractant_dosage.fix(5)
 
     # If the pH in the rougher scrub goes above 5 or 6, the equations get
     # extremely ill conditioned.
@@ -2866,11 +2841,11 @@ def data_reconcilliation(m):
 
 if __name__ == "__main__":
     m, results = main()
-    # warn(
-    #     "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
-    # )
-    # warn(
-    #     "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
-    # )
+    warn(
+        "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
+    )
+    warn(
+        "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
+    )
     # optimize_model(m)
     data_reconcilliation(m)

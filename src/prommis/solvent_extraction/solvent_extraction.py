@@ -130,7 +130,87 @@ from idaes.core.util.exceptions import ConfigurationError
 
 from idaes.models.unit_models.mscontactor import MSContactor
 
-__author__ = "Arkoprabho Dasgupta"
+__author__ = "Arkoprabho Dasgupta, Douglas Allan"
+
+
+class SolventExtractionScaler(CustomScalerBase):
+    """
+    Scaler for the SolventExtraction unit model.
+    """
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        """
+        Variable scaling routine for SolventExtraction.
+
+        Args:
+            model: instance of SolventExraction to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: dict of Scalers to use for sub-models, keyed by submodel local name
+
+        Returns:
+            None
+        """
+        if submodel_scalers is None:
+            submodel_scalers = {}
+
+        # The MSContactor scaler expects volume to be scaled
+        if hasattr(model.mscontactor, "volume"):
+            for vardata in model.mscontactor.volume.values():
+                self.set_variable_scaling_factor(
+                    vardata, 1 / value(vardata), overwrite=overwrite
+                )
+
+        # There are no Vars besides those created by the MSContactor
+        self.call_submodel_scaler_method(
+            submodel=model.mscontactor,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        """
+        Routine to apply scaling factors to constraints in model.
+
+        Args:
+            model: model to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: dict of Scalers to use for sub-models, keyed by submodel local name
+
+        Returns:
+            None
+        """
+
+        self.call_submodel_scaler_method(
+            submodel=model.mscontactor,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+        for idx, con in model.distribution_extent_constraint.items():
+            t, e, j = idx
+            self.scale_constraint_by_component(
+                con,
+                model.mscontactor.organic[t, e].conc_mol_comp[f"{j}_o"],
+                overwrite=overwrite,
+            )
+
+        if hasattr(model, "aqueous_pressure_constraint"):
+            for idx, con in model.aqueous_pressure_constraint.items():
+                t, e = idx
+                self.scale_constraint_by_component(
+                    con, model.mscontactor.aqueous[t, e].pressure, overwrite=overwrite
+                )
+        if hasattr(model, "organic_pressure_constraint"):
+            for idx, con in model.organic_pressure_constraint.items():
+                t, e = idx
+                self.scale_constraint_by_component(
+                    con, model.mscontactor.organic[t, e].pressure, overwrite=overwrite
+                )
 
 
 class SolventExtractionScaler(CustomScalerBase):

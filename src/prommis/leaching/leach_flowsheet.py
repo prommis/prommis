@@ -10,6 +10,7 @@ parameters and data for West Kentucky No. 13 coal refuse.
 
 Authors: Andrew Lee, Arkoprabho Dasgupta, Akintomiwa Ojo, Douglas Allan
 """
+
 import os
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In, PositiveInt

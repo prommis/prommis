@@ -169,9 +169,7 @@ class HydrogenDecrepitationCostingData(FlowsheetCostingBlockData):
         blk.efficiency = Param(units=pyunits.dimensionless, mutable=True)
         blk.efficiency.set_value(efficiency)
 
-        @blk.Expression(
-            blk.flowsheet().config.time,
-            doc="Power rating of the furnace")
+        @blk.Expression(blk.flowsheet().config.time, doc="Power rating of the furnace")
         def furnace_power_rating(b, t):
             return (
                 b.parent_block().heat_furnace_material

@@ -6,6 +6,7 @@
 #####################################################################################################
 
 from pyomo.environ import (
+    ComponentMap,
     ConcreteModel,
     units,
 )
@@ -21,7 +22,10 @@ from idaes.core.solvers import get_solver
 from prommis.properties.sulfuric_acid_leaching_properties import (
     SulfuricAcidLeachingParameters,
 )
-from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
+from prommis.solvent_extraction.ree_og_distribution import (
+    REESolExOgParameters,
+    ree_list,
+)
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
 
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
@@ -29,12 +33,14 @@ from prommis.solvent_extraction.solvent_extraction_reaction_package import (
 )
 
 
-def build_model(dosage, number_of_stages):
+def build_model(dosage, number_of_stages, has_holdup):
     """
     Method to build a steady state model for solvent extraction
     Args:
-        dosage: percentage dosage of extractant to the system.
-        number_of_stages: number of stages in the model.
+        dosage: Percentage dosage of extractant to the system.
+        number_of_stages: Number of stages in the model.
+        has_holdup: Boolean flag about whether or not to create terms
+            associated with material holdup and hydrostatic pressure
     Returns:
         m: ConcreteModel object with the solvent extraction system.
     """
@@ -55,36 +61,40 @@ def build_model(dosage, number_of_stages):
             "property_package": m.fs.leach_soln,
             "flow_direction": FlowDirection.forward,
             "has_energy_balance": False,
-            "has_pressure_balance": False,
+            "has_pressure_balance": not has_holdup,
         },
         organic_stream={
             "property_package": m.fs.prop_o,
             "flow_direction": FlowDirection.backward,
             "has_energy_balance": False,
-            "has_pressure_balance": False,
+            "has_pressure_balance": not has_holdup,
         },
         heterogeneous_reaction_package=m.fs.reaxn,
-        has_holdup=True,
+        has_holdup=has_holdup,
+        create_hydrostatic_pressure_terms=has_holdup,
     )
 
     return m
 
 
-def set_inputs(m, dosage):
+def set_inputs(m, dosage, has_holdup):
     """
     Set inlet conditions to the solvent extraction model and fixing the parameters
     of the model.
     Args:
         m: ConcreteModel object with the solvent extraction system.
-        dosage: percentage dosage of extractant to the system.
+        dosage: Percentage dosage of extractant to the system.
+        has_holdup: Boolean flag about whether or not to fix the terms
+            associated with material holdup and hydrostatic pressure
     Returns:
         None
 
     """
 
-    m.fs.solex.mscontactor.volume[:].fix(0.4 * units.m**3)
-    m.fs.solex.area_cross_stage[:] = 1
-    m.fs.solex.elevation[:] = 0
+    if has_holdup:
+        m.fs.solex.mscontactor.volume[:].fix(0.4 * units.m**3)
+        m.fs.solex.area_cross_stage[:] = 1
+        m.fs.solex.elevation[:] = 0
 
     m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H2O"].fix(1e6)
     m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H"].fix(10.75)
@@ -105,6 +115,9 @@ def set_inputs(m, dosage):
     m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Dy"].fix(0.047)
 
     m.fs.solex.mscontactor.aqueous_inlet_state[:].flow_vol.fix(62.01)
+    m.fs.solex.mscontactor.aqueous_inlet_state[:].pressure.fix(101300)
+    m.fs.solex.mscontactor.aqueous[:, :].temperature.fix(305.15 * units.K)
+    m.fs.solex.mscontactor.aqueous_inlet_state[:].temperature.fix(305.15 * units.K)
 
     m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Kerosene"].fix(820e3)
     m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["DEHPA"].fix(
@@ -124,25 +137,59 @@ def set_inputs(m, dosage):
     m.fs.solex.mscontactor.organic_inlet_state[:].conc_mass_comp["Dy_o"].fix(8.008e-6)
 
     m.fs.solex.mscontactor.organic_inlet_state[:].flow_vol.fix(62.01)
-
-    m.fs.solex.mscontactor.aqueous[:, :].temperature.fix(305.15 * units.K)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].temperature.fix(305.15 * units.K)
+    m.fs.solex.mscontactor.organic_inlet_state[:].pressure.fix(101300)
     m.fs.solex.mscontactor.organic[:, :].temperature.fix(305.15 * units.K)
     m.fs.solex.mscontactor.organic_inlet_state[:].temperature.fix(305.15 * units.K)
 
 
-def model_buildup_and_set_inputs(dosage, number_of_stages):
+def scale_model(m):
+    """
+    Apply scaling factors to improve solver performance.
+    """
+
+    aqueous_scaler = m.fs.solex.mscontactor.aqueous.default_scaler()
+    aqueous_scaler.default_scaling_factors["flow_vol"] = 1 / 62.01
+
+    organic_scaler = m.fs.solex.mscontactor.organic.default_scaler()
+    organic_scaler.default_scaling_factors["flow_vol"] = 1 / 62.01
+    for ree in ree_list:
+        if ree == "Sc_o":
+            organic_scaler.default_scaling_factors[f"conc_mass_comp[{ree}]"] = 1
+        else:
+            organic_scaler.default_scaling_factors[f"conc_mass_comp[{ree}]"] = 100
+
+    submodel_scalers = ComponentMap()
+    submodel_scalers[m.fs.solex.mscontactor.aqueous_inlet_state] = aqueous_scaler
+    submodel_scalers[m.fs.solex.mscontactor.aqueous] = aqueous_scaler
+    submodel_scalers[m.fs.solex.mscontactor.organic_inlet_state] = organic_scaler
+    submodel_scalers[m.fs.solex.mscontactor.organic] = organic_scaler
+
+    scaler_obj = m.fs.solex.default_scaler(
+        max_variable_scaling_factor=1e12,
+        max_constraint_scaling_factor=1e12,
+        max_expression_scaling_hint=1e12,
+        min_variable_scaling_factor=1e-12,
+        min_constraint_scaling_factor=1e-12,
+        min_expression_scaling_hint=1e-12,
+    )
+    scaler_obj.scale_model(m.fs.solex, submodel_scalers=submodel_scalers)
+
+
+def model_buildup_and_set_inputs(dosage, number_of_stages, has_holdup):
     """
     A function to build up the solvent extraction model and set inlet streams
     to the model.
     Args:
-        dosage: percentage dosage of extractant to the system.
+        dosage: Percentage dosage of extractant to the system.
         number_of_stages: Number of stages in the model.
+        has_holdup: Boolean flag about whether or not to create terms
+            associated with material holdup and hydrostatic pressure
     Returns:
         m: ConcreteModel object with the solvent extraction system.
     """
-    m = build_model(dosage, number_of_stages)
-    set_inputs(m, dosage)
+    m = build_model(dosage, number_of_stages, has_holdup=has_holdup)
+    set_inputs(m, dosage, has_holdup=has_holdup)
+    scale_model(m)
 
     return m
 
@@ -173,17 +220,19 @@ def solve_model(m):
     return results
 
 
-def main(dosage, number_of_stages):
+def main(dosage, number_of_stages, has_holdup):
     """
     The main function used to build a solvent extraction model, set inlets to the model,
     initialize the model, solve the model and export the results to a json file.
     Args:
-        dosage: percentage dosage of extractant to the system.
+        dosage: Percentage dosage of extractant to the system.
         number_of_stages: Number of stages in the model.
+        has_holdup: Boolean flag about whether or not to create
+            material holdup and hydrostatic pressure terms
     Returns:
         m: ConcreteModel object with the solvent extraction system.
     """
-    m = model_buildup_and_set_inputs(dosage, number_of_stages)
+    m = model_buildup_and_set_inputs(dosage, number_of_stages, has_holdup)
     initialize_steady_model(m)
     results = solve_model(m)
 

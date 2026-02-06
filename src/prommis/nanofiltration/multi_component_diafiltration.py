@@ -1257,24 +1257,25 @@ and used when constructing these,
                 if x != 0:
                     self.scaling_factor[
                         self.cation_equilibrium_retentate_membrane_interface[
-                            t, x, "cation_2"
-                        ]
-                    ] = 1e-5
-                    self.scaling_factor[
-                        self.cation_equilibrium_retentate_membrane_interface[
                             t, x, "cation_1"
                         ]
                     ] = 1e-3
                     self.scaling_factor[
                         self.cation_equilibrium_membrane_permeate_interface[
-                            t, x, "cation_2"
-                        ]
-                    ] = 1e-5
-                    self.scaling_factor[
-                        self.cation_equilibrium_membrane_permeate_interface[
                             t, x, "cation_1"
                         ]
                     ] = 1e-3
+                    if self.config.num_salts > 1:
+                        self.scaling_factor[
+                            self.cation_equilibrium_membrane_permeate_interface[
+                                t, x, "cation_2"
+                            ]
+                        ] = 1e-5
+                        self.scaling_factor[
+                            self.cation_equilibrium_retentate_membrane_interface[
+                                t, x, "cation_2"
+                            ]
+                        ] = 1e-5
 
     def add_ports(self):
         self.feed_inlet = Port(doc="Feed Inlet Port")

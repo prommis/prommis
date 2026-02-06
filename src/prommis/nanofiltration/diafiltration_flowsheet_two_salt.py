@@ -48,7 +48,7 @@ def main():
     m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(num_salts=2)
     m.fs.properties = MultiComponentDiafiltrationSoluteParameter(
         num_salts=2,
-        salt_system="lithium_cobalt_chloride"
+        salt_system="lithium_cobalt_chloride",
     )
 
     # update parameter inputs if desired

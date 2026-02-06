@@ -407,7 +407,7 @@ and used when constructing these,
         )
 
         def initialize_feed_conc_mol_comp(m, t, j):
-            vals = {"cation_1": 245, "cation_2": 288, "anion": 822}
+            vals = {"cation_1": 245, "cation_2": 288, "cation_3": 20, "anion": 822}
             return vals[j]
 
         self.feed_conc_mol_comp = Var(
@@ -427,7 +427,7 @@ and used when constructing these,
         )
 
         def initialize_diafiltrate_conc_mol_comp(m, t, j):
-            vals = {"cation_1": 14, "cation_2": 3, "anion": 21}
+            vals = {"cation_1": 14, "cation_2": 3, "cation_3": 3, "anion": 21}
             return vals[j]
 
         self.diafiltrate_conc_mol_comp = Var(
@@ -450,7 +450,7 @@ and used when constructing these,
         )
 
         def initialize_molar_ion_flux(m, t, w, j):
-            vals = {"cation_1": 11, "cation_2": 13, "anion": 37}
+            vals = {"cation_1": 11, "cation_2": 13, "cation_3": 15, "anion": 37}
             return vals[j]
 
         self.molar_ion_flux = Var(
@@ -472,7 +472,7 @@ and used when constructing these,
         )
 
         def initialize_retentate_conc_mol_comp(m, t, w, j):
-            vals = {"cation_1": 198, "cation_2": 241, "anion": 680}
+            vals = {"cation_1": 198, "cation_2": 241, "cation_3": 20, "anion": 680}
             return vals[j]
 
         self.retentate_conc_mol_comp = Var(
@@ -494,7 +494,7 @@ and used when constructing these,
         )
 
         def initialize_permeate_conc_mol_comp(m, t, w, j):
-            vals = {"cation_1": 191, "cation_2": 220, "anion": 632}
+            vals = {"cation_1": 191, "cation_2": 220, "cation_3": 20, "anion": 632}
             return vals[j]
 
         self.permeate_conc_mol_comp = Var(
@@ -517,7 +517,7 @@ and used when constructing these,
 
         # add variables dependent on dimensionless_module_length and dimensionless_membrane_thickness
         def initialize_membrane_conc_mol_comp(m, t, w, l, j):
-            vals = {"cation_1": 109, "cation_2": 18, "anion": 4.5}
+            vals = {"cation_1": 109, "cation_2": 18, "cation_3": 18, "anion": 4.5}
             return vals[j]
 
         self.membrane_conc_mol_comp = Var(
@@ -541,8 +541,9 @@ and used when constructing these,
 
         def initialize_membrane_cross_diffusion_coefficient_bilinear(m, t, w, l, j, k):
             vals = {
-                "cation_1": {"cation_1": -3800, "cation_2": -3800},
-                "cation_2": {"cation_1": -340, "cation_2": -2500},
+                "cation_1": {"cation_1": -3800, "cation_2": -3800, "cation_3": -3800},
+                "cation_2": {"cation_1": -340, "cation_2": -2500, "cation_3": -2500},
+                "cation_3": {"cation_1": -340, "cation_2": -2500, "cation_3": -2500},
             }
             return vals[j][k]
 
@@ -559,7 +560,7 @@ and used when constructing these,
         )
 
         def initialize_membrane_convection_coefficient_bilinear(m, t, w, l, j):
-            vals = {"cation_1": 105, "cation_2": -115}
+            vals = {"cation_1": 105, "cation_2": -115, "cation_3": -115}
             return vals[j]
 
         self.membrane_convection_coefficient_bilinear = Var(
@@ -574,8 +575,9 @@ and used when constructing these,
 
         def initialize_membrane_cross_diffusion_coefficient(m, t, w, l, j, k):
             vals = {
-                "cation_1": {"cation_1": -6, "cation_2": -6},
-                "cation_2": {"cation_1": -0.5, "cation_2": -4},
+                "cation_1": {"cation_1": -6, "cation_2": -6, "cation_3": -6},
+                "cation_2": {"cation_1": -0.5, "cation_2": -4, "cation_3": -4},
+                "cation_3": {"cation_1": -0.5, "cation_2": -4, "cation_3": -4},
             }
             return vals[j][k]
 
@@ -591,7 +593,7 @@ and used when constructing these,
         )
 
         def initialize_membrane_convection_coefficient(m, t, w, l, j):
-            vals = {"cation_1": 0.17, "cation_2": -0.18}
+            vals = {"cation_1": 0.17, "cation_2": -0.18, "cation_3": -0.18}
             return vals[j]
 
         self.membrane_convection_coefficient = Var(
@@ -1274,6 +1276,17 @@ and used when constructing these,
                         self.scaling_factor[
                             self.cation_equilibrium_retentate_membrane_interface[
                                 t, x, "cation_2"
+                            ]
+                        ] = 1e-5
+                    if self.config.num_salts > 2:
+                        self.scaling_factor[
+                            self.cation_equilibrium_membrane_permeate_interface[
+                                t, x, "cation_3"
+                            ]
+                        ] = 1e-5
+                        self.scaling_factor[
+                            self.cation_equilibrium_retentate_membrane_interface[
+                                t, x, "cation_3"
                             ]
                         ] = 1e-5
 

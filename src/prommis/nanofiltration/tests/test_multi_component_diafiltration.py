@@ -870,13 +870,458 @@ class TestDiafiltrationSingleSaltAluminum(object):
 
 
 ################################################################################
+# Test functions for single-salt model
+@pytest.fixture(scope="module")
+def sample_two_salt_model():
+    num_salts = 2
+    salt_system = "lithium_cobalt_chloride"
+
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.properties = MultiComponentDiafiltrationSoluteParameter(
+        num_salts=num_salts,
+        salt_system=salt_system,
+    )
+    m.fs.unit = MultiComponentDiafiltration(
+        property_package=m.fs.properties,
+        num_salts=num_salts,
+        NFE_module_length=10,
+        NFE_membrane_thickness=5,
+    )
+
+    m.fs.unit.total_module_length.fix()
+    m.fs.unit.total_membrane_length.fix()
+    m.fs.unit.applied_pressure.fix()
+    m.fs.unit.feed_flow_volume.fix()
+    m.fs.unit.feed_conc_mol_comp.fix()
+    m.fs.unit.diafiltrate_flow_volume.fix()
+    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    return m
+
+
+@pytest.mark.unit
+def test_config_two_salt(sample_two_salt_model):
+    assert len(sample_two_salt_model.fs.unit.config) == 7
+
+    assert not sample_two_salt_model.fs.unit.config.dynamic
+    assert not sample_two_salt_model.fs.unit.config.has_holdup
+
+    assert (
+        sample_two_salt_model.fs.unit.config.property_package
+        is sample_two_salt_model.fs.properties
+    )
+    assert sample_two_salt_model.fs.unit.config.num_salts == 2
+    assert sample_two_salt_model.fs.unit.config.NFE_module_length == 10
+    assert sample_two_salt_model.fs.unit.config.NFE_membrane_thickness == 5
+
+
+@pytest.mark.build
+@pytest.mark.unit
+def test_build_two_salt(sample_two_salt_model):
+    # parameters
+    assert isinstance(sample_two_salt_model.fs.unit.numerical_zero_tolerance, Param)
+    assert value(sample_two_salt_model.fs.unit.numerical_zero_tolerance) == 1e-10
+
+    assert isinstance(sample_two_salt_model.fs.unit.total_membrane_thickness, Param)
+    assert value(sample_two_salt_model.fs.unit.total_membrane_thickness) == 1e-7
+
+    assert isinstance(sample_two_salt_model.fs.unit.membrane_fixed_charge, Param)
+    assert value(sample_two_salt_model.fs.unit.membrane_fixed_charge) == -140
+
+    assert isinstance(sample_two_salt_model.fs.unit.membrane_permeability, Param)
+    assert value(sample_two_salt_model.fs.unit.membrane_permeability) == 0.01
+
+    assert isinstance(sample_two_salt_model.fs.unit.temperature, Param)
+    assert value(sample_two_salt_model.fs.unit.temperature) == 298
+
+    # sets
+    assert isinstance(
+        sample_two_salt_model.fs.unit.dimensionless_module_length, ContinuousSet
+    )
+    assert len(sample_two_salt_model.fs.unit.dimensionless_module_length) == 11
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.dimensionless_membrane_thickness,
+        ContinuousSet,
+    )
+    assert len(sample_two_salt_model.fs.unit.dimensionless_membrane_thickness) == 6
+
+    assert isinstance(sample_two_salt_model.fs.unit.time, Set)
+    assert len(sample_two_salt_model.fs.unit.time) == 1
+
+    assert isinstance(sample_two_salt_model.fs.unit.solutes, Set)
+    assert len(sample_two_salt_model.fs.unit.solutes) == 3
+
+    assert isinstance(sample_two_salt_model.fs.unit.cations, Set)
+    assert len(sample_two_salt_model.fs.unit.cations) == 2
+
+    # variables
+    assert isinstance(sample_two_salt_model.fs.unit.total_module_length, Var)
+    assert len(sample_two_salt_model.fs.unit.total_module_length) == 1
+
+    assert isinstance(sample_two_salt_model.fs.unit.total_membrane_length, Var)
+    assert len(sample_two_salt_model.fs.unit.total_membrane_length) == 1
+
+    assert isinstance(sample_two_salt_model.fs.unit.applied_pressure, Var)
+    assert len(sample_two_salt_model.fs.unit.applied_pressure) == 1
+
+    assert isinstance(sample_two_salt_model.fs.unit.feed_flow_volume, Var)
+    assert len(sample_two_salt_model.fs.unit.feed_flow_volume) == 1
+
+    assert isinstance(sample_two_salt_model.fs.unit.feed_conc_mol_comp, Var)
+    assert len(sample_two_salt_model.fs.unit.feed_conc_mol_comp) == 3
+
+    assert isinstance(sample_two_salt_model.fs.unit.diafiltrate_flow_volume, Var)
+    assert len(sample_two_salt_model.fs.unit.diafiltrate_flow_volume) == 1
+
+    assert isinstance(sample_two_salt_model.fs.unit.diafiltrate_conc_mol_comp, Var)
+    assert len(sample_two_salt_model.fs.unit.diafiltrate_conc_mol_comp) == 3
+
+    assert isinstance(sample_two_salt_model.fs.unit.membrane_D_tilde, Var)
+    assert len(sample_two_salt_model.fs.unit.membrane_D_tilde) == 66
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.membrane_cross_diffusion_coefficient_bilinear,
+        Var,
+    )
+    assert (
+        len(sample_two_salt_model.fs.unit.membrane_cross_diffusion_coefficient_bilinear)
+        == 264
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.membrane_convection_coefficient_bilinear, Var
+    )
+    assert (
+        len(sample_two_salt_model.fs.unit.membrane_convection_coefficient_bilinear)
+        == 132
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.membrane_cross_diffusion_coefficient, Var
+    )
+    assert (
+        len(sample_two_salt_model.fs.unit.membrane_cross_diffusion_coefficient) == 264
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.membrane_convection_coefficient, Var
+    )
+    assert len(sample_two_salt_model.fs.unit.membrane_convection_coefficient) == 132
+
+    assert isinstance(sample_two_salt_model.fs.unit.volume_flux_water, Var)
+    assert len(sample_two_salt_model.fs.unit.volume_flux_water) == 11
+
+    assert isinstance(sample_two_salt_model.fs.unit.molar_ion_flux, Var)
+    assert len(sample_two_salt_model.fs.unit.molar_ion_flux) == 33
+
+    assert isinstance(sample_two_salt_model.fs.unit.retentate_flow_volume, Var)
+    assert len(sample_two_salt_model.fs.unit.retentate_flow_volume) == 11
+
+    assert isinstance(sample_two_salt_model.fs.unit.retentate_conc_mol_comp, Var)
+    assert len(sample_two_salt_model.fs.unit.retentate_conc_mol_comp) == 33
+
+    assert isinstance(sample_two_salt_model.fs.unit.permeate_flow_volume, Var)
+    assert len(sample_two_salt_model.fs.unit.permeate_flow_volume) == 11
+
+    assert isinstance(sample_two_salt_model.fs.unit.permeate_conc_mol_comp, Var)
+    assert len(sample_two_salt_model.fs.unit.permeate_conc_mol_comp) == 33
+
+    assert isinstance(sample_two_salt_model.fs.unit.osmotic_pressure, Var)
+    assert len(sample_two_salt_model.fs.unit.osmotic_pressure) == 11
+
+    assert isinstance(sample_two_salt_model.fs.unit.membrane_conc_mol_comp, Var)
+    assert len(sample_two_salt_model.fs.unit.membrane_conc_mol_comp) == 198
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.d_retentate_conc_mol_comp_dx,
+        DerivativeVar,
+    )
+    assert len(sample_two_salt_model.fs.unit.d_retentate_conc_mol_comp_dx) == 33
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.d_retentate_flow_volume_dx, DerivativeVar
+    )
+    assert len(sample_two_salt_model.fs.unit.d_retentate_flow_volume_dx) == 11
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.d_membrane_conc_mol_comp_dz,
+        DerivativeVar,
+    )
+    assert len(sample_two_salt_model.fs.unit.d_membrane_conc_mol_comp_dz) == 198
+
+    # constraints
+    assert isinstance(sample_two_salt_model.fs.unit.overall_mol_balance, Constraint)
+    assert len(sample_two_salt_model.fs.unit.overall_mol_balance) == 10
+
+    assert isinstance(sample_two_salt_model.fs.unit.cation_mol_balance, Constraint)
+    assert len(sample_two_salt_model.fs.unit.cation_mol_balance) == 20
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.overall_bulk_flux_equation, Constraint
+    )
+    assert len(sample_two_salt_model.fs.unit.overall_bulk_flux_equation) == 10
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.cation_bulk_flux_equation, Constraint
+    )
+    assert len(sample_two_salt_model.fs.unit.cation_bulk_flux_equation) == 20
+
+    assert isinstance(sample_two_salt_model.fs.unit.lumped_water_flux, Constraint)
+    assert len(sample_two_salt_model.fs.unit.lumped_water_flux) == 10
+
+    assert isinstance(sample_two_salt_model.fs.unit.chloride_flux_membrane, Constraint)
+    assert len(sample_two_salt_model.fs.unit.chloride_flux_membrane) == 10
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.osmotic_pressure_calculation, Constraint
+    )
+    assert len(sample_two_salt_model.fs.unit.osmotic_pressure_calculation) == 10
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.electroneutrality_retentate, Constraint
+    )
+    assert len(sample_two_salt_model.fs.unit.electroneutrality_retentate) == 11
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.electroneutrality_permeate, Constraint
+    )
+    assert len(sample_two_salt_model.fs.unit.electroneutrality_permeate) == 10
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface,
+        Constraint,
+    )
+    assert (
+        len(
+            sample_two_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface
+        )
+        == 20
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface,
+        Constraint,
+    )
+    assert (
+        len(
+            sample_two_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface
+        )
+        == 20
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.membrane_D_tilde_calculation, Constraint
+    )
+    assert len(sample_two_salt_model.fs.unit.membrane_D_tilde_calculation) == 60
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.membrane_cross_diffusion_coefficient_bilinear_calculation,
+        Constraint,
+    )
+    assert (
+        len(
+            sample_two_salt_model.fs.unit.membrane_cross_diffusion_coefficient_bilinear_calculation
+        )
+        == 240
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.membrane_convection_coefficient_bilinear_calculation,
+        Constraint,
+    )
+    assert (
+        len(
+            sample_two_salt_model.fs.unit.membrane_convection_coefficient_bilinear_calculation
+        )
+        == 120
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.membrane_cross_diffusion_coefficient_calculation,
+        Constraint,
+    )
+    assert (
+        len(
+            sample_two_salt_model.fs.unit.membrane_cross_diffusion_coefficient_calculation
+        )
+        == 240
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.membrane_convection_coefficient_calculation,
+        Constraint,
+    )
+    assert (
+        len(sample_two_salt_model.fs.unit.membrane_convection_coefficient_calculation)
+        == 120
+    )
+
+    assert isinstance(sample_two_salt_model.fs.unit.cation_flux_membrane, Constraint)
+    assert len(sample_two_salt_model.fs.unit.cation_flux_membrane) == 120
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.electroneutrality_membrane, Constraint
+    )
+    assert len(sample_two_salt_model.fs.unit.electroneutrality_membrane) == 60
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.retentate_flow_volume_boundary_condition,
+        Constraint,
+    )
+    assert (
+        len(sample_two_salt_model.fs.unit.retentate_flow_volume_boundary_condition) == 1
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.retentate_conc_mol_comp_boundary_condition,
+        Constraint,
+    )
+    assert (
+        len(sample_two_salt_model.fs.unit.retentate_conc_mol_comp_boundary_condition)
+        == 2
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.membrane_conc_mol_comp_boundary_condition,
+        Constraint,
+    )
+    assert (
+        len(sample_two_salt_model.fs.unit.membrane_conc_mol_comp_boundary_condition)
+        == 12
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.permeate_flow_volume_boundary_condition,
+        Constraint,
+    )
+    assert (
+        len(sample_two_salt_model.fs.unit.permeate_flow_volume_boundary_condition) == 1
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.permeate_conc_mol_comp_boundary_condition,
+        Constraint,
+    )
+    assert (
+        len(sample_two_salt_model.fs.unit.permeate_conc_mol_comp_boundary_condition)
+        == 3
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.d_retentate_flow_volume_dx_boundary_condition,
+        Constraint,
+    )
+    assert (
+        len(sample_two_salt_model.fs.unit.d_retentate_flow_volume_dx_boundary_condition)
+        == 1
+    )
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.d_retentate_conc_mol_comp_dx_boundary_condition,
+        Constraint,
+    )
+    assert (
+        len(
+            sample_two_salt_model.fs.unit.d_retentate_conc_mol_comp_dx_boundary_condition
+        )
+        == 2
+    )
+    assert isinstance(
+        sample_two_salt_model.fs.unit.volume_flux_water_boundary_condition,
+        Constraint,
+    )
+    assert len(sample_two_salt_model.fs.unit.volume_flux_water_boundary_condition) == 1
+
+    assert isinstance(
+        sample_two_salt_model.fs.unit.molar_ion_flux_boundary_condition,
+        Constraint,
+    )
+    assert len(sample_two_salt_model.fs.unit.molar_ion_flux_boundary_condition) == 3
+
+    for t in sample_two_salt_model.fs.unit.time:
+        for x in sample_two_salt_model.fs.unit.dimensionless_module_length:
+            assert sample_two_salt_model.fs.unit.d_retentate_conc_mol_comp_dx[
+                t, x, "anion"
+            ].fixed
+            if x != 0:
+                assert not sample_two_salt_model.fs.unit.d_retentate_conc_mol_comp_dx_disc_eq[
+                    t, x, "anion"
+                ].active
+
+            for z in sample_two_salt_model.fs.unit.dimensionless_membrane_thickness:
+                assert sample_two_salt_model.fs.unit.d_membrane_conc_mol_comp_dz[
+                    t, x, z, "anion"
+                ].fixed
+                if z != 0:
+                    assert not sample_two_salt_model.fs.unit.d_membrane_conc_mol_comp_dz_disc_eq[
+                        t, x, z, "anion"
+                    ].active
+
+    # scaling factors
+    for t in sample_two_salt_model.fs.unit.time:
+        for x in sample_two_salt_model.fs.unit.dimensionless_module_length:
+            if x != 0:
+                assert (
+                    sample_two_salt_model.fs.unit.scaling_factor[
+                        sample_two_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface[
+                            t, x, "cation_2"
+                        ]
+                    ]
+                    == 1e-5
+                )
+                assert (
+                    sample_two_salt_model.fs.unit.scaling_factor[
+                        sample_two_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface[
+                            t, x, "cation_1"
+                        ]
+                    ]
+                    == 1e-3
+                )
+                assert (
+                    sample_two_salt_model.fs.unit.scaling_factor[
+                        sample_two_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface[
+                            t, x, "cation_2"
+                        ]
+                    ]
+                    == 1e-5
+                )
+                assert (
+                    sample_two_salt_model.fs.unit.scaling_factor[
+                        sample_two_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface[
+                            t, x, "cation_1"
+                        ]
+                    ]
+                    == 1e-3
+                )
+
+    # ports
+    assert isinstance(sample_two_salt_model.fs.unit.feed_inlet, Port)
+    assert len(sample_two_salt_model.fs.unit.feed_inlet.flow_vol) == 1
+    assert len(sample_two_salt_model.fs.unit.feed_inlet.conc_mol_comp) == 3
+
+    assert isinstance(sample_two_salt_model.fs.unit.diafiltrate_inlet, Port)
+    assert len(sample_two_salt_model.fs.unit.diafiltrate_inlet.flow_vol) == 1
+    assert len(sample_two_salt_model.fs.unit.diafiltrate_inlet.conc_mol_comp) == 3
+
+    assert isinstance(sample_two_salt_model.fs.unit.retentate_outlet, Port)
+    assert len(sample_two_salt_model.fs.unit.retentate_outlet.flow_vol) == 1
+    assert len(sample_two_salt_model.fs.unit.retentate_outlet.conc_mol_comp) == 3
+
+    assert isinstance(sample_two_salt_model.fs.unit.permeate_outlet, Port)
+    assert len(sample_two_salt_model.fs.unit.permeate_outlet.flow_vol) == 1
+    assert len(sample_two_salt_model.fs.unit.permeate_outlet.conc_mol_comp) == 3
+
+
+################################################################################
 # Test a two-salt model: lithium chloride + cobalt chloride
 
 
 @pytest.fixture(scope="module")
-def diafiltration_two_salt():
+def diafiltration_two_salt_lithium_cobalt():
     """
-    Build two-salt diafiltration unit model.
+    Build two-salt diafiltration unit model for lithium chloride + cobalt chloride.
     """
     num_salts = 2
     salt_system = "lithium_cobalt_chloride"
@@ -913,479 +1358,37 @@ def diafiltration_two_salt():
 
 
 @pytest.mark.unit
-def test_config(diafiltration_two_salt):
-    assert len(diafiltration_two_salt.fs.unit.config) == 7
-
-    assert not diafiltration_two_salt.fs.unit.config.dynamic
-    assert not diafiltration_two_salt.fs.unit.config.has_holdup
-
-    assert (
-        diafiltration_two_salt.fs.unit.config.property_package
-        is diafiltration_two_salt.fs.properties
-    )
-    assert diafiltration_two_salt.fs.unit.config.num_salts == 2
-    assert diafiltration_two_salt.fs.unit.config.NFE_module_length == 10
-    assert diafiltration_two_salt.fs.unit.config.NFE_membrane_thickness == 5
+def test_config_lithium_cobalt(diafiltration_two_salt_lithium_cobalt):
+    test_config_two_salt(diafiltration_two_salt_lithium_cobalt)
 
 
-class TestDiafiltrationTwoSalt(object):
+class TestDiafiltrationTwoSaltLithiumCobalt(object):
     @pytest.mark.build
     @pytest.mark.unit
-    def test_build(self, diafiltration_two_salt):
-        # parameters
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.numerical_zero_tolerance, Param
-        )
-        assert value(diafiltration_two_salt.fs.unit.numerical_zero_tolerance) == 1e-10
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.total_membrane_thickness, Param
-        )
-        assert value(diafiltration_two_salt.fs.unit.total_membrane_thickness) == 1e-7
-
-        assert isinstance(diafiltration_two_salt.fs.unit.membrane_fixed_charge, Param)
-        assert value(diafiltration_two_salt.fs.unit.membrane_fixed_charge) == -140
-
-        assert isinstance(diafiltration_two_salt.fs.unit.membrane_permeability, Param)
-        assert value(diafiltration_two_salt.fs.unit.membrane_permeability) == 0.01
-
-        assert isinstance(diafiltration_two_salt.fs.unit.temperature, Param)
-        assert value(diafiltration_two_salt.fs.unit.temperature) == 298
-
-        # sets
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.dimensionless_module_length, ContinuousSet
-        )
-        assert len(diafiltration_two_salt.fs.unit.dimensionless_module_length) == 11
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.dimensionless_membrane_thickness,
-            ContinuousSet,
-        )
-        assert len(diafiltration_two_salt.fs.unit.dimensionless_membrane_thickness) == 6
-
-        assert isinstance(diafiltration_two_salt.fs.unit.time, Set)
-        assert len(diafiltration_two_salt.fs.unit.time) == 1
-
-        assert isinstance(diafiltration_two_salt.fs.unit.solutes, Set)
-        assert len(diafiltration_two_salt.fs.unit.solutes) == 3
-
-        assert isinstance(diafiltration_two_salt.fs.unit.cations, Set)
-        assert len(diafiltration_two_salt.fs.unit.cations) == 2
-
-        # variables
-        assert isinstance(diafiltration_two_salt.fs.unit.total_module_length, Var)
-        assert len(diafiltration_two_salt.fs.unit.total_module_length) == 1
-
-        assert isinstance(diafiltration_two_salt.fs.unit.total_membrane_length, Var)
-        assert len(diafiltration_two_salt.fs.unit.total_membrane_length) == 1
-
-        assert isinstance(diafiltration_two_salt.fs.unit.applied_pressure, Var)
-        assert len(diafiltration_two_salt.fs.unit.applied_pressure) == 1
-
-        assert isinstance(diafiltration_two_salt.fs.unit.feed_flow_volume, Var)
-        assert len(diafiltration_two_salt.fs.unit.feed_flow_volume) == 1
-
-        assert isinstance(diafiltration_two_salt.fs.unit.feed_conc_mol_comp, Var)
-        assert len(diafiltration_two_salt.fs.unit.feed_conc_mol_comp) == 3
-
-        assert isinstance(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume, Var)
-        assert len(diafiltration_two_salt.fs.unit.diafiltrate_flow_volume) == 1
-
-        assert isinstance(diafiltration_two_salt.fs.unit.diafiltrate_conc_mol_comp, Var)
-        assert len(diafiltration_two_salt.fs.unit.diafiltrate_conc_mol_comp) == 3
-
-        assert isinstance(diafiltration_two_salt.fs.unit.membrane_D_tilde, Var)
-        assert len(diafiltration_two_salt.fs.unit.membrane_D_tilde) == 66
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient_bilinear,
-            Var,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient_bilinear
-            )
-            == 264
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_convection_coefficient_bilinear, Var
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.membrane_convection_coefficient_bilinear)
-            == 132
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient, Var
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient)
-            == 264
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_convection_coefficient, Var
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.membrane_convection_coefficient) == 132
-        )
-
-        assert isinstance(diafiltration_two_salt.fs.unit.volume_flux_water, Var)
-        assert len(diafiltration_two_salt.fs.unit.volume_flux_water) == 11
-
-        assert isinstance(diafiltration_two_salt.fs.unit.molar_ion_flux, Var)
-        assert len(diafiltration_two_salt.fs.unit.molar_ion_flux) == 33
-
-        assert isinstance(diafiltration_two_salt.fs.unit.retentate_flow_volume, Var)
-        assert len(diafiltration_two_salt.fs.unit.retentate_flow_volume) == 11
-
-        assert isinstance(diafiltration_two_salt.fs.unit.retentate_conc_mol_comp, Var)
-        assert len(diafiltration_two_salt.fs.unit.retentate_conc_mol_comp) == 33
-
-        assert isinstance(diafiltration_two_salt.fs.unit.permeate_flow_volume, Var)
-        assert len(diafiltration_two_salt.fs.unit.permeate_flow_volume) == 11
-
-        assert isinstance(diafiltration_two_salt.fs.unit.permeate_conc_mol_comp, Var)
-        assert len(diafiltration_two_salt.fs.unit.permeate_conc_mol_comp) == 33
-
-        assert isinstance(diafiltration_two_salt.fs.unit.osmotic_pressure, Var)
-        assert len(diafiltration_two_salt.fs.unit.osmotic_pressure) == 11
-
-        assert isinstance(diafiltration_two_salt.fs.unit.membrane_conc_mol_comp, Var)
-        assert len(diafiltration_two_salt.fs.unit.membrane_conc_mol_comp) == 198
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx,
-            DerivativeVar,
-        )
-        assert len(diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx) == 33
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx, DerivativeVar
-        )
-        assert len(diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx) == 11
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.d_membrane_conc_mol_comp_dz,
-            DerivativeVar,
-        )
-        assert len(diafiltration_two_salt.fs.unit.d_membrane_conc_mol_comp_dz) == 198
-
-        # constraints
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.overall_mol_balance, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.overall_mol_balance) == 10
-
-        assert isinstance(diafiltration_two_salt.fs.unit.cation_mol_balance, Constraint)
-        assert len(diafiltration_two_salt.fs.unit.cation_mol_balance) == 20
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.overall_bulk_flux_equation, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.overall_bulk_flux_equation) == 10
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.cation_bulk_flux_equation, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.cation_bulk_flux_equation) == 20
-
-        assert isinstance(diafiltration_two_salt.fs.unit.lumped_water_flux, Constraint)
-        assert len(diafiltration_two_salt.fs.unit.lumped_water_flux) == 10
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.chloride_flux_membrane, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.chloride_flux_membrane) == 10
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.osmotic_pressure_calculation, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.osmotic_pressure_calculation) == 10
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.electroneutrality_retentate, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.electroneutrality_retentate) == 11
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.electroneutrality_permeate, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.electroneutrality_permeate) == 10
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.cation_equilibrium_retentate_membrane_interface,
-            Constraint,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.cation_equilibrium_retentate_membrane_interface
-            )
-            == 20
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.cation_equilibrium_membrane_permeate_interface,
-            Constraint,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.cation_equilibrium_membrane_permeate_interface
-            )
-            == 20
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_D_tilde_calculation, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.membrane_D_tilde_calculation) == 60
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient_bilinear_calculation,
-            Constraint,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient_bilinear_calculation
-            )
-            == 240
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_convection_coefficient_bilinear_calculation,
-            Constraint,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.membrane_convection_coefficient_bilinear_calculation
-            )
-            == 120
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient_calculation,
-            Constraint,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.membrane_cross_diffusion_coefficient_calculation
-            )
-            == 240
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_convection_coefficient_calculation,
-            Constraint,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.membrane_convection_coefficient_calculation
-            )
-            == 120
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.cation_flux_membrane, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.cation_flux_membrane) == 120
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.electroneutrality_membrane, Constraint
-        )
-        assert len(diafiltration_two_salt.fs.unit.electroneutrality_membrane) == 60
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.retentate_flow_volume_boundary_condition,
-            Constraint,
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.retentate_flow_volume_boundary_condition)
-            == 1
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.retentate_conc_mol_comp_boundary_condition,
-            Constraint,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.retentate_conc_mol_comp_boundary_condition
-            )
-            == 2
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.membrane_conc_mol_comp_boundary_condition,
-            Constraint,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.membrane_conc_mol_comp_boundary_condition
-            )
-            == 12
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.permeate_flow_volume_boundary_condition,
-            Constraint,
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.permeate_flow_volume_boundary_condition)
-            == 1
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.permeate_conc_mol_comp_boundary_condition,
-            Constraint,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.permeate_conc_mol_comp_boundary_condition
-            )
-            == 3
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx_boundary_condition,
-            Constraint,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.d_retentate_flow_volume_dx_boundary_condition
-            )
-            == 1
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx_boundary_condition,
-            Constraint,
-        )
-        assert (
-            len(
-                diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx_boundary_condition
-            )
-            == 2
-        )
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.volume_flux_water_boundary_condition,
-            Constraint,
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.volume_flux_water_boundary_condition)
-            == 1
-        )
-
-        assert isinstance(
-            diafiltration_two_salt.fs.unit.molar_ion_flux_boundary_condition,
-            Constraint,
-        )
-        assert (
-            len(diafiltration_two_salt.fs.unit.molar_ion_flux_boundary_condition) == 3
-        )
-
-        for t in diafiltration_two_salt.fs.unit.time:
-            for x in diafiltration_two_salt.fs.unit.dimensionless_module_length:
-                assert diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx[
-                    t, x, "anion"
-                ].fixed
-                if x != 0:
-                    assert not diafiltration_two_salt.fs.unit.d_retentate_conc_mol_comp_dx_disc_eq[
-                        t, x, "anion"
-                    ].active
-
-                for (
-                    z
-                ) in diafiltration_two_salt.fs.unit.dimensionless_membrane_thickness:
-                    assert diafiltration_two_salt.fs.unit.d_membrane_conc_mol_comp_dz[
-                        t, x, z, "anion"
-                    ].fixed
-                    if z != 0:
-                        assert not diafiltration_two_salt.fs.unit.d_membrane_conc_mol_comp_dz_disc_eq[
-                            t, x, z, "anion"
-                        ].active
-
-        # scaling factors
-        for t in diafiltration_two_salt.fs.unit.time:
-            for x in diafiltration_two_salt.fs.unit.dimensionless_module_length:
-                if x != 0:
-                    assert (
-                        diafiltration_two_salt.fs.unit.scaling_factor[
-                            diafiltration_two_salt.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                                t, x, "cation_2"
-                            ]
-                        ]
-                        == 1e-5
-                    )
-                    assert (
-                        diafiltration_two_salt.fs.unit.scaling_factor[
-                            diafiltration_two_salt.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                                t, x, "cation_1"
-                            ]
-                        ]
-                        == 1e-3
-                    )
-                    assert (
-                        diafiltration_two_salt.fs.unit.scaling_factor[
-                            diafiltration_two_salt.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                                t, x, "cation_2"
-                            ]
-                        ]
-                        == 1e-5
-                    )
-                    assert (
-                        diafiltration_two_salt.fs.unit.scaling_factor[
-                            diafiltration_two_salt.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                                t, x, "cation_1"
-                            ]
-                        ]
-                        == 1e-3
-                    )
-
-        # ports
-        assert isinstance(diafiltration_two_salt.fs.unit.feed_inlet, Port)
-        assert len(diafiltration_two_salt.fs.unit.feed_inlet.flow_vol) == 1
-        assert len(diafiltration_two_salt.fs.unit.feed_inlet.conc_mol_comp) == 3
-
-        assert isinstance(diafiltration_two_salt.fs.unit.diafiltrate_inlet, Port)
-        assert len(diafiltration_two_salt.fs.unit.diafiltrate_inlet.flow_vol) == 1
-        assert len(diafiltration_two_salt.fs.unit.diafiltrate_inlet.conc_mol_comp) == 3
-
-        assert isinstance(diafiltration_two_salt.fs.unit.retentate_outlet, Port)
-        assert len(diafiltration_two_salt.fs.unit.retentate_outlet.flow_vol) == 1
-        assert len(diafiltration_two_salt.fs.unit.retentate_outlet.conc_mol_comp) == 3
-
-        assert isinstance(diafiltration_two_salt.fs.unit.permeate_outlet, Port)
-        assert len(diafiltration_two_salt.fs.unit.permeate_outlet.flow_vol) == 1
-        assert len(diafiltration_two_salt.fs.unit.permeate_outlet.conc_mol_comp) == 3
+    def test_build_lithium_cobalt(self, diafiltration_two_salt_lithium_cobalt):
+        test_build_two_salt(diafiltration_two_salt_lithium_cobalt)
 
     @pytest.mark.component
-    def test_diagnostics(self, diafiltration_two_salt):
-        dt = DiagnosticsToolbox(diafiltration_two_salt.fs.unit)
-        dt.assert_no_structural_warnings()
+    def test_diagnostics_lithium_cobalt(self, diafiltration_two_salt_lithium_cobalt):
+        test_diagnostics(diafiltration_two_salt_lithium_cobalt)
 
     @pytest.mark.solver
     @pytest.mark.component
-    def test_solve(self, diafiltration_two_salt):
-        scaling = TransformationFactory("core.scale_model")
-        scaled_model = scaling.create_using(diafiltration_two_salt, rename=False)
-
-        solver = SolverFactory("ipopt")
-        results = solver.solve(scaled_model, tee=True)
-
-        scaling.propagate_solution(scaled_model, diafiltration_two_salt)
-
-        assert_optimal_termination(results)
+    def test_solve_lithium_cobalt(self, diafiltration_two_salt_lithium_cobalt):
+        test_solve(diafiltration_two_salt_lithium_cobalt)
 
         test_dict = {
             "retentate_final": [
-                value(diafiltration_two_salt.fs.unit.retentate_flow_volume[0, 1]),
+                value(
+                    diafiltration_two_salt_lithium_cobalt.fs.unit.retentate_flow_volume[
+                        0, 1
+                    ]
+                ),
                 6.6914,
             ],
             "lithium_retentate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[
+                    diafiltration_two_salt_lithium_cobalt.fs.unit.retentate_conc_mol_comp[
                         0, 1, "cation_1"
                     ]
                 ),
@@ -1393,7 +1396,7 @@ class TestDiafiltrationTwoSalt(object):
             ],
             "cobalt_retentate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[
+                    diafiltration_two_salt_lithium_cobalt.fs.unit.retentate_conc_mol_comp[
                         0, 1, "cation_2"
                     ]
                 ),
@@ -1401,19 +1404,23 @@ class TestDiafiltrationTwoSalt(object):
             ],
             "chloride_retentate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.retentate_conc_mol_comp[
+                    diafiltration_two_salt_lithium_cobalt.fs.unit.retentate_conc_mol_comp[
                         0, 1, "anion"
                     ]
                 ),
                 680.12,
             ],
             "permeate_final": [
-                value(diafiltration_two_salt.fs.unit.permeate_flow_volume[0, 1]),
+                value(
+                    diafiltration_two_salt_lithium_cobalt.fs.unit.permeate_flow_volume[
+                        0, 1
+                    ]
+                ),
                 9.4615,
             ],
             "lithium_permeate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[
+                    diafiltration_two_salt_lithium_cobalt.fs.unit.permeate_conc_mol_comp[
                         0, 1, "cation_1"
                     ]
                 ),
@@ -1421,7 +1428,7 @@ class TestDiafiltrationTwoSalt(object):
             ],
             "cobalt_permeate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[
+                    diafiltration_two_salt_lithium_cobalt.fs.unit.permeate_conc_mol_comp[
                         0, 1, "cation_2"
                     ]
                 ),
@@ -1429,7 +1436,9 @@ class TestDiafiltrationTwoSalt(object):
             ],
             "chloride_permeate_final": [
                 value(
-                    diafiltration_two_salt.fs.unit.permeate_conc_mol_comp[0, 1, "anion"]
+                    diafiltration_two_salt_lithium_cobalt.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "anion"
+                    ]
                 ),
                 632.27,
             ],
@@ -1439,9 +1448,292 @@ class TestDiafiltrationTwoSalt(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues(self, diafiltration_two_salt):
-        dt = DiagnosticsToolbox(diafiltration_two_salt.fs.unit)
-        dt.assert_no_numerical_warnings()
+    def test_numerical_issues_lithium_cobalt(
+        self, diafiltration_two_salt_lithium_cobalt
+    ):
+        test_numerical_issues(diafiltration_two_salt_lithium_cobalt)
+
+
+################################################################################
+# Test a two-salt model: lithium chloride + aluminum chloride
+
+
+@pytest.fixture(scope="module")
+def diafiltration_two_salt_lithium_aluminum():
+    """
+    Build two-salt diafiltration unit model for lithium chloride + aluminum chloride.
+    """
+    num_salts = 2
+    salt_system = "lithium_aluminum_chloride"
+
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.properties = MultiComponentDiafiltrationSoluteParameter(
+        num_salts=num_salts,
+        salt_system=salt_system,
+    )
+
+    m.fs.unit = MultiComponentDiafiltration(
+        property_package=m.fs.properties,
+        num_salts=num_salts,
+        NFE_module_length=10,
+        NFE_membrane_thickness=5,
+    )
+
+    assert value(m.fs.unit.membrane_fixed_charge) == -140
+
+    assert degrees_of_freedom(m.fs.unit) == 9
+
+    m.fs.unit.total_module_length.fix()
+    m.fs.unit.total_membrane_length.fix()
+    m.fs.unit.applied_pressure.fix()
+    m.fs.unit.feed_flow_volume.fix()
+    m.fs.unit.feed_conc_mol_comp.fix()
+    m.fs.unit.diafiltrate_flow_volume.fix()
+    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    assert degrees_of_freedom(m.fs.unit) == 0
+
+    return m
+
+
+@pytest.mark.unit
+def test_config_lithium_aluminum(diafiltration_two_salt_lithium_aluminum):
+    test_config_two_salt(diafiltration_two_salt_lithium_aluminum)
+
+
+class TestDiafiltrationTwoSaltLithiumAluminum(object):
+    @pytest.mark.build
+    @pytest.mark.unit
+    def test_build_lithium_aluminum(self, diafiltration_two_salt_lithium_aluminum):
+        test_build_two_salt(diafiltration_two_salt_lithium_aluminum)
+
+    @pytest.mark.component
+    def test_diagnostics_lithium_aluminum(
+        self, diafiltration_two_salt_lithium_aluminum
+    ):
+        test_diagnostics(diafiltration_two_salt_lithium_aluminum)
+
+    @pytest.mark.solver
+    @pytest.mark.component
+    def test_solve_lithium_aluminum(self, diafiltration_two_salt_lithium_aluminum):
+        test_solve(diafiltration_two_salt_lithium_aluminum)
+
+        test_dict = {
+            "retentate_final": [
+                value(
+                    diafiltration_two_salt_lithium_aluminum.fs.unit.retentate_flow_volume[
+                        0, 1
+                    ]
+                ),
+                10.627,
+            ],
+            "lithium_retentate_final": [
+                value(
+                    diafiltration_two_salt_lithium_aluminum.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "cation_1"
+                    ]
+                ),
+                192.11,
+            ],
+            "aluminum_retentate_final": [
+                value(
+                    diafiltration_two_salt_lithium_aluminum.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "cation_2"
+                    ]
+                ),
+                230.93,
+            ],
+            "chloride_retentate_final": [
+                value(
+                    diafiltration_two_salt_lithium_aluminum.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "anion"
+                    ]
+                ),
+                884.89,
+            ],
+            "permeate_final": [
+                value(
+                    diafiltration_two_salt_lithium_aluminum.fs.unit.permeate_flow_volume[
+                        0, 1
+                    ]
+                ),
+                5.5634,
+            ],
+            "lithium_permeate_final": [
+                value(
+                    diafiltration_two_salt_lithium_aluminum.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "cation_1"
+                    ]
+                ),
+                191.19,
+            ],
+            "aluminum_permeate_final": [
+                value(
+                    diafiltration_two_salt_lithium_aluminum.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "cation_2"
+                    ]
+                ),
+                210.77,
+            ],
+            "chloride_permeate_final": [
+                value(
+                    diafiltration_two_salt_lithium_aluminum.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "anion"
+                    ]
+                ),
+                823.49,
+            ],
+        }
+
+        for model_result, test_val in test_dict.values():
+            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+
+    @pytest.mark.component
+    def test_numerical_issues_lithium_aluminum(
+        self, diafiltration_two_salt_lithium_aluminum
+    ):
+        test_numerical_issues(diafiltration_two_salt_lithium_aluminum)
+
+
+################################################################################
+# Test a two-salt model: cobalt chloride + aluminum chloride
+
+
+@pytest.fixture(scope="module")
+def diafiltration_two_salt_cobalt_aluminum():
+    """
+    Build two-salt diafiltration unit model for cobalt chloride + aluminum chloride.
+    """
+    num_salts = 2
+    salt_system = "cobalt_aluminum_chloride"
+
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.properties = MultiComponentDiafiltrationSoluteParameter(
+        num_salts=num_salts,
+        salt_system=salt_system,
+    )
+
+    m.fs.unit = MultiComponentDiafiltration(
+        property_package=m.fs.properties,
+        num_salts=num_salts,
+        NFE_module_length=10,
+        NFE_membrane_thickness=5,
+    )
+
+    assert value(m.fs.unit.membrane_fixed_charge) == -140
+
+    assert degrees_of_freedom(m.fs.unit) == 9
+
+    m.fs.unit.total_module_length.fix()
+    m.fs.unit.total_membrane_length.fix()
+    m.fs.unit.applied_pressure.fix()
+    m.fs.unit.feed_flow_volume.fix()
+    m.fs.unit.feed_conc_mol_comp.fix()
+    m.fs.unit.diafiltrate_flow_volume.fix()
+    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    assert degrees_of_freedom(m.fs.unit) == 0
+
+    return m
+
+
+@pytest.mark.unit
+def test_config_cobalt_aluminum(diafiltration_two_salt_cobalt_aluminum):
+    test_config_two_salt(diafiltration_two_salt_cobalt_aluminum)
+
+
+class TestDiafiltrationTwoSaltCobaltAluminum(object):
+    @pytest.mark.build
+    @pytest.mark.unit
+    def test_build_cobalt_aluminum(self, diafiltration_two_salt_cobalt_aluminum):
+        test_build_two_salt(diafiltration_two_salt_cobalt_aluminum)
+
+    @pytest.mark.component
+    def test_diagnostics_cobalt_aluminum(self, diafiltration_two_salt_cobalt_aluminum):
+        test_diagnostics(diafiltration_two_salt_cobalt_aluminum)
+
+    @pytest.mark.solver
+    @pytest.mark.component
+    def test_solve_cobalt_aluminum(self, diafiltration_two_salt_cobalt_aluminum):
+        test_solve(diafiltration_two_salt_cobalt_aluminum)
+
+        test_dict = {
+            "retentate_final": [
+                value(
+                    diafiltration_two_salt_cobalt_aluminum.fs.unit.retentate_flow_volume[
+                        0, 1
+                    ]
+                ),
+                12.643,
+            ],
+            "cobalt_retentate_final": [
+                value(
+                    diafiltration_two_salt_cobalt_aluminum.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "cation_1"
+                    ]
+                ),
+                193.52,
+            ],
+            "aluminum_retentate_final": [
+                value(
+                    diafiltration_two_salt_cobalt_aluminum.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "cation_2"
+                    ]
+                ),
+                225.98,
+            ],
+            "chloride_retentate_final": [
+                value(
+                    diafiltration_two_salt_cobalt_aluminum.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "anion"
+                    ]
+                ),
+                1065.0,
+            ],
+            "permeate_final": [
+                value(
+                    diafiltration_two_salt_cobalt_aluminum.fs.unit.permeate_flow_volume[
+                        0, 1
+                    ]
+                ),
+                3.5922,
+            ],
+            "cobalt_permeate_final": [
+                value(
+                    diafiltration_two_salt_cobalt_aluminum.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "cation_1"
+                    ]
+                ),
+                186.36,
+            ],
+            "aluminum_permeate_final": [
+                value(
+                    diafiltration_two_salt_cobalt_aluminum.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "cation_2"
+                    ]
+                ),
+                211.20,
+            ],
+            "chloride_permeate_final": [
+                value(
+                    diafiltration_two_salt_cobalt_aluminum.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "anion"
+                    ]
+                ),
+                1006.3,
+            ],
+        }
+
+        for model_result, test_val in test_dict.values():
+            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+
+    @pytest.mark.component
+    def test_numerical_issues_cobalt_aluminum(
+        self, diafiltration_two_salt_cobalt_aluminum
+    ):
+        test_numerical_issues(diafiltration_two_salt_cobalt_aluminum)
 
 
 ################################################################################

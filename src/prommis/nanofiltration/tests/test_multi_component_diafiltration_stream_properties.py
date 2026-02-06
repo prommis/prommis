@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Diagnostic tests for the multi-component diafiltration property model for feed streams.
+Diagnostic tests for the multi-component diafiltration property model for streams.
 """
 
 from pyomo.environ import ConcreteModel, Var
@@ -19,44 +19,121 @@ from prommis.nanofiltration.multi_component_diafiltration_stream_properties impo
 )
 
 
+# Test single-salt model
 @pytest.fixture
-def model():
+def model_single_salt():
+    num_salts = 1
+
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.feed_properties = MultiComponentDiafiltrationStreamParameter()
+    m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(
+        num_salts=num_salts,
+    )
 
     return m
 
 
 @pytest.mark.unit
-def test_parameters(model):
-    assert len(model.fs.feed_properties.phase_list) == 1
-    for k in model.fs.feed_properties.phase_list:
+def test_parameters_single_salt(model_single_salt):
+    assert len(model_single_salt.fs.stream_properties.phase_list) == 1
+    for k in model_single_salt.fs.stream_properties.phase_list:
         assert k == "liquid"
 
-    for j in model.fs.feed_properties.component_list:
+    for j in model_single_salt.fs.stream_properties.component_list:
         assert j in [
-            "Li",
-            "Co",
-            "Cl",
+            "cation_1",
+            "anion",
         ]
 
 
 @pytest.mark.unit
-def test_build(model):
-    model.fs.state = model.fs.feed_properties.build_state_block(model.fs.time)
+def test_build(model_single_salt):
+    assert len(model_single_salt.fs.stream_properties.config) == 2
 
-    assert len(model.fs.state) == 1
+    model_single_salt.fs.state = (
+        model_single_salt.fs.stream_properties.build_state_block(
+            model_single_salt.fs.time
+        )
+    )
 
-    assert isinstance(model.fs.state[0].flow_vol, Var)
-    assert isinstance(model.fs.state[0].conc_mol_comp, Var)
+    assert len(model_single_salt.fs.state) == 1
 
-    model.fs.state[0].flow_vol.set_value(10)
-    for j in model.fs.feed_properties.component_list:
-        model.fs.state[0].conc_mol_comp[j].set_value(1)
+    assert isinstance(model_single_salt.fs.state[0].flow_vol, Var)
+    assert isinstance(model_single_salt.fs.state[0].conc_mol_comp, Var)
 
-    model.fs.state.fix_initialization_states()
+    model_single_salt.fs.state[0].flow_vol.set_value(10)
+    for j in model_single_salt.fs.stream_properties.component_list:
+        model_single_salt.fs.state[0].conc_mol_comp[j].set_value(1)
 
-    assert model.fs.state[0].flow_vol.fixed
-    for j in model.fs.feed_properties.component_list:
-        assert model.fs.state[0].conc_mol_comp[j].fixed
+    model_single_salt.fs.state.fix_initialization_states()
+
+    assert model_single_salt.fs.state[0].flow_vol.fixed
+    for j in model_single_salt.fs.stream_properties.component_list:
+        assert model_single_salt.fs.state[0].conc_mol_comp[j].fixed
+
+
+# Test two-salt model
+@pytest.fixture
+def model_two_salt():
+    num_salts = 2
+
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(
+        num_salts=num_salts,
+    )
+
+    return m
+
+
+@pytest.mark.unit
+def test_parameters_two_salt(model_two_salt):
+    assert len(model_two_salt.fs.stream_properties.phase_list) == 1
+    for k in model_two_salt.fs.stream_properties.phase_list:
+        assert k == "liquid"
+
+    for j in model_two_salt.fs.stream_properties.component_list:
+        assert j in [
+            "cation_1",
+            "cation_2",
+            "anion",
+        ]
+
+
+@pytest.mark.unit
+def test_build_two_salt(model_two_salt):
+    test_build(model_two_salt)
+
+
+# Test three-salt model
+@pytest.fixture
+def model_three_salt():
+    num_salts = 3
+
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(
+        num_salts=num_salts,
+    )
+
+    return m
+
+
+@pytest.mark.unit
+def test_parameters_three_salt(model_three_salt):
+    assert len(model_three_salt.fs.stream_properties.phase_list) == 1
+    for k in model_three_salt.fs.stream_properties.phase_list:
+        assert k == "liquid"
+
+    for j in model_three_salt.fs.stream_properties.component_list:
+        assert j in [
+            "cation_1",
+            "cation_2",
+            "cation_3",
+            "anion",
+        ]
+
+
+@pytest.mark.unit
+def test_build_three_salt(model_three_salt):
+    test_build(model_three_salt)

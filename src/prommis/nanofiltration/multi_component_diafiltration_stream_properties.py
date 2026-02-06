@@ -5,11 +5,12 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Property package for the inlet and outlet streams of the two-salt diafiltration membrane.
+Property package for the inlet and outlet streams of the multi-component diafiltration membrane.
 
 Author: Molly Dougher
 """
 
+from pyomo.common.config import ConfigValue
 from pyomo.environ import Var, units
 
 from idaes.core import (
@@ -24,17 +25,28 @@ from idaes.core import (
 from idaes.core.util.initialization import fix_state_vars
 
 
-@declare_process_block_class("DiafiltrationStreamParameter")
-class DiafiltrationStreamParameterData(PhysicalParameterBlock):
+@declare_process_block_class("MultiComponentDiafiltrationStreamParameter")
+class MultiComponentDiafiltrationStreamParameterData(PhysicalParameterBlock):
     """
-    Property Package for the feed and product streams in the
-    two-salt diafiltration membrane.
+    Property Package for the feed and product streams in the multi-component
+    diafiltration membrane.
 
     Currently includes the following solutes:
         Li+ (lithium ion)
         Co2+ (cobalt ion)
+        Al3+ (aluminum ion)
         Cl- (chloride ion)
     """
+
+    CONFIG = PhysicalParameterBlock.CONFIG()
+
+    CONFIG.declare(
+        "num_salts",
+        ConfigValue(
+            default=2,
+            doc="Number of salts to be modeled",
+        ),
+    )
 
     def build(self):
         super().build()
@@ -42,13 +54,16 @@ class DiafiltrationStreamParameterData(PhysicalParameterBlock):
         self.liquid = Phase()
 
         # add cations
-        self.Li = Component()
-        self.Co = Component()
+        self.cation_1 = Component()
+        if self.config.num_salts > 1:
+            self.cation_2 = Component()
+        if self.config.num_salts > 2:
+            self.cation_3 = Component()
 
-        # add anions
-        self.Cl = Component()
+        # add anion
+        self.anion = Component()
 
-        self._state_block_class = DiafiltrationStreamStateBlock
+        self._state_block_class = MultiComponentDiafiltrationStreamStateBlock
 
     @classmethod
     def define_metadata(cls, obj):
@@ -70,7 +85,7 @@ class DiafiltrationStreamParameterData(PhysicalParameterBlock):
         )
 
 
-class _DiafiltrationStreamStateBlock(StateBlock):
+class _MultiComponentDiafiltrationStreamStateBlock(StateBlock):
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -82,12 +97,13 @@ class _DiafiltrationStreamStateBlock(StateBlock):
 
 
 @declare_process_block_class(
-    "DiafiltrationStreamStateBlock", block_class=_DiafiltrationStreamStateBlock
+    "MultiComponentDiafiltrationStreamStateBlock",
+    block_class=_MultiComponentDiafiltrationStreamStateBlock,
 )
-class DiafiltrationStreamStateBlockData(StateBlockData):
+class MultiComponentDiafiltrationStreamStateBlockData(StateBlockData):
     """
-    State block for the feed and product streams in the
-    two-salt diafiltration membrane.
+    State block for the feed and product streams in the multi-component
+    diafiltration membrane.
     """
 
     def build(self):

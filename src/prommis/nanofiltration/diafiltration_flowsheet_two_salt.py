@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Sample flowsheet for the two-salt diafiltration cascade.
+Sample flowsheet for the multi-component diafiltration cascade.
 
 Author: Molly Dougher
 """
@@ -26,22 +26,30 @@ from idaes.models.unit_models import Feed, Product
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 
-from prommis.nanofiltration.diafiltration_stream_properties import (
-    DiafiltrationStreamParameter,
+from prommis.nanofiltration.multi_component_diafiltration_stream_properties import (
+    MultiComponentDiafiltrationStreamParameter,
 )
-from prommis.nanofiltration.diafiltration_solute_properties import SoluteParameter
-from prommis.nanofiltration.diafiltration_two_salt import TwoSaltDiafiltration
+from prommis.nanofiltration.multi_component_diafiltration_solute_properties import (
+    MultiComponentDiafiltrationSoluteParameter,
+)
+from prommis.nanofiltration.multi_component_diafiltration import (
+    MultiComponentDiafiltration,
+)
 
 
 def main():
     """
-    Builds and solves flowsheet with two-salt diafiltration unit model.
+    Builds and solves flowsheet with multi-component diafiltration unit model
+    for a two-salt (lithium chloride and cobalt chloride) solution.
     """
     # build flowsheet
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.stream_properties = DiafiltrationStreamParameter()
-    m.fs.properties = SoluteParameter()
+    m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(num_salts=2)
+    m.fs.properties = MultiComponentDiafiltrationSoluteParameter(
+        num_salts=2,
+        salt_system="lithium_cobalt_chloride",
+    )
 
     # update parameter inputs if desired
     build_membrane_parameters(m)
@@ -51,8 +59,9 @@ def main():
     m.fs.diafiltrate_block = Feed(property_package=m.fs.stream_properties)
 
     # add the membrane unit model
-    m.fs.membrane = TwoSaltDiafiltration(
+    m.fs.membrane = MultiComponentDiafiltration(
         property_package=m.fs.properties,
+        num_salts=2,
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
@@ -88,7 +97,7 @@ def main():
 
 def build_membrane_parameters(m):
     """
-    Updates parameters needed in two salt diafiltration unit model if desired
+    Updates parameters needed in multi-component diafiltration unit model if desired.
 
     Args:
         m: Pyomo model
@@ -185,51 +194,61 @@ def plot_results(m):
         if x_val != 0:
             x_axis_values.append(x_val * value(m.fs.membrane.total_module_length))
             conc_ret_lith.append(
-                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
+                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_1"])
             )
             conc_perm_lith.append(
-                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
+                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_1"])
             )
             conc_ret_cob.append(
-                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
+                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_2"])
             )
             conc_perm_cob.append(
-                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
+                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_2"])
             )
 
             water_flux.append(value(m.fs.membrane.volume_flux_water[0, x_val]))
-            lithium_flux.append(value(m.fs.membrane.molar_ion_flux[0, x_val, "Li"]))
+            lithium_flux.append(
+                value(m.fs.membrane.molar_ion_flux[0, x_val, "cation_1"])
+            )
 
             lithium_rejection.append(
                 (
                     1
                     - (
-                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
+                        value(
+                            m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_1"]
+                        )
+                        / value(
+                            m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_1"]
+                        )
                     )
                 )
                 * 100
             )
             lithium_sieving.append(
                 (
-                    value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-                    / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
+                    value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_1"])
+                    / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_1"])
                 )
             )
             cobalt_rejection.append(
                 (
                     1
                     - (
-                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
+                        value(
+                            m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_2"]
+                        )
+                        / value(
+                            m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_2"]
+                        )
                     )
                 )
                 * 100
             )
             cobalt_sieving.append(
                 (
-                    value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-                    / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
+                    value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_2"])
+                    / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_2"])
                 )
             )
 
@@ -326,13 +345,23 @@ def plot_membrane_results(m):
         for x_val in m.fs.membrane.dimensionless_module_length:
             if x_val != 0:
                 conc_mem_lith.append(
-                    value(m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Li"])
+                    value(
+                        m.fs.membrane.membrane_conc_mol_comp[
+                            0, x_val, z_val, "cation_1"
+                        ]
+                    )
                 )
                 conc_mem_cob.append(
-                    value(m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Co"])
+                    value(
+                        m.fs.membrane.membrane_conc_mol_comp[
+                            0, x_val, z_val, "cation_2"
+                        ]
+                    )
                 )
                 conc_mem_chl.append(
-                    value(m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Cl"])
+                    value(
+                        m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "anion"]
+                    )
                 )
 
         conc_mem_lith_dict[f"{z_val}"] = conc_mem_lith

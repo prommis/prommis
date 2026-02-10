@@ -251,7 +251,7 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
             )
             i += 1
 
-        # initialze properties
+        # initialize properties
         self.charge = Param(
             self.component_list,
             units=units.dimensionless,

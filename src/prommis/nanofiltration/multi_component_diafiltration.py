@@ -364,7 +364,7 @@ and used when constructing these,
             doc="Thickness of membrane (z-direction)",
         )
         self.membrane_fixed_charge = Param(
-            initialize=-140,
+            initialize=-44,
             mutable=True,
             units=units.mol / units.m**3,  # mM
             doc="Fixed charge on the membrane",
@@ -493,7 +493,7 @@ and used when constructing these,
         self.retentate_flow_volume = Var(
             self.time,
             self.dimensionless_module_length,
-            initialize=6.7,
+            initialize=6.75,
             units=units.m**3 / units.h,
             bounds=[1e-11, None],
             doc="Volumetric flow rate of the retentate, x-dependent",
@@ -520,7 +520,7 @@ and used when constructing these,
         self.permeate_flow_volume = Var(
             self.time,
             self.dimensionless_module_length,
-            initialize=9.5,
+            initialize=10,
             units=units.m**3 / units.h,
             bounds=[1e-11, None],
             doc="Volumetric flow rate of the permeate, x-dependent",
@@ -612,10 +612,9 @@ and used when constructing these,
 
         def initialize_membrane_convection_coefficient_bilinear(m, t, w, l, j):
             vals = {
-                self.config.cation_list[k]: -100
+                self.config.cation_list[k]: 100
                 for k in range(len(self.config.cation_list))
             }
-            vals[self.config.cation_list[0]] == vals[self.config.cation_list[0]] * -1
             return vals[j]
 
         self.membrane_convection_coefficient_bilinear = Var(
@@ -631,7 +630,7 @@ and used when constructing these,
         def initialize_membrane_cross_diffusion_coefficient(m, t, w, l, j, k):
             vals = {
                 self.config.cation_list[k]: {
-                    self.config.cation_list[j]: -0.5
+                    self.config.cation_list[j]: -5
                     for j in range(len(self.config.cation_list))
                 }
                 for k in range(len(self.config.cation_list))
@@ -657,10 +656,9 @@ and used when constructing these,
 
         def initialize_membrane_convection_coefficient(m, t, w, l, j):
             vals = {
-                self.config.cation_list[k]: -0.2
+                self.config.cation_list[k]: 0.2
                 for k in range(len(self.config.cation_list))
             }
-            vals[self.config.cation_list[0]] == vals[self.config.cation_list[0]] * -1
             return vals[j]
 
         self.membrane_convection_coefficient = Var(
@@ -1337,43 +1335,42 @@ and used when constructing these,
         """
         self.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
-        # self.scaling_factor[self.retentate_conc_mol_comp] = 1e-2
-        # self.scaling_factor[self.membrane_conc_mol_comp] = 1e-1
-        # self.scaling_factor[self.permeate_conc_mol_comp] = 1e-2
-
-        # self.scaling_factor[self.volume_flux_water] = 1e3
-        # self.scaling_factor[self.membrane_D_tilde] = 1e-1
-        # self.scaling_factor[self.membrane_cross_diffusion_coefficient_bilinear] = 1e-2
-        # self.scaling_factor[self.membrane_convection_coefficient_bilinear] = 1e-1
-        # self.scaling_factor[self.membrane_cross_diffusion_coefficient] = 1e1
-        # self.scaling_factor[self.membrane_convection_coefficient] = 1e2
-
-        for t in self.time:
-            for x in self.dimensionless_module_length:
-                if x != 0:
-                    self.scaling_factor[self.lumped_water_flux[t, x]] = 1e2
-                    self.scaling_factor[
-                        self.cation_equilibrium_retentate_membrane_interface[
-                            t, x, self.config.cation_list[0]
-                        ]
-                    ] = 1e-3
-                    self.scaling_factor[
-                        self.cation_equilibrium_membrane_permeate_interface[
-                            t, x, self.config.cation_list[0]
-                        ]
-                    ] = 1e-3
-                    for k in range(len(self.config.cation_list)):
-                        if k != 0:
-                            self.scaling_factor[
-                                self.cation_equilibrium_retentate_membrane_interface[
-                                    t, x, self.config.cation_list[k]
-                                ]
-                            ] = 1e-5
-                            self.scaling_factor[
-                                self.cation_equilibrium_membrane_permeate_interface[
-                                    t, x, self.config.cation_list[k]
-                                ]
-                            ] = 1e-5
+        if len(self.config.cation_list) <= 2:
+            self.scaling_factor[self.volume_flux_water] = 1e2
+            self.scaling_factor[self.membrane_D_tilde] = 1e-1
+            self.scaling_factor[self.membrane_cross_diffusion_coefficient_bilinear] = (
+                1e-2
+            )
+            self.scaling_factor[self.membrane_convection_coefficient_bilinear] = 1e-1
+            self.scaling_factor[self.membrane_cross_diffusion_coefficient] = 1e1
+            self.scaling_factor[self.membrane_convection_coefficient] = 1e1
+        else:
+            for t in self.time:
+                for x in self.dimensionless_module_length:
+                    if x != 0:
+                        self.scaling_factor[self.lumped_water_flux[t, x]] = 1e3
+                        self.scaling_factor[
+                            self.cation_equilibrium_retentate_membrane_interface[
+                                t, x, self.config.cation_list[0]
+                            ]
+                        ] = 1e-3
+                        self.scaling_factor[
+                            self.cation_equilibrium_membrane_permeate_interface[
+                                t, x, self.config.cation_list[0]
+                            ]
+                        ] = 1e-3
+                        for k in range(len(self.config.cation_list)):
+                            if k != 0:
+                                self.scaling_factor[
+                                    self.cation_equilibrium_retentate_membrane_interface[
+                                        t, x, self.config.cation_list[k]
+                                    ]
+                                ] = 1e-5
+                                self.scaling_factor[
+                                    self.cation_equilibrium_membrane_permeate_interface[
+                                        t, x, self.config.cation_list[k]
+                                    ]
+                                ] = 1e-5
 
     def add_ports(self):
         self.feed_inlet = Port(doc="Feed Inlet Port")

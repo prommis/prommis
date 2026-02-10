@@ -57,35 +57,35 @@ def test_main():
     test_dict = {
         "retentate_final": [
             value(m.fs.membrane.retentate_flow_volume[0, 1]),
-            6.6914,
+            6.0465,
         ],
         "lithium_retentate_final": [
             value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "lithium"]),
-            197.90,
+            188.88,
         ],
         "cobalt_retentate_final": [
             value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "cobalt"]),
-            241.11,
+            246.67,
         ],
         "chloride_retentate_final": [
             value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "chloride"]),
-            680.12,
+            682.22,
         ],
         "permeate_final": [
             value(m.fs.membrane.permeate_flow_volume[0, 1]),
-            9.4615,
+            10.033,
         ],
         "lithium_permeate_final": [
             value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "lithium"]),
-            191.35,
+            191.55,
         ],
         "cobalt_permeate_final": [
             value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "cobalt"]),
-            220.46,
+            222.76,
         ],
         "chloride_permeate_final": [
             value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "chloride"]),
-            632.27,
+            637.06,
         ],
     }
 

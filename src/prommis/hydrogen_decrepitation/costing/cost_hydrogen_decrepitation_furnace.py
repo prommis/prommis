@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Property package for rare earth permanent magnet (REPM) materials.
+Costing module for rare-earth permanent magnet hydrogen decrepitation furnace.
 
 Authors: Akintomiwa Ojo, Brandon Paul
 """

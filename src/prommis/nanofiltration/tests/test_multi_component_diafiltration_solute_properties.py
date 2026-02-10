@@ -23,14 +23,14 @@ from prommis.nanofiltration.multi_component_diafiltration_solute_properties impo
 # Test functions for single-salt model
 @pytest.fixture
 def sample_model_single_salt():
-    num_salts = 1
-    salt_system = "lithium_chloride"
+    cation_list = ["lithium"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.solute_properties = MultiComponentDiafiltrationSoluteParameter(
-        num_salts=num_salts,
-        salt_system=salt_system,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -69,10 +69,6 @@ def test_parameters_single_salt(sample_model_single_salt):
         assert k == "liquid"
 
     for j in sample_model_single_salt.fs.solute_properties.component_list:
-        assert j in [
-            "cation_1",
-            "anion",
-        ]
         assert j in sample_model_single_salt.fs.solute_properties.charge
         assert j in sample_model_single_salt.fs.solute_properties.diffusion_coefficient
         assert j in sample_model_single_salt.fs.solute_properties.sigma
@@ -91,14 +87,14 @@ def test_parameters_single_salt(sample_model_single_salt):
 # Test single-salt model: lithium chloride
 @pytest.fixture
 def model_lithium():
-    num_salts = 1
-    salt_system = "lithium_chloride"
+    cation_list = ["lithium"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.solute_properties = MultiComponentDiafiltrationSoluteParameter(
-        num_salts=num_salts,
-        salt_system=salt_system,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -112,65 +108,73 @@ def test_build_lithium(model_lithium):
 @pytest.mark.unit
 def test_parameters_single_salt_lithium(model_lithium):
     test_parameters_single_salt(model_lithium)
+    for j in model_lithium.fs.solute_properties.component_list:
+        assert j in [
+            "lithium",
+            "chloride",
+        ]
 
     # check lithium values
-    assert value(model_lithium.fs.solute_properties.charge["cation_1"]) == 1
+    assert value(model_lithium.fs.solute_properties.charge["lithium"]) == 1
     assert (
-        value(model_lithium.fs.solute_properties.diffusion_coefficient["cation_1"])
+        value(model_lithium.fs.solute_properties.diffusion_coefficient["lithium"])
         == 3.71
     )
-    assert value(model_lithium.fs.solute_properties.sigma["cation_1"]) == 1
+    assert value(model_lithium.fs.solute_properties.sigma["lithium"]) == 1
     assert (
         value(
             model_lithium.fs.solute_properties.partition_coefficient_retentate[
-                "cation_1"
+                "lithium"
             ]
         )
         == 0.4
+    )
+    assert (
+        value(
+            model_lithium.fs.solute_properties.partition_coefficient_permeate["lithium"]
+        )
+        == 0.4
+    )
+    assert value(model_lithium.fs.solute_properties.num_solutes["lithium"]) == 1
+
+    # check chloride values (single salt with lithium)
+    assert value(model_lithium.fs.solute_properties.charge["chloride"]) == -1
+    assert (
+        value(model_lithium.fs.solute_properties.diffusion_coefficient["chloride"])
+        == 7.31
+    )
+    assert value(model_lithium.fs.solute_properties.sigma["chloride"]) == 1
+    assert (
+        value(
+            model_lithium.fs.solute_properties.partition_coefficient_retentate[
+                "chloride"
+            ]
+        )
+        == 0.01
     )
     assert (
         value(
             model_lithium.fs.solute_properties.partition_coefficient_permeate[
-                "cation_1"
+                "chloride"
             ]
         )
-        == 0.4
-    )
-    assert value(model_lithium.fs.solute_properties.num_solutes["cation_1"]) == 1
-
-    # check chloride values (single salt with lithium)
-    assert value(model_lithium.fs.solute_properties.charge["anion"]) == -1
-    assert (
-        value(model_lithium.fs.solute_properties.diffusion_coefficient["anion"]) == 7.31
-    )
-    assert value(model_lithium.fs.solute_properties.sigma["anion"]) == 1
-    assert (
-        value(
-            model_lithium.fs.solute_properties.partition_coefficient_retentate["anion"]
-        )
         == 0.01
     )
-    assert (
-        value(
-            model_lithium.fs.solute_properties.partition_coefficient_permeate["anion"]
-        )
-        == 0.01
-    )
-    assert value(model_lithium.fs.solute_properties.num_solutes["anion"]) == 1
+    assert value(model_lithium.fs.solute_properties.num_solutes["chloride"]) == 1
 
 
 ################################################################################
 # Test single-salt model: cobalt chloride
 @pytest.fixture
 def model_cobalt():
-    num_salts = 1
-    salt_system = "cobalt_chloride"
+    cation_list = ["cobalt"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.solute_properties = MultiComponentDiafiltrationSoluteParameter(
-        num_salts=num_salts,
-        salt_system=salt_system,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -184,61 +188,68 @@ def test_build_cobalt(model_cobalt):
 @pytest.mark.unit
 def test_parameters_single_salt_cobalt(model_cobalt):
     test_parameters_single_salt(model_cobalt)
+    for j in model_cobalt.fs.solute_properties.component_list:
+        assert j in [
+            "cobalt",
+            "chloride",
+        ]
 
     # check cobalt values
-    assert value(model_cobalt.fs.solute_properties.charge["cation_1"]) == 2
+    assert value(model_cobalt.fs.solute_properties.charge["cobalt"]) == 2
     assert (
-        value(model_cobalt.fs.solute_properties.diffusion_coefficient["cation_1"])
-        == 2.64
+        value(model_cobalt.fs.solute_properties.diffusion_coefficient["cobalt"]) == 2.64
     )
-    assert value(model_cobalt.fs.solute_properties.sigma["cation_1"]) == 1
+    assert value(model_cobalt.fs.solute_properties.sigma["cobalt"]) == 1
+    assert (
+        value(
+            model_cobalt.fs.solute_properties.partition_coefficient_retentate["cobalt"]
+        )
+        == 0.04
+    )
+    assert (
+        value(
+            model_cobalt.fs.solute_properties.partition_coefficient_permeate["cobalt"]
+        )
+        == 0.04
+    )
+    assert value(model_cobalt.fs.solute_properties.num_solutes["cobalt"]) == 1
+
+    # check chloride values (single salt with cobalt)
+    assert value(model_cobalt.fs.solute_properties.charge["chloride"]) == -1
+    assert (
+        value(model_cobalt.fs.solute_properties.diffusion_coefficient["chloride"])
+        == 7.31
+    )
+    assert value(model_cobalt.fs.solute_properties.sigma["chloride"]) == 1
     assert (
         value(
             model_cobalt.fs.solute_properties.partition_coefficient_retentate[
-                "cation_1"
+                "chloride"
             ]
         )
-        == 0.04
-    )
-    assert (
-        value(
-            model_cobalt.fs.solute_properties.partition_coefficient_permeate["cation_1"]
-        )
-        == 0.04
-    )
-    assert value(model_cobalt.fs.solute_properties.num_solutes["cation_1"]) == 1
-
-    # check chloride values (single salt with cobalt)
-    assert value(model_cobalt.fs.solute_properties.charge["anion"]) == -1
-    assert (
-        value(model_cobalt.fs.solute_properties.diffusion_coefficient["anion"]) == 7.31
-    )
-    assert value(model_cobalt.fs.solute_properties.sigma["anion"]) == 1
-    assert (
-        value(
-            model_cobalt.fs.solute_properties.partition_coefficient_retentate["anion"]
-        )
         == 0.01
     )
     assert (
-        value(model_cobalt.fs.solute_properties.partition_coefficient_permeate["anion"])
+        value(
+            model_cobalt.fs.solute_properties.partition_coefficient_permeate["chloride"]
+        )
         == 0.01
     )
-    assert value(model_cobalt.fs.solute_properties.num_solutes["anion"]) == 2
+    assert value(model_cobalt.fs.solute_properties.num_solutes["chloride"]) == 2
 
 
 ################################################################################
 # Test single-salt model: aluminum chloride
 @pytest.fixture
 def model_aluminum():
-    num_salts = 1
-    salt_system = "aluminum_chloride"
+    cation_list = ["aluminum"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.solute_properties = MultiComponentDiafiltrationSoluteParameter(
-        num_salts=num_salts,
-        salt_system=salt_system,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -252,18 +263,23 @@ def test_build_aluminum(model_aluminum):
 @pytest.mark.unit
 def test_parameters_single_salt_aluminum(model_aluminum):
     test_parameters_single_salt(model_aluminum)
+    for j in model_aluminum.fs.solute_properties.component_list:
+        assert j in [
+            "aluminum",
+            "chloride",
+        ]
 
     # check aluminum values
-    assert value(model_aluminum.fs.solute_properties.charge["cation_1"]) == 3
+    assert value(model_aluminum.fs.solute_properties.charge["aluminum"]) == 3
     assert (
-        value(model_aluminum.fs.solute_properties.diffusion_coefficient["cation_1"])
+        value(model_aluminum.fs.solute_properties.diffusion_coefficient["aluminum"])
         == 2.01
     )
-    assert value(model_aluminum.fs.solute_properties.sigma["cation_1"]) == 1
+    assert value(model_aluminum.fs.solute_properties.sigma["aluminum"]) == 1
     assert (
         value(
             model_aluminum.fs.solute_properties.partition_coefficient_retentate[
-                "cation_1"
+                "aluminum"
             ]
         )
         == 0.004
@@ -271,47 +287,51 @@ def test_parameters_single_salt_aluminum(model_aluminum):
     assert (
         value(
             model_aluminum.fs.solute_properties.partition_coefficient_permeate[
-                "cation_1"
+                "aluminum"
             ]
         )
         == 0.004
     )
-    assert value(model_aluminum.fs.solute_properties.num_solutes["cation_1"]) == 1
+    assert value(model_aluminum.fs.solute_properties.num_solutes["aluminum"]) == 1
 
     # check chloride values (single salt with aluminum)
-    assert value(model_aluminum.fs.solute_properties.charge["anion"]) == -1
+    assert value(model_aluminum.fs.solute_properties.charge["chloride"]) == -1
     assert (
-        value(model_aluminum.fs.solute_properties.diffusion_coefficient["anion"])
+        value(model_aluminum.fs.solute_properties.diffusion_coefficient["chloride"])
         == 7.31
     )
-    assert value(model_aluminum.fs.solute_properties.sigma["anion"]) == 1
+    assert value(model_aluminum.fs.solute_properties.sigma["chloride"]) == 1
     assert (
         value(
-            model_aluminum.fs.solute_properties.partition_coefficient_retentate["anion"]
+            model_aluminum.fs.solute_properties.partition_coefficient_retentate[
+                "chloride"
+            ]
         )
         == 0.01
     )
     assert (
         value(
-            model_aluminum.fs.solute_properties.partition_coefficient_permeate["anion"]
+            model_aluminum.fs.solute_properties.partition_coefficient_permeate[
+                "chloride"
+            ]
         )
         == 0.01
     )
-    assert value(model_aluminum.fs.solute_properties.num_solutes["anion"]) == 3
+    assert value(model_aluminum.fs.solute_properties.num_solutes["chloride"]) == 3
 
 
 ################################################################################
 # Test functions for two-salt model
 @pytest.fixture
 def sample_model_two_salt():
-    num_salts = 2
-    salt_system = "lithium_cobalt_chloride"
+    cation_list = ["lithium", "cobalt"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.solute_properties = MultiComponentDiafiltrationSoluteParameter(
-        num_salts=num_salts,
-        salt_system=salt_system,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -324,11 +344,6 @@ def test_parameters_two_salt(sample_model_two_salt):
         assert k == "liquid"
 
     for j in sample_model_two_salt.fs.solute_properties.component_list:
-        assert j in [
-            "cation_1",
-            "cation_2",
-            "anion",
-        ]
         assert j in sample_model_two_salt.fs.solute_properties.charge
         assert j in sample_model_two_salt.fs.solute_properties.diffusion_coefficient
         assert j in sample_model_two_salt.fs.solute_properties.sigma
@@ -347,14 +362,14 @@ def test_parameters_two_salt(sample_model_two_salt):
 # Test two-salt model: lithium chloride + cobalt chloride
 @pytest.fixture
 def model_lithium_cobalt():
-    num_salts = 2
-    salt_system = "lithium_cobalt_chloride"
+    cation_list = ["lithium", "cobalt"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.solute_properties = MultiComponentDiafiltrationSoluteParameter(
-        num_salts=num_salts,
-        salt_system=salt_system,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -368,20 +383,26 @@ def test_build_lithium_cobalt(model_lithium_cobalt):
 @pytest.mark.unit
 def test_parameters_two_salt_lithium_cobalt(model_lithium_cobalt):
     test_parameters_two_salt(model_lithium_cobalt)
+    for j in model_lithium_cobalt.fs.solute_properties.component_list:
+        assert j in [
+            "lithium",
+            "cobalt",
+            "chloride",
+        ]
 
     # check lithium values
-    assert value(model_lithium_cobalt.fs.solute_properties.charge["cation_1"]) == 1
+    assert value(model_lithium_cobalt.fs.solute_properties.charge["lithium"]) == 1
     assert (
         value(
-            model_lithium_cobalt.fs.solute_properties.diffusion_coefficient["cation_1"]
+            model_lithium_cobalt.fs.solute_properties.diffusion_coefficient["lithium"]
         )
         == 3.71
     )
-    assert value(model_lithium_cobalt.fs.solute_properties.sigma["cation_1"]) == 1
+    assert value(model_lithium_cobalt.fs.solute_properties.sigma["lithium"]) == 1
     assert (
         value(
             model_lithium_cobalt.fs.solute_properties.partition_coefficient_retentate[
-                "cation_1"
+                "lithium"
             ]
         )
         == 0.4
@@ -389,26 +410,24 @@ def test_parameters_two_salt_lithium_cobalt(model_lithium_cobalt):
     assert (
         value(
             model_lithium_cobalt.fs.solute_properties.partition_coefficient_permeate[
-                "cation_1"
+                "lithium"
             ]
         )
         == 0.4
     )
-    assert value(model_lithium_cobalt.fs.solute_properties.num_solutes["cation_1"]) == 1
+    assert value(model_lithium_cobalt.fs.solute_properties.num_solutes["lithium"]) == 1
 
     # check cobalt values
-    assert value(model_lithium_cobalt.fs.solute_properties.charge["cation_2"]) == 2
+    assert value(model_lithium_cobalt.fs.solute_properties.charge["cobalt"]) == 2
     assert (
-        value(
-            model_lithium_cobalt.fs.solute_properties.diffusion_coefficient["cation_2"]
-        )
+        value(model_lithium_cobalt.fs.solute_properties.diffusion_coefficient["cobalt"])
         == 2.64
     )
-    assert value(model_lithium_cobalt.fs.solute_properties.sigma["cation_2"]) == 1
+    assert value(model_lithium_cobalt.fs.solute_properties.sigma["cobalt"]) == 1
     assert (
         value(
             model_lithium_cobalt.fs.solute_properties.partition_coefficient_retentate[
-                "cation_2"
+                "cobalt"
             ]
         )
         == 0.04
@@ -416,24 +435,26 @@ def test_parameters_two_salt_lithium_cobalt(model_lithium_cobalt):
     assert (
         value(
             model_lithium_cobalt.fs.solute_properties.partition_coefficient_permeate[
-                "cation_2"
+                "cobalt"
             ]
         )
         == 0.04
     )
-    assert value(model_lithium_cobalt.fs.solute_properties.num_solutes["cation_2"]) == 1
+    assert value(model_lithium_cobalt.fs.solute_properties.num_solutes["cobalt"]) == 1
 
     # check chloride values (two salt with lithium and cobalt)
-    assert value(model_lithium_cobalt.fs.solute_properties.charge["anion"]) == -1
+    assert value(model_lithium_cobalt.fs.solute_properties.charge["chloride"]) == -1
     assert (
-        value(model_lithium_cobalt.fs.solute_properties.diffusion_coefficient["anion"])
+        value(
+            model_lithium_cobalt.fs.solute_properties.diffusion_coefficient["chloride"]
+        )
         == 7.31
     )
-    assert value(model_lithium_cobalt.fs.solute_properties.sigma["anion"]) == 1
+    assert value(model_lithium_cobalt.fs.solute_properties.sigma["chloride"]) == 1
     assert (
         value(
             model_lithium_cobalt.fs.solute_properties.partition_coefficient_retentate[
-                "anion"
+                "chloride"
             ]
         )
         == 0.01
@@ -441,12 +462,12 @@ def test_parameters_two_salt_lithium_cobalt(model_lithium_cobalt):
     assert (
         value(
             model_lithium_cobalt.fs.solute_properties.partition_coefficient_permeate[
-                "anion"
+                "chloride"
             ]
         )
         == 0.01
     )
-    assert value(model_lithium_cobalt.fs.solute_properties.num_solutes["anion"]) == 3
+    assert value(model_lithium_cobalt.fs.solute_properties.num_solutes["chloride"]) == 3
 
 
 ################################################################################
@@ -455,14 +476,14 @@ def test_parameters_two_salt_lithium_cobalt(model_lithium_cobalt):
 # Test two-salt model: lithium chloride + aluminum chloride
 @pytest.fixture
 def model_lithium_aluminum():
-    num_salts = 2
-    salt_system = "lithium_aluminum_chloride"
+    cation_list = ["lithium", "aluminum"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.solute_properties = MultiComponentDiafiltrationSoluteParameter(
-        num_salts=num_salts,
-        salt_system=salt_system,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -476,22 +497,26 @@ def test_build_lithium_aluminum(model_lithium_aluminum):
 @pytest.mark.unit
 def test_parameters_two_salt_lithium_aluminum(model_lithium_aluminum):
     test_parameters_two_salt(model_lithium_aluminum)
+    for j in model_lithium_aluminum.fs.solute_properties.component_list:
+        assert j in [
+            "lithium",
+            "aluminum",
+            "chloride",
+        ]
 
     # check lithium values
-    assert value(model_lithium_aluminum.fs.solute_properties.charge["cation_1"]) == 1
+    assert value(model_lithium_aluminum.fs.solute_properties.charge["lithium"]) == 1
     assert (
         value(
-            model_lithium_aluminum.fs.solute_properties.diffusion_coefficient[
-                "cation_1"
-            ]
+            model_lithium_aluminum.fs.solute_properties.diffusion_coefficient["lithium"]
         )
         == 3.71
     )
-    assert value(model_lithium_aluminum.fs.solute_properties.sigma["cation_1"]) == 1
+    assert value(model_lithium_aluminum.fs.solute_properties.sigma["lithium"]) == 1
     assert (
         value(
             model_lithium_aluminum.fs.solute_properties.partition_coefficient_retentate[
-                "cation_1"
+                "lithium"
             ]
         )
         == 0.4
@@ -499,30 +524,30 @@ def test_parameters_two_salt_lithium_aluminum(model_lithium_aluminum):
     assert (
         value(
             model_lithium_aluminum.fs.solute_properties.partition_coefficient_permeate[
-                "cation_1"
+                "lithium"
             ]
         )
         == 0.4
     )
     assert (
-        value(model_lithium_aluminum.fs.solute_properties.num_solutes["cation_1"]) == 1
+        value(model_lithium_aluminum.fs.solute_properties.num_solutes["lithium"]) == 1
     )
 
     # check aluminum values
-    assert value(model_lithium_aluminum.fs.solute_properties.charge["cation_2"]) == 3
+    assert value(model_lithium_aluminum.fs.solute_properties.charge["aluminum"]) == 3
     assert (
         value(
             model_lithium_aluminum.fs.solute_properties.diffusion_coefficient[
-                "cation_2"
+                "aluminum"
             ]
         )
         == 2.01
     )
-    assert value(model_lithium_aluminum.fs.solute_properties.sigma["cation_2"]) == 1
+    assert value(model_lithium_aluminum.fs.solute_properties.sigma["aluminum"]) == 1
     assert (
         value(
             model_lithium_aluminum.fs.solute_properties.partition_coefficient_retentate[
-                "cation_2"
+                "aluminum"
             ]
         )
         == 0.004
@@ -530,28 +555,30 @@ def test_parameters_two_salt_lithium_aluminum(model_lithium_aluminum):
     assert (
         value(
             model_lithium_aluminum.fs.solute_properties.partition_coefficient_permeate[
-                "cation_2"
+                "aluminum"
             ]
         )
         == 0.004
     )
     assert (
-        value(model_lithium_aluminum.fs.solute_properties.num_solutes["cation_2"]) == 1
+        value(model_lithium_aluminum.fs.solute_properties.num_solutes["aluminum"]) == 1
     )
 
     # check chloride values (two salt with lithium and aluminum)
-    assert value(model_lithium_aluminum.fs.solute_properties.charge["anion"]) == -1
+    assert value(model_lithium_aluminum.fs.solute_properties.charge["chloride"]) == -1
     assert (
         value(
-            model_lithium_aluminum.fs.solute_properties.diffusion_coefficient["anion"]
+            model_lithium_aluminum.fs.solute_properties.diffusion_coefficient[
+                "chloride"
+            ]
         )
         == 7.31
     )
-    assert value(model_lithium_aluminum.fs.solute_properties.sigma["anion"]) == 1
+    assert value(model_lithium_aluminum.fs.solute_properties.sigma["chloride"]) == 1
     assert (
         value(
             model_lithium_aluminum.fs.solute_properties.partition_coefficient_retentate[
-                "anion"
+                "chloride"
             ]
         )
         == 0.01
@@ -559,12 +586,14 @@ def test_parameters_two_salt_lithium_aluminum(model_lithium_aluminum):
     assert (
         value(
             model_lithium_aluminum.fs.solute_properties.partition_coefficient_permeate[
-                "anion"
+                "chloride"
             ]
         )
         == 0.01
     )
-    assert value(model_lithium_aluminum.fs.solute_properties.num_solutes["anion"]) == 4
+    assert (
+        value(model_lithium_aluminum.fs.solute_properties.num_solutes["chloride"]) == 4
+    )
 
 
 ################################################################################
@@ -573,14 +602,14 @@ def test_parameters_two_salt_lithium_aluminum(model_lithium_aluminum):
 # Test two-salt model: cobalt chloride + aluminum chloride
 @pytest.fixture
 def model_cobalt_aluminum():
-    num_salts = 2
-    salt_system = "cobalt_aluminum_chloride"
+    cation_list = ["cobalt", "aluminum"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.solute_properties = MultiComponentDiafiltrationSoluteParameter(
-        num_salts=num_salts,
-        salt_system=salt_system,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -594,20 +623,26 @@ def test_build_cobalt_aluminum(model_cobalt_aluminum):
 @pytest.mark.unit
 def test_parameters_two_salt_cobalt_aluminum(model_cobalt_aluminum):
     test_parameters_two_salt(model_cobalt_aluminum)
+    for j in model_cobalt_aluminum.fs.solute_properties.component_list:
+        assert j in [
+            "cobalt",
+            "aluminum",
+            "chloride",
+        ]
 
     # check cobalt values
-    assert value(model_cobalt_aluminum.fs.solute_properties.charge["cation_1"]) == 2
+    assert value(model_cobalt_aluminum.fs.solute_properties.charge["cobalt"]) == 2
     assert (
         value(
-            model_cobalt_aluminum.fs.solute_properties.diffusion_coefficient["cation_1"]
+            model_cobalt_aluminum.fs.solute_properties.diffusion_coefficient["cobalt"]
         )
         == 2.64
     )
-    assert value(model_cobalt_aluminum.fs.solute_properties.sigma["cation_1"]) == 1
+    assert value(model_cobalt_aluminum.fs.solute_properties.sigma["cobalt"]) == 1
     assert (
         value(
             model_cobalt_aluminum.fs.solute_properties.partition_coefficient_retentate[
-                "cation_1"
+                "cobalt"
             ]
         )
         == 0.04
@@ -615,28 +650,26 @@ def test_parameters_two_salt_cobalt_aluminum(model_cobalt_aluminum):
     assert (
         value(
             model_cobalt_aluminum.fs.solute_properties.partition_coefficient_permeate[
-                "cation_1"
+                "cobalt"
             ]
         )
         == 0.04
     )
-    assert (
-        value(model_cobalt_aluminum.fs.solute_properties.num_solutes["cation_1"]) == 1
-    )
+    assert value(model_cobalt_aluminum.fs.solute_properties.num_solutes["cobalt"]) == 1
 
     # check aluminum values
-    assert value(model_cobalt_aluminum.fs.solute_properties.charge["cation_2"]) == 3
+    assert value(model_cobalt_aluminum.fs.solute_properties.charge["aluminum"]) == 3
     assert (
         value(
-            model_cobalt_aluminum.fs.solute_properties.diffusion_coefficient["cation_2"]
+            model_cobalt_aluminum.fs.solute_properties.diffusion_coefficient["aluminum"]
         )
         == 2.01
     )
-    assert value(model_cobalt_aluminum.fs.solute_properties.sigma["cation_2"]) == 1
+    assert value(model_cobalt_aluminum.fs.solute_properties.sigma["aluminum"]) == 1
     assert (
         value(
             model_cobalt_aluminum.fs.solute_properties.partition_coefficient_retentate[
-                "cation_2"
+                "aluminum"
             ]
         )
         == 0.004
@@ -644,26 +677,28 @@ def test_parameters_two_salt_cobalt_aluminum(model_cobalt_aluminum):
     assert (
         value(
             model_cobalt_aluminum.fs.solute_properties.partition_coefficient_permeate[
-                "cation_2"
+                "aluminum"
             ]
         )
         == 0.004
     )
     assert (
-        value(model_cobalt_aluminum.fs.solute_properties.num_solutes["cation_2"]) == 1
+        value(model_cobalt_aluminum.fs.solute_properties.num_solutes["aluminum"]) == 1
     )
 
     # check chloride values (two salt with cobalt and aluminum)
-    assert value(model_cobalt_aluminum.fs.solute_properties.charge["anion"]) == -1
+    assert value(model_cobalt_aluminum.fs.solute_properties.charge["chloride"]) == -1
     assert (
-        value(model_cobalt_aluminum.fs.solute_properties.diffusion_coefficient["anion"])
+        value(
+            model_cobalt_aluminum.fs.solute_properties.diffusion_coefficient["chloride"]
+        )
         == 7.31
     )
-    assert value(model_cobalt_aluminum.fs.solute_properties.sigma["anion"]) == 1
+    assert value(model_cobalt_aluminum.fs.solute_properties.sigma["chloride"]) == 1
     assert (
         value(
             model_cobalt_aluminum.fs.solute_properties.partition_coefficient_retentate[
-                "anion"
+                "chloride"
             ]
         )
         == 0.01
@@ -671,26 +706,28 @@ def test_parameters_two_salt_cobalt_aluminum(model_cobalt_aluminum):
     assert (
         value(
             model_cobalt_aluminum.fs.solute_properties.partition_coefficient_permeate[
-                "anion"
+                "chloride"
             ]
         )
         == 0.01
     )
-    assert value(model_cobalt_aluminum.fs.solute_properties.num_solutes["anion"]) == 5
+    assert (
+        value(model_cobalt_aluminum.fs.solute_properties.num_solutes["chloride"]) == 5
+    )
 
 
 ################################################################################
 # Test functions for three-salt model
 @pytest.fixture
 def sample_model_three_salt():
-    num_salts = 3
-    salt_system = "lithium_cobalt_aluminum_chloride"
+    cation_list = ["lithium", "cobalt", "aluminum"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.solute_properties = MultiComponentDiafiltrationSoluteParameter(
-        num_salts=num_salts,
-        salt_system=salt_system,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -703,12 +740,6 @@ def test_parameters_three_salt(sample_model_three_salt):
         assert k == "liquid"
 
     for j in sample_model_three_salt.fs.solute_properties.component_list:
-        assert j in [
-            "cation_1",
-            "cation_2",
-            "cation_3",
-            "anion",
-        ]
         assert j in sample_model_three_salt.fs.solute_properties.charge
         assert j in sample_model_three_salt.fs.solute_properties.diffusion_coefficient
         assert j in sample_model_three_salt.fs.solute_properties.sigma
@@ -727,14 +758,14 @@ def test_parameters_three_salt(sample_model_three_salt):
 # Test three-salt model: lithium chloride + cobalt chloride + aluminum chloride
 @pytest.fixture
 def model_lithium_cobalt_aluminum():
-    num_salts = 3
-    salt_system = "lithium_cobalt_aluminum_chloride"
+    cation_list = ["lithium", "cobalt", "aluminum"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.solute_properties = MultiComponentDiafiltrationSoluteParameter(
-        num_salts=num_salts,
-        salt_system=salt_system,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -743,6 +774,13 @@ def model_lithium_cobalt_aluminum():
 @pytest.mark.unit
 def test_build_lithium_cobalt_aluminum(model_lithium_cobalt_aluminum):
     test_build(model_lithium_cobalt_aluminum)
+    for j in model_lithium_cobalt_aluminum.fs.solute_properties.component_list:
+        assert j in [
+            "lithium",
+            "cobalt",
+            "aluminum",
+            "chloride",
+        ]
 
 
 @pytest.mark.unit
@@ -751,24 +789,23 @@ def test_parameters_three_salt_lithium_cobalt_aluminum(model_lithium_cobalt_alum
 
     # check lithium values
     assert (
-        value(model_lithium_cobalt_aluminum.fs.solute_properties.charge["cation_1"])
-        == 1
+        value(model_lithium_cobalt_aluminum.fs.solute_properties.charge["lithium"]) == 1
     )
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.diffusion_coefficient[
-                "cation_1"
+                "lithium"
             ]
         )
         == 3.71
     )
     assert (
-        value(model_lithium_cobalt_aluminum.fs.solute_properties.sigma["cation_1"]) == 1
+        value(model_lithium_cobalt_aluminum.fs.solute_properties.sigma["lithium"]) == 1
     )
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.partition_coefficient_retentate[
-                "cation_1"
+                "lithium"
             ]
         )
         == 0.4
@@ -776,38 +813,35 @@ def test_parameters_three_salt_lithium_cobalt_aluminum(model_lithium_cobalt_alum
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.partition_coefficient_permeate[
-                "cation_1"
+                "lithium"
             ]
         )
         == 0.4
     )
     assert (
-        value(
-            model_lithium_cobalt_aluminum.fs.solute_properties.num_solutes["cation_1"]
-        )
+        value(model_lithium_cobalt_aluminum.fs.solute_properties.num_solutes["lithium"])
         == 1
     )
 
     # check cobalt values
     assert (
-        value(model_lithium_cobalt_aluminum.fs.solute_properties.charge["cation_2"])
-        == 2
+        value(model_lithium_cobalt_aluminum.fs.solute_properties.charge["cobalt"]) == 2
     )
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.diffusion_coefficient[
-                "cation_2"
+                "cobalt"
             ]
         )
         == 2.64
     )
     assert (
-        value(model_lithium_cobalt_aluminum.fs.solute_properties.sigma["cation_2"]) == 1
+        value(model_lithium_cobalt_aluminum.fs.solute_properties.sigma["cobalt"]) == 1
     )
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.partition_coefficient_retentate[
-                "cation_2"
+                "cobalt"
             ]
         )
         == 0.04
@@ -815,38 +849,36 @@ def test_parameters_three_salt_lithium_cobalt_aluminum(model_lithium_cobalt_alum
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.partition_coefficient_permeate[
-                "cation_2"
+                "cobalt"
             ]
         )
         == 0.04
     )
     assert (
-        value(
-            model_lithium_cobalt_aluminum.fs.solute_properties.num_solutes["cation_2"]
-        )
+        value(model_lithium_cobalt_aluminum.fs.solute_properties.num_solutes["cobalt"])
         == 1
     )
 
     # check aluminum values
     assert (
-        value(model_lithium_cobalt_aluminum.fs.solute_properties.charge["cation_3"])
+        value(model_lithium_cobalt_aluminum.fs.solute_properties.charge["aluminum"])
         == 3
     )
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.diffusion_coefficient[
-                "cation_3"
+                "aluminum"
             ]
         )
         == 2.01
     )
     assert (
-        value(model_lithium_cobalt_aluminum.fs.solute_properties.sigma["cation_3"]) == 1
+        value(model_lithium_cobalt_aluminum.fs.solute_properties.sigma["aluminum"]) == 1
     )
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.partition_coefficient_retentate[
-                "cation_3"
+                "aluminum"
             ]
         )
         == 0.004
@@ -854,35 +886,38 @@ def test_parameters_three_salt_lithium_cobalt_aluminum(model_lithium_cobalt_alum
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.partition_coefficient_permeate[
-                "cation_3"
+                "aluminum"
             ]
         )
         == 0.004
     )
     assert (
         value(
-            model_lithium_cobalt_aluminum.fs.solute_properties.num_solutes["cation_3"]
+            model_lithium_cobalt_aluminum.fs.solute_properties.num_solutes["aluminum"]
         )
         == 1
     )
 
     # check chloride values (two salt with lithium, cobalt, and aluminum)
     assert (
-        value(model_lithium_cobalt_aluminum.fs.solute_properties.charge["anion"]) == -1
+        value(model_lithium_cobalt_aluminum.fs.solute_properties.charge["chloride"])
+        == -1
     )
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.diffusion_coefficient[
-                "anion"
+                "chloride"
             ]
         )
         == 7.31
     )
-    assert value(model_lithium_cobalt_aluminum.fs.solute_properties.sigma["anion"]) == 1
+    assert (
+        value(model_lithium_cobalt_aluminum.fs.solute_properties.sigma["chloride"]) == 1
+    )
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.partition_coefficient_retentate[
-                "anion"
+                "chloride"
             ]
         )
         == 0.01
@@ -890,13 +925,15 @@ def test_parameters_three_salt_lithium_cobalt_aluminum(model_lithium_cobalt_alum
     assert (
         value(
             model_lithium_cobalt_aluminum.fs.solute_properties.partition_coefficient_permeate[
-                "anion"
+                "chloride"
             ]
         )
         == 0.01
     )
     assert (
-        value(model_lithium_cobalt_aluminum.fs.solute_properties.num_solutes["anion"])
+        value(
+            model_lithium_cobalt_aluminum.fs.solute_properties.num_solutes["chloride"]
+        )
         == 6
     )
 

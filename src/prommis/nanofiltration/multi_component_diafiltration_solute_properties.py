@@ -11,10 +11,9 @@ Author: Molly Dougher
 """
 
 from pyomo.common.config import ConfigValue
-from pyomo.environ import Param, Var, units
+from pyomo.environ import Param, Set, Var, units
 
 from idaes.core import (
-    Component,
     MaterialFlowBasis,
     Phase,
     PhysicalParameterBlock,
@@ -40,59 +39,59 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
     CONFIG = PhysicalParameterBlock.CONFIG()
 
     CONFIG.declare(
-        "num_salts",
+        "cation_list",
         ConfigValue(
-            default=2,
-            doc="Number of salts to be modeled",
+            default=["lithium", "cobalt"],
+            doc="List of cations present in the system",
         ),
     )
-
     CONFIG.declare(
-        "salt_system",
+        "anion_list",
         ConfigValue(
-            default="lithium_cobalt_chloride",
-            doc="Name of the salt system to be modeled",
+            default=["chloride"],
+            doc="List of anions present in the system",
         ),
     )
 
     def build(self):
         super().build()
 
+        try:
+            assert len(self.config.anion_list) == 1
+        except Exception:
+            print(
+                "The multi-component diafiltration unit model only supports systems with a common anion"
+            )
+
         self.liquid = Phase()
 
-        # add cations
-        self.cation_1 = Component()
-        if self.config.num_salts > 1:
-            self.cation_2 = Component()
-        if self.config.num_salts > 2:
-            self.cation_3 = Component()
-
-        # add anion
-        self.anion = Component()
+        self.component_list = Set(
+            initialize=self.config.cation_list + self.config.anion_list
+        )
 
         # ion valence
         charge_dict = {
-            "Li": 1,
-            "Co": 2,
-            "Al": 3,
-            "Cl": -1,
+            "lithium": 1,
+            "cobalt": 2,
+            "aluminum": 3,
+            "chloride": -1,
         }
 
         # infinite dilution solute diffusion coefficient
         # source: https://www.aqion.de/site/diffusion-coefficients
         diffusion_coefficient_dict = {
-            "Li": 3.71,  # mm2 / h
-            "Co": 2.64,  # mm2 / h
-            "Al": 2.01,  # mm2 / h
-            "Cl": 7.31,  # mm2 / h
+            "lithium": 3.71,  # mm2 / h
+            "cobalt": 2.64,  # mm2 / h
+            "aluminum": 2.01,  # mm2 / h
+            "chloride": 7.31,  # mm2 / h
         }
 
         # thermal reflection coefficient, related to solute rejection
         sigma_dict = {
-            "Li": 1,
-            "Co": 1,
-            "Al": 1,
-            "Cl": 1,
+            "lithium": 1,
+            "cobalt": 1,
+            "aluminum": 1,
+            "chloride": 1,
         }
 
         # partition coefficient at the solution-membrane interfaces
@@ -107,153 +106,152 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
         # while H on the retentate and permeate sides can differ, we assume them to be equal for now
         partition_coefficient_dict = {
             "retentate": {
-                "Li": 0.4,
-                "Co": 0.04,
-                "Al": 0.004,
-                "Cl": 0.01,
+                "lithium": 0.4,
+                "cobalt": 0.04,
+                "aluminum": 0.004,
+                "chloride": 0.01,
             },
             "permeate": {
-                "Li": 0.4,
-                "Co": 0.04,
-                "Al": 0.004,
-                "Cl": 0.01,
+                "lithium": 0.4,
+                "cobalt": 0.04,
+                "aluminum": 0.004,
+                "chloride": 0.01,
             },
         }
+
+        if self.config.cation_list == ["lithium"]:
+            salt_system = "lithium_chloride"
+        elif self.config.cation_list == ["cobalt"]:
+            salt_system = "cobalt_chloride"
+        elif self.config.cation_list == ["aluminum"]:
+            salt_system = "aluminum_chloride"
+        elif self.config.cation_list == ["lithium", "cobalt"]:
+            salt_system = "lithium_cobalt_chloride"
+        elif self.config.cation_list == ["lithium", "aluminum"]:
+            salt_system = "lithium_aluminum_chloride"
+        elif self.config.cation_list == ["cobalt", "aluminum"]:
+            salt_system = "cobalt_aluminum_chloride"
+        elif self.config.cation_list == ["lithium", "cobalt", "aluminum"]:
+            salt_system = "lithium_cobalt_aluminum_chloride"
 
         num_solutes_dict = {
             "lithium_chloride": {
-                "Li": 1,
-                "Cl": 1,
+                "lithium": 1,
+                "chloride": 1,
             },
             "cobalt_chloride": {
-                "Co": 1,
-                "Cl": 2,
+                "cobalt": 1,
+                "chloride": 2,
             },
             "aluminum_chloride": {
-                "Al": 1,
-                "Cl": 3,
+                "aluminum": 1,
+                "chloride": 3,
             },
             "lithium_cobalt_chloride": {
-                "Li": 1,
-                "Co": 1,
-                "Cl": 3,
+                "lithium": 1,
+                "cobalt": 1,
+                "chloride": 3,
             },
             "lithium_aluminum_chloride": {
-                "Li": 1,
-                "Al": 1,
-                "Cl": 4,
+                "lithium": 1,
+                "aluminum": 1,
+                "chloride": 4,
             },
             "cobalt_aluminum_chloride": {
-                "Co": 1,
-                "Al": 1,
-                "Cl": 5,
+                "cobalt": 1,
+                "aluminum": 1,
+                "chloride": 5,
             },
             "lithium_cobalt_aluminum_chloride": {
-                "Li": 1,
-                "Co": 1,
-                "Al": 1,
-                "Cl": 6,
+                "lithium": 1,
+                "cobalt": 1,
+                "aluminum": 1,
+                "chloride": 6,
             },
         }
 
-        if self.config.salt_system == "lithium_chloride":
-            cation_1 = "Li"
-            anion = "Cl"
-        if self.config.salt_system == "cobalt_chloride":
-            cation_1 = "Co"
-            anion = "Cl"
-        if self.config.salt_system == "aluminum_chloride":
-            cation_1 = "Al"
-            anion = "Cl"
-        if self.config.salt_system == "lithium_cobalt_chloride":
-            cation_1 = "Li"
-            cation_2 = "Co"
-            anion = "Cl"
-        if self.config.salt_system == "lithium_aluminum_chloride":
-            cation_1 = "Li"
-            cation_2 = "Al"
-            anion = "Cl"
-        if self.config.salt_system == "cobalt_aluminum_chloride":
-            cation_1 = "Co"
-            cation_2 = "Al"
-            anion = "Cl"
-        if self.config.salt_system == "lithium_cobalt_aluminum_chloride":
-            cation_1 = "Li"
-            cation_2 = "Co"
-            cation_3 = "Al"
-            anion = "Cl"
-
-        # initialize dictionaries
+        # initialize dictionaries for a single cation
         initialize_charge_dict = {
-            "cation_1": charge_dict[cation_1],
-            "anion": charge_dict[anion],
+            self.config.cation_list[0]: charge_dict[self.config.cation_list[0]],
+            self.config.anion_list[0]: charge_dict[self.config.anion_list[0]],
         }
-        if self.config.num_salts > 1:
-            initialize_charge_dict.update({"cation_2": charge_dict[cation_2]})
-        if self.config.num_salts > 2:
-            initialize_charge_dict.update({"cation_3": charge_dict[cation_3]})
-
         initialize_diffusion_coefficient_dict = {
-            "cation_1": diffusion_coefficient_dict[cation_1],
-            "anion": diffusion_coefficient_dict[anion],
+            self.config.cation_list[0]: diffusion_coefficient_dict[
+                self.config.cation_list[0]
+            ],
+            self.config.anion_list[0]: diffusion_coefficient_dict[
+                self.config.anion_list[0]
+            ],
         }
-        if self.config.num_salts > 1:
-            initialize_diffusion_coefficient_dict.update(
-                {"cation_2": diffusion_coefficient_dict[cation_2]}
-            )
-        if self.config.num_salts > 2:
-            initialize_diffusion_coefficient_dict.update(
-                {"cation_3": diffusion_coefficient_dict[cation_3]}
-            )
-
         initialize_sigma_dict = {
-            "cation_1": sigma_dict[cation_1],
-            "anion": sigma_dict[anion],
+            self.config.cation_list[0]: sigma_dict[self.config.cation_list[0]],
+            self.config.anion_list[0]: sigma_dict[self.config.anion_list[0]],
         }
-        if self.config.num_salts > 1:
-            initialize_sigma_dict.update({"cation_2": sigma_dict[cation_2]})
-        if self.config.num_salts > 2:
-            initialize_sigma_dict.update({"cation_3": sigma_dict[cation_3]})
-
         initialize_partition_coefficient_retentate_dict = {
-            "cation_1": partition_coefficient_dict["retentate"][cation_1],
-            "anion": partition_coefficient_dict["retentate"][anion],
+            self.config.cation_list[0]: partition_coefficient_dict["retentate"][
+                self.config.cation_list[0]
+            ],
+            self.config.anion_list[0]: partition_coefficient_dict["retentate"][
+                self.config.anion_list[0]
+            ],
         }
-        if self.config.num_salts > 1:
-            initialize_partition_coefficient_retentate_dict.update(
-                {"cation_2": partition_coefficient_dict["retentate"][cation_2]}
-            )
-        if self.config.num_salts > 2:
-            initialize_partition_coefficient_retentate_dict.update(
-                {"cation_3": partition_coefficient_dict["retentate"][cation_3]}
-            )
-
         initialize_partition_coefficient_permeate_dict = {
-            "cation_1": partition_coefficient_dict["permeate"][cation_1],
-            "anion": partition_coefficient_dict["permeate"][anion],
+            self.config.cation_list[0]: partition_coefficient_dict["permeate"][
+                self.config.cation_list[0]
+            ],
+            self.config.anion_list[0]: partition_coefficient_dict["permeate"][
+                self.config.anion_list[0]
+            ],
         }
-        if self.config.num_salts > 1:
-            initialize_partition_coefficient_permeate_dict.update(
-                {"cation_2": partition_coefficient_dict["permeate"][cation_2]}
-            )
-        if self.config.num_salts > 2:
-            initialize_partition_coefficient_permeate_dict.update(
-                {"cation_3": partition_coefficient_dict["permeate"][cation_3]}
-            )
-
         initialize_num_solutes_dict = {
-            "cation_1": num_solutes_dict[self.config.salt_system][cation_1],
-            "anion": num_solutes_dict[self.config.salt_system][anion],
+            self.config.cation_list[0]: num_solutes_dict[salt_system][
+                self.config.cation_list[0]
+            ],
+            self.config.anion_list[0]: num_solutes_dict[salt_system][
+                self.config.anion_list[0]
+            ],
         }
-        if self.config.num_salts > 1:
-            initialize_num_solutes_dict.update(
-                {"cation_2": num_solutes_dict[self.config.salt_system][cation_2]}
-            )
-        if self.config.num_salts > 2:
-            initialize_num_solutes_dict.update(
-                {"cation_3": num_solutes_dict[self.config.salt_system][cation_3]}
-            )
 
+        # add additional cations to dictionaries
+        i = 1
+        while i < len(self.config.cation_list):
+            initialize_charge_dict.update(
+                {self.config.cation_list[i]: charge_dict[self.config.cation_list[i]]}
+            )
+            initialize_diffusion_coefficient_dict.update(
+                {
+                    self.config.cation_list[i]: diffusion_coefficient_dict[
+                        self.config.cation_list[i]
+                    ]
+                }
+            )
+            initialize_sigma_dict.update(
+                {self.config.cation_list[i]: sigma_dict[self.config.cation_list[i]]}
+            )
+            initialize_partition_coefficient_retentate_dict.update(
+                {
+                    self.config.cation_list[i]: partition_coefficient_dict["retentate"][
+                        self.config.cation_list[i]
+                    ]
+                }
+            )
+            initialize_partition_coefficient_permeate_dict.update(
+                {
+                    self.config.cation_list[i]: partition_coefficient_dict["permeate"][
+                        self.config.cation_list[i]
+                    ]
+                }
+            )
+            initialize_num_solutes_dict.update(
+                {
+                    self.config.cation_list[i]: num_solutes_dict[salt_system][
+                        self.config.cation_list[i]
+                    ]
+                }
+            )
+            i += 1
+
+        # initialze properties
         self.charge = Param(
             self.component_list,
             units=units.dimensionless,

@@ -45,10 +45,22 @@ def main():
     # build flowsheet
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(num_salts=2)
+
+    cation_list = ["lithium", "cobalt"]
+    anion_list = ["chloride"]
+    inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
+    inlet_concentration = {
+        "feed": {"lithium": 245, "cobalt": 288, "chloride": 821},
+        "diafiltrate": {"lithium": 14, "cobalt": 3, "chloride": 20},
+    }
+
+    m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(
+        cation_list=cation_list,
+        anion_list=anion_list,
+    )
     m.fs.properties = MultiComponentDiafiltrationSoluteParameter(
-        num_salts=2,
-        salt_system="lithium_cobalt_chloride",
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     # update parameter inputs if desired
@@ -61,7 +73,10 @@ def main():
     # add the membrane unit model
     m.fs.membrane = MultiComponentDiafiltration(
         property_package=m.fs.properties,
-        num_salts=2,
+        cation_list=cation_list,
+        anion_list=anion_list,
+        inlet_flow_volume=inlet_flow_volume,
+        inlet_concentration=inlet_concentration,
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
@@ -194,32 +209,30 @@ def plot_results(m):
         if x_val != 0:
             x_axis_values.append(x_val * value(m.fs.membrane.total_module_length))
             conc_ret_lith.append(
-                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_1"])
+                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "lithium"])
             )
             conc_perm_lith.append(
-                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_1"])
+                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "lithium"])
             )
             conc_ret_cob.append(
-                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_2"])
+                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cobalt"])
             )
             conc_perm_cob.append(
-                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_2"])
+                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cobalt"])
             )
 
             water_flux.append(value(m.fs.membrane.volume_flux_water[0, x_val]))
             lithium_flux.append(
-                value(m.fs.membrane.molar_ion_flux[0, x_val, "cation_1"])
+                value(m.fs.membrane.molar_ion_flux[0, x_val, "lithium"])
             )
 
             lithium_rejection.append(
                 (
                     1
                     - (
-                        value(
-                            m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_1"]
-                        )
+                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "lithium"])
                         / value(
-                            m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_1"]
+                            m.fs.membrane.retentate_conc_mol_comp[0, x_val, "lithium"]
                         )
                     )
                 )
@@ -227,19 +240,17 @@ def plot_results(m):
             )
             lithium_sieving.append(
                 (
-                    value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_1"])
-                    / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_1"])
+                    value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "lithium"])
+                    / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "lithium"])
                 )
             )
             cobalt_rejection.append(
                 (
                     1
                     - (
-                        value(
-                            m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_2"]
-                        )
+                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cobalt"])
                         / value(
-                            m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_2"]
+                            m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cobalt"]
                         )
                     )
                 )
@@ -247,8 +258,8 @@ def plot_results(m):
             )
             cobalt_sieving.append(
                 (
-                    value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cation_2"])
-                    / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cation_2"])
+                    value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "cobalt"])
+                    / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "cobalt"])
                 )
             )
 
@@ -346,21 +357,19 @@ def plot_membrane_results(m):
             if x_val != 0:
                 conc_mem_lith.append(
                     value(
-                        m.fs.membrane.membrane_conc_mol_comp[
-                            0, x_val, z_val, "cation_1"
-                        ]
+                        m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "lithium"]
                     )
                 )
                 conc_mem_cob.append(
                     value(
-                        m.fs.membrane.membrane_conc_mol_comp[
-                            0, x_val, z_val, "cation_2"
-                        ]
+                        m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "cobalt"]
                     )
                 )
                 conc_mem_chl.append(
                     value(
-                        m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "anion"]
+                        m.fs.membrane.membrane_conc_mol_comp[
+                            0, x_val, z_val, "chloride"
+                        ]
                     )
                 )
 

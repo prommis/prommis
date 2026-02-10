@@ -22,12 +22,14 @@ from prommis.nanofiltration.multi_component_diafiltration_stream_properties impo
 # Test single-salt model
 @pytest.fixture
 def model_single_salt():
-    num_salts = 1
+    cation_list = ["lithium"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(
-        num_salts=num_salts,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -41,14 +43,14 @@ def test_parameters_single_salt(model_single_salt):
 
     for j in model_single_salt.fs.stream_properties.component_list:
         assert j in [
-            "cation_1",
-            "anion",
+            "lithium",
+            "chloride",
         ]
 
 
 @pytest.mark.unit
 def test_build(model_single_salt):
-    assert len(model_single_salt.fs.stream_properties.config) == 2
+    assert len(model_single_salt.fs.stream_properties.config) == 3
 
     model_single_salt.fs.state = (
         model_single_salt.fs.stream_properties.build_state_block(
@@ -75,12 +77,14 @@ def test_build(model_single_salt):
 # Test two-salt model
 @pytest.fixture
 def model_two_salt():
-    num_salts = 2
+    cation_list = ["lithium", "cobalt"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(
-        num_salts=num_salts,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -94,9 +98,9 @@ def test_parameters_two_salt(model_two_salt):
 
     for j in model_two_salt.fs.stream_properties.component_list:
         assert j in [
-            "cation_1",
-            "cation_2",
-            "anion",
+            "lithium",
+            "cobalt",
+            "chloride",
         ]
 
 
@@ -108,12 +112,14 @@ def test_build_two_salt(model_two_salt):
 # Test three-salt model
 @pytest.fixture
 def model_three_salt():
-    num_salts = 3
+    cation_list = ["lithium", "cobalt", "aluminum"]
+    anion_list = ["chloride"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(
-        num_salts=num_salts,
+        cation_list=cation_list,
+        anion_list=anion_list,
     )
 
     return m
@@ -127,10 +133,10 @@ def test_parameters_three_salt(model_three_salt):
 
     for j in model_three_salt.fs.stream_properties.component_list:
         assert j in [
-            "cation_1",
-            "cation_2",
-            "cation_3",
-            "anion",
+            "lithium",
+            "cobalt",
+            "aluminum",
+            "chloride",
         ]
 
 

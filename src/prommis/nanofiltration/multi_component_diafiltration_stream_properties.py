@@ -11,10 +11,9 @@ Author: Molly Dougher
 """
 
 from pyomo.common.config import ConfigValue
-from pyomo.environ import Var, units
+from pyomo.environ import Set, Var, units
 
 from idaes.core import (
-    Component,
     MaterialFlowBasis,
     Phase,
     PhysicalParameterBlock,
@@ -41,27 +40,35 @@ class MultiComponentDiafiltrationStreamParameterData(PhysicalParameterBlock):
     CONFIG = PhysicalParameterBlock.CONFIG()
 
     CONFIG.declare(
-        "num_salts",
+        "cation_list",
         ConfigValue(
-            default=2,
-            doc="Number of salts to be modeled",
+            default=["lithium", "cobalt"],
+            doc="List of cations present in the system",
+        ),
+    )
+    CONFIG.declare(
+        "anion_list",
+        ConfigValue(
+            default=["chloride"],
+            doc="List of anions present in the system",
         ),
     )
 
     def build(self):
         super().build()
 
+        try:
+            assert len(self.config.anion_list) == 1
+        except Exception:
+            print(
+                "The multi-component diafiltration unit model only supports systems with a common anion"
+            )
+
         self.liquid = Phase()
 
-        # add cations
-        self.cation_1 = Component()
-        if self.config.num_salts > 1:
-            self.cation_2 = Component()
-        if self.config.num_salts > 2:
-            self.cation_3 = Component()
-
-        # add anion
-        self.anion = Component()
+        self.component_list = Set(
+            initialize=self.config.cation_list + self.config.anion_list
+        )
 
         self._state_block_class = MultiComponentDiafiltrationStreamStateBlock
 

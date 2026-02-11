@@ -99,9 +99,6 @@ def test_config_single_salt(sample_single_salt_model):
 @pytest.mark.unit
 def test_build_single_salt(sample_single_salt_model):
     # parameters
-    assert isinstance(sample_single_salt_model.fs.unit.numerical_zero_tolerance, Param)
-    assert value(sample_single_salt_model.fs.unit.numerical_zero_tolerance) == 1e-10
-
     assert isinstance(sample_single_salt_model.fs.unit.total_membrane_thickness, Param)
     assert value(sample_single_salt_model.fs.unit.total_membrane_thickness) == 1e-7
 
@@ -592,6 +589,14 @@ class TestDiafiltrationSingleSaltLithium(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_lithium(self, diafiltration_single_salt_lithium):
+        assert isinstance(
+            diafiltration_single_salt_lithium.fs.unit.numerical_zero_tolerance, Param
+        )
+        assert (
+            value(diafiltration_single_salt_lithium.fs.unit.numerical_zero_tolerance)
+            == 1e-10
+        )
+
         test_build_single_salt(diafiltration_single_salt_lithium)
 
     @pytest.mark.component
@@ -719,6 +724,14 @@ class TestDiafiltrationSingleSaltCobalt(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_cobalt(self, diafiltration_single_salt_cobalt):
+        assert isinstance(
+            diafiltration_single_salt_cobalt.fs.unit.numerical_zero_tolerance, Param
+        )
+        assert (
+            value(diafiltration_single_salt_cobalt.fs.unit.numerical_zero_tolerance)
+            == 1e-10
+        )
+
         test_build_single_salt(diafiltration_single_salt_cobalt)
 
     @pytest.mark.component
@@ -844,6 +857,14 @@ class TestDiafiltrationSingleSaltAluminum(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_aluminum(self, diafiltration_single_salt_aluminum):
+        assert isinstance(
+            diafiltration_single_salt_aluminum.fs.unit.numerical_zero_tolerance, Param
+        )
+        assert (
+            value(diafiltration_single_salt_aluminum.fs.unit.numerical_zero_tolerance)
+            == 1e-10
+        )
+
         test_build_single_salt(diafiltration_single_salt_aluminum)
 
     @pytest.mark.component
@@ -972,9 +993,6 @@ def test_config_two_salt(sample_two_salt_model):
 @pytest.mark.unit
 def test_build_two_salt(sample_two_salt_model):
     # parameters
-    assert isinstance(sample_two_salt_model.fs.unit.numerical_zero_tolerance, Param)
-    assert value(sample_two_salt_model.fs.unit.numerical_zero_tolerance) == 1e-10
-
     assert isinstance(sample_two_salt_model.fs.unit.total_membrane_thickness, Param)
     assert value(sample_two_salt_model.fs.unit.total_membrane_thickness) == 1e-7
 
@@ -1425,6 +1443,17 @@ class TestDiafiltrationTwoSaltLithiumCobalt(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_lithium_cobalt(self, diafiltration_two_salt_lithium_cobalt):
+        assert isinstance(
+            diafiltration_two_salt_lithium_cobalt.fs.unit.numerical_zero_tolerance,
+            Param,
+        )
+        assert (
+            value(
+                diafiltration_two_salt_lithium_cobalt.fs.unit.numerical_zero_tolerance
+            )
+            == 1e-10
+        )
+
         test_build_two_salt(diafiltration_two_salt_lithium_cobalt)
 
     @pytest.mark.component
@@ -1545,6 +1574,9 @@ def diafiltration_two_salt_lithium_aluminum():
         NFE_membrane_thickness=5,
     )
 
+    # reduce numerical tolerance
+    m.fs.unit.numerical_zero_tolerance.set_value(1e-8)
+
     assert value(m.fs.unit.membrane_fixed_charge) == -44
 
     assert degrees_of_freedom(m.fs.unit) == 9
@@ -1571,6 +1603,17 @@ class TestDiafiltrationTwoSaltLithiumAluminum(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_lithium_aluminum(self, diafiltration_two_salt_lithium_aluminum):
+        assert isinstance(
+            diafiltration_two_salt_lithium_aluminum.fs.unit.numerical_zero_tolerance,
+            Param,
+        )
+        assert (
+            value(
+                diafiltration_two_salt_lithium_aluminum.fs.unit.numerical_zero_tolerance
+            )
+            == 1e-8
+        )
+
         test_build_two_salt(diafiltration_two_salt_lithium_aluminum)
 
     @pytest.mark.component
@@ -1719,6 +1762,17 @@ class TestDiafiltrationTwoSaltCobaltAluminum(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_cobalt_aluminum(self, diafiltration_two_salt_cobalt_aluminum):
+        assert isinstance(
+            diafiltration_two_salt_cobalt_aluminum.fs.unit.numerical_zero_tolerance,
+            Param,
+        )
+        assert (
+            value(
+                diafiltration_two_salt_cobalt_aluminum.fs.unit.numerical_zero_tolerance
+            )
+            == 1e-10
+        )
+
         test_build_two_salt(diafiltration_two_salt_cobalt_aluminum)
 
     @pytest.mark.component
@@ -1865,9 +1919,6 @@ def test_config_three_salt(sample_three_salt_model):
 @pytest.mark.unit
 def test_build_three_salt(sample_three_salt_model):
     # parameters
-    assert isinstance(sample_three_salt_model.fs.unit.numerical_zero_tolerance, Param)
-    assert value(sample_three_salt_model.fs.unit.numerical_zero_tolerance) == 1e-10
-
     assert isinstance(sample_three_salt_model.fs.unit.total_membrane_thickness, Param)
     assert value(sample_three_salt_model.fs.unit.total_membrane_thickness) == 1e-7
 
@@ -2214,6 +2265,95 @@ def test_build_three_salt(sample_three_salt_model):
                         t, x, z, "chloride"
                     ].active
 
+    # scaling factors
+    assert (
+        sample_three_salt_model.fs.unit.scaling_factor[
+            sample_three_salt_model.fs.unit.volume_flux_water
+        ]
+        == 1e2
+    )
+    assert (
+        sample_three_salt_model.fs.unit.scaling_factor[
+            sample_three_salt_model.fs.unit.membrane_D_tilde
+        ]
+        == 1e-1
+    )
+    assert (
+        sample_three_salt_model.fs.unit.scaling_factor[
+            sample_three_salt_model.fs.unit.membrane_cross_diffusion_coefficient_bilinear
+        ]
+        == 1e-2
+    )
+    assert (
+        sample_three_salt_model.fs.unit.scaling_factor[
+            sample_three_salt_model.fs.unit.membrane_convection_coefficient_bilinear
+        ]
+        == 1e-1
+    )
+    assert (
+        sample_three_salt_model.fs.unit.scaling_factor[
+            sample_three_salt_model.fs.unit.membrane_cross_diffusion_coefficient
+        ]
+        == 1e1
+    )
+    assert (
+        sample_three_salt_model.fs.unit.scaling_factor[
+            sample_three_salt_model.fs.unit.membrane_convection_coefficient
+        ]
+        == 1e1
+    )
+    for t in sample_three_salt_model.fs.unit.time:
+        for x in sample_three_salt_model.fs.unit.dimensionless_module_length:
+            if x != 0:
+                assert (
+                    sample_three_salt_model.fs.unit.scaling_factor[
+                        sample_three_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface[
+                            t, x, sample_three_salt_model.fs.unit.cations[3]
+                        ]
+                    ]
+                    == 1e-5
+                )
+                assert (
+                    sample_three_salt_model.fs.unit.scaling_factor[
+                        sample_three_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface[
+                            t, x, sample_three_salt_model.fs.unit.cations[2]
+                        ]
+                    ]
+                    == 1e-5
+                )
+                assert (
+                    sample_three_salt_model.fs.unit.scaling_factor[
+                        sample_three_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface[
+                            t, x, sample_three_salt_model.fs.unit.cations[1]
+                        ]
+                    ]
+                    == 1e-3
+                )
+                assert (
+                    sample_three_salt_model.fs.unit.scaling_factor[
+                        sample_three_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface[
+                            t, x, sample_three_salt_model.fs.unit.cations[3]
+                        ]
+                    ]
+                    == 1e-5
+                )
+                assert (
+                    sample_three_salt_model.fs.unit.scaling_factor[
+                        sample_three_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface[
+                            t, x, sample_three_salt_model.fs.unit.cations[2]
+                        ]
+                    ]
+                    == 1e-5
+                )
+                assert (
+                    sample_three_salt_model.fs.unit.scaling_factor[
+                        sample_three_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface[
+                            t, x, sample_three_salt_model.fs.unit.cations[1]
+                        ]
+                    ]
+                    == 1e-3
+                )
+
     # ports
     assert isinstance(sample_three_salt_model.fs.unit.feed_inlet, Port)
     assert len(sample_three_salt_model.fs.unit.feed_inlet.flow_vol) == 1
@@ -2294,63 +2434,18 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminum(object):
     def test_build_lithium_cobalt_aluminum(
         self, diafiltration_three_salt_lithium_cobalt_aluminum
     ):
+        assert isinstance(
+            diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.numerical_zero_tolerance,
+            Param,
+        )
+        assert (
+            value(
+                diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.numerical_zero_tolerance
+            )
+            == 1e-10
+        )
+
         test_build_three_salt(diafiltration_three_salt_lithium_cobalt_aluminum)
-        # scaling factors
-        for t in diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.time:
-            for (
-                x
-            ) in (
-                diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.dimensionless_module_length
-            ):
-                if x != 0:
-                    assert (
-                        diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.scaling_factor[
-                            diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                                t, x, "aluminum"
-                            ]
-                        ]
-                        == 1e-5
-                    )
-                    assert (
-                        diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.scaling_factor[
-                            diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                                t, x, "cobalt"
-                            ]
-                        ]
-                        == 1e-5
-                    )
-                    assert (
-                        diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.scaling_factor[
-                            diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                                t, x, "lithium"
-                            ]
-                        ]
-                        == 1e-3
-                    )
-                    assert (
-                        diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.scaling_factor[
-                            diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                                t, x, "aluminum"
-                            ]
-                        ]
-                        == 1e-5
-                    )
-                    assert (
-                        diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.scaling_factor[
-                            diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                                t, x, "cobalt"
-                            ]
-                        ]
-                        == 1e-5
-                    )
-                    assert (
-                        diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.scaling_factor[
-                            diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                                t, x, "lithium"
-                            ]
-                        ]
-                        == 1e-3
-                    )
 
     @pytest.mark.component
     def test_diagnostics_lithium_cobalt_aluminum(
@@ -2388,7 +2483,7 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminum(object):
                         0, 1, "cobalt"
                     ]
                 ),
-                244.68,
+                224.68,
             ],
             "aluminum_retentate_final": [
                 value(

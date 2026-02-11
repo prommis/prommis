@@ -63,9 +63,6 @@ def main():
         anion_list=anion_list,
     )
 
-    # update parameter inputs if desired
-    build_membrane_parameters(m)
-
     # add feed blocks for feed and diafiltrate
     m.fs.feed_block = Feed(property_package=m.fs.stream_properties)
     m.fs.diafiltrate_block = Feed(property_package=m.fs.stream_properties)
@@ -80,6 +77,9 @@ def main():
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
+
+    # update parameter inputs if desired
+    build_membrane_parameters(m)
 
     # add product blocks for retentate and permeate
     m.fs.retentate_block = Product(property_package=m.fs.stream_properties)

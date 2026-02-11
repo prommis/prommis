@@ -501,12 +501,8 @@ and used when constructing these,
 
         def initialize_retentate_conc_mol_comp(m, t, w, j):
             vals = self.config.inlet_concentration["feed"]
-            for i in range(len(self.config.cation_list)):
-                vals[self.config.cation_list[i]] = (
-                    vals[self.config.cation_list[i]] * 0.95
-                )
-            vals[self.config.anion_list[0]] = vals[self.config.anion_list[0]] * 0.95
-            return vals[j]
+            reduced_vals = {key: value * 0.95 for key, value in vals.items()}
+            return reduced_vals[j]
 
         self.retentate_conc_mol_comp = Var(
             self.time,
@@ -528,12 +524,8 @@ and used when constructing these,
 
         def initialize_permeate_conc_mol_comp(m, t, w, j):
             vals = self.config.inlet_concentration["feed"]
-            for i in range(len(self.config.cation_list)):
-                vals[self.config.cation_list[i]] = (
-                    vals[self.config.cation_list[i]] * 0.95
-                )
-            vals[self.config.anion_list[0]] = vals[self.config.anion_list[0]] * 0.95
-            return vals[j]
+            reduced_vals = {key: value * 0.95 for key, value in vals.items()}
+            return reduced_vals[j]
 
         self.permeate_conc_mol_comp = Var(
             self.time,
@@ -556,12 +548,8 @@ and used when constructing these,
         # add variables dependent on dimensionless_module_length and dimensionless_membrane_thickness
         def initialize_membrane_conc_mol_comp(m, t, w, l, j):
             vals = self.config.inlet_concentration["feed"]
-            for k in range(len(self.config.cation_list)):
-                if k != 0:
-                    vals[self.config.cation_list[k]] = (
-                        vals[self.config.cation_list[k]] * 0.1
-                    )
-            return vals[j]
+            reduced_vals = {key: value * 0.1 for key, value in vals.items()}
+            return reduced_vals[j]
 
         self.membrane_conc_mol_comp = Var(
             self.time,
@@ -590,12 +578,6 @@ and used when constructing these,
                 }
                 for k in range(len(self.config.cation_list))
             }
-            for p in range(len(self.config.cation_list)):
-                if p != 0:
-                    vals[self.config.cation_list[p]][self.config.cation_list[0]] = (
-                        vals[self.config.cation_list[p]][self.config.cation_list[0]]
-                        / 10
-                    )
             return vals[j][k]
 
         self.membrane_cross_diffusion_coefficient_bilinear = Var(
@@ -635,12 +617,6 @@ and used when constructing these,
                 }
                 for k in range(len(self.config.cation_list))
             }
-            for p in range(len(self.config.cation_list)):
-                if p != 0:
-                    vals[self.config.cation_list[p]][self.config.cation_list[0]] = (
-                        vals[self.config.cation_list[p]][self.config.cation_list[0]]
-                        / 10
-                    )
             return vals[j][k]
 
         self.membrane_cross_diffusion_coefficient = Var(
@@ -1335,16 +1311,14 @@ and used when constructing these,
         """
         self.scaling_factor = Suffix(direction=Suffix.EXPORT)
 
-        if len(self.config.cation_list) <= 2:
-            self.scaling_factor[self.volume_flux_water] = 1e2
-            self.scaling_factor[self.membrane_D_tilde] = 1e-1
-            self.scaling_factor[self.membrane_cross_diffusion_coefficient_bilinear] = (
-                1e-2
-            )
-            self.scaling_factor[self.membrane_convection_coefficient_bilinear] = 1e-1
-            self.scaling_factor[self.membrane_cross_diffusion_coefficient] = 1e1
-            self.scaling_factor[self.membrane_convection_coefficient] = 1e1
-        else:
+        self.scaling_factor[self.volume_flux_water] = 1e2
+        self.scaling_factor[self.membrane_D_tilde] = 1e-1
+        self.scaling_factor[self.membrane_cross_diffusion_coefficient_bilinear] = 1e-2
+        self.scaling_factor[self.membrane_convection_coefficient_bilinear] = 1e-1
+        self.scaling_factor[self.membrane_cross_diffusion_coefficient] = 1e1
+        self.scaling_factor[self.membrane_convection_coefficient] = 1e1
+
+        if len(self.config.cation_list) >= 2:
             for t in self.time:
                 for x in self.dimensionless_module_length:
                     if x != 0:

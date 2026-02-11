@@ -5,39 +5,56 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 r"""
-Two-Salt Diafiltration Unit Model
-=================================
+Multi-Component Diafiltration Unit Model
+========================================
 
 Author: Molly Dougher
 
-This membrane unit model is for the multi-component diafiltration of a two-salt system with a common anion. The membrane is designed for use in a diafiltration cascade, i.e., the model represents one spiral-wound membrane module.
+This membrane unit model is for the multi-component diafiltration of a multi-salt system with a common anion. Currently, the model and property packages support one, two, and three salt systems; however, the model can be extended to :math:`n` salts by supplying the appropriate properties and arguments (see below). The membrane is designed for use in a diafiltration cascade, i.e., the model represents one spiral-wound membrane module piece within a cascade of several membranes.
 
 Configuration Arguments
 -----------------------
 
-The Two-Salt Diafiltration unit model requires a property package that provides the valency (:math:`z_i`), single solute diffusion coefficient (:math:`D_i`) in :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1}`, reflection coefficient (:math:`\sigma_i`), partition coefficients (:math:`H_{i,r}` and :math:`H_{i,p}`) at the retentate-membrane and membrane-permeate interfaces, and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams.
+The Multi-Component Diafiltration unit model requires a property package that provides the valency (:math:`z_i`), infinite dilution diffusion coefficient (:math:`D_i`) in :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1}`, thermodynamic reflection coefficient (:math:`\sigma_i`), partition coefficients (:math:`H_{i,r}` and :math:`H_{i,p}`) at the retentate-membrane and membrane-permeate interfaces, and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams.
 
-There are two required arguments, ``NFE_module_length`` and ``NFE_membrane_thickness``, to specify the desired number of finite elements across the width (module length) and thickness of the membrane, respectively.
+There are six required arguments:
+
+#. ``cation_list`` (list of cations present in the system)
+
+    ``default=["lithium", "cobalt"]``
+
+#. ``anion_list`` (list of anions present in the system)
+
+    ``default=["chloride"]``
+
+#. ``inlet_flow_volume`` (dictionary of feed and diafiltrate flow rate information)
+
+    ``default={"feed": 12.5, "diafiltrate": 3.75}``
+
+#. ``inlet_concentration`` (dictionary of feed and diafiltrate concentration information)
+
+    ``default={"feed": {"lithium": 245, "cobalt": 288, "chloride": 822}, "diafiltrate": {"lithium": 14, "cobalt": 3, "chloride": 21}}``
+
+#. ``NFE_module_length`` (the desired number of finite elements across the width of the membrane (i.e., the module length))
+#. ``NFE_membrane_thickness`` (the desired number of finite elements across the thickness of the membrane)
 
 Degrees of Freedom
 ------------------
 
-The Two-Salt Diafiltration unit model has nine degrees of freedom (variable names and default values are provided in parentheses):
+The Multi-Component Diafiltration unit model has :math:`5+2n` degrees of freedom, where :math:`n` is the number of cations in the system:
 
-#. the length of the membrane module (``total_module_length``; :math:`4 \, \mathrm{m}`)
-#. the length of the membrane (``total_membrane_length``; :math:`41 \, \mathrm{m}`)
-#. the pressure applied to the membrane system (``applied_pressure``; :math:`10 \, \mathrm{bar}`)
-#. the volumetric flow rate of the feed (``feed_flow_volume``; :math:`12.5 \, \mathrm{m}^3 \, \mathrm{h}^{-1}`)
-#. the lithium concentration in the feed (``feed_conc_mol_comp[t,"Li"]``; :math:`245 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
-#. the cobalt concentration in the feed (``feed_conc_mol_comp[t,"Co"]``; :math:`288 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
-#. the volumetric flow rate of the diafiltrate (``diafiltrate_flow_volume``; :math:`3.75 \, \mathrm{m}^3 \, \mathrm{h}^{-1}`)
-#. the lithium concentration in the diafiltrate (``diafiltrate_conc_mol_comp[t,"Li"]``; :math:`14 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
-#. the cobalt concentration in the diafiltrate (``diafiltrate_conc_mol_comp[t,"Co"]``; :math:`3 \, \mathrm{mol} \, \mathrm{m}^{-3}`)
+#. the length of the membrane module (``total_module_length``)
+#. the length of the membrane (``total_membrane_length``)
+#. the pressure applied to the membrane system (``applied_pressure``)
+#. the volumetric flow rate of the feed (``feed_flow_volume``)
+#. the cation concentration in the feed (``feed_conc_mol_comp[t,k]``)
+#. the volumetric flow rate of the diafiltrate (``diafiltrate_flow_volume``)
+#. the cation concentration in the diafiltrate (``diafiltrate_conc_mol_comp[t,k]``)
 
 Model Structure
 ---------------
 
-There are three phases in the Two-Salt Diafiltration model: the retentate, the membrane, and the permeate. The retentate and the permeate are only discretized with respect to :math:`x` (parallel to the membrane surface), while the membrane is discretized with respect to both :math:`x` and :math:`z` (perpendicular to the membrane surface). The resulting system of partial differential algebraic equations is solved by discretizing with the backward finite difference method.
+There are three phases in the Multi-Component Diafiltration model: the retentate, the membrane, and the permeate. The retentate and the permeate are only discretized with respect to :math:`x` (parallel to the membrane surface), while the membrane is discretized with respect to both :math:`x` and :math:`z` (perpendicular to the membrane surface). The resulting system of partial differential algebraic equations is solved by discretizing with the backward finite difference method.
 
 Assumptions
 -----------
@@ -46,7 +63,7 @@ The membrane module dimensions, maximum applied pressure, and inlet flow rates a
 
 The partitioning relationships, which describe how the solutes transition (partition) across the solution-membrane interfaces, are derived assuming Donnan equilibrium. The partitioning coefficients incorporate both steric and Donnan effects.
 
-The default value for the membrane's surface charge (:math:`-140 \, \mathrm{mM}`), was calculated using zeta potential measurements for NF270 membranes. (See `this reference <https://doi.org/10.1021/acs.iecr.4c04763>`_). Currently, the default property package only supports negatively charged membranes.
+The default value for the membrane's surface charge (:math:`-44 \, \mathrm{mM}`), was calculated using zeta potential measurements for NF270 membranes. (See `this reference <https://doi.org/10.1021/acs.iecr.4c04763>`_). Currently, the default property package only supports negatively charged membranes.
 
 The membrane is assumed to be :math:`100 \, \mathrm{nm}` thick.
 
@@ -61,12 +78,14 @@ The transport mechanisms modeled within the membrane are convection, diffusion, 
 Sets
 ----
 
-The Two-Salt Diafiltration model defines the following discrete sets for solutes and cations in the system, respectively:
+The Multi-Component Diafiltration model defines the following discrete sets for solutes and cations in the system, respectively:
 
-.. math:: \mathcal{I}=\{\mathrm{Li,Co,Cl}\}
-.. math:: \mathcal{K}=\{\mathrm{Li,Co}\}
+.. math:: \mathcal{I}=\{\mathrm{cation_1, cation_2, ..., cation_n, anion}\}
+.. math:: \mathcal{K}=\{\mathrm{cation_1, cation_2, ..., cation_n}\}
 
-There are 2 continuous sets for each length dimension: ``dimensionless_module_length`` (in the :math:`x`-direction parallel to the membrane surface) and ``dimensionless_membrane_thickness`` (in the :math:`z`-direction perpendicular to the membrane surface). :math:`x` and :math:`z` are non-dimensionalized (denoted as :math:`\bar{x}` and :math:`\bar{z}`, respectively) using the module length or (:math:`w`) and membrane thickness (:math:`l`), respectively, to improve numerics.
+where :math:`n` is the desired number of cations.
+
+There are 2 continuous sets for each length dimension: ``dimensionless_module_length`` (in the :math:`x`-direction parallel to the membrane surface) and ``dimensionless_membrane_thickness`` (in the :math:`z`-direction perpendicular to the membrane surface). :math:`x` and :math:`z` are non-dimensionalized (denoted as :math:`\bar{x}` and :math:`\bar{z}`, respectively) using the module length (:math:`w`) and membrane thickness (:math:`l`), respectively, to improve numerical stability.
 
 .. math:: \bar{x} \in \mathbb{R} \| 0 \leq \bar{x} \leq 1
 .. math:: \bar{z} \in \mathbb{R} \| 0 \leq \bar{z} \leq 1
@@ -78,7 +97,7 @@ Some variables have a time domain to be compatible with the property package, ev
 Default Model Parameters
 ------------------------
 
-The Two-Salt Diafiltration model has the following parameters.
+The Multi-Component Diafiltration model has the following parameters.
 
 ================ =============================================== ============================ ============= ==========================================================
 Parameter        Description                                     Name                         Default Value Units
@@ -93,21 +112,21 @@ Parameter        Description                                     Name           
 Variables
 ---------
 
-The Two-Salt Diafiltration model adds the following variables.
+The Multi-Component Diafiltration model adds the following variables.
 
-=========================== ============================================================== ================================================= =========================================================================== =================================================================================================
+=========================== ============================================================== ================================================= =========================================================================== =====================================================================================================
 Variable                    Description                                                    Name                                              Units                                                                       Indexed over
-=========================== ============================================================== ================================================= =========================================================================== =================================================================================================
+=========================== ============================================================== ================================================= =========================================================================== =====================================================================================================
 :math:`c_{i,d}`             ion concentration in the diafiltrate                           ``diafiltrate_conc_mol_comp``                     :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t` and :math:`i \in \mathcal{I}`
 :math:`c_{i,f}`             ion concentration in the feed                                  ``feed_conc_mol_comp``                            :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t` and :math:`i \in \mathcal{I}`
-:math:`c_{i,m}`             ion concentration in the membrane                              ``membrane_conc_mol_comp``                        :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t`, math:`\bar{x}`, :math:`\bar{z}`, amd :math:`i \in \mathcal{I}`
+:math:`c_{i,m}`             ion concentration in the membrane                              ``membrane_conc_mol_comp``                        :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t`, :math:`\bar{x}`, :math:`\bar{z}`, amd :math:`i \in \mathcal{I}`
 :math:`c_{i,p}`             ion concentration in the permeate                              ``permeate_conc_mol_comp``                        :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t`, :math:`\bar{x}`, amd :math:`i \in \mathcal{I}`
 :math:`c_{i,r}`             ion concentration in the retentate                             ``retentate_conc_mol_comp``                       :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t`, :math:`\bar{x}`, amd :math:`i \in \mathcal{I}`
 :math:`\tilde{D}`           diffusion & convection coefficient denominator in the membrane ``membrane_D_tilde``                              :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1} \, \mathrm{mol} \, \mathrm{m}^{-3}` :math:`t`, :math:`\bar{x}`, and :math:`\bar{z}`
-:math:`D_{i,j}^{bilinear}`  bilinear cross-diffusion coefficient in the membrane           ``membrane_cross_diffusion_coefficient_bilinear`` :math:`\mathrm{mm}^4 \, \mathrm{h}^{-2} \, \mathrm{mol} \, \mathrm{m}^{-3}` :math:`t`, :math:`\bar{x}`, :math:`\bar{z}`, :math:`i \in \mathcal{I}`, :math:`j \in \mathcal{I}`
-:math:`\alpha_i^{bilinear}` bilinear convection coefficient in the membrane                ``membrane_convection_coefficient_bilinear``      :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1} \, \mathrm{mol} \, \mathrm{m}^{-3}` :math:`t`, :math:`\bar{x}`, :math:`\bar{z}`, and :math:`i \in \mathcal{I}`
-:math:`D_{i,j}`             cross-diffusion coefficient in the membrane                    ``membrane_cross_diffusion_coefficient``          :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1}`                                    :math:`t`, :math:`\bar{x}`, :math:`\bar{z}`, :math:`i \in \mathcal{I}`, :math:`j \in \mathcal{I}`
-:math:`\alpha_i`            convection coefficient in the membrane                         ``membrnane_convection_coefficient``              :math:`\mathrm{dimensionless}`                                              :math:`t`, :math:`\bar{x}` and :math:`\bar{z}`
+:math:`D_{kj}^{bilinear}`   bilinear cross-diffusion coefficient in the membrane           ``membrane_cross_diffusion_coefficient_bilinear`` :math:`\mathrm{mm}^4 \, \mathrm{h}^{-2} \, \mathrm{mol} \, \mathrm{m}^{-3}` :math:`t`, :math:`\bar{x}`, :math:`\bar{z}`, :math:`k \in \mathcal{K}`, and :math:`j \in \mathcal{K}`
+:math:`\alpha_k^{bilinear}` bilinear convection coefficient in the membrane                ``membrane_convection_coefficient_bilinear``      :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1} \, \mathrm{mol} \, \mathrm{m}^{-3}` :math:`t`, :math:`\bar{x}`, :math:`\bar{z}`, and :math:`k \in \mathcal{K}`
+:math:`D_{kj}`              cross-diffusion coefficient in the membrane                    ``membrane_cross_diffusion_coefficient``          :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1}`                                    :math:`t`, :math:`\bar{x}`, :math:`\bar{z}`, :math:`k \in \mathcal{K}`, and :math:`j \in \mathcal{K}`
+:math:`\alpha_k`            convection coefficient in the membrane                         ``membrnane_convection_coefficient``              :math:`\mathrm{dimensionless}`                                              :math:`t`, :math:`\bar{x}`, :math:`\bar{z}`, and :math:`k \in \mathcal{K}`
 :math:`j_i`                 molar flux of ions across the membrane                         ``molar_ion_flux``                                :math:`\mathrm{mol} \, \mathrm{m}^{-2} \, \mathrm{h}^{-1}`                  :math:`t`, :math:`\bar{x}`, amd :math:`i \in \mathcal{I}`
 :math:`J_w`                 water flux across the membrane                                 ``volume_flux_water``                             :math:`\mathrm{m}^3 \, \mathrm{m}^{-2} \, \mathrm{h}^{-1}`                  :math:`t` and :math:`\bar{x}`
 :math:`L`                   length of the membrane                                         ``total_membrane_length``                         :math:`\mathrm{m}`
@@ -118,12 +137,12 @@ Variable                    Description                                         
 :math:`q_p`                 volumetric flow rate of the permeate                           ``permeate_flow_volume``                          :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                                     :math:`t` and :math:`\bar{x}`
 :math:`q_r`                 volumetric flow rate of the retentate                          ``retentate_flow_volume``                         :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                                     :math:`t` and :math:`\bar{x}`
 :math:`w`                   length of the membrane module                                  ``total_module_length``                           :math:`\mathrm{m}`
-=========================== ============================================================== ================================================= =========================================================================== =================================================================================================
+=========================== ============================================================== ================================================= =========================================================================== =====================================================================================================
 
 Derivative Variables
 --------------------
 
-The Two-Salt Diafiltration model adds the following derivative variables.
+The Multi-Component Diafiltration model adds the following derivative variables.
 
 =================================================== =========================================== ================================= ======================================= ==========================================================================
 Variable                                            Description                                 Name                              Units                                   Indexed over
@@ -136,91 +155,89 @@ Variable                                            Description                 
 Constraints
 -----------
 
-Differential mole balances:
+**Differential mole balances:**
 
-.. math:: \frac{\mathrm{d}q_r(\bar{x})}{\mathrm{d}\bar{x}} = - J_w(\bar{x}) wL  \qquad \forall \, \bar{x} \neq 0
-.. math:: q_r(\bar{x}) \frac{\mathrm{d}c_{\mathrm{Li},r}(\bar{x})}{\mathrm{d}\bar{x}} = wL (J_w(\bar{x}) c_{\mathrm{Li},r}(\bar{x}) - j_{\mathrm{Li}}(\bar{x}))  \qquad \forall \, \bar{x} \neq 0
-.. math:: q_r(\bar{x}) \frac{\mathrm{d}c_{\mathrm{Co},r}(\bar{x})}{\mathrm{d}\bar{x}} = wL (J_w(\bar{x}) c_{\mathrm{Co},r}(\bar{x}) - j_{\mathrm{Co}}(\bar{x}))  \qquad \forall \, \bar{x} \neq 0
+.. math:: \frac{\mathrm{d}q_r(\bar{x})}{\mathrm{d}\bar{x}} = - J_w(\bar{x}) wL  \qquad \forall \, \bar{x} \in (0, 1]
+.. math:: q_r(\bar{x}) \frac{\mathrm{d}c_{k,r}(\bar{x})}{\mathrm{d}\bar{x}} = wL (J_w(\bar{x}) c_{k,r}(\bar{x}) - j_{k}(\bar{x}))  \qquad \forall \, \bar{x} \in (0, 1], \, k \in \mathcal{K}
 
-Bulk flux balances:
+**Bulk flux balances:**
 
-.. math:: q_p(\bar{x}) = \bar{x} wL J_w(\bar{x}) \qquad \forall \, \bar{x} \neq 0
-.. math:: j_{\mathrm{Li}}(\bar{x}) = c_{\mathrm{Li},p}(\bar{x}) J_w(\bar{x}) \qquad \forall \, \bar{x} \neq 0
-.. math:: j_{\mathrm{Co}}(\bar{x}) = c_{\mathrm{Co},p}(\bar{x}) J_w(\bar{x}) \qquad \forall \, \bar{x} \neq 0
+.. math:: q_p(\bar{x}) = \bar{x} wL J_w(\bar{x}) \qquad \forall \, \bar{x} \in (0, 1]
+.. math:: j_{k}(\bar{x}) = c_{k,p}(\bar{x}) J_w(\bar{x}) \qquad \forall \, \bar{x} \in (0, 1], \, k \in \mathcal{K}
 
-Overall water flux through the membrane:
+**Overall water flux through the membrane:**
 
-.. math:: J_w (\bar{x}) = L_p (\Delta P - \Delta \pi (\bar{x})) \qquad \forall \, \bar{x} \neq 0
-.. math:: \Delta \pi (\bar{x}) = \mathrm{R} \mathrm{T} \sum_{i \in \mathcal{I}} n_i \sigma_i (c_{i,r}(\bar{x})-c_{i,p}(\bar{x})) \qquad \forall \, \bar{x} \neq 0
+.. math:: J_w (\bar{x}) = L_p (\Delta P - \Delta \pi (\bar{x})) \qquad \forall \, \bar{x} \in (0, 1]
+.. math:: \Delta \pi (\bar{x}) = \mathrm{R} \mathrm{T} \sum_{i \in \mathcal{I}} n_i \sigma_i (c_{i,r}(\bar{x})-c_{i,p}(\bar{x})) \qquad \forall \, \bar{x} \in (0, 1]
 
-Solute flux through the membrane (extended Nernst-Planck equation):
+**Cation flux through the membrane:**
 
-.. math:: j_{\mathrm{Li}}(\bar{x}) = \alpha_{Li}(\bar{x},\bar{z}) c_{\mathrm{Li},m}(\bar{x},\bar{z}) J_w(\bar{x}) + \frac{D_{\mathrm{Li,Li}}(\bar{x},\bar{z})}{l} \frac{\partial c_{\mathrm{Li},m}(\bar{x},\bar{z})}{\partial \bar{z}} + \frac{D_{\mathrm{Li,Co}}(\bar{x},\bar{z})}{l} \frac{\partial c_{\mathrm{Co},m}(\bar{x},\bar{z})}{\partial \bar{z}} \qquad \forall \, \bar{z} \neq 0
-.. math:: j_{\mathrm{Co}}(\bar{x}) = \alpha_{Co}(\bar{x},\bar{z}) c_{\mathrm{Co},m}(\bar{x},\bar{z}) J_w(\bar{x}) + \frac{D_{\mathrm{Co,Li}}(\bar{x},\bar{z})}{l} \frac{\partial c_{\mathrm{Li},m}(\bar{x},\bar{z})}{\partial \bar{z}} + \frac{D_{\mathrm{Co,Co}}(\bar{x},\bar{z})}{l} \frac{\partial c_{\mathrm{Co},m}(\bar{x},\bar{z})}{\partial \bar{z}} \qquad \forall \, \bar{z} \neq 0
+*Derived from the extended Nernst-Planck equation*
 
-Note that the single solute diffusion coefficients are provided in :math:`\mathrm{mm}^2\ \, \mathrm{h}^{-1}` to improve numerical stability, but the diffusion coefficients in the Nernst-Planck equations must be converted to :math:`\mathrm{m}^2\ \, \mathrm{h}^{-1}`. The convection and cross-diffusion coefficients are defined as:
+.. math:: j_k(\bar{x}) = \alpha_k(\bar{x},\bar{z}) c_{k,m}(\bar{x},\bar{z}) J_w(\bar{x}) + \frac{1}{l} \sum_{j \in \mathcal{K}} \left(D_{kj} (\hat{x},\hat{z}) \nabla c_{j,m} (\hat{x},\hat{z}) \right) \qquad \forall \, \bar{x} \in (0, 1], \, k \in \mathcal{K}
 
-.. math:: \tilde{D}(\bar{x},\bar{z}) = z_{\mathrm{Li}}(z_{\mathrm{Li}} D_{\mathrm{Li}} - z_{\mathrm{Cl}} D_{\mathrm{Cl}})c_{\mathrm{Li},m}(\bar{x},\bar{z}) + z_{\mathrm{Co}}(z_{\mathrm{Co}} D_{\mathrm{Co}} - z_{\mathrm{Cl}} D_{\mathrm{Cl}})c_{\mathrm{Co},m}(\bar{x},\bar{z}) - z_{\mathrm{Cl}} D_{\mathrm{Cl}} \chi \qquad \forall \, \bar{x} \neq 0
-.. math:: \alpha_{\mathrm{Li}}(\bar{x},\bar{z}) = 1 + \frac{z_{\mathrm{Li}} D_{\mathrm{Li}} \chi}{\tilde{D}(\bar{x},\bar{z})} \qquad \forall \, \bar{x} \neq 0
-.. math:: \alpha_{\mathrm{Co}}(\bar{x},\bar{z}) = 1 + \frac{z_{\mathrm{Co}} D_{\mathrm{Co}} \chi}{\tilde{D}(\bar{x},\bar{z})} \qquad \forall \, \bar{x} \neq 0
-.. math:: D_{\mathrm{Li,Li}}(\bar{x},\bar{z}) = \frac{z_{\mathrm{Li}} D_{\mathrm{Li}} D_{\mathrm{Cl}}(z_{\mathrm{Cl}} - z_{\mathrm{Li}})c_{\mathrm{Li},m}(\bar{x},\bar{z}) + z_{\mathrm{Co}} D_{\mathrm{Li}}(z_{\mathrm{Cl}} D_{\mathrm{Cl}} - z_{\mathrm{Co}} D_{\mathrm{Co}})c_{\mathrm{Co},m}(\bar{x},\bar{z}) + z_{\mathrm{Cl}} D_{\mathrm{Li}} D_{\mathrm{Cl}} \chi}{\tilde{D}(\bar{x},\bar{z})} \qquad \forall \, \bar{x} \neq 0
-.. math:: D_{\mathrm{Li,Co}}(\bar{x},\bar{z}) = \frac{z_{\mathrm{Li}} z_{\mathrm{Co}} D_{\mathrm{Li}}(D_{\mathrm{Co}} - D_{\mathrm{Cl}})c_{\mathrm{Li},m}(\bar{x},\bar{z})}{\tilde{D}(\bar{x},\bar{z})} \qquad \forall \, \bar{x} \neq 0
-.. math:: D_{\mathrm{Co,Li}}(\bar{x},\bar{z}) = \frac{z_{\mathrm{Li}} z_{\mathrm{Co}} D_{\mathrm{Co}}(D_{\mathrm{Li}} - D_{\mathrm{Cl}})c_{\mathrm{Co},m}(\bar{x},\bar{z})}{\tilde{D}(\bar{x},\bar{z})} \qquad \forall \, \bar{x} \neq 0
-.. math:: D_{\mathrm{Co,Co}}(\bar{x},\bar{z}) = \frac{z_{\mathrm{Li}} D_{\mathrm{Co}} (z_{\mathrm{Cl}} D_{\mathrm{Cl}} - z_{\mathrm{Li}} D_{\mathrm{Li}})c_{\mathrm{Li},m}(\bar{x},\bar{z}) + z_{\mathrm{Co}} D_{\mathrm{Co}} D_{\mathrm{Cl}} (z_{\mathrm{Cl}} - z_{\mathrm{Co}})c_{\mathrm{Co},m}(\bar{x},\bar{z}) + z_{\mathrm{Cl}} D_{\mathrm{Co}} D_{\mathrm{Cl}} \chi}{\tilde{D}(\bar{x},\bar{z})} \qquad \forall \, \bar{x} \neq 0
+where
+
+.. math:: \alpha_k(\bar{x},\bar{z}) = 1 + \dfrac{z_k D_k \chi}{\tilde{D} (\hat{x},\hat{z})}
+.. math:: 
+    D_{kj}(\bar{x},\bar{z}) = 
+    \begin{cases}
+        \dfrac{(z_k z_j D_k D_j - z_k z_j D_k D_a)c_{k,m} (\hat{x},\hat{z})}{\tilde{D} (\hat{x},\hat{z})},& \text{if } k \neq j \\
+        \dfrac{\sum_{t \in \mathcal{C}} \left((z_t z_a D_k D_a - \beta_{kt})c_{t,m} (\hat{x},\hat{z}) \right) + z_a D_k D_a \chi}{\tilde{D} (\hat{x},\hat{z})} ,& \text{if } k=j \\
+    \end{cases}
+.. math::
+    \beta_{kt} = 
+    \begin{cases}
+        z_t^2 D_t D_k ,& \text{if } k\neq t \\
+        z_t^2 D_t D_a ,& \text{if } k=t \\
+    \end{cases}
+.. math:: \tilde{D} (\hat{x},\hat{z}) = \sum_{j \in \mathcal{K}} \left((z_j^2 D_j - z_j z_a D_a)c_{j,m} (\hat{x},\hat{z}) \right) - z_a D_a \chi
+.. math:: \nabla c_{k,m} (\hat{x},\hat{z})= \dfrac{\partial c_{k,m}(\hat{x},\hat{z})}{\partial \hat{z}}
+
+where the subscript :math:`a` represents the anion in solution.
 
 The diffusion and convection coefficients are reformulated to bilinear constraints:
 
-.. math:: \alpha_{\mathrm{Li}}^{bilinear}(\bar{x},\bar{z}) = \alpha_{\mathrm{Li}}(\bar{x},\bar{z}) \tilde{D}(\bar{x},\bar{z}) = \tilde{D}(\bar{x},\bar{z}) + z_{\mathrm{Li}} D_{\mathrm{Li}} \chi \qquad \forall \, \bar{x} \neq 0
-.. math:: \alpha_{\mathrm{Co}}^{bilinear}(\bar{x},\bar{z}) = \alpha_{\mathrm{Co}}(\bar{x},\bar{z}) \tilde{D}(\bar{x},\bar{z}) = \tilde{D}(\bar{x},\bar{z}) + z_{\mathrm{Co}} D_{\mathrm{Co}} \chi \qquad \forall \, \bar{x} \neq 0
-.. math:: D_{\mathrm{Li,Li}}^{bilinear}(\bar{x},\bar{z}) = D_{\mathrm{Li,Li}}(\bar{x},\bar{z}) \tilde{D}(\bar{x},\bar{z}) = z_{\mathrm{Li}} D_{\mathrm{Li}} D_{\mathrm{Cl}}(z_{\mathrm{Cl}} - z_{\mathrm{Li}})c_{\mathrm{Li},m}(\bar{x},\bar{z}) + z_{\mathrm{Co}} D_{\mathrm{Li}}(z_{\mathrm{Cl}} D_{\mathrm{Cl}} - z_{\mathrm{Co}} D_{\mathrm{Co}})c_{\mathrm{Co},m}(\bar{x},\bar{z}) + z_{\mathrm{Cl}} D_{\mathrm{Li}} D_{\mathrm{Cl}} \chi \qquad \forall \, \bar{x} \neq 0
-.. math:: D_{\mathrm{Li,Co}}^{bilinear}(\bar{x},\bar{z}) = D_{\mathrm{Li,Co}}(\bar{x},\bar{z}) \tilde{D}(\bar{x},\bar{z}) = z_{\mathrm{Li}} z_{\mathrm{Co}} D_{\mathrm{Li}}(D_{\mathrm{Co}} - D_{\mathrm{Cl}})c_{\mathrm{Li},m}(\bar{x},\bar{z}) \qquad \forall \, \bar{x} \neq 0
-.. math:: D_{\mathrm{Co,Li}}^{bilinear}(\bar{x},\bar{z}) = D_{\mathrm{Co,Li}}(\bar{x},\bar{z}) \tilde{D}(\bar{x},\bar{z}) = z_{\mathrm{Li}} z_{\mathrm{Co}} D_{\mathrm{Co}}(D_{\mathrm{Li}} - D_{\mathrm{Cl}})c_{\mathrm{Co},m}(\bar{x},\bar{z}) \qquad \forall \, \bar{x} \neq 0
-.. math:: D_{\mathrm{Co,Co}}^{bilinear}(\bar{x},\bar{z}) = D_{\mathrm{Co,Co}}(\bar{x},\bar{z}) \tilde{D}(\bar{x},\bar{z}) = z_{\mathrm{Li}} D_{\mathrm{Co}} (z_{\mathrm{Cl}} D_{\mathrm{Cl}} - z_{\mathrm{Li}} D_{\mathrm{Li}})c_{\mathrm{Li},m}(\bar{x},\bar{z}) + z_{\mathrm{Co}} D_{\mathrm{Co}} D_{\mathrm{Cl}} (z_{\mathrm{Cl}} - z_{\mathrm{Co}})c_{\mathrm{Co},m}(\bar{x},\bar{z}) + z_{\mathrm{Cl}} D_{\mathrm{Co}} D_{\mathrm{Cl}} \chi \qquad \forall \, \bar{x} \neq 0
+.. math:: \alpha_k^{bilinear}(\bar{x},\bar{z}) = \alpha_k(\bar{x},\bar{z}) \tilde{D}(\bar{x},\bar{z}) = \tilde{D}(\bar{x},\bar{z}) + z_k D_k \chi
+.. math:: D_{kj}^{bilinear}(\bar{x},\bar{z}) = D_{kj}(\bar{x},\bar{z}) \tilde{D}(\bar{x},\bar{z})
 
-No applied potential on the system:
+*Note that the single solute diffusion coefficients are provided in* :math:`\mathrm{mm}^2\ \, \mathrm{h}^{-1}` *to improve numerical stability, but the diffusion coefficients in the Nernst-Planck equations must be converted to* :math:`\mathrm{m}^2\ \, \mathrm{h}^{-1}`.
 
-.. math:: 0 = \sum_{i \in \mathcal{I}} z_i j_i(\bar{x}) \qquad \forall \, \bar{x} \neq 0
+**No applied potential on the system:**
 
-Electroneutrality:
+.. math:: 0 = \sum_{i \in \mathcal{I}} z_i j_i(\bar{x}) \qquad \forall \, \bar{x} \in (0, 1]
+
+**Electroneutrality:**
 
 .. math:: 0 = \sum_{i \in \mathcal{I}} z_i c_{i,r}(\bar{x})
-.. math:: 0 = \chi + \sum_{i \in \mathcal{I}} z_i c_{i,m}(\bar{x},\bar{z}) \qquad \forall \, \bar{z} \neq 0
-.. math:: 0 = \sum_{i \in \mathcal{I}} z_i c_{i,p}(\bar{x})
+.. math:: 0 = \chi + \sum_{i \in \mathcal{I}} z_i c_{i,m}(\bar{x},\bar{z}) \qquad \forall \, \bar{x} \in (0, 1]
+.. math:: 0 = \sum_{i \in \mathcal{I}} z_i c_{i,p}(\bar{x}) \qquad \forall \, \bar{x} \in (0, 1]
 
-Partitioning at the retentate-membrane interface:
+**Partitioning:**
 
-.. math:: H_{\mathrm{Li}} H_{\mathrm{Cl}} c_{\mathrm{Li},r}(\bar{x}) c_{\mathrm{Cl},r}(\bar{x}) = c_{\mathrm{Li},m}(\bar{x},\bar{z}=0) c_{\mathrm{Cl},m}(\bar{x},\bar{z}=0) \qquad \forall \, \bar{x} \neq 0
-.. math:: H_{\mathrm{Co}} H_{\mathrm{Cl}}^{z_{\mathrm{Co}}} c_{\mathrm{Co},r}(\bar{x}) c_{\mathrm{Cl},r}(\bar{x})^{z_{\mathrm{Co}}} =c_{\mathrm{Co},m}(\bar{x},\bar{z}=0) c_{\mathrm{Cl},m}(\bar{x},\bar{z}=0)^{z_{\mathrm{Co}}} \qquad \forall \, \bar{x} \neq 0
+At the the retentate-membrane interface:
 
-Partitioning at the membrane-permeate interface:
+.. math:: H_k^{-z_a} H_a^{z_k} = \left(\frac{c_{k,m} (\hat{x},\hat{z}=0)}{c_{k,r} (\hat{x})}\right)^{-z_a} \left(\frac{c_{a,m} (\hat{x},\hat{z}=0)}{c_{a,r}(\hat{x})}\right)^{z_k} \qquad \forall \, \bar{x} \in (0, 1], \, k \in \mathcal{K}
 
-.. math:: H_{\mathrm{Li}} H_{\mathrm{Cl}} c_{\mathrm{Li},p}(\bar{x}) c_{\mathrm{Cl},p}(\bar{x}) = c_{\mathrm{Li},m}(\bar{x},\bar{z}=1) c_{\mathrm{Cl},m}(\bar{x},\bar{z}=1) \qquad \forall \, \bar{x} \neq 0
-.. math:: H_{\mathrm{Co}} H_{\mathrm{Cl}}^{z_{\mathrm{Co}}} c_{\mathrm{Co},p}(\bar{x}) c_{\mathrm{Cl},p}(\bar{x})^{z_{\mathrm{Co}}} =c_{\mathrm{Co},m}(\bar{x},\bar{z}=1) c_{\mathrm{Cl},m}(\bar{x},\bar{z}=1)^{z_{\mathrm{Co}}} \qquad \forall \, \bar{x} \neq 0
+At the membrane-permeate interface:
 
-The following boundary conditions complete the model:
+.. math:: H_k^{-z_a} H_a^{z_k} = \left(\frac{c_{k,m} (\hat{x},\hat{z}=1)}{c_{k,p} (\hat{x})}\right)^{-z_a} \left(\frac{c_{a,m} (\hat{x},\hat{z}=1)}{c_{a,p}(\hat{x})}\right)^{z_k} \qquad \forall \, \bar{x} \in (0, 1], \, k \in \mathcal{K}
+
+**Boundary conditions:**
 
 .. math:: q_r(\bar{x}=0) = q_f + q_d
-.. math:: c_{\mathrm{Li},r}(\bar{x}=0) = \frac{q_f c_{\mathrm{Li},f} + q_d c_{\mathrm{Li},d}}{q_f + q_d}
-.. math:: c_{\mathrm{Co},r}(\bar{x}=0) = \frac{q_f c_{\mathrm{Co},f} + q_d c_{\mathrm{Co},d}}{q_f + q_d}
+.. math:: c_{k,r}(\bar{x}=0) = \frac{q_f c_{k,f} + q_d c_{k,d}}{q_f + q_d} \qquad \forall \, k \in \mathcal{K}
+.. math:: c_{k,m} (\bar{x}=0,\bar{z}) = 0 \qquad \forall \, \bar{z}, \, k \in \mathcal{K}
 
-The following boundary conditions (which are expected to be zero) are fixed to improve numerical stability (with the appropriate constraints deactivated as described above):
+The following constraints (which are expected to be zero) are enforced to improve numerical stability (with the appropriate constraints deactivated as described above):
 
 .. math:: q_p(\bar{x}=0) = \epsilon
-.. math:: c_{\mathrm{Li},p}(\bar{x}=0) = \epsilon
-.. math:: c_{\mathrm{Co},p}(\bar{x}=0) = \epsilon
-.. math:: c_{\mathrm{Li},m} (\bar{x}=0,\bar{z}) = \epsilon \qquad \forall \, \bar{z}
-.. math:: c_{\mathrm{Co},m} (\bar{x}=0,\bar{z}) = \epsilon \qquad \forall \, \bar{z}
-.. math:: c_{\mathrm{Cl},m} (\bar{x}=0,\bar{z}) = \epsilon \qquad \forall \, \bar{z}
+.. math:: c_{i,p}(\bar{x}=0) = \epsilon \qquad \forall \, i \in \mathcal{I}
 .. math:: \frac{\mathrm{d}q_r(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=\epsilon
-.. math:: \frac{\mathrm{d}c_{\mathrm{Li},r}(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=\epsilon
-.. math:: \frac{\mathrm{d}c_{\mathrm{Co},r}(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=\epsilon
+.. math:: \frac{\mathrm{d}c_{k,r}(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=\epsilon \qquad \forall \, k \in \mathcal{K}
 .. math:: J_w(\bar{x}=0) = \epsilon
-.. math:: j_{\mathrm{Li}}(\bar{x}=0) = \epsilon
-.. math:: j_{\mathrm{Co}}(\bar{x}=0) = \epsilon
-.. math:: j_{\mathrm{Cl}}(\bar{x}=0) = \epsilon
+.. math:: j_i(\bar{x}=0) = \epsilon \qquad \forall \, i \in \mathcal{I}
 """
-
-# TODO: update documentation
 
 from pyomo.common.config import ConfigBlock, ConfigValue
 from pyomo.dae import ContinuousSet, DerivativeVar

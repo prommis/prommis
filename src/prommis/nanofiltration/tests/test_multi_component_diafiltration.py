@@ -2308,7 +2308,7 @@ def test_build_three_salt(sample_three_salt_model):
                 assert (
                     sample_three_salt_model.fs.unit.scaling_factor[
                         sample_three_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                            t, x, sample_three_salt_model.fs.unit.cations[3]
+                            t, x, sample_three_salt_model.fs.unit.config.cation_list[2]
                         ]
                     ]
                     == 1e-5
@@ -2316,7 +2316,7 @@ def test_build_three_salt(sample_three_salt_model):
                 assert (
                     sample_three_salt_model.fs.unit.scaling_factor[
                         sample_three_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                            t, x, sample_three_salt_model.fs.unit.cations[2]
+                            t, x, sample_three_salt_model.fs.unit.config.cation_list[1]
                         ]
                     ]
                     == 1e-5
@@ -2324,7 +2324,7 @@ def test_build_three_salt(sample_three_salt_model):
                 assert (
                     sample_three_salt_model.fs.unit.scaling_factor[
                         sample_three_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                            t, x, sample_three_salt_model.fs.unit.cations[1]
+                            t, x, sample_three_salt_model.fs.unit.config.cation_list[0]
                         ]
                     ]
                     == 1e-3
@@ -2332,7 +2332,7 @@ def test_build_three_salt(sample_three_salt_model):
                 assert (
                     sample_three_salt_model.fs.unit.scaling_factor[
                         sample_three_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                            t, x, sample_three_salt_model.fs.unit.cations[3]
+                            t, x, sample_three_salt_model.fs.unit.config.cation_list[2]
                         ]
                     ]
                     == 1e-5
@@ -2340,7 +2340,7 @@ def test_build_three_salt(sample_three_salt_model):
                 assert (
                     sample_three_salt_model.fs.unit.scaling_factor[
                         sample_three_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                            t, x, sample_three_salt_model.fs.unit.cations[2]
+                            t, x, sample_three_salt_model.fs.unit.config.cation_list[1]
                         ]
                     ]
                     == 1e-5
@@ -2348,7 +2348,7 @@ def test_build_three_salt(sample_three_salt_model):
                 assert (
                     sample_three_salt_model.fs.unit.scaling_factor[
                         sample_three_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                            t, x, sample_three_salt_model.fs.unit.cations[1]
+                            t, x, sample_three_salt_model.fs.unit.config.cation_list[0]
                         ]
                     ]
                     == 1e-3

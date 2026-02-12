@@ -432,20 +432,20 @@ def test_build_single_salt(sample_single_salt_model):
     for t in sample_single_salt_model.fs.unit.time:
         for x in sample_single_salt_model.fs.unit.dimensionless_module_length:
             assert sample_single_salt_model.fs.unit.d_retentate_conc_mol_comp_dx[
-                t, x, "chloride"
+                t, x, sample_single_salt_model.fs.unit.config.anion_list[0]
             ].fixed
             if x != 0:
                 assert not sample_single_salt_model.fs.unit.d_retentate_conc_mol_comp_dx_disc_eq[
-                    t, x, "chloride"
+                    t, x, sample_single_salt_model.fs.unit.config.anion_list[0]
                 ].active
 
             for z in sample_single_salt_model.fs.unit.dimensionless_membrane_thickness:
                 assert sample_single_salt_model.fs.unit.d_membrane_conc_mol_comp_dz[
-                    t, x, z, "chloride"
+                    t, x, z, sample_single_salt_model.fs.unit.config.anion_list[0]
                 ].fixed
                 if z != 0:
                     assert not sample_single_salt_model.fs.unit.d_membrane_conc_mol_comp_dz_disc_eq[
-                        t, x, z, "chloride"
+                        t, x, z, sample_single_salt_model.fs.unit.config.anion_list[0]
                     ].active
 
     # scaling factors
@@ -1313,20 +1313,20 @@ def test_build_two_salt(sample_two_salt_model):
     for t in sample_two_salt_model.fs.unit.time:
         for x in sample_two_salt_model.fs.unit.dimensionless_module_length:
             assert sample_two_salt_model.fs.unit.d_retentate_conc_mol_comp_dx[
-                t, x, "chloride"
+                t, x, sample_two_salt_model.fs.unit.config.anion_list[0]
             ].fixed
             if x != 0:
                 assert not sample_two_salt_model.fs.unit.d_retentate_conc_mol_comp_dx_disc_eq[
-                    t, x, "chloride"
+                    t, x, sample_two_salt_model.fs.unit.config.anion_list[0]
                 ].active
 
             for z in sample_two_salt_model.fs.unit.dimensionless_membrane_thickness:
                 assert sample_two_salt_model.fs.unit.d_membrane_conc_mol_comp_dz[
-                    t, x, z, "chloride"
+                    t, x, z, sample_two_salt_model.fs.unit.config.anion_list[0]
                 ].fixed
                 if z != 0:
                     assert not sample_two_salt_model.fs.unit.d_membrane_conc_mol_comp_dz_disc_eq[
-                        t, x, z, "chloride"
+                        t, x, z, sample_two_salt_model.fs.unit.config.anion_list[0]
                     ].active
 
     # scaling factors
@@ -2249,20 +2249,20 @@ def test_build_three_salt(sample_three_salt_model):
     for t in sample_three_salt_model.fs.unit.time:
         for x in sample_three_salt_model.fs.unit.dimensionless_module_length:
             assert sample_three_salt_model.fs.unit.d_retentate_conc_mol_comp_dx[
-                t, x, "chloride"
+                t, x, sample_three_salt_model.fs.unit.config.anion_list[0]
             ].fixed
             if x != 0:
                 assert not sample_three_salt_model.fs.unit.d_retentate_conc_mol_comp_dx_disc_eq[
-                    t, x, "chloride"
+                    t, x, sample_three_salt_model.fs.unit.config.anion_list[0]
                 ].active
 
             for z in sample_three_salt_model.fs.unit.dimensionless_membrane_thickness:
                 assert sample_three_salt_model.fs.unit.d_membrane_conc_mol_comp_dz[
-                    t, x, z, "chloride"
+                    t, x, z, sample_three_salt_model.fs.unit.config.anion_list[0]
                 ].fixed
                 if z != 0:
                     assert not sample_three_salt_model.fs.unit.d_membrane_conc_mol_comp_dz_disc_eq[
-                        t, x, z, "chloride"
+                        t, x, z, sample_three_salt_model.fs.unit.config.anion_list[0]
                     ].active
 
     # scaling factors

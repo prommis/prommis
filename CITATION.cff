@@ -1,0 +1,52 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - name: "PrOMMiS contributors"
+title: "PROMMIS: Accelerating & De-Risking Critical Minerals & Materials (CMM) supply chain development"
+url: "https://github.com/prommis/prommis"
+license-url: "https://github.com/prommis/prommis/blob/main/LICENSE.md"
+identifiers:
+  - description: "Confrence paper in International Mineral Processing Congress"
+    type: url
+    value: "https://app.knovel.com/hotlink/toc/id:kpXXXIIMP1/impc-international-mineral/impc-international-mineral"
+preferred-citation:
+  type: conference-paper
+  authors:
+    - family-names: "Tarka"
+      given-names: "Thomas"
+    - family-names: "Lee"
+      given-names: "Andrew"
+    - family-names: "Zamarripa-Perez"
+      given-names: "Miguel"
+    - family-names: "Paul"
+      given-names: "Brandon"
+    - family-names: "Garciadiego"
+      given-names: "Alejandro"
+    - family-names: "Fritz"
+      given-names: "Alison"
+    - family-names: "Dowling"
+      given-names: "Alexander"
+    - family-names: "Laird"
+      given-names: "Carl"
+    - family-names: "Gounaris"
+      given-names: "Chrysanthos"
+    - family-names: "Torres"
+      given-names: "Ana"
+    - family-names: "Bhattacharyya"
+      given-names: "Debangsu"
+    - family-names: "Siirola"
+      given-names: "John"
+    - family-names: "Gunter"
+      given-names: "Daniel"
+    - family-names: "Beattie"
+      given-names: "Keith"
+    - family-names: "Sahinidis"
+      given-names: "Nick"
+  year: 2024
+  conference:
+    name: "XXXI IMPC-International Mineral Processing Congress"
+  title: "PROMMIS: Applying novel modeling methods to accelerate critical minerals research, development, demonstration, and deployment (RD3)"
+  publisher:
+    name: "Society for Mining, Metallurgy, and Exploration (SME)"
+  pages: "980-990"
+  url: "https://app.knovel.com/hotlink/toc/id:kpXXXIIMP1/impc-international-mineral/impc-international-mineral"

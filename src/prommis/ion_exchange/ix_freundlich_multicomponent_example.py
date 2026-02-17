@@ -615,7 +615,6 @@ def add_costing(m):
     m.fs.costing.utilization_factor.fix(1)
     m.fs.costing.aggregate_fixed_operating_cost()
     m.fs.costing.aggregate_variable_operating_cost()
-    m.fs.costing.aggregate_flow_electricity()
     m.fs.costing.aggregate_capital_cost()
     m.fs.costing.total_capital_cost()
     m.fs.costing.total_operating_cost()

@@ -27,19 +27,28 @@ import pytest
 import pandas as pd
 import pyomo.environ as pyo
 
+from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.model_statistics import degrees_of_freedom
 
 pytest.importorskip("watertap", reason="WaterTAP dependency not available")
 
 # pylint: disable=wrong-import-position
-from watertap.core.util.initialization import check_dof
 from watertap.core.solvers import get_solver
 from watertap.property_models.multicomp_aq_sol_prop_pack import MCASParameterBlock
 
+from prommis.uky.costing.ree_plant_capcost import (
+    QGESSCosting,
+    QGESSCostingData,
+)
 from prommis.ion_exchange.ion_exchange_multicomponent import (
     IonExchangeMultiComp,
 )
+from prommis.ion_exchange.costing.ion_exchange_cost_model import (
+    IXCostingData,
+)
+
 from prommis.ion_exchange.ix_freundlich_multicomponent_example import (
     main,
     build_model,
@@ -57,8 +66,7 @@ modified by: Soraya Rawlings
 """
 
 
-@pytest.fixture(scope="module")
-def m():
+def create_model(regenerant, hazardous_waste):
 
     path = os.path.dirname(os.path.realpath(__file__))
     resin_file = os.path.join(path, "..", "data", "resin_data.json")
@@ -69,12 +77,10 @@ def m():
 
     solver = get_solver()
 
-    resin = "S950"
     target_component = "La"
+    resin = "S950"
     num_traps = 30
     c_trap_min = 1e-3
-    regenerant = "single_use"
-    hazardous_waste = False
 
     # Add sets for solvent and ion species
     m = build_model()
@@ -111,6 +117,15 @@ def m():
     return m
 
 
+@pytest.fixture(scope="module")
+def m():
+
+    regenerant = "single_use"
+    hazardous_waste = False
+
+    return create_model(regenerant, hazardous_waste)
+
+
 def build_clark_with_costing(m, regenerant, target_component):
 
     add_costing(m)
@@ -120,7 +135,6 @@ def build_clark_with_costing(m, regenerant, target_component):
     m.fs.costing.aggregate_capital_cost.set_value(1e3)
     m.fs.costing.aggregate_fixed_operating_cost.set_value(1e3)
     m.fs.costing.aggregate_variable_operating_cost.set_value(1e3)
-    m.fs.costing.aggregate_flow_costs["electricity"].set_value(1e-3)
     if regenerant != "single_use":
         m.fs.costing.aggregate_flow_costs["NaCl"].set_value(1e3)
     m.fs.costing.total_capital_cost.set_value(1e3)
@@ -201,7 +215,7 @@ def test_structural_issues(m):
     dt.assert_no_structural_warnings()
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_resin_specific_data(m):
 
     ix = m.fs.unit_ix
@@ -236,14 +250,14 @@ def test_resin_specific_data(m):
     )
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_initialization(m):
 
     # Scale model
     init_scaling = pyo.TransformationFactory("core.scale_model")
     scaled_model = init_scaling.create_using(m, rename=False)
 
-    check_dof(m, fail_flag=True)
+    assert degrees_of_freedom(scaled_model) == 0
 
     # Solve scaled model with zero degrees of freedom
     solver = get_solver()
@@ -279,7 +293,7 @@ def test_initialization(m):
             assert pytest.approx(r, rel=1e-6) == pyo.value(mv)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_optimization_single_use(m):
 
     regenerant = "single_use"
@@ -290,7 +304,7 @@ def test_optimization_single_use(m):
     init_scaling = pyo.TransformationFactory("core.scale_model")
     scaled_model = init_scaling.create_using(m, rename=False)
 
-    check_dof(m, fail_flag=True)
+    assert degrees_of_freedom(scaled_model) == 0
 
     # Solve scaled model with zero degrees of freedom
     scaled_results = solver.solve(scaled_model)
@@ -303,7 +317,7 @@ def test_optimization_single_use(m):
         m, regenerant=regenerant, target_component=target_component
     )
 
-    check_dof(m, fail_flag=True)
+    assert degrees_of_freedom(scaled_model) == 0
 
     # Solve scaled model
     results = solver.solve(m)
@@ -348,7 +362,7 @@ def test_optimization_single_use(m):
     # Expected results for system costs
     sys_cost_results = {
         "utilization_factor": 1,
-        "TPEC": 4.121212121212121,
+        "TPEC": 4.12,
         "TIC": 2.0,
         "total_capital_cost": 2398.5398832175597,
         "total_operating_cost": 88.9915519881193,
@@ -356,10 +370,6 @@ def test_optimization_single_use(m):
         "aggregate_capital_cost": 2398.5398832175597,
         "aggregate_fixed_operating_cost": 17.03535548053501,
         "aggregate_variable_operating_cost": 0.0,
-        "aggregate_flow_electricity": 4.1445910422021544e-08,
-        "aggregate_flow_costs": {
-            "electricity": 2.5432039553160866e-05,
-        },
         "maintenance_labor_chemical_operating_cost": 71.95619649459807,
     }
 
@@ -395,7 +405,7 @@ def test_optimization_single_use(m):
             assert pytest.approx(r, rel=1e-3) == pyo.value(mv)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_scaling(m):
 
     m.fs.unit_ix.calculate_scaling_factors()
@@ -487,64 +497,23 @@ def test_get_performance_contents(m):
     }
 
 
+@pytest.mark.unit
+def test_main_in_ix_example():
+    """Tests the execution of main function in example script."""
+
+    m = main()
+
+
 @pytest.fixture(scope="module")
 def m_nacl():
-    """
-    Uses the NaCl regenerant IX model
-    """
 
-    path = os.path.dirname(os.path.realpath(__file__))
-    resin_file = os.path.join(path, "..", "data", "resin_data.json")
-    comp_prop_file = os.path.join(path, "..", "data", "properties_data.json")
-    parmest_file = os.path.join(path, "..", "data", "parmest_data.json")
-    curve_file = os.path.join(path, "..", "data", "breakthrough_literature_data.csv")
-    curve_data = pd.read_csv(curve_file)
-
-    solver = get_solver()
-
-    resin = "S950"
-    target_component = "La"
-    num_traps = 30
-    c_trap_min = 1e-3
     regenerant = "NaCl"
     hazardous_waste = True
 
-    # Add sets for solvent and ion species
-    m = build_model()
-
-    add_data(
-        m,
-        resin=resin,
-        curve_data=curve_data,
-        resin_file=resin_file,
-        comp_prop_file=comp_prop_file,
-        parmest_file=parmest_file,
-    )
-
-    parmest_data = m.fs.parmest_data
-    build_clark(
-        m,
-        resin=resin,
-        regenerant=regenerant,
-        target_component=target_component,
-        num_traps=num_traps,
-        c_trap_min=c_trap_min,
-        resin_file=resin_file,
-        hazardous_waste=hazardous_waste,
-    )
-
-    set_bounds(m)
-
-    set_operating_conditions(
-        m, parmest_data=parmest_data, target_component=target_component, resin=resin
-    )
-
-    set_scaling(m)
-
-    return m
+    return create_model(regenerant, hazardous_waste)
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_optimization_nacl(m_nacl):
 
     regenerant = "NaCl"
@@ -555,7 +524,7 @@ def test_optimization_nacl(m_nacl):
     init_scaling = pyo.TransformationFactory("core.scale_model")
     scaled_model = init_scaling.create_using(m_nacl, rename=False)
 
-    check_dof(scaled_model, fail_flag=True)
+    assert degrees_of_freedom(scaled_model) == 0
 
     # Solve scaled model with zero degrees of freedom
     scaled_results = solver.solve(scaled_model)
@@ -568,7 +537,7 @@ def test_optimization_nacl(m_nacl):
         m_nacl, regenerant=regenerant, target_component=target_component
     )
 
-    check_dof(m, fail_flag=True)
+    assert degrees_of_freedom(scaled_model) == 0
 
     # Solve scaled model
     results = solver.solve(m)
@@ -630,10 +599,8 @@ def test_optimization_nacl(m_nacl):
         "aggregate_capital_cost": 2777.5679769146095,
         "aggregate_fixed_operating_cost": 3849.3271494414466,
         "aggregate_variable_operating_cost": 0.0,
-        "aggregate_flow_electricity": 4.189304217061552e-08,
         "aggregate_flow_costs": {
             "NaCl": 0.1522307890750307,
-            "electricity": 2.5706408536733103e-05,
         },
         "maintenance_labor_chemical_operating_cost": 83.32703930743828,
     }
@@ -741,15 +708,17 @@ def test_get_stream_table_contents_nacl(m_nacl):
     pd.testing.assert_frame_equal(stable, expected, rtol=1e-4, atol=1e-4)
 
 
-@pytest.mark.component
-def test_main_in_ix_example():
-    """Tests the execution of main function in example script."""
+@pytest.fixture(scope="module")
+def m_hcl():
 
-    m = main()
+    regenerant = "HCl"
+    hazardous_waste = True
+
+    return create_model(regenerant, hazardous_waste)
 
 
 @pytest.mark.unit
-def test_config_error_regen_in_costing():
+def test_config_error_regen_in_costing(m_hcl):
 
     # Set up the model with parameters that will trigger the
     # ConfigurationError
@@ -758,54 +727,203 @@ def test_config_error_regen_in_costing():
         match="Unsupported regenerant type: HCl",
     ):
 
-        path = os.path.dirname(os.path.realpath(__file__))
-        resin_file = os.path.join(path, "..", "data", "resin_data.json")
-        comp_prop_file = os.path.join(path, "..", "data", "properties_data.json")
-        parmest_file = os.path.join(path, "..", "data", "parmest_data.json")
-        curve_file = os.path.join(
-            path, "..", "data", "breakthrough_literature_data.csv"
+        add_costing(m_hcl)
+
+
+@pytest.fixture(scope="module")
+def m_pc():
+
+    regenerant = "single_use"
+    hazardous_waste = False
+
+    return create_model(regenerant, hazardous_waste)
+
+
+def build_ix_with_prommis_costing(m_pc):
+
+    # Add costing data
+    CE_index_year = "2021"
+    hours_per_shift = 8
+    shifts_per_day = 3
+    operating_days_per_year = 336
+
+    resources = [
+        "power",
+    ]
+    pure_product_output_rates = {
+        "Dy": 3.2875472266185857e-12 * pyo.units.kg / pyo.units.s,
+        "Er": 1.2361601354579852e-12 * pyo.units.kg / pyo.units.s,
+        "Ho": 5.251952565805055e-13 * pyo.units.kg / pyo.units.s,
+        "La": 1.0302482888461276e-11 * pyo.units.kg / pyo.units.s,
+        "Sm": 4.224017034693751e-12 * pyo.units.kg / pyo.units.s,
+        "Yb": 8.240673140478613e-13 * pyo.units.kg / pyo.units.s,
+    }
+    mixed_product_output_rates = {
+        "Dy": 3.2875472266185857e-12 * pyo.units.kg / pyo.units.s,
+        "Er": 1.2361601354579852e-12 * pyo.units.kg / pyo.units.s,
+        "Ho": 5.251952565805055e-13 * pyo.units.kg / pyo.units.s,
+        "La": 1.0302482888461276e-11 * pyo.units.kg / pyo.units.s,
+        "Sm": 4.224017034693751e-12 * pyo.units.kg / pyo.units.s,
+        "Yb": 8.240673140478613e-13 * pyo.units.kg / pyo.units.s,
+    }
+
+    m_pc.fs.costing = QGESSCosting(
+        discount_percentage=10,  # percent
+        plant_lifetime=20,  # years
+        has_capital_expenditure_period=True,
+        capital_expenditure_percentages=[10, 60, 30],
+        capital_escalation_percentage=3.6,
+        capital_loan_interest_percentage=6,
+        capital_loan_repayment_period=10,
+        debt_percentage_of_capex=50,
+        operating_inflation_percentage=3,
+        revenue_inflation_percentage=3,
+    )
+
+    # Declare variables and parameters in costing block
+    m_pc.fs.costing.base_currency = pyo.units.USD_2021
+    m_pc.fs.costing.base_period = pyo.units.year
+    m_pc.fs.costing.electricity_cost = pyo.Var(
+        initialize=0.07,
+        doc="Electricity cost",
+        units=m_pc.fs.costing.base_currency / pyo.units.kWh,
+    )
+    m_pc.fs.costing.electricity_cost.fix()
+
+    m_pc.fs.power = pyo.Var(m_pc.fs.time, initialize=1e-3, units=pyo.units.hp)
+    m_pc.fs.costing.TIC = pyo.Var(
+        initialize=2.0,
+        doc="Total Installed Cost (TIC)",
+        units=pyo.units.dimensionless,
+    )
+    m_pc.fs.costing.TIC.fix()
+
+    m_pc.fs.unit_ix.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m_pc.fs.costing,
+        costing_method=IXCostingData.cost_ion_exchange,
+    )
+    rates = [
+        m_pc.fs.power,
+    ]
+
+    m_pc.fs.costing.build_process_costs(
+        Lang_factor=m_pc.fs.costing.TIC,
+        labor_types=[
+            "maintenance",
+            "technician",
+            "engineer",
+        ],
+        labor_rate=[22.73, 21.97, 45.85],  # USD/hr
+        labor_burden=25,  # % fringe benefits
+        operators_per_shift=[2, 2, 3],
+        hours_per_shift=hours_per_shift,
+        shifts_per_day=shifts_per_day,
+        operating_days_per_year=operating_days_per_year,
+        pure_product_output_rates=pure_product_output_rates,
+        mixed_product_output_rates=mixed_product_output_rates,
+        mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
+        rates=rates,
+        resources=resources,
+        fixed_OM=True,
+        variable_OM=True,
+        CE_index_year=CE_index_year,
+        prices={"dummy": 1 * m_pc.fs.costing.base_currency / pyo.units.MW},
+    )
+
+    return m_pc
+
+
+@pytest.mark.unit
+def test_ix_with_prommis_costing(m_pc):
+
+    CE_index_year = "2021"
+    CE_index_units = getattr(pyo.units, "USD_" + CE_index_year)  # USD, for base year
+
+    regenerant = "single_use"
+    target_component = "La"
+    solver = get_solver()
+
+    # Scale model
+    init_scaling = pyo.TransformationFactory("core.scale_model")
+    scaled_model = init_scaling.create_using(m_pc, rename=False)
+
+    assert degrees_of_freedom(scaled_model) == 0
+
+    # Solve scaled model with zero degrees of freedom
+    scaled_results = solver.solve(scaled_model)
+    pyo.assert_optimal_termination(scaled_results)
+
+    # Propagate the solution back to the original model
+    init_scaling.propagate_solution(scaled_model, m_pc)
+
+    build_ix_with_prommis_costing(m_pc)
+
+    @m_pc.fs.Constraint()
+    def rule_power(b):
+        return b.power[0] == pyo.units.convert(
+            m_pc.fs.unit_ix.costing.total_pumping_power, to_units=pyo.units.hp
         )
-        curve_data = pd.read_csv(curve_file)
 
-        solver = get_solver()
+    m_pc.fs.unit_ix.target_breakthrough_time.setlb(1e-3)
 
-        resin = "S950"
-        target_component = "La"
-        num_traps = 30
-        c_trap_min = 1e-3
-        regenerant = "HCl"
-        hazardous_waste = True
+    # check model structural diagnostics
+    dt = DiagnosticsToolbox(model=m_pc)
+    dt.assert_no_structural_warnings()
 
-        # Add sets for solvent and ion species
-        m = build_model()
+    assert degrees_of_freedom(scaled_model) == 0
 
-        add_data(
-            m,
-            resin=resin,
-            curve_data=curve_data,
-            resin_file=resin_file,
-            comp_prop_file=comp_prop_file,
-            parmest_file=parmest_file,
-        )
+    # Confirm that base units match the ones in costing block
+    cost = m_pc.fs.costing
+    ix_cost = m_pc.fs.unit_ix.costing
 
-        parmest_data = m.fs.parmest_data
-        build_clark(
-            m,
-            resin=resin,
-            regenerant=regenerant,
-            target_component=target_component,
-            num_traps=num_traps,
-            c_trap_min=c_trap_min,
-            resin_file=resin_file,
-            hazardous_waste=hazardous_waste,
-        )
+    assert ix_cost.costing_package.base_currency == pyo.units.USD_2021
+    assert ix_cost.costing_package.base_period == pyo.units.year
 
-        set_bounds(m)
+    assert isinstance(ix_cost.capital_cost, pyo.Var)
+    assert isinstance(ix_cost.fixed_operating_cost, pyo.Var)
+    assert not hasattr(ix_cost, "variable_operating_cost")
+    assert isinstance(ix_cost.capital_cost_constraint, pyo.Constraint)
+    assert isinstance(ix_cost.fixed_operating_cost_constraint, pyo.Constraint)
+    assert not hasattr(ix_cost, "variable_operating_cost_constraint")
 
-        set_operating_conditions(
-            m, parmest_data=parmest_data, target_component=target_component, resin=resin
-        )
+    QGESSCostingData.costing_initialization(cost)
+    QGESSCostingData.initialize_fixed_OM_costs(cost)
+    QGESSCostingData.initialize_variable_OM_costs(cost)
 
-        set_scaling(m)
+    results = solver.solve(m_pc)
+    pyo.assert_optimal_termination(results)
 
-        add_costing(m)
+    sys_cost_results = {
+        "total_BEC": 0.0027232971929997854,
+        "custom_fixed_costs": 2.3051514078924913e-05,
+        "total_fixed_OM_cost": 2.42531,
+        "variable_operating_costs": 5.557009860683777e-12,
+        "custom_variable_costs": 1e-12,
+        "total_variable_OM_cost": 0.485062698268098,
+    }
+
+    for key, expected_value in sys_cost_results.items():
+        mv = getattr(cost, key)
+
+        if mv.is_indexed():
+            continue
+        else:
+            actual_value = pyo.value(mv)
+
+        assert actual_value == pytest.approx(expected_value, rel=1e-4)
+
+    assert pyo.value(cost.variable_operating_costs[0, "power"]) == pytest.approx(
+        sys_cost_results["variable_operating_costs"], rel=1e-4
+    )
+    assert pyo.value(cost.total_variable_OM_cost[0]) == pytest.approx(
+        sys_cost_results["total_variable_OM_cost"], rel=1e-4
+    )
+
+    ix_cost_results = {
+        "capital_cost": 2723.29719,
+        "fixed_operating_cost": 23.05151,
+    }
+
+    for key, expected_value in ix_cost_results.items():
+        mv = getattr(ix_cost, key)
+        assert pyo.value(mv) == pytest.approx(expected_value, rel=1e-4)

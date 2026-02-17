@@ -691,5 +691,3 @@ class IXCostingData(IXCostingBlockData):
         @blk.Constraint()
         def total_pumping_power_constr(blk):
             return blk.total_pumping_power == power_expr
-
-        blk.costing_package.cost_flow(blk.total_pumping_power, "electricity")

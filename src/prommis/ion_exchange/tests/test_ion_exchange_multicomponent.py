@@ -27,7 +27,7 @@ import pytest
 import pandas as pd
 import pyomo.environ as pyo
 
-from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.exceptions import ConfigurationError
 from idaes.core.util.model_statistics import degrees_of_freedom

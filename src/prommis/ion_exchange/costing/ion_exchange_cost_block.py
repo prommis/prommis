@@ -51,12 +51,12 @@ class IXCostingBlockData(FlowsheetCostingBlockData):
         """
 
         self.total_capital_cost = pyo.Var(
-            initialize=0,
+            initialize=2e3,
             doc="Total capital cost of the process",
             units=self.base_currency,
         )
         self.total_operating_cost = pyo.Var(
-            initialize=0,
+            initialize=1e2,
             doc="Total operating cost of process per operating period",
             units=self.base_currency / self.base_period,
         )
@@ -90,7 +90,7 @@ class IXCostingBlockData(FlowsheetCostingBlockData):
         )
 
         self.TPEC = pyo.Var(
-            initialize=4.121212121212121,
+            initialize=4.12,
             doc="Total Purchased Equipment Cost (TPEC)",
             units=pyo.units.dimensionless,
         )

@@ -239,7 +239,7 @@ The following constraints (which are expected to be zero) are enforced to improv
 .. math:: j_i(\bar{x}=0) = \epsilon \qquad \forall \, i \in \mathcal{I}
 """
 
-from pyomo.common.config import ConfigBlock, ConfigValue
+from pyomo.common.config import ConfigBlock, ConfigValue, ListOf
 from pyomo.dae import ContinuousSet, DerivativeVar
 from pyomo.environ import (
     Constraint,
@@ -257,6 +257,7 @@ from pyomo.network import Port
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.constants import Constants
+from idaes.core.util.exceptions import ConfigurationError
 
 
 @declare_process_block_class("MultiComponentDiafiltration")
@@ -296,6 +297,7 @@ and used when constructing these,
     CONFIG.declare(
         "cation_list",
         ConfigValue(
+            domain=ListOf(str),
             default=["lithium", "cobalt"],
             doc="List of cations present in the system",
         ),
@@ -303,6 +305,7 @@ and used when constructing these,
     CONFIG.declare(
         "anion_list",
         ConfigValue(
+            domain=ListOf(str),
             default=["chloride"],
             doc="List of anions present in the system",
         ),
@@ -343,10 +346,8 @@ and used when constructing these,
         """
         super().build()
 
-        try:
-            assert len(self.config.anion_list) == 1
-        except Exception:
-            print(
+        if len(self.config.anion_list) > 1:
+            raise ConfigurationError(
                 "The multi-component diafiltration unit model only supports systems with a common anion"
             )
 

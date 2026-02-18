@@ -10,7 +10,7 @@ Property package for the multi-component diafiltration membrane.
 Author: Molly Dougher
 """
 
-from pyomo.common.config import ConfigValue
+from pyomo.common.config import ConfigValue, ListOf
 from pyomo.environ import Param, Set, Var, units
 
 from idaes.core import (
@@ -21,6 +21,7 @@ from idaes.core import (
     StateBlockData,
     declare_process_block_class,
 )
+from idaes.core.util.exceptions import ConfigurationError
 from idaes.core.util.initialization import fix_state_vars
 
 
@@ -41,6 +42,7 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
     CONFIG.declare(
         "cation_list",
         ConfigValue(
+            domain=ListOf(str),
             default=["lithium", "cobalt"],
             doc="List of cations present in the system",
         ),
@@ -48,6 +50,7 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
     CONFIG.declare(
         "anion_list",
         ConfigValue(
+            domain=ListOf(str),
             default=["chloride"],
             doc="List of anions present in the system",
         ),
@@ -56,10 +59,8 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
     def build(self):
         super().build()
 
-        try:
-            assert len(self.config.anion_list) == 1
-        except Exception:
-            print(
+        if len(self.config.anion_list) > 1:
+            raise ConfigurationError(
                 "The multi-component diafiltration unit model only supports systems with a common anion"
             )
 

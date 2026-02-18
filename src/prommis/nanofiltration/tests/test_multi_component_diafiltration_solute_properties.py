@@ -11,6 +11,7 @@ Diagnostic tests for the multi-component diafiltration property model for solute
 from pyomo.environ import ConcreteModel, Var, value
 
 from idaes.core import FlowsheetBlock
+from idaes.core.util.exceptions import ConfigurationError
 
 import pytest
 
@@ -936,6 +937,28 @@ def test_parameters_three_salt_lithium_cobalt_aluminum(model_lithium_cobalt_alum
         )
         == 6
     )
+
+
+################################################################################
+# Test common anion exception
+
+
+@pytest.mark.component
+def test_common_anion_exception():
+    cation_list = ["lithium", "cobalt"]
+    anion_list = ["chloride", "sulfate"]
+
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+
+    with pytest.raises(
+        ConfigurationError,
+        match="The multi-component diafiltration unit model only supports systems with a common anion",
+    ):
+        m.fs.properties = MultiComponentDiafiltrationSoluteParameter(
+            cation_list=cation_list,
+            anion_list=anion_list,
+        )
 
 
 ################################################################################

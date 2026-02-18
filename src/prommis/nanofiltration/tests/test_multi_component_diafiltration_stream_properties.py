@@ -11,6 +11,7 @@ Diagnostic tests for the multi-component diafiltration property model for stream
 from pyomo.environ import ConcreteModel, Var
 
 from idaes.core import FlowsheetBlock
+from idaes.core.util.exceptions import ConfigurationError
 
 import pytest
 
@@ -143,3 +144,22 @@ def test_parameters_three_salt(model_three_salt):
 @pytest.mark.unit
 def test_build_three_salt(model_three_salt):
     test_build(model_three_salt)
+
+
+# Test common anion exception
+@pytest.mark.component
+def test_common_anion_exception():
+    cation_list = ["lithium", "cobalt"]
+    anion_list = ["chloride", "sulfate"]
+
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+
+    with pytest.raises(
+        ConfigurationError,
+        match="The multi-component diafiltration unit model only supports systems with a common anion",
+    ):
+        m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(
+            cation_list=cation_list,
+            anion_list=anion_list,
+        )

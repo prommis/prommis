@@ -70,7 +70,6 @@ from idaes.core.util.exceptions import ConfigurationError
 from watertap.core import ControlVolume0DBlock, InitializationMixin
 from watertap.core.solvers import get_solver
 
-
 """ This is the Ion Exchange (IX) base model that contains relevant
 general equations of the IX unit. This model calls a specific
 equilibiurm model that uses the Clark model with Freundlich

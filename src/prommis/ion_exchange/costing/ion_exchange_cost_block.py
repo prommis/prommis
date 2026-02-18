@@ -28,7 +28,6 @@
 import pyomo.environ as pyo
 from idaes.core import FlowsheetCostingBlockData, declare_process_block_class
 
-
 """ modified by: Soraya Rawlings """
 
 

@@ -59,7 +59,6 @@ from prommis.ion_exchange.costing.ion_exchange_cost_model import (
     IXCostingData,
 )
 
-
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pyomo.repn.plugins.nl_writer").setLevel(logging.ERROR)
 

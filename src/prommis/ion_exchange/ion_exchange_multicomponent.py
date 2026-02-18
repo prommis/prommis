@@ -60,16 +60,16 @@ The IXMC model introduces new key features, including:
    - Allows the modification of the resin file to incorporate new
      resins properties tailored to specific REEs or metal separations
      without altering the core equations of the IXMC model.
-  
+
 3. **Extended Freundlich Isotherm Implementation**:
-   
+
    - Implements the Freundlich equilibrium model, which is well-suited
      for heterogeneous surfaces and non-ideal adsorption processes, to
      allow users to fit experimental breakthrough data and derive
      equilibrium parameters for multicomponent systems.
 
 4. **New Configuration Options**:
-   
+
    - Introduces new configuration arguments to the unit model to
      provide greater control over operational parameters, including
      initial concentrations, number of trapezoids for trapezoidal rule
@@ -83,7 +83,7 @@ The IXMC model introduces new key features, including:
      the regeneration process.
 
 6. **Redefined Dimensionless Numbers**:
-   
+
    - Redefined dimensionless numbers and other key design terms as
      Pyomo `Expression` components, improving model flexibility,
      scalability, and convergence.
@@ -96,10 +96,10 @@ The IXMC model builds upon the original capabilities of the IX model
 and retains the four primary operational steps of ion exchange
 processes:
 
-(1) Service  
-(2) Backwashing  
-(3) Regeneration  
-(4) Rinsing  
+(1) Service
+(2) Backwashing
+(3) Regeneration
+(4) Rinsing
 
 Note that, even though the regeneration is added as a stream in the
 IXMC model, it is currently only used for costing purposes. However,
@@ -130,7 +130,7 @@ The IXMC model is separated into three distinct models, each
 designed to address specific aspects of the ion exchange process:
 
 1. **Base Model**:
-   
+
    - Provides the foundational structure for the IXMC model, ensuring
      consistency across all calculations and enabling users to define
      global key variables and parameters.
@@ -142,7 +142,7 @@ designed to address specific aspects of the ion exchange process:
      <https://watertap.readthedocs.io/en/stable/technical_reference/unit_models/ion_exchange_0D.html>`_.
 
 2. **Equilibrium Model**:
-   
+
    - Adds the Freundlich multicomponent equations, which describe the
      adsorption behavior of ions on the resin surface.
    - Includes the equations for the trapezoidal rule to calculate
@@ -151,7 +151,7 @@ designed to address specific aspects of the ion exchange process:
      concentrations and adsorption dynamics over time.
 
 3. **Costing Block and Model**:
-   
+
    - Modifies the original `IX costing package
      <https://watertap.readthedocs.io/en/latest/technical_reference/costing/ion_exchange.html>`_
      from WaterTAP. These models implement all costing variables and
@@ -179,7 +179,7 @@ focus on REE recovery. To solve an example, we follow three sequential steps:
      to the **Resin-Specific Information** section below.
 
 2. **Parameter Estimation Step**:
-   
+
    - Estimate equilibrium parameters using a parameter estimation
      model based on known breakthrough data. For our specific model
      under the Freundlich equilibrium, the estimated parameters are
@@ -189,9 +189,9 @@ focus on REE recovery. To solve an example, we follow three sequential steps:
    - Refer to the `Parmest documentation
      <https://pyomo.readthedocs.io/en/6.8.0/contributed_packages/parmest/index.html>`_,
      for a detailed guidance on parameter estimation.
-     
+
 3. **Data Implementation and Example Construction Step**:
-   
+
    - Integrate all calculated and known parameters into the IXMC model
      to solve the system.
    - Customize variables, bounds, and separation conditions to match
@@ -205,8 +205,8 @@ focus on REE recovery. To solve an example, we follow three sequential steps:
 
 This procedure mirrors the approach used in the original IX model,
 with additional enhancements for multicomponent systems.
-   
-    
+
+
 Resin-Specific Parameters and Equations
 ----------------------------------------
 
@@ -229,7 +229,7 @@ types.
 
    "Pressure drop (psi/m)", ":math:`p_{drop} = p_{drop, A} + p_{drop,B}u_{bed} + p_{drop, C}u_{bed}^{2}`"
    "Bed expansion fraction (dimensionless)", ":math:`H_{expan} = H_{expan, A} + H_{expan, B} u_{bw} + H_{expan, C} u_{bw}^{2}`"
-   
+
 The polynomial coefficients are specific to the resin being used and
 are typically obtained from the resin data production sheet, which
 include experimental plots of bed expansion and pressure drop as
@@ -251,7 +251,7 @@ manufacturer.
 .. csv-table:: Resin names and their types included in the resin JSON file.
    :header: "Resin Name", "Resin Type"
    :name: resin_table
-	    
+
    "A850", "Strong-base Type I Acrylic Anion Exchange :math:`[1]`"
    "S950", "Chelating Polystyrene-Divinylbenzene :math:`[2]`"
 
@@ -266,7 +266,7 @@ manufacturer.
    "Porosity (takes a value from 0 to 1)", ":math:`dimensionless` "
    "Reference", "N/A"
 
-   
+
 Modified Model Components
 =========================
 
@@ -283,7 +283,7 @@ terms that were modified in the model.
    Variable, "``Freundlich Coefficient n``", ":math:`{n_j}`", "The Freundlich isotherm coefficient :math:`n` that characterizes the adsorption capacity of each ion :math:`j` in the solution."
    Variable, "``Bed Volumes at 50% Influent Concentration``", ":math:`BV_{{50}_j}`", "The volume of influent required to reach 50% of the initial concentration for each ion :math:`j` in the solution."
    Variable, "``Mass Transfer Coefficient``", ":math:`k_{T_j}`", "The coefficient that quantifies the rate of mass transfer for each ion in the solution."
-   
+
 Limitations of the IXMC Model
 =============================
 
@@ -320,7 +320,6 @@ from prommis.ion_exchange.ion_exchange_multicomponent_base import (
     IonExchangeBaseData,
     IonExchangeType,
 )
-
 
 """ This model contains the Clark model equations using Freundlich
 equilibrium equations. This is a modified version of multicomponent

@@ -46,6 +46,7 @@ def main():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
 
+    # specify the feed
     cation_list = ["lithium", "cobalt"]
     anion_list = ["chloride"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
@@ -72,21 +73,21 @@ def main():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
-        inlet_flow_volume=inlet_flow_volume,
-        inlet_concentration=inlet_concentration,
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
 
     # update parameter inputs if desired
-    build_membrane_parameters(m)
+    update_membrane_parameters(m)
 
     # add product blocks for retentate and permeate
     m.fs.retentate_block = Product(property_package=m.fs.stream_properties)
     m.fs.permeate_block = Product(property_package=m.fs.stream_properties)
 
-    # fix the degrees of freedom to their default values
-    fix_variables(m)
+    # fix the degrees of freedom
+    fix_variables(m, inlet_flow_volume, inlet_concentration)
+
+    m.fs.membrane.initialize_streams()
 
     # add and connect flowsheet streams
     add_and_connect_streams(m)
@@ -110,7 +111,7 @@ def main():
     return (m, overall_results_plot, membrane_results_plot)
 
 
-def build_membrane_parameters(m):
+def update_membrane_parameters(m):
     """
     Updates parameters needed in multi-component diafiltration unit model if desired.
 
@@ -120,15 +121,21 @@ def build_membrane_parameters(m):
     pass
 
 
-def fix_variables(m):
+def fix_variables(m, inlet_flow_volume, inlet_concentration):
     # fix the nine degrees of freedom in the membrane
     m.fs.membrane.total_module_length.fix()
     m.fs.membrane.total_membrane_length.fix()
     m.fs.membrane.applied_pressure.fix()
-    m.fs.membrane.feed_flow_volume.fix()
-    m.fs.membrane.diafiltrate_flow_volume.fix()
-    m.fs.membrane.feed_conc_mol_comp.fix()
-    m.fs.membrane.diafiltrate_conc_mol_comp.fix()
+
+    m.fs.membrane.feed_flow_volume.fix(inlet_flow_volume["feed"])
+    m.fs.membrane.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
+
+    for t in m.fs.membrane.time:
+        for j in m.fs.membrane.solutes:
+            m.fs.membrane.feed_conc_mol_comp[t, j].fix(inlet_concentration["feed"][j])
+            m.fs.membrane.diafiltrate_conc_mol_comp[t, j].fix(
+                inlet_concentration["diafiltrate"][j]
+            )
 
 
 def add_and_connect_streams(m):

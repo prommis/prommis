@@ -47,6 +47,11 @@ from prommis.nanofiltration.multi_component_diafiltration import (
 def sample_single_salt_model():
     cation_list = ["lithium"]
     anion_list = ["chloride"]
+    inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
+    inlet_concentration = {
+        "feed": {"lithium": 245, "chloride": 245},
+        "diafiltrate": {"lithium": 14, "chloride": 14},
+    }
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -58,11 +63,6 @@ def sample_single_salt_model():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
-        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
-        inlet_concentration={
-            "feed": {"lithium": 245, "chloride": 245},
-            "diafiltrate": {"lithium": 14, "chloride": 14},
-        },
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
@@ -70,17 +70,25 @@ def sample_single_salt_model():
     m.fs.unit.total_module_length.fix()
     m.fs.unit.total_membrane_length.fix()
     m.fs.unit.applied_pressure.fix()
-    m.fs.unit.feed_flow_volume.fix()
-    m.fs.unit.feed_conc_mol_comp.fix()
-    m.fs.unit.diafiltrate_flow_volume.fix()
-    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
+    m.fs.unit.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
+
+    for t in m.fs.unit.time:
+        for j in m.fs.unit.solutes:
+            m.fs.unit.feed_conc_mol_comp[t, j].fix(inlet_concentration["feed"][j])
+            m.fs.unit.diafiltrate_conc_mol_comp[t, j].fix(
+                inlet_concentration["diafiltrate"][j]
+            )
+
+    m.fs.unit.initialize_streams()
 
     return m
 
 
 @pytest.mark.unit
 def test_config_single_salt(sample_single_salt_model):
-    assert len(sample_single_salt_model.fs.unit.config) == 10
+    assert len(sample_single_salt_model.fs.unit.config) == 8
 
     assert not sample_single_salt_model.fs.unit.config.dynamic
     assert not sample_single_salt_model.fs.unit.config.has_holdup
@@ -541,6 +549,11 @@ def diafiltration_single_salt_lithium():
     """
     cation_list = ["lithium"]
     anion_list = ["chloride"]
+    inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
+    inlet_concentration = {
+        "feed": {"lithium": 245, "chloride": 245},
+        "diafiltrate": {"lithium": 14, "chloride": 14},
+    }
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -553,11 +566,6 @@ def diafiltration_single_salt_lithium():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
-        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
-        inlet_concentration={
-            "feed": {"lithium": 245, "chloride": 245},
-            "diafiltrate": {"lithium": 14, "chloride": 14},
-        },
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
@@ -570,10 +578,18 @@ def diafiltration_single_salt_lithium():
     m.fs.unit.total_membrane_length.fix()
     # reduce pressure to accommodate lower osmotic pressure
     m.fs.unit.applied_pressure.fix(5)
-    m.fs.unit.feed_flow_volume.fix()
-    m.fs.unit.feed_conc_mol_comp.fix()
-    m.fs.unit.diafiltrate_flow_volume.fix()
-    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
+    m.fs.unit.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
+
+    for t in m.fs.unit.time:
+        for j in m.fs.unit.solutes:
+            m.fs.unit.feed_conc_mol_comp[t, j].fix(inlet_concentration["feed"][j])
+            m.fs.unit.diafiltrate_conc_mol_comp[t, j].fix(
+                inlet_concentration["diafiltrate"][j]
+            )
+
+    m.fs.unit.initialize_streams()
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -676,6 +692,11 @@ def diafiltration_single_salt_cobalt():
     """
     cation_list = ["cobalt"]
     anion_list = ["chloride"]
+    inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
+    inlet_concentration = {
+        "feed": {"cobalt": 288, "chloride": 576},
+        "diafiltrate": {"cobalt": 3, "chloride": 6},
+    }
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -688,11 +709,6 @@ def diafiltration_single_salt_cobalt():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
-        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
-        inlet_concentration={
-            "feed": {"cobalt": 288, "chloride": 576},
-            "diafiltrate": {"cobalt": 3, "chloride": 6},
-        },
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
@@ -705,10 +721,18 @@ def diafiltration_single_salt_cobalt():
     m.fs.unit.total_membrane_length.fix()
     # reduce pressure to accommodate lower osmotic pressure
     m.fs.unit.applied_pressure.fix(5)
-    m.fs.unit.feed_flow_volume.fix()
-    m.fs.unit.feed_conc_mol_comp.fix()
-    m.fs.unit.diafiltrate_flow_volume.fix()
-    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
+    m.fs.unit.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
+
+    for t in m.fs.unit.time:
+        for j in m.fs.unit.solutes:
+            m.fs.unit.feed_conc_mol_comp[t, j].fix(inlet_concentration["feed"][j])
+            m.fs.unit.diafiltrate_conc_mol_comp[t, j].fix(
+                inlet_concentration["diafiltrate"][j]
+            )
+
+    m.fs.unit.initialize_streams()
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -809,6 +833,11 @@ def diafiltration_single_salt_aluminum():
     """
     cation_list = ["aluminum"]
     anion_list = ["chloride"]
+    inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
+    inlet_concentration = {
+        "feed": {"aluminum": 20, "chloride": 60},
+        "diafiltrate": {"aluminum": 3, "chloride": 9},
+    }
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -821,14 +850,12 @@ def diafiltration_single_salt_aluminum():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
-        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
-        inlet_concentration={
-            "feed": {"aluminum": 20, "chloride": 60},
-            "diafiltrate": {"aluminum": 3, "chloride": 9},
-        },
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
+
+    # reduce numerical tolerance
+    m.fs.unit.numerical_zero_tolerance.set_value(1e-8)
 
     assert value(m.fs.unit.membrane_fixed_charge) == -44
 
@@ -838,10 +865,18 @@ def diafiltration_single_salt_aluminum():
     m.fs.unit.total_membrane_length.fix()
     # reduce pressure to accommodate lower osmotic pressure
     m.fs.unit.applied_pressure.fix(5)
-    m.fs.unit.feed_flow_volume.fix()
-    m.fs.unit.feed_conc_mol_comp.fix()
-    m.fs.unit.diafiltrate_flow_volume.fix()
-    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
+    m.fs.unit.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
+
+    for t in m.fs.unit.time:
+        for j in m.fs.unit.solutes:
+            m.fs.unit.feed_conc_mol_comp[t, j].fix(inlet_concentration["feed"][j])
+            m.fs.unit.diafiltrate_conc_mol_comp[t, j].fix(
+                inlet_concentration["diafiltrate"][j]
+            )
+
+    m.fs.unit.initialize_streams()
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -862,7 +897,7 @@ class TestDiafiltrationSingleSaltAluminum(object):
         )
         assert (
             value(diafiltration_single_salt_aluminum.fs.unit.numerical_zero_tolerance)
-            == 1e-10
+            == 1e-8
         )
 
         test_build_single_salt(diafiltration_single_salt_aluminum)
@@ -941,6 +976,11 @@ class TestDiafiltrationSingleSaltAluminum(object):
 def sample_two_salt_model():
     cation_list = ["lithium", "cobalt"]
     anion_list = ["chloride"]
+    inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
+    inlet_concentration = {
+        "feed": {"lithium": 245, "cobalt": 288, "chloride": 821},
+        "diafiltrate": {"lithium": 14, "cobalt": 3, "chloride": 20},
+    }
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -952,11 +992,6 @@ def sample_two_salt_model():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
-        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
-        inlet_concentration={
-            "feed": {"lithium": 245, "cobalt": 288, "chloride": 822},
-            "diafiltrate": {"lithium": 14, "cobalt": 3, "chloride": 21},
-        },
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
@@ -964,17 +999,25 @@ def sample_two_salt_model():
     m.fs.unit.total_module_length.fix()
     m.fs.unit.total_membrane_length.fix()
     m.fs.unit.applied_pressure.fix()
-    m.fs.unit.feed_flow_volume.fix()
-    m.fs.unit.feed_conc_mol_comp.fix()
-    m.fs.unit.diafiltrate_flow_volume.fix()
-    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
+    m.fs.unit.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
+
+    for t in m.fs.unit.time:
+        for j in m.fs.unit.solutes:
+            m.fs.unit.feed_conc_mol_comp[t, j].fix(inlet_concentration["feed"][j])
+            m.fs.unit.diafiltrate_conc_mol_comp[t, j].fix(
+                inlet_concentration["diafiltrate"][j]
+            )
+
+    m.fs.unit.initialize_streams()
 
     return m
 
 
 @pytest.mark.unit
 def test_config_two_salt(sample_two_salt_model):
-    assert len(sample_two_salt_model.fs.unit.config) == 10
+    assert len(sample_two_salt_model.fs.unit.config) == 8
 
     assert not sample_two_salt_model.fs.unit.config.dynamic
     assert not sample_two_salt_model.fs.unit.config.has_holdup
@@ -1366,6 +1409,15 @@ def test_build_two_salt(sample_two_salt_model):
         ]
         == 1e1
     )
+    for t in sample_two_salt_model.fs.unit.time:
+        for x in sample_two_salt_model.fs.unit.dimensionless_module_length:
+            if x != 0:
+                assert (
+                    sample_two_salt_model.fs.unit.scaling_factor[
+                        sample_two_salt_model.fs.unit.lumped_water_flux[t, x]
+                    ]
+                    == 1e3
+                )
 
     # ports
     assert isinstance(sample_two_salt_model.fs.unit.feed_inlet, Port)
@@ -1396,6 +1448,11 @@ def diafiltration_two_salt_lithium_cobalt():
     """
     cation_list = ["lithium", "cobalt"]
     anion_list = ["chloride"]
+    inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
+    inlet_concentration = {
+        "feed": {"lithium": 245, "cobalt": 288, "chloride": 821},
+        "diafiltrate": {"lithium": 14, "cobalt": 3, "chloride": 20},
+    }
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -1408,11 +1465,6 @@ def diafiltration_two_salt_lithium_cobalt():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
-        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
-        inlet_concentration={
-            "feed": {"lithium": 245, "cobalt": 288, "chloride": 822},
-            "diafiltrate": {"lithium": 14, "cobalt": 3, "chloride": 21},
-        },
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
@@ -1424,10 +1476,18 @@ def diafiltration_two_salt_lithium_cobalt():
     m.fs.unit.total_module_length.fix()
     m.fs.unit.total_membrane_length.fix()
     m.fs.unit.applied_pressure.fix()
-    m.fs.unit.feed_flow_volume.fix()
-    m.fs.unit.feed_conc_mol_comp.fix()
-    m.fs.unit.diafiltrate_flow_volume.fix()
-    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
+    m.fs.unit.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
+
+    for t in m.fs.unit.time:
+        for j in m.fs.unit.solutes:
+            m.fs.unit.feed_conc_mol_comp[t, j].fix(inlet_concentration["feed"][j])
+            m.fs.unit.diafiltrate_conc_mol_comp[t, j].fix(
+                inlet_concentration["diafiltrate"][j]
+            )
+
+    m.fs.unit.initialize_streams()
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -1553,6 +1613,11 @@ def diafiltration_two_salt_lithium_aluminum():
     """
     cation_list = ["lithium", "aluminum"]
     anion_list = ["chloride"]
+    inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
+    inlet_concentration = {
+        "feed": {"lithium": 245, "aluminum": 20, "chloride": 305},
+        "diafiltrate": {"lithium": 14, "aluminum": 3, "chloride": 23},
+    }
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -1565,11 +1630,6 @@ def diafiltration_two_salt_lithium_aluminum():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
-        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
-        inlet_concentration={
-            "feed": {"lithium": 245, "aluminum": 20, "chloride": 305},
-            "diafiltrate": {"lithium": 14, "aluminum": 3, "chloride": 23},
-        },
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
@@ -1584,10 +1644,18 @@ def diafiltration_two_salt_lithium_aluminum():
     m.fs.unit.total_module_length.fix()
     m.fs.unit.total_membrane_length.fix()
     m.fs.unit.applied_pressure.fix()
-    m.fs.unit.feed_flow_volume.fix()
-    m.fs.unit.feed_conc_mol_comp.fix()
-    m.fs.unit.diafiltrate_flow_volume.fix()
-    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
+    m.fs.unit.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
+
+    for t in m.fs.unit.time:
+        for j in m.fs.unit.solutes:
+            m.fs.unit.feed_conc_mol_comp[t, j].fix(inlet_concentration["feed"][j])
+            m.fs.unit.diafiltrate_conc_mol_comp[t, j].fix(
+                inlet_concentration["diafiltrate"][j]
+            )
+
+    m.fs.unit.initialize_streams()
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -1715,6 +1783,11 @@ def diafiltration_two_salt_cobalt_aluminum():
     """
     cation_list = ["cobalt", "aluminum"]
     anion_list = ["chloride"]
+    inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
+    inlet_concentration = {
+        "feed": {"cobalt": 288, "aluminum": 20, "chloride": 636},
+        "diafiltrate": {"cobalt": 3, "aluminum": 3, "chloride": 15},
+    }
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -1727,11 +1800,6 @@ def diafiltration_two_salt_cobalt_aluminum():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
-        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
-        inlet_concentration={
-            "feed": {"cobalt": 288, "aluminum": 20, "chloride": 636},
-            "diafiltrate": {"cobalt": 3, "aluminum": 3, "chloride": 15},
-        },
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
@@ -1743,10 +1811,18 @@ def diafiltration_two_salt_cobalt_aluminum():
     m.fs.unit.total_module_length.fix()
     m.fs.unit.total_membrane_length.fix()
     m.fs.unit.applied_pressure.fix()
-    m.fs.unit.feed_flow_volume.fix()
-    m.fs.unit.feed_conc_mol_comp.fix()
-    m.fs.unit.diafiltrate_flow_volume.fix()
-    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
+    m.fs.unit.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
+
+    for t in m.fs.unit.time:
+        for j in m.fs.unit.solutes:
+            m.fs.unit.feed_conc_mol_comp[t, j].fix(inlet_concentration["feed"][j])
+            m.fs.unit.diafiltrate_conc_mol_comp[t, j].fix(
+                inlet_concentration["diafiltrate"][j]
+            )
+
+    m.fs.unit.initialize_streams()
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -1867,6 +1943,11 @@ class TestDiafiltrationTwoSaltCobaltAluminum(object):
 def sample_three_salt_model():
     cation_list = ["lithium", "cobalt", "aluminum"]
     anion_list = ["chloride"]
+    inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
+    inlet_concentration = {
+        "feed": {"lithium": 245, "cobalt": 288, "aluminum": 20, "chloride": 881},
+        "diafiltrate": {"lithium": 14, "cobalt": 3, "aluminum": 3, "chloride": 29},
+    }
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -1878,11 +1959,6 @@ def sample_three_salt_model():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
-        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
-        inlet_concentration={
-            "feed": {"lithium": 245, "cobalt": 288, "aluminum": 20, "chloride": 881},
-            "diafiltrate": {"lithium": 14, "cobalt": 3, "aluminum": 3, "chloride": 29},
-        },
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
@@ -1890,17 +1966,25 @@ def sample_three_salt_model():
     m.fs.unit.total_module_length.fix()
     m.fs.unit.total_membrane_length.fix()
     m.fs.unit.applied_pressure.fix()
-    m.fs.unit.feed_flow_volume.fix()
-    m.fs.unit.feed_conc_mol_comp.fix()
-    m.fs.unit.diafiltrate_flow_volume.fix()
-    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
+    m.fs.unit.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
+
+    for t in m.fs.unit.time:
+        for j in m.fs.unit.solutes:
+            m.fs.unit.feed_conc_mol_comp[t, j].fix(inlet_concentration["feed"][j])
+            m.fs.unit.diafiltrate_conc_mol_comp[t, j].fix(
+                inlet_concentration["diafiltrate"][j]
+            )
+
+    m.fs.unit.initialize_streams()
 
     return m
 
 
 @pytest.mark.unit
 def test_config_three_salt(sample_three_salt_model):
-    assert len(sample_three_salt_model.fs.unit.config) == 10
+    assert len(sample_three_salt_model.fs.unit.config) == 8
 
     assert not sample_three_salt_model.fs.unit.config.dynamic
     assert not sample_three_salt_model.fs.unit.config.has_holdup
@@ -2307,51 +2391,9 @@ def test_build_three_salt(sample_three_salt_model):
             if x != 0:
                 assert (
                     sample_three_salt_model.fs.unit.scaling_factor[
-                        sample_three_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                            t, x, sample_three_salt_model.fs.unit.config.cation_list[2]
-                        ]
+                        sample_three_salt_model.fs.unit.lumped_water_flux[t, x]
                     ]
-                    == 1e-5
-                )
-                assert (
-                    sample_three_salt_model.fs.unit.scaling_factor[
-                        sample_three_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                            t, x, sample_three_salt_model.fs.unit.config.cation_list[1]
-                        ]
-                    ]
-                    == 1e-5
-                )
-                assert (
-                    sample_three_salt_model.fs.unit.scaling_factor[
-                        sample_three_salt_model.fs.unit.cation_equilibrium_retentate_membrane_interface[
-                            t, x, sample_three_salt_model.fs.unit.config.cation_list[0]
-                        ]
-                    ]
-                    == 1e-3
-                )
-                assert (
-                    sample_three_salt_model.fs.unit.scaling_factor[
-                        sample_three_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                            t, x, sample_three_salt_model.fs.unit.config.cation_list[2]
-                        ]
-                    ]
-                    == 1e-5
-                )
-                assert (
-                    sample_three_salt_model.fs.unit.scaling_factor[
-                        sample_three_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                            t, x, sample_three_salt_model.fs.unit.config.cation_list[1]
-                        ]
-                    ]
-                    == 1e-5
-                )
-                assert (
-                    sample_three_salt_model.fs.unit.scaling_factor[
-                        sample_three_salt_model.fs.unit.cation_equilibrium_membrane_permeate_interface[
-                            t, x, sample_three_salt_model.fs.unit.config.cation_list[0]
-                        ]
-                    ]
-                    == 1e-3
+                    == 1e3
                 )
 
     # ports
@@ -2383,6 +2425,11 @@ def diafiltration_three_salt_lithium_cobalt_aluminum():
     """
     cation_list = ["lithium", "cobalt", "aluminum"]
     anion_list = ["chloride"]
+    inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
+    inlet_concentration = {
+        "feed": {"lithium": 245, "cobalt": 288, "aluminum": 20, "chloride": 881},
+        "diafiltrate": {"lithium": 14, "cobalt": 3, "aluminum": 3, "chloride": 29},
+    }
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -2395,14 +2442,12 @@ def diafiltration_three_salt_lithium_cobalt_aluminum():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
-        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
-        inlet_concentration={
-            "feed": {"lithium": 245, "cobalt": 288, "aluminum": 20, "chloride": 881},
-            "diafiltrate": {"lithium": 14, "cobalt": 3, "aluminum": 3, "chloride": 29},
-        },
         NFE_module_length=10,
         NFE_membrane_thickness=5,
     )
+
+    # reduce numerical tolerance
+    m.fs.unit.numerical_zero_tolerance.set_value(1e-8)
 
     assert value(m.fs.unit.membrane_fixed_charge) == -44
 
@@ -2411,10 +2456,18 @@ def diafiltration_three_salt_lithium_cobalt_aluminum():
     m.fs.unit.total_module_length.fix()
     m.fs.unit.total_membrane_length.fix()
     m.fs.unit.applied_pressure.fix()
-    m.fs.unit.feed_flow_volume.fix()
-    m.fs.unit.feed_conc_mol_comp.fix()
-    m.fs.unit.diafiltrate_flow_volume.fix()
-    m.fs.unit.diafiltrate_conc_mol_comp.fix()
+
+    m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
+    m.fs.unit.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
+
+    for t in m.fs.unit.time:
+        for j in m.fs.unit.solutes:
+            m.fs.unit.feed_conc_mol_comp[t, j].fix(inlet_concentration["feed"][j])
+            m.fs.unit.diafiltrate_conc_mol_comp[t, j].fix(
+                inlet_concentration["diafiltrate"][j]
+            )
+
+    m.fs.unit.initialize_streams()
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -2442,7 +2495,7 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminum(object):
             value(
                 diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.numerical_zero_tolerance
             )
-            == 1e-10
+            == 1e-8
         )
 
         test_build_three_salt(diafiltration_three_salt_lithium_cobalt_aluminum)

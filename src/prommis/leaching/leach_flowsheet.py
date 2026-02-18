@@ -22,7 +22,6 @@ from pyomo.environ import (
     units,
     Var,
 )
-from pyomo.dae.flatten import flatten_dae_components
 
 import idaes.logger as idaeslog
 from idaes.core import FlowsheetBlockData, declare_process_block_class
@@ -39,27 +38,11 @@ from prommis.properties.sulfuric_acid_leaching_properties import (
 from prommis.util import scale_time_discretization_equations
 
 
-def copy_first_steady_state(m):
-    """
-    Function that propagates initial steady state guess to future time points.
-    This function is used to initialize all the time discrete variables to the
-    initial steady state value.
-    """
-
-    _, time_vars = flatten_dae_components(m, m.fs.time, Var, active=True)
-    # Copy initial conditions forward
-    for var in time_vars:
-        for t in m.fs.time:
-            if t == m.fs.time.first():
-                continue
-            else:
-                var[t].value = var[m.fs.time.first()].value
-
-
 class CocurrentSlurryLeachingFlowsheetInitializer(ModularInitializerBase):
     """
     This is an initializer for the CocurrentSlurryLeachingFlowsheet.
-    This method calls the
+    This method calls the default initializer for the leach train, then
+    performs a solve on the flowsheet.
     """
 
     CONFIG = ModularInitializerBase.CONFIG()

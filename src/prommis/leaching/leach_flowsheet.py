@@ -24,6 +24,7 @@ from pyomo.environ import (
 )
 from pyomo.dae.flatten import flatten_dae_components
 
+import idaes.logger as idaeslog
 from idaes.core import FlowsheetBlockData, declare_process_block_class
 from idaes.core.initialization import ModularInitializerBase
 from idaes.core.scaling import CustomScalerBase
@@ -447,40 +448,33 @@ class CocurrentSlurryLeachingFlowsheetData(FlowsheetBlockData):
             csb.scale_constraint_by_nominal_value(condata)
 
 
-def create_one_tank_json():
+def create_leaching_json(n_tanks):
+    if n_tanks == 1:
+        tank_str = "tank"
+    else:
+        tank_str = "tanks"
+    print(f"Creating steady state json for leaching with {n_tanks} {tank_str}")
     m = ConcreteModel()
     m.fs = CocurrentSlurryLeachingFlowsheet(
+        dynamic=False,
         has_holdup=True,
-        number_of_tanks=1,
+        number_of_tanks=n_tanks,
     )
     m.fs.scale_model()
-    init_obj = m.fs.default_initializer()
+    init_obj = m.fs.default_initializer(output_level=idaeslog.WARNING)
     init_obj.initialize(m.fs)
-    path_name = os.path.join("tests", "leaching_one_tank.json")
-    to_json(m, fname=path_name, human_read=True)
-    return m
 
-
-def create_two_tanks_json():
-    m = ConcreteModel()
-    m.fs = CocurrentSlurryLeachingFlowsheet(
-        has_holdup=True,
-        number_of_tanks=2,
-    )
-    m.fs.scale_model()
-    init_obj = m.fs.default_initializer()
-    init_obj.initialize(m.fs)
-    path_name = os.path.join("tests", "leaching_two_tanks.json")
+    path_name = os.path.join("tests", f"leaching_{n_tanks}_{tank_str}.json")
     to_json(m, fname=path_name, human_read=True)
+    print(f"Saved steady state solution to {path_name}")
     return m
 
 
 # -------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    m = create_one_tank_json()
-    # m = create_two_tanks_json()
+    m = create_leaching_json(n_tanks=1)
 
-    m.fs.leach.liquid_outlet.display()
-    m.fs.leach.solid_outlet.display()
+    # m.fs.leach.liquid_outlet.display()
+    # m.fs.leach.solid_outlet.display()
 
-    m.fs.leach.report()
+    # m.fs.leach.report()

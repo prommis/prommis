@@ -282,7 +282,7 @@ class TestDynamicOneTank:
         )
 
         m.fs.scale_model()
-        path = os.path.join(this_file_dir(), "leaching_one_tank.json")
+        path = os.path.join(this_file_dir(), "leaching_1_tank.json")
         from_json(m, fname=path, wts=StoreSpec.value())
 
         m.fs.reduce_dae_index()
@@ -392,7 +392,7 @@ class TestDynamicTwoTanks:
         )
 
         m.fs.scale_model()
-        path = os.path.join(this_file_dir(), "leaching_two_tanks.json")
+        path = os.path.join(this_file_dir(), "leaching_2_tanks.json")
         from_json(m, fname=path, wts=StoreSpec.value())
 
         m.fs.reduce_dae_index()

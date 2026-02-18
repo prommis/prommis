@@ -17,7 +17,7 @@ Configuration Arguments
 
 The Multi-Component Diafiltration unit model requires a property package that provides the valency (:math:`z_i`), infinite dilution diffusion coefficient (:math:`D_i`) in :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1}`, thermodynamic reflection coefficient (:math:`\sigma_i`), partition coefficients (:math:`H_{i,r}` and :math:`H_{i,p}`) at the retentate-membrane and membrane-permeate interfaces, and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams.
 
-There are six required arguments:
+There are four required arguments:
 
 #. ``cation_list`` (list of cations present in the system)
 
@@ -26,14 +26,6 @@ There are six required arguments:
 #. ``anion_list`` (list of anions present in the system)
 
     ``default=["chloride"]``
-
-#. ``inlet_flow_volume`` (dictionary of feed and diafiltrate flow rate information)
-
-    ``default={"feed": 12.5, "diafiltrate": 3.75}``
-
-#. ``inlet_concentration`` (dictionary of feed and diafiltrate concentration information)
-
-    ``default={"feed": {"lithium": 245, "cobalt": 288, "chloride": 822}, "diafiltrate": {"lithium": 14, "cobalt": 3, "chloride": 21}}``
 
 #. ``NFE_module_length`` (the desired number of finite elements across the width of the membrane (i.e., the module length))
 #. ``NFE_membrane_thickness`` (the desired number of finite elements across the thickness of the membrane)

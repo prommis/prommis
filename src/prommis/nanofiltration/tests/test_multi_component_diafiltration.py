@@ -69,7 +69,8 @@ def sample_single_salt_model():
 
     m.fs.unit.total_module_length.fix()
     m.fs.unit.total_membrane_length.fix()
-    m.fs.unit.applied_pressure.fix()
+    # reduce pressure to accommodate lower osmotic pressure of single salts
+    m.fs.unit.applied_pressure.fix(5)
 
     m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
     m.fs.unit.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
@@ -81,7 +82,8 @@ def sample_single_salt_model():
                 inlet_concentration["diafiltrate"][j]
             )
 
-    m.fs.unit.initialize_streams()
+    initialized_model = m.fs.unit.default_initializer()
+    initialized_model.initialize(m.fs.unit)
 
     return m
 
@@ -107,6 +109,9 @@ def test_config_single_salt(sample_single_salt_model):
 @pytest.mark.unit
 def test_build_single_salt(sample_single_salt_model):
     # parameters
+    assert isinstance(sample_single_salt_model.fs.unit.numerical_zero_tolerance, Param)
+    assert value(sample_single_salt_model.fs.unit.numerical_zero_tolerance) == 1e-10
+
     assert isinstance(sample_single_salt_model.fs.unit.total_membrane_thickness, Param)
     assert value(sample_single_salt_model.fs.unit.total_membrane_thickness) == 1e-7
 
@@ -576,7 +581,7 @@ def diafiltration_single_salt_lithium():
 
     m.fs.unit.total_module_length.fix()
     m.fs.unit.total_membrane_length.fix()
-    # reduce pressure to accommodate lower osmotic pressure
+    # reduce pressure to accommodate lower osmotic pressure of single salts
     m.fs.unit.applied_pressure.fix(5)
 
     m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
@@ -589,7 +594,8 @@ def diafiltration_single_salt_lithium():
                 inlet_concentration["diafiltrate"][j]
             )
 
-    m.fs.unit.initialize_streams()
+    initialized_model = m.fs.unit.default_initializer()
+    initialized_model.initialize(m.fs.unit)
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -605,14 +611,6 @@ class TestDiafiltrationSingleSaltLithium(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_lithium(self, diafiltration_single_salt_lithium):
-        assert isinstance(
-            diafiltration_single_salt_lithium.fs.unit.numerical_zero_tolerance, Param
-        )
-        assert (
-            value(diafiltration_single_salt_lithium.fs.unit.numerical_zero_tolerance)
-            == 1e-10
-        )
-
         test_build_single_salt(diafiltration_single_salt_lithium)
 
     @pytest.mark.component
@@ -719,7 +717,7 @@ def diafiltration_single_salt_cobalt():
 
     m.fs.unit.total_module_length.fix()
     m.fs.unit.total_membrane_length.fix()
-    # reduce pressure to accommodate lower osmotic pressure
+    # reduce pressure to accommodate lower osmotic pressure of single salts
     m.fs.unit.applied_pressure.fix(5)
 
     m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
@@ -732,7 +730,8 @@ def diafiltration_single_salt_cobalt():
                 inlet_concentration["diafiltrate"][j]
             )
 
-    m.fs.unit.initialize_streams()
+    initialized_model = m.fs.unit.default_initializer()
+    initialized_model.initialize(m.fs.unit)
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -748,14 +747,6 @@ class TestDiafiltrationSingleSaltCobalt(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_cobalt(self, diafiltration_single_salt_cobalt):
-        assert isinstance(
-            diafiltration_single_salt_cobalt.fs.unit.numerical_zero_tolerance, Param
-        )
-        assert (
-            value(diafiltration_single_salt_cobalt.fs.unit.numerical_zero_tolerance)
-            == 1e-10
-        )
-
         test_build_single_salt(diafiltration_single_salt_cobalt)
 
     @pytest.mark.component
@@ -854,16 +845,13 @@ def diafiltration_single_salt_aluminum():
         NFE_membrane_thickness=5,
     )
 
-    # reduce numerical tolerance
-    m.fs.unit.numerical_zero_tolerance.set_value(1e-8)
-
     assert value(m.fs.unit.membrane_fixed_charge) == -44
 
     assert degrees_of_freedom(m.fs.unit) == 7
 
     m.fs.unit.total_module_length.fix()
     m.fs.unit.total_membrane_length.fix()
-    # reduce pressure to accommodate lower osmotic pressure
+    # reduce pressure to accommodate lower osmotic pressure of single salts
     m.fs.unit.applied_pressure.fix(5)
 
     m.fs.unit.feed_flow_volume.fix(inlet_flow_volume["feed"])
@@ -876,7 +864,8 @@ def diafiltration_single_salt_aluminum():
                 inlet_concentration["diafiltrate"][j]
             )
 
-    m.fs.unit.initialize_streams()
+    initialized_model = m.fs.unit.default_initializer()
+    initialized_model.initialize(m.fs.unit)
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -892,14 +881,6 @@ class TestDiafiltrationSingleSaltAluminum(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_aluminum(self, diafiltration_single_salt_aluminum):
-        assert isinstance(
-            diafiltration_single_salt_aluminum.fs.unit.numerical_zero_tolerance, Param
-        )
-        assert (
-            value(diafiltration_single_salt_aluminum.fs.unit.numerical_zero_tolerance)
-            == 1e-8
-        )
-
         test_build_single_salt(diafiltration_single_salt_aluminum)
 
     @pytest.mark.component
@@ -1010,7 +991,8 @@ def sample_two_salt_model():
                 inlet_concentration["diafiltrate"][j]
             )
 
-    m.fs.unit.initialize_streams()
+    initialized_model = m.fs.unit.default_initializer()
+    initialized_model.initialize(m.fs.unit)
 
     return m
 
@@ -1036,6 +1018,12 @@ def test_config_two_salt(sample_two_salt_model):
 @pytest.mark.unit
 def test_build_two_salt(sample_two_salt_model):
     # parameters
+    assert isinstance(
+        sample_two_salt_model.fs.unit.numerical_zero_tolerance,
+        Param,
+    )
+    assert value(sample_two_salt_model.fs.unit.numerical_zero_tolerance) == 1e-10
+
     assert isinstance(sample_two_salt_model.fs.unit.total_membrane_thickness, Param)
     assert value(sample_two_salt_model.fs.unit.total_membrane_thickness) == 1e-7
 
@@ -1487,7 +1475,8 @@ def diafiltration_two_salt_lithium_cobalt():
                 inlet_concentration["diafiltrate"][j]
             )
 
-    m.fs.unit.initialize_streams()
+    initialized_model = m.fs.unit.default_initializer()
+    initialized_model.initialize(m.fs.unit)
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -1503,17 +1492,6 @@ class TestDiafiltrationTwoSaltLithiumCobalt(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_lithium_cobalt(self, diafiltration_two_salt_lithium_cobalt):
-        assert isinstance(
-            diafiltration_two_salt_lithium_cobalt.fs.unit.numerical_zero_tolerance,
-            Param,
-        )
-        assert (
-            value(
-                diafiltration_two_salt_lithium_cobalt.fs.unit.numerical_zero_tolerance
-            )
-            == 1e-10
-        )
-
         test_build_two_salt(diafiltration_two_salt_lithium_cobalt)
 
     @pytest.mark.component
@@ -1634,9 +1612,6 @@ def diafiltration_two_salt_lithium_aluminum():
         NFE_membrane_thickness=5,
     )
 
-    # reduce numerical tolerance
-    m.fs.unit.numerical_zero_tolerance.set_value(1e-8)
-
     assert value(m.fs.unit.membrane_fixed_charge) == -44
 
     assert degrees_of_freedom(m.fs.unit) == 9
@@ -1655,7 +1630,8 @@ def diafiltration_two_salt_lithium_aluminum():
                 inlet_concentration["diafiltrate"][j]
             )
 
-    m.fs.unit.initialize_streams()
+    initialized_model = m.fs.unit.default_initializer()
+    initialized_model.initialize(m.fs.unit)
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -1671,17 +1647,6 @@ class TestDiafiltrationTwoSaltLithiumAluminum(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_lithium_aluminum(self, diafiltration_two_salt_lithium_aluminum):
-        assert isinstance(
-            diafiltration_two_salt_lithium_aluminum.fs.unit.numerical_zero_tolerance,
-            Param,
-        )
-        assert (
-            value(
-                diafiltration_two_salt_lithium_aluminum.fs.unit.numerical_zero_tolerance
-            )
-            == 1e-8
-        )
-
         test_build_two_salt(diafiltration_two_salt_lithium_aluminum)
 
     @pytest.mark.component
@@ -1822,7 +1787,8 @@ def diafiltration_two_salt_cobalt_aluminum():
                 inlet_concentration["diafiltrate"][j]
             )
 
-    m.fs.unit.initialize_streams()
+    initialized_model = m.fs.unit.default_initializer()
+    initialized_model.initialize(m.fs.unit)
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -1838,17 +1804,6 @@ class TestDiafiltrationTwoSaltCobaltAluminum(object):
     @pytest.mark.build
     @pytest.mark.unit
     def test_build_cobalt_aluminum(self, diafiltration_two_salt_cobalt_aluminum):
-        assert isinstance(
-            diafiltration_two_salt_cobalt_aluminum.fs.unit.numerical_zero_tolerance,
-            Param,
-        )
-        assert (
-            value(
-                diafiltration_two_salt_cobalt_aluminum.fs.unit.numerical_zero_tolerance
-            )
-            == 1e-10
-        )
-
         test_build_two_salt(diafiltration_two_salt_cobalt_aluminum)
 
     @pytest.mark.component
@@ -1977,7 +1932,8 @@ def sample_three_salt_model():
                 inlet_concentration["diafiltrate"][j]
             )
 
-    m.fs.unit.initialize_streams()
+    initialized_model = m.fs.unit.default_initializer()
+    initialized_model.initialize(m.fs.unit)
 
     return m
 
@@ -2003,6 +1959,9 @@ def test_config_three_salt(sample_three_salt_model):
 @pytest.mark.unit
 def test_build_three_salt(sample_three_salt_model):
     # parameters
+    assert isinstance(sample_three_salt_model.fs.unit.numerical_zero_tolerance, Param)
+    assert value(sample_three_salt_model.fs.unit.numerical_zero_tolerance) == 1e-10
+
     assert isinstance(sample_three_salt_model.fs.unit.total_membrane_thickness, Param)
     assert value(sample_three_salt_model.fs.unit.total_membrane_thickness) == 1e-7
 
@@ -2446,9 +2405,6 @@ def diafiltration_three_salt_lithium_cobalt_aluminum():
         NFE_membrane_thickness=5,
     )
 
-    # reduce numerical tolerance
-    m.fs.unit.numerical_zero_tolerance.set_value(1e-8)
-
     assert value(m.fs.unit.membrane_fixed_charge) == -44
 
     assert degrees_of_freedom(m.fs.unit) == 11
@@ -2467,7 +2423,8 @@ def diafiltration_three_salt_lithium_cobalt_aluminum():
                 inlet_concentration["diafiltrate"][j]
             )
 
-    m.fs.unit.initialize_streams()
+    initialized_model = m.fs.unit.default_initializer()
+    initialized_model.initialize(m.fs.unit)
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
@@ -2487,17 +2444,6 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminum(object):
     def test_build_lithium_cobalt_aluminum(
         self, diafiltration_three_salt_lithium_cobalt_aluminum
     ):
-        assert isinstance(
-            diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.numerical_zero_tolerance,
-            Param,
-        )
-        assert (
-            value(
-                diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.numerical_zero_tolerance
-            )
-            == 1e-8
-        )
-
         test_build_three_salt(diafiltration_three_salt_lithium_cobalt_aluminum)
 
     @pytest.mark.component

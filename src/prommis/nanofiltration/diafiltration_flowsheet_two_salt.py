@@ -87,7 +87,9 @@ def main():
     # fix the degrees of freedom
     fix_variables(m, inlet_flow_volume, inlet_concentration)
 
-    m.fs.membrane.initialize_streams()
+    # initialize membrane model
+    initialized_membrane_model = m.fs.membrane.default_initializer()
+    initialized_membrane_model.initialize(m.fs.membrane)
 
     # add and connect flowsheet streams
     add_and_connect_streams(m)

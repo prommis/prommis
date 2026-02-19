@@ -247,9 +247,52 @@ from pyomo.environ import (
 from pyomo.network import Port
 
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
+from idaes.core.initialization import BlockTriangularizationInitializer
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.constants import Constants
 from idaes.core.util.exceptions import ConfigurationError
+
+
+class MultiComponentDiafiltrationInitializer(BlockTriangularizationInitializer):
+    """
+    Multi-Component Diafiltration Initializer Class.
+    """
+
+    def initialization_routine(self, model):
+        """
+        Initializes the retentate and permeate streams, membrane concentration,
+        and un-initialized derivative variables.
+
+        Note: derivative variables are initialized to an arbitrary value.
+
+        Method then calls the block triangularization initializer method.
+        """
+
+        for t in model.time:
+            for x in model.dimensionless_module_length:
+                model.retentate_flow_volume[t, x].set_value(
+                    value(model.feed_flow_volume[t]) * 1 / 3
+                )
+                model.d_retentate_flow_volume_dx[t, x].set_value(1)
+                model.permeate_flow_volume[t, x].set_value(
+                    value(model.feed_flow_volume[t]) * 2 / 3
+                )
+                for j in model.solutes:
+                    model.retentate_conc_mol_comp[t, x, j].set_value(
+                        value(model.feed_conc_mol_comp[t, j]) * 0.95
+                    )
+                    model.d_retentate_conc_mol_comp_dx[t, x, j].set_value(1)
+                    model.permeate_conc_mol_comp[t, x, j].set_value(
+                        value(model.feed_conc_mol_comp[t, j]) * 0.8
+                    )
+                for z in model.dimensionless_membrane_thickness:
+                    for j in model.solutes:
+                        model.membrane_conc_mol_comp[t, x, z, j].set_value(
+                            value(model.feed_conc_mol_comp[t, j]) * 0.1
+                        )
+                        model.d_membrane_conc_mol_comp_dz[t, x, z, j].set_value(1)
+
+        super().initialization_routine(model)
 
 
 @declare_process_block_class("MultiComponentDiafiltration")
@@ -257,6 +300,9 @@ class MultiComponentDiafiltrationData(UnitModelBlockData):
     """
     Multi-Component Diafiltration Unit Model Class.
     """
+
+    # Set default initializer
+    default_initializer = MultiComponentDiafiltrationInitializer
 
     CONFIG = UnitModelBlockData.CONFIG()
 
@@ -1360,32 +1406,3 @@ and used when constructing these,
             self.permeate_conc_mol_comp[:, self.dimensionless_module_length.last(), :]
         )
         self.permeate_outlet.add(self._permeate_conc_mol_comp_ref, "conc_mol_comp")
-
-    def initialize_streams(self):
-        """
-        Re-initializes the retentate and permeate flow rates and the
-        retentate, membrane, and permeate concentration variables.
-
-        Intended to be called on the flowsheet level after the user
-        inputs updated feed information.
-        """
-        for t in self.time:
-            for x in self.dimensionless_module_length:
-                self.retentate_flow_volume[t, x].set_value(
-                    value(self.feed_flow_volume[t]) * 1 / 3
-                )
-                self.permeate_flow_volume[t, x].set_value(
-                    value(self.feed_flow_volume[t]) * 2 / 3
-                )
-                for j in self.solutes:
-                    self.retentate_conc_mol_comp[t, x, j].set_value(
-                        value(self.feed_conc_mol_comp[t, j]) * 0.95
-                    )
-                    self.permeate_conc_mol_comp[t, x, j].set_value(
-                        value(self.feed_conc_mol_comp[t, j]) * 0.75
-                    )
-                for z in self.dimensionless_membrane_thickness:
-                    for j in self.solutes:
-                        self.membrane_conc_mol_comp[t, x, z, j].set_value(
-                            value(self.feed_conc_mol_comp[t, j]) * 0.1
-                        )

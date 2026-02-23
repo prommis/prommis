@@ -5,9 +5,10 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Initial property package for precipitate.
+Initial property package for precipitate. This property package includes parameters (:math:`\epsilon` and :math:`n_{DA}`) 
+used for equilibrium model of precipitation.
 
-Authors: Alejandro Garciadiego
+Authors: Alejandro Garciadiego, Bo-Xun Wang
 """
 
 from pyomo.environ import Constraint, Param, Set, Var, units
@@ -38,14 +39,13 @@ class AqueousParameterData(PhysicalParameterBlock):
     * Rare Earths: Sc, Y, La, Ce, Pr, Nd, Sm, Gd, Dy
     * Impurities: Al, Ca, Fe
 
-    Assumes the equilibrium reaction has a fixed rate and fixed partition coefficients
-    based on:
+    Assumes the equilibrium reaction can be described by the equilibrium equation.
 
-    Wang, Y., Ziemkiewicz, P., Noble, A., A Hybrid Experimental and Theoretical Approach
-    to Optimize Recovery of Rare Earth Elements from Acid Mine Drainage,
-    Minerals, 2022, 12. 236
+    .. math:: Conversion_{c} = \exp(-\frac{\epsilon}{Oxalic Acid Dosage}^{n_{DA}})
 
-    self.split can be substituted by surrogate model
+    where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters 
+    estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
+
     """
 
     def build(self):
@@ -77,7 +77,7 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Gd = Component()
         self.Dy = Component()
 
-        # parameter based on pH 1.5
+        # Equilibrium parameter (\epsilon) based on pH 1.5
         self.E_D = Param(
             self.component_list,
             units=units.dimensionless,
@@ -102,7 +102,7 @@ class AqueousParameterData(PhysicalParameterBlock):
             },
         )
 
-        # parameter based on pH 1.5
+        # Equilibrium parameter (n_{DA}) based on pH 1.5
         self.N_D = Param(
             self.component_list,
             units=units.dimensionless,

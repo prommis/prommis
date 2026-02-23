@@ -237,6 +237,7 @@ from pyomo.common.config import ConfigBlock, ConfigValue, ListOf
 from pyomo.dae import ContinuousSet, DerivativeVar
 from pyomo.environ import (
     Constraint,
+    Expression,
     Param,
     Reference,
     Set,
@@ -281,7 +282,10 @@ class MultiComponentDiafiltrationInitializer(BlockTriangularizationInitializer):
                     model.retentate_conc_mol_comp[t, x, j].set_value(
                         value(model.feed_conc_mol_comp[t, j]) * 0.95
                     )
-                    model.d_retentate_conc_mol_comp_dx[t, x, j].set_value(10)
+                    if len(model.config.cation_list) == 1:
+                        model.d_retentate_conc_mol_comp_dx[t, x, j].set_value(1)
+                    else:
+                        model.d_retentate_conc_mol_comp_dx[t, x, j].set_value(10)
                     model.permeate_conc_mol_comp[t, x, j].set_value(
                         value(model.feed_conc_mol_comp[t, j]) * 0.8
                     )
@@ -297,7 +301,11 @@ class MultiComponentDiafiltrationInitializer(BlockTriangularizationInitializer):
                         model.membrane_conc_mol_comp[t, x, z, j].set_value(
                             value(model.feed_conc_mol_comp[t, j]) * 0.1
                         )
-                        model.d_membrane_conc_mol_comp_dz[t, x, z, j].set_value(0.1)
+                        # Note: this threshhold is not rigorously tested
+                        if value(model.feed_ionic_strength[t]) < 800:
+                            model.d_membrane_conc_mol_comp_dz[t, x, z, j].set_value(1)
+                        else:
+                            model.d_membrane_conc_mol_comp_dz[t, x, z, j].set_value(0.1)
 
         super().initialization_routine(model)
 
@@ -402,6 +410,7 @@ and used when constructing these,
         self.deactivate_unnecessary_objects()
         self.add_scaling_factors()
         self.add_ports()
+        self.add_helpful_expressions()
 
     def add_mutable_parameters(self):
         """
@@ -1848,28 +1857,6 @@ and used when constructing these,
                 for x in self.dimensionless_module_length:
                     if x != 0:
                         self.scaling_factor[self.lumped_water_flux[t, x]] = 1e3
-                        # self.scaling_factor[
-                        #     self.cation_equilibrium_boundary_layer_membrane_interface[
-                        #         t, x, self.config.cation_list[0]
-                        #     ]
-                        # ] = 1e-3
-                        # self.scaling_factor[
-                        #     self.cation_equilibrium_membrane_permeate_interface[
-                        #         t, x, self.config.cation_list[0]
-                        #     ]
-                        # ] = 1e-3
-                        # for k in range(len(self.config.cation_list)):
-                        #     if k != 0:
-                        #         self.scaling_factor[
-                        #             self.cation_equilibrium_boundary_layer_membrane_interface[
-                        #                 t, x, self.config.cation_list[k]
-                        #             ]
-                        #         ] = 1e-5
-                        #         self.scaling_factor[
-                        #             self.cation_equilibrium_membrane_permeate_interface[
-                        #                 t, x, self.config.cation_list[k]
-                        #             ]
-                        #         ] = 1e-5
 
     def add_ports(self):
         self.feed_inlet = Port(doc="Feed Inlet Port")
@@ -1903,3 +1890,25 @@ and used when constructing these,
             self.permeate_conc_mol_comp[:, self.dimensionless_module_length.last(), :]
         )
         self.permeate_outlet.add(self._permeate_conc_mol_comp_ref, "conc_mol_comp")
+
+    def add_helpful_expressions(self):
+        def _feed_ionic_strength(
+            blk,
+            t,
+        ):
+            return 0.5 * sum(
+                (
+                    (
+                        (
+                            blk.feed_flow_volume[t] * blk.feed_conc_mol_comp[t, j]
+                            + blk.diafiltrate_flow_volume[t]
+                            * blk.diafiltrate_conc_mol_comp[t, j]
+                        )
+                        / (blk.feed_flow_volume[t] + blk.diafiltrate_flow_volume[t])
+                    )
+                    * blk.config.property_package.charge[j] ** 2
+                )
+                for j in blk.solutes
+            )
+
+        self.feed_ionic_strength = Expression(self.time, rule=_feed_ionic_strength)

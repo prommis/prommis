@@ -68,7 +68,6 @@ enable = [
     "ungrouped-imports",
     "implicit-str-concat",
     "dangerous-default-value",
-    "invalid-name",
 ]
 module-naming-style = "snake_case"
 const-naming-style = "any"

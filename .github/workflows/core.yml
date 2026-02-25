@@ -109,6 +109,8 @@ jobs:
         python-version:
           - '3.10'
           - '3.11'
+          - '3.12'
+          - '3.13'
         os:
           - linux
           - win64
@@ -128,7 +130,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Ensure pytest is installed
         run: |
-          pip install pytest
+          pip install pytest==7.*
           pip show pytest
       - name: Add coverage options
         if: matrix.coverage

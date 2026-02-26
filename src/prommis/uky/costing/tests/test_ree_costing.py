@@ -6450,6 +6450,9 @@ def test_REE_costing_consider_taxes():
     assert hasattr(m.fs.costing, "additional_chemicals_cost")
     assert hasattr(m.fs.costing, "additional_waste_cost")
     assert not hasattr(m.fs.costing, "cost_of_recovery")
+    assert not hasattr(m.fs.costing, "phaseout")
+    assert not hasattr(m.fs.costing, "plant_end_year")
+    assert not hasattr(m.fs.costing, "current_year")
 
     assert hasattr(m.fs.costing, "income_tax_percentage")
     assert hasattr(m.fs.costing, "mineral_depletion_percentage")
@@ -6462,6 +6465,10 @@ def test_REE_costing_consider_taxes():
     assert hasattr(m.fs.costing, "additional_tax_owed")
     assert hasattr(m.fs.costing, "pv_taxes")
     assert hasattr(m.fs.costing, "npv")
+    assert not hasattr(m.fs.costing, "pv_production_incentive")
+    assert not hasattr(m.fs.costing, "pv_production_incentive_from_capex")
+    assert not hasattr(m.fs.costing, "pv_production_incentive_from_opex")
+    assert not hasattr(m.fs.costing, "pv_production_incentive_constraint")
 
     assert isinstance(m.fs.costing.mineral_depletion_charge, pyo.Expression)
     assert isinstance(m.fs.costing.production_incentive_charge, pyo.Expression)
@@ -6491,3 +6498,143 @@ def test_REE_costing_consider_taxes():
     assert value(m.fs.costing.net_tax_owed) == pytest.approx(2.709606, abs=1e-4)
     assert value(m.fs.costing.pv_taxes) == pytest.approx(-17.33163, abs=1e-4)
     assert value(m.fs.costing.npv) == pytest.approx(158.08158, abs=1e-4)
+
+
+@pytest.mark.component
+def test_REE_costing_with_phaseout():
+    # Test REE costing with production incentive tax credit phaseout
+
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,  # percent
+        plant_lifetime=20,  # years
+        has_capital_expenditure_period=True,
+        capital_expenditure_percentages=[10, 60, 30],
+        capital_escalation_percentage=3.6,
+        capital_loan_interest_percentage=6,
+        capital_loan_repayment_period=10,
+        debt_percentage_of_capex=50,
+        operating_inflation_percentage=3,
+        revenue_inflation_percentage=3,
+    )
+
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    m.fs.costing.build_process_costs(
+        fixed_OM=True,
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        mixed_product_output_rates={
+            "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
+        },
+        variable_OM=True,
+        feed_input=m.fs.feed_input,
+        resources=[
+            "water",
+        ],
+        rates=[
+            m.fs.water,
+        ],
+        consider_taxes=True,
+        income_tax_percentage=26,
+        mineral_depletion_percentage=14,
+        production_incentive_percentage=10,
+        consider_phaseout=True,
+        royalty_charge_percentage_of_revenue=6.5,
+        calculate_NPV=True,
+        CE_index_year="2025",
+    )
+
+    dt = DiagnosticsToolbox(model=m)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    # check that some objects are built as expected
+    assert hasattr(m.fs.costing, "feed_input_rate")
+    assert hasattr(m.fs.costing, "total_fixed_OM_cost")
+    assert hasattr(m.fs.costing, "total_variable_OM_cost")
+    assert hasattr(m.fs.costing, "plant_overhead_cost")
+    assert hasattr(m.fs.costing, "other_variable_costs")
+    assert hasattr(m.fs.costing, "land_cost")
+    assert hasattr(m.fs.costing, "additional_chemicals_cost")
+    assert hasattr(m.fs.costing, "additional_waste_cost")
+    assert hasattr(m.fs.costing, "phaseout")
+    assert hasattr(m.fs.costing, "plant_end_year")
+    assert hasattr(m.fs.costing, "plant_lifetime")
+    assert hasattr(m.fs.costing, "current_year")
+
+    assert hasattr(m.fs.costing, "income_tax_percentage")
+    assert hasattr(m.fs.costing, "mineral_depletion_percentage")
+    assert hasattr(m.fs.costing, "production_incentive_percentage")
+    assert hasattr(m.fs.costing, "royalty_charge_percentage_of_revenue")
+    assert hasattr(m.fs.costing, "min_net_tax_owed")
+    assert hasattr(m.fs.costing, "net_tax_owed")
+    assert hasattr(m.fs.costing, "income_tax")
+    assert hasattr(m.fs.costing, "additional_tax_credit")
+    assert hasattr(m.fs.costing, "additional_tax_owed")
+    assert hasattr(m.fs.costing, "pv_taxes")
+    assert hasattr(m.fs.costing, "pv_production_incentive")
+    assert hasattr(m.fs.costing, "npv")
+
+    assert isinstance(m.fs.costing.mineral_depletion_charge, pyo.Expression)
+    assert isinstance(m.fs.costing.production_incentive_charge, pyo.Expression)
+    assert isinstance(m.fs.costing.pv_production_incentive_from_capex, pyo.Expression)
+    assert isinstance(m.fs.costing.pv_production_incentive_from_opex, pyo.Expression)
+    assert isinstance(m.fs.costing.income_tax_eq, pyo.Constraint)
+    assert isinstance(m.fs.costing.royalty_charge, pyo.Expression)
+    assert isinstance(m.fs.costing.net_tax_owed_eq, pyo.Constraint)
+    assert isinstance(m.fs.costing.pv_taxes_constraint, pyo.Constraint)
+    assert isinstance(m.fs.costing.pv_production_incentive_constraint, pyo.Constraint)
+    assert isinstance(m.fs.costing.npv_constraint, pyo.Constraint)
+
+    # check some cost results
+    assert value(m.fs.costing.total_fixed_OM_cost) == pytest.approx(5.59368, rel=1e-4)
+    assert value(m.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
+        1.15459, rel=1e-4
+    )
+    assert value(m.fs.costing.plant_overhead_cost[0]) == pytest.approx(
+        1.11873, rel=1e-4
+    )
+    assert value(m.fs.costing.other_variable_costs[0]) == pytest.approx(
+        0.0000, abs=1e-4
+    )
+    assert value(m.fs.costing.land_cost) == pytest.approx(0.0000, abs=1e-4)
+    assert value(m.fs.costing.additional_chemicals_cost) == pytest.approx(
+        0.0000, abs=1e-4
+    )
+    assert value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
+    assert value(m.fs.costing.income_tax) == pytest.approx(6.35477, abs=1e-4)
+    assert value(m.fs.costing.net_tax_owed) == pytest.approx(3.46109, abs=1e-4)
+    assert value(m.fs.costing.pv_taxes) == pytest.approx(-27.085, abs=1e-4)
+    assert value(m.fs.costing.npv) == pytest.approx(177.13365, abs=1e-4)
+    assert value(m.fs.costing.pv_production_incentive) == pytest.approx(
+        5.94735, abs=1e-4
+    )

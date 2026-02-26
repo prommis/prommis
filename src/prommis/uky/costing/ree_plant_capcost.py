@@ -330,8 +330,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         mineral_depletion_percentage=14,
         production_incentive_percentage=10,
         consider_phaseout=False,
-        phaseout_years=[2031, 2032, 2033],
-        phaseout_fractions=[0.75, 0.50, 0.25],
+        phaseout_years=None,
+        phaseout_fractions=None,
         royalty_charge_percentage_of_revenue=6.5,
         CE_index_year="2021",
         watertap_blocks=None,
@@ -498,6 +498,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"Valid CE index options include CE500, CE394 and years from "
                 f"1990 to 2020."
             )
+
+        if phaseout_years is None:
+            phaseout_years = [2031, 2032, 2033]
+        if phaseout_fractions is None:
+            phaseout_fractions = [0.75, 0.50, 0.25]
 
         if consider_phaseout:
             if not isinstance(phaseout_years, (list)):

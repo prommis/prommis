@@ -14,3 +14,4 @@ chapters:
   - file: examples/cmi_process.rst
   - file: superstructure/superstructure_function_documentation.rst
   - file: tutorials/diafiltration_flowsheet_optimization_tutorial-solution
+  - file: tutorials/diafiltration_cost_uncertainty_quantification_and_propagation-solution

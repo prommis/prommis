@@ -150,7 +150,7 @@ def test_build_three_salt(model_three_salt):
 @pytest.mark.component
 def test_common_anion_exception():
     cation_list = ["Li", "Co"]
-    anion_list = ["Cl", "sulfate"]
+    anion_list = ["Cl", "SO4"]
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)

@@ -45,12 +45,12 @@ from prommis.nanofiltration.multi_component_diafiltration import (
 # Test functions for single-salt model
 @pytest.fixture(scope="module")
 def sample_single_salt_model():
-    cation_list = ["lithium"]
-    anion_list = ["chloride"]
+    cation_list = ["Li"]
+    anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
     inlet_concentration = {
-        "feed": {"lithium": 245, "chloride": 245},
-        "diafiltrate": {"lithium": 14, "chloride": 14},
+        "feed": {"Li": 245, "Cl": 245},
+        "diafiltrate": {"Li": 14, "Cl": 14},
     }
 
     m = ConcreteModel()
@@ -192,10 +192,8 @@ def test_build(sample_single_salt_model):
     assert isinstance(sample_single_salt_model.fs.unit.lumped_water_flux, Constraint)
     assert len(sample_single_salt_model.fs.unit.lumped_water_flux) == 10
 
-    assert isinstance(
-        sample_single_salt_model.fs.unit.chloride_flux_membrane, Constraint
-    )
-    assert len(sample_single_salt_model.fs.unit.chloride_flux_membrane) == 10
+    assert isinstance(sample_single_salt_model.fs.unit.anion_flux_membrane, Constraint)
+    assert len(sample_single_salt_model.fs.unit.anion_flux_membrane) == 10
 
     assert isinstance(
         sample_single_salt_model.fs.unit.osmotic_pressure_calculation, Constraint
@@ -559,20 +557,20 @@ def test_numerical_issues(sample_single_salt_model):
 
 
 ################################################################################
-# Test single-salt model: lithium chloride
+# Test single-salt model: LiCl
 
 
 @pytest.fixture(scope="module")
-def diafiltration_single_salt_lithium():
+def diafiltration_single_salt_Li():
     """
-    Build single-salt diafiltration unit model for lithium chloride.
+    Build single-salt diafiltration unit model for LiCl.
     """
-    cation_list = ["lithium"]
-    anion_list = ["chloride"]
+    cation_list = ["Li"]
+    anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
     inlet_concentration = {
-        "feed": {"lithium": 245, "chloride": 245},
-        "diafiltrate": {"lithium": 14, "chloride": 14},
+        "feed": {"Li": 245, "Cl": 245},
+        "diafiltrate": {"Li": 14, "Cl": 14},
     }
 
     m = ConcreteModel()
@@ -618,70 +616,64 @@ def diafiltration_single_salt_lithium():
 
 
 @pytest.mark.unit
-def test_config_lithium(diafiltration_single_salt_lithium):
-    test_config(diafiltration_single_salt_lithium)
-    test_config_single_salt(diafiltration_single_salt_lithium)
+def test_config_Li(diafiltration_single_salt_Li):
+    test_config(diafiltration_single_salt_Li)
+    test_config_single_salt(diafiltration_single_salt_Li)
 
 
 class TestDiafiltrationSingleSaltLithium(object):
     @pytest.mark.build
     @pytest.mark.unit
-    def test_build_lithium(self, diafiltration_single_salt_lithium):
-        test_build(diafiltration_single_salt_lithium)
-        test_build_single_salt(diafiltration_single_salt_lithium)
+    def test_build_Li(self, diafiltration_single_salt_Li):
+        test_build(diafiltration_single_salt_Li)
+        test_build_single_salt(diafiltration_single_salt_Li)
 
     @pytest.mark.component
-    def test_diagnostics_lithium(self, diafiltration_single_salt_lithium):
-        test_diagnostics(diafiltration_single_salt_lithium)
+    def test_diagnostics_Li(self, diafiltration_single_salt_Li):
+        test_diagnostics(diafiltration_single_salt_Li)
 
     @pytest.mark.solver
     @pytest.mark.component
-    def test_solve_lithium(self, diafiltration_single_salt_lithium):
-        test_solve(diafiltration_single_salt_lithium)
+    def test_solve_Li(self, diafiltration_single_salt_Li):
+        test_solve(diafiltration_single_salt_Li)
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_single_salt_lithium.fs.unit.retentate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_single_salt_Li.fs.unit.retentate_flow_volume[0, 1]),
                 8.3856,
             ],
-            "lithium_retentate_final": [
+            "Li_retentate_final": [
                 value(
-                    diafiltration_single_salt_lithium.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "lithium"
+                    diafiltration_single_salt_Li.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Li"
                     ]
                 ),
                 194.52,
             ],
-            "chloride_retentate_final": [
+            "Cl_retentate_final": [
                 value(
-                    diafiltration_single_salt_lithium.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_single_salt_Li.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 194.52,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_single_salt_lithium.fs.unit.permeate_flow_volume[0, 1]
-                ),
+                value(diafiltration_single_salt_Li.fs.unit.permeate_flow_volume[0, 1]),
                 7.8637,
             ],
-            "lithium_permeate_final": [
+            "Li_permeate_final": [
                 value(
-                    diafiltration_single_salt_lithium.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "lithium"
+                    diafiltration_single_salt_Li.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Li"
                     ]
                 ),
                 190.38,
             ],
-            "chloride_permeate_final": [
+            "Cl_permeate_final": [
                 value(
-                    diafiltration_single_salt_lithium.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_single_salt_Li.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 190.38,
@@ -692,25 +684,25 @@ class TestDiafiltrationSingleSaltLithium(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues_lithium(self, diafiltration_single_salt_lithium):
-        test_numerical_issues(diafiltration_single_salt_lithium)
+    def test_numerical_issues_Li(self, diafiltration_single_salt_Li):
+        test_numerical_issues(diafiltration_single_salt_Li)
 
 
 ################################################################################
-# Test single-salt model: cobalt chloride
+# Test single-salt model: CoCl2
 
 
 @pytest.fixture(scope="module")
-def diafiltration_single_salt_cobalt():
+def diafiltration_single_salt_Co():
     """
-    Build single-salt diafiltration unit model for cobalt chloride.
+    Build single-salt diafiltration unit model for CoCl2.
     """
-    cation_list = ["cobalt"]
-    anion_list = ["chloride"]
+    cation_list = ["Co"]
+    anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
     inlet_concentration = {
-        "feed": {"cobalt": 288, "chloride": 576},
-        "diafiltrate": {"cobalt": 3, "chloride": 6},
+        "feed": {"Co": 288, "Cl": 576},
+        "diafiltrate": {"Co": 3, "Cl": 6},
     }
 
     m = ConcreteModel()
@@ -756,68 +748,64 @@ def diafiltration_single_salt_cobalt():
 
 
 @pytest.mark.unit
-def test_config_cobalt(diafiltration_single_salt_cobalt):
-    test_config(diafiltration_single_salt_cobalt)
-    test_config_single_salt(diafiltration_single_salt_cobalt)
+def test_config_Co(diafiltration_single_salt_Co):
+    test_config(diafiltration_single_salt_Co)
+    test_config_single_salt(diafiltration_single_salt_Co)
 
 
 class TestDiafiltrationSingleSaltCobalt(object):
     @pytest.mark.build
     @pytest.mark.unit
-    def test_build_cobalt(self, diafiltration_single_salt_cobalt):
-        test_build(diafiltration_single_salt_cobalt)
-        test_build_single_salt(diafiltration_single_salt_cobalt)
+    def test_build_Co(self, diafiltration_single_salt_Co):
+        test_build(diafiltration_single_salt_Co)
+        test_build_single_salt(diafiltration_single_salt_Co)
 
     @pytest.mark.component
-    def test_diagnostics_cobalt(self, diafiltration_single_salt_cobalt):
-        test_diagnostics(diafiltration_single_salt_cobalt)
+    def test_diagnostics_Co(self, diafiltration_single_salt_Co):
+        test_diagnostics(diafiltration_single_salt_Co)
 
     @pytest.mark.solver
     @pytest.mark.component
-    def test_solve_cobalt(self, diafiltration_single_salt_cobalt):
-        test_solve(diafiltration_single_salt_cobalt)
+    def test_solve_Co(self, diafiltration_single_salt_Co):
+        test_solve(diafiltration_single_salt_Co)
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_single_salt_cobalt.fs.unit.retentate_flow_volume[0, 1]
-                ),
+                value(diafiltration_single_salt_Co.fs.unit.retentate_flow_volume[0, 1]),
                 10.468,
             ],
-            "cobalt_retentate_final": [
+            "Co_retentate_final": [
                 value(
-                    diafiltration_single_salt_cobalt.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "cobalt"
+                    diafiltration_single_salt_Co.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Co"
                     ]
                 ),
                 227.59,
             ],
-            "chloride_retentate_final": [
+            "Cl_retentate_final": [
                 value(
-                    diafiltration_single_salt_cobalt.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_single_salt_Co.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 455.17,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_single_salt_cobalt.fs.unit.permeate_flow_volume[0, 1]
-                ),
+                value(diafiltration_single_salt_Co.fs.unit.permeate_flow_volume[0, 1]),
                 5.7687,
             ],
-            "cobalt_permeate_final": [
+            "Co_permeate_final": [
                 value(
-                    diafiltration_single_salt_cobalt.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "cobalt"
+                    diafiltration_single_salt_Co.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Co"
                     ]
                 ),
                 215.62,
             ],
-            "chloride_permeate_final": [
+            "Cl_permeate_final": [
                 value(
-                    diafiltration_single_salt_cobalt.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_single_salt_Co.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 431.24,
@@ -828,25 +816,25 @@ class TestDiafiltrationSingleSaltCobalt(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues_cobalt(self, diafiltration_single_salt_cobalt):
-        test_numerical_issues(diafiltration_single_salt_cobalt)
+    def test_numerical_issues_Co(self, diafiltration_single_salt_Co):
+        test_numerical_issues(diafiltration_single_salt_Co)
 
 
 ################################################################################
-# Test single-salt model: aluminum chloride
+# Test single-salt model: AlCl3
 
 
 @pytest.fixture(scope="module")
-def diafiltration_single_salt_aluminum():
+def diafiltration_single_salt_Al():
     """
-    Build single-salt diafiltration unit model for aluminum chloride.
+    Build single-salt diafiltration unit model for AlCl3.
     """
-    cation_list = ["aluminum"]
-    anion_list = ["chloride"]
+    cation_list = ["Al"]
+    anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
     inlet_concentration = {
-        "feed": {"aluminum": 20, "chloride": 60},
-        "diafiltrate": {"aluminum": 3, "chloride": 9},
+        "feed": {"Al": 20, "Cl": 60},
+        "diafiltrate": {"Al": 3, "Cl": 9},
     }
 
     m = ConcreteModel()
@@ -892,72 +880,64 @@ def diafiltration_single_salt_aluminum():
 
 
 @pytest.mark.unit
-def test_config_aluminum(diafiltration_single_salt_aluminum):
-    test_config(diafiltration_single_salt_aluminum)
-    test_config_single_salt(diafiltration_single_salt_aluminum)
+def test_config_Al(diafiltration_single_salt_Al):
+    test_config(diafiltration_single_salt_Al)
+    test_config_single_salt(diafiltration_single_salt_Al)
 
 
 class TestDiafiltrationSingleSaltAluminum(object):
     @pytest.mark.build
     @pytest.mark.unit
-    def test_build_aluminum(self, diafiltration_single_salt_aluminum):
-        test_build(diafiltration_single_salt_aluminum)
-        test_build_single_salt(diafiltration_single_salt_aluminum)
+    def test_build_Al(self, diafiltration_single_salt_Al):
+        test_build(diafiltration_single_salt_Al)
+        test_build_single_salt(diafiltration_single_salt_Al)
 
     @pytest.mark.component
-    def test_diagnostics_aluminum(self, diafiltration_single_salt_aluminum):
-        test_diagnostics(diafiltration_single_salt_aluminum)
+    def test_diagnostics_Al(self, diafiltration_single_salt_Al):
+        test_diagnostics(diafiltration_single_salt_Al)
 
     @pytest.mark.solver
     @pytest.mark.component
-    def test_solve_aluminum(self, diafiltration_single_salt_aluminum):
-        test_solve(diafiltration_single_salt_aluminum)
+    def test_solve_Al(self, diafiltration_single_salt_Al):
+        test_solve(diafiltration_single_salt_Al)
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_single_salt_aluminum.fs.unit.retentate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_single_salt_Al.fs.unit.retentate_flow_volume[0, 1]),
                 9.4910,
             ],
-            "aluminum_retentate_final": [
+            "Al_retentate_final": [
                 value(
-                    diafiltration_single_salt_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "aluminum"
+                    diafiltration_single_salt_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Al"
                     ]
                 ),
                 18.044,
             ],
-            "chloride_retentate_final": [
+            "Cl_retentate_final": [
                 value(
-                    diafiltration_single_salt_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_single_salt_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 54.131,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_single_salt_aluminum.fs.unit.permeate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_single_salt_Al.fs.unit.permeate_flow_volume[0, 1]),
                 6.7079,
             ],
-            "aluminum_permeate_final": [
+            "Al_permeate_final": [
                 value(
-                    diafiltration_single_salt_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "aluminum"
+                    diafiltration_single_salt_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Al"
                     ]
                 ),
                 14.372,
             ],
-            "chloride_permeate_final": [
+            "Cl_permeate_final": [
                 value(
-                    diafiltration_single_salt_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_single_salt_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 43.115,
@@ -968,20 +948,20 @@ class TestDiafiltrationSingleSaltAluminum(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues_aluminum(self, diafiltration_single_salt_aluminum):
-        test_numerical_issues(diafiltration_single_salt_aluminum)
+    def test_numerical_issues_Al(self, diafiltration_single_salt_Al):
+        test_numerical_issues(diafiltration_single_salt_Al)
 
 
 ################################################################################
 # Test functions for two-salt model
 @pytest.fixture(scope="module")
 def sample_two_salt_model():
-    cation_list = ["lithium", "cobalt"]
-    anion_list = ["chloride"]
+    cation_list = ["Li", "Co"]
+    anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
     inlet_concentration = {
-        "feed": {"lithium": 245, "cobalt": 288, "chloride": 821},
-        "diafiltrate": {"lithium": 14, "cobalt": 3, "chloride": 20},
+        "feed": {"Li": 245, "Co": 288, "Cl": 821},
+        "diafiltrate": {"Li": 14, "Co": 3, "Cl": 20},
     }
 
     m = ConcreteModel()
@@ -1237,20 +1217,20 @@ def test_build_two_salt(sample_two_salt_model):
 
 
 ################################################################################
-# Test a two-salt model: lithium chloride + cobalt chloride
+# Test a two-salt model: LiCl + CoCl2
 
 
 @pytest.fixture(scope="module")
-def diafiltration_two_salt_lithium_cobalt():
+def diafiltration_two_salt_Li_Co():
     """
-    Build two-salt diafiltration unit model for lithium chloride + cobalt chloride.
+    Build two-salt diafiltration unit model for LiCl + CoCl2.
     """
-    cation_list = ["lithium", "cobalt"]
-    anion_list = ["chloride"]
+    cation_list = ["Li", "Co"]
+    anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
     inlet_concentration = {
-        "feed": {"lithium": 245, "cobalt": 288, "chloride": 821},
-        "diafiltrate": {"lithium": 14, "cobalt": 3, "chloride": 20},
+        "feed": {"Li": 245, "Co": 288, "Cl": 821},
+        "diafiltrate": {"Li": 14, "Co": 3, "Cl": 20},
     }
 
     m = ConcreteModel()
@@ -1295,88 +1275,80 @@ def diafiltration_two_salt_lithium_cobalt():
 
 
 @pytest.mark.unit
-def test_config_lithium_cobalt(diafiltration_two_salt_lithium_cobalt):
-    test_config(diafiltration_two_salt_lithium_cobalt)
-    test_config_two_salt(diafiltration_two_salt_lithium_cobalt)
+def test_config_Li_Co(diafiltration_two_salt_Li_Co):
+    test_config(diafiltration_two_salt_Li_Co)
+    test_config_two_salt(diafiltration_two_salt_Li_Co)
 
 
 class TestDiafiltrationTwoSaltLithiumCobalt(object):
     @pytest.mark.build
     @pytest.mark.unit
-    def test_build_lithium_cobalt(self, diafiltration_two_salt_lithium_cobalt):
-        test_build(diafiltration_two_salt_lithium_cobalt)
-        test_build_two_salt(diafiltration_two_salt_lithium_cobalt)
+    def test_build_Li_Co(self, diafiltration_two_salt_Li_Co):
+        test_build(diafiltration_two_salt_Li_Co)
+        test_build_two_salt(diafiltration_two_salt_Li_Co)
 
     @pytest.mark.component
-    def test_diagnostics_lithium_cobalt(self, diafiltration_two_salt_lithium_cobalt):
-        test_diagnostics(diafiltration_two_salt_lithium_cobalt)
+    def test_diagnostics_Li_Co(self, diafiltration_two_salt_Li_Co):
+        test_diagnostics(diafiltration_two_salt_Li_Co)
 
     @pytest.mark.solver
     @pytest.mark.component
-    def test_solve_lithium_cobalt(self, diafiltration_two_salt_lithium_cobalt):
-        test_solve(diafiltration_two_salt_lithium_cobalt)
+    def test_solve_Li_Co(self, diafiltration_two_salt_Li_Co):
+        test_solve(diafiltration_two_salt_Li_Co)
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_two_salt_lithium_cobalt.fs.unit.retentate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Li_Co.fs.unit.retentate_flow_volume[0, 1]),
                 6.0465,
             ],
-            "lithium_retentate_final": [
+            "Li_retentate_final": [
                 value(
-                    diafiltration_two_salt_lithium_cobalt.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "lithium"
+                    diafiltration_two_salt_Li_Co.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Li"
                     ]
                 ),
                 188.88,
             ],
-            "cobalt_retentate_final": [
+            "Co_retentate_final": [
                 value(
-                    diafiltration_two_salt_lithium_cobalt.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "cobalt"
+                    diafiltration_two_salt_Li_Co.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Co"
                     ]
                 ),
                 246.67,
             ],
-            "chloride_retentate_final": [
+            "Cl_retentate_final": [
                 value(
-                    diafiltration_two_salt_lithium_cobalt.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_two_salt_Li_Co.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 682.22,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_two_salt_lithium_cobalt.fs.unit.permeate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Li_Co.fs.unit.permeate_flow_volume[0, 1]),
                 10.033,
             ],
-            "lithium_permeate_final": [
+            "Li_permeate_final": [
                 value(
-                    diafiltration_two_salt_lithium_cobalt.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "lithium"
+                    diafiltration_two_salt_Li_Co.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Li"
                     ]
                 ),
                 191.55,
             ],
-            "cobalt_permeate_final": [
+            "Co_permeate_final": [
                 value(
-                    diafiltration_two_salt_lithium_cobalt.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "cobalt"
+                    diafiltration_two_salt_Li_Co.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Co"
                     ]
                 ),
                 222.76,
             ],
-            "chloride_permeate_final": [
+            "Cl_permeate_final": [
                 value(
-                    diafiltration_two_salt_lithium_cobalt.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_two_salt_Li_Co.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 637.06,
@@ -1387,27 +1359,25 @@ class TestDiafiltrationTwoSaltLithiumCobalt(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues_lithium_cobalt(
-        self, diafiltration_two_salt_lithium_cobalt
-    ):
-        test_numerical_issues(diafiltration_two_salt_lithium_cobalt)
+    def test_numerical_issues_Li_Co(self, diafiltration_two_salt_Li_Co):
+        test_numerical_issues(diafiltration_two_salt_Li_Co)
 
 
 ################################################################################
-# Test a two-salt model: lithium chloride + aluminum chloride
+# Test a two-salt model: LiCl + AlCl3
 
 
 @pytest.fixture(scope="module")
-def diafiltration_two_salt_lithium_aluminum():
+def diafiltration_two_salt_Li_Al():
     """
-    Build two-salt diafiltration unit model for lithium chloride + aluminum chloride.
+    Build two-salt diafiltration unit model for LiCl + AlCl3.
     """
-    cation_list = ["lithium", "aluminum"]
-    anion_list = ["chloride"]
+    cation_list = ["Li", "Al"]
+    anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
     inlet_concentration = {
-        "feed": {"lithium": 245, "aluminum": 20, "chloride": 305},
-        "diafiltrate": {"lithium": 14, "aluminum": 3, "chloride": 23},
+        "feed": {"Li": 245, "Al": 20, "Cl": 305},
+        "diafiltrate": {"Li": 14, "Al": 3, "Cl": 23},
     }
 
     m = ConcreteModel()
@@ -1452,90 +1422,80 @@ def diafiltration_two_salt_lithium_aluminum():
 
 
 @pytest.mark.unit
-def test_config_lithium_aluminum(diafiltration_two_salt_lithium_aluminum):
-    test_config(diafiltration_two_salt_lithium_aluminum)
-    test_config_two_salt(diafiltration_two_salt_lithium_aluminum)
+def test_config_Li_Al(diafiltration_two_salt_Li_Al):
+    test_config(diafiltration_two_salt_Li_Al)
+    test_config_two_salt(diafiltration_two_salt_Li_Al)
 
 
 class TestDiafiltrationTwoSaltLithiumAluminum(object):
     @pytest.mark.build
     @pytest.mark.unit
-    def test_build_lithium_aluminum(self, diafiltration_two_salt_lithium_aluminum):
-        test_build(diafiltration_two_salt_lithium_aluminum)
-        test_build_two_salt(diafiltration_two_salt_lithium_aluminum)
+    def test_build_Li_Al(self, diafiltration_two_salt_Li_Al):
+        test_build(diafiltration_two_salt_Li_Al)
+        test_build_two_salt(diafiltration_two_salt_Li_Al)
 
     @pytest.mark.component
-    def test_diagnostics_lithium_aluminum(
-        self, diafiltration_two_salt_lithium_aluminum
-    ):
-        test_diagnostics(diafiltration_two_salt_lithium_aluminum)
+    def test_diagnostics_Li_Al(self, diafiltration_two_salt_Li_Al):
+        test_diagnostics(diafiltration_two_salt_Li_Al)
 
     @pytest.mark.solver
     @pytest.mark.component
-    def test_solve_lithium_aluminum(self, diafiltration_two_salt_lithium_aluminum):
-        test_solve(diafiltration_two_salt_lithium_aluminum)
+    def test_solve_Li_Al(self, diafiltration_two_salt_Li_Al):
+        test_solve(diafiltration_two_salt_Li_Al)
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_two_salt_lithium_aluminum.fs.unit.retentate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Li_Al.fs.unit.retentate_flow_volume[0, 1]),
                 5.6461,
             ],
-            "lithium_retentate_final": [
+            "Li_retentate_final": [
                 value(
-                    diafiltration_two_salt_lithium_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "lithium"
+                    diafiltration_two_salt_Li_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Li"
                     ]
                 ),
                 171.18,
             ],
-            "aluminum_retentate_final": [
+            "Al_retentate_final": [
                 value(
-                    diafiltration_two_salt_lithium_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "aluminum"
+                    diafiltration_two_salt_Li_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Al"
                     ]
                 ),
                 36.668,
             ],
-            "chloride_retentate_final": [
+            "Cl_retentate_final": [
                 value(
-                    diafiltration_two_salt_lithium_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_two_salt_Li_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 281.18,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_two_salt_lithium_aluminum.fs.unit.permeate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Li_Al.fs.unit.permeate_flow_volume[0, 1]),
                 9.0248,
             ],
-            "lithium_permeate_final": [
+            "Li_permeate_final": [
                 value(
-                    diafiltration_two_salt_lithium_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "lithium"
+                    diafiltration_two_salt_Li_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Li"
                     ]
                 ),
                 194.44,
             ],
-            "aluminum_permeate_final": [
+            "Al_permeate_final": [
                 value(
-                    diafiltration_two_salt_lithium_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "aluminum"
+                    diafiltration_two_salt_Li_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Al"
                     ]
                 ),
                 13.760,
             ],
-            "chloride_permeate_final": [
+            "Cl_permeate_final": [
                 value(
-                    diafiltration_two_salt_lithium_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_two_salt_Li_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 235.72,
@@ -1546,27 +1506,25 @@ class TestDiafiltrationTwoSaltLithiumAluminum(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues_lithium_aluminum(
-        self, diafiltration_two_salt_lithium_aluminum
-    ):
-        test_numerical_issues(diafiltration_two_salt_lithium_aluminum)
+    def test_numerical_issues_Li_Al(self, diafiltration_two_salt_Li_Al):
+        test_numerical_issues(diafiltration_two_salt_Li_Al)
 
 
 ################################################################################
-# Test a two-salt model: cobalt chloride + aluminum chloride
+# Test a two-salt model: CoCl2 + AlCl3
 
 
 @pytest.fixture(scope="module")
-def diafiltration_two_salt_cobalt_aluminum():
+def diafiltration_two_salt_Co_Al():
     """
-    Build two-salt diafiltration unit model for cobalt chloride + aluminum chloride.
+    Build two-salt diafiltration unit model for CoCl2 + AlCl3.
     """
-    cation_list = ["cobalt", "aluminum"]
-    anion_list = ["chloride"]
+    cation_list = ["Co", "Al"]
+    anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
     inlet_concentration = {
-        "feed": {"cobalt": 288, "aluminum": 20, "chloride": 636},
-        "diafiltrate": {"cobalt": 3, "aluminum": 3, "chloride": 15},
+        "feed": {"Co": 288, "Al": 20, "Cl": 636},
+        "diafiltrate": {"Co": 3, "Al": 3, "Cl": 15},
     }
 
     m = ConcreteModel()
@@ -1611,88 +1569,80 @@ def diafiltration_two_salt_cobalt_aluminum():
 
 
 @pytest.mark.unit
-def test_config_cobalt_aluminum(diafiltration_two_salt_cobalt_aluminum):
-    test_config(diafiltration_two_salt_cobalt_aluminum)
-    test_config_two_salt(diafiltration_two_salt_cobalt_aluminum)
+def test_config_Co_Al(diafiltration_two_salt_Co_Al):
+    test_config(diafiltration_two_salt_Co_Al)
+    test_config_two_salt(diafiltration_two_salt_Co_Al)
 
 
 class TestDiafiltrationTwoSaltCobaltAluminum(object):
     @pytest.mark.build
     @pytest.mark.unit
-    def test_build_cobalt_aluminum(self, diafiltration_two_salt_cobalt_aluminum):
-        test_build(diafiltration_two_salt_cobalt_aluminum)
-        test_build_two_salt(diafiltration_two_salt_cobalt_aluminum)
+    def test_build_Co_Al(self, diafiltration_two_salt_Co_Al):
+        test_build(diafiltration_two_salt_Co_Al)
+        test_build_two_salt(diafiltration_two_salt_Co_Al)
 
     @pytest.mark.component
-    def test_diagnostics_cobalt_aluminum(self, diafiltration_two_salt_cobalt_aluminum):
-        test_diagnostics(diafiltration_two_salt_cobalt_aluminum)
+    def test_diagnostics_Co_Al(self, diafiltration_two_salt_Co_Al):
+        test_diagnostics(diafiltration_two_salt_Co_Al)
 
     @pytest.mark.solver
     @pytest.mark.component
-    def test_solve_cobalt_aluminum(self, diafiltration_two_salt_cobalt_aluminum):
-        test_solve(diafiltration_two_salt_cobalt_aluminum)
+    def test_solve_Co_Al(self, diafiltration_two_salt_Co_Al):
+        test_solve(diafiltration_two_salt_Co_Al)
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_two_salt_cobalt_aluminum.fs.unit.retentate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Co_Al.fs.unit.retentate_flow_volume[0, 1]),
                 8.2716,
             ],
-            "cobalt_retentate_final": [
+            "Co_retentate_final": [
                 value(
-                    diafiltration_two_salt_cobalt_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "cobalt"
+                    diafiltration_two_salt_Co_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Co"
                     ]
                 ),
                 232.23,
             ],
-            "aluminum_retentate_final": [
+            "Al_retentate_final": [
                 value(
-                    diafiltration_two_salt_cobalt_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "aluminum"
+                    diafiltration_two_salt_Co_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Al"
                     ]
                 ),
                 18.276,
             ],
-            "chloride_retentate_final": [
+            "Cl_retentate_final": [
                 value(
-                    diafiltration_two_salt_cobalt_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_two_salt_Co_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 519.28,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_two_salt_cobalt_aluminum.fs.unit.permeate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Co_Al.fs.unit.permeate_flow_volume[0, 1]),
                 7.8847,
             ],
-            "cobalt_permeate_final": [
+            "Co_permeate_final": [
                 value(
-                    diafiltration_two_salt_cobalt_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "cobalt"
+                    diafiltration_two_salt_Co_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Co"
                     ]
                 ),
                 218.01,
             ],
-            "aluminum_permeate_final": [
+            "Al_permeate_final": [
                 value(
-                    diafiltration_two_salt_cobalt_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "aluminum"
+                    diafiltration_two_salt_Co_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Al"
                     ]
                 ),
                 14.954,
             ],
-            "chloride_permeate_final": [
+            "Cl_permeate_final": [
                 value(
-                    diafiltration_two_salt_cobalt_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_two_salt_Co_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 480.88,
@@ -1703,22 +1653,20 @@ class TestDiafiltrationTwoSaltCobaltAluminum(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues_cobalt_aluminum(
-        self, diafiltration_two_salt_cobalt_aluminum
-    ):
-        test_numerical_issues(diafiltration_two_salt_cobalt_aluminum)
+    def test_numerical_issues_Co_Al(self, diafiltration_two_salt_Co_Al):
+        test_numerical_issues(diafiltration_two_salt_Co_Al)
 
 
 ################################################################################
 # Test functions for three-salt model
 @pytest.fixture(scope="module")
 def sample_three_salt_model():
-    cation_list = ["lithium", "cobalt", "aluminum"]
-    anion_list = ["chloride"]
+    cation_list = ["Li", "Co", "Al"]
+    anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
     inlet_concentration = {
-        "feed": {"lithium": 245, "cobalt": 288, "aluminum": 20, "chloride": 881},
-        "diafiltrate": {"lithium": 14, "cobalt": 3, "aluminum": 3, "chloride": 29},
+        "feed": {"Li": 245, "Co": 288, "Al": 20, "Cl": 881},
+        "diafiltrate": {"Li": 14, "Co": 3, "Al": 3, "Cl": 29},
     }
 
     m = ConcreteModel()
@@ -1978,20 +1926,20 @@ def test_build_three_salt(sample_three_salt_model):
 
 
 ################################################################################
-# Test a three-salt model: lithium chloride + cobalt chloride + aluminum chloride
+# Test a three-salt model: LiCl + CoCl2 + AlCl3
 
 
 @pytest.fixture(scope="module")
-def diafiltration_three_salt_lithium_cobalt_aluminum():
+def diafiltration_three_salt_Li_Co_Al():
     """
-    Build two-salt diafiltration unit model for lithium chloride + cobalt chloride + aluminum chloride.
+    Build two-salt diafiltration unit model for LiCl + CoCl2 + AlCl3.
     """
-    cation_list = ["lithium", "cobalt", "aluminum"]
-    anion_list = ["chloride"]
+    cation_list = ["Li", "Co", "Al"]
+    anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
     inlet_concentration = {
-        "feed": {"lithium": 245, "cobalt": 288, "aluminum": 20, "chloride": 881},
-        "diafiltrate": {"lithium": 14, "cobalt": 3, "aluminum": 3, "chloride": 29},
+        "feed": {"Li": 245, "Co": 288, "Al": 20, "Cl": 881},
+        "diafiltrate": {"Li": 14, "Co": 3, "Al": 3, "Cl": 29},
     }
 
     m = ConcreteModel()
@@ -2036,112 +1984,104 @@ def diafiltration_three_salt_lithium_cobalt_aluminum():
 
 
 @pytest.mark.unit
-def test_config_lithium_cobalt_aluminum(
-    diafiltration_three_salt_lithium_cobalt_aluminum,
+def test_config_Li_Co_Al(
+    diafiltration_three_salt_Li_Co_Al,
 ):
-    test_config(diafiltration_three_salt_lithium_cobalt_aluminum)
-    test_config_three_salt(diafiltration_three_salt_lithium_cobalt_aluminum)
+    test_config(diafiltration_three_salt_Li_Co_Al)
+    test_config_three_salt(diafiltration_three_salt_Li_Co_Al)
 
 
 class TestDiafiltrationThreeSaltLithiumCobaltAluminum(object):
     @pytest.mark.build
     @pytest.mark.unit
-    def test_build_lithium_cobalt_aluminum(
-        self, diafiltration_three_salt_lithium_cobalt_aluminum
-    ):
-        test_build(diafiltration_three_salt_lithium_cobalt_aluminum)
-        test_build_three_salt(diafiltration_three_salt_lithium_cobalt_aluminum)
+    def test_build_Li_Co_Al(self, diafiltration_three_salt_Li_Co_Al):
+        test_build(diafiltration_three_salt_Li_Co_Al)
+        test_build_three_salt(diafiltration_three_salt_Li_Co_Al)
 
     @pytest.mark.component
-    def test_diagnostics_lithium_cobalt_aluminum(
-        self, diafiltration_three_salt_lithium_cobalt_aluminum
-    ):
-        test_diagnostics(diafiltration_three_salt_lithium_cobalt_aluminum)
+    def test_diagnostics_Li_Co_Al(self, diafiltration_three_salt_Li_Co_Al):
+        test_diagnostics(diafiltration_three_salt_Li_Co_Al)
 
     @pytest.mark.solver
     @pytest.mark.component
-    def test_solve_lithium_cobalt_aluminum(
-        self, diafiltration_three_salt_lithium_cobalt_aluminum
-    ):
-        test_solve(diafiltration_three_salt_lithium_cobalt_aluminum)
+    def test_solve_Li_Co_Al(self, diafiltration_three_salt_Li_Co_Al):
+        test_solve(diafiltration_three_salt_Li_Co_Al)
 
         test_dict = {
             "retentate_final": [
                 value(
-                    diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.retentate_flow_volume[
+                    diafiltration_three_salt_Li_Co_Al.fs.unit.retentate_flow_volume[
                         0, 1
                     ]
                 ),
                 10.2946,
             ],
-            "lithium_retentate_final": [
+            "Li_retentate_final": [
                 value(
-                    diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "lithium"
+                    diafiltration_three_salt_Li_Co_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Li"
                     ]
                 ),
                 189.13,
             ],
-            "cobalt_retentate_final": [
+            "Co_retentate_final": [
                 value(
-                    diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "cobalt"
+                    diafiltration_three_salt_Li_Co_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Co"
                     ]
                 ),
                 224.68,
             ],
-            "aluminum_retentate_final": [
+            "Al_retentate_final": [
                 value(
-                    diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "aluminum"
+                    diafiltration_three_salt_Li_Co_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Al"
                     ]
                 ),
                 21.673,
             ],
-            "chloride_retentate_final": [
+            "Cl_retentate_final": [
                 value(
-                    diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.retentate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_three_salt_Li_Co_Al.fs.unit.retentate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 703.51,
             ],
             "permeate_final": [
                 value(
-                    diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.permeate_flow_volume[
-                        0, 1
-                    ]
+                    diafiltration_three_salt_Li_Co_Al.fs.unit.permeate_flow_volume[0, 1]
                 ),
                 5.7276,
             ],
-            "lithium_permeate_final": [
+            "Li_permeate_final": [
                 value(
-                    diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "lithium"
+                    diafiltration_three_salt_Li_Co_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Li"
                     ]
                 ),
                 194.91,
             ],
-            "cobalt_permeate_final": [
+            "Co_permeate_final": [
                 value(
-                    diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "cobalt"
+                    diafiltration_three_salt_Li_Co_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Co"
                     ]
                 ),
                 220.89,
             ],
-            "aluminum_permeate_final": [
+            "Al_permeate_final": [
                 value(
-                    diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "aluminum"
+                    diafiltration_three_salt_Li_Co_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Al"
                     ]
                 ),
                 8.3159,
             ],
-            "chloride_permeate_final": [
+            "Cl_permeate_final": [
                 value(
-                    diafiltration_three_salt_lithium_cobalt_aluminum.fs.unit.permeate_conc_mol_comp[
-                        0, 1, "chloride"
+                    diafiltration_three_salt_Li_Co_Al.fs.unit.permeate_conc_mol_comp[
+                        0, 1, "Cl"
                     ]
                 ),
                 661.63,
@@ -2152,10 +2092,8 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminum(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues_lithium_cobalt_aluminum(
-        self, diafiltration_three_salt_lithium_cobalt_aluminum
-    ):
-        test_numerical_issues(diafiltration_three_salt_lithium_cobalt_aluminum)
+    def test_numerical_issues_Li_Co_Al(self, diafiltration_three_salt_Li_Co_Al):
+        test_numerical_issues(diafiltration_three_salt_Li_Co_Al)
 
 
 ################################################################################

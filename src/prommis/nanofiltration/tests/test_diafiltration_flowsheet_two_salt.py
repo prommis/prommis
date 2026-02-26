@@ -59,32 +59,32 @@ def test_main():
             value(m.fs.membrane.retentate_flow_volume[0, 1]),
             6.0465,
         ],
-        "lithium_retentate_final": [
-            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "lithium"]),
+        "Li_retentate_final": [
+            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "Li"]),
             188.88,
         ],
-        "cobalt_retentate_final": [
-            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "cobalt"]),
+        "Co_retentate_final": [
+            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "Co"]),
             246.67,
         ],
-        "chloride_retentate_final": [
-            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "chloride"]),
+        "Cl_retentate_final": [
+            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
             682.22,
         ],
         "permeate_final": [
             value(m.fs.membrane.permeate_flow_volume[0, 1]),
             10.033,
         ],
-        "lithium_permeate_final": [
-            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "lithium"]),
+        "Li_permeate_final": [
+            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "Li"]),
             191.55,
         ],
-        "cobalt_permeate_final": [
-            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "cobalt"]),
+        "Co_permeate_final": [
+            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "Co"]),
             222.76,
         ],
-        "chloride_permeate_final": [
-            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "chloride"]),
+        "Cl_permeate_final": [
+            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
             637.06,
         ],
     }

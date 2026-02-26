@@ -32,10 +32,10 @@ class MultiComponentDiafiltrationStreamParameterData(PhysicalParameterBlock):
     diafiltration membrane.
 
     Currently includes the following solutes:
-        Li+ (lithium ion)
-        Co2+ (cobalt ion)
-        Al3+ (aluminum ion)
-        Cl- (chloride ion)
+        Li (lithium ion, +)
+        Co (cobalt ion, 2+)
+        Al (aluminum ion, 3+)
+        Cl (chloride ion, -)
     """
 
     CONFIG = PhysicalParameterBlock.CONFIG()
@@ -44,7 +44,7 @@ class MultiComponentDiafiltrationStreamParameterData(PhysicalParameterBlock):
         "cation_list",
         ConfigValue(
             domain=ListOf(str),
-            default=["lithium", "cobalt"],
+            default=["Li", "Co"],
             doc="List of cations present in the system",
         ),
     )
@@ -52,7 +52,7 @@ class MultiComponentDiafiltrationStreamParameterData(PhysicalParameterBlock):
         "anion_list",
         ConfigValue(
             domain=ListOf(str),
-            default=["chloride"],
+            default=["Cl"],
             doc="List of anions present in the system",
         ),
     )

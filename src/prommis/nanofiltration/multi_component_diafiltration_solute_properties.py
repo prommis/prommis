@@ -31,10 +31,10 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
     Property Package for the multi-component diafiltration membrane.
 
     Currently includes the following solutes:
-        Li+ (lithium ion)
-        Co2+ (cobalt ion)
-        Al3+ (aluminum ion)
-        Cl- (chloride ion)
+        Li (lithium ion, +)
+        Co (cobalt ion, 2+)
+        Al (aluminum ion, 3+)
+        Cl (chloride ion, -)
     """
 
     CONFIG = PhysicalParameterBlock.CONFIG()
@@ -43,7 +43,7 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
         "cation_list",
         ConfigValue(
             domain=ListOf(str),
-            default=["lithium", "cobalt"],
+            default=["Li", "Co"],
             doc="List of cations present in the system",
         ),
     )
@@ -51,7 +51,7 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
         "anion_list",
         ConfigValue(
             domain=ListOf(str),
-            default=["chloride"],
+            default=["Cl"],
             doc="List of anions present in the system",
         ),
     )
@@ -72,27 +72,27 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
 
         # ion valence
         charge_dict = {
-            "lithium": 1,
-            "cobalt": 2,
-            "aluminum": 3,
-            "chloride": -1,
+            "Li": 1,
+            "Co": 2,
+            "Al": 3,
+            "Cl": -1,
         }
 
         # infinite dilution solute diffusion coefficient
         # source: https://www.aqion.de/site/diffusion-coefficients
         diffusion_coefficient_dict = {
-            "lithium": 3.71,  # mm2 / h
-            "cobalt": 2.64,  # mm2 / h
-            "aluminum": 2.01,  # mm2 / h
-            "chloride": 7.31,  # mm2 / h
+            "Li": 3.71,  # mm2 / h
+            "Co": 2.64,  # mm2 / h
+            "Al": 2.01,  # mm2 / h
+            "Cl": 7.31,  # mm2 / h
         }
 
         # thermal reflection coefficient, related to solute rejection
         sigma_dict = {
-            "lithium": 1,
-            "cobalt": 1,
-            "aluminum": 1,
-            "chloride": 1,
+            "Li": 1,
+            "Co": 1,
+            "Al": 1,
+            "Cl": 1,
         }
 
         # partition coefficient at the solution-membrane interfaces
@@ -107,67 +107,67 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
         # while H on the retentate and permeate sides can differ, we assume them to be equal for now
         partition_coefficient_dict = {
             "retentate": {
-                "lithium": 0.4,
-                "cobalt": 0.04,
-                "aluminum": 0.004,
-                "chloride": 0.01,
+                "Li": 0.4,
+                "Co": 0.04,
+                "Al": 0.004,
+                "Cl": 0.01,
             },
             "permeate": {
-                "lithium": 0.4,
-                "cobalt": 0.04,
-                "aluminum": 0.004,
-                "chloride": 0.01,
+                "Li": 0.4,
+                "Co": 0.04,
+                "Al": 0.004,
+                "Cl": 0.01,
             },
         }
 
-        if self.config.cation_list == ["lithium"]:
-            salt_system = "lithium_chloride"
-        elif self.config.cation_list == ["cobalt"]:
-            salt_system = "cobalt_chloride"
-        elif self.config.cation_list == ["aluminum"]:
-            salt_system = "aluminum_chloride"
-        elif self.config.cation_list == ["lithium", "cobalt"]:
-            salt_system = "lithium_cobalt_chloride"
-        elif self.config.cation_list == ["lithium", "aluminum"]:
-            salt_system = "lithium_aluminum_chloride"
-        elif self.config.cation_list == ["cobalt", "aluminum"]:
-            salt_system = "cobalt_aluminum_chloride"
-        elif self.config.cation_list == ["lithium", "cobalt", "aluminum"]:
-            salt_system = "lithium_cobalt_aluminum_chloride"
+        if self.config.cation_list == ["Li"]:
+            salt_system = "Li_Cl"
+        elif self.config.cation_list == ["Co"]:
+            salt_system = "Co_Cl2"
+        elif self.config.cation_list == ["Al"]:
+            salt_system = "Al_Cl3"
+        elif self.config.cation_list == ["Li", "Co"]:
+            salt_system = "Li_Co_Cl3"
+        elif self.config.cation_list == ["Li", "Al"]:
+            salt_system = "Li_Al_Cl4"
+        elif self.config.cation_list == ["Co", "Al"]:
+            salt_system = "Co_Al_Cl5"
+        elif self.config.cation_list == ["Li", "Co", "Al"]:
+            salt_system = "Li_Co_Al_Cl6"
 
         num_solutes_dict = {
-            "lithium_chloride": {
-                "lithium": 1,
-                "chloride": 1,
+            "Li_Cl": {
+                "Li": 1,
+                "Cl": 1,
             },
-            "cobalt_chloride": {
-                "cobalt": 1,
-                "chloride": 2,
+            "Co_Cl2": {
+                "Co": 1,
+                "Cl": 2,
             },
-            "aluminum_chloride": {
-                "aluminum": 1,
-                "chloride": 3,
+            "Al_Cl3": {
+                "Al": 1,
+                "Cl": 3,
             },
-            "lithium_cobalt_chloride": {
-                "lithium": 1,
-                "cobalt": 1,
-                "chloride": 3,
+            "Li_Co_Cl3": {
+                "Li": 1,
+                "Co": 1,
+                "Cl": 3,
             },
-            "lithium_aluminum_chloride": {
-                "lithium": 1,
-                "aluminum": 1,
-                "chloride": 4,
+            "Li_Al_Cl4": {
+                "Li": 1,
+                "Al": 1,
+                "Cl": 4,
             },
-            "cobalt_aluminum_chloride": {
-                "cobalt": 1,
-                "aluminum": 1,
-                "chloride": 5,
+            "Co_Al_Cl5": {
+                "Co": 1,
+                "Al": 1,
+                "Cl": 5,
             },
-            "lithium_cobalt_aluminum_chloride": {
-                "lithium": 1,
-                "cobalt": 1,
-                "aluminum": 1,
-                "chloride": 6,
+            "Li_Co_Al_Cl6": {
+                "Li": 1,
+                "Co": 1,
+                "Al": 1,
+                "Cl": 6,
             },
         }
 

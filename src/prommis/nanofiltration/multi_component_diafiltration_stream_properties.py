@@ -5,15 +5,15 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Property package for the inlet and outlet streams of the two-salt diafiltration membrane.
+Property package for the inlet and outlet streams of the multi-component diafiltration membrane.
 
 Author: Molly Dougher
 """
 
-from pyomo.environ import Var, units
+from pyomo.common.config import ConfigValue, ListOf
+from pyomo.environ import Set, Var, units
 
 from idaes.core import (
-    Component,
     MaterialFlowBasis,
     Phase,
     PhysicalParameterBlock,
@@ -21,34 +21,57 @@ from idaes.core import (
     StateBlockData,
     declare_process_block_class,
 )
+from idaes.core.util.exceptions import ConfigurationError
 from idaes.core.util.initialization import fix_state_vars
 
 
-@declare_process_block_class("DiafiltrationStreamParameter")
-class DiafiltrationStreamParameterData(PhysicalParameterBlock):
+@declare_process_block_class("MultiComponentDiafiltrationStreamParameter")
+class MultiComponentDiafiltrationStreamParameterData(PhysicalParameterBlock):
     """
-    Property Package for the feed and product streams in the
-    two-salt diafiltration membrane.
+    Property Package for the feed and product streams in the multi-component
+    diafiltration membrane.
 
     Currently includes the following solutes:
-        Li+ (lithium ion)
-        Co2+ (cobalt ion)
-        Cl- (chloride ion)
+        Li (lithium ion, +)
+        Co (cobalt ion, 2+)
+        Al (aluminum ion, 3+)
+        Cl (chloride ion, -)
     """
+
+    CONFIG = PhysicalParameterBlock.CONFIG()
+
+    CONFIG.declare(
+        "cation_list",
+        ConfigValue(
+            domain=ListOf(str),
+            default=["Li", "Co"],
+            doc="List of cations present in the system",
+        ),
+    )
+    CONFIG.declare(
+        "anion_list",
+        ConfigValue(
+            domain=ListOf(str),
+            default=["Cl"],
+            doc="List of anions present in the system",
+        ),
+    )
 
     def build(self):
         super().build()
 
+        if len(self.config.anion_list) > 1:
+            raise ConfigurationError(
+                "The multi-component diafiltration unit model only supports systems with a common anion"
+            )
+
         self.liquid = Phase()
 
-        # add cations
-        self.Li = Component()
-        self.Co = Component()
+        self.component_list = Set(
+            initialize=self.config.cation_list + self.config.anion_list
+        )
 
-        # add anions
-        self.Cl = Component()
-
-        self._state_block_class = DiafiltrationStreamStateBlock
+        self._state_block_class = MultiComponentDiafiltrationStreamStateBlock
 
     @classmethod
     def define_metadata(cls, obj):
@@ -70,7 +93,7 @@ class DiafiltrationStreamParameterData(PhysicalParameterBlock):
         )
 
 
-class _DiafiltrationStreamStateBlock(StateBlock):
+class _MultiComponentDiafiltrationStreamStateBlock(StateBlock):
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -82,12 +105,13 @@ class _DiafiltrationStreamStateBlock(StateBlock):
 
 
 @declare_process_block_class(
-    "DiafiltrationStreamStateBlock", block_class=_DiafiltrationStreamStateBlock
+    "MultiComponentDiafiltrationStreamStateBlock",
+    block_class=_MultiComponentDiafiltrationStreamStateBlock,
 )
-class DiafiltrationStreamStateBlockData(StateBlockData):
+class MultiComponentDiafiltrationStreamStateBlockData(StateBlockData):
     """
-    State block for the feed and product streams in the
-    two-salt diafiltration membrane.
+    State block for the feed and product streams in the multi-component
+    diafiltration membrane.
     """
 
     def build(self):

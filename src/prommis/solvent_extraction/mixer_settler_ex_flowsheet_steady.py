@@ -121,19 +121,19 @@ def set_inputs(m, dosage):
 
     m.fs.mixer_settler_ex.organic_inlet.flow_vol.fix(62.01)
 
-    m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.aqueous[:, :].temperature.fix(
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.aqueous[:, :].temperature.fix(
         305.15 * units.K
     )
-    m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.organic[:, :].temperature.fix(
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.organic[:, :].temperature.fix(
         305.15 * units.K
     )
 
-    m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.volume[:].fix(0.4 * units.m**3)
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.volume[:].fix(0.4 * units.m**3)
 
-    m.fs.mixer_settler_ex.organic_settler[:].unit.area.fix(1)
-    m.fs.mixer_settler_ex.aqueous_settler[:].unit.area.fix(1)
-    m.fs.mixer_settler_ex.aqueous_settler[:].unit.length.fix(1)
-    m.fs.mixer_settler_ex.organic_settler[:].unit.length.fix(1)
+    m.fs.mixer_settler_ex.organic_settler[:].area.fix(1)
+    m.fs.mixer_settler_ex.aqueous_settler[:].area.fix(1)
+    m.fs.mixer_settler_ex.aqueous_settler[:].length.fix(1)
+    m.fs.mixer_settler_ex.organic_settler[:].length.fix(1)
 
 
 def model_buildup_and_set_inputs(dosage, number_of_stages):

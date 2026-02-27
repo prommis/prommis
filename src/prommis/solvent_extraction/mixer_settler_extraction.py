@@ -105,9 +105,15 @@ settler tanks. These constraints are added directly to the 1D Control Volume blo
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import Block, RangeSet, TransformationFactory, value, Var, Constraint
+from pyomo.environ import (
+    assert_optimal_termination,
+    Block,
+    Constraint,
+    RangeSet,
+    TransformationFactory,
+    value,
+)
 from pyomo.network import Port, Arc
-from pyomo.dae.flatten import flatten_dae_components
 from idaes.core import (
     FlowDirection,
     UnitModelBlockData,
@@ -124,6 +130,7 @@ from idaes.core.initialization import (
 )
 from idaes.core.util.initialization import propagate_state
 
+from prommis.util import copy_first_steady_state
 from prommis.solvent_extraction.solvent_extraction import (
     SolventExtraction,
 )
@@ -210,7 +217,7 @@ class MixerSettlerExtractionInitializer(ModularInitializerBase):
                             f"{j}_settler_{model.elements.next(e)}_to_mixer_{e}_arc_expanded",
                         ).deactivate()
                         src_port = getattr(model, f"{j}_inlet")
-                        dest_port = getattr(model.mixer[e].unit, f"{j}_inlet")
+                        dest_port = getattr(model.mixer[e], f"{j}_inlet")
                         for var_name, src_var_obj in src_port.vars.items():
                             dest_var_obj = dest_port.vars[var_name]
                             for idx in src_var_obj:
@@ -228,22 +235,22 @@ class MixerSettlerExtractionInitializer(ModularInitializerBase):
                             Arc(
                                 source=model.mixer[
                                     model.elements.prev(e)
-                                ].unit.aqueous_outlet,
-                                destination=model.mixer[e].unit.aqueous_inlet,
+                                ].aqueous_outlet,
+                                destination=model.mixer[e].aqueous_inlet,
                             ),
                         ),
 
-            model.aqueous_settler[e].unit.deactivate()
-            model.organic_settler[e].unit.deactivate()
+            model.aqueous_settler[e].deactivate()
+            model.organic_settler[e].deactivate()
 
         TransformationFactory("network.expand_arcs").apply_to(model)
 
-        sx_initializer = model.mixer[model.elements.first()].unit.default_initializer(
+        sx_initializer = model.mixer[model.elements.first()].default_initializer(
             ssc_solver_options=self.config.ssc_solver_options,
             calculate_variable_options=self.config.calculate_variable_options,
         )
         for e in model.elements:
-            sx_initializer.initialize(model.mixer[e].unit)
+            sx_initializer.initialize(model.mixer[e])
             for j in ["aqueous", "organic"]:
                 if (
                     getattr(model.config, f"{j}_stream").flow_direction
@@ -258,11 +265,12 @@ class MixerSettlerExtractionInitializer(ModularInitializerBase):
 
         solver = self._get_solver()
         results_mx = solver.solve(model)
+        assert_optimal_termination(results_mx)
 
         for e in model.elements:
 
-            model.aqueous_settler[e].unit.activate()
-            model.organic_settler[e].unit.activate()
+            model.aqueous_settler[e].activate()
+            model.organic_settler[e].activate()
 
             for j in ["aqueous", "organic"]:
                 src_port = getattr(model, f"{j}_inlet")
@@ -272,23 +280,13 @@ class MixerSettlerExtractionInitializer(ModularInitializerBase):
                     for idx in src_var_obj:
                         dest_var_obj[idx].fix(value(src_var_obj[idx]))
 
-                target_model = getattr(model, f"{j}_settler")[e].unit
-                target_x = getattr(model, f"{j}_settler")[e].unit.length_domain
+                target_model = getattr(model, f"{j}_settler")[e]
+                target_x = target_model.length_domain
 
-                regular_vars, length_vars = flatten_dae_components(
-                    target_model,
-                    target_x,
-                    Var,
-                    active=True,
-                )
-                for var in length_vars:
-                    for x in target_x:
-                        if x == target_x.first():
-                            continue
-                        else:
-                            var[x].value = var[target_x.first()].value
+                copy_first_steady_state(target_model, target_x)
 
                 result_sx = solver.solve(target_model)
+                assert_optimal_termination(result_sx)
 
         # Reconstructing the model and solving
 
@@ -303,7 +301,7 @@ class MixerSettlerExtractionInitializer(ModularInitializerBase):
                     == FlowDirection.backward
                 ):
                     if e != model.elements.last():
-                        getattr(model.mixer[e].unit, f"{j}_inlet").unfix()
+                        getattr(model.mixer[e], f"{j}_inlet").unfix()
                         getattr(
                             model,
                             f"{j}_settler_{model.elements.next(e)}_to_mixer_{e}_arc_expanded",
@@ -479,48 +477,55 @@ class MixerSettlerExtractionData(UnitModelBlockData):
             self.config.number_of_stages,
             doc="Set of number of stages in cascade (1 to number of elements)",
         )
-
-        # Declare indexed mixer tanks and settler tanks
-
-        self.mixer = Block(self.elements)
-        self.aqueous_settler = Block(self.elements)
-        self.organic_settler = Block(self.elements)
-
         # Define the individual mixer and settler models
+        # Declare the mixer tank
+        self.mixer = SolventExtraction(
+            self.elements,
+            dynamic=self.config.dynamic,
+            number_of_finite_elements=1,
+            aqueous_stream=self.config.aqueous_stream,
+            organic_stream=self.config.organic_stream,
+            heterogeneous_reaction_package=self.config.heterogeneous_reaction_package,
+            heterogeneous_reaction_package_args=self.config.heterogeneous_reaction_package_args,
+            has_holdup=self.config.has_holdup,
+            create_hydrostatic_pressure_terms=True,
+        )
+
+        # Declare aqueous settler tank
+        self.aqueous_settler = ControlVolume1DBlock(
+            self.elements,
+            dynamic=self.config.dynamic,
+            has_holdup=self.config.has_holdup,
+            property_package=self.config.aqueous_stream.property_package,
+            property_package_args=self.config.aqueous_stream.property_package_args,
+            transformation_method=self.config.settler_transformation_method,
+            transformation_scheme=self.config.settler_transformation_scheme,
+            finite_elements=self.config.settler_finite_elements,
+            collocation_points=self.config.settler_collocation_points,
+        )
+        # Declare organic settler tanks
+        self.organic_settler = ControlVolume1DBlock(
+            self.elements,
+            dynamic=self.config.dynamic,
+            has_holdup=self.config.has_holdup,
+            property_package=self.config.organic_stream.property_package,
+            property_package_args=self.config.organic_stream.property_package_args,
+            transformation_method=self.config.settler_transformation_method,
+            transformation_scheme=self.config.settler_transformation_scheme,
+            finite_elements=self.config.settler_finite_elements,
+            collocation_points=self.config.settler_collocation_points,
+        )
 
         for i in self.elements:
-
-            # Declare the mixer tank
-            self.mixer[i].unit = SolventExtraction(
-                dynamic=self.config.dynamic,
-                number_of_finite_elements=1,
-                aqueous_stream=self.config.aqueous_stream,
-                organic_stream=self.config.organic_stream,
-                heterogeneous_reaction_package=self.config.heterogeneous_reaction_package,
-                heterogeneous_reaction_package_args=self.config.heterogeneous_reaction_package_args,
-                has_holdup=self.config.has_holdup,
-                create_hydrostatic_pressure_terms=True,
-            )
-
-            # Declare aqueous settler tank
-            self.aqueous_settler[i].unit = ControlVolume1DBlock(
-                dynamic=self.config.dynamic,
-                has_holdup=self.config.has_holdup,
-                property_package=self.config.aqueous_stream.property_package,
-                property_package_args=self.config.aqueous_stream.property_package_args,
-                transformation_method=self.config.settler_transformation_method,
-                transformation_scheme=self.config.settler_transformation_scheme,
-                finite_elements=self.config.settler_finite_elements,
-                collocation_points=self.config.settler_collocation_points,
-            )
-            self.aqueous_settler[i].unit.add_geometry(
+            # Configure the aqueous settler tank
+            self.aqueous_settler[i].add_geometry(
                 flow_direction=FlowDirection.forward,
             )
-            self.aqueous_settler[i].unit.add_state_blocks(
+            self.aqueous_settler[i].add_state_blocks(
                 information_flow=FlowDirection.forward,
                 has_phase_equilibrium=False,
             )
-            self.aqueous_settler[i].unit.add_material_balances(
+            self.aqueous_settler[i].add_material_balances(
                 balance_type=MaterialBalanceType.componentTotal,
                 has_phase_equilibrium=False,
                 has_mass_transfer=False,
@@ -529,45 +534,35 @@ class MixerSettlerExtractionData(UnitModelBlockData):
                 aqueous_energy_balance_type = EnergyBalanceType.enthalpyTotal
             else:
                 aqueous_energy_balance_type = EnergyBalanceType.none
-            self.aqueous_settler[i].unit.add_energy_balances(
+            self.aqueous_settler[i].add_energy_balances(
                 balance_type=aqueous_energy_balance_type,
             )
             if self.config.aqueous_stream.has_pressure_balance == True:
                 aqueous_pressure_balance_type = MomentumBalanceType.pressureTotal
             else:
                 aqueous_pressure_balance_type = MomentumBalanceType.none
-            self.aqueous_settler[i].unit.add_momentum_balances(
+            self.aqueous_settler[i].add_momentum_balances(
                 balance_type=aqueous_pressure_balance_type,
             )
-            self.aqueous_settler[i].unit.apply_transformation()
+            self.aqueous_settler[i].apply_transformation()
             self.add_inlet_port(
                 name=f"aqueous_settler_{i}_in",
-                block=self.aqueous_settler[i].unit,
+                block=self.aqueous_settler[i],
             )
             self.add_outlet_port(
                 name=f"aqueous_settler_{i}_out",
-                block=self.aqueous_settler[i].unit,
+                block=self.aqueous_settler[i],
             )
 
-            # Declare organic settler tanks
-            self.organic_settler[i].unit = ControlVolume1DBlock(
-                dynamic=self.config.dynamic,
-                has_holdup=self.config.has_holdup,
-                property_package=self.config.organic_stream.property_package,
-                property_package_args=self.config.organic_stream.property_package_args,
-                transformation_method=self.config.settler_transformation_method,
-                transformation_scheme=self.config.settler_transformation_scheme,
-                finite_elements=self.config.settler_finite_elements,
-                collocation_points=self.config.settler_collocation_points,
-            )
-            self.organic_settler[i].unit.add_geometry(
+            # Configure the organic settler tank
+            self.organic_settler[i].add_geometry(
                 flow_direction=FlowDirection.forward,
             )
-            self.organic_settler[i].unit.add_state_blocks(
+            self.organic_settler[i].add_state_blocks(
                 information_flow=FlowDirection.forward,
                 has_phase_equilibrium=False,
             )
-            self.organic_settler[i].unit.add_material_balances(
+            self.organic_settler[i].add_material_balances(
                 balance_type=MaterialBalanceType.componentTotal,
                 has_phase_equilibrium=False,
                 has_mass_transfer=False,
@@ -576,24 +571,24 @@ class MixerSettlerExtractionData(UnitModelBlockData):
                 organic_energy_balance_type = EnergyBalanceType.enthalpyTotal
             else:
                 organic_energy_balance_type = EnergyBalanceType.none
-            self.organic_settler[i].unit.add_energy_balances(
+            self.organic_settler[i].add_energy_balances(
                 balance_type=organic_energy_balance_type,
             )
             if self.config.organic_stream.has_pressure_balance == True:
                 organic_pressure_balance_type = MomentumBalanceType.pressureTotal
             else:
                 organic_pressure_balance_type = MomentumBalanceType.none
-            self.organic_settler[i].unit.add_momentum_balances(
+            self.organic_settler[i].add_momentum_balances(
                 balance_type=organic_pressure_balance_type,
             )
-            self.organic_settler[i].unit.apply_transformation()
+            self.organic_settler[i].apply_transformation()
             self.add_inlet_port(
                 name=f"organic_settler_{i}_in",
-                block=self.organic_settler[i].unit,
+                block=self.organic_settler[i],
             )
             self.add_outlet_port(
                 name=f"organic_settler_{i}_out",
-                block=self.organic_settler[i].unit,
+                block=self.organic_settler[i],
             )
 
         # if there is no energy balance, define function for temperature outlet
@@ -626,7 +621,7 @@ class MixerSettlerExtractionData(UnitModelBlockData):
 
                 # Declare temperature constraint for the settlers if it does not have energy balance
                 if getattr(self.config, f"{j}_stream").has_energy_balance == False:
-                    model = getattr(self, f"{j}_settler")[i].unit
+                    model = getattr(self, f"{j}_settler")[i]
                     setattr(
                         model,
                         f"temperature_constraint",
@@ -637,7 +632,7 @@ class MixerSettlerExtractionData(UnitModelBlockData):
 
                 # Declare pressure constraint for the settlers if it does not have pressure balance
                 if getattr(self.config, f"{j}_stream").has_pressure_balance == False:
-                    model = getattr(self, f"{j}_settler")[i].unit
+                    model = getattr(self, f"{j}_settler")[i]
                     setattr(
                         model,
                         f"pressure_constraint",
@@ -649,7 +644,7 @@ class MixerSettlerExtractionData(UnitModelBlockData):
                     self,
                     f"mixer_{j}_settler_arc_{i}",
                     Arc(
-                        source=getattr(self.mixer[i].unit, f"{j}_outlet"),
+                        source=getattr(self.mixer[i], f"{j}_outlet"),
                         destination=getattr(self, f"{j}_settler_{i}_in"),
                     ),
                 )
@@ -669,7 +664,7 @@ class MixerSettlerExtractionData(UnitModelBlockData):
                                     f"{j}_settler_{self.elements.prev(i)}_out",
                                 ),
                                 destination=getattr(
-                                    self.mixer[i].unit,
+                                    self.mixer[i],
                                     f"{j}_inlet",
                                 ),
                             ),
@@ -686,7 +681,7 @@ class MixerSettlerExtractionData(UnitModelBlockData):
                                     f"{j}_settler_{self.elements.next(i)}_out",
                                 ),
                                 destination=getattr(
-                                    self.mixer[i].unit,
+                                    self.mixer[i],
                                     f"{j}_inlet",
                                 ),
                             ),
@@ -708,7 +703,7 @@ class MixerSettlerExtractionData(UnitModelBlockData):
                 f"{j}_inlet",
                 Port(
                     extends=getattr(
-                        self.mixer[inlet_stage].unit,
+                        self.mixer[inlet_stage],
                         f"{j}_inlet",
                     ),
                 ),

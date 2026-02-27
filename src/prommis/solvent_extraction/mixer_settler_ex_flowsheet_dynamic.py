@@ -174,21 +174,21 @@ def set_inputs(m, dosage, perturb_time):
 
     # Fixing mixer parameters
 
-    m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.volume[:].fix(0.4 * units.m**3)
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.volume[:].fix(0.4 * units.m**3)
 
-    m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.aqueous[:, :].temperature.fix(
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.aqueous[:, :].temperature.fix(
         305.15 * units.K
     )
-    m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.organic[:, :].temperature.fix(
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.organic[:, :].temperature.fix(
         305.15 * units.K
     )
 
     # Fixing settler parameters
 
-    m.fs.mixer_settler_ex.organic_settler[:].unit.area.fix(1)
-    m.fs.mixer_settler_ex.aqueous_settler[:].unit.area.fix(1)
-    m.fs.mixer_settler_ex.aqueous_settler[:].unit.length.fix(0.4)
-    m.fs.mixer_settler_ex.organic_settler[:].unit.length.fix(0.4)
+    m.fs.mixer_settler_ex.organic_settler[:].area.fix(1)
+    m.fs.mixer_settler_ex.aqueous_settler[:].area.fix(1)
+    m.fs.mixer_settler_ex.aqueous_settler[:].length.fix(0.4)
+    m.fs.mixer_settler_ex.organic_settler[:].length.fix(0.4)
 
 
 def set_initial_conditions(m):
@@ -203,56 +203,50 @@ def set_initial_conditions(m):
 
     for e in m.fs.leach_soln.component_list:
         if e not in ["H2O", "HSO4"]:
-            m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.aqueous[
-                0, :
-            ].conc_mass_comp[e].fix()
+            m.fs.mixer_settler_ex.mixer[:].mscontactor.aqueous[0, :].conc_mass_comp[
+                e
+            ].fix()
 
-    m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.volume_frac_stream[
-        0, :, "aqueous"
-    ].fix()
-    m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.aqueous[0, :].flow_vol.fix()
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.volume_frac_stream[0, :, "aqueous"].fix()
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.aqueous[0, :].flow_vol.fix()
 
-    m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.aqueous_inherent_reaction_extent[
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.aqueous_inherent_reaction_extent[
         0.0, :, "Ka2"
     ].fix()
 
-    m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.organic[0, :].flow_vol.fix()
-    m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.organic[0, :].conc_mass_comp[
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.organic[0, :].flow_vol.fix()
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.organic[0, :].conc_mass_comp[
         "DEHPA"
     ].fix()
 
     for e in m.fs.reaxn.element_list:
-        m.fs.mixer_settler_ex.mixer[:].unit.mscontactor.heterogeneous_reaction_extent[
+        m.fs.mixer_settler_ex.mixer[:].mscontactor.heterogeneous_reaction_extent[
             0.0, :, f"{e}_mass_transfer"
         ].fix()
 
     # set variable values in the settler at t=0
 
     for s in m.fs.mixer_settler_ex.elements:
-        for x in m.fs.mixer_settler_ex.aqueous_settler[s].unit.length_domain:
+        for x in m.fs.mixer_settler_ex.aqueous_settler[s].length_domain:
             if x != 0:
                 for e in m.fs.leach_soln.component_list:
                     if e not in ["H2O", "HSO4"]:
-                        m.fs.mixer_settler_ex.aqueous_settler[s].unit.properties[
+                        m.fs.mixer_settler_ex.aqueous_settler[s].properties[
                             0, x
                         ].conc_mass_comp[e].fix()
-                m.fs.mixer_settler_ex.aqueous_settler[s].unit.properties[
-                    0, x
-                ].flow_vol.fix()
-                m.fs.mixer_settler_ex.aqueous_settler[s].unit.inherent_reaction_extent[
+                m.fs.mixer_settler_ex.aqueous_settler[s].properties[0, x].flow_vol.fix()
+                m.fs.mixer_settler_ex.aqueous_settler[s].inherent_reaction_extent[
                     0, x, "Ka2"
                 ].fix()
 
-        for x in m.fs.mixer_settler_ex.organic_settler[s].unit.length_domain:
+        for x in m.fs.mixer_settler_ex.organic_settler[s].length_domain:
             if x != 0:
                 for e in m.fs.prop_o.component_list:
                     if e not in ["Kerosene"]:
-                        m.fs.mixer_settler_ex.organic_settler[s].unit.properties[
+                        m.fs.mixer_settler_ex.organic_settler[s].properties[
                             0, x
                         ].conc_mass_comp[e].fix()
-                m.fs.mixer_settler_ex.organic_settler[s].unit.properties[
-                    0, x
-                ].flow_vol.fix()
+                m.fs.mixer_settler_ex.organic_settler[s].properties[0, x].flow_vol.fix()
 
 
 def build_model_and_discretize(dosage, number_of_stages, time_duration):

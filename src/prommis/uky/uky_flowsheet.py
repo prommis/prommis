@@ -245,15 +245,28 @@ def main():
             "For more guidance, run assert_no_structural_warnings from the IDAES DiagnosticToolbox "
         )
 
+    dt = DiagnosticsToolbox(m)
+    print("---Structural Issues Before Initialization---")
+    dt.report_structural_issues()
+
     initialize_system(m)
 
+    print("---Structural Issues After Initialization---")
+    dt.report_structural_issues()
+
     solve_system(m, tee=True)
+
+    print("---Numerical Issues After First Solve---")
+    dt.report_numerical_issues()
 
     # fixes the volumetric flow rate of the organic recycle streams and unfixes the flow of the make-up streams
     # we want to be able to adjust the total recycle flow rate, not just the make-up portion of it
     fix_organic_recycle(m)
 
     results = solve_system(m, tee=True)
+
+    print("---Numerical Issues After Second Solve---")
+    dt.report_numerical_issues()
 
     if not check_optimal_termination(results):
         raise RuntimeError(
@@ -922,8 +935,9 @@ def set_operating_conditions(m):
 
     m.fs.acid_feed1.flow_vol.fix(90)  # Increased by 1000x from REESim
     m.fs.acid_feed1.conc_mass_comp[0, "H2O"].fix(1000000)
-    m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(10.36)
-    m.fs.acid_feed1.conc_mass_comp[0, "Cl"].fix(359.64)
+    # Assumes an HCl weight percent of 3.7%
+    m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(1023 * units.mg / units.L)
+    m.fs.acid_feed1.conc_mass_comp[0, "Cl"].fix(35980 * units.mg / units.L)
     m.fs.acid_feed1.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Ca"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Fe"].fix(eps)
@@ -937,12 +951,11 @@ def set_operating_conditions(m):
     m.fs.acid_feed1.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Dy"].fix(eps)
 
-    m.fs.acid_feed2.flow_vol.fix(9)
+    m.fs.acid_feed2.flow_vol.fix(9)   # Change from 9 to 130? Why does REESim feed higher flow of HCL than dilute HCl?
     m.fs.acid_feed2.conc_mass_comp[0, "H2O"].fix(1000000)
-    m.fs.acid_feed2.conc_mass_comp[0, "H"].fix(
-        10.36 * 4
-    )  # Arbitrarily choose 4x the dilute solution
-    m.fs.acid_feed2.conc_mass_comp[0, "Cl"].fix(359.64 * 4)
+    # Assumes an HCl weight percent of 18.5%
+    m.fs.acid_feed2.conc_mass_comp[0, "H"].fix(5110 * units.mg / units.L)
+    m.fs.acid_feed2.conc_mass_comp[0, "Cl"].fix(179700 * units.mg / units.L)
     m.fs.acid_feed2.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Ca"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Fe"].fix(eps)
@@ -962,12 +975,11 @@ def set_operating_conditions(m):
     m.fs.rougher_sep.recycle_state[0.0].pressure.fix(P_atm)
     m.fs.rougher_sep.recycle_state[0.0].temperature.fix(Temp_room)
 
-    m.fs.acid_feed3.flow_vol.fix(9)
+    m.fs.acid_feed3.flow_vol.fix(9) # Change from 9 to 30? Why does REESim feed higher flow of HCL than dilute HCl?
     m.fs.acid_feed3.conc_mass_comp[0, "H2O"].fix(1000000)
-    m.fs.acid_feed3.conc_mass_comp[0, "H"].fix(
-        10.36 * 4
-    )  # Arbitrarily choose 4x the dilute solution
-    m.fs.acid_feed3.conc_mass_comp[0, "Cl"].fix(359.64 * 4)
+    # Assumes an HCl weight percent of 18.5%
+    m.fs.acid_feed3.conc_mass_comp[0, "H"].fix(5110 * units.mg / units.L)
+    m.fs.acid_feed3.conc_mass_comp[0, "Cl"].fix(179700 * units.mg / units.L)
     m.fs.acid_feed3.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Ca"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Fe"].fix(eps)

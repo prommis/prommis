@@ -203,13 +203,11 @@ def set_initial_conditions(m):
 
     for e in m.fs.leach_soln.component_list:
         if e not in ["H2O", "HSO4"]:
-            m.fs.mixer_settler_ex.mixer[:].mscontactor.aqueous[
-                0, :
-            ].conc_mass_comp[e].fix()
+            m.fs.mixer_settler_ex.mixer[:].mscontactor.aqueous[0, :].conc_mass_comp[
+                e
+            ].fix()
 
-    m.fs.mixer_settler_ex.mixer[:].mscontactor.volume_frac_stream[
-        0, :, "aqueous"
-    ].fix()
+    m.fs.mixer_settler_ex.mixer[:].mscontactor.volume_frac_stream[0, :, "aqueous"].fix()
     m.fs.mixer_settler_ex.mixer[:].mscontactor.aqueous[0, :].flow_vol.fix()
 
     m.fs.mixer_settler_ex.mixer[:].mscontactor.aqueous_inherent_reaction_extent[
@@ -236,9 +234,7 @@ def set_initial_conditions(m):
                         m.fs.mixer_settler_ex.aqueous_settler[s].properties[
                             0, x
                         ].conc_mass_comp[e].fix()
-                m.fs.mixer_settler_ex.aqueous_settler[s].properties[
-                    0, x
-                ].flow_vol.fix()
+                m.fs.mixer_settler_ex.aqueous_settler[s].properties[0, x].flow_vol.fix()
                 m.fs.mixer_settler_ex.aqueous_settler[s].inherent_reaction_extent[
                     0, x, "Ka2"
                 ].fix()
@@ -250,9 +246,7 @@ def set_initial_conditions(m):
                         m.fs.mixer_settler_ex.organic_settler[s].properties[
                             0, x
                         ].conc_mass_comp[e].fix()
-                m.fs.mixer_settler_ex.organic_settler[s].properties[
-                    0, x
-                ].flow_vol.fix()
+                m.fs.mixer_settler_ex.organic_settler[s].properties[0, x].flow_vol.fix()
 
 
 def build_model_and_discretize(dosage, number_of_stages, time_duration):

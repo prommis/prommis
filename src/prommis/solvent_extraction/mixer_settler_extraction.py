@@ -105,7 +105,15 @@ settler tanks. These constraints are added directly to the 1D Control Volume blo
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
-from pyomo.environ import assert_optimal_termination, Block, RangeSet, TransformationFactory, value, Var, Constraint
+from pyomo.environ import (
+    assert_optimal_termination,
+    Block,
+    RangeSet,
+    TransformationFactory,
+    value,
+    Var,
+    Constraint,
+)
 from pyomo.network import Port, Arc
 from pyomo.dae.flatten import flatten_dae_components
 from idaes.core import (

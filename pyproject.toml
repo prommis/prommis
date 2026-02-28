@@ -69,6 +69,7 @@ enable = [
     "implicit-str-concat",
     "dangerous-default-value",
     "invalid-name",
+    "silent-exception-handling"
 ]
 module-naming-style = "snake_case"
 const-naming-style = "any"
@@ -110,6 +111,7 @@ extend-exclude = [
     "*.jpg",
     "*.jpeg",
     "uky_example.ipynb",
+    "custom_pylint"
 ]
 
 [tool.typos.default.extend-words]

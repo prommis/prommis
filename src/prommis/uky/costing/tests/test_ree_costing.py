@@ -1530,18 +1530,7 @@ class TestWaterTAPCosting(object):
 
         calculate_scaling_factors(model.fs_membrane)
 
-        # check that all variables have scaling factors
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.nfunit))
-        assert len(unscaled_var_list) == 0
-
         model.fs_membrane.nfunit.initialize(optarg=solver.options)
-
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.nfunit, small=1e-5, zero=1e-12)
-        )
-        for var, val in badly_scaled_var_lst:
-            print(var.name, val)
-        assert len(badly_scaled_var_lst) == 0
 
         results = solver.solve(model.fs_membrane, tee=True)
 
@@ -1604,16 +1593,7 @@ class TestWaterTAPCosting(object):
 
         calculate_scaling_factors(model.fs_membrane)
 
-        # check that all variables have scaling factors
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.rounit))
-        assert len(unscaled_var_list) == 0
-
         model.fs_membrane.rounit.initialize(optarg=solver.options)
-
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.rounit)
-        )
-        assert badly_scaled_var_lst == []
 
         results = solver.solve(model.fs_membrane, tee=True)
 
@@ -1674,16 +1654,7 @@ class TestWaterTAPCosting(object):
 
         calculate_scaling_factors(model.fs_membrane)
 
-        # check that all variables have scaling factors
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.ixunit))
-        assert len(unscaled_var_list) == 0
-
         model.fs_membrane.ixunit.initialize(optarg=solver.options)
-
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.ixunit)
-        )
-        assert badly_scaled_var_lst == []
 
         results = solver.solve(model.fs_membrane, tee=True)
 
@@ -1715,6 +1686,36 @@ class TestWaterTAPCosting(object):
         assert_optimal_termination(results)
 
         return model
+
+    # TODO replace with test of condition number
+    @pytest.mark.component
+    def test_scaling(self, model):
+        # Nanofiltration
+        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.nfunit))
+        assert len(unscaled_var_list) == 0
+
+        badly_scaled_var_lst = list(
+            badly_scaled_var_generator(model.fs_membrane.nfunit, small=1e-5, zero=1e-12)
+        )
+        assert len(badly_scaled_var_lst) == 0
+
+        # RO unit
+        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.rounit))
+        assert len(unscaled_var_list) == 0
+
+        badly_scaled_var_lst = list(
+            badly_scaled_var_generator(model.fs_membrane.rounit)
+        )
+        assert len(badly_scaled_var_lst) == 0
+
+        # Ion exchange
+        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.ixunit))
+        assert len(unscaled_var_list) == 0
+
+        badly_scaled_var_lst = list(
+            badly_scaled_var_generator(model.fs_membrane.ixunit)
+        )
+        assert len(badly_scaled_var_lst) == 0
 
     @pytest.mark.component
     def test_REE_watertap_costing(self, model):
@@ -2458,7 +2459,7 @@ class TestDiafiltrationCosting(object):
         )
         m.fs.cascade.costing = UnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
-            costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop,
+            costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop_utility,
             costing_method_arguments={
                 "water_flux": m.fs.Jw,
                 "vol_flow_feed": m.fs.stage3.retentate_flow_vol,  # cascade feed
@@ -2469,12 +2470,11 @@ class TestDiafiltrationCosting(object):
             flowsheet_costing_block=m.fs.costing,
             costing_method=DiafiltrationCostingData.cost_pump,
             costing_method_arguments={
-                "inlet_pressure": m.fs.P_atm
-                + pyunits.convert(
-                    m.fs.cascade.costing.pressure_drop, to_units=pyunits.Pa
-                ),
-                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump opex
-                * pyunits.psi,  # this should make m.fs.feed_pump.costing.fixed_operating_cost ~0
+                "inlet_pressure": pyunits.convert(
+                    m.fs.P_atm, to_units=pyunits.kPa
+                ),  # units of kPa
+                "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
+                * pyunits.psi,  # this should make m.fs.feed_pump.costing.variable_operating_cost ~0
                 "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # feed
             },
         )
@@ -2482,8 +2482,12 @@ class TestDiafiltrationCosting(object):
             flowsheet_costing_block=m.fs.costing,
             costing_method=DiafiltrationCostingData.cost_pump,
             costing_method_arguments={
-                "inlet_pressure": m.fs.P_atm,
-                "outlet_pressure": m.fs.P_op,
+                "inlet_pressure": pyunits.convert(
+                    m.fs.P_atm, to_units=pyunits.kPa
+                ),  # units of kPa
+                "outlet_pressure": pyunits.convert(
+                    m.fs.P_op, to_units=pyunits.psi
+                ),  # units of psi
                 "inlet_vol_flow": m.fs.stage3.retentate_flow_vol,  # diafiltrate
             },
         )
@@ -2801,7 +2805,7 @@ class TestDiafiltrationCosting(object):
         # check model numerical diagnostics
         dt.assert_no_numerical_warnings()
 
-        assert value(model.fs.costing.total_BEC) == pytest.approx(44.684, rel=1e-4)
+        assert value(model.fs.costing.total_BEC) == pytest.approx(44.351, rel=1e-4)
         assert value(
             pyunits.convert(
                 model.fs.stage1.costing.capital_cost, to_units=CE_index_units
@@ -2821,7 +2825,7 @@ class TestDiafiltrationCosting(object):
             pyunits.convert(
                 model.fs.feed_pump.costing.capital_cost, to_units=CE_index_units
             )
-        ) == pytest.approx(0.34788, rel=1e-4)
+        ) == pytest.approx(0.014780, rel=1e-4)
         assert value(
             pyunits.convert(
                 model.fs.diafiltrate_pump.costing.capital_cost, to_units=CE_index_units
@@ -2870,7 +2874,7 @@ class TestDiafiltrationCosting(object):
         )
 
         assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(
-            10.95225, rel=1e-4
+            10.92257, rel=1e-4
         )
 
         assert value(
@@ -2884,20 +2888,20 @@ class TestDiafiltrationCosting(object):
                 model.fs.feed_pump.costing.variable_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
-        ) == pytest.approx(8.09845e-17, rel=1e-4)
+        ) == pytest.approx(2.91544e-10, rel=1e-4)
         assert value(
             pyunits.convert(
                 model.fs.diafiltrate_pump.costing.variable_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
-        ) == pytest.approx(2.36473e-10, rel=1e-4)
+        ) == pytest.approx(8.51301e-4, rel=1e-4)
 
         assert value(model.fs.costing.custom_variable_costs) == pytest.approx(
-            2.36473e-10, rel=1e-4
+            0.986072, rel=1e-4
         )
 
         assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
-            525.7185, rel=1e-4
+            526.8958, rel=1e-4
         )
 
 
@@ -4263,8 +4267,8 @@ def test_REE_costing_fixedOM_twiceonsamemodel():
         )
 
 
-@pytest.mark.unit
-def test_REE_costing_fixedOM_pureproductnotpassed():
+@pytest.mark.component
+def test_REE_costing_fixedOM_productratesnotpassed():
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = QGESSCosting()
@@ -4284,11 +4288,20 @@ def test_REE_costing_fixedOM_pureproductnotpassed():
         },
     )
 
-    with pytest.raises(
-        TypeError,
-        match="product_output_rates argument must be a dict",
-    ):
-        m.fs.costing.build_process_costs()
+    m.fs.costing.build_process_costs()
+
+    dt = DiagnosticsToolbox(model=m)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()
+
+    assert value(m.fs.costing.total_sales_revenue) == pytest.approx(0, abs=1e-6)
 
 
 @pytest.mark.unit
@@ -4320,38 +4333,6 @@ def test_REE_costing_fixedOM_pureproductnotadict():
             pure_product_output_rates=[
                 1.9 * pyunits.kg / pyunits.hr,
             ],
-        )
-
-
-@pytest.mark.unit
-def test_REE_costing_fixedOM_mixedproductnotpassed():
-    m = pyo.ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
-    m.fs.costing = QGESSCosting()
-
-    # 1.3 is CS Jaw Crusher
-    CS_jaw_crusher_accounts = ["1.3"]
-    m.fs.CS_jaw_crusher = UnitModelBlock()
-    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
-    m.fs.CS_jaw_crusher.power.fix()
-    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
-        flowsheet_costing_block=m.fs.costing,
-        costing_method=QGESSCostingData.get_REE_costing,
-        costing_method_arguments={
-            "cost_accounts": CS_jaw_crusher_accounts,
-            "scaled_param": m.fs.CS_jaw_crusher.power,
-            "source": 1,
-        },
-    )
-
-    with pytest.raises(
-        TypeError,
-        match="product_output_rates argument must be a dict",
-    ):
-        m.fs.costing.build_process_costs(
-            pure_product_output_rates={
-                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
-            },
         )
 
 

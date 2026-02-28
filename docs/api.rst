@@ -10,8 +10,8 @@ Leaching
 
    prommis.leaching.leach_train
    prommis.leaching.leach_reactions
-   prommis.leaching.leach_solids_properties
-   prommis.leaching.leach_solution_properties
+   prommis.properties.coal_refuse_properties
+   prommis.properties.sulfuric_acid_leaching_properties
 
 Roasting
 --------
@@ -82,10 +82,10 @@ Nanofiltration
 
    prommis.nanofiltration.diafiltration_flowsheet_two_salt
    prommis.nanofiltration.diafiltration_properties
-   prommis.nanofiltration.diafiltration_solute_properties
-   prommis.nanofiltration.diafiltration_stream_properties
-   prommis.nanofiltration.diafiltration_two_salt
    prommis.nanofiltration.diafiltration
+   prommis.nanofiltration.multi_component_diafiltration_solute_properties
+   prommis.nanofiltration.multi_component_diafiltration_stream_properties
+   prommis.nanofiltration.multi_component_diafiltration
    prommis.nanofiltration.nf_brine_plot
    prommis.nanofiltration.nf_brine
 

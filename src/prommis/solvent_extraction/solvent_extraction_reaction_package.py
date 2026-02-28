@@ -16,14 +16,48 @@ This is an example of how to write a reaction package for rare earth elements in
 solvent extraction.
 
 """
+
 from pyomo.common.config import ConfigValue
 from pyomo.environ import Constraint, Param, Set, Var, units, log10
 
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
 from idaes.core.base import property_meta
 from idaes.core.util.misc import add_object_reference
+from idaes.core.scaling import CustomScalerBase
 
-__author__ = "Arkoprabho Dasgupta"
+__author__ = "Arkoprabho Dasgupta, Douglas Allan"
+
+
+class SolventExtractionReactionScaler(CustomScalerBase):
+    """
+    Scaler for the solvent extraction reaction package.
+    """
+
+    DEFAULT_SCALING_FACTORS = {}
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        aq_block = model.parent_block().aqueous[model.index()]
+        org_block = model.parent_block().organic[model.index()]
+        for e in model.params.element_list:
+            sf_aq = self.get_scaling_factor(aq_block.conc_mol_comp[e], default=1)
+            sf_org = self.get_scaling_factor(
+                org_block.conc_mol_comp[e + "_o"], default=1
+            )
+            self.set_variable_scaling_factor(
+                model.distribution_coefficient[e], sf_org / sf_aq, overwrite=overwrite
+            )
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        for e in model.params.element_list:
+            self.scale_constraint_by_component(
+                model.distribution_expression_constraint[e],
+                model.distribution_coefficient[e],
+                overwrite=overwrite,
+            )
 
 
 # -----------------------------------------------------------------------------
@@ -73,8 +107,7 @@ class SolventExtractionReactionsData(
     m[i] = m0[i] + m1[i]*dosage
     B[i] = B0[i] + B1[i]*log(dosage)
 
-    If a system has x% DEHPA, then set `blk.extractant_dosage`=x, for example for 5% DEHPA system,
-    set `blk.extractant_dosage`=5
+    The dosage is set by the extractant_dosage variable on the organic state block.
 
     The data points for these empirical correlations have been taken from the phase 1 report.
     Certain rare earth elements do not have adequate data, hence certain functionalities could
@@ -117,10 +150,6 @@ class SolventExtractionReactionsData(
                 reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -3
 
         self.reaction_stoichiometry = reaction_stoichiometry
-
-        self.extractant_dosage = Param(
-            doc="Extractant dosage of the system", initialize=1, mutable=True
-        )
 
         self.m0 = Param(
             self.element_list,
@@ -278,13 +307,15 @@ class SolventExtractionReactionsData(
 
 
 class _SolventExtractionReactionsBlock(ProcessBlock):
-    pass
+    default_scaler = SolventExtractionReactionScaler
 
 
 @declare_process_block_class(
     "SolventExtractionReactionsBlock", block_class=_SolventExtractionReactionsBlock
 )
 class SolventExtractionReactionsData(ProcessBlockData):
+    default_scaler = SolventExtractionReactionScaler
+
     # Create Class ConfigBlock
     CONFIG = ProcessBlockData.CONFIG()
     CONFIG.declare(
@@ -313,11 +344,14 @@ class SolventExtractionReactionsData(ProcessBlockData):
 
         def distribution_expression(b, e):
             aq_block = b.parent_block().aqueous[b.index()]
+            org_block = b.parent_block().organic[b.index()]
 
             pH = aq_block.pH_phase["liquid"]
+            dosage = org_block.extractant_dosage
+
             return (b.distribution_coefficient[e]) == 10 ** (
-                (b.params.m0[e] + b.params.extractant_dosage * b.params.m1[e]) * pH
-                + (b.params.B0[e] + b.params.B1[e] * log10(b.params.extractant_dosage))
+                (b.params.m0[e] + dosage * b.params.m1[e]) * pH
+                + (b.params.B0[e] + b.params.B1[e] * log10(dosage))
             ) * (1 - b.params.K_corr[e]) + b.params.K_corr[e] * b.params.K1[e]
 
         self.distribution_expression_constraint = Constraint(

@@ -13,18 +13,39 @@ This is an example of how to write a custom heterogeneous reaction package for u
 LeachTrain unit model.
 
 """
+
 from pyomo.common.config import ConfigValue
-from pyomo.environ import Constraint, Param, Set, Var, units
+from pyomo.environ import Expression, Param, Set, units
 
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
 from idaes.core.base import property_meta
+from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.misc import add_object_reference
+
+
+class LeachReactionScaler(CustomScalerBase):
+    """
+    Scaler for the leach reaction package.
+    No variables or constraints, so no need for scaling.
+    """
+
+    DEFAULT_SCALING_FACTORS = {}
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        pass
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        pass
 
 
 # -----------------------------------------------------------------------------
 # Leach solution property package
-@declare_process_block_class("CoalRefuseLeachingReactions")
-class CoalRefuseLeachingReactionsData(
+@declare_process_block_class("CoalRefuseLeachingReactionParameterBlock")
+class CoalRefuseLeachingReactionParameterData(
     ProcessBlockData, property_meta.HasPropertyClassMetadata
 ):
     """
@@ -58,7 +79,7 @@ class CoalRefuseLeachingReactionsData(
     def build(self):
         super().build()
 
-        self._reaction_block_class = CoalRefuseLeachingReactionsBlock
+        self._reaction_block_class = CoalRefuseLeachingReactionBlock
 
         self.reaction_idx = Set(
             initialize=[
@@ -215,14 +236,15 @@ class CoalRefuseLeachingReactionsData(
         )
 
 
-class _CoalRefuseLeachingReactionsBlock(ProcessBlock):
+class _CoalRefuseLeachingReactionBlock(ProcessBlock):
     pass
 
 
 @declare_process_block_class(
-    "CoalRefuseLeachingReactionsBlock", block_class=_CoalRefuseLeachingReactionsBlock
+    "CoalRefuseLeachingReactionBlock", block_class=_CoalRefuseLeachingReactionBlock
 )
-class CoalRefuseLeachingReactionsData(ProcessBlockData):
+class CoalRefuseLeachingReactionData(ProcessBlockData):
+    default_scaler = LeachReactionScaler
     # Create Class ConfigBlock
     CONFIG = ProcessBlockData.CONFIG()
     CONFIG.declare(
@@ -244,13 +266,7 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
 
         add_object_reference(self, "_params", self.config.parameters)
 
-        self.reaction_rate = Var(
-            self.params.reaction_idx,
-            initialize=0,
-            units=units.mol / units.litre / units.hour,
-        )
-
-        def rule_reaction_rate_eq(b, r):
+        def rule_reaction_rate(b, r):
             l_block = b.parent_block().liquid[b.index()]
             s_block = b.parent_block().solid[b.index()]
 
@@ -265,15 +281,15 @@ class CoalRefuseLeachingReactionsData(ProcessBlockData):
 
             # Empirical correlation with varying exponent,
             # strip units from acid concentration for simplicity
-            return b.reaction_rate[r] == (
+            return (
                 eps
                 * b.params.B[r]
                 * (h_conc / (units.mol / units.L)) ** b.params.A[r]
-                * (1 - s_block.conversion[r]) ** (2 / 3)
+                * (1 - s_block.conversion_comp[r]) ** (2 / 3)
             )
 
-        self.reaction_rate_eq = Constraint(
-            self.params.reaction_idx, rule=rule_reaction_rate_eq
+        self.reaction_rate = Expression(
+            self.params.reaction_idx, rule=rule_reaction_rate
         )
 
     @property

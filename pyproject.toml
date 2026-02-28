@@ -19,7 +19,6 @@ classifiers = [
     "Operating System :: Unix",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -30,15 +29,17 @@ classifiers = [
 keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
 dynamic = ["version"]
 dependencies = [
-    "idaes-pse >=2.8.0",
-    "pyomo >=6.7.0",
+    "idaes-pse>=2.10.0",
+    "pyomo >=6.9.5",
 ]
 [project.optional-dependencies]
 watertap = [
-    "watertap >= 1.4.0",
+    "watertap >= 1.5.0"
 ]
+
+
 flowsheet-processor = [
-    "idaes-flowsheet-processor >=0.1.dev4",
+    "idaes-flowsheet-processor >=0.2",
 ]
 
 [tool.setuptools_scm]
@@ -46,10 +47,8 @@ flowsheet-processor = [
 version_scheme = "only-version"
 local_scheme = "node-and-date"
 
-[tool.pylint.MAIN]
-py-version = "3.9"
-init-hook="import sys; sys.path.append('custom_pylint')"
-load-plugins=["silent_exception_checker"]
+[tool.pylint.main]
+py-version = "3.11"
 
 [tool.pylint."messages control"]
 disable = [
@@ -93,6 +92,8 @@ known_issues = "prommis._testing_utils.known_issues"
 addopts = """
 --pyargs prommis
 --import-mode=importlib
+--cov=prommis
+--cov-config .coveragerc
 -rsx
 """
 
@@ -118,6 +119,8 @@ extend-exclude = [
 IDAES = "IDAES"
 # ignore phase_equil
 phase_equil = "phase_equil"
+# ignore author last name Theis
+Theis = "Theis"
 # Atomic elements
 Nd = "Nd"
 Ba = "Ba"

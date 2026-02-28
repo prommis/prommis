@@ -13,6 +13,7 @@ and solve the flowsheet.
 
 Authors: Dan Gunter (LBNL), Marcus Holly (KeyLogic)
 """
+
 __author__ = "Dan Gunter"
 
 # third party
@@ -24,11 +25,13 @@ from idaes_flowsheet_processor.api import FlowsheetCategory, FlowsheetInterface
 
 # package
 from prommis.uky.uky_flowsheet import (
+    add_result_expressions,
     build,
     initialize_system,
     set_operating_conditions,
     set_scaling,
     solve_system,
+    fix_organic_recycle,
     calculate_results,
 )
 
@@ -166,6 +169,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             obj=lsf.mass_frac_comp[0, compound],
             name=f"Leach solid feed {compound}",
             description=f"Leach solid feed {compound} fractional composition",
+            display_units="fraction",
             rounding=3,
             is_input=True,
             is_output=False,
@@ -197,7 +201,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     )
     exports.add(
         obj=rst.gas_inlet.pressure[0],
-        name="Gas inlet temperature",
+        name="Gas inlet pressure",
         rounding=2,
         ui_units=pyo.units.Pa,
         display_units="Pa",
@@ -240,7 +244,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
 
     # Export the leach solid outputs, which includes overall mass flow,
     # and mass fraction of oxides and inerts.
-    category = "solids"
+    category = "leaching solid outlet"
     leach = flowsheet.leach
     exports.add(
         obj=leach.solid_outlet.flow_mass[0],
@@ -248,7 +252,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         rounding=4,
         ui_units=pyo.units.kg / pyo.units.hour,
         display_units="kg/hr",
-        description=f"solid flow mass",
+        description=f"Leaching solid flow mass",
         is_input=False,
         is_output=True,
         output_category=category,
@@ -272,15 +276,15 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         description=f"leaching solid mass fraction of inert components outlet",
         is_input=False,
         is_output=True,
-        output_category="solid outlet",
+        output_category=category,
     )
 
     # Export leach liquid outputs, which includes the liquid flow
     # and liquid mass compositions
-    category = "leaching"
+    category = "Leaching liquid outlet"
     exports.add(
         obj=leach.liquid_outlet.flow_vol[0],
-        name=f"liquid flow volume",
+        name=f"Leaching liquid flow volume",
         ui_units=pyo.units.l / pyo.units.hour,
         display_units="l/h",
         rounding=4,
@@ -312,7 +316,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "cleaner_load",
         "cleaner_strip",
     }:
-        category = f"solex {stype}"
+        category = f"Solvent extraction {stype}"
         block = getattr(flowsheet, f"solex_{stype}")
         for ltype in {"organic", "aqueous"}:
             if stype == "rougher" and ltype == "aqueous":
@@ -342,11 +346,11 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     # Export the outputs for the precipitator, including overall flow
     # as well as concentration mass composition for chemical components
     # and precipitate components.
-    category = "precipitator"
+    category = "precipitator aqueous outlet"
     precipitator = flowsheet.precipitator
     exports.add(
         obj=precipitator.cv_aqueous.properties_out[0].flow_vol,
-        name=f"precipitator aqueous out",
+        name=f"precipitator aqueous outlet flow rate",
         ui_units=pyo.units.l / pyo.units.hour,
         display_units="liters/hour",
         rounding=4,
@@ -369,6 +373,7 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             is_output=True,
             output_category=category,
         )
+    category = "precipitator solid outlet"
     exports.add(
         obj=precipitator.precipitate_outlet.temperature[0],
         name="precipitator outlet temperature",
@@ -394,24 +399,56 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
             is_output=True,
             output_category=category,
         )
+
+    # Export the outputs for the roaster, including product mass flow
+    # and molar flow rates for the oxides in the product stream.
+    category = "Roaster product"
+    roaster = flowsheet.roaster
+    name = f"roaster product mass flow of total oxides"
+    obj = roaster.flow_mass_product[0]
+    exports.add(
+        obj=obj,
+        name=name,
+        description=f"Mass flow rate of oxides in the roaster product stream",
+        ui_units=pyo.units.kg / pyo.units.s,
+        display_units="kg/s",
+        rounding=10,
+        is_input=False,
+        is_output=True,
+        output_category=category,
+    )
+    for c in comp:
+        name = f"roaster product molar flow of {c} oxide"
+        obj = roaster.flow_mol_comp_product[0, c]
+        exports.add(
+            obj=obj,
+            name=name,
+            description=f"Roaster molar flow rate of {c} oxide in product stream",
+            ui_units=pyo.units.mol / pyo.units.s,
+            display_units="mol/s",
+            rounding=10,
+            is_input=False,
+            is_output=True,
+            output_category=category,
+        )
+
     _log.debug(f"exports:\n{exports.model_dump_json()}")
     _log.info(f"end/setup-UI-exports build_options={build_options}")
 
 
 def build_flowsheet(build_options=None, **kwargs):
-    """Called by the UI to build the flowsheet.
-    Does not solve the flowsheet, but does set operating conditions, scaling, and
-    initialize the system.
-    """
+    """Called by the UI to build the flowsheet."""
     _log.info(f"begin/build-flowsheet build_options={build_options}")
     m = build()
     set_operating_conditions(m)
+    add_result_expressions(m)
     set_scaling(m)
-    scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-    initialize_system(scaled_model)
+    initialize_system(m)
+    solve_system(m)
+    fix_organic_recycle(m)
+    solve_system(m)
     _log.info(f"end/build-flowsheet build_options={build_options}")
-    return scaled_model
+    return m
 
 
 def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
@@ -431,18 +468,18 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
         ],
     )
     element_names = {
-        "al": "Aluminum",
-        "ca": "Calcium",
-        "ce": "Cerium",
-        "dy": "Dysprosium",
-        "fe": "Iron",
-        "gd": "Gadolinium",
-        "la": "Lanthanum",
-        "nd": "Neodymium",
-        "pr": "Praseodymium",
-        "sc": "Scandium",
-        "sm": "Samarium",
-        "yt": "Yttrium",
+        "Al": "Aluminum",
+        "Ca": "Calcium",
+        "Ce": "Cerium",
+        "Dy": "Dysprosium",
+        "Fe": "Iron",
+        "Gd": "Gadolinium",
+        "La": "Lanthanum",
+        "Nd": "Neodymium",
+        "Pr": "Praseodymium",
+        "Sc": "Scandium",
+        "Sm": "Samarium",
+        "Y": "Yttrium",
     }
     element_values, element_labels = [], []
     for element, full_name in element_names.items():
@@ -452,8 +489,8 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
         name="element-recovery",
         values=element_values,
         labels=element_labels,
-        title="REE Elemental Recovery",
-        xlab="Rare earth elements",
+        title="Leaching REE Elemental Recovery",
+        xlab="Rare Earth Elements",
         ylab="Elemental Recovery",
         units="%",
     )
@@ -491,17 +528,7 @@ def get_diagram(build_options):
 def solve_flowsheet(flowsheet=None):
     """Solve a built/initialized flowsheet."""
 
-    m = build()
-
-    set_operating_conditions(m)
-
-    set_scaling(m)
-
-    scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-
-    initialize_system(scaled_model)
-
-    results = solve_system(scaled_model)
+    fs = flowsheet
+    results = solve_system(fs)
 
     return results

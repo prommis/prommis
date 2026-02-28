@@ -16,9 +16,9 @@ the unit model. The 3 gangue elements considered in the model are `Fe`, `Al`, an
 
 The feed oxalate mixture stream is typically from a precipitator in an upstream process. It is assumed
 that all oxalates are in their hydrate forms. In case the anhydrous oxalate feed flow rates are specified in
-the property package of the solid feed stream, the molar flow rates are converted to the corresponding hydrate flow rates. 
+the property package of the solid feed stream, the molar flow rates are converted to the corresponding hydrate flow rates.
 The molecular formula of an oxalate hydrate can be expressed in a general form as :ce:`RE2(C2O4)3 \\cdot xH2O` where RE is
-one of the 18 rare earth elements and x is the number of water molecules associated with the hyrate. The three 
+one of the 18 rare earth elements and x is the number of water molecules associated with the hyrate. The three
 gangue oxalate hydrates considered in the model are :ce:`Fe2(C2O4)3 \\cdot 2H2O`, :ce:`Al2(C2O4)3 \\cdot H2O`, and
 :ce:`CaC2O4 \\cdot H2O`, for `Fe`, `Al`, and `Ca` elements, respectively.
 
@@ -125,8 +125,7 @@ are not defined as outlet streams and their flow rates are defined as model vari
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
 
 # Additional import for the unit operation
-from pyomo.environ import Param, Set, Var
-from pyomo.environ import units as pyunits
+from pyomo.environ import Param, Set, units as pyunits, value, Var
 
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
@@ -136,9 +135,241 @@ from idaes.core import UnitModelBlockData, declare_process_block_class, useDefau
 from idaes.core.solvers import get_solver
 from idaes.core.util.config import DefaultBool, is_physical_parameter_block
 from idaes.core.util.tables import create_stream_table_dataframe
+from idaes.core.scaling import CustomScalerBase
 
 __author__ = "Jinliang Ma"
 __version__ = "1.0.0"
+
+
+class REEOxalateRoasterScaler(CustomScalerBase):
+    """
+    Scaler for the REEOxalateRoaster unit model.
+    """
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        """
+        Variable scaling routine for LeachingTrain.
+
+        Args:
+            model: instance of LeachingTrain to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: dict of Scalers to use for sub-models, keyed by submodel local name
+
+        Returns:
+            None
+        """
+        if submodel_scalers is None:
+            submodel_scalers = {}
+
+        # Gas streams
+        self.call_submodel_scaler_method(
+            submodel=model.gas_in,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+        self.propagate_state_scaling(
+            target_state=model.gas_out,
+            source_state=model.gas_in,
+            overwrite=overwrite,
+        )
+        self.call_submodel_scaler_method(
+            submodel=model.gas_out,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        # Solid stream
+        self.call_submodel_scaler_method(
+            submodel=model.solid_in,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        # Liquid stream
+        self.call_submodel_scaler_method(
+            submodel=model.liquid_in,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        # Volume is usually fixed and doesn't need to be scaled
+
+        # model.flow_mol_comp_feed ("mole flow rate of oxalate in solid feed stream")
+        for idx, vardata in model.flow_mol_comp_feed.items():
+            self.scale_variable_by_definition_constraint(
+                vardata, model.flow_mol_comp_feed_eqn[idx], overwrite=overwrite
+            )
+
+        # model.flow_mol_moist_feed ("mole flow rate of liquid water as surface moisture from liquid inlet")
+        for idx, vardata in model.flow_mol_moist_feed.items():
+            self.scale_variable_by_definition_constraint(
+                vardata, model.flow_mol_moist_feed_eqn[idx], overwrite=overwrite
+            )
+
+        # model.frac_comp_recovery ("fraction of oxide recovery")
+        for vardata in model.frac_comp_recovery.values():
+            self.set_variable_scaling_factor(vardata, 1, overwrite=overwrite)
+
+        # model.flow_mol_comp_product ("mole flow rate of oxide in product stream")
+        for idx, vardata in model.flow_mol_comp_product.items():
+            self.scale_variable_by_component(
+                vardata, model.flow_mol_comp_feed[idx], overwrite=overwrite
+            )
+
+        # model.flow_mol_comp_dust ("mole flow rate of oxide in dust stream")
+        for idx, vardata in model.flow_mol_comp_dust.items():
+            self.scale_variable_by_component(
+                vardata, model.flow_mol_comp_feed[idx], overwrite=overwrite
+            )
+
+        # model.flow_mass_product ("mass flow rate of total oxides in product stream")
+        for idx, vardata in model.flow_mass_product.items():
+            self.scale_variable_by_definition_constraint(
+                vardata, model.flow_mass_product_eqn[idx], overwrite=overwrite
+            )
+
+        # model.enth_mol_comp_feed ("molar enthalpy of individual species of solid oxalate feed")
+        # TODO All these oxide enthalpies are extremely negative due to
+        # the enthalpy of formation. Is scaling based on heat capacity
+        # more appropriate?
+        for (t, j), vardata in model.enth_mol_comp_feed.items():
+            self.set_variable_scaling_factor(
+                vardata,
+                1 / abs(value(model.enth0_oxide_list_all[j])),
+                overwrite=overwrite,
+            )
+
+        # model.enth_mol_comp_product ("molar enthalpy of individual species of solid oxide product")
+        # TODO All these oxide enthalpies are extremely negative due to
+        # the enthalpy of formation. Is scaling based on heat capacity
+        # more appropriate?
+        for (t, j), vardata in model.enth_mol_comp_product.items():
+            self.set_variable_scaling_factor(
+                vardata,
+                1 / abs(value(model.enth0_oxide_list_all[j])),
+                overwrite=overwrite,
+            )
+
+        # model.heat_duty
+        if hasattr(model, "heat_duty"):
+            for t, vardata in model.heat_duty.items():
+                enthalpy_flow_term = sum(
+                    model.enth_mol_comp_feed[t, i] * model.flow_mol_comp_feed[t, i]
+                    for i in model.metal_list
+                )
+                nom = self.get_expression_nominal_value(enthalpy_flow_term)
+                self.set_variable_scaling_factor(vardata, 1 / nom, overwrite=overwrite)
+
+        if hasattr(model, "deltaP"):
+            for t, vardata in model.deltaP.items():
+                self.scale_variable_by_component(
+                    vardata, model.gas_in[t].pressure, overwrite=overwrite
+                )
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        """
+        Routine to apply scaling factors to constraints in model.
+
+        Args:
+            model: model to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: dict of Scalers to use for sub-models, keyed by submodel local name
+
+        Returns:
+            None
+        """
+
+        # Gas streams
+        self.call_submodel_scaler_method(
+            submodel=model.gas_in,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+        self.propagate_state_scaling(
+            target_state=model.gas_out,
+            source_state=model.gas_in,
+            overwrite=overwrite,
+        )
+        self.call_submodel_scaler_method(
+            submodel=model.gas_out,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        # Solid stream
+        self.call_submodel_scaler_method(
+            submodel=model.solid_in,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        # Liquid stream
+        self.call_submodel_scaler_method(
+            submodel=model.liquid_in,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        for idx, condata in model.flow_mol_comp_feed_eqn.items():
+            self.scale_constraint_by_component(
+                condata, model.flow_mol_comp_feed[idx], overwrite=overwrite
+            )
+
+        for idx, condata in model.flow_mol_moist_feed_eqn.items():
+            self.scale_constraint_by_component(
+                condata, model.flow_mol_moist_feed[idx], overwrite=overwrite
+            )
+
+        for (t, j), condata in model.flow_mol_outlet_eqn.items():
+            self.scale_constraint_by_component(
+                condata, model.gas_out[t].flow_mol_comp[j], overwrite=overwrite
+            )
+
+        for idx, condata in model.flow_mol_comp_product_eqn.items():
+            self.scale_constraint_by_component(
+                condata, model.flow_mol_comp_product[idx], overwrite=overwrite
+            )
+
+        for idx, condata in model.flow_mol_comp_dust_eqn.items():
+            self.scale_constraint_by_component(
+                condata, model.flow_mol_comp_dust[idx], overwrite=overwrite
+            )
+
+        for idx, condata in model.flow_mass_product_eqn.items():
+            self.scale_constraint_by_component(
+                condata, model.flow_mass_product[idx], overwrite=overwrite
+            )
+
+        for idx, condata in model.enth_mol_comp_feed_eqn.items():
+            self.scale_constraint_by_component(
+                condata, model.enth_mol_comp_feed[idx], overwrite=overwrite
+            )
+
+        for idx, condata in model.enth_mol_comp_product_eqn.items():
+            self.scale_constraint_by_component(
+                condata, model.enth_mol_comp_product[idx], overwrite=overwrite
+            )
+
+        for idx, condata in model.energy_balance_eqn.items():
+            self.scale_constraint_by_nominal_value(condata, overwrite=overwrite)
+
+        if hasattr(model, "momentum_balance_eqn"):
+            for t, condata in model.momentum_balance_eqn.items():
+                self.scale_constraint_by_component(
+                    condata, model.gas_in[t].pressure, overwrite=overwrite
+                )
 
 
 # ----------------------------------------------------------------------------------------------------------
@@ -147,6 +378,8 @@ class REEOxalateRoasterData(UnitModelBlockData):
     """
     Simple 0D roaster model with mass and energy balance only
     """
+
+    default_scaler = REEOxalateRoasterScaler
 
     CONFIG = ConfigBlock()
     CONFIG.declare(
@@ -332,6 +565,7 @@ constructed,
         self.liquid_in = (
             self.config.property_package_precipitate_liquid.build_state_block(
                 self.flowsheet().time,
+                defined_state=True,
                 **self.config.property_package_args_precipitate_liquid,
             )
         )
@@ -683,6 +917,7 @@ constructed,
         def flow_mol_outlet_eqn(b, t, i):
             if i == "H2O":
                 return (
+                    # TODO are gas properties using SI units?
                     b.gas_out[t].flow_mol_comp[i]
                     == b.gas_in[t].flow_mol_comp[i]
                     + sum(
@@ -713,7 +948,7 @@ constructed,
             self.metal_list,
             doc="mole flow rate of product",
         )
-        def flow_mol_product(b, t, i):
+        def flow_mol_comp_product_eqn(b, t, i):
             return (
                 b.flow_mol_comp_product[t, i]
                 == b.flow_mol_comp_feed[t, i] * b.frac_comp_recovery[t, i]
@@ -724,7 +959,7 @@ constructed,
             self.metal_list,
             doc="mole flow rate of product",
         )
-        def flow_mol_dust(b, t, i):
+        def flow_mol_comp_dust_eqn(b, t, i):
             return b.flow_mol_comp_dust[t, i] == b.flow_mol_comp_feed[t, i] * (
                 1 - b.frac_comp_recovery[t, i]
             )

@@ -67,7 +67,7 @@ Variable         Name   Notes
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue
-from pyomo.environ import Block, Constraint, Var, units
+from pyomo.environ import Block, Constraint, Reference, Var, units
 from pyomo.network import Port
 
 from idaes.core import (
@@ -79,6 +79,109 @@ from idaes.core import (
 from idaes.core.initialization import ModularInitializerBase
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.models.unit_models.mscontactor import MSContactor
+from idaes.core.scaling import CustomScalerBase
+
+
+class LeachingTrainScaler(CustomScalerBase):
+    """
+    Scaler for the LeachingTrain unit model.
+    """
+
+    DEFAULT_SCALING_FACTORS = {
+        "liquid_solid_residence_time_ratio": 32,
+        # If no scaling factor for volume is provided, then the
+        # inverse of its current value is used as a scaling factor
+        "volume": None,
+    }
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        """
+        Variable scaling routine for LeachingTrain.
+
+        Args:
+            model: instance of LeachingTrain to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: dict of Scalers to use for sub-models, keyed by submodel local name
+
+        Returns:
+            None
+        """
+        if submodel_scalers is None:
+            submodel_scalers = {}
+
+        # MSContactor scaler expects volume to be scaled. Since this
+        # unit model has no geometry constraints, we can scale
+        # volume by its current magnitude.
+        for vardata in model.volume.values():
+            if self.get_default_scaling_factor(vardata) is not None:
+                self.scale_variable_by_default(vardata, overwrite=overwrite)
+            else:
+                self.set_variable_scaling_factor(
+                    vardata, 1 / vardata.value, overwrite=overwrite
+                )
+        if hasattr(model.mscontactor, "liquid_solid_residence_time_ratio"):
+            for vardata in model.mscontactor.liquid_solid_residence_time_ratio.values():
+                self.scale_variable_by_default(vardata, overwrite=overwrite)
+
+        self.call_submodel_scaler_method(
+            submodel=model.mscontactor,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        """
+        Routine to apply scaling factors to constraints in model.
+
+        Args:
+            model: model to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: dict of Scalers to use for sub-models, keyed by submodel local name
+
+        Returns:
+            None
+        """
+
+        self.call_submodel_scaler_method(
+            submodel=model.mscontactor,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        flow_basis = model.mscontactor.flow_basis
+        uom = model.mscontactor.uom
+        if flow_basis == MaterialFlowBasis.mass:
+            m_units = uom.MASS
+            x_units = m_units / uom.TIME
+        elif flow_basis == MaterialFlowBasis.molar:
+            m_units = uom.AMOUNT
+            x_units = m_units / uom.TIME
+        else:
+            # Undefined
+            x_units = None
+
+        for (
+            idx,
+            con,
+        ) in model.mscontactor.heterogeneous_reaction_extent_constraint.items():
+            t, s, r = idx
+            nom = self.get_expression_nominal_value(
+                units.convert(
+                    model.mscontactor.heterogeneous_reaction_extent[t, s, r],
+                    to_units=x_units,
+                )
+            )
+            self.set_constraint_scaling_factor(con, 1 / nom, overwrite=overwrite)
+
+        if hasattr(model.mscontactor, "outlet_flow_rate_eqn"):
+            for condata in model.mscontactor.outlet_flow_rate_eqn.values():
+                self.scale_constraint_by_nominal_value(condata, overwrite=overwrite)
 
 
 class LeachingTrainInitializer(ModularInitializerBase):
@@ -122,10 +225,7 @@ class LeachingTrainInitializer(ModularInitializerBase):
             None
         """
         # Initialize MSContactor
-        msc_init = model.mscontactor.default_initializer(
-            ssc_solver_options=self.config.ssc_solver_options,
-            calculate_variable_options=self.config.calculate_variable_options,
-        )
+        msc_init = model.mscontactor.default_initializer(**self.config)
         msc_init.initialize(model.mscontactor)
 
         solver = self._get_solver()
@@ -186,6 +286,7 @@ class LeachingTrainData(UnitModelBlockData):
 
     # Set default initializer
     default_initializer = LeachingTrainInitializer
+    default_scaler = LeachingTrainScaler
 
     CONFIG = UnitModelBlockData.CONFIG()
 
@@ -255,18 +356,21 @@ class LeachingTrainData(UnitModelBlockData):
         flow_basis = self.mscontactor.flow_basis
         uom = self.mscontactor.uom
 
-        # Reactor volume
-        self.volume = Var(
-            self.flowsheet().time,
-            self.mscontactor.elements,
-            initialize=1,
-            units=uom.VOLUME,
-            doc="Volume of each tank.",
-        )
+        if self.config.has_holdup:
+            self.volume = Reference(self.mscontactor.volume)
+        else:
+            # Reactor volume
+            self.volume = Var(
+                self.flowsheet().time,
+                self.mscontactor.elements,
+                initialize=1,
+                units=uom.VOLUME,
+                doc="Volume of each tank.",
+            )
 
         # Note that this is being added to the MSContactor block
         def rule_heterogeneous_reaction_extent(b, t, s, r):
-            volume = b.parent_block().volume
+            volume = b.parent_block().get_volume(t, s)
 
             if flow_basis == MaterialFlowBasis.mass:
                 m_units = uom.MASS
@@ -281,7 +385,7 @@ class LeachingTrainData(UnitModelBlockData):
             return units.convert(
                 b.heterogeneous_reaction_extent[t, s, r], to_units=x_units
             ) == units.convert(
-                b.heterogeneous_reactions[t, s].reaction_rate[r] * volume[t, s],
+                b.heterogeneous_reactions[t, s].reaction_rate[r] * volume,
                 to_units=x_units,
             )
 
@@ -291,6 +395,33 @@ class LeachingTrainData(UnitModelBlockData):
             self.config.reaction_package.reaction_idx,
             rule=rule_heterogeneous_reaction_extent,
         )
+
+        if self.config.has_holdup:
+            # Construct these on the MSContactor to avoid positive DOF
+            # during initialization
+            self.mscontactor.liquid_solid_residence_time_ratio = Var(
+                self.flowsheet().time,
+                self.mscontactor.elements,
+                initialize=1 / 32,
+                units=units.dimensionless,
+            )
+            self.liquid_solid_residence_time_ratio = Reference(
+                self.mscontactor.liquid_solid_residence_time_ratio
+            )
+
+            @self.mscontactor.Constraint(
+                self.flowsheet().time, self.mscontactor.elements
+            )
+            def outlet_flow_rate_eqn(b, t, s):
+                theta_s = b.volume_frac_stream[t, s, "solid"]
+                theta_l = b.volume_frac_stream[t, s, "liquid"]
+                v_l = b.liquid[t, s].flow_vol
+                v_s = b.solid[t, s].flow_vol
+
+                return (
+                    theta_l * v_s
+                    == theta_s * v_l * b.liquid_solid_residence_time_ratio[t, s]
+                )
 
         # Create unit level Ports
         self.liquid_inlet = Port(extends=self.mscontactor.liquid_inlet)
@@ -311,6 +442,12 @@ class LeachingTrainData(UnitModelBlockData):
             x_out = b.solid_outlet.mass_frac_comp[t, j]
 
             return (1 - f_out * x_out / (f_in * x_in)) * 100
+
+    def get_volume(self, t, s):
+        # TODO change when MSContactor can handle volume varying with time
+        if self.config.has_holdup:
+            return self.volume[s]
+        return self.volume[t, s]
 
     def _get_stream_table_contents(self, time_point=0):
         return self.mscontactor._get_stream_table_contents(time_point)

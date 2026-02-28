@@ -61,6 +61,13 @@ jobs:
           # we store the version
           black_requirement="$(grep 'black.*==' requirements-dev.txt)"
           pip install "$black_requirement"
+
+      - name: Print Black version
+        run: |
+          black_version=$(black --version)
+          echo "Installed Black version: $black_version from requirements-dev.txt"
+          echo "Ensure that the local version of Black matches this version for consistent formatting."
+
       - name: Run Black to verify that the committed code is formatted
         run: |
           black --check .
@@ -100,8 +107,7 @@ jobs:
           - standard
           - dev
         python-version:
-          - '3.9'
-        #   - '3.10'
+          - '3.10'
           - '3.11'
         os:
           - linux

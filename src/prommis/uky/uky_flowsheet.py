@@ -2687,6 +2687,7 @@ def initialize_costing(m):
         m: Model containing flowsheet with already-initialized unit models.
     """
     from idaes.core.util.exceptions import InitializationError
+
     print("Initializing Costing")
     init = BlockTriangularizationInitializer()
     try:
@@ -2694,7 +2695,6 @@ def initialize_costing(m):
     except InitializationError:
         print("Failed to initialize costing")
         pass
-
 
 
 def display_costing(m):

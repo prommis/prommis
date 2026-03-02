@@ -488,6 +488,36 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             )
         self.library = "REE"
 
+        if phaseout_years is None:
+            phaseout_years = [2031, 2032, 2033]
+        if phaseout_fractions is None:
+            phaseout_fractions = [0.75, 0.50, 0.25]
+
+        if consider_phaseout:
+            if CE_index_year is None:
+                raise ValueError(
+                    "CE_index_year must be defined to calculate production incentive charge."
+                )
+            if not isinstance(phaseout_years, (list)):
+                raise TypeError("phaseout_years must be a list of year values. ")
+            if not isinstance(phaseout_fractions, (list)):
+                raise TypeError(
+                    "phaseout_fractions must be a list of fraction values. "
+                )
+            if len(phaseout_years) != len(phaseout_fractions):
+                raise ValueError(
+                    "phaseout_years and phaseout_fractions must have the same length. "
+                )
+            if phaseout_years != sorted(phaseout_years):
+                raise ValueError(
+                    "phaseout_years must be in chronological (ascending) order. "
+                )
+            for i, frac in enumerate(phaseout_fractions):
+                if not (0 <= frac <= 1):
+                    raise ValueError(
+                        f"phaseout_fractions must contain values between 0 and 1. "
+                    )
+
         try:
             CE_index_units = getattr(
                 pyunits, "MUSD_" + CE_index_year
@@ -498,40 +528,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"Valid CE index options include CE500, CE394 and years from "
                 f"1990 to 2020."
             )
-
-        if phaseout_years is None:
-            phaseout_years = [2031, 2032, 2033]
-        if phaseout_fractions is None:
-            phaseout_fractions = [0.75, 0.50, 0.25]
-
-        if consider_phaseout:
-            if not isinstance(phaseout_years, (list)):
-                raise TypeError(
-                    "phaseout_years must be a list of year values. "
-                    f"Received type {type(phaseout_years)}"
-                )
-            if not isinstance(phaseout_fractions, (list)):
-                raise TypeError(
-                    "phaseout_fractions must be a list of fraction values. "
-                    f"Received type {type(phaseout_fractions)}"
-                )
-            if len(phaseout_years) != len(phaseout_fractions):
-                raise ValueError(
-                    "phaseout_years and phaseout_fractions must have the same length. "
-                    f"phaseout_years has {len(phaseout_years)} elements, "
-                    f"but phaseout_fractions has {len(phaseout_fractions)} elements."
-                )
-            if phaseout_years != sorted(phaseout_years):
-                raise ValueError(
-                    "phaseout_years must be in chronological (ascending) order. "
-                    f"Received: {phaseout_years}"
-                )
-            for i, frac in enumerate(phaseout_fractions):
-                if not (0 <= frac <= 1):
-                    raise ValueError(
-                        f"phaseout_fractions must contain values between 0 and 1. "
-                        f"Element at index {i} has value {frac}"
-                    )
 
         if (
             fixed_OM is False and calculate_NPV is True
@@ -1147,16 +1143,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     )
 
                     if consider_phaseout:
-                        if CE_index_year is None:
-                            raise ValueError(
-                                "CE_index_year must be defined to calculate production incentive charge."
-                            )
                         current_year = CE_index_year[:4]
                         try:
                             int(current_year)
                         except ValueError:
                             raise ValueError(
-                                f"CE_index_year {CE_index_year} does not start with a valid 4-digit year."
+                                f"CE_index_year does not start with a valid 4-digit year."
                             )
                         self.current_year = Param(
                             initialize=int(current_year),
@@ -3524,11 +3516,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 units=b.cost_units,
             )
 
-            if b.current_year is None:
-                raise ValueError(
-                    "CE_index_year must be defined and valid to calculate production incentive charge."
-                )
-
             current_year = int(value(b.current_year))
             b.plant_end_year = Param(
                 initialize=current_year + int(value(b.config.plant_lifetime)),
@@ -3911,7 +3898,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
                 @b.Expression()
                 def pv_production_incentive_from_capex(c):
-
                     return b.production_incentive_charge_percent_list[
                         0
                     ] * pyunits.convert(

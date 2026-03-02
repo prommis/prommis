@@ -6638,3 +6638,284 @@ def test_REE_costing_with_phaseout():
     assert value(m.fs.costing.pv_production_incentive) == pytest.approx(
         5.94735, abs=1e-4
     )
+
+
+@pytest.mark.unit
+def test_REE_costing_phaseout_years_notlist():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting()
+
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    with pytest.raises(
+        TypeError, match="phaseout_years must be a list of year values. "
+    ):
+        m.fs.costing.build_process_costs(
+            phaseout_years=(2031, 2032, 2033),
+            consider_phaseout=True,
+        )
+
+
+@pytest.mark.unit
+def test_REE_costing_phaseout_fractions_notlist():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting()
+
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    with pytest.raises(
+        TypeError, match="phaseout_fractions must be a list of fraction values. "
+    ):
+        m.fs.costing.build_process_costs(
+            phaseout_fractions=(0.75, 0.50, 0.25),
+            consider_phaseout=True,
+        )
+
+
+@pytest.mark.unit
+def test_REE_costing_phaseout_unequal_lengths():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting()
+
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    with pytest.raises(
+        ValueError,
+        match="phaseout_years and phaseout_fractions must have the same length. ",
+    ):
+        m.fs.costing.build_process_costs(
+            phaseout_years=[2031, 2032, 2033, 2034],
+            phaseout_fractions=[0.75, 0.50, 0.25],
+            consider_phaseout=True,
+        )
+
+
+@pytest.mark.unit
+def test_REE_costing_phaseout_years_not_chronological():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting()
+
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    with pytest.raises(
+        ValueError,
+        match=r"phaseout_years must be in chronological \(ascending\) order\. ",
+    ):
+        m.fs.costing.build_process_costs(
+            phaseout_years=[2033, 2031, 2032],
+            consider_phaseout=True,
+        )
+
+
+@pytest.mark.unit
+def test_REE_costing_phaseout_fractions_outofrange():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting()
+
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    with pytest.raises(
+        ValueError, match="phaseout_fractions must contain values between 0 and 1. "
+    ):
+        m.fs.costing.build_process_costs(
+            phaseout_fractions=[0.75, 1.5, 0.25],
+            consider_phaseout=True,
+        )
+
+
+@pytest.mark.unit
+def test_REE_costing_phaseout_no_ce_indexyear():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting()
+
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    with pytest.raises(
+        ValueError,
+        match=r"CE_index_year must be defined to calculate production incentive charge.",
+    ):
+        m.fs.costing.build_process_costs(
+            pure_product_output_rates={
+                "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+            },
+            consider_taxes=True,
+            consider_phaseout=True,
+            CE_index_year=None,
+        )
+
+
+@pytest.mark.unit
+def test_REE_costing_phaseout_no_capex_period():
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
+    m.fs.costing = QGESSCosting(
+        discount_percentage=10,
+        plant_lifetime=20,
+        total_capital_cost=100,
+        annual_operating_cost=100,
+        annual_revenue=100,
+        cost_year="2021",
+        has_capital_expenditure_period=False,
+    )
+    # 1.3 is CS Jaw Crusher
+    CS_jaw_crusher_accounts = ["1.3"]
+    m.fs.CS_jaw_crusher = UnitModelBlock()
+    m.fs.CS_jaw_crusher.power = pyo.Var(initialize=589, units=pyunits.hp)
+    m.fs.CS_jaw_crusher.power.fix()
+    m.fs.CS_jaw_crusher.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing,
+        costing_method=QGESSCostingData.get_REE_costing,
+        costing_method_arguments={
+            "cost_accounts": CS_jaw_crusher_accounts,
+            "scaled_param": m.fs.CS_jaw_crusher.power,
+            "source": 1,
+        },
+    )
+
+    m.fs.feed_input = pyo.Var(initialize=500, units=pyunits.ton / pyunits.hr)
+    m.fs.feed_input.fix()
+
+    m.fs.water = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
+    m.fs.water.fix()
+
+    m.fs.costing.build_process_costs(
+        pure_product_output_rates={
+            "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
+        },
+        fixed_OM=False,
+        consider_taxes=True,
+        consider_phaseout=True,
+        calculate_NPV=True,
+        CE_index_year="2025",
+    )
+
+    dt = DiagnosticsToolbox(model=m)
+    dt.assert_no_structural_warnings()
+
+    QGESSCostingData.costing_initialization(m.fs.costing)
+    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
+    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
+    solver = get_solver()
+    results = solver.solve(m, tee=True)
+    assert_optimal_termination(results)
+    dt.assert_no_numerical_warnings()

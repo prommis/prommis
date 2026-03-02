@@ -248,6 +248,7 @@ from pyomo.environ import (
     value,
 )
 from pyomo.network import Port
+from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.initialization import BlockTriangularizationInitializer
@@ -289,23 +290,110 @@ class MultiComponentDiafiltrationInitializer(BlockTriangularizationInitializer):
                     model.permeate_conc_mol_comp[t, x, j].set_value(
                         value(model.feed_conc_mol_comp[t, j]) * 0.8
                     )
-                for z in model.dimensionless_membrane_thickness:
-                    for j in model.solutes:
-                        if model.config.include_boundary_layer:
+                if model.config.include_boundary_layer:
+                    for z in model.dimensionless_boundary_layer_thickness:
+                        for j in model.solutes:
                             model.boundary_layer_conc_mol_comp[t, x, z, j].set_value(
                                 value(model.feed_conc_mol_comp[t, j]) * 0.75
                             )
                             model.d_boundary_layer_conc_mol_comp_dz[
                                 t, x, z, j
                             ].set_value(10)
-                        model.membrane_conc_mol_comp[t, x, z, j].set_value(
-                            value(model.feed_conc_mol_comp[t, j]) * 0.1
-                        )
-                        # Note: this threshhold is not rigorously tested
+                        # update diffusion coefficients
+                        if x != 0:
+                            calculate_variable_from_constraint(
+                                model.boundary_layer_D_tilde[t, x, z],
+                                model.boundary_layer_D_tilde_calculation[t, x, z],
+                            )
+                            for k in model.cations:
+                                for j in model.cations:
+                                    calculate_variable_from_constraint(
+                                        model.boundary_layer_cross_diffusion_coefficient_bilinear[
+                                            t, x, z, k, j
+                                        ],
+                                        model.boundary_layer_cross_diffusion_coefficient_calculation[
+                                            t, x, z, k, j
+                                        ],
+                                    )
+                                    calculate_variable_from_constraint(
+                                        model.boundary_layer_cross_diffusion_coefficient[
+                                            t, x, z, k, j
+                                        ],
+                                        model.boundary_layer_cross_diffusion_coefficient_bilinear_calculation[
+                                            t, x, z, k, j
+                                        ],
+                                    )
+
+                for z in model.dimensionless_membrane_thickness:
+                    for j in model.solutes:
+                        # adjust membrane concentration based on charge for 3 salt system
+                        if len(model.config.cation_list) == 1:
+                            model.membrane_conc_mol_comp[t, x, z, j].set_value(
+                                value(model.feed_conc_mol_comp[t, j]) * 0.1
+                            )
+                        else:
+                            if value(model.config.property_package.charge[j]) == 1:
+                                model.membrane_conc_mol_comp[t, x, z, j].set_value(
+                                    value(model.feed_conc_mol_comp[t, j]) * 0.2
+                                )
+                            elif value(model.config.property_package.charge[j]) >= 2:
+                                model.membrane_conc_mol_comp[t, x, z, j].set_value(
+                                    value(model.feed_conc_mol_comp[t, j]) * 1e-2
+                                )
+                            # update anion concentration to consider fixed membrane charge
+                            if x != 0:
+                                calculate_variable_from_constraint(
+                                    model.membrane_conc_mol_comp[
+                                        t, x, z, model.config.anion_list[0]
+                                    ],
+                                    model.electroneutrality_membrane[t, x, z],
+                                )
+                        # Note: this threshold is not rigorously tested
                         if value(model.feed_ionic_strength[t]) < 800:
                             model.d_membrane_conc_mol_comp_dz[t, x, z, j].set_value(1)
                         else:
                             model.d_membrane_conc_mol_comp_dz[t, x, z, j].set_value(0.1)
+
+                    # update diffusion and convection coefficients
+                    # improves numerics for multi-salt systems
+                    if len(model.config.cation_list) >= 3:
+                        if x != 0:
+                            calculate_variable_from_constraint(
+                                model.membrane_D_tilde[t, x, z],
+                                model.membrane_D_tilde_calculation[t, x, z],
+                            )
+                            for k in model.cations:
+                                calculate_variable_from_constraint(
+                                    model.membrane_convection_coefficient_bilinear[
+                                        t, x, z, k
+                                    ],
+                                    model.membrane_convection_coefficient_calculation[
+                                        t, x, z, k
+                                    ],
+                                )
+                                calculate_variable_from_constraint(
+                                    model.membrane_convection_coefficient[t, x, z, k],
+                                    model.membrane_convection_coefficient_bilinear_calculation[
+                                        t, x, z, k
+                                    ],
+                                )
+                                for j in model.cations:
+                                    calculate_variable_from_constraint(
+                                        model.membrane_cross_diffusion_coefficient_bilinear[
+                                            t, x, z, k, j
+                                        ],
+                                        model.membrane_cross_diffusion_coefficient_calculation[
+                                            t, x, z, k, j
+                                        ],
+                                    )
+                                    calculate_variable_from_constraint(
+                                        model.membrane_cross_diffusion_coefficient[
+                                            t, x, z, k, j
+                                        ],
+                                        model.membrane_cross_diffusion_coefficient_bilinear_calculation[
+                                            t, x, z, k, j
+                                        ],
+                                    )
 
         super().initialization_routine(model)
 

@@ -56,17 +56,17 @@ def build_regenerant_cost_param_block(blk, regenerant):
 
     # Register cost and purity parameters
     blk.cost = pyo.Param(
-        mutable=True,
         initialize=cost_value,
-        doc=f"{regenerant} cost",
         units=year_value / pyo.units.kg,
+        mutable=True,
+        doc=f"{regenerant} cost",
     )
 
     blk.purity = pyo.Param(
-        mutable=True,
         initialize=purity_value,
-        doc=f"{regenerant} purity",
         units=pyo.units.dimensionless,
+        mutable=True,
+        doc=f"{regenerant} purity",
     )
 
     costing = blk.costing_package
@@ -105,22 +105,28 @@ class IXCostingData(IXCostingBlockData):
         self.total_investment_factor = pyo.Param(
             initialize=1,
             domain=pyo.NonNegativeReals,
-            doc="Total investment factor [investment cost/equipment cost]",
             units=pyo.units.dimensionless,
+            mutable=True,
+            doc="Total investment factor [investment cost/equipment cost]",
         )
         self.maintenance_labor_chemical_factor = pyo.Param(
             initialize=0.03,
             domain=pyo.NonNegativeReals,
-            doc="Maintenance-labor-chemical factor [fraction of investment cost/year]",
             units=pyo.units.year**-1,
+            mutable=True,
+            doc="Maintenance-labor-chemical factor [fraction of investment cost/year]",
         )
         self.capital_annualization_factor = pyo.Param(
             initialize=0.1,
             domain=pyo.NonNegativeReals,
-            doc="Capital annualization factor [fraction of investment cost/year]",
             units=pyo.units.year**-1,
+            mutable=True,
+            doc="Capital annualization factor [fraction of investment cost/year]",
         )
-        self.capital_recovery_factor.expr = self.capital_annualization_factor
+        self.capital_recovery_factor = pyo.Expression(
+            expr=self.capital_annualization_factor,
+            doc="Capital annualization factor [fraction of investment cost/year]",
+        )
 
         self.maintenance_labor_chemical_operating_cost = pyo.Var(
             initialize=1e3,
@@ -230,7 +236,7 @@ class IXCostingData(IXCostingBlockData):
         # Define coefficients for the ion exchange pressure vessels,
         # backwash/rinse tank, and regeneration solution tank costed
         # with power equation. Consider col_vol and tank_vol in
-        # gallons. [ESR NOTE: Theoriginal terms were Var() but now I
+        # gallons. [ESR NOTE: The original terms were Var() but now I
         # converted them to Param()]. Below find the power equation
         # for each equipment:
         # pressure_vessel_cost = A * col_vol ** b
@@ -239,58 +245,68 @@ class IXCostingData(IXCostingBlockData):
         blk.vessel_A_coeff = pyo.Param(
             initialize=1596.499333,
             units=pyo.units.USD_2020,
+            mutable=True,
             doc="Ion exchange pressure vessel cost equation - A coeff., Carbon steel w/ stainless steel internals",
         )
         blk.vessel_b_coeff = pyo.Param(
             initialize=0.459496809,
             units=pyo.units.dimensionless,
+            mutable=True,
             doc="Ion exchange pressure vessel cost equation - b coeff., Carbon steel w/ stainless steel internals",
         )
 
         blk.backwash_tank_A_coeff = pyo.Param(
             initialize=308.9371309,
             units=pyo.units.USD_2020,
+            mutable=True,
             doc="Ion exchange backwash tank cost equation - A coeff., Steel tank",
         )
         blk.backwash_tank_b_coeff = pyo.Param(
             initialize=0.501467571,
             units=pyo.units.dimensionless,
+            mutable=True,
             doc="Ion exchange backwash tank cost equation - b coeff., Steel tank",
         )
 
         blk.regen_tank_A_coeff = pyo.Param(
             initialize=57.02158923,
             units=pyo.units.USD_2020,
+            mutable=True,
             doc="Ion exchange regen tank cost equation - A coeff. Stainless steel",
         )
 
         blk.regen_tank_b_coeff = pyo.Param(
             initialize=0.729325391,
             units=pyo.units.dimensionless,
+            mutable=True,
             doc="Ion exchange regen tank cost equation - b coeff. Stainless steel",
         )
 
         blk.annual_resin_replacement_factor = pyo.Param(
             initialize=0.05,
             units=pyo.units.year**-1,
+            mutable=True,
             doc="Fraction of ion exchange resin replaced per year, 4-5% of bed volume - EPA",
         )
 
         blk.hazardous_min_cost = pyo.Param(
             initialize=3240,
             units=pyo.units.USD_2020 / pyo.units.year,
+            mutable=True,
             doc="Min cost per hazardous waste shipment - EPA",
         )
 
         blk.hazardous_resin_disposal = pyo.Param(
             initialize=347.10,
             units=pyo.units.USD_2020 * pyo.units.ton**-1,
+            mutable=True,
             doc="Hazardous resin disposal cost - EPA",
         )
 
         blk.hazardous_regen_disposal = pyo.Param(
             initialize=3.64,
             units=pyo.units.USD_2020 * pyo.units.gal**-1,
+            mutable=True,
             doc="Hazardous liquid disposal cost - EPA",
         )
 
@@ -436,6 +452,7 @@ class IXCostingData(IXCostingBlockData):
             resin_cost = blk.cation_exchange_resin_cost = pyo.Param(
                 initialize=resin_cost["cation"][resin_type]["cost"],
                 units=resin_cost["cation"][resin_type]["units"],
+                mutable=True,
                 doc="Cation exchange resin cost per cubic ft",
             )
 

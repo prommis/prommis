@@ -83,11 +83,6 @@ class IXCostingBlockData(FlowsheetCostingBlockData):
         )
         self.utilization_factor.fix()
 
-        self.capital_recovery_factor = pyo.Expression(
-            expr=0.1,
-            doc="Capital annualization factor [fraction of investment cost/year]",
-        )
-
         self.TPEC = pyo.Var(
             initialize=4.12,
             doc="Total Purchased Equipment Cost (TPEC)",

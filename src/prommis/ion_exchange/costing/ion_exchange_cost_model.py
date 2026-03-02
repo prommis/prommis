@@ -334,15 +334,21 @@ class IXCostingData(IXCostingBlockData):
         # Define terms and unit conversions to match cost equations in
         # references
         ix_type = blk.unit_model.ion_exchange_type
-        tot_num_col = (
-            blk.unit_model.number_columns + blk.unit_model.number_columns_redundant
-        )
-        col_vol_gal = pyo.units.convert(
-            blk.unit_model.column_volume, to_units=pyo.units.gal
-        )
-        bed_vol_ft3 = pyo.units.convert(
-            blk.unit_model.bed_volume, to_units=pyo.units.ft**3
-        )
+        @blk.Expression()
+        def tot_num_col(b):
+            return (
+                b.unit_model.number_columns + b.unit_model.number_columns_redundant
+            )
+        @blk.Expression()
+        def col_vol_gal(b):
+            return pyo.units.convert(
+                b.unit_model.column_volume, to_units=pyo.units.gal
+            )
+        @blk.Expression()
+        def bed_vol_ft3(b):
+            return pyo.units.convert(
+                b.unit_model.bed_volume, to_units=pyo.units.ft**3
+            )
 
         # Declare variables
         blk.capital_cost_vessel = pyo.Var(
@@ -479,7 +485,7 @@ class IXCostingData(IXCostingBlockData):
             return b.capital_cost_vessel == pyo.units.convert(
                 (
                     b.vessel_A_coeff
-                    * (col_vol_gal / pyo.units.gallon) ** b.vessel_b_coeff
+                    * (b.col_vol_gal / pyo.units.gallon) ** b.vessel_b_coeff
                 ),
                 to_units=b.costing_package.base_currency,
             )
@@ -487,7 +493,7 @@ class IXCostingData(IXCostingBlockData):
         @blk.Constraint()
         def capital_cost_resin_constraint(b):
             return b.capital_cost_resin == pyo.units.convert(
-                resin_cost * bed_vol_ft3, to_units=b.costing_package.base_currency
+                resin_cost * b.bed_vol_ft3, to_units=b.costing_package.base_currency
             )
 
         backwash_tank_vol_expr = (
@@ -585,7 +591,7 @@ class IXCostingData(IXCostingBlockData):
             @blk.Constraint()
             def capital_cost_constraint(b):
                 return b.capital_cost == b.cost_factor * pyo.units.convert(
-                    (b.capital_cost_vessel + b.capital_cost_resin) * tot_num_col,
+                    (b.capital_cost_vessel + b.capital_cost_resin) * b.tot_num_col,
                     to_units=b.costing_package.base_currency,
                 )
 
@@ -597,7 +603,7 @@ class IXCostingData(IXCostingBlockData):
                     (
                         (
                             (b.capital_cost_vessel + b.capital_cost_resin)
-                            * tot_num_col
+                            * b.tot_num_col
                         )
                         + b.capital_cost_backwash_tank
                         + b.capital_cost_regen_tank
@@ -629,7 +635,7 @@ class IXCostingData(IXCostingBlockData):
                     )
 
                     return b.operating_cost_hazardous == pyo.units.convert(
-                        (bed_mass_ton * tot_num_col * b.hazardous_resin_disposal)
+                        (bed_mass_ton * b.tot_num_col * b.hazardous_resin_disposal)
                         * b.annual_resin_replacement_factor
                         + pyo.units.convert(
                             b.flow_mass_regen_soln / b.regen_soln_dens,
@@ -670,8 +676,8 @@ class IXCostingData(IXCostingBlockData):
                     + pyo.units.convert(
                         (
                             (
-                                bed_vol_ft3
-                                * tot_num_col
+                                b.bed_vol_ft3
+                                * b.tot_num_col
                                 * b.annual_resin_replacement_factor
                                 * resin_cost
                             )
@@ -685,7 +691,7 @@ class IXCostingData(IXCostingBlockData):
             def flow_mass_regen_soln_constraint(b):
                 return b.flow_mass_regen_soln == pyo.units.convert(
                     (
-                        (b.regen_dose * b.unit_model.bed_volume * tot_num_col)
+                        (b.regen_dose * b.unit_model.bed_volume * b.tot_num_col)
                         / (b.unit_model.cycle_time)
                     )
                     / b.regen_recycle,

@@ -225,10 +225,7 @@ class LeachingTrainInitializer(ModularInitializerBase):
             None
         """
         # Initialize MSContactor
-        msc_init = model.mscontactor.default_initializer(
-            ssc_solver_options=self.config.ssc_solver_options,
-            calculate_variable_options=self.config.calculate_variable_options,
-        )
+        msc_init = model.mscontactor.default_initializer(**self.config)
         msc_init.initialize(model.mscontactor)
 
         solver = self._get_solver()

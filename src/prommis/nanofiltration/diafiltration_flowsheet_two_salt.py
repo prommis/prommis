@@ -40,7 +40,7 @@ from prommis.nanofiltration.multi_component_diafiltration import (
 def main():
     """
     Builds and solves flowsheet with multi-component diafiltration unit model
-    for a two-salt (LiCl and CoCl2) solution.
+    for a two-salt (LiCl + CoCl2) solution.
     """
     # build flowsheet
     m = ConcreteModel()

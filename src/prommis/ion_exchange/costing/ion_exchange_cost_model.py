@@ -475,19 +475,19 @@ class IXCostingData(IXCostingBlockData):
             )
 
         @blk.Constraint()
-        def capital_cost_vessel_constraint(blk):
-            return blk.capital_cost_vessel == pyo.units.convert(
+        def capital_cost_vessel_constraint(b):
+            return b.capital_cost_vessel == pyo.units.convert(
                 (
-                    blk.vessel_A_coeff
-                    * (col_vol_gal / pyo.units.gallon) ** blk.vessel_b_coeff
+                    b.vessel_A_coeff
+                    * (col_vol_gal / pyo.units.gallon) ** b.vessel_b_coeff
                 ),
-                to_units=blk.costing_package.base_currency,
+                to_units=b.costing_package.base_currency,
             )
 
         @blk.Constraint()
-        def capital_cost_resin_constraint(blk):
-            return blk.capital_cost_resin == pyo.units.convert(
-                resin_cost * bed_vol_ft3, to_units=blk.costing_package.base_currency
+        def capital_cost_resin_constraint(b):
+            return b.capital_cost_resin == pyo.units.convert(
+                resin_cost * bed_vol_ft3, to_units=b.costing_package.base_currency
             )
 
         backwash_tank_vol_expr = (
@@ -514,11 +514,11 @@ class IXCostingData(IXCostingBlockData):
             # variable for the target_breakthrough_time. This new variable
             # is the one included in the multicomponent model.]
             @blk.Constraint()
-            def flow_vol_resin_constraint(blk):
-                return blk.flow_vol_resin == pyo.units.convert(
-                    blk.unit_model.bed_volume_total
-                    / blk.unit_model.target_breakthrough_time,
-                    to_units=pyo.units.m**3 / blk.costing_package.base_period,
+            def flow_vol_resin_constraint(b):
+                return b.flow_vol_resin == pyo.units.convert(
+                    b.unit_model.bed_volume_total
+                    / b.unit_model.target_breakthrough_time,
+                    to_units=pyo.units.m**3 / b.costing_package.base_period,
                 )
 
             blk.mass_flow_resin = pyo.units.convert(
@@ -529,18 +529,18 @@ class IXCostingData(IXCostingBlockData):
         else:
 
             @blk.Expression()
-            def regeneration_tank_vol(blk):
+            def regeneration_tank_vol(b):
                 return pyo.units.convert(
-                    blk.unit_model.regen_tank_vol, to_units=pyo.units.gal
+                    b.unit_model.regen_tank_vol, to_units=pyo.units.gal
                 )
 
             @blk.Constraint()
-            def capital_cost_regen_tank_constraint(blk):
-                return blk.capital_cost_regen_tank == pyo.units.convert(
-                    blk.regen_tank_A_coeff
-                    * (blk.regeneration_tank_vol / pyo.units.gallon)
-                    ** blk.regen_tank_b_coeff,
-                    to_units=blk.costing_package.base_currency,
+            def capital_cost_regen_tank_constraint(b):
+                return b.capital_cost_regen_tank == pyo.units.convert(
+                    b.regen_tank_A_coeff
+                    * (b.regeneration_tank_vol / pyo.units.gallon)
+                    ** b.regen_tank_b_coeff,
+                    to_units=b.costing_package.base_currency,
                 )
 
             backwash_tank_vol_expr += (
@@ -548,16 +548,16 @@ class IXCostingData(IXCostingBlockData):
             )
 
         @blk.Expression()
-        def backwash_tank_vol(blk):
+        def backwash_tank_vol(b):
             return pyo.units.convert(backwash_tank_vol_expr, to_units=pyo.units.gal)
 
         @blk.Constraint()
-        def capital_cost_backwash_tank_constraint(blk):
-            return blk.capital_cost_backwash_tank == pyo.units.convert(
-                blk.backwash_tank_A_coeff
-                * (blk.backwash_tank_vol / pyo.units.gallon)
-                ** blk.backwash_tank_b_coeff,
-                to_units=blk.costing_package.base_currency,
+        def capital_cost_backwash_tank_constraint(b):
+            return b.capital_cost_backwash_tank == pyo.units.convert(
+                b.backwash_tank_A_coeff
+                * (b.backwash_tank_vol / pyo.units.gallon)
+                ** b.backwash_tank_b_coeff,
+                to_units=b.costing_package.base_currency,
             )
 
         # Add cost_factor as a variable and make it equal to
@@ -571,38 +571,38 @@ class IXCostingData(IXCostingBlockData):
         )
 
         @blk.Constraint()
-        def cost_factor_link(blk):
-            return blk.cost_factor == blk.costing_package.TIC
+        def cost_factor_link(b):
+            return b.cost_factor == b.costing_package.TIC
 
         # Add direct capital cost. NOTE: This is needed to add the
         # aggregate costs in function aggregate_costs()
         @blk.Expression()
         def direct_capital_cost(b):
-            return blk.capital_cost / blk.cost_factor
+            return b.capital_cost / b.cost_factor
 
         if blk.unit_model.config.regenerant == "single_use":
 
             @blk.Constraint()
-            def capital_cost_constraint(blk):
-                return blk.capital_cost == blk.cost_factor * pyo.units.convert(
-                    (blk.capital_cost_vessel + blk.capital_cost_resin) * tot_num_col,
-                    to_units=blk.costing_package.base_currency,
+            def capital_cost_constraint(b):
+                return b.capital_cost == b.cost_factor * pyo.units.convert(
+                    (b.capital_cost_vessel + b.capital_cost_resin) * tot_num_col,
+                    to_units=b.costing_package.base_currency,
                 )
 
         else:
 
             @blk.Constraint()
-            def capital_cost_constraint(blk):
-                return blk.capital_cost == blk.cost_factor * pyo.units.convert(
+            def capital_cost_constraint(b):
+                return b.capital_cost == b.cost_factor * pyo.units.convert(
                     (
                         (
-                            (blk.capital_cost_vessel + blk.capital_cost_resin)
+                            (b.capital_cost_vessel + b.capital_cost_resin)
                             * tot_num_col
                         )
-                        + blk.capital_cost_backwash_tank
-                        + blk.capital_cost_regen_tank
+                        + b.capital_cost_backwash_tank
+                        + b.capital_cost_regen_tank
                     ),
-                    to_units=blk.costing_package.base_currency,
+                    to_units=b.costing_package.base_currency,
                 )
 
         if blk.unit_model.config.hazardous_waste:
@@ -610,34 +610,35 @@ class IXCostingData(IXCostingBlockData):
             if blk.unit_model.config.regenerant == "single_use":
 
                 @blk.Constraint()
-                def operating_cost_hazardous_constraint(blk):
-                    return blk.operating_cost_hazardous == pyo.units.convert(
-                        (blk.mass_flow_resin * blk.hazardous_resin_disposal)
-                        + blk.hazardous_min_cost,
-                        to_units=blk.costing_package.base_currency
-                        / blk.costing_package.base_period,
+                def operating_cost_hazardous_constraint(b):
+                    return b.operating_cost_hazardous == pyo.units.convert(
+                        (b.mass_flow_resin * b.hazardous_resin_disposal)
+                        + b.hazardous_min_cost,
+                        to_units=b.costing_package.base_currency
+                        / b.costing_package.base_period,
                     )
 
             else:
 
-                bed_mass_ton = pyo.units.convert(
-                    blk.unit_model.bed_volume * blk.unit_model.resin_density,
-                    to_units=pyo.units.ton,
-                )
-
                 @blk.Constraint()
-                def operating_cost_hazardous_constraint(blk):
-                    return blk.operating_cost_hazardous == pyo.units.convert(
-                        (bed_mass_ton * tot_num_col * blk.hazardous_resin_disposal)
-                        * blk.annual_resin_replacement_factor
+                def operating_cost_hazardous_constraint(b):
+
+                    bed_mass_ton = pyo.units.convert(
+                        b.unit_model.bed_volume * b.unit_model.resin_density,
+                        to_units=pyo.units.ton,
+                    )
+
+                    return b.operating_cost_hazardous == pyo.units.convert(
+                        (bed_mass_ton * tot_num_col * b.hazardous_resin_disposal)
+                        * b.annual_resin_replacement_factor
                         + pyo.units.convert(
-                            blk.flow_mass_regen_soln / blk.regen_soln_dens,
+                            b.flow_mass_regen_soln / b.regen_soln_dens,
                             to_units=pyo.units.gal / pyo.units.year,
                         )
-                        * blk.hazardous_regen_disposal
-                        + blk.hazardous_min_cost,
-                        to_units=blk.costing_package.base_currency
-                        / blk.costing_package.base_period,
+                        * b.hazardous_regen_disposal
+                        + b.hazardous_min_cost,
+                        to_units=b.costing_package.base_currency
+                        / b.costing_package.base_period,
                     )
 
         else:
@@ -647,47 +648,47 @@ class IXCostingData(IXCostingBlockData):
         if blk.unit_model.config.regenerant == "single_use":
 
             @blk.Constraint()
-            def single_use_resin_replacement_cost_constraint(blk):
-                return blk.single_use_resin_replacement_cost == pyo.units.convert(
-                    blk.flow_vol_resin * resin_cost,
-                    to_units=blk.costing_package.base_currency
-                    / blk.costing_package.base_period,
+            def single_use_resin_replacement_cost_constraint(b):
+                return b.single_use_resin_replacement_cost == pyo.units.convert(
+                    b.flow_vol_resin * resin_cost,
+                    to_units=b.costing_package.base_currency
+                    / b.costing_package.base_period,
                 )
 
             @blk.Constraint()
-            def fixed_operating_cost_constraint(blk):
-                return blk.fixed_operating_cost == (
-                    blk.single_use_resin_replacement_cost + blk.operating_cost_hazardous
+            def fixed_operating_cost_constraint(b):
+                return b.fixed_operating_cost == (
+                    b.single_use_resin_replacement_cost + b.operating_cost_hazardous
                 )
 
         else:
 
             @blk.Constraint()
-            def fixed_operating_cost_constraint(blk):
-                return blk.fixed_operating_cost == (
-                    blk.operating_cost_hazardous
+            def fixed_operating_cost_constraint(b):
+                return b.fixed_operating_cost == (
+                    b.operating_cost_hazardous
                     + pyo.units.convert(
                         (
                             (
                                 bed_vol_ft3
                                 * tot_num_col
-                                * blk.annual_resin_replacement_factor
+                                * b.annual_resin_replacement_factor
                                 * resin_cost
                             )
                         ),
-                        to_units=blk.costing_package.base_currency
-                        / blk.costing_package.base_period,
+                        to_units=b.costing_package.base_currency
+                        / b.costing_package.base_period,
                     )
                 )
 
             @blk.Constraint()
-            def flow_mass_regen_soln_constraint(blk):
-                return blk.flow_mass_regen_soln == pyo.units.convert(
+            def flow_mass_regen_soln_constraint(b):
+                return b.flow_mass_regen_soln == pyo.units.convert(
                     (
-                        (blk.regen_dose * blk.unit_model.bed_volume * tot_num_col)
-                        / (blk.unit_model.cycle_time)
+                        (b.regen_dose * b.unit_model.bed_volume * tot_num_col)
+                        / (b.unit_model.cycle_time)
                     )
-                    / blk.regen_recycle,
+                    / b.regen_recycle,
                     to_units=pyo.units.kg / pyo.units.year,
                 )
 
@@ -706,5 +707,5 @@ class IXCostingData(IXCostingBlockData):
             )
 
         @blk.Constraint()
-        def total_pumping_power_constr(blk):
-            return blk.total_pumping_power == power_expr
+        def total_pumping_power_constr(b):
+            return b.total_pumping_power == power_expr

@@ -357,8 +357,8 @@ def build_clark(
         "hazardous_waste": hazardous_waste,
         "target_component": target_component,
         "reactive_ions": m.list_reactive_ions,
-        "number_traps": num_traps,
-        "c_trap_min": c_trap_min,
+        "number_trapezoids": num_traps,
+        "minimum_concentration_trapezoids": c_trap_min,
         "resin_data_path": resin_file,
         "resin": resin,
     }

@@ -422,7 +422,7 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         # [ESR WIP: Define terms for trapezoidal rule. NOTE: the
         # trap_disc is a discretization index/parameter that defines
         # how the range between c_trap_min and c_norm is broken up.]
-        self.num_traps = int(self.config.number_traps)
+        self.num_traps = int(self.config.number_trapezoids)
         self.trap_disc = range(self.num_traps + 1)
         self.trap_index = self.trap_disc[1:]
 
@@ -430,7 +430,7 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
 
         self.c_trap_min = {}
         for i in self.reactive_ion_set:
-            self.c_trap_min[i] = float(self.config.c_trap_min)
+            self.c_trap_min[i] = float(self.config.minimum_concentration_trapezoids)
 
         # [ESR WIP: Bring breakthrough time and bv here from base model
         # since these variables depend on the set of reactive

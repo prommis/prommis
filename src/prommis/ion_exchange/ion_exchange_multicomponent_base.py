@@ -270,7 +270,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
     )
 
     CONFIG.declare(
-        "number_traps",
+        "number_trapezoids",
         ConfigValue(
             default=5,
             domain=int,
@@ -279,9 +279,9 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
     )
 
     CONFIG.declare(
-        "c_trap_min",
+        "minimum_concentration_trapezoids",
         ConfigValue(
-            default=1 - 3,
+            default=1e-3,
             domain=float,
             description="Minimum relative breakthrough concentration for estimating area under curve",
         ),
@@ -1177,12 +1177,12 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 # def add_ss_approximation(blk, ix_model_type=None):
 
 #     prop_in = blk.process_flow.properties_in[0]
-#     blk.num_traps = slf.config.number_traps
+#     blk.num_traps = self.config.number_trapezoids
 #     blk.trap_disc = range(blk.num_traps + 1)
 #     blk.trap_index = blk.trap_disc[1:]
 
 #     blk.c_trap_min = Param(  # TODO: make CONFIG option
-#         initialize=0.01,
+#         initialize=self.config.minimum_concentration_trapezoids,
 #         default=0.01,
 #         mutable=True,
 #         units=pyunits.dimensionless,

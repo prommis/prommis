@@ -219,11 +219,11 @@ def plot_results_by_length(m):
     # store values for percent recovery
     percent_recovery = []
 
-    # store values for lithium rejection (oberved)
+    # store values for lithium rejection (observed)
     lithium_rejection_obs = []
     # store values for lithium rejection (actual)
     lithium_rejection_act = []
-    # store values for cobalt rejection (oberved)
+    # store values for cobalt rejection (observed)
     cobalt_rejection_obs = []
     # store values for cobalt rejection (actual)
     cobalt_rejection_act = []
@@ -557,11 +557,11 @@ def plot_rejection_versus_concentration(m):
     # store values for concentration of cobalt in the permeate
     conc_perm_cob = []
 
-    # store values for lithium rejection (oberved)
+    # store values for lithium rejection (observed)
     lithium_rejection_obs = []
     # store values for lithium rejection (actual)
     lithium_rejection_act = []
-    # store values for cobalt rejection (oberved)
+    # store values for cobalt rejection (observed)
     cobalt_rejection_obs = []
     # store values for cobalt rejection (actual)
     cobalt_rejection_act = []

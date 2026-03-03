@@ -61,6 +61,8 @@ Model Structure
 
 There are (up to) four phases in the Multi-Component Diafiltration model: the retentate, the boundary layer, the membrane, and the permeate. The retentate and the permeate are only discretized with respect to module length (:math:`x`-direction), while the boundary layer and membrane are discretized with respect to both module length (:math:`x`-direction) and thickness (:math:`z_{bl}`-direction and :math:`z_{m}`-direction, respectively). The resulting system of partial differential algebraic equations is solved by discretizing with the backward finite difference method.
 
+A schematic of the Multi-Component Diafiltration model's geometry can be found `here <https://github.com/prommis/prommis/blob/main/src/prommis/nanofiltration/membrane_schematic.png>`_.
+
 Assumptions
 -----------
 

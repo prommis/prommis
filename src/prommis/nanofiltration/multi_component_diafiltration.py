@@ -1485,7 +1485,7 @@ and used when constructing these,
             rule=_cation_flux_membrane,
         )
 
-        def _chloride_flux_membrane(blk, t, x):
+        def _anion_flux_membrane(blk, t, x):
             if x == 0:
                 return Constraint.Skip
             return 0 == sum(
@@ -1493,8 +1493,8 @@ and used when constructing these,
                 for j in blk.solutes
             )
 
-        self.chloride_flux_membrane = Constraint(
-            self.time, self.dimensionless_module_length, rule=_chloride_flux_membrane
+        self.anion_flux_membrane = Constraint(
+            self.time, self.dimensionless_module_length, rule=_anion_flux_membrane
         )
 
         # other physical constraints
@@ -1938,7 +1938,7 @@ and used when constructing these,
         """
         for t in self.time:
             for x in self.dimensionless_module_length:
-                # Cl concentration gradient in retentate variable is created by default but
+                # anion concentration gradient in retentate variable is created by default but
                 # is not needed in model; fix to reduce number of variables
                 self.d_retentate_conc_mol_comp_dx[t, x, self.config.anion_list[0]].fix(
                     value(self.numerical_zero_tolerance)
@@ -1951,7 +1951,7 @@ and used when constructing these,
 
                 if self.config.include_boundary_layer:
                     for z in self.dimensionless_boundary_layer_thickness:
-                        # Cl concentration gradient in boundary layer variable is created by default but
+                        # anion concentration gradient in boundary layer variable is created by default but
                         # is not needed in model; fix to reduce number of variables
                         self.d_boundary_layer_conc_mol_comp_dz[
                             t, x, z, self.config.anion_list[0]
@@ -1962,7 +1962,7 @@ and used when constructing these,
                                 t, x, z, self.config.anion_list[0]
                             ].deactivate()
                 for z in self.dimensionless_membrane_thickness:
-                    # Cl concentration gradient in membrane variable is created by default but
+                    # anion concentration gradient in membrane variable is created by default but
                     # is not needed in model; fix to reduce number of variables
                     self.d_membrane_conc_mol_comp_dz[
                         t, x, z, self.config.anion_list[0]

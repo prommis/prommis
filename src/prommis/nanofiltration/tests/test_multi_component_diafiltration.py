@@ -255,10 +255,8 @@ def test_build(sample_single_salt_model):
     assert isinstance(sample_single_salt_model.fs.unit.lumped_water_flux, Constraint)
     assert len(sample_single_salt_model.fs.unit.lumped_water_flux) == 10
 
-    assert isinstance(
-        sample_single_salt_model.fs.unit.chloride_flux_membrane, Constraint
-    )
-    assert len(sample_single_salt_model.fs.unit.chloride_flux_membrane) == 10
+    assert isinstance(sample_single_salt_model.fs.unit.anion_flux_membrane, Constraint)
+    assert len(sample_single_salt_model.fs.unit.anion_flux_membrane) == 10
 
     assert isinstance(
         sample_single_salt_model.fs.unit.osmotic_pressure_calculation, Constraint

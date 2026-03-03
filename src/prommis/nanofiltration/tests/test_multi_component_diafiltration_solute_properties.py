@@ -71,7 +71,14 @@ def test_parameters_single_salt(sample_model_single_salt):
 
     for j in sample_model_single_salt.fs.solute_properties.component_list:
         assert j in sample_model_single_salt.fs.solute_properties.charge
-        assert j in sample_model_single_salt.fs.solute_properties.diffusion_coefficient
+        assert (
+            j
+            in sample_model_single_salt.fs.solute_properties.boundary_layer_diffusion_coefficient
+        )
+        assert (
+            j
+            in sample_model_single_salt.fs.solute_properties.membrane_diffusion_coefficient
+        )
         assert j in sample_model_single_salt.fs.solute_properties.sigma
         assert (
             j
@@ -117,7 +124,14 @@ def test_parameters_single_salt_Li(model_Li):
 
     # check Li values
     assert value(model_Li.fs.solute_properties.charge["Li"]) == 1
-    assert value(model_Li.fs.solute_properties.diffusion_coefficient["Li"]) == 3.71
+    assert (
+        value(model_Li.fs.solute_properties.boundary_layer_diffusion_coefficient["Li"])
+        == 3.71
+    )
+    assert (
+        value(model_Li.fs.solute_properties.membrane_diffusion_coefficient["Li"])
+        == 3.71
+    )
     assert value(model_Li.fs.solute_properties.sigma["Li"]) == 1
     assert (
         value(model_Li.fs.solute_properties.partition_coefficient_retentate["Li"])
@@ -130,7 +144,14 @@ def test_parameters_single_salt_Li(model_Li):
 
     # check Cl values (single salt with Li)
     assert value(model_Li.fs.solute_properties.charge["Cl"]) == -1
-    assert value(model_Li.fs.solute_properties.diffusion_coefficient["Cl"]) == 7.31
+    assert (
+        value(model_Li.fs.solute_properties.boundary_layer_diffusion_coefficient["Cl"])
+        == 7.31
+    )
+    assert (
+        value(model_Li.fs.solute_properties.membrane_diffusion_coefficient["Cl"])
+        == 7.31
+    )
     assert value(model_Li.fs.solute_properties.sigma["Cl"]) == 1
     assert (
         value(model_Li.fs.solute_properties.partition_coefficient_retentate["Cl"])
@@ -176,7 +197,14 @@ def test_parameters_single_salt_Co(model_Co):
 
     # check Co values
     assert value(model_Co.fs.solute_properties.charge["Co"]) == 2
-    assert value(model_Co.fs.solute_properties.diffusion_coefficient["Co"]) == 2.64
+    assert (
+        value(model_Co.fs.solute_properties.boundary_layer_diffusion_coefficient["Co"])
+        == 2.64
+    )
+    assert (
+        value(model_Co.fs.solute_properties.membrane_diffusion_coefficient["Co"])
+        == 2.64
+    )
     assert value(model_Co.fs.solute_properties.sigma["Co"]) == 1
     assert (
         value(model_Co.fs.solute_properties.partition_coefficient_retentate["Co"])
@@ -190,7 +218,14 @@ def test_parameters_single_salt_Co(model_Co):
 
     # check Cl values (single salt with Co)
     assert value(model_Co.fs.solute_properties.charge["Cl"]) == -1
-    assert value(model_Co.fs.solute_properties.diffusion_coefficient["Cl"]) == 7.31
+    assert (
+        value(model_Co.fs.solute_properties.boundary_layer_diffusion_coefficient["Cl"])
+        == 7.31
+    )
+    assert (
+        value(model_Co.fs.solute_properties.membrane_diffusion_coefficient["Cl"])
+        == 7.31
+    )
     assert value(model_Co.fs.solute_properties.sigma["Cl"]) == 1
     assert (
         value(model_Co.fs.solute_properties.partition_coefficient_retentate["Cl"])
@@ -236,7 +271,14 @@ def test_parameters_single_salt_Al(model_Al):
 
     # check Al values
     assert value(model_Al.fs.solute_properties.charge["Al"]) == 3
-    assert value(model_Al.fs.solute_properties.diffusion_coefficient["Al"]) == 2.01
+    assert (
+        value(model_Al.fs.solute_properties.boundary_layer_diffusion_coefficient["Al"])
+        == 2.01
+    )
+    assert (
+        value(model_Al.fs.solute_properties.membrane_diffusion_coefficient["Al"])
+        == 2.01
+    )
     assert value(model_Al.fs.solute_properties.sigma["Al"]) == 1
     assert (
         value(model_Al.fs.solute_properties.partition_coefficient_retentate["Al"])
@@ -250,7 +292,14 @@ def test_parameters_single_salt_Al(model_Al):
 
     # check Cl values (single salt with Al)
     assert value(model_Al.fs.solute_properties.charge["Cl"]) == -1
-    assert value(model_Al.fs.solute_properties.diffusion_coefficient["Cl"]) == 7.31
+    assert (
+        value(model_Al.fs.solute_properties.boundary_layer_diffusion_coefficient["Cl"])
+        == 7.31
+    )
+    assert (
+        value(model_Al.fs.solute_properties.membrane_diffusion_coefficient["Cl"])
+        == 7.31
+    )
     assert value(model_Al.fs.solute_properties.sigma["Cl"]) == 1
     assert (
         value(model_Al.fs.solute_properties.partition_coefficient_retentate["Cl"])
@@ -288,7 +337,14 @@ def test_parameters_two_salt(sample_model_two_salt):
 
     for j in sample_model_two_salt.fs.solute_properties.component_list:
         assert j in sample_model_two_salt.fs.solute_properties.charge
-        assert j in sample_model_two_salt.fs.solute_properties.diffusion_coefficient
+        assert (
+            j
+            in sample_model_two_salt.fs.solute_properties.boundary_layer_diffusion_coefficient
+        )
+        assert (
+            j
+            in sample_model_two_salt.fs.solute_properties.membrane_diffusion_coefficient
+        )
         assert j in sample_model_two_salt.fs.solute_properties.sigma
         assert (
             j
@@ -335,7 +391,16 @@ def test_parameters_two_salt_Li_Co(model_Li_Co):
 
     # check Li values
     assert value(model_Li_Co.fs.solute_properties.charge["Li"]) == 1
-    assert value(model_Li_Co.fs.solute_properties.diffusion_coefficient["Li"]) == 3.71
+    assert (
+        value(
+            model_Li_Co.fs.solute_properties.boundary_layer_diffusion_coefficient["Li"]
+        )
+        == 3.71
+    )
+    assert (
+        value(model_Li_Co.fs.solute_properties.membrane_diffusion_coefficient["Li"])
+        == 3.71
+    )
     assert value(model_Li_Co.fs.solute_properties.sigma["Li"]) == 1
     assert (
         value(model_Li_Co.fs.solute_properties.partition_coefficient_retentate["Li"])
@@ -349,7 +414,16 @@ def test_parameters_two_salt_Li_Co(model_Li_Co):
 
     # check Co values
     assert value(model_Li_Co.fs.solute_properties.charge["Co"]) == 2
-    assert value(model_Li_Co.fs.solute_properties.diffusion_coefficient["Co"]) == 2.64
+    assert (
+        value(
+            model_Li_Co.fs.solute_properties.boundary_layer_diffusion_coefficient["Co"]
+        )
+        == 2.64
+    )
+    assert (
+        value(model_Li_Co.fs.solute_properties.membrane_diffusion_coefficient["Co"])
+        == 2.64
+    )
     assert value(model_Li_Co.fs.solute_properties.sigma["Co"]) == 1
     assert (
         value(model_Li_Co.fs.solute_properties.partition_coefficient_retentate["Co"])
@@ -363,7 +437,16 @@ def test_parameters_two_salt_Li_Co(model_Li_Co):
 
     # check Cl values (two salt with Li and Co)
     assert value(model_Li_Co.fs.solute_properties.charge["Cl"]) == -1
-    assert value(model_Li_Co.fs.solute_properties.diffusion_coefficient["Cl"]) == 7.31
+    assert (
+        value(
+            model_Li_Co.fs.solute_properties.boundary_layer_diffusion_coefficient["Cl"]
+        )
+        == 7.31
+    )
+    assert (
+        value(model_Li_Co.fs.solute_properties.membrane_diffusion_coefficient["Cl"])
+        == 7.31
+    )
     assert value(model_Li_Co.fs.solute_properties.sigma["Cl"]) == 1
     assert (
         value(model_Li_Co.fs.solute_properties.partition_coefficient_retentate["Cl"])
@@ -412,7 +495,16 @@ def test_parameters_two_salt_Li_Al(model_Li_Al):
 
     # check Li values
     assert value(model_Li_Al.fs.solute_properties.charge["Li"]) == 1
-    assert value(model_Li_Al.fs.solute_properties.diffusion_coefficient["Li"]) == 3.71
+    assert (
+        value(
+            model_Li_Al.fs.solute_properties.boundary_layer_diffusion_coefficient["Li"]
+        )
+        == 3.71
+    )
+    assert (
+        value(model_Li_Al.fs.solute_properties.membrane_diffusion_coefficient["Li"])
+        == 3.71
+    )
     assert value(model_Li_Al.fs.solute_properties.sigma["Li"]) == 1
     assert (
         value(model_Li_Al.fs.solute_properties.partition_coefficient_retentate["Li"])
@@ -426,7 +518,16 @@ def test_parameters_two_salt_Li_Al(model_Li_Al):
 
     # check Al values
     assert value(model_Li_Al.fs.solute_properties.charge["Al"]) == 3
-    assert value(model_Li_Al.fs.solute_properties.diffusion_coefficient["Al"]) == 2.01
+    assert (
+        value(
+            model_Li_Al.fs.solute_properties.boundary_layer_diffusion_coefficient["Al"]
+        )
+        == 2.01
+    )
+    assert (
+        value(model_Li_Al.fs.solute_properties.membrane_diffusion_coefficient["Al"])
+        == 2.01
+    )
     assert value(model_Li_Al.fs.solute_properties.sigma["Al"]) == 1
     assert (
         value(model_Li_Al.fs.solute_properties.partition_coefficient_retentate["Al"])
@@ -440,7 +541,16 @@ def test_parameters_two_salt_Li_Al(model_Li_Al):
 
     # check Cl values (two salt with Li and Al)
     assert value(model_Li_Al.fs.solute_properties.charge["Cl"]) == -1
-    assert value(model_Li_Al.fs.solute_properties.diffusion_coefficient["Cl"]) == 7.31
+    assert (
+        value(
+            model_Li_Al.fs.solute_properties.boundary_layer_diffusion_coefficient["Cl"]
+        )
+        == 7.31
+    )
+    assert (
+        value(model_Li_Al.fs.solute_properties.membrane_diffusion_coefficient["Cl"])
+        == 7.31
+    )
     assert value(model_Li_Al.fs.solute_properties.sigma["Cl"]) == 1
     assert (
         value(model_Li_Al.fs.solute_properties.partition_coefficient_retentate["Cl"])
@@ -489,7 +599,16 @@ def test_parameters_two_salt_Co_Al(model_Co_Al):
 
     # check Co values
     assert value(model_Co_Al.fs.solute_properties.charge["Co"]) == 2
-    assert value(model_Co_Al.fs.solute_properties.diffusion_coefficient["Co"]) == 2.64
+    assert (
+        value(
+            model_Co_Al.fs.solute_properties.boundary_layer_diffusion_coefficient["Co"]
+        )
+        == 2.64
+    )
+    assert (
+        value(model_Co_Al.fs.solute_properties.membrane_diffusion_coefficient["Co"])
+        == 2.64
+    )
     assert value(model_Co_Al.fs.solute_properties.sigma["Co"]) == 1
     assert (
         value(model_Co_Al.fs.solute_properties.partition_coefficient_retentate["Co"])
@@ -503,7 +622,16 @@ def test_parameters_two_salt_Co_Al(model_Co_Al):
 
     # check Al values
     assert value(model_Co_Al.fs.solute_properties.charge["Al"]) == 3
-    assert value(model_Co_Al.fs.solute_properties.diffusion_coefficient["Al"]) == 2.01
+    assert (
+        value(
+            model_Co_Al.fs.solute_properties.boundary_layer_diffusion_coefficient["Al"]
+        )
+        == 2.01
+    )
+    assert (
+        value(model_Co_Al.fs.solute_properties.membrane_diffusion_coefficient["Al"])
+        == 2.01
+    )
     assert value(model_Co_Al.fs.solute_properties.sigma["Al"]) == 1
     assert (
         value(model_Co_Al.fs.solute_properties.partition_coefficient_retentate["Al"])
@@ -517,7 +645,16 @@ def test_parameters_two_salt_Co_Al(model_Co_Al):
 
     # check Cl values (two salt with Co and Al)
     assert value(model_Co_Al.fs.solute_properties.charge["Cl"]) == -1
-    assert value(model_Co_Al.fs.solute_properties.diffusion_coefficient["Cl"]) == 7.31
+    assert (
+        value(
+            model_Co_Al.fs.solute_properties.boundary_layer_diffusion_coefficient["Cl"]
+        )
+        == 7.31
+    )
+    assert (
+        value(model_Co_Al.fs.solute_properties.membrane_diffusion_coefficient["Cl"])
+        == 7.31
+    )
     assert value(model_Co_Al.fs.solute_properties.sigma["Cl"]) == 1
     assert (
         value(model_Co_Al.fs.solute_properties.partition_coefficient_retentate["Cl"])
@@ -555,7 +692,14 @@ def test_parameters_three_salt(sample_model_three_salt):
 
     for j in sample_model_three_salt.fs.solute_properties.component_list:
         assert j in sample_model_three_salt.fs.solute_properties.charge
-        assert j in sample_model_three_salt.fs.solute_properties.diffusion_coefficient
+        assert (
+            j
+            in sample_model_three_salt.fs.solute_properties.boundary_layer_diffusion_coefficient
+        )
+        assert (
+            j
+            in sample_model_three_salt.fs.solute_properties.membrane_diffusion_coefficient
+        )
         assert j in sample_model_three_salt.fs.solute_properties.sigma
         assert (
             j
@@ -604,7 +748,16 @@ def test_parameters_three_salt_Li_Co_Al(model_Li_Co_Al):
     # check Li values
     assert value(model_Li_Co_Al.fs.solute_properties.charge["Li"]) == 1
     assert (
-        value(model_Li_Co_Al.fs.solute_properties.diffusion_coefficient["Li"]) == 3.71
+        value(
+            model_Li_Co_Al.fs.solute_properties.boundary_layer_diffusion_coefficient[
+                "Li"
+            ]
+        )
+        == 3.71
+    )
+    assert (
+        value(model_Li_Co_Al.fs.solute_properties.membrane_diffusion_coefficient["Li"])
+        == 3.71
     )
     assert value(model_Li_Co_Al.fs.solute_properties.sigma["Li"]) == 1
     assert (
@@ -620,7 +773,16 @@ def test_parameters_three_salt_Li_Co_Al(model_Li_Co_Al):
     # check Co values
     assert value(model_Li_Co_Al.fs.solute_properties.charge["Co"]) == 2
     assert (
-        value(model_Li_Co_Al.fs.solute_properties.diffusion_coefficient["Co"]) == 2.64
+        value(
+            model_Li_Co_Al.fs.solute_properties.boundary_layer_diffusion_coefficient[
+                "Co"
+            ]
+        )
+        == 2.64
+    )
+    assert (
+        value(model_Li_Co_Al.fs.solute_properties.membrane_diffusion_coefficient["Co"])
+        == 2.64
     )
     assert value(model_Li_Co_Al.fs.solute_properties.sigma["Co"]) == 1
     assert (
@@ -636,7 +798,16 @@ def test_parameters_three_salt_Li_Co_Al(model_Li_Co_Al):
     # check Al values
     assert value(model_Li_Co_Al.fs.solute_properties.charge["Al"]) == 3
     assert (
-        value(model_Li_Co_Al.fs.solute_properties.diffusion_coefficient["Al"]) == 2.01
+        value(
+            model_Li_Co_Al.fs.solute_properties.boundary_layer_diffusion_coefficient[
+                "Al"
+            ]
+        )
+        == 2.01
+    )
+    assert (
+        value(model_Li_Co_Al.fs.solute_properties.membrane_diffusion_coefficient["Al"])
+        == 2.01
     )
     assert value(model_Li_Co_Al.fs.solute_properties.sigma["Al"]) == 1
     assert (
@@ -652,7 +823,16 @@ def test_parameters_three_salt_Li_Co_Al(model_Li_Co_Al):
     # check Cl values (two salt with Li, Co, and Al)
     assert value(model_Li_Co_Al.fs.solute_properties.charge["Cl"]) == -1
     assert (
-        value(model_Li_Co_Al.fs.solute_properties.diffusion_coefficient["Cl"]) == 7.31
+        value(
+            model_Li_Co_Al.fs.solute_properties.boundary_layer_diffusion_coefficient[
+                "Cl"
+            ]
+        )
+        == 7.31
+    )
+    assert (
+        value(model_Li_Co_Al.fs.solute_properties.membrane_diffusion_coefficient["Cl"])
+        == 7.31
     )
     assert value(model_Li_Co_Al.fs.solute_properties.sigma["Cl"]) == 1
     assert (

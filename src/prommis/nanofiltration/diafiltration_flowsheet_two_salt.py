@@ -235,9 +235,7 @@ def plot_results_by_length(m):
                 value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
             )
             conc_int_lith.append(
-                value(
-                    m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Li"]
-                )
+                value(m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Li"])
             )
             conc_perm_lith.append(
                 value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
@@ -253,9 +251,7 @@ def plot_results_by_length(m):
             )
 
             water_flux.append(value(m.fs.membrane.volume_flux_water[0, x_val]))
-            Li_flux.append(
-                value(m.fs.membrane.molar_ion_flux[0, x_val, "Li"])
-            )
+            Li_flux.append(value(m.fs.membrane.molar_ion_flux[0, x_val, "Li"]))
             Co_flux.append(value(m.fs.membrane.molar_ion_flux[0, x_val, "Co"]))
 
             Li_rejection_obs.append(
@@ -263,9 +259,7 @@ def plot_results_by_length(m):
                     1
                     - (
                         value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-                        / value(
-                            m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"]
-                        )
+                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
                     )
                 )
                 * 100
@@ -289,9 +283,7 @@ def plot_results_by_length(m):
                     1
                     - (
                         value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-                        / value(
-                            m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"]
-                        )
+                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
                     )
                 )
                 * 100
@@ -360,9 +352,7 @@ def plot_results_by_length(m):
     ax4.tick_params(direction="in", labelsize=10)
     ax4.legend()
 
-    ax5.plot(
-        x_axis_values, Li_rejection_obs, linewidth=2, label="Li (observed)"
-    )
+    ax5.plot(x_axis_values, Li_rejection_obs, linewidth=2, label="Li (observed)")
     ax5.plot(
         x_axis_values,
         Li_rejection_act,
@@ -370,12 +360,8 @@ def plot_results_by_length(m):
         linewidth=2,
         label="Li (actual)",
     )
-    ax5.plot(
-        x_axis_values, Co_rejection_obs, linewidth=2, label="Co (observed)"
-    )
-    ax5.plot(
-        x_axis_values, Co_rejection_act, "--", linewidth=2, label="Co (actual)"
-    )
+    ax5.plot(x_axis_values, Co_rejection_obs, linewidth=2, label="Co (observed)")
+    ax5.plot(x_axis_values, Co_rejection_act, "--", linewidth=2, label="Co (actual)")
     ax5.set_xlabel("Module Length (m)", fontsize=10, fontweight="bold")
     ax5.set_ylabel("Solute Rejection (%)", fontsize=10, fontweight="bold")
     ax5.tick_params(direction="in", labelsize=10)
@@ -460,23 +446,17 @@ def plot_results_by_thickness(m, phase):
                 if x_val != 0:
                     conc_lith.append(
                         value(
-                            m.fs.membrane.membrane_conc_mol_comp[
-                                0, x_val, z_val, "Li"
-                            ]
+                            m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Li"]
                         )
                     )
                     conc_cob.append(
                         value(
-                            m.fs.membrane.membrane_conc_mol_comp[
-                                0, x_val, z_val, "Co"
-                            ]
+                            m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Co"]
                         )
                     )
                     conc_chl.append(
                         value(
-                            m.fs.membrane.membrane_conc_mol_comp[
-                                0, x_val, z_val, "Cl"
-                            ]
+                            m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Cl"]
                         )
                     )
 
@@ -517,9 +497,7 @@ def plot_results_by_thickness(m, phase):
     ax2.tick_params(direction="in", labelsize=10)
     fig.colorbar(Co_plot, ax=ax2)
 
-    Cl_plot = ax3.pcolor(
-        z_axis_values, x_axis_values, conc_chl_df, cmap="Oranges"
-    )
+    Cl_plot = ax3.pcolor(z_axis_values, x_axis_values, conc_chl_df, cmap="Oranges")
     if phase == "Boundary Layer":
         ax3.set_xlabel("Boundary Layer Thickness (um)", fontsize=10, fontweight="bold")
     elif phase == "Membrane":
@@ -572,9 +550,7 @@ def plot_rejection_versus_concentration(m):
                 value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
             )
             conc_int_lith.append(
-                value(
-                    m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Li"]
-                )
+                value(m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Li"])
             )
             conc_perm_lith.append(
                 value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
@@ -594,9 +570,7 @@ def plot_rejection_versus_concentration(m):
                     1
                     - (
                         value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-                        / value(
-                            m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"]
-                        )
+                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
                     )
                 )
                 * 100
@@ -620,9 +594,7 @@ def plot_rejection_versus_concentration(m):
                     1
                     - (
                         value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-                        / value(
-                            m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"]
-                        )
+                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
                     )
                 )
                 * 100

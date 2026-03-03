@@ -886,11 +886,7 @@ class TestDiafiltrationSingleSaltLithium(object):
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_single_salt_Li.fs.unit.retentate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_single_salt_Li.fs.unit.retentate_flow_volume[0, 1]),
                 8.3858,
             ],
             "Li_retentate_final": [
@@ -910,9 +906,7 @@ class TestDiafiltrationSingleSaltLithium(object):
                 194.01,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_single_salt_Li.fs.unit.permeate_flow_volume[0, 1]
-                ),
+                value(diafiltration_single_salt_Li.fs.unit.permeate_flow_volume[0, 1]),
                 7.8636,
             ],
             "Li_permeate_final": [
@@ -1183,9 +1177,7 @@ class TestDiafiltrationSingleSaltCobalt(object):
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_single_salt_Co.fs.unit.retentate_flow_volume[0, 1]
-                ),
+                value(diafiltration_single_salt_Co.fs.unit.retentate_flow_volume[0, 1]),
                 10.475,
             ],
             "Co_retentate_final": [
@@ -1205,9 +1197,7 @@ class TestDiafiltrationSingleSaltCobalt(object):
                 453.64,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_single_salt_Co.fs.unit.permeate_flow_volume[0, 1]
-                ),
+                value(diafiltration_single_salt_Co.fs.unit.permeate_flow_volume[0, 1]),
                 5.7640,
             ],
             "Co_permeate_final": [
@@ -1478,11 +1468,7 @@ class TestDiafiltrationSingleSaltAluminum(object):
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_single_salt_Al.fs.unit.retentate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_single_salt_Al.fs.unit.retentate_flow_volume[0, 1]),
                 9.5153,
             ],
             "Al_retentate_final": [
@@ -1502,11 +1488,7 @@ class TestDiafiltrationSingleSaltAluminum(object):
                 53.166,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_single_salt_Al.fs.unit.permeate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_single_salt_Al.fs.unit.permeate_flow_volume[0, 1]),
                 6.6918,
             ],
             "Al_permeate_final": [
@@ -2161,11 +2143,7 @@ class TestDiafiltrationTwoSaltLithiumCobalt(object):
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_two_salt_Li_Co.fs.unit.retentate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Li_Co.fs.unit.retentate_flow_volume[0, 1]),
                 6.0854,
             ],
             "Li_retentate_final": [
@@ -2193,11 +2171,7 @@ class TestDiafiltrationTwoSaltLithiumCobalt(object):
                 670.55,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_two_salt_Li_Co.fs.unit.permeate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Li_Co.fs.unit.permeate_flow_volume[0, 1]),
                 10.035,
             ],
             "Li_permeate_final": [
@@ -2230,9 +2204,7 @@ class TestDiafiltrationTwoSaltLithiumCobalt(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues_Li_Co(
-        self, diafiltration_two_salt_Li_Co
-    ):
+    def test_numerical_issues_Li_Co(self, diafiltration_two_salt_Li_Co):
         test_numerical_issues(diafiltration_two_salt_Li_Co)
 
 
@@ -2298,18 +2270,14 @@ def test_config_Li_Co_no_boundary_layer(
     diafiltration_two_salt_Li_Co_no_boundary_layer,
 ):
     test_config(diafiltration_two_salt_Li_Co_no_boundary_layer)
-    test_config_no_boundary_layer(
-        diafiltration_two_salt_Li_Co_no_boundary_layer
-    )
+    test_config_no_boundary_layer(diafiltration_two_salt_Li_Co_no_boundary_layer)
     test_config_two_salt(diafiltration_two_salt_Li_Co_no_boundary_layer)
 
 
 class TestDiafiltrationTwoSaltLithiumCobaltNoBoundaryLayer(object):
     @pytest.mark.build
     @pytest.mark.unit
-    def test_build_Li_Co(
-        self, diafiltration_two_salt_Li_Co_no_boundary_layer
-    ):
+    def test_build_Li_Co(self, diafiltration_two_salt_Li_Co_no_boundary_layer):
         test_build(diafiltration_two_salt_Li_Co_no_boundary_layer)
         test_build_two_salt(diafiltration_two_salt_Li_Co_no_boundary_layer)
         test_build_two_salt_no_boundary_layer(
@@ -2484,9 +2452,7 @@ class TestDiafiltrationTwoSaltLithiumAluminum(object):
         test_build_two_salt_boundary_layer(diafiltration_two_salt_Li_Al)
 
     @pytest.mark.component
-    def test_diagnostics_Li_Al(
-        self, diafiltration_two_salt_Li_Al
-    ):
+    def test_diagnostics_Li_Al(self, diafiltration_two_salt_Li_Al):
         test_diagnostics(diafiltration_two_salt_Li_Al)
 
     @pytest.mark.solver
@@ -2496,11 +2462,7 @@ class TestDiafiltrationTwoSaltLithiumAluminum(object):
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_two_salt_Li_Al.fs.unit.retentate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Li_Al.fs.unit.retentate_flow_volume[0, 1]),
                 6.2797,
             ],
             "Li_retentate_final": [
@@ -2528,11 +2490,7 @@ class TestDiafiltrationTwoSaltLithiumAluminum(object):
                 267.24,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_two_salt_Li_Al.fs.unit.permeate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Li_Al.fs.unit.permeate_flow_volume[0, 1]),
                 9.0427,
             ],
             "Li_permeate_final": [
@@ -2565,9 +2523,7 @@ class TestDiafiltrationTwoSaltLithiumAluminum(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues_Li_Al(
-        self, diafiltration_two_salt_Li_Al
-    ):
+    def test_numerical_issues_Li_Al(self, diafiltration_two_salt_Li_Al):
         test_numerical_issues(diafiltration_two_salt_Li_Al)
 
 
@@ -2633,9 +2589,7 @@ def test_config_Li_Al_no_boundary_layer(
     diafiltration_two_salt_Li_Al_no_boundary_layer,
 ):
     test_config(diafiltration_two_salt_Li_Al_no_boundary_layer)
-    test_config_no_boundary_layer(
-        diafiltration_two_salt_Li_Al_no_boundary_layer
-    )
+    test_config_no_boundary_layer(diafiltration_two_salt_Li_Al_no_boundary_layer)
     test_config_two_salt(diafiltration_two_salt_Li_Al_no_boundary_layer)
 
 
@@ -2828,11 +2782,7 @@ class TestDiafiltrationTwoSaltCobaltAluminum(object):
 
         test_dict = {
             "retentate_final": [
-                value(
-                    diafiltration_two_salt_Co_Al.fs.unit.retentate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Co_Al.fs.unit.retentate_flow_volume[0, 1]),
                 8.3116,
             ],
             "Co_retentate_final": [
@@ -2860,11 +2810,7 @@ class TestDiafiltrationTwoSaltCobaltAluminum(object):
                 513.94,
             ],
             "permeate_final": [
-                value(
-                    diafiltration_two_salt_Co_Al.fs.unit.permeate_flow_volume[
-                        0, 1
-                    ]
-                ),
+                value(diafiltration_two_salt_Co_Al.fs.unit.permeate_flow_volume[0, 1]),
                 7.8653,
             ],
             "Co_permeate_final": [
@@ -2897,9 +2843,7 @@ class TestDiafiltrationTwoSaltCobaltAluminum(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues_Co_Al(
-        self, diafiltration_two_salt_Co_Al
-    ):
+    def test_numerical_issues_Co_Al(self, diafiltration_two_salt_Co_Al):
         test_numerical_issues(diafiltration_two_salt_Co_Al)
 
 
@@ -2965,9 +2909,7 @@ def test_config_Co_Al_no_boundary_layer(
     diafiltration_two_salt_Co_Al_no_boundary_layer,
 ):
     test_config(diafiltration_two_salt_Co_Al_no_boundary_layer)
-    test_config_no_boundary_layer(
-        diafiltration_two_salt_Co_Al_no_boundary_layer
-    )
+    test_config_no_boundary_layer(diafiltration_two_salt_Co_Al_no_boundary_layer)
     test_config_two_salt(diafiltration_two_salt_Co_Al_no_boundary_layer)
 
 
@@ -3537,27 +3479,19 @@ def test_config_Li_Co_Al(
 class TestDiafiltrationThreeSaltLithiumCobaltAluminum(object):
     @pytest.mark.build
     @pytest.mark.unit
-    def test_build_Li_Co_Al(
-        self, diafiltration_three_salt_Li_Co_Al
-    ):
+    def test_build_Li_Co_Al(self, diafiltration_three_salt_Li_Co_Al):
         test_build(diafiltration_three_salt_Li_Co_Al)
         test_build_boundary_layer(diafiltration_three_salt_Li_Co_Al)
         test_build_three_salt(diafiltration_three_salt_Li_Co_Al)
-        test_build_three_salt_boundary_layer(
-            diafiltration_three_salt_Li_Co_Al
-        )
+        test_build_three_salt_boundary_layer(diafiltration_three_salt_Li_Co_Al)
 
     @pytest.mark.component
-    def test_diagnostics_Li_Co_Al(
-        self, diafiltration_three_salt_Li_Co_Al
-    ):
+    def test_diagnostics_Li_Co_Al(self, diafiltration_three_salt_Li_Co_Al):
         test_diagnostics(diafiltration_three_salt_Li_Co_Al)
 
     @pytest.mark.solver
     @pytest.mark.component
-    def test_solve_Li_Co_Al(
-        self, diafiltration_three_salt_Li_Co_Al
-    ):
+    def test_solve_Li_Co_Al(self, diafiltration_three_salt_Li_Co_Al):
         test_solve(diafiltration_three_salt_Li_Co_Al)
 
         test_dict = {
@@ -3603,9 +3537,7 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminum(object):
             ],
             "permeate_final": [
                 value(
-                    diafiltration_three_salt_Li_Co_Al.fs.unit.permeate_flow_volume[
-                        0, 1
-                    ]
+                    diafiltration_three_salt_Li_Co_Al.fs.unit.permeate_flow_volume[0, 1]
                 ),
                 5.5393,
             ],
@@ -3647,9 +3579,7 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminum(object):
             assert pytest.approx(test_val, rel=1e-4) == value(model_result)
 
     @pytest.mark.component
-    def test_numerical_issues_Li_Co_Al(
-        self, diafiltration_three_salt_Li_Co_Al
-    ):
+    def test_numerical_issues_Li_Co_Al(self, diafiltration_three_salt_Li_Co_Al):
         test_numerical_issues(diafiltration_three_salt_Li_Co_Al)
 
 
@@ -3715,12 +3645,8 @@ def test_config_Li_Co_Al_no_boundary_layer(
     diafiltration_three_salt_Li_Co_Al_no_boundary_layer,
 ):
     test_config(diafiltration_three_salt_Li_Co_Al_no_boundary_layer)
-    test_config_no_boundary_layer(
-        diafiltration_three_salt_Li_Co_Al_no_boundary_layer
-    )
-    test_config_three_salt(
-        diafiltration_three_salt_Li_Co_Al_no_boundary_layer
-    )
+    test_config_no_boundary_layer(diafiltration_three_salt_Li_Co_Al_no_boundary_layer)
+    test_config_three_salt(diafiltration_three_salt_Li_Co_Al_no_boundary_layer)
 
 
 class TestDiafiltrationThreeSaltLithiumCobaltAluminumNoBoundaryLayer(object):
@@ -3730,9 +3656,7 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminumNoBoundaryLayer(object):
         self, diafiltration_three_salt_Li_Co_Al_no_boundary_layer
     ):
         test_build(diafiltration_three_salt_Li_Co_Al_no_boundary_layer)
-        test_build_three_salt(
-            diafiltration_three_salt_Li_Co_Al_no_boundary_layer
-        )
+        test_build_three_salt(diafiltration_three_salt_Li_Co_Al_no_boundary_layer)
         test_build_three_salt_no_boundary_layer(
             diafiltration_three_salt_Li_Co_Al_no_boundary_layer
         )
@@ -3741,9 +3665,7 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminumNoBoundaryLayer(object):
     def test_diagnostics_Li_Co_Al_no_boundary_layer(
         self, diafiltration_three_salt_Li_Co_Al_no_boundary_layer
     ):
-        test_diagnostics(
-            diafiltration_three_salt_Li_Co_Al_no_boundary_layer
-        )
+        test_diagnostics(diafiltration_three_salt_Li_Co_Al_no_boundary_layer)
 
     @pytest.mark.solver
     @pytest.mark.component
@@ -3842,9 +3764,7 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminumNoBoundaryLayer(object):
     def test_numerical_issues_Li_Co_Al_no_boundary_layer(
         self, diafiltration_three_salt_Li_Co_Al_no_boundary_layer
     ):
-        test_numerical_issues(
-            diafiltration_three_salt_Li_Co_Al_no_boundary_layer
-        )
+        test_numerical_issues(diafiltration_three_salt_Li_Co_Al_no_boundary_layer)
 
 
 ################################################################################

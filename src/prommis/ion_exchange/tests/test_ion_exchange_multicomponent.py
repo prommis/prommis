@@ -767,18 +767,7 @@ def build_ix_with_prommis_costing(m_pc):
         "Yb": 8.240673140478613e-13 * pyo.units.kg / pyo.units.s,
     }
 
-    m_pc.fs.costing = QGESSCosting(
-        discount_percentage=10,  # percent
-        plant_lifetime=20,  # years
-        has_capital_expenditure_period=True,
-        capital_expenditure_percentages=[10, 60, 30],
-        capital_escalation_percentage=3.6,
-        capital_loan_interest_percentage=6,
-        capital_loan_repayment_period=10,
-        debt_percentage_of_capex=50,
-        operating_inflation_percentage=3,
-        revenue_inflation_percentage=3,
-    )
+    m_pc.fs.costing = QGESSCosting()
 
     # Declare variables and parameters in costing block
     m_pc.fs.costing.base_currency = pyo.units.USD_2021

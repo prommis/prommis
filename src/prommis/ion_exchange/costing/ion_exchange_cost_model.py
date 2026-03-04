@@ -334,21 +334,18 @@ class IXCostingData(IXCostingBlockData):
         # Define terms and unit conversions to match cost equations in
         # references
         ix_type = blk.unit_model.ion_exchange_type
+
         @blk.Expression()
         def tot_num_col(b):
-            return (
-                b.unit_model.number_columns + b.unit_model.number_columns_redundant
-            )
+            return b.unit_model.number_columns + b.unit_model.number_columns_redundant
+
         @blk.Expression()
         def col_vol_gal(b):
-            return pyo.units.convert(
-                b.unit_model.column_volume, to_units=pyo.units.gal
-            )
+            return pyo.units.convert(b.unit_model.column_volume, to_units=pyo.units.gal)
+
         @blk.Expression()
         def bed_vol_ft3(b):
-            return pyo.units.convert(
-                b.unit_model.bed_volume, to_units=pyo.units.ft**3
-            )
+            return pyo.units.convert(b.unit_model.bed_volume, to_units=pyo.units.ft**3)
 
         # Declare variables
         blk.capital_cost_vessel = pyo.Var(
@@ -561,8 +558,7 @@ class IXCostingData(IXCostingBlockData):
         def capital_cost_backwash_tank_constraint(b):
             return b.capital_cost_backwash_tank == pyo.units.convert(
                 b.backwash_tank_A_coeff
-                * (b.backwash_tank_vol / pyo.units.gallon)
-                ** b.backwash_tank_b_coeff,
+                * (b.backwash_tank_vol / pyo.units.gallon) ** b.backwash_tank_b_coeff,
                 to_units=b.costing_package.base_currency,
             )
 
@@ -601,10 +597,7 @@ class IXCostingData(IXCostingBlockData):
             def capital_cost_constraint(b):
                 return b.capital_cost == b.cost_factor * pyo.units.convert(
                     (
-                        (
-                            (b.capital_cost_vessel + b.capital_cost_resin)
-                            * b.tot_num_col
-                        )
+                        ((b.capital_cost_vessel + b.capital_cost_resin) * b.tot_num_col)
                         + b.capital_cost_backwash_tank
                         + b.capital_cost_regen_tank
                     ),

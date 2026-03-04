@@ -1,3 +1,4 @@
+
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
 # (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
@@ -94,12 +95,12 @@ class TestDefinedStateTrue(object):
         assert len(list_unscaled_constraints(m.fs.state[0])) == 0
 
         assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.401286e6)
-        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(340.6207)
+        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(33.24336)
 
         m.fs.state[0].conc_mass_comp.unfix()
 
         assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.401271e6)
-        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(38.7843)
+        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(36.685066)
 
 
 class TestDefinedStateFalse(object):
@@ -174,15 +175,15 @@ class TestDefinedStateFalse(object):
         assert len(list_unscaled_constraints(m.fs.state[0])) == 0
 
         assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.401286e6)
-        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(340.6207)
+        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(33.24336)
 
         m.fs.state[0].conc_mass_comp["H2O"].unfix()
         m.fs.state[0].h2o_concentration_eqn.activate()
 
         assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.436486e6)
-        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(356.8645)
+        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(36.25460)
 
         m.fs.state[0].conc_mass_comp.unfix()
 
         assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.436470e6)
-        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(41.9072)
+        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(40.1640625)

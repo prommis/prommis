@@ -768,6 +768,8 @@ def set_scaling(m):
     # mutation is potentially dangerous, but we'll use it here until
     # there is a better way to set global default scaling factors
     HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["flow_vol"] = 1
+    HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["conc_mass_comp[H]"] = 1e-3
+    HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["conc_mass_comp[Cl]"] = 1e-5
     ModularPropertiesScaler.DEFAULT_SCALING_FACTORS["flow_mol_phase"] = 1 / 0.00781
 
     # Also use global mutation to change the max and min scaling factors

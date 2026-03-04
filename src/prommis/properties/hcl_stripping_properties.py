@@ -57,10 +57,10 @@ class HClStrippingPropertiesScaler(CustomScalerBase):
     DEFAULT_SCALING_FACTORS = {
         "flow_vol": DefaultScalingRecommendation.userInputRequired,
         "conc_mass_comp[H2O]": 1e-6,
-        "conc_mass_comp[H]": 1e-3,
+        "conc_mass_comp[H]": 1e-1,
         "conc_mass_comp[SO4]": 1e-2,
         "conc_mass_comp[HSO4]": 1e-3,
-        "conc_mass_comp[Cl]": 1e-5,
+        "conc_mass_comp[Cl]": 1e-3,
         # Use a large scaling factor for pH
         # to encourage the solver to take
         # smaller steps

@@ -2697,7 +2697,7 @@ def initialize_costing(m):
     """
 
     # Deactivate all constraints
-    for c in m.fs.costing.component_data_objects(Constraint):
+    for c in m.fs.component_data_objects(Constraint):
         c.deactivate()
 
     # Activate the costing constraints
@@ -2705,6 +2705,10 @@ def initialize_costing(m):
         c.activate()
 
     solve_strongly_connected_components(m.fs.costing, solver=get_solver("ipopt_v2"))
+
+    # Reactivate all constraints
+    for c in m.fs.component_data_objects(Constraint):
+        c.activate()
 
 
 def display_costing(m):

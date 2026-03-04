@@ -152,7 +152,7 @@ class TestSilentExceptionChecker(pylint.testutils.CheckerTestCase):
 
     @pytest.mark.xfail(
         reason="Checker does not yet detect tuple-typed except clauses "
-               "that include Exception, e.g. except (ValueError, Exception): pass"
+        "that include Exception, e.g. except (ValueError, Exception): pass"
     )
     def test_except_tuple_including_exception_with_pass_is_flagged(self):
         """except (ValueError, Exception): pass — broad catch hidden in a tuple."""

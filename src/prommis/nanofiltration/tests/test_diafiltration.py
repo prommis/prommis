@@ -100,6 +100,7 @@ def test_Li_purity_constraint_exception():
             purity=True,
         )
 
+
 @pytest.mark.component
 def test_Co_purity_constraint_exception():
     m = build_model()

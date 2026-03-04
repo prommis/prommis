@@ -19,26 +19,12 @@ class SilentExceptionChecker(BaseChecker):
         )
     }
 
-    def visit_module(self, node):
-        print(
-            f"DEBUG: visit_module called for {node.name}", file=sys.stderr, flush=True
-        )
-
-    def visit_functiondef(self, node):
-        print(
-            f"DEBUG: visit_functiondef called for {node.name}",
-            file=sys.stderr,
-            flush=True,
-        )
-
     def visit_tryexcept(self, node):
-        import sys
+        for handler in node.handlers:
+            if self._is_silent_exception(handler):
+                self.add_message("silent-exception-handling", node=handler)
 
-        print(
-            f"DEBUG: visit_tryexcept called at line {node.lineno}",
-            file=sys.stderr,
-            flush=True,
-        )
+    def _check_handlers(self, node) -> None:
         for handler in node.handlers:
             if self._is_silent_exception(handler):
                 self.add_message("silent-exception-handling", node=handler)

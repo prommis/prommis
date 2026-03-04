@@ -141,6 +141,9 @@ References:
 import logging
 from warnings import warn
 from pyomo.common.collections import ComponentMap
+from pyomo.contrib.incidence_analysis import (
+    solve_strongly_connected_components,
+)
 from pyomo.environ import (
     Block,
     ConcreteModel,
@@ -196,9 +199,6 @@ from idaes.models.unit_models.solid_liquid import SLSeparator
 from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
     get_prop,
-)
-from pyomo.contrib.incidence_analysis import (
-    solve_strongly_connected_components,
 )
 
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock

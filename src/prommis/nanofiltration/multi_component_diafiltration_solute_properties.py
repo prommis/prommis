@@ -80,7 +80,14 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
 
         # infinite dilution solute diffusion coefficient
         # source: https://www.aqion.de/site/diffusion-coefficients
-        diffusion_coefficient_dict = {
+        # assumption: no hindered transport (D_bulk = D_membrane)
+        boundary_layer_diffusion_coefficient_dict = {
+            "Li": 3.71,  # mm2 / h
+            "Co": 2.64,  # mm2 / h
+            "Al": 2.01,  # mm2 / h
+            "Cl": 7.31,  # mm2 / h
+        }
+        membrane_diffusion_coefficient_dict = {
             "Li": 3.71,  # mm2 / h
             "Co": 2.64,  # mm2 / h
             "Al": 2.01,  # mm2 / h
@@ -176,11 +183,19 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
             self.config.cation_list[0]: charge_dict[self.config.cation_list[0]],
             self.config.anion_list[0]: charge_dict[self.config.anion_list[0]],
         }
-        initialize_diffusion_coefficient_dict = {
-            self.config.cation_list[0]: diffusion_coefficient_dict[
+        initialize_boundary_layer_diffusion_coefficient_dict = {
+            self.config.cation_list[0]: boundary_layer_diffusion_coefficient_dict[
                 self.config.cation_list[0]
             ],
-            self.config.anion_list[0]: diffusion_coefficient_dict[
+            self.config.anion_list[0]: boundary_layer_diffusion_coefficient_dict[
+                self.config.anion_list[0]
+            ],
+        }
+        initialize_membrane_diffusion_coefficient_dict = {
+            self.config.cation_list[0]: membrane_diffusion_coefficient_dict[
+                self.config.cation_list[0]
+            ],
+            self.config.anion_list[0]: membrane_diffusion_coefficient_dict[
                 self.config.anion_list[0]
             ],
         }
@@ -219,9 +234,18 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
             initialize_charge_dict.update(
                 {self.config.cation_list[i]: charge_dict[self.config.cation_list[i]]}
             )
-            initialize_diffusion_coefficient_dict.update(
+            initialize_boundary_layer_diffusion_coefficient_dict.update(
                 {
-                    self.config.cation_list[i]: diffusion_coefficient_dict[
+                    self.config.cation_list[
+                        i
+                    ]: boundary_layer_diffusion_coefficient_dict[
+                        self.config.cation_list[i]
+                    ]
+                }
+            )
+            initialize_membrane_diffusion_coefficient_dict.update(
+                {
+                    self.config.cation_list[i]: membrane_diffusion_coefficient_dict[
                         self.config.cation_list[i]
                     ]
                 }
@@ -259,10 +283,16 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
             initialize=initialize_charge_dict,
         )
 
-        self.diffusion_coefficient = Param(
+        self.boundary_layer_diffusion_coefficient = Param(
             self.component_list,
             units=units.mm**2 / units.h,
-            initialize=initialize_diffusion_coefficient_dict,
+            initialize=initialize_boundary_layer_diffusion_coefficient_dict,
+        )
+
+        self.membrane_diffusion_coefficient = Param(
+            self.component_list,
+            units=units.mm**2 / units.h,
+            initialize=initialize_membrane_diffusion_coefficient_dict,
         )
 
         self.sigma = Param(

@@ -2712,22 +2712,33 @@ def initialize_costing(m):
         costing_vars.append(v)
 
     # Add the variables and constraints from m.fs.costing
-    for v in m.fs.costing.component_data_objects(ctype=Var, active=True, descend_into=False):
+    for v in m.fs.costing.component_data_objects(
+        ctype=Var, active=True, descend_into=False
+    ):
         costing_vars.append(v)
-    for c in m.fs.costing.component_data_objects(ctype=Constraint, active=True, descend_into=False):
+    for c in m.fs.costing.component_data_objects(
+        ctype=Constraint, active=True, descend_into=False
+    ):
         costing_constraints.append(c)
 
     # Add the variables and constraints from the unit model costing blocks
-    for unit in m.fs.component_data_objects(ctype=Block, active=True, descend_into=False):
+    for unit in m.fs.component_data_objects(
+        ctype=Block, active=True, descend_into=False
+    ):
         if hasattr(unit, "costing"):
-            for v in unit.costing.component_data_objects(ctype=Var, active=True, descend_into=False):
+            for v in unit.costing.component_data_objects(
+                ctype=Var, active=True, descend_into=False
+            ):
                 costing_vars.append(v)
-            for c in unit.costing.component_data_objects(ctype=Constraint, active=True, descend_into=False):
+            for c in unit.costing.component_data_objects(
+                ctype=Constraint, active=True, descend_into=False
+            ):
                 costing_constraints.append(c)
 
     # Ignore fixed variables (ensures 0 DOF)
     costing_vars = [
-        v for v in costing_vars
+        v
+        for v in costing_vars
         if v is not m.fs.costing.other_variable_costs[0]
         and v is not m.fs.costing.additional_cost_of_recovery
         and v is not m.fs.costing.other_fixed_costs

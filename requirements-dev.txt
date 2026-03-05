@@ -7,5 +7,6 @@ jupyter-book==1.0.*
 isort
 nbmake==1.4.6
 sphinx_design==0.6.0
+custom-pylint @ git+https://github.com/prommis/custom_pylint.git@main
 
 --editable .[watertap,flowsheet-processor]

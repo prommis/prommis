@@ -44,7 +44,7 @@ local_scheme = "node-and-date"
 
 [tool.pylint.main]
 py-version = "3.11"
-load-plugins = ["prommis.custom_pylint.silent_exception_checker"]
+load-plugins = ["custom_pylint.silent_exception_checker"]
 
 [tool.pylint."messages control"]
 disable = [

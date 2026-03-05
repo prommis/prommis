@@ -1,4 +1,3 @@
-
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
 # (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the

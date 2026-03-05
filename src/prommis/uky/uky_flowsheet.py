@@ -140,25 +140,6 @@ References:
 
 import logging
 from warnings import warn
-from pyomo.common.collections import ComponentMap
-from pyomo.contrib.incidence_analysis import (
-    solve_strongly_connected_components,
-)
-from pyomo.environ import (
-    Block,
-    ConcreteModel,
-    Constraint,
-    Expression,
-    Objective,
-    Param,
-    Set,
-    TransformationFactory,
-    Var,
-    check_optimal_termination,
-    units,
-    value,
-)
-from pyomo.network import Arc, SequentialDecomposition
 
 import idaes.logger as idaeslog
 from idaes.core import (
@@ -200,6 +181,29 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
     get_prop,
 )
+
+from pyomo.common.collections import ComponentMap
+from pyomo.contrib.incidence_analysis import (
+    solve_strongly_connected_components,
+)
+from pyomo.core.base.constraint import IndexedConstraint
+from pyomo.environ import (
+    Block,
+    ConcreteModel,
+    Constraint,
+    ConstraintList,
+    Expression,
+    Objective,
+    Param,
+    Set,
+    TransformationFactory,
+    Var,
+    check_optimal_termination,
+    units,
+    value,
+)
+from pyomo.network import Arc, SequentialDecomposition
+from pyomo.util.subsystems import create_subsystem_block
 
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 from prommis.properties.coal_refuse_properties import CoalRefuseParameters
@@ -282,11 +286,13 @@ def main():
 
     solve_system(m, tee=True)
 
-    warnings, next_steps = dt._collect_numerical_warnings()
+    # warnings, next_steps = dt._collect_numerical_warnings()
 
-    assert len(warnings) == 1
-    # WARNING: 9 Variables at or outside bounds (tol=0.0E+00)
-    # dt.assert_no_numerical_warnings()
+    # assert len(warnings) == 1
+    # WARNING: 20 Variables at or outside bounds (tol=0.0E+00)
+    dt.report_numerical_issues()
+    dt.display_constraints_with_large_residuals()
+    dt.assert_no_numerical_warnings()
 
     display_costing(m)
 
@@ -2695,20 +2701,41 @@ def initialize_costing(m):
     Args:
         m: Model containing flowsheet with already-initialized unit models.
     """
+    # Create empty lists for costing vars and constraints
+    costing_vars = []
+    costing_constraints = []
 
-    # Deactivate all constraints
-    for c in m.fs.component_data_objects(Constraint):
-        c.deactivate()
-
-    # Activate the costing constraints
+    # Add the variables and constraints from costing_constraints
     for c in m.fs.scaling_constraints.values():
-        c.activate()
+        costing_constraints.append(c)
+    for v in m.fs.scaling_constraints.keys():
+        costing_vars.append(v)
 
-    solve_strongly_connected_components(m.fs.costing, solver=get_solver("ipopt_v2"))
+    # Add the variables and constraints from m.fs.costing
+    for v in m.fs.costing.component_data_objects(ctype=Var, active=True, descend_into=False):
+        costing_vars.append(v)
+    for c in m.fs.costing.component_data_objects(ctype=Constraint, active=True, descend_into=False):
+        costing_constraints.append(c)
 
-    # Reactivate all constraints
-    for c in m.fs.component_data_objects(Constraint):
-        c.activate()
+    # Add the variables and constraints from the unit model costing blocks
+    for unit in m.fs.component_data_objects(ctype=Block, active=True, descend_into=False):
+        if hasattr(unit, "costing"):
+            for v in unit.costing.component_data_objects(ctype=Var, active=True, descend_into=False):
+                costing_vars.append(v)
+            for c in unit.costing.component_data_objects(ctype=Constraint, active=True, descend_into=False):
+                costing_constraints.append(c)
+
+    # Ignore fixed variables (ensures 0 DOF)
+    costing_vars = [
+        v for v in costing_vars
+        if v is not m.fs.costing.other_variable_costs[0]
+        and v is not m.fs.costing.additional_cost_of_recovery
+        and v is not m.fs.costing.other_fixed_costs
+    ]
+
+    # Build a temporary block with only the costing variables & constraints and solve
+    subsystem = create_subsystem_block(costing_constraints, costing_vars)
+    solve_strongly_connected_components(subsystem, solver=get_solver("ipopt_v2"))
 
 
 def display_costing(m):

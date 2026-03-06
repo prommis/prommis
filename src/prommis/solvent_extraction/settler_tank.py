@@ -328,16 +328,23 @@ class SettlerTankInitializer(SingleControlVolumeUnitInitializer):
     Initializer object for the SettlerTank unit model
     """
 
+    CONFIG = SingleControlVolumeUnitInitializer.CONFIG()
+    CONFIG.always_estimate_states = True
+    CONFIG.get("always_estimate_states")._default = True
+    CONFIG.get("always_estimate_states")._domain = In([True])
+
     def initialize_main_model(
         self,
         model: Block,
-        copy_inlet_state: Bool = True,
+        copy_inlet_state: Bool = False,
     ):
         """
         Initialization routine for the settler tank
 
         Args:
             model: SettlerTank object to be initialized.
+            copy_inlet_state: Argument necessary only because the parent
+                class expects it.
         Returns:
             Pyomo solver results object.
         """
@@ -352,12 +359,6 @@ class SettlerTankInitializer(SingleControlVolumeUnitInitializer):
         solve_log = idaeslog.getSolveLogger(
             model.name, self.get_output_level(), tag="unit"
         )
-        dof = degrees_of_freedom(model)
-        if not dof == 0:
-            raise InitializationError(
-                "SettlerTank initialization expected 0 degrees of "
-                f"freedom but instead has {dof}."
-            )
         area_fixed = False
         for idx in model.light_phase.area:
             if model.light_phase.area[idx].fixed or model.heavy_phase.area[idx].fixed:

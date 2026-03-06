@@ -12,6 +12,7 @@ Author: Douglas Allan
 Portions of this file were created with the help of Google Gemini 2.5 Pro.
 """
 
+import re
 import pytest
 
 from pyomo.environ import (
@@ -30,6 +31,7 @@ from idaes.core import (
 from idaes.core.scaling.util import jacobian_cond
 from idaes.core.solvers import get_solver
 from idaes.core.util import DiagnosticsToolbox
+from idaes.core.util.exceptions import InitializationError
 from idaes.core.util.model_statistics import (
     number_total_constraints,
     number_unused_variables,
@@ -50,11 +52,10 @@ from prommis.util import assert_solution_equivalent
 __author__ = "Douglas Allan"
 
 
-@pytest.fixture(scope="module")
-def model():
+def make_model(time_set=None):
     m = ConcreteModel()
 
-    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs = FlowsheetBlock(time_set=time_set, dynamic=False)
 
     m.fs.dehpa_kerosene_params = REESolExOgParameters()
     m.fs.sulfate_leaching_params = SulfuricAcidLeachingParameters()
@@ -84,12 +85,12 @@ def model():
     m.fs.unit.aqueous_inlet.pressure.fix(1e5 * units.Pa)
 
     m.fs.unit.aqueous_inlet.conc_mass_comp.fix(1e-16 * units.mg / units.L)
-    m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1e6 * units.mg / units.L)
-    m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H"].fix(10.75 * units.mg / units.L)
-    m.fs.unit.aqueous_inlet.conc_mass_comp[0, "SO4"].fix(100 * units.mg / units.L)
-    m.fs.unit.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(1e4 * units.mg / units.L)
-    m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Y"].fix(8.89 * units.mg / units.L)
-    m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Fe"].fix(1752.34 * units.mg / units.L)
+    m.fs.unit.aqueous_inlet.conc_mass_comp[:, "H2O"].fix(1e6 * units.mg / units.L)
+    m.fs.unit.aqueous_inlet.conc_mass_comp[:, "H"].fix(10.75 * units.mg / units.L)
+    m.fs.unit.aqueous_inlet.conc_mass_comp[:, "SO4"].fix(100 * units.mg / units.L)
+    m.fs.unit.aqueous_inlet.conc_mass_comp[:, "HSO4"].fix(1e4 * units.mg / units.L)
+    m.fs.unit.aqueous_inlet.conc_mass_comp[:, "Y"].fix(8.89 * units.mg / units.L)
+    m.fs.unit.aqueous_inlet.conc_mass_comp[:, "Fe"].fix(1752.34 * units.mg / units.L)
 
     # Specify organic inlet
     m.fs.unit.organic_inlet.flow_vol.fix(50 * units.L / units.hr)
@@ -97,14 +98,14 @@ def model():
     m.fs.unit.organic_inlet.pressure.fix(1e5 * units.Pa)
 
     m.fs.unit.organic_inlet.conc_mass_comp.fix(1e-16 * units.kg / units.m**3)
-    m.fs.unit.organic_inlet.conc_mass_comp[0, "Kerosene"].fix(
+    m.fs.unit.organic_inlet.conc_mass_comp[:, "Kerosene"].fix(
         820e3 * units.mg / units.L
     )
-    m.fs.unit.organic_inlet.conc_mass_comp[0, "DEHPA"].fix(
+    m.fs.unit.organic_inlet.conc_mass_comp[:, "DEHPA"].fix(
         0.05 * 975.8e3 * units.mg / units.L
     )
-    m.fs.unit.organic_inlet.conc_mass_comp[0, "Fe_o"].fix(20 * units.mg / units.L)
-    m.fs.unit.organic_inlet.conc_mass_comp[0, "Y_o"].fix(10 * units.mg / units.L)
+    m.fs.unit.organic_inlet.conc_mass_comp[:, "Fe_o"].fix(20 * units.mg / units.L)
+    m.fs.unit.organic_inlet.conc_mass_comp[:, "Y_o"].fix(10 * units.mg / units.L)
 
     # Fix geometric and operational parameters
     m.fs.unit.length.fix(1 * units.m)
@@ -135,6 +136,11 @@ def model():
     scaler_obj.scale_model(m.fs.unit, submodel_scalers=submodel_scalers)
 
     return m
+
+
+@pytest.fixture(scope="module")
+def model():
+    return make_model(time_set=[0])
 
 
 @pytest.mark.unit
@@ -182,8 +188,15 @@ def test_no_structural_issues(model):
 @pytest.mark.solver
 @pytest.mark.component
 def test_initialize(model):
-    # Use the model's default initializer directly
+    # Initialize with light phase height fixed
+    model.fs.unit.heavy_phase_height.unfix()
+    model.fs.unit.light_phase_height.fix(0.25 * units.m)
     initializer = model.fs.unit.default_initializer()
+    initializer.initialize(model.fs.unit)
+
+    # Now initialize with heavy phase height fixed
+    model.fs.unit.light_phase_height.unfix()
+    model.fs.unit.heavy_phase_height.fix(0.25 * units.m)
     initializer.initialize(model.fs.unit)
 
 
@@ -217,7 +230,6 @@ def test_no_numerical_issues(model):
 @pytest.mark.solver
 @pytest.mark.component
 def test_solution(model):
-    t = 0
     _abs = 1e-8
     _rel = 1e-6
     expected_results = {
@@ -292,3 +304,101 @@ def test_solution(model):
         expected_results["aqueous_phase.area"][idx] = (0.125, _rel, None)
 
     assert_solution_equivalent(model.fs.unit, expected_results=expected_results)
+
+
+@pytest.mark.unit
+def test_initialization_fails():
+    m = make_model(time_set=[0, 1])
+    unit = m.fs.unit
+    initializer = unit.default_initializer()
+
+    # Area fixed
+    unit.light_phase_weir_height.unfix()
+    unit.light_phase.area[0, 0.5].fix()
+    with pytest.raises(
+        InitializationError,
+        match=re.escape(
+            "Initialization is not supported for streams with area fixed. "
+            "Fix the settler width and exactly one phase height variable "
+            "instead."
+        ),
+    ):
+        initializer.initialize(unit)
+
+    unit.light_phase.area[0, 0.5].unfix()
+    unit.heavy_phase.area[0, 0.5].fix()
+    with pytest.raises(
+        InitializationError,
+        match=re.escape(
+            "Initialization is not supported for streams with area fixed. "
+            "Fix the settler width and exactly one phase height variable "
+            "instead."
+        ),
+    ):
+        initializer.initialize(unit)
+
+    unit.heavy_phase.area[0, 0.5].unfix()
+
+    # Both heights fixed
+    # Go down heavy branch
+    unit.light_phase_height[0].fix(0.25 * units.m)
+    with pytest.raises(
+        InitializationError,
+        match=re.escape("The heights of both phases cannot be fixed simultaneously."),
+    ):
+        initializer.initialize(unit)
+
+    # Go down light branch
+    unit.settler_width.unfix()
+    unit.light_phase_height.fix(0.25 * units.m)
+    with pytest.raises(
+        InitializationError,
+        match=re.escape("The heights of both phases cannot be fixed simultaneously."),
+    ):
+        initializer.initialize(unit)
+
+    unit.light_phase_height.unfix()
+    unit.light_phase_weir_height.fix()
+    unit.settler_width.fix()
+
+    # Height too high
+    # Heavy
+    unit.heavy_phase_height.fix(100)
+    with pytest.raises(
+        InitializationError,
+        match=re.escape(
+            "The heavy phase's height is fixed to a value higher than "
+            "the light weir height, so there is no room in the settler tank "
+            "for the light phase. Fix either the light or heavy phase's height "
+            "to a value strictly less than the weir height."
+        ),
+    ):
+        initializer.initialize(unit)
+
+    # Light
+    unit.heavy_phase_height.unfix()
+    unit.light_phase_height.fix(100)
+    with pytest.raises(
+        InitializationError,
+        match=re.escape(
+            "The light phase's height is fixed to a value higher than "
+            "the light weir height, so there is no room in the settler tank "
+            "for the heavy phase. Fix either the light or heavy phase's height "
+            "to a value strictly less than the weir height."
+        ),
+    ):
+        initializer.initialize(unit)
+
+    # Neither height is fixed
+    unit.heavy_phase_height.unfix()
+    unit.light_phase_height.unfix()
+    unit.light_phase.properties[:, 1].flow_vol.fix(100 * units.L / units.h)
+    with pytest.raises(
+        InitializationError,
+        match=re.escape(
+            "Neither the height of the light phase nor the height of the "
+            "heavy phase is fixed for at least one time point. Fix the "
+            "height of exactly one phase."
+        ),
+    ):
+        initializer.initialize(unit)

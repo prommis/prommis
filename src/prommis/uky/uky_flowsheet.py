@@ -57,7 +57,7 @@ Default Flowsheet Specifications
 Description                                                           Value        Units
 ===================================================================== ============ ============================
 Leaching
-Tank volume                                                           100          :math:`\text{m}^3`
+Tank volume                                                           100          :math:`\text{gal}`
 Liquid feed volumetric flow                                           224.3        :math:`\text{L/hr}`
 Liquid feed H concentration                                           100          :math:`\text{mg/L}`
 Liquid feed HSO4 concentration                                        1e-8         :math:`\text{mg/L}`

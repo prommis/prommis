@@ -152,7 +152,7 @@ from idaes.core import (
     UnitModelCostingBlock,
 )
 from idaes.core.initialization import BlockTriangularizationInitializer
-from idaes.core.scaling import AutoScaler, CustomScalerBase, ConstraintScalingScheme
+from idaes.core.scaling import CustomScalerBase, ConstraintScalingScheme
 from idaes.core.scaling.util import get_scaling_factor, set_scaling_factor
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox

@@ -186,12 +186,10 @@ from pyomo.common.collections import ComponentMap
 from pyomo.contrib.incidence_analysis import (
     solve_strongly_connected_components,
 )
-from pyomo.core.base.constraint import IndexedConstraint
 from pyomo.environ import (
     Block,
     ConcreteModel,
     Constraint,
-    ConstraintList,
     Expression,
     Objective,
     Param,
@@ -276,22 +274,9 @@ def main():
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 
-    auto = AutoScaler()
-    auto.scale_variables_by_magnitude(m)
-    auto.scale_constraints_by_jacobian_norm(m)
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
-
     solve_system(m, tee=True)
 
-    # warnings, next_steps = dt._collect_numerical_warnings()
-
-    # assert len(warnings) == 1
-    # WARNING: 20 Variables at or outside bounds (tol=0.0E+00)
-    dt.report_numerical_issues()
-    dt.display_constraints_with_large_residuals()
+    dt.display_variables_at_or_outside_bounds()
     dt.assert_no_numerical_warnings()
 
     display_costing(m)

@@ -26,9 +26,11 @@ Configuration Arguments
 - ``light_phase_alias``: String to use as an alias for the light phase. For example, if
     the user has ``light_phase_alias = "organic"``, the ``organic_phase`` attribute will be
     created as a reference to the ``light_phase`` control volume, and the ``organic_inlet``
-    and ``organic_outlet`` attributes will be created as references to the ``light_inlet``
-    and ``light_outlet`` ports.
-- ``heavy_phase_alias``: String to use as an alias for the heavy phase.
+    and ``organic_outlet`` ports will be created.
+- ``heavy_phase_alias``: String to use as an alias for the heavy phase. For example, if
+    the user has ``heavy_phase_alias = "aqueous"``, the ``aqueous_phase`` attribute will be
+    created as a reference to the ``heavy_phase`` control volume, and the ``aqueous_inlet``
+    and ``aqueous_outlet`` ports will be created.
 - ``light_phase_config``: Configuration dictionary for the light phase, described below.
 - ``heavy_phase_config``: Configuration dictionary for the heavy phase, described below.
 - ``transformation_method``: PyomoDAE transformation method for the ``ControlVolume1D`` objects.
@@ -227,9 +229,9 @@ class SettlerTankScaler(CustomScalerBase):
             )
 
         for phase in ["light", "heavy"]:
-            control_volume = getattr(model, f"{phase}_stream")
+            control_volume = getattr(model, f"{phase}_phase")
             constraint = getattr(model, f"{phase}_phase_area_eqn")
-            for vardata, idx in control_volume.area.items():
+            for idx, vardata in control_volume.area.items():
                 self.scale_variable_by_definition_constraint(
                     vardata, constraint[idx], overwrite=overwrite
                 )
@@ -276,9 +278,9 @@ class SettlerTankScaler(CustomScalerBase):
         )
 
         for phase in ["light", "heavy"]:
-            control_volume = getattr(model, f"{phase}_stream")
+            control_volume = getattr(model, f"{phase}_phase")
             constraint = getattr(model, f"{phase}_phase_area_eqn")
-            for vardata, idx in control_volume.area.items():
+            for idx, vardata in control_volume.area.items():
                 self.scale_constraint_by_component(
                     constraint[idx], vardata, overwrite=overwrite
                 )
@@ -298,6 +300,16 @@ class SettlerTankScaler(CustomScalerBase):
             submodel_scalers=submodel_scalers,
             overwrite=overwrite,
         )
+        ############################################################################################################
+        ## Step 2.5: Scale isothermal constraints (TODO: move into a scaler for the ControlVolume1DExtended)
+        ############################################################################################################
+        if hasattr(model.light_phase, "isothermal_constraint"):
+            for condata in model.light_phase.isothermal_constraint.values():
+                self.scale_constraint_by_nominal_value(condata, overwrite=overwrite)
+
+        if hasattr(model.heavy_phase, "isothermal_constraint"):
+            for condata in model.heavy_phase.isothermal_constraint.values():
+                self.scale_constraint_by_nominal_value(condata, overwrite=overwrite)
 
         ############################################################################################################
         ## Step 3: Scale performance constraints
@@ -307,15 +319,20 @@ class SettlerTankScaler(CustomScalerBase):
             nom = self.get_expression_nominal_value(
                 model.light_phase.properties[t, xf].flow_vol
             )
-            self.scale_constraint_by_component(
+            self.set_constraint_scaling_factor(
                 model.weir_flow_eqn[t], 1 / nom, overwrite=overwrite
             )
 
 
 class SettlerTankInitializer(SingleControlVolumeUnitInitializer):
+    """
+    Initializer object for the SettlerTank unit model
+    """
+
     def initialize_main_model(
         self,
         model: Block,
+        copy_inlet_state: Bool = True,
     ):
         """
         Initialization routine for the settler tank
@@ -342,7 +359,11 @@ class SettlerTankInitializer(SingleControlVolumeUnitInitializer):
                 "SettlerTank initialization expected 0 degrees of "
                 f"freedom but instead has {dof}."
             )
-        if model.light_phase.area.fixed or model.heavy_phase.area.fixed:
+        area_fixed = False
+        for idx in model.light_phase.area:
+            if model.light_phase.area[idx].fixed or model.heavy_phase.area[idx].fixed:
+                area_fixed = True
+        if area_fixed:
             raise InitializationError(
                 "Initialization is not supported for streams with area fixed. "
                 "Fix the settler width and exactly one phase height variable "
@@ -350,58 +371,89 @@ class SettlerTankInitializer(SingleControlVolumeUnitInitializer):
             )
 
         # Start by assuming that both phases take up half of the tank
-        if model.light_phase_height.fixed:
-            if model.heavy_phase_height.fixed:
+        light_fixed_list = [
+            vardata.fixed for vardata in model.light_phase_height.values()
+        ]
+        heavy_fixed_list = [
+            vardata.fixed for vardata in model.heavy_phase_height.values()
+        ]
+
+        if all(light_fixed_list):
+            if any(heavy_fixed_list):
                 raise InitializationError(
                     "The heights of both phases cannot be fixed simultaneously."
                 )
-            elif model.light_phase_height.value > model.light_phase_weir_height.value:
+            for t in model.flowsheet().time:
+                if (
+                    model.light_phase_height[t].value
+                    > model.light_phase_weir_height.value
+                ):
+                    raise InitializationError(
+                        "The light phase's height is fixed to a value higher than "
+                        "the light weir height, so there is no room in the settler tank "
+                        "for the heavy phase. Fix either the light or heavy phase's height "
+                        "to a value strictly less than the weir height."
+                    )
+                else:
+                    for x in model.light_phase.length_domain:
+                        model.light_phase.area[t, x].fix(
+                            model.settler_width * model.light_phase_height[t]
+                        )
+                        model.heavy_phase.area[t, x].fix(
+                            model.settler_width
+                            * (
+                                model.light_phase_weir_height
+                                - model.light_phase_height[t]
+                            )
+                        )
+        elif all(heavy_fixed_list):
+            if any(light_fixed_list):
                 raise InitializationError(
-                    "The light phase's height is fixed to a value higher than "
-                    "the light weir height, so there is no room in the settler tank "
-                    "for the heavy phase. Fix either the light or heavy phase's height "
-                    "to a value strictly less than the weir height."
+                    "The heights of both phases cannot be fixed simultaneously."
                 )
-            else:
-                model.light_phase.area.fix(
-                    model.settler_width * model.light_phase_height
-                )
-                model.heavy_phase.area.fix(
-                    model.settler_width
-                    * (model.light_phase_weir_height - model.light_phase_height)
-                )
-        elif model.heavy_phase_height.fixed:
-            # The case where both height variables are fixed is taken care of above.
-            if model.heavy_phase_height.value > model.light_phase_weir_height.value:
-                raise InitializationError(
-                    "The heavy phase's height is fixed to a value higher than "
-                    "the light weir height, so there is no room in the settler tank "
-                    "for the light phase. Fix either the light or heavy phase's height "
-                    "to a value strictly less than the weir height."
-                )
-            else:
-                model.heavy_phase.area.fix(
-                    model.settler_width * model.heavy_phase_height
-                )
-                model.light_phase.area.fix(
-                    model.settler_width
-                    * (model.light_phase_weir_height - model.heavy_phase_height)
-                )
+            for t in model.flowsheet().time:
+                if (
+                    model.heavy_phase_height[t].value
+                    > model.light_phase_weir_height.value
+                ):
+                    raise InitializationError(
+                        "The heavy phase's height is fixed to a value higher than "
+                        "the light weir height, so there is no room in the settler tank "
+                        "for the light phase. Fix either the light or heavy phase's height "
+                        "to a value strictly less than the weir height."
+                    )
+                else:
+                    for x in model.heavy_phase.length_domain:
+                        model.heavy_phase.area[t, x].fix(
+                            model.settler_width * model.heavy_phase_height[t]
+                        )
+                        model.light_phase.area[t, x].fix(
+                            model.settler_width
+                            * (
+                                model.light_phase_weir_height
+                                - model.heavy_phase_height[t]
+                            )
+                        )
         else:
             # Neither phase's height is fixed.
             raise InitializationError(
                 "Neither the height of the light phase nor the height of the "
-                "heavy phase is fixed. Fix the height of exactly one phase."
+                "heavy phase is fixed for at least one time point. Fix the "
+                "height of exactly one phase."
             )
 
         init_log.info_high(
             "Initialization Step 1a: Initializing light phase control volume."
         )
-        self.initialize_control_volume(model.light_phase)
+        self.initialize_control_volume(
+            model.light_phase, copy_inlet_state=copy_inlet_state
+        )
         init_log.info_high(
             "Initialization Step 1b: Initializing heavy phase control volume."
         )
-        self.initialize_control_volume(model.heavy_phase)
+        self.initialize_control_volume(
+            model.heavy_phase, copy_inlet_state=copy_inlet_state
+        )
         init_log.info_high("Initialization Step 1 complete.")
 
         model.light_phase.area.unfix()
@@ -410,14 +462,21 @@ class SettlerTankInitializer(SingleControlVolumeUnitInitializer):
         init_log.info_high(
             "Initialization Step 2: calculate overall liquid level from weir flow equation."
         )
-        if model.light_phase_height.fixed:
+        light_fixed_list = [
+            vardata.fixed for vardata in model.light_phase_height.values()
+        ]
+        heavy_fixed_list = [
+            vardata.fixed for vardata in model.heavy_phase_height.values()
+        ]
+
+        if all(light_fixed_list):
             for t in model.flowsheet().time:
                 calculate_variable_from_constraint(
                     model.heavy_phase_height[t],
                     model.weir_flow_eqn[t],
                 )
 
-        elif model.heavy_phase_height.fixed:
+        elif all(heavy_fixed_list):
             for t in model.flowsheet().time:
                 calculate_variable_from_constraint(
                     model.light_phase_height[t],
@@ -513,23 +572,27 @@ class SettlerTankData(UnitModelBlockData):
     CONFIG.declare(
         "dynamic",
         ConfigValue(
-            default=True,
+            default=False,
             domain=DefaultBool,
             doc="Whether model is dynamic (True) or steady state (False).",
         ),
     )
     CONFIG.declare(
         "light_phase_alias",
-        default="light_phase",
-        domain=str,
-        doc="Alias to use for light phase in settler",
+        ConfigValue(
+            default="light",
+            domain=str,
+            doc="Alias to use for light phase in settler",
+        ),
     )
 
     CONFIG.declare(
         "heavy_phase_alias",
-        default="heavy_phase",
-        domain=str,
-        doc="Alias to use for heavy phase in settler",
+        ConfigValue(
+            default="heavy",
+            domain=str,
+            doc="Alias to use for heavy phase in settler",
+        ),
     )
 
     CONFIG.declare(
@@ -592,8 +655,8 @@ class SettlerTankData(UnitModelBlockData):
             self.config.light_phase_config.property_package.get_metadata().get_derived_units
         )
 
-        for stream_name in ["light_phase, heavy_phase"]:
-            stream_config = getattr(self.config, stream_name)
+        for stream_name in ["light_phase", "heavy_phase"]:
+            stream_config = getattr(self.config, f"{stream_name}_config")
 
             # Create control volume
             control_volume = ExtendedControlVolume1DBlock(
@@ -612,9 +675,8 @@ class SettlerTankData(UnitModelBlockData):
             # Add geometry and material, energy, and pressure balance equations
             control_volume.add_geometry(
                 flow_direction=FlowDirection.forward,
-                length_var=self.length,
             )
-            control_volume.add_state_block(
+            control_volume.add_state_blocks(
                 information_flow=FlowDirection.forward, has_phase_equilibrium=False
             )
             control_volume.add_material_balances(
@@ -622,7 +684,7 @@ class SettlerTankData(UnitModelBlockData):
                 has_phase_equilibrium=False,
                 has_mass_transfer=False,
             )
-            control_volume.light_phase.add_energy_balances(
+            control_volume.add_energy_balances(
                 balance_type=stream_config.energy_balance_type
             )
             if stream_config.has_pressure_balance:
@@ -633,28 +695,32 @@ class SettlerTankData(UnitModelBlockData):
             control_volume.apply_transformation()
 
             # Add user-specified alias for stream
-            stream_alias = getattr(self.config, f"{stream_name}_name")
+            stream_alias = getattr(self.config, f"{stream_name}_alias")
             if stream_name == stream_alias:
                 # Either using light_phase as the alias
                 # for the light phase or heavy_phase
                 # as the alias for the heavy phase
                 pass
-            elif hasattr(self, stream_alias):
+
+            alias_phase = f"{stream_alias}_phase"
+            if hasattr(self, alias_phase):
                 raise ConfigurationError(
-                    f"Cannot use {stream_alias} as an alias for {stream_name}. "
+                    f"Cannot use {alias_phase} as an alias for {stream_name}_phase. "
                     f"An object with that name already exists on {self.name}."
                 )
             else:
-                add_object_reference(self, stream_alias, control_volume)
+                add_object_reference(self, alias_phase, control_volume)
 
-            self.add_inlet_port(name=f"{stream_alias}_inlet")
-            self.add_outlet_port(name=f"{stream_alias}_outlet")
+            self.add_inlet_port(name=f"{stream_alias}_inlet", block=control_volume)
+            self.add_outlet_port(name=f"{stream_alias}_outlet", block=control_volume)
 
         self._make_geometry()
         self._make_performance()
 
     def _make_geometry(self):
-        self.length = add_object_reference(self.light_phase.length)
+        add_object_reference(
+            self, local_name="length", remote_object=self.light_phase.length
+        )
 
         @self.Constraint(doc="Equate length of phase control volumes")
         def length_eqn(self):
@@ -745,9 +811,16 @@ class SettlerTankData(UnitModelBlockData):
             g = pyunits.convert(
                 Constants.acceleration_gravity, to_units=b._units("acceleration")
             )
-            self.light_phase.properties[t, xf].flow_vol == (
+            # Need to convert the light phase volumetric flowrate because, presently (3/6/26),
+            # the property packages of PrOMMiS have volumetric flow rate in L/hr, but the correct
+            # derived units are m^3/hr
+            return pyunits.convert(
+                self.light_phase.properties[t, xf].flow_vol,
+                to_units=self._units("flow_vol"),
+            ) == pyunits.convert(
                 g**0.5
                 * H**1.5
                 * b.light_phase_weir_channel_width
-                * b.weir_discharge_coefficient
+                * b.weir_discharge_coefficient,
+                to_units=self._units("flow_vol"),
             )

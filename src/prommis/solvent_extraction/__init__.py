@@ -1,1 +1,1 @@
-from .settler_tank import SetterTank
+from .settler_tank import SettlerTank

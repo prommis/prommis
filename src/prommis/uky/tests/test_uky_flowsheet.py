@@ -42,7 +42,6 @@ from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
-from prommis.uky.costing.ree_plant_capcost import QGESSCostingData
 from prommis.uky.uky_flowsheet import (
     add_costing,
     add_result_expressions,

@@ -276,7 +276,6 @@ def main():
 
     solve_system(m, tee=True)
 
-    dt.display_variables_at_or_outside_bounds()
     dt.assert_no_numerical_warnings()
 
     display_costing(m)

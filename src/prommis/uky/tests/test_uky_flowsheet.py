@@ -51,6 +51,7 @@ from prommis.uky.uky_flowsheet import (
     display_results,
     fix_organic_recycle,
     initialize_system,
+    initialize_costing,
     set_operating_conditions,
     set_scaling,
     solve_system,
@@ -579,6 +580,7 @@ def test_conservation(system_frame):
 def test_costing(system_frame):
     model = system_frame
     add_costing(model)
+    initialize_costing(model)
 
 
 @pytest.mark.component
@@ -587,15 +589,6 @@ def test_costing_diagnostics(system_frame):
     model = system_frame
     dt = DiagnosticsToolbox(model)
     dt.assert_no_structural_warnings()
-
-
-@pytest.mark.component
-@pytest.mark.solver
-def test_costing_initialize(system_frame):
-    model = system_frame
-    QGESSCostingData.costing_initialization(model.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(model.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(model.fs.costing)
 
 
 @pytest.mark.component

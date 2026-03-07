@@ -286,8 +286,8 @@ class _SulfuricAcidLeachingStateBlock(StateBlock):
         # and water density constraints
         for sbd in self.values():
             if not sbd.config.defined_state:
-                sbd.h2o_concentration.deactivate()
-                sbd.hso4_dissociation.deactivate()
+                sbd.conc_mass_comp["H2O"].unfix()
+                sbd.conc_mass_comp["HSO4"].unfix()
 
 
 @declare_process_block_class(

@@ -211,6 +211,9 @@ class _REESolExOgStateBlock(StateBlock):
 
     def fix_initialization_states(self):
         fix_state_vars(self)
+        for sbd in self.values():
+            if not sbd.config.defined_state:
+                sbd.conc_mass_comp["Kerosene"].unfix()
 
 
 @declare_process_block_class("REESolExOgStateBlock", block_class=_REESolExOgStateBlock)

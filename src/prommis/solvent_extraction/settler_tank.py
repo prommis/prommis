@@ -141,6 +141,7 @@ from idaes.core import (
     useDefault,
 )
 from idaes.core.initialization import (
+    ModularInitializerBase,
     SingleControlVolumeUnitInitializer,
 )
 from idaes.core.scaling import CustomScalerBase, DefaultScalingRecommendation
@@ -322,28 +323,20 @@ class SettlerTankScaler(CustomScalerBase):
             )
 
 
-class SettlerTankInitializer(SingleControlVolumeUnitInitializer):
+class SettlerTankInitializer(ModularInitializerBase):
     """
     Initializer object for the SettlerTank unit model
     """
 
-    CONFIG = SingleControlVolumeUnitInitializer.CONFIG()
-    CONFIG.always_estimate_states = True
-    CONFIG.get("always_estimate_states")._default = True
-    CONFIG.get("always_estimate_states")._domain = In([True])
-
     def initialize_main_model(
         self,
         model: Block,
-        copy_inlet_state: Bool = False,
     ):
         """
         Initialization routine for the settler tank
 
         Args:
-            model: SettlerTank object to be initialized.
-            copy_inlet_state: Argument necessary only because the parent
-                class expects it.
+            model: SettlerTank object to be initialized.=
         Returns:
             Pyomo solver results object.
         """
@@ -441,18 +434,18 @@ class SettlerTankInitializer(SingleControlVolumeUnitInitializer):
                 "height of exactly one phase."
             )
 
+        cv_init_kwargs = {**self.config}
+        cv_init_kwargs["always_estimate_states"] = True
+        cv_init = SingleControlVolumeUnitInitializer(**cv_init_kwargs)
+        # cv_init = SingleControlVolumeUnitInitializer(**self.config)
         init_log.info_high(
             "Initialization Step 1a: Initializing light phase control volume."
         )
-        self.initialize_control_volume(
-            model.light_phase, copy_inlet_state=copy_inlet_state
-        )
+        cv_init.initialize_control_volume(model.light_phase, copy_inlet_state=True)
         init_log.info_high(
             "Initialization Step 1b: Initializing heavy phase control volume."
         )
-        self.initialize_control_volume(
-            model.heavy_phase, copy_inlet_state=copy_inlet_state
-        )
+        cv_init.initialize_control_volume(model.heavy_phase, copy_inlet_state=True)
         init_log.info_high("Initialization Step 1 complete.")
 
         model.light_phase.area.unfix()

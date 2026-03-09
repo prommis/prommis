@@ -402,3 +402,45 @@ def test_initialization_fails():
         ),
     ):
         initializer.initialize(unit)
+
+
+@pytest.mark.unit
+def test_scaling_negative_length():
+    m = ConcreteModel()
+
+    m.fs = FlowsheetBlock()
+
+    m.fs.dehpa_kerosene_params = REESolExOgParameters()
+    m.fs.sulfate_leaching_params = SulfuricAcidLeachingParameters()
+
+    m.fs.unit = SettlerTank(
+        light_phase_alias="organic",
+        heavy_phase_alias="aqueous",
+        light_phase_config={
+            "property_package": m.fs.dehpa_kerosene_params,
+            "energy_balance_type": EnergyBalanceType.isothermal,
+            "has_pressure_balance": False,
+        },
+        heavy_phase_config={
+            "property_package": m.fs.sulfate_leaching_params,
+            "energy_balance_type": EnergyBalanceType.isothermal,
+            "has_pressure_balance": False,
+        },
+        has_holdup=True,
+        transformation_method="dae.finite_difference",
+        transformation_scheme="BACKWARD",
+        finite_elements=4,
+    )
+
+    m.fs.unit.length.fix(-1)
+
+    scaler_obj = SettlerTankScaler()
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "The variable SettlerTank.length should be strictly positive, but "
+            "instead it has a value of -1."
+        ),
+    ):
+        scaler_obj.scale_model(m.fs.unit)

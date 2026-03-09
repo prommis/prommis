@@ -198,7 +198,7 @@ class SettlerTankScaler(CustomScalerBase):
                     model.length, sf_L, overwrite=overwrite
                 )
             else:
-                raise RuntimeError(
+                raise ValueError(
                     "The variable SettlerTank.length should be strictly positive, but "
                     f"instead it has a value of {L}."
                 )

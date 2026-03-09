@@ -34,6 +34,8 @@ The Precipitator unit adds one additional constraint to define the conversion.
 where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters 
 estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
 
+New PR for precipitation model
+
 """
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue

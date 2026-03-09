@@ -19,6 +19,7 @@ Other methods:
     - display_flowsheet_cost() to display flowsheet cost
     - calculate_REE_costing_bounds() to provide an estimate of costing bounds
 """
+
 # TODO: Missing docstrings
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring

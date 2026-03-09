@@ -306,6 +306,7 @@ class SulfuricAcidLeachingStateBlockData(StateBlockData):
 
         self.flow_vol = Var(
             units=units.L / units.hour,
+            initialize=10,
             bounds=(1e-8, None),
         )
         self.conc_mass_comp = Var(

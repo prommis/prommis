@@ -10,6 +10,7 @@ Report Superstructure Results Code
 
 Author: Chris Laliwala
 """
+
 import math
 
 import pyomo.environ as pyo

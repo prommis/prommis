@@ -20,7 +20,7 @@ Reactions
 The reactions of impurities involved are listed below:
 
 1. Kaolinite calcination:
-   
+
    .. ce::
       Al2O3 \cdot 2SiO2 \cdot 2H2O -> Al2O3 + 2 SiO2 + 2 H2O (g)
 
@@ -114,7 +114,7 @@ The default values of those parameters are obtained from two sources as listed b
    inorganic and C1 and C2 organic substances in SI units," Journal of Physical and Chemical
    Reference Data, 11(2), 1982
 
-The NIST WebBook data are used for the properties of :ce:`Al2O3`, :ce:`SiO2`, :ce:`CaO`, :ce:`Fe2O3`, and `pyrite`. 
+The NIST WebBook data are used for the properties of :ce:`Al2O3`, :ce:`SiO2`, :ce:`CaO`, :ce:`Fe2O3`, and `pyrite`.
 Note that the heat capacity model is simplified as a linear function of temperature.
 The data of Wagman et al are used for the properties of :ce:`CaCO3` and `kaolinite`.
 The gas phase properties are calculated based on user configured property package.
@@ -128,7 +128,7 @@ Assumptions
 -----------
 
 - No kinetics or mass transfer is considered for the Kaolinite calcination and pyrite combustion. Complete conversions are assumed.
-- Reaction rate for :ce:`CaCO3` calcination is based on kinetics reported by Carrillo Garcia (2019). 
+- Reaction rate for :ce:`CaCO3` calcination is based on kinetics reported by Carrillo Garcia (2019).
 The rate is a function of conversion. It is assumed that the conversion of :ce:`CaCO3` in the feed stream is zero.
 - Reaction rates for the conversion of insoluble REE mineral to dissolvable mineral for each element is modeled by
 two competing reactions with two different activation energies and yield fractions.
@@ -153,7 +153,6 @@ from idaes.core.initialization import ModularInitializerBase
 from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.config import DefaultBool, is_physical_parameter_block
 from idaes.core.util.constants import Constants as const
-
 
 __author__ = "Jinliang Ma"
 __version__ = "1.0.0"

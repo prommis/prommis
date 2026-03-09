@@ -8,8 +8,8 @@ r"""
 Author: Lingyan Deng, Brandon Paul
 
 This is a test file for testing flowsheet optimization with PrOMMiS REE Costing. The example is a Li-Co diafiltration process to recover Li and Co as byproduct from battery recovery. Li-Co recovery
-process is referenced from literature: Wamble, N.P., Eugene, E.A., Phillip, W.A., Dowling, A.W., 'Optimal Diafiltration Membrane Cascades Enable Green Recycling of Spent Lithium-Ion 
-Batteries', ACS Sustainable Chem. Eng. 2022, 10, 12207−12225. 
+process is referenced from literature: Wamble, N.P., Eugene, E.A., Phillip, W.A., Dowling, A.W., 'Optimal Diafiltration Membrane Cascades Enable Green Recycling of Spent Lithium-Ion
+Batteries', ACS Sustainable Chem. Eng. 2022, 10, 12207−12225.
 
 The steps to test this framework include:
 1. Import packages
@@ -20,6 +20,7 @@ The steps to test this framework include:
 
 
 """
+
 from pyomo.environ import value
 
 from idaes.core import UnitModelCostingBlock

@@ -46,8 +46,6 @@ def build_model(dosage, number_of_stages):
     m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.reaxn = SolventExtractionReactions()
 
-    m.fs.reaxn.extractant_dosage = dosage
-
     m.fs.mixer_settler_ex = MixerSettlerExtraction(
         number_of_stages=number_of_stages,
         aqueous_stream={

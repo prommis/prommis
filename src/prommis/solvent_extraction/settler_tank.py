@@ -24,13 +24,14 @@ Configuration Arguments
 - ``has_holdup``: The SettlerTank always has holdup, so this option must equal True.
 - ``dynamic``: Boolean determining whether to create a dynamic or steady state model.
 - ``light_phase_alias``: String to use as an alias for the light phase. For example, if
-    the user has ``light_phase_alias = "organic"``, the ``organic_phase`` attribute will be
-    created as a reference to the ``light_phase`` control volume, and the ``organic_inlet``
-    and ``organic_outlet`` ports will be created.
+    the user has ``light_phase_alias = "organic"``, the ``organic`` attribute will be
+    created as a reference to the ``light_phase`` control volume, and references to the
+    ``light_phase_inlet`` and ``light_phase_outlet`` ports will be created as``organic_inlet``
+    and ``organic_outlet``.
 - ``heavy_phase_alias``: String to use as an alias for the heavy phase. For example, if
-    the user has ``heavy_phase_alias = "aqueous"``, the ``aqueous_phase`` attribute will be
+    the user has ``heavy_phase_alias = "aqueous"``, the ``aqueous`` attribute will be
     created as a reference to the ``heavy_phase`` control volume, and the ``aqueous_inlet``
-    and ``aqueous_outlet`` ports will be created.
+    and ``aqueous_outlet`` references will be created.
 - ``light_phase_config``: Configuration dictionary for the light phase, described below.
 - ``heavy_phase_config``: Configuration dictionary for the heavy phase, described below.
 - ``transformation_method``: PyomoDAE transformation method for the ``ControlVolume1D`` objects.
@@ -572,7 +573,7 @@ class SettlerTankData(UnitModelBlockData):
     CONFIG.declare(
         "light_phase_alias",
         ConfigValue(
-            default="light",
+            default="light_phase",
             domain=str,
             doc="Alias to use for light phase in settler",
         ),
@@ -581,7 +582,7 @@ class SettlerTankData(UnitModelBlockData):
     CONFIG.declare(
         "heavy_phase_alias",
         ConfigValue(
-            default="heavy",
+            default="heavy_phase",
             domain=str,
             doc="Alias to use for heavy phase in settler",
         ),
@@ -694,17 +695,23 @@ class SettlerTankData(UnitModelBlockData):
                 # as the alias for the heavy phase
                 pass
 
-            alias_phase = f"{stream_alias}_phase"
-            if hasattr(self, alias_phase):
+            if hasattr(self, stream_alias):
                 raise ConfigurationError(
-                    f"Cannot use {alias_phase} as an alias for {stream_name}_phase. "
+                    f"Cannot use {stream_alias} as an alias for {stream_name}_phase. "
                     f"An object with that name already exists on {self.name}."
                 )
             else:
-                add_object_reference(self, alias_phase, control_volume)
+                add_object_reference(self, stream_alias, control_volume)
 
-            self.add_inlet_port(name=f"{stream_alias}_inlet", block=control_volume)
-            self.add_outlet_port(name=f"{stream_alias}_outlet", block=control_volume)
+            inlet = self.add_inlet_port(
+                name=f"{stream_name}_inlet", block=control_volume
+            )
+            outlet = self.add_outlet_port(
+                name=f"{stream_name}_outlet", block=control_volume
+            )
+
+            add_object_reference(self, f"{stream_alias}_inlet", inlet)
+            add_object_reference(self, f"{stream_alias}_outlet", outlet)
 
         self._make_geometry()
         self._make_performance()

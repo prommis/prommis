@@ -129,8 +129,8 @@ def make_model(time_set=None):
     organic_scaler.default_scaling_factors["flow_vol"] = 1 / 50
 
     submodel_scalers = ComponentMap()
-    submodel_scalers[m.fs.unit.aqueous_phase.properties] = aqueous_scaler
-    submodel_scalers[m.fs.unit.organic_phase.properties] = organic_scaler
+    submodel_scalers[m.fs.unit.aqueous.properties] = aqueous_scaler
+    submodel_scalers[m.fs.unit.organic.properties] = organic_scaler
 
     scaler_obj = SettlerTankScaler()
     scaler_obj.scale_model(m.fs.unit, submodel_scalers=submodel_scalers)
@@ -151,12 +151,14 @@ def test_model_construction(model):
     assert model.fs.unit.default_initializer is SettlerTankInitializer
     assert model.fs.unit.default_scaler is SettlerTankScaler
     for port in ["inlet", "outlet"]:
-        for name in ["organic", "aqueous"]:
+        for name, alias in zip(["light_phase", "heavy_phase"], ["organic", "aqueous"]):
             port_obj = getattr(model.fs.unit, f"{name}_{port}")
             assert isinstance(port_obj, Port)
+            port_ref = getattr(model.fs.unit, f"{alias}_{port}")
+            assert port_obj is port_ref
 
-    assert model.fs.unit.light_phase is model.fs.unit.organic_phase
-    assert model.fs.unit.heavy_phase is model.fs.unit.aqueous_phase
+    assert model.fs.unit.light_phase is model.fs.unit.organic
+    assert model.fs.unit.heavy_phase is model.fs.unit.aqueous
 
     assert isinstance(model.fs.unit.length, Var)
     assert len(model.fs.unit.length) == 1
@@ -295,13 +297,13 @@ def test_solution(model):
     expected_results["aqueous_outlet.conc_mass_comp"][(0, "Y")] = (8.89, _rel, None)
     expected_results["aqueous_outlet.conc_mass_comp"][(0, "Fe")] = (1752.34, _rel, None)
 
-    expected_results["organic_phase.area"] = {}
-    for idx in model.fs.unit.organic_phase.area:
-        expected_results["organic_phase.area"][idx] = (0.1253070, _rel, None)
+    expected_results["organic.area"] = {}
+    for idx in model.fs.unit.organic.area:
+        expected_results["organic.area"][idx] = (0.1253070, _rel, None)
 
-    expected_results["aqueous_phase.area"] = {}
-    for idx in model.fs.unit.aqueous_phase.area:
-        expected_results["aqueous_phase.area"][idx] = (0.125, _rel, None)
+    expected_results["aqueous.area"] = {}
+    for idx in model.fs.unit.aqueous.area:
+        expected_results["aqueous.area"][idx] = (0.125, _rel, None)
 
     assert_solution_equivalent(model.fs.unit, expected_results=expected_results)
 

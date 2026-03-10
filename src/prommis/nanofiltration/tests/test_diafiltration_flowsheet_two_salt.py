@@ -8,8 +8,6 @@
 Tests the two-salt diafiltration flowsheet
 """
 
-from pyomo.environ import value
-
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.models.unit_models import Feed, Product
 

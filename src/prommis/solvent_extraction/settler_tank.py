@@ -58,7 +58,7 @@ Both phases are configured using a configuration dictionary.
 
 Degrees of freedom
 ------------------
-In addition to the variables on the inlet ports, it is expect that the user will specify the
+In addition to the variables on the inlet ports, it is expected that the user will specify the
 following variables:
 - ``length``: The length of the settler tank parallel with the flow
 - ``settler_width``: The width of the settler tank perpendicular to the flow
@@ -438,7 +438,7 @@ class SettlerTankInitializer(ModularInitializerBase):
         cv_init_kwargs = {**self.config}
         cv_init_kwargs["always_estimate_states"] = True
         cv_init = SingleControlVolumeUnitInitializer(**cv_init_kwargs)
-        # cv_init = SingleControlVolumeUnitInitializer(**self.config)
+
         init_log.info_high(
             "Initialization Step 1a: Initializing light phase control volume."
         )

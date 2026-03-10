@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import pytest
 
 from prommis.nanofiltration.diafiltration_flowsheet_two_salt import main
+from prommis.util import assert_solution_equivalent
 
 
 @pytest.mark.component
@@ -63,39 +64,18 @@ def test_main():
     assert isinstance(rejection_plot, plt.Figure)
 
     test_dict = {
-        "retentate_final": [
-            value(m.fs.membrane.retentate_flow_volume[0, 1]),
-            6.0854,
-        ],
-        "Li_retentate_final": [
-            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "Li"]),
-            190.89,
-        ],
-        "Co_retentate_final": [
-            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "Co"]),
-            239.83,
-        ],
-        "Cl_retentate_final": [
-            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-            670.55,
-        ],
-        "permeate_final": [
-            value(m.fs.membrane.permeate_flow_volume[0, 1]),
-            10.035,
-        ],
-        "Li_permeate_final": [
-            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "Li"]),
-            191.70,
-        ],
-        "Co_permeate_final": [
-            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "Co"]),
-            222.48,
-        ],
-        "Cl_permeate_final": [
-            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-            636.67,
-        ],
+        "retentate_flow_volume": {(0, 1): (6.0854, 1e-4, None)},
+        "retentate_conc_mol_comp": {
+            (0, 1, "Li"): (190.89, 1e-4, None),
+            (0, 1, "Co"): (239.83, 1e-4, None),
+            (0, 1, "Cl"): (670.55, 1e-4, None),
+        },
+        "permeate_flow_volume": {(0, 1): (10.035, 1e-4, None)},
+        "permeate_conc_mol_comp": {
+            (0, 1, "Li"): (191.70, 1e-4, None),
+            (0, 1, "Co"): (222.48, 1e-4, None),
+            (0, 1, "Cl"): (636.67, 1e-4, None),
+        },
     }
 
-    for model_result, test_val in test_dict.values():
-        assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+    assert_solution_equivalent(m.fs.membrane, test_dict)

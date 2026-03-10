@@ -36,6 +36,7 @@ from prommis.nanofiltration.multi_component_diafiltration_solute_properties impo
 from prommis.nanofiltration.multi_component_diafiltration import (
     MultiComponentDiafiltration,
 )
+from prommis.util import assert_solution_equivalent
 
 # TODO: test positive and neutral membrane cases
 # currently, the property package only supports a negative fixed charge
@@ -710,37 +711,20 @@ class TestDiafiltrationSingleSaltLithium(object):
     def test_solve_Li(self, diafiltration_single_salt_Li):
         test_solve(diafiltration_single_salt_Li)
 
-        membrane = diafiltration_single_salt_Li.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                8.3858,
-            ],
-            "Li_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Li"]),
-                194.01,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                194.01,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                7.8636,
-            ],
-            "Li_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Li"]),
-                190.62,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                190.62,
-            ],
+            "retentate_flow_volume": {(0, 1): (8.3858, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Li"): (194.01, 1e-4, None),
+                (0, 1, "Cl"): (194.01, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (7.8636, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Li"): (190.62, 1e-4, None),
+                (0, 1, "Cl"): (190.62, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(diafiltration_single_salt_Li.fs.unit, test_dict)
 
     @pytest.mark.component
     def test_numerical_issues_Li(self, diafiltration_single_salt_Li):
@@ -839,37 +823,22 @@ class TestDiafiltrationSingleSaltLithiumNoBoundaryLayer(object):
     ):
         test_solve(diafiltration_single_salt_Li_no_boundary_layer)
 
-        membrane = diafiltration_single_salt_Li_no_boundary_layer.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                8.3856,
-            ],
-            "Li_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Li"]),
-                194.52,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                194.52,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                7.8637,
-            ],
-            "Li_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Li"]),
-                190.38,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                190.38,
-            ],
+            "retentate_flow_volume": {(0, 1): (8.3856, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Li"): (194.52, 1e-4, None),
+                (0, 1, "Cl"): (194.52, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (7.8637, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Li"): (190.38, 1e-4, None),
+                (0, 1, "Cl"): (190.38, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(
+            diafiltration_single_salt_Li_no_boundary_layer.fs.unit, test_dict
+        )
 
     @pytest.mark.component
     def test_numerical_issues_Li_no_boundary_layer(
@@ -965,37 +934,20 @@ class TestDiafiltrationSingleSaltCobalt(object):
     def test_solve_Co(self, diafiltration_single_salt_Co):
         test_solve(diafiltration_single_salt_Co)
 
-        membrane = diafiltration_single_salt_Co.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                10.475,
-            ],
-            "Co_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Co"]),
-                226.82,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                453.64,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                5.7640,
-            ],
-            "Co_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Co"]),
-                216.55,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                433.11,
-            ],
+            "retentate_flow_volume": {(0, 1): (10.475, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Co"): (226.82, 1e-4, None),
+                (0, 1, "Cl"): (453.64, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (5.7640, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Co"): (216.55, 1e-4, None),
+                (0, 1, "Cl"): (433.11, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(diafiltration_single_salt_Co.fs.unit, test_dict)
 
     @pytest.mark.component
     def test_numerical_issues_Co(self, diafiltration_single_salt_Co):
@@ -1094,37 +1046,22 @@ class TestDiafiltrationSingleSaltCobaltNoBoundaryLayer(object):
     ):
         test_solve(diafiltration_single_salt_Co_no_boundary_layer)
 
-        membrane = diafiltration_single_salt_Co_no_boundary_layer.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                10.468,
-            ],
-            "Co_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Co"]),
-                227.59,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                455.17,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                5.7687,
-            ],
-            "Co_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Co"]),
-                215.62,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                431.24,
-            ],
+            "retentate_flow_volume": {(0, 1): (10.468, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Co"): (227.59, 1e-4, None),
+                (0, 1, "Cl"): (455.17, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (5.7687, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Co"): (215.62, 1e-4, None),
+                (0, 1, "Cl"): (431.24, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(
+            diafiltration_single_salt_Co_no_boundary_layer.fs.unit, test_dict
+        )
 
     @pytest.mark.component
     def test_numerical_issues_Co_no_boundary_layer(
@@ -1220,37 +1157,20 @@ class TestDiafiltrationSingleSaltAluminum(object):
     def test_solve_Al(self, diafiltration_single_salt_Al):
         test_solve(diafiltration_single_salt_Al)
 
-        membrane = diafiltration_single_salt_Al.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                9.5153,
-            ],
-            "Al_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Al"]),
-                17.722,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                53.166,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                6.6918,
-            ],
-            "Al_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Al"]),
-                14.649,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                43.947,
-            ],
+            "retentate_flow_volume": {(0, 1): (9.5153, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Al"): (17.722, 1e-4, None),
+                (0, 1, "Cl"): (53.166, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (6.6918, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Al"): (14.649, 1e-4, None),
+                (0, 1, "Cl"): (43.947, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(diafiltration_single_salt_Al.fs.unit, test_dict)
 
     @pytest.mark.component
     def test_numerical_issues_Al(self, diafiltration_single_salt_Al):
@@ -1346,37 +1266,22 @@ class TestDiafiltrationSingleSaltAluminumNoBoundaryLayer(object):
     ):
         test_solve(diafiltration_single_salt_Al_no_boundary_layer)
 
-        membrane = diafiltration_single_salt_Al_no_boundary_layer.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                9.4910,
-            ],
-            "Al_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Al"]),
-                18.044,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                54.131,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                6.7079,
-            ],
-            "Al_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Al"]),
-                14.372,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                43.115,
-            ],
+            "retentate_flow_volume": {(0, 1): (9.4910, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Al"): (18.044, 1e-4, None),
+                (0, 1, "Cl"): (54.131, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (6.7079, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Al"): (14.372, 1e-4, None),
+                (0, 1, "Cl"): (43.115, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(
+            diafiltration_single_salt_Al_no_boundary_layer.fs.unit, test_dict
+        )
 
     @pytest.mark.component
     def test_numerical_issues_Al_no_boundary_layer(
@@ -1775,45 +1680,22 @@ class TestDiafiltrationTwoSaltLithiumCobalt(object):
     def test_solve_Li_Co(self, diafiltration_two_salt_Li_Co):
         test_solve(diafiltration_two_salt_Li_Co)
 
-        membrane = diafiltration_two_salt_Li_Co.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                6.0854,
-            ],
-            "Li_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Li"]),
-                190.89,
-            ],
-            "Co_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Co"]),
-                239.83,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                670.55,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                10.035,
-            ],
-            "Li_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Li"]),
-                191.70,
-            ],
-            "Co_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Co"]),
-                222.48,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                636.67,
-            ],
+            "retentate_flow_volume": {(0, 1): (6.0854, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Li"): (190.89, 1e-4, None),
+                (0, 1, "Co"): (239.83, 1e-4, None),
+                (0, 1, "Cl"): (670.55, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (10.035, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Li"): (191.70, 1e-4, None),
+                (0, 1, "Co"): (222.48, 1e-4, None),
+                (0, 1, "Cl"): (636.67, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(diafiltration_two_salt_Li_Co.fs.unit, test_dict)
 
     @pytest.mark.component
     def test_numerical_issues_Li_Co(self, diafiltration_two_salt_Li_Co):
@@ -1909,45 +1791,24 @@ class TestDiafiltrationTwoSaltLithiumCobaltNoBoundaryLayer(object):
     ):
         test_solve(diafiltration_two_salt_Li_Co_no_boundary_layer)
 
-        membrane = diafiltration_two_salt_Li_Co_no_boundary_layer.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                6.0465,
-            ],
-            "Li_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Li"]),
-                188.88,
-            ],
-            "Co_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Co"]),
-                246.67,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                682.22,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                10.033,
-            ],
-            "Li_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Li"]),
-                191.55,
-            ],
-            "Co_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Co"]),
-                222.76,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                637.06,
-            ],
+            "retentate_flow_volume": {(0, 1): (6.0465, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Li"): (188.88, 1e-4, None),
+                (0, 1, "Co"): (246.67, 1e-4, None),
+                (0, 1, "Cl"): (682.22, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (10.033, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Li"): (191.55, 1e-4, None),
+                (0, 1, "Co"): (222.76, 1e-4, None),
+                (0, 1, "Cl"): (637.06, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(
+            diafiltration_two_salt_Li_Co_no_boundary_layer.fs.unit, test_dict
+        )
 
     @pytest.mark.component
     def test_numerical_issues_Li_Co_no_boundary_layer(
@@ -2042,45 +1903,22 @@ class TestDiafiltrationTwoSaltLithiumAluminum(object):
     def test_solve_Li_Al(self, diafiltration_two_salt_Li_Al):
         test_solve(diafiltration_two_salt_Li_Al)
 
-        membrane = diafiltration_two_salt_Li_Al.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                6.2797,
-            ],
-            "Li_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Li"]),
-                181.35,
-            ],
-            "Al_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Al"]),
-                28.631,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                267.24,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                9.0427,
-            ],
-            "Li_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Li"]),
-                194.19,
-            ],
-            "Al_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Al"]),
-                13.722,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                235.36,
-            ],
+            "retentate_flow_volume": {(0, 1): (6.2797, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Li"): (181.35, 1e-4, None),
+                (0, 1, "Al"): (28.631, 1e-4, None),
+                (0, 1, "Cl"): (267.24, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (9.0427, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Li"): (194.19, 1e-4, None),
+                (0, 1, "Al"): (13.722, 1e-4, None),
+                (0, 1, "Cl"): (235.36, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(diafiltration_two_salt_Li_Al.fs.unit, test_dict)
 
     @pytest.mark.component
     def test_numerical_issues_Li_Al(self, diafiltration_two_salt_Li_Al):
@@ -2178,45 +2016,24 @@ class TestDiafiltrationTwoSaltLithiumAluminumNoBoundaryLayer(object):
     ):
         test_solve(diafiltration_two_salt_Li_Al_no_boundary_layer)
 
-        membrane = diafiltration_two_salt_Li_Al_no_boundary_layer.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                5.6461,
-            ],
-            "Li_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Li"]),
-                171.18,
-            ],
-            "Al_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Al"]),
-                36.668,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                281.18,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                9.0248,
-            ],
-            "Li_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Li"]),
-                194.44,
-            ],
-            "Al_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Al"]),
-                13.760,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                235.72,
-            ],
+            "retentate_flow_volume": {(0, 1): (5.6461, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Li"): (171.18, 1e-4, None),
+                (0, 1, "Al"): (36.668, 1e-4, None),
+                (0, 1, "Cl"): (281.18, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (9.0248, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Li"): (194.44, 1e-4, None),
+                (0, 1, "Al"): (13.760, 1e-4, None),
+                (0, 1, "Cl"): (235.72, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(
+            diafiltration_two_salt_Li_Al_no_boundary_layer.fs.unit, test_dict
+        )
 
     @pytest.mark.component
     def test_numerical_issues_Li_Al(
@@ -2310,45 +2127,22 @@ class TestDiafiltrationTwoSaltCobaltAluminum(object):
     def test_solve_Co_Al(self, diafiltration_two_salt_Co_Al):
         test_solve(diafiltration_two_salt_Co_Al)
 
-        membrane = diafiltration_two_salt_Co_Al.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                8.3116,
-            ],
-            "Co_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Co"]),
-                230.55,
-            ],
-            "Al_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Al"]),
-                17.615,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                513.94,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                7.8653,
-            ],
-            "Co_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Co"]),
-                218.56,
-            ],
-            "Al_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Al"]),
-                15.305,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                483.04,
-            ],
+            "retentate_flow_volume": {(0, 1): (8.3116, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Co"): (230.55, 1e-4, None),
+                (0, 1, "Al"): (17.615, 1e-4, None),
+                (0, 1, "Cl"): (513.94, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (7.8653, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Co"): (218.56, 1e-4, None),
+                (0, 1, "Al"): (15.305, 1e-4, None),
+                (0, 1, "Cl"): (483.04, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(diafiltration_two_salt_Co_Al.fs.unit, test_dict)
 
     @pytest.mark.component
     def test_numerical_issues_Co_Al(self, diafiltration_two_salt_Co_Al):
@@ -2446,45 +2240,24 @@ class TestDiafiltrationTwoSaltCobaltAluminumNoBoundaryLayer(object):
     ):
         test_solve(diafiltration_two_salt_Co_Al_no_boundary_layer)
 
-        membrane = diafiltration_two_salt_Co_Al_no_boundary_layer.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                8.2716,
-            ],
-            "Co_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Co"]),
-                232.23,
-            ],
-            "Al_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Al"]),
-                18.276,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                519.28,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                7.8847,
-            ],
-            "Co_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Co"]),
-                218.01,
-            ],
-            "Al_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Al"]),
-                14.954,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                480.88,
-            ],
+            "retentate_flow_volume": {(0, 1): (8.2716, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Co"): (232.23, 1e-4, None),
+                (0, 1, "Al"): (18.276, 1e-4, None),
+                (0, 1, "Cl"): (519.28, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (7.8847, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Co"): (218.01, 1e-4, None),
+                (0, 1, "Al"): (14.954, 1e-4, None),
+                (0, 1, "Cl"): (480.88, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(
+            diafiltration_two_salt_Co_Al_no_boundary_layer.fs.unit, test_dict
+        )
 
     @pytest.mark.component
     def test_numerical_issues_Co_Al_no_boundary_layer(
@@ -2884,53 +2657,24 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminum(object):
     def test_solve_Li_Co_Al(self, diafiltration_three_salt_Li_Co_Al):
         test_solve(diafiltration_three_salt_Li_Co_Al)
 
-        membrane = diafiltration_three_salt_Li_Co_Al.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                10.528,
-            ],
-            "Li_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Li"]),
-                189.94,
-            ],
-            "Co_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Co"]),
-                224.29,
-            ],
-            "Al_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Al"]),
-                20.430,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                699.80,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                5.5393,
-            ],
-            "Li_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Li"]),
-                194.13,
-            ],
-            "Co_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Co"]),
-                220.51,
-            ],
-            "Al_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Al"]),
-                9.7103,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                664.29,
-            ],
+            "retentate_flow_volume": {(0, 1): (10.528, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Li"): (189.94, 1e-4, None),
+                (0, 1, "Co"): (224.29, 1e-4, None),
+                (0, 1, "Al"): (20.430, 1e-4, None),
+                (0, 1, "Cl"): (699.80, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (5.5393, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Li"): (194.13, 1e-4, None),
+                (0, 1, "Co"): (220.51, 1e-4, None),
+                (0, 1, "Al"): (9.7103, 1e-4, None),
+                (0, 1, "Cl"): (664.29, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(diafiltration_three_salt_Li_Co_Al.fs.unit, test_dict)
 
     @pytest.mark.component
     def test_numerical_issues_Li_Co_Al(self, diafiltration_three_salt_Li_Co_Al):
@@ -3028,53 +2772,26 @@ class TestDiafiltrationThreeSaltLithiumCobaltAluminumNoBoundaryLayer(object):
     ):
         test_solve(diafiltration_three_salt_Li_Co_Al_no_boundary_layer)
 
-        membrane = diafiltration_three_salt_Li_Co_Al_no_boundary_layer.fs.unit
-
         test_dict = {
-            "retentate_final": [
-                value(membrane.retentate_flow_volume[0, 1]),
-                10.295,
-            ],
-            "Li_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Li"]),
-                189.13,
-            ],
-            "Co_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Co"]),
-                224.68,
-            ],
-            "Al_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Al"]),
-                21.673,
-            ],
-            "Cl_retentate_final": [
-                value(membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-                703.51,
-            ],
-            "permeate_final": [
-                value(membrane.permeate_flow_volume[0, 1]),
-                5.7276,
-            ],
-            "Li_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Li"]),
-                194.91,
-            ],
-            "Co_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Co"]),
-                220.89,
-            ],
-            "Al_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Al"]),
-                8.3159,
-            ],
-            "Cl_permeate_final": [
-                value(membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-                661.63,
-            ],
+            "retentate_flow_volume": {(0, 1): (10.295, 1e-4, None)},
+            "retentate_conc_mol_comp": {
+                (0, 1, "Li"): (189.13, 1e-4, None),
+                (0, 1, "Co"): (224.68, 1e-4, None),
+                (0, 1, "Al"): (21.673, 1e-4, None),
+                (0, 1, "Cl"): (703.51, 1e-4, None),
+            },
+            "permeate_flow_volume": {(0, 1): (5.7276, 1e-4, None)},
+            "permeate_conc_mol_comp": {
+                (0, 1, "Li"): (194.91, 1e-4, None),
+                (0, 1, "Co"): (220.89, 1e-4, None),
+                (0, 1, "Al"): (8.3159, 1e-4, None),
+                (0, 1, "Cl"): (661.63, 1e-4, None),
+            },
         }
 
-        for model_result, test_val in test_dict.values():
-            assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+        assert_solution_equivalent(
+            diafiltration_three_salt_Li_Co_Al_no_boundary_layer.fs.unit, test_dict
+        )
 
     @pytest.mark.component
     def test_numerical_issues_Li_Co_Al_no_boundary_layer(

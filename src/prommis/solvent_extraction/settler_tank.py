@@ -337,7 +337,7 @@ class SettlerTankInitializer(ModularInitializerBase):
         Initialization routine for the settler tank
 
         Args:
-            model: SettlerTank object to be initialized.=
+            model: SettlerTank object to be initialized.
         Returns:
             Pyomo solver results object.
         """
@@ -750,14 +750,14 @@ class SettlerTankData(UnitModelBlockData):
             initialize=1,
             bounds=(0, None),
             units=self._units("length"),
-            doc="Height of light phase in tank",
+            doc="Height of light phase in tank measured from the top of the heavy phase",
         )
         self.heavy_phase_height = Var(
             self.flowsheet().time,
             initialize=1,
             bounds=(0, None),
             units=self._units("length"),
-            doc="Height of heavy phase in tank",
+            doc="Height of heavy phase in tank measured from the bottom of the settler tank",
         )
 
         @self.Expression(self.flowsheet().time)

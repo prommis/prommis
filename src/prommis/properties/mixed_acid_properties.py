@@ -260,7 +260,7 @@ class MixedAcidParameterData(PhysicalParameterBlock):
             self.inherent_reaction_stoichiometry[("H2C2O4_Ka2", "liquid", "H")] = 1
             self.inherent_reaction_stoichiometry[("H2C2O4_Ka2", "liquid", "HC2O4")] = -1
             self.inherent_reaction_stoichiometry[("H2C2O4_Ka2", "liquid", "C2O4")] = 1
-            # Note that there's a discrepency betwen the 25 C data reported on page D-102
+            # Note that there's a discrepancy between the 25 C data reported on page D-102
             # and the variable temperature data reported on page D-103. The variable
             # temperature data has Ka2 at 5.91e-5 at 0 C and monotonically decreasing to
             # 3.83e-5 at 50 C. The value it reports at 25 C is 5.18e-5

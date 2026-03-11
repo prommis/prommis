@@ -469,7 +469,7 @@ class MixedAcidStateBlockData(StateBlockData):
                             if nu_j == 1:
                                 rhs *= self.conc_mol_comp[j]
                             else:
-                                rhs *= self.conc_mol_comp[j] ** -nu_j
+                                rhs *= self.conc_mol_comp[j] ** nu_j
 
                     return lhs == rhs
 

@@ -6634,7 +6634,7 @@ def test_REE_costing_with_phaseout():
     assert value(m.fs.costing.income_tax) == pytest.approx(6.35477, abs=1e-4)
     assert value(m.fs.costing.net_tax_owed) == pytest.approx(3.46109, abs=1e-4)
     assert value(m.fs.costing.pv_taxes) == pytest.approx(-27.085, abs=1e-4)
-    assert value(m.fs.costing.npv) == pytest.approx(177.13365, abs=1e-4)
+    assert value(m.fs.costing.npv) == pytest.approx(189.02834, abs=1e-4)
     assert value(m.fs.costing.pv_production_incentive) == pytest.approx(
         5.94735, abs=1e-4
     )

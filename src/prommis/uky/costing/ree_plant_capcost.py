@@ -465,7 +465,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             phaseout_years: list of years during which production incentive tax credit is phased out.
                 MUST be in chronological (ascending) order. MUST have the same length as phaseout_fractions.
                 Defaults to [2031, 2032, 2033] based on the One Big Beautiful Bill Amendment (OBBBA)
-                https://www.congress.gov/bill/119th-congress/house-bill/1/text.
+                https://www.congress.gov/bill/119th-congress/house-bill/1/text (Volume 139 STAT. 274).
             phaseout_fractions: list of fractions of the production incentive tax credit that are applied during the phaseout years.
                 Each value MUST be between 0 and 1, and the list MUST have the same length as phaseout_years.
                 Defaults to [0.75, 0.50, 0.25] based on OBBBA, which specifies a 25% reduction in the first year of phaseout,
@@ -1161,6 +1161,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             phaseout_years,
                             initialize=dict(zip(phaseout_years, phaseout_fractions)),
                             mutable=True,
+                            doc="Phaseout fractions for production incentive charge, indexed by year",
                         )
 
                     self.eps = Param(
@@ -3341,7 +3342,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             fixed_OM: True/False flag for calculating fixed O&M costs
             variable_OM: True/False flag for calculating variable O&M costs
             consider_phaseout: True/False flag for whether to consider phaseout of production
-                incentive tax credit.If True, user must input production_incentive_percentage,
+                incentive tax credit. If True, user must input production_incentive_percentage,
             and CE_index_year must be defined to determine phaseout schedule.
         """
 
@@ -3520,6 +3521,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             b.plant_end_year = Param(
                 initialize=current_year + int(value(b.config.plant_lifetime)),
                 mutable=True,
+                doc="Year that plant ceases operation; used to determine phaseout of production incentive",
             )
 
             full_credit_years = int(
@@ -3923,7 +3925,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 + c.pv_loan_interest
                 + c.pv_operating_cost
                 + (c.pv_taxes if consider_taxes else 0 * c.cost_units)
-                - (
+                + (
                     c.pv_production_incentive if consider_phaseout else 0 * c.cost_units
                 ),
                 to_units=c.cost_units,

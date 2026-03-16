@@ -24,7 +24,7 @@ from pyomo.environ import (
     units,
     Var,
 )
-from pyomo.common.config import Bool, ConfigValue
+from pyomo.common.config import Bool, ConfigValue, In, ListOf
 
 from idaes.core import (
     Component,
@@ -39,8 +39,56 @@ from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
 from idaes.core.scaling import CustomScalerBase, DefaultScalingRecommendation
 
-contaminant_list = ["Fe", "Al", "Ca"]
-ree_list = ["Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
+# contaminant_list = ["Fe", "Al", "Ca"]
+# ree_list = ["Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
+
+_contaminant_list = ["Na^+", "Fe^3+", "Fe^2+", "Al^3+", "Ca^2+", "Mg^2+"]
+_ree_list = [
+    "Sc^3+",
+    "Y^3+",
+    "La^3+",
+    "Ce^3+",
+    "Pr^3+",
+    "Nd^3+",
+    "Sm^3+",
+    "Gd^3+",
+    "Dy^3+",
+]
+_reagent_list = ["NaOH", "H2O2"]
+
+_all_components_mw = {
+    # Base components
+    "H2O": 18.015e-3,
+    "H^+": 1.008e-3,
+    "Na^+": 22.990e-3,
+    "Cl^-": 35.453e-3,
+    # Rare Earths
+    "Sc^3+": 44.946e-3,
+    "Y^3+": 88.905e-3,
+    "La^3+": 138.905e-3,
+    "Ce^3+": 140.116e-3,
+    "Pr^3+": 140.907e-3,
+    "Nd^3+": 144.242e-3,
+    "Sm^3+": 150.36e-3,
+    "Gd^3+": 157.25e-3,
+    "Dy^3+": 162.50e-3,
+    # Contaminants
+    "Al^3+": 26.982e-3,
+    "Fe^3+": 55.845e-3,
+    "Fe^2+": 55.845e-3,
+    "Ca^2+": 40.078e-3,
+    "Mg^2+": 24.305e-3,
+    # Reagents
+    "NaOH": 39.997e-3,
+    "H2O2": 34.014e-3,
+    # Sulfates
+    "HSO4^-": 97.071e-3,
+    "SO4^2-": 96.064e-3,
+    # Oxalates
+    "H2C2O4": 90.034e-3,
+    "HC2O4^-": 89.026e-3,
+    "C2O4^2-": 88.018e-3,
+}
 
 
 class MixedAcidPropertiesScaler(CustomScalerBase):
@@ -55,24 +103,33 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
         "pressure": 1e-5,
         "temperature": 1 / 300,
         "conc_mass_comp[H2O]": 1e-6,
-        "conc_mass_comp[H]": 1e-1,
-        "conc_mass_comp[SO4]": 1e-2,
-        "conc_mass_comp[HSO4]": 1e-3,
-        "conc_mass_comp[Cl]": 1e-3,
+        "conc_mass_comp[H^+]": 1e-1,
+        "conc_mass_comp[Na^+]": 1e-3,
+        "conc_mass_comp[Cl^-]": 1e-3,
+        # Sulfates
+        "conc_mass_comp[SO4^2-]": 1e-2,
+        "conc_mass_comp[HSO4^-]": 1e-3,
         # TODO revisit oxalate concentration defaults
         # in precipitation PR
         "conc_mass_comp[H2C2O4]": 1e-3,
-        "conc_mass_comp[HC2O4]": 1e-3,
-        "conc_mass_comp[C2O4]": 1e-3,
+        "conc_mass_comp[HC2O4^-]": 1e-3,
+        "conc_mass_comp[C2O4^2-]": 1e-3,
+        # TODO revisit ascorbate concentration values later
+        "conc_mass_comp[HAsc]": 1,
+        "conc_mass_comp[Asc^-]": 100,
+        "conc_mass_comp[HDha]": 1,
+        "conc_mass_comp[Dha^-]": 100,
         # Use a large scaling factor for pH
         # to encourage the solver to take
         # smaller steps
         "pH_phase": 10,
     }
-    for ree in ree_list:
+    for ree in _ree_list:
         DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 10
-    for contaminant in contaminant_list:
+    for contaminant in _contaminant_list:
         DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{contaminant}]"] = 1e-2
+    for reagent in _reagent_list:
+        DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{reagent}]"] = 1
 
     def variable_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
@@ -116,7 +173,7 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
         if model.is_property_constructed("pH_phase"):
             self.scale_constraint_by_component(
                 model.pH_phase_eqn["liquid"],
-                model.conc_mol_comp["H"],
+                model.conc_mol_comp["H^+"],
                 overwrite=overwrite,
             )
 
@@ -136,12 +193,18 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
 class MixedAcidParameterData(PhysicalParameterBlock):
     """
     Property package for the mixed acid streams used in the UKy flowsheet.
+    This property package is most suitable for pHs from 0 to 5. At higher
+    pH values it makes more sence to track
 
-    Includes the following components:
-
-    * Acid components: H2O, H, Cl, and optionally HSO4, SO4, H2C2O4, HC2O4, and C2O4
-    * Rare Earths: Sc, Y, La, Ce, Pr, Nd, Sm, Gd, Dy
-    * Impurities: Al, Ca, Fe
+    * Default components: H2O, H^+, Na^+, Cl^-
+    * Additional acid systems:
+      * Sulfuric acid: HSO4^-, SO4^2-
+      * Oxalic acid: H2C2O4, HC2O4^-, and C2O4^2-
+      * Ascorbic acid: HAsc, Asc^-, HDha, Dha^-
+        (ascorbic acid, ascorbate, dehydroascorbic acid, dehydroascorbate)
+    * Reagents (optional): NaOH, H2O2
+    * Rare Earths: Sc^3+, Y^3+, La^3+, Ce^3+, Pr^3+, Nd^3+, Sm^3+, Gd^3+, Dy^3+
+    * Impurities: Al^3+, Ca^3+, Fe^3+, Fe^2+
 
     First dissociation of H2SO4 is assumed to be complete.
     Second dissociation governed by equilibrium (Ka2) - inherent reaction.
@@ -149,6 +212,35 @@ class MixedAcidParameterData(PhysicalParameterBlock):
     """
 
     CONFIG = PhysicalParameterBlock.CONFIG()
+    CONFIG.declare(
+        "metal_cation_list",
+        ConfigValue(
+            default=[
+                "Sc^3+",
+                "Y^3+",
+                "La^3+",
+                "Ce^3+",
+                "Pr^3+",
+                "Nd^3+",
+                "Sm^3+",
+                "Gd^3+",
+                "Dy^3+",
+                "Fe^3+",
+                "Al^3+",
+                "Ca^2+",
+            ],
+            domain=ListOf(str, domain=In(_ree_list + _contaminant_list)),
+            doc="Which metal cations to include as components",
+        ),
+    )
+    CONFIG.declare(
+        "reagent_list",
+        ConfigValue(
+            default=[],
+            domain=ListOf(str, domain=In(_reagent_list)),
+            doc="Which reagents to include as components",
+        ),
+    )
     CONFIG.declare(
         "include_sulfates",
         ConfigValue(
@@ -165,6 +257,14 @@ class MixedAcidParameterData(PhysicalParameterBlock):
             doc="Whether to include H2C2O4, HC2O4, and C2O4 as components.",
         ),
     )
+    CONFIG.declare(
+        "include_ascorbates",
+        ConfigValue(
+            default=False,
+            domain=Bool,
+            doc="Whether to include HAsc, Asc^-, HDha, and Dha^- as components.",
+        ),
+    )
 
     def build(self):
         super().build()
@@ -175,56 +275,27 @@ class MixedAcidParameterData(PhysicalParameterBlock):
         self.H2O = Component()
 
         # Acid related species
-        self.H = Component()
-        self.Cl = Component()
+        self.add_component("H^+", Component())
+        self.add_component("Cl^-", Component())
         if self.config.include_sulfates:
-            self.HSO4 = Component()
-            self.SO4 = Component()
+            self.add_component("HSO4^-", Component())
+            self.add_component("SO4^2-", Component())
         if self.config.include_oxalates:
             self.H2C2O4 = Component()
-            self.HC2O4 = Component()
-            self.C2O4 = Component()
+            self.add_component("HC2O4^-", Component())
+            self.add_component("C2O4^2-", Component())
 
-        # REEs
-        self.Sc = Component()
-        self.Y = Component()
-        self.La = Component()
-        self.Ce = Component()
-        self.Pr = Component()
-        self.Nd = Component()
-        self.Sm = Component()
-        self.Gd = Component()
-        self.Dy = Component()
+        # Metal cations
+        for j in self.config.metal_cation_list:
+            self.add_component(j, Component())
 
-        # Contaminants
-        self.Al = Component()
-        self.Ca = Component()
-        self.Fe = Component()
+        # Reagents
+        for j in self.config.reagent_list:
+            self.add_component(j, Component())
 
-        mw_init = {
-            "H2O": 18.015e-3,
-            "H": 1.008e-3,
-            "Cl": 35.453e-3,
-            "Sc": 44.946e-3,
-            "Y": 88.905e-3,
-            "La": 138.905e-3,
-            "Ce": 140.116e-3,
-            "Pr": 140.907e-3,
-            "Nd": 144.242e-3,
-            "Sm": 150.36e-3,
-            "Gd": 157.25e-3,
-            "Dy": 162.50e-3,
-            "Al": 26.982e-3,
-            "Ca": 40.078e-3,
-            "Fe": 55.845e-3,
-        }
-        if self.config.include_sulfates:
-            mw_init["HSO4"] = 97.06e-3
-            mw_init["SO4"] = 96.05e-3
-        if self.config.include_oxalates:
-            mw_init["H2C2O4"] = 90.03e-3
-            mw_init["HC2O4"] = 89.08e-3
-            mw_init["C2O4"] = 88.04e-3
+        mw_init = {}
+        for j in self.component_list:
+            mw_init[j] = _all_components_mw[j]
 
         self.mw = Param(
             self.component_list,
@@ -240,26 +311,32 @@ class MixedAcidParameterData(PhysicalParameterBlock):
         if self.config.include_sulfates:
             # Inherent reaction for partial dissociation of HSO4
             inherent_reaction_idx.append("H2SO4_Ka2")
-            self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "H")] = 1
-            self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "HSO4")] = -1
-            self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "SO4")] = 1
+            self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "H^+")] = 1
+            self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "HSO4^-")] = -1
+            self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "SO4^2-")] = 1
             k_eq_dict["H2SO4_Ka2"] = 10**-1.99 * units.mol / units.L
 
         if self.config.include_oxalates:
             # First hydrogen
             inherent_reaction_idx.append("H2C2O4_Ka1")
-            self.inherent_reaction_stoichiometry[("H2C2O4_Ka1", "liquid", "H")] = 1
+            self.inherent_reaction_stoichiometry[("H2C2O4_Ka1", "liquid", "H^+")] = 1
             self.inherent_reaction_stoichiometry[("H2C2O4_Ka1", "liquid", "H2C2O4")] = (
                 -1
             )
-            self.inherent_reaction_stoichiometry[("H2C2O4_Ka1", "liquid", "HC2O4")] = 1
+            self.inherent_reaction_stoichiometry[
+                ("H2C2O4_Ka1", "liquid", "HC2O4^-")
+            ] = 1
             k_eq_dict["H2C2O4_Ka1"] = 5.90e-2  # [1], page D-102 for 25 C
 
             # Second hydrogen
             inherent_reaction_idx.append("H2C2O4_Ka2")
-            self.inherent_reaction_stoichiometry[("H2C2O4_Ka2", "liquid", "H")] = 1
-            self.inherent_reaction_stoichiometry[("H2C2O4_Ka2", "liquid", "HC2O4")] = -1
-            self.inherent_reaction_stoichiometry[("H2C2O4_Ka2", "liquid", "C2O4")] = 1
+            self.inherent_reaction_stoichiometry[("H2C2O4_Ka2", "liquid", "H^+")] = 1
+            self.inherent_reaction_stoichiometry[
+                ("H2C2O4_Ka2", "liquid", "HC2O4^-")
+            ] = -1
+            self.inherent_reaction_stoichiometry[
+                ("H2C2O4_Ka2", "liquid", "C2O4^2-")
+            ] = 1
             # Note that there's a discrepancy between the 25 C data reported on page D-102
             # and the variable temperature data reported on page D-103. The variable
             # temperature data has Ka2 at 5.91e-5 at 0 C and monotonically decreasing to
@@ -355,11 +432,11 @@ class _MixedAcidStateBlock(StateBlock):
                 sbd.conc_mass_comp["H2O"].unfix()
 
                 if self.params.config.include_sulfates:
-                    sbd.conc_mass_comp["HSO4"].unfix()
+                    sbd.conc_mass_comp["HSO4^-"].unfix()
 
                 if self.params.config.include_oxalates:
-                    sbd.conc_mass_comp["HC2O4"].unfix()
-                    sbd.conc_mass_comp["C2O4"].unfix()
+                    sbd.conc_mass_comp["HC2O4^-"].unfix()
+                    sbd.conc_mass_comp["C2O4^2-"].unfix()
 
 
 @declare_process_block_class("MixedAcidStateBlock", block_class=_MixedAcidStateBlock)
@@ -483,7 +560,9 @@ class MixedAcidStateBlockData(StateBlockData):
 
         @self.Constraint(self.phase_list)
         def pH_phase_eqn(b, p):
-            return 10 ** (-b.pH_phase[p]) == b.conc_mol_comp["H"] * units.L / units.mol
+            return (
+                10 ** (-b.pH_phase[p]) == b.conc_mol_comp["H^+"] * units.L / units.mol
+            )
 
     def get_material_flow_terms(self, p, j):
         return self.flow_mol_comp[j]

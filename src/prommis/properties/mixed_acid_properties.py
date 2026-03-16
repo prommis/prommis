@@ -198,8 +198,9 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
 class MixedAcidParameterData(PhysicalParameterBlock):
     """
     Property package for the mixed acid streams used in the UKy flowsheet.
-    This property package is most suitable for pHs from 0 to 5. At higher
-    pH values it makes more sence to track
+    This property package is most suitable for pH values from 0 to 5. For pH
+    values 5, certain acid dissociation reactions can be assumed to be complete,
+    while others might need to be tracked.
 
     * Default components: H2O, H_+, Cl_-
     * Additional acid systems:

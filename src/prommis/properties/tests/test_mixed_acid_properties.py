@@ -8,7 +8,7 @@ import re
 
 from pyomo.environ import ConcreteModel, Constraint, Param, Set, value, Var
 
-from idaes.core import FlowsheetBlock
+from idaes.core import Component, FlowsheetBlock, Phase
 from idaes.core.scaling.util import (
     jacobian_cond,
     list_unscaled_constraints,
@@ -21,22 +21,169 @@ import pytest
 from prommis.properties.mixed_acid_properties import (
     MixedAcidParameterBlock,
     MixedAcidPropertiesScaler,
+    _all_components_mw,
 )
+
+
+class TestConfiguration(object):
+    config1 = {
+        "metal_cation_list": ["Y_3+", "Ca_2+"],
+        "reagent_list": ["H2O2"],
+        "include_sulfates": True,
+        "include_ascorbates": True,
+    }
+    config2 = {
+        "metal_cation_list": ["Na_+", "Dy_3+", "Fe_2+"],
+        "include_oxalates": True,
+    }
+    config3 = {"metal_cation_list": ["Fe_3+", "Fe_2+", "Ca_2+", "Sc_3+"]}
+
+    @pytest.mark.parametrize("config", [config1, config2, config3])
+    @pytest.mark.unit
+    def test_selection(self, config):
+        m = ConcreteModel()
+        m.fs = FlowsheetBlock(dynamic=False)
+
+        m.fs.params = MixedAcidParameterBlock(**config)
+
+        m.fs.state = m.fs.params.build_state_block(m.fs.time, defined_state=True)
+
+        comp_list = ["H2O", "H_+", "Cl_-"]
+        rxn_set = set()
+
+        if "metal_cation_list" in config:
+            for j in config["metal_cation_list"]:
+                comp_obj = getattr(m.fs.params, j)
+                assert isinstance(comp_obj, Component)
+                comp_list.append(j)
+        if "reagent_list" in config:
+            for j in config["reagent_list"]:
+                comp_obj = getattr(m.fs.params, j)
+                assert isinstance(comp_obj, Component)
+                comp_list.append(j)
+        if "include_sulfates" in config and config["include_sulfates"] == True:
+            rxn_set.add("H2SO4_Ka2")
+            for j in ["HSO4_-", "SO4_2-"]:
+                comp_obj = getattr(m.fs.params, j)
+                assert isinstance(comp_obj, Component)
+                comp_list.append(j)
+
+        if "include_oxalates" in config and config["include_oxalates"] == True:
+            rxn_set.add("H2C2O4_Ka1")
+            rxn_set.add("H2C2O4_Ka2")
+            for j in ["H2C2O4", "HC2O4_-", "C2O4_2-"]:
+                comp_obj = getattr(m.fs.params, j)
+                assert isinstance(comp_obj, Component)
+                comp_list.append(j)
+
+        if "include_ascorbates" in config and config["include_ascorbates"] == True:
+            rxn_set.add("HAsc_Ka1")
+            rxn_set.add("HDha_Ka1")
+            for j in ["HAsc", "Asc_-", "HDha", "Dha_-"]:
+                comp_obj = getattr(m.fs.params, j)
+                assert isinstance(comp_obj, Component)
+                comp_list.append(j)
+
+        # Test that we have only the species we requested
+        assert set(comp_list) == set(m.fs.params.component_list)
+
+        for j in comp_list:
+            assert m.fs.params.mw[j].value == _all_components_mw[j]
+
+        if hasattr(m.fs.params, "inherent_reaction_idx"):
+            assert set(m.fs.params.inherent_reaction_idx) == rxn_set
+        else:
+            assert len(rxn_set) == 0
+
+        if "include_sulfates" in config and config["include_sulfates"] == True:
+            assert m.fs.params.k_eq["H2SO4_Ka2"].value == 10**-1.99
+            for (
+                r,
+                _,
+                j,
+            ), nu_j in m.fs.params.inherent_reaction_stoichiometry.items():
+                assert r in rxn_set
+                if r == "H2SO4_Ka2":
+                    if j == "H_+" or j == "SO4_2-":
+                        assert nu_j == 1
+                    elif j == "HSO4_-":
+                        assert nu_j == -1
+                    else:
+                        assert nu_j == 0
+
+        if "include_oxalates" in config and config["include_oxalates"] == True:
+            assert m.fs.params.k_eq["H2C2O4_Ka1"].value == 5.90e-2
+            assert m.fs.params.k_eq["H2C2O4_Ka2"].value == 6.40e-5
+            for (
+                r,
+                _,
+                j,
+            ), nu_j in m.fs.params.inherent_reaction_stoichiometry.items():
+                assert r in rxn_set
+                if r == "H2C2O4_Ka1":
+                    if j == "H_+" or j == "HC2O4_-":
+                        assert nu_j == 1
+                    elif j == "H2C2O4":
+                        assert nu_j == -1
+                    else:
+                        assert nu_j == 0
+                elif r == "H2C2O4_Ka2":
+                    if j == "H_+" or j == "C2O4_2-":
+                        assert nu_j == 1
+                    elif j == "HC2O4_-":
+                        assert nu_j == -1
+                    else:
+                        assert nu_j == 0
+
+        if "include_ascorbates" in config and config["include_ascorbates"] == True:
+            assert m.fs.params.k_eq["HAsc_Ka1"].value == 10**-4.04
+            assert m.fs.params.k_eq["HDha_Ka1"].value == 10**-3.90
+            for (
+                r,
+                _,
+                j,
+            ), nu_j in m.fs.params.inherent_reaction_stoichiometry.items():
+                assert r in rxn_set
+                if r == "HAsc_Ka1":
+                    if j == "H_+" or j == "Asc_-":
+                        assert nu_j == 1
+                    elif j == "HAsc":
+                        assert nu_j == -1
+                    else:
+                        assert nu_j == 0
+                elif r == "HDhda_Ka1":
+                    if j == "H_+" or j == "Dha_-":
+                        assert nu_j == 1
+                    elif j == "HC2O4_-":
+                        assert nu_j == -1
+                    else:
+                        assert nu_j == 0
+
+        # Right now include smoke tests for scaling and initialization
+        scaler_obj = m.fs.state[0].default_scaler()
+        scaler_obj.default_scaling_factors["flow_vol"] = 0.1
+        scaler_obj.scale_model(m.fs.state[0])
+
+        m.fs.state.fix_initialization_states()
+        assert degrees_of_freedom(m.fs.state[0]) == 0
+
+        init_obj = m.fs.state[0].default_initializer()
+        init_obj.initialize(m.fs.state)
 
 
 class TestHClStripping(object):
     ree_list = [
-        "Sc^3+",
-        "Y^3+",
-        "La^3+",
-        "Ce^3+",
-        "Pr^3+",
-        "Nd^3+",
-        "Sm^3+",
-        "Gd^3+",
-        "Dy^3+",
+        "Sc_3+",
+        "Y_3+",
+        "La_3+",
+        "Ce_3+",
+        "Pr_3+",
+        "Nd_3+",
+        "Sm_3+",
+        "Gd_3+",
+        "Dy_3+",
     ]
-    contaminant_list = ["Fe^3+", "Al^3+", "Ca^2+"]
+    contaminant_list = ["Fe_3+", "Al_3+", "Ca_2+"]
 
     class TestDefinedStateTrue(object):
         @pytest.fixture(scope="class")
@@ -242,23 +389,23 @@ class TestSulfuricAcidLeaching(object):
         for k in model.fs.leach_soln.component_list:
             assert k in [
                 "H2O",
-                "H^+",
-                "Na^+",
-                "HSO4^-",
-                "SO4^2-",
-                "Sc^3+",
-                "Y^3+",
-                "La^3+",
-                "Ce^3+",
-                "Pr^3+",
-                "Nd^3+",
-                "Sm^3+",
-                "Gd^3+",
-                "Dy^3+",
-                "Al^3+",
-                "Ca^2+",
-                "Fe^3+",
-                "Cl^-",
+                "H_+",
+                "Na_+",
+                "HSO4_-",
+                "SO4_2-",
+                "Sc_3+",
+                "Y_3+",
+                "La_3+",
+                "Ce_3+",
+                "Pr_3+",
+                "Nd_3+",
+                "Sm_3+",
+                "Gd_3+",
+                "Dy_3+",
+                "Al_3+",
+                "Ca_2+",
+                "Fe_3+",
+                "Cl_-",
             ]
             assert k in model.fs.leach_soln.mw
 
@@ -267,23 +414,23 @@ class TestSulfuricAcidLeaching(object):
         assert isinstance(model.fs.leach_soln.inherent_reaction_idx, Set)
 
         assert model.fs.leach_soln.inherent_reaction_stoichiometry == {
-            ("H2SO4_Ka2", "liquid", "H^+"): 1,
-            ("H2SO4_Ka2", "liquid", "HSO4^-"): -1,
-            ("H2SO4_Ka2", "liquid", "SO4^2-"): 1,
+            ("H2SO4_Ka2", "liquid", "H_+"): 1,
+            ("H2SO4_Ka2", "liquid", "HSO4_-"): -1,
+            ("H2SO4_Ka2", "liquid", "SO4_2-"): 1,
             ("H2SO4_Ka2", "liquid", "H2O"): 0,
-            ("H2SO4_Ka2", "liquid", "Cl^-"): 0,
-            ("H2SO4_Ka2", "liquid", "Sc^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Y^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "La^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Ce^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Pr^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Nd^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Sm^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Gd^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Dy^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Al^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Ca^2+"): 0,
-            ("H2SO4_Ka2", "liquid", "Fe^3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Cl_-"): 0,
+            ("H2SO4_Ka2", "liquid", "Sc_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Y_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "La_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Ce_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Pr_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Nd_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Sm_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Gd_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Dy_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Al_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Ca_2+"): 0,
+            ("H2SO4_Ka2", "liquid", "Fe_3+"): 0,
         }
 
         assert isinstance(model.fs.leach_soln.k_eq, Param)
@@ -324,7 +471,7 @@ class TestSulfuricAcidLeaching(object):
 
         assert model.fs.state[0].flow_vol.fixed
         for j in model.fs.leach_soln.component_list:
-            if j == "H2O" or j == "HSO4^+":
+            if j == "H2O" or j == "HSO4_+":
                 assert not model.fs.state[0].conc_mass_comp[j].fixed
             else:
                 assert model.fs.state[0].conc_mass_comp[j].fixed
@@ -356,22 +503,22 @@ class TestSulfuricAcidLeaching(object):
         for k in model.fs.leach_soln.component_list:
             assert k in [
                 "H2O",
-                "H^+",
-                "HSO4^-",
-                "SO4^2-",
-                "Sc^3+",
-                "Y^3+",
-                "La^3+",
-                "Ce^3+",
-                "Pr^3+",
-                "Nd^3+",
-                "Sm^3+",
-                "Gd^3+",
-                "Dy^3+",
-                "Al^3+",
-                "Ca^2+",
-                "Fe^3+",
-                "Cl^-",
+                "H_+",
+                "HSO4_-",
+                "SO4_2-",
+                "Sc_3+",
+                "Y_3+",
+                "La_3+",
+                "Ce_3+",
+                "Pr_3+",
+                "Nd_3+",
+                "Sm_3+",
+                "Gd_3+",
+                "Dy_3+",
+                "Al_3+",
+                "Ca_2+",
+                "Fe_3+",
+                "Cl_-",
             ]
             assert k in model.fs.leach_soln.mw
 
@@ -380,23 +527,23 @@ class TestSulfuricAcidLeaching(object):
         assert isinstance(model.fs.leach_soln.inherent_reaction_idx, Set)
 
         assert model.fs.leach_soln.inherent_reaction_stoichiometry == {
-            ("H2SO4_Ka2", "liquid", "H^+"): 1,
-            ("H2SO4_Ka2", "liquid", "HSO4^-"): -1,
-            ("H2SO4_Ka2", "liquid", "SO4^2-"): 1,
+            ("H2SO4_Ka2", "liquid", "H_+"): 1,
+            ("H2SO4_Ka2", "liquid", "HSO4_-"): -1,
+            ("H2SO4_Ka2", "liquid", "SO4_2-"): 1,
             ("H2SO4_Ka2", "liquid", "H2O"): 0,
-            ("H2SO4_Ka2", "liquid", "Cl^-"): 0,
-            ("H2SO4_Ka2", "liquid", "Sc^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Y^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "La^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Ce^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Pr^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Nd^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Sm^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Gd^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Dy^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Al^3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Ca^2+"): 0,
-            ("H2SO4_Ka2", "liquid", "Fe^3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Cl_-"): 0,
+            ("H2SO4_Ka2", "liquid", "Sc_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Y_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "La_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Ce_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Pr_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Nd_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Sm_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Gd_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Dy_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Al_3+"): 0,
+            ("H2SO4_Ka2", "liquid", "Ca_2+"): 0,
+            ("H2SO4_Ka2", "liquid", "Fe_3+"): 0,
         }
 
         assert isinstance(model.fs.leach_soln.k_eq, Param)
@@ -437,7 +584,7 @@ class TestSulfuricAcidLeaching(object):
 
         assert model.fs.state[0].flow_vol.fixed
         for j in model.fs.leach_soln.component_list:
-            if j == "H2O" or j == "HSO4^-":
+            if j == "H2O" or j == "HSO4_-":
                 assert not model.fs.state[0].conc_mass_comp[j].fixed
             else:
                 assert model.fs.state[0].conc_mass_comp[j].fixed
@@ -449,8 +596,8 @@ class TestSulfuricAcidLeaching(object):
         assert model.fs.state[0].inherent_equilibrium_eqn.active
         assert model.fs.state[0].inherent_equilibrium_eqn["H2SO4_Ka2"].active
         assert str(model.fs.state[0].inherent_equilibrium_eqn["H2SO4_Ka2"].body) == (
-            "fs.leach_soln.k_eq[H2SO4_Ka2]*fs.state[0.0].conc_mol_comp[HSO4^-] "
-            "- fs.state[0.0].conc_mol_comp[H^+]*fs.state[0.0].conc_mol_comp[SO4^2-]"
+            "fs.leach_soln.k_eq[H2SO4_Ka2]*fs.state[0.0].conc_mol_comp[HSO4_-] "
+            "- fs.state[0.0].conc_mol_comp[H_+]*fs.state[0.0].conc_mol_comp[SO4_2-]"
         )
 
 
@@ -473,23 +620,23 @@ class TestOxalicAcid(object):
         for k in model.fs.leach_soln.component_list:
             assert k in [
                 "H2O",
-                "H^+",
+                "H_+",
                 "H2C2O4",
-                "HC2O4^-",
-                "C2O4^2-",
-                "Sc^3+",
-                "Y^3+",
-                "La^3+",
-                "Ce^3+",
-                "Pr^3+",
-                "Nd^3+",
-                "Sm^3+",
-                "Gd^3+",
-                "Dy^3+",
-                "Al^3+",
-                "Ca^2+",
-                "Fe^3+",
-                "Cl^-",
+                "HC2O4_-",
+                "C2O4_2-",
+                "Sc_3+",
+                "Y_3+",
+                "La_3+",
+                "Ce_3+",
+                "Pr_3+",
+                "Nd_3+",
+                "Sm_3+",
+                "Gd_3+",
+                "Dy_3+",
+                "Al_3+",
+                "Ca_2+",
+                "Fe_3+",
+                "Cl_-",
             ]
             assert k in model.fs.leach_soln.mw
 
@@ -505,16 +652,16 @@ class TestOxalicAcid(object):
         ), nu_j in model.fs.leach_soln.inherent_reaction_stoichiometry.items():
             assert r in rxn_set
             if r == "H2C2O4_Ka1":
-                if j == "H^+" or j == "HC2O4^-":
+                if j == "H_+" or j == "HC2O4_-":
                     assert nu_j == 1
                 elif j == "H2C2O4":
                     assert nu_j == -1
                 else:
                     assert nu_j == 0
             else:
-                if j == "H^+" or j == "C2O4^2-":
+                if j == "H_+" or j == "C2O4_2-":
                     assert nu_j == 1
-                elif j == "HC2O4^-":
+                elif j == "HC2O4_-":
                     assert nu_j == -1
                 else:
                     assert nu_j == 0
@@ -560,7 +707,7 @@ class TestOxalicAcid(object):
 
         assert model.fs.state[0].flow_vol.fixed
         for j in model.fs.leach_soln.component_list:
-            if j in {"H2O", "HC2O4^-", "C2O4^2-"}:
+            if j in {"H2O", "HC2O4_-", "C2O4_2-"}:
                 assert not model.fs.state[0].conc_mass_comp[j].fixed
             else:
                 assert model.fs.state[0].conc_mass_comp[j].fixed
@@ -573,10 +720,10 @@ class TestOxalicAcid(object):
         assert model.fs.state[0].inherent_equilibrium_eqn["H2C2O4_Ka1"].active
         assert str(model.fs.state[0].inherent_equilibrium_eqn["H2C2O4_Ka1"].body) == (
             "fs.leach_soln.k_eq[H2C2O4_Ka1]*fs.state[0.0].conc_mol_comp[H2C2O4] "
-            "- fs.state[0.0].conc_mol_comp[H^+]*fs.state[0.0].conc_mol_comp[HC2O4^-]"
+            "- fs.state[0.0].conc_mol_comp[H_+]*fs.state[0.0].conc_mol_comp[HC2O4_-]"
         )
         assert model.fs.state[0].inherent_equilibrium_eqn["H2C2O4_Ka2"].active
         assert str(model.fs.state[0].inherent_equilibrium_eqn["H2C2O4_Ka2"].body) == (
-            "fs.leach_soln.k_eq[H2C2O4_Ka2]*fs.state[0.0].conc_mol_comp[HC2O4^-] "
-            "- fs.state[0.0].conc_mol_comp[H^+]*fs.state[0.0].conc_mol_comp[C2O4^2-]"
+            "fs.leach_soln.k_eq[H2C2O4_Ka2]*fs.state[0.0].conc_mol_comp[HC2O4_-] "
+            "- fs.state[0.0].conc_mol_comp[H_+]*fs.state[0.0].conc_mol_comp[C2O4_2-]"
         )

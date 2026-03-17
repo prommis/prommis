@@ -151,10 +151,10 @@ class TestConfiguration(object):
                         assert nu_j == -1
                     else:
                         assert nu_j == 0
-                elif r == "HDhda_Ka1":
+                elif r == "HDha_Ka1":
                     if j == "H_+" or j == "Dha_-":
                         assert nu_j == 1
-                    elif j == "HC2O4_-":
+                    elif j == "HDha":
                         assert nu_j == -1
                     else:
                         assert nu_j == 0

@@ -266,7 +266,7 @@ class _HClStrippingStateBlock(StateBlock):
 
         for sbd in self.values():
             if not sbd.config.defined_state:
-                sbd.h2o_concentration_eqn.deactivate()
+                sbd.conc_mass_comp["H2O"].unfix()
 
 
 @declare_process_block_class(

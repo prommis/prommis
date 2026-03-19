@@ -460,10 +460,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             production_incentive_percentage: tax deduction percentage for producing critical minerals,
                 defaults to 10% of total production cost (excludes cost of feedstock). This only applies to
                 critical minerals other than metallurgical coal.
+                Section 45X(b)(1)(M):
+                https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title26-section45X&num=0&edition=prelim
+                Eligibility requirement: 45X(c)(6)
             consider_phaseout: True/False flag for whether to consider phaseout of production incentive tax credit.
                 If True, phaseout_years and phaseout_fractions must be defined. Defaults to False.
             phaseout_years: list of years during which production incentive tax credit is phased out.
-                MUST be in chronological (ascending) order. MUST have the same length as phaseout_fractions.
+                MUST be in chronological (ascending) order. The list MUST have the same length as phaseout_fractions.
                 Defaults to [2031, 2032, 2033] based on the One Big Beautiful Bill Amendment (OBBBA)
                 https://www.congress.gov/bill/119th-congress/house-bill/1/text (Volume 139 STAT. 274).
             phaseout_fractions: list of fractions of the production incentive tax credit that are applied during the phaseout years.

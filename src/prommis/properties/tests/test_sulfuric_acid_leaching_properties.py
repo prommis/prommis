@@ -113,10 +113,13 @@ def test_fix_state(model):
 
     assert model.fs.state[0].flow_vol.fixed
     for j in model.fs.leach_soln.component_list:
-        assert model.fs.state[0].conc_mass_comp[j].fixed
+        if j == "H2O" or j == "HSO4":
+            assert not model.fs.state[0].conc_mass_comp[j].fixed
+        else:
+            assert model.fs.state[0].conc_mass_comp[j].fixed
         assert not model.fs.state[0].conc_mol_comp[j].fixed
 
         assert model.fs.state[0].molar_concentration_constraint[j].active
 
-    assert not model.fs.state[0].h2o_concentration.active
-    assert not model.fs.state[0].hso4_dissociation.active
+    assert model.fs.state[0].h2o_concentration.active
+    assert model.fs.state[0].hso4_dissociation.active

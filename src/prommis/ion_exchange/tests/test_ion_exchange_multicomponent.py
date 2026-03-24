@@ -147,63 +147,63 @@ def build_clark_with_costing(m, regenerant, target_component):
 @pytest.mark.unit
 def test_config_error_in_ix_type():
 
+    path = os.path.dirname(os.path.realpath(__file__))
+    resin_file = os.path.join(path, "..", "data", "resin_data.json")
+    resin = "S950"
+    target_component = "Cl"
+    regenerant = "single_use"
+    list_solvent = ["H2O"]
+    list_reactive_ions = ["Cl"]
+    hazardous_waste = False
+    num_traps = 30
+    c_trap_min = 1e-3
+
+    # Add sets for solvent and ion species
+    m = build_model()
+
+    m.fs.set_solvent = pyo.Set(initialize=list_solvent)
+    m.fs.set_reactive_ions = pyo.Set(initialize=list_reactive_ions)
+    m.fs.set_all = pyo.Set(initialize=list_solvent + list_reactive_ions)
+
+    ion_props = {
+        "solute_list": [],
+        "diffusivity_data": {},
+        "molar_volume_data": {},
+        "mw_data": {},  # in kg/mol
+        "charge": {},
+    }
+
+    ion_props["solute_list"] = list_reactive_ions
+    ion_props["diffusivity_data"] = {}
+    ion_props["molar_volume_data"] = {
+        ("Liq", "Cl"): 0.0006818,
+    }
+    ion_props["mw_data"] = {
+        "H2O": 0.018,
+        "Cl": 0.035453,
+    }
+    ion_props["charge"] = {"Cl": -1}
+    ion_props["diffus_calculation"] = "HaydukLaudie"
+    m.fs.properties = MCASParameterBlock(**ion_props)
+
+    ix_config = {
+        "property_package": m.fs.properties,
+        "regenerant": regenerant,
+        "target_component": target_component,
+        "reactive_ions": list_reactive_ions,
+        "number_trapezoids": num_traps,
+        "minimum_concentration_trapezoids": c_trap_min,
+        "resin_data_path": resin_file,
+        "resin": resin,
+        "hazardous_waste": hazardous_waste,
+    }
+
     # Set up the model with parameters that will trigger the
     # ConfigurationError
     with pytest.raises(
         ConfigurationError,
         match="The current ion exchange model is limited to cation exchange methods, but the target component Cl has a charge of -.",
     ):
-
-        path = os.path.dirname(os.path.realpath(__file__))
-        resin_file = os.path.join(path, "..", "data", "resin_data.json")
-        resin = "S950"
-        target_component = "Cl"
-        regenerant = "single_use"
-        list_solvent = ["H2O"]
-        list_reactive_ions = ["Cl"]
-        hazardous_waste = False
-        num_traps = 30
-        c_trap_min = 1e-3
-
-        # Add sets for solvent and ion species
-        m = build_model()
-
-        m.fs.set_solvent = pyo.Set(initialize=list_solvent)
-        m.fs.set_reactive_ions = pyo.Set(initialize=list_reactive_ions)
-        m.fs.set_all = pyo.Set(initialize=list_solvent + list_reactive_ions)
-
-        ion_props = {
-            "solute_list": [],
-            "diffusivity_data": {},
-            "molar_volume_data": {},
-            "mw_data": {},  # in kg/mol
-            "charge": {},
-        }
-
-        ion_props["solute_list"] = list_reactive_ions
-        ion_props["diffusivity_data"] = {}
-        ion_props["molar_volume_data"] = {
-            ("Liq", "Cl"): 0.0006818,
-        }
-        ion_props["mw_data"] = {
-            "H2O": 0.018,
-            "Cl": 0.035453,
-        }
-        ion_props["charge"] = {"Cl": -1}
-        ion_props["diffus_calculation"] = "HaydukLaudie"
-        m.fs.properties = MCASParameterBlock(**ion_props)
-
-        ix_config = {
-            "property_package": m.fs.properties,
-            "regenerant": regenerant,
-            "target_component": target_component,
-            "reactive_ions": list_reactive_ions,
-            "number_trapezoids": num_traps,
-            "minimum_concentration_trapezoids": c_trap_min,
-            "resin_data_path": resin_file,
-            "resin": resin,
-            "hazardous_waste": hazardous_waste,
-        }
 
         m.fs.unit = ix = IonExchangeMultiComp(**ix_config)
 

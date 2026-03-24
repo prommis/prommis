@@ -34,7 +34,7 @@ dependencies = [
 ]
 [project.optional-dependencies]
 watertap = [
-    "watertap @ git+https://github.com/sufikaur/watertap@idaes-2.11-release-test"
+    "watertap @ git+https://github.com/sufikaur/watertap@main"
 ]
 
 

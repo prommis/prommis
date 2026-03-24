@@ -357,7 +357,7 @@ def build_clark(
         "hazardous_waste": hazardous_waste,
         "target_component": target_component,
         "reactive_ions": m.list_reactive_ions,
-        "number_trapezoids": num_traps,
+        "number_of_trapezoids": num_traps,
         "minimum_concentration_trapezoids": c_trap_min,
         "resin_data_path": resin_file,
         "resin": resin,
@@ -402,7 +402,7 @@ def set_bounds(m):
         ix.loading_rate.setlb(1e-16)
         ix.process_flow.properties_in[0].flow_mass_phase_comp["Liq", c].setlb(1e-16)
         ix.process_flow.properties_out[0].flow_mass_phase_comp["Liq", c].setlb(1e-16)
-        for i in range(1, ix.num_traps + 1):
+        for i in range(1, ix.number_of_trapezoids + 1):
             ix.c_traps[c, i].setlb(1e-16)
 
 
@@ -736,7 +736,7 @@ def plot_traps(
 
     ix = m.fs.unit_ix
     color = ["b", "k"]
-    num_traps = ix.num_traps
+    num_traps = ix.number_of_trapezoids
 
     plt.figure(figsize=(14, 12))
     plt.minorticks_on()

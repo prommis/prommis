@@ -191,7 +191,7 @@ def test_config_error_in_ix_type():
         "regenerant": regenerant,
         "target_component": target_component,
         "reactive_ions": list_reactive_ions,
-        "number_trapezoids": num_traps,
+        "number_of_trapezoids": num_traps,
         "minimum_concentration_trapezoids": c_trap_min,
         "resin_data_path": resin_file,
         "resin": resin,

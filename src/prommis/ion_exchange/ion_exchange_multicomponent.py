@@ -413,8 +413,8 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         # [ESR WIP: Define terms for trapezoidal rule. NOTE: the
         # trap_disc is a discretization index/parameter that defines
         # how the range between c_trap_min and c_norm is broken up.]
-        self.num_traps = int(self.config.number_trapezoids)
-        self.trap_disc = range(self.num_traps + 1)
+        self.number_of_trapezoids = self.config.number_of_trapezoids
+        self.trap_disc = range(self.number_of_trapezoids + 1)
         self.trap_index = self.trap_disc[1:]
 
         self.eps = pyo.Param(initialize=1e-4, mutable=True)
@@ -593,8 +593,8 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
                 return b.c_traps[j, k] == b.c_norm[j]
             else:
                 # [ESR updates: Reformulated to avoid denominators.]
-                return b.c_traps[j, k] * (b.num_traps - 1) == (
-                    b.c_trap_min[j] * (b.num_traps - 1)
+                return b.c_traps[j, k] * (b.number_of_trapezoids - 1) == (
+                    b.c_trap_min[j] * (b.number_of_trapezoids - 1)
                     + (b.trap_disc[k] - 1) * (b.c_norm[j] - b.c_trap_min[j])
                 )
 
@@ -645,10 +645,10 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
             # Norm term is the normalization term
 
             # Original normalization value
-            norm_term = b.tb_traps[j, self.num_traps]
+            norm_term = b.tb_traps[j, self.number_of_trapezoids]
 
             # # Use total interval value for normalization
-            # norm_term = b.tb_traps[j, self.num_traps] - b.tb_traps[j, 1]
+            # norm_term = b.tb_traps[j, self.number_of_trapezoids] - b.tb_traps[j, 1]
 
             # No normalization
             # norm_term = 1

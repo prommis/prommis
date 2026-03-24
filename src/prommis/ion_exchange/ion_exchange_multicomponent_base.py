@@ -270,7 +270,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
     )
 
     CONFIG.declare(
-        "number_trapezoids",
+        "number_of_trapezoids",
         ConfigValue(
             default=5,
             domain=int,
@@ -1173,8 +1173,8 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 # def add_ss_approximation(blk, ix_model_type=None):
 
 #     prop_in = blk.process_flow.properties_in[t0]
-#     blk.num_traps = self.config.number_trapezoids
-#     blk.trap_disc = range(blk.num_traps + 1)
+#     blk.number_of_trapezoids = self.config.number_of_trapezoids
+#     blk.trap_disc = range(blk.number_of_trapezoids + 1)
 #     blk.trap_index = blk.trap_disc[1:]
 
 #     blk.c_trap_min = Param(  # TODO: make CONFIG option
@@ -1290,7 +1290,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 #         return b.c_traps[j, k] == smooth_max(
 #             1e-5,
 #             b.c_trap_min
-#             + (b.trap_disc[k] - 1) * ((b.c_norm[j] - b.c_trap_min) / (b.num_traps - 1)),
+#             + (b.trap_disc[k] - 1) * ((b.c_norm[j] - b.c_trap_min) / (b.number_of_trapezoids - 1)),
 #         )
 
 #     @blk.Constraint(
@@ -1323,7 +1323,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 #     )
 #     def eq_traps(b, j, k):
 #         return b.traps[j, k] == (b.tb_traps[j, k] - b.tb_traps[j, k - 1]) / b.tb_traps[
-#             j, b.num_traps
+#             j, b.number_of_trapezoids
 #         ] * ((b.c_traps[j, k] + b.c_traps[j, k - 1]) / 2)
 
 #     @blk.Constraint(

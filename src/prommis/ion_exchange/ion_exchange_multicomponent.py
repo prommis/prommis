@@ -527,7 +527,7 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         )
 
         @self.Expression(self.reactive_ion_set, doc="Breakthrough concentration")
-        def c_breakthru(b, j):
+        def breakthrough_conc_mass_comp(b, j):
             return b.c_norm[j] * prop_in.conc_mass_phase_comp[p0, j]
 
         # Add Expression/Constraint to calculate dimensionless numbers

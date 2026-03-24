@@ -350,6 +350,9 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
     # )
 
     def build(self):
+
+        t0 = self.flowsheet().time.first()
+
         super().build()
 
         comps = self.config.property_package.component_list
@@ -391,7 +394,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
             has_pressure_change=False,
         )
 
-        prop_in = self.process_flow.properties_in[0]
+        prop_in = self.process_flow.properties_in[t0]
 
         self.add_inlet_port(name="inlet", block=self.process_flow)
         self.add_outlet_port(name="outlet", block=self.process_flow)
@@ -410,7 +413,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
                 doc="Material properties of regeneration stream",
                 **tmp_dict,
             )
-            regen = self.regeneration_stream[0]
+            regen = self.regeneration_stream[t0]
             self.add_outlet_port(name="regen", block=self.regeneration_stream)
 
         # ==========PARAMETERS==========
@@ -1169,7 +1172,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 
 # def add_ss_approximation(blk, ix_model_type=None):
 
-#     prop_in = blk.process_flow.properties_in[0]
+#     prop_in = blk.process_flow.properties_in[t0]
 #     blk.num_traps = self.config.number_trapezoids
 #     blk.trap_disc = range(blk.num_traps + 1)
 #     blk.trap_index = blk.trap_disc[1:]
@@ -1341,13 +1344,13 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 #     @blk.Constraint(blk.reactive_component_set, doc="Regeneration stream mass flow")
 #     def eq_mass_transfer_regen(b, j):
 #         return (
-#             b.regeneration_stream[0].get_material_flow_terms("Liq", j)
+#             b.regeneration_stream[t0].get_material_flow_terms("Liq", j)
 #             == -b.process_flow.mass_transfer_term[0, "Liq", j]
 #         )
 
 #     @blk.Constraint(doc="Regeneration stream flow rate")
 #     def eq_regen_flow_rate(b):
-#         return b.regeneration_stream[0].flow_vol_phase["Liq"] == pyunits.convert(
+#         return b.regeneration_stream[t0].flow_vol_phase["Liq"] == pyunits.convert(
 #             b.rinse_flow_rate * (b.rinse_time / b.cycle_time)
 #             + b.backwash_flow_rate * (b.backwash_time / b.cycle_time)
 #             + b.regen_flow_rate * (b.regeneration_time / b.cycle_time),

@@ -304,6 +304,7 @@ References
 # Import Pyomo libraries
 import pyomo.environ as pyo
 from pyomo.common.config import ConfigValue
+from pyomo.common.config import ListOf
 
 # Import IDAES cores
 from idaes.core import declare_process_block_class
@@ -355,19 +356,23 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         "reactive_ions",
         ConfigValue(
             default=list(),
-            domain=list,
+            domain=ListOf(str),
             description="Designates other reactive species",
         ),
     )
 
     def build(self):
+
+        # Validation that the flowsheet has one single time point
+        t0 = self.flowsheet().time.first()
+
         super().build()
 
-        prop_in = self.process_flow.properties_in[0]
+        prop_in = self.process_flow.properties_in[t0]
 
         # [ESR WIP: Add regen terms when regeneration is needed]
         if self.config.regenerant != "single_use":
-            regen = self.regeneration_stream[0]
+            regen = self.regeneration_stream[t0]
 
         comps = self.config.property_package.component_list
         target_component = self.config.target_component

@@ -396,6 +396,8 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 
         prop_in = self.process_flow.properties_in[t0]
 
+        p0 = list(prop_in.phase_list)[0]
+
         self.add_inlet_port(name="inlet", block=self.process_flow)
         self.add_outlet_port(name="outlet", block=self.process_flow)
 
@@ -710,7 +712,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 
         @self.Expression(doc="Flow per column")
         def flow_per_column(b):
-            return prop_in.flow_vol_phase["Liq"] / b.number_columns
+            return prop_in.flow_vol_phase[p0] / b.number_columns
 
         @self.Expression(doc="Cross-sectional area of one column")
         def bed_area(b):
@@ -784,7 +786,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         @self.Expression(doc="Main pump power")
         def main_pump_power(b):
             return pyo.units.convert(
-                (b.pressure_drop * prop_in.flow_vol_phase["Liq"]) / b.pump_efficiency,
+                (b.pressure_drop * prop_in.flow_vol_phase[p0]) / b.pump_efficiency,
                 to_units=pyo.units.kilowatts,
             ) * (b.target_breakthrough_time / b.cycle_time)
 
@@ -870,9 +872,7 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 
         @self.Constraint(doc="Reynolds number")
         def eq_Re(b):  # Eq. 3.358, ref[5] Inglezakis + Poulopoulos
-            return b.N_Re * prop_in.visc_k_phase["Liq"] == (
-                b.loading_rate * b.resin_diam
-            )
+            return b.N_Re * prop_in.visc_k_phase[p0] == (b.loading_rate * b.resin_diam)
 
         @self.Constraint(doc="Bed Peclet number")
         def eq_Pe_bed(b):
@@ -892,12 +892,12 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 
         @self.Constraint(doc="Loading rate")
         def eq_loading_rate(b):
-            return b.loading_rate * b.bed_area == prop_in.flow_vol_phase["Liq"]
+            return b.loading_rate * b.bed_area == prop_in.flow_vol_phase[p0]
 
         @self.Constraint(doc="Service flow rate")
         def eq_service_flow_rate(b):
             return b.service_flow_rate * b.bed_volume_total == pyo.units.convert(
-                prop_in.flow_vol_phase["Liq"],
+                prop_in.flow_vol_phase[p0],
                 to_units=pyo.units.m**3 / pyo.units.hr,
             )
 
@@ -1213,8 +1213,8 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 #     )
 
 #     for c in blk.reactive_component_set:
-#         blk.c_traps[(c, 0)].fix(0)
-#         blk.tb_traps[(c, 0)].fix(0)
+#         blk.c_traps[(c, t0)].fix(0)
+#         blk.tb_traps[(c, t0)].fix(0)
 
 #     blk.c_norm_avg = Var(
 #         blk.reactive_component_set,
@@ -1338,19 +1338,19 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
 #     )
 #     def eq_mass_transfer_term(b, j):
 #         return (1 - b.c_norm_avg[j]) * prop_in.get_material_flow_terms(
-#             "Liq", j
-#         ) == -b.process_flow.mass_transfer_term[0, "Liq", j]
+#             p0, j
+#         ) == -b.process_flow.mass_transfer_term[t0, p0, j]
 
 #     @blk.Constraint(blk.reactive_component_set, doc="Regeneration stream mass flow")
 #     def eq_mass_transfer_regen(b, j):
 #         return (
-#             b.regeneration_stream[t0].get_material_flow_terms("Liq", j)
-#             == -b.process_flow.mass_transfer_term[0, "Liq", j]
+#             b.regeneration_stream[t0].get_material_flow_terms(p0, j)
+#             == -b.process_flow.mass_transfer_term[t0, p0, j]
 #         )
 
 #     @blk.Constraint(doc="Regeneration stream flow rate")
 #     def eq_regen_flow_rate(b):
-#         return b.regeneration_stream[t0].flow_vol_phase["Liq"] == pyunits.convert(
+#         return b.regeneration_stream[t0].flow_vol_phase[p0] == pyunits.convert(
 #             b.rinse_flow_rate * (b.rinse_time / b.cycle_time)
 #             + b.backwash_flow_rate * (b.backwash_time / b.cycle_time)
 #             + b.regen_flow_rate * (b.regeneration_time / b.cycle_time),

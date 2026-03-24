@@ -369,6 +369,7 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         super().build()
 
         prop_in = self.process_flow.properties_in[t0]
+        p0 = list(prop_in.phase_list)[0]
 
         # [ESR WIP: Add regen terms when regeneration is needed]
         if self.config.regenerant != "single_use":
@@ -405,10 +406,10 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
 
         # [ESR update: Change the inerts for the ones in the set.]
         for j in self.inert_set:
-            self.process_flow.mass_transfer_term[:, "Liq", j].fix(0)
+            self.process_flow.mass_transfer_term[:, p0, j].fix(0)
 
             if self.config.regenerant != "single_use":
-                regen.get_material_flow_terms("Liq", j).fix(0)
+                regen.get_material_flow_terms(p0, j).fix(0)
 
         # [ESR WIP: Define terms for trapezoidal rule. NOTE: the
         # trap_disc is a discretization index/parameter that defines
@@ -527,12 +528,12 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
 
         @self.Expression(self.reactive_ion_set, doc="Breakthrough concentration")
         def c_breakthru(b, j):
-            return b.c_norm[j] * prop_in.conc_mass_phase_comp["Liq", j]
+            return b.c_norm[j] * prop_in.conc_mass_phase_comp[p0, j]
 
         # Add Expression/Constraint to calculate dimensionless numbers
         @self.Expression(self.reactive_ion_set, doc="Schmidt number")
         def N_Sc(b, j):  # Eq. 3.359, ref[1] Inglezakis + Poulopoulos
-            return prop_in.visc_k_phase["Liq"] / prop_in.diffus_phase_comp["Liq", j]
+            return prop_in.visc_k_phase[p0] / prop_in.diffus_phase_comp[p0, j]
 
         @self.Constraint(self.reactive_ion_set, doc="Sherwood number")
         def eq_Sh(b, j):  # Eq. 3.346, ref[1] Inglezakis + Poulopoulos
@@ -555,8 +556,8 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
             )
             def eq_mass_transfer_regen(b, j):
                 return (
-                    regen.get_material_flow_terms("Liq", j)
-                    == -b.process_flow.mass_transfer_term[0, "Liq", j]
+                    regen.get_material_flow_terms(p0, j)
+                    == -b.process_flow.mass_transfer_term[t0, p0, j]
                 )
 
         # [ESR updates: Add multicomponent set for breakthrough_time
@@ -674,7 +675,7 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
             self.reactive_ion_set, doc="Total mass of ion removed from the liquid phase"
         )
         def total_mass_removed(b, j):
-            return (1 - b.c_norm_avg[j]) * prop_in.get_material_flow_terms("Liq", j)
+            return (1 - b.c_norm_avg[j]) * prop_in.get_material_flow_terms(p0, j)
 
         @self.Constraint(
             # self.target_component_set,
@@ -683,11 +684,10 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         )
         def eq_mass_transfer_reactive_ions(b, j):
             # return (1 - b.c_norm_avg[j]) * prop_in.get_material_flow_terms(
-            #     "Liq", j
-            # ) == -b.process_flow.mass_transfer_term[0, "Liq", j]
+            #     p0, j
+            # ) == -b.process_flow.mass_transfer_term[t0, p0, j]
             return (
-                b.total_mass_removed[j]
-                == -b.process_flow.mass_transfer_term[0, "Liq", j]
+                b.total_mass_removed[j] == -b.process_flow.mass_transfer_term[t0, p0, j]
             )
 
     def calculate_scaling_factors(self):

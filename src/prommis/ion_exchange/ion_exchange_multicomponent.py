@@ -418,11 +418,15 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         self.trap_disc = range(self.number_of_trapezoids + 1)
         self.trap_index = self.trap_disc[1:]
 
-        self.eps = pyo.Param(initialize=1e-4, mutable=True)
-
-        self.c_trap_min = {}
+        c_trap_min_init = {}
         for i in self.reactive_ion_set:
-            self.c_trap_min[i] = float(self.config.minimum_concentration_trapezoids)
+            c_trap_min_init[i] = self.config.minimum_concentration_trapezoids
+        self.c_trap_min = pyo.Param(
+            self.reactive_ion_set,
+            mutable=True,
+            initialize=c_trap_min_init,
+            doc="Minimum normalized concentration for each reactive ion species",
+        )
 
         # [ESR WIP: Bring breakthrough time and bv here from base model
         # since these variables depend on the set of reactive

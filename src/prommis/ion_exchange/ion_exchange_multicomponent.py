@@ -491,8 +491,8 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         )
 
         for c in self.reactive_ion_set:
-            self.c_traps[(c, 0)].fix(0)
-            self.tb_traps[(c, 0)].fix(0)
+            self.c_traps[(c, t0)].fix(0)
+            self.tb_traps[(c, t0)].fix(0)
 
         self.c_norm_avg = pyo.Var(
             self.reactive_ion_set,
@@ -678,14 +678,10 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
             return (1 - b.c_norm_avg[j]) * prop_in.get_material_flow_terms(p0, j)
 
         @self.Constraint(
-            # self.target_component_set,
             self.reactive_ion_set,
             doc="CV mass transfer term",
         )
         def eq_mass_transfer_reactive_ions(b, j):
-            # return (1 - b.c_norm_avg[j]) * prop_in.get_material_flow_terms(
-            #     p0, j
-            # ) == -b.process_flow.mass_transfer_term[t0, p0, j]
             return (
                 b.total_mass_removed[j] == -b.process_flow.mass_transfer_term[t0, p0, j]
             )

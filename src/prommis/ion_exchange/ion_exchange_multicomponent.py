@@ -379,7 +379,6 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         # [ESR WIP: Define if inerts are needed in future
         # cases. Commented for now since it is not used in our current
         # case.]
-        # inerts = comps - self.target_component_set
         self.reactive_ion_set = pyo.Set(initialize=reactive_ions)
         self.inert_set = pyo.Set(initialize=comps - self.reactive_ion_set)
 
@@ -392,17 +391,12 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         else:
             # [ESR WIP: The current ion exchange model is used for the
             # separation of rare earth elements (REEs), which implies
-            # a cation exchange type. We commented other types for
+            # a cation exchange type. We removed other types for
             # now. We will consider if we need to integrate the
             # alternative types in future iterations.]
             raise ConfigurationError(
-                "The current ion exchange model is limited to cation exchange methods and alternative techniques are not addressed at this time."
+                f"The current ion exchange model is limited to cation exchange methods, but the target component {target_component} has a charge of {self.config.property_package.charge_comp[target_component].value}."
             )
-
-        # elif self.config.property_package.charge_comp[target_component].value < 0:
-        #     self.ion_exchange_type = IonExchangeType.anion
-        # else:
-        #     raise ConfigurationError("Target ion must have non-zero charge.")
 
         # [ESR update: Change the inerts for the ones in the set.]
         for j in self.inert_set:

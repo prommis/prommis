@@ -361,20 +361,13 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
             else:
                 # [ESR WIP: The current ion exchange model is used for
                 # the separation of rare earth elements (REEs), which
-                # implies a cation exchange type. We commented other
+                # implies a cation exchange type. We removed other
                 # types for now. We will consider if we need to
                 # integrate the alternative types in future
                 # iterations.]
                 raise ConfigurationError(
-                    "The current ion exchange model is limited to cation exchange methods and alternative techniques are not addressed at this time."
+                    f"The current ion exchange model is limited to cation exchange methods, but the target component {target_component} has a charge of {self.config.property_package.charge_comp[target_component].value}."
                 )
-
-            # elif self.config.property_package.charge_comp[target_component].value < 0:
-            #     self.ion_exchange_type = IonExchangeType.anion
-            # else:
-            #     assert target_component in ["TDS", "Alkalinity"]
-            #     self.ion_exchange_type = IonExchangeType.demineralize
-            #     # raise ConfigurationError("Target ion must have non-zero charge.")
 
         self.scaling_factor = pyo.Suffix(direction=pyo.Suffix.EXPORT)
 

@@ -151,7 +151,7 @@ def test_config_error_in_ix_type():
     # ConfigurationError
     with pytest.raises(
         ConfigurationError,
-        match="The current ion exchange model is limited to cation exchange methods and alternative techniques are not addressed at this time.",
+        match="The current ion exchange model is limited to cation exchange methods, but the target component Cl has a charge of -.",
     ):
 
         path = os.path.dirname(os.path.realpath(__file__))

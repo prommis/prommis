@@ -218,7 +218,7 @@ represented as polynomial coefficients :math:`p_{drop, A}, p_{drop,B},
 p_{drop, C}, H_{expan, A}, H_{expan, B}` and :math:`H_{expan, C}`,
 from a JSON file and calculates :math:`p_{drop}` and :math:`H_{expan}`
 values using the equations in Table 1. Consider :math:`u_{bed}` and
-:math:`u_{bw}` represent the linear velocity through the bed and the
+:math:`u_{bw}` represent the superficial velocity through the bed and the
 backwashing loading rate, respectively. The equations in Table 1 allow
 the IXMC model to accurately predict hydrodynamic behavior and
 operational performance, ensuring compatibility with multiple resin
@@ -287,13 +287,7 @@ terms that were modified in the model.
 Limitations of the IXMC Model
 =============================
 
-The IXMC model introduces new advancements for multicomponent ion
-exchange processes but it is important to acknowledge its current
-limitations and areas for future development. These limitations
-highlight opportunities for further refinement and extension of the
-model to improve its accuracy and applicability.
-
-1. **Steady-State Approximation**: The IXMC model uses a steady-state continuous approximation to represent the ion exchange batch process. This simplification may not fully capture transient dynamics or time-dependent behavior observed in real-world ion exchange operations.
+1. **Steady-State Approximation**: The IXMC model uses a steady-state continuous approximation to represent the ion exchange batch process. This simplified model will not capture transient dynamics or time-dependent behavior observed in real-world ion exchange operations.
 
 2. **Ion Competitiveness**: The IXMC multicomponent model currently does not account for ion competitiveness for the resin sites during the adsorption stage. These competitive effects include interactions between ions and the resin.
 
@@ -344,11 +338,9 @@ field-scale granular activated carbon systems.  Environ Sci Technol,
 21(6), 573-580. doi:10.1021/es00160a008
 
 
-modified by: Soraya Rawlings
-
 """
 
-__author__ = "Kurban Sitterley"
+__author__ = "Kurban Sitterley, Soraya Rawlings"
 
 
 @declare_process_block_class("IonExchangeMultiComp")

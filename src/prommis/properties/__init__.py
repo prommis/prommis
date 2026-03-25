@@ -1,2 +1,4 @@
 from .hcl_stripping_properties import HClStrippingParameterBlock
 from .ree_oxalate_properties import REEOxalateParameterBlock
+from .sulfuric_acid_leaching_properties import SulfuricAcidLeachingParameters
+from .translator_hcl_leach import TranslatorHClLeach

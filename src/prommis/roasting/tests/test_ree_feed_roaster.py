@@ -36,7 +36,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 
 import pytest
 
-from prommis.leaching.leach_solids_properties import CoalRefuseParameters
+from prommis.properties.coal_refuse_properties import CoalRefuseParameters
 from prommis.roasting.ree_feed_roaster import REEFeedRoaster
 
 
@@ -230,8 +230,8 @@ def test_build(model):
     assert isinstance(model.fs.roaster.deltaP, Var)
     assert isinstance(model.fs.roaster.flow_mol_outlet_eqn, Constraint)
     assert len(model.fs.roaster.flow_mol_outlet_eqn) == 4
-    assert number_variables(model.fs.roaster) == 193
-    assert number_total_constraints(model.fs.roaster) == 103
+    assert number_variables(model.fs.roaster) == 180
+    assert number_total_constraints(model.fs.roaster) == 90
     assert number_unused_variables(model.fs.roaster) == 1
     assert_units_consistent(model.fs.roaster)
 

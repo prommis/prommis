@@ -4,7 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-from pyomo.environ import Block, ConcreteModel, Constraint, Var, units
+from pyomo.environ import Block, ConcreteModel, Expression, Var, units
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
@@ -41,7 +41,7 @@ def model():
 
     m.fs.solid = Block(m.fs.time)
     m.fs.solid[0].flow_mass = Var(units=units.kg / units.hour)
-    m.fs.solid[0].conversion = Var(RXN_LIST, units=units.dimensionless)
+    m.fs.solid[0].conversion_comp = Var(RXN_LIST, units=units.dimensionless)
 
     m.fs.solid[0].params = Block()
     m.fs.solid[0].params.dens_mass = Var(units=units.kg / units.liter)
@@ -69,14 +69,9 @@ def test_build_reaction_block(model):
 
     assert len(model.fs.rxns) == 1
 
-    assert isinstance(model.fs.rxns[0].reaction_rate, Var)
+    assert isinstance(model.fs.rxns[0].reaction_rate, Expression)
     assert len(model.fs.rxns[0].reaction_rate) == 12
     for k in model.fs.rxns[0].reaction_rate:
-        assert k in RXN_LIST
-
-    assert isinstance(model.fs.rxns[0].reaction_rate_eq, Constraint)
-    assert len(model.fs.rxns[0].reaction_rate_eq) == 12
-    for k in model.fs.rxns[0].reaction_rate_eq:
         assert k in RXN_LIST
 
 

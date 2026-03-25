@@ -8,18 +8,19 @@ r"""
 Author: Lingyan Deng, Brandon Paul
 
 This is a test file for testing the byproduct recovery framework. The example is a Li-Co diafiltration process to recover Li and Co as byproduct from battery recovery. Li-Co recovery
-process is referenced from literature: Wamble, N.P., Eugene, E.A., Phillip, W.A., Dowling, A.W., 'Optimal Diafiltration Membrane Cascades Enable Green Recycling of Spent Lithium-Ion 
-Batteries', ACS Sustainable Chem. Eng. 2022, 10, 12207−12225. 
+process is referenced from literature: Wamble, N.P., Eugene, E.A., Phillip, W.A., Dowling, A.W., 'Optimal Diafiltration Membrane Cascades Enable Green Recycling of Spent Lithium-Ion
+Batteries', ACS Sustainable Chem. Eng. 2022, 10, 12207−12225.
 
 The steps to test this framework including:
 1. Import packages
 2. Build the li-co diafiltration recovery flowsheet
 3. add costing
-4. Use the byproduct recovery framework to determine if li should be recovered 
+4. Use the byproduct recovery framework to determine if li should be recovered
 5. Solve and display results
 
 
 """
+
 # 1. Import packages
 # Pyomo packages
 from pyomo.environ import (

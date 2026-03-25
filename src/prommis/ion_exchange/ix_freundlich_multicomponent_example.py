@@ -230,7 +230,6 @@ def main():
         curve_data=curve_data,
         output_plot=output_plot,
         save_plot=save_plot,
-        show_plot=False,
     )
 
 
@@ -403,7 +402,7 @@ def set_bounds(m):
         ix.process_flow.properties_in[0].flow_mass_phase_comp["Liq", c].setlb(1e-16)
         ix.process_flow.properties_out[0].flow_mass_phase_comp["Liq", c].setlb(1e-16)
         for i in range(1, ix.number_of_trapezoids + 1):
-            ix.c_traps[c, i].setlb(1e-16)
+            ix.conc_comp_norm_trapezoids[c, i].setlb(1e-16)
 
 
 def set_operating_conditions(m, parmest_data=None, target_component=None, resin=None):
@@ -506,7 +505,7 @@ def set_operating_conditions(m, parmest_data=None, target_component=None, resin=
         ix.freundlich_n[c].fix(parmest_data["freundlich_n"][c])
         ix.mass_transfer_coeff[c].fix(parmest_data["mass_transfer_coeff"][c])
         ix.bv_50[c].fix(parmest_data["bv_50"][c])
-        ix.c_norm[c].fix(0.99)
+        ix.conc_comp_norm_breakthrough[c].fix(0.99)
 
     return m
 
@@ -683,20 +682,20 @@ def run_optimization(m, target_component=None):
     ix = m.fs.unit_ix
 
     for c in m.fs.set_reactive_ions:
-        ix.c_norm[c].unfix()
+        ix.conc_comp_norm_breakthrough[c].unfix()
 
     ix.bed_depth.unfix()
     ix.bed_diameter.unfix()
 
     # For this example, we optimize the model to have an effluent with
-    # a very small concentration of the multiple REEs (c_norm closer
+    # a very small concentration of the multiple REEs (conc_comp_norm_breakthrough closer
     # to 1 or final concentration closer to initial concentration)
     @m.fs.unit_ix.Constraint(m.fs.set_reactive_ions)
     def components_specifications(b, c):
         if c == target_component:
-            return b.c_norm[c] == 0.999
+            return b.conc_comp_norm_breakthrough[c] == 0.999
         else:
-            return b.c_norm[c] >= 0.9
+            return b.conc_comp_norm_breakthrough[c] >= 0.9
 
     @m.fs.unit_ix.costing.Expression()
     def annualized_capital_cost(b):
@@ -711,9 +710,7 @@ def run_optimization(m, target_component=None):
     )
 
 
-def plot_traps(
-    m, results=None, curve_data=None, output_plot=None, save_plot=None, show_plot=None
-):
+def plot_traps(m, results=None, curve_data=None, output_plot=None, save_plot=None):
 
     distinct_colors = [
         "#1f77b4",  # Blue
@@ -765,8 +762,8 @@ def plot_traps(
         bvs_values = []
         c_breakthru_values = []
         for i in range(1, num_traps + 1):
-            bvs_values.append(pyo.value(ix.bv_traps[c, i]))
-            c_breakthru_values.append(pyo.value(ix.c_traps[c, i]))
+            bvs_values.append(pyo.value(ix.bv_trapezoids[c, i]))
+            c_breakthru_values.append(pyo.value(ix.conc_comp_norm_trapezoids[c, i]))
 
         plt.plot(
             bvs_values,
@@ -791,8 +788,6 @@ def plot_traps(
     )
     if save_plot:
         plt.savefig("breakthru_trapezoidal_all_components.png", bbox_inches="tight")
-    if show_plot:
-        plt.show()
     plt.close()
 
 

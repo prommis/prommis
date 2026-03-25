@@ -431,18 +431,23 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
 
         # [ESR WIP: Define terms for trapezoidal rule. NOTE: the
         # trap_disc is a discretization index/parameter that defines
-        # how the range between c_trap_min and c_norm is broken up.]
+        # how the range between the minimum normalized concentration
+        # (min_conc_comp_norm_trapezoids) and the final normalized
+        # breakthrough concentration (conc_comp_norm_breakthrough) is
+        # broken up.]
         self.number_of_trapezoids = self.config.number_of_trapezoids
         self.trap_disc = range(self.number_of_trapezoids + 1)
         self.trap_index = self.trap_disc[1:]
 
-        c_trap_min_init = {}
+        min_conc_comp_norm_trapezoids_init = {}
         for i in self.reactive_ion_set:
-            c_trap_min_init[i] = self.config.minimum_concentration_trapezoids
-        self.c_trap_min = pyo.Param(
+            min_conc_comp_norm_trapezoids_init[i] = (
+                self.config.minimum_concentration_trapezoids
+            )
+        self.min_conc_comp_norm_trapezoids = pyo.Param(
             self.reactive_ion_set,
             mutable=True,
-            initialize=c_trap_min_init,
+            initialize=min_conc_comp_norm_trapezoids_init,
             doc="Minimum normalized concentration for each reactive ion species",
         )
 
@@ -458,7 +463,7 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
             bounds=(0, None),
             domain=pyo.NonNegativeReals,
             units=pyo.units.s,
-            doc="Breakthrough time",
+            doc="Breakthrough time at final breakthrough normalized concentration",
         )
 
         @self.Constraint()
@@ -477,33 +482,33 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         )
 
         # Add relevant variables for IX column and trapezoidal rule
-        self.c_norm = pyo.Var(
+        self.conc_comp_norm_breakthrough = pyo.Var(
             self.reactive_ion_set,
             initialize=0.5,
             bounds=(0, 1),
             units=pyo.units.dimensionless,
-            doc="Dimensionless (relative) concentration [Ct/C0] of target ion",
+            doc="Normalized final breakthrough concentration [Ct/C0] of reactive ions",
         )
 
-        self.c_traps = pyo.Var(
+        self.conc_comp_norm_trapezoids = pyo.Var(
             self.reactive_ion_set,
             self.trap_disc,
             initialize=0.5,
             bounds=(0, 1),
             units=pyo.units.dimensionless,
-            doc="Normalized breakthrough concentrations for estimating area under breakthrough curve",
+            doc="Normalized breakthrough concentrations for each trapezoid for estimating area under breakthrough curve",
         )
 
-        self.tb_traps = pyo.Var(
+        self.breakthrough_time_trapezoids = pyo.Var(
             self.reactive_ion_set,
             self.trap_disc,
             initialize=1,
             bounds=(0, None),
             units=pyo.units.second,
-            doc="Breakthrough times for estimating area under breakthrough curve",
+            doc="Breakthrough times for each trapezoid for estimating area under breakthrough curve",
         )
 
-        self.traps = pyo.Var(
+        self.trapezoids = pyo.Var(
             self.reactive_ion_set,
             self.trap_index,
             initialize=0.01,
@@ -513,15 +518,15 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         )
 
         for c in self.reactive_ion_set:
-            self.c_traps[(c, t0)].fix(0)
-            self.tb_traps[(c, t0)].fix(0)
+            self.conc_comp_norm_trapezoids[(c, t0)].fix(0)
+            self.breakthrough_time_trapezoids[(c, t0)].fix(0)
 
-        self.c_norm_avg = pyo.Var(
+        self.conc_comp_norm_breakthrough_trapezoids = pyo.Var(
             self.reactive_ion_set,
             initialize=0.25,
             bounds=(0, 2),
             units=pyo.units.dimensionless,
-            doc="Sum of trapezoid areas",
+            doc="Summation of normalized concentrations of all trapezoid areas for each reactive ion",
         )
 
         self.freundlich_n = pyo.Var(
@@ -550,7 +555,9 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
 
         @self.Expression(self.reactive_ion_set, doc="Breakthrough concentration")
         def breakthrough_conc_mass_comp(b, j):
-            return b.c_norm[j] * prop_in.conc_mass_phase_comp[p0, j]
+            return (
+                b.conc_comp_norm_breakthrough[j] * prop_in.conc_mass_phase_comp[p0, j]
+            )
 
         # Add Expression/Constraint to calculate dimensionless numbers
         @self.Expression(self.reactive_ion_set, doc="Schmidt number")
@@ -599,9 +606,9 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
                 )
                 * (b.bv_50[j] - b.bv[j])
             )
-            right_side = ((1 / b.c_norm[j]) ** (b.freundlich_n[j] - 1) - 1) / (
-                2 ** (b.freundlich_n[j] - 1) - 1
-            )
+            right_side = (
+                (1 / b.conc_comp_norm_breakthrough[j]) ** (b.freundlich_n[j] - 1) - 1
+            ) / (2 ** (b.freundlich_n[j] - 1) - 1)
             return left_side - right_side == 0
 
         # [ESR notes: This is the concentration value at the kth
@@ -609,33 +616,42 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         @self.Constraint(
             self.reactive_ion_set,
             self.trap_index,
-            doc="Evenly spaced c_norm for trapezoids",
+            doc="Evenly spaced conc_comp_norm_breakthrough for trapezoids",
         )
-        def eq_c_traps(b, j, k):
+        def eq_conc_comp_norm_trapezoids(b, j, k):
             if k == max(b.trap_index):
-                return b.c_traps[j, k] == b.c_norm[j]
+                return (
+                    b.conc_comp_norm_trapezoids[j, k]
+                    == b.conc_comp_norm_breakthrough[j]
+                )
             else:
                 # [ESR updates: Reformulated to avoid denominators.]
-                return b.c_traps[j, k] * (b.number_of_trapezoids - 1) == (
-                    b.c_trap_min[j] * (b.number_of_trapezoids - 1)
-                    + (b.trap_disc[k] - 1) * (b.c_norm[j] - b.c_trap_min[j])
+                return b.conc_comp_norm_trapezoids[j, k] * (
+                    b.number_of_trapezoids - 1
+                ) == (
+                    b.min_conc_comp_norm_trapezoids[j] * (b.number_of_trapezoids - 1)
+                    + (b.trap_disc[k] - 1)
+                    * (
+                        b.conc_comp_norm_breakthrough[j]
+                        - b.min_conc_comp_norm_trapezoids[j]
+                    )
                 )
 
-        # [ESR updates: Add bv_traps as an expression. This term
+        # [ESR updates: Add bv_trapezoids as an expression. This term
         # corresponds to the bed volume corresponding to the kth
         # discretization point for ion j.]
         @self.Expression(self.reactive_ion_set, self.trap_disc, doc="BV for trapezoids")
-        def bv_traps(b, j, k):
-            return (b.tb_traps[j, k] * b.loading_rate) / b.bed_depth
+        def bv_trapezoids(b, j, k):
+            return (b.breakthrough_time_trapezoids[j, k] * b.loading_rate) / b.bed_depth
 
         @self.Constraint(
             self.reactive_ion_set,
             self.trap_index,
             doc="Breakthru time calc for trapezoids",
         )
-        def eq_tb_traps(b, j, k):
+        def eq_breakthrough_time_trapezoids(b, j, k):
             if k == max(self.trap_index):
-                return b.tb_traps[j, k] == b.breakthrough_time[j]
+                return b.breakthrough_time_trapezoids[j, k] == b.breakthrough_time[j]
             else:
                 left_side = pyo.exp(
                     (
@@ -646,15 +662,16 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
                         )
                         / (b.bv_50[j] * b.loading_rate)
                     )
-                    * (b.bv_50[j] - b.bv_traps[j, k])
+                    * (b.bv_50[j] - b.bv_trapezoids[j, k])
                 )
-                right_side = ((1 / b.c_traps[j, k]) ** (b.freundlich_n[j] - 1) - 1) / (
-                    2 ** (b.freundlich_n[j] - 1) - 1
-                )
+                right_side = (
+                    (1 / b.conc_comp_norm_trapezoids[j, k]) ** (b.freundlich_n[j] - 1)
+                    - 1
+                ) / (2 ** (b.freundlich_n[j] - 1) - 1)
                 return left_side - right_side == 0
 
         # [ESR WIP: Try to make changes in the normalization term in
-        # eq_traps to see if that improves the breakthrough time
+        # eq_trapezoids to see if that improves the breakthrough time
         # calculation. This normalization helps to express each
         # trapezoid’s width as a fraction of the total interval. This
         # normalization helps ensure that the integrated output (when
@@ -664,40 +681,48 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         @self.Constraint(
             self.reactive_ion_set, self.trap_index, doc="Area of trapezoids"
         )
-        def eq_traps(b, j, k):
+        def eq_trapezoids(b, j, k):
             # Norm term is the normalization term
 
             # Original normalization value
-            norm_term = b.tb_traps[j, self.number_of_trapezoids]
+            norm_term = b.breakthrough_time_trapezoids[j, self.number_of_trapezoids]
 
             # # Use total interval value for normalization
-            # norm_term = b.tb_traps[j, self.number_of_trapezoids] - b.tb_traps[j, 1]
+            # norm_term = b.breakthrough_time_trapezoids[j, self.number_of_trapezoids] - b.breakthrough_time_trapezoids[j, 1]
 
             # No normalization
             # norm_term = 1
 
-            return b.traps[j, k] * norm_term == (
+            return b.trapezoids[j, k] * norm_term == (
                 # width of the trapezoid
-                b.tb_traps[j, k]
-                - b.tb_traps[j, k - 1]
+                b.breakthrough_time_trapezoids[j, k]
+                - b.breakthrough_time_trapezoids[j, k - 1]
             ) * (
                 # average height between the two points
-                (b.c_traps[j, k] + b.c_traps[j, k - 1])
+                (
+                    b.conc_comp_norm_trapezoids[j, k]
+                    + b.conc_comp_norm_trapezoids[j, k - 1]
+                )
                 / 2
             )
 
         @self.Constraint(
-            self.reactive_ion_set, doc="Average relative effluent concentration"
+            self.reactive_ion_set,
+            doc="Summation of relative effluent concentration for each trapezoid area",
         )
-        def eq_c_norm_avg(b, j):
-            return b.c_norm_avg[j] == sum(b.traps[j, k] for k in b.trap_index)
+        def eq_conc_comp_norm_breakthrough_trapezoids(b, j):
+            return b.conc_comp_norm_breakthrough_trapezoids[j] == sum(
+                b.trapezoids[j, k] for k in b.trap_index
+            )
 
         # [ESR WIP: Define total_mass_removed as an Expression.]
         @self.Expression(
             self.reactive_ion_set, doc="Total mass of ion removed from the liquid phase"
         )
         def total_mass_removed(b, j):
-            return (1 - b.c_norm_avg[j]) * prop_in.get_material_flow_terms(p0, j)
+            return (
+                1 - b.conc_comp_norm_breakthrough_trapezoids[j]
+            ) * prop_in.get_material_flow_terms(p0, j)
 
         @self.Constraint(
             self.reactive_ion_set,
@@ -719,16 +744,16 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         iscale.set_scaling_factor(self.bv_50, 1e-3)
 
         sf = iscale.get_scaling_factor(self.breakthrough_time)
-        iscale.set_scaling_factor(self.tb_traps, sf)
+        iscale.set_scaling_factor(self.breakthrough_time_trapezoids, sf)
 
-        iscale.set_scaling_factor(self.c_traps, 1)
-        iscale.set_scaling_factor(self.traps, 1e3)
-        iscale.set_scaling_factor(self.c_norm_avg, 1e2)
+        iscale.set_scaling_factor(self.conc_comp_norm_trapezoids, 1)
+        iscale.set_scaling_factor(self.trapezoids, 1e3)
+        iscale.set_scaling_factor(self.conc_comp_norm_breakthrough_trapezoids, 1e2)
 
         for ind, c in self.eq_clark.items():
             if iscale.get_scaling_factor(c) is None:
                 iscale.constraint_scaling_transform(c, 1e-2)
 
-        for ind, c in self.eq_traps.items():
+        for ind, c in self.eq_trapezoids.items():
             if iscale.get_scaling_factor(c) is None:
                 iscale.constraint_scaling_transform(c, 1e2)

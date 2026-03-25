@@ -41,13 +41,13 @@ import pyomo.environ as pyo
 
 # Import IDAES models and libraries
 from idaes.core import FlowsheetBlock, UnitModelCostingBlock
+from idaes.core.solvers import get_solver
 from idaes.core.scaling.scaling_base import ScalerBase
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.exceptions import ConfigurationError
 
 # Import WaterTAP models and libraries
-from watertap.core.solvers import get_solver
 from watertap.property_models.multicomp_aq_sol_prop_pack import MCASParameterBlock
 
 # Import PrOMMiS ion exchange models
@@ -118,8 +118,8 @@ def main():
     curve_file = os.path.join(path, "data", "breakthrough_literature_data.csv")
     curve_data = pd.read_csv(curve_file)
 
-    # Define solver to use from WaterTAP
-    solver = get_solver()
+    # Define solver to use
+    solver = get_solver(solver="ipopt_v2")
 
     # Add relevant data for IX model: resin name, target component,
     # number of trapezoidal points, and the minimum concentration for
@@ -178,17 +178,11 @@ def main():
     # Add scaling factors to the IX model variables and constraints
     set_scaling(m)
 
-    # Scale model
-    scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
+    assert degrees_of_freedom(m) == 0
 
-    # Solve scaled initialization model
-    init_scaled_results = model_solve(scaled_model, solver=solver)
-    pyo.assert_optimal_termination(init_scaled_results)
-
-    # Propagate the solution back to the original model
-    init_results = scaling.propagate_solution(scaled_model, m)
-
+    # Solve scaled model with zero degrees of freedom
+    init_results = model_solve(m)
+    pyo.assert_optimal_termination(init_results)
     print("=========== End initialization")
 
     # Add relevant costing metrics for the IX model
@@ -793,15 +787,16 @@ def plot_traps(m, results=None, curve_data=None, output_plot=None, save_plot=Non
 
 def model_solve(m, solver=None):
 
-    solver = get_solver()
+    opt_args = {
+        "print_user_options": "yes",
+        "halt_on_ampl_error": "yes",
+    }
+
+    solver = get_solver(solver="ipopt_v2", solver_options=opt_args)
     results = solver.solve(
         m,
         tee=True,
         symbolic_solver_labels=True,
-        options={
-            "halt_on_ampl_error": "yes",
-            "max_iter": 1000,
-        },
     )
 
     return results

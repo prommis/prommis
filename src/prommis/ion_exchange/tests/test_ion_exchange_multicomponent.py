@@ -28,6 +28,7 @@ import pandas as pd
 import pyomo.environ as pyo
 
 from idaes.core import UnitModelCostingBlock
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.exceptions import ConfigurationError
 from idaes.core.util.model_statistics import degrees_of_freedom
@@ -35,7 +36,6 @@ from idaes.core.util.model_statistics import degrees_of_freedom
 pytest.importorskip("watertap", reason="WaterTAP dependency not available")
 
 # pylint: disable=wrong-import-position
-from watertap.core.solvers import get_solver
 from watertap.property_models.multicomp_aq_sol_prop_pack import MCASParameterBlock
 
 from prommis.uky.costing.ree_plant_capcost import (
@@ -56,6 +56,7 @@ from prommis.ion_exchange.ix_freundlich_multicomponent_example import (
     build_clark,
     set_bounds,
     set_operating_conditions,
+    initialize_system,
     set_scaling,
     add_costing,
     run_optimization,
@@ -75,7 +76,7 @@ def create_model(regenerant, hazardous_waste):
     curve_file = os.path.join(path, "..", "data", "breakthrough_literature_data.csv")
     curve_data = pd.read_csv(curve_file)
 
-    solver = get_solver()
+    solver = get_solver(solver="ipopt_v2")
 
     target_component = "La"
     resin = "S950"
@@ -111,6 +112,8 @@ def create_model(regenerant, hazardous_waste):
     set_operating_conditions(
         m, parmest_data=parmest_data, target_component=target_component, resin=resin
     )
+
+    initialize_system(m, solver=solver)
 
     set_scaling(m)
 
@@ -253,19 +256,12 @@ def test_resin_specific_data(m):
 @pytest.mark.unit
 def test_initialization(m):
 
-    # Scale model
-    init_scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = init_scaling.create_using(m, rename=False)
+    assert degrees_of_freedom(m) == 0
 
-    assert degrees_of_freedom(scaled_model) == 0
-
-    # Solve scaled model with zero degrees of freedom
-    solver = get_solver()
-    scaled_results = solver.solve(scaled_model)
-    pyo.assert_optimal_termination(scaled_results)
-
-    # Propagate the solution back to the original model
-    results = init_scaling.propagate_solution(scaled_model, m)
+    # Solve scaled model with zero degrees of freedom.
+    solver = get_solver(solver="ipopt_v2")
+    results = solver.solve(m, tee=True)
+    pyo.assert_optimal_termination(results)
 
     # Test expected results for ix variables. NOTE: bed_expansion_frac
     # and pressure_drop are the ones calculated with resin-specific
@@ -275,13 +271,13 @@ def test_initialization(m):
         "column_height": 2.2969999999999997,
         "bed_diameter": 0.015,
         "number_columns": 1.0,
-        "loading_rate": 9.450285573574311e-05,
+        "loading_rate": 9.369400114476226e-05,
         "bed_volume_total": 0.00017671458676442585,
-        "target_breakthrough_time": 1693392.3126900392,
-        "service_flow_rate": 0.3402102806486752,
-        "N_Re": 0.07087714180180733,
-        "N_Pe_particle": 0.01403501814152805,
-        "N_Pe_bed": 18.7133575220374,
+        "target_breakthrough_time": 1698537.355619108,
+        "service_flow_rate": 0.33772991916391243,
+        "N_Re": 0.5911246207427487,
+        "N_Pe_particle": 0.03884865308724417,
+        "N_Pe_bed": 51.79820411632556,
     }
 
     for v, r in ix_vars_results.items():
@@ -298,26 +294,20 @@ def test_optimization_single_use(m):
 
     regenerant = "single_use"
     target_component = "La"
-    solver = get_solver()
+    solver = get_solver(solver="ipopt_v2")
 
-    # Scale model
-    init_scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = init_scaling.create_using(m, rename=False)
-
-    assert degrees_of_freedom(scaled_model) == 0
+    assert degrees_of_freedom(m) == 0
 
     # Solve scaled model with zero degrees of freedom
-    scaled_results = solver.solve(scaled_model)
-    pyo.assert_optimal_termination(scaled_results)
+    results = solver.solve(m)
+    pyo.assert_optimal_termination(results)
 
-    # Propagate the solution back to the original model
-    init_scaling.propagate_solution(scaled_model, m)
-
+    # Add costing
     build_clark_with_costing(
         m, regenerant=regenerant, target_component=target_component
     )
 
-    assert degrees_of_freedom(scaled_model) == 0
+    assert degrees_of_freedom(m) == 0
 
     # Solve scaled model
     results = solver.solve(m)
@@ -342,13 +332,13 @@ def test_optimization_single_use(m):
         "bed_diameter": 0.010000000000242901,
         "number_columns": 1.0,
         "number_columns_redundant": 1.0,
-        "target_breakthrough_time": 2291425.7780593033,
-        "ebct": 10581.689703155758,
-        "loading_rate": 0.00021263142539509238,
-        "service_flow_rate": 0.34021031621503484,
-        "N_Re": 0.1594735690463193,
-        "N_Pe_particle": 0.02071383855568819,
-        "N_Pe_bed": 62.141509167630446,
+        "target_breakthrough_time": 2291425.840436401,
+        "ebct": 10581.690918071601,
+        "loading_rate": 0.00021263135947967806,
+        "service_flow_rate": 0.3402102771544627,
+        "N_Re": 0.15947351960975856,
+        "N_Pe_particle": 0.02071383547348408,
+        "N_Pe_bed": 62.14148779190142,
     }
 
     for v, r in ix_vars_results.items():
@@ -364,13 +354,13 @@ def test_optimization_single_use(m):
         "utilization_factor": 1,
         "TPEC": 4.12,
         "TIC": 2.0,
-        "total_capital_cost": 2398.5398832175597,
-        "total_operating_cost": 88.9915519881193,
+        "total_capital_cost": 2398.540064785851,
+        "total_operating_cost": 88.99155890300078,
         "electricity_cost": 0.07,
-        "aggregate_capital_cost": 2398.5398832175597,
-        "aggregate_fixed_operating_cost": 17.03535548053501,
+        "aggregate_capital_cost": 2398.540064785851,
+        "aggregate_fixed_operating_cost": 17.03535695942525,
         "aggregate_variable_operating_cost": 0.0,
-        "maintenance_labor_chemical_operating_cost": 71.95619649459807,
+        "maintenance_labor_chemical_operating_cost": 71.95620194357552,
     }
 
     for v, r in sys_cost_results.items():
@@ -384,15 +374,15 @@ def test_optimization_single_use(m):
     # Expected results for ion exchange costs considering "single_use"
     # for regenerant use
     ix_cost_results = {
-        "capital_cost": 2398.539883153269,
-        "fixed_operating_cost": 17.03535548053501,
-        "capital_cost_vessel": 598.398018274306,
-        "capital_cost_resin": 1.2369525140112791,
-        "capital_cost_backwash_tank": 47.95379556887687,
+        "capital_cost": 2398.540064785851,
+        "fixed_operating_cost": 17.03535695942525,
+        "capital_cost_vessel": 598.3980635404342,
+        "capital_cost_resin": 1.2369526560285031,
+        "capital_cost_backwash_tank": 47.95380302349629,
         "operating_cost_hazardous": 0,
-        "total_pumping_power": 4.1445910422021544e-08,
-        "flow_vol_resin": 0.0024337195286942945,
-        "single_use_resin_replacement_cost": 17.03535548053501,
+        "total_pumping_power": 4.144588949265954e-08,
+        "flow_vol_resin": 0.0024337197399727775,
+        "single_use_resin_replacement_cost": 17.03535695942525,
         "cost_factor": 2.0,
     }
 
@@ -518,26 +508,19 @@ def test_optimization_nacl(m_nacl):
 
     regenerant = "NaCl"
     target_component = "La"
-    solver = get_solver()
+    solver = get_solver(solver="ipopt_v2")
 
-    # Scale model
-    init_scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = init_scaling.create_using(m_nacl, rename=False)
-
-    assert degrees_of_freedom(scaled_model) == 0
+    assert degrees_of_freedom(m_nacl) == 0
 
     # Solve scaled model with zero degrees of freedom
-    scaled_results = solver.solve(scaled_model)
-    pyo.assert_optimal_termination(scaled_results)
-
-    # Propagate the solution back to the original model
-    init_scaling.propagate_solution(scaled_model, m_nacl)
+    results = solver.solve(m_nacl)
+    pyo.assert_optimal_termination(results)
 
     m = build_clark_with_costing(
         m_nacl, regenerant=regenerant, target_component=target_component
     )
 
-    assert degrees_of_freedom(scaled_model) == 0
+    assert degrees_of_freedom(m_nacl) == 0
 
     # Solve scaled model
     results = solver.solve(m)
@@ -554,21 +537,21 @@ def test_optimization_nacl(m_nacl):
     ix_vars_results = {
         "resin_diam": 0.00075,
         "resin_density": 1126.61,
-        "bed_volume": 0.00017671456829883997,
-        "bed_volume_total": 0.00017671456829883997,
-        "bed_depth": 2.2499997646005814,
+        "bed_volume": 0.00017671456852191367,
+        "bed_volume_total": 0.00017671456852191367,
+        "bed_depth": 2.2499998247710224,
         "bed_porosity": 0.8,
-        "column_height": 3.918249694686954,
-        "bed_diameter": 0.010000000000640615,
+        "column_height": 3.918249772728016,
+        "bed_diameter": 0.010,
         "number_columns": 1.0,
         "number_columns_redundant": 1.0,
-        "target_breakthrough_time": 2291425.7741685435,
-        "ebct": 10581.689703668251,
-        "loading_rate": 0.00021263142537817904,
-        "service_flow_rate": 0.34021031619855785,
-        "N_Re": 0.15947356903363427,
-        "N_Pe_particle": 0.020713838554897324,
-        "N_Pe_bed": 62.14150916332458,
+        "target_breakthrough_time": 2291425.784302045,
+        "ebct": 10581.689717025934,
+        "loading_rate": 0.00021263143079604515,
+        "service_flow_rate": 0.340210315769097,
+        "N_Re": 0.15947357309703392,
+        "N_Pe_particle": 0.02071383880823667,
+        "N_Pe_bed": 62.14151158515693,
     }
 
     for v, r in ix_vars_results.items():
@@ -590,19 +573,19 @@ def test_optimization_nacl(m_nacl):
     # Expected results for system costs
     sys_cost_results = {
         "utilization_factor": 1,
-        "TPEC": 4.121212121212121,
+        "TPEC": 4.12,
         "TIC": 2.0,
-        "total_capital_cost": 2777.5679769146095,
-        "total_operating_cost": 3932.8064452419,
+        "total_capital_cost": 2777.567970707076,
+        "total_operating_cost": 3932.8064193491246,
         "electricity_cost": 0.07,
         "NaCl_cost": 0.09,
-        "aggregate_capital_cost": 2777.5679769146095,
-        "aggregate_fixed_operating_cost": 3849.3271494414466,
+        "aggregate_capital_cost": 2777.567970707076,
+        "aggregate_fixed_operating_cost": 3849.327149439306,
         "aggregate_variable_operating_cost": 0.0,
         "aggregate_flow_costs": {
-            "NaCl": 0.1522307890750307,
+            "NaCl": 0.1522307886061904,
         },
-        "maintenance_labor_chemical_operating_cost": 83.32703930743828,
+        "maintenance_labor_chemical_operating_cost": 83.32703912121227,
     }
 
     for v, r in sys_cost_results.items():
@@ -616,15 +599,15 @@ def test_optimization_nacl(m_nacl):
     # Expected results for ion exchange costs considering "single_use"
     # for regenerant use
     ix_cost_results = {
-        "capital_cost": 2777.5679769146095,
-        "fixed_operating_cost": 3849.3271494414466,
-        "capital_cost_vessel": 598.398018289634,
-        "capital_cost_resin": 1.2369525140701472,
-        "capital_cost_backwash_tank": 183.3206369055396,
-        "operating_cost_hazardous": 3849.2034541900457,
-        "total_pumping_power": 4.189304217061552e-08,
-        "capital_cost_regen_tank": 6.193409944356747,
-        "flow_mass_regen_soln": 1.4243565041828834,
+        "capital_cost": 2777.567970707076,
+        "fixed_operating_cost": 3849.327149439306,
+        "capital_cost_vessel": 598.398016760088,
+        "capital_cost_resin": 1.2369525156316006,
+        "capital_cost_backwash_tank": 183.32063685203983,
+        "operating_cost_hazardous": 3849.203454187743,
+        "total_pumping_power": 4.189304435605264e-08,
+        "capital_cost_regen_tank": 6.193409950058746,
+        "flow_mass_regen_soln": 1.424356499796151,
         "cost_factor": 2.0,
     }
 
@@ -830,20 +813,13 @@ def test_ix_with_prommis_costing(m_pc):
 
     regenerant = "single_use"
     target_component = "La"
-    solver = get_solver()
+    solver = get_solver(solver="ipopt_v2")
 
-    # Scale model
-    init_scaling = pyo.TransformationFactory("core.scale_model")
-    scaled_model = init_scaling.create_using(m_pc, rename=False)
-
-    assert degrees_of_freedom(scaled_model) == 0
+    assert degrees_of_freedom(m_pc) == 0
 
     # Solve scaled model with zero degrees of freedom
-    scaled_results = solver.solve(scaled_model)
-    pyo.assert_optimal_termination(scaled_results)
-
-    # Propagate the solution back to the original model
-    init_scaling.propagate_solution(scaled_model, m_pc)
+    results = solver.solve(m_pc)
+    pyo.assert_optimal_termination(results)
 
     build_ix_with_prommis_costing(m_pc)
 
@@ -859,7 +835,7 @@ def test_ix_with_prommis_costing(m_pc):
     dt = DiagnosticsToolbox(model=m_pc)
     dt.assert_no_structural_warnings()
 
-    assert degrees_of_freedom(scaled_model) == 0
+    assert degrees_of_freedom(m_pc) == 0
 
     # Confirm that base units match the ones in costing block
     cost = m_pc.fs.costing
@@ -884,7 +860,7 @@ def test_ix_with_prommis_costing(m_pc):
 
     sys_cost_results = {
         "total_BEC": 0.0027232971929997854,
-        "custom_fixed_costs": 2.3051514078924913e-05,
+        "custom_fixed_costs": 2.298165311277419e-05,
         "total_fixed_OM_cost": 2.42531,
         "variable_operating_costs": 5.557009860683777e-12,
         "custom_variable_costs": 1e-12,
@@ -910,7 +886,7 @@ def test_ix_with_prommis_costing(m_pc):
 
     ix_cost_results = {
         "capital_cost": 2723.29719,
-        "fixed_operating_cost": 23.05151,
+        "fixed_operating_cost": 22.981653112774186,
     }
 
     for key, expected_value in ix_cost_results.items():

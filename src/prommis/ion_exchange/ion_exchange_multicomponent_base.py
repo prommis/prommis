@@ -269,24 +269,6 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         ),
     )
 
-    CONFIG.declare(
-        "number_of_trapezoids",
-        ConfigValue(
-            default=5,
-            domain=int,
-            description="Designates number of trapezoids",
-        ),
-    )
-
-    CONFIG.declare(
-        "minimum_concentration_trapezoids",
-        ConfigValue(
-            default=1e-3,
-            domain=float,
-            description="Minimum relative breakthrough concentration for estimating area under curve",
-        ),
-    )
-
     # NOTE: If resin is not "single_use", add regeneration
     CONFIG.declare(
         "regenerant",

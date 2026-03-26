@@ -25,228 +25,156 @@ r"""
 Ion Exchange Multicomponent (IXMC) Model
 ========================================
 
-The Ion Exchange Multicomponent (IXMC) model extends the WaterTAP Ion
-Exchange (IX) unit model to improve the recovery of critical minerals
-and rare earth elements (REEs) from multicomponent systems, including
-waste streams generated during mining and industrial processes. The
-IXMC model introduces new features to address the challenges of
-multicomponent ion exchange processes while building upon the basic
-assumptions and methodologies of the original IX model. Refer to the
-`WaterTAP IX documentation <https://watertap.readthedocs.io/en/stable/technical_reference/unit_models/ion_exchange_0D.html>`_ for more information on the original IX model, including its
-assumptions, equations, and implementation.
+Author: E. Soraya Rawlings
 
+The Ion Exchange Multicomponent (IXMC) model represents a fixed-bed
+ion exchange process for the recovery of critical minerals and rare
+earth elements (REEs) from diverse sources, including waste streams
+generated during mining and industrial processes. The IXMC introduces
+new features to address the complexities of multicomponent ion
+exchange, enabling the prediction of process equilibrium,
+hydrodynamics, bed and column geometry, and capital and operating
+costs. The model extends the capabilities of the `WaterTAP Ion Exchange unit model <https://watertap.readthedocs.io/en/stable/technical_reference/unit_models/ion_exchange_0D.html>`_.
 
-Key Features
-------------
-The IXMC model introduces new key features, including:
+Configuration Arguments
+-----------------------
 
-1. **Multicomponent separation**:
+The IXMC unit model requires the use of the `Multi-component aqueous
+solution (MCAS) property package
+<https://watertap.readthedocs.io/en/latest/technical_reference/property_models/mc_aq_sol.html>`_
+. Users must specify the solute ions and provide molecular weight,
+diffusivity, and charge data for each ion in the system.
 
-   - Supports the separation of multiple components by introducing a
-     list of "reactive" ions that can be separated alongside the
-     target ion. This allows for individual calculations of
-     breakthrough times, composition profiles, and adsorption dynamics
-     using the trapezoidal rule for each ion in the system.
-   - Increases flexibility by providing individual control over final
-     concentrations, making the model suited for systems where
-     selective recovery is critical.
+The primary configuration arguments are:
 
-2. **Resin Manipulation**:
+#. ``property_package``: PhysicalParameterBlock for stream properties.
+#. ``property_package_args``: Arguments for constructing the property package.
+#. ``target_component``: The primary ion to be removed via ion exchange.
+#. ``regenerant``: Regenerant configuration (e.g., ``single#.use``, ``NaCl``).
+#. ``resin``: Resin name (e.g., ``S950``)
+#. ``resin_data_path``: Path to the JSON file containing resin properties.
+#. ``reactive_ions``: List of additional ions to be separated alongside the target ion.
+#. ``number_of_trapezoids``: Number of trapezoids for trapezoidal rule calculations.
+#. ``minimum_concentration_trapezoids``: Minimum concentration for ions to be used during trapezoidal rule.
 
-   - Allows users to select, define, and manipulate ion exchange
-     resins, including specifying resin properties such as bead
-     diameter, bulk density, and surface area per volume specific for
-     each resin of interest.
-   - Allows the modification of the resin file to incorporate new
-     resins properties tailored to specific REEs or metal separations
-     without altering the core equations of the IXMC model.
+Degrees of Freedom
+------------------
 
-3. **Extended Freundlich Isotherm Implementation**:
+In addition to specifying inlet feed state variables (temperature,
+pressure, and molar flowrate for each ion :math:`j`), users must
+provide additional degrees of freedom for both single-component and
+multicomponent configurations to fully define the model. Common
+variables to fix include:
 
-   - Implements the Freundlich equilibrium model, which is well-suited
-     for heterogeneous surfaces and non-ideal adsorption processes, to
-     allow users to fit experimental breakthrough data and derive
-     equilibrium parameters for multicomponent systems.
+#. ``resin_diam``: Diameter of the resin bead.
+#. ``resin_density``: Bulk density of the resin.
+#. ``bed_depth``: Height of the resin bed within column.
+#. ``bed_diameter``: Diameter of the column.
+#. ``bed_porosity``: Porosity of the resin bed.
+#. ``number_columns``: Number of columns in operation.
+#. ``loading_rate`` or ``ebct``: Superficial velocity through the resin bed or empty bed contact time.
 
-4. **New Configuration Options**:
+Equilibrium-related variables to fix include:
 
-   - Introduces new configuration arguments to the unit model to
-     provide greater control over operational parameters, including
-     initial concentrations, number of trapezoids for trapezoidal rule
-     calculations, and the file path for resin properties.
-
-5. **Regeneration Stream and Stage Separation**:
-
-   - Distinguishes the exchange stage (adsorption) from the
-     regeneration stage (desorption) using the configuration argument
-     `regenerant`, allowing for greater flexibility in modeling
-     the regeneration process.
-
-6. **Redefined Dimensionless Numbers**:
-
-   - Redefined dimensionless numbers and other key design terms as
-     Pyomo `Expression` components, improving model flexibility,
-     scalability, and convergence.
-
-
-Introduction
-------------
-
-The IXMC model builds upon the original capabilities of the IX model
-and retains the four primary operational steps of ion exchange
-processes:
-
-(1) Service
-(2) Backwashing
-(3) Regeneration
-(4) Rinsing
-
-Note that, even though the regeneration is added as a stream in the
-IXMC model, it is currently only used for costing purposes. However,
-as mentioned in the **Key Features** section (point 5), the IXMC model
-separates all the terms required during this stage using the
-configuration argument `regenerant`. When it is set to `single_use`,
-the IXMC model excludes all equations related to the regeneration
-stage. Conversely, when selecting a regenerant type, such as `NaCl`,
-the regeneration stream (implemented as a Pyomo `port` component) and
-associated regeneration equations are added to the model. This
-capability provides greater flexibility in modeling ion exchange
-process since it distinguishes between adsorption and desorption
-processes. The integration of equilibrium equations to accurately
-model both stages is part of the ongoing and future work.
-
-Additionally, the IXMC model enhances multicomponent separation
-capabilities by introducing a set of reactive ions (as mentioned in
-the **Key Features** section in point 1), which can be separated
-alongside the selected target ion. This feature enables precise
-predictions of column performance, resin bed design characteristics,
-and adsorption dynamics for multicomponent systems.
-
+#. ``freundlich_n_j``: Freundlich isotherm exponent for each ion :math:`j`
+#. ``bv_50``: Bed volumes at fifty percent breakthrough for each ion :math:`j`
+#. ``conc_comp_norm_breakthrough_j``: Normalized breakthrough concentration for each ion :math:`j`
+#. ``mass_transfer_coeff_j``: Mass transfer coefficient for each ion :math:`j`
 
 Model Structure
 ---------------
 
-The IXMC model is separated into three distinct models, each
-designed to address specific aspects of the ion exchange process:
+The IXMC model is organized into three distinct models, each designed
+to address specific aspects of the ion exchange process:
 
-1. **Base Model**:
+1. **ion_exchange_multicomponent_base**: The base model that provides the
+     foundational structure for the IXMC model, defining all global
+     key variables and parameters, including column geometry and resin
+     properties.
 
-   - Provides the foundational structure for the IXMC model, ensuring
-     consistency across all calculations and enabling users to define
-     global key variables and parameters.
-   - Contains all global variables and parameters required for
-     modeling the ion exchange column, including terms related to
-     column geometry and resin properties. Most of these variables,
-     parameters, and expressions are included under the **Model
-     Components** Table in the `WaterTAP IX documentation
-     <https://watertap.readthedocs.io/en/stable/technical_reference/unit_models/ion_exchange_0D.html>`_.
+2. **ion_exchange_multicomponent**: The equilibrium model that
+     incorporates the Freundlich multicomponent equations, using the
+     Clark equation to describe the adsorption behavior of ions on the
+     resin surface. It also applies all variables and equations for
+     the trapezoidal rule calculations to determine breakthrough curve
+     behavior and estimate effluent concentrations.
 
-2. **Equilibrium Model**:
+3. **ion_exchange_cost_block** and **ion_exchange_cost_model**: The
+     costing models that implement costing variables and parameters
+     using standard PrOMMiS costing features, ensuring compatibility
+     with existing costing methodologies.
 
-   - Adds the Freundlich multicomponent equations, which describe the
-     adsorption behavior of ions on the resin surface.
-   - Includes the equations for the trapezoidal rule to calculate
-     compositions along the breakthrough curve. This numerical
-     approach allows for accurate estimation of effluent
-     concentrations and adsorption dynamics over time.
+Assumptions
+-----------
 
-3. **Costing Block and Model**:
+The model is implemented as a 0D control volume with the following
+assumptions:
 
-   - Modifies the original `IX costing package
-     <https://watertap.readthedocs.io/en/latest/technical_reference/costing/ion_exchange.html>`_
-     from WaterTAP. These models implement all costing variables and
-     parameters using the standard `PrOMMiS costing features
-     <https://prommis.readthedocs.io/en/latest/tutorials/costing_basic_features.html>`_
-     to ensure compatibility with existing costing methodologies.
+#. Single liquid phase
+#. Steady state operation 
+#. Single and multiple solutes and one solvent (water)
+#. Plug flow and isothermal conditions
+#. Freundlich isotherm for equilibrium modeling
+#. If ``single-use`` regenerant configuration is used, backwashing,
+  regeneration, and rinsing steps are not modeled and associated costs
+  are zero.
+#. For multicomponent systems, competitive effects between ions are not
+  currently modeled (see Limitations).
 
-How to Use the IXMC Model
--------------------------
+Sets
+----
 
-The IXMC model is designed to handle multicomponent systems, with a
-focus on REE recovery. To solve an example, we follow three sequential steps:
+The model defines the following sets:
 
-1. **Resin-Specific Step**:
+#. ``Components``: :math:`j` (e.g., ``['H2O', 'Cation_+', 'Anion_-', 'Inert']``)
+#. ``Target Component``: :math:`j` (e.g., ``['Cation_+']``)
+#. ``Reactive Ions``: :math:`j` (list of ions to be separated)
+#. ``Inert``: :math:`j` (list of ions that are not separated)
 
-   - Ensure that the resin selected for the ion exchange process meets
-     their specific requirements and that all resin-specific
-     parameters and equations are accurately defined.
-   - If the resin of interest is not available, analyze the resin data
-     product sheet provided by the manufacturer to extract polynomial
-     coefficients for bed expansion and pressure drop equations. These
-     coefficients are essential for accurately modeling the
-     operational performance of the column. For details on the current
-     available resins and how we determine these coefficients, refer
-     to the **Resin-Specific Information** section below.
+Parameters
+----------
 
-2. **Parameter Estimation Step**:
+The IXMC model has the following parameters:
 
-   - Estimate equilibrium parameters using a parameter estimation
-     model based on known breakthrough data. For our specific model
-     under the Freundlich equilibrium, the estimated parameters are
-     the Freundlich isotherm exponent (:math:`n`), mass transfer
-     coefficient (:math:`k_T`), and bed volumes at 50% of the influent
-     concentration (:math:`BV_{50}`).
-   - Refer to the `Parmest documentation
-     <https://pyomo.readthedocs.io/en/6.8.0/contributed_packages/parmest/index.html>`_,
-     for a detailed guidance on parameter estimation.
+.. csv-table:: Key operating and resin-specific parameters
+   :header: "Parameter", "Description"
 
-3. **Data Implementation and Example Construction Step**:
+   ":math:`underdrain_h`", "Height of the column underdrain."
+   ":math:`distributor_h`", "Height of the column distributor."
+   ":math:`Pe_p_A`", "Peclet particle equation parameter A."
+   ":math:`Pe_p_exp`", "Peclet particle equation exponent."
+   ":math:`Sh_A`", "Sherwood equation parameter A."
+   ":math:`Sh_exp_A`", "Sherwood equation exponent A."
+   ":math:`Sh_exp_B`", "Sherwood equation exponent B."
+   ":math:`Sh_exp_C`", "Sherwood equation exponent C."
+   ":math:`pump_efficiency`", "Pump efficiency."
+   ":math:`backwash_loading_rate`", "Backwash loading rate."
+   ":math:`backwash_time`", "Backwash time."
+   ":math:`pressure_drop_param_{A}`", "Pressure drop equation parameter A (resin-specific)."
+   ":math:`pressure_drop_param_{B}`", "Pressure drop equation parameter B (resin-specific)."
+   ":math:`pressure_drop_param_{C}`", "Pressure drop equation parameter C (resin-specific)."
+   ":math:`bed_expansion_param_{A}`", "Bed expansion fraction equation parameter A (resin-specific)."
+   ":math:`bed\_expansion\_frac\_B`", "Bed expansion fraction equation parameter B (resin-specific)."
+   ":math:`bed\_expansion\_frac\_C`", "Bed expansion fraction equation parameter C (resin-specific)."
+   ":math:`regen_dose`", "Regenerant dose required per volume of resin (if regenerant is not ``single_use``)."
+   ":math:`regen_soln_conc`", "Concentration of regenerant solution (if regenerant is not ``single_use``)."
+   ":math:`regen_soln_conc_sat`", "Saturation concentration of regenerant solution (if regenerant is not ``single_use``)."
+   ":math:`regen_soln_dens`", "Density of regenerant solution (if regenerant is not ``single_use``)."
+   ":math:`regen_cycle`", "Number of cycles the regenerant can be reused (if regenerant is not ``single_use``)."
+   ":math:`num_regen_columns`", "Number of regeneration columns (if regenerant is not ``single_use``)."
+   ":math:`rinse_bed_volumes`", "Number of bed volumes for the rinse step (if regenerant is not ``single_use``)."
+   
+Parameters from Resin Data
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   - Integrate all calculated and known parameters into the IXMC model
-     to solve the system.
-   - Customize variables, bounds, and separation conditions to match
-     their specific case requirements. Additionally, adjust
-     configuration options to define multicomponent property packages
-     and specify target ions, ensuring the model accurately reflects
-     the desired operational conditions. For assistance in defining
-     your degrees of freedom, refer to the **Degrees of Freedom**
-     section under Freundlich in the `WaterTAP IX documentation
-     <https://watertap.readthedocs.io/en/stable/technical_reference/unit_models/ion_exchange_0D.html>`_.
-
-This procedure mirrors the approach used in the original IX model,
-with additional enhancements for multicomponent systems.
-
-
-Resin-Specific Parameters and Equations
-----------------------------------------
-
-The IXMC model uses resin-specific parameters and equations to
-calculate the pressure drop (:math:`p_{drop}`) and the bed expansion
-fraction (:math:`H_{expan}`), considering the physical and chemical
-properties of the resin. The IXMC model reads the resin parameters,
-represented as polynomial coefficients :math:`p_{drop, A}, p_{drop,B},
-p_{drop, C}, H_{expan, A}, H_{expan, B}` and :math:`H_{expan, C}`,
-from a JSON file and calculates :math:`p_{drop}` and :math:`H_{expan}`
-values using the equations in Table 1. Consider :math:`u_{bed}` and
-:math:`u_{bw}` represent the superficial velocity through the bed and the
-backwashing loading rate, respectively. The equations in Table 1 allow
-the IXMC model to accurately predict hydrodynamic behavior and
-operational performance, ensuring compatibility with multiple resin
-types.
-
-.. csv-table:: Resin-Specific Equations for Pressure Drop and Bed Expansion.
-   :header: "Description", "Equation"
-
-   "Pressure drop (psi/m)", ":math:`p_{drop} = p_{drop, A} + p_{drop,B}u_{bed} + p_{drop, C}u_{bed}^{2}`"
-   "Bed expansion fraction (dimensionless)", ":math:`H_{expan} = H_{expan, A} + H_{expan, B} u_{bw} + H_{expan, C} u_{bw}^{2}`"
-
-The polynomial coefficients are specific to the resin being used and
-are typically obtained from the resin data production sheet, which
-include experimental plots of bed expansion and pressure drop as
-functions of flow rate, temperature, and other operating
-conditions. Curve-fitting techniques are often applied to derive these
-coefficients from the data. Note that, to ensure accuracy, the output
-of the equations should be validated against the data provided in the
-resin product sheet. This validation step is essential for confirming
-the reliability of the model predictions.
-
-Resin Data in JSON File
-^^^^^^^^^^^^^^^^^^^^^^^
-
-Tables 2 and 3 summarize the key properties and information available
-for the available resins. Note that most of the key values for these
-properties can be found in the resin data sheets provided by the
-manufacturer.
+Resin-specific parameters are unique to each resin and are typically
+obtained from manufacturer data sheeta, which provide physical
+properties and experimental plots of bed expansion and pressure drop
+as functions of flow rate, temperature, and other operating
+conditions. Curve-fitting techniques are commonly used to derive these
+coefficients from the data. These parameters are stored in a JSON
+file. The tables below summarize the available resin types and the key
+properties included for each resin.
 
 .. csv-table:: Resin names and their types included in the resin JSON file.
    :header: "Resin Name", "Resin Type"
@@ -266,38 +194,75 @@ manufacturer.
    "Porosity (takes a value from 0 to 1)", ":math:`dimensionless` "
    "Reference", "N/A"
 
+Variables
+---------
 
-Modified Model Components
-=========================
+The IXMC model adds the following variables:
 
-The IXMC model modifies variables, parameters, and expressions to
-support multicomponent systems. Table 4 summarizes some of the key
-terms that were modified in the model.
+.. csv-table:: Key Parameters Needed in the IXMC Model
+   :header: "Name", "Symbol", "Description"
 
-.. csv-table::  Key Parameters Needed in the IXMC Model
-   :header: "Type", "Name", "Symbol", "Description"
+    "``Inlet Temperature``", ":math:`T_{in}`", "Inlet temperature of the feed stream (:math:`\text{K}`)."
+    "``Inlet Pressure``", ":math:`P_{in}`", "Inlet pressure of the feed stream (:math:`\text{Pa}`)."
+    "``Component Molar Flow Rate``", ":math:`\dot{n}_{j}`", "Molar flow rate of each component (:math:`\text{mol/s}`)."
+    "``Bed Linear Velocity``", ":math:`u_{bed}`", "Linear velocity through the resin bed (:math:`\text{m/s}`)."
+    "``Interstitial Velocity``", ":math:`u_{inter}`", "Interstitial velocity in the bed (:math:`\text{m/s}`)."
+    "``Regenerant Recycle Cycles``", ":math:`regen_{recycle}`", "Number of cycles before regenerant disposal."
 
-   Variable, "``Empty Bed Contact Time``", ":math:`ebct`", "The time the liquid remains in contact with the resin, calculated as :math:`\frac{V_{res}}{flow_{col}}` where :math:`V_{res}` is the bed volume and :math:`flow_{col}` is the volumetric flow per column."
-   Variable, "``Bed Area``", ":math:`bed_{area}`", "The cross-sectional area of the resin bed, calculated based on the column dimensions."
-   Variable, "``Breakthrough Time``", ":math:`t_{{break}_j}`", "The time required for each ion :math:`j` to appear at the outlet at the desired final concentration."
-   Variable, "``Freundlich Coefficient n``", ":math:`{n_j}`", "The Freundlich isotherm coefficient :math:`n` that characterizes the adsorption capacity of each ion :math:`j` in the solution."
-   Variable, "``Bed Volumes at 50% Influent Concentration``", ":math:`BV_{{50}_j}`", "The volume of influent required to reach 50% of the initial concentration for each ion :math:`j` in the solution."
-   Variable, "``Mass Transfer Coefficient``", ":math:`k_{T_j}`", "The coefficient that quantifies the rate of mass transfer for each ion in the solution."
+    "``Resin Diameter``", ":math:`resin_diam`", "Diameter of individual resin beads (:math:`\text{m}`)."
+    "``Resin Density``", ":math:`resin_density`", "Bulk density of the resin (:math:`\text{kg/L}`)."
+    "``Bed Volume``", ":math:`bed_volume`", "Volume of resin bed in column (:math:`\text{m3}`)."
+    "``Total Bed Volume``", ":math:`V_{bed,tot}`", "Total volume of the resin beds (:math:`\text{m}^3`)."
+    "``Bed Depth``", ":math:`Z`", "Depth of the resin bed (:math:`\text{m}`)."
+    "``Bed Porosity``", ":math:`\varepsilon`", "Porosity of the resin bed (dimensionless).    "``Column Height``", ":math:`H_{col}`", "Height of the column (:math:`\text{m}`)."
+    "``Column Diameter``", ":math:`D_{col}`", "Diameter of the column (:math:`\text{m}`)."
+"
+    "``Number of Columns``", ":math:`n_{col}`", "Number of operational columns in the system."
+    "``Target Component Breakthrough Time``", ":math:`target_breakthrough_time}`", "The time the target ion takes to appear at the outlet at the desired final concentration (:math:`\text{s}`)."
+    "``Empty Bed Contact Time``", ":math:`ebct`", "The time the liquid remains in contact with the resin (:math:`\text{s}`)."
+    "``Loading Rate``", ":math:`loading_rate`", "Superficial velocity through the resin bed (:math:`\text{m/s}`)."
+    "``Service Flow Rate``", ":math:`service_flow_rate`", "Service flow rate in the column (:math:`1 / \text{hr}`)."
+    "``Reynolds Number``", ":math:`N_Re`", "Reynolds number (dimensionless)."
+    "``Peclet Particle Number``", ":math:`N_Pe_particle`", "Peclet particle number (dimensionless)."
+    "``Peclet Bed Number``", ":math:`N_Pe_bed`", "Peclet bed number (dimensionless)."
+    "``Bed Area``", ":math:`bed_area`", "The cross-sectional area of the resin bed, calculated based on the column dimensions."
+    "``Breakthrough Time``", ":math:`target_breakthrough_time}`", "The time each reactive ion :math:`j` takes to appear at the outlet at the desired final concentration (:math:`\text{s}`)."
+    "``Sherwood Number``", ":math:`N_Sh`", "Sherwood number (dimensionless)."
+    "``Normalized Concentration at Final Breakthrough``", ":math:`conc_comp_norm_breakthrough`", "Normalized final breakthrough concentration for each ion :math:`j` (dimensionless)."
+    "``Normalized Concentrations for Trapezoids``", ":math:`conc_comp_norm_trapezoids_j`", "Normalized breakthrough concentrations for each ion :math:`j` for each trapezoid (dimensionless)."
+    "``Breakthrough Time for Trapezoids``", ":math:`breakthrough_time_trapezoids}`", "The time each reactive ion :math:`j` takes to appear at each trapezoid (:math:`\text{s}`)."
+    "``Trapezoids``", ":math:`trapezoids}`", "The trapezoid areas for each ion :math:`j` for estimatinf the area under the breakthrough curve (dimensionless)."
+    "``Freundlich Coefficient n``", ":math:`{freundlich_n_j}`", "The Freundlich isotherm coefficient :math:`n` that characterizes the adsorption capacity of each ion :math:`j` in the solution."
+    "``Mass Transfer Coefficient``", ":math:`k_{T_j}`", "The coefficient that quantifies the rate of mass transfer for each ion in the solution."
+    "``Bed Volumes at 50% Influent Concentration``", ":math:`BV_{{50}_j}`", "The volume of influent required to reach 50% of the initial concentration for each ion :math:`j` in the solution."
+
+These variables are calculated using constraints and expressions
+defined within the models (see Model Structure above).
 
 Limitations of the IXMC Model
-=============================
+-----------------------------
 
-1. **Steady-State Approximation**: The IXMC model uses a steady-state continuous approximation to represent the ion exchange batch process. This simplified model will not capture transient dynamics or time-dependent behavior observed in real-world ion exchange operations.
+1. **Steady-State Approximation**: The IXMC model uses a steady-state
+   continuous approximation to represent the ion exchange batch
+   process. This simplified model will not capture transient dynamics
+   or time-dependent behavior observed in real-world ion exchange
+   operations.
 
-2. **Ion Competitiveness**: The IXMC multicomponent model currently does not account for ion competitiveness for the resin sites during the adsorption stage. These competitive effects include interactions between ions and the resin.
+2. **Ion Competitiveness**: The IXMC multicomponent model currently
+   does not account for ion competitiveness for the resin sites during
+   the adsorption stage. These competitive effects include
+   interactions between ions and the resin.
 
 References
 ----------
 
 | [1] Crittenden, J. C., Trussell, R. R., Hand, D. W., Howe, K. J., & Tchobanoglous, G. (2012). MWH's Water Treatment, Chapter 16: Ion Exchange, Figures 16-14 and 16-15. John Wiley & Sons, Inc.
-
 | [2] Resin Product data sheet: URL: https://www.purolite.com/product/mts9500
-
+| [3] LeVan, M. D., Carta, G., & Yon, C. M. (2019). Section 16: Adsorption and Ion Exchange. Perry's Chemical Engineers' Handbook, 9th Edition.
+| [4] Inamuddin, & Luqman, M. (2012). Ion Exchange Technology I: Theory and Materials.
+| [5] Inglezakis, V. J., & Poulopoulos, S. G. (2006). Adsorption, Ion Exchange and Catalysis: Design of Operations and Environmental Applications. doi:10.1016/B978-0-444-52783-7.X5000-9
+| [6] Croll, H. C., Adelman, M. J., Chow, S. J., Schwab, K. J., Capelle, R., Oppenheimer, J., & Jacangelo, J. G. (2023). Fundamental kinetic constants for breakthrough of per| and polyfluoroalkyl substances at varying empty bed contact times: Theoretical analysis and pilot scale demonstration. Chemical Engineering Journal, 464. doi:10.1016/j.cej.2023.142587
+| [7] United States Environmental Protection Agency. (2021). Work Breakdown Structure-Based Cost Models. https://www.epa.gov/sdwa/drinking-water-treatment-technology-unit-cost-models
 
 """
 

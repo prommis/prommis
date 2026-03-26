@@ -111,7 +111,7 @@ The model is implemented as a 0D control volume with the following
 assumptions:
 
 #. Single liquid phase
-#. Steady state operation 
+#. Steady state operation
 #. Single and multiple solutes and one solvent (water)
 #. Plug flow and isothermal conditions
 #. Freundlich isotherm for equilibrium modeling
@@ -163,7 +163,7 @@ The IXMC model has the following parameters:
    ":math:`regen_cycle`", "Number of cycles the regenerant can be reused (if regenerant is not ``single_use``)."
    ":math:`num_regen_columns`", "Number of regeneration columns (if regenerant is not ``single_use``)."
    ":math:`rinse_bed_volumes`", "Number of bed volumes for the rinse step (if regenerant is not ``single_use``)."
-   
+
 Parameters from Resin Data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 

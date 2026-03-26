@@ -66,20 +66,20 @@ provide additional degrees of freedom for both single-component and
 multicomponent configurations to fully define the model. Common
 variables to fix include:
 
-#. ``resin_diam``: Diameter of the resin bead.
-#. ``resin_density``: Bulk density of the resin.
-#. ``bed_depth``: Height of the resin bed within column.
-#. ``bed_diameter``: Diameter of the column.
-#. ``bed_porosity``: Porosity of the resin bed.
-#. ``number_columns``: Number of columns in operation.
-#. ``loading_rate`` or ``ebct``: Superficial velocity through the resin bed or empty bed contact time.
+#. :math:`resin\_diam`: Diameter of the resin bead.
+#. :math:`resin\_density`: Bulk density of the resin.
+#. :math:`bed\_depth`: Height of the resin bed within column.
+#. :math:`bed\_diameter`: Diameter of the column.
+#. :math:`bed\_porosity`: Porosity of the resin bed.
+#. :math:`number\_columns`: Number of columns in operation.
+#. :math:`loading\_rate` or :math:`ebct`: Superficial velocity through the resin bed or empty bed contact time.
 
 Equilibrium-related variables to fix include:
 
-#. ``freundlich_n_j``: Freundlich isotherm exponent for each ion :math:`j`
-#. ``bv_50``: Bed volumes at fifty percent breakthrough for each ion :math:`j`
-#. ``conc_comp_norm_breakthrough_j``: Normalized breakthrough concentration for each ion :math:`j`
-#. ``mass_transfer_coeff_j``: Mass transfer coefficient for each ion :math:`j`
+#. :math:`freundlich\_n_{j}`: Freundlich isotherm exponent for each ion :math:`j`
+#. :math:`bv\_50_{j}`: Bed volumes at fifty percent breakthrough for each ion :math:`j`
+#. :math:`conc\_comp\_norm\_breakthrough_{j}`: Normalized breakthrough concentration for each ion :math:`j`
+#. :math:`mass\_transfer\_coeff_{j}`: Mass transfer coefficient for each ion :math:`j`
 
 Model Structure
 ---------------
@@ -115,7 +115,7 @@ assumptions:
 #. Single and multiple solutes and one solvent (water)
 #. Plug flow and isothermal conditions
 #. Freundlich isotherm for equilibrium modeling
-#. If ``single-use`` regenerant configuration is used, backwashing,
+#. If ``single_use`` regenerant configuration is used, backwashing,
    regeneration, and rinsing steps are not modeled and associated costs
    are zero.
 #. For multicomponent systems, competitive effects between ions are not

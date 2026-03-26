@@ -39,9 +39,6 @@ from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
 from idaes.core.scaling import CustomScalerBase, DefaultScalingRecommendation
 
-# contaminant_list = ["Fe", "Al", "Ca"]
-# ree_list = ["Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
-
 _contaminant_list = ["Na_+", "Fe_3+", "Fe_2+", "Al_3+", "Ca_2+", "Mg_2+"]
 _ree_list = [
     "Sc_3+",

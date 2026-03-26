@@ -88,21 +88,21 @@ The IXMC model is organized into three distinct models, each designed
 to address specific aspects of the ion exchange process:
 
 1. **ion_exchange_multicomponent_base**: The base model that provides the
-     foundational structure for the IXMC model, defining all global
-     key variables and parameters, including column geometry and resin
-     properties.
+   foundational structure for the IXMC model, defining all global
+   key variables and parameters, including column geometry and resin
+   properties.
 
 2. **ion_exchange_multicomponent**: The equilibrium model that
-     incorporates the Freundlich multicomponent equations, using the
-     Clark equation to describe the adsorption behavior of ions on the
-     resin surface. It also applies all variables and equations for
-     the trapezoidal rule calculations to determine breakthrough curve
-     behavior and estimate effluent concentrations.
+   incorporates the Freundlich multicomponent equations, using the
+   Clark equation to describe the adsorption behavior of ions on the
+   resin surface. It also applies all variables and equations for
+   the trapezoidal rule calculations to determine breakthrough curve
+   behavior and estimate effluent concentrations.
 
 3. **ion_exchange_cost_block** and **ion_exchange_cost_model**: The
-     costing models that implement costing variables and parameters
-     using standard PrOMMiS costing features, ensuring compatibility
-     with existing costing methodologies.
+   costing models that implement costing variables and parameters
+   using standard PrOMMiS costing features, ensuring compatibility
+   with existing costing methodologies.
 
 Assumptions
 -----------

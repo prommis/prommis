@@ -50,7 +50,7 @@ The primary configuration arguments are:
 #. ``property_package``: PhysicalParameterBlock for stream properties.
 #. ``property_package_args``: Arguments for constructing the property package.
 #. ``target_component``: The primary ion to be removed via ion exchange.
-#. ``regenerant``: Regenerant configuration (e.g., ``single#.use``, ``NaCl``).
+#. ``regenerant``: Regenerant configuration (e.g., ``single_use``, ``NaCl``).
 #. ``resin``: Resin name (e.g., ``S950``)
 #. ``resin_data_path``: Path to the JSON file containing resin properties.
 #. ``reactive_ions``: List of additional ions to be separated alongside the target ion.
@@ -126,43 +126,43 @@ Sets
 
 The model defines the following sets:
 
-#. ``Components``: :math:`j` (e.g., ``['H2O', 'Cation_+', 'Anion_-', 'Inert']``)
-#. ``Target Component``: :math:`j` (e.g., ``['Cation_+']``)
-#. ``Reactive Ions``: :math:`j` (list of ions to be separated)
-#. ``Inert``: :math:`j` (list of ions that are not separated)
+#. ``Components``: Ions and solvent in the solution (e.g., ``['H2O', 'Cation_+', 'Anion_-', 'Inert']``)
+#. ``Target Component``: Target ion to be separated (e.g., ``['Cation_+']``)
+#. ``Reactive Ions``: List of ions to be separated
+#. ``Inert``: List of ions that are not separated
 
-Parameters
-----------
+Default Parameters
+------------------
 
 The IXMC model has the following parameters:
 
 .. csv-table:: Key operating and resin-specific parameters
-   :header: "Parameter", "Description"
+   :header: "Symbol in Model", "Description"
 
-   ":math:`underdrain_h`", "Height of the column underdrain."
-   ":math:`distributor_h`", "Height of the column distributor."
-   ":math:`Pe_p_A`", "Peclet particle equation parameter A."
-   ":math:`Pe_p_exp`", "Peclet particle equation exponent."
-   ":math:`Sh_A`", "Sherwood equation parameter A."
-   ":math:`Sh_exp_A`", "Sherwood equation exponent A."
-   ":math:`Sh_exp_B`", "Sherwood equation exponent B."
-   ":math:`Sh_exp_C`", "Sherwood equation exponent C."
-   ":math:`pump_efficiency`", "Pump efficiency."
-   ":math:`backwash_loading_rate`", "Backwash loading rate."
-   ":math:`backwash_time`", "Backwash time."
-   ":math:`pressure_drop_param_{A}`", "Pressure drop equation parameter A (resin-specific)."
-   ":math:`pressure_drop_param_{B}`", "Pressure drop equation parameter B (resin-specific)."
-   ":math:`pressure_drop_param_{C}`", "Pressure drop equation parameter C (resin-specific)."
-   ":math:`bed_expansion_param_{A}`", "Bed expansion fraction equation parameter A (resin-specific)."
-   ":math:`bed\_expansion\_frac\_B`", "Bed expansion fraction equation parameter B (resin-specific)."
-   ":math:`bed\_expansion\_frac\_C`", "Bed expansion fraction equation parameter C (resin-specific)."
-   ":math:`regen_dose`", "Regenerant dose required per volume of resin (if regenerant is not ``single_use``)."
-   ":math:`regen_soln_conc`", "Concentration of regenerant solution (if regenerant is not ``single_use``)."
-   ":math:`regen_soln_conc_sat`", "Saturation concentration of regenerant solution (if regenerant is not ``single_use``)."
-   ":math:`regen_soln_dens`", "Density of regenerant solution (if regenerant is not ``single_use``)."
-   ":math:`regen_cycle`", "Number of cycles the regenerant can be reused (if regenerant is not ``single_use``)."
-   ":math:`num_regen_columns`", "Number of regeneration columns (if regenerant is not ``single_use``)."
-   ":math:`rinse_bed_volumes`", "Number of bed volumes for the rinse step (if regenerant is not ``single_use``)."
+   ":math:`underdrain\_h`", "Height of the column underdrain."
+   ":math:`distributor\_h`", "Height of the column distributor."
+   ":math:`Pe\_p\_A`", "Peclet particle equation parameter A."
+   ":math:`Pe\_p\_exp`", "Peclet particle equation exponent."
+   ":math:`Sh\_A`", "Sherwood equation parameter A."
+   ":math:`Sh\_exp\_A`", "Sherwood equation exponent A."
+   ":math:`Sh\_exp\_B`", "Sherwood equation exponent B."
+   ":math:`Sh\_exp\_C`", "Sherwood equation exponent C."
+   ":math:`pump\_efficiency`", "Pump efficiency."
+   ":math:`backwash\_loading\_rate`", "Backwash loading rate."
+   ":math:`backwash\_time`", "Backwash time."
+   ":math:`pressure\_drop\_param\_A`", "Pressure drop equation parameter A (resin-specific)."
+   ":math:`pressure\_drop\_param\_B`", "Pressure drop equation parameter B (resin-specific)."
+   ":math:`pressure\_drop\_param\_C`", "Pressure drop equation parameter C (resin-specific)."
+   ":math:`bed\_expansion\_param\_A`", "Bed expansion fraction equation parameter A (resin-specific)."
+   ":math:`bed\_expansion\_param\_B`", "Bed expansion fraction equation parameter B (resin-specific)."
+   ":math:`bed\_expansion\_param\_C`", "Bed expansion fraction equation parameter C (resin-specific)."
+   ":math:`regen\_dose`", "Regenerant dose required per volume of resin (if regenerant is not ``single_use``)."
+   ":math:`regen\_soln\_conc`", "Concentration of regenerant solution (if regenerant is not ``single_use``)."
+   ":math:`regen\_soln\_conc\_sat`", "Saturation concentration of regenerant solution (if regenerant is not ``single_use``)."
+   ":math:`regen\_soln\_dens`", "Density of regenerant solution (if regenerant is not ``single_use``)."
+   ":math:`regen\_cycle`", "Number of cycles the regenerant can be reused (if regenerant is not ``single_use``)."
+   ":math:`num\_regen\_columns`", "Number of regeneration columns (if regenerant is not ``single_use``)."
+   ":math:`rinse\_bed\_volumes`", "Number of bed volumes for the rinse step (if regenerant is not ``single_use``)."
 
 Parameters from Resin Data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -200,41 +200,38 @@ Variables
 The IXMC model adds the following variables:
 
 .. csv-table:: Key Parameters Needed in the IXMC Model
-   :header: "Name", "Symbol", "Description"
+   :header: "Name", "Symbol in Model", "Description"
 
-    "``Inlet Temperature``", ":math:`T_{in}`", "Inlet temperature of the feed stream (:math:`\text{K}`)."
-    "``Inlet Pressure``", ":math:`P_{in}`", "Inlet pressure of the feed stream (:math:`\text{Pa}`)."
-    "``Component Molar Flow Rate``", ":math:`\dot{n}_{j}`", "Molar flow rate of each component (:math:`\text{mol/s}`)."
-    "``Bed Linear Velocity``", ":math:`u_{bed}`", "Linear velocity through the resin bed (:math:`\text{m/s}`)."
-    "``Interstitial Velocity``", ":math:`u_{inter}`", "Interstitial velocity in the bed (:math:`\text{m/s}`)."
-    "``Regenerant Recycle Cycles``", ":math:`regen_{recycle}`", "Number of cycles before regenerant disposal."
-
-    "``Resin Diameter``", ":math:`resin_diam`", "Diameter of individual resin beads (:math:`\text{m}`)."
-    "``Resin Density``", ":math:`resin_density`", "Bulk density of the resin (:math:`\text{kg/L}`)."
-    "``Bed Volume``", ":math:`bed_volume`", "Volume of resin bed in column (:math:`\text{m3}`)."
-    "``Total Bed Volume``", ":math:`V_{bed,tot}`", "Total volume of the resin beds (:math:`\text{m}^3`)."
-    "``Bed Depth``", ":math:`Z`", "Depth of the resin bed (:math:`\text{m}`)."
-    "``Bed Porosity``", ":math:`\varepsilon`", "Porosity of the resin bed (dimensionless).    "``Column Height``", ":math:`H_{col}`", "Height of the column (:math:`\text{m}`)."
-    "``Column Diameter``", ":math:`D_{col}`", "Diameter of the column (:math:`\text{m}`)."
-"
-    "``Number of Columns``", ":math:`n_{col}`", "Number of operational columns in the system."
-    "``Target Component Breakthrough Time``", ":math:`target_breakthrough_time}`", "The time the target ion takes to appear at the outlet at the desired final concentration (:math:`\text{s}`)."
-    "``Empty Bed Contact Time``", ":math:`ebct`", "The time the liquid remains in contact with the resin (:math:`\text{s}`)."
-    "``Loading Rate``", ":math:`loading_rate`", "Superficial velocity through the resin bed (:math:`\text{m/s}`)."
-    "``Service Flow Rate``", ":math:`service_flow_rate`", "Service flow rate in the column (:math:`1 / \text{hr}`)."
-    "``Reynolds Number``", ":math:`N_Re`", "Reynolds number (dimensionless)."
-    "``Peclet Particle Number``", ":math:`N_Pe_particle`", "Peclet particle number (dimensionless)."
-    "``Peclet Bed Number``", ":math:`N_Pe_bed`", "Peclet bed number (dimensionless)."
-    "``Bed Area``", ":math:`bed_area`", "The cross-sectional area of the resin bed, calculated based on the column dimensions."
-    "``Breakthrough Time``", ":math:`target_breakthrough_time}`", "The time each reactive ion :math:`j` takes to appear at the outlet at the desired final concentration (:math:`\text{s}`)."
-    "``Sherwood Number``", ":math:`N_Sh`", "Sherwood number (dimensionless)."
-    "``Normalized Concentration at Final Breakthrough``", ":math:`conc_comp_norm_breakthrough`", "Normalized final breakthrough concentration for each ion :math:`j` (dimensionless)."
-    "``Normalized Concentrations for Trapezoids``", ":math:`conc_comp_norm_trapezoids_j`", "Normalized breakthrough concentrations for each ion :math:`j` for each trapezoid (dimensionless)."
-    "``Breakthrough Time for Trapezoids``", ":math:`breakthrough_time_trapezoids}`", "The time each reactive ion :math:`j` takes to appear at each trapezoid (:math:`\text{s}`)."
-    "``Trapezoids``", ":math:`trapezoids}`", "The trapezoid areas for each ion :math:`j` for estimatinf the area under the breakthrough curve (dimensionless)."
-    "``Freundlich Coefficient n``", ":math:`{freundlich_n_j}`", "The Freundlich isotherm coefficient :math:`n` that characterizes the adsorption capacity of each ion :math:`j` in the solution."
-    "``Mass Transfer Coefficient``", ":math:`k_{T_j}`", "The coefficient that quantifies the rate of mass transfer for each ion in the solution."
-    "``Bed Volumes at 50% Influent Concentration``", ":math:`BV_{{50}_j}`", "The volume of influent required to reach 50% of the initial concentration for each ion :math:`j` in the solution."
+   "``Inlet Temperature``", ":math:`inlet.temperature`", "Inlet temperature of the feed stream (:math:`\text{K}`)."
+   "``Inlet Pressure``", ":math:`inlet.pressure`", "Inlet pressure of the feed stream (:math:`\text{Pa}`)."
+   "``Component Molar Flow Rate``", ":math:`conc\_mol\_phase\_comp_{j}`", "Molar flow rate of each component (:math:`\text{mol/s}`)."
+   "``Regenerant Recycle Cycles``", ":math:`regen\_recycle`", "Number of cycles before regenerant disposal."
+   "``Resin Diameter``", ":math:`resin\_diam`", "Diameter of individual resin beads (:math:`\text{m}`)."
+   "``Resin Density``", ":math:`resin\_density`", "Bulk density of the resin (:math:`\text{kg/L}`)."
+   "``Bed Volume``", ":math:`bed\_volume`", "Volume of resin bed in column (:math:`\text{m}^3`)."
+   "``Total Bed Volume``", ":math:`bed\_volume\_total`", "Total volume of the resin beds (:math:`\text{m}^3`)."
+   "``Bed Depth``", ":math:`bed\_depth`", "Depth of the resin bed (:math:`\text{m}`)."
+   "``Bed Porosity``", ":math:`bed\_porosity`", "Porosity of the resin bed (dimensionless)."
+   "``Column Height``", ":math:`column\_height`", "Height of the column (:math:`\text{m}`)."
+   "``Column Diameter``", ":math:`column\_diameter`", "Diameter of the column (:math:`\text{m}`)."
+   "``Number of Columns``", ":math:`number\_columns`", "Number of operational columns in the system."
+   "``Target Component Breakthrough Time``", ":math:`target\_breakthrough\_time`", "The time the target ion takes to appear at the outlet at the desired final concentration (:math:`\text{s}`)."
+   "``Empty Bed Contact Time``", ":math:`ebct`", "The time the liquid remains in contact with the resin (:math:`\text{s}`)."
+   "``Loading Rate``", ":math:`loading\_rate`", "Superficial velocity through the resin bed (:math:`\text{m/s}`)."
+   "``Service Flow Rate``", ":math:`service\_flow\_rate`", "Service flow rate in the column (:math:`1 / \text{hr}`)."
+   "``Reynolds Number``", ":math:`N\_Re`", "Reynolds number (dimensionless)."
+   "``Peclet Particle Number``", ":math:`N\_Pe\_particle`", "Peclet particle number (dimensionless)."
+   "``Peclet Bed Number``", ":math:`N\_Pe\_bed`", "Peclet bed number (dimensionless)."
+   "``Bed Area``", ":math:`bed\_area`", "The cross-sectional area of the resin bed, calculated based on the column dimensions."
+   "``Sherwood Number``", ":math:`N\_Sh`", "Sherwood number (dimensionless)."
+   "``Normalized Concentration at Final Breakthrough``", ":math:`conc\_comp\_norm\_breakthrough_{j}`", "Normalized final breakthrough concentration for each ion :math:`j` (dimensionless)."
+   "``Normalized Concentrations for Trapezoids``", ":math:`conc\_comp\_norm\_trapezoids_{j}`", "Normalized breakthrough concentrations for each ion :math:`j` for each trapezoid (dimensionless)."
+   "``Components Breakthrough Time``", ":math:`breakthrough\_time_{j}`", "The time each reactive ion :math:`j` takes to appear at the outlet at the desired final concentration (:math:`\text{s}`)."
+   "``Breakthrough Time for Trapezoids``", ":math:`breakthrough\_time\_trapezoids_{j,a}`", "The time each reactive ion :math:`j` takes to appear at each trapezoid :math:`a` (:math:`\text{s}`)."
+   "``Trapezoids``", ":math:`trapezoids_{j, a}`", "The trapezoid areas :math:`a` for each ion :math:`j` for estimating the area under the breakthrough curve (dimensionless)."
+   "``Freundlich Coefficient n``", ":math:`freundlich\_n_{j}`", "The Freundlich isotherm coefficient :math:`n` that characterizes the adsorption capacity of each ion :math:`j` in the solution."
+   "``Mass Transfer Coefficient``", ":math:`mass\_transfer\_coeff_{j}`", "The coefficient that quantifies the rate of mass transfer for each ion in the solution."
+   "``Bed Volumes at 50% Influent Concentration``", ":math:`BV_{{50}_j}`", "The volume of influent required to reach 50% of the initial concentration for each ion :math:`j` in the solution."
 
 These variables are calculated using constraints and expressions
 defined within the models (see Model Structure above).

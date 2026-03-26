@@ -64,7 +64,6 @@ enable = [
     "ungrouped-imports",
     "implicit-str-concat",
     "dangerous-default-value",
-    "invalid-name",
     "silent-exception-handling",
 ]
 module-naming-style = "snake_case"

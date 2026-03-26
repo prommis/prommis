@@ -6495,9 +6495,9 @@ def test_REE_costing_consider_taxes():
     )
     assert value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
     assert value(m.fs.costing.income_tax) == pytest.approx(5.303479, abs=1e-4)
-    assert value(m.fs.costing.net_tax_owed) == pytest.approx(2.709606, abs=1e-4)
-    assert value(m.fs.costing.pv_taxes) == pytest.approx(-17.33163, abs=1e-4)
-    assert value(m.fs.costing.npv) == pytest.approx(158.08158, abs=1e-4)
+    assert value(m.fs.costing.net_tax_owed) == pytest.approx(2.795132, abs=1e-4)
+    assert value(m.fs.costing.pv_taxes) == pytest.approx(-17.878691, abs=1e-4)
+    assert value(m.fs.costing.npv) == pytest.approx(157.534519, abs=1e-4)
 
 
 @pytest.mark.component
@@ -6606,8 +6606,6 @@ def test_REE_costing_with_phaseout():
 
     assert isinstance(m.fs.costing.mineral_depletion_charge, pyo.Expression)
     assert isinstance(m.fs.costing.production_incentive_charge, pyo.Expression)
-    assert isinstance(m.fs.costing.pv_production_incentive_from_capex, pyo.Expression)
-    assert isinstance(m.fs.costing.pv_production_incentive_from_opex, pyo.Expression)
     assert isinstance(m.fs.costing.income_tax_eq, pyo.Constraint)
     assert isinstance(m.fs.costing.royalty_charge, pyo.Expression)
     assert isinstance(m.fs.costing.net_tax_owed_eq, pyo.Constraint)
@@ -6632,11 +6630,11 @@ def test_REE_costing_with_phaseout():
     )
     assert value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
     assert value(m.fs.costing.income_tax) == pytest.approx(6.35477, abs=1e-4)
-    assert value(m.fs.costing.net_tax_owed) == pytest.approx(3.46109, abs=1e-4)
-    assert value(m.fs.costing.pv_taxes) == pytest.approx(-27.085, abs=1e-4)
-    assert value(m.fs.costing.npv) == pytest.approx(189.02834, abs=1e-4)
+    assert value(m.fs.costing.net_tax_owed) == pytest.approx(3.559615, abs=1e-4)
+    assert value(m.fs.costing.pv_taxes) == pytest.approx(-27.085046, abs=1e-4)
+    assert value(m.fs.costing.npv) == pytest.approx(186.817998, abs=1e-4)
     assert value(m.fs.costing.pv_production_incentive) == pytest.approx(
-        5.94735, abs=1e-4
+        3.736998, abs=1e-4
     )
 
 

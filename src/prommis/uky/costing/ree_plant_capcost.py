@@ -462,7 +462,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 critical minerals other than metallurgical coal.
                 Section 45X(b)(1)(M):
                 https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title26-section45X&num=0&edition=prelim
-                Eligibility requirement: 45X(c)(6)
+                Eligibility requirement: see 45X(c)(6)
             consider_phaseout: True/False flag for whether to consider phaseout of production incentive tax credit.
                 If True, phaseout_years and phaseout_fractions must be defined. Defaults to False.
             phaseout_years: list of years during which production incentive tax credit is phased out.
@@ -1234,7 +1234,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             * (
                                 self.total_variable_OM_cost[0]
                                 + self.total_fixed_OM_cost
-                                + self.annualized_cost / pyunits.year
                             )
                         )
                     else:
@@ -1246,7 +1245,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             * (
                                 self.total_variable_OM_cost[0]
                                 + self.total_fixed_OM_cost
-                                + self.annualized_cost / pyunits.year
                             )
                         )
 
@@ -3822,9 +3820,20 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         if consider_phaseout:
 
-            @b.Expression()
-            def pv_production_incentive_from_opex(c):
-                return pyunits.convert(
+            # The present value of the production incentive is:
+            #
+            #   PV_prod_incentive = sum over k=0,1,...,M-1 of [ p_k * C_opex * (SPWF(r, g, k+1) - SPWF(r, g, k)) ]
+
+            # where:
+            #   p_k    = production_incentive_charge_percent_list[k]  (incentive fraction in year k)
+            #   C_opex = annual operating cost (base year dollars)
+            #   M      = len(production_incentive_charge_percent_list)
+            #   SPWF(r, g, N) = series present worth factor with discount rate r, inflation rate g, and N years
+
+            @b.Constraint()
+            def pv_production_incentive_constraint(c):
+
+                return c.pv_production_incentive == pyunits.convert(
                     sum(
                         b.production_incentive_charge_percent_list[idx]
                         * c.opex
@@ -3857,66 +3866,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         )
                     ),
                     to_units=c.cost_units,
-                )
-
-            if b.config.has_capital_expenditure_period:
-
-                @b.Expression()
-                def pv_production_incentive_from_capex(c):
-
-                    return pyunits.convert(
-                        sum(
-                            b.production_incentive_charge_percent_list[idx]
-                            * c.capex
-                            * (  # P/A_year(i) - P/A_year(i-1))
-                                series_present_worth_factor(
-                                    pyunits.convert(
-                                        c.discount_percentage,
-                                        to_units=pyunits.dimensionless,
-                                    ),
-                                    pyunits.convert(
-                                        c.capital_escalation_percentage,
-                                        to_units=pyunits.dimensionless,
-                                    ),
-                                    idx + 1,
-                                )
-                                - series_present_worth_factor(
-                                    pyunits.convert(
-                                        c.discount_percentage,
-                                        to_units=pyunits.dimensionless,
-                                    ),
-                                    pyunits.convert(
-                                        c.capital_escalation_percentage,
-                                        to_units=pyunits.dimensionless,
-                                    ),
-                                    idx,
-                                )
-                            )
-                            for idx in range(
-                                len(c.config.capital_expenditure_percentages)
-                            )
-                        ),
-                        to_units=c.cost_units,
-                    )
-
-            else:
-
-                @b.Expression()
-                def pv_production_incentive_from_capex(c):
-                    return b.production_incentive_charge_percent_list[
-                        0
-                    ] * pyunits.convert(
-                        c.capex,
-                        to_units=c.cost_units,
-                    )
-
-            @b.Constraint()
-            def pv_production_incentive_constraint(c):
-
-                return (
-                    c.pv_production_incentive
-                    == c.pv_production_incentive_from_opex
-                    + c.pv_production_incentive_from_capex
                 )
 
         @b.Constraint()

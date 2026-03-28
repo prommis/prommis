@@ -80,7 +80,14 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
 
         # infinite dilution solute diffusion coefficient
         # source: https://www.aqion.de/site/diffusion-coefficients
-        diffusion_coefficient_dict = {
+        # assumption: no hindered transport (D_bulk = D_membrane)
+        boundary_layer_diffusion_coefficient_dict = {
+            "Li": 3.71,  # mm2 / h
+            "Co": 2.64,  # mm2 / h
+            "Al": 2.01,  # mm2 / h
+            "Cl": 7.31,  # mm2 / h
+        }
+        membrane_diffusion_coefficient_dict = {
             "Li": 3.71,  # mm2 / h
             "Co": 2.64,  # mm2 / h
             "Al": 2.01,  # mm2 / h
@@ -172,83 +179,65 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
         }
 
         # initialize dictionaries for a single cation
+        cat_1 = self.config.cation_list[0]
+        a0 = self.config.anion_list[0]
         initialize_charge_dict = {
-            self.config.cation_list[0]: charge_dict[self.config.cation_list[0]],
-            self.config.anion_list[0]: charge_dict[self.config.anion_list[0]],
+            cat_1: charge_dict[cat_1],
+            a0: charge_dict[a0],
         }
-        initialize_diffusion_coefficient_dict = {
-            self.config.cation_list[0]: diffusion_coefficient_dict[
-                self.config.cation_list[0]
-            ],
-            self.config.anion_list[0]: diffusion_coefficient_dict[
-                self.config.anion_list[0]
-            ],
+        initialize_boundary_layer_diffusion_coefficient_dict = {
+            cat_1: boundary_layer_diffusion_coefficient_dict[cat_1],
+            a0: boundary_layer_diffusion_coefficient_dict[a0],
+        }
+        initialize_membrane_diffusion_coefficient_dict = {
+            cat_1: membrane_diffusion_coefficient_dict[cat_1],
+            a0: membrane_diffusion_coefficient_dict[a0],
         }
         initialize_sigma_dict = {
-            self.config.cation_list[0]: sigma_dict[self.config.cation_list[0]],
-            self.config.anion_list[0]: sigma_dict[self.config.anion_list[0]],
+            cat_1: sigma_dict[cat_1],
+            a0: sigma_dict[a0],
         }
         initialize_partition_coefficient_retentate_dict = {
-            self.config.cation_list[0]: partition_coefficient_dict["retentate"][
-                self.config.cation_list[0]
-            ],
-            self.config.anion_list[0]: partition_coefficient_dict["retentate"][
-                self.config.anion_list[0]
-            ],
+            cat_1: partition_coefficient_dict["retentate"][cat_1],
+            a0: partition_coefficient_dict["retentate"][a0],
         }
         initialize_partition_coefficient_permeate_dict = {
-            self.config.cation_list[0]: partition_coefficient_dict["permeate"][
-                self.config.cation_list[0]
-            ],
-            self.config.anion_list[0]: partition_coefficient_dict["permeate"][
-                self.config.anion_list[0]
-            ],
+            cat_1: partition_coefficient_dict["permeate"][cat_1],
+            a0: partition_coefficient_dict["permeate"][a0],
         }
         initialize_num_solutes_dict = {
-            self.config.cation_list[0]: num_solutes_dict[salt_system][
-                self.config.cation_list[0]
-            ],
-            self.config.anion_list[0]: num_solutes_dict[salt_system][
-                self.config.anion_list[0]
-            ],
+            cat_1: num_solutes_dict[salt_system][cat_1],
+            a0: num_solutes_dict[salt_system][a0],
         }
 
         # add additional cations to dictionaries
+        cation_list = self.config.cation_list
         i = 1
-        while i < len(self.config.cation_list):
-            initialize_charge_dict.update(
-                {self.config.cation_list[i]: charge_dict[self.config.cation_list[i]]}
-            )
-            initialize_diffusion_coefficient_dict.update(
+        while i < len(cation_list):
+            initialize_charge_dict.update({cation_list[i]: charge_dict[cation_list[i]]})
+            initialize_boundary_layer_diffusion_coefficient_dict.update(
                 {
-                    self.config.cation_list[i]: diffusion_coefficient_dict[
-                        self.config.cation_list[i]
+                    cation_list[i]: boundary_layer_diffusion_coefficient_dict[
+                        cation_list[i]
                     ]
                 }
             )
-            initialize_sigma_dict.update(
-                {self.config.cation_list[i]: sigma_dict[self.config.cation_list[i]]}
+            initialize_membrane_diffusion_coefficient_dict.update(
+                {cation_list[i]: membrane_diffusion_coefficient_dict[cation_list[i]]}
             )
+            initialize_sigma_dict.update({cation_list[i]: sigma_dict[cation_list[i]]})
             initialize_partition_coefficient_retentate_dict.update(
                 {
-                    self.config.cation_list[i]: partition_coefficient_dict["retentate"][
-                        self.config.cation_list[i]
+                    cation_list[i]: partition_coefficient_dict["retentate"][
+                        cation_list[i]
                     ]
                 }
             )
             initialize_partition_coefficient_permeate_dict.update(
-                {
-                    self.config.cation_list[i]: partition_coefficient_dict["permeate"][
-                        self.config.cation_list[i]
-                    ]
-                }
+                {cation_list[i]: partition_coefficient_dict["permeate"][cation_list[i]]}
             )
             initialize_num_solutes_dict.update(
-                {
-                    self.config.cation_list[i]: num_solutes_dict[salt_system][
-                        self.config.cation_list[i]
-                    ]
-                }
+                {cation_list[i]: num_solutes_dict[salt_system][cation_list[i]]}
             )
             i += 1
 
@@ -259,10 +248,16 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
             initialize=initialize_charge_dict,
         )
 
-        self.diffusion_coefficient = Param(
+        self.boundary_layer_diffusion_coefficient = Param(
             self.component_list,
             units=units.mm**2 / units.h,
-            initialize=initialize_diffusion_coefficient_dict,
+            initialize=initialize_boundary_layer_diffusion_coefficient_dict,
+        )
+
+        self.membrane_diffusion_coefficient = Param(
+            self.component_list,
+            units=units.mm**2 / units.h,
+            initialize=initialize_membrane_diffusion_coefficient_dict,
         )
 
         self.sigma = Param(

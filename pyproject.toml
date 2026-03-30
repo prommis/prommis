@@ -23,18 +23,16 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Chemistry",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
-dynamic = ["version"]
-dependencies = [
-    "idaes-pse >=2.11.0",
-    "pyomo >=6.9.5",
+keywords = [
+    "IDAES",
+    "energy systems",
+    "chemical engineering",
+    "process modeling",
 ]
 dynamic = ["version"]
-dependencies = ["idaes-pse>=2.10.0", "pyomo >=6.9.5"]
+dependencies = ["idaes-pse>=2.11.0", "pyomo >=6.9.5"]
 [project.optional-dependencies]
-watertap = [
-    "watertap >= 1.6.0rc0"
-]
+watertap = ["watertap >= 1.6.0rc0"]
 
 
 flowsheet-processor = ["idaes-flowsheet-processor >=0.2"]

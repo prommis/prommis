@@ -1,8 +1,5 @@
 [build-system]
-requires = [
-    "setuptools >= 64",
-    "setuptools_scm >= 7",
-]
+requires = ["setuptools >= 64", "setuptools_scm >= 7"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -28,21 +25,19 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Chemistry",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-keywords = ["IDAES", "energy systems", "chemical engineering", "process modeling"]
+keywords = [
+    "IDAES",
+    "energy systems",
+    "chemical engineering",
+    "process modeling",
+]
 dynamic = ["version"]
-dependencies = [
-    "idaes-pse>=2.10.0",
-    "pyomo >=6.9.5",
-]
+dependencies = ["idaes-pse>=2.11.0", "pyomo >=6.9.5"]
 [project.optional-dependencies]
-watertap = [
-    "watertap >= 1.5.0"
-]
+watertap = ["watertap >= 1.6.0"]
 
 
-flowsheet-processor = [
-    "idaes-flowsheet-processor >=0.2",
-]
+flowsheet-processor = ["idaes-flowsheet-processor >=0.2"]
 
 [tool.setuptools_scm]
 # https://setuptools-scm.readthedocs.io/en/v8.1.0/extending/
@@ -51,6 +46,7 @@ local_scheme = "node-and-date"
 
 [tool.pylint.main]
 py-version = "3.11"
+load-plugins = ["custom_pylint.silent_exception_checker"]
 
 [tool.pylint."messages control"]
 disable = [
@@ -71,6 +67,7 @@ enable = [
     "implicit-str-concat",
     "dangerous-default-value",
     "invalid-name",
+    "silent-exception-handling",
 ]
 module-naming-style = "snake_case"
 const-naming-style = "any"
@@ -112,6 +109,7 @@ extend-exclude = [
     "*.jpg",
     "*.jpeg",
     "uky_example.ipynb",
+    "custom_pylint",
 ]
 
 [tool.typos.default.extend-words]

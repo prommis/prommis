@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -27,9 +27,9 @@ from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.scaling import (
-    badly_scaled_var_generator,
     calculate_scaling_factors,
-    unscaled_variables_generator,
+    get_jacobian,
+    jacobian_cond,
 )
 
 import pytest
@@ -1687,35 +1687,27 @@ class TestWaterTAPCosting(object):
 
         return model
 
-    # TODO replace with test of condition number
+    @pytest.mark.solver
     @pytest.mark.component
-    def test_scaling(self, model):
-        # Nanofiltration
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.nfunit))
-        assert len(unscaled_var_list) == 0
+    def test_condition_number(self, model):
 
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.nfunit, small=1e-5, zero=1e-12)
+        # Check condition number to confirm scaling for nanofiltration
+        jac, _ = get_jacobian(model.fs_membrane.nfunit, scaled=False)
+        assert (jacobian_cond(jac=jac, scaled=False)) == pytest.approx(
+            5.6905e14, rel=1e-3
         )
-        assert len(badly_scaled_var_lst) == 0
 
-        # RO unit
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.rounit))
-        assert len(unscaled_var_list) == 0
-
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.rounit)
+        # Check condition number to confirm scaling for RO
+        jac, _ = get_jacobian(model.fs_membrane.rounit, scaled=False)
+        assert (jacobian_cond(jac=jac, scaled=False)) == pytest.approx(
+            4.29867e16, rel=1e-3
         )
-        assert len(badly_scaled_var_lst) == 0
 
-        # Ion exchange
-        unscaled_var_list = list(unscaled_variables_generator(model.fs_membrane.ixunit))
-        assert len(unscaled_var_list) == 0
-
-        badly_scaled_var_lst = list(
-            badly_scaled_var_generator(model.fs_membrane.ixunit)
+        # Check condition number to confirm scaling for ion exchange
+        jac, _ = get_jacobian(model.fs_membrane.ixunit, scaled=False)
+        assert (jacobian_cond(jac=jac, scaled=False)) == pytest.approx(
+            4.59436e15, rel=1e-3
         )
-        assert len(badly_scaled_var_lst) == 0
 
     @pytest.mark.component
     def test_REE_watertap_costing(self, model):
@@ -1941,7 +1933,7 @@ class TestWaterTAPCosting(object):
     @pytest.mark.component
     def test_REE_watertap_costing_results_totalcapex(self, model):
 
-        assert value(model.fs.costing.total_BEC) == pytest.approx(50.686, rel=1e-4)
+        assert value(model.fs.costing.total_BEC) == pytest.approx(56.5333, rel=1e-4)
 
     @pytest.mark.component
     def test_REE_watertap_costing_results_equipmentcapex(self, model):
@@ -1974,7 +1966,7 @@ class TestWaterTAPCosting(object):
             pyunits.convert(
                 model.fs_membrane.nfzounit.costing.capital_cost, to_units=CE_index_units
             )
-        ) == pytest.approx(2.3391, rel=1e-4)
+        ) == pytest.approx(8.1867, rel=1e-4)
 
         assert value(
             model.fs.costing.total_BEC
@@ -2027,7 +2019,7 @@ class TestWaterTAPCosting(object):
                 model.fs_membrane.nfzounit.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
-        ) == pytest.approx(0.467810, rel=1e-4)
+        ) == pytest.approx(1.63734, rel=1e-4)
 
         assert value(
             pyunits.convert(
@@ -2040,14 +2032,14 @@ class TestWaterTAPCosting(object):
                 model.fs_membrane.nfzounit.costing.fixed_operating_cost,
                 to_units=CE_index_units / pyunits.year,
             )
-        ) == pytest.approx(0.505407, rel=1e-4)
+        ) == pytest.approx(1.6749, rel=1e-4)
 
         assert value(model.fs.costing.watertap_fixed_costs) == pytest.approx(
-            0.505407, rel=1e-4
+            1.67493, rel=1e-4
         )
 
         assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(
-            11.98986, rel=1e-4
+            13.6804, rel=1e-4
         )
 
     # TODO commented as no WaterTAP models currently use this, may change in the future

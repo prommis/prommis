@@ -32,7 +32,7 @@ keywords = [
 dynamic = ["version"]
 dependencies = ["idaes-pse>=2.11.0", "pyomo >=6.9.5"]
 [project.optional-dependencies]
-watertap = ["watertap >= 1.6.0rc0"]
+watertap = ["watertap >= 1.6.0"]
 
 
 flowsheet-processor = ["idaes-flowsheet-processor >=0.2"]

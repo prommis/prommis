@@ -195,4 +195,4 @@ jobs:
         run: jupyter-book build .
       - name: Execute notebooks
         working-directory: docs/
-        run: pytest --nbmake -m "solution" --ignore docs/tutorial/diafiltration_cost_uncertainty_quantification_and_propagation-solution.ipynb .
+        run: pytest --nbmake -m "solution" --ignore tutorials/diafiltration_cost_uncertainty_quantification_and_propagation-solution.ipynb .

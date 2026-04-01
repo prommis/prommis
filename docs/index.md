@@ -17,8 +17,8 @@ PrOMMiS helps to guarantee national strategic objectives for critical materials:
 
 PrOMMiS leverages tools and models from the Institute for Design of Advanced Energy Systems
 ([IDAES](https://idaes.org/)), Water treatment Technoeconomic Assessment Platform
-([WaterTAP](https://netl.doe.gov/carbon-management/carbon-capture/ccsi2)), Carbon Capture Simulation for Industry
-Impact ([CCSI2]()) and other related programs.
+([WaterTAP](https://www.nawihub.org/knowledge/watertap/)), Carbon Capture Simulation for Industry
+Impact ([CCSI2](https://www.acceleratecarboncapture.org/)) and other related programs.
 
 For more information on the IDAES platform and related projects, now called IDAES+, see the [IDAES+
 web pages](https://idaesplus.readthedocs.io/latest/).

@@ -329,6 +329,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         income_tax_percentage=26,
         mineral_depletion_percentage=14,
         production_incentive_percentage=10,
+        consider_phaseout=False,
+        phaseout_years=None,
+        phaseout_fractions=None,
         royalty_charge_percentage_of_revenue=6.5,
         CE_index_year="2021",
         watertap_blocks=None,
@@ -455,7 +458,21 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 the type of mineral recovered, defaults to 14% of gross income excluding royalties
                 as reported in the UKy report.
             production_incentive_percentage: tax deduction percentage for producing critical minerals,
-                defaults to 10% of total production cost (excludes cost of feedstock).
+                defaults to 10% of total production cost (excludes cost of feedstock). This only applies to
+                critical minerals other than metallurgical coal.
+                Section 45X(b)(1)(M):
+                https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title26-section45X&num=0&edition=prelim
+                Eligibility requirement: see 45X(c)(6)
+            consider_phaseout: True/False flag for whether to consider phaseout of production incentive tax credit.
+                If True, phaseout_years and phaseout_fractions must be defined. Defaults to False.
+            phaseout_years: list of years during which production incentive tax credit is phased out.
+                MUST be in chronological (ascending) order. The list MUST have the same length as phaseout_fractions.
+                Defaults to [2031, 2032, 2033] based on the One Big Beautiful Bill Amendment (OBBBA)
+                https://www.congress.gov/bill/119th-congress/house-bill/1/text (Volume 139 STAT. 274).
+            phaseout_fractions: list of fractions of the production incentive tax credit that are applied during the phaseout years.
+                Each value MUST be between 0 and 1, and the list MUST have the same length as phaseout_years.
+                Defaults to [0.75, 0.50, 0.25] based on OBBBA, which specifies a 25% reduction in the first year of phaseout,
+                50% reduction in the second year, and 75% reduction in the third year before the tax credit is fully phased out.
             royalty_charge_percentage_of_revenue: Percentage of revenue charged as royalties;
                 defaults to 6.5% as reported in the UKy report.
             transport_cost_per_ton_product: Expression, Var or Param to use for transport costs
@@ -473,6 +490,36 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 f"model."
             )
         self.library = "REE"
+
+        if phaseout_years is None:
+            phaseout_years = [2031, 2032, 2033]
+        if phaseout_fractions is None:
+            phaseout_fractions = [0.75, 0.50, 0.25]
+
+        if consider_phaseout:
+            if CE_index_year is None:
+                raise ValueError(
+                    "CE_index_year must be defined to calculate production incentive charge."
+                )
+            if not isinstance(phaseout_years, (list)):
+                raise TypeError("phaseout_years must be a list of year values. ")
+            if not isinstance(phaseout_fractions, (list)):
+                raise TypeError(
+                    "phaseout_fractions must be a list of fraction values. "
+                )
+            if len(phaseout_years) != len(phaseout_fractions):
+                raise ValueError(
+                    "phaseout_years and phaseout_fractions must have the same length. "
+                )
+            if phaseout_years != sorted(phaseout_years):
+                raise ValueError(
+                    "phaseout_years must be in chronological (ascending) order. "
+                )
+            for i, frac in enumerate(phaseout_fractions):
+                if not (0 <= frac <= 1):
+                    raise ValueError(
+                        f"phaseout_fractions must contain values between 0 and 1. "
+                    )
 
         try:
             CE_index_units = getattr(
@@ -1098,6 +1145,28 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         units=pyunits.percent,
                     )
 
+                    if consider_phaseout:
+                        current_year = CE_index_year[:4]
+                        try:
+                            int(current_year)
+                        except ValueError:
+                            raise ValueError(
+                                f"CE_index_year does not start with a valid 4-digit year."
+                            )
+                        self.current_year = Param(
+                            initialize=int(current_year),
+                            mutable=True,
+                            doc="Current year for calculating production incentive charge phaseout",
+                            units=pyunits.dimensionless,
+                        )
+
+                        self.phaseout = Param(
+                            phaseout_years,
+                            initialize=dict(zip(phaseout_years, phaseout_fractions)),
+                            mutable=True,
+                            doc="Phaseout fractions for production incentive charge, indexed by year",
+                        )
+
                     self.eps = Param(
                         initialize=1e-4,
                         units=CE_index_units / pyunits.year,
@@ -1147,17 +1216,37 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         )
                         * (self.total_sales_revenue - self.royalty_charge)
                     )
-                    self.production_incentive_charge = Expression(
-                        expr=pyunits.convert(
-                            self.production_incentive_percentage,
-                            to_units=pyunits.dimensionless,
+
+                    if consider_phaseout:
+                        if value(self.current_year) < min(phaseout_years):
+                            phase_out_factor = 1.0
+                        elif value(self.current_year) <= max(phaseout_years):
+                            phase_out_factor = self.phaseout[self.current_year]
+                        else:
+                            phase_out_factor = 0.0
+
+                        self.production_incentive_charge = Expression(
+                            expr=pyunits.convert(
+                                self.production_incentive_percentage,
+                                to_units=pyunits.dimensionless,
+                            )
+                            * phase_out_factor
+                            * (
+                                self.total_variable_OM_cost[0]
+                                + self.total_fixed_OM_cost
+                            )
                         )
-                        * (
-                            self.total_variable_OM_cost[0]
-                            + self.total_fixed_OM_cost
-                            + self.annualized_cost / pyunits.year
+                    else:
+                        self.production_incentive_charge = Expression(
+                            expr=pyunits.convert(
+                                self.production_incentive_percentage,
+                                to_units=pyunits.dimensionless,
+                            )
+                            * (
+                                self.total_variable_OM_cost[0]
+                                + self.total_fixed_OM_cost
+                            )
                         )
-                    )
 
                     @self.Constraint()
                     def income_tax_eq(c):
@@ -1296,7 +1385,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         )
 
             if calculate_NPV:
-                self.calculate_NPV(fixed_OM, variable_OM, consider_taxes)
+                self.calculate_NPV(
+                    fixed_OM, variable_OM, consider_taxes, consider_phaseout
+                )
 
     @staticmethod
     def initialize_build(*args, **kwargs):
@@ -3131,7 +3222,13 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         # method has finished building components
         b.components_already_built = True
 
-    def calculate_NPV(b, fixed_OM, variable_OM, consider_taxes=False):
+    def calculate_NPV(
+        b,
+        fixed_OM,
+        variable_OM,
+        consider_taxes=False,
+        consider_phaseout=False,
+    ):
         """
         Equations for cash flow expressions derived from the textbook
         Engineering Economy: Applying Theory to Practice, 3rd Ed. by Ted. G. Eschenbach.
@@ -3245,6 +3342,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 value (NPV) calculations to
             fixed_OM: True/False flag for calculating fixed O&M costs
             variable_OM: True/False flag for calculating variable O&M costs
+            consider_phaseout: True/False flag for whether to consider phaseout of production
+                incentive tax credit. If True, user must input production_incentive_percentage,
+            and CE_index_year must be defined to determine phaseout schedule.
         """
 
         # input verification
@@ -3388,6 +3488,76 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         b.revenue_inflation_percentage = Param(
             initialize=b.config.revenue_inflation_percentage, units=pyunits.percent
         )
+
+        if consider_phaseout:
+
+            assert hasattr(
+                b, "production_incentive_charge"
+            ), "production_incentive_charge not defined"
+            assert hasattr(
+                b, "production_incentive_percentage"
+            ), "production_incentive_percentage not defined"
+            assert hasattr(
+                b, "current_year"
+            ), "CE_index_year must be defined to calculate production incentive charge"
+            assert hasattr(
+                b, "phaseout"
+            ), "phaseout schedule must be defined to calculate production incentive charge"
+
+            b.eps = Param(
+                initialize=1e-4,
+                units=pyunits.dimensionless,
+            )
+
+            b.pv_production_incentive = Var(
+                initialize=b.production_incentive_charge
+                * pyunits.year
+                * b.config.plant_lifetime,
+                bounds=(0, None),
+                doc="Present value of total lifetime production incentive",
+                units=b.cost_units,
+            )
+
+            current_year = int(value(b.current_year))
+            b.plant_end_year = Param(
+                initialize=current_year + int(value(b.config.plant_lifetime)),
+                mutable=True,
+                doc="Year that plant ceases operation; used to determine phaseout of production incentive",
+            )
+
+            full_credit_years = int(
+                value(smooth_max(0, min(b.phaseout.keys()) - current_year, eps=b.eps))
+            )
+
+            b.production_incentive_charge_percent_list = []
+
+            for i in range(full_credit_years):
+                b.production_incentive_charge_percent_list.append(
+                    value(
+                        pyunits.convert(
+                            b.production_incentive_percentage,
+                            to_units=pyunits.dimensionless,
+                        )
+                    )
+                )
+
+            for year in b.phaseout.keys():
+                if value(b.plant_end_year) >= year:
+                    b.production_incentive_charge_percent_list.append(
+                        value(b.phaseout[year])
+                        * value(
+                            pyunits.convert(
+                                b.production_incentive_percentage,
+                                to_units=pyunits.dimensionless,
+                            )
+                        )
+                    )
+
+            if value(b.plant_end_year) > max(b.phaseout.keys()):
+                zero_credit_years = value(b.plant_end_year) - max(b.phaseout.keys())
+
+                for i in range(value(zero_credit_years)):
+                    b.production_incentive_charge_percent_list.append(0.0)
 
         # define series present worth factor as an method so it can be called
 
@@ -3616,7 +3786,11 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 # PV_taxes = net_tax_owed * [ P/A(r, 0, Operating_end_year) - P/A(r, 0, CAPEX_end_year) ]
 
                 return c.pv_taxes == -pyunits.convert(
-                    c.net_tax_owed
+                    (
+                        (c.net_tax_owed + c.production_incentive_charge)
+                        if consider_phaseout
+                        else c.net_tax_owed
+                    )
                     * pyunits.year
                     * (
                         series_present_worth_factor(
@@ -3644,6 +3818,56 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                     to_units=c.cost_units,
                 )
 
+        if consider_phaseout:
+
+            # The present value of the production incentive is:
+            #
+            #   PV_prod_incentive = sum over k=0,1,...,M-1 of [ p_k * C_opex * (SPWF(r, g, k+1) - SPWF(r, g, k)) ]
+
+            # where:
+            #   p_k    = production_incentive_charge_percent_list[k]  (incentive fraction in year k)
+            #   C_opex = annual operating cost (base year dollars)
+            #   M      = len(production_incentive_charge_percent_list)
+            #   SPWF(r, g, N) = series present worth factor with discount rate r, inflation rate g, and N years
+
+            @b.Constraint()
+            def pv_production_incentive_constraint(c):
+
+                return c.pv_production_incentive == pyunits.convert(
+                    sum(
+                        b.production_incentive_charge_percent_list[idx]
+                        * c.opex
+                        * (
+                            series_present_worth_factor(
+                                pyunits.convert(
+                                    c.discount_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                pyunits.convert(
+                                    c.operating_inflation_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                idx + 1,
+                            )
+                            - series_present_worth_factor(
+                                pyunits.convert(
+                                    c.discount_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                pyunits.convert(
+                                    c.operating_inflation_percentage,
+                                    to_units=pyunits.dimensionless,
+                                ),
+                                idx,
+                            )
+                        )
+                        for idx in range(
+                            len(b.production_incentive_charge_percent_list)
+                        )
+                    ),
+                    to_units=c.cost_units,
+                )
+
         @b.Constraint()
         def npv_constraint(c):
 
@@ -3652,7 +3876,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 + c.pv_capital_cost
                 + c.pv_loan_interest
                 + c.pv_operating_cost
-                + (c.pv_taxes if consider_taxes else 0 * c.cost_units),
+                + (c.pv_taxes if consider_taxes else 0 * c.cost_units)
+                + (
+                    c.pv_production_incentive if consider_phaseout else 0 * c.cost_units
+                ),
                 to_units=c.cost_units,
             )
 

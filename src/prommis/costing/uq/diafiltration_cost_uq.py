@@ -1208,17 +1208,8 @@ def main(
         decision_variables_bounds(m)
 
         # Deterministic baseline optimization
-
-        # initial value to help net_tax_owed constraint solve
-        m.fs.costing.production_incentive_percentage.set_value(0)
         det_results = local_solver.solve(m)
         pyo.assert_optimal_termination(det_results)
-
-        # revert to actual value and re-solve
-        m.fs.costing.production_incentive_percentage.set_value(10)
-        det_results = local_solver.solve(m)
-        pyo.assert_optimal_termination(det_results)
-
         det_obj = pyo.value(m.fs.costing.cost_of_recovery)
         print(
             f"Deterministic optimal cost_of_recovery of membrane with sieving at ({technology_name}) is: {det_obj:.6f}"

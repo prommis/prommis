@@ -157,6 +157,17 @@ class DiafiltrationModel:
         for i in m.component_data_objects(Var):
             if i.lb == 1e-8 and "stage" not in i.name:
                 i.setlb(0)
+            i.setlb(0)
+
+        # set bounds
+        for i in m.component_data_objects(Var, active=True):
+            if 'flow_vol' in i.name or 'mass_solute' in i.name:
+                i.setlb(0)
+                i.setub(1e6)
+
+        for i in m.fs.component_data_objects(Var):
+            if 'split_fraction' in i.name:
+                i.setub(1)
 
         return m
 

@@ -167,12 +167,12 @@ class DiafiltrationModel:
 
         # set bounds
         for i in m.component_data_objects(Var, active=True):
-            if 'flow_vol' in i.name or 'mass_solute' in i.name:
+            if "flow_vol" in i.name or "mass_solute" in i.name:
                 i.setlb(0)
                 i.setub(1e6)
 
         for i in m.fs.component_data_objects(Var):
-            if 'split_fraction' in i.name:
+            if "split_fraction" in i.name:
                 i.setub(1)
 
         return m
@@ -628,7 +628,7 @@ class DiafiltrationModel:
         """Add precipitator units."""
         m.fs.precipitator = Precipitator(
             ["retentate", "permeate"],
-            outlet_list=['solid', 'downstream', 'recycle'],
+            outlet_list=["solid", "downstream", "recycle"],
             yields=self.perc_precipitate,
             property_package=m.fs.properties,
             material_balance_type=MaterialBalanceType.componentTotal,
@@ -1105,10 +1105,10 @@ class DiafiltrationModel:
             m.fs.split_diafiltrate.inlet.flow_vol.setub(self.diaf["solvent"])
             m.fs.precipitator["retentate"].volume.unfix()
             m.fs.precipitator["permeate"].volume.unfix()
-            m.fs.precipitator['retentate'].yields['solvent', 'recycle'].unfix()
-            m.fs.precipitator['permeate'].yields['solvent', 'recycle'].unfix()
-            m.fs.precipitator['retentate'].split_inlet['bypass'].unfix()
-            m.fs.precipitator['permeate'].split_inlet['bypass'].unfix()
+            m.fs.precipitator["retentate"].yields["solvent", "recycle"].unfix()
+            m.fs.precipitator["permeate"].yields["solvent", "recycle"].unfix()
+            m.fs.precipitator["retentate"].split_inlet["bypass"].unfix()
+            m.fs.precipitator["permeate"].split_inlet["bypass"].unfix()
 
     def model_scaling(self, m):
         """Apply model scaling."""
@@ -1161,7 +1161,6 @@ class DiafiltrationModel:
         else:
             m.fs.costing = DiafiltrationCosting()
 
-
         # Create dummy variables to store the UnitModelCostingBlocks
         # These are needed because the sieving coefficient model does not account for pressure
         m.fs.cascade = UnitModelBlock()  # to cost the pressure drop
@@ -1189,7 +1188,9 @@ class DiafiltrationModel:
                     "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
                     "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
                     * units.psi,  # this should make m.fs.feed_pump.costing.variable_operating_cost ~0
-                    "inlet_vol_flow": m.fs.split_feed.mixed_state[0].flow_vol, # * units.m**3 / units.h,  # feed
+                    "inlet_vol_flow": m.fs.split_feed.mixed_state[
+                        0
+                    ].flow_vol,  # * units.m**3 / units.h,  # feed
                     "simple_costing": simple_costing,
                 },
             )
@@ -1200,7 +1201,9 @@ class DiafiltrationModel:
                 costing_method_arguments={
                     "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
                     "outlet_pressure": operating_pressure * units.psi,
-                    "inlet_vol_flow": m.fs.split_feed.mixed_state[0].flow_vol, # * units.m**3 / units.h,  # feed
+                    "inlet_vol_flow": m.fs.split_feed.mixed_state[
+                        0
+                    ].flow_vol,  # * units.m**3 / units.h,  # feed
                     "simple_costing": simple_costing,
                 },
             )
@@ -1211,7 +1214,9 @@ class DiafiltrationModel:
             costing_method_arguments={
                 "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
                 "outlet_pressure": operating_pressure * units.psi,
-                "inlet_vol_flow": m.fs.split_diafiltrate.mixed_state[0].flow_vol, # * units.m**3 / units.h,  # diafiltrate
+                "inlet_vol_flow": m.fs.split_diafiltrate.mixed_state[
+                    0
+                ].flow_vol,  # * units.m**3 / units.h,  # diafiltrate
                 "simple_costing": simple_costing,
             },
         )
@@ -1237,24 +1242,16 @@ class DiafiltrationModel:
 
             # create price parameters
             m.fs.soda_ash_price = Param(
-                initialize=0.13,
-                mutable=True,
-                units=units.USD_2021 / units.kg
+                initialize=0.13, mutable=True, units=units.USD_2021 / units.kg
             )
             m.fs.ammonium_oxalate_price = Param(
-                initialize=3.10,
-                mutable=True,
-                units=units.USD_2016 / units.kg
+                initialize=3.10, mutable=True, units=units.USD_2016 / units.kg
             )
             m.fs.lithium_carbonate_price = Param(
-                initialize=10,
-                mutable=True,
-                units=units.USD_2021 / units.kg
+                initialize=10, mutable=True, units=units.USD_2021 / units.kg
             )
             m.fs.cobalt_oxalate_price = Param(
-                initialize=40,
-                mutable=True,
-                units=units.USD_2021 / units.kg
+                initialize=40, mutable=True, units=units.USD_2021 / units.kg
             )
 
             default_market_prices = {
@@ -1332,8 +1329,8 @@ class DiafiltrationModel:
                 pure_product_output_rates={
                     # 'Li': m.prec_mass_li,
                     # 'Co': m.prec_mass_co,
-                    'Li2CO3': m.prec_mass_li,
-                    'CoC2O4': m.prec_mass_co,
+                    "Li2CO3": m.prec_mass_li,
+                    "CoC2O4": m.prec_mass_co,
                 },
                 sale_prices=default_market_prices,
                 CE_index_year="2021",
@@ -1428,14 +1425,18 @@ class DiafiltrationModel:
         m.prec_li_lb.activate()
 
         if npv:
+
             def cost_obj(m):
                 # return m.fs.costing.total_annualized_cost
                 # return m.fs.costing.pv_revenue + m.fs.costing.pv_capital_cost + m.fs.costing.pv_operating_cost
                 return m.fs.costing.npv
+
             sense = maximize
         else:
+
             def cost_obj(m):
                 return m.fs.costing.total_annualized_cost
+
             sense = minimize
 
         m.cost_objective = Objective(rule=cost_obj, sense=sense)

@@ -243,10 +243,10 @@ def report_values(m, prec=True):
             pyo.value(m.fs.precipitator["retentate"].volume),
             pyo.value(m.fs.precipitator["permeate"].volume),
         ]
-        m.fs.precipitator['retentate'].yields['solvent', 'recycle'].pprint()
-        m.fs.precipitator['permeate'].yields['solvent', 'recycle'].pprint()
-        m.fs.precipitator['retentate'].split_inlet['bypass'].pprint()
-        m.fs.precipitator['permeate'].split_inlet['bypass'].pprint()
+        m.fs.precipitator["retentate"].yields["solvent", "recycle"].pprint()
+        m.fs.precipitator["permeate"].yields["solvent", "recycle"].pprint()
+        m.fs.precipitator["retentate"].split_inlet["bypass"].pprint()
+        m.fs.precipitator["permeate"].split_inlet["bypass"].pprint()
     return data
 
 
@@ -883,6 +883,7 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
     # Show the plot
     plt.show()
 
+
 def sep_dof(m, mixing, first, second):
     """Separate model DoF into first and second stage."""
     NS = len(m.fs.stages)
@@ -894,7 +895,7 @@ def sep_dof(m, mixing, first, second):
     # second stage variables
     second_stage_variables = second
 
-    if mixing == 'tube':
+    if mixing == "tube":
         for i in m.fs.stages:
             for j in m.fs.tubes:
                 if i != NS or j != NT:
@@ -906,15 +907,11 @@ def sep_dof(m, mixing, first, second):
                     #     .split_fraction[0, f'outlet_{(i-1)*NT+j}']
                     # )
                     second_stage_variables.append(
-                        getattr(
-                            m.fs.split_feed,
-                            f'outlet_{(i-1)*NT+j}'
-                        ).flow_vol[0]
+                        getattr(m.fs.split_feed, f"outlet_{(i-1)*NT+j}").flow_vol[0]
                     )
                     second_stage_variables.append(
                         getattr(
-                            m.fs.split_diafiltrate,
-                            f'outlet_{(i-1)*NT+j}'
+                            m.fs.split_diafiltrate, f"outlet_{(i-1)*NT+j}"
                         ).flow_vol[0]
                     )
                 if j != NT:
@@ -924,10 +921,9 @@ def sep_dof(m, mixing, first, second):
                         #     .split_fraction[0, f'outlet_{j}']
                         # )
                         second_stage_variables.append(
-                            getattr(
-                                m.fs.recycle_splitters[i],
-                                f'outlet_{j}'
-                            ).flow_vol[0]
+                            getattr(m.fs.recycle_splitters[i], f"outlet_{j}").flow_vol[
+                                0
+                            ]
                         )
             if i != 1:
                 # second_stage_variables.append(
@@ -944,7 +940,7 @@ def sep_dof(m, mixing, first, second):
                     m.fs.split_permeate[i].product.flow_vol[0]
                 )
 
-    elif mixing == 'stage' or mixing == 'simple' or mixing == 'classic':
+    elif mixing == "stage" or mixing == "simple" or mixing == "classic":
         for i in m.fs.stages:
             if i > 1:
                 # second_stage_variables.append(
@@ -955,18 +951,12 @@ def sep_dof(m, mixing, first, second):
                 #     .split_fraction[0, f'outlet_{i}']
                 # )
                 second_stage_variables.append(
-                    getattr(
-                        m.fs.split_feed,
-                        f'outlet_{i}'
-                    ).flow_vol[0]
+                    getattr(m.fs.split_feed, f"outlet_{i}").flow_vol[0]
                 )
                 second_stage_variables.append(
-                    getattr(
-                        m.fs.split_diafiltrate,
-                        f'outlet_{i}'
-                    ).flow_vol[0]
+                    getattr(m.fs.split_diafiltrate, f"outlet_{i}").flow_vol[0]
                 )
-            if mixing != 'classic':
+            if mixing != "classic":
                 if i != 1:
                     # second_stage_variables.append(
                     #     m.fs.split_retentate[i].split_fraction[0, 'product']
@@ -981,16 +971,13 @@ def sep_dof(m, mixing, first, second):
                     second_stage_variables.append(
                         m.fs.split_permeate[i].product.flow_vol[0]
                     )
-            if mixing == 'stage':
-                for j in pyo.RangeSet(NT-1):
+            if mixing == "stage":
+                for j in pyo.RangeSet(NT - 1):
                     # second_stage_variables.append(
                     #     m.fs.splitters[i].split_fraction[0, f'outlet_{j}']
                     # )
                     second_stage_variables.append(
-                        getattr(
-                            m.fs.splitters[i],
-                            f'outlet_{j}'
-                        ).flow_vol[0]
+                        getattr(m.fs.splitters[i], f"outlet_{j}").flow_vol[0]
                     )
 
     return first_stage_variables, second_stage_variables

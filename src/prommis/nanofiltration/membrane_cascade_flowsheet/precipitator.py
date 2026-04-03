@@ -95,41 +95,36 @@ class SplitterData(SeparatorData):
         #            if i != 'solvent']
         # or include generalization for some water in precipitate
         solutes = self.mixed_state.component_list
-        self.yields = Var(solutes, self.outlet_idx, bounds=(0,1))
+        self.yields = Var(solutes, self.outlet_idx, bounds=(0, 1))
 
         #####
         # Add bypass
         #####
-        bypass_flows = ['bypass', 'ro']
-        self.split_inlet = Var(bypass_flows, bounds=(0,1))
+        bypass_flows = ["bypass", "ro"]
+        self.split_inlet = Var(bypass_flows, bounds=(0, 1))
         self.split_inlet_flows = Var(solutes, bypass_flows)
 
         # set initial bypass to 0
-        self.split_inlet['bypass'].fix(1e-8)
+        self.split_inlet["bypass"].fix(1e-8)
 
-        @self.Constraint(
-            doc="Sum of bypass split frac equation"
-        )
+        @self.Constraint(doc="Sum of bypass split frac equation")
         def split_inlet_eqn(b):
-            return (
-                sum(b.split_inlet[i] for i in bypass_flows)
-                == 1
-            )
+            return sum(b.split_inlet[i] for i in bypass_flows) == 1
 
         @self.Constraint(
             self.flowsheet().time,
             solutes,
             bypass_flows,
-            doc="Precipitator outlet equations"
+            doc="Precipitator outlet equations",
         )
         def bypass_split_eqn(b, t, sol, flows):
-            if sol == 'solvent':
+            if sol == "solvent":
                 return (
-                    b.split_inlet[flows]*b.mixed_state[t].flow_vol
-                    == b.split_inlet_flows['solvent', flows]
+                    b.split_inlet[flows] * b.mixed_state[t].flow_vol
+                    == b.split_inlet_flows["solvent", flows]
                 )
             return (
-                b.split_inlet[flows]*b.mixed_state[t].flow_mass_solute[sol]
+                b.split_inlet[flows] * b.mixed_state[t].flow_mass_solute[sol]
                 == b.split_inlet_flows[sol, flows]
             )
 
@@ -137,11 +132,11 @@ class SplitterData(SeparatorData):
         # Reverse osmosis
         #####
         # set 50% of solvent to go to recycle
-        self.yields['solvent', 'recycle'].fix(0.5)
+        self.yields["solvent", "recycle"].fix(0.5)
 
         # set solute recycle outlet to be 0
-        self.yields['Li', 'recycle'].fix(1e-8)
-        self.yields['Co', 'recycle'].fix(1e-8)
+        self.yields["Li", "recycle"].fix(1e-8)
+        self.yields["Co", "recycle"].fix(1e-8)
 
         #####
         # Product collection
@@ -162,27 +157,27 @@ class SplitterData(SeparatorData):
         )
         def outlet_yield_eqn(b, t, o, sol):
             o_block = getattr(self, o + "_state")
-            if sol == 'solvent':
-                if o == 'recycle':
+            if sol == "solvent":
+                if o == "recycle":
                     return (
-                        b.yields[sol, o]*b.split_inlet_flows['solvent', 'ro']
-                        + b.split_inlet_flows['solvent', 'bypass']
+                        b.yields[sol, o] * b.split_inlet_flows["solvent", "ro"]
+                        + b.split_inlet_flows["solvent", "bypass"]
                         == o_block[t].flow_vol
                     )
                 else:
                     return (
-                        b.yields[sol, o]*b.split_inlet_flows['solvent', 'ro']
+                        b.yields[sol, o] * b.split_inlet_flows["solvent", "ro"]
                         == o_block[t].flow_vol
                     )
-            if o == 'recycle':
+            if o == "recycle":
                 return (
-                    b.yields[sol, o]*b.split_inlet_flows[sol, 'ro']
-                    + b.split_inlet_flows[sol, 'bypass']
+                    b.yields[sol, o] * b.split_inlet_flows[sol, "ro"]
+                    + b.split_inlet_flows[sol, "bypass"]
                     == o_block[t].flow_mass_solute[sol]
                 )
             else:
                 return (
-                    b.yields[sol, o]*b.split_inlet_flows[sol, 'ro']
+                    b.yields[sol, o] * b.split_inlet_flows[sol, "ro"]
                     == o_block[t].flow_mass_solute[sol]
                 )
 

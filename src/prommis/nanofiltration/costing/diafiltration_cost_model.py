@@ -32,7 +32,7 @@ from prommis.nanofiltration.costing.diafiltration_cost_block import (
 class DiafiltrationCostingData(DiafiltrationCostingBlockData):
     """
     Costing block for the diafiltration flowsheet
-    
+
     References for default market prices:
         Na2CO3 and Li2CO3, 2021 data: https://pubs.usgs.gov/periodicals/mcs2024/mcs2024.pdf
     """
@@ -426,8 +426,9 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 domain=NonNegativeReals,
                 bounds=(0, 2000),
                 doc="Flow used to size pump installation (CAPEX)",
-                units=units.m**3 / units.hr
+                units=units.m**3 / units.hr,
             )
+
             @blk.Constraint()
             def install_flows_constraint(blk):
                 return blk.install_inlet_vol_flow >= inlet_vol_flow
@@ -444,26 +445,26 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 domain=NonNegativeReals,
                 bounds=(0, None),
                 doc="Auxilliary variable for pump installation (CAPEX)",
-                units=units.dimensionless
+                units=units.dimensionless,
             )
 
             @blk.Constraint()
             def capital_cost_auxilliary_constraint(blk):
-                return (blk.capital_cost_auxilliary_var ** (1/blk.pump_exponential_factor)
-                        == blk.install_inlet_vol_flow * inlet_pressure
-                        / (units.kPa * units.m**3 / units.hr) 
-                        )
+                return blk.capital_cost_auxilliary_var ** (
+                    1 / blk.pump_exponential_factor
+                ) == blk.install_inlet_vol_flow * inlet_pressure / (
+                    units.kPa * units.m**3 / units.hr
+                )
 
             # Ref [4] Eqn 5
             # assumes stainless steel centrifugal pumps
             @blk.Constraint()
             def capital_cost_constraint(blk):
                 return blk.capital_cost == units.convert(
-                    blk.base_pump_cost
-                    * blk.capital_cost_auxilliary_var,
+                    blk.base_pump_cost * blk.capital_cost_auxilliary_var,
                     to_units=blk.costing_package.base_currency,
                 )
-            
+
             # calculate the pump head: pump Ref [1] Eqn 1.1
             blk.pump_head = Var(
                 initialize=10,
@@ -769,8 +770,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         def variable_operating_cost_constraint(blk):
             return blk.variable_operating_cost == units.convert(
                 sum(
-                    material_inlet_rates[p]
-                    * default_market_prices[p]
+                    material_inlet_rates[p] * default_market_prices[p]
                     for p in material_inlet_rates.keys()
                 ),
                 to_units=blk.costing_package.base_currency

@@ -1144,9 +1144,9 @@ class DiafiltrationModel:
                 costing_method=DiafiltrationCostingData.cost_membrane_pressure_drop_utility,
                 costing_method_arguments={
                     "water_flux": flux * units.m**3 / units.m**2 / units.h,
-                    "vol_flow_feed": feed["solvent"]
-                    * units.m**3
-                    / units.h,  # cascade feed
+                    "vol_flow_feed": m.fs.split_feed.mixed_state[0].flow_vol,
+                    # * units.m**3
+                    # / units.h,  # cascade feed
                     "vol_flow_perm": sum(
                         m.fs.split_permeate[i].product.flow_vol[0] for i in RangeSet(NS)
                     ),  # cascade permeate
@@ -1159,7 +1159,7 @@ class DiafiltrationModel:
                     "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
                     "outlet_pressure": 1e-5  # assume numerically 0 since SEC accounts for feed pump OPEX
                     * units.psi,  # this should make m.fs.feed_pump.costing.variable_operating_cost ~0
-                    "inlet_vol_flow": feed["solvent"] * units.m**3 / units.h,  # feed
+                    "inlet_vol_flow": m.fs.split_feed.mixed_state[0].flow_vol, # * units.m**3 / units.h,  # feed
                     "simple_costing": simple_costing,
                 },
             )
@@ -1170,7 +1170,7 @@ class DiafiltrationModel:
                 costing_method_arguments={
                     "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
                     "outlet_pressure": operating_pressure * units.psi,
-                    "inlet_vol_flow": feed["solvent"] * units.m**3 / units.h,  # feed
+                    "inlet_vol_flow": m.fs.split_feed.mixed_state[0].flow_vol, # * units.m**3 / units.h,  # feed
                     "simple_costing": simple_costing,
                 },
             )
@@ -1181,7 +1181,7 @@ class DiafiltrationModel:
             costing_method_arguments={
                 "inlet_pressure": atmospheric_pressure * units.kPa,  # 14.7 psia
                 "outlet_pressure": operating_pressure * units.psi,
-                "inlet_vol_flow": diaf["solvent"] * units.m**3 / units.h,  # diafiltrate
+                "inlet_vol_flow": m.fs.split_diafiltrate.mixed_state[0].flow_vol, # * units.m**3 / units.h,  # diafiltrate
                 "simple_costing": simple_costing,
             },
         )

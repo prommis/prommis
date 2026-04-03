@@ -375,7 +375,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             blk.base_pump_cost = Param(
                 initialize=622.59,
                 doc="Base cost of stainless steel, centrifugal pump",
-                units=units.USD_1996 / (units.kPa * units.m**3 / units.hr) ** 0.39,
+                units=units.USD_1996,
             )
             blk.pump_exponential_factor = Param(
                 initialize=0.39,
@@ -408,16 +408,50 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 doc="Unit variable operating cost",
             )
 
+            # add installation flow for separating CAPEX and OPEX considerations
+            blk.install_inlet_vol_flow = Var(
+                initialize=inlet_vol_flow.value,
+                domain=NonNegativeReals,
+                bounds=(0, 2000),
+                doc="Flow used to size pump installation (CAPEX)",
+                units=units.m**3 / units.hr
+            )
+            @blk.Constraint()
+            def install_flows_constraint(blk):
+                return blk.install_inlet_vol_flow >= inlet_vol_flow
+
+            # The pump exponentional factor is fractional, leading to the issue below:
+            # - the derivative of (flow * pressure) ** 0.39 causes numerical issues for IPOPT
+            #
+            # This is fixed with:
+            # the capital cost constraint is reformulated with an auxilliary variable as
+            #     aux_var ** (1/0.39) = (flow * pressure)
+            #     and capital_cost = base_cost * aux_var
+            blk.capital_cost_auxilliary_var = Var(
+                initialize=inlet_vol_flow.value * inlet_pressure / units.kPa,
+                domain=NonNegativeReals,
+                bounds=(0, None),
+                doc="Auxilliary variable for pump installation (CAPEX)",
+                units=units.dimensionless
+            )
+
+            @blk.Constraint()
+            def capital_cost_auxilliary_constraint(blk):
+                return (blk.capital_cost_auxilliary_var ** (1/blk.pump_exponential_factor)
+                        == blk.install_inlet_vol_flow * inlet_pressure
+                        / (units.kPa * units.m**3 / units.hr) 
+                        )
+
             # Ref [4] Eqn 5
             # assumes stainless steel centrifugal pumps
             @blk.Constraint()
             def capital_cost_constraint(blk):
                 return blk.capital_cost == units.convert(
                     blk.base_pump_cost
-                    * (inlet_vol_flow * inlet_pressure) ** blk.pump_exponential_factor,
+                    * blk.capital_cost_auxilliary_var,
                     to_units=blk.costing_package.base_currency,
                 )
-
+            
             # calculate the pump head: pump Ref [1] Eqn 1.1
             blk.pump_head = Var(
                 initialize=10,

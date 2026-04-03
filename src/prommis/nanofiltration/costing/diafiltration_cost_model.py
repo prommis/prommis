@@ -302,8 +302,8 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
         @blk.Constraint()
         def SEC_equation(blk):
-            return blk.SEC == units.convert(
-                (vol_flow_feed * dP / vol_flow_perm), to_units=units.kWh / units.m**3
+            return blk.SEC * vol_flow_perm == units.convert(
+                (vol_flow_feed * dP), to_units=units.kW
             )
 
         @blk.Constraint()

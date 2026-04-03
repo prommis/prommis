@@ -622,7 +622,7 @@ class DiafiltrationModel:
         """Add precipitator units."""
         m.fs.precipitator = Precipitator(
             ["retentate", "permeate"],
-            outlet_list=["solid", "recycle"],
+            outlet_list=['solid', 'downstream', 'recycle'],
             yields=self.perc_precipitate,
             property_package=m.fs.properties,
             material_balance_type=MaterialBalanceType.componentTotal,
@@ -1099,6 +1099,10 @@ class DiafiltrationModel:
             m.fs.split_diafiltrate.inlet.flow_vol.setub(self.diaf["solvent"])
             m.fs.precipitator["retentate"].volume.unfix()
             m.fs.precipitator["permeate"].volume.unfix()
+            m.fs.precipitator['retentate'].yields['solvent', 'recycle'].unfix()
+            m.fs.precipitator['permeate'].yields['solvent', 'recycle'].unfix()
+            m.fs.precipitator['retentate'].split_inlet['bypass'].unfix()
+            m.fs.precipitator['permeate'].split_inlet['bypass'].unfix()
 
     def model_scaling(self, m):
         """Apply model scaling."""

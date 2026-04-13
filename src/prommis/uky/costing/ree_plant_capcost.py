@@ -53,6 +53,7 @@ from idaes.core import (
 )
 from idaes.core.util.math import smooth_max
 from idaes.core.util.tables import stream_table_dataframe_to_string
+from idaes.core.util.model_statistics import degrees_of_freedom
 
 from pandas import DataFrame
 
@@ -2787,7 +2788,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             to_units=CE_index_units / pyunits.year,
                         )
                     )
-        from idaes.core.util.model_diagnostics import degrees_of_freedom
+        
 
         if watertap_blocks is not None:  # added from WaterTAP
             for w in watertap_blocks:

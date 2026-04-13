@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -199,8 +199,8 @@ class MixedAcidParameterData(PhysicalParameterBlock):
     """
     Property package for the mixed acid streams used in the UKy flowsheet.
     This property package is most suitable for pH values from 0 to 5. For pH
-    values 5, certain acid dissociation reactions can be assumed to be complete,
-    while others might need to be tracked.
+    values over 5, certain acid dissociation reactions can be assumed to be
+    complete, while others might need to be tracked.
 
     * Default components: H2O, H_+, Cl_-
     * Additional acid systems:
@@ -314,7 +314,11 @@ class MixedAcidParameterData(PhysicalParameterBlock):
             initialize=mw_init,
         )
 
-        if self.config.include_sulfates or self.config.include_oxalates:
+        if (
+            self.config.include_sulfates
+            or self.config.include_oxalates
+            or self.config.include_ascorbates
+        ):
             self._has_inherent_reactions = True
             inherent_reaction_idx = []
             self.inherent_reaction_stoichiometry = {}

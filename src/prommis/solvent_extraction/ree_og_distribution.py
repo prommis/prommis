@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -211,6 +211,9 @@ class _REESolExOgStateBlock(StateBlock):
 
     def fix_initialization_states(self):
         fix_state_vars(self)
+        for sbd in self.values():
+            if not sbd.config.defined_state:
+                sbd.conc_mass_comp["Kerosene"].unfix()
 
 
 @declare_process_block_class("REESolExOgStateBlock", block_class=_REESolExOgStateBlock)

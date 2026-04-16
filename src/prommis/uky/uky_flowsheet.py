@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -57,7 +57,7 @@ Default Flowsheet Specifications
 Description                                                           Value        Units
 ===================================================================== ============ ============================
 Leaching
-Tank volume                                                           100          :math:`\text{m}^3`
+Tank volume                                                           100          :math:`\text{gal}`
 Liquid feed volumetric flow                                           224.3        :math:`\text{L/hr}`
 Liquid feed H concentration                                           100          :math:`\text{mg/L}`
 Liquid feed HSO4 concentration                                        1e-8         :math:`\text{mg/L}`
@@ -140,22 +140,6 @@ References:
 
 import logging
 from warnings import warn
-from pyomo.common.collections import ComponentMap
-from pyomo.environ import (
-    Block,
-    ConcreteModel,
-    Constraint,
-    Expression,
-    Objective,
-    Param,
-    Set,
-    TransformationFactory,
-    Var,
-    check_optimal_termination,
-    units,
-    value,
-)
-from pyomo.network import Arc, SequentialDecomposition
 
 import idaes.logger as idaeslog
 from idaes.core import (
@@ -168,7 +152,7 @@ from idaes.core import (
     UnitModelCostingBlock,
 )
 from idaes.core.initialization import BlockTriangularizationInitializer
-from idaes.core.scaling import AutoScaler, CustomScalerBase, ConstraintScalingScheme
+from idaes.core.scaling import CustomScalerBase, ConstraintScalingScheme
 from idaes.core.scaling.util import get_scaling_factor, set_scaling_factor
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
@@ -197,6 +181,27 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     EosType,
     get_prop,
 )
+
+from pyomo.common.collections import ComponentMap
+from pyomo.contrib.incidence_analysis import (
+    solve_strongly_connected_components,
+)
+from pyomo.environ import (
+    Block,
+    ConcreteModel,
+    Constraint,
+    Expression,
+    Objective,
+    Param,
+    Set,
+    TransformationFactory,
+    Var,
+    check_optimal_termination,
+    units,
+    value,
+)
+from pyomo.network import Arc, SequentialDecomposition
+from pyomo.util.subsystems import create_subsystem_block
 
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 from prommis.properties.coal_refuse_properties import CoalRefuseParameters
@@ -268,14 +273,6 @@ def main():
     # diagnostics, initialize, and solve
     dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
-
-    auto = AutoScaler()
-    auto.scale_variables_by_magnitude(m)
-    auto.scale_constraints_by_jacobian_norm(m)
-
-    QGESSCostingData.costing_initialization(m.fs.costing)
-    QGESSCostingData.initialize_fixed_OM_costs(m.fs.costing)
-    QGESSCostingData.initialize_variable_OM_costs(m.fs.costing)
 
     solve_system(m, tee=True)
 
@@ -761,6 +758,8 @@ def set_scaling(m):
     # mutation is potentially dangerous, but we'll use it here until
     # there is a better way to set global default scaling factors
     HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["flow_vol"] = 1
+    HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["conc_mass_comp[H]"] = 1e-3
+    HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["conc_mass_comp[Cl]"] = 1e-5
     ModularPropertiesScaler.DEFAULT_SCALING_FACTORS["flow_mol_phase"] = 1 / 0.00781
 
     # Also use global mutation to change the max and min scaling factors
@@ -920,10 +919,11 @@ def set_operating_conditions(m):
     m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].fix(dehpa_conc)
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"].fix(kerosene_conc)
 
-    m.fs.acid_feed1.flow_vol.fix(90)  # Increased by 1000x from REESim
+    # Assumes an HCl weight percent of 3.7%
+    m.fs.acid_feed1.flow_vol.fix(0.09)
     m.fs.acid_feed1.conc_mass_comp[0, "H2O"].fix(1000000)
-    m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(10.36)
-    m.fs.acid_feed1.conc_mass_comp[0, "Cl"].fix(359.64)
+    m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(1023 * units.mg / units.L)
+    m.fs.acid_feed1.conc_mass_comp[0, "Cl"].fix(35980 * units.mg / units.L)
     m.fs.acid_feed1.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Ca"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Fe"].fix(eps)
@@ -937,12 +937,11 @@ def set_operating_conditions(m):
     m.fs.acid_feed1.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Dy"].fix(eps)
 
-    m.fs.acid_feed2.flow_vol.fix(9)
+    # Assumes an HCl weight percent of 18.5%
+    m.fs.acid_feed2.flow_vol.fix(0.13)
     m.fs.acid_feed2.conc_mass_comp[0, "H2O"].fix(1000000)
-    m.fs.acid_feed2.conc_mass_comp[0, "H"].fix(
-        10.36 * 4
-    )  # Arbitrarily choose 4x the dilute solution
-    m.fs.acid_feed2.conc_mass_comp[0, "Cl"].fix(359.64 * 4)
+    m.fs.acid_feed2.conc_mass_comp[0, "H"].fix(5110 * units.mg / units.L)
+    m.fs.acid_feed2.conc_mass_comp[0, "Cl"].fix(179700 * units.mg / units.L)
     m.fs.acid_feed2.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Ca"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Fe"].fix(eps)
@@ -962,12 +961,11 @@ def set_operating_conditions(m):
     m.fs.rougher_sep.recycle_state[0.0].pressure.fix(P_atm)
     m.fs.rougher_sep.recycle_state[0.0].temperature.fix(Temp_room)
 
-    m.fs.acid_feed3.flow_vol.fix(9)
+    # Assumes an HCl weight percent of 18.5%
+    m.fs.acid_feed3.flow_vol.fix(0.03)
     m.fs.acid_feed3.conc_mass_comp[0, "H2O"].fix(1000000)
-    m.fs.acid_feed3.conc_mass_comp[0, "H"].fix(
-        10.36 * 4
-    )  # Arbitrarily choose 4x the dilute solution
-    m.fs.acid_feed3.conc_mass_comp[0, "Cl"].fix(359.64 * 4)
+    m.fs.acid_feed3.conc_mass_comp[0, "H"].fix(5110 * units.mg / units.L)
+    m.fs.acid_feed3.conc_mass_comp[0, "Cl"].fix(179700 * units.mg / units.L)
     m.fs.acid_feed3.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Ca"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Fe"].fix(eps)
@@ -1092,105 +1090,105 @@ def initialize_system(m):
         _log.info("Initialization Order: {_init_ord}")
 
     tear_guesses1 = {
-        "flow_vol": {0: 866.06},
+        "flow_vol": {0: 606.92},
         "conc_mass_comp": {
-            (0, "Al"): 207.46,
-            (0, "Ca"): 40.23,
-            (0, "Ce"): 2.11,
-            (0, "Cl"): 158.36,
-            (0, "Dy"): 1.13e-2,
-            (0, "Fe"): 292.56,
-            (0, "Gd"): 0.24,
-            (0, "H"): 13.66,
+            (0, "Al"): 280.14,
+            (0, "Ca"): 71.51,
+            (0, "Ce"): 3.37,
+            (0, "Cl"): 111.13,
+            (0, "Dy"): 3.48e-5,
+            (0, "Fe"): 451.50,
+            (0, "Gd"): 0.21,
+            (0, "H"): 14.57,
             (0, "H2O"): 1000000,
-            (0, "HSO4"): 1940.93,
-            (0, "La"): 0.76,
-            (0, "Nd"): 1.06,
-            (0, "Pr"): 0.26,
-            (0, "SO4"): 1438.92,
-            (0, "Sc"): 2.07e-3,
-            (0, "Sm"): 0.10,
-            (0, "Y"): 2.02e-2,
+            (0, "HSO4"): 2845.99,
+            (0, "La"): 1.28,
+            (0, "Nd"): 1.65,
+            (0, "Pr"): 0.43,
+            (0, "SO4"): 1977.81,
+            (0, "Sc"): 2.02e-3,
+            (0, "Sm"): 0.16,
+            (0, "Y"): 1.19e-5,
         },
     }
     tear_guesses2 = {
         "flow_vol": {0: 62.01},
         "conc_mass_comp": {
-            (0, "Al_o"): 0.048,
-            (0, "Ca_o"): 1.98e-2,
-            (0, "Ce_o"): 5.71e-3,
+            (0, "Al_o"): 20.42,
+            (0, "Ca_o"): 6.51,
+            (0, "Ce_o"): 1.01,
             (0, "Dy_o"): 1.077,
-            (0, "Fe_o"): 1.954,
-            (0, "Gd_o"): 0.14,
-            (0, "La_o"): 4.03e-3,
-            (0, "Nd_o"): 3.37e-3,
-            (0, "Pr_o"): 1.04e-3,
-            (0, "Sc_o"): 1.74,
-            (0, "Sm_o"): 4.91e-3,
-            (0, "Y_o"): 4.17,
+            (0, "Fe_o"): 95.31,
+            (0, "Gd_o"): 0.5,
+            (0, "La_o"): 0.38,
+            (0, "Nd_o"): 0.43,
+            (0, "Pr_o"): 0.11,
+            (0, "Sc_o"): 2.03,
+            (0, "Sm_o"): 0.092,
+            (0, "Y_o"): 0.153,
             (0, "DEHPA"): 9.8e5 * 0.05,
             (0, "Kerosene"): 8.2e5,
         },
     }
     tear_guesses3 = {
-        "flow_vol": {0: 623.07},
+        "flow_vol": {0: 425.13},
         "conc_mass_comp": {
-            (0, "Al"): 320.46,
-            (0, "Ca"): 62.14,
-            (0, "Ce"): 3.26,
-            (0, "Cl"): 192.63,
-            (0, "Dy"): 4.6e-2,
-            (0, "Fe"): 452.28,
-            (0, "Gd"): 0.40,
-            (0, "H"): 2.92,
+            (0, "Al"): 444.84,
+            (0, "Ca"): 113.56,
+            (0, "Ce"): 5.45,
+            (0, "Cl"): 176.28,
+            (0, "Dy"): 0.89,
+            (0, "Fe"): 717.95,
+            (0, "Gd"): 0.83,
+            (0, "H"): 2.15,
             (0, "H2O"): 1000000,
-            (0, "HSO4"): 732.71,
-            (0, "La"): 1.18,
-            (0, "Nd"): 1.63,
-            (0, "Pr"): 0.41,
-            (0, "SO4"): 2543.95,
-            (0, "Sc"): 2.25e-2,
-            (0, "Sm"): 0.16,
-            (0, "Y"): 0.11,
+            (0, "HSO4"): 839.03,
+            (0, "La"): 2.07,
+            (0, "Nd"): 2.65,
+            (0, "Pr"): 0.69,
+            (0, "SO4"): 3960.84,
+            (0, "Sc"): 3.60e-2,
+            (0, "Sm"): 0.28,
+            (0, "Y"): 1.55,
         },
     }
     tear_guesses4 = {
         "flow_vol": {0: 62},
         "conc_mass_comp": {
-            (0, "Al_o"): 3.64e-3,
-            (0, "Ca_o"): 2.13e-3,
-            (0, "Ce_o"): 5.93e-4,
-            (0, "Dy_o"): 0.33,
-            (0, "Fe_o"): 0.75,
-            (0, "Gd_o"): 4.00e-2,
-            (0, "La_o"): 4.08e-4,
-            (0, "Nd_o"): 3.76e-4,
-            (0, "Pr_o"): 1.47e-4,
-            (0, "Sc_o"): 3.97e-3,
-            (0, "Sm_o"): 7.87e-4,
-            (0, "Y_o"): 1.03,
+            (0, "Al_o"): 5.82,
+            (0, "Ca_o"): 1.57,
+            (0, "Ce_o"): 0.88,
+            (0, "Dy_o"): 5.9e-3,
+            (0, "Fe_o"): 11.71,
+            (0, "Gd_o"): 0.68,
+            (0, "La_o"): 0.35,
+            (0, "Nd_o"): 0.35,
+            (0, "Pr_o"): 5.27e-2,
+            (0, "Sc_o"): 6.71e-5,
+            (0, "Sm_o"): 9.81e-2,
+            (0, "Y_o"): 7.73e-2,
             (0, "DEHPA"): 9.8e5 * 0.05,
             (0, "Kerosene"): 8.2e5,
         },
     }
     tear_guesses5 = {
-        "flow_vol": {0: 16.70},
+        "flow_vol": {0: 0.15},
         "conc_mass_comp": {
-            (0, "Al"): 2.42,
-            (0, "Ca"): 0.68,
-            (0, "Ce"): 0.16,
-            (0, "Cl"): 1438.56,
-            (0, "Dy"): 0.64,
-            (0, "Fe"): 22.67,
-            (0, "Gd"): 1.01,
-            (0, "H"): 39.81,
+            (0, "Al"): 393.40,
+            (0, "Ca"): 98.92,
+            (0, "Ce"): 264.13,
+            (0, "Cl"): 179700,
+            (0, "Dy"): 2468.079,
+            (0, "Fe"): 618.17,
+            (0, "Gd"): 1357.78,
+            (0, "H"): 4781.44,
             (0, "H2O"): 1000000,
-            (0, "La"): 0.13,
-            (0, "Nd"): 8.52e-2,
-            (0, "Pr"): 2.10e-2,
-            (0, "Sc"): 1.65e-3,
-            (0, "Sm"): 7.88e-2,
-            (0, "Y"): 1.17,
+            (0, "La"): 105.89,
+            (0, "Nd"): 90.36,
+            (0, "Pr"): 5.43,
+            (0, "Sc"): 3e-3,
+            (0, "Sm"): 43.77,
+            (0, "Y"): 4341.44,
         },
     }
 
@@ -2682,13 +2680,57 @@ def add_costing(m):
 
 def initialize_costing(m):
     """
-    Initializes costing by calling block triangularization on the entire flowsheet.
+    Initializes costing by calling block triangularization on the costing constraints and variables.
 
     Args:
         m: Model containing flowsheet with already-initialized unit models.
     """
-    init = BlockTriangularizationInitializer()
-    init.initialize(m)
+    # Create empty lists for costing vars and constraints
+    costing_vars = []
+    costing_constraints = []
+
+    # Add the variables and constraints from costing_constraints
+    for c in m.fs.scaling_constraints.values():
+        costing_constraints.append(c)
+    for v in m.fs.scaling_constraints.keys():
+        costing_vars.append(v)
+
+    # Add the variables and constraints from m.fs.costing
+    for v in m.fs.costing.component_data_objects(
+        ctype=Var, active=True, descend_into=False
+    ):
+        costing_vars.append(v)
+    for c in m.fs.costing.component_data_objects(
+        ctype=Constraint, active=True, descend_into=False
+    ):
+        costing_constraints.append(c)
+
+    # Add the variables and constraints from the unit model costing blocks
+    for unit in m.fs.component_data_objects(
+        ctype=Block, active=True, descend_into=False
+    ):
+        if hasattr(unit, "costing"):
+            for v in unit.costing.component_data_objects(
+                ctype=Var, active=True, descend_into=False
+            ):
+                costing_vars.append(v)
+            for c in unit.costing.component_data_objects(
+                ctype=Constraint, active=True, descend_into=False
+            ):
+                costing_constraints.append(c)
+
+    # Ignore fixed variables (ensures 0 DOF)
+    costing_vars = [
+        v
+        for v in costing_vars
+        if v is not m.fs.costing.other_variable_costs[0]
+        and v is not m.fs.costing.additional_cost_of_recovery
+        and v is not m.fs.costing.other_fixed_costs
+    ]
+
+    # Build a temporary block with only the costing variables & constraints and solve
+    subsystem = create_subsystem_block(costing_constraints, costing_vars)
+    solve_strongly_connected_components(subsystem, solver=get_solver("ipopt_v2"))
 
 
 def display_costing(m):

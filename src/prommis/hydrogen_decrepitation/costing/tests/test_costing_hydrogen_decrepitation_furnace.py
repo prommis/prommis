@@ -340,19 +340,7 @@ class TestHydrogenDecrepitationCostingGasFired:
             flowsheet_costing_block=model.fs.costing,
             costing_method=HydrogenDecrepitationCostingData.cost_hydrogen_decrepitation_furnace,
             costing_method_arguments={
-                "price_insulation1": 183.81,  # in USD
-                "price_metal1": 3.14,  # USD/kg
-                "price_insulation2": 47.00,  # in USD
-                "price_metal2": 1.50,  # USD/kg
-                "hours_per_shift": 8,  # hr
-                "shifts_per_day": 3,
-                "operating_days_per_year": 336,  # days
-                "efficiency": 0.95,
-                "utility_rate": 0.081,  # USD/kWhr
                 "heating_mode": 0,
-                "labor_rate": 75,  # USD/hr
-                "temperature_controller_price": 129.00,  # USD
-                "engineering_and_drafting": 1000,  # USD
             },
         )
 
@@ -371,43 +359,25 @@ class TestHydrogenDecrepitationCostingGasFired:
             model.fs.hydrogen_decrepitation_furnace.costing.variable_operating_cost,
             Var,
         )
+        assert isinstance(model.fs.costing.price_insulation1, Param)
+        assert isinstance(model.fs.costing.labor_rate, Param)
+        assert isinstance(model.fs.costing.price_metal1, Param)
+        assert isinstance(model.fs.costing.price_insulation2, Param)
+        assert isinstance(model.fs.costing.price_metal2, Param)
+        assert isinstance(model.fs.costing.efficiency, Param)
+        assert isinstance(model.fs.costing.hours_per_shift, Param)
+        assert isinstance(model.fs.costing.shifts_per_day, Param)
         assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_insulation1, Param
+            model.fs.costing.operating_days_per_year,
+            Param,
         )
+        assert isinstance(model.fs.costing.utility_rate, Param)
         assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.labor_rate, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_metal1, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_insulation2, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_metal2, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.efficiency, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.hours_per_shift, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.shifts_per_day, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.operating_days_per_year,
+            model.fs.costing.temperature_controller_price,
             Param,
         )
         assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.utility_rate, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.temperature_controller_price,
-            Param,
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.engineering_and_drafting,
+            model.fs.costing.engineering_and_drafting,
             Param,
         )
         assert isinstance(
@@ -686,19 +656,7 @@ class TestHydrogenDecrepitationCostingElectric:
             flowsheet_costing_block=model.fs.costing,
             costing_method=HydrogenDecrepitationCostingData.cost_hydrogen_decrepitation_furnace,
             costing_method_arguments={
-                "price_insulation1": 183.81,  # in USD
-                "price_metal1": 3.14,  # USD/kg
-                "price_insulation2": 47.00,  # in USD
-                "price_metal2": 1.50,  # USD/kg
-                "hours_per_shift": 8,  # hr
-                "shifts_per_day": 3,
-                "operating_days_per_year": 336,  # days
-                "efficiency": 0.95,
-                "utility_rate": 0.081,  # USD/kWhr
                 "heating_mode": 1,
-                "labor_rate": 75,  # USD/hr
-                "temperature_controller_price": 129.00,  # USD
-                "engineering_and_drafting": 1000,  # USD
             },
         )
 
@@ -717,43 +675,25 @@ class TestHydrogenDecrepitationCostingElectric:
             model.fs.hydrogen_decrepitation_furnace.costing.variable_operating_cost,
             Var,
         )
+        assert isinstance(model.fs.costing.price_insulation1, Param)
+        assert isinstance(model.fs.costing.labor_rate, Param)
+        assert isinstance(model.fs.costing.price_metal1, Param)
+        assert isinstance(model.fs.costing.price_insulation2, Param)
+        assert isinstance(model.fs.costing.price_metal2, Param)
+        assert isinstance(model.fs.costing.efficiency, Param)
+        assert isinstance(model.fs.costing.hours_per_shift, Param)
+        assert isinstance(model.fs.costing.shifts_per_day, Param)
         assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_insulation1, Param
+            model.fs.costing.operating_days_per_year,
+            Param,
         )
+        assert isinstance(model.fs.costing.utility_rate, Param)
         assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.labor_rate, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_metal1, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_insulation2, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_metal2, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.efficiency, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.hours_per_shift, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.shifts_per_day, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.operating_days_per_year,
+            model.fs.costing.temperature_controller_price,
             Param,
         )
         assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.utility_rate, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.temperature_controller_price,
-            Param,
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.engineering_and_drafting,
+            model.fs.costing.engineering_and_drafting,
             Param,
         )
         assert isinstance(
@@ -823,19 +763,7 @@ def test_invalid_parent_block():
             flowsheet_costing_block=m.fs.costing,
             costing_method=HydrogenDecrepitationCostingData.cost_hydrogen_decrepitation_furnace,
             costing_method_arguments={
-                "price_insulation1": 183.81,  # in USD
-                "price_metal1": 3.14,  # USD/kg
-                "price_insulation2": 47.00,  # in USD
-                "price_metal2": 1.50,  # USD/kg
-                "hours_per_shift": 8,  # hr
-                "shifts_per_day": 3,
-                "operating_days_per_year": 336,  # days
-                "efficiency": 0.95,
-                "utility_rate": 0.081,  # USD/kWhr
                 "heating_mode": 0,
-                "labor_rate": 75,  # USD/hr
-                "temperature_controller_price": 129.00,  # USD
-                "engineering_and_drafting": 1000,  # USD
             },
         )
 
@@ -880,18 +808,6 @@ def test_invalid_heating_mode():
             flowsheet_costing_block=m.fs.costing,
             costing_method=HydrogenDecrepitationCostingData.cost_hydrogen_decrepitation_furnace,
             costing_method_arguments={
-                "price_insulation1": 183.81,  # in USD
-                "price_metal1": 3.14,  # USD/kg
-                "price_insulation2": 47.00,  # in USD
-                "price_metal2": 1.50,  # USD/kg
-                "hours_per_shift": 8,  # hr
-                "shifts_per_day": 3,
-                "operating_days_per_year": 336,  # days
-                "efficiency": 0.95,
-                "utility_rate": 0.081,  # USD/kWhr
                 "heating_mode": 2,
-                "labor_rate": 75,  # USD/hr
-                "temperature_controller_price": 129.00,  # USD
-                "engineering_and_drafting": 1000,  # USD
             },
         )

@@ -63,23 +63,99 @@ class TestHydrogenDecrepitationQGESS:
             },
         )
 
+        # HD-specific params that QGESSCosting doesn't define
+        model.fs.costing.price_insulation1 = Param(
+            mutable=True,
+            units=pyunits.USD_Jan_2024,
+        )
+        model.fs.costing.price_insulation1.set_value(183.81 * pyunits.USD_Jan_2024)
+
+        model.fs.costing.labor_rate = Param(
+            mutable=True,
+            units=pyunits.USD_Jan_2024 / pyunits.hr,
+        )
+        model.fs.costing.labor_rate.set_value(75 * pyunits.USD_Jan_2024 / pyunits.hr)
+
+        model.fs.costing.price_metal1 = Param(
+            mutable=True,
+            units=pyunits.USD_Jan_2024 / pyunits.kg,
+        )
+        model.fs.costing.price_metal1.set_value(
+            3.14 * pyunits.USD_Jan_2024 / pyunits.kg
+        )
+
+        model.fs.costing.price_insulation2 = Param(
+            mutable=True,
+            units=pyunits.USD_Jan_2024,
+        )
+        model.fs.costing.price_insulation2.set_value(47.00 * pyunits.USD_Jan_2024)
+
+        model.fs.costing.price_metal2 = Param(
+            mutable=True,
+            units=pyunits.USD_Jan_2024 / pyunits.kg,
+        )
+        model.fs.costing.price_metal2.set_value(
+            1.50 * pyunits.USD_Jan_2024 / pyunits.kg
+        )
+
+        model.fs.costing.efficiency = Param(
+            mutable=True,
+            units=pyunits.dimensionless,
+        )
+        model.fs.costing.efficiency.set_value(0.95 * pyunits.dimensionless)
+
+        model.fs.costing.hours_per_shift = Param(
+            mutable=True,
+            units=pyunits.hr,
+        )
+        model.fs.costing.hours_per_shift.set_value(8 * pyunits.hr)
+
+        model.fs.costing.shifts_per_day = Param(
+            mutable=True,
+            units=1 / pyunits.day,
+        )
+        model.fs.costing.shifts_per_day.set_value(3 * (pyunits.day) ** (-1))
+
+        model.fs.costing.operating_days_per_year = Param(
+            mutable=True,
+            units=pyunits.day / pyunits.year,
+        )
+        model.fs.costing.operating_days_per_year.set_value(
+            336 * pyunits.day / pyunits.year
+        )
+
+        model.fs.costing.utility_rate = Param(
+            mutable=True,
+            units=pyunits.USD_Jan_2024 / (pyunits.kW * pyunits.hr),
+        )
+        model.fs.costing.utility_rate.set_value(
+            0.081 * pyunits.USD_Jan_2024 / (pyunits.kW * pyunits.hr)
+        )
+
+        model.fs.costing.temperature_controller_price = Param(
+            mutable=True,
+            units=pyunits.USD_Jan_2024,
+        )
+        model.fs.costing.temperature_controller_price.set_value(
+            129.00 * pyunits.USD_Jan_2024
+        )
+
+        model.fs.costing.engineering_and_drafting = Param(
+            mutable=True,
+            units=pyunits.USD_Jan_2024,
+        )
+        model.fs.costing.engineering_and_drafting.set_value(1000 * pyunits.USD_Jan_2024)
+
+        model.fs.costing.CE_index_year = Param(
+            initialize="Jan_2024",
+            mutable=True,
+        )
+
         model.fs.hydrogen_decrepitation_furnace.costing = UnitModelCostingBlock(
             flowsheet_costing_block=model.fs.costing,
             costing_method=HydrogenDecrepitationCostingData.cost_hydrogen_decrepitation_furnace,
             costing_method_arguments={
-                "price_insulation1": 183.81,  # in USD
-                "price_metal1": 3.14,  # USD/kg
-                "price_insulation2": 47.00,  # in USD
-                "price_metal2": 1.50,  # USD/kg
-                "hours_per_shift": 8,  # hr
-                "shifts_per_day": 3,
-                "operating_days_per_year": 336,  # days
-                "efficiency": 0.95,
-                "utility_rate": 0.081,  # USD/kWhr
                 "heating_mode": 0,
-                "labor_rate": 75,  # USD/hr
-                "temperature_controller_price": 129.00,  # USD
-                "engineering_and_drafting": 1000,  # USD
             },
         )
 
@@ -100,43 +176,25 @@ class TestHydrogenDecrepitationQGESS:
             model.fs.hydrogen_decrepitation_furnace.costing.variable_operating_cost,
             Var,
         )
+        assert isinstance(model.fs.costing.price_insulation1, Param)
+        assert isinstance(model.fs.costing.labor_rate, Param)
+        assert isinstance(model.fs.costing.price_metal1, Param)
+        assert isinstance(model.fs.costing.price_insulation2, Param)
+        assert isinstance(model.fs.costing.price_metal2, Param)
+        assert isinstance(model.fs.costing.efficiency, Param)
+        assert isinstance(model.fs.costing.hours_per_shift, Param)
+        assert isinstance(model.fs.costing.shifts_per_day, Param)
         assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_insulation1, Param
+            model.fs.costing.operating_days_per_year,
+            Param,
         )
+        assert isinstance(model.fs.costing.utility_rate, Param)
         assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.labor_rate, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_metal1, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_insulation2, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.price_metal2, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.efficiency, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.hours_per_shift, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.shifts_per_day, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.operating_days_per_year,
+            model.fs.costing.temperature_controller_price,
             Param,
         )
         assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.utility_rate, Param
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.temperature_controller_price,
-            Param,
-        )
-        assert isinstance(
-            model.fs.hydrogen_decrepitation_furnace.costing.engineering_and_drafting,
+            model.fs.costing.engineering_and_drafting,
             Param,
         )
         assert isinstance(

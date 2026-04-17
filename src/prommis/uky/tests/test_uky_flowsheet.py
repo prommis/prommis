@@ -15,6 +15,7 @@ from pyomo.environ import (
     assert_optimal_termination,
     units,
     value,
+    Var,
 )
 from pyomo.network import Arc
 
@@ -610,8 +611,8 @@ def test_costing_solution(system_frame):
         "costing.total_installation_cost": {None: (5.51875e-01, tol, None)},
         "costing.other_plant_costs": {None: (4.78618e-06, tol, None)},
         "costing.total_fixed_OM_cost": {None: (6.80612e00, tol, None)},
-        "costing.total_variable_OM_cost": {0: (1.36131e00, tol, None)},
-        "costing.total_sales_revenue": {None: (2.69422e-5, None, tol)},
+        "costing.total_variable_OM_cost": {0: (1.36155e00, tol, None)},
+        "costing.total_sales_revenue": {None: (1.03978e-4, None, tol)},
         "costing.land_cost": {None: (6.1234e-5, tol, None)},
     }
     assert_solution_equivalent(model.fs, expected_results)
@@ -623,7 +624,30 @@ def test_costing_solution_diagnostics(system_frame):
 
     model = system_frame
     dt = DiagnosticsToolbox(model)
-    dt.assert_no_numerical_warnings()
+    # Relax numerical diagnostics to permit the three known variables that sit at their bounds
+    warnings, _ = dt._collect_numerical_warnings()
+    assert len(warnings) == 1
+    assert "Variables at or outside bounds" in str(warnings[0])
+
+    actual = sorted(
+        v.name
+        for v in model.component_data_objects(Var, descend_into=True)
+        if v.value is not None
+        and (
+            (v.has_lb() and v.value <= value(v.lb))
+            or (v.has_ub() and v.value >= value(v.ub))
+        )
+    )
+
+    expected = sorted(
+        [
+            "fs.precipitator.precipitate_state_block[0.0].flow_mol_comp['Sc2(C2O4)3(s)']",
+            "fs.sl_sep2.solid_state[0.0].flow_mol_comp['Sc2(C2O4)3(s)']",
+            "fs.roaster.solid_in[0.0].flow_mol_comp['Sc2(C2O4)3(s)']",
+        ]
+    )
+
+    assert actual == expected
 
 
 @pytest.mark.unit

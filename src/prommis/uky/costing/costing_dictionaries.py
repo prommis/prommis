@@ -235,7 +235,7 @@ def load_default_resource_prices():
         # https://www.eia.gov/dnav/pet/pet_pri_gnd_dcus_nus_a.htm.
         # Diesel price annual average in U.S (2023).
         "diesel": convert_to_usd_2021(4.214, pyunits.USD_2023) / pyunits.gallon,
-        "bioleaching_solution": 0.008 * 1e-6 * CE_index_units / pyunits.L,
+        "bioleaching_solution": 0.008 * CE_index_units / pyunits.L,
         # Average price of year 2023. https://businessanalytiq.com/procurementanalytics/
         # index/sulfuric-acid-price-index/. Accessed 1/16/2025
         "H2SO4": convert_to_usd_2021(128.00, pyunits.USD_2023) / pyunits.tonne,

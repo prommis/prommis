@@ -15,7 +15,6 @@ from pyomo.environ import (
     assert_optimal_termination,
     units,
     value,
-    Var,
 )
 from pyomo.network import Arc
 

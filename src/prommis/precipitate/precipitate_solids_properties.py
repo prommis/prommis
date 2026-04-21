@@ -196,6 +196,7 @@ class PrecipitateStateBlockData(StateBlockData):
 
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
         iscale.set_scaling_factor(self.temperature, 1e1)
+        iscale.set_scaling_factor(self.flow_mol_comp["Sc2(C2O4)3(s)"], 1e5)
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar

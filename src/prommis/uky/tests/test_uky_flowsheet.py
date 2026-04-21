@@ -624,30 +624,7 @@ def test_costing_solution_diagnostics(system_frame):
 
     model = system_frame
     dt = DiagnosticsToolbox(model)
-    # Relax numerical diagnostics to permit the three known variables that sit at their bounds
-    warnings, _ = dt._collect_numerical_warnings()
-    assert len(warnings) == 1
-    assert "Variables at or outside bounds" in str(warnings[0])
-
-    actual = sorted(
-        v.name
-        for v in model.component_data_objects(Var, descend_into=True)
-        if v.value is not None
-        and (
-            (v.has_lb() and v.value <= value(v.lb))
-            or (v.has_ub() and v.value >= value(v.ub))
-        )
-    )
-
-    expected = sorted(
-        [
-            "fs.precipitator.precipitate_state_block[0.0].flow_mol_comp['Sc2(C2O4)3(s)']",
-            "fs.sl_sep2.solid_state[0.0].flow_mol_comp['Sc2(C2O4)3(s)']",
-            "fs.roaster.solid_in[0.0].flow_mol_comp['Sc2(C2O4)3(s)']",
-        ]
-    )
-
-    assert actual == expected
+    dt.assert_no_numerical_warnings()
 
 
 @pytest.mark.unit

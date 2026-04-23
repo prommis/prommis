@@ -217,6 +217,7 @@ class TestDiafiltrationCostUQStructure:
         assert eff_spec["mode"] == pytest.approx(0.7)
         assert eff_spec["high"] == pytest.approx(1.0)
 
+        # TODO change to capacity where 1.00 corresonds to 365.25 operating days per year
         op_days_spec = specs[cp.operating_days_per_year.getname()]
         assert op_days_spec["type"] == "triangular"
         assert op_days_spec["low"] == pytest.approx(300.0)

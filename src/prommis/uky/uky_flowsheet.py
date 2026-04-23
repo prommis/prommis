@@ -2617,9 +2617,7 @@ def add_costing(m):
         labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
         labor_burden=25,  # % fringe benefits
         operators_per_shift=[4, 9, 2, 2, 2, 3],
-        hours_per_shift=hours_per_shift,
-        shifts_per_day=shifts_per_day,
-        operating_days_per_year=operating_days_per_year,
+        capacity_factor=0.92,
         pure_product_output_rates=pure_product_output_rates,
         mixed_product_output_rates=mixed_product_output_rates,
         mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products

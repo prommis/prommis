@@ -339,7 +339,7 @@ def identify_uncertain_params(m):
         cp.factor_membrane_replacement,
         cp.electricity_cost,
         cp.pump_efficiency,
-        cp.operating_days_per_year,
+        cp.operating_days_per_year, # TODO change to capacity factor
         cp.Lang_factor,
         cp.Li_price,
         cp.Co_price,

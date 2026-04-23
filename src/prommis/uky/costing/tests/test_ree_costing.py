@@ -1097,9 +1097,7 @@ class TestREECosting(object):
             labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
             labor_burden=25,  # % fringe benefits
             operators_per_shift=[4, 9, 2, 2, 2, 3],
-            hours_per_shift=hours_per_shift,
-            shifts_per_day=shifts_per_day,
-            operating_days_per_year=operating_days_per_year,
+            capacity_factor=0.92,
             pure_product_output_rates=pure_product_output_rates,
             mixed_product_output_rates=mixed_product_output_rates,
             mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
@@ -1855,9 +1853,7 @@ class TestWaterTAPCosting(object):
             labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
             labor_burden=25,  # % fringe benefits
             operators_per_shift=[4, 9, 2, 2, 2, 3],
-            hours_per_shift=hours_per_shift,
-            shifts_per_day=shifts_per_day,
-            operating_days_per_year=operating_days_per_year,
+            capacity_factor=0.92,
             pure_product_output_rates=pure_product_output_rates,
             mixed_product_output_rates=mixed_product_output_rates,
             mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
@@ -2274,9 +2270,7 @@ class TestCustomCosting(object):
             labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
             labor_burden=25,  # % fringe benefits
             operators_per_shift=[4, 9, 2, 2, 2, 3],
-            hours_per_shift=hours_per_shift,
-            shifts_per_day=shifts_per_day,
-            operating_days_per_year=operating_days_per_year,
+            capacity_factor=0.92,
             pure_product_output_rates=pure_product_output_rates,
             mixed_product_output_rates=mixed_product_output_rates,
             mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
@@ -2727,9 +2721,7 @@ class TestDiafiltrationCosting(object):
             labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
             labor_burden=25,  # % fringe benefits
             operators_per_shift=[4, 9, 2, 2, 2, 3],
-            hours_per_shift=hours_per_shift,
-            shifts_per_day=shifts_per_day,
-            operating_days_per_year=operating_days_per_year,
+            capacity_factor=0.92,
             pure_product_output_rates=pure_product_output_rates,
             mixed_product_output_rates=mixed_product_output_rates,
             mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
@@ -4194,7 +4186,7 @@ def test_REE_costing_fixedOM_defaults():
         0.30730, rel=1e-4
     )
     assert value(m.fs.costing.sales_patenting_and_research_cost) == pytest.approx(
-        0.13965, rel=1e-4
+        0.13967, rel=1e-4
     )
     assert value(m.fs.costing.admin_and_support_labor_cost) == pytest.approx(
         0.61460, rel=1e-4
@@ -4749,7 +4741,7 @@ def test_REE_costing_variableOM_nofixedOM():
 
     with pytest.raises(
         AttributeError,
-        match="_ScalarQGESSCosting' object has no attribute 'hours_per_shift'",
+        match="_ScalarQGESSCosting' object has no attribute 'plant_overhead_cost'",
     ):
         m.fs.costing.build_process_costs(
             fixed_OM=False,
@@ -6482,10 +6474,10 @@ def test_REE_costing_consider_taxes():
         0.0000, abs=1e-4
     )
     assert value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
-    assert value(m.fs.costing.income_tax) == pytest.approx(5.303479, abs=1e-4)
-    assert value(m.fs.costing.net_tax_owed) == pytest.approx(2.795132, abs=1e-4)
-    assert value(m.fs.costing.pv_taxes) == pytest.approx(-17.878691, abs=1e-4)
-    assert value(m.fs.costing.npv) == pytest.approx(157.534519, abs=1e-4)
+    assert value(m.fs.costing.income_tax) == pytest.approx(5.303978, abs=1e-4)
+    assert value(m.fs.costing.net_tax_owed) == pytest.approx(2.795411, abs=1e-4)
+    assert value(m.fs.costing.pv_taxes) == pytest.approx(-17.880470, abs=1e-4)
+    assert value(m.fs.costing.npv) == pytest.approx(157.549228, abs=1e-4)
 
 
 @pytest.mark.component
@@ -6617,12 +6609,12 @@ def test_REE_costing_with_phaseout():
         0.0000, abs=1e-4
     )
     assert value(m.fs.costing.additional_waste_cost) == pytest.approx(0.0000, abs=1e-4)
-    assert value(m.fs.costing.income_tax) == pytest.approx(6.35477, abs=1e-4)
-    assert value(m.fs.costing.net_tax_owed) == pytest.approx(3.559615, abs=1e-4)
-    assert value(m.fs.costing.pv_taxes) == pytest.approx(-27.085046, abs=1e-4)
-    assert value(m.fs.costing.npv) == pytest.approx(186.817998, abs=1e-4)
+    assert value(m.fs.costing.income_tax) == pytest.approx(6.35537, abs=1e-4)
+    assert value(m.fs.costing.net_tax_owed) == pytest.approx(3.559966, abs=1e-4)
+    assert value(m.fs.costing.pv_taxes) == pytest.approx(-27.087657, abs=1e-4)
+    assert value(m.fs.costing.npv) == pytest.approx(186.835421, abs=1e-4)
     assert value(m.fs.costing.pv_production_incentive) == pytest.approx(
-        3.736998, abs=1e-4
+        3.737312, abs=1e-4
     )
 
 

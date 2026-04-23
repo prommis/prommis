@@ -34,6 +34,7 @@ from pyomo.core.base.param import ScalarParam
 
 from idaes.core import UnitModelBlock, UnitModelCostingBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox, degrees_of_freedom
+from idaes.core.util.scaling import constraint_autoscale_large_jac
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -88,6 +89,41 @@ def set_sieving_coefficients(m, li_sc, co_sc):
     sc["Li"].fix(li_sc)
     sc["Co"].fix(co_sc)
 
+def set_scaling_uq(m):
+    if not hasattr(m, "scaling_factor"):
+        m.scaling_factor = pyo.Suffix(direction=pyo.Suffix.EXPORT)
+
+    # Generic Jacobian-based autoscaling
+    constraint_autoscale_large_jac(m)
+
+    # Membrane stage costing blocks
+    for stage in [m.fs.stage1, m.fs.stage2, m.fs.stage3]:
+        if hasattr(stage, "costing"):
+            if hasattr(stage.costing, "membrane_area"):
+                m.scaling_factor[stage.costing.membrane_area] = 1e-4
+            if hasattr(stage.costing, "capital_cost"):
+                m.scaling_factor[stage.costing.capital_cost] = 1e-5
+
+    # Pump costing blocks
+    if hasattr(m.fs.feed_pump, "costing"):
+        if hasattr(m.fs.feed_pump.costing, "capital_cost"):
+            m.scaling_factor[m.fs.feed_pump.costing.capital_cost] = 1e-5
+        if hasattr(m.fs.feed_pump.costing, "variable_operating_cost"):
+            m.scaling_factor[m.fs.feed_pump.costing.variable_operating_cost] = 1e3
+        if hasattr(m.fs.feed_pump.costing, "pump_head"):
+            m.scaling_factor[m.fs.feed_pump.costing.pump_head] = 1e5
+        if hasattr(m.fs.feed_pump.costing, "pump_power"):
+            m.scaling_factor[m.fs.feed_pump.costing.pump_power] = 1e2
+
+    if hasattr(m.fs.diafiltrate_pump, "costing"):
+        if hasattr(m.fs.diafiltrate_pump.costing, "capital_cost"):
+            m.scaling_factor[m.fs.diafiltrate_pump.costing.capital_cost] = 1e-5
+        if hasattr(m.fs.diafiltrate_pump.costing, "variable_operating_cost"):
+            m.scaling_factor[m.fs.diafiltrate_pump.costing.variable_operating_cost] = 1e-5
+        if hasattr(m.fs.diafiltrate_pump.costing, "pump_head"):
+            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_head] = 1e-1
+        if hasattr(m.fs.diafiltrate_pump.costing, "pump_power"):
+            m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_power] = 1e-5
 
 # 1. Build the flowsheet + costing
 def build_diafiltration_model(sieving_coeffs=(1.3, 0.5), technology_name=None):
@@ -100,12 +136,7 @@ def build_diafiltration_model(sieving_coeffs=(1.3, 0.5), technology_name=None):
     # Override sieving coefficients (Li, Co) for this run
     li_sc, co_sc = sieving_coeffs
     set_sieving_coefficients(m, li_sc, co_sc)
-    # Initialize the flowsheet
-    initialize_model(m)
-    # Add recovery constraint and unfix optimization variables.
-    unfix_opt_variables(m)
-    add_product_constraints(m, Li_recovery_bound=0.945, Co_recovery_bound=0.635)
-
+    
     # Create dummy variables to store the UnitModelCostingBlocks
     m.fs.cascade = UnitModelBlock()  # to cost the pressure drop
     m.fs.feed_pump = UnitModelBlock()  # to cost feed pump
@@ -322,6 +353,25 @@ def build_diafiltration_model(sieving_coeffs=(1.3, 0.5), technology_name=None):
         isinstance(c, pyo.Objective) for c in m.component_objects(pyo.Objective)
     ):
         m.obj = pyo.Objective(expr=m.fs.costing.cost_of_recovery, sense=pyo.minimize)
+    
+    # Initialize the flowsheet
+    initialize_model(m)
+    
+    dt.assert_no_structural_warnings(ignore_evaluation_errors=True)
+
+    square_solver = pyo.SolverFactory("ipopt")
+    square_results = square_solver.solve(m, tee=False)
+    if not pyo.check_optimal_termination(square_results):
+        raise RuntimeError(
+            f"Square solve failed for technology {technology_name or sieving_coeffs}: "
+            f"status={square_results.solver.status}, "
+            f"term={square_results.solver.termination_condition}"
+        )
+    # Add recovery constraint and unfix optimization variables.
+    unfix_opt_variables(m)
+    add_product_constraints(m, Li_recovery_bound=0.945, Co_recovery_bound=0.635)
+    
+    set_scaling_uq(m)
 
     return m
 

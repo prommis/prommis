@@ -23,13 +23,7 @@ The steps to test this framework including:
 
 # 1. Import packages
 # Pyomo packages
-from pyomo.environ import (
-    ConcreteModel,
-    Expression,
-    Param,
-    Var,
-    value,
-)
+from pyomo.environ import ConcreteModel, Expression, Param, Var, value
 
 # IDAES packages
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox

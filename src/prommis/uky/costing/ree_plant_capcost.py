@@ -1409,8 +1409,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         if hasattr(self, "capacity_factor"):
             var_dict["Capacity Factor"] = value(self.capacity_factor)
-            var_dict["Estimated Operating Days Per Year"] = value(self.capacity_factor * 365.25)
-
+            var_dict["Estimated Operating Days Per Year"] = value(
+                self.capacity_factor * 365.25
+            )
 
         if hasattr(self, "total_BEC"):
             var_dict["Total Bare Erected Cost"] = value(self.total_BEC)
@@ -2586,9 +2587,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         def variable_cost_eq(c, t, r):
             return c.variable_operating_costs[t, r] == (
                 pyunits.convert(
-                    resource_prices[r]
-                    * resource_rates[r][t]
-                    * c.capacity_factor,
+                    resource_prices[r] * resource_rates[r][t] * c.capacity_factor,
                     to_units=CE_index_units / pyunits.year,
                 )
             )
@@ -2930,19 +2929,22 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             if hasattr(b, "feed_input_rate"):
                 print(
                     "Total annual O&M cost per ton feed processed (USD/ton): %.3f"
-                    % value(pyunits.convert(
-                        (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
-                        * 1e6
-                        / (
-                            pyunits.convert(
-                                b.feed_input_rate, to_units=pyunits.ton / pyunits.hr
-                            )
-                            * b.capacity_factor * pyunits.year
-                        ),
-                        pyunits.get_units(b.total_variable_OM_cost[0])/pyunits.ton,
+                    % value(
+                        pyunits.convert(
+                            (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
+                            * 1e6
+                            / (
+                                pyunits.convert(
+                                    b.feed_input_rate, to_units=pyunits.ton / pyunits.hr
+                                )
+                                * b.capacity_factor
+                                * pyunits.year
+                            ),
+                            pyunits.get_units(b.total_variable_OM_cost[0])
+                            / pyunits.ton,
+                        )
                     )
                 )
-            )
             if hasattr(b, "recovery_rate_per_year"):
                 print(
                     "Total annual O&M cost per kg REE recovered (USD/kg): %.3f"

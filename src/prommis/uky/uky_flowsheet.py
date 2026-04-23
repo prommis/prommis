@@ -141,6 +141,25 @@ References:
 import logging
 from warnings import warn
 
+from pyomo.common.collections import ComponentMap
+from pyomo.contrib.incidence_analysis import solve_strongly_connected_components
+from pyomo.environ import (
+    Block,
+    ConcreteModel,
+    Constraint,
+    Expression,
+    Objective,
+    Param,
+    Set,
+    TransformationFactory,
+    Var,
+    check_optimal_termination,
+    units,
+    value,
+)
+from pyomo.network import Arc, SequentialDecomposition
+from pyomo.util.subsystems import create_subsystem_block
+
 import idaes.logger as idaeslog
 from idaes.core import (
     FlowDirection,
@@ -152,12 +171,11 @@ from idaes.core import (
     UnitModelCostingBlock,
 )
 from idaes.core.initialization import BlockTriangularizationInitializer
-from idaes.core.scaling import CustomScalerBase, ConstraintScalingScheme
+from idaes.core.scaling import ConstraintScalingScheme, CustomScalerBase
 from idaes.core.scaling.util import get_scaling_factor, set_scaling_factor
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
-
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
     ModularPropertiesScaler,
@@ -182,45 +200,23 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     get_prop,
 )
 
-from pyomo.common.collections import ComponentMap
-from pyomo.contrib.incidence_analysis import (
-    solve_strongly_connected_components,
-)
-from pyomo.environ import (
-    Block,
-    ConcreteModel,
-    Constraint,
-    Expression,
-    Objective,
-    Param,
-    Set,
-    TransformationFactory,
-    Var,
-    check_optimal_termination,
-    units,
-    value,
-)
-from pyomo.network import Arc, SequentialDecomposition
-from pyomo.util.subsystems import create_subsystem_block
-
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
+from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitator import Precipitator
+from prommis.properties import HClStrippingParameterBlock
 from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.hcl_stripping_properties import HClStrippingPropertiesScaler
 from prommis.properties.sulfuric_acid_leaching_properties import (
     SulfuricAcidLeachingParameters,
 )
-from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
-from prommis.properties import HClStrippingParameterBlock
-from prommis.properties.hcl_stripping_properties import HClStrippingPropertiesScaler
-from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-from prommis.precipitate.precipitator import Precipitator
+from prommis.properties.translator_hcl_leach import TranslatorHClLeach
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import (
     SolventExtraction,
     SolventExtractionInitializer,
 )
-
-from prommis.properties.translator_hcl_leach import TranslatorHClLeach
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,
 )

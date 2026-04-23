@@ -12,7 +12,7 @@ Tests for diafiltration_cost_UQ.
 
 This test suite checks that:
 
-1. The seiving coefficient are reset value for two different value.
+1. The sieving coefficient are reset value for two different value.
 
 2. The uncertain costing parameters and their distributions are as expected,
    and are consistent with the model (e.g., lognormal specs reproduce the
@@ -185,7 +185,7 @@ class TestDiafiltrationCostUQStructure:
         assert _contains_param(uncertain_params, cp.factor_membrane_replacement)
         assert _contains_param(uncertain_params, cp.electricity_cost)
         assert _contains_param(uncertain_params, cp.pump_efficiency)
-        assert _contains_param(uncertain_params, cp.operating_days_per_year)
+        assert _contains_param(uncertain_params, cp.capacity_factor)
         assert _contains_param(uncertain_params, cp.Lang_factor)
         assert _contains_param(uncertain_params, cp.Li_price)
         assert _contains_param(uncertain_params, cp.Co_price)
@@ -217,11 +217,12 @@ class TestDiafiltrationCostUQStructure:
         assert eff_spec["mode"] == pytest.approx(0.7)
         assert eff_spec["high"] == pytest.approx(1.0)
 
-        op_days_spec = specs[cp.operating_days_per_year.getname()]
+        # use number of operating days per year to estimate capacity factor
+        op_days_spec = specs[cp.capacity_factor.getname()]
         assert op_days_spec["type"] == "triangular"
-        assert op_days_spec["low"] == pytest.approx(300.0)
-        assert op_days_spec["mode"] == pytest.approx(336.0)
-        assert op_days_spec["high"] == pytest.approx(365.0)
+        assert op_days_spec["low"] == pytest.approx(300.0 / 365.25)  # ~ 0.82
+        assert op_days_spec["mode"] == pytest.approx(336.0 / 365.25)  # ~ 0.92
+        assert op_days_spec["high"] == pytest.approx(365.25 / 365.25)  # 1
 
         # --- Uniform distributions ---
         repl_spec = specs[cp.factor_membrane_replacement.getname()]

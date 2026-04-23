@@ -339,7 +339,7 @@ def identify_uncertain_params(m):
         cp.factor_membrane_replacement,
         cp.electricity_cost,
         cp.pump_efficiency,
-        cp.operating_days_per_year,
+        cp.capacity_factor,
         cp.Lang_factor,
         cp.Li_price,
         cp.Co_price,
@@ -457,12 +457,12 @@ def build_uncertainty_specs(m, lognormal_params=None, income_tax_samples=None):
         "high": 1.0,
     }
 
-    # operating_days_per_year: (300, 336, 365)
-    specs[cp.operating_days_per_year.getname()] = {
+    # capacity_factor: (300/365.25, 336/365.25, 365.25/365.25)
+    specs[cp.capacity_factor.getname()] = {
         "type": "triangular",
-        "low": 300.0,
-        "mode": 336.0,
-        "high": 365.0,
+        "low": 300.0 / 365.25,
+        "mode": 336.0 / 365.25,
+        "high": 365.25 / 365.25,
     }
 
     # --- 2. Uniform distributions ---

@@ -12,7 +12,7 @@ Tests for diafiltration_cost_UQ.
 
 This test suite checks that:
 
-1. The seiving coefficient are reset value for two different value.
+1. The sieving coefficient are reset value for two different value.
 
 2. The uncertain costing parameters and their distributions are as expected,
    and are consistent with the model (e.g., lognormal specs reproduce the

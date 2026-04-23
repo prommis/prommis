@@ -2630,7 +2630,6 @@ def add_costing(m):
         fixed_OM=True,
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
         waste=[
             "nonhazardous_solid_waste",
             "nonhazardous_precipitate_waste",

@@ -318,7 +318,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         fixed_OM=True,
         variable_OM=False,
         feed_input=None,
-        efficiency=0.85,
         chemicals=None,
         additional_chemicals_cost=None,
         waste=None,
@@ -444,7 +443,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             prices: list setting prices of resources
             fixed_OM: True/False flag for calculating fixed O&M costs
             variable_OM: True/False flag for calculating variable O&M costs
-            efficiency: power usage efficiency, or fixed motor/distribution efficiency
             chemicals: string setting chemicals type for chemicals costs
             additional_chemicals_cost: Expression, Var or Param to calculate additional chemical costs.
             waste: string setting waste type for waste costs
@@ -1075,7 +1073,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             if variable_OM:
                 self.get_variable_OM_costs(
-                    efficiency=efficiency,
                     resources=resources,
                     rates=rates,
                     prices=prices,
@@ -2482,7 +2479,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         prices=None,
         feed_input_rate=None,
         CE_index_year="2021",
-        efficiency=0.85,
     ):
         """
         Args:
@@ -2492,7 +2488,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             prices: dict of resource prices to be added to the premade dictionary
             feed_input_rate: rate of feedstock input
             CE_index_year: year for cost basis, e.g. "2021" to use 2021 dollars
-            efficiency: power usage efficiency, or fixed motor/distribution efficiency
 
         Returns:
             None.
@@ -2602,17 +2597,10 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         @b.Constraint(b.parent_block().time, resources)
         def variable_cost_eq(c, t, r):
-            if r == "power":
-                efficiency_factor = efficiency  # fixed motor efficiency
-            else:
-                efficiency_factor = (
-                    1  # other costs don't have this, could add more later
-                )
             return c.variable_operating_costs[t, r] == (
                 pyunits.convert(
                     resource_prices[r]
                     * resource_rates[r][t]
-                    / efficiency_factor
                     * c.hours_per_shift
                     * c.shifts_per_day
                     * c.operating_days_per_year,

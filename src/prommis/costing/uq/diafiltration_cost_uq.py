@@ -31,6 +31,7 @@ import os
 
 import pyomo.environ as pyo
 from pyomo.core.base.param import ScalarParam
+from pyomo.common.errors import ApplicationError
 
 from idaes.core import UnitModelBlock, UnitModelCostingBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox, degrees_of_freedom
@@ -732,7 +733,7 @@ def run_LHS(
         # Solve the model for this realization
         try:
             res = solver.solve(m, tee=False, load_solutions=False)
-        except Exception as e:
+        except (ApplicationError, RuntimeError, ValueError) as e:
             print(f"WARNING: LHS solve failed for sample {i} with exception: {e}")
             continue
 
@@ -862,7 +863,7 @@ def run_monte_carlo(
         try:
             # IMPORTANT: don't auto-load a bad solution into the model
             res = solver.solve(m, tee=False, load_solutions=False)
-        except Exception as e:
+        except (ApplicationError, RuntimeError, ValueError) as e:
             # Something went really wrong at the solver level; leave this sample as NaN
             print(f"WARNING: solve failed for sample {i} with exception: {e}")
             continue

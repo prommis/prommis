@@ -30,8 +30,8 @@ import math
 import os
 
 import pyomo.environ as pyo
-from pyomo.core.base.param import ScalarParam
 from pyomo.common.errors import ApplicationError
+from pyomo.core.base.param import ScalarParam
 
 from idaes.core import UnitModelBlock, UnitModelCostingBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox, degrees_of_freedom

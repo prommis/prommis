@@ -497,12 +497,10 @@ class TestDiafiltrationCostUQStructure:
             save_plots=False,
             output_dir=str(tmp_path),
         )
-        
+
     @pytest.mark.unit
     def test_set_scaling_uq_smoke(self, monkeypatch):
-        m = build_diafiltration_model(
-            sieving_coeffs=(1.3, 0.5), technology_name=None
-        )
+        m = build_diafiltration_model(sieving_coeffs=(1.3, 0.5), technology_name=None)
 
         called = {"autoscale": False}
         monkeypatch.setattr(
@@ -520,16 +518,20 @@ class TestDiafiltrationCostUQStructure:
         assert hasattr(m, "scaling_factor")
         assert called["autoscale"] is True
 
-        assert m.scaling_factor[m.fs.stage1.costing.membrane_area] == pytest.approx(1e-4)
+        assert m.scaling_factor[m.fs.stage1.costing.membrane_area] == pytest.approx(
+            1e-4
+        )
         assert m.scaling_factor[m.fs.stage1.costing.capital_cost] == pytest.approx(1e-5)
-        assert m.scaling_factor[m.fs.feed_pump.costing.capital_cost] == pytest.approx(1e-5)
-        assert m.scaling_factor[m.fs.diafiltrate_pump.costing.pump_head] == pytest.approx(1e-1)
-        
+        assert m.scaling_factor[m.fs.feed_pump.costing.capital_cost] == pytest.approx(
+            1e-5
+        )
+        assert m.scaling_factor[
+            m.fs.diafiltrate_pump.costing.pump_head
+        ] == pytest.approx(1e-1)
+
     @pytest.mark.unit
     def test_set_scaling_uq_keeps_existing_suffix(self, monkeypatch):
-        m = build_diafiltration_model(
-            sieving_coeffs=(1.3, 0.5), technology_name=None
-        )
+        m = build_diafiltration_model(sieving_coeffs=(1.3, 0.5), technology_name=None)
 
         monkeypatch.setattr(uq, "constraint_autoscale_large_jac", lambda m: None)
 
@@ -542,7 +544,7 @@ class TestDiafiltrationCostUQStructure:
         uq.set_scaling_uq(m)
 
         assert m.scaling_factor is old_suffix
-        
+
     @pytest.mark.unit
     def test_build_diafiltration_model_square_solve_failure(self, monkeypatch):
         class DummyResults:

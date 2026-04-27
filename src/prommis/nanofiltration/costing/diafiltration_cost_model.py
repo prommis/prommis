@@ -32,6 +32,9 @@ from prommis.nanofiltration.costing.diafiltration_cost_block import (
 class DiafiltrationCostingData(DiafiltrationCostingBlockData):
     """
     Costing block for the diafiltration flowsheet
+
+    References for default market prices:
+        Na2CO3 and Li2CO3, 2021 data: https://pubs.usgs.gov/periodicals/mcs2024/mcs2024.pdf
     """
 
     def build_global_params(self):
@@ -58,6 +61,15 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             units=units.hr / units.year,
         )
         self.operating_hours_per_year.fix()
+
+        self.default_market_prices = {
+            "Na2CO3": 0.13 * units.USD_2021 / units.kg,  # soda ash
+            "(NH4)2C2O4": 1
+            * units.USD_2021
+            / units.kg,  # TODO: add ammonium oxalate cost
+            "Li2CO3": 12 * units.USD_2021 / units.kg,  # lithium carbonate
+            "CoC2O4": 1 * units.USD_2021 / units.kg,  # TODO: add cobalt oxalate price
+        }
 
     def build_process_costs(
         self,
@@ -302,8 +314,8 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
 
         @blk.Constraint()
         def SEC_equation(blk):
-            return blk.SEC == units.convert(
-                (vol_flow_feed * dP / vol_flow_perm), to_units=units.kWh / units.m**3
+            return blk.SEC * vol_flow_perm == units.convert(
+                (vol_flow_feed * dP), to_units=units.kW
             )
 
         @blk.Constraint()
@@ -375,7 +387,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
             blk.base_pump_cost = Param(
                 initialize=622.59,
                 doc="Base cost of stainless steel, centrifugal pump",
-                units=units.USD_1996 / (units.kPa * units.m**3 / units.hr) ** 0.39,
+                units=units.USD_1996,
             )
             blk.pump_exponential_factor = Param(
                 initialize=0.39,
@@ -408,13 +420,48 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                 doc="Unit variable operating cost",
             )
 
+            # add installation flow for separating CAPEX and OPEX considerations
+            blk.install_inlet_vol_flow = Var(
+                initialize=inlet_vol_flow.value,
+                domain=NonNegativeReals,
+                bounds=(0, 2000),
+                doc="Flow used to size pump installation (CAPEX)",
+                units=units.m**3 / units.hr,
+            )
+
+            @blk.Constraint()
+            def install_flows_constraint(blk):
+                return blk.install_inlet_vol_flow >= inlet_vol_flow
+
+            # The pump exponentional factor is fractional, leading to the issue below:
+            # - the derivative of (flow * pressure) ** 0.39 causes numerical issues for IPOPT
+            #
+            # This is fixed with:
+            # the capital cost constraint is reformulated with an auxilliary variable as
+            #     aux_var ** (1/0.39) = (flow * pressure)
+            #     and capital_cost = base_cost * aux_var
+            blk.capital_cost_auxilliary_var = Var(
+                initialize=inlet_vol_flow.value * inlet_pressure / units.kPa,
+                domain=NonNegativeReals,
+                bounds=(0, None),
+                doc="Auxilliary variable for pump installation (CAPEX)",
+                units=units.dimensionless,
+            )
+
+            @blk.Constraint()
+            def capital_cost_auxilliary_constraint(blk):
+                return blk.capital_cost_auxilliary_var ** (
+                    1 / blk.pump_exponential_factor
+                ) == blk.install_inlet_vol_flow * inlet_pressure / (
+                    units.kPa * units.m**3 / units.hr
+                )
+
             # Ref [4] Eqn 5
             # assumes stainless steel centrifugal pumps
             @blk.Constraint()
             def capital_cost_constraint(blk):
                 return blk.capital_cost == units.convert(
-                    blk.base_pump_cost
-                    * (inlet_vol_flow * inlet_pressure) ** blk.pump_exponential_factor,
+                    blk.base_pump_cost * blk.capital_cost_auxilliary_var,
                     to_units=blk.costing_package.base_currency,
                 )
 
@@ -568,6 +615,8 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         blk,
         precip_volume,
         precip_headspace=1.2,
+        material_inlet_rates=None,
+        default_market_prices=None,
         simple_costing=False,
     ):
         """
@@ -595,6 +644,7 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
         Args:
             precip_volume: volume of the precipitator as calculated by the unit model (m3)
             precip_headspace: precipitator headspace percentage; default value is 20%
+            material_inlet_rates: dictionary of flow rates for raw material flowrates
             simple_costing: Boolean to determine which costing method is implemented (default=False)
         """
 
@@ -707,3 +757,22 @@ class DiafiltrationCostingData(DiafiltrationCostingBlockData):
                     + blk.precipitator_base_cost_capital,
                     to_units=blk.costing_package.base_currency,
                 )
+
+        # either cost model
+        blk.variable_operating_cost = Var(
+            initialize=1e5,
+            domain=NonNegativeReals,
+            units=blk.costing_package.base_currency / blk.costing_package.base_period,
+            doc="Unit variable operating cost",
+        )
+
+        @blk.Constraint()
+        def variable_operating_cost_constraint(blk):
+            return blk.variable_operating_cost == units.convert(
+                sum(
+                    material_inlet_rates[p] * default_market_prices[p]
+                    for p in material_inlet_rates.keys()
+                ),
+                to_units=blk.costing_package.base_currency
+                / blk.costing_package.base_period,
+            )

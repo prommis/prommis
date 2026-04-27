@@ -12,7 +12,7 @@ Tests for diafiltration_cost_UQ.
 
 This test suite checks that:
 
-1. The seiving coefficient are reset value for two different value.
+1. The sieving coefficient are reset value for two different value.
 
 2. The uncertain costing parameters and their distributions are as expected,
    and are consistent with the model (e.g., lognormal specs reproduce the
@@ -476,8 +476,6 @@ class TestDiafiltrationCostUQStructure:
         out = capsys.readouterr().out
         assert "Saved stage-length histogram plot to:" in out
 
-    # TODO fix solver issue
-    @pytest.mark.xfail
     @pytest.mark.unit
     def test_main_monte_carlo(self, tmp_path):
         main(
@@ -489,8 +487,6 @@ class TestDiafiltrationCostUQStructure:
             output_dir=str(tmp_path),
         )
 
-    # TODO fix solver issue
-    @pytest.mark.xfail
     @pytest.mark.component
     def test_main_smoke_lhs(self, tmp_path):
         main(
@@ -501,3 +497,69 @@ class TestDiafiltrationCostUQStructure:
             save_plots=False,
             output_dir=str(tmp_path),
         )
+
+    @pytest.mark.unit
+    def test_set_scaling_uq_smoke(self, monkeypatch):
+        m = build_diafiltration_model(sieving_coeffs=(1.3, 0.5), technology_name=None)
+
+        called = {"autoscale": False}
+        monkeypatch.setattr(
+            uq,
+            "constraint_autoscale_large_jac",
+            lambda m: called.__setitem__("autoscale", True),
+        )
+
+        # Exercise the branch that creates the suffix
+        if hasattr(m, "scaling_factor"):
+            m.del_component(m.scaling_factor)
+
+        uq.set_scaling_uq(m)
+
+        assert hasattr(m, "scaling_factor")
+        assert called["autoscale"] is True
+
+        assert m.scaling_factor[m.fs.stage1.costing.membrane_area] == pytest.approx(
+            1e-4
+        )
+        assert m.scaling_factor[m.fs.stage1.costing.capital_cost] == pytest.approx(1e-5)
+        assert m.scaling_factor[m.fs.feed_pump.costing.capital_cost] == pytest.approx(
+            1e-5
+        )
+        assert m.scaling_factor[
+            m.fs.diafiltrate_pump.costing.pump_head
+        ] == pytest.approx(1e-1)
+
+    @pytest.mark.unit
+    def test_set_scaling_uq_keeps_existing_suffix(self, monkeypatch):
+        m = build_diafiltration_model(sieving_coeffs=(1.3, 0.5), technology_name=None)
+
+        monkeypatch.setattr(uq, "constraint_autoscale_large_jac", lambda m: None)
+
+        if hasattr(m, "scaling_factor"):
+            m.del_component(m.scaling_factor)
+
+        m.scaling_factor = pyo.Suffix(direction=pyo.Suffix.EXPORT)
+        old_suffix = m.scaling_factor
+
+        uq.set_scaling_uq(m)
+
+        assert m.scaling_factor is old_suffix
+
+    @pytest.mark.unit
+    def test_build_diafiltration_model_square_solve_failure(self, monkeypatch):
+        class DummyResults:
+            solver = type(
+                "S", (), {"status": "warning", "termination_condition": "infeasible"}
+            )()
+
+        class DummySolver:
+            def solve(self, m, tee=False):
+                return DummyResults()
+
+        monkeypatch.setattr(uq.pyo, "SolverFactory", lambda name: DummySolver())
+        monkeypatch.setattr(uq.pyo, "check_optimal_termination", lambda res: False)
+
+        with pytest.raises(RuntimeError, match="Square solve failed"):
+            uq.build_diafiltration_model(
+                sieving_coeffs=(1.3, 0.5), technology_name=None
+            )

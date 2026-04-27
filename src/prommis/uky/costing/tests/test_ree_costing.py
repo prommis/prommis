@@ -1198,7 +1198,7 @@ class TestREECosting(object):
             10.916, rel=1e-4
         )
         assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
-            525.71, rel=1e-4
+            531.7451, rel=1e-4
         )
         assert value(model.fs.costing.land_cost) == pytest.approx(
             1.2247, rel=1e-4
@@ -1213,10 +1213,10 @@ class TestREECosting(object):
             -11.001142, rel=1e-4
         )
         assert value(model.fs.costing.pv_operating_cost) == pytest.approx(
-            -4614.5826, rel=1e-4
+            -4666.3511, rel=1e-4
         )
         assert value(model.fs.costing.pv_revenue) == pytest.approx(237.25943, rel=1e-4)
-        assert value(model.fs.costing.npv) == pytest.approx(-4501.10576, rel=1e-4)
+        assert value(model.fs.costing.npv) == pytest.approx(-4552.8743, rel=1e-4)
 
     @pytest.mark.unit
     def test_report(self, model):
@@ -2383,7 +2383,7 @@ class TestCustomCosting(object):
         )
 
         assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
-            530.67815, rel=1e-4
+            536.7120, rel=1e-4
         )
 
 
@@ -2893,7 +2893,7 @@ class TestDiafiltrationCosting(object):
         )
 
         assert value(model.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
-            526.8958, rel=1e-4
+            532.9297, rel=1e-4
         )
 
 

@@ -353,14 +353,17 @@ see reaction package for documentation.}""",
 
         @self.Constraint(
             self.flowsheet().time,
-            prop_aq.dissolved_elements,
+            prop_aq.component_list,
             doc="Mass balance equations aqueous.",
         )
         def aqueous_depletion(blk, t, comp):
-            return blk.cv_aqueous.properties_out[t].conc_mass_comp[
-                comp
-            ] * blk.cv_aqueous.properties_out[t].flow_vol == (
-                blk.cv_aqueous.properties_in[t].conc_mass_comp[comp]
-                * blk.cv_aqueous.properties_in[t].flow_vol
-                * (1 - prop_aq.split[comp] / 100)
-            )
+            if comp == "H2O":
+                return blk.cv_aqueous.properties_out[t].flow_mass_comp[comp] == blk.cv_aqueous.properties_in[t].flow_mass_comp[comp] * (1 - prop_aq.split[comp] / 100)
+            else:
+                return blk.cv_aqueous.properties_out[t].conc_mass_comp[
+                    comp
+                ] * blk.cv_aqueous.properties_out[t].flow_vol == (
+                    blk.cv_aqueous.properties_in[t].conc_mass_comp[comp]
+                    * blk.cv_aqueous.properties_in[t].flow_vol
+                    * (1 - prop_aq.split[comp] / 100)
+                )

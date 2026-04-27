@@ -109,7 +109,7 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
         # monovalent ions of similar size (i.e., Na and Li) behave similarly
         # H,Li is estimated from the data in Fig 1D (Na) of above reference at 200 mM
         # H,Co (divalent) is estimated as one order of magnitude smaller than H,Li (monovalent)
-        # H,Al (trivalent) is estimated as one order of magnitude smaller than H,Co (divalent)
+        # H,Al (trivalent) is estimated as two orders of magnitude smaller than H,Li (monovalent)
         # H,Cl is estimated from the data in Fig 1C of above reference at 200 mM
         # while H on the retentate and permeate sides can differ, we assume them to be equal for now
         partition_coefficient_dict = {
@@ -178,68 +178,25 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
             },
         }
 
-        # initialize dictionaries for a single cation
-        cat_1 = self.config.cation_list[0]
-        a0 = self.config.anion_list[0]
-        initialize_charge_dict = {
-            cat_1: charge_dict[cat_1],
-            a0: charge_dict[a0],
-        }
-        initialize_boundary_layer_diffusion_coefficient_dict = {
-            cat_1: boundary_layer_diffusion_coefficient_dict[cat_1],
-            a0: boundary_layer_diffusion_coefficient_dict[a0],
-        }
-        initialize_membrane_diffusion_coefficient_dict = {
-            cat_1: membrane_diffusion_coefficient_dict[cat_1],
-            a0: membrane_diffusion_coefficient_dict[a0],
-        }
-        initialize_sigma_dict = {
-            cat_1: sigma_dict[cat_1],
-            a0: sigma_dict[a0],
-        }
-        initialize_partition_coefficient_retentate_dict = {
-            cat_1: partition_coefficient_dict["retentate"][cat_1],
-            a0: partition_coefficient_dict["retentate"][a0],
-        }
-        initialize_partition_coefficient_permeate_dict = {
-            cat_1: partition_coefficient_dict["permeate"][cat_1],
-            a0: partition_coefficient_dict["permeate"][a0],
-        }
-        initialize_num_solutes_dict = {
-            cat_1: num_solutes_dict[salt_system][cat_1],
-            a0: num_solutes_dict[salt_system][a0],
-        }
+        # create subset of property dictionaries to initialize parameters
+        def _subset(mapping_dict):
+            return {ion: mapping_dict[ion] for ion in self.component_list}
 
-        # add additional cations to dictionaries
-        cation_list = self.config.cation_list
-        i = 1
-        while i < len(cation_list):
-            initialize_charge_dict.update({cation_list[i]: charge_dict[cation_list[i]]})
-            initialize_boundary_layer_diffusion_coefficient_dict.update(
-                {
-                    cation_list[i]: boundary_layer_diffusion_coefficient_dict[
-                        cation_list[i]
-                    ]
-                }
-            )
-            initialize_membrane_diffusion_coefficient_dict.update(
-                {cation_list[i]: membrane_diffusion_coefficient_dict[cation_list[i]]}
-            )
-            initialize_sigma_dict.update({cation_list[i]: sigma_dict[cation_list[i]]})
-            initialize_partition_coefficient_retentate_dict.update(
-                {
-                    cation_list[i]: partition_coefficient_dict["retentate"][
-                        cation_list[i]
-                    ]
-                }
-            )
-            initialize_partition_coefficient_permeate_dict.update(
-                {cation_list[i]: partition_coefficient_dict["permeate"][cation_list[i]]}
-            )
-            initialize_num_solutes_dict.update(
-                {cation_list[i]: num_solutes_dict[salt_system][cation_list[i]]}
-            )
-            i += 1
+        initialize_charge_dict = _subset(charge_dict)
+        initialize_boundary_layer_diffusion_coefficient_dict = _subset(
+            boundary_layer_diffusion_coefficient_dict
+        )
+        initialize_membrane_diffusion_coefficient_dict = _subset(
+            membrane_diffusion_coefficient_dict
+        )
+        initialize_sigma_dict = _subset(sigma_dict)
+        initialize_partition_coefficient_retentate_dict = _subset(
+            partition_coefficient_dict["retentate"]
+        )
+        initialize_partition_coefficient_permeate_dict = _subset(
+            partition_coefficient_dict["permeate"]
+        )
+        initialize_num_solutes_dict = _subset(num_solutes_dict[salt_system])
 
         # initialize properties
         self.charge = Param(

@@ -160,8 +160,8 @@ def build_clark_with_costing(m, regenerant, target_component):
 
 
 def build_ix_test_model(
-    target_component,
-    list_reactive_ions,
+    target_component=None,
+    list_reactive_ions=None,
     resin="S950",
     resin_file=None,
     regenerant="single_use",

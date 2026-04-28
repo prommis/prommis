@@ -65,7 +65,6 @@ from idaes.core.util.constants import Constants
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.misc import StrEnum
 from idaes.core.util.exceptions import ConfigurationError
-from idaes.core.base.phases import LiquidPhase
 
 # Import WaterTAP libraries
 from watertap.core import ControlVolume0DBlock, InitializationMixin

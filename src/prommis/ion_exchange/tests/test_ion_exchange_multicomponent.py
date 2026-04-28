@@ -27,7 +27,7 @@ import pytest
 import pandas as pd
 import pyomo.environ as pyo
 
-from idaes.core import UnitModelCostingBlock
+from idaes.core import FlowsheetBlock, UnitModelCostingBlock
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.exceptions import ConfigurationError
@@ -65,6 +65,18 @@ from prommis.ion_exchange.ix_freundlich_multicomponent_example import (
 """
 modified by: Soraya Rawlings
 """
+
+
+def build_dynamic_model():
+    """Method to build a dummy dynamic flowsheet to test
+    configuration error
+
+    """
+
+    m = pyo.ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=True, time_set=[0, 1], time_units=pyo.units.hr)
+
+    return m
 
 
 def create_model(regenerant, hazardous_waste):
@@ -147,13 +159,101 @@ def build_clark_with_costing(m, regenerant, target_component):
     return m
 
 
+def build_ix_test_model(
+    target_component,
+    list_reactive_ions,
+    resin="S950",
+    resin_file=None,
+    regenerant="single_use",
+    list_solvent=["H2O"],
+    hazardous_waste=False,
+    num_traps=30,
+    c_trap_min=1e-3,
+    build_model_func=None,
+    charge_dict=None,
+):
+
+    m = build_model_func()
+
+    m.fs.set_solvent = pyo.Set(initialize=list_solvent)
+    m.fs.set_reactive_ions = pyo.Set(initialize=list_reactive_ions)
+    m.fs.set_all = pyo.Set(initialize=list_solvent + list_reactive_ions)
+
+    if charge_dict is None:
+        charge_dict = {ion: -1 for ion in list_reactive_ions}  # Default to -1 for test
+
+    ion_props = {
+        "solute_list": list_reactive_ions,
+        "diffusivity_data": {},
+        "molar_volume_data": {("Liq", ion): 0.0006818 for ion in list_reactive_ions},
+        "mw_data": {"H2O": 0.018, **{ion: 0.035453 for ion in list_reactive_ions}},
+        "charge": charge_dict,
+        "diffus_calculation": "HaydukLaudie",
+    }
+    m.fs.properties = MCASParameterBlock(**ion_props)
+
+    ix_config = {
+        "property_package": m.fs.properties,
+        "regenerant": regenerant,
+        "target_component": target_component,
+        "reactive_ions": list_reactive_ions,
+        "number_of_trapezoids": num_traps,
+        "minimum_concentration_trapezoids": c_trap_min,
+        "resin_data_path": resin_file,
+        "resin": resin,
+        "hazardous_waste": hazardous_waste,
+    }
+    return m, ix_config
+
+
 @pytest.mark.unit
 def test_config_error_in_ix_type():
 
     path = os.path.dirname(os.path.realpath(__file__))
     resin_file = os.path.join(path, "..", "data", "resin_data.json")
+
+    # Set up for anion exchange (or negative charge)
+    m, ix_config = build_ix_test_model(
+        target_component="Cl",
+        list_reactive_ions=["Cl"],
+        resin_file=resin_file,
+        charge_dict={"Cl": -1},
+        build_model_func=build_model,
+    )
+
+    with pytest.raises(
+        ConfigurationError,
+        match="The current ion exchange model is limited to cation exchange methods, but the target component Cl has a charge of -.",
+    ):
+        m.fs.unit = IonExchangeMultiComp(**ix_config)
+
+
+@pytest.mark.unit
+def test_config_error_in_ix_time():
+
+    path = os.path.dirname(os.path.realpath(__file__))
+    resin_file = os.path.join(path, "..", "data", "resin_data.json")
+    m, ix_config = build_ix_test_model(
+        target_component="Cl",
+        list_reactive_ions=["Cl"],
+        resin_file=resin_file,
+        build_model_func=build_dynamic_model,
+    )
+
+    with pytest.raises(
+        ConfigurationError,
+        match="This unit model is not compatible with flowsheets that contain more than one time point.",
+    ):
+        m.fs.unit = IonExchangeMultiComp(**ix_config)
+
+
+@pytest.mark.unit
+def test_config_error_target_component_not_in_reactive_ions():
+
+    path = os.path.dirname(os.path.realpath(__file__))
+    resin_file = os.path.join(path, "..", "data", "resin_data.json")
     resin = "S950"
-    target_component = "Cl"
+    target_component = "La"
     regenerant = "single_use"
     list_solvent = ["H2O"]
     list_reactive_ions = ["Cl"]
@@ -176,16 +276,18 @@ def test_config_error_in_ix_type():
         "charge": {},
     }
 
-    ion_props["solute_list"] = list_reactive_ions
+    ion_props["solute_list"] = list_reactive_ions + [target_component]
     ion_props["diffusivity_data"] = {}
     ion_props["molar_volume_data"] = {
         ("Liq", "Cl"): 0.0006818,
+        ("Liq", "La"): 22.386e-6,
     }
     ion_props["mw_data"] = {
         "H2O": 0.018,
         "Cl": 0.035453,
+        "La": 0.001389,
     }
-    ion_props["charge"] = {"Cl": -1}
+    ion_props["charge"] = {"Cl": -1, "La": +3}
     ion_props["diffus_calculation"] = "HaydukLaudie"
     m.fs.properties = MCASParameterBlock(**ion_props)
 
@@ -201,14 +303,11 @@ def test_config_error_in_ix_type():
         "hazardous_waste": hazardous_waste,
     }
 
-    # Set up the model with parameters that will trigger the
-    # ConfigurationError
     with pytest.raises(
         ConfigurationError,
-        match="The current ion exchange model is limited to cation exchange methods, but the target component Cl has a charge of -.",
+        match="The target component La does not appear in the list of reactive ions specified in the unit's configuration dictionary.",
     ):
-
-        m.fs.unit = ix = IonExchangeMultiComp(**ix_config)
+        m.fs.unit = IonExchangeMultiComp(**ix_config)
 
 
 @pytest.mark.unit

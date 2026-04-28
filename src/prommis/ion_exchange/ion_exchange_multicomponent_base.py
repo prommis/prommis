@@ -65,6 +65,7 @@ from idaes.core.util.constants import Constants
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.misc import StrEnum
 from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.base.phases import LiquidPhase
 
 # Import WaterTAP libraries
 from watertap.core import ControlVolume0DBlock, InitializationMixin
@@ -103,11 +104,9 @@ https://wcponline.com/2013/08/06/hydrodynamic-design-part-8-flow-ion-exchange-be
 
 Assumption: We are always below the resin_max_capacity
 
-modified by: E. Soraya Rawlings
-
 """
 
-__author__ = "Kurban Sitterley"
+__author__ = "Kurban Sitterley, Soraya Rawlings"
 
 
 _log = idaeslog.getLogger(__name__)
@@ -319,6 +318,11 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
     )
 
     def build(self):
+
+        if len(self.flowsheet().time) > 1:
+            raise ConfigurationError(
+                "This unit model is not compatible with flowsheets that contain more than one time point."
+            )
 
         t0 = self.flowsheet().time.first()
 

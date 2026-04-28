@@ -359,7 +359,11 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
         target_component = self.config.target_component
         reactive_ions = self.config.reactive_ions
 
-        assert target_component in reactive_ions
+        if not target_component in reactive_ions:
+            raise ConfigurationError(
+                f"The target component {target_component} does not appear in the list of "
+                "reactive ions specified in the unit's configuration dictionary."
+            )
         self.target_component_set = pyo.Set(initialize=[target_component])
 
         # [ESR WIP: Define if inerts are needed in future

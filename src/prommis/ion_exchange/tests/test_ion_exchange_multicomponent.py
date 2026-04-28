@@ -165,13 +165,16 @@ def build_ix_test_model(
     resin="S950",
     resin_file=None,
     regenerant="single_use",
-    list_solvent=["H2O"],
+    list_solvent=None,
     hazardous_waste=False,
     num_traps=30,
     c_trap_min=1e-3,
     build_model_func=None,
     charge_dict=None,
 ):
+
+    if list_solvent is None:
+        list_solvent = ["H2O"]
 
     m = build_model_func()
 

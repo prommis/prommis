@@ -235,23 +235,23 @@ def load_default_resource_prices():
         # https://www.eia.gov/dnav/pet/pet_pri_gnd_dcus_nus_a.htm.
         # Diesel price annual average in U.S (2023).
         "diesel": convert_to_usd_2021(4.214, pyunits.USD_2023) / pyunits.gallon,
-        "bioleaching_solution": 0.008 * 1e-6 * CE_index_units / pyunits.L,
+        "bioleaching_solution": 0.008 * CE_index_units / pyunits.L,
         # Average price of year 2023. https://businessanalytiq.com/procurementanalytics/
         # index/sulfuric-acid-price-index/. Accessed 1/16/2025
         "H2SO4": convert_to_usd_2021(128.00, pyunits.USD_2023) / pyunits.tonne,
         # U.S. Annual Industrial price. https://www.eia.gov/dnav/ng/ng_pri_sum_dcu_nus_a.htm
         "natural_gas": convert_to_usd_2021(4.53e-3, pyunits.USD_2023) / pyunits.ft**3,
-        "polymer": 33.61 * 1e-6 * CE_index_units / pyunits.kg,
+        "polymer": 33.61 * CE_index_units / pyunits.kg,
         # (price year 2020) https://www.intratec.us/chemical-markets/caustic-soda-price.
         # Accessed 1/16/2025
         "NAOH": convert_to_usd_2021(350.00, pyunits.USD_2020) / pyunits.tonne,
         # (price year 2020) https://www.intratec.us/chemical-markets/calcium-carbonate-price.
         # Accessed 1/16/2025
         "CACO3": convert_to_usd_2021(1030.00, pyunits.USD_2020) / pyunits.tonne,
-        "coal_calcite": 0.50 * 1e-6 * CE_index_units / pyunits.tonne,
-        "HCL": 250.00 * 1e-6 * CE_index_units / pyunits.tonne,
-        "oxalic_acid": 1.00 * 1e-6 * CE_index_units / pyunits.kg,
-        "ascorbic_acid": 2.00 * 1e-6 * CE_index_units / pyunits.kg,
+        "coal_calcite": 0.50 * CE_index_units / pyunits.tonne,
+        "HCL": 250.00 * CE_index_units / pyunits.tonne,
+        "oxalic_acid": 1.00 * CE_index_units / pyunits.kg,
+        "ascorbic_acid": 2.00 * CE_index_units / pyunits.kg,
         # Annual average Kerosene price (2023). https://www.eia.gov/dnav/pet/hist/LeafHandler.
         # ashx?n=PET&s=EER_EPJK_PF4_RGC_DPG&f=A
         "kerosene": convert_to_usd_2021(2.699, pyunits.USD_2023) / pyunits.gallon,
@@ -260,8 +260,8 @@ def load_default_resource_prices():
         # (price year 2020) https://www.intratec.us/chemical-markets/sodium-sulfides-price.
         # Accessed 1/16/2025
         "NA2S": convert_to_usd_2021(655.00, pyunits.USD_2020) / pyunits.tonne,
-        "nonhazardous_solid_waste": 1.00 * 1e-6 * CE_index_units / pyunits.ton,
-        "nonhazardous_precipitate_waste": 5.00 * 1e-6 * CE_index_units / pyunits.ton,
-        "dust_and_volatiles": 1.00 * 1e-6 * CE_index_units / pyunits.ton,
+        "nonhazardous_solid_waste": 1.00 * CE_index_units / pyunits.ton,
+        "nonhazardous_precipitate_waste": 5.00 * CE_index_units / pyunits.ton,
+        "dust_and_volatiles": 1.00 * CE_index_units / pyunits.ton,
     }
     return default_resource_prices

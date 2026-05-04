@@ -52,7 +52,6 @@ from pyomo.common.config import ConfigBlock, ConfigValue, In
 
 # Import IDAES libraries and components
 import idaes.logger as idaeslog
-import idaes.core.util.scaling as iscale
 from idaes.core import (
     MaterialBalanceType,
     EnergyBalanceType,

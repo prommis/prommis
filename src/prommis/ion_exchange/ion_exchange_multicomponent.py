@@ -270,7 +270,6 @@ from pyomo.common.config import ListOf
 
 # Import IDAES cores
 from idaes.core import declare_process_block_class
-import idaes.core.util.scaling as iscale
 from idaes.core.util.exceptions import ConfigurationError
 
 from prommis.ion_exchange.ion_exchange_multicomponent_base import (

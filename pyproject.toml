@@ -18,6 +18,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Scientific/Engineering :: Chemistry",
@@ -30,9 +32,9 @@ keywords = [
     "process modeling",
 ]
 dynamic = ["version"]
-dependencies = ["idaes-pse>=2.10.0", "pyomo >=6.9.5"]
+dependencies = ["idaes-pse>=2.11.0", "pyomo >=6.9.5"]
 [project.optional-dependencies]
-watertap = ["watertap >= 1.5.0"]
+watertap = ["watertap >= 1.6.0"]
 
 
 flowsheet-processor = ["idaes-flowsheet-processor >=0.2"]

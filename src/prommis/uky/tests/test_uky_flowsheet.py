@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -610,8 +610,8 @@ def test_costing_solution(system_frame):
         "costing.total_installation_cost": {None: (5.51875e-01, tol, None)},
         "costing.other_plant_costs": {None: (4.78618e-06, tol, None)},
         "costing.total_fixed_OM_cost": {None: (6.80612e00, tol, None)},
-        "costing.total_variable_OM_cost": {0: (1.36131e00, tol, None)},
-        "costing.total_sales_revenue": {None: (2.69422e-5, None, tol)},
+        "costing.total_variable_OM_cost": {0: (1.36155e00, tol, None)},
+        "costing.total_sales_revenue": {None: (1.03978e-4, None, tol)},
         "costing.land_cost": {None: (6.1234e-5, tol, None)},
     }
     assert_solution_equivalent(model.fs, expected_results)

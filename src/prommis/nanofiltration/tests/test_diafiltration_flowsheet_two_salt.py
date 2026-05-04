@@ -8,8 +8,6 @@
 Tests the two-salt diafiltration flowsheet
 """
 
-from pyomo.environ import value
-
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.models.unit_models import Feed, Product
 
@@ -18,6 +16,7 @@ import matplotlib.pyplot as plt
 import pytest
 
 from prommis.nanofiltration.diafiltration_flowsheet_two_salt import main
+from prommis.util import assert_solution_equivalent
 
 
 @pytest.mark.component
@@ -25,7 +24,13 @@ def test_main():
     """
     Tests the execution of the main function in diafiltration.py
     """
-    m, overall_results_plot, membrane_results_plot = main()
+    (
+        m,
+        overall_results_plot,
+        boundary_layer_results_plot,
+        membrane_results_plot,
+        rejection_plot,
+    ) = main()
     dt = DiagnosticsToolbox(m)
     dt.assert_no_numerical_warnings()
 
@@ -52,42 +57,23 @@ def test_main():
 
     # verify plots exist
     assert isinstance(overall_results_plot, plt.Figure)
+    assert isinstance(boundary_layer_results_plot, plt.Figure)
     assert isinstance(membrane_results_plot, plt.Figure)
+    assert isinstance(rejection_plot, plt.Figure)
 
     test_dict = {
-        "retentate_final": [
-            value(m.fs.membrane.retentate_flow_volume[0, 1]),
-            6.0465,
-        ],
-        "Li_retentate_final": [
-            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "Li"]),
-            188.88,
-        ],
-        "Co_retentate_final": [
-            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "Co"]),
-            246.67,
-        ],
-        "Cl_retentate_final": [
-            value(m.fs.membrane.retentate_conc_mol_comp[0, 1, "Cl"]),
-            682.22,
-        ],
-        "permeate_final": [
-            value(m.fs.membrane.permeate_flow_volume[0, 1]),
-            10.033,
-        ],
-        "Li_permeate_final": [
-            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "Li"]),
-            191.55,
-        ],
-        "Co_permeate_final": [
-            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "Co"]),
-            222.76,
-        ],
-        "Cl_permeate_final": [
-            value(m.fs.membrane.permeate_conc_mol_comp[0, 1, "Cl"]),
-            637.06,
-        ],
+        "retentate_flow_volume": {(0, 1): (6.0854, 1e-4, None)},
+        "retentate_conc_mol_comp": {
+            (0, 1, "Li"): (190.89, 1e-4, None),
+            (0, 1, "Co"): (239.83, 1e-4, None),
+            (0, 1, "Cl"): (670.55, 1e-4, None),
+        },
+        "permeate_flow_volume": {(0, 1): (10.035, 1e-4, None)},
+        "permeate_conc_mol_comp": {
+            (0, 1, "Li"): (191.70, 1e-4, None),
+            (0, 1, "Co"): (222.48, 1e-4, None),
+            (0, 1, "Cl"): (636.67, 1e-4, None),
+        },
     }
 
-    for model_result, test_val in test_dict.values():
-        assert pytest.approx(test_val, rel=1e-4) == value(model_result)
+    assert_solution_equivalent(m.fs.membrane, test_dict)

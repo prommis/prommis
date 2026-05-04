@@ -73,7 +73,9 @@ def main():
         property_package=m.fs.properties,
         cation_list=cation_list,
         anion_list=anion_list,
+        include_boundary_layer=True,
         NFE_module_length=10,
+        NFE_boundary_layer_thickness=5,
         NFE_membrane_thickness=5,
     )
 
@@ -105,12 +107,18 @@ def main():
     dt.assert_no_numerical_warnings()
 
     # visualize the results
-    overall_results_plot = plot_results(m)
-    membrane_results_plot = plot_membrane_results(m)
+    overall_results_plot = plot_results_by_length(m)
+    boundary_layer_results_plot = plot_results_by_thickness(m, phase="Boundary Layer")
+    membrane_results_plot = plot_results_by_thickness(m, phase="Membrane")
+    rejection_plot = plot_rejection_versus_concentration(m)
 
-    print(overall_results_plot)
-
-    return (m, overall_results_plot, membrane_results_plot)
+    return (
+        m,
+        overall_results_plot,
+        boundary_layer_results_plot,
+        membrane_results_plot,
+        rejection_plot,
+    )
 
 
 def update_membrane_parameters(m):
@@ -124,7 +132,7 @@ def update_membrane_parameters(m):
 
 
 def fix_variables(m, inlet_flow_volume, inlet_concentration):
-    # fix the nine degrees of freedom in the membrane
+    # fix degrees of freedom in the membrane
     m.fs.membrane.total_module_length.fix()
     m.fs.membrane.total_membrane_length.fix()
     m.fs.membrane.applied_pressure.fix()
@@ -178,7 +186,7 @@ def solve_model(m):
     scaling.propagate_solution(scaled_model, m)
 
 
-def plot_results(m):
+def plot_results_by_length(m):
     """
     Plots concentration and flux variables across the length of the membrane module.
 
@@ -190,10 +198,14 @@ def plot_results(m):
 
     # store values for concentration of Li in the retentate
     conc_ret_lith = []
+    # store values for concentration of Li at interface of BL and M
+    conc_int_lith = []
     # store values for concentration of Li in the permeate
     conc_perm_lith = []
     # store values for concentration of Co in the retentate
     conc_ret_cob = []
+    # store values for concentration of Co at interface of BL and M
+    conc_int_cob = []
     # store values for concentration of Co in the permeate
     conc_perm_cob = []
 
@@ -201,18 +213,20 @@ def plot_results(m):
     water_flux = []
     # store values for mol flux of Li across membrane
     Li_flux = []
+    # store values for mol flux of Co across membrane
+    Co_flux = []
 
     # store values for percent recovery
     percent_recovery = []
 
-    # store values for Li rejection
-    Li_rejection = []
-    # store values for Li solute passage
-    Li_sieving = []
-    # store values for Co rejection
-    Co_rejection = []
-    # store values for Co solute passage
-    Co_sieving = []
+    # store values for Li rejection (observed)
+    Li_rejection_obs = []
+    # store values for Li rejection (actual)
+    Li_rejection_act = []
+    # store values for Co rejection (observed)
+    Co_rejection_obs = []
+    # store values for Co rejection (actual)
+    Co_rejection_act = []
 
     for x_val in m.fs.membrane.dimensionless_module_length:
         if x_val != 0:
@@ -220,11 +234,17 @@ def plot_results(m):
             conc_ret_lith.append(
                 value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
             )
+            conc_int_lith.append(
+                value(m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Li"])
+            )
             conc_perm_lith.append(
                 value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
             )
             conc_ret_cob.append(
                 value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
+            )
+            conc_int_cob.append(
+                value(m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Co"])
             )
             conc_perm_cob.append(
                 value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
@@ -232,8 +252,9 @@ def plot_results(m):
 
             water_flux.append(value(m.fs.membrane.volume_flux_water[0, x_val]))
             Li_flux.append(value(m.fs.membrane.molar_ion_flux[0, x_val, "Li"]))
+            Co_flux.append(value(m.fs.membrane.molar_ion_flux[0, x_val, "Co"]))
 
-            Li_rejection.append(
+            Li_rejection_obs.append(
                 (
                     1
                     - (
@@ -243,13 +264,21 @@ def plot_results(m):
                 )
                 * 100
             )
-            Li_sieving.append(
+            Li_rejection_act.append(
                 (
-                    value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-                    / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
+                    1
+                    - (
+                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
+                        / value(
+                            m.fs.membrane.boundary_layer_conc_mol_comp[
+                                0, x_val, 1, "Li"
+                            ]
+                        )
+                    )
                 )
+                * 100
             )
-            Co_rejection.append(
+            Co_rejection_obs.append(
                 (
                     1
                     - (
@@ -259,11 +288,19 @@ def plot_results(m):
                 )
                 * 100
             )
-            Co_sieving.append(
+            Co_rejection_act.append(
                 (
-                    value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-                    / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
+                    1
+                    - (
+                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
+                        / value(
+                            m.fs.membrane.boundary_layer_conc_mol_comp[
+                                0, x_val, 1, "Co"
+                            ]
+                        )
+                    )
                 )
+                * 100
             )
 
             percent_recovery.append(
@@ -282,6 +319,7 @@ def plot_results(m):
     )
 
     ax1.plot(x_axis_values, conc_ret_lith, linewidth=2, label="retentate")
+    ax1.plot(x_axis_values, conc_int_lith, linewidth=2, label="interface")
     ax1.plot(x_axis_values, conc_perm_lith, linewidth=2, label="permeate")
     ax1.set_ylabel(
         "Lithium Concentration (mol/m$^3$)",
@@ -292,6 +330,7 @@ def plot_results(m):
     ax1.legend()
 
     ax2.plot(x_axis_values, conc_ret_cob, linewidth=2, label="retentate")
+    ax2.plot(x_axis_values, conc_int_cob, linewidth=2, label="interface")
     ax2.plot(x_axis_values, conc_perm_cob, linewidth=2, label="permeate")
     ax2.set_ylabel(
         "Cobalt Concentration (mol/m$^3$)",
@@ -306,13 +345,23 @@ def plot_results(m):
     ax3.set_ylabel("Water Flux (m$^3$/m$^2$/h)", fontsize=10, fontweight="bold")
     ax3.tick_params(direction="in", labelsize=10)
 
-    ax4.plot(x_axis_values, Li_flux, linewidth=2)
+    ax4.plot(x_axis_values, Li_flux, linewidth=2, label="Li")
+    ax4.plot(x_axis_values, Co_flux, linewidth=2, label="Co")
     ax4.set_xlabel("Module Length (m)", fontsize=10, fontweight="bold")
-    ax4.set_ylabel("Lithium Molar Flux (mol/m$^2$/h)", fontsize=10, fontweight="bold")
+    ax4.set_ylabel("Solute Molar Flux (mol/m$^2$/h)", fontsize=10, fontweight="bold")
     ax4.tick_params(direction="in", labelsize=10)
+    ax4.legend()
 
-    ax5.plot(x_axis_values, Li_rejection, linewidth=2, label="Li")
-    ax5.plot(x_axis_values, Co_rejection, linewidth=2, label="Co")
+    ax5.plot(x_axis_values, Li_rejection_obs, linewidth=2, label="Li (observed)")
+    ax5.plot(
+        x_axis_values,
+        Li_rejection_act,
+        "--",
+        linewidth=2,
+        label="Li (actual)",
+    )
+    ax5.plot(x_axis_values, Co_rejection_obs, linewidth=2, label="Co (observed)")
+    ax5.plot(x_axis_values, Co_rejection_act, "--", linewidth=2, label="Co (actual)")
     ax5.set_xlabel("Module Length (m)", fontsize=10, fontweight="bold")
     ax5.set_ylabel("Solute Rejection (%)", fontsize=10, fontweight="bold")
     ax5.tick_params(direction="in", labelsize=10)
@@ -328,9 +377,9 @@ def plot_results(m):
     return fig
 
 
-def plot_membrane_results(m):
+def plot_results_by_thickness(m, phase):
     """
-    Plots concentrations within the membrane.
+    Plots concentrations within the boundary layer or membrane.
 
     Args:
         m: Pyomo model
@@ -338,76 +387,256 @@ def plot_membrane_results(m):
     x_axis_values = []
     z_axis_values = []
 
+    # store values for concentration of Li
+    conc_lith = []
+    conc_lith_dict = {}
+    # store values for concentration of Co
+    conc_cob = []
+    conc_cob_dict = {}
+    # store values for concentration of Cl
+    conc_chl = []
+    conc_chl_dict = {}
+
     for x_val in m.fs.membrane.dimensionless_module_length:
         if x_val != 0:
             x_axis_values.append(x_val * value(m.fs.membrane.total_module_length))
-    for z_val in m.fs.membrane.dimensionless_membrane_thickness:
-        z_axis_values.append(
-            z_val * value(m.fs.membrane.total_membrane_thickness) * 1e9
-        )
-    # store values for concentration of Li in the membrane
-    conc_mem_lith = []
-    conc_mem_lith_dict = {}
-    # store values for concentration of Co in the membrane
-    conc_mem_cob = []
-    conc_mem_cob_dict = {}
-    # store values for concentration of Cl in the membrane
-    conc_mem_chl = []
-    conc_mem_chl_dict = {}
 
-    for z_val in m.fs.membrane.dimensionless_membrane_thickness:
-        for x_val in m.fs.membrane.dimensionless_module_length:
-            if x_val != 0:
-                conc_mem_lith.append(
-                    value(m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Li"])
-                )
-                conc_mem_cob.append(
-                    value(m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Co"])
-                )
-                conc_mem_chl.append(
-                    value(m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Cl"])
-                )
+    if phase == "Boundary Layer":
+        for z_val in m.fs.membrane.dimensionless_boundary_layer_thickness:
+            z_axis_values.append(
+                z_val * value(m.fs.membrane.total_boundary_layer_thickness) * 1e6
+            )
+            for x_val in m.fs.membrane.dimensionless_module_length:
+                if x_val != 0:
+                    conc_lith.append(
+                        value(
+                            m.fs.membrane.boundary_layer_conc_mol_comp[
+                                0, x_val, z_val, "Li"
+                            ]
+                        )
+                    )
+                    conc_cob.append(
+                        value(
+                            m.fs.membrane.boundary_layer_conc_mol_comp[
+                                0, x_val, z_val, "Co"
+                            ]
+                        )
+                    )
+                    conc_chl.append(
+                        value(
+                            m.fs.membrane.boundary_layer_conc_mol_comp[
+                                0, x_val, z_val, "Cl"
+                            ]
+                        )
+                    )
 
-        conc_mem_lith_dict[f"{z_val}"] = conc_mem_lith
-        conc_mem_cob_dict[f"{z_val}"] = conc_mem_cob
-        conc_mem_chl_dict[f"{z_val}"] = conc_mem_chl
-        conc_mem_lith = []
-        conc_mem_cob = []
-        conc_mem_chl = []
+            conc_lith_dict[f"{z_val}"] = conc_lith
+            conc_cob_dict[f"{z_val}"] = conc_cob
+            conc_chl_dict[f"{z_val}"] = conc_chl
+            conc_lith = []
+            conc_cob = []
+            conc_chl = []
 
-    conc_mem_lith_df = DataFrame(index=x_axis_values, data=conc_mem_lith_dict)
-    conc_mem_cob_df = DataFrame(index=x_axis_values, data=conc_mem_cob_dict)
-    conc_mem_chl_df = DataFrame(index=x_axis_values, data=conc_mem_chl_dict)
+    elif phase == "Membrane":
+        for z_val in m.fs.membrane.dimensionless_membrane_thickness:
+            z_axis_values.append(
+                z_val * value(m.fs.membrane.total_membrane_thickness) * 1e9
+            )
+            for x_val in m.fs.membrane.dimensionless_module_length:
+                if x_val != 0:
+                    conc_lith.append(
+                        value(
+                            m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Li"]
+                        )
+                    )
+                    conc_cob.append(
+                        value(
+                            m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Co"]
+                        )
+                    )
+                    conc_chl.append(
+                        value(
+                            m.fs.membrane.membrane_conc_mol_comp[0, x_val, z_val, "Cl"]
+                        )
+                    )
+
+            conc_lith_dict[f"{z_val}"] = conc_lith
+            conc_cob_dict[f"{z_val}"] = conc_cob
+            conc_chl_dict[f"{z_val}"] = conc_chl
+            conc_lith = []
+            conc_cob = []
+            conc_chl = []
+
+    conc_lith_df = DataFrame(index=x_axis_values, data=conc_lith_dict)
+    conc_cob_df = DataFrame(index=x_axis_values, data=conc_cob_dict)
+    conc_chl_df = DataFrame(index=x_axis_values, data=conc_chl_dict)
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, dpi=125, figsize=(15, 7))
-    Li_plot = ax1.pcolor(z_axis_values, x_axis_values, conc_mem_lith_df, cmap="Greens")
-    ax1.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
+    Li_plot = ax1.pcolor(z_axis_values, x_axis_values, conc_lith_df, cmap="Greens")
+    if phase == "Boundary Layer":
+        ax1.set_xlabel("Boundary Layer Thickness (um)", fontsize=10, fontweight="bold")
+    elif phase == "Membrane":
+        ax1.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
     ax1.set_ylabel("Module Length (m)", fontsize=10, fontweight="bold")
     ax1.set_title(
-        "Lithium Concentration\n in Membrane (mol/m$^3$)",
+        f"Lithium Concentration\n in {phase} (mol/m$^3$)",
         fontsize=10,
         fontweight="bold",
     )
     ax1.tick_params(direction="in", labelsize=10)
     fig.colorbar(Li_plot, ax=ax1)
 
-    Co_plot = ax2.pcolor(z_axis_values, x_axis_values, conc_mem_cob_df, cmap="Blues")
-    ax2.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
+    Co_plot = ax2.pcolor(z_axis_values, x_axis_values, conc_cob_df, cmap="Blues")
+    if phase == "Boundary Layer":
+        ax2.set_xlabel("Boundary Layer Thickness (um)", fontsize=10, fontweight="bold")
+    elif phase == "Membrane":
+        ax2.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
     ax2.set_title(
-        "Cobalt Concentration\n in Membrane (mol/m$^3$)", fontsize=10, fontweight="bold"
+        f"Cobalt Concentration\n in {phase} (mol/m$^3$)", fontsize=10, fontweight="bold"
     )
     ax2.tick_params(direction="in", labelsize=10)
     fig.colorbar(Co_plot, ax=ax2)
 
-    Cl_plot = ax3.pcolor(z_axis_values, x_axis_values, conc_mem_chl_df, cmap="Oranges")
-    ax3.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
+    Cl_plot = ax3.pcolor(z_axis_values, x_axis_values, conc_chl_df, cmap="Oranges")
+    if phase == "Boundary Layer":
+        ax3.set_xlabel("Boundary Layer Thickness (um)", fontsize=10, fontweight="bold")
+    elif phase == "Membrane":
+        ax3.set_xlabel("Membrane Thickness (nm)", fontsize=10, fontweight="bold")
     ax3.set_title(
-        "Chloride Concentration\n in Membrane (mol/m$^3$)",
+        f"Chloride Concentration\n in {phase} (mol/m$^3$)",
         fontsize=10,
         fontweight="bold",
     )
     ax3.tick_params(direction="in", labelsize=10)
     fig.colorbar(Cl_plot, ax=ax3)
+
+    plt.show()
+
+    return fig
+
+
+def plot_rejection_versus_concentration(m):
+    """
+    Plots rejection versus retentate-side concentration.
+
+    Args:
+        m: Pyomo model
+    """
+    # store values for concentration of Li in the retentate
+    conc_ret_lith = []
+    # store values for concentration of Li at interface of BL and M
+    conc_int_lith = []
+    # store values for concentration of Li in the permeate
+    conc_perm_lith = []
+    # store values for concentration of Co in the retentate
+    conc_ret_cob = []
+    # store values for concentration of Co at interface of BL and M
+    conc_int_cob = []
+    # store values for concentration of Co in the permeate
+    conc_perm_cob = []
+
+    # store values for Li rejection (observed)
+    Li_rejection_obs = []
+    # store values for Li rejection (actual)
+    Li_rejection_act = []
+    # store values for Co rejection (observed)
+    Co_rejection_obs = []
+    # store values for Co rejection (actual)
+    Co_rejection_act = []
+
+    for x_val in m.fs.membrane.dimensionless_module_length:
+        if x_val != 0:
+            conc_ret_lith.append(
+                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
+            )
+            conc_int_lith.append(
+                value(m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Li"])
+            )
+            conc_perm_lith.append(
+                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
+            )
+            conc_ret_cob.append(
+                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
+            )
+            conc_int_cob.append(
+                value(m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Co"])
+            )
+            conc_perm_cob.append(
+                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
+            )
+
+            Li_rejection_obs.append(
+                (
+                    1
+                    - (
+                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
+                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
+                    )
+                )
+                * 100
+            )
+            Li_rejection_act.append(
+                (
+                    1
+                    - (
+                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
+                        / value(
+                            m.fs.membrane.boundary_layer_conc_mol_comp[
+                                0, x_val, 1, "Li"
+                            ]
+                        )
+                    )
+                )
+                * 100
+            )
+            Co_rejection_obs.append(
+                (
+                    1
+                    - (
+                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
+                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
+                    )
+                )
+                * 100
+            )
+            Co_rejection_act.append(
+                (
+                    1
+                    - (
+                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
+                        / value(
+                            m.fs.membrane.boundary_layer_conc_mol_comp[
+                                0, x_val, 1, "Co"
+                            ]
+                        )
+                    )
+                )
+                * 100
+            )
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, dpi=100, figsize=(10, 5))
+
+    ax1.plot(conc_ret_lith, Li_rejection_obs, linewidth=2, label="observed")
+    ax1.plot(conc_ret_lith, Li_rejection_act, linewidth=2, label="actual")
+    ax1.set_xlabel(
+        "Lithium Concentration (Feed-Side) (mol/m$^3$)",
+        fontsize=10,
+        fontweight="bold",
+    )
+    ax1.set_ylabel("Percent Rejection (%)", fontsize=10, fontweight="bold")
+    ax1.tick_params(direction="in", labelsize=10)
+    ax1.legend()
+
+    ax2.plot(conc_ret_cob, Co_rejection_obs, linewidth=2, label="observed")
+    ax2.plot(conc_ret_cob, Co_rejection_act, linewidth=2, label="actual")
+    ax2.set_xlabel(
+        "Cobalt Concentration (Feed-Side) (mol/m$^3$)",
+        fontsize=10,
+        fontweight="bold",
+    )
+    ax2.set_ylabel("Percent Rejection (%)", fontsize=10, fontweight="bold")
+    ax2.tick_params(direction="in", labelsize=10)
+    ax2.legend()
 
     plt.show()
 

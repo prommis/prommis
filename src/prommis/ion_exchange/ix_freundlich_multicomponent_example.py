@@ -177,6 +177,7 @@ def main():
 
     # Add scaling factors to the IX model variables and constraints
     set_scaling(m)
+    dt.assert_no_numerical_warnings(ignore_parallel_components=True)
 
     assert degrees_of_freedom(m) == 0
 
@@ -194,7 +195,6 @@ def main():
     # Solve and re-initialize the model after adding costing variables
     initialize_system(m, solver=solver)
 
-    dt = DiagnosticsToolbox(model=m)
     dt.assert_no_structural_warnings()
 
     init_costing_results = model_solve(m, solver=solver)
@@ -258,7 +258,6 @@ def add_data(
         "service_flow_rate",
         "ebct",
         "N_Re",
-        "N_Sh",
         "N_Pe_bed",
         "N_Pe_particle",
     ]
@@ -381,6 +380,12 @@ def set_bounds(m):
     """This method adds bounds to relevant variables"""
 
     ix = m.fs.unit_ix
+
+    ix.bed_porosity.setub(1)
+    ix.number_columns.setlb(0)
+    for c in m.fs.set_reactive_ions:
+        ix.conc_comp_norm_trapezoids[c, 0].fix(1e-12)
+        ix.breakthrough_time_trapezoids[c, 0].fix(1e-3)
 
     ix.bed_diameter.setlb(0.01)
     ix.bed_diameter.setub(100)
@@ -568,6 +573,31 @@ def set_scaling(m):
     return m
 
 
+def set_scaling_regeneration(m):
+
+    ix = m.fs.unit_ix
+    ix.scaling_factor[ix.regeneration_stream[0].pressure] = 1e-3
+    ix.scaling_factor[ix.loading_rate] = 1e3
+    ix.scaling_factor[ix.service_flow_rate] = 1e-3
+    ix.scaling_factor[ix.bed_volume] = 1e3
+    for c in m.fs.set_reactive_ions:
+        ix.scaling_factor[ix.breakthrough_time[c]] = 1e-3
+        for k in range(1, ix.number_of_trapezoids + 1):
+            ix.scaling_factor[ix.conc_comp_norm_trapezoids[c, k]] = 1e3
+            ix.scaling_factor[ix.breakthrough_time_trapezoids[c, k]] = 1e-3
+
+    ix.scaling_factor[ix.costing.capital_cost_backwash_tank_constraint] = 1e4
+    for c in m.fs.set_reactive_ions:
+        ix.scaling_factor[ix.eq_mass_transfer_regen[c]] = 1e3
+        ix.scaling_factor[ix.eq_conc_comp_norm_breakthrough_trapezoids[c]] = 1e3
+        for k in range(1, ix.number_of_trapezoids + 1):
+            ix.scaling_factor[ix.trapezoids[c, k]] = 1e3
+            if k == 1:
+                ix.scaling_factor[ix.eq_trapezoids[c, k]] = 1e2
+            else:
+                ix.scaling_factor[ix.eq_trapezoids[c, k]] = 1e-2
+
+
 def initialize_system(
     m,
     solver=None,
@@ -610,6 +640,11 @@ def add_costing(m):
     m.fs.costing.aggregate_capital_cost()
     m.fs.costing.total_capital_cost()
     m.fs.costing.total_operating_cost()
+
+    # Set initial values
+    m.fs.costing.aggregate_capital_cost.set_value(1e3)
+    m.fs.costing.aggregate_fixed_operating_cost.set_value(1e1)
+    m.fs.costing.aggregate_variable_operating_cost.set_value(1e-3)
 
     # Touch relevant cost variable
     m.fs.costing.total_annualized_cost

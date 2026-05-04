@@ -642,7 +642,7 @@ class IXCostingData(IXCostingBlockData):
 
         else:
 
-            blk.operating_cost_hazardous.fix(0)
+            blk.operating_cost_hazardous.fix(1e-6)
 
         if blk.unit_model.config.regenerant == "single_use":
 

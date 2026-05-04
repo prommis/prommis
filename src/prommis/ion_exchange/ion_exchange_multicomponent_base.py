@@ -1077,23 +1077,24 @@ class IonExchangeBaseData(InitializationMixin, UnitModelBlockData):
         #     raise InitializationError(f"Unit model {self.name} failed to initialize.")
 
     def calculate_scaling_factors(self):
-        super().calculate_scaling_factors()
 
-        iscale.set_scaling_factor(self.target_breakthrough_time, 1e-6)
-        iscale.set_scaling_factor(self.N_Re, 1)
-        iscale.set_scaling_factor(self.N_Pe_particle, 1e2)
-        iscale.set_scaling_factor(self.N_Pe_bed, 1e-3)
-        iscale.set_scaling_factor(self.number_columns, 1)
-        iscale.set_scaling_factor(self.resin_diam, 1e4)
-        iscale.set_scaling_factor(self.resin_density, 1e-3)
-        iscale.set_scaling_factor(self.bed_volume_total, 0.1)
-        iscale.set_scaling_factor(self.bed_depth, 1)
-        iscale.set_scaling_factor(self.bed_porosity, 10)
-        iscale.set_scaling_factor(self.column_height, 1)
-        iscale.set_scaling_factor(self.bed_diameter, 1)
-        iscale.set_scaling_factor(self.service_flow_rate, 0.1)
-        iscale.set_scaling_factor(self.ebct, 1e-2)
-        iscale.set_scaling_factor(self.loading_rate, 1e3)
+        self.scaling_factor = pyo.Suffix(direction=pyo.Suffix.EXPORT)
+
+        self.scaling_factor[self.target_breakthrough_time] = 1e-3
+        self.scaling_factor[self.N_Re] = 1e-3
+        self.scaling_factor[self.N_Pe_particle] = 1e2
+        self.scaling_factor[self.N_Pe_bed] = 1e-3
+        self.scaling_factor[self.number_columns] = 1
+        self.scaling_factor[self.resin_diam] = 1e4
+        self.scaling_factor[self.resin_density] = 1e-2
+        self.scaling_factor[self.bed_volume_total] = 1e2
+        self.scaling_factor[self.bed_depth] = 1e2
+        self.scaling_factor[self.bed_porosity] = 1e1
+        self.scaling_factor[self.column_height] = 1e1
+        self.scaling_factor[self.bed_diameter] = 1e3
+        self.scaling_factor[self.service_flow_rate] = 1e-1
+        self.scaling_factor[self.ebct] = 1e-6
+        self.scaling_factor[self.loading_rate] = 1e3
 
     def _get_stream_table_contents(self, time_point=0):
 

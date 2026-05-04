@@ -393,7 +393,7 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
             self.process_flow.mass_transfer_term[:, p0, j].fix(0)
 
             if self.config.regenerant != "single_use":
-                regen.get_material_flow_terms(p0, j).fix(0)
+                regen.get_material_flow_terms(p0, j).fix(1e-6)
 
         # [ESR WIP: Define terms for trapezoidal rule. NOTE: the
         # trap_disc is a discretization index/parameter that defines
@@ -438,14 +438,6 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
                 self.target_breakthrough_time
                 == self.breakthrough_time[target_component]
             )
-
-        # Add variables for dimensionless number
-        self.N_Sh = pyo.Var(
-            self.reactive_ion_set,
-            initialize=30,
-            units=pyo.units.dimensionless,
-            doc="Sherwood number",
-        )
 
         # Add relevant variables for IX column and trapezoidal rule
         self.conc_comp_norm_breakthrough = pyo.Var(
@@ -525,16 +517,15 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
                 b.conc_comp_norm_breakthrough[j] * prop_in.conc_mass_phase_comp[p0, j]
             )
 
-        # Add Expression/Constraint to calculate dimensionless numbers
+        # Add Expressions to calculate dimensionless numbers
         @self.Expression(self.reactive_ion_set, doc="Schmidt number")
         def N_Sc(b, j):  # Eq. 3.359, ref[1] Inglezakis + Poulopoulos
             return prop_in.visc_k_phase[p0] / prop_in.diffus_phase_comp[p0, j]
 
-        @self.Constraint(self.reactive_ion_set, doc="Sherwood number")
-        def eq_Sh(b, j):  # Eq. 3.346, ref[1] Inglezakis + Poulopoulos
+        @self.Expression(self.reactive_ion_set, doc="Sherwood number")
+        def N_Sh(b, j):  # Eq. 3.346, ref[1] Inglezakis + Poulopoulos
             return (
-                b.N_Sh[j]
-                == b.Sh_A
+                b.Sh_A
                 * b.bed_porosity**b.Sh_exp_A
                 * b.N_Re**b.Sh_exp_B
                 * b.N_Sc[j] ** b.Sh_exp_C
@@ -700,26 +691,42 @@ class IonExchangeMultiCompData(IonExchangeBaseData):
             )
 
     def calculate_scaling_factors(self):
-        super().calculate_scaling_factors()
 
-        # [ESR updates: Add new variables from base model.]
-        iscale.set_scaling_factor(self.breakthrough_time, 1e-4)
-        iscale.set_scaling_factor(self.bv, 1e-1)
-        iscale.set_scaling_factor(self.freundlich_n, 1)
-        iscale.set_scaling_factor(self.mass_transfer_coeff, 1e2)
-        iscale.set_scaling_factor(self.bv_50, 1e-3)
+        sf = 1e-4
 
-        sf = iscale.get_scaling_factor(self.breakthrough_time)
-        iscale.set_scaling_factor(self.breakthrough_time_trapezoids, sf)
+        self.scaling_factor[self.process_flow.properties_in[0].pressure] = 1e-5
+        self.scaling_factor[self.process_flow.properties_out[0].pressure] = 1e-3
 
-        iscale.set_scaling_factor(self.conc_comp_norm_trapezoids, 1)
-        iscale.set_scaling_factor(self.trapezoids, 1e3)
-        iscale.set_scaling_factor(self.conc_comp_norm_breakthrough_trapezoids, 1e2)
+        for c in self.reactive_ion_set:
+            self.scaling_factor[self.breakthrough_time[c]] = 1e-4
+            self.scaling_factor[self.freundlich_n[c]] = 1
+            self.scaling_factor[self.mass_transfer_coeff[c]] = 1e2
+            self.scaling_factor[self.bv_50[c]] = 1
+
+            self.scaling_factor[
+                self.process_flow.properties_in[0].diffus_phase_comp["Liq", c]
+            ] = 1e4
+            self.scaling_factor[
+                self.process_flow.properties_in[0].flow_mol_phase_comp["Liq", c]
+            ] = 1e2
+            self.scaling_factor[
+                self.process_flow.properties_out[0].flow_mol_phase_comp["Liq", c]
+            ] = 1e2
+            self.scaling_factor[
+                self.process_flow.properties_in[0].flow_mass_phase_comp["Liq", c]
+            ] = 1e1
+            self.scaling_factor[
+                self.process_flow.properties_out[0].flow_mass_phase_comp["Liq", c]
+            ] = 1e1
+
+            self.scaling_factor[self.conc_comp_norm_breakthrough_trapezoids[c]] = 1
+            scaling = 1 / pyo.value(
+                self.breakthrough_time_trapezoids[c, self.number_of_trapezoids]
+            )
+            for k in self.trap_index:
+                self.scaling_factor[self.breakthrough_time_trapezoids[c, k]] = sf
+                self.scaling_factor[self.conc_comp_norm_trapezoids[c, k]] = 1e6
+                self.scaling_factor[self.eq_trapezoids[c, k]] = scaling
 
         for ind, c in self.eq_clark.items():
-            if iscale.get_scaling_factor(c) is None:
-                iscale.constraint_scaling_transform(c, 1e-2)
-
-        for ind, c in self.eq_trapezoids.items():
-            if iscale.get_scaling_factor(c) is None:
-                iscale.constraint_scaling_transform(c, 1e2)
+            self.scaling_factor[c] = 1

@@ -32,6 +32,7 @@ from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.exceptions import ConfigurationError
 from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.core.scaling.util import jacobian_cond
 
 pytest.importorskip("watertap", reason="WaterTAP dependency not available")
 
@@ -58,6 +59,7 @@ from prommis.ion_exchange.ix_freundlich_multicomponent_example import (
     set_operating_conditions,
     initialize_system,
     set_scaling,
+    set_scaling_regeneration,
     add_costing,
     run_optimization,
 )
@@ -376,10 +378,10 @@ def test_initialization(m):
         "loading_rate": 9.369400114476226e-05,
         "bed_volume_total": 0.00017671458676442585,
         "target_breakthrough_time": 1698537.355619108,
-        "service_flow_rate": 0.33772991916391243,
-        "N_Re": 0.5911246207427487,
-        "N_Pe_particle": 0.03884865308724417,
-        "N_Pe_bed": 51.79820411632556,
+        "service_flow_rate": 0.33623961482389764,
+        "N_Re": 0.590444577120212,
+        "N_Pe_particle": 0.03882749957077343,
+        "N_Pe_bed": 51.769999427697904,
     }
 
     for v, r in ix_vars_results.items():
@@ -481,7 +483,7 @@ def test_optimization_single_use(m):
         "capital_cost_vessel": 598.3980635404342,
         "capital_cost_resin": 1.2369526560285031,
         "capital_cost_backwash_tank": 47.95380302349629,
-        "operating_cost_hazardous": 0,
+        "operating_cost_hazardous": 1e-6,
         "total_pumping_power": 4.144588949265954e-08,
         "flow_vol_resin": 0.0024337197399727775,
         "single_use_resin_replacement_cost": 17.03535695942525,
@@ -498,9 +500,15 @@ def test_optimization_single_use(m):
 
 
 @pytest.mark.unit
-def test_scaling(m):
+def test_scaling_and_numerical_warnings(m):
 
     m.fs.unit_ix.calculate_scaling_factors()
+
+    dt = DiagnosticsToolbox(m)
+    dt.assert_no_numerical_warnings(ignore_parallel_components=True)
+
+    assert jacobian_cond(m, scaled=False) == pytest.approx(170184365219283.22)
+    assert jacobian_cond(m, scaled=True) == pytest.approx(7345773350071.2295)
 
 
 @pytest.mark.unit
@@ -629,7 +637,6 @@ def test_optimization_nacl(m_nacl):
     pyo.assert_optimal_termination(results)
 
     run_optimization(m, target_component=target_component)
-
     results_opt = solver.solve(m)
     pyo.assert_optimal_termination(results_opt)
 
@@ -641,7 +648,7 @@ def test_optimization_nacl(m_nacl):
         "resin_density": 1126.61,
         "bed_volume": 0.00017671456852191367,
         "bed_volume_total": 0.00017671456852191367,
-        "bed_depth": 2.2499998247710224,
+        "bed_depth": 2.249999824769932,
         "bed_porosity": 0.8,
         "column_height": 3.918249772728016,
         "bed_diameter": 0.010,
@@ -791,6 +798,31 @@ def test_get_stream_table_contents_nacl(m_nacl):
     )
 
     pd.testing.assert_frame_equal(stable, expected, rtol=1e-4, atol=1e-4)
+
+
+@pytest.mark.unit
+def test_scaling_and_numerical_warnings_nacl(m_nacl):
+
+    ix = m_nacl.fs.unit_ix
+
+    ix.bed_diameter.setlb(1e-3)
+    ix.column_height.setub(10)
+    for c in m_nacl.fs.set_reactive_ions:
+        ix.breakthrough_time_trapezoids[c, 0].fix(1e-6)
+
+    ix.calculate_scaling_factors()
+
+    set_scaling_regeneration(m_nacl)
+
+    solver = get_solver(solver="ipopt_v2")
+    results = solver.solve(m_nacl)
+    pyo.assert_optimal_termination(results)
+
+    dt = DiagnosticsToolbox(m_nacl)
+    dt.assert_no_numerical_warnings(ignore_parallel_components=True)
+
+    assert jacobian_cond(m_nacl, scaled=False) == pytest.approx(167273088489942.94)
+    assert jacobian_cond(m_nacl, scaled=True) == pytest.approx(239832041366.47086)
 
 
 @pytest.fixture(scope="module")
@@ -964,7 +996,7 @@ def test_ix_with_prommis_costing(m_pc):
         "total_BEC": 0.0027232971929997854,
         "custom_fixed_costs": 2.298165311277419e-05,
         "total_fixed_OM_cost": 2.42531,
-        "variable_operating_costs": 5.557009860683777e-12,
+        "variable_operating_costs": 2.6277252183096534e-10,
         "custom_variable_costs": 1e-12,
         "total_variable_OM_cost": 0.485062698268098,
     }

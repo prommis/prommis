@@ -226,7 +226,7 @@ class TestSolidHandling(object):
     def test_numerical_issues(self, model):
         dt = DiagnosticsToolbox(model=model)
         # The assert_no_numerical_warnings will fail if there is an active constraint with no Jacobian
-        # entries and that all variables in that constaint (e.g. crushing_direction_constraint) are fixed
+        # entries and that all variables in that constraint (e.g. crushing_direction_constraint) are fixed
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component

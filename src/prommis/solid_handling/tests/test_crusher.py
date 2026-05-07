@@ -181,9 +181,6 @@ def test_recommend_stage_for_product_p80(
 class TestSolidHandling(object):
     @pytest.fixture(scope="class")
     def model(self):
-        # Preserve the original regression test case by disabling interval limits.
-        # The historical product P80 for this fixture is much finer than the
-        # stage-classification ranges introduced in the updated crusher model.
         m = _build_model(crusher_stage="secondary", enforce_stage_size_limits=False)
         _set_base_state(m.fs.unit)
 
@@ -228,8 +225,8 @@ class TestSolidHandling(object):
     @pytest.mark.solver
     def test_numerical_issues(self, model):
         dt = DiagnosticsToolbox(model=model)
-        # The assert_no_numerical_warnings will fail if there is an active constraint
-        # with no Jacobian entries and that all variables in that constaint (e.g. crushing_direction_constraint) are fixed
+        # The assert_no_numerical_warnings will fail if there is an active constraint with no Jacobian
+        # entries and that all variables in that constaint (e.g. crushing_direction_constraint) are fixed
         dt.assert_no_numerical_warnings()
 
     @pytest.mark.component

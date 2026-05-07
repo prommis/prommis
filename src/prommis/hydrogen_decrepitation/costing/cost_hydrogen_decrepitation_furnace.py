@@ -160,7 +160,7 @@ class HydrogenDecrepitationCostingData(FlowsheetCostingBlockData):
             mutable=True,
             doc="Base year to convert costing values to, e.g. 'Jan_2024'",
         )
-
+    @staticmethod
     def cost_hydrogen_decrepitation_furnace(
         blk,
         heating_mode=0,

@@ -5,15 +5,16 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 import math
+
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
     Expression,
     Var,
     assert_optimal_termination,
-    value,
 )
 from pyomo.environ import units as pyunits
+from pyomo.environ import value
 
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
@@ -37,13 +38,13 @@ from prommis.solid_handling.crusher_solids_properties import CoalRefuseParameter
 # Get default solver for testing
 solver = get_solver()
 
+
 def _build_model(**crusher_kwargs):
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties_solid = CoalRefuseParameters(doc="solid property")
     m.fs.unit = Crusher(property_package=m.fs.properties_solid, **crusher_kwargs)
     return m
-
 
 
 def _set_base_state(unit, feed_median_um=8e4, prod_median_um=5.8e4):
@@ -55,13 +56,13 @@ def _set_base_state(unit, feed_median_um=8e4, prod_median_um=5.8e4):
     unit.properties_out[0].particle_size_width.fix(1.5)
 
 
-
 def _fix_product_p80(unit, product_p80_target):
     width = value(unit.properties_out[0].particle_size_width)
     p80_factor = (-math.log(1 - 0.8)) ** (width / 2)
-    product_p80_um = value(pyunits.convert(product_p80_target, to_units=pyunits.um) / pyunits.um)
+    product_p80_um = value(
+        pyunits.convert(product_p80_target, to_units=pyunits.um) / pyunits.um
+    )
     unit.properties_out[0].particle_size_median.fix(product_p80_um / p80_factor)
-
 
 
 def _cm_value(native_size, unit):
@@ -72,12 +73,13 @@ def _cm_value(native_size, unit):
         )
         / pyunits.cm
     )
-    
+
+
 # -----------------------------------------------------------------------------
 @pytest.mark.unit
 def test_config():
     m = _build_model()
-    
+
     assert not m.fs.unit.config.dynamic
     assert not m.fs.unit.config.has_holdup
     assert m.fs.unit.config.property_package is m.fs.properties_solid
@@ -85,6 +87,7 @@ def test_config():
     assert m.fs.unit.config.crusher_equipment is None
     assert m.fs.unit._crusher_stage == "secondary"
     assert m.fs.unit._stage_selection_basis == "default"
+
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
@@ -161,7 +164,9 @@ def test_inconsistent_stage_and_equipment_raises():
         (0.3 * pyunits.cm, "tertiary", False),
     ],
 )
-def test_recommend_stage_for_product_p80(product_p80_target, expected_stage, in_modeled_range):
+def test_recommend_stage_for_product_p80(
+    product_p80_target, expected_stage, in_modeled_range
+):
     m = _build_model(enforce_stage_size_limits=False)
     _set_base_state(m.fs.unit, feed_median_um=200000, prod_median_um=108000)
     _fix_product_p80(m.fs.unit, product_p80_target)
@@ -170,6 +175,7 @@ def test_recommend_stage_for_product_p80(product_p80_target, expected_stage, in_
 
     assert recommended_stage == expected_stage
     assert modeled_range is in_modeled_range
+
 
 # -----------------------------------------------------------------------------
 class TestSolidHandling(object):
@@ -180,12 +186,12 @@ class TestSolidHandling(object):
         # stage-classification ranges introduced in the updated crusher model.
         m = _build_model(crusher_stage="secondary", enforce_stage_size_limits=False)
         _set_base_state(m.fs.unit)
-        
-        # No unfixed variable exist for crushing_direction_constraint, 
+
+        # No unfixed variable exist for crushing_direction_constraint,
         # deactivate it to avoid assert_no_numerical_warning failure
-        m.fs.unit.crushing_direction_constraint[0].deactivate() 
+        m.fs.unit.crushing_direction_constraint[0].deactivate()
         return m
-    
+
     @pytest.mark.build
     @pytest.mark.unit
     def test_build(self, model):
@@ -222,7 +228,7 @@ class TestSolidHandling(object):
     @pytest.mark.solver
     def test_numerical_issues(self, model):
         dt = DiagnosticsToolbox(model=model)
-        # The assert_no_numerical_warnings will fail if there is an active constraint 
+        # The assert_no_numerical_warnings will fail if there is an active constraint
         # with no Jacobian entries and that all variables in that constaint (e.g. crushing_direction_constraint) are fixed
         dt.assert_no_numerical_warnings()
 
@@ -245,7 +251,8 @@ class TestSolidHandling(object):
         )  # Test prod size expressions.
 
         assert pytest.approx(123.826, rel=1e-5) == value(model.fs.unit.work[0])
-        
+
+
 @pytest.mark.unit
 def test_check_applicability_no_warning_for_in_range_secondary(caplog):
     m = _build_model(crusher_stage="secondary")
@@ -316,6 +323,7 @@ def test_check_applicability_warning_mentions_equipment_when_out_of_range(caplog
     assert "falls in the 'secondary' crushing range" in warning_messages[0]
     assert "equipment='hammer_mill'" in caplog.text
 
+
 @pytest.mark.unit
 def test_check_applicability_warns_when_target_is_finer_than_modeled_range(caplog):
     m = _build_model(crusher_stage="tertiary", enforce_stage_size_limits=False)
@@ -326,6 +334,7 @@ def test_check_applicability_warns_when_target_is_finer_than_modeled_range(caplo
         warning_messages = m.fs.unit.check_applicability()
 
     assert len(warning_messages) == 1
-    assert "finer than the minimum modeled crushing range (0.5 cm)" in warning_messages[0]
+    assert (
+        "finer than the minimum modeled crushing range (0.5 cm)" in warning_messages[0]
+    )
     assert "finer than the minimum modeled crushing range (0.5 cm)" in caplog.text
-        

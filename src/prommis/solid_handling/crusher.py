@@ -24,7 +24,7 @@ The stage categories are interpreted using product-P80 intervals:
 
 Here eps is a small positive tolerance used so the algebraic constraints
 remain non-overlapping in Pyomo.
-    
+
 If the requested product P80 is below 0.5 cm, the target is treated as finer than
 this modeled crushing-stage range.
 
@@ -69,7 +69,7 @@ the mesh at :math:`t` time, :math:`P_{t, feed, 80}` is feed particle size with
 Expressions
 -----------
 
-Crusher includes two expressions to calculate the size of particles that has 80% 
+Crusher includes two expressions to calculate the size of particles that has 80%
 passing the mesh for both feed and product particles.
 
 .. math:: P_{t, feed, 80} = \frac{S_{t, in, median}}{unit} * \left(-\log(1 - 0.8)\right)^{\frac{SW_{t, in}}{2}}
@@ -99,12 +99,13 @@ Variable         Name   Notes
 
 """
 
-from functools import partial
 import math
+from functools import partial
 
 from pyomo.common.config import ConfigDict, ConfigValue, In
-from pyomo.environ import Constraint, Var, log, value
+from pyomo.environ import Constraint, Var, log
 from pyomo.environ import units as pyunits
+from pyomo.environ import value
 
 import idaes.logger as idaeslog
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
@@ -150,6 +151,7 @@ CRUSHER_EQUIPMENT_TO_STAGE = {
     "hammer_mill": "tertiary",
 }
 
+
 def _size_to_native_units(size_value, native_units):
     """
     Convert a size quantity to the numeric magnitude associated with native_units.
@@ -158,16 +160,20 @@ def _size_to_native_units(size_value, native_units):
     """
     return value(pyunits.convert(size_value, to_units=native_units) / native_units)
 
+
 def _stage_eps_to_native_units(native_units):
     return _size_to_native_units(STAGE_P80_EPS, native_units)
 
+
 def _equipment_label(equipment_names):
     return ", ".join(name.replace("_", " ") for name in equipment_names)
+
 
 def _range_bound_to_native_units(size_value, native_units):
     if size_value is None:
         return None
     return _size_to_native_units(size_value, native_units)
+
 
 def _get_stage_bounds_native(stage_name, native_units):
     stage_data = CRUSHER_STAGE_DATA[stage_name]
@@ -179,6 +185,7 @@ def _get_stage_bounds_native(stage_name, native_units):
     )
     return lower, upper
 
+
 def _product_p80_in_stage_range(stage_name, product_p80_native, native_units):
     """
     Check whether product P80 lies in the stated stage-classification interval.
@@ -187,7 +194,7 @@ def _product_p80_in_stage_range(stage_name, product_p80_native, native_units):
     - primary: product P80 >= 10 cm
     - secondary: 2 cm <= product P80 <= 10 cm - eps
     - tertiary: 0.5 cm <= product P80 <= 2 cm - eps
-    
+
     Here eps is a small positive tolerance used so the algebraic constraints
     remain non-overlapping in Pyomo.
     """
@@ -201,6 +208,7 @@ def _product_p80_in_stage_range(stage_name, product_p80_native, native_units):
         return lower <= product_p80_native <= upper - eps
 
     raise ValueError(f"Unsupported crusher stage '{stage_name}'.")
+
 
 def _recommend_stage_from_product_p80_native(product_p80_native, native_units):
     """
@@ -222,6 +230,7 @@ def _recommend_stage_from_product_p80_native(product_p80_native, native_units):
         return "tertiary", True
 
     return "tertiary", False
+
 
 @declare_process_block_class("Crusher")
 class CrusherData(UnitModelBlockData):
@@ -346,7 +355,6 @@ because strict inequalities cannot be imposed directly in Pyomo constraints.""",
 
         return selected_stage, selected_equipment, "stage_and_equipment"
 
-
     def build(self):
         """
         Begin building model (pre-DAE transformation).
@@ -428,11 +436,13 @@ because strict inequalities cannot be imposed directly in Pyomo constraints.""",
         for t in self.flowsheet().time:
             width_guess = value(self.properties_out[t].particle_size_width)
             p80_factor = (-math.log(1 - 0.8)) ** (width_guess / 2)
-            if (not self.properties_out[t].particle_size_median.fixed) and p80_factor > 0:
+            if (
+                not self.properties_out[t].particle_size_median.fixed
+            ) and p80_factor > 0:
                 self.properties_out[t].particle_size_median.set_value(
                     default_product_p80 / p80_factor
                 )
-        
+
         @self.Expression(self.flowsheet().time, doc="Feed P80 size")
         def feed_p80(self, t):
             return (
@@ -457,7 +467,7 @@ because strict inequalities cannot be imposed directly in Pyomo constraints.""",
                 * self.config.property_package.bond_work_index
                 * (1 / (self.prod_p80[t]) ** 0.5 - 1 / (self.feed_p80[t]) ** 0.5)
             )
-        
+
         @self.Constraint(
             self.flowsheet().time,
             doc="Crusher must reduce or maintain particle size (feed P80 >= product P80)",
@@ -485,7 +495,10 @@ because strict inequalities cannot be imposed directly in Pyomo constraints.""",
                 return Constraint.Skip
             if self._applicable_product_p80_upper is None:
                 return Constraint.Skip
-            return self.prod_p80[t] <= self._applicable_product_p80_upper - self._stage_product_p80_eps
+            return (
+                self.prod_p80[t]
+                <= self._applicable_product_p80_upper - self._stage_product_p80_eps
+            )
 
     def recommend_stage_for_product_p80(self, t=None):
         """
@@ -565,8 +578,8 @@ because strict inequalities cannot be imposed directly in Pyomo constraints.""",
                 / pyunits.cm
             )
 
-            recommended_stage, in_modeled_range = _recommend_stage_from_product_p80_native(
-                product_p80_native, sunit
+            recommended_stage, in_modeled_range = (
+                _recommend_stage_from_product_p80_native(product_p80_native, sunit)
             )
             recommended_equipment = _equipment_label(
                 CRUSHER_STAGE_DATA[recommended_stage]["equipment_names"]
@@ -625,6 +638,7 @@ because strict inequalities cannot be imposed directly in Pyomo constraints.""",
             "Product P80": value(self.prod_p80[time_point]),
         }
         return {"vars": var_dict}
+
 
 def _state_rule(b, time, index, state):
     sin = b.properties_in[time].define_state_vars()[state]

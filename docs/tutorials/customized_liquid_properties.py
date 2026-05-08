@@ -169,9 +169,9 @@ class AqueousStateBlockkData(StateBlockData):
 
         self.flow_mass_comp = Var(
             self.params.dissolved_elements,
-            units=units.kg / units.s, 
-            initialize = 1,
-            bounds=(1e-20, None)
+            units=units.kg / units.s,
+            initialize=1,
+            bounds=(1e-20, None),
         )
 
         # Concentration conversion constraint
@@ -189,28 +189,43 @@ class AqueousStateBlockkData(StateBlockData):
         def flow_mol_constraint(b, j):
             if j == "H2O":
                 # Assume constant density of 1 kg/L
-                return units.convert(self.flow_vol * self.params.dens_mass / self.params.mw[j], to_units=units.mol/units.hour) == b.flow_mol_comp[j]
+                return (
+                    units.convert(
+                        self.flow_vol * self.params.dens_mass / self.params.mw[j],
+                        to_units=units.mol / units.hour,
+                    )
+                    == b.flow_mol_comp[j]
+                )
             else:
-                return    (
+                return (
                     units.convert(
                         b.flow_vol * b.conc_mass_comp[j] / b.params.mw[j],
                         to_units=units.mol / units.hour,
                     )
                     == b.flow_mol_comp[j]
                 )
-    
+
         # Concentration conversion constraint
         @self.Constraint(self.params.dissolved_elements)
         def flow_mass_constraint(b, j):
             if j == "H2O":
                 # Assume constant density of 1 kg/L
-                return units.convert(self.flow_vol * self.params.dens_mass, to_units=units.kg/units.s) == b.flow_mass_comp[j]
+                return (
+                    units.convert(
+                        self.flow_vol * self.params.dens_mass,
+                        to_units=units.kg / units.s,
+                    )
+                    == b.flow_mass_comp[j]
+                )
             else:
                 # Need to convert from moles to mass
-                return units.convert(
-                    b.flow_vol * b.conc_mass_comp[j],
-                    to_units=units.kg / units.s,
-                ) == b.flow_mass_comp[j]
+                return (
+                    units.convert(
+                        b.flow_vol * b.conc_mass_comp[j],
+                        to_units=units.kg / units.s,
+                    )
+                    == b.flow_mass_comp[j]
+                )
             # return (
             #     units.convert(
             #         b.flow_vol * b.conc_mass_comp[j],

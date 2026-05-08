@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -499,6 +499,7 @@ class MixerSettlerExtractionData(UnitModelBlockData):
                 heterogeneous_reaction_package=self.config.heterogeneous_reaction_package,
                 heterogeneous_reaction_package_args=self.config.heterogeneous_reaction_package_args,
                 has_holdup=self.config.has_holdup,
+                create_hydrostatic_pressure_terms=True,
             )
 
             # Declare aqueous settler tank

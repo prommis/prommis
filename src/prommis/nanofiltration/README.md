@@ -26,13 +26,16 @@ A fixed configuration nanofiltration membrane system with an additional, dilute 
 
 A custom costing class is added to the flowsheet to minimize the annualized operating cost, subject to lithium and cobalt recovery bounds, the transport model, and mass balances. There are 3 degrees of freedom (the membrane length in each of the 3 stages).
 
-## diafiltration_two_salt.py
-Multi-component (two-salt, common anion) unit model for diafiltration. The membrane is designed for use in the diafiltration cascade, i.e., is a spiral-wound membrane module. See [source code](https://github.com/prommis/prommis/blob/main/src/prommis/nanofiltration/diafiltration_two_salt.py) for detailed documentation. See below figure for the membrane system schematic.
+## multi_component_diafiltration.py
+Multi-component (one, two, or three salts with a common anion) unit model for diafiltration. The membrane is designed for use in the diafiltration cascade, i.e., is a spiral-wound membrane module. See [source code](https://github.com/prommis/prommis/blob/main/src/prommis/nanofiltration/diafiltration_two_salt.py) for detailed documentation. See below figure for the membrane system schematic.
 
 ![membrane_schematic](membrane_schematic.png "Membrane system schematic for multi-component diafiltration")
 
-## diafiltration_solute_properties.py
-This contains the property package for the multi-component model for diafiltration.
+## multi_component_diafiltration_solute_properties.py
+This contains the property package for the multi-component model for diafiltration unit model. Currently, the property package includes three cations (lithium, cobalt, and aluminum) and one anion (chloride).
+
+## multi_component_diafiltration_stream_properties.py
+This contains the property package for the streams in the multi-component diafiltration flowsheet.
 
 ## diafiltration_flowsheet_two_salt.py
 This is a sample flowsheet for the diafiltration of lithium chloride and cobalt chloride using the two-salt, common anion diafiltration unit model.

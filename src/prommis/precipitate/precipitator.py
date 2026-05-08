@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -21,7 +21,7 @@ created in the precipitator and fixed separation coefficients of the solids.
 Model Structure
 ---------------
 
-The Precitator unit model has hard coded stream names (``aqueous`` and ``precipitate`` respectively). The Precipitator 
+The Precitator unit model has hard coded stream names (``aqueous`` and ``precipitate`` respectively). The Precipitator
 model also has one inlet and two outlets named ``aqueous_inlet``, ``aqueous_outlet`` and ``precipitate_outlet`` respectively.
 
 Additional Constraints
@@ -29,9 +29,9 @@ Additional Constraints
 
 The Precipitator unit adds two additional constraint to define the stochiometry and separation.
 
-.. math:: n_{t,prec,c} = \frac{n_{t,aq_in,c} - n_{t,aq_out,c}}{S_{comp}} 
+.. math:: n_{t,prec,c} = \frac{n_{t,aq_in,c} - n_{t,aq_out,c}}{S_{comp}}
 
-where :math:`n_{t,prec,c}` is the outlet precipitation of component c, :math:`n_{t,aq_in,c}` is the inlet of component c in 
+where :math:`n_{t,prec,c}` is the outlet precipitation of component c, :math:`n_{t,aq_in,c}` is the inlet of component c in
 the aqueous phase, :math:`n_{t,aq_in,c}` is the outlet of component c in the aqueous phase at time :math:`t`, divided by the
 stoichiometric parameter of component c :math:`S_{comp}`
 

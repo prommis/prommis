@@ -1,0 +1,12 @@
+﻿Year,State_tax,Federal_tax,total_tax,CEPCI,2021_tax,,Year,CEPCI,source
+2015,9.99,35,44.99,556.8,57.27175287,,2025,810.4,https://www.chemengonline.com/plant-cost-index-beta/
+2016,9.99,35,44.99,541.7,58.86821488,,2024,800,https://www.training.itservices.manchester.ac.uk/public/gced/CEPCI.html?reactors/CEPCI/index.html
+2017,9.99,35,44.99,567.5,56.19191542,,2023,797.9,https://www.training.itservices.manchester.ac.uk/public/gced/CEPCI.html?reactors/CEPCI/index.html
+2018,9.99,21,30.99,603.1,36.42134306,,2022,816,https://www.training.itservices.manchester.ac.uk/public/gced/CEPCI.html?reactors/CEPCI/index.html
+2019,9.99,21,30.99,607.5,36.15755062,,2021,708.8,https://www.training.itservices.manchester.ac.uk/public/gced/CEPCI.html?reactors/CEPCI/index.html
+2020,9.99,21,30.99,596.2,36.8428581,,2020,596.2,https://www.training.itservices.manchester.ac.uk/public/gced/CEPCI.html?reactors/CEPCI/index.html
+2021,9.99,21,30.99,708.8,30.99,,2019,607.5,https://www.training.itservices.manchester.ac.uk/public/gced/CEPCI.html?reactors/CEPCI/index.html
+2022,9.99,21,30.99,816,26.91876471,,2018,603.1,https://www.training.itservices.manchester.ac.uk/public/gced/CEPCI.html?reactors/CEPCI/index.html
+2023,8.99,21,29.99,797.9,26.64107282,,2017,567.5,https://www.training.itservices.manchester.ac.uk/public/gced/CEPCI.html?reactors/CEPCI/index.html
+2024,8.49,21,29.49,800,26.12814,,2016,541.7,https://www.training.itservices.manchester.ac.uk/public/gced/CEPCI.html?reactors/CEPCI/index.html
+2025,7.99,21,28.99,810.4,25.35551826,,2015,556.8,https://www.training.itservices.manchester.ac.uk/public/gced/CEPCI.html?reactors/CEPCI/index.html

@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -21,7 +21,9 @@ from idaes.core.util import from_json, StoreSpec
 
 from idaes.core.solvers import get_solver
 
-from prommis.leaching.leach_solution_properties import LeachSolutionParameters
+from prommis.properties.sulfuric_acid_leaching_properties import (
+    SulfuricAcidLeachingParameters,
+)
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.mixer_settler_extraction import (
     MixerSettlerExtraction,
@@ -49,7 +51,7 @@ def build_model(dosage, number_of_stages, time_duration):
         dynamic=True, time_set=[0, time_duration], time_units=units.hour
     )
     m.fs.prop_o = REESolExOgParameters()
-    m.fs.leach_soln = LeachSolutionParameters()
+    m.fs.leach_soln = SulfuricAcidLeachingParameters()
     m.fs.reaxn = SolventExtractionReactions()
 
     m.fs.reaxn.extractant_dosage = dosage

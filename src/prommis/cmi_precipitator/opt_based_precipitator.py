@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -70,6 +70,7 @@ is the extent of reaction :math:`r`, :math:`I_{aq}` is the set of all aqueous sp
 [1] Allan M.M. Leal, Dmitrii A. Kulik, William R. Smith, and Martin O. Saar. An overview of computational methods for chemical equilibrium and kinetic calculations for
 geochemical and reactive transport modeling. *Pure Appl. Chem.*, 89:597-643, 2017.
 """
+
 # Import Pyomo libraries
 import pyomo.environ as pyo
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue

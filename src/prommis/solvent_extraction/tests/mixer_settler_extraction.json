@@ -337,12 +337,12 @@
                     }
                   },
                   "leach_soln": {
-                    "__type__": "<class 'idaes.core.base.process_block._ScalarLeachSolutionParameters'>",
+                    "__type__": "<class 'idaes.core.base.process_block._ScalarSulfuricAcidLeachingParameters'>",
                     "__id__": 57,
                     "active": true,
                     "data": {
                       "None": {
-                        "__type__": "<class 'idaes.core.base.process_block._ScalarLeachSolutionParameters'>",
+                        "__type__": "<class 'idaes.core.base.process_block._ScalarSulfuricAcidLeachingParameters'>",
                         "__id__": 58,
                         "active": true,
                         "__pyomo_components__": {
@@ -1175,12 +1175,12 @@
                                                 "active": true,
                                                 "__pyomo_components__": {
                                                   "aqueous": {
-                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedLeachSolutionStateBlock'>",
+                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedSulfuricAcidLeachingStateBlock'>",
                                                     "__id__": 211,
                                                     "active": true,
                                                     "data": {
                                                       "(0.0, 1)": {
-                                                        "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                        "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                         "__id__": 212,
                                                         "active": true,
                                                         "__pyomo_components__": {
@@ -1695,12 +1695,12 @@
                                                     }
                                                   },
                                                   "aqueous_inlet_state": {
-                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedLeachSolutionStateBlock'>",
+                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedSulfuricAcidLeachingStateBlock'>",
                                                     "__id__": 281,
                                                     "active": true,
                                                     "data": {
                                                       "0.0": {
-                                                        "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                        "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                         "__id__": 282,
                                                         "active": true,
                                                         "__pyomo_components__": {
@@ -4905,12 +4905,12 @@
                                                 "active": true,
                                                 "__pyomo_components__": {
                                                   "aqueous": {
-                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedLeachSolutionStateBlock'>",
+                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedSulfuricAcidLeachingStateBlock'>",
                                                     "__id__": 739,
                                                     "active": true,
                                                     "data": {
                                                       "(0.0, 1)": {
-                                                        "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                        "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                         "__id__": 740,
                                                         "active": true,
                                                         "__pyomo_components__": {
@@ -5425,12 +5425,12 @@
                                                     }
                                                   },
                                                   "aqueous_inlet_state": {
-                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedLeachSolutionStateBlock'>",
+                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedSulfuricAcidLeachingStateBlock'>",
                                                     "__id__": 809,
                                                     "active": true,
                                                     "data": {
                                                       "0.0": {
-                                                        "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                        "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                         "__id__": 810,
                                                         "active": true,
                                                         "__pyomo_components__": {
@@ -8635,12 +8635,12 @@
                                                 "active": true,
                                                 "__pyomo_components__": {
                                                   "aqueous": {
-                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedLeachSolutionStateBlock'>",
+                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedSulfuricAcidLeachingStateBlock'>",
                                                     "__id__": 1267,
                                                     "active": true,
                                                     "data": {
                                                       "(0.0, 1)": {
-                                                        "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                        "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                         "__id__": 1268,
                                                         "active": true,
                                                         "__pyomo_components__": {
@@ -9155,12 +9155,12 @@
                                                     }
                                                   },
                                                   "aqueous_inlet_state": {
-                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedLeachSolutionStateBlock'>",
+                                                    "__type__": "<class 'idaes.core.base.process_block._IndexedSulfuricAcidLeachingStateBlock'>",
                                                     "__id__": 1337,
                                                     "active": true,
                                                     "data": {
                                                       "0.0": {
-                                                        "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                        "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                         "__id__": 1338,
                                                         "active": true,
                                                         "__pyomo_components__": {
@@ -12392,12 +12392,12 @@
                                             }
                                           },
                                           "properties": {
-                                            "__type__": "<class 'idaes.core.base.process_block._IndexedLeachSolutionStateBlock'>",
+                                            "__type__": "<class 'idaes.core.base.process_block._IndexedSulfuricAcidLeachingStateBlock'>",
                                             "__id__": 1798,
                                             "active": true,
                                             "data": {
                                               "(0.0, 0.0)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 1799,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -12886,7 +12886,7 @@
                                                 }
                                               },
                                               "(0.0, 0.25)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 1864,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -13399,7 +13399,7 @@
                                                 }
                                               },
                                               "(0.0, 0.5)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 1933,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -13912,7 +13912,7 @@
                                                 }
                                               },
                                               "(0.0, 0.75)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 2002,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -14425,7 +14425,7 @@
                                                 }
                                               },
                                               "(0.0, 1.0)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 2071,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -20081,12 +20081,12 @@
                                             }
                                           },
                                           "properties": {
-                                            "__type__": "<class 'idaes.core.base.process_block._IndexedLeachSolutionStateBlock'>",
+                                            "__type__": "<class 'idaes.core.base.process_block._IndexedSulfuricAcidLeachingStateBlock'>",
                                             "__id__": 2886,
                                             "active": true,
                                             "data": {
                                               "(0.0, 0.0)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 2887,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -20575,7 +20575,7 @@
                                                 }
                                               },
                                               "(0.0, 0.25)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 2952,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -21088,7 +21088,7 @@
                                                 }
                                               },
                                               "(0.0, 0.5)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 3021,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -21601,7 +21601,7 @@
                                                 }
                                               },
                                               "(0.0, 0.75)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 3090,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -22114,7 +22114,7 @@
                                                 }
                                               },
                                               "(0.0, 1.0)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 3159,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -27770,12 +27770,12 @@
                                             }
                                           },
                                           "properties": {
-                                            "__type__": "<class 'idaes.core.base.process_block._IndexedLeachSolutionStateBlock'>",
+                                            "__type__": "<class 'idaes.core.base.process_block._IndexedSulfuricAcidLeachingStateBlock'>",
                                             "__id__": 3974,
                                             "active": true,
                                             "data": {
                                               "(0.0, 0.0)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 3975,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -28264,7 +28264,7 @@
                                                 }
                                               },
                                               "(0.0, 0.25)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 4040,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -28777,7 +28777,7 @@
                                                 }
                                               },
                                               "(0.0, 0.5)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 4109,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -29290,7 +29290,7 @@
                                                 }
                                               },
                                               "(0.0, 0.75)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 4178,
                                                 "active": true,
                                                 "__pyomo_components__": {
@@ -29803,7 +29803,7 @@
                                                 }
                                               },
                                               "(0.0, 1.0)": {
-                                                "__type__": "<class 'prommis.leaching.leach_solution_properties.LeachSolutionStateBlockData'>",
+                                                "__type__": "<class 'prommis.properties.sulfuric_acid_leaching_properties.SulfuricAcidLeachingStateBlockData'>",
                                                 "__id__": 4247,
                                                 "active": true,
                                                 "__pyomo_components__": {

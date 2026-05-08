@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -145,11 +145,14 @@ class TestDefinedStateFalse(object):
 
         assert m.fs.state[0].flow_vol.fixed
         for j in m.fs.prec_sol.dissolved_elements:
-            assert m.fs.state[0].conc_mass_comp[j].fixed
+            if j == "H2O":
+                assert not m.fs.state[0].conc_mass_comp[j].fixed
+            else:
+                assert m.fs.state[0].conc_mass_comp[j].fixed
             assert not m.fs.state[0].flow_mol_comp[j].fixed
 
             assert m.fs.state[0].flow_mol_comp_eqn[j].active
-        assert not m.fs.state[0].h2o_concentration_eqn.active
+        assert m.fs.state[0].h2o_concentration_eqn.active
 
     @pytest.mark.unit
     def test_scaling(self, frame):
@@ -172,12 +175,6 @@ class TestDefinedStateFalse(object):
 
         assert len(list_unscaled_variables(m.fs.state[0])) == 0
         assert len(list_unscaled_constraints(m.fs.state[0])) == 0
-
-        assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.401286e6)
-        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(33.24336)
-
-        m.fs.state[0].conc_mass_comp["H2O"].unfix()
-        m.fs.state[0].h2o_concentration_eqn.activate()
 
         assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.436486e6)
         assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(36.25460)

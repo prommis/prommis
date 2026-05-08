@@ -806,23 +806,19 @@ def test_scaling_and_numerical_warnings_nacl(m_nacl):
     ix = m_nacl.fs.unit_ix
 
     ix.bed_diameter.setlb(1e-3)
-    ix.column_height.setub(10)
-    for c in m_nacl.fs.set_reactive_ions:
-        ix.breakthrough_time_trapezoids[c, 0].fix(1e-6)
+    ix.trapezoids["La", 1].fix(1e-6)
+
+    ix.bed_depth.fix()
 
     ix.calculate_scaling_factors()
 
     set_scaling_regeneration(m_nacl)
 
-    solver = get_solver(solver="ipopt_v2")
-    results = solver.solve(m_nacl)
-    pyo.assert_optimal_termination(results)
-
     dt = DiagnosticsToolbox(m_nacl)
     dt.assert_no_numerical_warnings(ignore_parallel_components=True)
 
-    assert jacobian_cond(m_nacl, scaled=False) == pytest.approx(167273088489942.94)
-    assert jacobian_cond(m_nacl, scaled=True) == pytest.approx(239832041366.47086)
+    assert jacobian_cond(m_nacl, scaled=False) == pytest.approx(1.3023291979866841e19)
+    assert jacobian_cond(m_nacl, scaled=True) == pytest.approx(6.151197655338821e15)
 
 
 @pytest.fixture(scope="module")

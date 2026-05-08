@@ -581,21 +581,16 @@ def set_scaling_regeneration(m):
     ix.scaling_factor[ix.service_flow_rate] = 1e-3
     ix.scaling_factor[ix.bed_volume] = 1e3
     for c in m.fs.set_reactive_ions:
+        ix.scaling_factor[ix.regeneration_stream[0].flow_mol_phase_comp["Liq", c]] = 1e1
         ix.scaling_factor[ix.breakthrough_time[c]] = 1e-3
         for k in range(1, ix.number_of_trapezoids + 1):
             ix.scaling_factor[ix.conc_comp_norm_trapezoids[c, k]] = 1e3
             ix.scaling_factor[ix.breakthrough_time_trapezoids[c, k]] = 1e-3
 
-    ix.scaling_factor[ix.costing.capital_cost_backwash_tank_constraint] = 1e4
+    ix.scaling_factor[ix.costing.capital_cost_backwash_tank_constraint] = 1
     for c in m.fs.set_reactive_ions:
         ix.scaling_factor[ix.eq_mass_transfer_regen[c]] = 1e3
-        ix.scaling_factor[ix.eq_conc_comp_norm_breakthrough_trapezoids[c]] = 1e3
-        for k in range(1, ix.number_of_trapezoids + 1):
-            ix.scaling_factor[ix.trapezoids[c, k]] = 1e3
-            if k == 1:
-                ix.scaling_factor[ix.eq_trapezoids[c, k]] = 1e2
-            else:
-                ix.scaling_factor[ix.eq_trapezoids[c, k]] = 1e-2
+        ix.scaling_factor[ix.eq_conc_comp_norm_breakthrough_trapezoids[c]] = 1
 
 
 def initialize_system(

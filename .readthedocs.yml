@@ -14,6 +14,6 @@ python:
     - requirements: requirements-dev.txt
 
 sphinx:
-  configuration: docs/_config.yml
+  configuration: docs/conf.py
   builder: html
   fail_on_warning: true

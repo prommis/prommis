@@ -1,6 +1,6 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
@@ -43,7 +43,7 @@ class AqueousParameterData(PhysicalParameterBlock):
 
     .. math:: Conversion_{c} = \exp(-\frac{\epsilon}{Oxalic Acid Dosage}^{n_{DA}})
 
-    where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters 
+    where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters
     estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
 
     """
@@ -218,7 +218,7 @@ class _AqueousStateBlock(StateBlock):
 
 
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
-class AqueousStateBlockkData(StateBlockData):
+class AqueousStateBlockData(StateBlockData):
     """
     State block for aqueous solution generated in oxalate precipitator.
 
@@ -306,7 +306,6 @@ class AqueousStateBlockkData(StateBlockData):
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
         iscale.set_scaling_factor(self.conc_mol_comp, 1e3)
-
 
     def _dens_mass(self):
         add_object_reference(self, "dens_mass", self.params.dens_mass)

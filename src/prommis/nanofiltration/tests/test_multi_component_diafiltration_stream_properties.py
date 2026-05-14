@@ -43,10 +43,7 @@ def test_parameters_single_salt(model_single_salt):
         assert k == "liquid"
 
     for j in model_single_salt.fs.stream_properties.component_list:
-        assert j in [
-            "Li",
-            "Cl",
-        ]
+        assert j in ["Li", "Cl"]
 
 
 @pytest.mark.unit
@@ -98,11 +95,7 @@ def test_parameters_two_salt(model_two_salt):
         assert k == "liquid"
 
     for j in model_two_salt.fs.stream_properties.component_list:
-        assert j in [
-            "Li",
-            "Co",
-            "Cl",
-        ]
+        assert j in ["Li", "Co", "Cl"]
 
 
 @pytest.mark.unit
@@ -133,12 +126,7 @@ def test_parameters_three_salt(model_three_salt):
         assert k == "liquid"
 
     for j in model_three_salt.fs.stream_properties.component_list:
-        assert j in [
-            "Li",
-            "Co",
-            "Al",
-            "Cl",
-        ]
+        assert j in ["Li", "Co", "Al", "Cl"]
 
 
 @pytest.mark.unit

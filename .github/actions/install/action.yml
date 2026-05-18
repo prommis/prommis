@@ -27,14 +27,14 @@ runs:
   steps:
 
     - name: Set up Conda environment
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4
       with:
         activate-environment: ${{ inputs.conda-environment }}
         python-version: ${{ inputs.python-version }}
 
     - name: Check out repository
       if: inputs.variant == 'dev'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Install using pip (requirements-dev.txt)

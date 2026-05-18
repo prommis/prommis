@@ -49,8 +49,8 @@ jobs:
     # OS and/or Python version don't make a difference, so we choose ubuntu and 3.10 for performance
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Install Black
@@ -80,7 +80,7 @@ jobs:
       - uses: prommis/prommis/.github/actions/install@main
         with:
           variant: dev
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Run Pylint (pyproject.toml)
         run: |
           pylint prommis
@@ -120,7 +120,7 @@ jobs:
           - os: win64
             runner-image: windows-2022
           - install-variant: dev
-            python-version: '3.11'
+            python-version: '3.12'
             os: linux
             coverage: true
     steps:
@@ -142,7 +142,7 @@ jobs:
         run: pytest --pyargs prommis --xfail-known-issues
       - name: Upload coverage report as job artifact
         if: matrix.coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report-${{ matrix.os }}
           path: coverage.xml
@@ -154,12 +154,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # the checkout step is needed to have access to codecov.yml
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
         with:
           pattern: coverage-report-*
       - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         with:
           fail_ci_if_error: true
           verbose: true

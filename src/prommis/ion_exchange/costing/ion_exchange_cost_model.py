@@ -30,8 +30,6 @@ import pyomo.environ as pyo
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 from idaes.core import declare_process_block_class, register_idaes_currency_units
-from idaes.core.util.constants import Constants
-from idaes.models.costing.SSLW import SSLWCostingData
 from idaes.core.util.exceptions import ConfigurationError
 
 from prommis.ion_exchange.costing.ion_exchange_cost_block import (

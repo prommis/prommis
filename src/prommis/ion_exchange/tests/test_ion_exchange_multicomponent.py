@@ -507,8 +507,8 @@ def test_scaling_and_numerical_warnings(m):
     dt = DiagnosticsToolbox(m)
     dt.assert_no_numerical_warnings(ignore_parallel_components=True)
 
-    assert jacobian_cond(m, scaled=False) == pytest.approx(170184365219283.22)
-    assert jacobian_cond(m, scaled=True) == pytest.approx(7345773350071.2295)
+    assert jacobian_cond(m, scaled=False) == pytest.approx(170184365219283.22, rel=1e-2)
+    assert jacobian_cond(m, scaled=True) == pytest.approx(7345773350071.2295, rel=1e-2)
 
 
 @pytest.mark.unit

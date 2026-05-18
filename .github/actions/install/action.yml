@@ -31,6 +31,8 @@ runs:
       with:
         activate-environment: ${{ inputs.conda-environment }}
         python-version: ${{ inputs.python-version }}
+        channels: conda-forge
+        conda-remove-defaults: 'true'
 
     - name: Check out repository
       if: inputs.variant == 'dev'

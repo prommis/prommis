@@ -53,6 +53,11 @@ runs:
       run: |
         pip install --progress-bar off "git+$_pip_install_url" idaes-pse pytest
 
+    - name: Install cyipopt and reaktoro (conda-forge as defined in channels input for setup-miniconda)
+      shell: bash -l {0}
+      run: |
+        conda install --yes cyipopt reaktoro
+
     - name: Install extensions
       shell: bash -l {0}
       run: |

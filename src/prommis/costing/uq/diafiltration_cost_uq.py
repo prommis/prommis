@@ -34,7 +34,8 @@ from pyomo.common.errors import ApplicationError
 from pyomo.core.base.param import ScalarParam
 
 from idaes.core import UnitModelBlock, UnitModelCostingBlock
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox, degrees_of_freedom
+from idaes.core.util import DiagnosticsToolbox
+from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.scaling import constraint_autoscale_large_jac
 
 import matplotlib.pyplot as plt

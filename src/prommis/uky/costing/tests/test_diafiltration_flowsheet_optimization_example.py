@@ -24,7 +24,8 @@ The steps to test this framework include:
 from pyomo.environ import value
 
 from idaes.core import UnitModelCostingBlock
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox, degrees_of_freedom
+from idaes.core.util import DiagnosticsToolbox
+from idaes.core.util.model_statistics import degrees_of_freedom
 
 import pytest
 

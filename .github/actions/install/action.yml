@@ -49,8 +49,7 @@ runs:
       env:
         _pip_install_url: ${{ github.server_url }}/${{ github.repository }}@${{ github.ref }}
       run: |
-        pip install --progress-bar off "git+$_pip_install_url" idaes-pse pytest
-
+        pip install --progress-bar off "git+$_pip_install_url" idaes-pse pytest pytest-cov
     - name: Install cyipopt and reaktoro (conda-forge only)
       shell: bash -l {0}
       run: |

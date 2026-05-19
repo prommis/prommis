@@ -77,6 +77,7 @@ jobs:
     # OS and/or Python version don't make a difference, so we choose ubuntu and 3.10 for performance
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/install
         with:
           variant: dev
@@ -124,6 +125,7 @@ jobs:
             os: linux
             coverage: true
     steps:
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/install
         with:
           variant: ${{ matrix.install-variant }}
@@ -188,6 +190,7 @@ jobs:
           - os: win64
             runner-image: windows-2022
     steps:
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/install
         with:
           variant: ${{ matrix.install-variant }}

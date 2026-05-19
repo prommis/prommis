@@ -19,7 +19,7 @@ inputs:
   info-packages:
     description: Packages to show info for
     required: false
-    default: prommis idaes-pse pyomo watertap reaktoro
+    default: prommis idaes-pse pyomo watertap reaktoro pytest pylint black
 
 runs:
   using: "composite"
@@ -30,19 +30,18 @@ runs:
         activate-environment: ${{ inputs.conda-environment }}
         python-version: ${{ inputs.python-version }}
         channels: conda-forge
-        conda-remove-defaults: 'true'
-        packages: pip
+        conda-remove-defaults: "true"
 
-    - name: Upgrade pip tooling
+    - name: Bootstrap pip tooling
       shell: bash -l {0}
       run: |
-        python -m pip install --upgrade pip setuptools wheel
+        conda install --yes -c conda-forge --override-channels pip setuptools wheel
 
     - name: Install using pip (pyproject dev extras)
       if: inputs.variant == 'dev'
       shell: bash -l {0}
       run: |
-        pip install --progress-bar off ".[dev]"
+        pip install --progress-bar off -e ".[dev]"
 
     - name: Install using pip (git+... URL)
       if: inputs.variant == 'standard'
@@ -55,7 +54,7 @@ runs:
     - name: Install cyipopt and reaktoro (conda-forge only)
       shell: bash -l {0}
       run: |
-        conda install --yes -c conda-forge cyipopt reaktoro
+        conda install --yes -c conda-forge --override-channels cyipopt reaktoro
 
     - name: Install extensions
       shell: bash -l {0}

@@ -50,6 +50,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
@@ -78,6 +81,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - uses: ./.github/actions/install
         with:
           variant: dev
@@ -126,6 +132,8 @@ jobs:
             coverage: true
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: ./.github/actions/install
         with:
           variant: ${{ matrix.install-variant }}
@@ -157,6 +165,8 @@ jobs:
     steps:
       # the checkout step is needed to have access to codecov.yml
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v8
         with:
           pattern: coverage-report-*
@@ -191,6 +201,8 @@ jobs:
             runner-image: windows-2022
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: ./.github/actions/install
         with:
           variant: ${{ matrix.install-variant }}

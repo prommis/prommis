@@ -31,6 +31,7 @@ runs:
         python-version: ${{ inputs.python-version }}
         channels: conda-forge
         conda-remove-defaults: 'true'
+        packages: pip
 
     - name: Upgrade pip tooling
       shell: bash -l {0}

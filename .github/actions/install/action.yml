@@ -27,14 +27,16 @@ runs:
   steps:
 
     - name: Set up Conda environment
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4
       with:
         activate-environment: ${{ inputs.conda-environment }}
         python-version: ${{ inputs.python-version }}
+        channels: conda-forge
+        conda-remove-defaults: 'true'
 
     - name: Check out repository
       if: inputs.variant == 'dev'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Install using pip (requirements-dev.txt)
@@ -50,6 +52,11 @@ runs:
         _pip_install_url: ${{ github.server_url }}/${{ github.repository }}@${{ github.ref }}
       run: |
         pip install --progress-bar off "git+$_pip_install_url" idaes-pse pytest
+
+    - name: Install cyipopt and reaktoro (conda-forge as defined in channels input for setup-miniconda)
+      shell: bash -l {0}
+      run: |
+        conda install --yes cyipopt reaktoro
 
     - name: Install extensions
       shell: bash -l {0}

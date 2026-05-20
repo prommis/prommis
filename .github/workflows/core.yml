@@ -91,6 +91,13 @@ jobs:
       - name: Run Pylint (pyproject.toml)
         run: |
           pylint prommis
+      - name: Environment summary
+        if: always()
+        uses: ./.github/actions/environment-summary
+        with:
+          python-version: ${{ matrix.python-version }}
+          os: ${{ matrix.os }}
+          job-name: code-linting
 
   spell-check:
     name: Check Spelling
@@ -157,6 +164,13 @@ jobs:
           name: coverage-report-${{ matrix.os }}
           path: coverage.xml
           if-no-files-found: error
+      - name: Environment summary
+        if: always()
+        uses: ./.github/actions/environment-summary
+        with:
+          python-version: ${{ matrix.python-version }}
+          os: ${{ matrix.os }}
+          job-name: pytest
 
   upload-coverage:
     name: Upload coverage report (Codecov)
@@ -213,3 +227,10 @@ jobs:
       - name: Execute notebooks
         working-directory: docs/
         run: pytest --nbmake -m "solution" .
+      - name: Environment summary
+        if: always()
+        uses: ./.github/actions/environment-summary
+        with:
+          python-version: ${{ matrix.python-version }}
+          os: ${{ matrix.os }}
+          job-name: docs

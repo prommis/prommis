@@ -360,9 +360,7 @@ see reaction package for documentation.}""",
             if comp == "H2O":
                 return blk.cv_aqueous.properties_out[t].flow_mol_comp[
                     comp
-                ] == blk.cv_aqueous.properties_in[t].flow_mol_comp[comp] * (
-                    1 - prop_aq.split[comp] / 100
-                )
+                ] == blk.cv_aqueous.properties_in[t].flow_mol_comp[comp]
             else:
                 return blk.cv_aqueous.properties_out[t].conc_mass_comp[
                     comp

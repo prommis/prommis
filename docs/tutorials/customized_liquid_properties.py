@@ -226,13 +226,6 @@ class AqueousStateBlockkData(StateBlockData):
                     )
                     == b.flow_mass_comp[j]
                 )
-            # return (
-            #     units.convert(
-            #         b.flow_vol * b.conc_mass_comp[j],
-            #         to_units=units.kg / units.s,
-            #     )
-            #     == b.flow_mass_comp[j]
-            # )
 
         iscale.set_scaling_factor(self.flow_vol, 1e1)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)

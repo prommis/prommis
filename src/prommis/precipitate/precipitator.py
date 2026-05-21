@@ -358,9 +358,9 @@ see reaction package for documentation.}""",
         )
         def aqueous_depletion(blk, t, comp):
             if comp == "H2O":
-                return blk.cv_aqueous.properties_out[t].flow_mass_comp[
+                return blk.cv_aqueous.properties_out[t].flow_mol_comp[
                     comp
-                ] == blk.cv_aqueous.properties_in[t].flow_mass_comp[comp] * (
+                ] == blk.cv_aqueous.properties_in[t].flow_mol_comp[comp] * (
                     1 - prop_aq.split[comp] / 100
                 )
             else:

@@ -251,50 +251,50 @@ def test_solution(system_frame):
         (0, "Al_o"): (8.21061e01, tol, None),
         (0, "Ce_o"): (4.62725e00, tol, None),
         (0, "Dy_o"): (2.09446e-01, tol, None),
-        (0, "Fe_o"): (4.05944e+02, tol, None),
+        (0, "Fe_o"): (4.05944e02, tol, None),
         (0, "Gd_o"): (3.88652e-01, tol, None),
         (0, "La_o"): (3.08160e-01, tol, None),
-        (0, "Nd_o"): (1.63860e+00, tol, None),
+        (0, "Nd_o"): (1.63860e00, tol, None),
         (0, "Pr_o"): (1.71446e-01, tol, None),
-        (0, "Sc_o"): (2.68644e+00, tol, None),
+        (0, "Sc_o"): (2.68644e00, tol, None),
         (0, "Sm_o"): (2.20814e-02, tol, None),
-        (0, "Y_o"): (6.08285e+00, tol, None),
+        (0, "Y_o"): (6.08285e00, tol, None),
     }
     expected_results["solex_rougher_strip.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (3.37500e+00, tol, None)
+        0: (3.37500e00, tol, None)
     }
     expected_results[
         "solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp"
     ] = {
         (0, "H2O"): (1000000.0, tol, None),
-        (0, "H"): (5.27987e+02, tol, None),
-        (0, "Al"): (2.30870e+03, tol, None),
-        (0, "Ca"): (3.18870e+02, tol, None),
-        (0, "Ce"): (9.67983e+02, tol, None),
-        (0, "Cl"): (3.54530e+04, tol, None),
-        (0, "Dy"): (2.88507e+01, tol, None),
-        (0, "Fe"): (3.18845e+03, tol, None),
-        (0, "Gd"): (8.39645e+01, tol, None),
-        (0, "La"): (5.13336e+01, tol, None),
-        (0, "Nd"): (3.48127e+02, tol, None),
-        (0, "Pr"): (7.29587e+00, tol, None),
+        (0, "H"): (5.27987e02, tol, None),
+        (0, "Al"): (2.30870e03, tol, None),
+        (0, "Ca"): (3.18870e02, tol, None),
+        (0, "Ce"): (9.67983e02, tol, None),
+        (0, "Cl"): (3.54530e04, tol, None),
+        (0, "Dy"): (2.88507e01, tol, None),
+        (0, "Fe"): (3.18845e03, tol, None),
+        (0, "Gd"): (8.39645e01, tol, None),
+        (0, "La"): (5.13336e01, tol, None),
+        (0, "Nd"): (3.48127e02, tol, None),
+        (0, "Pr"): (7.29587e00, tol, None),
         (0, "Sc"): (4.24753e-03, tol, None),
-        (0, "Sm"): (3.76324e+00, tol, None),
-        (0, "Y"): (2.59065e+01, tol, None),
+        (0, "Sm"): (3.76324e00, tol, None),
+        (0, "Y"): (2.59065e01, tol, None),
     }
 
     # Solex Cleaner Strip Results
     expected_results["solex_cleaner_strip.mscontactor.organic_outlet.flow_vol"] = {
-        0: (6.03300e+02, tol, None)
+        0: (6.03300e02, tol, None)
     }
     expected_results[
         "solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp"
     ] = {
-        (0, "Al_o"): (4.29829e+01, tol, None),
-        (0, "Ca_o"): (6.45536e+00, tol, None),
-        (0, "Ce_o"): (1.79751e+00, tol, None),
+        (0, "Al_o"): (4.29829e01, tol, None),
+        (0, "Ca_o"): (6.45536e00, tol, None),
+        (0, "Ce_o"): (1.79751e00, tol, None),
         (0, "Dy_o"): (2.19242e-02, tol, None),
-        (0, "Fe_o"): (1.04548e+02, tol, None),
+        (0, "Fe_o"): (1.04548e02, tol, None),
         (0, "Gd_o"): (1.26121e-01, tol, None),
         (0, "La_o"): (1.96726e-01, tol, None),
         (0, "Nd_o"): (6.89990e-01, tol, None),
@@ -304,48 +304,48 @@ def test_solution(system_frame):
         (0, "Y_o"): (2.71177e-01, tol, None),
     }
     expected_results["solex_cleaner_strip.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (3.51700e+00, tol, None)
+        0: (3.51700e00, tol, None)
     }
     expected_results[
         "solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp"
     ] = {
-        (0, "Al"): (9.08094e+02, tol, None),
-        (0, "Ca"): (1.07568e+02, tol, None),
-        (0, "Ce"): (4.48743e+02, tol, None),
-        (0, "Cl"): (3.54530e+04, tol, None),
-        (0, "Dy"): (1.14368e+01, tol, None),
-        (0, "Fe"): (7.27142e+02, tol, None),
-        (0, "Gd"): (3.58220e+01, tol, None),
-        (0, "H"): (8.46687e+02, tol, None),
+        (0, "Al"): (9.08094e02, tol, None),
+        (0, "Ca"): (1.07568e02, tol, None),
+        (0, "Ce"): (4.48743e02, tol, None),
+        (0, "Cl"): (3.54530e04, tol, None),
+        (0, "Dy"): (1.14368e01, tol, None),
+        (0, "Fe"): (7.27142e02, tol, None),
+        (0, "Gd"): (3.58220e01, tol, None),
+        (0, "H"): (8.46687e02, tol, None),
         (0, "H2O"): (1000000.0, tol, None),
-        (0, "La"): (2.52955e+01, tol, None),
-        (0, "Nd"): (1.54062e+02, tol, None),
-        (0, "Pr"): (2.60196e+00, tol, None),
+        (0, "La"): (2.52955e01, tol, None),
+        (0, "Nd"): (1.54062e02, tol, None),
+        (0, "Pr"): (2.60196e00, tol, None),
         (0, "Sc"): (6.993204e-6, None, tol),
-        (0, "Sm"): (1.60670e+00, tol, None),
-        (0, "Y"): (8.74986e+00, tol, None),
+        (0, "Sm"): (1.60670e00, tol, None),
+        (0, "Y"): (8.74986e00, tol, None),
     }
 
     # Precipitator Results
     expected_results["precipitator.cv_aqueous.properties_out[0].flow_vol"] = {
-        None: (3.51700e+00, tol, None)
+        None: (3.51700e00, tol, None)
     }
     expected_results["precipitator.cv_aqueous.properties_out[0].conc_mass_comp"] = {
-        "Al": (8.99921e+02, tol, None),
-        "Ca": (8.55162e+01, tol, None),
-        "Ce": (1.43284e+02, tol, None),
-        "Cl": (3.54530e+04, tol, None),
-        "Dy": (1.46848e+00, tol, None),
-        "Fe": (7.09400e+02, tol, None),
-        "Gd": (4.29505e+00, tol, None),
-        "H": (8.46687e+02, tol, None),
+        "Al": (8.99921e02, tol, None),
+        "Ca": (8.55162e01, tol, None),
+        "Ce": (1.43284e02, tol, None),
+        "Cl": (3.54530e04, tol, None),
+        "Dy": (1.46848e00, tol, None),
+        "Fe": (7.09400e02, tol, None),
+        "Gd": (4.29505e00, tol, None),
+        "H": (8.46687e02, tol, None),
         "H2O": (1000000.0, tol, None),
-        "La": (1.22658e+01, tol, None),
-        "Nd": (2.84244e+01, tol, None),
+        "La": (1.22658e01, tol, None),
+        "Nd": (2.84244e01, tol, None),
         "Pr": (5.72431e-01, tol, None),
         "Sc": (4.78265e-6, None, tol),
         "Sm": (2.03247e-01, tol, None),
-        "Y": (2.23471e+00, tol, None),
+        "Y": (2.23471e00, tol, None),
     }
     expected_results["precipitator.precipitate_outlet.temperature"] = {
         0: (348.15, tol, None)
@@ -377,44 +377,52 @@ def test_solution(system_frame):
     }
 
     # Volumetric flow rates
-    expected_results["leach_mixer.outlet.flow_vol"] = {0: (2.86499e+02, tol, None)}
-    expected_results["rougher_org_make_up.outlet.flow_vol"] = {0: (1.28900e+01, tol, None)}
+    expected_results["leach_mixer.outlet.flow_vol"] = {0: (2.86499e02, tol, None)}
+    expected_results["rougher_org_make_up.outlet.flow_vol"] = {
+        0: (1.28900e01, tol, None)
+    }
     expected_results["solex_rougher_load.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (2.07121e+02, tol, None)
+        0: (2.07121e02, tol, None)
     }
     expected_results["solex_rougher_scrub.mscontactor.aqueous_outlet.flow_vol"] = {
         0: (1.00000e-01, tol, None)
     }
     expected_results["solex_rougher_strip.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (3.37500e+00, tol, None)
+        0: (3.37500e00, tol, None)
     }
     expected_results["acid_feed1.outlet.flow_vol"] = {0: (1.00000e-01, tol, None)}
-    expected_results["acid_feed2.outlet.flow_vol"] = {0: (3.37500e+00, tol, None)}
-    expected_results["acid_feed3.outlet.flow_vol"] = {0: (3.51700e+00, tol, None)}
-    expected_results["rougher_sep.inlet.flow_vol"] = {0: (1.28900e+02, tol, None)}
-    expected_results["load_sep.inlet.flow_vol"] = {0: (2.07121e+02, tol, None)}
+    expected_results["acid_feed2.outlet.flow_vol"] = {0: (3.37500e00, tol, None)}
+    expected_results["acid_feed3.outlet.flow_vol"] = {0: (3.51700e00, tol, None)}
+    expected_results["rougher_sep.inlet.flow_vol"] = {0: (1.28900e02, tol, None)}
+    expected_results["load_sep.inlet.flow_vol"] = {0: (2.07121e02, tol, None)}
     expected_results["scrub_sep.inlet.flow_vol"] = {0: (1.00000e-01, tol, None)}
-    expected_results["rougher_mixer.outlet.flow_vol"] = {0: (1.28900e+02, tol, None)}
-    expected_results["rougher_organic_purge.inlet.flow_vol"] = {0: (1.28900e+01, tol, None)}
+    expected_results["rougher_mixer.outlet.flow_vol"] = {0: (1.28900e02, tol, None)}
+    expected_results["rougher_organic_purge.inlet.flow_vol"] = {
+        0: (1.28900e01, tol, None)
+    }
     expected_results["solex_cleaner_load.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (6.22377e+00, tol, None)
+        0: (6.22377e00, tol, None)
     }
     expected_results["solex_cleaner_strip.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (3.51700e+00, tol, None)
+        0: (3.51700e00, tol, None)
     }
-    expected_results["cleaner_org_make_up.outlet.flow_vol"] = {0: (6.03300e+01, tol, None)}
-    expected_results["cleaner_mixer.outlet.flow_vol"] = {0: (6.03300e+02, tol, None)}
-    expected_results["cleaner_sep.inlet.flow_vol"] = {0: (6.03300e+02, tol, None)}
-    expected_results["leach_sx_mixer.outlet.flow_vol"] = {0: (2.07121e+02, tol, None)}
-    expected_results["cleaner_organic_purge.inlet.flow_vol"] = {0: (6.03300e+01, tol, None)}
+    expected_results["cleaner_org_make_up.outlet.flow_vol"] = {
+        0: (6.03300e01, tol, None)
+    }
+    expected_results["cleaner_mixer.outlet.flow_vol"] = {0: (6.03300e02, tol, None)}
+    expected_results["cleaner_sep.inlet.flow_vol"] = {0: (6.03300e02, tol, None)}
+    expected_results["leach_sx_mixer.outlet.flow_vol"] = {0: (2.07121e02, tol, None)}
+    expected_results["cleaner_organic_purge.inlet.flow_vol"] = {
+        0: (6.03300e01, tol, None)
+    }
     expected_results["sl_sep1.recovered_liquid_outlet.flow_vol"] = {
-        0: (2.00897e+02, tol, None)
+        0: (2.00897e02, tol, None)
     }
     expected_results["sl_sep2.recovered_liquid_outlet.flow_vol"] = {
-        0: (3.16530e+00, tol, None)
+        0: (3.16530e00, tol, None)
     }
-    expected_results["precip_sep.inlet.flow_vol"] = {0: (3.16530e+00, tol, None)}
-    expected_results["precip_sx_mixer.outlet.flow_vol"] = {0: (6.22377e+00, tol, None)}
+    expected_results["precip_sep.inlet.flow_vol"] = {0: (3.16530e00, tol, None)}
+    expected_results["precip_sx_mixer.outlet.flow_vol"] = {0: (6.22377e00, tol, None)}
     expected_results["precip_purge.inlet.flow_vol"] = {0: (3.16530e-01, tol, None)}
 
     assert_solution_equivalent(model.fs, expected_results)

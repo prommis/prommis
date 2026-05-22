@@ -58,10 +58,10 @@ Description                                                           Value     
 ===================================================================== ============ ============================
 Leaching
 Tank volume                                                           100          :math:`\text{gal}`
-Liquid feed volumetric flow                                           224.3        :math:`\text{L/hr}`
-Liquid feed H concentration                                           100          :math:`\text{mg/L}`
-Liquid feed HSO4 concentration                                        1e-8         :math:`\text{mg/L}`
-Liquid feed SO4 concentration                                         4800         :math:`\text{mg/L}`
+Liquid feed volumetric flow                                           100          :math:`\text{L/hr}`
+Liquid feed H concentration                                           277          :math:`\text{mg/L}`
+Liquid feed HSO4 concentration                                        25025        :math:`\text{mg/L}`
+Liquid feed SO4 concentration                                         915          :math:`\text{mg/L}`
 Liquid feed REE and contaminant concentrations                        1e-10        :math:`\text{mg/L}`
 Solid feed mass flow                                                  22.68        :math:`\text{kg/hr}`
 Solid feed inerts mass fraction                                       0.6952       :math:`\text{dimensionless}`
@@ -79,7 +79,7 @@ Solid feed Gd2O3 mass fraction                                        1.0e-5    
 Solid feed Dy2O3 mass fraction                                        7.5e-6       :math:`\text{dimensionless}`
 
 Solvent Extraction Rougher
-Loading section organic feed volumetric flow                          62.01        :math:`\text{L/hr}`
+Loading section organic feed volumetric flow                          12.89        :math:`\text{L/hr}`
 Organic make-up REE and contaminant concentrations                    1e-7         :math:`\text{mg/L}`
 Scrubbing section acid feed volumetric flow                           0.09         :math:`\text{L/hr}`
 Scrubbing section acid feed H concentration                           10.36        :math:`\text{mg/L}`
@@ -91,7 +91,7 @@ Stripping section acid feed Cl concentration                          1438.56   
 Stripping section acid feed REE and contaminant concentrations        1e-7         :math:`\text{mg/L}`
 
 Solvent Extraction Cleaner
-Loading section organic feed volumetric flow                          62.01        :math:`\text{L/hr}`
+Loading section organic feed volumetric flow                          60.33        :math:`\text{L/hr}`
 Organic make-up REE and contaminant concentrations                    1e-7         :math:`\text{mg/L}`
 Stripping section acid feed volumetric flow                           0.09         :math:`\text{L/hr}`
 Stripping section acid feed H concentration                           41.44        :math:`\text{mg/L}`
@@ -139,7 +139,6 @@ References:
 """
 
 import logging
-from warnings import warn
 
 import idaes.logger as idaeslog
 from idaes.core import (
@@ -801,7 +800,7 @@ def set_operating_conditions(m):
         m: pyomo model
     """
     # Constants
-    # Assume a 5% volume-by-volume ratio
+    # Assume a 20% volume-by-volume ratio
     dosage = 20 / 100
     dehpa_conc = 975.8e3 * dosage * units.mg / units.L
     kerosene_conc = 8.2e5 * units.mg / units.L
@@ -814,9 +813,9 @@ def set_operating_conditions(m):
     m.fs.leach_liquid_feed.flow_vol.fix(100 * units.L / units.hour)
     m.fs.leach_liquid_feed.conc_mass_comp.fix(1e-10 * units.mg / units.L)
     m.fs.leach_liquid_feed.conc_mass_comp[0, "H2O"].fix(1e6 * units.mg / units.L)
-    m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].fix(277.049 * units.mg / units.L)
-    m.fs.leach_liquid_feed.conc_mass_comp[0, "HSO4"].fix(25025.118 * units.mg / units.L)
-    m.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"].fix(914.785 * units.mg / units.L)
+    m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].fix(277 * units.mg / units.L)
+    m.fs.leach_liquid_feed.conc_mass_comp[0, "HSO4"].fix(25025 * units.mg / units.L)
+    m.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"].fix(915 * units.mg / units.L)
 
     m.fs.leach_solid_feed.flow_mass.fix(22.68 * units.kg / units.hour)
     m.fs.leach_solid_feed.mass_frac_comp[0, "inerts"].fix(0.6952 * units.kg / units.kg)
@@ -912,10 +911,10 @@ def set_operating_conditions(m):
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Sm_o"].fix(eps)
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Gd_o"].fix(eps)
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Dy_o"].fix(eps)
-    m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].fix(1.9516e5)
-    m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"].fix(8.2e5)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].fix(dehpa_conc)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"].fix(kerosene_conc)
 
-    # Assumes an HCl weight percent of 3.7%
+    # 0.974M HCl; pH = 0.01
     m.fs.acid_feed1.flow_vol.fix(0.1 * units.L / units.hr)
     m.fs.acid_feed1.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(981.44 * units.mg / units.L)
@@ -933,6 +932,7 @@ def set_operating_conditions(m):
     m.fs.acid_feed1.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Dy"].fix(eps)
 
+    # 1M HCl; pH = 0
     m.fs.acid_feed2.flow_vol.fix(3.375 * units.L / units.hr)
     m.fs.acid_feed2.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed2.conc_mass_comp[0, "H"].fix(1008 * units.mg / units.L)
@@ -956,6 +956,7 @@ def set_operating_conditions(m):
     m.fs.rougher_sep.recycle_state[0.0].pressure.fix(P_atm)
     m.fs.rougher_sep.recycle_state[0.0].temperature.fix(Temp_room)
 
+    # 1M HCl; pH = 0
     m.fs.acid_feed3.flow_vol.fix(3.517 * units.L / units.hr)
     m.fs.acid_feed3.conc_mass_comp[0, "H2O"].fix(1000000)
     m.fs.acid_feed3.conc_mass_comp[0, "H"].fix(1008 * units.mg / units.L)
@@ -986,8 +987,8 @@ def set_operating_conditions(m):
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Sm_o"].fix(eps)
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Gd_o"].fix(eps)
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Dy_o"].fix(eps)
-    m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"].fix(1.95159e5)
-    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Kerosene"].fix(8.2e5)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"].fix(dehpa_conc)
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "Kerosene"].fix(kerosene_conc)
     m.fs.cleaner_org_make_up.properties[0.0].pressure.fix(P_atm)
     m.fs.cleaner_org_make_up.properties[0.0].temperature.fix(Temp_room)
     m.fs.cleaner_mixer.mixed_state[0.0].pressure.fix(P_atm)
@@ -2810,7 +2811,7 @@ def optimize_model(m):
 
     # Unfix HCl feed flow rates and concentrations
     for feed in [m.fs.acid_feed1, m.fs.acid_feed2, m.fs.acid_feed3]:
-        # Trying to optimize acid_feed1 will try to bring its flow to zero
+        # Trying to optimize acid_feed1 will bring its flow to zero
         # Since optimizing this stream has proved problematic, let's fix to 0.1 L/hr
         if feed == m.fs.acid_feed1:
             continue
@@ -2876,3 +2877,7 @@ if __name__ == "__main__":
     m, results = main()
     optimize_model(m)
     # data_reconcilliation(m)
+
+    m.fs.acid_feed1.display()
+    m.fs.acid_feed2.display()
+    m.fs.acid_feed3.display()

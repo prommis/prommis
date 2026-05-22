@@ -205,217 +205,217 @@ def test_solution(system_frame):
     # --- Data Definition ---
 
     # Leach Unit Results
-    expected_results["leach.solid_outlet.flow_mass"] = {0: (2.22213e01, tol, None)}
+    expected_results["leach.solid_outlet.flow_mass"] = {0: (2.15278e01, tol, None)}
     expected_results["leach.solid_outlet.mass_frac_comp"] = {
-        (0, "Al2O3"): (0.233339, tol, None),
-        (0, "CaO"): (0.00176827, tol, None),
-        (0, "Ce2O3"): (9.47052e-5, tol, None),
+        (0, "Al2O3"): (2.23386e-01, tol, None),
+        (0, "CaO"): (9.08374e-4, tol, None),
+        (0, "Ce2O3"): (4.85053e-5, tol, None),
         (0, "Dy2O3"): (6.459123e-6, None, tol),
-        (0, "Fe2O3"): (0.0550767, tol, None),
+        (0, "Fe2O3"): (4.31369e-2, tol, None),
         (0, "Gd2O3"): (3.71286e-6, None, tol),
-        (0, "La2O3"): (4.46256e-5, tol, None),
-        (0, "Nd2O3"): (3.76359e-5, tol, None),
-        (0, "Pr2O3"): (9.31775e-06, tol, None),
-        (0, "Sc2O3"): (2.69415e-5, tol, None),
-        (0, "Sm2O3"): (1.18787e-5, tol, None),
-        (0, "Y2O3"): (2.90205e-5, tol, None),
-        (0, "inerts"): (0.709552, tol, None),
+        (0, "La2O3"): (2.64898e-5, tol, None),
+        (0, "Nd2O3"): (1.66796e-5, tol, None),
+        (0, "Pr2O3"): (4.31398e-06, tol, None),
+        (0, "Sc2O3"): (2.57282e-5, tol, None),
+        (0, "Sm2O3"): (8.83854e-6, tol, None),
+        (0, "Y2O3"): (2.45503e-5, tol, None),
+        (0, "inerts"): (0.732409, tol, None),
     }
-    expected_results["leach.liquid_outlet.flow_vol"] = {0: (607.327, tol, None)}
+    expected_results["leach.liquid_outlet.flow_vol"] = {0: (286.996, tol, None)}
     expected_results["leach.liquid_outlet.conc_mass_comp"] = {
-        (0, "Al"): (446.962, tol, None),
-        (0, "Ca"): (113.572, tol, None),
-        (0, "Ce"): (5.39646, tol, None),
-        (0, "Cl"): (124.023, tol, None),
-        (0, "Dy"): (0.105014, tol, None),
-        (0, "Fe"): (719.756, tol, None),
-        (0, "Gd"): (0.475374, tol, None),
-        (0, "H"): (1.75316, tol, None),
+        (0, "Al"): (2785.57, tol, None),
+        (0, "Ca"): (367.562, tol, None),
+        (0, "Ce"): (8.73905, tol, None),
+        (0, "Cl"): (1899.39, tol, None),
+        (0, "Dy"): (0.211327, tol, None),
+        (0, "Fe"): (3371.56, tol, None),
+        (0, "Gd"): (0.730248, tol, None),
+        (0, "H"): (2.25142, tol, None),
         (0, "H2O"): (1000000.0, tol, None),
-        (0, "HSO4"): (708.093, tol, None),
-        (0, "SO4"): (4.09043e03, tol, None),
-        (0, "La"): (2.04625, tol, None),
-        (0, "Nd"): (2.6378, tol, None),
-        (0, "Pr"): (0.686617, tol, None),
-        (0, "Sc"): (0.036107, tol, None),
-        (0, "Y"): (0.19884, tol, None),
+        (0, "HSO4"): (4407, tol, None),
+        (0, "SO4"): (1.98238e4, tol, None),
+        (0, "La"): (7.17211, tol, None),
+        (0, "Nd"): (5.05299, tol, None),
+        (0, "Pr"): (2.26022, tol, None),
+        (0, "Sc"): (0.176383, tol, None),
+        (0, "Y"): (0.598142, tol, None),
     }
 
     # Solex Rougher Strip Results
     expected_results["solex_rougher_strip.mscontactor.organic_outlet.flow_vol"] = {
-        0: (62.01, tol, None)
+        0: (128.9, tol, None)
     }
     expected_results[
         "solex_rougher_strip.mscontactor.organic_outlet.conc_mass_comp"
     ] = {
-        (0, "Al_o"): (2.21854e01, tol, None),
-        (0, "Ce_o"): (1.00019e00, tol, None),
-        (0, "Dy_o"): (9.46796e-03, tol, None),
-        (0, "Fe_o"): (1.05113e02, tol, None),
-        (0, "Gd_o"): (4.20017e-01, tol, None),
-        (0, "La_o"): (3.75435e-01, tol, None),
-        (0, "Nd_o"): (4.34448e-01, tol, None),
-        (0, "Pr_o"): (1.16491e-01, tol, None),
-        (0, "Sc_o"): (2.25521e00, tol, None),
-        (0, "Sm_o"): (8.91130e-02, tol, None),
-        (0, "Y_o"): (1.16378e-01, tol, None),
+        (0, "Al_o"): (8.21061e01, tol, None),
+        (0, "Ce_o"): (4.62725e00, tol, None),
+        (0, "Dy_o"): (2.09446e-01, tol, None),
+        (0, "Fe_o"): (4.05944e+02, tol, None),
+        (0, "Gd_o"): (3.88652e-01, tol, None),
+        (0, "La_o"): (3.08160e-01, tol, None),
+        (0, "Nd_o"): (1.63860e+00, tol, None),
+        (0, "Pr_o"): (1.71446e-01, tol, None),
+        (0, "Sc_o"): (2.68644e+00, tol, None),
+        (0, "Sm_o"): (2.20814e-02, tol, None),
+        (0, "Y_o"): (6.08285e+00, tol, None),
     }
     expected_results["solex_rougher_strip.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (1.30000e-01, tol, None)
+        0: (3.37500e+00, tol, None)
     }
     expected_results[
         "solex_rougher_strip.mscontactor.aqueous_outlet.conc_mass_comp"
     ] = {
         (0, "H2O"): (1000000.0, tol, None),
-        (0, "H"): (4.84108e03, tol, None),
-        (0, "Al"): (4.34299e02, tol, None),
-        (0, "Ca"): (1.10980e02, tol, None),
-        (0, "Ce"): (2.71989e02, tol, None),
-        (0, "Cl"): (1.79700e05, tol, None),
-        (0, "Dy"): (9.39532e02, tol, None),
-        (0, "Fe"): (7.12470e02, tol, None),
-        (0, "Gd"): (1.23220e03, tol, None),
-        (0, "La"): (1.06115e02, tol, None),
-        (0, "Nd"): (9.56514e01, tol, None),
-        (0, "Pr"): (6.10344e00, tol, None),
-        (0, "Sc"): (3.56558e-03, tol, None),
-        (0, "Sm"): (4.51837e01, tol, None),
-        (0, "Y"): (3.63620e03, tol, None),
+        (0, "H"): (5.27987e+02, tol, None),
+        (0, "Al"): (2.30870e+03, tol, None),
+        (0, "Ca"): (3.18870e+02, tol, None),
+        (0, "Ce"): (9.67983e+02, tol, None),
+        (0, "Cl"): (3.54530e+04, tol, None),
+        (0, "Dy"): (2.88507e+01, tol, None),
+        (0, "Fe"): (3.18845e+03, tol, None),
+        (0, "Gd"): (8.39645e+01, tol, None),
+        (0, "La"): (5.13336e+01, tol, None),
+        (0, "Nd"): (3.48127e+02, tol, None),
+        (0, "Pr"): (7.29587e+00, tol, None),
+        (0, "Sc"): (4.24753e-03, tol, None),
+        (0, "Sm"): (3.76324e+00, tol, None),
+        (0, "Y"): (2.59065e+01, tol, None),
     }
 
     # Solex Cleaner Strip Results
     expected_results["solex_cleaner_strip.mscontactor.organic_outlet.flow_vol"] = {
-        0: (6.20100e01, tol, None)
+        0: (6.03300e+02, tol, None)
     }
     expected_results[
         "solex_cleaner_strip.mscontactor.organic_outlet.conc_mass_comp"
     ] = {
-        (0, "Al_o"): (6.32280e00, tol, None),
-        (0, "Ca_o"): (1.70227e00, tol, None),
-        (0, "Ce_o"): (8.77313e-01, tol, None),
-        (0, "Dy_o"): (1.98951e-03, tol, None),
-        (0, "Fe_o"): (1.29152e01, tol, None),
-        (0, "Gd_o"): (5.74821e-01, tol, None),
-        (0, "La_o"): (3.52850e-01, tol, None),
-        (0, "Nd_o"): (3.52635e-01, tol, None),
-        (0, "Pr_o"): (5.63599e-02, tol, None),
-        (0, "Sc_o"): (7.47573e-05, tol, None),
-        (0, "Sm_o"): (9.54875e-02, tol, None),
-        (0, "Y_o"): (5.77284e-02, tol, None),
+        (0, "Al_o"): (4.29829e+01, tol, None),
+        (0, "Ca_o"): (6.45536e+00, tol, None),
+        (0, "Ce_o"): (1.79751e+00, tol, None),
+        (0, "Dy_o"): (2.19242e-02, tol, None),
+        (0, "Fe_o"): (1.04548e+02, tol, None),
+        (0, "Gd_o"): (1.26121e-01, tol, None),
+        (0, "La_o"): (1.96726e-01, tol, None),
+        (0, "Nd_o"): (6.89990e-01, tol, None),
+        (0, "Pr_o"): (7.57856e-02, tol, None),
+        (0, "Sc_o"): (2.37583e-04, tol, None),
+        (0, "Sm_o"): (1.34351e-02, tol, None),
+        (0, "Y_o"): (2.71177e-01, tol, None),
     }
     expected_results["solex_cleaner_strip.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (0.03, tol, None)
+        0: (3.51700e+00, tol, None)
     }
     expected_results[
         "solex_cleaner_strip.mscontactor.aqueous_outlet.conc_mass_comp"
     ] = {
-        (0, "Al"): (1.20168e02, tol, None),
-        (0, "Ca"): (2.60620e01, tol, None),
-        (0, "Ce"): (1.98303e02, tol, None),
-        (0, "Cl"): (1.79700e05, tol, None),
-        (0, "Dy"): (2.35258e02, tol, None),
-        (0, "Fe"): (8.66114e01, tol, None),
-        (0, "Gd"): (9.88843e02, tol, None),
-        (0, "H"): (5.00580e03, tol, None),
+        (0, "Al"): (9.08094e+02, tol, None),
+        (0, "Ca"): (1.07568e+02, tol, None),
+        (0, "Ce"): (4.48743e+02, tol, None),
+        (0, "Cl"): (3.54530e+04, tol, None),
+        (0, "Dy"): (1.14368e+01, tol, None),
+        (0, "Fe"): (7.27142e+02, tol, None),
+        (0, "Gd"): (3.58220e+01, tol, None),
+        (0, "H"): (8.46687e+02, tol, None),
         (0, "H2O"): (1000000.0, tol, None),
-        (0, "La"): (7.90549e01, tol, None),
-        (0, "Nd"): (6.60411e01, tol, None),
-        (0, "Pr"): (2.77363e00, tol, None),
+        (0, "La"): (2.52955e+01, tol, None),
+        (0, "Nd"): (1.54062e+02, tol, None),
+        (0, "Pr"): (2.60196e+00, tol, None),
         (0, "Sc"): (6.993204e-6, None, tol),
-        (0, "Sm"): (3.44977e01, tol, None),
-        (0, "Y"): (1.56414e03, tol, None),
+        (0, "Sm"): (1.60670e+00, tol, None),
+        (0, "Y"): (8.74986e+00, tol, None),
     }
 
     # Precipitator Results
     expected_results["precipitator.cv_aqueous.properties_out[0].flow_vol"] = {
-        None: (0.03, tol, None)
+        None: (3.51700e+00, tol, None)
     }
     expected_results["precipitator.cv_aqueous.properties_out[0].conc_mass_comp"] = {
-        "Al": (1.19087e02, tol, None),
-        "Ca": (2.07193e01, tol, None),
-        "Ce": (6.33183e01, tol, None),
-        "Cl": (1.79700e05, tol, None),
-        "Dy": (3.02072e01, tol, None),
-        "Fe": (8.44981e01, tol, None),
-        "Gd": (1.18562e02, tol, None),
-        "H": (5.00580e03, tol, None),
+        "Al": (8.99921e+02, tol, None),
+        "Ca": (8.55162e+01, tol, None),
+        "Ce": (1.43284e+02, tol, None),
+        "Cl": (3.54530e+04, tol, None),
+        "Dy": (1.46848e+00, tol, None),
+        "Fe": (7.09400e+02, tol, None),
+        "Gd": (4.29505e+00, tol, None),
+        "H": (8.46687e+02, tol, None),
         "H2O": (1000000.0, tol, None),
-        "La": (3.83337e01, tol, None),
-        "Nd": (1.21846e01, tol, None),
-        "Pr": (6.10199e-01, tol, None),
+        "La": (1.22658e+01, tol, None),
+        "Nd": (2.84244e+01, tol, None),
+        "Pr": (5.72431e-01, tol, None),
         "Sc": (4.78265e-6, None, tol),
-        "Sm": (4.36397e00, tol, None),
-        "Y": (3.99481e02, tol, None),
+        "Sm": (2.03247e-01, tol, None),
+        "Y": (2.23471e+00, tol, None),
     }
     expected_results["precipitator.precipitate_outlet.temperature"] = {
         0: (348.15, tol, None)
     }
     expected_results["precipitator.precipitate_outlet.flow_mol_comp"] = {
-        (0, "Al2(C2O4)3(s)"): (1.3049e-6, None, tol),
-        (0, "Ca(C2O4)(s)"): (3.99923e-06, tol, None),
-        (0, "Ce2(C2O4)3(s)"): (1.6235e-6, None, tol),
+        (0, "Al2(C2O4)3(s)"): (0.00053, None, tol),
+        (0, "Ca(C2O4)(s)"): (1.93509e-03, tol, None),
+        (0, "Ce2(C2O4)3(s)"): (0.00383, None, tol),
         (0, "Dy2(C2O4)3(s)"): (9.2872e-6, None, tol),
-        (0, "Fe2(C2O4)3(s)"): (5.67638e-07, tol, None),
-        (0, "Gd2(C2O4)3(s)"): (8.30157e-05, tol, None),
-        (0, "La2(C2O4)3(s)"): (9.30326e-7, None, tol),
-        (0, "Nd2(C2O4)3(s)"): (1.0331e-6, None, tol),
+        (0, "Fe2(C2O4)3(s)"): (5.58685e-04, tol, None),
+        (0, "Gd2(C2O4)3(s)"): (3.52560e-04, tol, None),
+        (0, "La2(C2O4)3(s)"): (0.00016, None, tol),
+        (0, "Nd2(C2O4)3(s)"): (0.00153, None, tol),
         (0, "Pr2(C2O4)3(s)"): (2.77874e-7, None, tol),
-        (0, "Sc2(C2O4)3(s)"): (1.24687e-14, tol, None),
+        (0, "Sc2(C2O4)3(s)"): (4.64554e-12, tol, None),
         (0, "Sm2(C2O4)3(s)"): (1.20288e-6, None, tol),
-        (0, "Y2(C2O4)3(s)"): (1.96500e-04, tol, None),
+        (0, "Y2(C2O4)3(s)"): (1.28867e-04, tol, None),
     }
 
     # Roaster Results
-    expected_results["roaster.gas_outlet.flow_mol"] = {0: (7.85761e-03, tol, None)}
+    expected_results["roaster.gas_outlet.flow_mol"] = {0: (1.32655e-02, tol, None)}
     expected_results["roaster.gas_outlet.temperature"] = {0: (873.15, tol, None)}
     expected_results["roaster.gas_outlet.pressure"] = {0: (101325, tol, None)}
     expected_results["roaster.gas_outlet.mole_frac_comp"] = {
-        (0, "CO2"): (4.29085e-02, tol, None),
-        (0, "H2O"): (1.05898e-01, tol, None),
-        (0, "N2"): (7.40088e-01, tol, None),
-        (0, "O2"): (1.11105e-01, tol, None),
+        (0, "CO2"): (2.63673e-02, tol, None),
+        (0, "H2O"): (4.69678e-01, tol, None),
+        (0, "N2"): (4.38381e-01, tol, None),
+        (0, "O2"): (6.55739e-02, tol, None),
     }
 
     # Volumetric flow rates
-    expected_results["leach_mixer.outlet.flow_vol"] = {0: (6.07136e02, tol, None)}
-    expected_results["rougher_org_make_up.outlet.flow_vol"] = {0: (6.201, tol, None)}
+    expected_results["leach_mixer.outlet.flow_vol"] = {0: (2.86499e+02, tol, None)}
+    expected_results["rougher_org_make_up.outlet.flow_vol"] = {0: (1.28900e+01, tol, None)}
     expected_results["solex_rougher_load.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (4.25283e02, tol, None)
+        0: (2.07121e+02, tol, None)
     }
     expected_results["solex_rougher_scrub.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (9.00000e-02, tol, None)
+        0: (1.00000e-01, tol, None)
     }
     expected_results["solex_rougher_strip.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (1.30000e-01, tol, None)
+        0: (3.37500e+00, tol, None)
     }
-    expected_results["acid_feed1.outlet.flow_vol"] = {0: (9.00000e-02, tol, None)}
-    expected_results["acid_feed2.outlet.flow_vol"] = {0: (1.30000e-01, tol, None)}
-    expected_results["acid_feed3.outlet.flow_vol"] = {0: (3.00000e-02, tol, None)}
-    expected_results["rougher_sep.inlet.flow_vol"] = {0: (62.01, tol, None)}
-    expected_results["load_sep.inlet.flow_vol"] = {0: (4.25283e02, tol, None)}
-    expected_results["scrub_sep.inlet.flow_vol"] = {0: (9.00000e-02, tol, None)}
-    expected_results["rougher_mixer.outlet.flow_vol"] = {0: (62.01, tol, None)}
-    expected_results["rougher_organic_purge.inlet.flow_vol"] = {0: (6.201, tol, None)}
+    expected_results["acid_feed1.outlet.flow_vol"] = {0: (1.00000e-01, tol, None)}
+    expected_results["acid_feed2.outlet.flow_vol"] = {0: (3.37500e+00, tol, None)}
+    expected_results["acid_feed3.outlet.flow_vol"] = {0: (3.51700e+00, tol, None)}
+    expected_results["rougher_sep.inlet.flow_vol"] = {0: (1.28900e+02, tol, None)}
+    expected_results["load_sep.inlet.flow_vol"] = {0: (2.07121e+02, tol, None)}
+    expected_results["scrub_sep.inlet.flow_vol"] = {0: (1.00000e-01, tol, None)}
+    expected_results["rougher_mixer.outlet.flow_vol"] = {0: (1.28900e+02, tol, None)}
+    expected_results["rougher_organic_purge.inlet.flow_vol"] = {0: (1.28900e+01, tol, None)}
     expected_results["solex_cleaner_load.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (1.54300e-01, tol, None)
+        0: (6.22377e+00, tol, None)
     }
     expected_results["solex_cleaner_strip.mscontactor.aqueous_outlet.flow_vol"] = {
-        0: (3.00000e-02, tol, None)
+        0: (3.51700e+00, tol, None)
     }
-    expected_results["cleaner_org_make_up.outlet.flow_vol"] = {0: (6.201, tol, None)}
-    expected_results["cleaner_mixer.outlet.flow_vol"] = {0: (62.01, tol, None)}
-    expected_results["cleaner_sep.inlet.flow_vol"] = {0: (62.01, tol, None)}
-    expected_results["leach_sx_mixer.outlet.flow_vol"] = {0: (4.25283e02, tol, None)}
-    expected_results["cleaner_organic_purge.inlet.flow_vol"] = {0: (6.201, tol, None)}
+    expected_results["cleaner_org_make_up.outlet.flow_vol"] = {0: (6.03300e+01, tol, None)}
+    expected_results["cleaner_mixer.outlet.flow_vol"] = {0: (6.03300e+02, tol, None)}
+    expected_results["cleaner_sep.inlet.flow_vol"] = {0: (6.03300e+02, tol, None)}
+    expected_results["leach_sx_mixer.outlet.flow_vol"] = {0: (2.07121e+02, tol, None)}
+    expected_results["cleaner_organic_purge.inlet.flow_vol"] = {0: (6.03300e+01, tol, None)}
     expected_results["sl_sep1.recovered_liquid_outlet.flow_vol"] = {
-        0: (4.25129e02, tol, None)
+        0: (2.00897e+02, tol, None)
     }
     expected_results["sl_sep2.recovered_liquid_outlet.flow_vol"] = {
-        0: (2.70000e-02, tol, None)
+        0: (3.16530e+00, tol, None)
     }
-    expected_results["precip_sep.inlet.flow_vol"] = {0: (2.70000e-02, tol, None)}
-    expected_results["precip_sx_mixer.outlet.flow_vol"] = {0: (1.54300e-01, tol, None)}
-    expected_results["precip_purge.inlet.flow_vol"] = {0: (2.70000e-03, tol, None)}
+    expected_results["precip_sep.inlet.flow_vol"] = {0: (3.16530e+00, tol, None)}
+    expected_results["precip_sx_mixer.outlet.flow_vol"] = {0: (6.22377e+00, tol, None)}
+    expected_results["precip_purge.inlet.flow_vol"] = {0: (3.16530e-01, tol, None)}
 
     assert_solution_equivalent(model.fs, expected_results)
 
@@ -605,13 +605,13 @@ def test_costing_solution(system_frame):
     tol = 1e-4
 
     expected_results = {
-        "costing.total_plant_cost": {None: (8.32020e-01, tol, None)},
-        "costing.total_BEC": {None: (2.80140e-01, tol, None)},
-        "costing.total_installation_cost": {None: (5.51875e-01, tol, None)},
-        "costing.other_plant_costs": {None: (4.78618e-06, tol, None)},
-        "costing.total_fixed_OM_cost": {None: (6.80612e00, tol, None)},
-        "costing.total_variable_OM_cost": {0: (1.36155e00, tol, None)},
-        "costing.total_sales_revenue": {None: (1.03978e-4, None, tol)},
+        "costing.total_plant_cost": {None: (7.34943e-01, tol, None)},
+        "costing.total_BEC": {None: (2.47454e-01, tol, None)},
+        "costing.total_installation_cost": {None: (4.87485e-01, tol, None)},
+        "costing.other_plant_costs": {None: (3.59415e-06, tol, None)},
+        "costing.total_fixed_OM_cost": {None: (6.80321e00, tol, None)},
+        "costing.total_variable_OM_cost": {0: (1.36096e00, tol, None)},
+        "costing.total_sales_revenue": {None: (6.4e-4, None, tol)},
         "costing.land_cost": {None: (6.1234e-5, tol, None)},
     }
     assert_solution_equivalent(model.fs, expected_results)

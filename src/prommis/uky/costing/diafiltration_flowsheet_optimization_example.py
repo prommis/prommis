@@ -26,7 +26,8 @@ from pyomo.environ import units as pyunits
 from pyomo.environ import value
 
 from idaes.core import UnitModelBlock, UnitModelCostingBlock
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox, degrees_of_freedom
+from idaes.core.util import DiagnosticsToolbox
+from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.scaling import constraint_autoscale_large_jac
 
 from prommis.nanofiltration.costing.diafiltration_cost_model import (

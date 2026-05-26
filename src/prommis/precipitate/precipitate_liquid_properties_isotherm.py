@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Initial property package for precipitate. This property package includes parameters (:math:`\epsilon` and :math:`n_{DA}`) 
+Initial property package for precipitate. This property package includes parameters (:math:`\epsilon` and :math:`n_{DA}`)
 used for equilibrium model of precipitation.
 
 Authors: Alejandro Garciadiego, Bo-Xun Wang

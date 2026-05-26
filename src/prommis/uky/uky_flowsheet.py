@@ -580,9 +580,6 @@ def build():
     )
 
     # -----------------------------------------------------------------------------------------------------------------
-    # Translator blocks
-
-    # -----------------------------------------------------------------------------------------------------------------
 
     # UKy flowsheet connections
     m.fs.leaching_sol_feed = Arc(
@@ -1250,7 +1247,6 @@ def initialize_system(m):
         elif unit in sep_units:
             _log.info(f"Initializing {unit}")
             initializer_sep.initialize(unit)
-
         elif unit in mix_units:
             _log.info(f"Initializing {unit}")
             initializer_mix.initialize(unit)

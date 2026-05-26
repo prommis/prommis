@@ -2,7 +2,7 @@
 Superstructure Function Documentation
 =====================================
 
-:Author: Christopher Laliwala
+:Author: Christopher Laliwala, Oluwamayowa O. Amusat, Ana I. Torres
 :Date:   October 2025
 
 .. contents::

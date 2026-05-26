@@ -2,7 +2,6 @@ name: Install PrOMMiS
 description: Install PrOMMiS and all required dependencies
 
 inputs:
-
   variant:
     description: "Which installation variant to use. Choices: standard (default); dev"
     required: false
@@ -20,28 +19,29 @@ inputs:
   info-packages:
     description: Packages to show info for
     required: false
-    default: prommis idaes-pse pyomo
+    default: prommis idaes-pse pyomo watertap reaktoro pytest pylint black
 
 runs:
   using: "composite"
   steps:
-
     - name: Set up Conda environment
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4
       with:
         activate-environment: ${{ inputs.conda-environment }}
         python-version: ${{ inputs.python-version }}
+        channels: conda-forge
+        conda-remove-defaults: "true"
 
-    - name: Check out repository
-      if: inputs.variant == 'dev'
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - name: Install using pip (requirements-dev.txt)
+    - name: Bootstrap pip tooling
+      shell: bash -l {0}
+      run: |
+        conda install --yes -c conda-forge --override-channels pip setuptools wheel
+
+    - name: Install using pip (pyproject dev extras)
       if: inputs.variant == 'dev'
       shell: bash -l {0}
       run: |
-        pip install --progress-bar off -r requirements-dev.txt
+        pip install --progress-bar off -e ".[dev]"
 
     - name: Install using pip (git+... URL)
       if: inputs.variant == 'standard'
@@ -49,7 +49,11 @@ runs:
       env:
         _pip_install_url: ${{ github.server_url }}/${{ github.repository }}@${{ github.ref }}
       run: |
-        pip install --progress-bar off "git+$_pip_install_url" idaes-pse pytest
+        pip install --progress-bar off "git+$_pip_install_url" idaes-pse pytest pytest-cov
+    - name: Install cyipopt and reaktoro (conda-forge only)
+      shell: bash -l {0}
+      run: |
+        conda install --yes -c conda-forge --override-channels cyipopt reaktoro
 
     - name: Install extensions
       shell: bash -l {0}
@@ -68,5 +72,5 @@ runs:
         pip list
         echo '::endgroup::'
         echo '::group::Output of "pip show ${{ inputs.info-packages }}"'
-        pip show ${{ inputs.info-packages }}
+        pip show ${{ inputs.info-packages }} || true
         echo '::endgroup::'

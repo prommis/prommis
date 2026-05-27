@@ -10,7 +10,9 @@ from idaes.core import FlowsheetBlock
 
 import pytest
 
-from prommis.precipitate.precipitate_solids_properties_isotherm import PrecipitateParameters
+from prommis.precipitate.precipitate_solids_properties_isotherm import (
+    PrecipitateParameters,
+)
 
 
 @pytest.mark.unit

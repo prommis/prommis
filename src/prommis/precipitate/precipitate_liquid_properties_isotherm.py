@@ -1,10 +1,10 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-"""
+r"""
 Initial property package for precipitate. This property package includes parameters (:math:`\epsilon` and :math:`n_{DA}`)
 used for equilibrium model of precipitation.
 
@@ -31,7 +31,7 @@ from idaes.core.util.misc import add_object_reference
 # Precipitate solution property package
 @declare_process_block_class("AqueousParameter")
 class AqueousParameterData(PhysicalParameterBlock):
-    """
+    r"""
     Property package for aqueous solution generated in oxalate precipitator.
 
     Includes the following components:

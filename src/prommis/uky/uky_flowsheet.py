@@ -2873,7 +2873,3 @@ if __name__ == "__main__":
     m, results = main()
     optimize_model(m)
     # data_reconcilliation(m)
-
-    m.fs.acid_feed1.display()
-    m.fs.acid_feed2.display()
-    m.fs.acid_feed3.display()

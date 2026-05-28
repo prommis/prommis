@@ -17,7 +17,6 @@ from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.check_units import assert_units_consistent
 
-
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,
@@ -26,10 +25,10 @@ from idaes.core.initialization import (
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
+    degrees_of_freedom,
     number_total_constraints,
     number_unused_variables,
     number_variables,
-    degrees_of_freedom,
 )
 
 import pytest
@@ -206,12 +205,11 @@ class TestSolidHandling(object):
         assert number_total_constraints(model.fs.unit) == 42
         assert number_unused_variables(model.fs.unit) == 0
 
-    
     @pytest.mark.component
     def test_structural_issues(self, model):
         assert_units_consistent(model.fs.unit)
         assert degrees_of_freedom(model.fs.unit) == 0
-        
+
         dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
@@ -344,6 +342,7 @@ def test_check_applicability_warns_when_target_is_finer_than_modeled_range(caplo
     )
     assert "finer than the minimum modeled crushing range (0.5 cm)" in caplog.text
 
+
 @pytest.mark.component
 @pytest.mark.solver
 def test_solve_with_stage_bounds_and_crushing_direction_active():
@@ -364,10 +363,10 @@ def test_solve_with_stage_bounds_and_crushing_direction_active():
     assert m.fs.unit.crushing_direction_constraint[0].active
     assert m.fs.unit.product_p80_lower_bound[0].active
     assert m.fs.unit.product_p80_upper_bound[0].active
-    
+
     assert_units_consistent(m.fs.unit)
     assert degrees_of_freedom(m.fs.unit) == 0
-        
+
     results = solver.solve(m)
     assert_optimal_termination(results)
 

@@ -505,7 +505,7 @@ stage-specific bounds unless requested by the user.""",
                 self.prod_p80[t]
                 <= self._applicable_product_p80_upper - self._stage_product_p80_eps
             )
-            
+
     @property
     def crusher_stage(self):
         """

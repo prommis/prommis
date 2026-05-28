@@ -2423,11 +2423,29 @@ def add_costing(m):
 
     m.fs.scaling_constraints[m.fs.power] = m.fs.power_constraint
 
+    m.fs.acid_feed = Var(
+        m.fs.time, initialize=2.57e-4, units=units.tonne / units.hr, bounds=(0, None)
+    )
+    m.fs.acid_feed_constraint = Constraint(
+        expr=m.fs.acid_feed[0]
+        == units.convert(
+            (
+                m.fs.acid_feed1.conc_mass_comp[0, "H"] * m.fs.acid_feed1.flow_vol[0]
+                + m.fs.acid_feed2.conc_mass_comp[0, "H"] * m.fs.acid_feed2.flow_vol[0]
+                + m.fs.acid_feed3.conc_mass_comp[0, "H"] * m.fs.acid_feed3.flow_vol[0]
+            )
+            * 36460 / 1008, to_units=units.tonne / units.hr
+        )
+    )
+
+    m.fs.scaling_constraints[m.fs.acid_feed] = m.fs.acid_feed_constraint
+
     resources = [
         "nonhazardous_solid_waste",
         "nonhazardous_precipitate_waste",
         "dust_and_volatiles",
         "power",
+        "HCl",
     ]
 
     rates = [
@@ -2435,6 +2453,7 @@ def add_costing(m):
         m.fs.precipitate,
         m.fs.dust_and_volatiles,
         m.fs.power,
+        m.fs.acid_feed,
     ]
 
     # define product flowrates
@@ -2873,7 +2892,3 @@ if __name__ == "__main__":
     m, results = main()
     optimize_model(m)
     # data_reconcilliation(m)
-
-    m.fs.acid_feed1.display()
-    m.fs.acid_feed2.display()
-    m.fs.acid_feed3.display()

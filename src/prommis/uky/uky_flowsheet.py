@@ -2434,6 +2434,7 @@ def add_costing(m):
                 + m.fs.acid_feed2.conc_mass_comp[0, "H"] * m.fs.acid_feed2.flow_vol[0]
                 + m.fs.acid_feed3.conc_mass_comp[0, "H"] * m.fs.acid_feed3.flow_vol[0]
             )
+            # Ratio of HCl and H molecular weight in mg
             * 36460
             / 1008,
             to_units=units.tonne / units.hr,

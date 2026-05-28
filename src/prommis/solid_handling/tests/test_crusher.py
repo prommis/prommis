@@ -15,6 +15,8 @@ from pyomo.environ import (
 )
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
+from pyomo.util.check_units import assert_units_consistent
+
 
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
@@ -27,6 +29,7 @@ from idaes.core.util.model_statistics import (
     number_total_constraints,
     number_unused_variables,
     number_variables,
+    degrees_of_freedom,
 )
 
 import pytest
@@ -85,8 +88,9 @@ def test_config():
     assert m.fs.unit.config.property_package is m.fs.properties_solid
     assert m.fs.unit.config.crusher_stage is None
     assert m.fs.unit.config.crusher_equipment is None
-    assert m.fs.unit._crusher_stage == "secondary"
-    assert m.fs.unit._stage_selection_basis == "default"
+    assert not m.fs.unit.config.enforce_stage_size_limits
+    assert m.fs.unit.crusher_stage == "secondary"
+    assert m.fs.unit.stage_selection_basis == "default"
 
 
 @pytest.mark.unit
@@ -101,9 +105,9 @@ def test_config():
 def test_stage_selection(stage_name, expected_lower_cm, expected_upper_cm):
     m = _build_model(crusher_stage=stage_name)
 
-    assert m.fs.unit._crusher_stage == stage_name
-    assert m.fs.unit._crusher_equipment is None
-    assert m.fs.unit._stage_selection_basis == "stage"
+    assert m.fs.unit.crusher_stage == stage_name
+    assert m.fs.unit.crusher_equipment is None
+    assert m.fs.unit.stage_selection_basis == "stage"
     assert pytest.approx(expected_lower_cm, rel=1e-8) == _cm_value(
         m.fs.unit._applicable_product_p80_lower, m.fs.unit
     )
@@ -132,18 +136,18 @@ def test_equipment_selection_without_stage(equipment_name, expected_stage):
     m = _build_model(crusher_equipment=equipment_name)
 
     assert m.fs.unit.config.crusher_stage is None
-    assert m.fs.unit._crusher_equipment == equipment_name
-    assert m.fs.unit._crusher_stage == expected_stage
-    assert m.fs.unit._stage_selection_basis == "equipment"
+    assert m.fs.unit.crusher_equipment == equipment_name
+    assert m.fs.unit.crusher_stage == expected_stage
+    assert m.fs.unit.stage_selection_basis == "equipment"
 
 
 @pytest.mark.unit
 def test_consistent_stage_and_equipment_allowed():
     m = _build_model(crusher_stage="primary", crusher_equipment="jaw")
 
-    assert m.fs.unit._crusher_stage == "primary"
-    assert m.fs.unit._crusher_equipment == "jaw"
-    assert m.fs.unit._stage_selection_basis == "stage_and_equipment"
+    assert m.fs.unit.crusher_stage == "primary"
+    assert m.fs.unit.crusher_equipment == "jaw"
+    assert m.fs.unit.stage_selection_basis == "stage_and_equipment"
 
 
 @pytest.mark.unit
@@ -202,8 +206,12 @@ class TestSolidHandling(object):
         assert number_total_constraints(model.fs.unit) == 42
         assert number_unused_variables(model.fs.unit) == 0
 
+    
     @pytest.mark.component
     def test_structural_issues(self, model):
+        assert_units_consistent(model.fs.unit)
+        assert degrees_of_freedom(model.fs.unit) == 0
+        
         dt = DiagnosticsToolbox(model=model)
         dt.assert_no_structural_warnings()
 
@@ -252,7 +260,7 @@ class TestSolidHandling(object):
 
 @pytest.mark.unit
 def test_check_applicability_no_warning_for_in_range_secondary(caplog):
-    m = _build_model(crusher_stage="secondary")
+    m = _build_model(crusher_stage="secondary", enforce_stage_size_limits=True)
     _set_base_state(m.fs.unit, feed_median_um=150000, prod_median_um=58)
     _fix_product_p80(m.fs.unit, 5 * pyunits.cm)
 
@@ -296,7 +304,7 @@ def test_check_applicability_warns_when_primary_target_belongs_to_secondary(capl
 @pytest.mark.unit
 def test_check_applicability_warning_mentions_equipment(caplog):
     m = _build_model(crusher_equipment="hammer_mill")
-    _set_base_state(m.fs.unit, feed_median_um=50000, prod_median_um=58)
+    _set_base_state(m.fs.unit, feed_median_um=50000)
     _fix_product_p80(m.fs.unit, 1 * pyunits.cm)
 
     with caplog.at_level("WARNING"):
@@ -309,7 +317,7 @@ def test_check_applicability_warning_mentions_equipment(caplog):
 @pytest.mark.unit
 def test_check_applicability_warning_mentions_equipment_when_out_of_range(caplog):
     m = _build_model(crusher_equipment="hammer_mill", enforce_stage_size_limits=False)
-    _set_base_state(m.fs.unit, feed_median_um=150000, prod_median_um=580000)
+    _set_base_state(m.fs.unit, feed_median_um=150000, prod_median_um=58000)
     _fix_product_p80(m.fs.unit, 5 * pyunits.cm)
 
     with caplog.at_level("WARNING"):
@@ -335,3 +343,38 @@ def test_check_applicability_warns_when_target_is_finer_than_modeled_range(caplo
         "finer than the minimum modeled crushing range (0.5 cm)" in warning_messages[0]
     )
     assert "finer than the minimum modeled crushing range (0.5 cm)" in caplog.text
+
+@pytest.mark.component
+@pytest.mark.solver
+def test_solve_with_stage_bounds_and_crushing_direction_active():
+    m = _build_model(crusher_stage="secondary", enforce_stage_size_limits=True)
+
+    _set_base_state(m.fs.unit, feed_median_um=150000, prod_median_um=58000)
+
+    # Let the solver determine the outlet median particle size.
+    m.fs.unit.properties_out[0].particle_size_median.unfix()
+
+    # Close the model by specifying the desired product P80.
+    m.fs.unit.product_p80_spec = Constraint(
+        expr=m.fs.unit.prod_p80[0]
+        == value(pyunits.convert(5 * pyunits.cm, to_units=pyunits.um) / pyunits.um)
+    )
+
+    # Following constraints should remain active.
+    assert m.fs.unit.crushing_direction_constraint[0].active
+    assert m.fs.unit.product_p80_lower_bound[0].active
+    assert m.fs.unit.product_p80_upper_bound[0].active
+    
+    assert_units_consistent(m.fs.unit)
+    assert degrees_of_freedom(m.fs.unit) == 0
+        
+    results = solver.solve(m)
+    assert_optimal_termination(results)
+
+    assert pytest.approx(5.0, rel=1e-6) == _cm_value(
+        value(m.fs.unit.prod_p80[0]), m.fs.unit
+    )
+
+    dt = DiagnosticsToolbox(model=m)
+    dt.assert_no_structural_warnings()
+    dt.assert_no_numerical_warnings()

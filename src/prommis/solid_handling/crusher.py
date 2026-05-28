@@ -70,7 +70,8 @@ Expressions
 -----------
 
 Crusher includes two expressions to calculate the size of particles that has 80%
-passing the mesh for both feed and product particles.
+passing the mesh for both feed and product particles. Reference:
+https://doi.org/10.1016/0304-3967(80)90007-4.
 
 .. math:: P_{t, feed, 80} = \frac{S_{t, in, median}}{unit} * \left(-\log(1 - 0.8)\right)^{\frac{SW_{t, in}}{2}}
 
@@ -102,7 +103,7 @@ Variable         Name   Notes
 import math
 from functools import partial
 
-from pyomo.common.config import ConfigDict, ConfigValue, In
+from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
 from pyomo.environ import Constraint, Var, log
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
@@ -115,7 +116,7 @@ from idaes.core.util.tables import create_stream_table_dataframe
 _log = idaeslog.getLogger(__name__)
 
 STAGE_P80_EPS = 1e-6 * pyunits.cm
-CRUSHER_STAGE_ORDER = ("primary", "secondary", "tertiary")
+
 
 CRUSHER_STAGE_DATA = {
     "primary": {
@@ -317,13 +318,15 @@ Valid values:
     CONFIG.declare(
         "enforce_stage_size_limits",
         ConfigValue(
-            default=True,
-            domain=In([True, False]),
+            default=False,
+            domain=Bool,
             description="Whether to enforce stage-specific product size constraints",
             doc="""If True, enforce inclusive interval constraints for the selected
 stage. Note that the stated primary-stage classification is product P80 > 10 cm;
 for the algebraic constraint, the lower bound is enforced as product P80 >= 10 cm
-because strict inequalities cannot be imposed directly in Pyomo constraints.""",
+because strict inequalities cannot be imposed directly in Pyomo constraints. 
+This is opt-in so that a plain Crusher(...) does not impose hard
+stage-specific bounds unless requested by the user.""",
         ),
     )
 
@@ -339,7 +342,6 @@ because strict inequalities cannot be imposed directly in Pyomo constraints.""",
         if selected_stage is not None and selected_equipment is None:
             return selected_stage, None, "stage"
 
-        selected_equipment = selected_equipment.strip().lower()
         inferred_stage = CRUSHER_EQUIPMENT_TO_STAGE[selected_equipment]
 
         if selected_stage is None:
@@ -429,6 +431,10 @@ because strict inequalities cannot be imposed directly in Pyomo constraints.""",
         )
         self._stage_product_p80_eps = _stage_eps_to_native_units(sunit)
 
+        # Initialization aid only: if the outlet median particle size is unfixed,
+        # initialize it so that the implied product P80 is near the default value for
+        # the selected stage. This does not fix or specify the product size; users may
+        # overwrite this initial guess or add their own product-size specification.
         default_product_p80 = _size_to_native_units(
             stage_spec["default_product_p80"], sunit
         )
@@ -499,6 +505,42 @@ because strict inequalities cannot be imposed directly in Pyomo constraints.""",
                 self.prod_p80[t]
                 <= self._applicable_product_p80_upper - self._stage_product_p80_eps
             )
+            
+    @property
+    def crusher_stage(self):
+        """
+        Resolved crusher stage used by this unit.
+
+        Returns
+        -------
+        str
+            One of "primary", "secondary", or "tertiary".
+        """
+        return self._crusher_stage
+
+    @property
+    def crusher_equipment(self):
+        """
+        Resolved crusher equipment name used by this unit, if supplied.
+
+        Returns
+        -------
+        str or None
+            Crusher equipment name, or None if no equipment was supplied.
+        """
+        return self._crusher_equipment
+
+    @property
+    def stage_selection_basis(self):
+        """
+        Basis used to resolve the crusher stage.
+
+        Returns
+        -------
+        str
+            One of "default", "stage", "equipment", or "stage_and_equipment".
+        """
+        return self._stage_selection_basis
 
     def recommend_stage_for_product_p80(self, t=None):
         """

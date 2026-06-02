@@ -1,0 +1,338 @@
+{
+  "schema_version": 1,
+  "source": {
+    "scenario": "table1_product_fit",
+    "scenario_data_file": "mountain_pass_scenario_data.json",
+    "paper": "Pradip & Fuerstenau (2013), Mountain Pass flotation",
+    "parameterization": "kinetic_cell_balance"
+  },
+  "property_package": {
+    "rho_mass_comp_kg_per_m3": {
+      "REO": 5000.0,
+      "CaO": 2710.0,
+      "BaO": 4480.0,
+      "SrO": 3960.0,
+      "inert_gangue": 2650.0
+    }
+  },
+  "bank_constants": {
+    "rho_water_kg_per_m3": 1000.0,
+    "feed_floor_kg_per_h": 1e-12
+  },
+  "basis": {
+    "figure_2_units": "t/shift",
+    "shift_duration_h": 11.0,
+    "plant_throughput_t_per_day": 1700.0,
+    "plant_dry_feed_kg_per_h": 70833.33333333333,
+    "json_fresh_feed_total_kg_per_h": 789.5,
+    "scale_jsonbasis_to_plant_h": 89.71923158116951
+  },
+  "assumptions": {
+    "plant_throughput_t_per_day": 1700.0,
+    "cell_inventory": "bank-uniform geometric dry-solid holdup",
+    "zero_rate_carrier": "only exactly k == 0"
+  },
+  "units": {
+    "cell_volume": "m^3",
+    "rho_solid": "kg/m^3",
+    "cell_total_solid_holdup": "kg",
+    "k_cb": "1/hour"
+  },
+  "banks": {
+    "cleaner1": {
+      "number_of_cells": 1,
+      "cell_volume": 4.46847884622,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.2,
+      "pulp_solids_mass_fraction": 0.5,
+      "rho_solid": 3556.30695363,
+      "cell_total_solid_holdup": 2790.20400595,
+      "F_in_reference_kg_per_h": {
+        "BaO": 3285.09346432,
+        "CaO": 6233.58443509,
+        "REO": 26763.0003631,
+        "SrO": 6048.86958068,
+        "inert_gangue": 20686.3514277
+      },
+      "k_cb_per_hour": {
+        "REO": 25.2951561264,
+        "CaO": 7.41635439266,
+        "BaO": 6.41039843754,
+        "SrO": 11.4495796707,
+        "inert_gangue": 10.4402360354
+      },
+      "R_ref": {
+        "BaO": 0.428,
+        "CaO": 0.464,
+        "REO": 0.747,
+        "SrO": 0.572,
+        "inert_gangue": 0.549272063299
+      },
+      "R_fit": {
+        "REO": 0.747,
+        "CaO": 0.464,
+        "BaO": 0.428,
+        "SrO": 0.572,
+        "inert_gangue": 0.549272063299
+      },
+      "calibration": {
+        "calibration_bound_pinned": {},
+        "calibration_upper_bound_fraction": {
+          "REO": 0.00252951561264,
+          "CaO": 0.000741635439266,
+          "BaO": 0.000641039843754,
+          "SrO": 0.00114495796707,
+          "inert_gangue": 0.00104402360354
+        },
+        "calibration_infeasible_trials": 6,
+        "calibration_max_deficit_seen": 0.331027241445,
+        "calibration_success": true,
+        "residual_per_component": {
+          "REO": 1.11022302463e-16,
+          "CaO": 1.11022302463e-16,
+          "BaO": 5.55111512313e-17,
+          "SrO": 0.0,
+          "inert_gangue": 0.0
+        },
+        "residual_max": 1.11022302463e-16,
+        "residual_norm": 1.66533453694e-16
+      }
+    },
+    "cleaner2": {
+      "number_of_cells": 1,
+      "cell_volume": 5.63312922106,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.2,
+      "pulp_solids_mass_fraction": 0.5,
+      "rho_solid": 3424.33853053,
+      "cell_total_solid_holdup": 3487.9322739,
+      "F_in_reference_kg_per_h": {
+        "BaO": 5053.44500136,
+        "CaO": 7113.37387456,
+        "REO": 27655.0325026,
+        "SrO": 7840.36573793,
+        "inert_gangue": 31112.9105444
+      },
+      "k_cb_per_hour": {
+        "REO": 7.15247961778,
+        "CaO": 15.2867232991,
+        "BaO": 25.7666100479,
+        "SrO": 14.16959941,
+        "inert_gangue": 20.6777469706
+      },
+      "R_ref": {
+        "BaO": 0.735,
+        "CaO": 0.622,
+        "REO": 0.435,
+        "SrO": 0.604,
+        "inert_gangue": 0.69
+      },
+      "R_fit": {
+        "REO": 0.435,
+        "CaO": 0.622,
+        "BaO": 0.735,
+        "SrO": 0.604,
+        "inert_gangue": 0.69
+      },
+      "calibration": {
+        "calibration_bound_pinned": {},
+        "calibration_upper_bound_fraction": {
+          "REO": 0.000715247961778,
+          "CaO": 0.00152867232991,
+          "BaO": 0.00257666100479,
+          "SrO": 0.001416959941,
+          "inert_gangue": 0.00206777469706
+        },
+        "calibration_infeasible_trials": 6,
+        "calibration_max_deficit_seen": 0.22331803622,
+        "calibration_success": true,
+        "residual_per_component": {
+          "REO": 0.0,
+          "CaO": 0.0,
+          "BaO": -1.11022302463e-16,
+          "SrO": 1.11022302463e-16,
+          "inert_gangue": 1.11022302463e-16
+        },
+        "residual_max": 1.11022302463e-16,
+        "residual_norm": 1.92296268638e-16
+      }
+    },
+    "cleaners34": {
+      "number_of_cells": 1,
+      "cell_volume": 6.70099361037,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.2,
+      "pulp_solids_mass_fraction": 0.5,
+      "rho_solid": 3273.7920896,
+      "cell_total_solid_holdup": 4106.45336304,
+      "F_in_reference_kg_per_h": {
+        "BaO": 3714.282076,
+        "CaO": 4424.51854997,
+        "REO": 12029.9391386,
+        "SrO": 4735.58090571,
+        "inert_gangue": 21467.9082756
+      },
+      "k_cb_per_hour": {
+        "REO": 5.50400744707,
+        "CaO": 0.465716127005,
+        "BaO": 0.177040585604,
+        "SrO": 0.783125473259,
+        "inert_gangue": 0.839873695959
+      },
+      "R_ref": {
+        "BaO": 0.018,
+        "CaO": 0.046,
+        "REO": 0.363,
+        "SrO": 0.075,
+        "inert_gangue": 0.08
+      },
+      "R_fit": {
+        "REO": 0.363,
+        "CaO": 0.046,
+        "BaO": 0.018,
+        "SrO": 0.075,
+        "inert_gangue": 0.08
+      },
+      "calibration": {
+        "calibration_bound_pinned": {},
+        "calibration_upper_bound_fraction": {
+          "REO": 0.000550400744707,
+          "CaO": 4.65716127005e-05,
+          "BaO": 1.77040585604e-05,
+          "SrO": 7.83125473259e-05,
+          "inert_gangue": 8.39873695959e-05
+        },
+        "calibration_infeasible_trials": 0,
+        "calibration_max_deficit_seen": 0.0,
+        "calibration_success": true,
+        "residual_per_component": {
+          "REO": 1.66533453694e-16,
+          "CaO": 2.08166817117e-17,
+          "BaO": 1.4224732503e-16,
+          "SrO": -6.93889390391e-17,
+          "inert_gangue": 9.71445146547e-17
+        },
+        "residual_max": 1.66533453694e-16,
+        "residual_norm": 2.50305630187e-16
+      }
+    },
+    "rougher": {
+      "number_of_cells": 12,
+      "cell_volume": 1.7,
+      "cell_volume_basis": "paper_anchored",
+      "air_holdup": 0.1,
+      "pulp_solids_mass_fraction": 0.325,
+      "rho_solid": 3088.71571698,
+      "cell_total_solid_holdup": 637.318832834,
+      "F_in_reference_kg_per_h": {
+        "BaO": 11119.6030798,
+        "CaO": 17124.2952198,
+        "REO": 11798.6302958,
+        "SrO": 5441.93114318,
+        "inert_gangue": 40878.8096278
+      },
+      "k_cb_per_hour": {
+        "REO": 28.5208190527,
+        "CaO": 2.04711163704,
+        "BaO": 1.69509462373,
+        "SrO": 7.03490599331,
+        "inert_gangue": 2.7887424159
+      },
+      "R_ref": {
+        "BaO": 0.175,
+        "CaO": 0.207,
+        "REO": 0.944,
+        "SrO": 0.541,
+        "inert_gangue": 0.270099576271
+      },
+      "R_fit": {
+        "REO": 0.944,
+        "CaO": 0.207,
+        "BaO": 0.175,
+        "SrO": 0.541,
+        "inert_gangue": 0.270099576271
+      },
+      "calibration": {
+        "calibration_bound_pinned": {},
+        "calibration_upper_bound_fraction": {
+          "REO": 0.00285208190527,
+          "CaO": 0.000204711163704,
+          "BaO": 0.000169509462373,
+          "SrO": 0.000703490599331,
+          "inert_gangue": 0.00027887424159
+        },
+        "calibration_infeasible_trials": 0,
+        "calibration_max_deficit_seen": 0.0,
+        "calibration_success": true,
+        "residual_per_component": {
+          "REO": 0.0,
+          "CaO": 9.43689570931e-16,
+          "BaO": 6.93889390391e-16,
+          "SrO": 3.33066907388e-16,
+          "inert_gangue": 1.66533453694e-16
+        },
+        "residual_max": 9.43689570931e-16,
+        "residual_norm": 1.2291051413e-15
+      }
+    },
+    "scavenger": {
+      "number_of_cells": 1,
+      "cell_volume": 8.38694278342,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.1,
+      "pulp_solids_mass_fraction": 0.325,
+      "rho_solid": 3329.83168554,
+      "cell_total_solid_holdup": 3175.21709549,
+      "F_in_reference_kg_per_h": {
+        "BaO": 1879.07346159,
+        "CaO": 3341.20125721,
+        "REO": 6771.03909187,
+        "SrO": 2588.91618053,
+        "inert_gangue": 9323.91649688
+      },
+      "k_cb_per_hour": {
+        "REO": 39.2255903384,
+        "CaO": 2.07221635192,
+        "BaO": 1.86325876136,
+        "SrO": 7.27754450867,
+        "inert_gangue": 3.09901860038
+      },
+      "R_ref": {
+        "BaO": 0.414,
+        "CaO": 0.44,
+        "REO": 0.937,
+        "SrO": 0.734,
+        "inert_gangue": 0.540238961039
+      },
+      "R_fit": {
+        "REO": 0.937,
+        "CaO": 0.44,
+        "BaO": 0.414,
+        "SrO": 0.734,
+        "inert_gangue": 0.540238961039
+      },
+      "calibration": {
+        "calibration_bound_pinned": {},
+        "calibration_upper_bound_fraction": {
+          "REO": 0.00392255903384,
+          "CaO": 0.000207221635192,
+          "BaO": 0.000186325876136,
+          "SrO": 0.000727754450867,
+          "inert_gangue": 0.000309901860038
+        },
+        "calibration_infeasible_trials": 6,
+        "calibration_max_deficit_seen": 0.320594959759,
+        "calibration_success": true,
+        "residual_per_component": {
+          "REO": 0.0,
+          "CaO": 0.0,
+          "BaO": 0.0,
+          "SrO": 0.0,
+          "inert_gangue": 1.11022302463e-16
+        },
+        "residual_max": 1.11022302463e-16,
+        "residual_norm": 1.11022302463e-16
+      }
+    }
+  }
+}

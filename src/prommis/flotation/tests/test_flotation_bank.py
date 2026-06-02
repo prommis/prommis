@@ -6,6 +6,8 @@
 #####################################################################################################
 """Tests for the generic flotation bank unit model."""
 
+import logging
+
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
@@ -383,7 +385,7 @@ def test_kinetic_cell_balance_initializer_scales_temporary_fixed_inlet_guess():
 @pytest.mark.solver
 @pytest.mark.skipif(not solver.available(exception_flag=False), reason="No IPOPT")
 def test_kinetic_cell_balance_staged_initializer_scales_temporary_fixed_inlet_guess(
-    capfd,
+    caplog,
     monkeypatch,
 ):
     model = _temporary_fixed_low_feed_cell_balance_model()
@@ -404,16 +406,20 @@ def test_kinetic_cell_balance_staged_initializer_scales_temporary_fixed_inlet_gu
     )
 
     initializer = FlotationBankKineticCellBalanceStagedInitializer()
-    initializer.initialize(unit, output_level=idaeslog.INFO_HIGH)
-    captured = capfd.readouterr()
+    # idaes.init does not propagate to the root logger that caplog attaches to,
+    # so re-enable propagation for the duration of this test (monkeypatch restores
+    # it afterwards) to make the staged step messages visible to caplog.
+    monkeypatch.setattr(logging.getLogger("idaes.init"), "propagate", True)
+    with caplog.at_level(idaeslog.INFO_HIGH, logger="idaes.init"):
+        initializer.initialize(unit, output_level=idaeslog.INFO_HIGH)
 
     assert initializer.summary[unit]["status"] == InitializationStatus.Ok
     assert value(unit.inlet.flow_mass_comp[0, "REO"]) > 1.0
-    assert "Initialization Step 1: validation complete." in captured.out
-    assert "Initialization Step 2: rough staged seed applied." in captured.out
-    assert "Initialization Step 3 (cell-balance sub-block)" in captured.out
-    assert "Initialization Step 4 (full bank)" in captured.out
-    assert "Initialization Step 5 (full bank): residual check complete" in captured.out
+    assert "Initialization Step 1: validation complete." in caplog.text
+    assert "Initialization Step 2: rough staged seed applied." in caplog.text
+    assert "Initialization Step 3 (cell-balance sub-block)" in caplog.text
+    assert "Initialization Step 4 (full bank)" in caplog.text
+    assert "Initialization Step 5 (full bank): residual check complete" in caplog.text
 
 
 @pytest.mark.unit

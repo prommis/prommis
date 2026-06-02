@@ -970,7 +970,7 @@ class FlotationBankKineticCellBalanceAnalyticalInitializer(ModularInitializerBas
 class FlotationBankKineticCellBalanceStagedInitializer(ModularInitializerBase):
     """Staged-solve initializer for kinetic cell-balance banks (IDAES standard).
 
-    Uses commom IDAES fix / deactivate / solve / unfix / reactivate
+    Uses common IDAES fix / deactivate / solve / unfix / reactivate
     pattern with an independent, non-analytical starting point. This path does
     not call ``cell_cascade_forward`` for the cell cascade values; the staged
     IPOPT solves compute those values from the Pyomo equations themselves.

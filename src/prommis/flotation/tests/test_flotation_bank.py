@@ -29,7 +29,7 @@ from idaes.core.scaling import get_scaling_factor
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.exceptions import ConfigurationError, InitializationError
 
 import pytest
 
@@ -1059,6 +1059,49 @@ def test_staged_and_analytical_initializers_agree():
                 rel=1e-5,
                 abs=1e-9,
             )
+
+
+@pytest.mark.component
+@pytest.mark.solver
+@pytest.mark.skipif(not solver.available(exception_flag=False), reason="No IPOPT")
+def test_kinetic_cell_balance_staged_initializer_rolls_back_on_solver_failure(
+    monkeypatch,
+):
+    model = _bank_model(
+        fix_recoveries=False,
+        recovery_basis="kinetic_cell_balance",
+        number_of_cells=2,
+    )
+    _fix_cell_balance_inputs(model.fs.unit)
+    unit = model.fs.unit
+
+    outlet_constraint_names = (
+        "concentrate_outlet_eq",
+        "tails_outlet_eq",
+        "recovery_eq",
+    )
+
+    # Treat the staged sub-block solve as non-convergent so the initializer
+    # raises and runs its rollback. The real IPOPT solve still runs; only the
+    # optimal-termination verdict is overridden.
+    monkeypatch.setattr(
+        initializer_module, "check_optimal_termination", lambda results: False
+    )
+
+    initializer = FlotationBankKineticCellBalanceStagedInitializer()
+    with pytest.raises(InitializationError, match="did not converge"):
+        initializer.initialize(unit)
+
+    # A failed staged initialization must leave the model in its original
+    # structural state: outlet equations reactivated and the bank-level outlet
+    # Vars unfixed.
+    for name in outlet_constraint_names:
+        constraint = getattr(unit, name)
+        assert all(constraint[index].active for index in constraint)
+    for component in COMPONENTS:
+        assert not unit.properties_concentrate[0].flow_mass_comp[component].fixed
+        assert not unit.properties_tails[0].flow_mass_comp[component].fixed
+        assert not unit.recovery[0, component].fixed
 
 
 @pytest.mark.unit

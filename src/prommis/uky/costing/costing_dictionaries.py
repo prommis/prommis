@@ -249,7 +249,7 @@ def load_default_resource_prices():
         # Accessed 1/16/2025
         "CACO3": convert_to_usd_2021(1030.00, pyunits.USD_2020) / pyunits.tonne,
         "coal_calcite": 0.50 * CE_index_units / pyunits.tonne,
-        "HCL": 250.00 * CE_index_units / pyunits.tonne,
+        "HCl": 250.00 * CE_index_units / pyunits.tonne,
         "oxalic_acid": 1.00 * CE_index_units / pyunits.kg,
         "ascorbic_acid": 2.00 * CE_index_units / pyunits.kg,
         # Annual average Kerosene price (2023). https://www.eia.gov/dnav/pet/hist/LeafHandler.

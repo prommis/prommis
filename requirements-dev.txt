@@ -9,6 +9,4 @@ nbmake==1.4.6
 sphinx_design==0.6.0
 custom-pylint @ git+https://github.com/prommis/custom_pylint.git@main
 
-watertap @ https://github.com/watertap-org/watertap/archive/refs/pull/1795/head.zip
-
---editable .[flowsheet-processor]
+--editable .[watertap,flowsheet-processor]

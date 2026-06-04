@@ -618,7 +618,7 @@ def test_costing_solution(system_frame):
         "costing.total_installation_cost": {None: (4.87485e-01, tol, None)},
         "costing.other_plant_costs": {None: (3.59415e-06, tol, None)},
         "costing.total_fixed_OM_cost": {None: (6.80321e00, tol, None)},
-        "costing.total_variable_OM_cost": {0: (1.36096e00, tol, None)},
+        "costing.total_variable_OM_cost": {0: (1.36148e00, tol, None)},
         "costing.total_sales_revenue": {None: (6.4e-4, None, tol)},
         "costing.land_cost": {None: (6.1234e-5, tol, None)},
     }

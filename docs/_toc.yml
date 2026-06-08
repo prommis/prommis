@@ -15,3 +15,4 @@ chapters:
   - file: superstructure/superstructure_function_documentation.rst
   - file: tutorials/diafiltration_flowsheet_optimization_tutorial-solution
   - file: tutorials/diafiltration_cost_uncertainty_quantification_and_propagation-solution
+  - file: tutorials/detailed_chemistry_integration_tutorial-solution

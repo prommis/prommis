@@ -856,9 +856,6 @@ def build_ix_with_prommis_costing(m_pc):
 
     # Add costing data
     CE_index_year = "2021"
-    hours_per_shift = 8
-    shifts_per_day = 3
-    operating_days_per_year = 336
 
     resources = [
         "power",
@@ -918,9 +915,7 @@ def build_ix_with_prommis_costing(m_pc):
         labor_rate=[22.73, 21.97, 45.85],  # USD/hr
         labor_burden=25,  # % fringe benefits
         operators_per_shift=[2, 2, 3],
-        hours_per_shift=hours_per_shift,
-        shifts_per_day=shifts_per_day,
-        operating_days_per_year=operating_days_per_year,
+        capacity_factor=0.92,
         pure_product_output_rates=pure_product_output_rates,
         mixed_product_output_rates=mixed_product_output_rates,
         mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
@@ -992,7 +987,7 @@ def test_ix_with_prommis_costing(m_pc):
         "total_BEC": 0.0027232971929997854,
         "custom_fixed_costs": 2.298165311277419e-05,
         "total_fixed_OM_cost": 2.42531,
-        "variable_operating_costs": 2.6277252183096534e-10,
+        "variable_operating_costs": 2.2337658611375462e-10,
         "custom_variable_costs": 1e-12,
         "total_variable_OM_cost": 0.485062698268098,
     }

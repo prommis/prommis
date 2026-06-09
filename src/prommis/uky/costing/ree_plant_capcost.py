@@ -303,9 +303,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         labor_rate=None,
         labor_burden=25,
         operators_per_shift=None,
-        hours_per_shift=8,
-        shifts_per_day=3,
-        operating_days_per_year=336,
+        capacity_factor=0.92,
         pure_product_output_rates=None,
         mixed_product_output_rates=None,
         mixed_product_sale_price_realization_factor=0.65,
@@ -318,7 +316,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         fixed_OM=True,
         variable_OM=False,
         feed_input=None,
-        efficiency=0.85,
         chemicals=None,
         additional_chemicals_cost=None,
         waste=None,
@@ -429,10 +426,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 labor expenses; assumed constant for all operator types. The
                 value should be a percentage, for example 10 for 10%.
             operators_per_shift: number of operators per shift; defined as list
-                of operators per shift for each operator type
-            hours_per_shift: number of hours per shift
-            shifts_per_day: number of shifts per day
-            operating_days_per_year: number of operating days per year
+                of operators per shift for each operator type; assumes three
+                8-hour shifts per day
+            capacity_factor: capacity factor of the plant
             feed_input: rate of feedstock input
             pure_product_output_rates: dict of production rates of each REE pure product
             mixed_product_output_rates: dict of production rates of each REE in the mixed product
@@ -444,7 +440,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             prices: list setting prices of resources
             fixed_OM: True/False flag for calculating fixed O&M costs
             variable_OM: True/False flag for calculating variable O&M costs
-            efficiency: power usage efficiency, or fixed motor/distribution efficiency
             chemicals: string setting chemicals type for chemicals costs
             additional_chemicals_cost: Expression, Var or Param to calculate additional chemical costs.
             waste: string setting waste type for waste costs
@@ -1057,15 +1052,19 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             else:
                 self.additional_waste_cost = Expression(expr=0 * CE_index_units)
 
+            self.capacity_factor = Param(
+                initialize=capacity_factor,
+                mutable=True,
+                doc="capacity factor of the plant",
+                units=pyunits.dimensionless,
+            )
+
             if fixed_OM:
                 self.get_fixed_OM_costs(
                     labor_types=labor_types,
                     labor_rate=labor_rate,
                     labor_burden=labor_burden,
                     operators_per_shift=operators_per_shift,
-                    hours_per_shift=hours_per_shift,
-                    shifts_per_day=shifts_per_day,
-                    operating_days_per_year=operating_days_per_year,
                     pure_product_output_rates=pure_product_output_rates,
                     mixed_product_output_rates=mixed_product_output_rates,
                     mixed_product_sale_price_realization_factor=mixed_product_sale_price_realization_factor,
@@ -1075,7 +1074,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
             if variable_OM:
                 self.get_variable_OM_costs(
-                    efficiency=efficiency,
+                    capacity_factor=capacity_factor,
                     resources=resources,
                     rates=rates,
                     prices=prices,
@@ -1407,6 +1406,12 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             var_dict["Total Plant Cost"] = value(self.total_plant_cost)
         elif hasattr(self, "npv"):
             var_dict["Plant Cost Units"] = str(pyunits.get_units(self.npv))
+
+        if hasattr(self, "capacity_factor"):
+            var_dict["Capacity Factor"] = value(self.capacity_factor)
+            var_dict["Estimated Operating Days Per Year"] = value(
+                self.capacity_factor * 365.25
+            )
 
         if hasattr(self, "total_BEC"):
             var_dict["Total Bare Erected Cost"] = value(self.total_BEC)
@@ -2084,9 +2089,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
         labor_rate=None,
         labor_burden=25,
         operators_per_shift=None,
-        hours_per_shift=8,
-        shifts_per_day=3,
-        operating_days_per_year=336,
         pure_product_output_rates=None,
         mixed_product_output_rates=None,
         mixed_product_sale_price_realization_factor=0.65,
@@ -2104,10 +2106,8 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 labor expenses; assumed constant for all operator types. The
                 value should be a percentage, for example 10 for 10%.
             operators_per_shift: number of operators per shift; defined as list
-                of operators per shift for each operator type
-            hours_per_shift: number of hours per shift
-            shifts_per_day: number of shifts per day
-            operating_days_per_year: number of operating days per year
+                of operators per shift for each operator type; assumes three
+                8-hour shifts per day
             pure_product_output_rates: dict of production rates of each REE pure product
             mixed_product_output_rates: dict of production rates of each REE in the mixed product
             mixed_product_sale_price_realization_factor: multiplicative factor for selling impure products
@@ -2200,17 +2200,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             initialize=dict(zip(labor_types, operators_per_shift)),
             mutable=True,
             units=pyunits.dimensionless,
-        )
-        b.hours_per_shift = Param(
-            initialize=hours_per_shift, mutable=True, units=pyunits.hr
-        )
-        b.shifts_per_day = Param(
-            initialize=shifts_per_day, mutable=True, units=pyunits.day**-1
-        )
-        b.operating_days_per_year = Param(
-            initialize=operating_days_per_year,
-            mutable=True,
-            units=pyunits.day / pyunits.year,
         )
         b.mixed_product_sale_price_realization_factor = Param(
             initialize=mixed_product_sale_price_realization_factor,
@@ -2335,9 +2324,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             for i in operating_labor_types
                         )
                         * (1 + c.labor_burden / 100)
-                        * c.hours_per_shift
-                        * c.shifts_per_day
-                        * c.operating_days_per_year
+                        * c.capacity_factor
                     ),
                     CE_index_units / pyunits.year,
                 )
@@ -2357,9 +2344,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                             for i in technical_labor_types
                         )
                         * (1 + c.labor_burden / 100)
-                        * c.hours_per_shift
-                        * c.shifts_per_day
-                        * c.operating_days_per_year
+                        * c.capacity_factor
                     ),
                     CE_index_units / pyunits.year,
                 )
@@ -2444,7 +2429,7 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         @b.Constraint()
         def total_sales_revenue_eq(c):
-            return c.total_sales_revenue == (
+            return c.total_sales_revenue == pyunits.convert(
                 (
                     (
                         sum(
@@ -2470,19 +2455,18 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                         else 1e-12 * CE_index_units / pyunits.h
                     )
                 )
-                * c.hours_per_shift
-                * c.shifts_per_day
-                * c.operating_days_per_year
+                * c.capacity_factor,
+                CE_index_units / pyunits.year,
             )
 
     def get_variable_OM_costs(
         b,
+        capacity_factor,
         resources,
         rates,
         prices=None,
         feed_input_rate=None,
         CE_index_year="2021",
-        efficiency=0.85,
     ):
         """
         Args:
@@ -2492,7 +2476,6 @@ class QGESSCostingData(FlowsheetCostingBlockData):
             prices: dict of resource prices to be added to the premade dictionary
             feed_input_rate: rate of feedstock input
             CE_index_year: year for cost basis, e.g. "2021" to use 2021 dollars
-            efficiency: power usage efficiency, or fixed motor/distribution efficiency
 
         Returns:
             None.
@@ -2602,20 +2585,9 @@ class QGESSCostingData(FlowsheetCostingBlockData):
 
         @b.Constraint(b.parent_block().time, resources)
         def variable_cost_eq(c, t, r):
-            if r == "power":
-                efficiency_factor = efficiency  # fixed motor efficiency
-            else:
-                efficiency_factor = (
-                    1  # other costs don't have this, could add more later
-                )
             return c.variable_operating_costs[t, r] == (
                 pyunits.convert(
-                    resource_prices[r]
-                    * resource_rates[r][t]
-                    / efficiency_factor
-                    * c.hours_per_shift
-                    * c.shifts_per_day
-                    * c.operating_days_per_year,
+                    resource_prices[r] * resource_rates[r][t] * c.capacity_factor,
                     to_units=CE_index_units / pyunits.year,
                 )
             )
@@ -2958,15 +2930,18 @@ class QGESSCostingData(FlowsheetCostingBlockData):
                 print(
                     "Total annual O&M cost per ton feed processed (USD/ton): %.3f"
                     % value(
-                        (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
-                        * 1e6
-                        / (
-                            pyunits.convert(
-                                b.feed_input_rate, to_units=pyunits.ton / pyunits.hr
-                            )
-                            * b.hours_per_shift
-                            * b.shifts_per_day
-                            * b.operating_days_per_year
+                        pyunits.convert(
+                            (b.total_fixed_OM_cost + b.total_variable_OM_cost[0])
+                            * 1e6
+                            / (
+                                pyunits.convert(
+                                    b.feed_input_rate, to_units=pyunits.ton / pyunits.hr
+                                )
+                                * b.capacity_factor
+                                * pyunits.year
+                            ),
+                            pyunits.get_units(b.total_variable_OM_cost[0])
+                            / pyunits.ton,
                         )
                     )
                 )

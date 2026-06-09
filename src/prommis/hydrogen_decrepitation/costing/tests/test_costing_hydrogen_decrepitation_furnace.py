@@ -365,12 +365,7 @@ class TestHydrogenDecrepitationCostingGasFired:
         assert isinstance(model.fs.costing.price_insulation2, Param)
         assert isinstance(model.fs.costing.price_metal2, Param)
         assert isinstance(model.fs.costing.efficiency, Param)
-        assert isinstance(model.fs.costing.hours_per_shift, Param)
-        assert isinstance(model.fs.costing.shifts_per_day, Param)
-        assert isinstance(
-            model.fs.costing.operating_days_per_year,
-            Param,
-        )
+        assert isinstance(model.fs.costing.capacity_factor, Param)
         assert isinstance(model.fs.costing.utility_rate, Param)
         assert isinstance(
             model.fs.costing.temperature_controller_price,
@@ -681,12 +676,7 @@ class TestHydrogenDecrepitationCostingElectric:
         assert isinstance(model.fs.costing.price_insulation2, Param)
         assert isinstance(model.fs.costing.price_metal2, Param)
         assert isinstance(model.fs.costing.efficiency, Param)
-        assert isinstance(model.fs.costing.hours_per_shift, Param)
-        assert isinstance(model.fs.costing.shifts_per_day, Param)
-        assert isinstance(
-            model.fs.costing.operating_days_per_year,
-            Param,
-        )
+        assert isinstance(model.fs.costing.capacity_factor, Param)
         assert isinstance(model.fs.costing.utility_rate, Param)
         assert isinstance(
             model.fs.costing.temperature_controller_price,

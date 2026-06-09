@@ -39,6 +39,20 @@ watertap = ["watertap[reaktoro] >= 1.6.0"]
 
 flowsheet-processor = ["idaes-flowsheet-processor >=0.2"]
 
+dev = [
+    "prommis[watertap,flowsheet-processor]",
+    "black[jupyter]==26.3.1",
+    "pylint==2.17.7",
+    "astroid==2.15.8",
+    "pytest==7.*",
+    "pytest-cov",
+    "jupyter-book==1.0.*",
+    "isort",
+    "nbmake==1.4.6",
+    "sphinx_design==0.6.0",
+    "custom-pylint @ git+https://github.com/prommis/custom_pylint.git@main",
+]
+
 [tool.setuptools_scm]
 # https://setuptools-scm.readthedocs.io/en/v8.1.0/extending/
 version_scheme = "only-version"
@@ -87,7 +101,6 @@ known_issues = "prommis._testing_utils.known_issues"
 
 [tool.pytest.ini_options]
 addopts = """
---pyargs prommis
 --import-mode=importlib
 --cov=prommis
 --cov-config .coveragerc

@@ -49,8 +49,11 @@ jobs:
     # OS and/or Python version don't make a difference, so we choose ubuntu and 3.10 for performance
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Install Black
@@ -77,20 +80,31 @@ jobs:
     # OS and/or Python version don't make a difference, so we choose ubuntu and 3.10 for performance
     runs-on: ubuntu-latest
     steps:
-      - uses: prommis/prommis/.github/actions/install@main
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/install
         with:
           variant: dev
           python-version: "3.11"
       - name: Run Pylint (pyproject.toml)
         run: |
           pylint prommis
+      - name: Environment summary
+        if: always()
+        uses: ./.github/actions/environment-summary
+        with:
+          python-version: ${{ matrix.python-version }}
+          os: ${{ matrix.os }}
+          job-name: code-linting
 
   spell-check:
     name: Check Spelling
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Run Spell Checker
         uses: crate-ci/typos@v1.17.0
 
@@ -124,7 +138,10 @@ jobs:
             os: linux
             coverage: true
     steps:
-      - uses: prommis/prommis/.github/actions/install@main
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/install
         with:
           variant: ${{ matrix.install-variant }}
           python-version: ${{ matrix.python-version }}
@@ -142,11 +159,18 @@ jobs:
         run: pytest --pyargs prommis --xfail-known-issues
       - name: Upload coverage report as job artifact
         if: matrix.coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report-${{ matrix.os }}
           path: coverage.xml
           if-no-files-found: error
+      - name: Environment summary
+        if: always()
+        uses: ./.github/actions/environment-summary
+        with:
+          python-version: ${{ matrix.python-version }}
+          os: ${{ matrix.os }}
+          job-name: pytest
 
   upload-coverage:
     name: Upload coverage report (Codecov)
@@ -154,12 +178,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # the checkout step is needed to have access to codecov.yml
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
         with:
           pattern: coverage-report-*
       - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         with:
           fail_ci_if_error: true
           verbose: true
@@ -188,7 +214,10 @@ jobs:
           - os: win64
             runner-image: windows-2022
     steps:
-      - uses: prommis/prommis/.github/actions/install@main
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/install
         with:
           variant: ${{ matrix.install-variant }}
           python-version: ${{ matrix.python-version }}
@@ -198,3 +227,10 @@ jobs:
       - name: Execute notebooks
         working-directory: docs/
         run: pytest --nbmake -m "solution" .
+      - name: Environment summary
+        if: always()
+        uses: ./.github/actions/environment-summary
+        with:
+          python-version: ${{ matrix.python-version }}
+          os: ${{ matrix.os }}
+          job-name: docs

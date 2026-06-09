@@ -5158,7 +5158,7 @@ def test_REE_costing_variableOM_resourcenotinpricelist():
         match="A resource was included that does not contain a price. "
         "Prices exist for the following resources: \\['power', 'water', "
         "'diesel', 'bioleaching_solution', 'H2SO4', 'natural_gas', "
-        "'polymer', 'NAOH', 'CACO3', 'coal_calcite', 'HCL', 'oxalic_acid',"
+        "'polymer', 'NAOH', 'CACO3', 'coal_calcite', 'HCl', 'oxalic_acid',"
         " 'ascorbic_acid', 'kerosene', 'D2EHPA', 'NA2S', "
         "'nonhazardous_solid_waste', 'nonhazardous_precipitate_waste', "
         "'dust_and_volatiles'\\]",

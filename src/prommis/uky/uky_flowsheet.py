@@ -159,7 +159,6 @@ from idaes.core.util.model_statistics import degrees_of_freedom
 
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
-    ModularPropertiesScaler,
 )
 from idaes.models.unit_models.feed import Feed, FeedInitializer
 from idaes.models.unit_models.mixer import (
@@ -209,7 +208,6 @@ from prommis.properties.sulfuric_acid_leaching_properties import (
 )
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.properties import HClStrippingParameterBlock
-from prommis.properties.hcl_stripping_properties import HClStrippingPropertiesScaler
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster

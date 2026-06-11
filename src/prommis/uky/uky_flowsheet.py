@@ -173,7 +173,7 @@ from idaes.core.initialization import BlockTriangularizationInitializer
 from idaes.core.scaling import ConstraintScalingScheme, CustomScalerBase
 from idaes.core.scaling.util import get_scaling_factor, set_scaling_factor
 from idaes.core.solvers import get_solver
-from idaes.core.util.diagnostics_tools.diagnostics_toolbox import DiagnosticsToolbox
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,

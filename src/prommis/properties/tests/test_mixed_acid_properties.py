@@ -6,7 +6,7 @@
 #####################################################################################################
 import re
 
-from pyomo.environ import ConcreteModel, Constraint, Param, Set, value, Var
+from pyomo.environ import ConcreteModel, Constraint, Param, Set, Var, value
 
 from idaes.core import Component, FlowsheetBlock, Phase
 from idaes.core.scaling.util import (

@@ -369,6 +369,7 @@ class TestHClStripping(object):
                 40.1640625
             )
 
+
 class TestSulfuricAcidLeaching(object):
     @pytest.fixture(scope="class")
     def model(self):

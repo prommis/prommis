@@ -167,7 +167,7 @@ class CoalRefuseStateBlockData(StateBlockData):
         )
         self.particle_size_median = Var(
             units=units.um,  # um micrometer. unit need to convert
-            initialize=80,  # Feed median particle size, micrometer
+            initialize=80000,  # Feed median particle size, micrometer
             bounds=(10, None),
             doc="Feed median Particle Size, micrometer",
         )

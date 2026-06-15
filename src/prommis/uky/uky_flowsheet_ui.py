@@ -27,12 +27,12 @@ from idaes_flowsheet_processor.api import FlowsheetCategory, FlowsheetInterface
 from prommis.uky.uky_flowsheet import (
     add_result_expressions,
     build,
+    calculate_results,
+    fix_organic_recycle,
     initialize_system,
     set_operating_conditions,
     set_scaling,
     solve_system,
-    fix_organic_recycle,
-    calculate_results,
 )
 
 _log = idaeslog.getLogger(__name__)

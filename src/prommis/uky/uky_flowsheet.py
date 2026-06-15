@@ -58,10 +58,10 @@ Description                                                           Value     
 ===================================================================== ============ ============================
 Leaching
 Tank volume                                                           100          :math:`\text{gal}`
-Liquid feed volumetric flow                                           224.3        :math:`\text{L/hr}`
-Liquid feed H concentration                                           100          :math:`\text{mg/L}`
-Liquid feed HSO4 concentration                                        1e-8         :math:`\text{mg/L}`
-Liquid feed SO4 concentration                                         4800         :math:`\text{mg/L}`
+Liquid feed volumetric flow                                           100          :math:`\text{L/hr}`
+Liquid feed H concentration                                           277          :math:`\text{mg/L}`
+Liquid feed HSO4 concentration                                        25025        :math:`\text{mg/L}`
+Liquid feed SO4 concentration                                         915          :math:`\text{mg/L}`
 Liquid feed REE and contaminant concentrations                        1e-10        :math:`\text{mg/L}`
 Solid feed mass flow                                                  22.68        :math:`\text{kg/hr}`
 Solid feed inerts mass fraction                                       0.6952       :math:`\text{dimensionless}`
@@ -79,7 +79,7 @@ Solid feed Gd2O3 mass fraction                                        1.0e-5    
 Solid feed Dy2O3 mass fraction                                        7.5e-6       :math:`\text{dimensionless}`
 
 Solvent Extraction Rougher
-Loading section organic feed volumetric flow                          62.01        :math:`\text{L/hr}`
+Loading section organic feed volumetric flow                          12.89        :math:`\text{L/hr}`
 Organic make-up REE and contaminant concentrations                    1e-7         :math:`\text{mg/L}`
 Scrubbing section acid feed volumetric flow                           0.09         :math:`\text{L/hr}`
 Scrubbing section acid feed H concentration                           10.36        :math:`\text{mg/L}`
@@ -91,7 +91,7 @@ Stripping section acid feed Cl concentration                          1438.56   
 Stripping section acid feed REE and contaminant concentrations        1e-7         :math:`\text{mg/L}`
 
 Solvent Extraction Cleaner
-Loading section organic feed volumetric flow                          62.01        :math:`\text{L/hr}`
+Loading section organic feed volumetric flow                          60.33        :math:`\text{L/hr}`
 Organic make-up REE and contaminant concentrations                    1e-7         :math:`\text{mg/L}`
 Stripping section acid feed volumetric flow                           0.09         :math:`\text{L/hr}`
 Stripping section acid feed H concentration                           41.44        :math:`\text{mg/L}`
@@ -139,7 +139,25 @@ References:
 """
 
 import logging
-from warnings import warn
+
+from pyomo.common.collections import ComponentMap
+from pyomo.contrib.incidence_analysis import solve_strongly_connected_components
+from pyomo.environ import (
+    Block,
+    ConcreteModel,
+    Constraint,
+    Expression,
+    Objective,
+    Param,
+    Set,
+    TransformationFactory,
+    Var,
+    check_optimal_termination,
+    units,
+    value,
+)
+from pyomo.network import Arc, SequentialDecomposition
+from pyomo.util.subsystems import create_subsystem_block
 
 import idaes.logger as idaeslog
 from idaes.core import (
@@ -152,12 +170,11 @@ from idaes.core import (
     UnitModelCostingBlock,
 )
 from idaes.core.initialization import BlockTriangularizationInitializer
-from idaes.core.scaling import CustomScalerBase, ConstraintScalingScheme
+from idaes.core.scaling import ConstraintScalingScheme, CustomScalerBase
 from idaes.core.scaling.util import get_scaling_factor, set_scaling_factor
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
-
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
     ModularPropertiesScaler,
@@ -182,45 +199,23 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     get_prop,
 )
 
-from pyomo.common.collections import ComponentMap
-from pyomo.contrib.incidence_analysis import (
-    solve_strongly_connected_components,
-)
-from pyomo.environ import (
-    Block,
-    ConcreteModel,
-    Constraint,
-    Expression,
-    Objective,
-    Param,
-    Set,
-    TransformationFactory,
-    Var,
-    check_optimal_termination,
-    units,
-    value,
-)
-from pyomo.network import Arc, SequentialDecomposition
-from pyomo.util.subsystems import create_subsystem_block
-
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
+from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitator import Precipitator
+from prommis.properties import HClStrippingParameterBlock
 from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.hcl_stripping_properties import HClStrippingPropertiesScaler
 from prommis.properties.sulfuric_acid_leaching_properties import (
     SulfuricAcidLeachingParameters,
 )
-from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
-from prommis.properties import HClStrippingParameterBlock
-from prommis.properties.hcl_stripping_properties import HClStrippingPropertiesScaler
-from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-from prommis.precipitate.precipitator import Precipitator
+from prommis.properties.translator_hcl_leach import TranslatorHClLeach
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import (
     SolventExtraction,
     SolventExtractionInitializer,
 )
-
-from prommis.properties.translator_hcl_leach import TranslatorHClLeach
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,
 )
@@ -581,9 +576,6 @@ def build():
     )
 
     # -----------------------------------------------------------------------------------------------------------------
-    # Translator blocks
-
-    # -----------------------------------------------------------------------------------------------------------------
 
     # UKy flowsheet connections
     m.fs.leaching_sol_feed = Arc(
@@ -801,8 +793,8 @@ def set_operating_conditions(m):
         m: pyomo model
     """
     # Constants
-    # Assume a 5% volume-by-volume ratio
-    dosage = 5 / 100
+    # Assume a 20% volume-by-volume ratio
+    dosage = 20 / 100
     dehpa_conc = 975.8e3 * dosage * units.mg / units.L
     kerosene_conc = 8.2e5 * units.mg / units.L
     Temp_room = 303 * units.K
@@ -810,16 +802,13 @@ def set_operating_conditions(m):
 
     m.fs.leach_liquid_feed.properties[0.0].pressure.fix(P_atm)
     m.fs.leach_liquid_feed.properties[0.0].temperature.fix(Temp_room)
-    m.fs.leach_liquid_feed.flow_vol.fix(224.3 * units.L / units.hour)
+    # NOTE: This is an arbitrary lower bound set by the optimization - shouldn't go lower
+    m.fs.leach_liquid_feed.flow_vol.fix(100 * units.L / units.hour)
     m.fs.leach_liquid_feed.conc_mass_comp.fix(1e-10 * units.mg / units.L)
     m.fs.leach_liquid_feed.conc_mass_comp[0, "H2O"].fix(1e6 * units.mg / units.L)
-    m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].fix(
-        2 * 0.05 * 1e3 * units.mg / units.L
-    )
-    m.fs.leach_liquid_feed.conc_mass_comp[0, "HSO4"].fix(1e-8 * units.mg / units.L)
-    m.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"].fix(
-        0.05 * 96e3 * units.mg / units.L
-    )
+    m.fs.leach_liquid_feed.conc_mass_comp[0, "H"].fix(277 * units.mg / units.L)
+    m.fs.leach_liquid_feed.conc_mass_comp[0, "HSO4"].fix(25025 * units.mg / units.L)
+    m.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"].fix(915 * units.mg / units.L)
 
     m.fs.leach_solid_feed.flow_mass.fix(22.68 * units.kg / units.hour)
     m.fs.leach_solid_feed.mass_frac_comp[0, "inerts"].fix(0.6952 * units.kg / units.kg)
@@ -898,8 +887,7 @@ def set_operating_conditions(m):
     m.fs.load_sep.split_fraction[:, "recycle"].fix(0.9)
     m.fs.scrub_sep.split_fraction[:, "recycle"].fix(0.9)
 
-    m.fs.rougher_org_make_up.flow_vol.fix(6.201)
-
+    m.fs.rougher_org_make_up.flow_vol.fix(12.89)
     m.fs.rougher_org_make_up.properties[0.0].pressure.fix(P_atm)
     m.fs.rougher_org_make_up.properties[0.0].temperature.fix(Temp_room)
     m.fs.rougher_mixer.mixed_state[0.0].pressure.fix(P_atm)
@@ -919,11 +907,11 @@ def set_operating_conditions(m):
     m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].fix(dehpa_conc)
     m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"].fix(kerosene_conc)
 
-    # Assumes an HCl weight percent of 3.7%
-    m.fs.acid_feed1.flow_vol.fix(0.09)
+    # 0.974M HCl; pH = 0.01
+    m.fs.acid_feed1.flow_vol.fix(0.1 * units.L / units.hr)
     m.fs.acid_feed1.conc_mass_comp[0, "H2O"].fix(1000000)
-    m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(1023 * units.mg / units.L)
-    m.fs.acid_feed1.conc_mass_comp[0, "Cl"].fix(35980 * units.mg / units.L)
+    m.fs.acid_feed1.conc_mass_comp[0, "H"].fix(981.44 * units.mg / units.L)
+    m.fs.acid_feed1.conc_mass_comp[0, "Cl"].fix(34518.74 * units.mg / units.L)
     m.fs.acid_feed1.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Ca"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Fe"].fix(eps)
@@ -937,11 +925,11 @@ def set_operating_conditions(m):
     m.fs.acid_feed1.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed1.conc_mass_comp[0, "Dy"].fix(eps)
 
-    # Assumes an HCl weight percent of 18.5%
-    m.fs.acid_feed2.flow_vol.fix(0.13)
+    # 1M HCl; pH = 0
+    m.fs.acid_feed2.flow_vol.fix(3.375 * units.L / units.hr)
     m.fs.acid_feed2.conc_mass_comp[0, "H2O"].fix(1000000)
-    m.fs.acid_feed2.conc_mass_comp[0, "H"].fix(5110 * units.mg / units.L)
-    m.fs.acid_feed2.conc_mass_comp[0, "Cl"].fix(179700 * units.mg / units.L)
+    m.fs.acid_feed2.conc_mass_comp[0, "H"].fix(1008 * units.mg / units.L)
+    m.fs.acid_feed2.conc_mass_comp[0, "Cl"].fix(35453 * units.mg / units.L)
     m.fs.acid_feed2.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Ca"].fix(eps)
     m.fs.acid_feed2.conc_mass_comp[0, "Fe"].fix(eps)
@@ -961,11 +949,11 @@ def set_operating_conditions(m):
     m.fs.rougher_sep.recycle_state[0.0].pressure.fix(P_atm)
     m.fs.rougher_sep.recycle_state[0.0].temperature.fix(Temp_room)
 
-    # Assumes an HCl weight percent of 18.5%
-    m.fs.acid_feed3.flow_vol.fix(0.03)
+    # 1M HCl; pH = 0
+    m.fs.acid_feed3.flow_vol.fix(3.517 * units.L / units.hr)
     m.fs.acid_feed3.conc_mass_comp[0, "H2O"].fix(1000000)
-    m.fs.acid_feed3.conc_mass_comp[0, "H"].fix(5110 * units.mg / units.L)
-    m.fs.acid_feed3.conc_mass_comp[0, "Cl"].fix(179700 * units.mg / units.L)
+    m.fs.acid_feed3.conc_mass_comp[0, "H"].fix(1008 * units.mg / units.L)
+    m.fs.acid_feed3.conc_mass_comp[0, "Cl"].fix(35453 * units.mg / units.L)
     m.fs.acid_feed3.conc_mass_comp[0, "Al"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Ca"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Fe"].fix(eps)
@@ -979,8 +967,7 @@ def set_operating_conditions(m):
     m.fs.acid_feed3.conc_mass_comp[0, "Gd"].fix(eps)
     m.fs.acid_feed3.conc_mass_comp[0, "Dy"].fix(eps)
 
-    m.fs.cleaner_org_make_up.flow_vol.fix(6.201)
-
+    m.fs.cleaner_org_make_up.flow_vol.fix(60.33)
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Al_o"].fix(eps)
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Ca_o"].fix(eps)
     m.fs.cleaner_org_make_up.conc_mass_comp[0, "Fe_o"].fix(eps)
@@ -1090,105 +1077,105 @@ def initialize_system(m):
         _log.info("Initialization Order: {_init_ord}")
 
     tear_guesses1 = {
-        "flow_vol": {0: 606.92},
+        "flow_vol": {0: 288.18},
         "conc_mass_comp": {
-            (0, "Al"): 280.14,
-            (0, "Ca"): 71.51,
-            (0, "Ce"): 3.37,
-            (0, "Cl"): 111.13,
-            (0, "Dy"): 3.48e-5,
-            (0, "Fe"): 451.50,
-            (0, "Gd"): 0.21,
-            (0, "H"): 14.57,
+            (0, "Al"): 1759.30,
+            (0, "Ca"): 228.06,
+            (0, "Ce"): 1.36,
+            (0, "Cl"): 2097.49,
+            (0, "Dy"): 7.63e-3,
+            (0, "Fe"): 2089.62,
+            (0, "Gd"): 0.064,
+            (0, "H"): 40.89,
             (0, "H2O"): 1000000,
-            (0, "HSO4"): 2845.99,
-            (0, "La"): 1.28,
-            (0, "Nd"): 1.65,
-            (0, "Pr"): 0.43,
-            (0, "SO4"): 1977.81,
-            (0, "Sc"): 2.02e-3,
-            (0, "Sm"): 0.16,
-            (0, "Y"): 1.19e-5,
+            (0, "HSO4"): 19465.77,
+            (0, "La"): 4.29,
+            (0, "Nd"): 1.63,
+            (0, "Pr"): 1.37,
+            (0, "SO4"): 4820.67,
+            (0, "Sc"): 2.5e-3,
+            (0, "Sm"): 0.69,
+            (0, "Y"): 3.06e-3,
         },
     }
     tear_guesses2 = {
-        "flow_vol": {0: 62.01},
+        "flow_vol": {0: 128.95},
         "conc_mass_comp": {
-            (0, "Al_o"): 20.42,
-            (0, "Ca_o"): 6.51,
-            (0, "Ce_o"): 1.01,
-            (0, "Dy_o"): 1.077,
-            (0, "Fe_o"): 95.31,
-            (0, "Gd_o"): 0.5,
-            (0, "La_o"): 0.38,
-            (0, "Nd_o"): 0.43,
-            (0, "Pr_o"): 0.11,
-            (0, "Sc_o"): 2.03,
-            (0, "Sm_o"): 0.092,
-            (0, "Y_o"): 0.153,
-            (0, "DEHPA"): 9.8e5 * 0.05,
+            (0, "Al_o"): 73.38,
+            (0, "Ca_o"): 13.24,
+            (0, "Ce_o"): 3.91,
+            (0, "Dy_o"): 0.18,
+            (0, "Fe_o"): 362.63,
+            (0, "Gd_o"): 0.33,
+            (0, "La_o"): 0.26,
+            (0, "Nd_o"): 1.36,
+            (0, "Pr_o"): 0.15,
+            (0, "Sc_o"): 2.43,
+            (0, "Sm_o"): 0.019,
+            (0, "Y_o"): 5.36,
+            (0, "DEHPA"): 185882.7,
             (0, "Kerosene"): 8.2e5,
         },
     }
     tear_guesses3 = {
-        "flow_vol": {0: 425.13},
+        "flow_vol": {0: 208.99},
         "conc_mass_comp": {
-            (0, "Al"): 444.84,
-            (0, "Ca"): 113.56,
-            (0, "Ce"): 5.45,
-            (0, "Cl"): 176.28,
-            (0, "Dy"): 0.89,
-            (0, "Fe"): 717.95,
-            (0, "Gd"): 0.83,
-            (0, "H"): 2.15,
+            (0, "Al"): 2738.65,
+            (0, "Ca"): 355.51,
+            (0, "Ce"): 17.72,
+            (0, "Cl"): 3197.12,
+            (0, "Dy"): 0.50,
+            (0, "Fe"): 3278.86,
+            (0, "Gd"): 1.47,
+            (0, "H"): 4.26,
             (0, "H2O"): 1000000,
-            (0, "HSO4"): 839.03,
-            (0, "La"): 2.07,
-            (0, "Nd"): 2.65,
-            (0, "Pr"): 0.69,
-            (0, "SO4"): 3960.84,
-            (0, "Sc"): 3.60e-2,
-            (0, "Sm"): 0.28,
-            (0, "Y"): 1.55,
+            (0, "HSO4"): 6900.7,
+            (0, "La"): 7.38,
+            (0, "Nd"): 7.99,
+            (0, "Pr"): 2.23,
+            (0, "SO4"): 16419.12,
+            (0, "Sc"): 0.17,
+            (0, "Sm"): 1.12,
+            (0, "Y"): 0.80,
         },
     }
     tear_guesses4 = {
-        "flow_vol": {0: 62},
+        "flow_vol": {0: 603.34},
         "conc_mass_comp": {
-            (0, "Al_o"): 5.82,
-            (0, "Ca_o"): 1.57,
-            (0, "Ce_o"): 0.88,
-            (0, "Dy_o"): 5.9e-3,
-            (0, "Fe_o"): 11.71,
-            (0, "Gd_o"): 0.68,
-            (0, "La_o"): 0.35,
-            (0, "Nd_o"): 0.35,
-            (0, "Pr_o"): 5.27e-2,
-            (0, "Sc_o"): 6.71e-5,
-            (0, "Sm_o"): 9.81e-2,
-            (0, "Y_o"): 7.73e-2,
-            (0, "DEHPA"): 9.8e5 * 0.05,
+            (0, "Al_o"): 36.41,
+            (0, "Ca_o"): 5.38,
+            (0, "Ce_o"): 1.14,
+            (0, "Dy_o"): 0.013,
+            (0, "Fe_o"): 91.1,
+            (0, "Gd_o"): 0.079,
+            (0, "La_o"): 0.14,
+            (0, "Nd_o"): 0.44,
+            (0, "Pr_o"): 0.059,
+            (0, "Sc_o"): 2.19e-4,
+            (0, "Sm_o"): 9.35e-3,
+            (0, "Y_o"): 0.21,
+            (0, "DEHPA"): 192174.95,
             (0, "Kerosene"): 8.2e5,
         },
     }
     tear_guesses5 = {
-        "flow_vol": {0: 0.15},
+        "flow_vol": {0: 6.91},
         "conc_mass_comp": {
-            (0, "Al"): 393.40,
-            (0, "Ca"): 98.92,
-            (0, "Ce"): 264.13,
-            (0, "Cl"): 179700,
-            (0, "Dy"): 2468.079,
-            (0, "Fe"): 618.17,
-            (0, "Gd"): 1357.78,
-            (0, "H"): 4781.44,
+            (0, "Al"): 1588.08,
+            (0, "Ca"): 197.47,
+            (0, "Ce"): 525.13,
+            (0, "Cl"): 35453.0,
+            (0, "Dy"): 15.14,
+            (0, "Fe"): 1932.16,
+            (0, "Gd"): 42.49,
+            (0, "H"): 692.2,
             (0, "H2O"): 1000000,
-            (0, "La"): 105.89,
-            (0, "Nd"): 90.36,
-            (0, "Pr"): 5.43,
-            (0, "Sc"): 3e-3,
-            (0, "Sm"): 43.77,
-            (0, "Y"): 4341.44,
+            (0, "La"): 29.36,
+            (0, "Nd"): 175.35,
+            (0, "Pr"): 3.77,
+            (0, "Sc"): 2.13e-3,
+            (0, "Sm"): 1.87,
+            (0, "Y"): 14.079,
         },
     }
 
@@ -1256,7 +1243,6 @@ def initialize_system(m):
         elif unit in sep_units:
             _log.info(f"Initializing {unit}")
             initializer_sep.initialize(unit)
-
         elif unit in mix_units:
             _log.info(f"Initializing {unit}")
             initializer_mix.initialize(unit)
@@ -1299,12 +1285,13 @@ def fix_organic_recycle(m):
     Args:
         m: pyomo model
     """
-
+    rougher_flow = value(m.fs.rougher_mixer.outlet.flow_vol[0])
     m.fs.rougher_org_make_up.outlet.flow_vol.unfix()
-    m.fs.rougher_mixer.outlet.flow_vol.fix(62.01)
+    m.fs.rougher_mixer.outlet.flow_vol.fix(rougher_flow)
 
+    cleaner_flow = value(m.fs.cleaner_mixer.outlet.flow_vol[0])
     m.fs.cleaner_org_make_up.outlet.flow_vol.unfix()
-    m.fs.cleaner_mixer.outlet.flow_vol.fix(62.01)
+    m.fs.cleaner_mixer.outlet.flow_vol.fix(cleaner_flow)
 
 
 def add_result_expressions(m):
@@ -2432,11 +2419,31 @@ def add_costing(m):
 
     m.fs.scaling_constraints[m.fs.power] = m.fs.power_constraint
 
+    m.fs.acid_feed = Var(
+        m.fs.time, initialize=2.57e-4, units=units.tonne / units.hr, bounds=(0, None)
+    )
+    m.fs.acid_feed_constraint = Constraint(
+        expr=m.fs.acid_feed[0]
+        == units.convert(
+            (
+                m.fs.acid_feed1.conc_mass_comp[0, "H"] * m.fs.acid_feed1.flow_vol[0]
+                + m.fs.acid_feed2.conc_mass_comp[0, "H"] * m.fs.acid_feed2.flow_vol[0]
+                + m.fs.acid_feed3.conc_mass_comp[0, "H"] * m.fs.acid_feed3.flow_vol[0]
+            )
+            # Ratio of HCl and H molecular weight in mg
+            * 36460 / 1008,
+            to_units=units.tonne / units.hr,
+        )
+    )
+
+    m.fs.scaling_constraints[m.fs.acid_feed] = m.fs.acid_feed_constraint
+
     resources = [
         "nonhazardous_solid_waste",
         "nonhazardous_precipitate_waste",
         "dust_and_volatiles",
         "power",
+        "HCl",
     ]
 
     rates = [
@@ -2444,6 +2451,7 @@ def add_costing(m):
         m.fs.precipitate,
         m.fs.dust_and_volatiles,
         m.fs.power,
+        m.fs.acid_feed,
     ]
 
     # define product flowrates
@@ -2617,9 +2625,7 @@ def add_costing(m):
         labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
         labor_burden=25,  # % fringe benefits
         operators_per_shift=[4, 9, 2, 2, 2, 3],
-        hours_per_shift=hours_per_shift,
-        shifts_per_day=shifts_per_day,
-        operating_days_per_year=operating_days_per_year,
+        capacity_factor=0.92,
         pure_product_output_rates=pure_product_output_rates,
         mixed_product_output_rates=mixed_product_output_rates,
         mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
@@ -2630,7 +2636,6 @@ def add_costing(m):
         fixed_OM=True,
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
         waste=[
             "nonhazardous_solid_waste",
             "nonhazardous_precipitate_waste",
@@ -2807,19 +2812,21 @@ def optimize_model(m):
     # estimate for a lower bound.
     m.fs.leach_liquid_feed.properties[0].flow_vol.setlb(100)
 
-    # The true figure of merit is probably the volumetric flow rate
-    # out of the mixer, which is 68.3 L/hr in the case without a lower
-    # bound. In the case before optimization, the mixer outlet flow
-    # rate is 865 L/hr. In the case with a lower bound of 100, the
-    # mixer outlet flow rate is 291 L/hr.
-    #
+    m.fs.rougher_mixer.outlet.flow_vol.unfix()
+    m.fs.cleaner_mixer.outlet.flow_vol.unfix()
+
     # We probably also need a performance equation for the filter
     # press  (sl_sep1) to determine the fraction of fluid entrained
     # as a function of the liquid to solid ratio.
 
     # Unfix HCl feed flow rates and concentrations
     for feed in [m.fs.acid_feed1, m.fs.acid_feed2, m.fs.acid_feed3]:
-        feed.flow_vol.unfix()
+        # Trying to optimize acid_feed1 will bring its flow to zero
+        # Since optimizing this stream has proved problematic, let's fix to 0.1 L/hr
+        if feed == m.fs.acid_feed1:
+            continue
+        else:
+            feed.flow_vol.unfix()
         feed.conc_mass_comp[0, "H"].unfix()
         feed.conc_mass_comp[0, "Cl"].unfix()
         # Revisit how strong of an acid we can use
@@ -2835,18 +2842,13 @@ def optimize_model(m):
         for condata in feed.HCl_stoich_eqn.values():
             set_scaling_factor(condata, 10)
 
-    # Make extractant dosage a decision variable
-    # m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
-    # m.fs.rougher_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
-
-    # m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
-    # m.fs.cleaner_org_make_up.properties[0].extractant_dosage.bounds = (3, 10)
-
     # We can't make extractant dosage a decision variable until we have a
     # correlation for how impurity (Fe, Al, Ca) distribution coefficients
     # vary with dosage
-    m.fs.rougher_org_make_up.properties[0].extractant_dosage.fix(5)
-    m.fs.cleaner_org_make_up.properties[0].extractant_dosage.fix(5)
+    m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
+    m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"].unfix()
+    m.fs.rougher_org_make_up.properties[0].extractant_dosage.bounds = (5, 20)
+    m.fs.cleaner_org_make_up.properties[0].extractant_dosage.bounds = (5, 20)
 
     # If the pH in the rougher scrub goes above 5 or 6, the equations get
     # extremely ill conditioned.
@@ -2883,11 +2885,5 @@ def data_reconcilliation(m):
 
 if __name__ == "__main__":
     m, results = main()
-    warn(
-        "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
-    )
-    warn(
-        "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
-    )
-    # optimize_model(m)
-    data_reconcilliation(m)
+    optimize_model(m)
+    # data_reconcilliation(m)

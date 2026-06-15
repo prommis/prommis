@@ -101,7 +101,6 @@ known_issues = "prommis._testing_utils.known_issues"
 
 [tool.pytest.ini_options]
 addopts = """
---pyargs prommis
 --import-mode=importlib
 --cov=prommis
 --cov-config .coveragerc

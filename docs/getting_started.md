@@ -136,7 +136,7 @@ To understand how this and other examples work and start to create your own, ple
 
 ## For PrOMMiS developers
 
-Unless otherwise noted, these commands assume that the working directory is the root of the local clone of this repository (i.e., the directory containing the [README file](../README.md)).
+Unless otherwise noted, these commands assume that the working directory is the root of the local clone of this repository (i.e., the directory containing the `README.md`).
 
 ### Installation
 

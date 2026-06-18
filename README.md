@@ -41,7 +41,7 @@ For partnership opportunities with the PrOMMiS team, contact us at [prommis-supp
 ## Cite this work
 
 <!-- This is a placeholder for the citation information -->
-<!-- Will be adressed in [#175](https://github.com/prommis/prommis/pull/175) -->
+<!-- Will be addressed in [#175](https://github.com/prommis/prommis/pull/175) -->
 <!-- To cite this work, please use the "Cite this repository" feature available on the right side of this repository page. -->
 
 ## Funding Acknowledgements

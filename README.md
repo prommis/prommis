@@ -1,72 +1,49 @@
-# prommis
-Process Optimization and Modeling for Minerals Sustainability
+# PrOMMiS
 
-## Getting started (for PrOMMiS contributors)
+This is the Process Optimization and Modeling for Minerals Sustainability (PROMMiS) development repository.
 
-Unless otherwise noted, these commands assume that the working directory is the root of the local clone of this repository (i.e. the directory containing this README file).
+## Build Status
 
-### Installation
+<!-- The checks.yml file is missing in the repository -->
+<!-- [![Checks](https://github.com/prommis/prommis/actions/workflows/checks.yml/badge.svg)](https://github.com/prommis/prommis/actions/workflows/checks.yml) -->
+[![Documentation Status](https://readthedocs.org/projects/prommis/badge/?version=latest)](https://prommis.readthedocs.io/en/latest/?badge=latest)
+[![codecov](https://codecov.io/gh/prommis/prommis/branch/main/graph/badge.svg)](https://codecov.io/gh/prommis/prommis)  
+[![GitHub contributors](https://img.shields.io/github/contributors/prommis/prommis.svg)](https://github.com/prommis/prommis/graphs/contributors)  
+[![Merged PRs](https://img.shields.io/github/issues-pr-closed-raw/prommis/prommis.svg?label=merged+PRs)](https://github.com/prommis/prommis/pulls?q=is:pr+is:merged)
+![Open Issues](https://img.shields.io/github/issues/prommis/prommis)
+![Closed Issues](https://img.shields.io/github/issues-closed/prommis/prommis)
+<!-- [![Issue stats](http://isitmaintained.com/badge/resolution/prommis/prommis.svg)](http://isitmaintained.com/project/prommis/prommis) -->
 
-```sh
-conda create --name prommis-dev --yes python=3.11
-conda activate prommis-dev
-git clone https://github.com/prommis/prommis && cd prommis
-pip install -r requirements-dev.txt
-```
+## Getting started
 
-### Before committing
+Go to the [Getting Started](https://prommis.readthedocs.io/en/stable/getting_started.html) section of the documentation to quickly learn how to install and use PrOMMiS.
 
-Before running any of these commands, ensure the `prommis-dev` Conda environment has been activated:
+### Graphical UI
 
-```sh
-conda activate prommis-dev
-```
+The **Flowsheet Processor** lets you configure and run flowsheets in a graphical user interface, including specific versions designed for the IDAES, WaterTAP, and PrOMMiS initiatives.
 
-#### Sort import statements
+* One-click native installer for Windows and MacOS: [Download](https://prommis.github.io/idaes-flowsheet-processor-ui/docs/Download/prommis)
+* Source code installation (UNIX/Linux): [Github](https://github.com/prommis/idaes-flowsheet-processor-ui)
 
-```sh
-isort src/prommis
-```
+## Documentation
 
-#### Formatting code
+The PrOMMiS documentation is available online at <https://prommis.readthedocs.io>.
 
-```sh
-black .
-```
+## Developer Installation
 
-#### Running linter (Pylint)
+If you want to clone the repository and work directly with the code, please
+refer to the [Getting Started for Developers](https://prommis.readthedocs.io/en/stable/getting_started.html#for-prommis-developers) section of the documentation.
 
-```sh
-pylint prommis
-```
+## Contact
 
-#### Running spell checker (Typos)
+For partnership opportunities with the PrOMMiS team, contact us at [prommis-support@lbl.gov](prommis-support@lbl.gov).
 
-```sh
-typos
-```
+## Cite this work
 
-Note: if the `typos` executable is not found, it can be installed by running `conda install --yes -c conda-forge typos` after activating the `prommis-dev` Conda environment.
+<!-- This is a placeholder for the citation information -->
+<!-- Will be adressed in [#175](https://github.com/prommis/prommis/pull/175) -->
+<!-- To cite this work, please use the "Cite this repository" feature available on the right side of this repository page. -->
 
-#### Running tests
+## Funding Acknowledgements
 
-```sh
-pytest                          # run the complete test suite
-pytest -k test_my_flowsheet.py  # run only test defined in the file named test_my_flowsheet.py
-```
-
-#### Building documentation
-
-From the `docs/` subdirectory:
-
-```sh
-jupyter-book build .
-```
-
-#### Testing (executing) notebooks
-
-From the `docs/` subdirectory:
-
-```sh
-pytest --nbmake -m "solution" .
-```
+<!-- Placeholder for funding acknowledgements -->

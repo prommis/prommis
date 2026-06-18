@@ -43,6 +43,9 @@ For partnership opportunities with the PrOMMiS team, contact us at [prommis-supp
 <!-- This is a placeholder for the citation information -->
 <!-- Will be addressed in [#175](https://github.com/prommis/prommis/pull/175) -->
 <!-- To cite this work, please use the "Cite this repository" feature available on the right side of this repository page. -->
+If you use PrOMMiS in your work, please cite:
+
+>Tarka, T., Lee, A., Zamarripa-Perez, M., Paul, B., Garciadiego, A., Fritz, A., Dowling, A., Laird, C., Gounaris, C., Torres, A., Bhattacharyya, D., Siirola, J., Gunter, D., Beattie, K., Sahinidis, N. (2024). PROMMIS: Applying novel modeling methods to accelerate critical minerals research, development, demonstration, and deployment (RD3). In Society for Mining, Metallurgy & Exploration Inc. (Eds.), XXXI IMPC-International Mineral Processing Congress. (pp.980-990) Society for Mining, Metallurgy & Exploration Inc. <https://app.knovel.com/hotlink/toc/id:kpXXXIIMP1/impc-international-mineral/impc-international-mineral>
 
 ## Funding Acknowledgements
 

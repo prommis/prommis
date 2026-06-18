@@ -28,19 +28,20 @@ __author__ = (
 )
 __version__ = "1.0.0"
 
+from pyomo.environ import Var
 from pyomo.environ import units as pyunits
-from pyomo.environ import value, Var
+from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 import idaes.logger as idaeslog
 from idaes.core import declare_process_block_class
-from idaes.models.costing.QGESS import QGESSCostingData
 from idaes.core.base.costing_base import UnitModelCostingBlock
+from idaes.models.costing.QGESS import QGESSCostingData
 
 from prommis.costing.ree_costing_dictionaries import (
     load_REE_costing_dictionary,
     register_ree_currency_units,
-    )
+)
 
 _log = idaeslog.getLogger(__name__)
 
@@ -50,10 +51,10 @@ _log = idaeslog.getLogger(__name__)
 
 
 def REEUnitModelCostingBlock(
-        flowsheet_costing_block,
-        costing_method,
-        costing_method_arguments,
-        ):
+    flowsheet_costing_block,
+    costing_method,
+    costing_method_arguments,
+):
     """
     Wrapper method for constructing costing blocks for PrOMMiS REE unit models.
 
@@ -73,7 +74,9 @@ def REEUnitModelCostingBlock(
     else:
         # append REE_costing_params to the existing list, but put it first so
         # that name conflict can check against it during loading
-        costing_method_arguments["additional_costing_params"].insert(0, REE_costing_params)
+        costing_method_arguments["additional_costing_params"].insert(
+            0, REE_costing_params
+        )
 
     if "CEPCI_year" not in costing_method_arguments:
         costing_method_arguments["CEPCI_year"] = "2021"

@@ -8,35 +8,28 @@
 Tests for REE costing.
 
 """
+
 # TODO cleanup commented imports if tests don't use them
 # import os
 # from contextlib import nullcontext as does_not_raise
 
 import pyomo.environ as pyo
+
 # from pyomo.common.config import ConfigDict
 from pyomo.common.dependencies import attempt_import
+
 # from pyomo.core.base.expression import ScalarExpression
 # from pyomo.core.base.units_container import UnitsError
 from pyomo.environ import assert_optimal_termination
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
-# from pyomo.util.calc_var_value import calculate_variable_from_constraint
 
 import idaes.logger as idaeslog
 from idaes.core import FlowsheetBlock, UnitModelBlock
 from idaes.core.solvers import get_solver
-# from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-# from idaes.core.util.model_statistics import degrees_of_freedom
-# from idaes.core.util.scaling import (
-    # calculate_scaling_factors,
-    # get_jacobian,
-    # jacobian_cond,
-# )
 
 import pytest
 
-# from prommis.nanofiltration.costing.diafiltration_cost_model import (
-    # DiafiltrationCostingData,
 # )
 # from prommis.costing.custom_costing_example import CustomCostingData
 from prommis.costing.ree_costing import (
@@ -44,11 +37,25 @@ from prommis.costing.ree_costing import (
     REECostingData,
     REEUnitModelCostingBlock,
 )
-
 from prommis.costing.ree_costing_dictionaries import (
     load_REE_costing_dictionary,
     register_ree_currency_units,
-    )
+)
+
+# from pyomo.util.calc_var_value import calculate_variable_from_constraint
+
+# from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+# from idaes.core.util.model_statistics import degrees_of_freedom
+# from idaes.core.util.scaling import (
+# calculate_scaling_factors,
+# get_jacobian,
+# jacobian_cond,
+# )
+
+
+# from prommis.nanofiltration.costing.diafiltration_cost_model import (
+# DiafiltrationCostingData,
+
 
 _, watertap_costing_available = attempt_import("watertap.costing")
 # if watertap_costing_available:
@@ -107,18 +114,25 @@ def test_REEUnitModelCostingBlock_defaults():
         flowsheet_costing_block=m.fs.costing,
         costing_method=REECostingData.get_equipment_costing,
         costing_method_arguments={
-            "cost_accounts": ["1.1",],
+            "cost_accounts": [
+                "1.1",
+            ],
             "scaled_param": m.fs.unit.scaled_var,
         },
     )
 
     assert m.fs.unit.costing.costing_method_arguments["cost_accounts"] == ["1.1"]
-    assert m.fs.unit.costing.costing_method_arguments["scaled_param"] == m.fs.unit.scaled_var
+    assert (
+        m.fs.unit.costing.costing_method_arguments["scaled_param"]
+        == m.fs.unit.scaled_var
+    )
 
     # defaults set by REEUnitModelCostingBlock() wrapper on UnitModelCostingBlock
     assert m.fs.unit.costing.costing_method_arguments["tech"] == 10
     assert m.fs.unit.costing.costing_method_arguments["ccs"] == "A"
-    assert m.fs.unit.costing.costing_method_arguments["additional_costing_params"] == [REE_costing_params,]
+    assert m.fs.unit.costing.costing_method_arguments["additional_costing_params"] == [
+        REE_costing_params,
+    ]
     assert m.fs.unit.costing.costing_method_arguments["CEPCI_year"] == "2021"
 
     solver = get_solver()
@@ -132,11 +146,14 @@ def test_REEUnitModelCostingBlock_defaults():
         value(
             pyunits.convert(
                 147400.0 * pyunits.USD_2016,  # reference value
-                to_units=pyunits.MUSD_2021  # default CEPCI plant units
-                )
+                to_units=pyunits.MUSD_2021,  # default CEPCI plant units
             )
         )
-    assert pyunits.get_units(m.fs.unit.costing.bare_erected_cost["1.1"]) == pyunits.MUSD_2021
+    )
+    assert (
+        pyunits.get_units(m.fs.unit.costing.bare_erected_cost["1.1"])
+        == pyunits.MUSD_2021
+    )
 
 
 @pytest.mark.unit
@@ -154,6 +171,7 @@ def test_register_REE_currency_units_twice(caplog):
     )
     for record in caplog.records:
         assert msg in record.message
+
 
 # TODO finish updating these tests for the new syntax
 # def base_model():
@@ -3510,7 +3528,6 @@ def test_register_REE_currency_units_twice(caplog):
 #         REE_costing_params,
 #         additional_costing_params,
 #         ]
-    
 
 
 # @pytest.mark.component

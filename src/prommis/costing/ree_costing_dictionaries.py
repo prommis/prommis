@@ -23,14 +23,14 @@ Two python dictionaries that are loaded:
 __author__ = "Costing Team (A. Noring, B. Paul, D. Caballero, and M. Zamarripa)"
 __version__ = "1.0.0"
 
-import os
 import json
+import os
 
 from pyomo.common.fileutils import this_file_dir
 from pyomo.environ import units as pyunits
 
-from idaes.core import register_idaes_currency_units
 import idaes.logger as idaeslog
+from idaes.core import register_idaes_currency_units
 
 directory = this_file_dir()
 

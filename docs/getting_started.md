@@ -1,4 +1,4 @@
-# Getting started
+# Getting Started
 
 This page gets you started with the PrOMMiS Python package.
 

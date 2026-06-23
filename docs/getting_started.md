@@ -2,11 +2,11 @@
 
 This page gets you started with the PrOMMiS Python package.
 
-It depends on the [IDAES](https://idaes-pse.readthedocs.io/en/stable/) and [WaterTAP](https://watertap.readthedocs.io/en/stable/) Python packages, which means that these will be automatically installed as part of its installation.
-
 ## Install PrOMMiS
 
 PrOMMiS is distributed as a Python package, so can be installed through Python's standard tool, `pip`. These instructions assume you can run commands from a Mac OSX, Linux, or Windows Powershell terminal.
+
+Installation includes [IDAES](https://idaes-pse.readthedocs.io/en/stable/) and [WaterTAP](https://watertap.readthedocs.io/en/stable/) dependencies automatically.
 
 ### Create Python environment (optional)
 

@@ -111,6 +111,7 @@ ie. at the mixer tank outlet point.
 
 
 """
+from collections import OrderedDict
 
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
 from pyomo.environ import Block, Constraint, Param, units, value
@@ -127,10 +128,19 @@ from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.constants import Constants
 from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.misc import StrEnum
 
 from idaes.models.unit_models.mscontactor import MSContactor
 
 __author__ = "Arkoprabho Dasgupta, Douglas Allan"
+
+class ExtractionDirection(StrEnum):
+    """
+    Enum used to register the expected direction of material transfer.
+    """
+    notSet = "not_set"
+    loading = "loading"
+    stripping = "stripping"
 
 
 class SolventExtractionScaler(CustomScalerBase):
@@ -383,6 +393,15 @@ class SolventExtractionData(UnitModelBlockData):
             description="Arguments for heterogeneous reaction package for solvent extraction.",
         ),
     )
+    CONFIG.declare(
+        "extraction_direction",
+        ConfigValue(
+            default=ExtractionDirection.notSet,
+            domain=In(ExtractionDirection),
+            description="Expected direction of material transfer. This is not used "
+            "for any equations, but only for reporting the extraction percentage."
+        )
+    )
 
     def build(self):
 
@@ -521,3 +540,61 @@ class SolventExtractionData(UnitModelBlockData):
         self.aqueous_outlet = Port(extends=self.mscontactor.aqueous_outlet)
         self.organic_inlet = Port(extends=self.mscontactor.organic_inlet)
         self.organic_outlet = Port(extends=self.mscontactor.organic_outlet)
+
+    def _get_stream_table_contents(self, time_point=0):
+        return self.mscontactor._get_stream_table_contents(time_point)
+
+    def _get_performance_contents(self, time_point=0):
+
+        out = dict(
+            vars = OrderedDict(),
+            exprs = OrderedDict(),
+            params = OrderedDict()
+        )
+        if self.config.has_holdup:
+            for e in self.mscontactor.elements:
+                out["vars"][f"Aqueous phase % stage {e}"] = (
+                    self.mscontactor.volume_frac_stream[time_point, e, "aqueous"]
+                )
+
+        if self.config.create_hydrostatic_pressure_terms:
+            out["params"]["Stage base area"] = self.area_cross_stage
+            out["params"]["Elevation"] = self.elevation
+
+        # Add expressions        
+        for j in self.config.heterogeneous_reaction_package.element_list:
+            expr = 1
+            for e in self.mscontactor.elements:
+                expr *= self.mscontactor.heterogeneous_reactions[time_point, e].distribution_coefficient[j]
+
+            out["exprs"][f"Geometric mean distribution coefficient {j}"] = expr**(1 / len(self.mscontactor.elements))
+
+
+        # Find aqueous outlet state
+        if self.mscontactor.config.aqueous_config.flow_direction is FlowDirection.forward:
+            aq_out = self.mscontactor.aqueous[time_point, self.mscontactor.elements.last()]
+        elif self.mscontactor.config.aqueous_config.flow_direction is FlowDirection.backward:
+            aq_out = self.mscontactor.aqueous[time_point, self.mscontactor.elements.first()]
+        else:
+            return out
+        
+        # Find organic outlet state
+        if self.mscontactor.config.organic_config.flow_direction is FlowDirection.forward:
+            org_out = self.mscontactor.organic[time_point, self.mscontactor.elements.last()]
+        elif self.mscontactor.config.organic_config.flow_direction is FlowDirection.backward:
+            org_out = self.mscontactor.organic[time_point, self.mscontactor.elements.first()]
+        else:
+            return out
+
+        # Build dictionary of recovery expressions        
+        for j in self.config.heterogeneous_reaction_package.element_list:
+            if self.config.extraction_direction == ExtractionDirection.loading:
+                element_inflow = self.mscontactor.aqueous_inlet_state[time_point].flow_mol_comp[j]
+                out["exprs"][f"Recovery % {j}"] = 100* org_out.flow_mol_comp[f"{j}_o"] / element_inflow
+            elif self.config.extraction_direction == ExtractionDirection.stripping:
+                element_inflow = self.mscontactor.organic_inlet_state[time_point].flow_mol_comp[f"{j}_o"]
+                out["exprs"][f"Recovery % {j}"] = 100 * aq_out.flow_mol_comp[j] / element_inflow
+            else:
+                pass
+
+        return out

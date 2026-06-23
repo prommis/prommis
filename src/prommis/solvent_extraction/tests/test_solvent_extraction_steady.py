@@ -111,6 +111,10 @@ class Test_Solvent_Extraction_steady_model:
         }
         assert_solution_equivalent(model.fs.solex, expected_results)
 
+    def test_get_stream_table_contents(self, SolEx_frame):
+        out = SolEx_frame.fs.solex._get_stream_table_contents()
+        import pdb; pdb.set_trace()
+
 
 class Test_Solvent_Extraction_steady_model_hydrostatic_pressure:
     @pytest.fixture(scope="class")

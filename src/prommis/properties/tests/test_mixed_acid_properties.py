@@ -6,7 +6,7 @@
 #####################################################################################################
 import re
 
-from pyomo.environ import ConcreteModel, Constraint, Param, Set, value, Var
+from pyomo.environ import ConcreteModel, Constraint, Param, Set, Var, value
 
 from idaes.core import Component, FlowsheetBlock, Phase
 from idaes.core.scaling.util import (
@@ -390,120 +390,6 @@ class TestSulfuricAcidLeaching(object):
             assert k in [
                 "H2O",
                 "H_+",
-                "Na_+",
-                "HSO4_-",
-                "SO4_2-",
-                "Sc_3+",
-                "Y_3+",
-                "La_3+",
-                "Ce_3+",
-                "Pr_3+",
-                "Nd_3+",
-                "Sm_3+",
-                "Gd_3+",
-                "Dy_3+",
-                "Al_3+",
-                "Ca_2+",
-                "Fe_3+",
-                "Cl_-",
-            ]
-            assert k in model.fs.leach_soln.mw
-
-        assert model.fs.leach_soln._has_inherent_reactions
-
-        assert isinstance(model.fs.leach_soln.inherent_reaction_idx, Set)
-
-        assert model.fs.leach_soln.inherent_reaction_stoichiometry == {
-            ("H2SO4_Ka2", "liquid", "H_+"): 1,
-            ("H2SO4_Ka2", "liquid", "HSO4_-"): -1,
-            ("H2SO4_Ka2", "liquid", "SO4_2-"): 1,
-            ("H2SO4_Ka2", "liquid", "H2O"): 0,
-            ("H2SO4_Ka2", "liquid", "Cl_-"): 0,
-            ("H2SO4_Ka2", "liquid", "Sc_3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Y_3+"): 0,
-            ("H2SO4_Ka2", "liquid", "La_3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Ce_3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Pr_3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Nd_3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Sm_3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Gd_3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Dy_3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Al_3+"): 0,
-            ("H2SO4_Ka2", "liquid", "Ca_2+"): 0,
-            ("H2SO4_Ka2", "liquid", "Fe_3+"): 0,
-        }
-
-        assert isinstance(model.fs.leach_soln.k_eq, Param)
-        assert len(model.fs.leach_soln.k_eq) == 1
-        assert value(model.fs.leach_soln.k_eq["H2SO4_Ka2"]) == pytest.approx(
-            10**-1.99, rel=1e-8
-        )
-
-        assert isinstance(model.fs.leach_soln.dens_mass, Param)
-        assert value(model.fs.leach_soln.dens_mass) == pytest.approx(1, rel=1e-8)
-
-    @pytest.mark.unit
-    def test_build_state(self, model):
-        model.fs.state = model.fs.leach_soln.build_state_block(model.fs.time)
-
-        assert len(model.fs.state) == 1
-
-        assert isinstance(model.fs.state[0].flow_vol, Var)
-        assert isinstance(model.fs.state[0].conc_mass_comp, Var)
-        assert isinstance(model.fs.state[0].conc_mol_comp, Var)
-
-        assert isinstance(model.fs.state[0].conc_mol_comp_eqn, Constraint)
-        assert isinstance(model.fs.state[0].h2o_concentration_eqn, Constraint)
-        assert isinstance(model.fs.state[0].inherent_equilibrium_eqn, Constraint)
-        assert len(model.fs.state[0].inherent_equilibrium_eqn) == 1
-
-        assert isinstance(model.fs.state[0].dens_mass, Param)
-
-    @pytest.mark.unit
-    def test_fix_state(self, model):
-        model.fs.state = model.fs.leach_soln.build_state_block(model.fs.time)
-
-        model.fs.state[0].flow_vol.set_value(10)
-        model.fs.state[0].conc_mass_comp[:].set_value(1)
-        model.fs.state[0].conc_mol_comp[:].set_value(1)
-
-        model.fs.state.fix_initialization_states()
-
-        assert model.fs.state[0].flow_vol.fixed
-        for j in model.fs.leach_soln.component_list:
-            if j == "H2O" or j == "HSO4_+":
-                assert not model.fs.state[0].conc_mass_comp[j].fixed
-            else:
-                assert model.fs.state[0].conc_mass_comp[j].fixed
-            assert not model.fs.state[0].conc_mol_comp[j].fixed
-
-            assert model.fs.state[0].conc_mol_comp_eqn[j].active
-
-        assert model.fs.state[0].h2o_concentration_eqn.active
-        assert model.fs.state[0].inherent_equilibrium_eqn.active
-        assert model.fs.state[0].inherent_equilibrium_eqn["H2SO4_Ka2"].active
-
-
-class TestSulfuricAcidLeaching(object):
-    @pytest.fixture(scope="class")
-    def model(self):
-        m = ConcreteModel()
-        m.fs = FlowsheetBlock(dynamic=False)
-
-        m.fs.leach_soln = MixedAcidParameterBlock(include_sulfates=True)
-
-        return m
-
-    @pytest.mark.unit
-    def test_parameters(self, model):
-        assert len(model.fs.leach_soln.phase_list) == 1
-        for k in model.fs.leach_soln.phase_list:
-            assert k == "liquid"
-
-        for k in model.fs.leach_soln.component_list:
-            assert k in [
-                "H2O",
-                "H_+",
                 "HSO4_-",
                 "SO4_2-",
                 "Sc_3+",
@@ -726,4 +612,133 @@ class TestOxalicAcid(object):
         assert str(model.fs.state[0].inherent_equilibrium_eqn["H2C2O4_Ka2"].body) == (
             "fs.leach_soln.k_eq[H2C2O4_Ka2]*fs.state[0.0].conc_mol_comp[HC2O4_-] "
             "- fs.state[0.0].conc_mol_comp[H_+]*fs.state[0.0].conc_mol_comp[C2O4_2-]"
+        )
+
+
+class TestAscorbateAcids(object):
+    @pytest.fixture(scope="class")
+    def model(self):
+        m = ConcreteModel()
+        m.fs = FlowsheetBlock(dynamic=False)
+
+        m.fs.leach_soln = MixedAcidParameterBlock(include_ascorbates=True)
+
+        return m
+
+    @pytest.mark.unit
+    def test_parameters(self, model):
+        assert len(model.fs.leach_soln.phase_list) == 1
+        for k in model.fs.leach_soln.phase_list:
+            assert k == "liquid"
+
+        for k in model.fs.leach_soln.component_list:
+            assert k in [
+                "H2O",
+                "H_+",
+                "HAsc",
+                "Asc_-",
+                "HDha",
+                "Dha_-",
+                "Sc_3+",
+                "Y_3+",
+                "La_3+",
+                "Ce_3+",
+                "Pr_3+",
+                "Nd_3+",
+                "Sm_3+",
+                "Gd_3+",
+                "Dy_3+",
+                "Al_3+",
+                "Ca_2+",
+                "Fe_3+",
+                "Cl_-",
+            ]
+            assert k in model.fs.leach_soln.mw
+
+        assert model.fs.leach_soln._has_inherent_reactions
+
+        assert isinstance(model.fs.leach_soln.inherent_reaction_idx, Set)
+
+        rxn_set = {"HAsc_Ka1", "HDha_Ka1"}
+        for (
+            r,
+            _,
+            j,
+        ), nu_j in model.fs.leach_soln.inherent_reaction_stoichiometry.items():
+            assert r in rxn_set
+            if r == "HAsc_Ka1":
+                if j == "H_+" or j == "Asc_-":
+                    assert nu_j == 1
+                elif j == "HAsc":
+                    assert nu_j == -1
+                else:
+                    assert nu_j == 0
+            else:
+                if j == "H_+" or j == "Dha_-":
+                    assert nu_j == 1
+                elif j == "HDha":
+                    assert nu_j == -1
+                else:
+                    assert nu_j == 0
+
+        assert isinstance(model.fs.leach_soln.k_eq, Param)
+        assert len(model.fs.leach_soln.k_eq) == 2
+        assert value(model.fs.leach_soln.k_eq["HAsc_Ka1"]) == pytest.approx(
+            10**-4.04, rel=1e-8
+        )
+        assert value(model.fs.leach_soln.k_eq["HDha_Ka1"]) == pytest.approx(
+            10**-3.90, rel=1e-8
+        )
+
+        assert isinstance(model.fs.leach_soln.dens_mass, Param)
+        assert value(model.fs.leach_soln.dens_mass) == pytest.approx(1, rel=1e-8)
+
+    @pytest.mark.unit
+    def test_build_state(self, model):
+        model.fs.state = model.fs.leach_soln.build_state_block(model.fs.time)
+
+        assert len(model.fs.state) == 1
+
+        assert isinstance(model.fs.state[0].flow_vol, Var)
+        assert isinstance(model.fs.state[0].conc_mass_comp, Var)
+        assert isinstance(model.fs.state[0].conc_mol_comp, Var)
+
+        assert isinstance(model.fs.state[0].conc_mol_comp_eqn, Constraint)
+        assert isinstance(model.fs.state[0].h2o_concentration_eqn, Constraint)
+        assert isinstance(model.fs.state[0].inherent_equilibrium_eqn, Constraint)
+        assert len(model.fs.state[0].inherent_equilibrium_eqn) == 2
+
+        assert isinstance(model.fs.state[0].dens_mass, Param)
+
+    @pytest.mark.unit
+    def test_fix_state(self, model):
+        model.fs.state = model.fs.leach_soln.build_state_block(model.fs.time)
+
+        model.fs.state[0].flow_vol.set_value(10)
+        model.fs.state[0].conc_mass_comp[:].set_value(1)
+        model.fs.state[0].conc_mol_comp[:].set_value(1)
+
+        model.fs.state.fix_initialization_states()
+
+        assert model.fs.state[0].flow_vol.fixed
+        for j in model.fs.leach_soln.component_list:
+            if j == "H2O":
+                assert not model.fs.state[0].conc_mass_comp[j].fixed
+            else:
+                assert model.fs.state[0].conc_mass_comp[j].fixed
+            assert not model.fs.state[0].conc_mol_comp[j].fixed
+
+            assert model.fs.state[0].conc_mol_comp_eqn[j].active
+
+        assert model.fs.state[0].h2o_concentration_eqn.active
+        assert model.fs.state[0].inherent_equilibrium_eqn.active
+        assert model.fs.state[0].inherent_equilibrium_eqn["HAsc_Ka1"].active
+        assert str(model.fs.state[0].inherent_equilibrium_eqn["HAsc_Ka1"].body) == (
+            "fs.leach_soln.k_eq[HAsc_Ka1]*fs.state[0.0].conc_mol_comp[HAsc] "
+            "- fs.state[0.0].conc_mol_comp[H_+]*fs.state[0.0].conc_mol_comp[Asc_-]"
+        )
+        assert model.fs.state[0].inherent_equilibrium_eqn["HDha_Ka1"].active
+        assert str(model.fs.state[0].inherent_equilibrium_eqn["HDha_Ka1"].body) == (
+            "fs.leach_soln.k_eq[HDha_Ka1]*fs.state[0.0].conc_mol_comp[HDha] "
+            "- fs.state[0.0].conc_mol_comp[H_+]*fs.state[0.0].conc_mol_comp[Dha_-]"
         )

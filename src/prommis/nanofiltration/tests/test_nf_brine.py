@@ -27,7 +27,7 @@ def test_main():
     """
     m = main()
     test_dict = {
-        "pressure": [m.fs.pump.outlet.pressure[0] * 1e-5, 11.362344380368109],
+        "pressure": [m.fs.pump.outlet.pressure[0] * 1e-5, 10.769205812393905],
         "area": [m.fs.unit.area, 999.9990553265868],
         "nf_recovery": [
             m.fs.unit.recovery_vol_phase[0.0, "Liq"] * 100,

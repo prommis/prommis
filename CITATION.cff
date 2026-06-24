@@ -2,7 +2,7 @@ cff-version: 1.2.0
 title: >-
   Process Optimization and Modeling for Minerals
   Sustainability (PrOMMiS) v1.0.0
-message: 'If you use this software, please cite both the article from preferred-citation and the software itself.'
+message: "If you use this software, please cite both the article from preferred-citation and the software itself."
 type: software
 authors:
   - family-names: Beattie
@@ -66,7 +66,7 @@ identifiers:
     value: 10.11578/dc.20250729.4
     description: OSTI software record
   - type: url
-    value: 'https://www.osti.gov/biblio/code-158882'
+    value: "https://www.osti.gov/doecode/biblio/158882"
     description: OSTI entry
   - type: url
     value: >-
@@ -74,8 +74,8 @@ identifiers:
     description: >-
       Conference paper in International Mineral Processing
       Congress
-repository-code: 'https://github.com/prommis/prommis'
-url: 'https://github.com/prommis/prommis'
+repository-code: "https://github.com/prommis/prommis"
+url: "https://github.com/prommis/prommis"
 abstract: >
   The U.S. Department of Energy's (DOE) Process Optimization
   and Modeling for Minerals Sustainability (PrOMMiS) project
@@ -89,8 +89,8 @@ keywords:
   - rare earth elements
 license: BSD-3-Clause
 version: 1.0.0
-date-released: '2025-07-16'
-license-url: 'https://github.com/prommis/prommis/blob/main/LICENSE.md'
+date-released: "2025-07-16"
+license-url: "https://github.com/prommis/prommis/blob/main/LICENSE.md"
 doi: 10.11578/dc.20250729.4
 preferred-citation:
   type: conference-paper
@@ -132,7 +132,7 @@ preferred-citation:
     PROMMIS: Applying novel modeling methods to accelerate critical minerals
     research, development, demonstration, and deployment (RD3)
   publisher:
-    name: 'Society for Mining, Metallurgy, and Exploration (SME)'
+    name: "Society for Mining, Metallurgy, and Exploration (SME)"
   pages: 980-990
   url: >-
     https://app.knovel.com/hotlink/toc/id:kpXXXIIMP1/impc-international-mineral/impc-international-mineral

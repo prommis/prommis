@@ -2763,7 +2763,7 @@ def optimize_model(m):
             # Assign a large penalty for having contaminants
             + 1e5
             * (
-                + m.fs.metal_product_flow[0, "Al"]
+                +m.fs.metal_product_flow[0, "Al"]
                 + m.fs.metal_product_flow[0, "Ca"]
                 + m.fs.metal_product_flow[0, "Fe"]
             )
@@ -2790,6 +2790,7 @@ def optimize_model(m):
             == 2 * b.properties[t].conc_mol_comp["SO4"]
             + b.properties[t].conc_mol_comp["HSO4"]
         )
+
     # Apply a scaling factor of 10 to conc_mol_comp values - should double check if this is necessary
     for condata in m.fs.leach_liquid_feed.H2SO4_stoich_eqn.values():
         set_scaling_factor(condata, 10)
@@ -2801,6 +2802,7 @@ def optimize_model(m):
             b.properties[t].params.Ka2 * b.properties[t].conc_mol_comp["HSO4"]
             == b.properties[t].conc_mol_comp["SO4"] * b.properties[t].conc_mol_comp["H"]
         )
+
     # Update scaling factors
     sf = get_scaling_factor(m.fs.leach.mscontactor.liquid[0, 1].hso4_dissociation)
     for condata in m.fs.leach_liquid_feed.HSO4_dissociation.values():

@@ -104,25 +104,11 @@ class TestHydrogenDecrepitationQGESS:
         )
         model.fs.costing.efficiency.set_value(0.95 * pyunits.dimensionless)
 
-        model.fs.costing.hours_per_shift = Param(
+        model.fs.costing.capacity_factor = Param(
             mutable=True,
-            units=pyunits.hr,
+            units=pyunits.dimensionless,
         )
-        model.fs.costing.hours_per_shift.set_value(8 * pyunits.hr)
-
-        model.fs.costing.shifts_per_day = Param(
-            mutable=True,
-            units=1 / pyunits.day,
-        )
-        model.fs.costing.shifts_per_day.set_value(3 * (pyunits.day) ** (-1))
-
-        model.fs.costing.operating_days_per_year = Param(
-            mutable=True,
-            units=pyunits.day / pyunits.year,
-        )
-        model.fs.costing.operating_days_per_year.set_value(
-            336 * pyunits.day / pyunits.year
-        )
+        model.fs.costing.capacity_factor.set_value(0.92)
 
         model.fs.costing.utility_rate = Param(
             mutable=True,
@@ -182,12 +168,7 @@ class TestHydrogenDecrepitationQGESS:
         assert isinstance(model.fs.costing.price_insulation2, Param)
         assert isinstance(model.fs.costing.price_metal2, Param)
         assert isinstance(model.fs.costing.efficiency, Param)
-        assert isinstance(model.fs.costing.hours_per_shift, Param)
-        assert isinstance(model.fs.costing.shifts_per_day, Param)
-        assert isinstance(
-            model.fs.costing.operating_days_per_year,
-            Param,
-        )
+        assert isinstance(model.fs.costing.capacity_factor, Param)
         assert isinstance(model.fs.costing.utility_rate, Param)
         assert isinstance(
             model.fs.costing.temperature_controller_price,
@@ -232,9 +213,7 @@ class TestHydrogenDecrepitationQGESS:
             operators_per_shift=[
                 2,
             ],
-            hours_per_shift=8,
-            shifts_per_day=3,
-            operating_days_per_year=336,
+            capacity_factor=0.92,
             # powder product is a mixed basket that would require additional processing to separate
             pure_product_output_rates={
                 "Nd2Fe14B": 0.0000 * pyunits.kg / pyunits.hr,
@@ -337,7 +316,7 @@ class TestHydrogenDecrepitationQGESS:
             model.fs.costing.sales_patenting_and_research_cost
         ) == pytest.approx(2.0855, rel=1e-4)
         assert value(model.fs.costing.admin_and_support_labor_cost) == pytest.approx(
-            0.15402, rel=1e-4
+            0.15404, rel=1e-4
         )
         assert value(
             model.fs.costing.property_taxes_and_insurance_cost

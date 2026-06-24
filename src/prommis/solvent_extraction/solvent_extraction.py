@@ -552,7 +552,7 @@ class SolventExtractionData(UnitModelBlockData):
         out = dict(vars=OrderedDict(), exprs=OrderedDict(), params=OrderedDict())
         if self.config.has_holdup:
             for e in self.mscontactor.elements:
-                out["vars"][f"Aqueous phase % stage {e}"] = (
+                out["vars"][f"Aqueous phase frac stage {e}"] = (
                     self.mscontactor.volume_frac_stream[time_point, e, "aqueous"]
                 )
 
@@ -571,48 +571,5 @@ class SolventExtractionData(UnitModelBlockData):
             out["exprs"][f"Geometric mean distribution coefficient {j}"] = expr ** (
                 1 / len(self.mscontactor.elements)
             )
-
-        # Find aqueous outlet state
-        if self.config.aqueous_stream.flow_direction is FlowDirection.forward:
-            aq_out = self.mscontactor.aqueous[
-                time_point, self.mscontactor.elements.last()
-            ]
-        elif self.config.aqueous_stream.flow_direction is FlowDirection.backward:
-            aq_out = self.mscontactor.aqueous[
-                time_point, self.mscontactor.elements.first()
-            ]
-        else:
-            return out
-
-        # Find organic outlet state
-        if self.config.organic_stream.flow_direction is FlowDirection.forward:
-            org_out = self.mscontactor.organic[
-                time_point, self.mscontactor.elements.last()
-            ]
-        elif self.config.organic_stream.flow_direction is FlowDirection.backward:
-            org_out = self.mscontactor.organic[
-                time_point, self.mscontactor.elements.first()
-            ]
-        else:
-            return out
-
-        # Build dictionary of recovery expressions
-        for j in self.config.heterogeneous_reaction_package.element_list:
-            if self.config.extraction_direction == ExtractionDirection.loading:
-                element_inflow = self.mscontactor.aqueous_inlet_state[
-                    time_point
-                ].flow_mol_comp[j]
-                out["exprs"][f"Recovery % {j}"] = (
-                    100 * org_out.flow_mol_comp[f"{j}_o"] / element_inflow
-                )
-            elif self.config.extraction_direction == ExtractionDirection.stripping:
-                element_inflow = self.mscontactor.organic_inlet_state[
-                    time_point
-                ].flow_mol_comp[f"{j}_o"]
-                out["exprs"][f"Recovery % {j}"] = (
-                    100 * aq_out.flow_mol_comp[j] / element_inflow
-                )
-            else:
-                pass
 
         return out

@@ -129,21 +129,10 @@ from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.constants import Constants
 from idaes.core.util.exceptions import ConfigurationError
-from idaes.core.util.misc import StrEnum
 
 from idaes.models.unit_models.mscontactor import MSContactor
 
 __author__ = "Arkoprabho Dasgupta, Douglas Allan"
-
-
-class ExtractionDirection(StrEnum):
-    """
-    Enum used to register the expected direction of material transfer.
-    """
-
-    notSet = "not_set"
-    loading = "loading"
-    stripping = "stripping"
 
 
 class SolventExtractionScaler(CustomScalerBase):
@@ -394,15 +383,6 @@ class SolventExtractionData(UnitModelBlockData):
             default=False,
             domain=Bool,
             description="Arguments for heterogeneous reaction package for solvent extraction.",
-        ),
-    )
-    CONFIG.declare(
-        "extraction_direction",
-        ConfigValue(
-            default=ExtractionDirection.notSet,
-            domain=In(ExtractionDirection),
-            description="Expected direction of material transfer. This is not used "
-            "for any equations, but only for reporting the extraction percentage.",
         ),
     )
 

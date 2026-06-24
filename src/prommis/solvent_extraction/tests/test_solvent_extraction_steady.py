@@ -18,7 +18,6 @@ from idaes.core.util.testing import assert_solution_equivalent
 import pytest
 
 from prommis.solvent_extraction.solvent_extraction import (
-    ExtractionDirection,
     SolventExtractionInitializer,
 )
 from prommis.solvent_extraction.solvent_extraction_steady import (

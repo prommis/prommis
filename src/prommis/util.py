@@ -5,16 +5,12 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Temporary home for assert_solution_equivalent until it gets moved to IDAES
+Utility functions that are useful when working with PrOMMiS models
 """
-
-from math import ceil
-import textwrap
-import pytest
 
 from pyomo.common.collections import ComponentSet
 from pyomo.common.deprecation import relocated_module_attribute
-from pyomo.environ import Expression, log10, Reference, value, Var
+from pyomo.environ import Reference, Var
 from pyomo.dae import DerivativeVar
 from pyomo.dae.flatten import flatten_dae_components, slice_component_along_sets
 
@@ -22,6 +18,8 @@ import idaes.logger as idaeslog
 from idaes.core.scaling.util import get_scaling_factor, set_scaling_factor
 
 _log = idaeslog.getLogger(__name__)
+
+__author__ = "Douglas Allan"
 
 relocated_module_attribute(
     "assert_solution_equivalent",

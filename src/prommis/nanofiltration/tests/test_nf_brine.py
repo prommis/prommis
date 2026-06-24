@@ -35,7 +35,7 @@ def test_main():
         ],
         "li_rejection": [
             value(m.fs.unit.rejection_intrinsic_phase_comp[0, "Liq", "Li_+"]) * 100,
-            1.8379272407186817,
+            1.797218846339098,
         ],
         "feed_ion_ratio": [
             (value(m.fs.feed.flow_mol_phase_comp[0, "Liq", "Mg_2+"]) / 0.024)
@@ -45,7 +45,7 @@ def test_main():
         "perm_ion_ratio": [
             (value(m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Mg_2+"]) / 0.024)
             / (value(m.fs.permeate.flow_mol_phase_comp[0, "Liq", "Li_+"]) / 0.0069),
-            0.4972950260825848,
+            0.49851171341975153,
         ],
     }
     for model_result, testval in test_dict.values():

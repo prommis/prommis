@@ -789,7 +789,7 @@ def set_scaling(m):
                 )
 
 
-def set_operating_conditions(m):
+def set_operating_conditions(m, DEHPA_dosage=0.2):
     """
     Set the operating conditions of the flowsheet such that the degrees of freedom are zero.
 
@@ -798,7 +798,7 @@ def set_operating_conditions(m):
     """
     # Constants
     # Assume a 20% volume-by-volume ratio
-    dosage = 20 / 100
+    dosage = DEHPA_dosage
     dehpa_conc = 975.8e3 * dosage * units.mg / units.L
     kerosene_conc = 8.2e5 * units.mg / units.L
     Temp_room = 303 * units.K

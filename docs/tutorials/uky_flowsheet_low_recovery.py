@@ -793,7 +793,7 @@ def set_scaling(m):
                 )
 
 
-def set_operating_conditions(m):
+def set_operating_conditions(m, DEHPA_dosage=0.05):
     """
     Set the operating conditions of the flowsheet such that the degrees of freedom are zero.
 
@@ -802,7 +802,7 @@ def set_operating_conditions(m):
     """
     # Constants
     # Assume a 5% volume-by-volume ratio
-    dosage = 5 / 100
+    dosage = DEHPA_dosage
     dehpa_conc = 975.8e3 * dosage * units.mg / units.L
     kerosene_conc = 8.2e5 * units.mg / units.L
     Temp_room = 303 * units.K
@@ -2880,11 +2880,5 @@ def data_reconcilliation(m):
 
 if __name__ == "__main__":
     m, results = main()
-    warn(
-        "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
-    )
-    warn(
-        "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
-    )
     # optimize_model(m)
     data_reconcilliation(m)

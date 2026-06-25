@@ -8,19 +8,15 @@
 Python script to read costing components
 This script reads the library of costing components (scaled cost, reference
 parameters, costing exponents, etc.) from the json files.
-First, open json file, then create a python dictionary that gets imported into
-power_plant_capcost.py
-
-Two python dictionaries that are loaded:
-* BB_costing_data
-* sCO2_costing_params
 
 """
 
 # TODO: Missing docstrings
 # pylint: disable=missing-function-docstring
 
-__author__ = "Costing Team (A. Noring, B. Paul, D. Caballero, and M. Zamarripa)"
+__author__ = (
+    "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, L. Deng, and M. Zamarripa)"
+)
 __version__ = "1.0.0"
 
 import json
@@ -75,12 +71,12 @@ def load_REE_costing_dictionary():
     Specifically it includes scaling exponents, valid ranges for the
     scaled parameter, and units for those ranges. It is important to note
     the units only apply to the ranges and are not necessarily the units
-    that the reference parameter value will be given in.. It includes the
+    that the reference parameter value will be given in. It includes the
     total plant cost (TPC), reference parameter value, and units for that
     value.
 
     This dictionary is nested with the following structure:
-    source --> account --> property name --> property values
+    tech --> ccs --> account --> property name --> property values
     """
     with open(os.path.join(directory, "REE_costing_parameters.json"), "r") as file:
         REE_costing_parameters = json.load(file)
@@ -90,7 +86,6 @@ def load_REE_costing_dictionary():
 def load_default_sale_prices():
     """
     Dictionary of default prices
-    MUSD: the currency units are millions of USD, so its price need a 1e-6 multiplier to get USD
     """
     register_idaes_currency_units()
 

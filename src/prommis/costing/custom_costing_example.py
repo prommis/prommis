@@ -51,7 +51,7 @@ class CustomCostingData(FlowsheetCostingBlockData):
         material_factor_dict = (
             {  # material factors for each valid choice of shell material
                 "carbonsteel": 1,
-                "stainlessteel": 1.5,
+                "stainlesssteel": 1.5,
                 "aluminum": 2,
             }
         )

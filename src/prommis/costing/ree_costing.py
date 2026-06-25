@@ -5,18 +5,14 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Power Plant costing library
-This method leverages NETL costing capabilities. Two main methods have been
-developed to calculate the capital cost of power generation plants:
+REE costing library
+This method leverages NETL costing capabilities.
 
-1. Fossil fueled power plants (from SCPC to IGCC) (get_PP_costing)
-2. Supercritical CO2 power cycles (direct and indirect) (get_sCO2_unit_cost)
+- calculate_REE_costing_bounds() to provide an estimate of costing bounds
 
-Other methods:
-
-    - check_sCO2_costing_bounds() to display a warning if costing model have
-      been used outside the range that where designed for
-    - get_ASU_cost() to cost air separation units
+Other methods for calculating capital and equipment costs live in IDAES.
+Methods for byproduct recovery and uncertainty quantification live in other
+modules in this directory.
 """
 
 # TODO: Missing docstrings
@@ -24,11 +20,13 @@ Other methods:
 # pylint: disable=missing-function-docstring
 
 __author__ = (
-    "Costing Team (A. Noring, A. Deshpande, B. Paul, D. Caballero, and M. Zamarripa)"
+    "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, L. Deng, and M. Zamarripa)"
 )
 __version__ = "1.0.0"
 
-from pyomo.environ import Var
+from functools import partial
+from pyomo.common.config import ConfigValue
+from pyomo.environ import Var, Constraint
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
@@ -101,7 +99,17 @@ class REECostingData(QGESSCostingData):
 
     # IDAES users must explicitly select a power plant tech
     # for PrOMMiS, if users don't select a tech value, assume they want 10 (UKy)
-    CONFIG["tech"] = 10
+    # make 10 the default, but leave the domain as int so users can use tech 1-9 if they want to
+    del CONFIG["tech"]
+
+    CONFIG.declare(
+        "tech",
+        ConfigValue(
+            default=10,
+            domain=int,
+            description="Integer corresponding to supported technology libraries, where 1-7 are various power plant types, 8-9 are specific case studies, and 10 is UKy REE.",
+        ),
+    )
 
     def build_global_params(self):
         """
@@ -113,7 +121,6 @@ class REECostingData(QGESSCostingData):
         for each costing method to separate the parameters for each method.
         """
         super().build_global_params()
-        self.config.tech = 10
 
         # Set the base year for all costs
         self.base_currency = pyunits.USD_2021
@@ -121,59 +128,33 @@ class REECostingData(QGESSCostingData):
         self.base_period = pyunits.year
 
     def calculate_REE_costing_bounds(
-        b, capacity, grade, CE_index_year, recalculate=False
+        b, capacity, grade, report=False,
     ):
         # adapted from https://doi.org/10.1038/s41893-023-01145-1
         # This method accepts a flowsheet-level costing block
         # capacity and grade should be variables with Pyomo units,
         # or values with Pyomo unit containers
-        # CE_index_year should be a string currency unit, e.g. "2021"
-        # recalculate tells method to delete and rebuild components
 
-        if recalculate and hasattr(b, "components_already_built"):
-            delattr(b, "capacity")
-            delattr(b, "grade")
-            delattr(b, "costing_lower_bound")
-            delattr(b, "costing_upper_bound")
-            delattr(b, "costing_lower_bound_eq")
-            delattr(b, "costing_upper_bound_eq")
+    
+        b.capacity = Var(
+            initialize=value(pyunits.convert(capacity, to_units=pyunits.tonnes)),
+            bounds=(0, None),
+            doc="Feedstock capacity of site",
+            units=pyunits.tonnes,
+        )
+        b.capacity.fix(capacity)
 
-        if not hasattr(b, "capacity"):
-            b.capacity = Var(
-                initialize=value(pyunits.convert(capacity, to_units=pyunits.tonnes)),
-                bounds=(0, None),
-                doc="Feedstock capacity of site",
-                units=pyunits.tonnes,
-            )
-            b.capacity.fix(capacity)
-            _log.info(
-                "New variable 'capacity' created as attribute of {}".format(b.name)
-            )
-        else:
-            _log.info(
-                "Flowsheet-level costing block {} already has attribute "
-                "'capacity', moving on. Set 'recalculate' to True to delete "
-                "old objects and recalculate for new inputs".format(b.name)
-            )
+    
+        b.grade = Var(
+            initialize=value(pyunits.convert(grade, to_units=pyunits.percent)),
+            bounds=(0, None),
+            doc="Grade percentage of site. The value should be a "
+            "percentage, for example 10 for 10%.",
+            units=pyunits.percent,
+        )
+        b.grade.fix(grade)
 
-        if not hasattr(b, "grade"):
-            b.grade = Var(
-                initialize=value(pyunits.convert(grade, to_units=pyunits.percent)),
-                bounds=(0, None),
-                doc="Grade percentage of site. The value should be a "
-                "percentage, for example 10 for 10%.",
-                units=pyunits.percent,
-            )
-            b.grade.fix(grade)
-            _log.info("New variable 'grade' created as attribute of {}".format(b.name))
-        else:
-            _log.info(
-                "Flowsheet-level costing block {} already has attribute "
-                "'grade', moving on. Set 'recalculate' to True to delete "
-                "old objects and recalculate for new inputs".format(b.name)
-            )
-
-        processes = {
+        b.processes = {
             "Total Capital": [81, 1.4, -0.46, 0.063],
             "Total Operating": [27, 0.87, -0.087, 0.038],
             "Beneficiation": [2.7, 1.3, -0.15, 0.062],
@@ -189,126 +170,84 @@ class REECostingData(QGESSCostingData):
             "Mining": [25, 2.5, -0.32, 0.095],
         }
 
-        if not hasattr(b, "costing_lower_bound"):
-            b.costing_lower_bound = Var(
-                processes,
-                initialize=1,
-                bounds=(0, None),
-                doc="Estimated lower bound on per unit production cost of site",
-                units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
-            )
-            _log.info(
-                "New variable 'costing_lower_bound' created as attribute of {}".format(
-                    b.name
-                )
-            )
-        else:
-            _log.info(
-                "Flowsheet-level costing block {} already has attribute "
-                "'costing_lower_bound', moving on. Set 'recalculate' to True to delete "
-                "old objects and recalculate for new inputs".format(b.name)
-            )
+        b.costing_lower_bound = Var(
+            b.processes,
+            initialize=1,
+            bounds=(0, None),
+            doc="Estimated lower bound on per unit production cost of site",
+            units=b.CEPCI_units / pyunits.kg,
+        )
 
-        if not hasattr(b, "costing_upper_bound"):
-            b.costing_upper_bound = Var(
-                processes,
-                initialize=1,
-                bounds=(0, None),
-                doc="Estimated upper bound on per unit production cost of site",
-                units=getattr(pyunits, "USD_" + CE_index_year) / pyunits.kg,
-            )
-            _log.info(
-                "New variable 'costing_upper_bound' created as attribute of {}".format(
-                    b.name
-                )
-            )
-        else:
-            _log.info(
-                "Flowsheet-level costing block {} already has attribute "
-                "'costing_upper_bound', moving on. Set 'recalculate' to True to delete "
-                "old objects and recalculate for new inputs".format(b.name)
-            )
+        b.costing_upper_bound = Var(
+            b.processes,
+            initialize=1,
+            bounds=(0, None),
+            doc="Estimated upper bound on per unit production cost of site",
+            units=b.CEPCI_units / pyunits.kg,
+        )
 
-        if not hasattr(b, "costing_lower_bound_eq"):
-
-            @b.Constraint(processes)
-            def costing_lower_bound_eq(c, p):
+        def rule_costing_lower_bound_eq(c, p, ps):
                 return (
                     c.costing_lower_bound[p]
                     == pyunits.convert(
                         pyunits.USD_2022
-                        * (processes[p][0] - processes[p][1])
+                        * (ps[p][0] - ps[p][1])
                         * (
                             pyunits.convert(c.grade, to_units=pyunits.dimensionless)
                             * pyunits.convert(c.capacity, to_units=pyunits.tonnes)
                             / pyunits.tonnes
                         )
-                        ** (processes[p][2] - processes[p][3]),
-                        to_units=getattr(pyunits, "USD_" + CE_index_year),
+                        ** (ps[p][2] - ps[p][3]),
+                        to_units=b.CEPCI_units,
                     )
                     / pyunits.kg
                 )
-
-            # assume model is already solved, so just calculate costing bounds here
-            for i in b.costing_lower_bound.keys():
-                calculate_variable_from_constraint(
-                    b.costing_lower_bound[i],
-                    b.costing_lower_bound_eq[i],
-                )
-            _log.info(
-                "New constraint 'costing_lower_bounding_eq' created as attribute of {}".format(
-                    b.name
-                )
-            )
-        else:
-            _log.info(
-                "Flowsheet-level costing block {} already has indexed "
-                "constraint 'costing_lower_bounding_eq', reporting existing results. "
-                "Set 'recalculate' to True to delete old objects and recalculate "
-                "for new inputs".format(b.name)
+                
+        b.costing_lower_bound_eq = Constraint(
+            [p for p in b.processes.keys()],
+            rule=partial(rule_costing_lower_bound_eq, ps=b.processes)
             )
 
-        if not hasattr(b, "costing_upper_bound_eq"):
-
-            @b.Constraint(processes)
-            def costing_upper_bound_eq(c, p):
+        def rule_costing_upper_bound_eq(c, p, ps):
                 return (
                     c.costing_upper_bound[p]
                     == pyunits.convert(
                         pyunits.USD_2022
-                        * (processes[p][0] + processes[p][1])
+                        * (ps[p][0] + ps[p][1])
                         * (
                             pyunits.convert(c.grade, to_units=pyunits.dimensionless)
                             * pyunits.convert(c.capacity, to_units=pyunits.tonnes)
                             / pyunits.tonnes
                         )
-                        ** (processes[p][2] + processes[p][3]),
-                        to_units=getattr(pyunits, "USD_" + CE_index_year),
+                        ** (ps[p][2] + ps[p][3]),
+                        to_units=b.CEPCI_units,
                     )
                     / pyunits.kg
                 )
-
-            # assume model is already solved, so just calculate costing bounds here
-            for i in b.costing_upper_bound.keys():
-                calculate_variable_from_constraint(
-                    b.costing_upper_bound[i],
-                    b.costing_upper_bound_eq[i],
-                )
-            _log.info(
-                "New constraint 'costing_upper_bounding_eq' created as attribute of {}".format(
-                    b.name
-                )
-            )
-        else:
-            _log.info(
-                "Flowsheet-level costing block {} already has indexed "
-                "constraint 'costing_upper_bounding_eq', reporting existing results. "
-                "Set 'recalculate' to True to delete old objects and recalculate "
-                "for new inputs".format(b.name)
+                
+        b.costing_upper_bound_eq = Constraint(
+            [p for p in b.processes.keys()],
+            rule=partial(rule_costing_upper_bound_eq, ps=b.processes)
             )
 
-        _log.info("\n\nPrinting calculated costing bounds for processes:")
-        for p in processes:
+        # assume model is already solved, so just calculate costing bounds here
+        for i in b.costing_upper_bound.keys():
+            calculate_variable_from_constraint(
+                b.costing_upper_bound[i],
+                b.costing_upper_bound_eq[i],
+            )
+
+        if report:
+            REECostingData.report_costing_bounds(b)
+
+
+    def report_costing_bounds(b):
+        """
+        Display calculated costing bounds.
+        """
+
+        print("\n\nPrinting calculated costing bounds for processes:")
+        for p in b.processes:
             print(
                 p,
                 ": [",
@@ -316,9 +255,6 @@ class REECostingData(QGESSCostingData):
                 ", ",
                 value(b.costing_upper_bound[p]),
                 "]",
-                getattr(pyunits, "USD_" + CE_index_year),
+                b.CEPCI_units,
                 "/kg",
             )
-
-        # method has finished building components
-        b.components_already_built = True

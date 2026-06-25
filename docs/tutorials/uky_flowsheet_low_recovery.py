@@ -776,7 +776,6 @@ def set_scaling(m):
     csb = CustomScalerBase()
 
     for blk in m.fs.component_data_objects(ctype=Block, descend_into=False):
-        # if blk.parent_block() is m.fs:
         if isinstance(blk, UnitModelBlockData):
             if hasattr(blk, "default_scaler") and blk.default_scaler is not None:
                 print(f"Scaling {blk.name}")
@@ -2433,11 +2432,31 @@ def add_costing(m):
 
     m.fs.scaling_constraints[m.fs.power] = m.fs.power_constraint
 
+    m.fs.acid_feed = Var(
+        m.fs.time, initialize=2.57e-4, units=units.tonne / units.hr, bounds=(0, None)
+    )
+    m.fs.acid_feed_constraint = Constraint(
+        expr=m.fs.acid_feed[0]
+        == units.convert(
+            (
+                m.fs.acid_feed1.conc_mass_comp[0, "H"] * m.fs.acid_feed1.flow_vol[0]
+                + m.fs.acid_feed2.conc_mass_comp[0, "H"] * m.fs.acid_feed2.flow_vol[0]
+                + m.fs.acid_feed3.conc_mass_comp[0, "H"] * m.fs.acid_feed3.flow_vol[0]
+            )
+            # Ratio of HCl and H molecular weight in mg
+            * 36460 / 1008,
+            to_units=units.tonne / units.hr,
+        )
+    )
+
+    m.fs.scaling_constraints[m.fs.acid_feed] = m.fs.acid_feed_constraint
+
     resources = [
         "nonhazardous_solid_waste",
         "nonhazardous_precipitate_waste",
         "dust_and_volatiles",
         "power",
+        "HCl",
     ]
 
     rates = [
@@ -2445,6 +2464,7 @@ def add_costing(m):
         m.fs.precipitate,
         m.fs.dust_and_volatiles,
         m.fs.power,
+        m.fs.acid_feed,
     ]
 
     # define product flowrates
@@ -2618,9 +2638,7 @@ def add_costing(m):
         labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
         labor_burden=25,  # % fringe benefits
         operators_per_shift=[4, 9, 2, 2, 2, 3],
-        hours_per_shift=hours_per_shift,
-        shifts_per_day=shifts_per_day,
-        operating_days_per_year=operating_days_per_year,
+        capacity_factor=0.92,
         pure_product_output_rates=pure_product_output_rates,
         mixed_product_output_rates=mixed_product_output_rates,
         mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
@@ -2631,7 +2649,6 @@ def add_costing(m):
         fixed_OM=True,
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
         waste=[
             "nonhazardous_solid_waste",
             "nonhazardous_precipitate_waste",

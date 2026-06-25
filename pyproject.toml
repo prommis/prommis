@@ -32,7 +32,7 @@ keywords = [
     "process modeling",
 ]
 dynamic = ["version"]
-dependencies = ["idaes-pse[ui]>=2.11.0", "pyomo >=6.9.5"]
+dependencies = ["idaes-pse[ui] @ git+https://github.com/sufikaur/idaes-pse.git@995ef18fd835473a63047fd2ac69dd9fa4101fe8", "pyomo >=6.9.5"]
 [project.optional-dependencies]
 watertap = ["watertap[reaktoro] >= 1.6.0"]
 

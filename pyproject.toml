@@ -32,9 +32,9 @@ keywords = [
     "process modeling",
 ]
 dynamic = ["version"]
-dependencies = ["idaes-pse[ui] @ git+https://github.com/sufikaur/idaes-pse.git@995ef18fd835473a63047fd2ac69dd9fa4101fe8", "pyomo >=6.9.5"]
+dependencies = ["idaes-pse[ui] @ git+https://github.com/IDAES/idaes-pse.git@995ef18fd835473a63047fd2ac69dd9fa4101fe8", "pyomo >=6.9.5"]
 [project.optional-dependencies]
-watertap = ["watertap[reaktoro] @ git+https://github.com/sufikaur/watertap.git@f3bb951974438171fc9433c97b21cc1daf45e621"]
+watertap = ["watertap[reaktoro] @ git+https://github.com/IDAES/watertap.git@f3bb951974438171fc9433c97b21cc1daf45e621"]
 
 
 flowsheet-processor = ["idaes-flowsheet-processor >=0.2"]

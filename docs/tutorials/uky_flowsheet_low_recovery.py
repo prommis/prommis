@@ -802,8 +802,7 @@ def set_operating_conditions(m, DEHPA_dosage=0.05):
     """
     # Constants
     # Assume a 5% volume-by-volume ratio
-    dosage = DEHPA_dosage
-    dehpa_conc = 975.8e3 * dosage * units.mg / units.L
+    dehpa_conc = 975.8e3 * DEHPA_dosage * units.mg / units.L
     kerosene_conc = 8.2e5 * units.mg / units.L
     Temp_room = 303 * units.K
     P_atm = 101235 * units.Pa
@@ -2822,11 +2821,6 @@ def optimize_model(m):
 
     # Unfix HCl feed flow rates and concentrations
     for feed in [m.fs.acid_feed1, m.fs.acid_feed2, m.fs.acid_feed3]:
-        # Trying to optimize acid_feed1 will bring its flow to zero, so we'll keep it fixed
-        # if feed == m.fs.acid_feed1:
-        #     continue
-        # else:
-        #     feed.flow_vol.unfix()
         feed.flow_vol.unfix()
         feed.conc_mass_comp[0, "H"].unfix()
         feed.conc_mass_comp[0, "Cl"].unfix()

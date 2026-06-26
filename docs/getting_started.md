@@ -185,7 +185,7 @@ Note: if the `typos` executable is not found, it can be installed by running `co
 
 ```sh
 pytest                          # run the complete test suite
-pytest -k test_my_flowsheet.py  # run only test defined in the file named test_my_flowsheet.py
+pytest [filepath_to_test_my_flowsheet.py]  # run only test defined in the file named test_my_flowsheet.py by replacing [filepath_to_test_my_flowsheet.py] with the actual path to the file
 ```
 
 #### Building documentation

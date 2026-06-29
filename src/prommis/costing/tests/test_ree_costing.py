@@ -12,9 +12,7 @@ Tests for REE costing.
 import os
 
 import pyomo.environ as pyo
-
 from pyomo.common.dependencies import attempt_import
-
 from pyomo.environ import assert_optimal_termination
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
@@ -22,6 +20,13 @@ from pyomo.environ import value
 import idaes.logger as idaeslog
 from idaes.core import FlowsheetBlock, UnitModelBlock, UnitModelCostingBlock
 from idaes.core.solvers import get_solver
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.core.util.scaling import (
+    calculate_scaling_factors,
+    get_jacobian,
+    jacobian_cond,
+)
 
 import pytest
 
@@ -35,19 +40,9 @@ from prommis.costing.ree_costing_dictionaries import (
     load_REE_costing_dictionary,
     register_ree_currency_units,
 )
-
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util.scaling import (
-calculate_scaling_factors,
-get_jacobian,
-jacobian_cond,
+from prommis.nanofiltration.costing.diafiltration_cost_model import (
+    DiafiltrationCostingData,
 )
-
-
-
-from prommis.nanofiltration.costing.diafiltration_cost_model import DiafiltrationCostingData
-
 
 _, watertap_costing_available = attempt_import("watertap.costing")
 if watertap_costing_available:
@@ -165,7 +160,7 @@ def test_register_REE_currency_units_twice(caplog):
 
 def base_model():
 
-    CEPCI_year="UKy_2019"
+    CEPCI_year = "UKy_2019"
 
     # Create a Concrete Model as the top level object
     m = pyo.ConcreteModel()
@@ -918,7 +913,7 @@ class TestREECosting(object):
         CEPCI_year_units = getattr(pyunits, "USD_" + model.fs.costing.config.CEPCI_year)
 
         # set some parameter values
-        labor_types=[
+        labor_types = [
             "skilled",
             "unskilled",
             "supervisor",
@@ -926,19 +921,24 @@ class TestREECosting(object):
             "technician",
             "engineer",
         ]
-        
-        labor_rates=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85]  # USD/hr
+
+        labor_rates = [24.98, 19.08, 30.39, 22.73, 21.97, 45.85]  # USD/hr
         labor_rates_dict = dict(zip(labor_types, labor_rates))
 
-        operators_per_shift=[4, 9, 2, 2, 2, 3]
+        operators_per_shift = [4, 9, 2, 2, 2, 3]
         operators_per_shift_dict = dict(zip(labor_types, operators_per_shift))
-        
-        model.fs.costing.labor_burden.set_value(25 * pyunits.percent),  # % fringe benefits
+
+        model.fs.costing.labor_burden.set_value(
+            25 * pyunits.percent
+        ),  # % fringe benefits
 
         for l in labor_types:
-            model.fs.costing.labor_rates[l].set_value(labor_rates_dict[l] * CEPCI_year_units / pyunits.hr)
-            model.fs.costing.operators_per_shift[l].set_value(operators_per_shift_dict[l])
-        
+            model.fs.costing.labor_rates[l].set_value(
+                labor_rates_dict[l] * CEPCI_year_units / pyunits.hr
+            )
+            model.fs.costing.operators_per_shift[l].set_value(
+                operators_per_shift_dict[l]
+            )
 
         # add plant-level cost constraints
 
@@ -1059,7 +1059,6 @@ class TestREECosting(object):
             "Lu2O3": 0.00105 * pyunits.kg / pyunits.hr,
         }
 
-
         # argument related to Fixed OM costs
         model.fs.costing.build_REE_process_costs(
             feedstock_rate=model.fs.feedstock,
@@ -1125,11 +1124,11 @@ class TestREECosting(object):
     def test_results(self, model):
         # check some overall cost results
 
-        assert value(model.fs.costing.total_TPC) == pytest.approx(
+        assert value(model.fs.costing.total_TPC) == pytest.approx(133.23, rel=1e-4)
+        assert value(model.fs.costing.total_BEC) == pytest.approx(44.308, rel=1e-4)
+        assert value(model.fs.costing.total_overnight_capital) == pytest.approx(
             133.23, rel=1e-4
         )
-        assert value(model.fs.costing.total_BEC) == pytest.approx(44.308, rel=1e-4)
-        assert value(model.fs.costing.total_overnight_capital) == pytest.approx(133.23, rel=1e-4)
         assert value(model.fs.costing.other_plant_costs) == pytest.approx(
             1.6309, rel=1e-4
         )
@@ -1146,16 +1145,20 @@ class TestREECosting(object):
             30.061, rel=1e-4
         )
         assert value(model.fs.costing.pv_capital_cost) == pytest.approx(
-            -114.1620885, rel=1e-4  # TODO update to -112.78144 once IDAES side is patched
+            -114.1620885,
+            rel=1e-4,  # TODO update to -112.78144 once IDAES side is patched
         )
         assert value(model.fs.costing.pv_loan_interest) == pytest.approx(
-            -11.1358148, rel=1e-4  # TODO update to -11.001142 once IDAES side is patched
+            -11.1358148,
+            rel=1e-4,  # TODO update to -11.001142 once IDAES side is patched
         )
         assert value(model.fs.costing.pv_operating_cost) == pytest.approx(
             -5051.7729, rel=1e-4
         )
         assert value(model.fs.costing.pv_revenue) == pytest.approx(257.91371, rel=1e-4)
-        assert value(model.fs.costing.npv) == pytest.approx(-4919.1571, rel=1e-4)  # TODO update to -4917.6417 once IDAES side is patched
+        assert value(model.fs.costing.npv) == pytest.approx(
+            -4919.1571, rel=1e-4
+        )  # TODO update to -4917.6417 once IDAES side is patched
 
     @pytest.mark.unit
     def test_report(self, model):
@@ -1226,11 +1229,16 @@ class TestREECosting(object):
         for key in model.fs.costing.costing_lower_bound.keys():
 
             if key == "Chemical Extraction, Enrichment and Separation":
-                assert value(model.fs.costing.costing_lower_bound[key]) == pytest.approx(
-                    expected_costing_lower_bound[key], abs=1e-8,
+                assert value(
+                    model.fs.costing.costing_lower_bound[key]
+                ) == pytest.approx(
+                    expected_costing_lower_bound[key],
+                    abs=1e-8,
                 )
             else:
-                assert value(model.fs.costing.costing_lower_bound[key]) == pytest.approx(
+                assert value(
+                    model.fs.costing.costing_lower_bound[key]
+                ) == pytest.approx(
                     expected_costing_lower_bound[key], abs=1e-8, rel=1e-4
                 )
 
@@ -1278,11 +1286,16 @@ class TestREECosting(object):
         for key in model.fs.costing.costing_lower_bound.keys():
 
             if key == "Chemical Extraction, Enrichment and Separation":
-                assert value(model.fs.costing.costing_lower_bound[key]) == pytest.approx(
-                    expected_costing_lower_bound[key], abs=1e-8,
+                assert value(
+                    model.fs.costing.costing_lower_bound[key]
+                ) == pytest.approx(
+                    expected_costing_lower_bound[key],
+                    abs=1e-8,
                 )
             else:
-                assert value(model.fs.costing.costing_lower_bound[key]) == pytest.approx(
+                assert value(
+                    model.fs.costing.costing_lower_bound[key]
+                ) == pytest.approx(
                     expected_costing_lower_bound[key], abs=1e-8, rel=1e-4
                 )
 
@@ -1354,9 +1367,7 @@ class TestWaterTAPCosting(object):
                 * mass_flow_in
                 / model.fs.nfunit.feed_side.properties_in[0].mw_comp[ion]
             )
-            model.fs.nfunit.inlet.flow_mol_phase_comp[0, "Liq", ion].fix(
-                mol_comp_flow
-            )
+            model.fs.nfunit.inlet.flow_mol_phase_comp[0, "Liq", ion].fix(mol_comp_flow)
 
         H2O_mass_frac = 1 - sum(x for x in feed_mass_frac.values())
         H2O_mol_comp_flow = (
@@ -1520,9 +1531,7 @@ class TestWaterTAPCosting(object):
         )
 
         model.fs.ixunit.process_flow.properties_in[0].flow_mass_phase_comp[...]
-        model.fs.ixunit.process_flow.properties_out[0].flow_mass_phase_comp[
-            ...
-        ]
+        model.fs.ixunit.process_flow.properties_out[0].flow_mass_phase_comp[...]
         model.fs.ixunit.regeneration_stream[0].flow_mass_phase_comp[...]
 
         model.fs.ixunit.service_flow_rate.fix(15)
@@ -1568,9 +1577,7 @@ class TestWaterTAPCosting(object):
         model.fs.nfzounit.inlet.flow_mass_comp[0, "tds"].fix(1)
         model.fs.nfzounit.inlet.flow_mass_comp[0, "dye"].fix(2)
 
-        model.fs.nfzounit.load_parameters_from_database(
-            use_default_removal=True
-        )
+        model.fs.nfzounit.load_parameters_from_database(use_default_removal=True)
 
         results = solver.solve(model.fs, tee=True)
 
@@ -1606,6 +1613,7 @@ class TestWaterTAPCosting(object):
 
         from watertap.costing import WaterTAPCosting
         from watertap.costing.zero_order_costing import ZeroOrderCosting
+
         # loop through WaterTAP blocks and import costing from WaterTAP
         model.fs.watertap_costing = WaterTAPCosting()
         model.fs.zeroorder_costing = ZeroOrderCosting()
@@ -1613,22 +1621,30 @@ class TestWaterTAPCosting(object):
         model.fs.nfunit.costing = UnitModelCostingBlock(
             flowsheet_costing_block=model.fs.watertap_costing
         )
-        model.fs.costing._registered_unit_costing.append(model.fs.nfunit.costing)  # pylint: disable=protected-access
+        model.fs.costing._registered_unit_costing.append(
+            model.fs.nfunit.costing
+        )  # pylint: disable=protected-access
 
         model.fs.rounit.costing = UnitModelCostingBlock(
             flowsheet_costing_block=model.fs.watertap_costing
         )
-        model.fs.costing._registered_unit_costing.append(model.fs.rounit.costing)  # pylint: disable=protected-access
+        model.fs.costing._registered_unit_costing.append(
+            model.fs.rounit.costing
+        )  # pylint: disable=protected-access
 
         model.fs.ixunit.costing = UnitModelCostingBlock(
             flowsheet_costing_block=model.fs.watertap_costing
         )
-        model.fs.costing._registered_unit_costing.append(model.fs.ixunit.costing)  # pylint: disable=protected-access
+        model.fs.costing._registered_unit_costing.append(
+            model.fs.ixunit.costing
+        )  # pylint: disable=protected-access
 
         model.fs.nfzounit.costing = UnitModelCostingBlock(
             flowsheet_costing_block=model.fs.zeroorder_costing
         )
-        model.fs.costing._registered_unit_costing.append(model.fs.nfzounit.costing)  # pylint: disable=protected-access
+        model.fs.costing._registered_unit_costing.append(
+            model.fs.nfzounit.costing
+        )  # pylint: disable=protected-access
 
     @pytest.mark.component
     def test_REE_watertap_costing(self, model):
@@ -1637,7 +1653,7 @@ class TestWaterTAPCosting(object):
         CEPCI_year_units = getattr(pyunits, "USD_" + model.fs.costing.config.CEPCI_year)
 
         # set some parameter values
-        labor_types=[
+        labor_types = [
             "skilled",
             "unskilled",
             "supervisor",
@@ -1645,19 +1661,24 @@ class TestWaterTAPCosting(object):
             "technician",
             "engineer",
         ]
-        
-        labor_rates=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85]  # USD/hr
+
+        labor_rates = [24.98, 19.08, 30.39, 22.73, 21.97, 45.85]  # USD/hr
         labor_rates_dict = dict(zip(labor_types, labor_rates))
 
-        operators_per_shift=[4, 9, 2, 2, 2, 3]
+        operators_per_shift = [4, 9, 2, 2, 2, 3]
         operators_per_shift_dict = dict(zip(labor_types, operators_per_shift))
-        
-        model.fs.costing.labor_burden.set_value(25 * pyunits.percent),  # % fringe benefits
+
+        model.fs.costing.labor_burden.set_value(
+            25 * pyunits.percent
+        ),  # % fringe benefits
 
         for l in labor_types:
-            model.fs.costing.labor_rates[l].set_value(labor_rates_dict[l] * CEPCI_year_units / pyunits.hr)
-            model.fs.costing.operators_per_shift[l].set_value(operators_per_shift_dict[l])
-        
+            model.fs.costing.labor_rates[l].set_value(
+                labor_rates_dict[l] * CEPCI_year_units / pyunits.hr
+            )
+            model.fs.costing.operators_per_shift[l].set_value(
+                operators_per_shift_dict[l]
+            )
 
         # add plant-level cost constraints
 
@@ -1778,7 +1799,6 @@ class TestWaterTAPCosting(object):
             "Lu2O3": 0.00105 * pyunits.kg / pyunits.hr,
         }
 
-
         # argument related to Fixed OM costs
         model.fs.costing.build_REE_process_costs(
             feedstock_rate=model.fs.feedstock,
@@ -1838,41 +1858,49 @@ class TestWaterTAPCosting(object):
 
         assert value(
             pyunits.convert(
-                model.fs.nfunit.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.nfunit.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(0.0015159, rel=1e-4)
 
         assert value(
             pyunits.convert(
-                model.fs.rounit.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.rounit.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(0.0016148, rel=1e-4)
 
         assert value(
             pyunits.convert(
-                model.fs.ixunit.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.ixunit.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(4.0354, rel=1e-4)
 
         assert value(
             pyunits.convert(
-                model.fs.nfzounit.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.nfzounit.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(8.1867, rel=1e-4)
 
         assert value(
             model.fs.costing.total_BEC
             - pyunits.convert(
-                model.fs.nfunit.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.nfunit.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
             - pyunits.convert(
-                model.fs.rounit.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.rounit.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
             - pyunits.convert(
-                model.fs.ixunit.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.ixunit.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
             - pyunits.convert(
-                model.fs.nfzounit.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.nfzounit.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(44.308, rel=1e-4)
 
@@ -2017,7 +2045,7 @@ class TestCustomCosting(object):
         CEPCI_year_units = getattr(pyunits, "USD_" + model.fs.costing.config.CEPCI_year)
 
         # set some parameter values
-        labor_types=[
+        labor_types = [
             "skilled",
             "unskilled",
             "supervisor",
@@ -2025,19 +2053,24 @@ class TestCustomCosting(object):
             "technician",
             "engineer",
         ]
-        
-        labor_rates=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85]  # USD/hr
+
+        labor_rates = [24.98, 19.08, 30.39, 22.73, 21.97, 45.85]  # USD/hr
         labor_rates_dict = dict(zip(labor_types, labor_rates))
 
-        operators_per_shift=[4, 9, 2, 2, 2, 3]
+        operators_per_shift = [4, 9, 2, 2, 2, 3]
         operators_per_shift_dict = dict(zip(labor_types, operators_per_shift))
-        
-        model.fs.costing.labor_burden.set_value(25 * pyunits.percent),  # % fringe benefits
+
+        model.fs.costing.labor_burden.set_value(
+            25 * pyunits.percent
+        ),  # % fringe benefits
 
         for l in labor_types:
-            model.fs.costing.labor_rates[l].set_value(labor_rates_dict[l] * CEPCI_year_units / pyunits.hr)
-            model.fs.costing.operators_per_shift[l].set_value(operators_per_shift_dict[l])
-        
+            model.fs.costing.labor_rates[l].set_value(
+                labor_rates_dict[l] * CEPCI_year_units / pyunits.hr
+            )
+            model.fs.costing.operators_per_shift[l].set_value(
+                operators_per_shift_dict[l]
+            )
 
         # add plant-level cost constraints
 
@@ -2158,7 +2191,6 @@ class TestCustomCosting(object):
             "Lu2O3": 0.00105 * pyunits.kg / pyunits.hr,
         }
 
-
         # argument related to Fixed OM costs
         model.fs.costing.build_REE_process_costs(
             feedstock_rate=model.fs.feedstock,
@@ -2223,13 +2255,15 @@ class TestCustomCosting(object):
         assert value(model.fs.costing.total_BEC) == pytest.approx(44.377, rel=1e-4)
         assert value(
             pyunits.convert(
-                model.fs.custom_vessel.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.custom_vessel.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(0.0686081, rel=1e-4)
         assert value(
             model.fs.costing.total_BEC
             - pyunits.convert(
-                model.fs.custom_vessel.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.custom_vessel.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(44.308, rel=1e-4)
 
@@ -2463,7 +2497,7 @@ class TestDiafiltrationCosting(object):
         CEPCI_year_units = getattr(pyunits, "USD_" + model.fs.costing.config.CEPCI_year)
 
         # set some parameter values
-        labor_types=[
+        labor_types = [
             "skilled",
             "unskilled",
             "supervisor",
@@ -2471,19 +2505,24 @@ class TestDiafiltrationCosting(object):
             "technician",
             "engineer",
         ]
-        
-        labor_rates=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85]  # USD/hr
+
+        labor_rates = [24.98, 19.08, 30.39, 22.73, 21.97, 45.85]  # USD/hr
         labor_rates_dict = dict(zip(labor_types, labor_rates))
 
-        operators_per_shift=[4, 9, 2, 2, 2, 3]
+        operators_per_shift = [4, 9, 2, 2, 2, 3]
         operators_per_shift_dict = dict(zip(labor_types, operators_per_shift))
-        
-        model.fs.costing.labor_burden.set_value(25 * pyunits.percent),  # % fringe benefits
+
+        model.fs.costing.labor_burden.set_value(
+            25 * pyunits.percent
+        ),  # % fringe benefits
 
         for l in labor_types:
-            model.fs.costing.labor_rates[l].set_value(labor_rates_dict[l] * CEPCI_year_units / pyunits.hr)
-            model.fs.costing.operators_per_shift[l].set_value(operators_per_shift_dict[l])
-        
+            model.fs.costing.labor_rates[l].set_value(
+                labor_rates_dict[l] * CEPCI_year_units / pyunits.hr
+            )
+            model.fs.costing.operators_per_shift[l].set_value(
+                operators_per_shift_dict[l]
+            )
 
         # add plant-level cost constraints
 
@@ -2604,7 +2643,6 @@ class TestDiafiltrationCosting(object):
             "Lu2O3": 0.00105 * pyunits.kg / pyunits.hr,
         }
 
-
         # argument related to Fixed OM costs
         model.fs.costing.build_REE_process_costs(
             feedstock_rate=model.fs.feedstock,
@@ -2659,45 +2697,55 @@ class TestDiafiltrationCosting(object):
         assert value(model.fs.costing.total_BEC) == pytest.approx(44.351, rel=1e-4)
         assert value(
             pyunits.convert(
-                model.fs.stage1.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.stage1.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(0.0043043, rel=1e-4)
         assert value(
             pyunits.convert(
-                model.fs.stage2.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.stage2.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(0.0043043, rel=1e-4)
         assert value(
             pyunits.convert(
-                model.fs.stage3.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.stage3.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(0.0043043, rel=1e-4)
         assert value(
             pyunits.convert(
-                model.fs.feed_pump.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.feed_pump.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(0.014780, rel=1e-4)
         assert value(
             pyunits.convert(
-                model.fs.diafiltrate_pump.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.diafiltrate_pump.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(0.014780, rel=1e-4)
         assert value(
             model.fs.costing.total_BEC
             - pyunits.convert(
-                model.fs.stage1.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.stage1.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
             - pyunits.convert(
-                model.fs.stage2.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.stage2.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
             - pyunits.convert(
-                model.fs.stage3.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.stage3.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
             - pyunits.convert(
-                model.fs.feed_pump.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.feed_pump.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
             - pyunits.convert(
-                model.fs.diafiltrate_pump.costing.capital_cost, to_units=model.fs.costing.CEPCI_units
+                model.fs.diafiltrate_pump.costing.capital_cost,
+                to_units=model.fs.costing.CEPCI_units,
             )
         ) == pytest.approx(44.308, rel=1e-4)
 
@@ -2874,16 +2922,14 @@ class TestHDDRecyclingCosting(object):
             ]
         ) == pytest.approx(0.41035, rel=1e-4)
 
-        assert value(model.fs.costing.total_TPC) == pytest.approx(
-            3.8220, rel=1e-4
-        )
+        assert value(model.fs.costing.total_TPC) == pytest.approx(3.8220, rel=1e-4)
 
 
 class TestNPVCostingBlock(object):
     @pytest.fixture(scope="class")
     def model(self):
         CEPCI_year = "2021"
-        
+
         # Create a concrete model as the top level object
         m = pyo.ConcreteModel()
         m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
@@ -2928,7 +2974,9 @@ class TestNPVCostingBlock(object):
                 "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
             },
             feedstock_rate=m.fs.feedstock,
-            resources={"water": m.fs.water,},
+            resources={
+                "water": m.fs.water,
+            },
         )
 
         return m
@@ -2983,9 +3031,7 @@ class TestNPVCostingBlock(object):
     @pytest.mark.component
     def test_NPV_costingblock_results(self, model):
         # values that are hard-coded in the following test class
-        assert value(model.fs.costing.total_BEC) == pytest.approx(
-            2.512179, rel=1e-4
-        )
+        assert value(model.fs.costing.total_BEC) == pytest.approx(2.512179, rel=1e-4)
         assert value(model.fs.costing.total_fixed_OM_cost) == pytest.approx(
             6.001094, rel=1e-4
         )
@@ -2995,7 +3041,7 @@ class TestNPVCostingBlock(object):
         assert value(model.fs.costing.total_sales_revenue) == pytest.approx(
             30.36196, rel=1e-4
         )
-        
+
         # check some NPV results
         assert value(model.fs.costing.pv_capital_cost) == pytest.approx(
             -6.3162037, rel=1e-4
@@ -3027,9 +3073,11 @@ class TestNPVFixedInputs(object):
 
         # values from previous test class
         m.fs.costing.build_REE_process_costs(
-            total_purchase_cost=2.512179*m.fs.costing.CEPCI_units,
-            annual_fixed_operating_cost=(6.001094 + 1.23406)*m.fs.costing.CEPCI_units/pyunits.year,
-            annual_revenue=30.36196*m.fs.costing.CEPCI_units/pyunits.year,
+            total_purchase_cost=2.512179 * m.fs.costing.CEPCI_units,
+            annual_fixed_operating_cost=(6.001094 + 1.23406)
+            * m.fs.costing.CEPCI_units
+            / pyunits.year,
+            annual_revenue=30.36196 * m.fs.costing.CEPCI_units / pyunits.year,
         )
 
         return m
@@ -3239,6 +3287,7 @@ def test_REE_costing_disallowedunitmodelcostunits():
     ):
         m.fs.costing = REECosting(CEPCI_year="notayear")
 
+
 @pytest.mark.unit
 def test_REE_costing_nonexistentcostaccount():
     m = pyo.ConcreteModel()
@@ -3254,7 +3303,7 @@ def test_REE_costing_nonexistentcostaccount():
     with pytest.raises(
         KeyError,
         # TODO fails as expected but on wrong part of the account loading, look into this later
-        #match="Account notanaccount could not be found in the dictionary for source 1",
+        # match="Account notanaccount could not be found in the dictionary for source 1",
     ):
         m.fs.CS_jaw_crusher.costing = REEUnitModelCostingBlock(
             flowsheet_costing_block=m.fs.costing,
@@ -3363,6 +3412,7 @@ def test_REE_costing_multipleaccountsdifferentparameters():
             },
         )
 
+
 @pytest.mark.component
 def test_REE_costing_additionalcostingparams_newaccount():
     m = pyo.ConcreteModel()
@@ -3397,7 +3447,9 @@ def test_REE_costing_additionalcostingparams_newaccount():
         costing_method_arguments={
             "cost_accounts": CS_jaw_crusher_accounts,
             "scaled_param": m.fs.CS_jaw_crusher.power,
-            "additional_costing_params": [additional_costing_params,],
+            "additional_costing_params": [
+                additional_costing_params,
+            ],
         },
     )
 
@@ -3540,7 +3592,9 @@ def test_REE_costing_additionalcostingparams_overwrite():
         costing_method_arguments={
             "cost_accounts": CS_jaw_crusher_accounts,
             "scaled_param": m.fs.CS_jaw_crusher.power,
-            "additional_costing_params": [additional_costing_params,],
+            "additional_costing_params": [
+                additional_costing_params,
+            ],
             "use_additional_costing_params": True,
         },
     )
@@ -3603,7 +3657,9 @@ def test_REE_costing_additionalcostingparams_nooverwrite():
             costing_method_arguments={
                 "cost_accounts": CS_jaw_crusher_accounts,
                 "scaled_param": m.fs.CS_jaw_crusher.power,
-                "additional_costing_params": [additional_costing_params,],
+                "additional_costing_params": [
+                    additional_costing_params,
+                ],
                 "use_additional_costing_params": False,
             },
         )
@@ -3772,7 +3828,7 @@ def test_REE_costing_usersetTPC_noOM():
     )
 
     m.fs.costing.build_REE_process_costs(
-        total_purchase_cost=1*m.fs.costing.CEPCI_units,
+        total_purchase_cost=1 * m.fs.costing.CEPCI_units,
     )
 
     dt = DiagnosticsToolbox(model=m)
@@ -3803,7 +3859,7 @@ def test_REE_costing_usersetTPC_withOM():
     m.fs.costing = REECosting(
         has_fixed_OM=True,
         has_variable_OM=True,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -3826,7 +3882,7 @@ def test_REE_costing_usersetTPC_withOM():
     m.fs.water.fix()
 
     m.fs.costing.build_REE_process_costs(
-        total_purchase_cost=1*m.fs.costing.CEPCI_units,
+        total_purchase_cost=1 * m.fs.costing.CEPCI_units,
         pure_product_output_rates={
             "Sc2O3": 1.9 * pyunits.kg / pyunits.hr,
         },
@@ -3864,7 +3920,7 @@ def test_REE_costing_fixedOM_productratesnotpassed():
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = REECosting(
         has_fixed_OM=True,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -3901,7 +3957,7 @@ def test_REE_costing_fixedOM_pureproductnotadict():
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = REECosting(
         has_fixed_OM=True,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -3934,7 +3990,7 @@ def test_REE_costing_fixedOM_mixedproductnotadict():
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = REECosting(
         has_fixed_OM=True,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -4036,7 +4092,7 @@ def test_REE_costing_fixedOM_pureproductnoprice():
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = REECosting(
         has_fixed_OM=True,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -4073,7 +4129,7 @@ def test_REE_costing_fixedOM_mixedproductnoprice():
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = REECosting(
         has_fixed_OM=True,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -4110,7 +4166,7 @@ def test_REE_costing_variableOM_nofixedOM():
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = REECosting(
         has_variable_OM=True,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -4134,7 +4190,9 @@ def test_REE_costing_variableOM_nofixedOM():
 
     m.fs.costing.build_REE_process_costs(
         feedstock_rate=m.fs.feedstock,
-        resources={"water": m.fs.water,}
+        resources={
+            "water": m.fs.water,
+        },
     )
 
 
@@ -4145,7 +4203,7 @@ def test_REE_costing_variableOM_resourcesnotadict():
     m.fs.costing = REECosting(
         has_fixed_OM=True,
         has_variable_OM=True,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -4179,8 +4237,11 @@ def test_REE_costing_variableOM_resourcesnotadict():
                 "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
             },
             feedstock_rate=m.fs.feedstock,
-            resources=[m.fs.water,]
+            resources=[
+                m.fs.water,
+            ],
         )
+
 
 # TODO why did this value change?
 @pytest.mark.component
@@ -4190,7 +4251,7 @@ def test_REE_costing_variableOM_customprices():
     m.fs.costing = REECosting(
         has_fixed_OM=True,
         has_variable_OM=True,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -4220,7 +4281,9 @@ def test_REE_costing_variableOM_customprices():
             "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
         },
         feedstock_rate=m.fs.feedstock,
-        resources={"water": m.fs.water,},
+        resources={
+            "water": m.fs.water,
+        },
         resource_prices={"water": 1.90e-3 * 1e-6 * pyunits.MUSD_2021 / pyunits.gallon},
     )
 
@@ -4236,33 +4299,45 @@ def test_REE_costing_variableOM_customprices():
     m.fs.costing.variable_operating_costs.display()
     c = m.fs.costing
     t = 0
-    resources = {"water": m.fs.water,}
+    resources = {
+        "water": m.fs.water,
+    }
     print(value(sum(c.variable_operating_costs[t, r] for r in resources)))
-    print(value(
-        c.plant_overhead_cost[t]
-        if hasattr(c, "plant_overhead_cost")
-        else 0 * c.CEPCI_units / pyunits.year
-    ))
-    print(value(
-        c.land_cost
-        if c.land_cost_reoccurrence == "annual"
-        else 0 * c.CEPCI_units / pyunits.year
-    ))
-    print(value(
-                    c.additional_chemicals_cost
-                    if c.additional_chemicals_cost_reoccurrence == "annual"
-                    else 0 * c.CEPCI_units / pyunits.year
-                ))
-    print(value(
-                    c.additional_waste_cost
-                    if c.additional_waste_cost_reoccurrence == "annual"
-                    else 0 * c.CEPCI_units / pyunits.year
-                ))
-    print(value(
-                    c.maintenance_material_cost
-                    if hasattr(c, "maintenance_material_cost")
-                    else 0 * c.CEPCI_units / pyunits.year
-                ))
+    print(
+        value(
+            c.plant_overhead_cost[t]
+            if hasattr(c, "plant_overhead_cost")
+            else 0 * c.CEPCI_units / pyunits.year
+        )
+    )
+    print(
+        value(
+            c.land_cost
+            if c.land_cost_reoccurrence == "annual"
+            else 0 * c.CEPCI_units / pyunits.year
+        )
+    )
+    print(
+        value(
+            c.additional_chemicals_cost
+            if c.additional_chemicals_cost_reoccurrence == "annual"
+            else 0 * c.CEPCI_units / pyunits.year
+        )
+    )
+    print(
+        value(
+            c.additional_waste_cost
+            if c.additional_waste_cost_reoccurrence == "annual"
+            else 0 * c.CEPCI_units / pyunits.year
+        )
+    )
+    print(
+        value(
+            c.maintenance_material_cost
+            if hasattr(c, "maintenance_material_cost")
+            else 0 * c.CEPCI_units / pyunits.year
+        )
+    )
     print(value(c.other_variable_costs[t]))
     print(value(c.custom_variable_costs))
 
@@ -4279,7 +4354,7 @@ def test_REE_costing_variableOM_custompricesnotadict():
     m.fs.costing = REECosting(
         has_fixed_OM=True,
         has_variable_OM=True,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -4313,7 +4388,9 @@ def test_REE_costing_variableOM_custompricesnotadict():
                 "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
             },
             feedstock_rate=m.fs.feedstock,
-            resources={"water": m.fs.water,},
+            resources={
+                "water": m.fs.water,
+            },
             resource_prices=[1e-3 * 1e-6 * pyunits.MUSD_2021 / pyunits.gallon],
         )
 
@@ -4325,7 +4402,7 @@ def test_REE_costing_variableOM_resourcenotinpricelist():
     m.fs.costing = REECosting(
         has_fixed_OM=True,
         has_variable_OM=True,
-        )
+    )
 
     # 1.3 is CS Jaw Crusher
     CS_jaw_crusher_accounts = ["1.3"]
@@ -4372,26 +4449,28 @@ def test_REE_costing_variableOM_resourcenotinpricelist():
                 "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
             },
             feedstock_rate=m.fs.feedstock,
-            resources={"H2O": m.fs.H2O,},
+            resources={
+                "H2O": m.fs.H2O,
+            },
         )
 
 
 @pytest.mark.component
 def test_REE_costing_economy_of_numbers():
-    
+
     m = pyo.ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=True, time_units=pyunits.s)
     m.fs.costing = REECosting(
         Lang_factor=1,
         has_economy_of_numbers=True,
         CEPCI_year="2007",
-        )
+    )
 
     m.fs.costing.cum_num_units.set_value(5)
     m.fs.costing.learning_rate.set_value(0.05)
 
     m.fs.costing.build_REE_process_costs(
-        total_purchase_cost=41.2*m.fs.costing.CEPCI_units,
+        total_purchase_cost=41.2 * m.fs.costing.CEPCI_units,
     )
 
     dt = DiagnosticsToolbox(model=m)
@@ -4459,7 +4538,9 @@ def test_REE_costing_consider_taxes():
             "Sc2O3": 0.00143 * pyunits.kg / pyunits.hr,
         },
         feedstock_rate=m.fs.feedstock,
-        resources={"water": m.fs.water,},
+        resources={
+            "water": m.fs.water,
+        },
     )
 
     dt = DiagnosticsToolbox(model=m)
@@ -4477,7 +4558,9 @@ def test_REE_costing_consider_taxes():
     assert value(m.fs.costing.total_variable_OM_cost[0]) == pytest.approx(
         1.234056, rel=1e-4
     )
-    assert value(m.fs.costing.plant_overhead_cost[0]) == pytest.approx(1.20022, rel=1e-4)
+    assert value(m.fs.costing.plant_overhead_cost[0]) == pytest.approx(
+        1.20022, rel=1e-4
+    )
     assert value(m.fs.costing.other_variable_costs[0]) == pytest.approx(
         0.0000, abs=1e-4
     )

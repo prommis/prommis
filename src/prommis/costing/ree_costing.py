@@ -25,8 +25,9 @@ __author__ = (
 __version__ = "1.0.0"
 
 from functools import partial
+
 from pyomo.common.config import ConfigValue
-from pyomo.environ import Var, Constraint, Expression
+from pyomo.environ import Constraint, Expression, Var
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
@@ -37,12 +38,14 @@ from idaes.core.base.costing_base import UnitModelCostingBlock
 from idaes.models.costing.QGESS import QGESSCostingData
 
 # this is a duplicate reference to reporting method in IDAES, remove later
-from idaes.models_extra.power_generation.costing.power_plant_costing_dictionaries import report
+from idaes.models_extra.power_generation.costing.power_plant_costing_dictionaries import (
+    report,
+)
 
 from prommis.costing.ree_costing_dictionaries import (
-    load_REE_costing_dictionary,
-    load_default_sale_prices,
     load_default_resource_prices,
+    load_default_sale_prices,
+    load_REE_costing_dictionary,
     register_ree_currency_units,
 )
 
@@ -79,7 +82,10 @@ def REEUnitModelCostingBlock(
 
         if not (
             isinstance(costing_method_arguments["additional_costing_params"], list)
-            and all(isinstance(item, dict) for item in costing_method_arguments["additional_costing_params"])
+            and all(
+                isinstance(item, dict)
+                for item in costing_method_arguments["additional_costing_params"]
+            )
         ):
             raise TypeError(
                 "additional_costing_params must be a list of dicts, not a single dict, "
@@ -178,15 +184,11 @@ class REECostingData(QGESSCostingData):
                         self.installation_components[k] for k in installation_components
                     ),
                     to_units=pyunits.dimensionless,
-                ) + 1  # added this
+                )
+                + 1  # added this
             )
 
-        
-
-    def build_REE_process_costs(
-        self,
-        **kwargs
-        ):
+    def build_REE_process_costs(self, **kwargs):
         """
         Wrapper method for building PrOMMiS REE process costs.
 
@@ -202,9 +204,7 @@ class REECostingData(QGESSCostingData):
         else:
             # do some type checking before appending the REE default resource prices
             if not isinstance(kwargs["resource_prices"], dict):
-                raise TypeError(
-                    "Dictionary of resource prices must be a dict object."
-                )
+                raise TypeError("Dictionary of resource prices must be a dict object.")
             for k in REE_resource_prices:
                 kwargs["resource_prices"][k] = REE_resource_prices[k]
 
@@ -226,6 +226,7 @@ class REECostingData(QGESSCostingData):
         # TODO remove, mock some changes that need to patched into the IDAES QGESS module later
         if hasattr(self, "total_TPC_eq"):
             delattr(self, "total_TPC_eq")
+
             @self.Constraint()
             def total_TPC_eq(c):
                 # TPC = BEC that needs Lang factor applied to get TPC + TPC that is already calculated
@@ -233,21 +234,28 @@ class REECostingData(QGESSCostingData):
                 return c.total_TPC == (
                     (
                         (
-                            (sum(c.BEC_list) - sum(c.BEC_blocks_with_TPC_list)) * c.Lang_factor
+                            (sum(c.BEC_list) - sum(c.BEC_blocks_with_TPC_list))
+                            * c.Lang_factor
                             + sum(c.TPC_blocks_with_TPC_list)
-                        ) + c.other_plant_costs  # added this
                         )
+                        + c.other_plant_costs  # added this
+                    )
                     # apply economy of numbers if enabled
-                    * (c.NOAK_factor if c.config.has_economy_of_numbers else 1)  # applied to whole TPC
+                    * (
+                        c.NOAK_factor if c.config.has_economy_of_numbers else 1
+                    )  # applied to whole TPC
                 )
 
         if hasattr(self, "total_variable_cost_eq"):
             delattr(self, "total_variable_cost_eq")
+
             @self.Constraint(self.parent_block().time)
             def total_variable_cost_eq(c, t):
                 return (
                     c.total_variable_OM_cost[t]
-                    == sum(c.variable_operating_costs[t, r] for r in kwargs["resources"])
+                    == sum(
+                        c.variable_operating_costs[t, r] for r in kwargs["resources"]
+                    )
                     + (
                         c.plant_overhead_cost[t]
                         if hasattr(c, "plant_overhead_cost")
@@ -292,7 +300,7 @@ class REECostingData(QGESSCostingData):
                 )
             )
 
-    # TODO remove, mock reference to report method that needs to be patched into IDAES QGESS    
+    # TODO remove, mock reference to report method that needs to be patched into IDAES QGESS
     def report(self, export=False):
         """
         Call report method.
@@ -300,14 +308,16 @@ class REECostingData(QGESSCostingData):
         return report(self, export=export)
 
     def calculate_REE_costing_bounds(
-        b, capacity, grade, report=False,
+        b,
+        capacity,
+        grade,
+        report=False,
     ):
         # adapted from https://doi.org/10.1038/s41893-023-01145-1
         # This method accepts a flowsheet-level costing block
         # capacity and grade should be variables with Pyomo units,
         # or values with Pyomo unit containers
 
-    
         b.capacity = Var(
             initialize=value(pyunits.convert(capacity, to_units=pyunits.tonnes)),
             bounds=(0, None),
@@ -316,7 +326,6 @@ class REECostingData(QGESSCostingData):
         )
         b.capacity.fix(capacity)
 
-    
         b.grade = Var(
             initialize=value(pyunits.convert(grade, to_units=pyunits.percent)),
             bounds=(0, None),
@@ -359,26 +368,26 @@ class REECostingData(QGESSCostingData):
         )
 
         def rule_costing_lower_bound_eq(c, p, ps):
-                return (
-                    c.costing_lower_bound[p]
-                    == pyunits.convert(
-                        pyunits.USD_2022
-                        * (ps[p][0] - ps[p][1])
-                        * (
-                            pyunits.convert(c.grade, to_units=pyunits.dimensionless)
-                            * pyunits.convert(c.capacity, to_units=pyunits.tonnes)
-                            / pyunits.tonnes
-                        )
-                        ** (ps[p][2] - ps[p][3]),
-                        to_units=b.base_currency,
+            return (
+                c.costing_lower_bound[p]
+                == pyunits.convert(
+                    pyunits.USD_2022
+                    * (ps[p][0] - ps[p][1])
+                    * (
+                        pyunits.convert(c.grade, to_units=pyunits.dimensionless)
+                        * pyunits.convert(c.capacity, to_units=pyunits.tonnes)
+                        / pyunits.tonnes
                     )
-                    / pyunits.kg
+                    ** (ps[p][2] - ps[p][3]),
+                    to_units=b.base_currency,
                 )
-                
+                / pyunits.kg
+            )
+
         b.costing_lower_bound_eq = Constraint(
             [p for p in b.processes.keys()],
-            rule=partial(rule_costing_lower_bound_eq, ps=b.processes)
-            )
+            rule=partial(rule_costing_lower_bound_eq, ps=b.processes),
+        )
 
         # assume model is already solved, so just calculate costing bounds here
         for i in b.costing_lower_bound.keys():
@@ -388,26 +397,26 @@ class REECostingData(QGESSCostingData):
             )
 
         def rule_costing_upper_bound_eq(c, p, ps):
-                return (
-                    c.costing_upper_bound[p]
-                    == pyunits.convert(
-                        pyunits.USD_2022
-                        * (ps[p][0] + ps[p][1])
-                        * (
-                            pyunits.convert(c.grade, to_units=pyunits.dimensionless)
-                            * pyunits.convert(c.capacity, to_units=pyunits.tonnes)
-                            / pyunits.tonnes
-                        )
-                        ** (ps[p][2] + ps[p][3]),
-                        to_units=b.base_currency,
+            return (
+                c.costing_upper_bound[p]
+                == pyunits.convert(
+                    pyunits.USD_2022
+                    * (ps[p][0] + ps[p][1])
+                    * (
+                        pyunits.convert(c.grade, to_units=pyunits.dimensionless)
+                        * pyunits.convert(c.capacity, to_units=pyunits.tonnes)
+                        / pyunits.tonnes
                     )
-                    / pyunits.kg
+                    ** (ps[p][2] + ps[p][3]),
+                    to_units=b.base_currency,
                 )
-                
+                / pyunits.kg
+            )
+
         b.costing_upper_bound_eq = Constraint(
             [p for p in b.processes.keys()],
-            rule=partial(rule_costing_upper_bound_eq, ps=b.processes)
-            )
+            rule=partial(rule_costing_upper_bound_eq, ps=b.processes),
+        )
 
         # assume model is already solved, so just calculate costing bounds here
         for i in b.costing_upper_bound.keys():
@@ -418,7 +427,6 @@ class REECostingData(QGESSCostingData):
 
         if report:
             REECostingData.report_costing_bounds(b)
-
 
     def report_costing_bounds(b):
         """

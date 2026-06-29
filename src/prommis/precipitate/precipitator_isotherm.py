@@ -70,7 +70,7 @@ from idaes.core.initialization import ModularInitializerBase
 # Precipitator unit model
 class OxalatePrecipitatorInitializer(ModularInitializerBase):
     """
-    This is a general purpose Initializer  for the Oxalate Precipitator unit model.
+    This is a general purpose Initializer for the Oxalate Precipitator unit model.
 
     This routine calls the initializer for the internal MSContactor model.
 

@@ -200,7 +200,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
         "reaction_package",
         ConfigValue(
             # TODO: Add a domain validator for this
-            description="Heterogeneous reaction package for precipitaction.",
+            description="Heterogeneous reaction package for precipitation.",
         ),
     )
     CONFIG.declare(

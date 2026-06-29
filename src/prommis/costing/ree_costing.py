@@ -26,7 +26,7 @@ __version__ = "1.0.0"
 
 from functools import partial
 from pyomo.common.config import ConfigValue
-from pyomo.environ import Var, Constraint
+from pyomo.environ import Var, Constraint, Expression
 from pyomo.environ import units as pyunits
 from pyomo.environ import value
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
@@ -36,8 +36,13 @@ from idaes.core import declare_process_block_class
 from idaes.core.base.costing_base import UnitModelCostingBlock
 from idaes.models.costing.QGESS import QGESSCostingData
 
+# this is a duplicate reference to reporting method in IDAES, remove later
+from idaes.models_extra.power_generation.costing.power_plant_costing_dictionaries import report
+
 from prommis.costing.ree_costing_dictionaries import (
     load_REE_costing_dictionary,
+    load_default_sale_prices,
+    load_default_resource_prices,
     register_ree_currency_units,
 )
 
@@ -70,8 +75,20 @@ def REEUnitModelCostingBlock(
         costing_method_arguments["additional_costing_params"] = []
         costing_method_arguments["additional_costing_params"].append(REE_costing_params)
     else:
-        # append REE_costing_params to the existing list, but put it first so
-        # that name conflict can check against it during loading
+        # do some type checking here before calling the QGESS method
+
+        if not (
+            isinstance(costing_method_arguments["additional_costing_params"], list)
+            and all(isinstance(item, dict) for item in costing_method_arguments["additional_costing_params"])
+        ):
+            raise TypeError(
+                "additional_costing_params must be a list of dicts, not a single dict, "
+                "e.g. [{'1': data}, {'2': data},] or [{'1': data},] and not {'1': data}."
+            )
+
+        # create a list with the dictionaties
+        # dictionaries_to_append = [REE_costing_params, costing_method_arguments["additional_costing_params"]]
+        # costing_method_arguments["additional_costing_params"] = dictionaries_to_append
         costing_method_arguments["additional_costing_params"].insert(
             0, REE_costing_params
         )
@@ -111,6 +128,17 @@ class REECostingData(QGESSCostingData):
         ),
     )
 
+    del CONFIG["CEPCI_year"]
+
+    CONFIG.declare(
+        "CEPCI_year",
+        ConfigValue(
+            default="2021",
+            domain=str,
+            description="Basis year for costing. Must be a supported value from 1990 to 2023 or a user-defined value. For details, see the IDAES 'costing_base.py' module",
+        ),
+    )
+
     def build_global_params(self):
         """
         This is where we can declare any global parameters we need, such as
@@ -123,9 +151,153 @@ class REECostingData(QGESSCostingData):
         super().build_global_params()
 
         # Set the base year for all costs
-        self.base_currency = pyunits.USD_2021
+        self.base_currency = getattr(pyunits, "USD_" + self.config.CEPCI_year)
         # Set a base period for all operating costs
         self.base_period = pyunits.year
+
+        # TODO remove, mock some changes that need to patched into the IDAES QGESS module later
+        if isinstance(self.Lang_factor, Expression):
+            installation_components = {
+                "piping_materials_and_labor_percentage": 20,
+                "electrical_materials_and_labor_percentage": 20,
+                "instrumentation_percentage": 8,
+                "plants_services_percentage": 10,
+                "process_buildings_percentage": 40,
+                "auxiliary_buildings_percentage": 15,
+                "site_improvements_percentage": 10,
+                "equipment_installation_percentage": 17,
+                "field_expenses_percentage": 12,
+                "project_management_and_construction_percentage": 30,
+                "process_contingency_percentage": 15,
+            }
+
+            delattr(self, "Lang_factor")
+            self.Lang_factor = Expression(
+                expr=pyunits.convert(
+                    sum(
+                        self.installation_components[k] for k in installation_components
+                    ),
+                    to_units=pyunits.dimensionless,
+                ) + 1  # added this
+            )
+
+        
+
+    def build_REE_process_costs(
+        self,
+        **kwargs
+        ):
+        """
+        Wrapper method for building PrOMMiS REE process costs.
+
+        Passes to QGESS build_process_costs() and sets some defaults
+        """
+
+        # TODO change to use additional dictionary arguments instead of looping through prices
+
+        REE_resource_prices = load_default_resource_prices()
+
+        if "resource_prices" not in kwargs:
+            kwargs["resource_prices"] = REE_resource_prices
+        else:
+            # do some type checking before appending the REE default resource prices
+            if not isinstance(kwargs["resource_prices"], dict):
+                raise TypeError(
+                    "Dictionary of resource prices must be a dict object."
+                )
+            for k in REE_resource_prices:
+                kwargs["resource_prices"][k] = REE_resource_prices[k]
+
+        REE_sale_prices = load_default_sale_prices()
+
+        if "sale_prices" not in kwargs:
+            kwargs["sale_prices"] = REE_sale_prices
+        else:
+            # do some type checking before appending the REE default sale prices
+            if not isinstance(kwargs["sale_prices"], dict):
+                raise TypeError(
+                    "Dictionary of custom sale_prices must be a dict object."
+                )
+            for k in REE_sale_prices:
+                kwargs["sale_prices"][k] = REE_sale_prices[k]
+
+        QGESSCostingData.build_process_costs(self, **kwargs)
+
+        # TODO remove, mock some changes that need to patched into the IDAES QGESS module later
+        if hasattr(self, "total_TPC_eq"):
+            delattr(self, "total_TPC_eq")
+            @self.Constraint()
+            def total_TPC_eq(c):
+                # TPC = BEC that needs Lang factor applied to get TPC + TPC that is already calculated
+                # apply location factor and economy of numbers here too
+                return c.total_TPC == (
+                    (
+                        (
+                            (sum(c.BEC_list) - sum(c.BEC_blocks_with_TPC_list)) * c.Lang_factor
+                            + sum(c.TPC_blocks_with_TPC_list)
+                        ) + c.other_plant_costs  # added this
+                        )
+                    # apply economy of numbers if enabled
+                    * (c.NOAK_factor if c.config.has_economy_of_numbers else 1)  # applied to whole TPC
+                )
+
+        if hasattr(self, "total_variable_cost_eq"):
+            delattr(self, "total_variable_cost_eq")
+            @self.Constraint(self.parent_block().time)
+            def total_variable_cost_eq(c, t):
+                return (
+                    c.total_variable_OM_cost[t]
+                    == sum(c.variable_operating_costs[t, r] for r in kwargs["resources"])
+                    + (
+                        c.plant_overhead_cost[t]
+                        if hasattr(c, "plant_overhead_cost")
+                        else 0 * c.CEPCI_units / pyunits.year
+                    )
+                    + (
+                        c.land_cost
+                        if c.land_cost_reoccurrence == "annual"
+                        else 0 * c.CEPCI_units / pyunits.year
+                    )
+                    + (
+                        c.additional_chemicals_cost
+                        if c.additional_chemicals_cost_reoccurrence == "annual"
+                        else 0 * c.CEPCI_units / pyunits.year
+                    )
+                    + (
+                        c.additional_waste_cost
+                        if c.additional_waste_cost_reoccurrence == "annual"
+                        else 0 * c.CEPCI_units / pyunits.year
+                    )
+                    # for power plants, include maintenance material costs here if defined
+                    + (
+                        c.maintenance_material_cost
+                        if hasattr(c, "maintenance_material_cost")
+                        else 0 * c.CEPCI_units / pyunits.year
+                    )
+                    + c.other_variable_costs[t]  # added this
+                    + c.custom_variable_costs  # added this
+                )
+
+        if hasattr(self, "capex"):  # this is used for the NPV calculation
+            delattr(self, "capex")
+            self.capex = Expression(
+                expr=(
+                    self.total_TPC
+                    # removed double counting of other_plant_costs
+                    + (
+                        self.land_cost
+                        if self.land_cost_reoccurrence == "one_time"
+                        else 0 * self.CEPCI_units
+                    )
+                )
+            )
+
+    # TODO remove, mock reference to report method that needs to be patched into IDAES QGESS    
+    def report(self, export=False):
+        """
+        Call report method.
+        """
+        return report(self, export=export)
 
     def calculate_REE_costing_bounds(
         b, capacity, grade, report=False,
@@ -175,7 +347,7 @@ class REECostingData(QGESSCostingData):
             initialize=1,
             bounds=(0, None),
             doc="Estimated lower bound on per unit production cost of site",
-            units=b.CEPCI_units / pyunits.kg,
+            units=b.base_currency / pyunits.kg,
         )
 
         b.costing_upper_bound = Var(
@@ -183,7 +355,7 @@ class REECostingData(QGESSCostingData):
             initialize=1,
             bounds=(0, None),
             doc="Estimated upper bound on per unit production cost of site",
-            units=b.CEPCI_units / pyunits.kg,
+            units=b.base_currency / pyunits.kg,
         )
 
         def rule_costing_lower_bound_eq(c, p, ps):
@@ -198,7 +370,7 @@ class REECostingData(QGESSCostingData):
                             / pyunits.tonnes
                         )
                         ** (ps[p][2] - ps[p][3]),
-                        to_units=b.CEPCI_units,
+                        to_units=b.base_currency,
                     )
                     / pyunits.kg
                 )
@@ -206,6 +378,13 @@ class REECostingData(QGESSCostingData):
         b.costing_lower_bound_eq = Constraint(
             [p for p in b.processes.keys()],
             rule=partial(rule_costing_lower_bound_eq, ps=b.processes)
+            )
+
+        # assume model is already solved, so just calculate costing bounds here
+        for i in b.costing_lower_bound.keys():
+            calculate_variable_from_constraint(
+                b.costing_lower_bound[i],
+                b.costing_lower_bound_eq[i],
             )
 
         def rule_costing_upper_bound_eq(c, p, ps):
@@ -220,7 +399,7 @@ class REECostingData(QGESSCostingData):
                             / pyunits.tonnes
                         )
                         ** (ps[p][2] + ps[p][3]),
-                        to_units=b.CEPCI_units,
+                        to_units=b.base_currency,
                     )
                     / pyunits.kg
                 )

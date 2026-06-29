@@ -188,7 +188,7 @@ def load_default_sale_prices():
         "Eu2O3": 27 * pyunits.USD_2023 / pyunits.kg,  # Purity 99.99%.
         "La2O3": 1 * pyunits.USD_2023 / pyunits.kg,  # Purity 99.5%.
         "Nd2O3": 78 * pyunits.USD_2023 / pyunits.kg,  # Purity 99.5%.
-        "Sc2O3": 2100 * pyunits.MUSD_2022 / pyunits.kg,  # Purity 99.99%. year 2022.
+        "Sc2O3": 2100 * pyunits.USD_2022 / pyunits.kg,  # Purity 99.99%. year 2022.
         "Ta2O5": 170 * pyunits.USD_2023 / pyunits.kg,  # Purity 99.9%.
         "Tb4O7": 1298 * pyunits.USD_2023 / pyunits.kg,  # Purity 99.9%.
         "TiO2": 1.46 * pyunits.USD_2023 / pyunits.kg,  # Purity 99.9%.

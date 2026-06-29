@@ -1,0 +1,138 @@
+cff-version: 1.2.0
+title: >-
+  Process Optimization and Modeling for Minerals
+  Sustainability (PrOMMiS) v1.0.0
+message: "If you use this software, please cite both the article from preferred-citation and the software itself."
+type: software
+authors:
+  - family-names: Beattie
+    given-names: Keith S
+  - family-names: Davis
+    given-names: Soren
+  - family-names: Gunter
+    given-names: Daniel
+  - family-names: Martin
+    given-names: Shawn
+  - family-names: Skolfield
+    given-names: Kyle
+  - family-names: Mundt
+    given-names: Miranda
+  - family-names: Johnson
+    given-names: Emma
+  - family-names: Nicholson
+    given-names: Bethany
+  - family-names: Laliwala
+    given-names: Christopher
+  - family-names: Yao
+    given-names: Jason
+  - family-names: Dougher
+    given-names: Molly
+  - family-names: Deng
+    given-names: Lingyan
+  - family-names: Fritz
+    given-names: Alison
+  - family-names: Holly
+    given-names: Marcus
+  - family-names: Lee
+    given-names: Andrew
+  - family-names: Ma
+    given-names: Jinliang
+  - family-names: Paul
+    given-names: Brandon
+  - family-names: Bynum
+    given-names: Michael
+  - family-names: Dasgupta
+    given-names: Arkoprabho
+  - family-names: Ojo
+    given-names: Akintomiwa
+  - family-names: Rawlings
+    given-names: E. Soraya
+  - family-names: Wang
+    given-names: Maojian
+  - family-names: Garciadiego Del Rio
+    given-names: Alejandro
+  - family-names: Bi
+    given-names: Xiangyu
+  - family-names: O'Donnell
+    given-names: Cody
+  - family-names: Bianchi
+    given-names: Ludovico
+  - family-names: Amusat
+    given-names: Oluwamayowa
+  - family-names: Siirola
+    given-names: John
+identifiers:
+  - type: doi
+    value: 10.11578/dc.20250729.4
+    description: OSTI software record
+  - type: url
+    value: "https://www.osti.gov/doecode/biblio/158882"
+    description: OSTI entry
+  - type: url
+    value: >-
+      https://app.knovel.com/hotlink/toc/id:kpXXXIIMP1/impc-international-mineral/impc-international-mineral
+    description: >-
+      Conference paper in International Mineral Processing
+      Congress
+repository-code: "https://github.com/prommis/prommis"
+url: "https://github.com/prommis/prommis"
+abstract: >
+  The U.S. Department of Energy's (DOE) Process Optimization
+  and Modeling for Minerals Sustainability (PrOMMiS) project
+  develops an open-source system modeling, optimization, and
+  analysis application to accelerate the scale-up of
+  critical minerals and rare earth element technologies.
+keywords:
+  - process modeling
+  - optimization
+  - critical minerals
+  - rare earth elements
+license: BSD-3-Clause
+version: 1.0.0
+date-released: "2025-07-16"
+license-url: "https://github.com/prommis/prommis/blob/main/LICENSE.md"
+doi: 10.11578/dc.20250729.4
+preferred-citation:
+  type: conference-paper
+  authors:
+    - family-names: Tarka
+      given-names: Thomas
+    - family-names: Lee
+      given-names: Andrew
+    - family-names: Zamarripa-Perez
+      given-names: Miguel
+    - family-names: Paul
+      given-names: Brandon
+    - family-names: Garciadiego
+      given-names: Alejandro
+    - family-names: Fritz
+      given-names: Alison
+    - family-names: Dowling
+      given-names: Alexander
+    - family-names: Laird
+      given-names: Carl
+    - family-names: Gounaris
+      given-names: Chrysanthos
+    - family-names: Torres
+      given-names: Ana
+    - family-names: Bhattacharyya
+      given-names: Debangsu
+    - family-names: Siirola
+      given-names: John
+    - family-names: Gunter
+      given-names: Daniel
+    - family-names: Beattie
+      given-names: Keith S
+    - family-names: Sahinidis
+      given-names: Nick
+  year: 2024
+  conference:
+    name: XXXI IMPC-International Mineral Processing Congress
+  title: >-
+    PROMMIS: Applying novel modeling methods to accelerate critical minerals
+    research, development, demonstration, and deployment (RD3)
+  publisher:
+    name: "Society for Mining, Metallurgy, and Exploration (SME)"
+  pages: 980-990
+  url: >-
+    https://app.knovel.com/hotlink/toc/id:kpXXXIIMP1/impc-international-mineral/impc-international-mineral

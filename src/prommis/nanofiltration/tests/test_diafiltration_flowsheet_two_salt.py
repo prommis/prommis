@@ -9,6 +9,7 @@ Tests the two-salt diafiltration flowsheet
 """
 
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.testing import assert_solution_equivalent
 from idaes.models.unit_models import Feed, Product
 
 import matplotlib.pyplot as plt
@@ -16,7 +17,6 @@ import matplotlib.pyplot as plt
 import pytest
 
 from prommis.nanofiltration.diafiltration_flowsheet_two_salt import main
-from prommis.util import assert_solution_equivalent
 
 
 @pytest.mark.component

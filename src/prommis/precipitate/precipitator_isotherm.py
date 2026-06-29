@@ -21,7 +21,7 @@ created in the precipitator and the parameters used in the equilibrium equation.
 Model Structure
 ---------------
 
-The Precipitator unit model has hard coded stream names (``aqueous`` and ``precipitate`` respectively). The Precipitator 
+The Precipitator unit model has hard coded stream names (``aqueous`` and ``precipitate`` respectively). The Precipitator
 model also has one inlet and two outlets named ``aqueous_inlet``, ``aqueous_outlet`` and ``precipitate_outlet`` respectively.
 
 Additional Constraints
@@ -31,7 +31,7 @@ The Precipitator unit adds one additional constraint to define the conversion.
 
 .. math:: Conversion_{c} = \exp(-\frac{\epsilon}{Oxalic Acid Dosage}^{n_{DA}})
 
-where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters 
+where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters
 estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
 
 
@@ -117,7 +117,6 @@ class OxalatePrecipitatorInitializer(ModularInitializerBase):
         )
 
         msc_init.initialize(model.mscontactor)
-
 
         model.mscontactor.heterogeneous_reaction_extent.unfix()
 

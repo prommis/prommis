@@ -5,8 +5,8 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 r"""
-Reaction package for heterogeneous reactions involved in oxalate precipitation of  
-REEs from solid West Kentucky No. 13 coal refuse using oxalic acid.  
+Reaction package for heterogeneous reactions involved in oxalate precipitation of
+REEs from solid West Kentucky No. 13 coal refuse using oxalic acid.
 
 Authors: Alejandro Garciadiego, Bo-Xun Wang
 

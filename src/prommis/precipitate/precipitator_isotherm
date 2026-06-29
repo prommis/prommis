@@ -21,7 +21,7 @@ created in the precipitator and the parameters used in the equilibrium equation.
 Model Structure
 ---------------
 
-The Precitator unit model has hard coded stream names (``aqueous`` and ``precipitate`` respectively). The Precipitator 
+The Precipitator unit model has hard coded stream names (``aqueous`` and ``precipitate`` respectively). The Precipitator 
 model also has one inlet and two outlets named ``aqueous_inlet``, ``aqueous_outlet`` and ``precipitate_outlet`` respectively.
 
 Additional Constraints

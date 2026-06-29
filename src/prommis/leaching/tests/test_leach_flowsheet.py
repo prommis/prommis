@@ -18,8 +18,9 @@ from pyomo.common.fileutils import this_file_dir
 from idaes.core.solvers import get_solver
 from idaes.core.scaling.util import jacobian_cond
 from idaes.core.util import DiagnosticsToolbox, from_json, StoreSpec
+from idaes.core.util.testing import assert_solution_equivalent
 
-from prommis.util import assert_solution_equivalent, copy_first_steady_state
+from prommis.util import copy_first_steady_state
 from prommis.leaching.leach_flowsheet import CocurrentSlurryLeachingFlowsheet
 
 _expected_results_steady_one_tank = {}

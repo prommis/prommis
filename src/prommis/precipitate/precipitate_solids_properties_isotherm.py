@@ -25,7 +25,7 @@ from idaes.core import (
 from idaes.core.util.initialization import fix_state_vars
 
 # -----------------------------------------------------------------------------
-# Precipitate solution property package
+# Precipitate solids property package
 
 
 def _config_blk_build(blk):

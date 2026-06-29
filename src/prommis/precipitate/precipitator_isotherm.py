@@ -242,10 +242,6 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             heterogeneous_reactions_args=self.config.reaction_package_args,
         )
 
-        # Get units of measurement from MSContactor
-        flow_basis = self.mscontactor.flow_basis
-        uom = self.mscontactor.uom
-
         self.hydraulic_retention_time = Var(
             self.flowsheet().time,
             initialize=2,

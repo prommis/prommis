@@ -11,6 +11,7 @@ chapters:
       - file: tutorials/costing_basic_features-solution
       - file: tutorials/costing_advanced_features-solution
       - file: tutorials/uky_flowsheet-solution
+      - file: tutorials/uky_flowsheet_optimization-solution
       - file: tutorials/byproduct_recovery_determination-solution
       - file: tutorials/costing_uky_flowsheet-solution
       - file: examples/cmi_process.rst

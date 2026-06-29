@@ -47,4 +47,4 @@ To cite this work, please use the "Cite this repository" feature available on th
 
 ## Funding Acknowledgements
 
-<!-- Placeholder for funding acknowledgements -->
+This effort was funded by the U.S. Department of Energy’s Process Optimization and Modeling for Minerals Sustainability (PrOMMiS) Initiative, supported by the Department of Energy’s Hydrocarbons and Geothermal Energy Office.

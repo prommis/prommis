@@ -10,6 +10,7 @@ from pyomo.environ import check_optimal_termination
 
 from idaes.core.solvers import get_solver
 from idaes.core.util import DiagnosticsToolbox
+from idaes.core.util.testing import assert_solution_equivalent
 
 import pytest
 
@@ -19,7 +20,6 @@ from prommis.solvent_extraction.mixer_settler_ex_flowsheet_dynamic import (
     import_steady_value,
     main,
 )
-from prommis.util import assert_solution_equivalent
 
 solver = get_solver()
 

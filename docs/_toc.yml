@@ -2,17 +2,21 @@ format: jb-book
 root: index
 chapters:
   - file: getting_started.md
-  - file: tutorials/diafiltration
-  - file: tutorials/diafiltration-solution
-  - file: tutorials/costing_basic_features
-  - file: tutorials/costing_basic_features-solution
-  - file: tutorials/costing_advanced_features-solution
-  - file: tutorials/uky_flowsheet-solution
-  - file: tutorials/byproduct_recovery_determination-solution
-  - file: tutorials/costing_uky_flowsheet-solution
   - file: api.rst
-  - file: examples/cmi_process.rst
-  - file: superstructure/superstructure_function_documentation.rst
-  - file: tutorials/diafiltration_flowsheet_optimization_tutorial-solution
-  - file: tutorials/diafiltration_cost_uncertainty_quantification_and_propagation-solution
-  - file: tutorials/detailed_chemistry_integration_tutorial-solution
+  - file: tutorials/intro   # optional landing page for tutorials
+    sections:
+      - file: tutorials/diafiltration
+      - file: tutorials/diafiltration-solution
+      - file: tutorials/costing_basic_features
+      - file: tutorials/costing_basic_features-solution
+      - file: tutorials/costing_advanced_features-solution
+      - file: tutorials/uky_flowsheet-solution
+      - file: tutorials/byproduct_recovery_determination-solution
+      - file: tutorials/costing_uky_flowsheet-solution
+      - file: examples/cmi_process.rst
+      - file: superstructure/superstructure_function_documentation.rst
+      - file: tutorials/diafiltration_flowsheet_optimization_tutorial-solution
+      - file: tutorials/diafiltration_cost_uncertainty_quantification_and_propagation-solution
+      - file: tutorials/detailed_chemistry_integration_tutorial-solution
+  - file: license.rst
+  - file: copyright.rst

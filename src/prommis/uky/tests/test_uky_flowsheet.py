@@ -14,6 +14,7 @@ from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.testing import assert_solution_equivalent
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
@@ -52,7 +53,6 @@ from prommis.uky.uky_flowsheet import (
     set_scaling,
     solve_system,
 )
-from prommis.util import assert_solution_equivalent
 
 
 @pytest.fixture(scope="module")

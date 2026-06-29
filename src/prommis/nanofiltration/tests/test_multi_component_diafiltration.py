@@ -27,6 +27,7 @@ from pyomo.network import Port
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
+from idaes.core.util.testing import assert_solution_equivalent
 
 import pytest
 
@@ -36,7 +37,6 @@ from prommis.nanofiltration.multi_component_diafiltration_solute_properties impo
 from prommis.nanofiltration.multi_component_diafiltration import (
     MultiComponentDiafiltration,
 )
-from prommis.util import assert_solution_equivalent
 
 # TODO: test positive and neutral membrane cases
 # currently, the property package only supports a negative fixed charge

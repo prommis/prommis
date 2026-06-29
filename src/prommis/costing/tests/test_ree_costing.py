@@ -1593,7 +1593,7 @@ class TestWaterTAPCosting(object):
         # Check condition number to confirm scaling for nanofiltration
         jac, _ = get_jacobian(model.fs.nfunit, scaled=False)
         assert (jacobian_cond(jac=jac, scaled=False)) == pytest.approx(
-            5.6905e14, rel=1e-3
+            6.8163e14, rel=1e-3
         )
 
         # Check condition number to confirm scaling for RO

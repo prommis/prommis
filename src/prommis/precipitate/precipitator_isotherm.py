@@ -116,10 +116,8 @@ class OxalatePrecipitatorInitializer(ModularInitializerBase):
             calculate_variable_options=self.config.calculate_variable_options,
         )
 
-        try:
-            msc_init.initialize(model.mscontactor)
-        except:
-            pass
+        msc_init.initialize(model.mscontactor)
+
 
         model.mscontactor.heterogeneous_reaction_extent.unfix()
 

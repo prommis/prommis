@@ -77,31 +77,6 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Gd = Component()
         self.Dy = Component()
 
-        # Equilibrium parameter (\epsilon) based on pH 1.5
-        self.E_D = Param(
-            self.component_list,
-            units=units.dimensionless,
-            initialize={
-                "H2O": 100,
-                "Sc": 6.42030,
-                "Y": 4.551786,
-                "La": 4.3717,
-                "Ce": 1.18848,
-                "Pr": 2.09604,
-                "Nd": 1.01030,
-                "Sm": 2.296176,
-                "Gd": 3.07276,
-                "Dy": 4.8608,
-                "Al": 50,
-                "Ca": 14.49274,
-                "Fe": 8.659561,
-                "H": 100,
-                "Cl": 100,
-                "HSO4": 100,
-                "SO4": 100,
-            },
-        )
-
         self.mw = Param(
             self.component_list,
             units=units.kg / units.mol,

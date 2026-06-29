@@ -102,31 +102,6 @@ class AqueousParameterData(PhysicalParameterBlock):
             },
         )
 
-        # Equilibrium parameter (n_{DA}) based on pH 1.5
-        self.N_D = Param(
-            self.component_list,
-            units=units.dimensionless,
-            initialize={
-                "H2O": 100,
-                "Sc": 6.42030,
-                "Y": 4.67403,
-                "La": 4.6340,
-                "Ce": 2.737238,
-                "Pr": 3.44364,
-                "Nd": 2.419137,
-                "Sm": 3.7201,
-                "Gd": 4.1995,
-                "Dy": 4.73106,
-                "Al": 0.9,
-                "Ca": 4.45302,
-                "Fe": 3.6495,
-                "H": 100,
-                "Cl": 100,
-                "HSO4": 100,
-                "SO4": 100,
-            },
-        )
-
         self.mw = Param(
             self.component_list,
             units=units.kg / units.mol,

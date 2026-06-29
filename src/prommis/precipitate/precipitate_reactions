@@ -31,7 +31,7 @@ class OxalatePrecipitationLeachingReactionsData(
     ProcessBlockData, property_meta.HasPropertyClassMetadata
 ):
     """
-    Reaction package for heterogeneous reactions involved in oxalate precipiration of
+    Reaction package for heterogeneous reactions involved in oxalate precipitation of
     REEs from solid West Kentucky No. 13 coal refuse using oxalic acid.
 
     This reaction package is designed to be used with the precipitator

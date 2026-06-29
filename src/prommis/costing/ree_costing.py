@@ -92,7 +92,7 @@ def REEUnitModelCostingBlock(
                 "e.g. [{'1': data}, {'2': data},] or [{'1': data},] and not {'1': data}."
             )
 
-        # create a list with the dictionaties
+        # create a list with the dictionaries
         # dictionaries_to_append = [REE_costing_params, costing_method_arguments["additional_costing_params"]]
         # costing_method_arguments["additional_costing_params"] = dictionaries_to_append
         costing_method_arguments["additional_costing_params"].insert(

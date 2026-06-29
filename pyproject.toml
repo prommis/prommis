@@ -32,9 +32,9 @@ keywords = [
     "process modeling",
 ]
 dynamic = ["version"]
-dependencies = ["idaes-pse[ui]>=2.12.0rc1", "pyomo >=6.9.5"]
+dependencies = ["idaes-pse[ui]>=2.12.0", "pyomo >=6.9.5"]
 [project.optional-dependencies]
-watertap = ["watertap[reaktoro] @ git+https://github.com/sufikaur/watertap.git@idaes-pse-2.12"]
+watertap = ["watertap[reaktoro] @ git+https://github.com/watertap-org/watertap.git@main"]
 
 
 flowsheet-processor = ["idaes-flowsheet-processor >=0.2"]
@@ -129,6 +129,8 @@ extend-exclude = [
 IDAES = "IDAES"
 # ignore phase_equil
 phase_equil = "phase_equil"
+# ignore reoccurrence
+reoccurrence = "reoccurrence"
 # ignore author last name Theis
 Theis = "Theis"
 # Atomic elements

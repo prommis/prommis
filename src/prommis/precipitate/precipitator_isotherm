@@ -208,7 +208,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
         ConfigValue(
             default=None,
             domain=dict,
-            description="Arguments for heterogeneous reaction package for precipitaction.",
+            description="Arguments for heterogeneous reaction package for precipitation.",
         ),
     )
     CONFIG.declare(

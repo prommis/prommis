@@ -37,6 +37,7 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
+from idaes.core.util.testing import assert_solution_equivalent
 
 from prommis.properties.sulfuric_acid_leaching_properties import (
     SulfuricAcidLeachingParameters,
@@ -47,7 +48,6 @@ from prommis.solvent_extraction.settler_tank import (
     SettlerTankInitializer,
     SettlerTankScaler,
 )
-from prommis.util import assert_solution_equivalent
 
 __author__ = "Douglas Allan"
 

@@ -5,13 +5,14 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 
+import pytest
+
 from pyomo.environ import check_optimal_termination
 
 from idaes.core.initialization import InitializationStatus
 from idaes.core.solvers import get_solver
 from idaes.core.util import DiagnosticsToolbox
-
-import pytest
+from idaes.core.util.testing import assert_solution_equivalent
 
 from prommis.solvent_extraction.mixer_settler_extraction import (
     MixerSettlerExtractionInitializer,
@@ -20,7 +21,6 @@ from prommis.solvent_extraction.mixer_settler_ex_flowsheet_steady import (
     model_buildup_and_set_inputs,
     main,
 )
-from prommis.util import assert_solution_equivalent
 
 solver = get_solver()
 

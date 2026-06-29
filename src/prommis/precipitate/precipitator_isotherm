@@ -214,7 +214,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
     CONFIG.declare(
         "number_of_tanks",
         ConfigValue(
-            default=1, domain=int, description="Number of tanks in precipitaction"
+            default=1, domain=int, description="Number of tanks in precipitation"
         ),
     )
 

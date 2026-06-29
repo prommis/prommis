@@ -35,7 +35,7 @@ class OxalatePrecipitationLeachingReactionsData(
     REEs from solid West Kentucky No. 13 coal refuse using oxalic acid.
 
     This reaction package is designed to be used with the precipitator
-    unit model and assumed two streams named 'liquid' and 'solid'.
+    unit model and assumes two streams named 'liquid' and 'solid'.
 
     Reaction parameters fitted to a shrinking core model using data from:
 

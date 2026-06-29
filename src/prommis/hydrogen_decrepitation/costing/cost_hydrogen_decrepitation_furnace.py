@@ -107,26 +107,12 @@ class HydrogenDecrepitationCostingData(FlowsheetCostingBlockData):
         )
         self.efficiency.set_value(0.95 * pyunits.dimensionless)
 
-        self.hours_per_shift = Param(
+        self.capacity_factor = Param(
             mutable=True,
-            units=pyunits.hr,
-            doc="Number of hours per shift",
+            units=pyunits.dimensionless,
+            doc="Capacity factor for equipment operation",
         )
-        self.hours_per_shift.set_value(8 * pyunits.hr)
-
-        self.shifts_per_day = Param(
-            mutable=True,
-            units=1 / pyunits.day,
-            doc="Number of shifts per day",
-        )
-        self.shifts_per_day.set_value(3 * (pyunits.day) ** (-1))
-
-        self.operating_days_per_year = Param(
-            mutable=True,
-            units=pyunits.day / pyunits.year,
-            doc="Number of operating days per year",
-        )
-        self.operating_days_per_year.set_value(336 * pyunits.day / pyunits.year)
+        self.capacity_factor.set_value(0.92)
 
         self.utility_rate = Param(
             mutable=True,
@@ -231,11 +217,13 @@ class HydrogenDecrepitationCostingData(FlowsheetCostingBlockData):
 
         @blk.Expression(doc="Number of batches processed annually")
         def total_runs(b):
-            return (
-                b.costing_package.hours_per_shift
-                * b.costing_package.shifts_per_day
-                * b.costing_package.operating_days_per_year
-            ) / b.parent_block().processing_time
+            return pyunits.convert(
+                b.costing_package.capacity_factor
+                * 1
+                * pyunits.year
+                / b.parent_block().processing_time,
+                to_units=pyunits.dimensionless,
+            )
 
         @blk.Expression(doc="Heat duty required annually")
         def annual_heat_duty(b):
@@ -252,9 +240,7 @@ class HydrogenDecrepitationCostingData(FlowsheetCostingBlockData):
         def operating_cost_eq(b):
             return b.OPEX == pyunits.convert(
                 (b.parent_block().total_heat_duty[0] / b.costing_package.efficiency)
-                * b.costing_package.hours_per_shift
-                * b.costing_package.shifts_per_day
-                * b.costing_package.operating_days_per_year
+                * b.costing_package.capacity_factor
                 * b.costing_package.utility_rate,
                 to_units=blk.costing_package.base_currency
                 / blk.costing_package.base_period,

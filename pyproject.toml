@@ -101,7 +101,6 @@ known_issues = "prommis._testing_utils.known_issues"
 
 [tool.pytest.ini_options]
 addopts = """
---pyargs prommis
 --import-mode=importlib
 --cov=prommis
 --cov-config .coveragerc
@@ -130,6 +129,8 @@ extend-exclude = [
 IDAES = "IDAES"
 # ignore phase_equil
 phase_equil = "phase_equil"
+# ignore reoccurrence
+reoccurrence = "reoccurrence"
 # ignore author last name Theis
 Theis = "Theis"
 # Atomic elements

@@ -45,7 +45,7 @@ class OxalatePrecipitationLeachingReactionsData(
 
     .. math:: Conversion_{c} = \exp(-\frac{\epsilon}{Oxalic Acid Dosage}^{n_{DA}})
 
-    where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters
+    where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters 
     estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
 
     The details for obtaining the equilibrium parameters can be found at the Jupyter notebook, "Parameter estimation tutorial.ipynb".

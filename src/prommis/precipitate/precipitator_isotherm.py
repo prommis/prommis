@@ -265,14 +265,12 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             bounds=(1e-20, 0.999999),
         )
 
-        
         self.min_conversion = Param(
             initialize=1e-6,
             mutable=True,
             units=pyunits.dimensionless,
             doc="Minimum conversion for Ca(C2O4)(s)",
-)
-
+        )
 
         # Create unit level Ports
         self.aqueous_inlet = Port(extends=self.mscontactor.liquid_inlet)

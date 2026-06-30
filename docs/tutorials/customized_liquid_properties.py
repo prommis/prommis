@@ -1,17 +1,16 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-r"""
-Initial property package for precipitate. This property package includes parameters (:math:`\epsilon` and :math:`n_{DA}`)
-used for equilibrium model of precipitation.
+"""
+Customized liquid property package for detailed chemistry tutorial.
 
-Authors: Alejandro Garciadiego, Bo-Xun Wang
+Authors: Maojian Wang
 """
 
-from pyomo.environ import Constraint, Param, Set, Var, units
+from pyomo.environ import Param, Set, Var, units
 
 import idaes.core.util.scaling as iscale
 from idaes.core import (
@@ -23,6 +22,7 @@ from idaes.core import (
     StateBlockData,
     declare_process_block_class,
 )
+from idaes.core.base.components import Solvent, Solute
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
 
@@ -31,96 +31,60 @@ from idaes.core.util.misc import add_object_reference
 # Precipitate solution property package
 @declare_process_block_class("AqueousParameter")
 class AqueousParameterData(PhysicalParameterBlock):
-    r"""
-    Property package for aqueous solution generated in oxalate precipitator.
-
-    Includes the following components:
-
-    * Rare Earths: Sc, Y, La, Ce, Pr, Nd, Sm, Gd, Dy
-    * Impurities: Al, Ca, Fe
-
-    Assumes the equilibrium reaction can be described by the equilibrium equation.
-
-    .. math:: Conversion_{c} = \exp(-\frac{\epsilon}{Oxalic Acid Dosage}^{n_{DA}})
-
-    where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters
-    estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
-
-    """
 
     def build(self):
         super().build()
 
         self.liquid = Phase()
+        self.H2O = Solvent()
+        self.Ca = Solute()
+        self.Na = Solute()
+        self.K = Solute()
+        self.Mg = Solute()
+        self.Cl = Solute()
+        self.SO4 = Solute()
+        self.HCO3 = Solute()
 
-        # Solvents
-        self.H2O = Component()
-
-        # Contaminants
-        self.Al = Component()
-        self.Ca = Component()
-        self.Fe = Component()
-        self.H = Component()
-        self.Cl = Component()
-        self.HSO4 = Component()
-        self.SO4 = Component()
-        self.H2C2O4 = Component()
-
-        # REEs
-        self.Sc = Component()
-        self.Y = Component()
-        self.La = Component()
-        self.Ce = Component()
-        self.Pr = Component()
-        self.Nd = Component()
-        self.Sm = Component()
-        self.Gd = Component()
-        self.Dy = Component()
+        self.split = Var(
+            self.component_list,
+            units=units.kg / units.kg,
+            initialize={
+                "Ca": 10,
+                "Na": 1e-20,
+                "K": 1e-20,
+                "Mg": 1e-20,
+                "Cl": 1e-20,
+                "SO4": 1e-20,
+                "HCO3": 1e-20,
+                "H2O": 1e-20,
+            },
+        )
+        self.split.fix()
 
         self.mw = Param(
             self.component_list,
             units=units.kg / units.mol,
             initialize={
-                "H2O": 18e-3,
-                "Sc": 44.946e-3,
-                "Y": 88.905e-3,
-                "La": 138.905e-3,
-                "Ce": 140.116e-3,
-                "Pr": 140.907e-3,
-                "Nd": 144.242e-3,
-                "Sm": 150.36e-3,
-                "Gd": 157.25e-3,
-                "Dy": 162.50e-3,
-                "Al": 26.982e-3,
                 "Ca": 40.078e-3,
-                "Fe": 55.845e-3,
-                "H": 1.008e-3,
+                "Na": 22.989769e-3,
+                "K": 39.0983e-3,
+                "Mg": 24.305e-3,
                 "Cl": 35.453e-3,
-                "HSO4": 97.064e-3,
-                "SO4": 96.056e-3,
-                "H2C2O4": 90.03e-3,
+                "SO4": 96.06e-3,
+                "HCO3": 61.0168e-3,
+                "H2O": 18e-3,
             },
         )
 
         self.dissolved_elements = Set(
             initialize=[
-                "Al",
                 "Ca",
-                "Fe",
-                "Sc",
-                "Y",
-                "La",
-                "Ce",
-                "Pr",
-                "Nd",
-                "Sm",
-                "Gd",
-                "Dy",
-                "H",
+                "Na",
+                "K",
+                "Mg",
                 "Cl",
-                "HSO4",
                 "SO4",
-                "H2C2O4",
+                "HCO3",
                 "H2O",
             ]
         )
@@ -142,6 +106,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "conc_mass_comp": {"method": None},
                 "dens_mol": {"method": "_dens_mol"},
                 "flow_mol_comp": {"method": None},
+                "flow_mass_comp": {"method": None},
             }
         )
         obj.add_default_units(
@@ -168,7 +133,7 @@ class _AqueousStateBlock(StateBlock):
 
 
 @declare_process_block_class("AqueousStateBlock", block_class=_AqueousStateBlock)
-class AqueousStateBlockData(StateBlockData):
+class AqueousStateBlockkData(StateBlockData):
     """
     State block for aqueous solution generated in oxalate precipitator.
 
@@ -183,7 +148,7 @@ class AqueousStateBlockData(StateBlockData):
             bounds=(1e-8, None),
         )
         self.conc_mass_comp = Var(
-            self.params.dissolved_elements,
+            self.params.solute_set,
             units=units.mg / units.L,
             initialize=1e-5,
             bounds=(1e-20, None),
@@ -196,28 +161,21 @@ class AqueousStateBlockData(StateBlockData):
         )
 
         self.conc_mol_comp = Var(
-            self.params.dissolved_elements,
+            self.params.solute_set,
             units=units.mol / units.L,
             initialize=1e-5,
             bounds=(1e-20, None),
         )
 
-        self.temperature = Var(
-            initialize=298.15,
-            bounds=(298, None),
-            doc="State temperature [K]",
-            units=units.K,
-        )
-
-        self.pressure = Var(
-            initialize=101325.0,
-            bounds=(1e3, 1e6),
-            doc="State pressure [Pa]",
-            units=units.Pa,
+        self.flow_mass_comp = Var(
+            self.params.dissolved_elements,
+            units=units.kg / units.s,
+            initialize=1,
+            bounds=(1e-20, None),
         )
 
         # Concentration conversion constraint
-        @self.Constraint(self.params.dissolved_elements)
+        @self.Constraint(self.params.solute_set)
         def molar_concentration_constraint(b, j):
             return (
                 units.convert(
@@ -232,7 +190,10 @@ class AqueousStateBlockData(StateBlockData):
             if j == "H2O":
                 # Assume constant density of 1 kg/L
                 return (
-                    self.flow_vol * self.params.dens_mass / self.params.mw[j]
+                    units.convert(
+                        self.flow_vol * self.params.dens_mass / self.params.mw[j],
+                        to_units=units.mol / units.hour,
+                    )
                     == b.flow_mol_comp[j]
                 )
             else:
@@ -244,18 +205,33 @@ class AqueousStateBlockData(StateBlockData):
                     == b.flow_mol_comp[j]
                 )
 
-        if not self.config.defined_state:
-            # Concentration of H2O based on assumed density
-            self.h2o_concentration = Constraint(
-                expr=self.conc_mass_comp["H2O"] == 1e6 * units.mg / units.L
-            )
+        # Concentration conversion constraint
+        @self.Constraint(self.params.dissolved_elements)
+        def flow_mass_constraint(b, j):
+            if j == "H2O":
+                # Assume constant density of 1 kg/L
+                return (
+                    units.convert(
+                        self.flow_vol * self.params.dens_mass,
+                        to_units=units.kg / units.s,
+                    )
+                    == b.flow_mass_comp[j]
+                )
+            else:
+                # Need to convert from moles to mass
+                return (
+                    units.convert(
+                        b.flow_vol * b.conc_mass_comp[j],
+                        to_units=units.kg / units.s,
+                    )
+                    == b.flow_mass_comp[j]
+                )
 
-        iscale.set_scaling_factor(self.flow_vol, 1e-2)
-        iscale.set_scaling_factor(self.temperature, 1e-2)
-        iscale.set_scaling_factor(self.pressure, 1e5)
+        iscale.set_scaling_factor(self.flow_vol, 1e1)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
-        iscale.set_scaling_factor(self.conc_mol_comp, 1e3)
+        iscale.set_scaling_factor(self.conc_mol_comp, 1e5)
+        iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
 
     def _dens_mass(self):
         add_object_reference(self, "dens_mass", self.params.dens_mass)
@@ -279,6 +255,4 @@ class AqueousStateBlockData(StateBlockData):
         return {
             "flow_vol": self.flow_vol,
             "conc_mass_comp": self.conc_mass_comp,
-            "temperature": self.temperature,
-            "pressure": self.pressure,
         }

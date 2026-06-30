@@ -5,8 +5,8 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 r"""
-Reaction package for heterogeneous reactions involved in oxalate precipitation of  
-REEs from solid West Kentucky No. 13 coal refuse using oxalic acid.  
+Reaction package for heterogeneous reactions involved in oxalate precipitation of
+REEs from solid West Kentucky No. 13 coal refuse using oxalic acid.
 
 Authors: Alejandro Garciadiego, Bo-Xun Wang
 
@@ -31,11 +31,11 @@ class OxalatePrecipitationLeachingReactionsData(
     ProcessBlockData, property_meta.HasPropertyClassMetadata
 ):
     """
-    Reaction package for heterogeneous reactions involved in oxalate precipiration of
+    Reaction package for heterogeneous reactions involved in oxalate precipitation of
     REEs from solid West Kentucky No. 13 coal refuse using oxalic acid.
 
     This reaction package is designed to be used with the precipitator
-    unit model and assumed two streams named 'liquid' and 'solid'.
+    unit model and assumes two streams named 'liquid' and 'solid'.
 
     Reaction parameters fitted to a shrinking core model using data from:
 
@@ -45,7 +45,7 @@ class OxalatePrecipitationLeachingReactionsData(
 
     .. math:: Conversion_{c} = \exp(-\frac{\epsilon}{Oxalic Acid Dosage}^{n_{DA}})
 
-    where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters 
+    where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters
     estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
 
     The details for obtaining the equilibrium parameters can be found at the Jupyter notebook, "Parameter estimation tutorial.ipynb".

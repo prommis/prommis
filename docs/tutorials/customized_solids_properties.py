@@ -1,13 +1,13 @@
 #####################################################################################################
 # “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
-# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2025 by the software owners: The Regents of the
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Preliminary property package for West Kentucky No. 13 coal refuse.
+Customized solids property package for detailed chemistry tutorial.
 
-Authors: Alejandro Garciadiego
+Authors: Maojian Wang
 """
 
 from pyomo.common.config import ConfigValue
@@ -24,9 +24,6 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 
-# -----------------------------------------------------------------------------
-# Precipitate solids property package
-
 
 def _config_blk_build(blk):
     blk.declare(
@@ -42,22 +39,6 @@ def _config_blk_build(blk):
 
 @declare_process_block_class("PrecipitateParameters")
 class PrecipitateParametersData(PhysicalParameterBlock):
-    """
-    Solid phase property package for oxalate precipitation.
-
-    Based on assay provided in:
-
-    RESEARCH PERFORMANCE FINAL REPORT, Pilot-Scale Testing of an Integrated
-    Circuit for the Extraction of Rare Earth Minerals and Elements from Coal
-    and Coal Byproducts Using Advanced Separation Technologies,
-    Honaker, R.Q., et al., DE-FE0027035
-
-    Includes the following components:
-    * Rare Earth Oxalates: "Al2(C2O4)3(s)", "Fe2(C2O4)3(s)", "Sc2(C2O4)3(s)",
-    "Y2(C2O4)3(s)", "La2(C2O4)3(s)", "Ce2(C2O4)3(s)", "Pr2(C2O4)3(s)",
-    "Nd2(C2O4)3(s)", "Sm2(C2O4)3(s)", "Gd2(C2O4)3(s)", "Dy2(C2O4)3(s)"
-
-    """
 
     CONFIG = PhysicalParameterBlock.CONFIG()
     _config_blk_build(CONFIG)
@@ -68,53 +49,28 @@ class PrecipitateParametersData(PhysicalParameterBlock):
         self.solid = Phase()
 
         comp_list = [
-            "Al2(C2O4)3(s)",
-            "Ca(C2O4)(s)",
-            "Fe2(C2O4)3(s)",
-            "Sc2(C2O4)3(s)",
-            "Y2(C2O4)3(s)",
-            "La2(C2O4)3(s)",
-            "Ce2(C2O4)3(s)",
-            "Pr2(C2O4)3(s)",
-            "Nd2(C2O4)3(s)",
-            "Sm2(C2O4)3(s)",
-            "Gd2(C2O4)3(s)",
-            "Dy2(C2O4)3(s)",
+            "Ca(CO3)(s)",
         ]
 
         self.component_list = comp_list
 
         self.react = {
-            "Sc2(C2O4)3(s)": "Sc",
-            "Y2(C2O4)3(s)": "Y",
-            "La2(C2O4)3(s)": "La",
-            "Ce2(C2O4)3(s)": "Ce",
-            "Pr2(C2O4)3(s)": "Pr",
-            "Nd2(C2O4)3(s)": "Nd",
-            "Sm2(C2O4)3(s)": "Sm",
-            "Gd2(C2O4)3(s)": "Gd",
-            "Dy2(C2O4)3(s)": "Dy",
-            "Al2(C2O4)3(s)": "Al",
-            "Ca(C2O4)(s)": "Ca",
-            "Fe2(C2O4)3(s)": "Fe",
+            "Ca(CO3)(s)": "Ca",
         }
+
+        self.stoich = Param(
+            self.component_list,
+            units=units.mol / units.mol,
+            initialize={
+                "Ca(CO3)(s)": 1,
+            },
+        )
 
         self.mw = Param(
             self.component_list,
             units=units.kg / units.mol,
             initialize={
-                "Sc2(C2O4)3(s)": 354 * 1e-3,
-                "Y2(C2O4)3(s)": 441.87 * 1e-3,
-                "La2(C2O4)3(s)": 541.87 * 1e-3,
-                "Ce2(C2O4)3(s)": 544.286 * 1e-3,
-                "Pr2(C2O4)3(s)": 545.87 * 1e-3,
-                "Nd2(C2O4)3(s)": 552.54 * 1e-3,
-                "Sm2(C2O4)3(s)": 564.77 * 1e-3,
-                "Gd2(C2O4)3(s)": 578.56 * 1e-3,
-                "Dy2(C2O4)3(s)": 769.21 * 1e-3,
-                "Al2(C2O4)3(s)": 318.02 * 1e-3,
-                "Ca(C2O4)(s)": 128.097 * 1e-3,
-                "Fe2(C2O4)3(s)": 143.86 * 1e-3,
+                "Ca(CO3)(s)": 100.09 * 1e-3,
             },
         )
 
@@ -177,9 +133,6 @@ class PrecipitateStateBlockData(StateBlockData):
 
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
         iscale.set_scaling_factor(self.temperature, 1e1)
-
-    def get_material_flow_terms(self, p, j):
-        return self.flow_mol_comp[j]
 
     def get_material_flow_basis(self):
         return MaterialFlowBasis.molar

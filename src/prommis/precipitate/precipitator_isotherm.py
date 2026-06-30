@@ -21,7 +21,7 @@ created in the precipitator and the parameters used in the equilibrium equation.
 Model Structure
 ---------------
 
-The Precitator unit model has hard coded stream names (``aqueous`` and ``precipitate`` respectively). The Precipitator 
+The Precipitator unit model has hard coded stream names (``aqueous`` and ``precipitate`` respectively). The Precipitator
 model also has one inlet and two outlets named ``aqueous_inlet``, ``aqueous_outlet`` and ``precipitate_outlet`` respectively.
 
 Additional Constraints
@@ -31,7 +31,7 @@ The Precipitator unit adds one additional constraint to define the conversion.
 
 .. math:: Conversion_{c} = \exp(-\frac{\epsilon}{Oxalic Acid Dosage}^{n_{DA}})
 
-where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters 
+where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters
 estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
 
 
@@ -40,6 +40,7 @@ estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxal
 from pyomo.common.config import Bool, ConfigDict, ConfigValue
 
 from pyomo.environ import (
+    Param,
     Var,
     Block,
     log,
@@ -70,7 +71,7 @@ from idaes.core.initialization import ModularInitializerBase
 # Precipitator unit model
 class OxalatePrecipitatorInitializer(ModularInitializerBase):
     """
-    This is a general purpose Initializer  for the Oxalate Precipitator unit model.
+    This is a general purpose Initializer for the Oxalate Precipitator unit model.
 
     This routine calls the initializer for the internal MSContactor model.
 
@@ -116,10 +117,7 @@ class OxalatePrecipitatorInitializer(ModularInitializerBase):
             calculate_variable_options=self.config.calculate_variable_options,
         )
 
-        try:
-            msc_init.initialize(model.mscontactor)
-        except:
-            pass
+        msc_init.initialize(model.mscontactor)
 
         model.mscontactor.heterogeneous_reaction_extent.unfix()
 
@@ -200,7 +198,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
         "reaction_package",
         ConfigValue(
             # TODO: Add a domain validator for this
-            description="Heterogeneous reaction package for precipitaction.",
+            description="Heterogeneous reaction package for precipitation.",
         ),
     )
     CONFIG.declare(
@@ -208,13 +206,13 @@ class OxalatePrecipitatorData(UnitModelBlockData):
         ConfigValue(
             default=None,
             domain=dict,
-            description="Arguments for heterogeneous reaction package for precipitaction.",
+            description="Arguments for heterogeneous reaction package for precipitation.",
         ),
     )
     CONFIG.declare(
         "number_of_tanks",
         ConfigValue(
-            default=1, domain=int, description="Number of tanks in precipitaction"
+            default=1, domain=int, description="Number of tanks in precipitation"
         ),
     )
 
@@ -244,10 +242,6 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             heterogeneous_reactions_args=self.config.reaction_package_args,
         )
 
-        # Get units of measurement from MSContactor
-        flow_basis = self.mscontactor.flow_basis
-        uom = self.mscontactor.uom
-
         self.hydraulic_retention_time = Var(
             self.flowsheet().time,
             initialize=2,
@@ -271,6 +265,13 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             bounds=(1e-20, 0.999999),
         )
 
+        self.min_conversion = Param(
+            initialize=1e-6,
+            mutable=True,
+            units=pyunits.dimensionless,
+            doc="Minimum conversion for Ca(C2O4)(s)",
+        )
+
         # Create unit level Ports
         self.aqueous_inlet = Port(extends=self.mscontactor.liquid_inlet)
         self.aqueous_outlet = Port(extends=self.mscontactor.liquid_outlet)
@@ -278,10 +279,9 @@ class OxalatePrecipitatorData(UnitModelBlockData):
 
         @self.Constraint(self.flowsheet().time, doc="Hydraulic retention time equation")
         def eq_hydraulic_retention(blk, t):
-            return (
-                self.hydraulic_retention_time[t] * self.aqueous_inlet.flow_vol[t]
-                == self.volume[t]
-            )
+            return blk.hydraulic_retention_time[t] * pyunits.convert(
+                blk.aqueous_inlet.flow_vol[t], to_units=pyunits.m**3 / pyunits.hour
+            ) == pyunits.convert(blk.volume[t], to_units=pyunits.m**3)
 
         @self.Constraint(
             self.flowsheet().time,
@@ -293,7 +293,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             return blk.mscontactor.heterogeneous_reaction_extent[t, s, r] == (
                 blk.mscontactor.heterogeneous_reactions[t, s].reaction_rate[r]
                 - (
-                    self.conversion[r]
+                    blk.conversion[r]
                     * blk.mscontactor.liquid_inlet_state[t].flow_mol_comp[
                         blk.mscontactor.config.streams.solid.property_package.react[r]
                     ]
@@ -308,9 +308,9 @@ class OxalatePrecipitatorData(UnitModelBlockData):
         )
         def conversion_constraint(blk, t, s, r):
             if r == "Ca(C2O4)(s)":
-                return self.conversion[r] == 1e-6
+                return blk.conversion[r] == blk.min_conversion
             else:
-                return log(self.conversion[r]) == (
+                return log(blk.conversion[r]) == (
                     -(
                         (blk.config.reaction_package.E_D[r])
                         ** blk.config.reaction_package.N_D[r]
@@ -350,6 +350,9 @@ class OxalatePrecipitatorData(UnitModelBlockData):
                 blk.mscontactor.solid_inlet_state[t].flow_mol_comp[r]
                 == 1e-9 * pyunits.mole / pyunits.hour
             )
+
+    def calculate_scaling_factors(self):
+        super().calculate_scaling_factors()
 
         iscale.set_scaling_factor(self.hydraulic_retention_time, 1e0)
         iscale.set_scaling_factor(self.conversion, 1e1)

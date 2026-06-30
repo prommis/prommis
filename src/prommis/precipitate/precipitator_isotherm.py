@@ -293,7 +293,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             return blk.mscontactor.heterogeneous_reaction_extent[t, s, r] == (
                 blk.mscontactor.heterogeneous_reactions[t, s].reaction_rate[r]
                 - (
-                    self.conversion[r]
+                    blk.conversion[r]
                     * blk.mscontactor.liquid_inlet_state[t].flow_mol_comp[
                         blk.mscontactor.config.streams.solid.property_package.react[r]
                     ]

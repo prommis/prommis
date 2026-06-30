@@ -351,6 +351,9 @@ class OxalatePrecipitatorData(UnitModelBlockData):
                 == 1e-9 * pyunits.mole / pyunits.hour
             )
 
+    def calculate_scaling_factors(self):
+        super().calculate_scaling_factors()
+
         iscale.set_scaling_factor(self.hydraulic_retention_time, 1e0)
         iscale.set_scaling_factor(self.conversion, 1e1)
         iscale.set_scaling_factor(self.mscontactor.heterogeneous_reaction_extent, 1e3)

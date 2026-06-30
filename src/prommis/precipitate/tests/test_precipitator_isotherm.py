@@ -42,6 +42,7 @@ from precipitator_isotherm import (
     OxalatePrecipitator,
     OxalatePrecipitatorInitializer,
 )
+
 # from prommis.util import assert_solution_equivalent
 # -----------------------------------------------------------------------------
 # Get default solver for testing
@@ -217,41 +218,41 @@ class TestPrec(object):
     @pytest.mark.component
     def test_solution(self, prec):
         expected_results = {
-        "unit.aqueous_outlet.flow_vol": {
-            0: (100, None, 1e-0),
-        },
-        "unit.aqueous_outlet.conc_mass_comp": {
-            (0, "Al"):     (9.982,      None, 1e-3),
-            (0, "Ca"):     (10,         None, 1e-3),
-            (0, "Ce"):     (0.0991,     None, 1e-3),
-            (0, "Dy"):     (2.3824,     None, 1e-3),
-            (0, "Fe"):     (9.7864,     None, 1e-3),
-            (0, "Gd"):     (0.4486,     None, 1e-3),
-            (0, "La"):     (1.5715,     1e-3, None),
-            (0, "Nd"):     (0.1142,     None, 1e-3),
-            (0, "Pr"):     (0.2118,     None, 1e-3),
-            (0, "Sc"):     (6.3964,     None, 1e-3),
-            (0, "Sm"):     (0.2183,     None, 1e-3),
-            (0, "Y"):      (1.8401,     None, 1e-3),
-        },
-        "unit.precipitate_outlet.flow_mol_comp": {
-            (0, "Al2(C2O4)3(s)"): (3.20213e-05, None, 1e-6),
-            (0, "Ca(C2O4)(s)"):   (0.00,        None, 1e-6),
-            (0, "Ce2(C2O4)3(s)"): (0.003533,    None, 1e-6),
-            (0, "Dy2(C2O4)3(s)"): (0.002344,    None, 1e-6),
-            (0, "Fe2(C2O4)3(s)"): (0.000192,    None, 1e-6),
-            (0, "Gd2(C2O4)3(s)"): (0.003037,    None, 1e-6),
-            (0, "La2(C2O4)3(s)"): (0.003034,    None, 1e-6),
-            (0, "Nd2(C2O4)3(s)"): (0.003427,    None, 1e-6),
-            (0, "Pr2(C2O4)3(s)"): (0.0034732,   None, 1e-6),
-            (0, "Sc2(C2O4)3(s)"): (0.004009,    None, 1e-6),
-            (0, "Sm2(C2O4)3(s)"): (0.003253,    None, 1e-6),
-            (0, "Y2(C2O4)3(s)"):  (0.004589,    None, 1e-6),
-        },
-        "unit.precipitate_outlet.temperature": {
-            0: (348.15, None, 1e-3),
-        },
-    }
+            "unit.aqueous_outlet.flow_vol": {
+                0: (100, None, 1e-0),
+            },
+            "unit.aqueous_outlet.conc_mass_comp": {
+                (0, "Al"): (9.982, None, 1e-3),
+                (0, "Ca"): (10, None, 1e-3),
+                (0, "Ce"): (0.0991, None, 1e-3),
+                (0, "Dy"): (2.3824, None, 1e-3),
+                (0, "Fe"): (9.7864, None, 1e-3),
+                (0, "Gd"): (0.4486, None, 1e-3),
+                (0, "La"): (1.5715, 1e-3, None),
+                (0, "Nd"): (0.1142, None, 1e-3),
+                (0, "Pr"): (0.2118, None, 1e-3),
+                (0, "Sc"): (6.3964, None, 1e-3),
+                (0, "Sm"): (0.2183, None, 1e-3),
+                (0, "Y"): (1.8401, None, 1e-3),
+            },
+            "unit.precipitate_outlet.flow_mol_comp": {
+                (0, "Al2(C2O4)3(s)"): (3.20213e-05, None, 1e-6),
+                (0, "Ca(C2O4)(s)"): (0.00, None, 1e-6),
+                (0, "Ce2(C2O4)3(s)"): (0.003533, None, 1e-6),
+                (0, "Dy2(C2O4)3(s)"): (0.002344, None, 1e-6),
+                (0, "Fe2(C2O4)3(s)"): (0.000192, None, 1e-6),
+                (0, "Gd2(C2O4)3(s)"): (0.003037, None, 1e-6),
+                (0, "La2(C2O4)3(s)"): (0.003034, None, 1e-6),
+                (0, "Nd2(C2O4)3(s)"): (0.003427, None, 1e-6),
+                (0, "Pr2(C2O4)3(s)"): (0.0034732, None, 1e-6),
+                (0, "Sc2(C2O4)3(s)"): (0.004009, None, 1e-6),
+                (0, "Sm2(C2O4)3(s)"): (0.003253, None, 1e-6),
+                (0, "Y2(C2O4)3(s)"): (0.004589, None, 1e-6),
+            },
+            "unit.precipitate_outlet.temperature": {
+                0: (348.15, None, 1e-3),
+            },
+        }
         assert_solution_equivalent(prec.fs, expected_results)
 
     @pytest.mark.solver
@@ -451,43 +452,42 @@ class TestPrecRob(object):
     @pytest.mark.component
     def test_solution(self, prec):
         expected_results = {
-        "unit.aqueous_outlet.flow_vol": {
-            0: (100, None, 1e-0),
-        },
-        "unit.aqueous_outlet.conc_mass_comp": {
-            (0, "Al"):  (9.730,  None, 1e-3),
-            (0, "Ca"):  (9.9999, None, 1e-3),
-            (0, "Ce"):  (0.01782, None, 1e-3),
-            (0, "Dy"):  (0.1380, None, 1e-3),
-            (0, "Fe"):  (2.0863, None, 1e-3),
-            (0, "Gd"):  (0.0327, None, 1e-3),
-            (0, "La"):  (0.0924, 1e-3, None),
-            (0, "Nd"):  (0.0250, None, 1e-3),
-            (0, "Pr"):  (0.0254, None, 1e-3),
-            (0, "Sc"):  (0.1791, None, 1e-3),
-            (0, "Sm"):  (0.0212, None, 1e-3),
-            (0, "Y"):   (0.1080, None, 1e-3),
-        },
-        "unit.precipitate_outlet.flow_mol_comp": {
-            (0, "Al2(C2O4)3(s)"): (0.0005,    None, 1e-6),
-            (0, "Ca(C2O4)(s)"):   (1.3e-08,   None, 1e-6),
-            (0, "Ce2(C2O4)3(s)"): (0.003562,  None, 1e-6),
-            (0, "Dy2(C2O4)3(s)"): (0.003034,  None, 1e-6),
-            (0, "Fe2(C2O4)3(s)"): (0.007086,  None, 1e-6),
-            (0, "Gd2(C2O4)3(s)"): (0.003169,  None, 1e-6),
-            (0, "La2(C2O4)3(s)"): (0.003566,  None, 1e-6),
-            (0, "Nd2(C2O4)3(s)"): (0.003458,  None, 1e-6),
-            (0, "Pr2(C2O4)3(s)"): (0.003540,  None, 1e-6),
-            (0, "Sc2(C2O4)3(s)"): (0.010926,  None, 1e-6),
-            (0, "Sm2(C2O4)3(s)"): (0.003318,  None, 1e-6),
-            (0, "Y2(C2O4)3(s)"):  (0.005564,  None, 1e-6),
-        },
-        "unit.precipitate_outlet.temperature": {
-            0: (348.15, None, 1e-3),
-        },
-         }
+            "unit.aqueous_outlet.flow_vol": {
+                0: (100, None, 1e-0),
+            },
+            "unit.aqueous_outlet.conc_mass_comp": {
+                (0, "Al"): (9.730, None, 1e-3),
+                (0, "Ca"): (9.9999, None, 1e-3),
+                (0, "Ce"): (0.01782, None, 1e-3),
+                (0, "Dy"): (0.1380, None, 1e-3),
+                (0, "Fe"): (2.0863, None, 1e-3),
+                (0, "Gd"): (0.0327, None, 1e-3),
+                (0, "La"): (0.0924, 1e-3, None),
+                (0, "Nd"): (0.0250, None, 1e-3),
+                (0, "Pr"): (0.0254, None, 1e-3),
+                (0, "Sc"): (0.1791, None, 1e-3),
+                (0, "Sm"): (0.0212, None, 1e-3),
+                (0, "Y"): (0.1080, None, 1e-3),
+            },
+            "unit.precipitate_outlet.flow_mol_comp": {
+                (0, "Al2(C2O4)3(s)"): (0.0005, None, 1e-6),
+                (0, "Ca(C2O4)(s)"): (1.3e-08, None, 1e-6),
+                (0, "Ce2(C2O4)3(s)"): (0.003562, None, 1e-6),
+                (0, "Dy2(C2O4)3(s)"): (0.003034, None, 1e-6),
+                (0, "Fe2(C2O4)3(s)"): (0.007086, None, 1e-6),
+                (0, "Gd2(C2O4)3(s)"): (0.003169, None, 1e-6),
+                (0, "La2(C2O4)3(s)"): (0.003566, None, 1e-6),
+                (0, "Nd2(C2O4)3(s)"): (0.003458, None, 1e-6),
+                (0, "Pr2(C2O4)3(s)"): (0.003540, None, 1e-6),
+                (0, "Sc2(C2O4)3(s)"): (0.010926, None, 1e-6),
+                (0, "Sm2(C2O4)3(s)"): (0.003318, None, 1e-6),
+                (0, "Y2(C2O4)3(s)"): (0.005564, None, 1e-6),
+            },
+            "unit.precipitate_outlet.temperature": {
+                0: (348.15, None, 1e-3),
+            },
+        }
         assert_solution_equivalent(prec.fs, expected_results)
-    
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")

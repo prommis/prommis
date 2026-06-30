@@ -279,9 +279,9 @@ class OxalatePrecipitatorData(UnitModelBlockData):
 
         @self.Constraint(self.flowsheet().time, doc="Hydraulic retention time equation")
         def eq_hydraulic_retention(blk, t):
-            return self.hydraulic_retention_time[t] * pyunits.convert(
-                self.aqueous_inlet.flow_vol[t], to_units=pyunits.m**3 / pyunits.hour
-            ) == pyunits.convert(self.volume[t], to_units=pyunits.m**3)
+            return blk.hydraulic_retention_time[t] * pyunits.convert(
+                blk.aqueous_inlet.flow_vol[t], to_units=pyunits.m**3 / pyunits.hour
+            ) == pyunits.convert(blk.volume[t], to_units=pyunits.m**3)
 
         @self.Constraint(
             self.flowsheet().time,

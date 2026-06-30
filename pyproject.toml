@@ -36,11 +36,12 @@ dependencies = ["idaes-pse[ui]>=2.12.0", "pyomo >=6.9.5"]
 [project.optional-dependencies]
 watertap = ["watertap[reaktoro] @ git+https://github.com/watertap-org/watertap.git@main"]
 
+flowsheet-processor = ["idaes-flowsheet-processor >=0.3"]
 
-flowsheet-processor = ["idaes-flowsheet-processor >=0.2"]
+ui = ["prommis[flowsheet-processor]", "idaes-ui", "idaes-connectivity"]
 
 dev = [
-    "prommis[watertap,flowsheet-processor]",
+    "prommis[watertap,ui]",
     "black[jupyter]==26.3.1",
     "pylint==2.17.7",
     "astroid==2.15.8",

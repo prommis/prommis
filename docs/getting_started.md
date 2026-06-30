@@ -43,11 +43,15 @@ conda activate prommis
 We will now install the PrOMMiS Python package into this environment.
 
 ```
-pip install prommis
+pip install "prommis[ui]"
 ```
 
 This will take a couple of minutes.
-Once it is done, you can continue to try an example.
+Once it is done, you can continueto try an example.
+
+:::{note}
+By default, this installs packages that enable the PrOMMiS UI components. To install PrOMMiS without the UI, run `pip install prommis` instead.
+:::
 
 ### Install IDAES “extensions”
 

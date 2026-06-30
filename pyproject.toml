@@ -38,7 +38,7 @@ watertap = ["watertap[reaktoro] >= 1.6.0"]
 
 flowsheet-processor = ["idaes-flowsheet-processor >=0.2"]
 
-ui = ["prommis[flowsheet-processor]", "idaes-pse[ui]"]
+ui = ["prommis[flowsheet-processor]", "idaes-ui", "idaes-connectivity"]
 
 dev = [
     "prommis[watertap,ui]",

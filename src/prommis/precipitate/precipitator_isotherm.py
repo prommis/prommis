@@ -40,6 +40,7 @@ estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxal
 from pyomo.common.config import Bool, ConfigDict, ConfigValue
 
 from pyomo.environ import (
+    Param,
     Var,
     Block,
     log,
@@ -264,6 +265,15 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             bounds=(1e-20, 0.999999),
         )
 
+        
+        self.min_conversion = Param(
+            initialize=1e-6,
+            mutable=True,
+            units=pyunits.dimensionless,
+            doc="Minimum conversion for Ca(C2O4)(s)",
+)
+
+
         # Create unit level Ports
         self.aqueous_inlet = Port(extends=self.mscontactor.liquid_inlet)
         self.aqueous_outlet = Port(extends=self.mscontactor.liquid_outlet)
@@ -300,9 +310,9 @@ class OxalatePrecipitatorData(UnitModelBlockData):
         )
         def conversion_constraint(blk, t, s, r):
             if r == "Ca(C2O4)(s)":
-                return self.conversion[r] == 1e-6
+                return blk.conversion[r] == blk.min_conversion
             else:
-                return log(self.conversion[r]) == (
+                return log(blk.conversion[r]) == (
                     -(
                         (blk.config.reaction_package.E_D[r])
                         ** blk.config.reaction_package.N_D[r]

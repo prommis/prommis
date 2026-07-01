@@ -51,7 +51,6 @@ dev = [
     "isort",
     "nbmake==1.4.6",
     "sphinx_design==0.6.0",
-    "custom-pylint @ git+https://github.com/prommis/custom_pylint.git@main",
 ]
 
 [tool.setuptools_scm]
@@ -61,7 +60,7 @@ local_scheme = "node-and-date"
 
 [tool.pylint.main]
 py-version = "3.11"
-load-plugins = ["custom_pylint.silent_exception_checker"]
+load-plugins = ["prommis._pylint_plugins"]
 
 [tool.pylint."messages control"]
 disable = [

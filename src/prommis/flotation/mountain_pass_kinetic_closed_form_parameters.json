@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "source": {
+    "scenario": "table1_product_fit",
+    "scenario_data_file": "mountain_pass_scenario_data.json",
+    "paper": "Pradip & Fuerstenau (2013), Mountain Pass flotation",
+    "tau_anchor": "rougher V_eff = 12 cells x 1.7 m^3 x (1 - 0.10) = 18.36 m^3"
+  },
+  "property_package": {
+    "rho_mass_comp_kg_per_m3": {
+      "REO": 5000.0,
+      "CaO": 2710.0,
+      "BaO": 4480.0,
+      "SrO": 3960.0,
+      "inert_gangue": 2650.0
+    }
+  },
+  "bank_constants": {
+    "rho_water_kg_per_m3": 1000.0
+  },
+  "basis": {
+    "figure_2_units": "t/shift",
+    "shift_duration_h": 11.0,
+    "plant_throughput_t_per_day": 1700.0,
+    "plant_dry_feed_kg_per_h": 70833.33333333333,
+    "json_fresh_feed_total_kg_per_h": 789.5,
+    "scale_jsonbasis_to_plant_h": 89.71923158116951
+  },
+  "assumptions": {
+    "plant_throughput_t_per_day": 1700.0,
+    "tau_ratio_path": {
+      "scavenger": 1.5,
+      "cleaner1": 0.5,
+      "cleaner2": 0.5,
+      "cleaners34": 1.0
+    }
+  },
+  "units": {
+    "cell_volume": "m^3",
+    "tau_required": "min",
+    "k_cf": "1/min",
+    "Q_slurry": "m^3/min"
+  },
+  "banks": {
+    "cleaner1": {
+      "number_of_cells": 1,
+      "cell_volume": 4.468478846215957,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.2,
+      "pulp_solids_mass_fraction": 0.5,
+      "tau_required_min": 2.6566245291964483,
+      "Q_slurry_m3_per_min": 1.345610957696771,
+      "k_cf_per_min": {
+        "REO": 1.1113987458564722,
+        "CaO": 0.32585396704625214,
+        "BaO": 0.2816550626663349,
+        "SrO": 0.5030626584386305,
+        "inert_gangue": 0.45871490882362953
+      },
+      "R_ref": {
+        "BaO": 0.428,
+        "CaO": 0.464,
+        "REO": 0.747,
+        "SrO": 0.572,
+        "inert_gangue": 0.5492720632988435
+      }
+    },
+    "cleaner2": {
+      "number_of_cells": 1,
+      "cell_volume": 5.633129221062429,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.2,
+      "pulp_solids_mass_fraction": 0.5,
+      "tau_required_min": 2.6566245291964483,
+      "Q_slurry_m3_per_min": 1.6963267964001787,
+      "k_cf_per_min": {
+        "REO": 0.2898081742314013,
+        "CaO": 0.6193960145359202,
+        "BaO": 1.0440259341049243,
+        "SrO": 0.5741317632544293,
+        "inert_gangue": 0.8378325303975659
+      },
+      "R_ref": {
+        "BaO": 0.735,
+        "CaO": 0.622,
+        "REO": 0.435,
+        "SrO": 0.604,
+        "inert_gangue": 0.69
+      }
+    },
+    "cleaners34": {
+      "number_of_cells": 1,
+      "cell_volume": 6.7009936103725005,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.2,
+      "pulp_solids_mass_fraction": 0.5,
+      "tau_required_min": 5.313249058392897,
+      "Q_slurry_m3_per_min": 1.0089485415388162,
+      "k_cf_per_min": {
+        "REO": 0.10725239988810562,
+        "CaO": 0.009075055360700414,
+        "BaO": 0.003449855013148564,
+        "SrO": 0.015260169472576086,
+        "inert_gangue": 0.01636597885464684
+      },
+      "R_ref": {
+        "BaO": 0.018,
+        "CaO": 0.046,
+        "REO": 0.363,
+        "SrO": 0.075,
+        "inert_gangue": 0.08
+      }
+    },
+    "rougher": {
+      "number_of_cells": 12,
+      "cell_volume": 1.7,
+      "cell_volume_basis": "paper_anchored",
+      "air_holdup": 0.1,
+      "pulp_solids_mass_fraction": 0.325,
+      "tau_required_min": 5.313249058392897,
+      "Q_slurry_m3_per_min": 3.455512775370136,
+      "k_cf_per_min": {
+        "REO": 0.6131927251293292,
+        "CaO": 0.04407621742648254,
+        "BaO": 0.03649784141201961,
+        "SrO": 0.15141892671329205,
+        "inert_gangue": 0.06004120675552124
+      },
+      "R_ref": {
+        "BaO": 0.175,
+        "CaO": 0.207,
+        "REO": 0.944,
+        "SrO": 0.541,
+        "inert_gangue": 0.2700995762711864
+      }
+    },
+    "scavenger": {
+      "number_of_cells": 1,
+      "cell_volume": 8.386942783416918,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.1,
+      "pulp_solids_mass_fraction": 0.325,
+      "tau_required_min": 7.969873587589345,
+      "Q_slurry_m3_per_min": 0.9470976449148865,
+      "k_cf_per_min": {
+        "REO": 1.866154551833305,
+        "CaO": 0.09858553929108697,
+        "BaO": 0.08864439741407695,
+        "SrO": 0.34622864038113804,
+        "inert_gangue": 0.14743558012542043
+      },
+      "R_ref": {
+        "BaO": 0.414,
+        "CaO": 0.44,
+        "REO": 0.937,
+        "SrO": 0.734,
+        "inert_gangue": 0.540238961038961
+      }
+    }
+  }
+}

@@ -177,7 +177,6 @@ from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
-    ModularPropertiesScaler,
 )
 from idaes.models.unit_models.feed import Feed, FeedInitializer
 from idaes.models.unit_models.mixer import (
@@ -205,7 +204,6 @@ from prommis.precipitate.precipitate_solids_properties import PrecipitateParamet
 from prommis.precipitate.precipitator import Precipitator
 from prommis.properties import HClStrippingParameterBlock
 from prommis.properties.coal_refuse_properties import CoalRefuseParameters
-from prommis.properties.hcl_stripping_properties import HClStrippingPropertiesScaler
 from prommis.properties.sulfuric_acid_leaching_properties import (
     SulfuricAcidLeachingParameters,
 )
@@ -745,14 +743,16 @@ def set_scaling(m):
         m: pyomo model
     """
 
-    # Changing the default scaling factor in the class dictionary
-    # applies this scaling factor globally. This sort of global
-    # mutation is potentially dangerous, but we'll use it here until
-    # there is a better way to set global default scaling factors
-    HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["flow_vol"] = 1
-    HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["conc_mass_comp[H]"] = 1e-3
-    HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["conc_mass_comp[Cl]"] = 1e-5
-    ModularPropertiesScaler.DEFAULT_SCALING_FACTORS["flow_mol_phase"] = 1 / 0.00781
+    liquid_properties_scaler = m.fs.HCl_stripping_params.default_state_scaler_class()
+    vapor_properties_scaler = m.fs.prop_gas.default_state_scaler_class()
+
+    liquid_properties_scaler.default_scaling_factors["flow_vol"] = 1
+    liquid_properties_scaler.default_scaling_factors["conc_mass_comp[H]"] = 1e-3
+    liquid_properties_scaler.default_scaling_factors["conc_mass_comp[Cl]"] = 1e-5
+    vapor_properties_scaler.default_scaling_factors["flow_mol_phase"] = 1 / 0.00781
+
+    m.fs.HCl_stripping_params.default_state_scaler_object = liquid_properties_scaler
+    m.fs.prop_gas.default_state_scaler_object = vapor_properties_scaler
 
     # Also use global mutation to change the max and min scaling factors
     # allowed from objects derived from CustomScalerBase, i.e., all the

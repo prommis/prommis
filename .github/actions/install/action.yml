@@ -37,11 +37,11 @@ runs:
       run: |
         conda install --yes -c conda-forge --override-channels pip setuptools wheel
 
-    - name: Install using pip (pyproject dev extras)
+    - name: Install using pip (requirements-dev.txt)
       if: inputs.variant == 'dev'
       shell: bash -l {0}
       run: |
-        pip install --progress-bar off -e ".[dev]"
+        pip install --progress-bar off -r requirements-dev.txt
 
     - name: Install using pip (git+... URL)
       if: inputs.variant == 'standard'

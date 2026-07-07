@@ -86,18 +86,29 @@ def load_scenario_data(data_file=SCENARIO_DATA_FILE):
     path = Path(data_file)
     with path.open(encoding="utf-8") as file:
         data = json.load(file)
-    feed_components = tuple(data["feed"]["fresh_feed"])
-    if set(feed_components) != set(COMPONENTS):
+    fresh_feed = data["feed"]["fresh_feed"]
+    if set(fresh_feed) != set(COMPONENTS):
         raise ValueError(
             "Scenario data feed components do not match the property package."
         )
+    if any(flow < 0 for flow in fresh_feed.values()):
+        raise ValueError("Scenario data fresh feed flows must be non-negative.")
+    if stream_total(fresh_feed) <= 0:
+        raise ValueError("Scenario data fresh feed total flow must be positive.")
     for scenario in data["scenarios"].values():
+        for stream_flows in scenario.get("initial_streams", {}).values():
+            if any(flow < 0 for flow in stream_flows.values()):
+                raise ValueError(
+                    "Scenario data initial stream flows must be non-negative."
+                )
         for bank_recoveries in scenario["recoveries"].values():
             if set(bank_recoveries) != set(COMPONENTS):
                 raise ValueError(
                     "Scenario data recovery components do not match the property "
                     "package."
                 )
+            if any(not 0 <= recovery <= 1 for recovery in bank_recoveries.values()):
+                raise ValueError("Scenario data recoveries must be between 0 and 1.")
     return data
 
 

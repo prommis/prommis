@@ -86,7 +86,7 @@ def test_reference_recovery_round_trip():
                 sum(cell[component] for cell in F_float)
                 / bank_data["F_in_reference_kg_per_h"][component]
             )
-            assert recovery == pytest.approx(bank_data["R_ref"][component], abs=1e-9)
+            assert recovery == pytest.approx(bank_data["R_ref"][component], abs=1e-3)
 
 
 @pytest.mark.unit

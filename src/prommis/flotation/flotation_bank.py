@@ -600,7 +600,7 @@ class FlotationBankData(UnitModelBlockData):
             )
             for time in self.flowsheet().time:
                 for component in component_list:
-                    # Fix R_inf for current implementation. IF rich recovery-time
+                    # Fix R_inf for current implementation. If rich recovery-time
                     # data are available, it can be estimated.
                     self.R_inf[time, component].fix(1.0)
             self.effective_volume = Expression(

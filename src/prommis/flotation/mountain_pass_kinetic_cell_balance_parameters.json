@@ -23,9 +23,9 @@
     "figure_2_units": "t/shift",
     "shift_duration_h": 11.0,
     "plant_throughput_t_per_day": 1700.0,
-    "plant_dry_feed_kg_per_h": 70833.33333333333,
+    "plant_dry_feed_kg_per_h": 70833.33333,
     "json_fresh_feed_total_kg_per_h": 789.5,
-    "scale_jsonbasis_to_plant_h": 89.71923158116951
+    "scale_jsonbasis_to_plant_h": 89.71923
   },
   "assumptions": {
     "plant_throughput_t_per_day": 1700.0,
@@ -41,143 +41,143 @@
   "banks": {
     "cleaner1": {
       "number_of_cells": 1,
-      "cell_volume": 4.46847884622,
+      "cell_volume": 4.46848,
       "cell_volume_basis": "inferred_from_assumed_tau",
       "air_holdup": 0.2,
       "pulp_solids_mass_fraction": 0.5,
-      "rho_solid": 3556.30695363,
-      "cell_total_solid_holdup": 2790.20400595,
+      "rho_solid": 3556.30695,
+      "cell_total_solid_holdup": 2790.20402,
       "F_in_reference_kg_per_h": {
-        "BaO": 3285.09346432,
-        "CaO": 6233.58443509,
-        "REO": 26763.0003631,
-        "SrO": 6048.86958068,
-        "inert_gangue": 20686.3514277
+        "BaO": 3285.09389,
+        "CaO": 6233.58455,
+        "REO": 26763.00005,
+        "SrO": 6048.8697,
+        "inert_gangue": 20686.35149
       },
       "k_cb_per_hour": {
-        "REO": 25.2951561264,
-        "CaO": 7.41635439266,
-        "BaO": 6.41039843754,
-        "SrO": 11.4495796707,
-        "inert_gangue": 10.4402360354
+        "REO": 25.2952,
+        "CaO": 7.41637,
+        "BaO": 6.41041,
+        "SrO": 11.4496,
+        "inert_gangue": 10.44017
       },
       "R_ref": {
         "BaO": 0.428,
         "CaO": 0.464,
         "REO": 0.747,
         "SrO": 0.572,
-        "inert_gangue": 0.549272063299
+        "inert_gangue": 0.54927
       },
       "R_fit": {
         "REO": 0.747,
         "CaO": 0.464,
         "BaO": 0.428,
         "SrO": 0.572,
-        "inert_gangue": 0.549272063299
+        "inert_gangue": 0.54927
       },
       "calibration": {
         "calibration_bound_pinned": {},
         "calibration_upper_bound_fraction": {
-          "REO": 0.00252951561264,
-          "CaO": 0.000741635439266,
-          "BaO": 0.000641039843754,
-          "SrO": 0.00114495796707,
-          "inert_gangue": 0.00104402360354
+          "REO": 0.00253,
+          "CaO": 0.00074,
+          "BaO": 0.00064,
+          "SrO": 0.00114,
+          "inert_gangue": 0.00104
         },
         "calibration_infeasible_trials": 6,
-        "calibration_max_deficit_seen": 0.331027241445,
+        "calibration_max_deficit_seen": 0.33102,
         "calibration_success": true,
         "residual_per_component": {
           "REO": 1.11022302463e-16,
           "CaO": 1.11022302463e-16,
-          "BaO": 5.55111512313e-17,
-          "SrO": 0.0,
-          "inert_gangue": 0.0
-        },
-        "residual_max": 1.11022302463e-16,
-        "residual_norm": 1.66533453694e-16
-      }
-    },
-    "cleaner2": {
-      "number_of_cells": 1,
-      "cell_volume": 5.63312922106,
-      "cell_volume_basis": "inferred_from_assumed_tau",
-      "air_holdup": 0.2,
-      "pulp_solids_mass_fraction": 0.5,
-      "rho_solid": 3424.33853053,
-      "cell_total_solid_holdup": 3487.9322739,
-      "F_in_reference_kg_per_h": {
-        "BaO": 5053.44500136,
-        "CaO": 7113.37387456,
-        "REO": 27655.0325026,
-        "SrO": 7840.36573793,
-        "inert_gangue": 31112.9105444
-      },
-      "k_cb_per_hour": {
-        "REO": 7.15247961778,
-        "CaO": 15.2867232991,
-        "BaO": 25.7666100479,
-        "SrO": 14.16959941,
-        "inert_gangue": 20.6777469706
-      },
-      "R_ref": {
-        "BaO": 0.735,
-        "CaO": 0.622,
-        "REO": 0.435,
-        "SrO": 0.604,
-        "inert_gangue": 0.69
-      },
-      "R_fit": {
-        "REO": 0.435,
-        "CaO": 0.622,
-        "BaO": 0.735,
-        "SrO": 0.604,
-        "inert_gangue": 0.69
-      },
-      "calibration": {
-        "calibration_bound_pinned": {},
-        "calibration_upper_bound_fraction": {
-          "REO": 0.000715247961778,
-          "CaO": 0.00152867232991,
-          "BaO": 0.00257666100479,
-          "SrO": 0.001416959941,
-          "inert_gangue": 0.00206777469706
-        },
-        "calibration_infeasible_trials": 6,
-        "calibration_max_deficit_seen": 0.22331803622,
-        "calibration_success": true,
-        "residual_per_component": {
-          "REO": 0.0,
-          "CaO": 0.0,
-          "BaO": -1.11022302463e-16,
+          "BaO": 1.11022302463e-16,
           "SrO": 1.11022302463e-16,
           "inert_gangue": 1.11022302463e-16
         },
         "residual_max": 1.11022302463e-16,
-        "residual_norm": 1.92296268638e-16
+        "residual_norm": 2.48253415325e-16
+      }
+    },
+    "cleaner2": {
+      "number_of_cells": 1,
+      "cell_volume": 5.63313,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.2,
+      "pulp_solids_mass_fraction": 0.5,
+      "rho_solid": 3424.33853,
+      "cell_total_solid_holdup": 3487.93225,
+      "F_in_reference_kg_per_h": {
+        "BaO": 5053.44469,
+        "CaO": 7113.37402,
+        "REO": 27655.03262,
+        "SrO": 7840.36537,
+        "inert_gangue": 31112.91049
+      },
+      "k_cb_per_hour": {
+        "REO": 7.15248,
+        "CaO": 15.28672,
+        "BaO": 25.76661,
+        "SrO": 14.1696,
+        "inert_gangue": 20.67775
+      },
+      "R_ref": {
+        "BaO": 0.735,
+        "CaO": 0.622,
+        "REO": 0.435,
+        "SrO": 0.604,
+        "inert_gangue": 0.69
+      },
+      "R_fit": {
+        "REO": 0.435,
+        "CaO": 0.622,
+        "BaO": 0.735,
+        "SrO": 0.604,
+        "inert_gangue": 0.69
+      },
+      "calibration": {
+        "calibration_bound_pinned": {},
+        "calibration_upper_bound_fraction": {
+          "REO": 0.00072,
+          "CaO": 0.00153,
+          "BaO": 0.00258,
+          "SrO": 0.00142,
+          "inert_gangue": 0.00207
+        },
+        "calibration_infeasible_trials": 6,
+        "calibration_max_deficit_seen": 0.22332,
+        "calibration_success": true,
+        "residual_per_component": {
+          "REO": 0.0,
+          "CaO": 1.11022302463e-16,
+          "BaO": 0.0,
+          "SrO": 1.11022302463e-16,
+          "inert_gangue": 0.0
+        },
+        "residual_max": 1.11022302463e-16,
+        "residual_norm": 1.57009245868e-16
       }
     },
     "cleaners34": {
       "number_of_cells": 1,
-      "cell_volume": 6.70099361037,
+      "cell_volume": 6.70099,
       "cell_volume_basis": "inferred_from_assumed_tau",
       "air_holdup": 0.2,
       "pulp_solids_mass_fraction": 0.5,
-      "rho_solid": 3273.7920896,
-      "cell_total_solid_holdup": 4106.45336304,
+      "rho_solid": 3273.7921,
+      "cell_total_solid_holdup": 4106.45338,
       "F_in_reference_kg_per_h": {
-        "BaO": 3714.282076,
-        "CaO": 4424.51854997,
-        "REO": 12029.9391386,
-        "SrO": 4735.58090571,
-        "inert_gangue": 21467.9082756
+        "BaO": 3714.28198,
+        "CaO": 4424.51826,
+        "REO": 12029.93947,
+        "SrO": 4735.58112,
+        "inert_gangue": 21467.90828
       },
       "k_cb_per_hour": {
-        "REO": 5.50400744707,
-        "CaO": 0.465716127005,
-        "BaO": 0.177040585604,
-        "SrO": 0.783125473259,
-        "inert_gangue": 0.839873695959
+        "REO": 5.50401,
+        "CaO": 0.46572,
+        "BaO": 0.17704,
+        "SrO": 0.78313,
+        "inert_gangue": 0.83987
       },
       "R_ref": {
         "BaO": 0.018,
@@ -196,24 +196,24 @@
       "calibration": {
         "calibration_bound_pinned": {},
         "calibration_upper_bound_fraction": {
-          "REO": 0.000550400744707,
-          "CaO": 4.65716127005e-05,
-          "BaO": 1.77040585604e-05,
-          "SrO": 7.83125473259e-05,
-          "inert_gangue": 8.39873695959e-05
+          "REO": 0.00055,
+          "CaO": 5e-05,
+          "BaO": 2e-05,
+          "SrO": 8e-05,
+          "inert_gangue": 8e-05
         },
         "calibration_infeasible_trials": 0,
         "calibration_max_deficit_seen": 0.0,
         "calibration_success": true,
         "residual_per_component": {
-          "REO": 1.66533453694e-16,
-          "CaO": 2.08166817117e-17,
-          "BaO": 1.4224732503e-16,
-          "SrO": -6.93889390391e-17,
-          "inert_gangue": 9.71445146547e-17
+          "REO": 1.11022302463e-16,
+          "CaO": 1.31838984174e-16,
+          "BaO": -7.6327832943e-17,
+          "SrO": 1.38777878078e-17,
+          "inert_gangue": -2.77555756156e-17
         },
-        "residual_max": 1.66533453694e-16,
-        "residual_norm": 2.50305630187e-16
+        "residual_max": 1.31838984174e-16,
+        "residual_norm": 1.91040237767e-16
       }
     },
     "rougher": {
@@ -222,116 +222,116 @@
       "cell_volume_basis": "paper_anchored",
       "air_holdup": 0.1,
       "pulp_solids_mass_fraction": 0.325,
-      "rho_solid": 3088.71571698,
-      "cell_total_solid_holdup": 637.318832834,
+      "rho_solid": 3088.71572,
+      "cell_total_solid_holdup": 637.31883,
       "F_in_reference_kg_per_h": {
-        "BaO": 11119.6030798,
-        "CaO": 17124.2952198,
-        "REO": 11798.6302958,
-        "SrO": 5441.93114318,
-        "inert_gangue": 40878.8096278
+        "BaO": 11119.60328,
+        "CaO": 17124.29523,
+        "REO": 11798.63073,
+        "SrO": 5441.93076,
+        "inert_gangue": 40878.80937
       },
       "k_cb_per_hour": {
-        "REO": 28.5208190527,
-        "CaO": 2.04711163704,
-        "BaO": 1.69509462373,
-        "SrO": 7.03490599331,
-        "inert_gangue": 2.7887424159
+        "REO": 28.52081,
+        "CaO": 2.04711,
+        "BaO": 1.69509,
+        "SrO": 7.0349,
+        "inert_gangue": 2.78875
       },
       "R_ref": {
         "BaO": 0.175,
         "CaO": 0.207,
         "REO": 0.944,
         "SrO": 0.541,
-        "inert_gangue": 0.270099576271
+        "inert_gangue": 0.2701
       },
       "R_fit": {
         "REO": 0.944,
         "CaO": 0.207,
         "BaO": 0.175,
         "SrO": 0.541,
-        "inert_gangue": 0.270099576271
+        "inert_gangue": 0.2701
       },
       "calibration": {
         "calibration_bound_pinned": {},
         "calibration_upper_bound_fraction": {
-          "REO": 0.00285208190527,
-          "CaO": 0.000204711163704,
-          "BaO": 0.000169509462373,
-          "SrO": 0.000703490599331,
-          "inert_gangue": 0.00027887424159
+          "REO": 0.00285,
+          "CaO": 0.0002,
+          "BaO": 0.00017,
+          "SrO": 0.0007,
+          "inert_gangue": 0.00028
         },
         "calibration_infeasible_trials": 0,
         "calibration_max_deficit_seen": 0.0,
         "calibration_success": true,
         "residual_per_component": {
-          "REO": 0.0,
-          "CaO": 9.43689570931e-16,
-          "BaO": 6.93889390391e-16,
-          "SrO": 3.33066907388e-16,
-          "inert_gangue": 1.66533453694e-16
+          "REO": 2.22044604925e-16,
+          "CaO": 1.05471187339e-15,
+          "BaO": -1.66533453694e-16,
+          "SrO": 2.22044604925e-16,
+          "inert_gangue": -1.11022302463e-16
         },
-        "residual_max": 9.43689570931e-16,
-        "residual_norm": 1.2291051413e-15
+        "residual_max": 1.05471187339e-15,
+        "residual_norm": 1.1185187043e-15
       }
     },
     "scavenger": {
       "number_of_cells": 1,
-      "cell_volume": 8.38694278342,
+      "cell_volume": 8.38694,
       "cell_volume_basis": "inferred_from_assumed_tau",
       "air_holdup": 0.1,
       "pulp_solids_mass_fraction": 0.325,
-      "rho_solid": 3329.83168554,
-      "cell_total_solid_holdup": 3175.21709549,
+      "rho_solid": 3329.83169,
+      "cell_total_solid_holdup": 3175.21728,
       "F_in_reference_kg_per_h": {
-        "BaO": 1879.07346159,
-        "CaO": 3341.20125721,
-        "REO": 6771.03909187,
-        "SrO": 2588.91618053,
-        "inert_gangue": 9323.91649688
+        "BaO": 1879.07331,
+        "CaO": 3341.2016,
+        "REO": 6771.03953,
+        "SrO": 2588.91661,
+        "inert_gangue": 9323.91682
       },
       "k_cb_per_hour": {
-        "REO": 39.2255903384,
-        "CaO": 2.07221635192,
-        "BaO": 1.86325876136,
-        "SrO": 7.27754450867,
-        "inert_gangue": 3.09901860038
+        "REO": 39.22554,
+        "CaO": 2.07221,
+        "BaO": 1.86326,
+        "SrO": 7.27754,
+        "inert_gangue": 3.09903
       },
       "R_ref": {
         "BaO": 0.414,
         "CaO": 0.44,
         "REO": 0.937,
         "SrO": 0.734,
-        "inert_gangue": 0.540238961039
+        "inert_gangue": 0.54024
       },
       "R_fit": {
         "REO": 0.937,
         "CaO": 0.44,
         "BaO": 0.414,
         "SrO": 0.734,
-        "inert_gangue": 0.540238961039
+        "inert_gangue": 0.54024
       },
       "calibration": {
         "calibration_bound_pinned": {},
         "calibration_upper_bound_fraction": {
-          "REO": 0.00392255903384,
-          "CaO": 0.000207221635192,
-          "BaO": 0.000186325876136,
-          "SrO": 0.000727754450867,
-          "inert_gangue": 0.000309901860038
+          "REO": 0.00392,
+          "CaO": 0.00021,
+          "BaO": 0.00019,
+          "SrO": 0.00073,
+          "inert_gangue": 0.00031
         },
         "calibration_infeasible_trials": 6,
-        "calibration_max_deficit_seen": 0.320594959759,
+        "calibration_max_deficit_seen": 0.3206,
         "calibration_success": true,
         "residual_per_component": {
           "REO": 0.0,
-          "CaO": 0.0,
-          "BaO": 0.0,
+          "CaO": -5.55111512313e-17,
+          "BaO": 1.11022302463e-16,
           "SrO": 0.0,
           "inert_gangue": 1.11022302463e-16
         },
         "residual_max": 1.11022302463e-16,
-        "residual_norm": 1.11022302463e-16
+        "residual_norm": 1.66533453694e-16
       }
     }
   }

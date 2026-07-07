@@ -30,6 +30,12 @@ COMPONENTS = ("REO", "CaO", "BaO", "SrO", "inert_gangue")
 # https://www.sciencedirect.com/science/article/abs/pii/S0892687525007083
 # kWh/t is equivalent to W*h/kg, the model's native units.
 BASTNAESITE_BOND_WORK_INDEX = 6.96
+# Per-component true (material) densities [kg/m^3] of each component's
+# representative host mineral: quartz (inert_gangue), calcite (CaO), celestine
+# (SrO), barite (BaO), and bastnaesite-(Ce) (REO). These are size-independent
+# crystal densities (not bulk/apparent packing densities), used only to convert
+# dry-solid mass flow to volumetric flow. Source: Handbook of Mineralogy
+# (Anthony, Bideaux, Bladh & Nichols, Mineral Data Publishing, 2001-2005).
 SOLID_DENSITIES = {
     "REO": 5000.0,
     "CaO": 2710.0,

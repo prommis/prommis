@@ -18,6 +18,8 @@ from idaes.core.initialization import (
 )
 from idaes.core.util.exceptions import ConfigurationError, InitializationError
 
+from scipy.optimize import brentq
+
 __author__ = "Daison Yancy Caballero"
 
 FEED_FLOOR_KG_PER_H = 1e-12
@@ -134,8 +136,6 @@ def _solve_cell(
     collect_diagnostics,
 ):
     """Solve one cell in the fixed-inventory kinetic cascade."""
-    from scipy.optimize import brentq
-
     F_in_cell = {
         j: (F_in_cell_raw[j] if F_in_cell_raw[j] > FEED_FLOOR_KG_PER_H else 0.0)
         for j in F_in_cell_raw
@@ -416,7 +416,7 @@ def _cell_feed_nominal(model, t, i, j):
     if i == model.cells.first():
         return _safe_value(model.properties_in[t].flow_mass_comp[j], default=1e-3)
     return _safe_value(
-        model.cell_pulp_out_flow[t, model.cells.prev(i), j], default=1e-3
+        model.cell_pulp_out_flow_mass_comp[t, model.cells.prev(i), j], default=1e-3
     )
 
 
@@ -441,23 +441,34 @@ def _kinetic_cell_balance_max_constraint_residual(model):
     for constraint_name in _KINETIC_CELL_BALANCE_CONSTRAINT_NAMES:
         constraint_obj = getattr(model, constraint_name, None)
         if constraint_obj is None:
-            continue
+            raise ConfigurationError(
+                f"bank={model.local_name}: missing expected kinetic-cell-balance "
+                f"constraint {constraint_name!r} during residual check."
+            )
         for index in constraint_obj:
             con = constraint_obj[index]
             if not con.active:
                 continue
             try:
                 body_val = value(con.body, exception=False)
-                upper_val = (
-                    value(con.upper, exception=False) if con.upper is not None else 0.0
+                bound = con.upper if con.upper is not None else con.lower
+                bound_val = value(bound, exception=False) if bound is not None else None
+            except (ValueError, TypeError) as exc:
+                raise ConfigurationError(
+                    f"bank={model.local_name}: could not evaluate active "
+                    f"constraint {con.name} during residual check."
+                ) from exc
+            if body_val is None or bound_val is None:
+                raise ConfigurationError(
+                    f"bank={model.local_name}: active constraint {con.name} "
+                    "returned an unevaluable residual."
                 )
-            except (ValueError, TypeError):
-                continue
-            if body_val is None or upper_val is None:
-                continue
-            if not (math.isfinite(body_val) and math.isfinite(upper_val)):
-                continue
-            residual = abs(body_val - upper_val)
+            if not (math.isfinite(body_val) and math.isfinite(bound_val)):
+                raise ConfigurationError(
+                    f"bank={model.local_name}: active constraint {con.name} "
+                    "returned a non-finite residual."
+                )
+            residual = abs(body_val - bound_val)
             if residual > max_residual:
                 max_residual = residual
                 worst = (
@@ -503,14 +514,14 @@ def _geometric_m_total(model):
     rho_slurry_val = value(model.rho_slurry)
     M_total = (
         value(model.cell_volume)
-        * (1 - value(model.air_holdup))
+        * (1 - value(model.volume_frac_air))
         * rho_slurry_val
         * value(model.pulp_solids_mass_fraction)
     )
     if not math.isfinite(M_total) or M_total <= 0:
         raise ConfigurationError(
             f"bank={model.local_name}: geometric M_total is {M_total}; "
-            "check cell_volume, air_holdup, pulp_solids_mass_fraction, "
+            "check cell_volume, volume_frac_air, pulp_solids_mass_fraction, "
             "rho_solid, and rho_water are fixed and finite."
         )
     return M_total
@@ -835,7 +846,7 @@ class FlotationBankKineticClosedFormInitializer(BlockTriangularizationInitialize
 
         number_of_cells = model.config.number_of_cells
         for time in model.flowsheet().time:
-            tau_value = value(model.tau[time])
+            tau_value = value(model.residence_time[time])
             for component in component_list:
                 recovery_fixed = model.recovery[time, component].fixed
                 k_fixed = model.k_cf[time, component].fixed
@@ -926,10 +937,10 @@ class FlotationBankKineticCellBalanceAnalyticalInitializer(ModularInitializerBas
                 model.cell_solid_holdup[time, cell, component].set_value(
                     M_cells[cell_idx][component]
                 )
-                model.cell_pulp_out_flow[time, cell, component].set_value(
+                model.cell_pulp_out_flow_mass_comp[time, cell, component].set_value(
                     F_pulp_out_cells[cell_idx][component]
                 )
-                model.cell_float_flow[time, cell, component].set_value(
+                model.cell_flotation_flow_mass_comp[time, cell, component].set_value(
                     F_float_cells[cell_idx][component]
                 )
 
@@ -1079,8 +1090,10 @@ class FlotationBankKineticCellBalanceStagedInitializer(ModularInitializerBase):
                 pulp_out = feed - float_guess
 
                 model.cell_solid_holdup[time, cell, j].set_value(holdup)
-                model.cell_pulp_out_flow[time, cell, j].set_value(pulp_out)
-                model.cell_float_flow[time, cell, j].set_value(float_guess)
+                model.cell_pulp_out_flow_mass_comp[time, cell, j].set_value(pulp_out)
+                model.cell_flotation_flow_mass_comp[time, cell, j].set_value(
+                    float_guess
+                )
                 F_float[j] = float_guess
                 F_pulp_out[j] = pulp_out
 
@@ -1103,9 +1116,12 @@ class FlotationBankKineticCellBalanceStagedInitializer(ModularInitializerBase):
         """Stage-4 seed: aggregate solved cell-level values into bank outlets."""
         for j in component_list:
             concentrate = sum(
-                value(model.cell_float_flow[time, cell, j]) for cell in model.cells
+                value(model.cell_flotation_flow_mass_comp[time, cell, j])
+                for cell in model.cells
             )
-            tails = value(model.cell_pulp_out_flow[time, model.cells.last(), j])
+            tails = value(
+                model.cell_pulp_out_flow_mass_comp[time, model.cells.last(), j]
+            )
             model.properties_concentrate[time].flow_mass_comp[j].set_value(concentrate)
             model.properties_tails[time].flow_mass_comp[j].set_value(tails)
             feed = value(model.properties_in[time].flow_mass_comp[j])

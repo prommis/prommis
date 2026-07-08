@@ -65,14 +65,14 @@ recoveries from plant data or add process constraints that determine them.
 
 Closed-form kinetic mode (``"kinetic_closed_form"``) is a prediction form.
 Users fix ``k_cf[t, j]`` and leave ``recovery[t, j]`` free. They also fix
-``cell_volume``, ``air_holdup``, and ``pulp_solids_mass_fraction`` for each
+``cell_volume``, ``volume_frac_air``, and ``pulp_solids_mass_fraction`` for each
 bank.
 
 Kinetic-cell-balance mode (``"kinetic_cell_balance"``) is a prediction form.
-Users fix ``cell_volume``, ``air_holdup``, ``pulp_solids_mass_fraction``,
+Users fix ``cell_volume``, ``volume_frac_air``, ``pulp_solids_mass_fraction``,
 ``rho_solid``, ``rho_water``, and ``k_cb[t, j]``; the cell balances then
 determine cell holdups, outlet flows, concentrate and tails flows, and
-``recovery[t, j]``. This mode is steady-state only and rejects ``dynamic=True``.
+``recovery[t, j]``.
 
 The bank's ``default_initializer`` is
 ``FlotationBankKineticCellBalanceInitializer``, a dispatcher that selects
@@ -94,15 +94,11 @@ use either strategy class directly.
 Dynamic-flowsheet compatibility
 -------------------------------
 
-The ``fixed`` and ``kinetic`` modes are algebraic in time — every constraint
-is evaluated independently at each time point and the unit carries no
-accumulation state. They can be embedded in dynamic flowsheets without
-restriction; the state blocks propagate the flowsheet's dynamic context. Only
-the ``kinetic_cell_balance`` mode rejects ``dynamic=True``, because its
-``cell_total_solid_holdup`` and ``cell_solid_holdup`` Vars are named like
-inventory accumulators but are algebraically closed by the geometric inventory
-expression — a future dynamic variant of that mode will add the corresponding
-``dM/dt`` terms before lifting the restriction.
+All recovery modes are steady-state unit models. They are algebraic in time:
+every constraint is evaluated independently at each time point and the unit
+carries no accumulation state. The unit therefore requires ``dynamic=False`` and
+``has_holdup=False``. It can still be embedded in a dynamic flowsheet by
+constructing the unit as steady-state.
 
 Model Structure
 ---------------
@@ -134,7 +130,7 @@ Name                              Symbol                   Notes
                                                            concentrate.
 ``cell_volume``                   :math:`V_{cell}`         Volume per flotation
                                                            cell; kinetic modes.
-``air_holdup``                    :math:`\epsilon_{air}`   Volumetric air hold-up
+``volume_frac_air``               :math:`\epsilon_{air}`   Volumetric air
                                                            fraction; kinetic
                                                            modes.
 ``pulp_solids_mass_fraction``     :math:`w_s`              Inlet pulp solids mass
@@ -159,8 +155,9 @@ Name                              Symbol                   Notes
                                                            ``kinetic_cell_balance``
                                                            mode only.
 ``R_inf[t, j]``                   :math:`R_{\infty,t,j}`   Ultimate recoverable
-                                                           fraction, fixed at
-                                                           1.0 by default;
+                                                           fraction, a mutable
+                                                           parameter at 1.0 by
+                                                           default;
                                                            closed-form kinetic
                                                            mode only.
 ``cell_total_solid_holdup``       :math:`M_{t,i}`          Total dry-solid
@@ -171,11 +168,11 @@ Name                              Symbol                   Notes
                                                            inventory in cell
                                                            ``i``; kinetic-cell-
                                                            balance mode.
-``cell_pulp_out_flow``            :math:`P_{t,i,j}`        Component dry-solid
+``cell_pulp_out_flow_mass_comp``  :math:`P_{t,i,j}`        Component dry-solid
                                                            pulp outlet flow from
                                                            cell ``i``; kinetic-
                                                            cell-balance mode.
-``cell_float_flow``               :math:`G_{t,i,j}`        Component dry-solid
+``cell_flotation_flow_mass_comp`` :math:`G_{t,i,j}`        Component dry-solid
                                                            flotation flow from
                                                            cell ``i``; kinetic-
                                                            cell-balance mode.
@@ -241,11 +238,13 @@ The total cell inventory is fixed by the geometric closure:
 
     M_{t,i} = V_{cell}(1 - \epsilon_{air})\rho_{slurry}w_s
 
-and component holdups sum to ``M[t, i]``. A well-mixed algebraic closure is
-written for all but one component; the omitted component follows from the total
-holdup and material balances. Concentrate flow is the sum of all cell flotation
-flows, tails flow is the last cell pulp outlet, and recovery is still reported
-through ``recovery[t, j]``.
+and component holdups sum to ``M[t, i]``. A well-mixed algebraic closure, meaning
+a steady-state relation rather than an accumulation equation, is written for all
+but one component. That relation makes the component composition of the cell
+solid holdup match the component composition of the cell pulp outlet; the
+omitted component follows from the total holdup and material balances.
+Concentrate flow is the sum of all cell flotation flows, tails flow is the last
+cell pulp outlet, and recovery is still reported through ``recovery[t, j]``.
 
 The forward cascade helper used by the initializer validates finite and numeric
 inputs, applies ``FEED_FLOOR_KG_PER_H`` to component feeds at each cell entry,
@@ -289,6 +288,7 @@ from pyomo.common.config import ConfigBlock, ConfigValue, In, PositiveInt
 from pyomo.environ import (
     Expression,
     Param,
+    PercentFraction,
     PositiveReals,
     RangeSet,
     Var,
@@ -301,6 +301,7 @@ from idaes.core.initialization import BlockTriangularizationInitializer
 from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.misc import StrEnum
 from idaes.core.util.tables import create_stream_table_dataframe
 
 from prommis.flotation.initializer import (
@@ -311,6 +312,12 @@ from prommis.flotation.initializer import (
 )
 
 __author__ = "Daison Yancy Caballero"
+
+
+class RecoveryBasis(StrEnum):
+    fixed = "fixed"
+    kinetic_closed_form = "kinetic_closed_form"
+    kinetic_cell_balance = "kinetic_cell_balance"
 
 
 class FlotationBankScaler(CustomScalerBase):
@@ -332,7 +339,7 @@ class FlotationBankScaler(CustomScalerBase):
             )
         for var in model.recovery.values():
             self.set_variable_scaling_factor(var, 1.0, overwrite=overwrite)
-        if model.config.recovery_basis == "kinetic_closed_form":
+        if model.config.recovery_basis == RecoveryBasis.kinetic_closed_form:
             k_floor = 0.01
             for var in model.k_cf.values():
                 nominal = _safe_value(var, default=1.0)
@@ -343,18 +350,22 @@ class FlotationBankScaler(CustomScalerBase):
             self.set_variable_scaling_factor(
                 model.cell_volume, 1 / max(abs(cell_volume), 1e-6), overwrite=overwrite
             )
-            self.set_variable_scaling_factor(model.air_holdup, 1.0, overwrite=overwrite)
+            self.set_variable_scaling_factor(
+                model.volume_frac_air, 1.0, overwrite=overwrite
+            )
             self.set_variable_scaling_factor(
                 model.pulp_solids_mass_fraction, 1.0, overwrite=overwrite
             )
-        if model.config.recovery_basis == "kinetic_cell_balance":
+        if model.config.recovery_basis == RecoveryBasis.kinetic_cell_balance:
             cell_volume = _safe_value(model.cell_volume, default=1.0)
             self.set_variable_scaling_factor(
                 model.cell_volume,
                 1 / max(abs(cell_volume), 1e-6),
                 overwrite=overwrite,
             )
-            self.set_variable_scaling_factor(model.air_holdup, 1.0, overwrite=overwrite)
+            self.set_variable_scaling_factor(
+                model.volume_frac_air, 1.0, overwrite=overwrite
+            )
             self.set_variable_scaling_factor(
                 model.pulp_solids_mass_fraction, 1.0, overwrite=overwrite
             )
@@ -373,7 +384,10 @@ class FlotationBankScaler(CustomScalerBase):
                 self.set_variable_scaling_factor(
                     var, 1 / max(abs(nominal), 1e-3), overwrite=overwrite
                 )
-            for var_obj in (model.cell_pulp_out_flow, model.cell_float_flow):
+            for var_obj in (
+                model.cell_pulp_out_flow_mass_comp,
+                model.cell_flotation_flow_mass_comp,
+            ):
                 for (time, cell, component), var in var_obj.items():
                     feed_nominal = _cell_feed_nominal(model, time, cell, component)
                     nominal = _safe_value(var, default=feed_nominal)
@@ -381,57 +395,84 @@ class FlotationBankScaler(CustomScalerBase):
                         var, 1 / max(abs(nominal), 1e-12), overwrite=overwrite
                     )
 
+    def _required_scaling_factor(self, var):
+        scaling_factor = self.get_scaling_factor(var)
+        if scaling_factor is not None and scaling_factor > 0:
+            return scaling_factor
+        raise ConfigurationError(f"Missing scaling factor for {var.name}.")
+
+    def _scale_constraint_by_required_component(
+        self, target_constraint, scaling_component, overwrite
+    ):
+        self.set_constraint_scaling_factor(
+            target_constraint,
+            self._required_scaling_factor(scaling_component),
+            overwrite=overwrite,
+        )
+
     def constraint_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
     ):
-        if model.config.recovery_basis in ("fixed", "kinetic_closed_form"):
+        if model.config.recovery_basis in (
+            RecoveryBasis.fixed,
+            RecoveryBasis.kinetic_closed_form,
+        ):
             for (time, component), condata in model.concentrate_split_eq.items():
-                self.scale_constraint_by_component(
+                self._scale_constraint_by_required_component(
                     condata,
                     model.properties_concentrate[time].flow_mass_comp[component],
                     overwrite=overwrite,
                 )
             for (time, component), condata in model.tails_split_eq.items():
-                self.scale_constraint_by_component(
+                self._scale_constraint_by_required_component(
                     condata,
                     model.properties_tails[time].flow_mass_comp[component],
                     overwrite=overwrite,
                 )
-        if model.config.recovery_basis == "kinetic_closed_form":
+        if model.config.recovery_basis == RecoveryBasis.kinetic_closed_form:
             for (time, component), condata in model.kinetic_recovery_eq.items():
-                self.scale_constraint_by_component(
+                self._scale_constraint_by_required_component(
                     condata, model.recovery[time, component], overwrite=overwrite
                 )
-        if model.config.recovery_basis == "kinetic_cell_balance":
+        if model.config.recovery_basis == RecoveryBasis.kinetic_cell_balance:
             component_list = list(model.config.property_package.component_list)
             for (time, cell), condata in model.geometric_holdup_eq.items():
-                nominal = _safe_value(
-                    model.cell_total_solid_holdup[time, cell], default=1.0
+                scaling_factor = self._required_scaling_factor(
+                    model.cell_total_solid_holdup[time, cell]
                 )
                 self.set_constraint_scaling_factor(
-                    condata, 1 / max(abs(nominal), 1.0), overwrite=overwrite
+                    condata, scaling_factor, overwrite=overwrite
                 )
             for (time, cell), condata in model.total_component_holdup_eq.items():
-                nominal = _safe_value(
-                    model.cell_total_solid_holdup[time, cell], default=1.0
+                scaling_factor = self._required_scaling_factor(
+                    model.cell_total_solid_holdup[time, cell]
                 )
                 self.set_constraint_scaling_factor(
-                    condata, 1 / max(abs(nominal), 1.0), overwrite=overwrite
+                    condata, scaling_factor, overwrite=overwrite
                 )
             for (time, cell, component), condata in model.well_mixed_eq.items():
-                holdup = _safe_value(
-                    model.cell_total_solid_holdup[time, cell], default=1.0
+                component_holdup_sf = self._required_scaling_factor(
+                    model.cell_solid_holdup[time, cell, component]
                 )
-                outlet_flow = sum(
-                    _safe_value(
-                        model.cell_pulp_out_flow[time, cell, local_component],
-                        default=1e-3,
+                total_holdup_sf = self._required_scaling_factor(
+                    model.cell_total_solid_holdup[time, cell]
+                )
+                pulp_out_nominal = 0.0
+                for local_component in component_list:
+                    pulp_out_sf = self._required_scaling_factor(
+                        model.cell_pulp_out_flow_mass_comp[time, cell, local_component]
                     )
-                    for local_component in component_list
+                    pulp_out_nominal += 1 / pulp_out_sf
+                total_pulp_out_sf = 1 / pulp_out_nominal
+                component_pulp_out_sf = self._required_scaling_factor(
+                    model.cell_pulp_out_flow_mass_comp[time, cell, component]
                 )
                 self.set_constraint_scaling_factor(
                     condata,
-                    1 / max(abs(holdup * outlet_flow), 1e-3),
+                    min(
+                        component_holdup_sf * total_pulp_out_sf,
+                        total_holdup_sf * component_pulp_out_sf,
+                    ),
                     overwrite=overwrite,
                 )
             for (
@@ -439,35 +480,55 @@ class FlotationBankScaler(CustomScalerBase):
                 cell,
                 component,
             ), condata in model.cell_material_balance_eq.items():
-                feed_nominal = _cell_feed_nominal(model, time, cell, component)
-                self.set_constraint_scaling_factor(
-                    condata, 1 / max(abs(feed_nominal), 1e-12), overwrite=overwrite
+                if cell == model.cells.first():
+                    feed_component = model.properties_in[time].flow_mass_comp[component]
+                else:
+                    feed_component = model.cell_pulp_out_flow_mass_comp[
+                        time, model.cells.prev(cell), component
+                    ]
+                feed_sf = self._required_scaling_factor(feed_component)
+                pulp_out_sf = self._required_scaling_factor(
+                    model.cell_pulp_out_flow_mass_comp[time, cell, component]
                 )
-            for (time, cell, component), condata in model.flotation_removal_eq.items():
-                k_nominal = _safe_value(model.k_cb[time, component], default=0.01)
-                holdup = _safe_value(
-                    model.cell_solid_holdup[time, cell, component], default=1e-3
+                flotation_sf = self._required_scaling_factor(
+                    model.cell_flotation_flow_mass_comp[time, cell, component]
                 )
                 self.set_constraint_scaling_factor(
                     condata,
-                    1 / max(abs(k_nominal * holdup), 1e-3),
+                    min(feed_sf, pulp_out_sf, flotation_sf),
                     overwrite=overwrite,
                 )
-            for constraint_obj in (
-                model.concentrate_outlet_eq,
-                model.tails_outlet_eq,
-                model.recovery_eq,
-            ):
-                for (time, component), condata in constraint_obj.items():
-                    feed_nominal = _safe_value(
-                        model.properties_in[time].flow_mass_comp[component],
-                        default=1e-3,
-                    )
-                    self.set_constraint_scaling_factor(
-                        condata,
-                        1 / max(abs(feed_nominal), 1e-3),
-                        overwrite=overwrite,
-                    )
+            for (time, cell, component), condata in model.flotation_removal_eq.items():
+                flotation_sf = self._required_scaling_factor(
+                    model.cell_flotation_flow_mass_comp[time, cell, component]
+                )
+                k_sf = self._required_scaling_factor(model.k_cb[time, component])
+                holdup_sf = self._required_scaling_factor(
+                    model.cell_solid_holdup[time, cell, component]
+                )
+                self.set_constraint_scaling_factor(
+                    condata,
+                    min(flotation_sf, k_sf * holdup_sf),
+                    overwrite=overwrite,
+                )
+            for (time, component), condata in model.concentrate_outlet_eq.items():
+                self._scale_constraint_by_required_component(
+                    condata,
+                    model.properties_concentrate[time].flow_mass_comp[component],
+                    overwrite=overwrite,
+                )
+            for (time, component), condata in model.tails_outlet_eq.items():
+                self._scale_constraint_by_required_component(
+                    condata,
+                    model.properties_tails[time].flow_mass_comp[component],
+                    overwrite=overwrite,
+                )
+            for (time, component), condata in model.recovery_eq.items():
+                self._scale_constraint_by_required_component(
+                    condata,
+                    model.properties_concentrate[time].flow_mass_comp[component],
+                    overwrite=overwrite,
+                )
 
 
 @declare_process_block_class("FlotationBank")
@@ -486,6 +547,10 @@ class FlotationBankData(UnitModelBlockData):
     default_initializer = BlockTriangularizationInitializer
 
     CONFIG = UnitModelBlockData.CONFIG()
+    CONFIG.get("dynamic")._domain = In([False])
+    CONFIG.get("dynamic")._default = False
+    CONFIG.get("has_holdup")._domain = In([False])
+    CONFIG.get("has_holdup")._default = False
     CONFIG.declare(
         "property_package",
         ConfigValue(
@@ -504,8 +569,8 @@ class FlotationBankData(UnitModelBlockData):
     CONFIG.declare(
         "recovery_basis",
         ConfigValue(
-            default="fixed",
-            domain=In(["fixed", "kinetic_closed_form", "kinetic_cell_balance"]),
+            default=RecoveryBasis.fixed,
+            domain=In(RecoveryBasis),
             description="How recovery is determined",
         ),
     )
@@ -551,7 +616,7 @@ class FlotationBankData(UnitModelBlockData):
             doc="Local component recovery to concentrate",
         )
 
-        if self.config.recovery_basis == "kinetic_closed_form":
+        if self.config.recovery_basis == RecoveryBasis.kinetic_closed_form:
             number_of_cells = self.config.number_of_cells
 
             self.cell_volume = Var(
@@ -560,11 +625,11 @@ class FlotationBankData(UnitModelBlockData):
                 units=units.m**3,
                 doc="Volume per flotation cell",
             )
-            self.air_holdup = Var(
+            self.volume_frac_air = Var(
                 initialize=0.10,
                 bounds=(0, 0.5),
                 units=units.dimensionless,
-                doc="Volumetric air hold-up fraction in the cells",
+                doc="Volumetric air fraction in the cells",
             )
             self.pulp_solids_mass_fraction = Var(
                 initialize=0.325,
@@ -587,24 +652,17 @@ class FlotationBankData(UnitModelBlockData):
                 units=1 / units.hour,
                 doc="Closed-form apparent first-order flotation rate constant.",
             )
-            self.R_inf = Var(
+            self.R_inf = Param(
                 self.flowsheet().time,
                 component_list,
                 initialize=1.0,
-                # The tiny upper tolerance avoids diagnostics warning on the
-                # default fixed-at-one value while preserving the intended
-                # ultimate-recovery bound for estimation workflows.
-                bounds=(0, 1 + 1e-8),
+                mutable=True,
+                domain=PercentFraction,
                 units=units.dimensionless,
-                doc="Ultimate recoverable fraction fixed at 1.0 by default",
+                doc="Ultimate recoverable fraction",
             )
-            for time in self.flowsheet().time:
-                for component in component_list:
-                    # Fix R_inf for current implementation. If rich recovery-time
-                    # data are available, it can be estimated.
-                    self.R_inf[time, component].fix(1.0)
             self.effective_volume = Expression(
-                expr=self.cell_volume * number_of_cells * (1 - self.air_holdup),
+                expr=self.cell_volume * number_of_cells * (1 - self.volume_frac_air),
                 doc="Active slurry volume across the bank",
             )
 
@@ -637,28 +695,31 @@ class FlotationBankData(UnitModelBlockData):
 
             @self.Expression(self.flowsheet().time)
             def flow_vol_slurry(b, t):
-                return b.properties_in[t].flow_vol_solid + b.flow_vol_water[t]
+                return b.properties_in[t].flow_vol_phase["solid"] + b.flow_vol_water[t]
 
             @self.Expression(self.flowsheet().time)
-            def tau(b, t):
+            def residence_time(b, t):
                 return b.effective_volume / b.flow_vol_slurry[t]
 
             @self.Constraint(self.flowsheet().time, component_list)
             def kinetic_recovery_eq(b, t, j):
                 return b.recovery[t, j] == b.R_inf[t, j] * (
                     1
-                    - (1 + b.k_cf[t, j] * b.tau[t] / number_of_cells)
+                    - (1 + b.k_cf[t, j] * b.residence_time[t] / number_of_cells)
                     ** (-number_of_cells)
                 )
 
             self.default_initializer = FlotationBankKineticClosedFormInitializer
 
-        elif self.config.recovery_basis == "kinetic_cell_balance":
+        elif self.config.recovery_basis == RecoveryBasis.kinetic_cell_balance:
             self._validate_kinetic_cell_balance_config()
             self._build_kinetic_cell_balance(component_list)
             self.default_initializer = FlotationBankKineticCellBalanceInitializer
 
-        if self.config.recovery_basis in ("fixed", "kinetic_closed_form"):
+        if self.config.recovery_basis in (
+            RecoveryBasis.fixed,
+            RecoveryBasis.kinetic_closed_form,
+        ):
 
             @self.Constraint(self.flowsheet().time, component_list)
             def concentrate_split_eq(b, t, j):
@@ -684,14 +745,9 @@ class FlotationBankData(UnitModelBlockData):
     def _validate_kinetic_cell_balance_config(self):
         if self.config.dynamic is True:
             raise ConfigurationError(
-                "recovery_basis='kinetic_cell_balance' uses geometric "
-                "(algebraic) holdup and does not integrate cell_solid_holdup "
-                "over time. dynamic=True is rejected to avoid producing a "
-                "model that names a Var 'holdup' but behaves steady-state. "
-                "Use recovery_basis='fixed' or 'kinetic_closed_form' (both "
-                "algebraic in time) inside dynamic flowsheets, or wait for a "
-                "future dynamic kinetic-cell-balance mode with proper "
-                "dM/dt terms."
+                "FlotationBank is a steady-state unit model. dynamic=True is "
+                "rejected because the unit does not construct accumulation "
+                "terms."
             )
 
     def _build_kinetic_cell_balance(self, component_list):
@@ -706,11 +762,11 @@ class FlotationBankData(UnitModelBlockData):
             units=units.m**3,
             doc="Volume per flotation cell",
         )
-        self.air_holdup = Var(
+        self.volume_frac_air = Var(
             initialize=0.10,
             bounds=(0, 0.5),
             units=units.dimensionless,
-            doc="Volumetric air hold-up fraction in the cells",
+            doc="Volumetric air fraction in the cells",
         )
         self.pulp_solids_mass_fraction = Var(
             initialize=0.325,
@@ -757,7 +813,7 @@ class FlotationBankData(UnitModelBlockData):
             units=units.kg,
             doc="Component dry-solid holdup in each cell",
         )
-        self.cell_pulp_out_flow = Var(
+        self.cell_pulp_out_flow_mass_comp = Var(
             self.flowsheet().time,
             self.cells,
             component_names,
@@ -766,7 +822,7 @@ class FlotationBankData(UnitModelBlockData):
             units=units.kg / units.hour,
             doc="Component dry-solid pulp outlet flow from each cell",
         )
-        self.cell_float_flow = Var(
+        self.cell_flotation_flow_mass_comp = Var(
             self.flowsheet().time,
             self.cells,
             component_names,
@@ -780,11 +836,11 @@ class FlotationBankData(UnitModelBlockData):
         def cell_feed(b, t, i, j):
             if i == b.cells.first():
                 return b.properties_in[t].flow_mass_comp[j]
-            return b.cell_pulp_out_flow[t, b.cells.prev(i), j]
+            return b.cell_pulp_out_flow_mass_comp[t, b.cells.prev(i), j]
 
         @self.Expression(self.flowsheet().time, self.cells)
         def cell_total_pulp_out_flow(b, t, i):
-            return sum(b.cell_pulp_out_flow[t, i, j] for j in component_names)
+            return sum(b.cell_pulp_out_flow_mass_comp[t, i, j] for j in component_names)
 
         @self.Expression()
         def rho_slurry(b):
@@ -811,7 +867,7 @@ class FlotationBankData(UnitModelBlockData):
 
         @self.Expression(self.flowsheet().time)
         def tau_apparent_cell(b, t):
-            return b.cell_volume * (1 - b.air_holdup) / b.Q_slurry_in[t]
+            return b.cell_volume * (1 - b.volume_frac_air) / b.Q_slurry_in[t]
 
         @self.Expression(self.flowsheet().time)
         def tau_apparent_bank(b, t):
@@ -828,7 +884,7 @@ class FlotationBankData(UnitModelBlockData):
             return (
                 b.cell_total_solid_holdup[t, i]
                 == b.cell_volume
-                * (1 - b.air_holdup)
+                * (1 - b.volume_frac_air)
                 * b.rho_slurry
                 * b.pulp_solids_mass_fraction
             )
@@ -844,13 +900,14 @@ class FlotationBankData(UnitModelBlockData):
         def cell_material_balance_eq(b, t, i, j):
             return (
                 b.cell_feed[t, i, j]
-                == b.cell_pulp_out_flow[t, i, j] + b.cell_float_flow[t, i, j]
+                == b.cell_pulp_out_flow_mass_comp[t, i, j]
+                + b.cell_flotation_flow_mass_comp[t, i, j]
             )
 
         @self.Constraint(self.flowsheet().time, self.cells, component_names)
         def flotation_removal_eq(b, t, i, j):
             return (
-                b.cell_float_flow[t, i, j]
+                b.cell_flotation_flow_mass_comp[t, i, j]
                 == b.k_cb[t, j] * b.cell_solid_holdup[t, i, j]
             )
 
@@ -862,20 +919,21 @@ class FlotationBankData(UnitModelBlockData):
         def well_mixed_eq(b, t, i, j):
             return (
                 b.cell_solid_holdup[t, i, j] * b.cell_total_pulp_out_flow[t, i]
-                == b.cell_total_solid_holdup[t, i] * b.cell_pulp_out_flow[t, i, j]
+                == b.cell_total_solid_holdup[t, i]
+                * b.cell_pulp_out_flow_mass_comp[t, i, j]
             )
 
         @self.Constraint(self.flowsheet().time, component_names)
         def concentrate_outlet_eq(b, t, j):
             return b.properties_concentrate[t].flow_mass_comp[j] == sum(
-                b.cell_float_flow[t, i, j] for i in b.cells
+                b.cell_flotation_flow_mass_comp[t, i, j] for i in b.cells
             )
 
         @self.Constraint(self.flowsheet().time, component_names)
         def tails_outlet_eq(b, t, j):
             return (
                 b.properties_tails[t].flow_mass_comp[j]
-                == b.cell_pulp_out_flow[t, b.cells.last(), j]
+                == b.cell_pulp_out_flow_mass_comp[t, b.cells.last(), j]
             )
 
         @self.Constraint(self.flowsheet().time, component_names)
@@ -903,12 +961,12 @@ class FlotationBankData(UnitModelBlockData):
         variables = {
             "Mass Pull": numeric(self.solid_mass_pull[time_point]),
         }
-        if self.config.recovery_basis == "kinetic_closed_form":
+        if self.config.recovery_basis == RecoveryBasis.kinetic_closed_form:
             variables.update(
                 {
-                    "Residence Time": numeric(self.tau[time_point]),
+                    "Residence Time": numeric(self.residence_time[time_point]),
                     "Inlet Solid Volumetric Flow": numeric(
-                        self.properties_in[time_point].flow_vol_solid
+                        self.properties_in[time_point].flow_vol_phase["solid"]
                     ),
                     "Inlet Water Volumetric Flow": numeric(
                         self.flow_vol_water[time_point]
@@ -924,7 +982,7 @@ class FlotationBankData(UnitModelBlockData):
                     for component in self.config.property_package.component_list
                 }
             )
-        if self.config.recovery_basis == "kinetic_cell_balance":
+        if self.config.recovery_basis == RecoveryBasis.kinetic_cell_balance:
             variables.update(
                 {
                     "Inlet Water Mass Flow": numeric(

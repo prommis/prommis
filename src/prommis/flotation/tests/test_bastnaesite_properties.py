@@ -58,7 +58,7 @@ def test_build(model):
     assert not hasattr(model.fs.properties, "bond_work_index")
     assert isinstance(model.fs.state[0].flow_mass_comp, Var)
     assert isinstance(model.fs.state[0].flow_mass, Expression)
-    assert isinstance(model.fs.state[0].flow_vol_solid, Expression)
+    assert isinstance(model.fs.state[0].flow_vol_phase, Expression)
     assert not model.fs.state[0].is_property_constructed("mass_frac_comp")
     assert isinstance(model.fs.state[0].mass_frac_comp, Expression)
     assert model.fs.state[0].is_property_constructed("mass_frac_comp")
@@ -94,7 +94,7 @@ def test_derived_mass_quantities(model):
         state.flow_mass_comp[component].set_value(flow)
 
     assert value(state.flow_mass) == pytest.approx(total_flow)
-    assert value(state.flow_vol_solid) == pytest.approx(
+    assert value(state.flow_vol_phase["solid"]) == pytest.approx(
         sum(
             flow / value(model.fs.properties.rho_mass_comp[component])
             for component, flow in component_flows.items()

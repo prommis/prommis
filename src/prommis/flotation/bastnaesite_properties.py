@@ -124,12 +124,12 @@ class BastnaesiteParameterData(PhysicalParameterBlock):
             {
                 "flow_mass_comp": {"method": None},
                 "flow_mass": {"method": None},
+                "flow_vol_phase": {"method": None},
                 "mass_frac_comp": {"method": "_mass_frac_comp"},
             }
         )
         obj.define_custom_properties(
             {
-                "flow_vol_solid": {"method": None},
                 "particle_size_median": {"method": None},
                 "particle_size_width": {"method": None},
             }
@@ -192,21 +192,29 @@ class BastnaesiteStateBlockData(StateBlockData):
             ),
             doc="Total dry-solid mass flow",
         )
-        self.flow_vol_solid = Expression(
-            expr=sum(
-                self.flow_mass_comp[component] / self.params.rho_mass_comp[component]
-                for component in self.params.component_list
-            ),
-            doc="Volumetric flow of the solids phase",
+
+        def flow_vol_phase_rule(b, _phase):
+            return sum(
+                b.flow_mass_comp[component] / b.params.rho_mass_comp[component]
+                for component in b.params.component_list
+            )
+
+        self.flow_vol_phase = Expression(
+            self.params.phase_list,
+            rule=flow_vol_phase_rule,
+            doc="Dry-solid volumetric flow indexed by phase",
         )
 
     def _mass_frac_comp(self):
         # Note: this Expression is undefined for zero-flow streams (division by
         # zero). It is used only for reporting; callers that may encounter
         # zero-flow streams should guard before calling value().
+        def mass_frac_comp_rule(b, j):
+            return b.flow_mass_comp[j] / b.flow_mass
+
         self.mass_frac_comp = Expression(
             self.params.component_list,
-            rule=lambda b, j: b.flow_mass_comp[j] / b.flow_mass,
+            rule=mass_frac_comp_rule,
             doc="Component dry-solid mass fraction (undefined for zero flow)",
         )
 

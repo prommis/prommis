@@ -12,20 +12,20 @@ from pyomo.environ import (
     ConcreteModel,
     Constraint,
     Expression,
+    Param,
     Var,
     assert_optimal_termination,
-    units,
     value,
 )
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes import logger as idaeslog
-from idaes.core import FlowsheetBlock, useDefault
+from idaes.core import FlowsheetBlock
 from idaes.core.initialization import (
     BlockTriangularizationInitializer,
     InitializationStatus,
 )
-from idaes.core.scaling import get_scaling_factor
+from idaes.core.scaling import del_scaling_factor, get_scaling_factor
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
@@ -41,6 +41,7 @@ from prommis.flotation.bastnaesite_properties import (
 from prommis.flotation.flotation_bank import (
     FlotationBank,
     FlotationBankScaler,
+    RecoveryBasis,
 )
 from prommis.flotation.initializer import (
     FEED_FLOOR_KG_PER_H,
@@ -76,7 +77,7 @@ RECOVERY = {
 
 
 def _fix_kinetic_inputs(unit, tau_h=2.0, k_per_h=1.5):
-    unit.air_holdup.fix(0.0)
+    unit.volume_frac_air.fix(0.0)
     unit.pulp_solids_mass_fraction.fix(0.5)
     unit.cell_volume.fix(
         tau_h * value(unit.flow_vol_slurry[0]) / unit.config.number_of_cells
@@ -86,7 +87,7 @@ def _fix_kinetic_inputs(unit, tau_h=2.0, k_per_h=1.5):
 
 
 def _fix_cell_balance_inputs(unit, cell_volume=0.02, k_per_h=0.5):
-    unit.air_holdup.fix(0.1)
+    unit.volume_frac_air.fix(0.1)
     unit.pulp_solids_mass_fraction.fix(0.5)
     unit.rho_solid.set_value(3000.0)
     unit.cell_volume.fix(cell_volume)
@@ -137,17 +138,17 @@ def test_build(model_with_free_recoveries):
     assert isinstance(unit.tails_split_eq, Constraint)
     assert unit.default_scaler is FlotationBankScaler
     assert unit.default_initializer is BlockTriangularizationInitializer
-    assert unit.config.recovery_basis == "fixed"
+    assert unit.config.recovery_basis == RecoveryBasis.fixed
     assert not unit.recovery[0, "REO"].fixed
     assert "bank_name" not in unit.config
     assert "calibration_mode" not in unit.config
     for attr in (
         "cell_volume",
-        "air_holdup",
+        "volume_frac_air",
         "pulp_solids_mass_fraction",
         "k_cf",
         "R_inf",
-        "tau",
+        "residence_time",
         "effective_volume",
         "flow_vol_slurry",
         "kinetic_recovery_eq",
@@ -161,17 +162,17 @@ def test_build_kinetic_mode_adds_state():
     model = _bank_model(fix_recoveries=False, recovery_basis="kinetic_closed_form")
     unit = model.fs.unit
 
-    assert unit.config.recovery_basis == "kinetic_closed_form"
+    assert unit.config.recovery_basis == RecoveryBasis.kinetic_closed_form
     assert unit.default_initializer is FlotationBankKineticClosedFormInitializer
     assert isinstance(unit.recovery, Var)
     assert isinstance(unit.cell_volume, Var)
-    assert isinstance(unit.air_holdup, Var)
+    assert isinstance(unit.volume_frac_air, Var)
     assert isinstance(unit.pulp_solids_mass_fraction, Var)
     assert isinstance(unit.k_cf, Var)
-    assert isinstance(unit.R_inf, Var)
+    assert isinstance(unit.R_inf, Param)
     assert isinstance(unit.effective_volume, Expression)
     assert isinstance(unit.flow_vol_slurry, Expression)
-    assert isinstance(unit.tau, Expression)
+    assert isinstance(unit.residence_time, Expression)
     assert isinstance(unit.kinetic_recovery_eq, Constraint)
 
 
@@ -185,17 +186,17 @@ def test_build_kinetic_cell_balance_mode_adds_cell_state():
     )
     unit = model.fs.unit
 
-    assert unit.config.recovery_basis == "kinetic_cell_balance"
+    assert unit.config.recovery_basis == RecoveryBasis.kinetic_cell_balance
     assert unit.default_initializer is FlotationBankKineticCellBalanceInitializer
     assert isinstance(unit.recovery, Var)
     assert isinstance(unit.cell_volume, Var)
-    assert isinstance(unit.air_holdup, Var)
+    assert isinstance(unit.volume_frac_air, Var)
     assert isinstance(unit.pulp_solids_mass_fraction, Var)
     assert isinstance(unit.k_cb, Var)
     assert isinstance(unit.cell_total_solid_holdup, Var)
     assert isinstance(unit.cell_solid_holdup, Var)
-    assert isinstance(unit.cell_pulp_out_flow, Var)
-    assert isinstance(unit.cell_float_flow, Var)
+    assert isinstance(unit.cell_pulp_out_flow_mass_comp, Var)
+    assert isinstance(unit.cell_flotation_flow_mass_comp, Var)
     assert isinstance(unit.rho_slurry, Expression)
     assert isinstance(unit.geometric_holdup_eq, Constraint)
     assert isinstance(unit.recovery_eq, Constraint)
@@ -206,8 +207,8 @@ def test_build_kinetic_cell_balance_mode_adds_cell_state():
     assert unit._well_mixed_omitted_component == "inert_gangue"
     assert unit._zero_feed_recovery_fixes == set()
     assert unit.cell_volume.lb == pytest.approx(1e-6)
-    assert unit.air_holdup.lb == pytest.approx(0)
-    assert unit.air_holdup.ub == pytest.approx(0.5)
+    assert unit.volume_frac_air.lb == pytest.approx(0)
+    assert unit.volume_frac_air.ub == pytest.approx(0.5)
     assert unit.pulp_solids_mass_fraction.lb == pytest.approx(1e-3)
     assert unit.pulp_solids_mass_fraction.ub == pytest.approx(1 - 1e-3)
     assert unit.k_cb[0, "REO"].lb == pytest.approx(0)
@@ -226,11 +227,11 @@ def test_number_of_cells_unused_in_fixed_mode_equations():
     assert unit.config.number_of_cells == 12
     for attr in (
         "cell_volume",
-        "air_holdup",
+        "volume_frac_air",
         "pulp_solids_mass_fraction",
         "k_cf",
         "R_inf",
-        "tau",
+        "residence_time",
         "effective_volume",
         "flow_vol_slurry",
         "kinetic_recovery_eq",
@@ -275,32 +276,61 @@ def test_kinetic_cell_balance_exception_construction():
 
 
 @pytest.mark.unit
-def test_kinetic_cell_balance_rejects_dynamic_flowsheet():
+@pytest.mark.parametrize(
+    "recovery_basis",
+    [
+        RecoveryBasis.fixed,
+        RecoveryBasis.kinetic_closed_form,
+        RecoveryBasis.kinetic_cell_balance,
+    ],
+)
+def test_flotation_bank_rejects_dynamic_true(recovery_basis):
     m = ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=True, time_set=[0, 1], time_units=units.hour)
+    m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties = BastnaesiteParameters()
 
-    with pytest.raises(ConfigurationError, match="steady-state"):
+    with pytest.raises(ValueError, match="dynamic"):
         m.fs.unit = FlotationBank(
             property_package=m.fs.properties,
-            recovery_basis="kinetic_cell_balance",
+            recovery_basis=recovery_basis,
+            dynamic=True,
         )
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("has_holdup", [True, False, useDefault])
-def test_kinetic_cell_balance_does_not_validate_has_holdup(has_holdup):
+@pytest.mark.parametrize(
+    "recovery_basis",
+    [
+        RecoveryBasis.fixed,
+        RecoveryBasis.kinetic_closed_form,
+        RecoveryBasis.kinetic_cell_balance,
+    ],
+)
+def test_flotation_bank_rejects_has_holdup_true(recovery_basis):
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.properties = BastnaesiteParameters()
+
+    with pytest.raises(ValueError, match="has_holdup"):
+        m.fs.unit = FlotationBank(
+            property_package=m.fs.properties,
+            recovery_basis=recovery_basis,
+            has_holdup=True,
+        )
+
+
+@pytest.mark.unit
+def test_flotation_bank_accepts_default_steady_holdup_config():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties = BastnaesiteParameters()
     m.fs.unit = FlotationBank(
         property_package=m.fs.properties,
         recovery_basis="kinetic_cell_balance",
-        has_holdup=has_holdup,
     )
 
-    expected = False if has_holdup is useDefault else has_holdup
-    assert m.fs.unit.config.has_holdup is expected
+    assert m.fs.unit.config.dynamic is False
+    assert m.fs.unit.config.has_holdup is False
 
 
 @pytest.mark.unit
@@ -437,13 +467,38 @@ def test_scaler_sets_kinetic_cell_balance_factors_without_init():
     scaler.constraint_scaling_routine(bank)
 
     assert get_scaling_factor(bank.cell_solid_holdup[0, 1, "REO"]) > 0
-    assert get_scaling_factor(bank.cell_pulp_out_flow[0, 1, "REO"]) > 0
+    assert get_scaling_factor(bank.cell_pulp_out_flow_mass_comp[0, 1, "REO"]) > 0
     assert get_scaling_factor(bank.k_cb[0, "REO"]) > 0
     assert get_scaling_factor(bank.cell_total_solid_holdup[0, 1]) > 0
     assert get_scaling_factor(bank.well_mixed_eq[0, 1, "REO"]) > 0
     assert get_scaling_factor(bank.flotation_removal_eq[0, 1, "REO"]) > 0
     assert get_scaling_factor(bank.geometric_holdup_eq[0, 1]) > 0
     assert get_scaling_factor(bank.recovery_eq[0, "REO"]) > 0
+
+    geometric_scaling = get_scaling_factor(bank.geometric_holdup_eq[0, 1])
+    bank.cell_total_solid_holdup[0, 1].set_value(1e9)
+    scaler.constraint_scaling_routine(bank, overwrite=True)
+    assert get_scaling_factor(bank.geometric_holdup_eq[0, 1]) == pytest.approx(
+        geometric_scaling
+    )
+
+
+@pytest.mark.unit
+def test_cell_balance_constraint_scaling_requires_variable_scaling():
+    model = _bank_model(
+        fix_recoveries=False,
+        recovery_basis="kinetic_cell_balance",
+        number_of_cells=2,
+    )
+    bank = model.fs.unit
+    _fix_cell_balance_inputs(bank)
+
+    scaler = FlotationBankScaler()
+    scaler.variable_scaling_routine(bank)
+    del_scaling_factor(bank.cell_total_solid_holdup[0, 1])
+
+    with pytest.raises(ConfigurationError, match="Missing scaling factor"):
+        scaler.constraint_scaling_routine(bank)
 
 
 @pytest.mark.unit
@@ -457,7 +512,7 @@ def test_kinetic_recovery_one_cell():
 
     unit.default_initializer().initialize(unit)
 
-    assert value(unit.tau[0]) == pytest.approx(2.0)
+    assert value(unit.residence_time[0]) == pytest.approx(2.0)
     expected = 1.5 * 2.0 / (1 + 1.5 * 2.0)
     assert value(unit.recovery[0, "REO"]) == pytest.approx(expected)
 
@@ -478,39 +533,36 @@ def test_kinetic_recovery_intermediate_cell_counts(number_of_cells):
 
     expected = 1 - (
         1
-        + value(unit.k_cf[0, "REO"]) * value(unit.tau[0]) / unit.config.number_of_cells
+        + value(unit.k_cf[0, "REO"])
+        * value(unit.residence_time[0])
+        / unit.config.number_of_cells
     ) ** (-unit.config.number_of_cells)
     assert value(unit.recovery[0, "REO"]) == pytest.approx(expected)
 
 
 @pytest.mark.unit
-def test_tau_responds_to_throughput():
+def test_residence_time_responds_to_throughput():
     model = _bank_model(
         fix_recoveries=False,
         recovery_basis="kinetic_closed_form",
         fix_kinetic=True,
     )
     unit = model.fs.unit
-    base_tau = value(unit.tau[0])
+    base_residence_time = value(unit.residence_time[0])
 
     for component, flow in FEED.items():
         unit.inlet.flow_mass_comp[0, component].set_value(2 * flow)
 
-    assert value(unit.tau[0]) == pytest.approx(base_tau / 2)
+    assert value(unit.residence_time[0]) == pytest.approx(base_residence_time / 2)
 
 
 @pytest.mark.unit
-def test_R_inf_is_fixed_var_for_current_kinetic_model():
+def test_R_inf_is_mutable_param_for_current_kinetic_model():
     model = _bank_model(fix_recoveries=False, recovery_basis="kinetic_closed_form")
 
-    assert model.fs.unit.R_inf[0, "REO"].fixed
-    assert model.fs.unit.R_inf[0, "REO"].lb == pytest.approx(0.0)
-    # Upper bound is intentionally 1 + 1e-8 (not exactly 1.0) so that the
-    # default fixed-at-one R_inf does not trigger a diagnostics warning.
-    assert model.fs.unit.R_inf[0, "REO"].ub == pytest.approx(1 + 1e-8, abs=1e-12)
+    assert isinstance(model.fs.unit.R_inf, Param)
     assert value(model.fs.unit.R_inf[0, "REO"]) == pytest.approx(1.0)
 
-    model.fs.unit.R_inf[0, "REO"].unfix()
     model.fs.unit.R_inf[0, "REO"].set_value(0.5)
     assert value(model.fs.unit.R_inf[0, "REO"]) == pytest.approx(0.5)
 
@@ -587,9 +639,11 @@ def test_kinetic_recovery_twelve_cells():
     _fix_kinetic_inputs(unit, tau_h=tau_h, k_per_h=k_per_h)
 
     unit.default_initializer().initialize(unit)
-    expected = 1 - (1 + value(unit.k_cf[0, "REO"]) * value(unit.tau[0]) / 12) ** -12
+    expected = (
+        1 - (1 + value(unit.k_cf[0, "REO"]) * value(unit.residence_time[0]) / 12) ** -12
+    )
 
-    assert value(unit.tau[0]) == pytest.approx(tau_h)
+    assert value(unit.residence_time[0]) == pytest.approx(tau_h)
     assert expected == pytest.approx(target_recovery)
     assert value(unit.recovery[0, "REO"]) == pytest.approx(target_recovery)
 
@@ -607,7 +661,9 @@ def test_kinetic_plug_flow_limit():
 
     tanks_in_series = 1 - (
         1
-        + value(unit.k_cf[0, "REO"]) * value(unit.tau[0]) / unit.config.number_of_cells
+        + value(unit.k_cf[0, "REO"])
+        * value(unit.residence_time[0])
+        / unit.config.number_of_cells
     ) ** (-unit.config.number_of_cells)
 
     assert tanks_in_series == pytest.approx(1 - 2.718281828459045**-0.5, abs=1e-3)
@@ -804,7 +860,7 @@ def test_no_numerical_warnings_kinetic_bank():
         recovery_basis="kinetic_closed_form",
         fix_kinetic=True,
     )
-    model.fs.unit.air_holdup.fix(0.1)
+    model.fs.unit.volume_frac_air.fix(0.1)
     model.fs.unit.cell_volume.fix(
         2.0 * value(model.fs.unit.flow_vol_slurry[0]) / (1 - 0.1)
     )
@@ -991,7 +1047,7 @@ def test_scaler_sets_kinetic_closed_form_factors():
 
     assert get_scaling_factor(bank.k_cf[0, "REO"]) > 0
     assert get_scaling_factor(bank.cell_volume) > 0
-    assert get_scaling_factor(bank.air_holdup) > 0
+    assert get_scaling_factor(bank.volume_frac_air) > 0
     assert get_scaling_factor(bank.pulp_solids_mass_fraction) > 0
     assert get_scaling_factor(bank.kinetic_recovery_eq[0, "REO"]) > 0
 
@@ -1053,9 +1109,9 @@ def test_staged_and_analytical_initializers_agree():
                 abs=1e-9,
             )
             assert value(
-                s_unit.cell_pulp_out_flow[0, cell, component]
+                s_unit.cell_pulp_out_flow_mass_comp[0, cell, component]
             ) == pytest.approx(
-                value(a_unit.cell_pulp_out_flow[0, cell, component]),
+                value(a_unit.cell_pulp_out_flow_mass_comp[0, cell, component]),
                 rel=1e-5,
                 abs=1e-9,
             )

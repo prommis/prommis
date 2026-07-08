@@ -12,17 +12,17 @@ closed-form tanks-in-series kinetic recovery model
 is constrained by the tanks-in-series form of the Garcia-Zuniga first-order
 flotation rate law:
 
-    R = R_inf * (1 - (1 + k_cf * tau / N)^(-N))
+    R = R_inf * (1 - (1 + k_cf * residence_time / N)^(-N))
 
 where ``k_cf`` is the apparent first-order flotation rate constant calibrated
-against a flow-proportional cell inventory, ``tau`` is the apparent slurry
-residence time inferred from bank geometry and inlet pulp density, and ``N``
-is the number of perfectly mixed cells in series
+against a flow-proportional cell inventory, ``residence_time`` is the apparent
+slurry residence time inferred from bank geometry and inlet pulp density, and
+``N`` is the number of perfectly mixed cells in series
 
 The fitted rate constants are loaded from
 ``mountain_pass_kinetic_closed_form_parameters.json`` and are tied to the
 ``table1_product_fit`` scenario basis, bank-local pulp-density assumptions,
-air holdup, and cell geometry.
+air volume fraction, and cell geometry.
 
 References:
 
@@ -234,7 +234,7 @@ def set_model_inputs(model, feed_scale=1.0):
         bank = getattr(model.fs, bank_name)
         bank.rho_water.set_value(rho_water)
         bank.cell_volume.fix(bank_parameters["cell_volume"] * units.m**3)
-        bank.air_holdup.fix(bank_parameters["air_holdup"])
+        bank.volume_frac_air.fix(bank_parameters["air_holdup"])
         bank.pulp_solids_mass_fraction.fix(bank_parameters["pulp_solids_mass_fraction"])
         for time in model.fs.time:
             for component in COMPONENTS:
@@ -302,7 +302,7 @@ def kinetic_summary(model, time=0):
         bank = getattr(model.fs, bank_name)
         summary[bank_name] = {
             "number_of_cells": bank.config.number_of_cells,
-            "tau_min": value(bank.tau[time]) * 60.0,
+            "residence_time_min": value(bank.residence_time[time]) * 60.0,
             "Q_slurry_m3_per_min": value(bank.flow_vol_slurry[time]) / 60.0,
             "k_cf_per_min": {
                 component: value(bank.k_cf[time, component]) / 60.0
@@ -327,12 +327,12 @@ def print_results(model, time=0):
     """Print product metrics and per-bank kinetic diagnostics."""
     recovery_flowsheet.print_results(model, time=time)
     print("\nKinetic bank summary:")
-    print("  Bank              N      tau (min)      k_REO (1/min)")
+    print("  Bank              N  residence (min)   k_REO (1/min)")
     for bank_name, bank_summary in kinetic_summary(model, time=time).items():
         print(
             f"  {bank_name:<14} "
             f"{bank_summary['number_of_cells']:>2} "
-            f"{bank_summary['tau_min']:>14.6f} "
+            f"{bank_summary['residence_time_min']:>14.6f} "
             f"{bank_summary['k_cf_per_min']['REO']:>16.6f}"
         )
 

@@ -16,7 +16,7 @@ in component holdup:
 
 where ``k_cb`` is the cell-balance first-order flotation rate constant
 calibrated against a fixed-inventory CSTR cascade (geometric solid inventory
-set by cell volume, air holdup, and pulp density), and ``M[i, j]`` is the
+set by cell volume, air volume fraction, and pulp density), and ``M[i, j]`` is the
 component solid holdup in cell ``i`` determined by the well-mixed closure and
 the geometric holdup equation.
 
@@ -259,7 +259,7 @@ def set_model_inputs(model, feed_scale=1.0):
         bank.rho_water.set_value(rho_water)
         bank.rho_solid.set_value(bank_parameters["rho_solid"])
         bank.cell_volume.fix(bank_parameters["cell_volume"] * units.m**3)
-        bank.air_holdup.fix(bank_parameters["air_holdup"])
+        bank.volume_frac_air.fix(bank_parameters["air_holdup"])
         bank.pulp_solids_mass_fraction.fix(bank_parameters["pulp_solids_mass_fraction"])
         for time in model.fs.time:
             for component in COMPONENTS:
@@ -424,11 +424,11 @@ def cell_balance_summary(model, time=0):
                 for component in COMPONENTS
             )
             float_total = sum(
-                _safe_float(bank.cell_float_flow[time, cell, component])
+                _safe_float(bank.cell_flotation_flow_mass_comp[time, cell, component])
                 for component in COMPONENTS
             )
             pulp_out_total = sum(
-                _safe_float(bank.cell_pulp_out_flow[time, cell, component])
+                _safe_float(bank.cell_pulp_out_flow_mass_comp[time, cell, component])
                 for component in COMPONENTS
             )
             cells.append(
@@ -474,7 +474,7 @@ def print_results(model, time=0):
     """Print product metrics and per-bank cell-balance diagnostics."""
     recovery_flowsheet.print_results(model, time=time)
     print("\nKinetic cell-balance bank summary:")
-    print("  Bank              N   tau bank (min)   audit walk")
+    print("  Bank              N  residence (min)   audit walk")
     for bank_name, bank_summary in cell_balance_summary(model, time=time).items():
         print(
             f"  {bank_name:<14} "

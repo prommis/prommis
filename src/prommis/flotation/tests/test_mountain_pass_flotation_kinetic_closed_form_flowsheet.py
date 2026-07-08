@@ -96,8 +96,12 @@ def test_runtime_basis_matches_calibration_basis_pre_solve():
         scaled_bank = getattr(scaled.fs, bank_name)
         expected_tau_h = bank_parameters["tau_required_min"] / 60
 
-        assert value(base_bank.tau[0]) == pytest.approx(expected_tau_h, rel=1e-4)
-        assert value(scaled_bank.tau[0]) == pytest.approx(expected_tau_h / 2, rel=1e-4)
+        assert value(base_bank.residence_time[0]) == pytest.approx(
+            expected_tau_h, rel=1e-4
+        )
+        assert value(scaled_bank.residence_time[0]) == pytest.approx(
+            expected_tau_h / 2, rel=1e-4
+        )
         assert value(scaled_bank.k_cf[0, "REO"]) == pytest.approx(
             value(base_bank.k_cf[0, "REO"])
         )
@@ -279,7 +283,7 @@ def test_derived_tau_matches_calibration():
     kinetic_parameters = kinetic.load_kinetic_parameters()
     for bank_name, bank_parameters in kinetic_parameters["banks"].items():
         bank = getattr(model.fs, bank_name)
-        assert value(bank.tau[0]) * 60 == pytest.approx(
+        assert value(bank.residence_time[0]) * 60 == pytest.approx(
             bank_parameters["tau_required_min"],
             abs=1e-3,
         )
@@ -296,7 +300,9 @@ def test_feed_scale_changes_tau_not_k():
 
     base_rougher = base.fs.rougher
     scaled_rougher = scaled.fs.rougher
-    assert value(scaled_rougher.tau[0]) < value(base_rougher.tau[0])
+    assert value(scaled_rougher.residence_time[0]) < value(
+        base_rougher.residence_time[0]
+    )
     for component in COMPONENTS:
         assert value(scaled_rougher.recovery[0, component]) < value(
             base_rougher.recovery[0, component]

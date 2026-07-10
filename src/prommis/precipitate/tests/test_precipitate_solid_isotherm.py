@@ -34,3 +34,4 @@ def test_build():
 
     for j in m.fs.prec_solid.component_list:
         assert m.fs.state[0].flow_mol_comp[j].fixed
+

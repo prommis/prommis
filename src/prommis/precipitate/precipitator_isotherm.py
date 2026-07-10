@@ -15,7 +15,7 @@ The Precipitator Unit Model represents an Equilibrium reactor unit model with th
 Configuration Arguments
 -----------------------
 
-The precipitator unit model needs an aqueous property package which includes stoichiometric values for solids being
+The precipitator unit model needs the aqueous, solid, and reaction property packages which include stoichiometric values for solids being
 created in the precipitator and the parameters used in the equilibrium equation.
 
 Model Structure
@@ -37,7 +37,7 @@ estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxal
 
 """
 
-from pyomo.common.config import Bool, ConfigDict, ConfigValue
+from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
 
 from pyomo.environ import (
     Param,
@@ -157,16 +157,16 @@ StreamCONFIG.declare(
     "has_energy_balance",
     ConfigValue(
         default=False,
-        domain=Bool,
-        doc="Bool indicating whether to include energy balance for stream. Default=True.",
+        domain=In([False]),
+        doc="Bool indicating whether to include energy balance for stream. Must be false",
     ),
 )
 StreamCONFIG.declare(
     "has_pressure_balance",
     ConfigValue(
-        default=True,
-        domain=Bool,
-        doc="Bool indicating whether to include pressure balance for stream. Default=True.",
+        default=False,
+        domain=In([False]),
+        doc="Bool indicating whether to include pressure balance for stream. Must be false",
     ),
 )
 
@@ -277,6 +277,15 @@ class OxalatePrecipitatorData(UnitModelBlockData):
         self.aqueous_outlet = Port(extends=self.mscontactor.liquid_outlet)
         self.precipitate_outlet = Port(extends=self.mscontactor.solid_outlet)
 
+        @self.Expression(
+            self.flowsheet().time,
+            doc="Oxalic acid dosage",
+        )
+        def oxalic_acid_dosage(blk, t):
+            return blk.aqueous_inlet.conc_mass_comp[0, "H2C2O4"] / (
+                1000 * pyunits.mg / pyunits.l
+            )
+
         @self.Constraint(self.flowsheet().time, doc="Hydraulic retention time equation")
         def eq_hydraulic_retention(blk, t):
             return blk.hydraulic_retention_time[t] * pyunits.convert(
@@ -295,7 +304,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
                 - (
                     blk.conversion[r]
                     * blk.mscontactor.liquid_inlet_state[t].flow_mol_comp[
-                        blk.mscontactor.config.streams.solid.property_package.react[r]
+                        blk.mscontactor.config.streams.solid.property_package.reaction_to_element[r]
                     ]
                 )
             )
@@ -316,13 +325,8 @@ class OxalatePrecipitatorData(UnitModelBlockData):
                         ** blk.config.reaction_package.N_D[r]
                     )
                 ) / (
-                    (
-                        (
-                            (blk.aqueous_inlet.conc_mass_comp[0, "H2C2O4"])
-                            / (1000 * pyunits.mg / pyunits.l)
-                        )
+                        blk.oxalic_acid_dosage[t]
                         ** blk.config.reaction_package.N_D[r]
-                    )
                 )
 
         @self.Constraint(self.flowsheet().time, doc="temperature equation")
@@ -351,8 +355,10 @@ class OxalatePrecipitatorData(UnitModelBlockData):
                 == 1e-9 * pyunits.mole / pyunits.hour
             )
 
-    def calculate_scaling_factors(self):
-        super().calculate_scaling_factors()
+    def scale_model(self):
+        """
+        Apply scaling factors to improve solver performance.
+        """
 
         iscale.set_scaling_factor(self.hydraulic_retention_time, 1e0)
         iscale.set_scaling_factor(self.conversion, 1e1)
@@ -374,4 +380,5 @@ class OxalatePrecipitatorData(UnitModelBlockData):
         var_dict["Unit Height"] = self.height
         var_dict["Unit Diameter"] = self.diameter
         expr_dict["Surface Area"] = self.surface_area
+        expr_dict["Oxalic Acid Dosage"] = self.oxalic_acid_dosage[time_point]
         return {"vars": var_dict, "params": param_dict, "exprs": expr_dict}

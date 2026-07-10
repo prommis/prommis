@@ -18,6 +18,11 @@ precipitation unit model.
 from pyomo.common.config import ConfigValue
 from pyomo.environ import Constraint, Param, Set, Var, units
 
+from idaes.core.util.config import (
+    is_physical_parameter_block,
+    is_reaction_parameter_block,
+)
+
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
 from idaes.core.base import property_meta
 from idaes.core.util.misc import add_object_reference
@@ -57,73 +62,33 @@ class OxalatePrecipitationLeachingReactionsData(
 
         self._reaction_block_class = OxalatePrecipitationReactionsBlock
 
-        self.reaction_idx = Set(
-            initialize=[
-                "Al2(C2O4)3(s)",
-                "Fe2(C2O4)3(s)",
-                "Ca(C2O4)(s)",
-                "Sc2(C2O4)3(s)",
-                "Y2(C2O4)3(s)",
-                "La2(C2O4)3(s)",
-                "Ce2(C2O4)3(s)",
-                "Pr2(C2O4)3(s)",
-                "Nd2(C2O4)3(s)",
-                "Sm2(C2O4)3(s)",
-                "Gd2(C2O4)3(s)",
-                "Dy2(C2O4)3(s)",
-            ]
-        )
+        trivalent_list = ["Al", "Fe", "Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
+        divalent_list = ["Ca"]
+        element_list = trivalent_list + divalent_list
 
-        self.reaction_stoichiometry = {
-            ("Al2(C2O4)3(s)", "liquid", "Al"): 2,
-            ("Al2(C2O4)3(s)", "liquid", "H2C2O4"): 3,
-            ("Al2(C2O4)3(s)", "solid", "Al2(C2O4)3(s)"): -1,
-            ("Al2(C2O4)3(s)", "liquid", "H"): -6,
-            ("Fe2(C2O4)3(s)", "liquid", "Fe"): 2,
-            ("Fe2(C2O4)3(s)", "liquid", "H2C2O4"): 3,
-            ("Fe2(C2O4)3(s)", "solid", "Fe2(C2O4)3(s)"): -1,
-            ("Fe2(C2O4)3(s)", "liquid", "H"): -6,
-            ("Ca(C2O4)(s)", "liquid", "Ca"): 1,
-            ("Ca(C2O4)(s)", "liquid", "H2C2O4"): 1,
-            ("Ca(C2O4)(s)", "solid", "Ca(C2O4)(s)"): -1,
-            ("Ca(C2O4)(s)", "liquid", "H"): -2,
-            ("Sc2(C2O4)3(s)", "liquid", "Sc"): 2,
-            ("Sc2(C2O4)3(s)", "liquid", "H2C2O4"): 3,
-            ("Sc2(C2O4)3(s)", "solid", "Sc2(C2O4)3(s)"): -1,
-            ("Sc2(C2O4)3(s)", "liquid", "H"): -6,
-            ("Y2(C2O4)3(s)", "liquid", "Y"): 2,
-            ("Y2(C2O4)3(s)", "liquid", "H2C2O4"): 3,
-            ("Y2(C2O4)3(s)", "solid", "Y2(C2O4)3(s)"): -1,
-            ("Y2(C2O4)3(s)", "liquid", "H"): -6,
-            ("La2(C2O4)3(s)", "liquid", "La"): 2,
-            ("La2(C2O4)3(s)", "liquid", "H2C2O4"): 3,
-            ("La2(C2O4)3(s)", "solid", "La2(C2O4)3(s)"): -1,
-            ("La2(C2O4)3(s)", "liquid", "H"): -6,
-            ("Ce2(C2O4)3(s)", "liquid", "Ce"): 2,
-            ("Ce2(C2O4)3(s)", "liquid", "H2C2O4"): 3,
-            ("Ce2(C2O4)3(s)", "solid", "Ce2(C2O4)3(s)"): -1,
-            ("Ce2(C2O4)3(s)", "liquid", "H"): -6,
-            ("Pr2(C2O4)3(s)", "liquid", "Pr"): 2,
-            ("Pr2(C2O4)3(s)", "liquid", "H2C2O4"): 3,
-            ("Pr2(C2O4)3(s)", "solid", "Pr2(C2O4)3(s)"): -1,
-            ("Pr2(C2O4)3(s)", "liquid", "H"): -6,
-            ("Nd2(C2O4)3(s)", "liquid", "Nd"): 2,
-            ("Nd2(C2O4)3(s)", "liquid", "H2C2O4"): 3,
-            ("Nd2(C2O4)3(s)", "solid", "Nd2(C2O4)3(s)"): -1,
-            ("Nd2(C2O4)3(s)", "liquid", "H"): -6,
-            ("Sm2(C2O4)3(s)", "liquid", "Sm"): 2,
-            ("Sm2(C2O4)3(s)", "liquid", "H2C2O4"): 3,
-            ("Sm2(C2O4)3(s)", "solid", "Sm2(C2O4)3(s)"): -1,
-            ("Sm2(C2O4)3(s)", "liquid", "H"): -6,
-            ("Gd2(C2O4)3(s)", "liquid", "Gd"): 2,
-            ("Gd2(C2O4)3(s)", "liquid", "H2C2O4"): 3,
-            ("Gd2(C2O4)3(s)", "solid", "Gd2(C2O4)3(s)"): -1,
-            ("Gd2(C2O4)3(s)", "liquid", "H"): -6,
-            ("Dy2(C2O4)3(s)", "liquid", "Dy"): 2,
-            ("Dy2(C2O4)3(s)", "liquid", "H2C2O4"): 3,
-            ("Dy2(C2O4)3(s)", "solid", "Dy2(C2O4)3(s)"): -1,
-            ("Dy2(C2O4)3(s)", "liquid", "H"): -6,
-        }
+        index_list = [f"{e}2(C2O4)3(s)" for e in trivalent_list] + [
+            f"{e}(C2O4)(s)" for e in divalent_list
+        ]
+
+        self.element_list = Set(initialize=element_list)
+        self.reaction_idx = Set(initialize=index_list)
+
+        reaction_stoichiometry = {}
+        for e in trivalent_list:
+            rxn = f"{e}2(C2O4)3(s)"
+            reaction_stoichiometry[(rxn, "liquid", e)] = 2
+            reaction_stoichiometry[(rxn, "liquid", "H2C2O4")] = 3
+            reaction_stoichiometry[(rxn, "solid", rxn)] = -1
+            reaction_stoichiometry[(rxn, "liquid", "H")] = -6
+
+        for e in divalent_list:
+            rxn = f"{e}(C2O4)(s)"
+            reaction_stoichiometry[(rxn, "liquid", e)] = 1
+            reaction_stoichiometry[(rxn, "liquid", "H2C2O4")] = 1
+            reaction_stoichiometry[(rxn, "solid", rxn)] = -1
+            reaction_stoichiometry[(rxn, "liquid", "H")] = -2
+
+        self.reaction_stoichiometry = reaction_stoichiometry
 
         # Equilibrium parameter (\epsilon) based on pH 1.5
         self.E_D = Param(
@@ -228,8 +193,6 @@ class OxalatePrecipitationReactionsData(ProcessBlockData):
     CONFIG.declare(
         "parameters",
         ConfigValue(
-            # TODO
-            # domain=is_reaction_parameter_block,
             description="""A reference to an instance of the Heterogeneous Reaction Parameter
     Block associated with this property package.""",
         ),

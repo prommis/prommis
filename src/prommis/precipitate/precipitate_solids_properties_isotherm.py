@@ -84,7 +84,7 @@ class PrecipitateParametersData(PhysicalParameterBlock):
 
         self.component_list = comp_list
 
-        self.react = {
+        self.reaction_to_element = {
             "Sc2(C2O4)3(s)": "Sc",
             "Y2(C2O4)3(s)": "Y",
             "La2(C2O4)3(s)": "La",
@@ -172,7 +172,7 @@ class PrecipitateStateBlockData(StateBlockData):
             self.params.component_list,
             units=units.mol / units.hour,
             initialize=1e-5,
-            bounds=(1e-20, None),
+            bounds=(1e-25, None),
         )
 
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)

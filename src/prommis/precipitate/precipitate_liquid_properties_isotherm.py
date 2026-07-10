@@ -77,6 +77,56 @@ class AqueousParameterData(PhysicalParameterBlock):
         self.Gd = Component()
         self.Dy = Component()
 
+        # Equilibrium parameter (\epsilon) based on pH 1.5
+        self.E_D = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "H2O": 100,
+                "Sc": 6.42030,
+                "Y": 4.551786,
+                "La": 4.3717,
+                "Ce": 1.18848,
+                "Pr": 2.09604,
+                "Nd": 1.01030,
+                "Sm": 2.296176,
+                "Gd": 3.07276,
+                "Dy": 4.8608,
+                "Al": 50,
+                "Ca": 14.49274,
+                "Fe": 8.659561,
+                "H": 100,
+                "Cl": 100,
+                "HSO4": 100,
+                "SO4": 100,
+            },
+        )
+
+        # Equilibrium parameter (n_{DA}) based on pH 1.5
+        self.N_D = Param(
+            self.component_list,
+            units=units.dimensionless,
+            initialize={
+                "H2O": 100,
+                "Sc": 6.42030,
+                "Y": 4.67403,
+                "La": 4.6340,
+                "Ce": 2.737238,
+                "Pr": 3.44364,
+                "Nd": 2.419137,
+                "Sm": 3.7201,
+                "Gd": 4.1995,
+                "Dy": 4.73106,
+                "Al": 0.9,
+                "Ca": 4.45302,
+                "Fe": 3.6495,
+                "H": 100,
+                "Cl": 100,
+                "HSO4": 100,
+                "SO4": 100,
+            },
+        )
+
         self.mw = Param(
             self.component_list,
             units=units.kg / units.mol,
@@ -186,20 +236,20 @@ class AqueousStateBlockData(StateBlockData):
             self.params.dissolved_elements,
             units=units.mg / units.L,
             initialize=1e-5,
-            bounds=(1e-20, None),
+            bounds=(1e-25, None),
         )
         self.flow_mol_comp = Var(
             self.params.dissolved_elements,
             units=units.mol / units.hour,
             initialize=1e-5,
-            bounds=(1e-20, None),
+            bounds=(1e-25, None),
         )
 
         self.conc_mol_comp = Var(
             self.params.dissolved_elements,
             units=units.mol / units.L,
             initialize=1e-5,
-            bounds=(1e-20, None),
+            bounds=(1e-25, None),
         )
 
         self.temperature = Var(

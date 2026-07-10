@@ -62,7 +62,19 @@ class OxalatePrecipitationLeachingReactionsData(
 
         self._reaction_block_class = OxalatePrecipitationReactionsBlock
 
-        trivalent_list = ["Al", "Fe", "Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
+        trivalent_list = [
+            "Al",
+            "Fe",
+            "Sc",
+            "Y",
+            "La",
+            "Ce",
+            "Pr",
+            "Nd",
+            "Sm",
+            "Gd",
+            "Dy",
+        ]
         divalent_list = ["Ca"]
         element_list = trivalent_list + divalent_list
 

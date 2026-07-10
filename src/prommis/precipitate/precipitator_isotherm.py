@@ -304,7 +304,9 @@ class OxalatePrecipitatorData(UnitModelBlockData):
                 - (
                     blk.conversion[r]
                     * blk.mscontactor.liquid_inlet_state[t].flow_mol_comp[
-                        blk.mscontactor.config.streams.solid.property_package.reaction_to_element[r]
+                        blk.mscontactor.config.streams.solid.property_package.reaction_to_element[
+                            r
+                        ]
                     ]
                 )
             )
@@ -324,10 +326,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
                         (blk.config.reaction_package.E_D[r])
                         ** blk.config.reaction_package.N_D[r]
                     )
-                ) / (
-                        blk.oxalic_acid_dosage[t]
-                        ** blk.config.reaction_package.N_D[r]
-                )
+                ) / (blk.oxalic_acid_dosage[t] ** blk.config.reaction_package.N_D[r])
 
         @self.Constraint(self.flowsheet().time, doc="temperature equation")
         def temp_constraint(blk, t):

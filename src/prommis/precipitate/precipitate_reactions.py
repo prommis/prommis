@@ -18,11 +18,6 @@ precipitation unit model.
 from pyomo.common.config import ConfigValue
 from pyomo.environ import Constraint, Param, Set, Var, units
 
-from idaes.core.util.config import (
-    is_physical_parameter_block,
-    is_reaction_parameter_block,
-)
-
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
 from idaes.core.base import property_meta
 from idaes.core.util.misc import add_object_reference

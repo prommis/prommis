@@ -7,10 +7,7 @@
 import pytest
 from pyomo.environ import (
     ConcreteModel,
-    assert_optimal_termination,
     value,
-    SolverFactory,
-    TransformationFactory,
 )
 from pyomo.util.check_units import assert_units_consistent
 
@@ -25,7 +22,6 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
-from idaes.core.util.scaling import unscaled_variables_generator
 
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters

@@ -37,7 +37,7 @@ estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxal
 
 """
 
-from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
+from pyomo.common.config import ConfigDict, ConfigValue, In
 
 from pyomo.environ import (
     Param,

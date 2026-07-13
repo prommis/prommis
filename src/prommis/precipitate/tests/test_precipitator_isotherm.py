@@ -164,6 +164,11 @@ class TestPrec(object):
     def test_dof(self, prec):
         assert degrees_of_freedom(prec) == 0
 
+    @pytest.mark.unit
+    def test_structural_issues(self, prec):
+        dt = DiagnosticsToolbox(prec)
+        dt.assert_no_structural_warnings()
+
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
@@ -180,7 +185,6 @@ class TestPrec(object):
     def test_numerical_issues(self, prec):
         dt = DiagnosticsToolbox(prec)
         dt.assert_no_numerical_warnings()
-        dt.assert_no_structural_warnings()
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
@@ -197,7 +201,7 @@ class TestPrec(object):
                 (0, "Dy"): (2.3824, None, 1e-3),
                 (0, "Fe"): (9.7864, None, 1e-3),
                 (0, "Gd"): (0.4486, None, 1e-3),
-                (0, "La"): (1.5715, 1e-3, None),
+                (0, "La"): (1.5715, None, 1e-3),
                 (0, "Nd"): (0.1142, None, 1e-3),
                 (0, "Pr"): (0.2118, None, 1e-3),
                 (0, "Sc"): (6.3964, None, 1e-3),
@@ -380,6 +384,11 @@ class TestPrecRob(object):
     def test_dof(self, prec):
         assert degrees_of_freedom(prec) == 0
 
+    @pytest.mark.unit
+    def test_structural_issues(self, prec):
+        dt = DiagnosticsToolbox(prec)
+        dt.assert_no_structural_warnings()
+
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
@@ -396,7 +405,6 @@ class TestPrecRob(object):
     def test_numerical_issues(self, prec):
         dt = DiagnosticsToolbox(prec)
         dt.assert_no_numerical_warnings()
-        dt.assert_no_structural_warnings()
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
@@ -413,7 +421,7 @@ class TestPrecRob(object):
                 (0, "Dy"): (0.1380, None, 1e-3),
                 (0, "Fe"): (2.0863, None, 1e-3),
                 (0, "Gd"): (0.0327, None, 1e-3),
-                (0, "La"): (0.0924, 1e-3, None),
+                (0, "La"): (0.0924, None, 1e-3),
                 (0, "Nd"): (0.0250, None, 1e-3),
                 (0, "Pr"): (0.0254, None, 1e-3),
                 (0, "Sc"): (0.1791, None, 1e-3),

@@ -15,8 +15,30 @@ The Precipitator Unit Model represents an Equilibrium reactor unit model with th
 Configuration Arguments
 -----------------------
 
-The precipitator unit model needs the aqueous, solid, and reaction property packages which include stoichiometric values for solids being
+The precipitator unit model needs the liquid, solid, and reaction property packages which include stoichiometric values for solids being
 created in the precipitator and the parameters used in the equilibrium equation.
+
+While the liquid, solid, and reaction property packages are included in this model, users should be able to modify or replace those
+property packages (e.g., by changing the values of equilibrium parameters) to customize the model for specific applications.
+
+- ``liquid_phase``: Configuration dictionary for the liquid (aqueous) phase, described below.
+- ``solid_phase``: Configuration dictionary for the solid (precipitate) phase, described below.
+- ``reaction_package``: Heterogeneous reaction package to use for precipitation. This package
+provides the stoichiometric and equilibrium parameters (e.g. E_D and N_D) used to
+calculate conversion for each precipitating species.
+- ``reaction_package_args``: Dict of arguments to be passed to the heterogeneous reaction
+package when it is constructed.
+- ``number_of_tanks``: Number of tanks (finite elements) to use when constructing the internal
+``MSContactor`` model. Default is 1.
+
+Each of ``liquid_phase`` and ``solid_phase`` accepts the following sub-arguments:
+
+- ``property_package``: Property package to use for the given phase. The default package from the parent model or flowsheet is used.
+- ``property_package_args``: Dict of arguments to use when constructing the property package for the given phase.
+- ``has_energy_balance``: Boolean indicating whether to include an energy balance for the
+given phase. Must be ``False``, as the Precipitator does not support energy balances.
+- ``has_pressure_balance``: Boolean indicating whether to include a pressure balance for the
+given phase. Must be ``False``, as the Precipitator does not support pressure balances.
 
 Model Structure
 ---------------
@@ -263,6 +285,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             initialize=0.5,
             units=pyunits.dimensionless,
             bounds=(1e-20, 0.999999),
+            doc="Conversion of each precipitation species",
         )
 
         self.min_conversion = Param(
@@ -354,7 +377,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
                 == 1e-9 * pyunits.mole / pyunits.hour
             )
 
-    def scale_model(self):
+    def calculate_scaling_factors(self):
         """
         Apply scaling factors to improve solver performance.
         """

@@ -23,8 +23,8 @@ from idaes.core.util.model_statistics import (
     number_variables,
 )
 
-from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
-from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitate_liquid_properties_isotherm import AqueousParameter
+from prommis.precipitate.precipitate_solids_properties_isotherm import PrecipitateParameters
 from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
 from prommis.precipitate.precipitator_isotherm import (
     OxalatePrecipitator,

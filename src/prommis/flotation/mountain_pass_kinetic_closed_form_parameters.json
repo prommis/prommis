@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "source": {
+    "scenario": "table1_product_fit",
+    "scenario_data_file": "mountain_pass_scenario_data.json",
+    "paper": "Pradip & Fuerstenau (2013), Mountain Pass flotation",
+    "tau_anchor": "rougher V_eff = 12 cells x 1.7 m^3 x (1 - 0.10) = 18.36 m^3"
+  },
+  "property_package": {
+    "rho_mass_comp_kg_per_m3": {
+      "REO": 5000.0,
+      "CaO": 2710.0,
+      "BaO": 4480.0,
+      "SrO": 3960.0,
+      "inert_gangue": 2650.0
+    }
+  },
+  "bank_constants": {
+    "rho_water_kg_per_m3": 1000.0
+  },
+  "basis": {
+    "figure_2_units": "t/shift",
+    "shift_duration_h": 11.0,
+    "plant_throughput_t_per_day": 1700.0,
+    "plant_dry_feed_kg_per_h": 70833.33333,
+    "json_fresh_feed_total_kg_per_h": 789.5,
+    "scale_jsonbasis_to_plant_h": 89.71923
+  },
+  "assumptions": {
+    "plant_throughput_t_per_day": 1700.0,
+    "tau_ratio_path": {
+      "scavenger": 1.5,
+      "cleaner1": 0.5,
+      "cleaner2": 0.5,
+      "cleaners34": 1.0
+    }
+  },
+  "units": {
+    "cell_volume": "m^3",
+    "tau_required": "min",
+    "k_cf": "1/min",
+    "Q_slurry": "m^3/min"
+  },
+  "banks": {
+    "cleaner1": {
+      "number_of_cells": 1,
+      "cell_volume": 4.46848,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.2,
+      "pulp_solids_mass_fraction": 0.5,
+      "tau_required_min": 2.65662,
+      "Q_slurry_m3_per_min": 1.34561,
+      "k_cf_per_min": {
+        "REO": 1.1114,
+        "CaO": 0.32585,
+        "BaO": 0.28166,
+        "SrO": 0.50306,
+        "inert_gangue": 0.45871
+      },
+      "R_ref": {
+        "BaO": 0.428,
+        "CaO": 0.464,
+        "REO": 0.747,
+        "SrO": 0.572,
+        "inert_gangue": 0.54927
+      }
+    },
+    "cleaner2": {
+      "number_of_cells": 1,
+      "cell_volume": 5.63313,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.2,
+      "pulp_solids_mass_fraction": 0.5,
+      "tau_required_min": 2.65662,
+      "Q_slurry_m3_per_min": 1.69633,
+      "k_cf_per_min": {
+        "REO": 0.28981,
+        "CaO": 0.6194,
+        "BaO": 1.04403,
+        "SrO": 0.57413,
+        "inert_gangue": 0.83783
+      },
+      "R_ref": {
+        "BaO": 0.735,
+        "CaO": 0.622,
+        "REO": 0.435,
+        "SrO": 0.604,
+        "inert_gangue": 0.69
+      }
+    },
+    "cleaners34": {
+      "number_of_cells": 1,
+      "cell_volume": 6.70099,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.2,
+      "pulp_solids_mass_fraction": 0.5,
+      "tau_required_min": 5.31325,
+      "Q_slurry_m3_per_min": 1.00895,
+      "k_cf_per_min": {
+        "REO": 0.10725,
+        "CaO": 0.00908,
+        "BaO": 0.00345,
+        "SrO": 0.01526,
+        "inert_gangue": 0.01637
+      },
+      "R_ref": {
+        "BaO": 0.018,
+        "CaO": 0.046,
+        "REO": 0.363,
+        "SrO": 0.075,
+        "inert_gangue": 0.08
+      }
+    },
+    "rougher": {
+      "number_of_cells": 12,
+      "cell_volume": 1.7,
+      "cell_volume_basis": "paper_anchored",
+      "air_holdup": 0.1,
+      "pulp_solids_mass_fraction": 0.325,
+      "tau_required_min": 5.31325,
+      "Q_slurry_m3_per_min": 3.45551,
+      "k_cf_per_min": {
+        "REO": 0.61319,
+        "CaO": 0.04408,
+        "BaO": 0.0365,
+        "SrO": 0.15142,
+        "inert_gangue": 0.06004
+      },
+      "R_ref": {
+        "BaO": 0.175,
+        "CaO": 0.207,
+        "REO": 0.944,
+        "SrO": 0.541,
+        "inert_gangue": 0.2701
+      }
+    },
+    "scavenger": {
+      "number_of_cells": 1,
+      "cell_volume": 8.38694,
+      "cell_volume_basis": "inferred_from_assumed_tau",
+      "air_holdup": 0.1,
+      "pulp_solids_mass_fraction": 0.325,
+      "tau_required_min": 7.96987,
+      "Q_slurry_m3_per_min": 0.9471,
+      "k_cf_per_min": {
+        "REO": 1.86615,
+        "CaO": 0.09859,
+        "BaO": 0.08864,
+        "SrO": 0.34623,
+        "inert_gangue": 0.14744
+      },
+      "R_ref": {
+        "BaO": 0.414,
+        "CaO": 0.44,
+        "REO": 0.937,
+        "SrO": 0.734,
+        "inert_gangue": 0.54024
+      }
+    }
+  }
+}

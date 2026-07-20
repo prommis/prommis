@@ -112,6 +112,8 @@ ie. at the mixer tank outlet point.
 
 """
 
+from collections import OrderedDict
+
 from pyomo.common.config import Bool, ConfigDict, ConfigValue, In
 from pyomo.environ import Block, Constraint, Param, units, value
 from pyomo.network import Port
@@ -521,3 +523,33 @@ class SolventExtractionData(UnitModelBlockData):
         self.aqueous_outlet = Port(extends=self.mscontactor.aqueous_outlet)
         self.organic_inlet = Port(extends=self.mscontactor.organic_inlet)
         self.organic_outlet = Port(extends=self.mscontactor.organic_outlet)
+
+    def _get_stream_table_contents(self, time_point=0):
+        return self.mscontactor._get_stream_table_contents(time_point)
+
+    def _get_performance_contents(self, time_point=0):
+
+        out = dict(vars=OrderedDict(), exprs=OrderedDict(), params=OrderedDict())
+        if self.config.has_holdup:
+            for e in self.mscontactor.elements:
+                out["vars"][f"Aqueous phase frac stage {e}"] = (
+                    self.mscontactor.volume_frac_stream[time_point, e, "aqueous"]
+                )
+
+        if self.config.create_hydrostatic_pressure_terms:
+            out["params"]["Stage base area"] = self.area_cross_stage
+            out["params"]["Elevation"] = self.elevation
+
+        # Add expressions
+        for j in self.config.heterogeneous_reaction_package.element_list:
+            expr = 1
+            for e in self.mscontactor.elements:
+                expr *= self.mscontactor.heterogeneous_reactions[
+                    time_point, e
+                ].distribution_coefficient[j]
+
+            out["exprs"][f"Geometric mean distribution coefficient {j}"] = expr ** (
+                1 / len(self.mscontactor.elements)
+            )
+
+        return out

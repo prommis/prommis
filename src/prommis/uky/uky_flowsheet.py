@@ -140,6 +140,25 @@ References:
 
 import logging
 
+from pyomo.common.collections import ComponentMap
+from pyomo.contrib.incidence_analysis import solve_strongly_connected_components
+from pyomo.environ import (
+    Block,
+    ConcreteModel,
+    Constraint,
+    Expression,
+    Objective,
+    Param,
+    Set,
+    TransformationFactory,
+    Var,
+    check_optimal_termination,
+    units,
+    value,
+)
+from pyomo.network import Arc, SequentialDecomposition
+from pyomo.util.subsystems import create_subsystem_block
+
 import idaes.logger as idaeslog
 from idaes.core import (
     FlowDirection,
@@ -151,15 +170,13 @@ from idaes.core import (
     UnitModelCostingBlock,
 )
 from idaes.core.initialization import BlockTriangularizationInitializer
-from idaes.core.scaling import CustomScalerBase, ConstraintScalingScheme
+from idaes.core.scaling import ConstraintScalingScheme, CustomScalerBase
 from idaes.core.scaling.util import get_scaling_factor, set_scaling_factor
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
-
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
-    ModularPropertiesScaler,
 )
 from idaes.models.unit_models.feed import Feed, FeedInitializer
 from idaes.models.unit_models.mixer import (
@@ -181,45 +198,22 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     get_prop,
 )
 
-from pyomo.common.collections import ComponentMap
-from pyomo.contrib.incidence_analysis import (
-    solve_strongly_connected_components,
-)
-from pyomo.environ import (
-    Block,
-    ConcreteModel,
-    Constraint,
-    Expression,
-    Objective,
-    Param,
-    Set,
-    TransformationFactory,
-    Var,
-    check_optimal_termination,
-    units,
-    value,
-)
-from pyomo.network import Arc, SequentialDecomposition
-from pyomo.util.subsystems import create_subsystem_block
-
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
+from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitator import Precipitator
+from prommis.properties import HClStrippingParameterBlock
 from prommis.properties.coal_refuse_properties import CoalRefuseParameters
 from prommis.properties.sulfuric_acid_leaching_properties import (
     SulfuricAcidLeachingParameters,
 )
-from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
-from prommis.properties import HClStrippingParameterBlock
-from prommis.properties.hcl_stripping_properties import HClStrippingPropertiesScaler
-from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-from prommis.precipitate.precipitator import Precipitator
+from prommis.properties.translator_hcl_leach import TranslatorHClLeach
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import (
     SolventExtraction,
     SolventExtractionInitializer,
 )
-
-from prommis.properties.translator_hcl_leach import TranslatorHClLeach
 from prommis.solvent_extraction.solvent_extraction_reaction_package import (
     SolventExtractionReactions,
 )
@@ -749,14 +743,16 @@ def set_scaling(m):
         m: pyomo model
     """
 
-    # Changing the default scaling factor in the class dictionary
-    # applies this scaling factor globally. This sort of global
-    # mutation is potentially dangerous, but we'll use it here until
-    # there is a better way to set global default scaling factors
-    HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["flow_vol"] = 1
-    HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["conc_mass_comp[H]"] = 1e-3
-    HClStrippingPropertiesScaler.DEFAULT_SCALING_FACTORS["conc_mass_comp[Cl]"] = 1e-5
-    ModularPropertiesScaler.DEFAULT_SCALING_FACTORS["flow_mol_phase"] = 1 / 0.00781
+    liquid_properties_scaler = m.fs.HCl_stripping_params.default_state_scaler_class()
+    vapor_properties_scaler = m.fs.prop_gas.default_state_scaler_class()
+
+    liquid_properties_scaler.default_scaling_factors["flow_vol"] = 1
+    liquid_properties_scaler.default_scaling_factors["conc_mass_comp[H]"] = 1e-3
+    liquid_properties_scaler.default_scaling_factors["conc_mass_comp[Cl]"] = 1e-5
+    vapor_properties_scaler.default_scaling_factors["flow_mol_phase"] = 1 / 0.00781
+
+    m.fs.HCl_stripping_params.default_state_scaler_object = liquid_properties_scaler
+    m.fs.prop_gas.default_state_scaler_object = vapor_properties_scaler
 
     # Also use global mutation to change the max and min scaling factors
     # allowed from objects derived from CustomScalerBase, i.e., all the
@@ -789,7 +785,7 @@ def set_scaling(m):
                 )
 
 
-def set_operating_conditions(m):
+def set_operating_conditions(m, DEHPA_dosage=0.2):
     """
     Set the operating conditions of the flowsheet such that the degrees of freedom are zero.
 
@@ -798,7 +794,7 @@ def set_operating_conditions(m):
     """
     # Constants
     # Assume a 20% volume-by-volume ratio
-    dosage = 20 / 100
+    dosage = DEHPA_dosage
     dehpa_conc = 975.8e3 * dosage * units.mg / units.L
     kerosene_conc = 8.2e5 * units.mg / units.L
     Temp_room = 303 * units.K
@@ -2629,9 +2625,7 @@ def add_costing(m):
         labor_rate=[24.98, 19.08, 30.39, 22.73, 21.97, 45.85],  # USD/hr
         labor_burden=25,  # % fringe benefits
         operators_per_shift=[4, 9, 2, 2, 2, 3],
-        hours_per_shift=hours_per_shift,
-        shifts_per_day=shifts_per_day,
-        operating_days_per_year=operating_days_per_year,
+        capacity_factor=0.92,
         pure_product_output_rates=pure_product_output_rates,
         mixed_product_output_rates=mixed_product_output_rates,
         mixed_product_sale_price_realization_factor=0.65,  # 65% price realization for mixed products
@@ -2642,7 +2636,6 @@ def add_costing(m):
         fixed_OM=True,
         variable_OM=True,
         feed_input=m.fs.feed_input,
-        efficiency=0.80,  # power usage efficiency, or fixed motor/distribution efficiency
         waste=[
             "nonhazardous_solid_waste",
             "nonhazardous_precipitate_waste",

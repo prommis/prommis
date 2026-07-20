@@ -9,17 +9,12 @@ Tests for UKy flowsheet.
 
 """
 
-import pytest
-
-from pyomo.environ import (
-    assert_optimal_termination,
-    units,
-    value,
-)
+from pyomo.environ import assert_optimal_termination, units, value
 from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.testing import assert_solution_equivalent
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
@@ -29,16 +24,17 @@ from idaes.models.unit_models.product import Product
 from idaes.models.unit_models.separator import Separator
 from idaes.models.unit_models.solid_liquid import SLSeparator
 
-from prommis.util import assert_solution_equivalent
+import pytest
+
 from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
+from prommis.leaching.leach_train import LeachingTrain
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+from prommis.precipitate.precipitator import Precipitator
 from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.hcl_stripping_properties import HClStrippingParameterBlock
 from prommis.properties.sulfuric_acid_leaching_properties import (
     SulfuricAcidLeachingParameters,
 )
-from prommis.leaching.leach_train import LeachingTrain
-from prommis.properties.hcl_stripping_properties import HClStrippingParameterBlock
-from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-from prommis.precipitate.precipitator import Precipitator
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
@@ -46,16 +42,16 @@ from prommis.uky.uky_flowsheet import (
     add_costing,
     add_result_expressions,
     build,
+    data_reconcilliation,
     display_costing,
     display_results,
     fix_organic_recycle,
-    initialize_system,
     initialize_costing,
+    initialize_system,
+    optimize_model,
     set_operating_conditions,
     set_scaling,
     solve_system,
-    data_reconcilliation,
-    optimize_model,
 )
 
 

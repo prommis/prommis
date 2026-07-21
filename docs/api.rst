@@ -89,16 +89,16 @@ Nanofiltration
    prommis.nanofiltration.nf_brine_plot
    prommis.nanofiltration.nf_brine
 
-CMI Precipitator 
+CMU Precipitator 
 ----------------
 
 .. autosummary::
    :toctree: _autosummary
    :template: autosummary/module-with-contents.rst
 
-   prommis.cmi_precipitator.opt_based_precipitator
-   prommis.cmi_precipitator.aqueous_properties
-   prommis.cmi_precipitator.precipitate_properties
+   prommis.cmu_precipitator.opt_based_precipitator
+   prommis.cmu_precipitator.aqueous_properties
+   prommis.cmu_precipitator.precipitate_properties
 
 Ion Exchange 
 ------------

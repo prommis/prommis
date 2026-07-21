@@ -1,0 +1,463 @@
+{
+  "feed": {
+    "fresh_feed": {
+      "BaO": 115.267,
+      "CaO": 174.4795,
+      "REO": 60.7915,
+      "SrO": 39.475,
+      "inert_gangue": 399.487
+    }
+  },
+  "scenarios": {
+    "figure2_mass_balance": {
+      "description": "Recoveries calculated from Figure 2 stream masses and assays for the connected recycle circuit.",
+      "initial_streams": {
+        "cleaner1_concentrate": {
+          "BaO": 15.46183,
+          "CaO": 32.34986,
+          "REO": 226.51578,
+          "SrO": 38.66988,
+          "inert_gangue": 163.7759
+        },
+        "cleaner1_feed": {
+          "BaO": 36.69607,
+          "CaO": 70.19476,
+          "REO": 302.85833,
+          "SrO": 67.43332,
+          "inert_gangue": 289.92194
+        },
+        "cleaner1_tails": {
+          "BaO": 21.23424,
+          "CaO": 37.8449,
+          "REO": 76.34255,
+          "SrO": 28.76344,
+          "inert_gangue": 126.14604
+        },
+        "cleaner2_concentrate": {
+          "BaO": 35.72902,
+          "CaO": 44.18507,
+          "REO": 127.27984,
+          "SrO": 47.65514,
+          "inert_gangue": 0.0
+        },
+        "cleaner2_feed": {
+          "BaO": 50.59566,
+          "CaO": 74.64732,
+          "REO": 305.49639,
+          "SrO": 82.53834,
+          "inert_gangue": 163.7759
+        },
+        "cleaner2_tails": {
+          "BaO": 14.86664,
+          "CaO": 30.46225,
+          "REO": 178.21655,
+          "SrO": 34.88319,
+          "inert_gangue": 163.7759
+        },
+        "cleaners34_concentrate": {
+          "BaO": 0.59519,
+          "CaO": 1.88761,
+          "REO": 48.29923,
+          "SrO": 3.78669,
+          "inert_gangue": 0.0
+        },
+        "cleaners34_tails": {
+          "BaO": 35.13383,
+          "CaO": 42.29746,
+          "REO": 78.98061,
+          "SrO": 43.86846,
+          "inert_gangue": 0.0
+        },
+        "final_tails": {
+          "BaO": 114.67181,
+          "CaO": 172.59189,
+          "REO": 12.49227,
+          "SrO": 35.68831,
+          "inert_gangue": 399.487
+        },
+        "rougher_concentrate": {
+          "BaO": 21.82943,
+          "CaO": 39.73251,
+          "REO": 124.64178,
+          "SrO": 32.55013,
+          "inert_gangue": 126.14604
+        },
+        "rougher_feed": {
+          "BaO": 124.069,
+          "CaO": 191.2337,
+          "REO": 132.27995,
+          "SrO": 60.55808,
+          "inert_gangue": 467.66231
+        },
+        "rougher_tails": {
+          "BaO": 102.23957,
+          "CaO": 151.50119,
+          "REO": 7.63817,
+          "SrO": 28.00796,
+          "inert_gangue": 341.51627
+        },
+        "scavenger_concentrate": {
+          "BaO": 8.802,
+          "CaO": 16.7542,
+          "REO": 71.48845,
+          "SrO": 21.08308,
+          "inert_gangue": 68.17531
+        },
+        "scavenger_tails": {
+          "BaO": 12.43224,
+          "CaO": 21.0907,
+          "REO": 4.8541,
+          "SrO": 7.68036,
+          "inert_gangue": 57.97073
+        }
+      },
+      "recoveries": {
+        "cleaner1": {
+          "BaO": 0.42135,
+          "CaO": 0.46086,
+          "REO": 0.74793,
+          "SrO": 0.57345,
+          "inert_gangue": 0.5649
+        },
+        "cleaner2": {
+          "BaO": 0.70617,
+          "CaO": 0.59192,
+          "REO": 0.41663,
+          "SrO": 0.57737,
+          "inert_gangue": 0.0
+        },
+        "cleaners34": {
+          "BaO": 0.01666,
+          "CaO": 0.04272,
+          "REO": 0.37947,
+          "SrO": 0.07946,
+          "inert_gangue": 0.99
+        },
+        "rougher": {
+          "BaO": 0.17595,
+          "CaO": 0.20777,
+          "REO": 0.94226,
+          "SrO": 0.5375,
+          "inert_gangue": 0.26974
+        },
+        "scavenger": {
+          "BaO": 0.41452,
+          "CaO": 0.44271,
+          "REO": 0.93642,
+          "SrO": 0.73298,
+          "inert_gangue": 0.54045
+        }
+      }
+    },
+    "table1_product_fit": {
+      "description": "Keeps Table 2 assayed-component recoveries fixed, but calibrates the unmeasured inert_gangue recoveries in Cleaner 2 and Cleaners 3&4 so the example flowsheet reproduces the Table 1 final product envelope.",
+      "initial_streams": {
+        "cleaner1_concentrate": {
+          "BaO": 15.67133,
+          "CaO": 32.23816,
+          "REO": 222.82805,
+          "SrO": 38.56423,
+          "inert_gangue": 126.64436
+        },
+        "cleaner1_feed": {
+          "BaO": 36.61527,
+          "CaO": 69.4788,
+          "REO": 298.29725,
+          "SrO": 67.41999,
+          "inert_gangue": 230.56764
+        },
+        "cleaner1_tails": {
+          "BaO": 20.94393,
+          "CaO": 37.24064,
+          "REO": 75.46921,
+          "SrO": 28.85576,
+          "inert_gangue": 103.92328
+        },
+        "cleaner2_concentrate": {
+          "BaO": 41.39895,
+          "CaO": 49.31516,
+          "REO": 134.08429,
+          "SrO": 52.78223,
+          "inert_gangue": 239.27878
+        },
+        "cleaner2_feed": {
+          "BaO": 56.3251,
+          "CaO": 79.28483,
+          "REO": 308.23974,
+          "SrO": 87.38779,
+          "inert_gangue": 346.78084
+        },
+        "cleaner2_tails": {
+          "BaO": 14.92615,
+          "CaO": 29.96967,
+          "REO": 174.15545,
+          "SrO": 34.60557,
+          "inert_gangue": 107.50206
+        },
+        "cleaners34_concentrate": {
+          "BaO": 0.74518,
+          "CaO": 2.2685,
+          "REO": 48.6726,
+          "SrO": 3.95867,
+          "inert_gangue": 19.1423
+        },
+        "cleaners34_tails": {
+          "BaO": 40.65377,
+          "CaO": 47.04667,
+          "REO": 85.41169,
+          "SrO": 48.82356,
+          "inert_gangue": 220.13648
+        },
+        "final_tails": {
+          "BaO": 114.52182,
+          "CaO": 172.211,
+          "REO": 12.1189,
+          "SrO": 35.51633,
+          "inert_gangue": 380.3447
+        },
+        "rougher_concentrate": {
+          "BaO": 21.68911,
+          "CaO": 39.50913,
+          "REO": 124.1418,
+          "SrO": 32.81442,
+          "inert_gangue": 123.06558
+        },
+        "rougher_feed": {
+          "BaO": 123.93779,
+          "CaO": 190.86538,
+          "REO": 131.50615,
+          "SrO": 60.65512,
+          "inert_gangue": 455.6304
+        },
+        "rougher_tails": {
+          "BaO": 102.24867,
+          "CaO": 151.35625,
+          "REO": 7.36434,
+          "SrO": 27.8407,
+          "inert_gangue": 332.56482
+        },
+        "scavenger_concentrate": {
+          "BaO": 8.67079,
+          "CaO": 16.38588,
+          "REO": 70.71465,
+          "SrO": 21.18012,
+          "inert_gangue": 56.1434
+        },
+        "scavenger_tails": {
+          "BaO": 12.27314,
+          "CaO": 20.85476,
+          "REO": 4.75456,
+          "SrO": 7.67563,
+          "inert_gangue": 47.77987
+        }
+      },
+      "recoveries": {
+        "cleaner1": {
+          "BaO": 0.428,
+          "CaO": 0.464,
+          "REO": 0.747,
+          "SrO": 0.572,
+          "inert_gangue": 0.54927
+        },
+        "cleaner2": {
+          "BaO": 0.735,
+          "CaO": 0.622,
+          "REO": 0.435,
+          "SrO": 0.604,
+          "inert_gangue": 0.69
+        },
+        "cleaners34": {
+          "BaO": 0.018,
+          "CaO": 0.046,
+          "REO": 0.363,
+          "SrO": 0.075,
+          "inert_gangue": 0.08
+        },
+        "rougher": {
+          "BaO": 0.175,
+          "CaO": 0.207,
+          "REO": 0.944,
+          "SrO": 0.541,
+          "inert_gangue": 0.2701
+        },
+        "scavenger": {
+          "BaO": 0.414,
+          "CaO": 0.44,
+          "REO": 0.937,
+          "SrO": 0.734,
+          "inert_gangue": 0.54024
+        }
+      }
+    },
+    "table2_reported_with_fitted_inert": {
+      "description": "Published Table 2 recoveries for REO, CaO, BaO, and SrO, with inert_gangue recovery fitted to each bank mass pull.",
+      "initial_streams": {
+        "cleaner1_concentrate": {
+          "BaO": 15.67133,
+          "CaO": 32.23816,
+          "REO": 222.82805,
+          "SrO": 38.56423,
+          "inert_gangue": 151.81259
+        },
+        "cleaner1_feed": {
+          "BaO": 36.61527,
+          "CaO": 69.4788,
+          "REO": 298.29725,
+          "SrO": 67.41999,
+          "inert_gangue": 276.3887
+        },
+        "cleaner1_tails": {
+          "BaO": 20.94393,
+          "CaO": 37.24064,
+          "REO": 75.46921,
+          "SrO": 28.85576,
+          "inert_gangue": 124.57611
+        },
+        "cleaner2_concentrate": {
+          "BaO": 41.39895,
+          "CaO": 49.31516,
+          "REO": 134.08429,
+          "SrO": 52.78223,
+          "inert_gangue": 1.51828
+        },
+        "cleaner2_feed": {
+          "BaO": 56.3251,
+          "CaO": 79.28483,
+          "REO": 308.23974,
+          "SrO": 87.38779,
+          "inert_gangue": 151.82778
+        },
+        "cleaner2_tails": {
+          "BaO": 14.92615,
+          "CaO": 29.96967,
+          "REO": 174.15545,
+          "SrO": 34.60557,
+          "inert_gangue": 150.3095
+        },
+        "cleaners34_concentrate": {
+          "BaO": 0.74518,
+          "CaO": 2.2685,
+          "REO": 48.6726,
+          "SrO": 3.95867,
+          "inert_gangue": 1.50309
+        },
+        "cleaners34_tails": {
+          "BaO": 40.65377,
+          "CaO": 47.04667,
+          "REO": 85.41169,
+          "SrO": 48.82356,
+          "inert_gangue": 0.01518
+        },
+        "final_tails": {
+          "BaO": 114.52182,
+          "CaO": 172.211,
+          "REO": 12.1189,
+          "SrO": 35.51633,
+          "inert_gangue": 397.98391
+        },
+        "rougher_concentrate": {
+          "BaO": 21.68911,
+          "CaO": 39.50913,
+          "REO": 124.1418,
+          "SrO": 32.81442,
+          "inert_gangue": 126.07921
+        },
+        "rougher_feed": {
+          "BaO": 123.93779,
+          "CaO": 190.86538,
+          "REO": 131.50615,
+          "SrO": 60.65512,
+          "inert_gangue": 466.78787
+        },
+        "rougher_tails": {
+          "BaO": 102.24867,
+          "CaO": 151.35625,
+          "REO": 7.36434,
+          "SrO": 27.8407,
+          "inert_gangue": 340.70866
+        },
+        "scavenger_concentrate": {
+          "BaO": 8.67079,
+          "CaO": 16.38588,
+          "REO": 70.71465,
+          "SrO": 21.18012,
+          "inert_gangue": 67.30087
+        },
+        "scavenger_tails": {
+          "BaO": 12.27314,
+          "CaO": 20.85476,
+          "REO": 4.75456,
+          "SrO": 7.67563,
+          "inert_gangue": 57.27524
+        }
+      },
+      "recoveries": {
+        "cleaner1": {
+          "BaO": 0.428,
+          "CaO": 0.464,
+          "REO": 0.747,
+          "SrO": 0.572,
+          "inert_gangue": 0.54927
+        },
+        "cleaner2": {
+          "BaO": 0.735,
+          "CaO": 0.622,
+          "REO": 0.435,
+          "SrO": 0.604,
+          "inert_gangue": 0.01
+        },
+        "cleaners34": {
+          "BaO": 0.018,
+          "CaO": 0.046,
+          "REO": 0.363,
+          "SrO": 0.075,
+          "inert_gangue": 0.99
+        },
+        "rougher": {
+          "BaO": 0.175,
+          "CaO": 0.207,
+          "REO": 0.944,
+          "SrO": 0.541,
+          "inert_gangue": 0.2701
+        },
+        "scavenger": {
+          "BaO": 0.414,
+          "CaO": 0.44,
+          "REO": 0.937,
+          "SrO": 0.734,
+          "inert_gangue": 0.54024
+        }
+      }
+    }
+  },
+  "table_1_products": {
+    "combined_tails": {
+      "assays": {
+        "BaO": 16.1,
+        "CaO": 24.1,
+        "REO": 1.7,
+        "SrO": 5.0
+      },
+      "weight_split": 90.4
+    },
+    "feed": {
+      "assays": {
+        "BaO": 14.6,
+        "CaO": 22.1,
+        "REO": 7.7,
+        "SrO": 5.0
+      },
+      "weight_split": 100.0
+    },
+    "final_concentrate": {
+      "assays": {
+        "BaO": 0.9,
+        "CaO": 2.7,
+        "REO": 65.6,
+        "SrO": 5.4
+      },
+      "reo_recovery": 80.1,
+      "weight_split": 9.6
+    }
+  }
+}

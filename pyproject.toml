@@ -34,9 +34,9 @@ keywords = [
 dynamic = ["version"]
 dependencies = ["idaes-pse>=2.12.0", "pyomo >=6.9.5"]
 [project.optional-dependencies]
-watertap = ["watertap[reaktoro]>=1.7.0"]
+watertap = [watertap[reaktoro] @ git+https://github.com/watertap-org/watertap.git@idaes-flowsheet-processor-0.3.2"]
 
-flowsheet-processor = ["idaes-flowsheet-processor >=0.3"]
+flowsheet-processor = ["idaes-flowsheet-processor >=0.3.2"]
 
 ui = ["prommis[flowsheet-processor]", "idaes-ui", "idaes-connectivity"]
 

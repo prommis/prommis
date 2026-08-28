@@ -7,13 +7,12 @@
 """
 Preliminary property package for West Kentucky No. 13 coal refuse.
 
-Authors: Alejandro Garciadiego
+Authors: Alejandro Garciadiego, Bo-Xun Wang
 """
 
 from pyomo.common.config import ConfigValue
 from pyomo.environ import Param, Var, units
 
-import idaes.core.util.scaling as iscale
 from idaes.core import (
     MaterialFlowBasis,
     Phase,
@@ -23,6 +22,7 @@ from idaes.core import (
     declare_process_block_class,
 )
 from idaes.core.util.initialization import fix_state_vars
+from idaes.core.scaling import CustomScalerBase
 
 # -----------------------------------------------------------------------------
 # Precipitate solids property package
@@ -39,6 +39,29 @@ def _config_blk_build(blk):
         ),
     )
 
+class PrecipitateParametersScaler(CustomScalerBase):
+    """
+    Scaler for the precipitate solids property package.
+    """
+
+    DEFAULT_SCALING_FACTORS = {
+        "temperature": 1e1,
+        "flow_mol_comp": 1e3,
+    }
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        # Scale state variables
+        self.scale_variable_by_default(model.temperature, overwrite=overwrite)
+        for var in model.flow_mol_comp.values():
+            self.scale_variable_by_default(var, overwrite=overwrite)
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        # No constraints to scale
+        pass
 
 @declare_process_block_class("PrecipitateParameters")
 class PrecipitateParametersData(PhysicalParameterBlock):
@@ -85,18 +108,18 @@ class PrecipitateParametersData(PhysicalParameterBlock):
         self.component_list = comp_list
 
         self.reaction_to_element = {
-            "Sc2(C2O4)3(s)": "Sc",
-            "Y2(C2O4)3(s)": "Y",
-            "La2(C2O4)3(s)": "La",
-            "Ce2(C2O4)3(s)": "Ce",
-            "Pr2(C2O4)3(s)": "Pr",
-            "Nd2(C2O4)3(s)": "Nd",
-            "Sm2(C2O4)3(s)": "Sm",
-            "Gd2(C2O4)3(s)": "Gd",
-            "Dy2(C2O4)3(s)": "Dy",
-            "Al2(C2O4)3(s)": "Al",
-            "Ca(C2O4)(s)": "Ca",
-            "Fe2(C2O4)3(s)": "Fe",
+            "Sc2(C2O4)3(s)": "Sc_3+",
+            "Y2(C2O4)3(s)": "Y_3+",
+            "La2(C2O4)3(s)": "La_3+",
+            "Ce2(C2O4)3(s)": "Ce_3+",
+            "Pr2(C2O4)3(s)": "Pr_3+",
+            "Nd2(C2O4)3(s)": "Nd_3+",
+            "Sm2(C2O4)3(s)": "Sm_3+",
+            "Gd2(C2O4)3(s)": "Gd_3+",
+            "Dy2(C2O4)3(s)": "Dy_3+",
+            "Al2(C2O4)3(s)": "Al_3+",
+            "Ca(C2O4)(s)": "Ca_2+",
+            "Fe2(C2O4)3(s)": "Fe_3+",
         }
 
         self.mw = Param(
@@ -140,6 +163,8 @@ class PrecipitateParametersData(PhysicalParameterBlock):
 
 
 class _PrecipitateBlock(StateBlock):
+    default_scaler = PrecipitateParametersScaler
+
     def fix_initialization_states(self):
         """
         Fixes state variables for state blocks.
@@ -156,6 +181,8 @@ class PrecipitateStateBlockData(StateBlockData):
     """
     State block for solid REE oxalate.
     """
+
+    default_scaler = PrecipitateParametersScaler
 
     def build(self):
         super().build()
@@ -174,9 +201,6 @@ class PrecipitateStateBlockData(StateBlockData):
             initialize=1e-5,
             bounds=(1e-25, None),
         )
-
-        iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
-        iscale.set_scaling_factor(self.temperature, 1e1)
 
     def get_material_flow_terms(self, p, j):
         return self.flow_mol_comp[j]

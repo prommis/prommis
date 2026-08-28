@@ -58,6 +58,8 @@ estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxal
 
 
 """
+
+import math
 from pyomo.common.collections import ComponentMap
 from pyomo.common.config import ConfigDict, ConfigValue, In
 
@@ -90,6 +92,7 @@ from idaes.core.initialization import ModularInitializerBase
 from idaes.core.scaling import CustomScalerBase, ConstraintScalingScheme
 import math
 
+
 class OxalatePrecipitatorScaler(CustomScalerBase):
     """
     Scaler for the Oxalate Precipitator unit model.
@@ -103,19 +106,19 @@ class OxalatePrecipitatorScaler(CustomScalerBase):
         "solid_heterogeneous_reactions_generation": 1e3,
         "liquid_heterogeneous_reactions_generation": 1e3,
     }
- 
+
     def variable_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: ComponentMap = None
     ):
         """
         Variable scaling routine for the Oxalate Precipitator.
- 
+
         Args:
             model: instance of OxalatePrecipitator to be scaled
             overwrite: whether to overwrite existing scaling factors
             submodel_scalers: ComponentMap of Scalers to use for sub-models,
                 keyed by submodel local name
- 
+
         Returns:
             None
         """
@@ -126,7 +129,7 @@ class OxalatePrecipitatorScaler(CustomScalerBase):
             method="variable_scaling_routine",
             overwrite=overwrite,
         )
- 
+
         for t in model.flowsheet().time:
             self.scale_variable_by_default(model.volume[t], overwrite=overwrite)
             self.scale_variable_by_default(
@@ -141,25 +144,29 @@ class OxalatePrecipitatorScaler(CustomScalerBase):
                 self.scale_variable_by_default(v, overwrite=overwrite)
 
         if hasattr(model.mscontactor, "solid_heterogeneous_reactions_generation"):
-            for v in model.mscontactor.solid_heterogeneous_reactions_generation.values():
+            for (
+                v
+            ) in model.mscontactor.solid_heterogeneous_reactions_generation.values():
                 self.scale_variable_by_default(v, overwrite=overwrite)
 
         if hasattr(model.mscontactor, "liquid_heterogeneous_reactions_generation"):
-            for v in model.mscontactor.liquid_heterogeneous_reactions_generation.values():
+            for (
+                v
+            ) in model.mscontactor.liquid_heterogeneous_reactions_generation.values():
                 self.scale_variable_by_default(v, overwrite=overwrite)
- 
+
     def constraint_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: ComponentMap = None
     ):
         """
         Constraint scaling routine for the Oxalate Precipitator.
- 
+
         Args:
             model: instance of OxalatePrecipitator to be scaled
             overwrite: whether to overwrite existing scaling factors
             submodel_scalers: ComponentMap of Scalers to use for sub-models,
                 keyed by submodel local name
- 
+
         Returns:
             None
         """
@@ -169,7 +176,7 @@ class OxalatePrecipitatorScaler(CustomScalerBase):
             method="constraint_scaling_routine",
             overwrite=overwrite,
         )
- 
+
         for condata in model.eq_hydraulic_retention.values():
             self.scale_constraint_by_nominal_value(
                 condata,
@@ -190,27 +197,28 @@ class OxalatePrecipitatorScaler(CustomScalerBase):
                 scheme=ConstraintScalingScheme.inverseMaximum,
                 overwrite=overwrite,
             )
- 
+
         for condata in model.liq_temp_constraint.values():
             self.scale_constraint_by_nominal_value(
                 condata,
                 scheme=ConstraintScalingScheme.inverseMaximum,
                 overwrite=overwrite,
             )
- 
+
         for condata in model.press_constraint.values():
             self.scale_constraint_by_nominal_value(
                 condata,
                 scheme=ConstraintScalingScheme.inverseMaximum,
                 overwrite=overwrite,
             )
- 
+
         for condata in model.init_solid_constraint.values():
             self.scale_constraint_by_nominal_value(
                 condata,
                 scheme=ConstraintScalingScheme.inverseMaximum,
                 overwrite=overwrite,
             )
+
 
 # -----------------------------------------------------------------------------
 # Precipitator unit model
@@ -275,7 +283,7 @@ class OxalatePrecipitatorInitializer(ModularInitializerBase):
                     E_D = value(model.config.reaction_package.E_D[r])
                     N_D = value(model.config.reaction_package.N_D[r])
                     if dosage > 0:
-                        exponent = -(E_D ** N_D) / (dosage ** N_D)
+                        exponent = -(E_D**N_D) / (dosage**N_D)
                         exponent = max(min(exponent, 0.0), -700.0)
                         model.conversion[r].set_value(
                             min(max(math.exp(exponent), 1e-20), 0.999999)
@@ -444,11 +452,11 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             doc="Oxalic acid dosage",
         )
         def oxalic_acid_dosage(blk, t):
-            return (blk.aqueous_inlet.conc_mass_comp[0, "H2C2O4"] +
-                    blk.aqueous_inlet.conc_mass_comp[0, "HC2O4_-"] +
-                    blk.aqueous_inlet.conc_mass_comp[0, "C2O4_2-"]) / (
-                1000 * pyunits.mg / pyunits.l
-            )
+            return (
+                blk.aqueous_inlet.conc_mass_comp[0, "H2C2O4"]
+                + blk.aqueous_inlet.conc_mass_comp[0, "HC2O4_-"]
+                + blk.aqueous_inlet.conc_mass_comp[0, "C2O4_2-"]
+            ) / (1000 * pyunits.mg / pyunits.l)
 
         @self.Constraint(self.flowsheet().time, doc="Hydraulic retention time equation")
         def eq_hydraulic_retention(blk, t):
@@ -468,7 +476,9 @@ class OxalatePrecipitatorData(UnitModelBlockData):
                 - (
                     blk.conversion[r]
                     * blk.mscontactor.liquid_inlet_state[t].flow_mol_comp[
-                        blk.mscontactor.config.streams.solid.property_package.reaction_to_element[r]
+                        blk.mscontactor.config.streams.solid.property_package.reaction_to_element[
+                            r
+                        ]
                     ]
                 )
             )

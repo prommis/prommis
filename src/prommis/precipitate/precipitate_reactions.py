@@ -23,6 +23,7 @@ from idaes.core.base import property_meta
 from idaes.core.util.misc import add_object_reference
 from idaes.core.scaling import CustomScalerBase
 
+
 class OxalatePrecipitationReactionsScaler(CustomScalerBase):
     """
     Scaler for the oxalate precipitation heterogeneous reaction package.
@@ -45,6 +46,7 @@ class OxalatePrecipitationReactionsScaler(CustomScalerBase):
             self.scale_constraint_by_component(
                 condata, model.reaction_rate[idx], overwrite=overwrite
             )
+
 
 # -----------------------------------------------------------------------------
 # Precipitation property package
@@ -79,7 +81,19 @@ class OxalatePrecipitationReactionsData(
 
         self._reaction_block_class = OxalatePrecipitationReactionsBlock
 
-        trivalent_list = ["Al_3+", "Fe_3+", "Sc_3+", "Y_3+", "La_3+", "Ce_3+", "Pr_3+", "Nd_3+", "Sm_3+", "Gd_3+", "Dy_3+"]
+        trivalent_list = [
+            "Al_3+",
+            "Fe_3+",
+            "Sc_3+",
+            "Y_3+",
+            "La_3+",
+            "Ce_3+",
+            "Pr_3+",
+            "Nd_3+",
+            "Sm_3+",
+            "Gd_3+",
+            "Dy_3+",
+        ]
         divalent_list = ["Ca_2+"]
         element_list = trivalent_list + divalent_list
 

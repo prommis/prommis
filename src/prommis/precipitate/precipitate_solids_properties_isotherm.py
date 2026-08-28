@@ -39,6 +39,7 @@ def _config_blk_build(blk):
         ),
     )
 
+
 class PrecipitateParametersScaler(CustomScalerBase):
     """
     Scaler for the precipitate solids property package.
@@ -62,6 +63,7 @@ class PrecipitateParametersScaler(CustomScalerBase):
     ):
         # No constraints to scale
         pass
+
 
 @declare_process_block_class("PrecipitateParameters")
 class PrecipitateParametersData(PhysicalParameterBlock):

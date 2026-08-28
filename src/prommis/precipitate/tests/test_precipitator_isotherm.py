@@ -27,9 +27,10 @@ from idaes.core.util.model_statistics import (
 
 from prommis.properties.mixed_acid_properties import (
     MixedAcidParameterBlock,
-    MixedAcidPropertiesScaler,
 )
-from prommis.precipitate.precipitate_solids_properties_isotherm import PrecipitateParameters
+from prommis.precipitate.precipitate_solids_properties_isotherm import (
+    PrecipitateParameters,
+)
 from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
 from prommis.precipitate.precipitator_isotherm import (
     OxalatePrecipitatorScaler,
@@ -76,6 +77,7 @@ def test_config():
 
     assert m.fs.unit.default_scaler is OxalatePrecipitatorScaler
 
+
 # -----------------------------------------------------------------------------
 class TestPrec(object):
     @pytest.fixture(scope="class")
@@ -121,7 +123,6 @@ class TestPrec(object):
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "HC2O4_-"].fix(1e-9)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "C2O4_2-"].fix(1e-9)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1000000)
-
 
         m.fs.unit.aqueous_inlet.temperature[0].fix(298.15)
         m.fs.unit.aqueous_inlet.pressure[0].fix(1e5)
@@ -225,18 +226,18 @@ class TestPrec(object):
                 0: (100, None, 1e-0),
             },
             "unit.aqueous_outlet.conc_mass_comp": {
-                (0, "Al_3+"):     (9.982,      None, 1e-3),
-                (0, "Ca_2+"):     (10,         None, 1e-3),
-                (0, "Ce_3+"):     (0.0991,     None, 1e-3),
-                (0, "Dy_3+"):     (2.3824,     None, 1e-3),
-                (0, "Fe_3+"):     (9.7864,     None, 1e-3),
-                (0, "Gd_3+"):     (0.4486,     None, 1e-3),
-                (0, "La_3+"):     (1.5715,     None, 1e-3),
-                (0, "Nd_3+"):     (0.1142,     None, 1e-3),
-                (0, "Pr_3+"):     (0.2118,     None, 1e-3),
-                (0, "Sc_3+"):     (6.3964,     None, 1e-3),
-                (0, "Sm_3+"):     (0.2183,     None, 1e-3),
-                (0, "Y_3+"):      (1.8401,     None, 1e-3),
+                (0, "Al_3+"): (9.982, None, 1e-3),
+                (0, "Ca_2+"): (10, None, 1e-3),
+                (0, "Ce_3+"): (0.0991, None, 1e-3),
+                (0, "Dy_3+"): (2.3824, None, 1e-3),
+                (0, "Fe_3+"): (9.7864, None, 1e-3),
+                (0, "Gd_3+"): (0.4486, None, 1e-3),
+                (0, "La_3+"): (1.5715, None, 1e-3),
+                (0, "Nd_3+"): (0.1142, None, 1e-3),
+                (0, "Pr_3+"): (0.2118, None, 1e-3),
+                (0, "Sc_3+"): (6.3964, None, 1e-3),
+                (0, "Sm_3+"): (0.2183, None, 1e-3),
+                (0, "Y_3+"): (1.8401, None, 1e-3),
             },
             "unit.precipitate_outlet.flow_mol_comp": {
                 (0, "Al2(C2O4)3(s)"): (3.20213e-05, None, 1e-6),
@@ -288,7 +289,9 @@ class TestPrec(object):
             "Fe2(C2O4)3(s)": 2,
         }
 
-        reversed_react = dict(map(reversed, prec.fs.properties_solid.reaction_to_element.items()))
+        reversed_react = dict(
+            map(reversed, prec.fs.properties_solid.reaction_to_element.items())
+        )
         pass_through_elements = ["Cl_-", "H2O"]
         for j in prec.fs.properties_aq.component_list:
             if j in ["H_+", "H2C2O4", "HC2O4_-", "C2O4_2-"]:
@@ -336,6 +339,7 @@ class TestPrec(object):
         expr_dict = out["exprs"]
         assert len(expr_dict) == 1
         assert expr_dict["Oxalic Acid Dosage"] is unit.oxalic_acid_dosage[0]
+
 
 # -----------------------------------------------------------------------------
 class TestPrecRob(object):
@@ -485,22 +489,22 @@ class TestPrecRob(object):
                 0: (100, None, 1e-0),
             },
             "unit.aqueous_outlet.conc_mass_comp": {
-                (0, "Al_3+"):  (9.730,  None, 1e-3),
-                (0, "Ca_2+"):  (9.9999, None, 1e-3),
-                (0, "Ce_3+"):  (0.0178, None, 1e-3),
-                (0, "Dy_3+"):  (0.1380, None, 1e-3),
-                (0, "Fe_3+"):  (2.0863, None, 1e-3),
-                (0, "Gd_3+"):  (0.0327, None, 1e-3),
-                (0, "La_3+"):  (0.0924, None, 1e-3),
-                (0, "Nd_3+"):  (0.0250, None, 1e-3),
-                (0, "Pr_3+"):  (0.0254, None, 1e-3),
-                (0, "Sc_3+"):  (0.1791, None, 1e-3),
-                (0, "Sm_3+"):  (0.0212, None, 1e-3),
-                (0, "Y_3+"):   (0.1080, None, 1e-3),
+                (0, "Al_3+"): (9.730, None, 1e-3),
+                (0, "Ca_2+"): (9.9999, None, 1e-3),
+                (0, "Ce_3+"): (0.0178, None, 1e-3),
+                (0, "Dy_3+"): (0.1380, None, 1e-3),
+                (0, "Fe_3+"): (2.0863, None, 1e-3),
+                (0, "Gd_3+"): (0.0327, None, 1e-3),
+                (0, "La_3+"): (0.0924, None, 1e-3),
+                (0, "Nd_3+"): (0.0250, None, 1e-3),
+                (0, "Pr_3+"): (0.0254, None, 1e-3),
+                (0, "Sc_3+"): (0.1791, None, 1e-3),
+                (0, "Sm_3+"): (0.0212, None, 1e-3),
+                (0, "Y_3+"): (0.1080, None, 1e-3),
             },
             "unit.precipitate_outlet.flow_mol_comp": {
                 (0, "Al2(C2O4)3(s)"): (0.0005, None, 1e-6),
-                (0, "Ca(C2O4)(s)"):   (1.3e-08, None, 1e-6),
+                (0, "Ca(C2O4)(s)"): (1.3e-08, None, 1e-6),
                 (0, "Ce2(C2O4)3(s)"): (0.003562, None, 1e-6),
                 (0, "Dy2(C2O4)3(s)"): (0.003034, None, 1e-6),
                 (0, "Fe2(C2O4)3(s)"): (0.007086, None, 1e-6),
@@ -510,7 +514,7 @@ class TestPrecRob(object):
                 (0, "Pr2(C2O4)3(s)"): (0.003540, None, 1e-6),
                 (0, "Sc2(C2O4)3(s)"): (0.010926, None, 1e-6),
                 (0, "Sm2(C2O4)3(s)"): (0.003318, None, 1e-6),
-                (0, "Y2(C2O4)3(s)"):  (0.005564, None, 1e-6),
+                (0, "Y2(C2O4)3(s)"): (0.005564, None, 1e-6),
             },
             "unit.precipitate_outlet.temperature": {
                 0: (348.15, None, 1e-3),
@@ -548,7 +552,9 @@ class TestPrecRob(object):
             "Fe2(C2O4)3(s)": 2,
         }
 
-        reversed_react = dict(map(reversed, prec.fs.properties_solid.reaction_to_element.items()))
+        reversed_react = dict(
+            map(reversed, prec.fs.properties_solid.reaction_to_element.items())
+        )
         pass_through_elements = ["Cl_-", "H2O"]
         for j in prec.fs.properties_aq.component_list:
             if j in ["H_+", "H2C2O4", "HC2O4_-", "C2O4_2-"]:

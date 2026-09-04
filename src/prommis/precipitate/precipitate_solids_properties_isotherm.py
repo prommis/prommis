@@ -46,7 +46,7 @@ class PrecipitateParametersScaler(CustomScalerBase):
     """
 
     DEFAULT_SCALING_FACTORS = {
-        "temperature": 1e1,
+        "temperature": 1/300,
         "flow_mol_comp": 1e3,
     }
 

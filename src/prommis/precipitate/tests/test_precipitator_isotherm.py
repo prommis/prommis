@@ -15,6 +15,7 @@ from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import InitializationStatus
+from idaes.core.scaling.util import jacobian_cond
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.testing import assert_solution_equivalent
@@ -24,6 +25,7 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
+from idaes.core.scaling.util import unscaled_variables_generator
 
 from prommis.properties.mixed_acid_properties import (
     MixedAcidParameterBlock,
@@ -201,6 +203,13 @@ class TestPrec(object):
 
         assert initializer.summary[model.fs.unit]["status"] == InitializationStatus.Ok
 
+    @pytest.mark.component
+    def test_var_scaling(self, prec):
+        unscaled_var_list = list(
+            unscaled_variables_generator(prec.fs.unit, include_fixed=True)
+        )
+        assert len(unscaled_var_list) == 0
+
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
@@ -210,6 +219,9 @@ class TestPrec(object):
 
         # Check for optimal solution
         assert check_optimal_termination(results)
+
+        assert jacobian_cond(prec, scaled=False) == pytest.approx(1.96086723e12)
+        assert jacobian_cond(prec, scaled=True) == pytest.approx(6.39830401e4)
 
     @pytest.mark.component
     @pytest.mark.solver
@@ -463,6 +475,16 @@ class TestPrecRob(object):
         initializer.initialize(model.fs.unit)
 
         assert initializer.summary[model.fs.unit]["status"] == InitializationStatus.Ok
+
+    @pytest.mark.component
+    def test_var_scaling(self, prec):
+        unscaled_var_list = list(
+            unscaled_variables_generator(prec.fs.unit, include_fixed=True)
+        )
+        assert len(unscaled_var_list) == 0
+
+        assert jacobian_cond(prec, scaled=False) == pytest.approx(1.29555270e12)
+        assert jacobian_cond(prec, scaled=True) == pytest.approx(1.72335026e4)
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")

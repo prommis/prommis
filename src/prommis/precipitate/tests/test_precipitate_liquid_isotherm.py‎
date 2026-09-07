@@ -4,7 +4,11 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
+import io
+import logging
+
 from pyomo.environ import ConcreteModel, Constraint, Var
+from pyomo.common.log import LoggingIntercept
 
 from idaes.core import FlowsheetBlock
 
@@ -12,6 +16,35 @@ import pytest
 
 from prommis.precipitate.precipitate_liquid_properties_isotherm import AqueousParameter
 
+@pytest.mark.unit
+def test_deprecation_warning_on_parameter_block():
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+
+    stream = io.StringIO()
+    with LoggingIntercept(stream, "pyomo", logging.WARNING):
+        m.fs.prec_sol = AqueousParameter()
+
+    output = stream.getvalue()
+    assert "DEPRECATED" in output
+    assert "PrOMMiS 1.1" in output
+
+@pytest.mark.unit
+def test_deprecation_warning_on_state_block():
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+
+    stream = io.StringIO()
+    with LoggingIntercept(None, "pyomo", 0):
+        m.fs.prec_sol = AqueousParameter()
+
+    stream = io.StringIO()
+    with LoggingIntercept(stream, "pyomo", logging.WARNING):
+        m.fs.state = m.fs.prec_sol.build_state_block(m.fs.time)
+
+    output = stream.getvalue()
+    assert "DEPRECATED" in output
+    assert "PrOMMiS 1.1" in output
 
 @pytest.mark.unit
 def test_build():

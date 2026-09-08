@@ -16,6 +16,7 @@ import pytest
 
 from prommis.precipitate.precipitate_liquid_properties_isotherm import AqueousParameter
 
+
 @pytest.mark.unit
 def test_deprecation_warning_on_parameter_block():
     m = ConcreteModel()
@@ -28,6 +29,7 @@ def test_deprecation_warning_on_parameter_block():
     output = stream.getvalue()
     assert "DEPRECATED" in output
     assert "PrOMMiS 1.1" in output
+
 
 @pytest.mark.unit
 def test_deprecation_warning_on_state_block():
@@ -45,6 +47,7 @@ def test_deprecation_warning_on_state_block():
     output = stream.getvalue()
     assert "DEPRECATED" in output
     assert "PrOMMiS 1.1" in output
+
 
 @pytest.mark.unit
 def test_build():

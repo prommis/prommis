@@ -63,10 +63,7 @@ def main():
 
     set_scaling(m)
 
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-
-    if degrees_of_freedom(scaled_model) != 0:
+    if degrees_of_freedom(m) != 0:
         raise AssertionError(
             "The degrees of freedom are not equal to 0."
             "Check that the expected variables are fixed and unfixed."
@@ -74,14 +71,14 @@ def main():
         )
 
     # structural diagnostics check
-    dt = DiagnosticsToolbox(scaled_model)
+    dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 
-    initialize_system(scaled_model)
+    initialize_system(m)
 
-    scaled_results = solve_system(scaled_model, False)
+    results = solve_system(m, False)
 
-    if not check_optimal_termination(scaled_results):
+    if not check_optimal_termination(results):
         raise RuntimeError(
             "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
         )
@@ -89,11 +86,9 @@ def main():
     # numerical diagnostics test
     dt.assert_no_numerical_warnings()
 
-    res = scaling.propagate_solution(scaled_model, m)
-
     display_results(m)
 
-    return m, res
+    return m, results
 
 
 def build():

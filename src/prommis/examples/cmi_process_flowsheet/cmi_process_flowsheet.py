@@ -657,7 +657,7 @@ def set_scaling(m):
     )
 
 
-def initialize_system(m):
+def initialize_system(m, solver_name="ipopt_v2", solver_options=None):
     """
     Initialize system.
 
@@ -666,46 +666,46 @@ def initialize_system(m):
     """
 
     ### Initialize Feed and propagate state to Dissolution Stage
-    m.fs.FEED.initialize()
+    m.fs.FEED.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.FEED_Diss)
 
     ### Initialize Dissolution Stage and propagate state to S101
-    m.fs.Dissolution.initialize()
+    m.fs.Dissolution.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.Diss_S101)
 
     ### Initialize S101 and propagate state to pH adjustment stage mixer
-    m.fs.S101.initialize()
+    m.fs.S101.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.S101_AdjMixer)
 
     # # Initialize pH Adjustment feed and propagate state to mixer
-    m.fs.AdjFeed.initialize()
+    m.fs.AdjFeed.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.AdjFeed_AdjMixer)
 
     # # Initialize pH Adjustment mixer and propagate state to reactor
-    m.fs.AdjMixer.initialize()
+    m.fs.AdjMixer.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.AdjMixer_Adjustment)
 
     # # Initialize pH Adjustment reactor and propagate state to precipitation stage mixer
-    m.fs.Adjustment.initialize()
+    m.fs.Adjustment.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.Adjustment_PrecipMixer)
 
     # Initialize precipitation stage feed and propagate state to precipitation stage mixer
-    m.fs.PrecipFeed.initialize()
+    m.fs.PrecipFeed.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.PrecipFeed_PrecipMixer)
 
     # Initialize precipitation stage feed and propagate state to precipitation stage reactor
-    m.fs.PrecipMixer.initialize()
+    m.fs.PrecipMixer.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.PrecipMixer_Precipitation)
 
     # Initialize precipitation stage reactor
-    m.fs.Precipitation.initialize()
+    m.fs.Precipitation.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.Precipitation_S102)
 
     ### Initialize S102
-    m.fs.S102.initialize()
+    m.fs.S102.initialize(solver=solver_name, optarg=solver_options)
 
     # Initialize precipitation stage calcinator
-    m.fs.Calcination.initialize()
+    m.fs.Calcination.initialize(solver=solver_name, optarg=solver_options)
 
 
 def solve_system(m, tee=False):
@@ -715,7 +715,7 @@ def solve_system(m, tee=False):
         tee: boolean indicator to stream IPOPT solution
     """
     # Solve flowsheet
-    solver_obj = get_solver()
+    solver_obj = get_solver("ipopt_v2")
 
     results = solver_obj.solve(m, tee=tee)
 

@@ -663,6 +663,8 @@ def initialize_system(m, solver_name="ipopt_v2", solver_options=None):
 
     Args:
         m: pyomo model
+        solver_name: name of the solver to retrieve using get_solver
+        solver_options: dictionary of options to use with designated solver
     """
 
     ### Initialize Feed and propagate state to Dissolution Stage

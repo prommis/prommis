@@ -311,6 +311,54 @@ class MixedAcidParameterData(PhysicalParameterBlock):
             initialize=mw_init,
         )
 
+        # Split fractions for the precipitator
+        # parameter based on pH 1.28
+        # TODO add surrogate model/equation
+        split_fractions = {
+            "H2O": 1e-20,
+            "Sc_3+": 31.61,
+            "Y_3+": 74.46,
+            "La_3+": 51.51,
+            "Ce_3+": 68.07,
+            "Pr_3+": 78,
+            "Nd_3+": 81.55,
+            "Sm_3+": 87.35,
+            "Gd_3+": 88.01,
+            "Dy_3+": 87.16,
+            "Al_3+": 0.9,
+            "Ca_2+": 20.50,
+            "Fe_3+": 2.44,
+            "H_+": 1e-20,
+            "Cl_-": 1e-20,
+        }
+
+        if self.config.include_oxalates:
+            split_fractions.update({
+                "H2C2O4": 1e-20,
+                "HC2O4_-": 1e-20,
+                "C2O4_2-": 1e-20,
+            })
+
+        elif self.config.include_sulfates:
+            split_fractions.update({
+                "HSO4_-": 1e-20,
+                "SO4_2-": 1e-20,
+            })
+
+        elif self.config.include_ascorbates:
+            split_fractions.update({
+                "HAsc-": 1e-20,
+                "Asc_-": 1e-20,
+                "HDha": 1e-20,
+                "Dha_-": 1e-20,
+            })
+
+        self.split = Param(
+            self.component_list,
+            units=units.kg / units.kg,
+            initialize=split_fractions
+        )
+
         if (
             self.config.include_sulfates
             or self.config.include_oxalates
@@ -515,7 +563,7 @@ class MixedAcidStateBlockData(StateBlockData):
 
         self.temperature = Var(
             domain=Reals,
-            initialize=298.15,
+            initialize=303.0,
             bounds=(298.1, None),
             doc="State temperature [K]",
             units=units.K,
@@ -528,6 +576,15 @@ class MixedAcidStateBlockData(StateBlockData):
             doc="State pressure [Pa]",
             units=units.Pa,
         )
+
+        # TODO: These scaling factors are copied from the now unused precipitate_liquid_properties
+        # The flowsheet appears to initialize better with the vars scaled in this manner rather than
+        # adjusting the default scaling factors in the flowsheet with the new scaling tools... need to look into this more
+        import idaes.core.util.scaling as iscale
+        iscale.set_scaling_factor(self.flow_vol, 1e1)
+        iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
+        iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
+        iscale.set_scaling_factor(self.conc_mol_comp, 1e5)
 
         # Concentration conversion constraint
         @self.Constraint(self.params.component_list)

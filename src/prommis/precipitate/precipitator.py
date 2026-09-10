@@ -45,6 +45,7 @@ solved by a surrogate or a model equation.
 # Import Pyomo libraries
 from pyomo.common.collections import ComponentMap
 from pyomo.common.config import Bool, ConfigBlock, ConfigValue
+from pyomo.environ import Constraint, value
 
 import idaes.logger as idaeslog
 
@@ -276,6 +277,12 @@ see reaction package for documentation.}""",
             doc="Flag whether to create legacy volume balance constraint",
         ),
     )
+
+    def fix_initialization_states(self):
+        self.cv_aqueous.properties_in.fix_initialization_states()
+        for t in self.flowsheet().time:
+            self.cv_aqueous.properties_in[t].conc_mass_comp["HC2O4_-"].unfix()
+            self.cv_aqueous.properties_in[t].conc_mass_comp["C2O4_2-"].unfix()
 
     def build(self):
         """

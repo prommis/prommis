@@ -42,8 +42,9 @@ class SolventExtractionReactionScaler(CustomScalerBase):
         org_block = model.parent_block().organic[model.index()]
         for e in model.params.element_list:
             sf_aq = self.get_scaling_factor(aq_block.conc_mol_comp[e], default=1)
+
             sf_org = self.get_scaling_factor(
-                org_block.conc_mol_comp[e + "_o"], default=1
+                org_block.conc_mol_comp[model.params.organic_name[e]], default=1
             )
             self.set_variable_scaling_factor(
                 model.distribution_coefficient[e], sf_org / sf_aq, overwrite=overwrite
@@ -120,33 +121,34 @@ class SolventExtractionReactionsData(
 
         self._reaction_block_class = SolventExtractionReactionsBlock
 
-        REE_list = ["La", "Y", "Pr", "Ce", "Nd", "Sm", "Gd", "Dy"]
-        Impurity_list = ["Al", "Ca", "Fe", "Sc"]
+        REE_list = ["La_3+", "Y_3+", "Pr_3+", "Ce_3+", "Nd_3+", "Sm_3+", "Gd_3+", "Dy_3+"]
+        Impurity_list = ["Al_3+", "Ca_2+", "Fe_3+", "Sc_3+"]
 
         index_list = [f"{e}_mass_transfer" for e in (REE_list + Impurity_list)]
         element_list = REE_list + Impurity_list
 
         self.element_list = Set(initialize=element_list)
         self.reaction_idx = Set(initialize=index_list)
+        self.organic_name = {e: f"{e.split('_')[0]}_o" for e in element_list}
 
         reaction_stoichiometry = {}
 
         for e in REE_list:
             reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", e)] = -1
-            reaction_stoichiometry[(f"{e}_mass_transfer", "organic", f"{e}_o")] = 1
-            reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H")] = 3
+            reaction_stoichiometry[(f"{e}_mass_transfer", "organic", self.organic_name[e])] = 1
+            reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H_+")] = 3
             reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -3
 
         for e in Impurity_list:
-            if e == "Ca":
+            if e == "Ca_2+":
                 reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", e)] = -1
-                reaction_stoichiometry[(f"{e}_mass_transfer", "organic", f"{e}_o")] = 1
-                reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H")] = 2
+                reaction_stoichiometry[(f"{e}_mass_transfer", "organic", self.organic_name[e])] = 1
+                reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H_+")] = 2
                 reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -2
             else:
                 reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", e)] = -1
-                reaction_stoichiometry[(f"{e}_mass_transfer", "organic", f"{e}_o")] = 1
-                reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H")] = 3
+                reaction_stoichiometry[(f"{e}_mass_transfer", "organic", self.organic_name[e])] = 1
+                reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H_+")] = 3
                 reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -3
 
         self.reaction_stoichiometry = reaction_stoichiometry
@@ -154,108 +156,108 @@ class SolventExtractionReactionsData(
         self.m0 = Param(
             self.element_list,
             initialize={
-                "Ce": 0.30916,
-                "Y": 1.63166,
-                "Gd": 1.0225,
-                "Dy": 1.70783,
-                "Sm": 0.81233,
-                "Nd": 0.31183,
-                "La": 0.54,
-                "Pr": 0.29,
-                "Sc": 0,
-                "Al": 0,
-                "Ca": 0,
-                "Fe": 0,
+                "Ce_3+": 0.30916,
+                "Y_3+": 1.63166,
+                "Gd_3+": 1.0225,
+                "Dy_3+": 1.70783,
+                "Sm_3+": 0.81233,
+                "Nd_3+": 0.31183,
+                "La_3+": 0.54,
+                "Pr_3+": 0.29,
+                "Sc_3+": 0,
+                "Al_3+": 0,
+                "Ca_2+": 0,
+                "Fe_3+": 0,
             },
         )
 
         self.m1 = Param(
             self.element_list,
             initialize={
-                "Ce": 0.04816,
-                "Y": 0.15166,
-                "Gd": 0.0195,
-                "Dy": 0.06443,
-                "Sm": -0.02247,
-                "Nd": 0.03763,
-                "La": 0,
-                "Pr": 0,
-                "Sc": 0,
-                "Al": 0,
-                "Ca": 0,
-                "Fe": 0,
+                "Ce_3+": 0.04816,
+                "Y_3+": 0.15166,
+                "Gd_3+": 0.0195,
+                "Dy_3+": 0.06443,
+                "Sm_3+": -0.02247,
+                "Nd_3+": 0.03763,
+                "La_3+": 0,
+                "Pr_3+": 0,
+                "Sc_3+": 0,
+                "Al_3+": 0,
+                "Ca_2+": 0,
+                "Fe_3+": 0,
             },
         )
 
         self.B0 = Param(
             self.element_list,
             initialize={
-                "Ce": -1.66021,
-                "Y": -2.12601,
-                "Gd": -2.24143,
-                "Dy": -2.42226,
-                "Sm": -2.12172,
-                "Nd": -1.62372,
-                "La": -1.93,
-                "Pr": -1.48,
-                "Sc": 0,
-                "Al": 0,
-                "Ca": 0,
-                "Fe": 0,
+                "Ce_3+": -1.66021,
+                "Y_3+": -2.12601,
+                "Gd_3+": -2.24143,
+                "Dy_3+": -2.42226,
+                "Sm_3+": -2.12172,
+                "Nd_3+": -1.62372,
+                "La_3+": -1.93,
+                "Pr_3+": -1.48,
+                "Sc_3+": 0,
+                "Al_3+": 0,
+                "Ca_2+": 0,
+                "Fe_3+": 0,
             },
         )
 
         self.B1 = Param(
             self.element_list,
             initialize={
-                "Ce": -0.38599,
-                "Y": 0.26612,
-                "Gd": 0.03065,
-                "Dy": -0.02538,
-                "Sm": 0.17414,
-                "Nd": -0.38096,
-                "La": 0,
-                "Pr": 0,
-                "Sc": 0,
-                "Al": 0,
-                "Ca": 0,
-                "Fe": 0,
+                "Ce_3+": -0.38599,
+                "Y_3+": 0.26612,
+                "Gd_3+": 0.03065,
+                "Dy_3+": -0.02538,
+                "Sm_3+": 0.17414,
+                "Nd_3+": -0.38096,
+                "La_3+": 0,
+                "Pr_3+": 0,
+                "Sc_3+": 0,
+                "Al_3+": 0,
+                "Ca_2+": 0,
+                "Fe_3+": 0,
             },
         )
 
         self.K1 = Param(
             self.element_list,
             initialize={
-                "Ce": 0,
-                "Y": 0,
-                "Gd": 0,
-                "Dy": 0,
-                "Sm": 0,
-                "Nd": 0,
-                "La": 0,
-                "Pr": 0,
-                "Sc": 632.4976,
-                "Al": 0.0531,
-                "Ca": 0.0658,
-                "Fe": 0.1496,
+                "Ce_3+": 0,
+                "Y_3+": 0,
+                "Gd_3+": 0,
+                "Dy_3+": 0,
+                "Sm_3+": 0,
+                "Nd_3+": 0,
+                "La_3+": 0,
+                "Pr_3+": 0,
+                "Sc_3+": 632.4976,
+                "Al_3+": 0.0531,
+                "Ca_2+": 0.0658,
+                "Fe_3+": 0.1496,
             },
         )
 
         self.K_corr = Param(
             self.element_list,
             initialize={
-                "Ce": 0,
-                "Y": 0,
-                "Gd": 0,
-                "Dy": 0,
-                "Sm": 0,
-                "Nd": 0,
-                "La": 0,
-                "Pr": 0,
-                "Sc": 1,
-                "Al": 1,
-                "Ca": 1,
-                "Fe": 1,
+                "Ce_3+": 0,
+                "Y_3+": 0,
+                "Gd_3+": 0,
+                "Dy_3+": 0,
+                "Sm_3+": 0,
+                "Nd_3+": 0,
+                "La_3+": 0,
+                "Pr_3+": 0,
+                "Sc_3+": 1,
+                "Al_3+": 1,
+                "Ca_2+": 1,
+                "Fe_3+": 1,
             },
         )
 

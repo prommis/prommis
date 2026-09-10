@@ -85,18 +85,18 @@ class PrecipitateParametersData(PhysicalParameterBlock):
         self.component_list = comp_list
 
         self.react = {
-            "Sc2(C2O4)3(s)": "Sc",
-            "Y2(C2O4)3(s)": "Y",
-            "La2(C2O4)3(s)": "La",
-            "Ce2(C2O4)3(s)": "Ce",
-            "Pr2(C2O4)3(s)": "Pr",
-            "Nd2(C2O4)3(s)": "Nd",
-            "Sm2(C2O4)3(s)": "Sm",
-            "Gd2(C2O4)3(s)": "Gd",
-            "Dy2(C2O4)3(s)": "Dy",
-            "Al2(C2O4)3(s)": "Al",
-            "Ca(C2O4)(s)": "Ca",
-            "Fe2(C2O4)3(s)": "Fe",
+            "Sc2(C2O4)3(s)": "Sc_3+",
+            "Y2(C2O4)3(s)": "Y_3+",
+            "La2(C2O4)3(s)": "La_3+",
+            "Ce2(C2O4)3(s)": "Ce_3+",
+            "Pr2(C2O4)3(s)": "Pr_3+",
+            "Nd2(C2O4)3(s)": "Nd_3+",
+            "Sm2(C2O4)3(s)": "Sm_3+",
+            "Gd2(C2O4)3(s)": "Gd_3+",
+            "Dy2(C2O4)3(s)": "Dy_3+",
+            "Al2(C2O4)3(s)": "Al_3+",
+            "Ca(C2O4)(s)": "Ca_2+",
+            "Fe2(C2O4)3(s)": "Fe_3+",
         }
 
         self.stoich = Param(

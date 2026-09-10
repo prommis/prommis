@@ -59,12 +59,15 @@ estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxal
 
 """
 
+import math
+from pyomo.common.collections import ComponentMap
 from pyomo.common.config import ConfigDict, ConfigValue, In
 
 from pyomo.environ import (
     Param,
     Var,
     Block,
+    value,
     log,
     NonNegativeReals,
     units as pyunits,
@@ -83,10 +86,137 @@ from idaes.core import (
     useDefault,
 )
 from idaes.core.util.config import is_physical_parameter_block
-import idaes.core.util.scaling as iscale
 
 from idaes.models.unit_models.mscontactor import MSContactor
 from idaes.core.initialization import ModularInitializerBase
+from idaes.core.scaling import CustomScalerBase, ConstraintScalingScheme
+
+
+class OxalatePrecipitatorScaler(CustomScalerBase):
+    """
+    Scaler for the Oxalate Precipitator unit model.
+    """
+
+    DEFAULT_SCALING_FACTORS = {
+        "volume": 1e-3,
+        "hydraulic_retention_time": 1e0,
+        "conversion": 1e1,
+        "heterogeneous_reaction_extent": 1e3,
+        "solid_heterogeneous_reactions_generation": 1e3,
+        "liquid_heterogeneous_reactions_generation": 1e3,
+    }
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: ComponentMap = None
+    ):
+        """
+        Variable scaling routine for the Oxalate Precipitator.
+
+        Args:
+            model: instance of OxalatePrecipitator to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: ComponentMap of Scalers to use for sub-models,
+                keyed by submodel local name
+
+        Returns:
+            None
+        """
+
+        self.call_submodel_scaler_method(
+            submodel=model.mscontactor,
+            submodel_scalers=submodel_scalers,
+            method="variable_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        for t in model.flowsheet().time:
+            self.scale_variable_by_default(model.volume[t], overwrite=overwrite)
+            self.scale_variable_by_default(
+                model.hydraulic_retention_time[t], overwrite=overwrite
+            )
+
+        for r in model.config.reaction_package.reaction_idx:
+            self.scale_variable_by_default(model.conversion[r], overwrite=overwrite)
+
+        if hasattr(model.mscontactor, "heterogeneous_reaction_extent"):
+            for v in model.mscontactor.heterogeneous_reaction_extent.values():
+                self.scale_variable_by_default(v, overwrite=overwrite)
+
+        if hasattr(model.mscontactor, "solid_heterogeneous_reactions_generation"):
+            for (
+                v
+            ) in model.mscontactor.solid_heterogeneous_reactions_generation.values():
+                self.scale_variable_by_default(v, overwrite=overwrite)
+
+        if hasattr(model.mscontactor, "liquid_heterogeneous_reactions_generation"):
+            for (
+                v
+            ) in model.mscontactor.liquid_heterogeneous_reactions_generation.values():
+                self.scale_variable_by_default(v, overwrite=overwrite)
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: ComponentMap = None
+    ):
+        """
+        Constraint scaling routine for the Oxalate Precipitator.
+
+        Args:
+            model: instance of OxalatePrecipitator to be scaled
+            overwrite: whether to overwrite existing scaling factors
+            submodel_scalers: ComponentMap of Scalers to use for sub-models,
+                keyed by submodel local name
+
+        Returns:
+            None
+        """
+        self.call_submodel_scaler_method(
+            submodel=model.mscontactor,
+            submodel_scalers=submodel_scalers,
+            method="constraint_scaling_routine",
+            overwrite=overwrite,
+        )
+
+        for condata in model.eq_hydraulic_retention.values():
+            self.scale_constraint_by_nominal_value(
+                condata,
+                scheme=ConstraintScalingScheme.inverseMaximum,
+                overwrite=overwrite,
+            )
+
+        for condata in model.heterogeneous_reaction_extent_constraint.values():
+            self.scale_constraint_by_nominal_value(
+                condata,
+                scheme=ConstraintScalingScheme.inverseMaximum,
+                overwrite=overwrite,
+            )
+
+        for condata in model.temp_constraint.values():
+            self.scale_constraint_by_nominal_value(
+                condata,
+                scheme=ConstraintScalingScheme.inverseMaximum,
+                overwrite=overwrite,
+            )
+
+        for condata in model.liq_temp_constraint.values():
+            self.scale_constraint_by_nominal_value(
+                condata,
+                scheme=ConstraintScalingScheme.inverseMaximum,
+                overwrite=overwrite,
+            )
+
+        for condata in model.press_constraint.values():
+            self.scale_constraint_by_nominal_value(
+                condata,
+                scheme=ConstraintScalingScheme.inverseMaximum,
+                overwrite=overwrite,
+            )
+
+        for condata in model.init_solid_constraint.values():
+            self.scale_constraint_by_nominal_value(
+                condata,
+                scheme=ConstraintScalingScheme.inverseMaximum,
+                overwrite=overwrite,
+            )
 
 
 # -----------------------------------------------------------------------------
@@ -142,6 +272,21 @@ class OxalatePrecipitatorInitializer(ModularInitializerBase):
         msc_init.initialize(model.mscontactor)
 
         model.mscontactor.heterogeneous_reaction_extent.unfix()
+
+        for t in model.flowsheet().time:
+            dosage = value(model.oxalic_acid_dosage[t])
+            for r in model.config.reaction_package.reaction_idx:
+                if r == "Ca(C2O4)(s)":
+                    model.conversion[r].set_value(value(model.min_conversion))
+                else:
+                    E_D = value(model.config.reaction_package.E_D[r])
+                    N_D = value(model.config.reaction_package.N_D[r])
+                    if dosage > 0:
+                        exponent = -(E_D**N_D) / (dosage**N_D)
+                        exponent = max(min(exponent, 0.0), -700.0)
+                        model.conversion[r].set_value(
+                            min(max(math.exp(exponent), 1e-20), 0.999999)
+                        )
 
         solver = self._get_solver()
         results = solver.solve(model, tee=True)
@@ -201,6 +346,7 @@ class OxalatePrecipitatorData(UnitModelBlockData):
 
     # Set default initializer
     default_initializer = OxalatePrecipitatorInitializer
+    default_scaler = OxalatePrecipitatorScaler
 
     CONFIG = UnitModelBlockData.CONFIG()
 
@@ -305,9 +451,11 @@ class OxalatePrecipitatorData(UnitModelBlockData):
             doc="Oxalic acid dosage",
         )
         def oxalic_acid_dosage(blk, t):
-            return blk.aqueous_inlet.conc_mass_comp[0, "H2C2O4"] / (
-                1000 * pyunits.mg / pyunits.l
-            )
+            return (
+                blk.aqueous_inlet.conc_mass_comp[0, "H2C2O4"]
+                + blk.aqueous_inlet.conc_mass_comp[0, "HC2O4_-"]
+                + blk.aqueous_inlet.conc_mass_comp[0, "C2O4_2-"]
+            ) / (1000 * pyunits.mg / pyunits.l)
 
         @self.Constraint(self.flowsheet().time, doc="Hydraulic retention time equation")
         def eq_hydraulic_retention(blk, t):
@@ -377,30 +525,11 @@ class OxalatePrecipitatorData(UnitModelBlockData):
                 == 1e-9 * pyunits.mole / pyunits.hour
             )
 
-    def calculate_scaling_factors(self):
-        """
-        Apply scaling factors to improve solver performance.
-        """
-
-        iscale.set_scaling_factor(self.hydraulic_retention_time, 1e0)
-        iscale.set_scaling_factor(self.conversion, 1e1)
-        iscale.set_scaling_factor(self.mscontactor.heterogeneous_reaction_extent, 1e3)
-        iscale.set_scaling_factor(
-            self.mscontactor.solid_heterogeneous_reactions_generation, 1e3
-        )
-        iscale.set_scaling_factor(
-            self.mscontactor.liquid_heterogeneous_reactions_generation, 1e3
-        )
-        iscale.set_scaling_factor(self.volume, 1e-3)
-
     def _get_performance_contents(self, time_point=0):
         var_dict = {}
         expr_dict = {}
         param_dict = {}
         var_dict["Unit Volume"] = self.volume[time_point]
         var_dict["Hydraulic Retention Time"] = self.hydraulic_retention_time[time_point]
-        var_dict["Unit Height"] = self.height
-        var_dict["Unit Diameter"] = self.diameter
-        expr_dict["Surface Area"] = self.surface_area
         expr_dict["Oxalic Acid Dosage"] = self.oxalic_acid_dosage[time_point]
         return {"vars": var_dict, "params": param_dict, "exprs": expr_dict}

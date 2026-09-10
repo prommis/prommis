@@ -6,13 +6,16 @@
 #####################################################################################################
 import pytest
 from pyomo.environ import (
+    ComponentMap,
     ConcreteModel,
+    check_optimal_termination,
     value,
 )
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
 from idaes.core.initialization import InitializationStatus
+from idaes.core.scaling.util import jacobian_cond
 from idaes.core.solvers import get_solver
 from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 from idaes.core.util.testing import assert_solution_equivalent
@@ -22,13 +25,17 @@ from idaes.core.util.model_statistics import (
     number_unused_variables,
     number_variables,
 )
+from idaes.core.scaling.util import unscaled_variables_generator
 
-from prommis.precipitate.precipitate_liquid_properties_isotherm import AqueousParameter
+from prommis.properties.mixed_acid_properties import (
+    MixedAcidParameterBlock,
+)
 from prommis.precipitate.precipitate_solids_properties_isotherm import (
     PrecipitateParameters,
 )
 from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
 from prommis.precipitate.precipitator_isotherm import (
+    OxalatePrecipitatorScaler,
     OxalatePrecipitator,
     OxalatePrecipitatorInitializer,
 )
@@ -43,7 +50,7 @@ solver = get_solver()
 def test_config():
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
-    m.fs.properties_aq = AqueousParameter()
+    m.fs.properties_aq = MixedAcidParameterBlock(include_oxalates=True)
     m.fs.properties_solid = PrecipitateParameters()
     m.fs.prec_rxns = OxalatePrecipitationReactions()
 
@@ -70,6 +77,8 @@ def test_config():
     assert m.fs.unit.config.solid_phase.property_package is m.fs.properties_solid
     assert m.fs.unit.config.reaction_package is m.fs.prec_rxns
 
+    assert m.fs.unit.default_scaler is OxalatePrecipitatorScaler
+
 
 # -----------------------------------------------------------------------------
 class TestPrec(object):
@@ -77,7 +86,7 @@ class TestPrec(object):
     def prec(self):
         m = ConcreteModel()
         m.fs = FlowsheetBlock(dynamic=False)
-        m.fs.properties_aq = AqueousParameter()
+        m.fs.properties_aq = MixedAcidParameterBlock(include_oxalates=True)
         m.fs.properties_solid = PrecipitateParameters()
         m.fs.prec_rxns = OxalatePrecipitationReactions()
 
@@ -98,30 +107,44 @@ class TestPrec(object):
 
         m.fs.unit.aqueous_inlet.flow_vol[0].fix(100)
 
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Al"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Ca"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Fe"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Sc"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Y"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "La"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Ce"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Pr"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Nd"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Sm"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Gd"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Dy"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H"].fix(1e-9)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Cl"].fix(1e-9)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "SO4"].fix(1e-9)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Al_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Ca_2+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Fe_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Sc_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Y_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "La_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Ce_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Pr_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Nd_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Sm_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Gd_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Dy_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H_+"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Cl_-"].fix(1e-9)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2C2O4"].fix(6400)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(100000)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "HC2O4_-"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "C2O4_2-"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1000000)
 
         m.fs.unit.aqueous_inlet.temperature[0].fix(298.15)
         m.fs.unit.aqueous_inlet.pressure[0].fix(1e5)
 
         m.fs.unit.precipitate_outlet.temperature.fix(348.15)
         m.fs.unit.hydraulic_retention_time[0.0].fix(2)
+
+        liquid_scaler = m.fs.unit.mscontactor.liquid.default_scaler()
+        liquid_scaler.default_scaling_factors["flow_vol"] = 1e-2
+
+        solid_scaler = m.fs.unit.mscontactor.solid.default_scaler()
+
+        submodel_scalers = ComponentMap()
+        submodel_scalers[m.fs.unit.mscontactor.liquid_inlet_state] = liquid_scaler
+        submodel_scalers[m.fs.unit.mscontactor.liquid] = liquid_scaler
+        submodel_scalers[m.fs.unit.mscontactor.solid_inlet_state] = solid_scaler
+        submodel_scalers[m.fs.unit.mscontactor.solid] = solid_scaler
+
+        scaler_obj = m.fs.unit.default_scaler()
+        scaler_obj.scale_model(m.fs.unit, submodel_scalers=submodel_scalers)
 
         return m
 
@@ -152,8 +175,8 @@ class TestPrec(object):
         assert hasattr(prec.fs.unit, "heterogeneous_reaction_extent_constraint")
         assert hasattr(prec.fs.unit, "eq_hydraulic_retention")
 
-        assert number_variables(prec.fs.unit) == 208
-        assert number_total_constraints(prec.fs.unit) == 185
+        assert number_variables(prec.fs.unit) == 228
+        assert number_total_constraints(prec.fs.unit) == 205
         assert number_unused_variables(prec.fs.unit) == 0
 
     @pytest.mark.component
@@ -181,6 +204,26 @@ class TestPrec(object):
         assert initializer.summary[model.fs.unit]["status"] == InitializationStatus.Ok
 
     @pytest.mark.component
+    def test_var_scaling(self, prec):
+        unscaled_var_list = list(
+            unscaled_variables_generator(prec.fs.unit, include_fixed=True)
+        )
+        assert len(unscaled_var_list) == 0
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(solver is None, reason="Solver not available")
+    @pytest.mark.component
+    def test_solve(self, prec):
+        m = prec
+        results = solver.solve(m, tee=True)
+
+        # Check for optimal solution
+        assert check_optimal_termination(results)
+
+        assert jacobian_cond(prec, scaled=False) == pytest.approx(1.96086723e12)
+        assert jacobian_cond(prec, scaled=True) == pytest.approx(6.39830401e4)
+
+    @pytest.mark.component
     @pytest.mark.solver
     def test_numerical_issues(self, prec):
         dt = DiagnosticsToolbox(prec)
@@ -195,18 +238,18 @@ class TestPrec(object):
                 0: (100, None, 1e-0),
             },
             "unit.aqueous_outlet.conc_mass_comp": {
-                (0, "Al"): (9.982, None, 1e-3),
-                (0, "Ca"): (10, None, 1e-3),
-                (0, "Ce"): (0.0991, None, 1e-3),
-                (0, "Dy"): (2.3824, None, 1e-3),
-                (0, "Fe"): (9.7864, None, 1e-3),
-                (0, "Gd"): (0.4486, None, 1e-3),
-                (0, "La"): (1.5715, None, 1e-3),
-                (0, "Nd"): (0.1142, None, 1e-3),
-                (0, "Pr"): (0.2118, None, 1e-3),
-                (0, "Sc"): (6.3964, None, 1e-3),
-                (0, "Sm"): (0.2183, None, 1e-3),
-                (0, "Y"): (1.8401, None, 1e-3),
+                (0, "Al_3+"): (9.982, None, 1e-3),
+                (0, "Ca_2+"): (10, None, 1e-3),
+                (0, "Ce_3+"): (0.0991, None, 1e-3),
+                (0, "Dy_3+"): (2.3824, None, 1e-3),
+                (0, "Fe_3+"): (9.7864, None, 1e-3),
+                (0, "Gd_3+"): (0.4486, None, 1e-3),
+                (0, "La_3+"): (1.5715, None, 1e-3),
+                (0, "Nd_3+"): (0.1142, None, 1e-3),
+                (0, "Pr_3+"): (0.2118, None, 1e-3),
+                (0, "Sc_3+"): (6.3964, None, 1e-3),
+                (0, "Sm_3+"): (0.2183, None, 1e-3),
+                (0, "Y_3+"): (1.8401, None, 1e-3),
             },
             "unit.precipitate_outlet.flow_mol_comp": {
                 (0, "Al2(C2O4)3(s)"): (3.20213e-05, None, 1e-6),
@@ -261,9 +304,9 @@ class TestPrec(object):
         reversed_react = dict(
             map(reversed, prec.fs.properties_solid.reaction_to_element.items())
         )
-        pass_through_elements = ["Cl", "SO4", "H2O", "HSO4"]
-        for j in prec.fs.properties_aq.dissolved_elements:
-            if j in ["H", "H2C2O4"]:
+        pass_through_elements = ["Cl_-", "H2O"]
+        for j in prec.fs.properties_aq.component_list:
+            if j in ["H_+", "H2C2O4", "HC2O4_-", "C2O4_2-"]:
                 pass
             elif j in pass_through_elements:
                 assert value(
@@ -290,6 +333,25 @@ class TestPrec(object):
                     abs=1e-8,
                 )
 
+    @pytest.mark.unit
+    def test_get_performance_contents(self, prec):
+        unit = prec.fs.unit
+        out = unit._get_performance_contents()
+
+        assert len(out) == 3
+
+        var_dict = out["vars"]
+        assert len(var_dict) == 2
+        assert var_dict["Unit Volume"] is unit.volume[0]
+        assert var_dict["Hydraulic Retention Time"] is unit.hydraulic_retention_time[0]
+
+        param_dict = out["params"]
+        assert len(param_dict) == 0
+
+        expr_dict = out["exprs"]
+        assert len(expr_dict) == 1
+        assert expr_dict["Oxalic Acid Dosage"] is unit.oxalic_acid_dosage[0]
+
 
 # -----------------------------------------------------------------------------
 class TestPrecRob(object):
@@ -297,7 +359,7 @@ class TestPrecRob(object):
     def prec(self):
         m = ConcreteModel()
         m.fs = FlowsheetBlock(dynamic=False)
-        m.fs.properties_aq = AqueousParameter()
+        m.fs.properties_aq = MixedAcidParameterBlock(include_oxalates=True)
         m.fs.properties_solid = PrecipitateParameters()
         m.fs.prec_rxns = OxalatePrecipitationReactions()
 
@@ -318,30 +380,44 @@ class TestPrecRob(object):
 
         m.fs.unit.aqueous_inlet.flow_vol[0].fix(100)
 
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Al"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Ca"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Fe"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Sc"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Y"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "La"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Ce"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Pr"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Nd"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Sm"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Gd"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Dy"].fix(10)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H"].fix(1e-6)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Cl"].fix(1e-6)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "SO4"].fix(1e-6)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "HSO4"].fix(1e-6)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Al_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Ca_2+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Fe_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Sc_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Y_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "La_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Ce_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Pr_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Nd_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Sm_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Gd_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Dy_3+"].fix(10)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H_+"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "Cl_-"].fix(1e-9)
         m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2C2O4"].fix(12000)
-        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(100000)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "HC2O4_-"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "C2O4_2-"].fix(1e-9)
+        m.fs.unit.aqueous_inlet.conc_mass_comp[0, "H2O"].fix(1000000)
 
         m.fs.unit.aqueous_inlet.temperature[0].fix(298.15)
         m.fs.unit.aqueous_inlet.pressure[0].fix(1e5)
 
         m.fs.unit.precipitate_outlet.temperature.fix(348.15)
         m.fs.unit.hydraulic_retention_time[0.0].fix(2)
+
+        liquid_scaler = m.fs.unit.mscontactor.liquid.default_scaler()
+        liquid_scaler.default_scaling_factors["flow_vol"] = 1e-2
+
+        solid_scaler = m.fs.unit.mscontactor.solid.default_scaler()
+
+        submodel_scalers = ComponentMap()
+        submodel_scalers[m.fs.unit.mscontactor.liquid_inlet_state] = liquid_scaler
+        submodel_scalers[m.fs.unit.mscontactor.liquid] = liquid_scaler
+        submodel_scalers[m.fs.unit.mscontactor.solid_inlet_state] = solid_scaler
+        submodel_scalers[m.fs.unit.mscontactor.solid] = solid_scaler
+
+        scaler_obj = m.fs.unit.default_scaler()
+        scaler_obj.scale_model(m.fs.unit, submodel_scalers=submodel_scalers)
 
         return m
 
@@ -372,8 +448,8 @@ class TestPrecRob(object):
         assert hasattr(prec.fs.unit, "heterogeneous_reaction_extent_constraint")
         assert hasattr(prec.fs.unit, "eq_hydraulic_retention")
 
-        assert number_variables(prec.fs.unit) == 208
-        assert number_total_constraints(prec.fs.unit) == 185
+        assert number_variables(prec.fs.unit) == 228
+        assert number_total_constraints(prec.fs.unit) == 205
         assert number_unused_variables(prec.fs.unit) == 0
 
     @pytest.mark.component
@@ -401,6 +477,26 @@ class TestPrecRob(object):
         assert initializer.summary[model.fs.unit]["status"] == InitializationStatus.Ok
 
     @pytest.mark.component
+    def test_var_scaling(self, prec):
+        unscaled_var_list = list(
+            unscaled_variables_generator(prec.fs.unit, include_fixed=True)
+        )
+        assert len(unscaled_var_list) == 0
+
+        assert jacobian_cond(prec, scaled=False) == pytest.approx(1.29555270e12)
+        assert jacobian_cond(prec, scaled=True) == pytest.approx(1.72335026e4)
+
+    @pytest.mark.solver
+    @pytest.mark.skipif(solver is None, reason="Solver not available")
+    @pytest.mark.component
+    def test_solve(self, prec):
+        m = prec
+        results = solver.solve(m, tee=True)
+
+        # Check for optimal solution
+        assert check_optimal_termination(results)
+
+    @pytest.mark.component
     @pytest.mark.solver
     def test_numerical_issues(self, prec):
         dt = DiagnosticsToolbox(prec)
@@ -415,18 +511,18 @@ class TestPrecRob(object):
                 0: (100, None, 1e-0),
             },
             "unit.aqueous_outlet.conc_mass_comp": {
-                (0, "Al"): (9.730, None, 1e-3),
-                (0, "Ca"): (9.9999, None, 1e-3),
-                (0, "Ce"): (0.0178, None, 1e-3),
-                (0, "Dy"): (0.1380, None, 1e-3),
-                (0, "Fe"): (2.0863, None, 1e-3),
-                (0, "Gd"): (0.0327, None, 1e-3),
-                (0, "La"): (0.0924, None, 1e-3),
-                (0, "Nd"): (0.0250, None, 1e-3),
-                (0, "Pr"): (0.0254, None, 1e-3),
-                (0, "Sc"): (0.1791, None, 1e-3),
-                (0, "Sm"): (0.0212, None, 1e-3),
-                (0, "Y"): (0.1080, None, 1e-3),
+                (0, "Al_3+"): (9.730, None, 1e-3),
+                (0, "Ca_2+"): (9.9999, None, 1e-3),
+                (0, "Ce_3+"): (0.0178, None, 1e-3),
+                (0, "Dy_3+"): (0.1380, None, 1e-3),
+                (0, "Fe_3+"): (2.0863, None, 1e-3),
+                (0, "Gd_3+"): (0.0327, None, 1e-3),
+                (0, "La_3+"): (0.0924, None, 1e-3),
+                (0, "Nd_3+"): (0.0250, None, 1e-3),
+                (0, "Pr_3+"): (0.0254, None, 1e-3),
+                (0, "Sc_3+"): (0.1791, None, 1e-3),
+                (0, "Sm_3+"): (0.0212, None, 1e-3),
+                (0, "Y_3+"): (0.1080, None, 1e-3),
             },
             "unit.precipitate_outlet.flow_mol_comp": {
                 (0, "Al2(C2O4)3(s)"): (0.0005, None, 1e-6),
@@ -481,9 +577,9 @@ class TestPrecRob(object):
         reversed_react = dict(
             map(reversed, prec.fs.properties_solid.reaction_to_element.items())
         )
-        pass_through_elements = ["Cl", "SO4", "H2O", "HSO4"]
-        for j in prec.fs.properties_aq.dissolved_elements:
-            if j in ["H", "H2C2O4"]:
+        pass_through_elements = ["Cl_-", "H2O"]
+        for j in prec.fs.properties_aq.component_list:
+            if j in ["H_+", "H2C2O4", "HC2O4_-", "C2O4_2-"]:
                 pass
             elif j in pass_through_elements:
                 assert value(
@@ -509,3 +605,22 @@ class TestPrecRob(object):
                     rel=1e-8,
                     abs=1e-8,
                 )
+
+    @pytest.mark.unit
+    def test_get_performance_contents(self, prec):
+        unit = prec.fs.unit
+        out = unit._get_performance_contents()
+
+        assert len(out) == 3
+
+        var_dict = out["vars"]
+        assert len(var_dict) == 2
+        assert var_dict["Unit Volume"] is unit.volume[0]
+        assert var_dict["Hydraulic Retention Time"] is unit.hydraulic_retention_time[0]
+
+        param_dict = out["params"]
+        assert len(param_dict) == 0
+
+        expr_dict = out["exprs"]
+        assert len(expr_dict) == 1
+        assert expr_dict["Oxalic Acid Dosage"] is unit.oxalic_acid_dosage[0]

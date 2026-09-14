@@ -176,7 +176,7 @@ class TestPrec(object):
 
         # We could do better scaling than this, but it's better to save our effort
         # for the predictive precipitator model
-        assert jacobian_cond(prec, scaled=False) == pytest.approx(2.021955e11, rel=1e-3)
+        assert jacobian_cond(prec, scaled=False) == pytest.approx(5.6411977e7, rel=1e-3)
         assert jacobian_cond(prec, scaled=True) == pytest.approx(1.06038e5, rel=1e-3)
 
     @pytest.mark.solver

@@ -105,7 +105,7 @@ class TestDefinedStateTrue(object):
         m.fs.state[0].conc_mass_comp.unfix()
 
         assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(
-            2.884511e6, rel=1e-3
+            2.441325e6, rel=1e-3
         )
         assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(
             57.05977, rel=1e-3
@@ -198,7 +198,7 @@ class TestDefinedStateFalse(object):
         m.fs.state[0].conc_mass_comp.unfix()
 
         assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(
-            2.913884e6, rel=1e-3
+            2.475956e6, rel=1e-3
         )
         assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(
             60.36033, rel=1e-3

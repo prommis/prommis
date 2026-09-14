@@ -309,7 +309,8 @@ class HClStrippingStateBlockData(StateBlockData):
         )
         self.flow_mass_comp = Var(
             self.params.dissolved_elements,
-            units=units.kg / units.s,
+            # units=units.kg / units.s,
+            units = units.kg / units.hour,
             initialize=1,
             bounds=(1e-20, None),
         )
@@ -356,7 +357,7 @@ class HClStrippingStateBlockData(StateBlockData):
                 return (
                     units.convert(
                         self.flow_vol * self.params.dens_mass,
-                        to_units=units.kg / units.s,
+                        to_units=units.kg / units.hour,
                     )
                     == b.flow_mass_comp[j]
                 )
@@ -365,7 +366,7 @@ class HClStrippingStateBlockData(StateBlockData):
                 return (
                     units.convert(
                         b.flow_vol * b.conc_mass_comp[j],
-                        to_units=units.kg / units.s,
+                        to_units=units.kg / units.hour,
                     )
                     == b.flow_mass_comp[j]
                 )

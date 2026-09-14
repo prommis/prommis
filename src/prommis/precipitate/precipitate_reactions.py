@@ -21,13 +21,37 @@ from pyomo.environ import Constraint, Param, Set, Var, units
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
 from idaes.core.base import property_meta
 from idaes.core.util.misc import add_object_reference
-import idaes.core.util.scaling as iscale
+from idaes.core.scaling import CustomScalerBase
+
+
+class OxalatePrecipitationReactionsScaler(CustomScalerBase):
+    """
+    Scaler for the oxalate precipitation heterogeneous reaction package.
+    """
+
+    DEFAULT_SCALING_FACTORS = {
+        "reaction_rate": 1e3,
+    }
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        for idx, var in model.reaction_rate.items():
+            self.scale_variable_by_default(var, overwrite=overwrite)
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        for idx, condata in model.reaction_rate_eq.items():
+            self.scale_constraint_by_component(
+                condata, model.reaction_rate[idx], overwrite=overwrite
+            )
 
 
 # -----------------------------------------------------------------------------
 # Precipitation property package
 @declare_process_block_class("OxalatePrecipitationReactions")
-class OxalatePrecipitationLeachingReactionsData(
+class OxalatePrecipitationReactionsData(
     ProcessBlockData, property_meta.HasPropertyClassMetadata
 ):
     """
@@ -58,23 +82,23 @@ class OxalatePrecipitationLeachingReactionsData(
         self._reaction_block_class = OxalatePrecipitationReactionsBlock
 
         trivalent_list = [
-            "Al",
-            "Fe",
-            "Sc",
-            "Y",
-            "La",
-            "Ce",
-            "Pr",
-            "Nd",
-            "Sm",
-            "Gd",
-            "Dy",
+            "Al_3+",
+            "Fe_3+",
+            "Sc_3+",
+            "Y_3+",
+            "La_3+",
+            "Ce_3+",
+            "Pr_3+",
+            "Nd_3+",
+            "Sm_3+",
+            "Gd_3+",
+            "Dy_3+",
         ]
-        divalent_list = ["Ca"]
+        divalent_list = ["Ca_2+"]
         element_list = trivalent_list + divalent_list
 
-        index_list = [f"{e}2(C2O4)3(s)" for e in trivalent_list] + [
-            f"{e}(C2O4)(s)" for e in divalent_list
+        index_list = [f"{e.split('_')[0]}2(C2O4)3(s)" for e in trivalent_list] + [
+            f"{e.split('_')[0]}(C2O4)(s)" for e in divalent_list
         ]
 
         self.element_list = Set(initialize=element_list)
@@ -82,14 +106,14 @@ class OxalatePrecipitationLeachingReactionsData(
 
         reaction_stoichiometry = {}
         for e in trivalent_list:
-            rxn = f"{e}2(C2O4)3(s)"
+            rxn = f"{e.split('_')[0]}2(C2O4)3(s)"
             reaction_stoichiometry[(rxn, "liquid", e)] = 2
             reaction_stoichiometry[(rxn, "liquid", "H2C2O4")] = 3
             reaction_stoichiometry[(rxn, "solid", rxn)] = -1
             reaction_stoichiometry[(rxn, "liquid", "H")] = -6
 
         for e in divalent_list:
-            rxn = f"{e}(C2O4)(s)"
+            rxn = f"{e.split('_')[0]}(C2O4)(s)"
             reaction_stoichiometry[(rxn, "liquid", e)] = 1
             reaction_stoichiometry[(rxn, "liquid", "H2C2O4")] = 1
             reaction_stoichiometry[(rxn, "solid", rxn)] = -1
@@ -187,7 +211,7 @@ class OxalatePrecipitationLeachingReactionsData(
 
 
 class _OxalatePrecipitationReactionsBlock(ProcessBlock):
-    pass
+    default_scaler = OxalatePrecipitationReactionsScaler
 
 
 @declare_process_block_class(
@@ -195,6 +219,8 @@ class _OxalatePrecipitationReactionsBlock(ProcessBlock):
     block_class=_OxalatePrecipitationReactionsBlock,
 )
 class OxalatePrecipitationReactionsData(ProcessBlockData):
+    default_scaler = OxalatePrecipitationReactionsScaler
+
     # Create Class ConfigBlock
     CONFIG = ProcessBlockData.CONFIG()
     CONFIG.declare(
@@ -229,8 +255,6 @@ class OxalatePrecipitationReactionsData(ProcessBlockData):
         self.reaction_rate_eq = Constraint(
             self.params.reaction_idx, rule=rule_reaction_rate_eq
         )
-
-        iscale.set_scaling_factor(self.reaction_rate, 1e3)
 
     @property
     def params(self):

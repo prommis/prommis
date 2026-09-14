@@ -216,7 +216,7 @@ class AqueousStateBlockkData(StateBlockData):
         self.flow_mass_comp = Var(
             self.params.dissolved_elements,
             # units=units.kg / units.s,
-            units = units.kg / units.hour,
+            units=units.kg / units.hour,
             initialize=1,
             bounds=(1e-20, None),
         )

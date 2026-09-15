@@ -115,8 +115,6 @@ def REEUnitModelCostingBlock(
 
 @declare_process_block_class("REECosting")
 class REECostingData(QGESSCostingData):
-    # Register currency and conversion rates based on CEPCI
-    register_ree_currency_units()
 
     CONFIG = QGESSCostingData.CONFIG()
 
@@ -154,6 +152,8 @@ class REECostingData(QGESSCostingData):
         You can do what you want here, so you could have e.g. sub-Blocks
         for each costing method to separate the parameters for each method.
         """
+        # Register currency and conversion rates based on CEPCI
+        register_ree_currency_units()
         super().build_global_params()
 
         # Set the base year for all costs

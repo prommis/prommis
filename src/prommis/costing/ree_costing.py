@@ -15,10 +15,6 @@ Methods for byproduct recovery and uncertainty quantification live in other
 modules in this directory.
 """
 
-# TODO: Missing docstrings
-# pylint: disable=missing-class-docstring
-# pylint: disable=missing-function-docstring
-
 __author__ = (
     "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, L. Deng, and M. Zamarripa)"
 )
@@ -115,6 +111,12 @@ def REEUnitModelCostingBlock(
 
 @declare_process_block_class("REECosting")
 class REECostingData(QGESSCostingData):
+    """
+    REE Costing Class
+    """
+
+    # Register currency and conversion rates based on CEPCI
+    register_ree_currency_units()
 
     CONFIG = QGESSCostingData.CONFIG()
 
@@ -244,6 +246,7 @@ class REECostingData(QGESSCostingData):
                     * (
                         c.NOAK_factor if c.config.has_economy_of_numbers else 1
                     )  # applied to whole TPC
+                    * c.location_factor
                 )
 
         if hasattr(self, "total_variable_cost_eq"):
@@ -443,10 +446,12 @@ class REECostingData(QGESSCostingData):
         grade,
         report=False,
     ):
-        # adapted from https://doi.org/10.1038/s41893-023-01145-1
-        # This method accepts a flowsheet-level costing block
-        # capacity and grade should be variables with Pyomo units,
-        # or values with Pyomo unit containers
+        """
+        Adapted from https://doi.org/10.1038/s41893-023-01145-1
+        This method accepts a flowsheet-level costing block
+        capacity and grade should be variables with Pyomo units,
+        or values with Pyomo unit containers.
+        """
 
         b.capacity = Var(
             initialize=value(pyunits.convert(capacity, to_units=pyunits.tonnes)),

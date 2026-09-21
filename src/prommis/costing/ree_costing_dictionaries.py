@@ -11,9 +11,6 @@ parameters, costing exponents, etc.) from the json files.
 
 """
 
-# TODO: Missing docstrings
-# pylint: disable=missing-function-docstring
-
 __author__ = (
     "Costing Team (B. Paul, A. Fritz, A. Ojo, A. Dasgupta, L. Deng, and M. Zamarripa)"
 )

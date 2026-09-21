@@ -45,7 +45,7 @@ class AqueousParameterData(PhysicalParameterBlock):
     to Optimize Recovery of Rare Earth Elements from Acid Mine Drainage,
     Minerals, 2022, 12. 236
 
-    self.split can be substituted by surrogate model
+    The percentage partition coefficients (self.split) can be substituted by a surrogate model.
     """
 
     def build(self):
@@ -80,7 +80,7 @@ class AqueousParameterData(PhysicalParameterBlock):
         # TODO add surrogate model/equation
         self.split = Param(
             self.component_list,
-            units=units.kg / units.kg,
+            units=units.dimensionless,
             initialize={
                 "H2O": 1e-20,
                 "Sc": 31.61,
@@ -100,6 +100,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "HSO4": 1e-20,
                 "SO4": 1e-20,
             },
+            doc="Percentage partition coefficients for each component between organic and aqueous phases [%]",
         )
 
         self.mw = Param(
@@ -165,6 +166,7 @@ class AqueousParameterData(PhysicalParameterBlock):
                 "conc_mass_comp": {"method": None},
                 "dens_mol": {"method": "_dens_mol"},
                 "flow_mol_comp": {"method": None},
+                "flow_mass_comp": {"method": None},
             }
         )
         obj.add_default_units(
@@ -211,6 +213,12 @@ class AqueousStateBlockkData(StateBlockData):
             initialize=1e-5,
             bounds=(1e-20, None),
         )
+        self.flow_mass_comp = Var(
+            self.params.dissolved_elements,
+            units=units.kg / units.hour,
+            initialize=1,
+            bounds=(1e-20, None),
+        )
         self.flow_mol_comp = Var(
             self.params.dissolved_elements,
             units=units.mol / units.hour,
@@ -246,10 +254,38 @@ class AqueousStateBlockkData(StateBlockData):
                 == b.flow_mol_comp[j]
             )
 
+        # Concentration conversion constraint
+        @self.Constraint(self.params.dissolved_elements)
+        def flow_mass_constraint(b, j):
+            if j == "H2O":
+                # Assume constant density of 1 kg/L
+                return (
+                    units.convert(
+                        self.flow_vol * self.params.dens_mass,
+                        to_units=units.kg / units.hour,
+                    )
+                    == b.flow_mass_comp[j]
+                )
+            else:
+                # Need to convert from moles to mass
+                return (
+                    units.convert(
+                        b.flow_vol * b.conc_mass_comp[j],
+                        to_units=units.kg / units.hour,
+                    )
+                    == b.flow_mass_comp[j]
+                )
+
         iscale.set_scaling_factor(self.flow_vol, 1e1)
         iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
         iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
         iscale.set_scaling_factor(self.conc_mol_comp, 1e5)
+        # Set a different scaling factor for H2O since it is the dominant component in the solution
+        for comp in self.params.dissolved_elements:
+            if comp != "H2O":
+                iscale.set_scaling_factor(self.flow_mass_comp[comp], 1e6)
+            else:
+                iscale.set_scaling_factor(self.flow_mass_comp[comp], 1e2)
 
     def _dens_mass(self):
         add_object_reference(self, "dens_mass", self.params.dens_mass)

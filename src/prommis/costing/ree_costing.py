@@ -115,8 +115,6 @@ def REEUnitModelCostingBlock(
 
 @declare_process_block_class("REECosting")
 class REECostingData(QGESSCostingData):
-    # Register currency and conversion rates based on CEPCI
-    register_ree_currency_units()
 
     CONFIG = QGESSCostingData.CONFIG()
 
@@ -154,6 +152,8 @@ class REECostingData(QGESSCostingData):
         You can do what you want here, so you could have e.g. sub-Blocks
         for each costing method to separate the parameters for each method.
         """
+        # Register currency and conversion rates based on CEPCI
+        register_ree_currency_units()
         super().build_global_params()
 
         # Set the base year for all costs
@@ -299,6 +299,136 @@ class REECostingData(QGESSCostingData):
                     )
                 )
             )
+
+    def get_total_BEC(self):
+        """Return the total bare erected cost, creating it if necessary."""
+        if not hasattr(self, "total_BEC"):
+            if not hasattr(self, "BEC_list"):
+                raise AttributeError(
+                    f"{self.name} does not contain a BEC_list from which to "
+                    "calculate total_BEC."
+                )
+
+            self.total_BEC = Expression(
+                expr=sum(self.BEC_list),
+                doc="Total bare erected cost",
+            )
+
+        return self.total_BEC
+
+    # TODO display_flowsheet_cost to be moved to QGESS.py
+    def display_flowsheet_cost(
+        self,
+        feedstock_rate,
+        production_rate,
+    ):
+        """Display flowsheet-level capital and operating costs.
+
+        Args:
+            feedstock_rate: Mass flow rate of feed entering the process.
+            production_rate: Annual mass flow rate of recovered product.
+        """
+        self.get_total_BEC()
+
+        # Variable O&M is calculated at full capacity. Apply the capacity
+        # factor to obtain the cost at the actual operating capacity.
+        annual_variable_OM_cost = self.total_variable_OM_cost[0] * self.capacity_factor
+        annual_OM_cost = self.total_fixed_OM_cost + annual_variable_OM_cost
+        total_annualized_plant_cost = (
+            self.annualized_cost + annual_OM_cost * pyunits.year
+        )
+
+        print("\n")
+
+        # Capital costs
+        print(
+            "Total bare erected cost (MUSD): %.3f" % value(self.total_BEC),
+        )
+
+        if hasattr(self, "total_overnight_capital"):
+            print(
+                "Total overnight (installed) equipment cost (MUSD): %.3f"
+                % value(self.total_overnight_capital),
+            )
+
+        if hasattr(self, "annualized_cost"):
+            print(
+                "Total annualized capital cost (MUSD/year): %.3f"
+                % value(self.annualized_cost),
+            )
+
+        print()
+
+        # Operating costs
+        if hasattr(self, "total_fixed_OM_cost"):
+            print(
+                "Total annual fixed O&M cost (MUSD/year): %.3f"
+                % value(self.total_fixed_OM_cost),
+            )
+
+        if hasattr(self, "total_variable_OM_cost"):
+            print(
+                "Total annual variable O&M cost at full capacity "
+                "(MUSD/year): %.3f" % value(self.total_variable_OM_cost[0]),
+            )
+            print(
+                "Total annual variable O&M cost at operating capacity "
+                "(MUSD/year): %.3f" % value(annual_variable_OM_cost),
+            )
+
+        print(
+            "Total annual O&M cost (MUSD/year): %.3f" % value(annual_OM_cost),
+        )
+
+        annual_OM_cost_per_ton = pyunits.convert(
+            annual_OM_cost / (feedstock_rate * self.capacity_factor),
+            to_units=self.base_currency / pyunits.ton,
+        )
+        print(
+            "Total annual O&M cost per ton feed processed (USD/ton): %.3f"
+            % value(annual_OM_cost_per_ton),
+        )
+
+        annual_OM_cost_per_kg = pyunits.convert(
+            annual_OM_cost / production_rate,
+            to_units=self.base_currency / pyunits.kg,
+        )
+        print(
+            "Total annual O&M cost per kg REE recovered (USD/kg): %.3f"
+            % value(annual_OM_cost_per_kg),
+        )
+
+        print()
+
+        print(
+            "Total annualized plant cost (MUSD/year): %.3f"
+            % value(total_annualized_plant_cost),
+        )
+        print(
+            "Annual rate of recovery (kg/year): %.3f"
+            % value(
+                pyunits.convert(
+                    production_rate,
+                    to_units=pyunits.kg / pyunits.year,
+                )
+            ),
+        )
+
+        cost_of_recovery = pyunits.convert(
+            total_annualized_plant_cost / (production_rate * pyunits.year),
+            to_units=self.base_currency / pyunits.kg,
+        )
+        print(
+            "Cost of recovery per kg REE recovered (USD/kg): %.3f"
+            % value(cost_of_recovery),
+        )
+
+        print()
+
+        if hasattr(self, "npv"):
+            print("Net present value (MUSD): %.3f" % value(self.npv))
+
+        print("\n")
 
     # TODO remove, mock reference to report method that needs to be patched into IDAES QGESS
     def report(self, export=False):

@@ -158,6 +158,21 @@ def test_register_REE_currency_units_twice(caplog):
         assert msg in record.message
 
 
+@pytest.mark.unit
+def test_get_total_BEC():
+    m = pyo.ConcreteModel()
+    m.costing = pyo.Block()
+    m.costing.bec_1 = pyo.Expression(expr=1)
+    m.costing.bec_2 = pyo.Expression(expr=2)
+    m.costing.BEC_list = [m.costing.bec_1, m.costing.bec_2]
+
+    total_BEC = REECostingData.get_total_BEC(m.costing)
+
+    assert total_BEC is m.costing.total_BEC
+    assert value(total_BEC) == pytest.approx(3)
+    assert REECostingData.get_total_BEC(m.costing) is total_BEC
+
+
 def base_model():
 
     CEPCI_year = "UKy_2019"
@@ -1171,6 +1186,23 @@ class TestREECosting(object):
 
         REECostingData.display_total_plant_costs(model.fs.costing)
         REECostingData.display_bare_erected_costs(model.fs.costing)
+
+    @pytest.mark.unit
+    def test_display_flowsheet_cost(self, model, capsys):
+        capsys.readouterr()
+        REECostingData.display_flowsheet_cost(
+            model.fs.costing,
+            feedstock_rate=model.fs.feedstock,
+            production_rate=model.fs.recovery_rate_per_year,
+        )
+        report_output = capsys.readouterr().out
+
+        assert "Total bare erected cost (MUSD)" in report_output
+        assert "Total annual O&M cost (MUSD/year)" in report_output
+        assert "Total annual O&M cost per ton feed processed (USD/ton)" in report_output
+        assert "Total annual O&M cost per kg REE recovered (USD/kg)" in report_output
+        assert "Cost of recovery per kg REE recovered (USD/kg)" in report_output
+        assert "Net present value (MUSD)" in report_output
 
     @pytest.mark.unit
     def test_costing_bounding_build_diagnostics(self, model):

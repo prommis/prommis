@@ -243,7 +243,7 @@ class REECostingData(QGESSCostingData):
                     # apply economy of numbers if enabled
                     * (
                         c.NOAK_factor if c.config.has_economy_of_numbers else 1
-                    )  # applied to whole TPC 
+                    )  # applied to whole TPC
                     * c.location_factor
                 )
 

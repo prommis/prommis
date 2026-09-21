@@ -12,6 +12,7 @@ Authors: Alejandro Garciadiego, Bo-Xun Wang
 """
 
 from pyomo.environ import Constraint, Param, Set, Var, units
+from pyomo.common.deprecation import deprecation_warning
 
 import idaes.core.util.scaling as iscale
 from idaes.core import (
@@ -49,6 +50,13 @@ class AqueousParameterData(PhysicalParameterBlock):
     """
 
     def build(self):
+        # Deprecation Notice for the Old Liquid Property Package
+        deprecation_warning(
+            "AqueousParameter has been deprecated and may be removed in "
+            "PrOMMiS 1.2. Please use MixedAcidParameterBlock instead.",
+            version="PrOMMiS 1.1",
+        )
+
         super().build()
 
         self.liquid = Phase()
@@ -175,6 +183,13 @@ class AqueousStateBlockData(StateBlockData):
     """
 
     def build(self):
+        # Deprecation Notice for the Old Liquid Property Package
+        deprecation_warning(
+            "AqueousStateBlock has been deprecated and may be removed in "
+            "PrOMMiS 1.2. Please use MixedAcidStateBlock instead.",
+            version="PrOMMiS 1.1",
+        )
+
         super().build()
 
         self.flow_vol = Var(

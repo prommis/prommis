@@ -218,6 +218,13 @@ class OxalatePrecipitatorScaler(CustomScalerBase):
                 overwrite=overwrite,
             )
 
+        for condata in model.conversion_constraint.values():
+            self.scale_constraint_by_nominal_value(
+                condata,
+                scheme=ConstraintScalingScheme.inverseMaximum,
+                overwrite=overwrite,
+            )
+
 
 # -----------------------------------------------------------------------------
 # Precipitator unit model

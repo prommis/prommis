@@ -66,6 +66,9 @@ class HClStrippingPropertiesScaler(CustomScalerBase):
         # smaller steps
         "pH_phase": 10,
     }
+    # Note: flow_mass_comp scaling factors are derived automatically in
+    # variable_scaling_routine via scale_variable_by_definition_constraint,
+    # so no default scaling factors are declared for it here.
     for ree in _ree_list:
         DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 0.1
     for contaminant in _gangue_list:
@@ -95,6 +98,11 @@ class HClStrippingPropertiesScaler(CustomScalerBase):
                 vardata, model.flow_mol_comp_eqn[idx], overwrite=overwrite
             )
 
+        for idx, vardata in model.flow_mass_comp.items():
+            self.scale_variable_by_definition_constraint(
+                vardata, model.flow_mass_comp_eqn[idx], overwrite=overwrite
+            )
+
     def constraint_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
     ):
@@ -105,6 +113,10 @@ class HClStrippingPropertiesScaler(CustomScalerBase):
         for idx, condata in model.flow_mol_comp_eqn.items():
             self.scale_constraint_by_component(
                 condata, model.flow_mol_comp[idx], overwrite=overwrite
+            )
+        for idx, condata in model.flow_mass_comp_eqn.items():
+            self.scale_constraint_by_component(
+                condata, model.flow_mass_comp[idx], overwrite=overwrite
             )
 
         if model.is_property_constructed("pH_phase"):
@@ -172,7 +184,7 @@ class HClStrippingParameterData(PhysicalParameterBlock):
         # TODO add surrogate model/equation
         self.split = Param(
             self.component_list,
-            units=units.kg / units.kg,
+            units=units.dimensionless,
             initialize={
                 "H2O": 1e-20,
                 "Sc": 31.61,
@@ -233,6 +245,7 @@ class HClStrippingParameterData(PhysicalParameterBlock):
                 "conc_mass_comp": {"method": None},
                 "dens_mol": {"method": "_dens_mol"},
                 "flow_mol_comp": {"method": None},
+                "flow_mass_comp": {"method": None},
             }
         )
         obj.define_custom_properties(
@@ -294,6 +307,12 @@ class HClStrippingStateBlockData(StateBlockData):
             initialize=1e-5,
             bounds=(1e-30, None),
         )
+        self.flow_mass_comp = Var(
+            self.params.dissolved_elements,
+            units=units.kg / units.hour,
+            initialize=1,
+            bounds=(1e-20, None),
+        )
         self.flow_mol_comp = Var(
             self.params.dissolved_elements,
             units=units.mol / units.hour,
@@ -328,6 +347,28 @@ class HClStrippingStateBlockData(StateBlockData):
                 )
                 == b.flow_mol_comp[j]
             )
+
+        # Concentration conversion constraint
+        @self.Constraint(self.params.dissolved_elements)
+        def flow_mass_comp_eqn(b, j):
+            if j == "H2O":
+                # Assume constant density of 1 kg/L
+                return (
+                    units.convert(
+                        self.flow_vol * self.params.dens_mass,
+                        to_units=units.kg / units.hour,
+                    )
+                    == b.flow_mass_comp[j]
+                )
+            else:
+                # Need to convert from moles to mass
+                return (
+                    units.convert(
+                        b.flow_vol * b.conc_mass_comp[j],
+                        to_units=units.kg / units.hour,
+                    )
+                    == b.flow_mass_comp[j]
+                )
 
         if not self.config.defined_state:
             # Concentration of H2O based on assumed density

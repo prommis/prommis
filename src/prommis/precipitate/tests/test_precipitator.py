@@ -132,8 +132,8 @@ class TestPrec(object):
         assert hasattr(prec.fs.unit, "aqueous_depletion")
         assert not hasattr(prec.fs.unit, "vol_balance")
 
-        assert number_variables(prec.fs.unit) == 105
-        assert number_total_constraints(prec.fs.unit) == 88
+        assert number_variables(prec.fs.unit) == 135
+        assert number_total_constraints(prec.fs.unit) == 118
         assert number_unused_variables(prec.fs.unit) == 1
 
     @pytest.mark.component
@@ -176,8 +176,8 @@ class TestPrec(object):
 
         # We could do better scaling than this, but it's better to save our effort
         # for the predictive precipitator model
-        assert jacobian_cond(prec, scaled=False) == pytest.approx(4.188145e6, rel=1e-3)
-        assert jacobian_cond(prec, scaled=True) == pytest.approx(1.05985e5, rel=1e-3)
+        assert jacobian_cond(prec, scaled=False) == pytest.approx(5.6411977e7, rel=1e-3)
+        assert jacobian_cond(prec, scaled=True) == pytest.approx(1.06038e5, rel=1e-3)
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")

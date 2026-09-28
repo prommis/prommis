@@ -277,12 +277,12 @@ def main():
 
     initialize_system(m)
 
-    print("Initialized tear guesses after initialization")
-    m.fs.leach.liquid_inlet.display()
-    m.fs.solex_rougher_load.organic_inlet.display()
-    m.fs.solex_rougher_load.aqueous_inlet.display()
-    m.fs.solex_cleaner_load.organic_inlet.display()
-    m.fs.solex_cleaner_load.aqueous_inlet.display()
+    # print("Initialized tear guesses after initialization")
+    # m.fs.leach.liquid_inlet.display()
+    # m.fs.solex_rougher_load.organic_inlet.display()
+    # m.fs.solex_rougher_load.aqueous_inlet.display()
+    # m.fs.solex_cleaner_load.organic_inlet.display()
+    # m.fs.solex_cleaner_load.aqueous_inlet.display()
 
     # print("Large Residuals")
     # residuals = []
@@ -314,12 +314,12 @@ def main():
     #             f"scaling={get_scaling_factor(v)}"
     #         )
 
-    print("Initialized tear guesses after 1st solve")
-    m.fs.leach.liquid_inlet.display()
-    m.fs.solex_rougher_load.organic_inlet.display()
-    m.fs.solex_rougher_load.aqueous_inlet.display()
-    m.fs.solex_cleaner_load.organic_inlet.display()
-    m.fs.solex_cleaner_load.aqueous_inlet.display()
+    # print("Initialized tear guesses after 1st solve")
+    # m.fs.leach.liquid_inlet.display()
+    # m.fs.solex_rougher_load.organic_inlet.display()
+    # m.fs.solex_rougher_load.aqueous_inlet.display()
+    # m.fs.solex_cleaner_load.organic_inlet.display()
+    # m.fs.solex_cleaner_load.aqueous_inlet.display()
 
     # fixes the volumetric flow rate of the organic recycle streams and unfixes the flow of the make-up streams
     # we want to be able to adjust the total recycle flow rate, not just the make-up portion of it
@@ -327,39 +327,40 @@ def main():
 
     print("2nd Solve")
     results = solve_system(m, tee=True)
-    print("Initialized tear guesses after 2nd solve")
-    m.fs.leach.liquid_inlet.display()
-    m.fs.solex_rougher_load.organic_inlet.display()
-    m.fs.solex_rougher_load.aqueous_inlet.display()
-    m.fs.solex_cleaner_load.organic_inlet.display()
-    m.fs.solex_cleaner_load.aqueous_inlet.display()
+    # print("Initialized tear guesses after 2nd solve")
+    # m.fs.leach.liquid_inlet.display()
+    # m.fs.solex_rougher_load.organic_inlet.display()
+    # m.fs.solex_rougher_load.aqueous_inlet.display()
+    # m.fs.solex_cleaner_load.organic_inlet.display()
+    # m.fs.solex_cleaner_load.aqueous_inlet.display()
 
     if not check_optimal_termination(results):
         raise RuntimeError(
             "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
         )
-    # add_result_expressions(m)
-    # display_results(m)
-    #
-    # add_costing(m)
-    # initialize_costing(m)
-    #
-    # # diagnostics, initialize, and solve
+
+    add_result_expressions(m)
+    display_results(m)
+
+    add_costing(m)
+    initialize_costing(m)
+
+    # diagnostics, initialize, and solve
     # dt = DiagnosticsToolbox(m)
     # dt.assert_no_structural_warnings()
-    #
-    # print("3rd Solve")
-    # solve_system(m, tee=True)
+
+    print("3rd Solve")
+    solve_system(m, tee=True)
     # print("Initialized tear guesses after 3rd solve")
     # m.fs.leach.liquid_inlet.display()
     # m.fs.solex_rougher_load.organic_inlet.display()
     # m.fs.solex_rougher_load.aqueous_inlet.display()
     # m.fs.solex_cleaner_load.organic_inlet.display()
     # m.fs.solex_cleaner_load.aqueous_inlet.display()
-    #
+
     # dt.assert_no_numerical_warnings()
-    #
-    # display_costing(m)
+
+    display_costing(m)
 
     return m, results
 
@@ -1746,11 +1747,41 @@ def fix_organic_recycle(m):
 
 def add_result_expressions(m):
     fs = m.fs
-    ree_list = ["Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy"]
-    gangue_list = ["Al", "Fe", "Ca"]
+    ree_list = ["Sc_3+", "Y_3+", "La_3+", "Ce_3+", "Pr_3+", "Nd_3+", "Sm_3+", "Gd_3+", "Dy_3+"]
+    gangue_list = ["Al_3+", "Fe_3+", "Ca_2+"]
     fs.ree_set = Set(initialize=ree_list)
     fs.gangue_set = Set(initialize=gangue_list)
     fs.metal_set = Set(initialize=ree_list + gangue_list)
+
+    metal_to_oxide = {
+        "Al_3+": "Al2O3",
+        "Fe_3+": "Fe2O3",
+        "Ca_2+": "CaO",
+        "Sc_3+": "Sc2O3",
+        "Y_3+": "Y2O3",
+        "La_3+": "La2O3",
+        "Ce_3+": "Ce2O3",
+        "Pr_3+": "Pr2O3",
+        "Nd_3+": "Nd2O3",
+        "Sm_3+": "Sm2O3",
+        "Gd_3+": "Gd2O3",
+        "Dy_3+": "Dy2O3",
+    }
+
+    metal_to_organic = {
+        "Al_3+": "Al_o",
+        "Fe_3+": "Fe_o",
+        "Ca_2+": "Ca_o",
+        "Sc_3+": "Sc_o",
+        "Y_3+": "Y_o",
+        "La_3+": "La_o",
+        "Ce_3+": "Ce_o",
+        "Pr_3+": "Pr_o",
+        "Nd_3+": "Nd_o",
+        "Sm_3+": "Sm_o",
+        "Gd_3+": "Gd_o",
+        "Dy_3+": "Dy_o",
+    }
 
     metal_mass_frac = {
         "Al2O3": 26.98 * 2 / (26.98 * 2 + 16 * 3),
@@ -1790,10 +1821,7 @@ def add_result_expressions(m):
         "and the solvent extraction recycle stream",
     )
     def leaching_metal_inlet_flow(b, t, j):
-        if j == "Ca":
-            j_oxide = "CaO"
-        else:
-            j_oxide = f"{j}2O3"
+        j_oxide = metal_to_oxide[j]
 
         return units.convert(
             b.leach_solid_feed.flow_mass[t]
@@ -1812,10 +1840,7 @@ def add_result_expressions(m):
         doc="Mass flow rate of metals fed into the overall process",
     )
     def metal_feed_flow(b, t, j):
-        if j == "Ca":
-            j_oxide = "CaO"
-        else:
-            j_oxide = f"{j}2O3"
+        j_oxide = metal_to_oxide[j]
 
         return units.convert(
             b.leach_solid_feed.flow_mass[t]
@@ -1843,10 +1868,7 @@ def add_result_expressions(m):
         "the flowsheet product stream.",
     )
     def metal_product_flow(b, t, j):
-        if j == "Ca":
-            j_oxide = "CaO"
-        else:
-            j_oxide = f"{j}2O3"
+        j_oxide = metal_to_oxide[j]
 
         return units.convert(
             b.roaster.flow_mol_comp_product[t, j]
@@ -1862,10 +1884,8 @@ def add_result_expressions(m):
         "the leach filter cake solids",
     )
     def metal_leach_filter_cake_solids_flow(b, t, j):
-        if j == "Ca":
-            j_oxide = "CaO"
-        else:
-            j_oxide = f"{j}2O3"
+        j_oxide = metal_to_oxide[j]
+
         return units.convert(
             +b.leach_filter_cake.flow_mass[t]
             * b.leach_filter_cake.mass_frac_comp[t, j_oxide]
@@ -1919,7 +1939,7 @@ def add_result_expressions(m):
     def metal_rougher_organic_purge_flow(b, t, j):
         return units.convert(
             b.rougher_sep.purge.flow_vol[t]
-            * b.rougher_sep.purge.conc_mass_comp[t, f"{j}_o"],
+            * b.rougher_sep.purge.conc_mass_comp[t, metal_to_organic[j]],
             to_units=units.kg / units.hr,
         )
 
@@ -1944,7 +1964,7 @@ def add_result_expressions(m):
     def metal_cleaner_organic_purge_flow(b, t, j):
         return units.convert(
             b.cleaner_sep.purge.flow_vol[t]
-            * b.cleaner_sep.purge.conc_mass_comp[t, f"{j}_o"],
+            * b.cleaner_sep.purge.conc_mass_comp[t, metal_to_organic[j]],
             to_units=units.kg / units.hr,
         )
 
@@ -2068,18 +2088,18 @@ def display_results(m):
         m: pyomo model
     """
     metal_name_dict = {
-        "Sc": "scandium",
-        "Y": "yttrium",
-        "La": "lanthanum",
-        "Ce": "cerium",
-        "Pr": "praseodymium",
-        "Nd": "neodynium",
-        "Sm": "samarium",
-        "Gd": "gadolinium",
-        "Dy": "dysprosium",
-        "Al": "aluminum",
-        "Fe": "iron",
-        "Ca": "calcium",
+        "Sc_3+": "scandium",
+        "Y_3+": "yttrium",
+        "La_3+": "lanthanum",
+        "Ce_3+": "cerium",
+        "Pr_3+": "praseodymium",
+        "Nd_3+": "neodymium",
+        "Sm_3+": "samarium",
+        "Gd_3+": "gadolinium",
+        "Dy_3+": "dysprosium",
+        "Al_3+": "aluminum",
+        "Fe_3+": "iron",
+        "Ca_2+": "calcium",
     }
 
     def print_element_report(j):
@@ -2615,30 +2635,12 @@ def add_costing(m):
     # Precipitation costs
     # 10.1 is UKy Oxalate Precipitation - Polyethylene Tanks
     reep_pe_tanks_accounts = ["10.1"]
-    m.fs.precipitator.volume = Var(initialize=15.04, units=units.gal, bounds=(0, None))
-
-    @m.fs.precipitator.Constraint(reep_pe_tanks_accounts)
-    def volume_scaling_constraint(c, k):
-        return m.fs.precipitator.volume == units.convert(
-            REE_costing_params["1"][k]["RP Value"]
-            * units.gal
-            * (
-                m.fs.precipitator.aqueous_inlet.flow_vol[0]
-                / reference_basis_flow["precipitator_solex_aqueous_flow_vol"]
-            ),
-            to_units=units.gal,
-        )
-
-    m.fs.scaling_constraints[m.fs.precipitator.volume] = (
-        m.fs.precipitator.volume_scaling_constraint
-    )
-
     m.fs.precipitator.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": reep_pe_tanks_accounts,
-            "scaled_param": m.fs.precipitator.volume,
+            "scaled_param": m.fs.precipitator.volume[0],
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,
@@ -2876,9 +2878,9 @@ def add_costing(m):
         expr=m.fs.acid_feed[0]
         == units.convert(
             (
-                m.fs.acid_feed1.conc_mass_comp[0, "H"] * m.fs.acid_feed1.flow_vol[0]
-                + m.fs.acid_feed2.conc_mass_comp[0, "H"] * m.fs.acid_feed2.flow_vol[0]
-                + m.fs.acid_feed3.conc_mass_comp[0, "H"] * m.fs.acid_feed3.flow_vol[0]
+                m.fs.acid_feed1.conc_mass_comp[0, "H_+"] * m.fs.acid_feed1.flow_vol[0]
+                + m.fs.acid_feed2.conc_mass_comp[0, "H_+"] * m.fs.acid_feed2.flow_vol[0]
+                + m.fs.acid_feed3.conc_mass_comp[0, "H_+"] * m.fs.acid_feed3.flow_vol[0]
             )
             # Ratio of HCl and H molecular weight in mg
             * 36460 / 1008,
@@ -2921,7 +2923,7 @@ def add_costing(m):
     # TODO Why are these Params and not Expressions?
     m.fs.Ce_product = Param(
         default=units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Ce"]
+            m.fs.roaster.flow_mol_comp_product[0, "Ce_3+"]
             * REO_molar_mass["Ce2O3"]
             * units.g
             / units.mol,
@@ -2934,7 +2936,7 @@ def add_costing(m):
 
     m.fs.Dy_product = Param(
         default=units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Dy"]
+            m.fs.roaster.flow_mol_comp_product[0, "Dy_3+"]
             * REO_molar_mass["Dy2O3"]
             * units.g
             / units.mol,
@@ -2947,7 +2949,7 @@ def add_costing(m):
 
     m.fs.Gd_product = Param(
         default=units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Gd"]
+            m.fs.roaster.flow_mol_comp_product[0, "Gd_3+"]
             * REO_molar_mass["Gd2O3"]
             * units.g
             / units.mol,
@@ -2960,7 +2962,7 @@ def add_costing(m):
 
     m.fs.La_product = Param(
         default=units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "La"]
+            m.fs.roaster.flow_mol_comp_product[0, "La_3+"]
             * REO_molar_mass["La2O3"]
             * units.g
             / units.mol,
@@ -2973,7 +2975,7 @@ def add_costing(m):
 
     m.fs.Nd_product = Param(
         default=units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Nd"]
+            m.fs.roaster.flow_mol_comp_product[0, "Nd_3+"]
             * REO_molar_mass["Nd2O3"]
             * units.g
             / units.mol,
@@ -2986,7 +2988,7 @@ def add_costing(m):
 
     m.fs.Pr_product = Param(
         default=units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Pr"]
+            m.fs.roaster.flow_mol_comp_product[0, "Pr_3+"]
             * REO_molar_mass["Pr2O3"]
             * units.g
             / units.mol,
@@ -2999,7 +3001,7 @@ def add_costing(m):
 
     m.fs.Sc_product = Param(
         default=units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Sc"]
+            m.fs.roaster.flow_mol_comp_product[0, "Sc_3+"]
             * REO_molar_mass["Sc2O3"]
             * units.g
             / units.mol,
@@ -3012,7 +3014,7 @@ def add_costing(m):
 
     m.fs.Sm_product = Param(
         default=units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Sm"]
+            m.fs.roaster.flow_mol_comp_product[0, "Sm_3+"]
             * REO_molar_mass["Sm2O3"]
             * units.g
             / units.mol,
@@ -3025,7 +3027,7 @@ def add_costing(m):
 
     m.fs.Y_product = Param(
         default=units.convert(
-            m.fs.roaster.flow_mol_comp_product[0, "Y"]
+            m.fs.roaster.flow_mol_comp_product[0, "Y_3+"]
             * REO_molar_mass["Y2O3"]
             * units.g
             / units.mol,
@@ -3214,9 +3216,9 @@ def optimize_model(m):
             + 1e5
             * (
                 -m.fs.ree_product_flow[0]
-                + m.fs.metal_product_flow[0, "Al"]
-                + m.fs.metal_product_flow[0, "Ca"]
-                + m.fs.metal_product_flow[0, "Fe"]
+                + m.fs.metal_product_flow[0, "Al_3+"]
+                + m.fs.metal_product_flow[0, "Ca_2+"]
+                + m.fs.metal_product_flow[0, "Fe_3+"]
             )
         )
     )
@@ -3235,8 +3237,8 @@ def optimize_model(m):
             + b.properties[t].conc_mol_comp["HSO4_-"]
         )
 
-    for condata in m.fs.leach_liquid_feed.H2SO4_stoich_eqn.values():
-        set_scaling_factor(condata, 10)
+    # for condata in m.fs.leach_liquid_feed.H2SO4_stoich_eqn.values():
+    #     set_scaling_factor(condata, 10)
 
     # Because we have defined_state=True for the feed
     # block, we need to create the dissociation
@@ -3245,13 +3247,13 @@ def optimize_model(m):
     @m.fs.leach_liquid_feed.Constraint(m.fs.time)
     def HSO4_dissociation(b, t):
         return (
-            b.params.k_eq["H2SO4_Ka2"] * b.properties[t].conc_mol_comp["HSO4_-"]
+            b.properties[t].params.k_eq["H2SO4_Ka2"] * b.properties[t].conc_mol_comp["HSO4_-"]
             == b.properties[t].conc_mol_comp["SO4_2-"] * b.properties[t].conc_mol_comp["H_+"]
         )
-
-    sf = get_scaling_factor(m.fs.leach.mscontactor.liquid[0, 1].hso4_dissociation)
-    for condata in m.fs.leach_liquid_feed.HSO4_dissociation.values():
-        set_scaling_factor(condata, sf)
+    #
+    # sf = get_scaling_factor(m.fs.leach.mscontactor.liquid[0, 1].hso4_dissociation)
+    # for condata in m.fs.leach_liquid_feed.HSO4_dissociation.values():
+    #     set_scaling_factor(condata, sf)
 
     # We should think about how strong of acid we can use for leaching
     m.fs.leach_liquid_feed.properties[0].pH_phase["liquid"].setlb(0)
@@ -3298,8 +3300,8 @@ def optimize_model(m):
                 == b.properties[t].conc_mol_comp["Cl_-"]
             )
 
-        for condata in feed.HCl_stoich_eqn.values():
-            set_scaling_factor(condata, 10)
+        # for condata in feed.HCl_stoich_eqn.values():
+        #     set_scaling_factor(condata, 10)
 
     # We can't make extractant dosage a decision variable until we have a
     # correlation for how impurity (Fe, Al, Ca) distribution coefficients
@@ -3325,7 +3327,7 @@ def optimize_model(m):
         print("Flowsheet optimization did not converge.")
 
 
-def data_reconcilliation(m):
+def data_reconciliation(m):
     m.fs.acid_feed1.flow_vol.unfix()
     m.obj = Objective(expr=m.fs.acid_feed1.flow_vol[0])
     m.fs.solex_rougher_scrub.mscontactor.aqueous[0.0, 1].pH_phase["liquid"].setub(3)
@@ -3339,17 +3341,11 @@ def data_reconcilliation(m):
     if check_optimal_termination(results):
         display_results(m)
     else:
-        print("Data reconcilliation optimization did not converge.")
+        print("Data reconciliation optimization did not converge.")
 
 
 if __name__ == "__main__":
     m, results = main()
-    # print("4th Solve")
-    # optimize_model(m)
-    # data_reconcilliation(m)
-
-    m.fs.leach.display()
-
-    #TODO: That would mean the fix has to be upstream of the solver: a higher acid feed concentration,
-    # a different B[Al2O3], more stages/volume, or a lower solid feed rate — an operating-conditions decision,
-    # not a numerics one.
+    print("4th Solve")
+    optimize_model(m)
+    # data_reconciliation(m)

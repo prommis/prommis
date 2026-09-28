@@ -141,18 +141,18 @@ __author__ = "Jinliang Ma"
 __version__ = "1.0.0"
 
 _metal_to_solid_compound = {
-    "Sc": "Sc2(C2O4)3(s)",
-    "Y": "Y2(C2O4)3(s)",
-    "La": "La2(C2O4)3(s)",
-    "Ce": "Ce2(C2O4)3(s)",
-    "Pr": "Pr2(C2O4)3(s)",
-    "Nd": "Nd2(C2O4)3(s)",
-    "Sm": "Sm2(C2O4)3(s)",
-    "Gd": "Gd2(C2O4)3(s)",
-    "Dy": "Dy2(C2O4)3(s)",
-    "Al": "Al2(C2O4)3(s)",
-    "Ca": "Ca(C2O4)(s)",
-    "Fe": "Fe2(C2O4)3(s)",
+    "Sc_3+": "Sc2(C2O4)3(s)",
+    "Y_3+": "Y2(C2O4)3(s)",
+    "La_3+": "La2(C2O4)3(s)",
+    "Ce_3+": "Ce2(C2O4)3(s)",
+    "Pr_3+": "Pr2(C2O4)3(s)",
+    "Nd_3+": "Nd2(C2O4)3(s)",
+    "Sm_3+": "Sm2(C2O4)3(s)",
+    "Gd_3+": "Gd2(C2O4)3(s)",
+    "Dy_3+": "Dy2(C2O4)3(s)",
+    "Al_3+": "Al2(C2O4)3(s)",
+    "Ca_2+": "Ca(C2O4)(s)",
+    "Fe_3+": "Fe2(C2O4)3(s)",
 
 }
 
@@ -531,18 +531,18 @@ constructed,
         "metal_list",
         ConfigValue(
             default=[
-                "Al",
-                "Fe",
-                "Ca",
-                "Sc",
-                "Y",
-                "La",
-                "Ce",
-                "Pr",
-                "Nd",
-                "Sm",
-                "Gd",
-                "Dy",
+                "Al_3+",
+                "Fe_3+",
+                "Ca_2+",
+                "Sc_3+",
+                "Y_3+",
+                "La_3+",
+                "Ce_3+",
+                "Pr_3+",
+                "Nd_3+",
+                "Sm_3+",
+                "Gd_3+",
+                "Dy_3+",
             ],
             domain=list,
             description="List of components in solid oxalate feed",
@@ -632,27 +632,27 @@ constructed,
 
         # List of all possible elements considered in this unit model
         self.metal_list_all = [
-            "Al",
-            "Fe",
-            "Ca",
-            "Sc",
-            "Y",
-            "La",
-            "Ce",
-            "Pr",
-            "Nd",
-            "Pm",
-            "Sm",
-            "Eu",
-            "Gd",
-            "Tb",
-            "Dy",
-            "Ho",
-            "Er",
-            "Tm",
-            "Yb",
-            "Lu",
-            "Th",
+            "Al_3+",
+            "Fe_3+",
+            "Ca_2+",
+            "Sc_3+",
+            "Y_3+",
+            "La_3+",
+            "Ce_3+",
+            "Pr_3+",
+            "Nd_3+",
+            "Pm_3+",
+            "Sm_3+",
+            "Eu_3+",
+            "Gd_3+",
+            "Tb_3+",
+            "Dy_3+",
+            "Ho_3+",
+            "Er_3+",
+            "Tm_3+",
+            "Yb_3+",
+            "Lu_3+",
+            "Th_4+",
         ]
         # atomic mass of each metal element
         self.am_metal_list_all = Param(
@@ -685,40 +685,40 @@ constructed,
         self.am_C = Param(initialize=0.012011, units=pyunits.kg / pyunits.mol)
         self.am_N = Param(initialize=0.014007, units=pyunits.kg / pyunits.mol)
         self.am_O = Param(initialize=0.015999, units=pyunits.kg / pyunits.mol)
-        self.am_metal_list_all["Al"] = 0.026982
-        self.am_metal_list_all["Fe"] = 0.055845
-        self.am_metal_list_all["Ca"] = 0.040078
-        self.am_metal_list_all["Sc"] = 0.044956
-        self.am_metal_list_all["Y"] = 0.088906
-        self.am_metal_list_all["La"] = 0.13891
-        self.am_metal_list_all["Ce"] = 0.14012
-        self.am_metal_list_all["Pr"] = 0.14091
-        self.am_metal_list_all["Nd"] = 0.14424
-        self.am_metal_list_all["Pm"] = 0.145
-        self.am_metal_list_all["Sm"] = 0.15036
-        self.am_metal_list_all["Eu"] = 0.15196
-        self.am_metal_list_all["Gd"] = 0.15725
-        self.am_metal_list_all["Tb"] = 0.15893
-        self.am_metal_list_all["Dy"] = 0.1625
-        self.am_metal_list_all["Ho"] = 0.16493
-        self.am_metal_list_all["Er"] = 0.16726
-        self.am_metal_list_all["Tm"] = 0.16893
-        self.am_metal_list_all["Yb"] = 0.17304
-        self.am_metal_list_all["Lu"] = 0.17497
-        self.am_metal_list_all["Th"] = 0.23204
+        self.am_metal_list_all["Al_3+"] = 0.026982
+        self.am_metal_list_all["Fe_3+"] = 0.055845
+        self.am_metal_list_all["Ca_2+"] = 0.040078
+        self.am_metal_list_all["Sc_3+"] = 0.044956
+        self.am_metal_list_all["Y_3+"] = 0.088906
+        self.am_metal_list_all["La_3+"] = 0.13891
+        self.am_metal_list_all["Ce_3+"] = 0.14012
+        self.am_metal_list_all["Pr_3+"] = 0.14091
+        self.am_metal_list_all["Nd_3+"] = 0.14424
+        self.am_metal_list_all["Pm_3+"] = 0.145
+        self.am_metal_list_all["Sm_3+"] = 0.15036
+        self.am_metal_list_all["Eu_3+"] = 0.15196
+        self.am_metal_list_all["Gd_3+"] = 0.15725
+        self.am_metal_list_all["Tb_3+"] = 0.15893
+        self.am_metal_list_all["Dy_3+"] = 0.1625
+        self.am_metal_list_all["Ho_3+"] = 0.16493
+        self.am_metal_list_all["Er_3+"] = 0.16726
+        self.am_metal_list_all["Tm_3+"] = 0.16893
+        self.am_metal_list_all["Yb_3+"] = 0.17304
+        self.am_metal_list_all["Lu_3+"] = 0.17497
+        self.am_metal_list_all["Th_4+"] = 0.23204
         # The count of C2O4 unit in oxalate is 3 for all oxalate except CaC2O4_H2O
-        self.xC2O4_oxalate_list_all["Ca"] = 1
+        self.xC2O4_oxalate_list_all["Ca_2+"] = 1
         # The count of H2O in the oxalate hydrate is 10 except three listed below
-        self.xH2O_oxalate_list_all["Al"] = 1
-        self.xH2O_oxalate_list_all["Fe"] = 2
-        self.xH2O_oxalate_list_all["Ca"] = 1
+        self.xH2O_oxalate_list_all["Al_3+"] = 1
+        self.xH2O_oxalate_list_all["Fe_3+"] = 2
+        self.xH2O_oxalate_list_all["Ca_2+"] = 1
 
         self.mw_H2O = Param(
             initialize=self.am_H * 2 + self.am_O, units=pyunits.kg / pyunits.mol
         )
 
         for i in self.metal_list_all:
-            if i == "Ca":
+            if i == "Ca_2+":
                 self.mw_oxalate_list_all[i] = (
                     self.am_metal_list_all[i]
                     + self.xC2O4_oxalate_list_all[i] * (self.am_C * 2 + self.am_O * 4)
@@ -732,7 +732,7 @@ constructed,
                 )
 
         for i in self.metal_list_all:
-            if i == "Ca":
+            if i == "Ca_2+":
                 self.mw_oxide_list_all[i] = self.am_metal_list_all[i] + self.am_O
             else:
                 self.mw_oxide_list_all[i] = (
@@ -784,46 +784,46 @@ constructed,
             units=pyunits.J / pyunits.mol / pyunits.K**2,
         )
         # Oxalate standard enthalpy available in literature
-        self.enth0_oxalate_list_all["Al"] = (
+        self.enth0_oxalate_list_all["Al_3+"] = (
             -3397000
         )  # Kotz et al (2014), anhydrous data
-        self.enth0_oxalate_list_all["Fe"] = (
+        self.enth0_oxalate_list_all["Fe_3+"] = (
             -2572300
         )  # Wagman et al (1982), anhydrous data
-        self.enth0_oxalate_list_all["Ca"] = -1674860  # Wagman et al (1982)
-        self.enth0_oxalate_list_all["La"] = -5916176  # Not in Wagman et al
-        self.enth0_oxalate_list_all["Ce"] = -6782000  # Wagman et al (1982)
-        self.enth0_oxalate_list_all["Pr"] = -5920000  # Wagman et al (1982)
-        self.enth0_oxalate_list_all["Nd"] = -6782000  # Wagman et al (1982)
+        self.enth0_oxalate_list_all["Ca_2+"] = -1674860  # Wagman et al (1982)
+        self.enth0_oxalate_list_all["La_3+"] = -5916176  # Not in Wagman et al
+        self.enth0_oxalate_list_all["Ce_3+"] = -6782000  # Wagman et al (1982)
+        self.enth0_oxalate_list_all["Pr_3+"] = -5920000  # Wagman et al (1982)
+        self.enth0_oxalate_list_all["Nd_3+"] = -6782000  # Wagman et al (1982)
         # Oxide standard enthalpy available in literature
-        self.enth0_oxide_list_all["Fe"] = -825500  # NIST WebBook
-        self.enth0_oxide_list_all["Al"] = -1675700  # NIST WebBook
-        self.enth0_oxide_list_all["Ca"] = -635090  # NIST WebBook
-        self.enth0_oxide_list_all["La"] = -1793702  # Wagman et al (1982)
-        self.enth0_oxide_list_all["Ce"] = -1796191  # Wagman et al (1982)
-        self.enth0_oxide_list_all["Pr"] = -1809664  # Wagman et al (1982)
-        self.enth0_oxide_list_all["Nd"] = -1807906  # Wagman et al (1982)
-        self.enth0_oxide_list_all["Sc"] = -1908820  # Wagman et al (1982)
-        self.enth0_oxide_list_all["Y"] = -1905310  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Fe_3+"] = -825500  # NIST WebBook
+        self.enth0_oxide_list_all["Al_3+"] = -1675700  # NIST WebBook
+        self.enth0_oxide_list_all["Ca_2+"] = -635090  # NIST WebBook
+        self.enth0_oxide_list_all["La_3+"] = -1793702  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Ce_3+"] = -1796191  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Pr_3+"] = -1809664  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Nd_3+"] = -1807906  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Sc_3+"] = -1908820  # Wagman et al (1982)
+        self.enth0_oxide_list_all["Y_3+"] = -1905310  # Wagman et al (1982)
         # Heat capacity of most oxalates except Ca are unavailable, use the default value
-        self.cp0_oxalate_list_all["Ca"] = 152.8  # Wagman et al (1982)
+        self.cp0_oxalate_list_all["Ca_2+"] = 152.8  # Wagman et al (1982)
 
         # Heat capacity of oxide available in literature
-        self.cp0_oxide_list_all["La"] = 107.72  # revised based on Wagman et al (1982)
-        self.cp0_oxide_list_all["Ce"] = 115.78  # revised based on Wagman et al (1982)
-        self.cp0_oxide_list_all["Pr"] = 112.82  # revised based on Wagman et al (1982)
-        self.cp0_oxide_list_all["Nd"] = 105.13  # revised based on Wagman et al (1982)
-        self.cp0_oxide_list_all["Al"] = 28.039  # NIST WebBook
-        self.cp0_oxide_list_all["Fe"] = 80.623  # NIST WebBook
-        self.cp0_oxide_list_all["Ca"] = 47.2  # NIST WebBook
+        self.cp0_oxide_list_all["La_3+"] = 107.72  # revised based on Wagman et al (1982)
+        self.cp0_oxide_list_all["Ce_3+"] = 115.78  # revised based on Wagman et al (1982)
+        self.cp0_oxide_list_all["Pr_3+"] = 112.82  # revised based on Wagman et al (1982)
+        self.cp0_oxide_list_all["Nd_3+"] = 105.13  # revised based on Wagman et al (1982)
+        self.cp0_oxide_list_all["Al_3+"] = 28.039  # NIST WebBook
+        self.cp0_oxide_list_all["Fe_3+"] = 80.623  # NIST WebBook
+        self.cp0_oxide_list_all["Ca_2+"] = 47.2  # NIST WebBook
 
-        self.cp1_oxide_list_all["La"] = 0.026114  # revised based on Wagman et al (1982)
-        self.cp1_oxide_list_all["Ce"] = 0.03477  # revised based on Wagman et al (1982)
-        self.cp1_oxide_list_all["Pr"] = 0.034364  # revised based on Wagman et al (1982)
-        self.cp1_oxide_list_all["Nd"] = 0.0403  # revised based on Wagman et al (1982)
-        self.cp1_oxide_list_all["Al"] = 0.17156  # NIST WebBook
-        self.cp1_oxide_list_all["Fe"] = 0.09936  # NIST WebBook
-        self.cp1_oxide_list_all["Ca"] = 0.00299  # NIST WebBook
+        self.cp1_oxide_list_all["La_3+"] = 0.026114  # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Ce_3+"] = 0.03477  # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Pr_3+"] = 0.034364  # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Nd_3+"] = 0.0403  # revised based on Wagman et al (1982)
+        self.cp1_oxide_list_all["Al_3+"] = 0.17156  # NIST WebBook
+        self.cp1_oxide_list_all["Fe_3+"] = 0.09936  # NIST WebBook
+        self.cp1_oxide_list_all["Ca_2+"] = 0.00299  # NIST WebBook
 
         # unit constants used for the expressions of liquid water enthalpy
         self.enth_mol_const = Param(

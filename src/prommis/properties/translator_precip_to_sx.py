@@ -110,7 +110,6 @@ class TranslatorPrecipSXData(TranslatorData):
 
     CONFIG = TranslatorData.CONFIG()
 
-    # TODO: Decide whether this option should remain
     del CONFIG["outlet_state_defined"]
     del CONFIG["has_phase_equilibrium"]
 
@@ -130,14 +129,6 @@ class TranslatorPrecipSXData(TranslatorData):
     )
 
     default_scaler = TranslatorPrecipSXScaler
-
-    # def fix_initialization_states(self):
-    #     self.properties_in.fix_initialization_states()
-    #     # Need to temporarily fix HSO4_- during initialization, otherwise there will be 1 DOF
-    #     for t in self.flowsheet().time:
-    #         self.properties_out[t].conc_mass_comp["HSO4_-"].fix(
-    #             value(self.eps_conc_mass)
-    #         )
 
     def build(self):
         """

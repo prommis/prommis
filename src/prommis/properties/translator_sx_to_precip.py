@@ -116,7 +116,6 @@ class TranslatorSXPrecipData(TranslatorData):
 
     CONFIG = TranslatorData.CONFIG()
 
-    # TODO: Decide whether this option should remain
     del CONFIG["outlet_state_defined"]
     del CONFIG["has_phase_equilibrium"]
 
@@ -139,11 +138,6 @@ class TranslatorSXPrecipData(TranslatorData):
 
     def fix_initialization_states(self):
         self.properties_in.fix_initialization_states()
-        # Need to temporarily fix H2C2O4 during initialization, otherwise there will be 1 DOF
-        # for t in self.flowsheet().time:
-        #     self.properties_out[t].conc_mass_comp["H2C2O4"].fix(
-        #         value(self.eps_conc_mass)
-        #     )
 
     def build(self):
         """
@@ -209,9 +203,6 @@ class TranslatorSXPrecipData(TranslatorData):
                 == blk.properties_in[t].conc_mass_comp[i]
             )
 
-        #TODO: Consider how to make this oxalic concentration visible/editable in the flowsheet
-        # and whether or not the concentrations of C2O4_2- and HC2O4_- must be specified
-
         @self.Constraint(
             self.flowsheet().time,
             doc="Defines mass concentration for the oxalate components",
@@ -238,17 +229,3 @@ class TranslatorSXPrecipData(TranslatorData):
                 blk.properties_out[t].conc_mass_comp[i]
                 == blk.eps
             )
-
-        # @self.Constraint(
-        #     self.flowsheet().time,
-        #     doc="Equality temperature equation",
-        # )
-        # def eq_temperature_rule(blk, t):
-        #     return blk.properties_out[t].temperature == blk.properties_in[t].temperature
-
-        # @self.Constraint(
-        #     self.flowsheet().time,
-        #     doc="Equality pressure equation",
-        # )
-        # def eq_pressure_rule(blk, t):
-        #     return blk.properties_out[t].pressure == blk.properties_in[t].pressure

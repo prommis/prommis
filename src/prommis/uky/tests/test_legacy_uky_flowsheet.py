@@ -5,7 +5,7 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """
-Tests for UKy flowsheet.
+Tests for the legacy UKy flowsheet.
 
 """
 
@@ -38,7 +38,7 @@ from prommis.properties.sulfuric_acid_leaching_properties import (
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
-from prommis.uky.uky_flowsheet import (
+from prommis.uky.legacy_uky_flowsheet import (
     add_costing,
     add_result_expressions,
     build,
@@ -637,10 +637,10 @@ def test_display(system_frame):
     display_costing(model)
 
 
-# Smoke tests to make sure data reconciliation and optimization solve
+# Smoke tests to make sure data reconcilliation and optimization solve
 @pytest.mark.integration
 @pytest.mark.solver
-def test_data_reconciliation(system_frame):
+def test_data_reconcilliation(system_frame):
     data_reconciliation(system_frame)
 
 

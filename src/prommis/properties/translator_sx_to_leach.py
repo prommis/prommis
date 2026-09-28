@@ -136,14 +136,6 @@ class TranslatorSXLeachData(TranslatorData):
 
     default_scaler = TranslatorSXLeachScaler
 
-    # def fix_initialization_states(self):
-    #     self.properties_in.fix_initialization_states()
-    #     # Need to temporarily fix HSO4_- during initialization, otherwise there will be 1 DOF
-    #     for t in self.flowsheet().time:
-    #         self.properties_out[t].conc_mass_comp["HSO4_-"].fix(
-    #             value(self.eps_conc_mass)
-    #         )
-
     def build(self):
         """
         Begin building model.

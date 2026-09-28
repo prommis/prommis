@@ -151,6 +151,9 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
             self.scale_variable_by_default(
                 model.pH_phase["liquid"], overwrite=overwrite
             )
+
+        #TODO: Revisit how conc_mol_comp and flow_mol_comp are scaled
+
         # for idx, vardata in model.conc_mol_comp.items():
         #     self.scale_variable_by_definition_constraint(
         #         vardata, model.conc_mol_comp_eqn[idx], overwrite=overwrite
@@ -275,14 +278,6 @@ class MixedAcidParameterData(PhysicalParameterBlock):
             doc="Whether to include HAsc, Asc_-, HDha, and Dha_- as components.",
         ),
     )
-    CONFIG.declare(
-        "include_H2SO4_Ka2",
-        ConfigValue(
-            default=True,
-            domain=Bool,
-            doc="Whether to include HAsc, Asc_-, HDha, and Dha_- as components.",
-        ),
-    )
 
     def build(self):
         super().build()
@@ -336,15 +331,6 @@ class MixedAcidParameterData(PhysicalParameterBlock):
             self.inherent_reaction_stoichiometry = {}
             k_eq_dict = {}
         if self.config.include_sulfates:
-            # Inherent reaction for partial dissociation of HSO4
-            # if self.config.include_H2SO4_Ka2:
-            #     inherent_reaction_idx.append("H2SO4_Ka2")
-            #     self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "H_+")] = 1
-            #     self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "HSO4_-")] = -1
-            #     self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "SO4_2-")] = 1
-            #     k_eq_dict["H2SO4_Ka2"] = 10**-1.99 * units.mol / units.L
-            # else:
-            #     pass
             inherent_reaction_idx.append("H2SO4_Ka2")
             self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "H_+")] = 1
             self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "HSO4_-")] = -1
@@ -535,10 +521,9 @@ class MixedAcidStateBlockData(StateBlockData):
             initialize=1e-5,
             bounds=(1e-20, None),
         )
-        # TODO: Evaluate if this temperature change is necessary
         self.temperature = Var(
             domain=Reals,
-            initialize=303.0,
+            initialize=298.15,
             bounds=(298.1, None),
             doc="State temperature [K]",
             units=units.K,
@@ -551,15 +536,6 @@ class MixedAcidStateBlockData(StateBlockData):
             doc="State pressure [Pa]",
             units=units.Pa,
         )
-
-        # TODO: These scaling factors are copied from the now unused precipitate_liquid_properties
-        # The flowsheet appears to initialize better with the vars scaled in this manner rather than
-        # adjusting the default scaling factors in the flowsheet with the new scaling tools... need to look into this more
-        # import idaes.core.util.scaling as iscale
-        # iscale.set_scaling_factor(self.flow_vol, 1e1)
-        # iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
-        # iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
-        # iscale.set_scaling_factor(self.conc_mol_comp, 1e5)
 
         # Concentration conversion constraint
         @self.Constraint(self.params.component_list)

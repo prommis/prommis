@@ -45,12 +45,10 @@ class TestDefinedStateTrue(object):
         assert isinstance(m.fs.state[0].flow_vol, Var)
         assert isinstance(m.fs.state[0].conc_mass_comp, Var)
         assert isinstance(m.fs.state[0].flow_mol_comp, Var)
-        assert isinstance(m.fs.state[0].flow_mass_comp, Var)
         assert not m.fs.state[0].is_property_constructed("pH_phase")
 
         assert isinstance(m.fs.state[0].conc_mol_comp_eqn, Constraint)
         assert isinstance(m.fs.state[0].flow_mol_comp_eqn, Constraint)
-        assert isinstance(m.fs.state[0].flow_mass_comp_eqn, Constraint)
         assert not m.fs.state[0].is_property_constructed("h2o_concentration_eqn")
         assert not m.fs.state[0].is_property_constructed("pH_phase_eqn")
 
@@ -95,21 +93,13 @@ class TestDefinedStateTrue(object):
         assert len(list_unscaled_variables(m.fs.state[0])) == 0
         assert len(list_unscaled_constraints(m.fs.state[0])) == 0
 
-        assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(
-            2.884529e6, rel=1e-3
-        )
-        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(
-            48.28557, rel=1e-3
-        )
+        assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.401286e6)
+        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(33.24336)
 
         m.fs.state[0].conc_mass_comp.unfix()
 
-        assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(
-            2.884515e6, rel=1e-3
-        )
-        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(
-            57.05977, rel=1e-3
-        )
+        assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.401271e6)
+        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(36.685066)
 
 
 class TestDefinedStateFalse(object):
@@ -131,13 +121,11 @@ class TestDefinedStateFalse(object):
         assert len(m.fs.state) == 1
 
         assert isinstance(m.fs.state[0].flow_vol, Var)
-        assert isinstance(m.fs.state[0].flow_mass_comp, Var)
         assert isinstance(m.fs.state[0].conc_mass_comp, Var)
         assert isinstance(m.fs.state[0].flow_mol_comp, Var)
         assert not m.fs.state[0].is_property_constructed("pH_phase")
 
         assert isinstance(m.fs.state[0].flow_mol_comp_eqn, Constraint)
-        assert isinstance(m.fs.state[0].flow_mass_comp_eqn, Constraint)
         assert isinstance(m.fs.state[0].conc_mol_comp_eqn, Constraint)
         assert isinstance(m.fs.state[0].h2o_concentration_eqn, Constraint)
         assert m.fs.state[0].h2o_concentration_eqn.active
@@ -188,18 +176,10 @@ class TestDefinedStateFalse(object):
         assert len(list_unscaled_variables(m.fs.state[0])) == 0
         assert len(list_unscaled_constraints(m.fs.state[0])) == 0
 
-        assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(
-            2.913897e6, rel=1e-3
-        )
-        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(
-            51.29104, rel=1e-3
-        )
+        assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.436486e6)
+        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(36.25460)
 
         m.fs.state[0].conc_mass_comp.unfix()
 
-        assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(
-            2.913883e6, rel=1e-3
-        )
-        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(
-            60.36033, rel=1e-3
-        )
+        assert jacobian_cond(m.fs.state[0], scaled=False) == pytest.approx(2.436470e6)
+        assert jacobian_cond(m.fs.state[0], scaled=True) == pytest.approx(40.1640625)

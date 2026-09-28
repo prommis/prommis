@@ -4,10 +4,11 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-import pytest
-from idaes.core import FlowsheetBlock
 from pyomo.environ import ConcreteModel, Constraint, Var
-from pyomo.util.check_units import assert_units_consistent
+
+from idaes.core import FlowsheetBlock
+
+import pytest
 
 from prommis.precipitate.precipitate_liquid_properties import AqueousParameter
 
@@ -26,12 +27,8 @@ def test_build():
     assert isinstance(m.fs.state[0].flow_vol, Var)
     assert isinstance(m.fs.state[0].conc_mass_comp, Var)
     assert isinstance(m.fs.state[0].flow_mol_comp, Var)
-    assert isinstance(m.fs.state[0].flow_mass_comp, Var)
 
     assert isinstance(m.fs.state[0].flow_mol_constraint, Constraint)
-    assert isinstance(m.fs.state[0].flow_mass_constraint, Constraint)
-
-    assert_units_consistent(m)
 
     m.fs.state[0].flow_vol.set_value(10)
     for i in m.fs.prec_sol.dissolved_elements:

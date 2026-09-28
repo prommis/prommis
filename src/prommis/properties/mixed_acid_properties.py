@@ -109,12 +109,12 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
         "conc_mass_comp[Na_+]": 1e-3,
         "conc_mass_comp[Cl_-]": 1e-3,
         # Sulfates
-        "conc_mass_comp[SO4_2-]": 1e-2,
+        "conc_mass_comp[SO4_2-]": 1e-3,
         "conc_mass_comp[HSO4_-]": 1e-3,
         # TODO revisit oxalate concentration defaults
         # in precipitation PR
         "conc_mass_comp[H2C2O4]": 1e-3,
-        "conc_mass_comp[HC2O4_-]": 1e-3,
+        "conc_mass_comp[HC2O4_-]": 1e-2,
         "conc_mass_comp[C2O4_2-]": 1e-3,
         # TODO revisit ascorbate concentration values later
         "conc_mass_comp[HAsc]": 1,
@@ -126,6 +126,7 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
         # smaller steps
         "pH_phase": 10,
         "conc_mol_comp": 1e5,
+        "flow_mol_comp": 1e3,
     }
     for ree in _ree_list:
         DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 10
@@ -150,17 +151,20 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
             self.scale_variable_by_default(
                 model.pH_phase["liquid"], overwrite=overwrite
             )
-        for idx, vardata in model.conc_mol_comp.items():
-            self.scale_variable_by_definition_constraint(
-                vardata, model.conc_mol_comp_eqn[idx], overwrite=overwrite
-            )
-        # for idx, var in model.conc_mol_comp.items():
-        #     self.scale_variable_by_default(var, overwrite=overwrite)
+        # for idx, vardata in model.conc_mol_comp.items():
+        #     self.scale_variable_by_definition_constraint(
+        #         vardata, model.conc_mol_comp_eqn[idx], overwrite=overwrite
+        #     )
+        for idx, var in model.conc_mol_comp.items():
+            self.scale_variable_by_default(var, overwrite=overwrite)
 
-        for idx, vardata in model.flow_mol_comp.items():
-            self.scale_variable_by_definition_constraint(
-                vardata, model.flow_mol_comp_eqn[idx], overwrite=overwrite
-            )
+        # for idx, vardata in model.flow_mol_comp.items():
+        #     self.scale_variable_by_definition_constraint(
+        #         vardata, model.flow_mol_comp_eqn[idx], overwrite=overwrite
+        #     )
+
+        for idx, var in model.flow_mol_comp.items():
+            self.scale_variable_by_default(var, overwrite=overwrite)
 
     def constraint_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
@@ -333,14 +337,19 @@ class MixedAcidParameterData(PhysicalParameterBlock):
             k_eq_dict = {}
         if self.config.include_sulfates:
             # Inherent reaction for partial dissociation of HSO4
-            if self.config.include_H2SO4_Ka2:
-                inherent_reaction_idx.append("H2SO4_Ka2")
-                self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "H_+")] = 1
-                self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "HSO4_-")] = -1
-                self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "SO4_2-")] = 1
-                k_eq_dict["H2SO4_Ka2"] = 10**-1.99 * units.mol / units.L
-            else:
-                pass
+            # if self.config.include_H2SO4_Ka2:
+            #     inherent_reaction_idx.append("H2SO4_Ka2")
+            #     self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "H_+")] = 1
+            #     self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "HSO4_-")] = -1
+            #     self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "SO4_2-")] = 1
+            #     k_eq_dict["H2SO4_Ka2"] = 10**-1.99 * units.mol / units.L
+            # else:
+            #     pass
+            inherent_reaction_idx.append("H2SO4_Ka2")
+            self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "H_+")] = 1
+            self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "HSO4_-")] = -1
+            self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "SO4_2-")] = 1
+            k_eq_dict["H2SO4_Ka2"] = 10 ** -1.99 * units.mol / units.L
 
         if self.config.include_oxalates:
             # First hydrogen
@@ -546,11 +555,11 @@ class MixedAcidStateBlockData(StateBlockData):
         # TODO: These scaling factors are copied from the now unused precipitate_liquid_properties
         # The flowsheet appears to initialize better with the vars scaled in this manner rather than
         # adjusting the default scaling factors in the flowsheet with the new scaling tools... need to look into this more
-        import idaes.core.util.scaling as iscale
-        iscale.set_scaling_factor(self.flow_vol, 1e1)
-        iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
-        iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
-        iscale.set_scaling_factor(self.conc_mol_comp, 1e5)
+        # import idaes.core.util.scaling as iscale
+        # iscale.set_scaling_factor(self.flow_vol, 1e1)
+        # iscale.set_scaling_factor(self.conc_mass_comp, 1e2)
+        # iscale.set_scaling_factor(self.flow_mol_comp, 1e3)
+        # iscale.set_scaling_factor(self.conc_mol_comp, 1e5)
 
         # Concentration conversion constraint
         @self.Constraint(self.params.component_list)

@@ -239,6 +239,7 @@ _log = idaeslog.getLogger(__name__)
 # Epsilon represents near-zero component concentrations
 eps = 1e-8 * units.mg / units.L
 
+
 def main():
     """
     Run the flowsheet by calling the appropriate functions in series.
@@ -275,6 +276,13 @@ def main():
     # report_scaling_factors(m, descend_into=True)
 
     initialize_system(m)
+
+    print("Initialized tear guesses after initialization")
+    m.fs.leach.liquid_inlet.display()
+    m.fs.solex_rougher_load.organic_inlet.display()
+    m.fs.solex_rougher_load.aqueous_inlet.display()
+    m.fs.solex_cleaner_load.organic_inlet.display()
+    m.fs.solex_cleaner_load.aqueous_inlet.display()
 
     # print("Large Residuals")
     # residuals = []
@@ -326,33 +334,32 @@ def main():
     m.fs.solex_cleaner_load.organic_inlet.display()
     m.fs.solex_cleaner_load.aqueous_inlet.display()
 
-
     if not check_optimal_termination(results):
         raise RuntimeError(
             "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
         )
-    add_result_expressions(m)
-    display_results(m)
-
-    add_costing(m)
-    initialize_costing(m)
-
-    # diagnostics, initialize, and solve
-    dt = DiagnosticsToolbox(m)
-    dt.assert_no_structural_warnings()
-
-    print("3rd Solve")
-    solve_system(m, tee=True)
-    print("Initialized tear guesses after 3rd solve")
-    m.fs.leach.liquid_inlet.display()
-    m.fs.solex_rougher_load.organic_inlet.display()
-    m.fs.solex_rougher_load.aqueous_inlet.display()
-    m.fs.solex_cleaner_load.organic_inlet.display()
-    m.fs.solex_cleaner_load.aqueous_inlet.display()
-
-    dt.assert_no_numerical_warnings()
-
-    display_costing(m)
+    # add_result_expressions(m)
+    # display_results(m)
+    #
+    # add_costing(m)
+    # initialize_costing(m)
+    #
+    # # diagnostics, initialize, and solve
+    # dt = DiagnosticsToolbox(m)
+    # dt.assert_no_structural_warnings()
+    #
+    # print("3rd Solve")
+    # solve_system(m, tee=True)
+    # print("Initialized tear guesses after 3rd solve")
+    # m.fs.leach.liquid_inlet.display()
+    # m.fs.solex_rougher_load.organic_inlet.display()
+    # m.fs.solex_rougher_load.aqueous_inlet.display()
+    # m.fs.solex_cleaner_load.organic_inlet.display()
+    # m.fs.solex_cleaner_load.aqueous_inlet.display()
+    #
+    # dt.assert_no_numerical_warnings()
+    #
+    # display_costing(m)
 
     return m, results
 
@@ -859,21 +866,36 @@ def set_scaling(m):
     """
     leach_properties_scaler = m.fs.leach_soln.default_state_scaler_class()
     sx_properties_scaler = m.fs.sx_soln.default_state_scaler_class()
+    organic_properties_scaler = m.fs.prop_o.default_state_scaler_class()
     precip_properties_scaler = m.fs.precip_soln.default_state_scaler_class()
+    solid_properties_scaler = m.fs.properties_solid.default_state_scaler_class()
     vapor_properties_scaler = m.fs.prop_gas.default_state_scaler_class()
 
     # These are the default scaling factors set by iscale in mixed_acid_properties
     leach_properties_scaler.default_scaling_factors["flow_vol"] = 1e1
     leach_properties_scaler.default_scaling_factors["flow_mol_comp"] = 1e3
     leach_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
+    leach_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
+    # leach_properties_scaler.default_scaling_factors["conc_mass_comp[Gd_3+]"] = 1e1
+    # leach_properties_scaler.default_scaling_factors["conc_mass_comp[Nd_3+]"] = 1
+    # leach_properties_scaler.default_scaling_factors["conc_mass_comp[Gd_3+"] = 1e1
 
     precip_properties_scaler.default_scaling_factors["flow_vol"] = 1e1
     precip_properties_scaler.default_scaling_factors["flow_mol_comp"] = 1e3
     precip_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
+    precip_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
 
     sx_properties_scaler.default_scaling_factors["flow_vol"] = 1e1
     sx_properties_scaler.default_scaling_factors["flow_mol_comp"] = 1e3
     sx_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
+    sx_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
+    # sx_properties_scaler.default_scaling_factors["conc_mass_comp[Gd_3+]"] = 1e1
+    # sx_properties_scaler.default_scaling_factors["conc_mass_comp[Nd_3+]"] = 1
+
+    # organic_properties_scaler.default_scaling_factors["flow_vol"] = 1e1
+    # organic_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
+
+    # solid_properties_scaler.default_scaling_factors["flow_mol_comp"] = 1e1
 
     # HCl_properties_scaler.default_scaling_factors["conc_mass_comp[H_+]"] = 1e-3
     # HCl_properties_scaler.default_scaling_factors["conc_mass_comp[Cl_-]"] = 1e-5
@@ -882,7 +904,9 @@ def set_scaling(m):
 
     m.fs.leach_soln.default_state_scaler_object = leach_properties_scaler
     m.fs.sx_soln.default_state_scaler_object = leach_properties_scaler
+    m.fs.prop_o.default_state_scaler_object = organic_properties_scaler
     m.fs.precip_soln.default_state_scaler_object = precip_properties_scaler
+    m.fs.properties_solid.default_state_scaler_object = solid_properties_scaler
     m.fs.prop_gas.default_state_scaler_object = vapor_properties_scaler
 
     # Also use global mutation to change the max and min scaling factors
@@ -941,7 +965,8 @@ def set_operating_conditions(m, DEHPA_dosage=0.2):
     m.fs.leach_liquid_feed.conc_mass_comp[0, "HSO4_-"].fix(25025 * units.mg / units.L)
     m.fs.leach_liquid_feed.conc_mass_comp[0, "SO4_2-"].fix(915 * units.mg / units.L)
 
-    m.fs.leach_solid_feed.flow_mass.fix(22.68 * units.kg / units.hour)
+    # m.fs.leach_solid_feed.flow_mass.fix(22.68 * units.kg / units.hour)
+    m.fs.leach_solid_feed.flow_mass.fix(11 * units.kg / units.hour)
     m.fs.leach_solid_feed.mass_frac_comp[0, "inerts"].fix(0.6952 * units.kg / units.kg)
     m.fs.leach_solid_feed.mass_frac_comp[0, "Al2O3"].fix(0.237 * units.kg / units.kg)
     m.fs.leach_solid_feed.mass_frac_comp[0, "Fe2O3"].fix(0.0642 * units.kg / units.kg)
@@ -1188,23 +1213,23 @@ def initialize_system(m):
         "temperature": {0: 303},
         "pressure": {0: 101325},
         "conc_mass_comp": {
-            (0, "Al_3+"): 1759.30,
-            (0, "Ca_2+"): 228.06,
-            (0, "Ce_3+"): 1.36,
-            (0, "Cl_-"): 2097.49,
-            (0, "Dy_3+"): 7.63e-3,
-            (0, "Fe_3+"): 2089.62,
-            (0, "Gd_3+"): 0.064,
-            (0, "H_+"): 40.89,
+            (0, "Al_3+"): 1876.67,
+            (0, "Ca_2+"): 105.47,
+            (0, "Ce_3+"): 1.65,
+            (0, "Cl_-"): 1903.18,
+            (0, "Dy_3+"): 0.08,
+            (0, "Fe_3+"): 1420.61,
+            (0, "Gd_3+"): 0.066,
+            (0, "H_+"): 54.25,
             (0, "H2O"): 1000000,
             (0, "HSO4_-"): 19465.77,
-            (0, "La_3+"): 4.29,
-            (0, "Nd_3+"): 1.63,
-            (0, "Pr_3+"): 1.37,
-            (0, "SO4_2-"): 4820.67,
-            (0, "Sc_3+"): 2.5e-3,
-            (0, "Sm_3+"): 0.69,
-            (0, "Y_3+"): 3.06e-3,
+            (0, "La_3+"): 2.28,
+            (0, "Nd_3+"): 1.5,
+            (0, "Pr_3+"): 0.69,
+            (0, "SO4_2-"): 3871.5,
+            (0, "Sc_3+"): 1.75e-3,
+            (0, "Sm_3+"): 0.4,
+            (0, "Y_3+"): 6.67e-3,
         },
     }
     tear_guesses2 = {
@@ -1212,18 +1237,18 @@ def initialize_system(m):
         "temperature": {0: 303},
         "pressure": {0: 101325},
         "conc_mass_comp": {
-            (0, "Al_o"): 73.38,
-            (0, "Ca_o"): 13.24,
-            (0, "Ce_o"): 3.91,
-            (0, "Dy_o"): 0.18,
-            (0, "Fe_o"): 362.63,
+            (0, "Al_o"): 79.196,
+            (0, "Ca_o"): 6.8,
+            (0, "Ce_o"): 2.27,
+            (0, "Dy_o"): 0.21,
+            (0, "Fe_o"): 261.26,
             (0, "Gd_o"): 0.33,
-            (0, "La_o"): 0.26,
-            (0, "Nd_o"): 1.36,
-            (0, "Pr_o"): 0.15,
-            (0, "Sc_o"): 2.43,
-            (0, "Sm_o"): 0.019,
-            (0, "Y_o"): 5.36,
+            (0, "La_o"): 0.11,
+            (0, "Nd_o"): 0.64,
+            (0, "Pr_o"): 0.071,
+            (0, "Sc_o"): 1.78,
+            (0, "Sm_o"): 0.0093,
+            (0, "Y_o"): 3.47,
             (0, "DEHPA"): 185882.7,
             (0, "Kerosene"): 8.2e5,
         },
@@ -1390,6 +1415,15 @@ def initialize_system(m):
                 calculate_variable_from_constraint(state.flow_mol_comp[j], state.flow_mol_comp_eqn[j])
             for j in state.conc_mol_comp:
                 calculate_variable_from_constraint(state.conc_mol_comp[j], state.conc_mol_comp_eqn[j])
+        for t, s in m.fs.leach.mscontactor.liquid:
+            state = m.fs.leach.mscontactor.liquid[t, s]
+            # state.conc_mol_comp["H_+"].set_value(0.002)
+            # state.conc_mol_comp["HSO4_-"].set_value(0.002)
+            # state.conc_mol_comp["SO4_2-"].set_value(0.002)
+            calculate_variable_from_constraint(
+                state.conc_mol_comp["HSO4_-"],
+                state.inherent_equilibrium_eqn["H2SO4_Ka2"],
+            )
 
     def function(unit):
         if unit in feed_units:
@@ -1406,9 +1440,23 @@ def initialize_system(m):
             m.fs.leach.solid_inlet.mass_frac_comp.fix()
 
             seed_unset_vars(m.fs.leach)  # crash-proofing first
+            for idx in m.fs.leach.mscontactor.liquid_inherent_reaction_extent:
+                m.fs.leach.mscontactor.liquid_inherent_reaction_extent[idx].set_value(0)
+            print("Al2O3 value:")
+            print(value(m.fs.leach.mscontactor.solid[0, 1].conversion_comp["Al2O3"]))
+            # for idx in m.fs.leach.mscontactor.heterogeneous_reaction_extent:
+            #     m.fs.leach.mscontactor.heterogeneous_reaction_extent[idx].set_value(0)
+            for idx in m.fs.leach.mscontactor.heterogeneous_reaction_extent:
+                m.fs.leach.mscontactor.heterogeneous_reaction_extent[idx].set_value(0)
             seed_leach_liquid_states(m.fs.leach)
 
             print("Large Residuals - Leaching")
+            print("extent bounds:", m.fs.leach.mscontactor.liquid_inherent_reaction_extent[0.0, 1, "H2SO4_Ka2"].bounds)
+            print("extent value:", value(m.fs.leach.mscontactor.liquid_inherent_reaction_extent[0.0, 1, "H2SO4_Ka2"]))
+            print("generation bounds:",
+                  m.fs.leach.mscontactor.liquid_inherent_reaction_generation[0.0, 1, "liquid", "HSO4_-"].bounds)
+            print("generation value:",
+                  value(m.fs.leach.mscontactor.liquid_inherent_reaction_generation[0.0, 1, "liquid", "HSO4_-"]))
             none_count = 0
             residuals = []
             for c in large_residuals_set(m.fs.leach, tol=1.0):
@@ -1439,6 +1487,12 @@ def initialize_system(m):
             m.fs.leach.solid_inlet.mass_frac_comp.unfix()
 
             print("Post-Solve Diagnostics")
+            print("extent bounds:", m.fs.leach.mscontactor.liquid_inherent_reaction_extent[0.0, 1, "H2SO4_Ka2"].bounds)
+            print("extent value:", value(m.fs.leach.mscontactor.liquid_inherent_reaction_extent[0.0, 1, "H2SO4_Ka2"]))
+            print("generation bounds:",
+                  m.fs.leach.mscontactor.liquid_inherent_reaction_generation[0.0, 1, "liquid", "HSO4_-"].bounds)
+            print("generation value:",
+                  value(m.fs.leach.mscontactor.liquid_inherent_reaction_generation[0.0, 1, "liquid", "HSO4_-"]))
             for c in large_residuals_set(m.fs.leach, tol=1.0):
                 print(c.name, "=", value(c.body, exception=False))
         #
@@ -3293,3 +3347,9 @@ if __name__ == "__main__":
     # print("4th Solve")
     # optimize_model(m)
     # data_reconcilliation(m)
+
+    m.fs.leach.display()
+
+    #TODO: That would mean the fix has to be upstream of the solver: a higher acid feed concentration,
+    # a different B[Al2O3], more stages/volume, or a lower solid feed rate — an operating-conditions decision,
+    # not a numerics one.

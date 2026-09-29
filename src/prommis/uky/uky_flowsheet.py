@@ -799,18 +799,15 @@ def set_scaling(m):
     vapor_properties_scaler = m.fs.prop_gas.default_state_scaler_class()
 
     # These are the default scaling factors set by iscale in mixed_acid_properties
-    leach_properties_scaler.default_scaling_factors["flow_vol"] = 1e1
-    leach_properties_scaler.default_scaling_factors["flow_mol_comp"] = 1e3
+    leach_properties_scaler.default_scaling_factors["flow_vol"] = 1e1 #1e-2
     leach_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
     leach_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
 
-    precip_properties_scaler.default_scaling_factors["flow_vol"] = 1e1
-    precip_properties_scaler.default_scaling_factors["flow_mol_comp"] = 1e3
+    precip_properties_scaler.default_scaling_factors["flow_vol"] = 1e1 # 1e0 or 1e1
     precip_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
     precip_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
 
-    sx_properties_scaler.default_scaling_factors["flow_vol"] = 1e1
-    sx_properties_scaler.default_scaling_factors["flow_mol_comp"] = 1e3
+    sx_properties_scaler.default_scaling_factors["flow_vol"] = 1e0  # 1e1 or 1e0
     sx_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
     sx_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
 
@@ -1330,9 +1327,6 @@ def initialize_system(m):
                 calculate_variable_from_constraint(state.conc_mol_comp[j], state.conc_mol_comp_eqn[j])
         for t, s in m.fs.leach.mscontactor.liquid:
             state = m.fs.leach.mscontactor.liquid[t, s]
-            # state.conc_mol_comp["H_+"].set_value(0.002)
-            # state.conc_mol_comp["HSO4_-"].set_value(0.002)
-            # state.conc_mol_comp["SO4_2-"].set_value(0.002)
             calculate_variable_from_constraint(
                 state.conc_mol_comp["HSO4_-"],
                 state.inherent_equilibrium_eqn["H2SO4_Ka2"],
@@ -1355,39 +1349,15 @@ def initialize_system(m):
             seed_unset_vars(m.fs.leach)  # crash-proofing first
             for idx in m.fs.leach.mscontactor.liquid_inherent_reaction_extent:
                 m.fs.leach.mscontactor.liquid_inherent_reaction_extent[idx].set_value(0)
-            print("Al2O3 value:")
-            print(value(m.fs.leach.mscontactor.solid[0, 1].conversion_comp["Al2O3"]))
-            # for idx in m.fs.leach.mscontactor.heterogeneous_reaction_extent:
-            #     m.fs.leach.mscontactor.heterogeneous_reaction_extent[idx].set_value(0)
             for idx in m.fs.leach.mscontactor.heterogeneous_reaction_extent:
                 m.fs.leach.mscontactor.heterogeneous_reaction_extent[idx].set_value(0)
             seed_leach_liquid_states(m.fs.leach)
-
-            print("Large Residuals - Leaching")
-            print("extent bounds:", m.fs.leach.mscontactor.liquid_inherent_reaction_extent[0.0, 1, "H2SO4_Ka2"].bounds)
-            print("extent value:", value(m.fs.leach.mscontactor.liquid_inherent_reaction_extent[0.0, 1, "H2SO4_Ka2"]))
-            print("generation bounds:",
-                  m.fs.leach.mscontactor.liquid_inherent_reaction_generation[0.0, 1, "liquid", "HSO4_-"].bounds)
-            print("generation value:",
-                  value(m.fs.leach.mscontactor.liquid_inherent_reaction_generation[0.0, 1, "liquid", "HSO4_-"]))
-            none_count = 0
-            residuals = []
-            for c in large_residuals_set(m.fs.leach, tol=1.0):
-                v = value(c.body, exception=False)
-                if v is not None:
-                    residuals.append((c, v))
-                else:
-                    none_count += 1
-            for c, v in sorted(residuals, key=lambda x: abs(x[1]), reverse=True):
-                print(c.name, "=", v, "sf:", get_scaling_factor(c))
-            print("skipped:", none_count)
 
             solver = get_solver()
             # halt error related to Al2O3 rxn rate, where the exponent value is A
             # solver.options["halt_on_ampl_error"] = "yes"
             solver.options["bound_relax_factor"] = 0
             solver.options["max_iter"] = 500
-            # solver.options["nlp_scaling_method"] = "user-scaling"
             solver.solve(m.fs.leach, tee=True)
             print(solver.options)
 
@@ -1398,135 +1368,6 @@ def initialize_system(m):
 
             m.fs.leach.solid_inlet.flow_mass.unfix()
             m.fs.leach.solid_inlet.mass_frac_comp.unfix()
-
-            print("Post-Solve Diagnostics")
-            print("extent bounds:", m.fs.leach.mscontactor.liquid_inherent_reaction_extent[0.0, 1, "H2SO4_Ka2"].bounds)
-            print("extent value:", value(m.fs.leach.mscontactor.liquid_inherent_reaction_extent[0.0, 1, "H2SO4_Ka2"]))
-            print("generation bounds:",
-                  m.fs.leach.mscontactor.liquid_inherent_reaction_generation[0.0, 1, "liquid", "HSO4_-"].bounds)
-            print("generation value:",
-                  value(m.fs.leach.mscontactor.liquid_inherent_reaction_generation[0.0, 1, "liquid", "HSO4_-"]))
-            for c in large_residuals_set(m.fs.leach, tol=1.0):
-                print(c.name, "=", value(c.body, exception=False))
-        #
-        # elif unit == m.fs.solex_cleaner_load:
-        #     _log.info(f"Manually initializing {unit}")
-        #     m.fs.solex_cleaner_load.aqueous_inlet.flow_vol.fix()
-        #     m.fs.solex_cleaner_load.aqueous_inlet.conc_mass_comp.fix()
-        #     m.fs.solex_cleaner_load.aqueous_inlet.temperature.fix()
-        #     m.fs.solex_cleaner_load.aqueous_inlet.pressure.fix()
-        #
-        #     m.fs.solex_cleaner_load.organic_inlet.flow_vol.fix()
-        #     m.fs.solex_cleaner_load.organic_inlet.conc_mass_comp.fix()
-        #     m.fs.solex_cleaner_load.organic_inlet.temperature.fix()
-        #     m.fs.solex_cleaner_load.organic_inlet.pressure.fix()
-        #
-        #     solver = get_solver()
-        #     solver.solve(m.fs.solex_cleaner_load, tee=True)
-        #
-        #     m.fs.solex_cleaner_load.aqueous_inlet.flow_vol.unfix()
-        #     m.fs.solex_cleaner_load.aqueous_inlet.conc_mass_comp.unfix()
-        #     m.fs.solex_cleaner_load.aqueous_inlet.temperature.unfix()
-        #     m.fs.solex_cleaner_load.aqueous_inlet.pressure.unfix()
-        #
-        #     m.fs.solex_cleaner_load.organic_inlet.flow_vol.unfix()
-        #     m.fs.solex_cleaner_load.organic_inlet.conc_mass_comp.unfix()
-        #     m.fs.solex_cleaner_load.organic_inlet.temperature.unfix()
-        #     m.fs.solex_cleaner_load.organic_inlet.pressure.unfix()
-        #
-        # elif unit == m.fs.solex_rougher_scrub:
-        #     _log.info(f"Manually initializing {unit}")
-        #     m.fs.solex_rougher_scrub.aqueous_inlet.flow_vol.fix()
-        #     m.fs.solex_rougher_scrub.aqueous_inlet.conc_mass_comp.fix()
-        #     m.fs.solex_rougher_scrub.aqueous_inlet.temperature.fix()
-        #     m.fs.solex_rougher_scrub.aqueous_inlet.pressure.fix()
-        #
-        #     m.fs.solex_rougher_scrub.organic_inlet.flow_vol.fix()
-        #     m.fs.solex_rougher_scrub.organic_inlet.conc_mass_comp.fix()
-        #     m.fs.solex_rougher_scrub.organic_inlet.temperature.fix()
-        #     m.fs.solex_rougher_scrub.organic_inlet.pressure.fix()
-        #
-        #     solver = get_solver()
-        #     # solver.options["nlp_scaling_method"] = "user-scaling"
-        #     solver.solve(m.fs.solex_rougher_scrub, tee=True)
-        #
-        #     m.fs.solex_rougher_scrub.aqueous_inlet.flow_vol.unfix()
-        #     m.fs.solex_rougher_scrub.aqueous_inlet.conc_mass_comp.unfix()
-        #     m.fs.solex_rougher_scrub.aqueous_inlet.temperature.unfix()
-        #     m.fs.solex_rougher_scrub.aqueous_inlet.pressure.unfix()
-        #
-        #     m.fs.solex_rougher_scrub.organic_inlet.flow_vol.unfix()
-        #     m.fs.solex_rougher_scrub.organic_inlet.conc_mass_comp.unfix()
-        #     m.fs.solex_rougher_scrub.organic_inlet.temperature.unfix()
-        #     m.fs.solex_rougher_scrub.organic_inlet.pressure.unfix()
-
-        # elif unit == m.fs.solex_rougher_strip:
-        #     _log.info(f"Manually initializing {unit}")
-        #     m.fs.solex_rougher_strip.aqueous_inlet.flow_vol.fix()
-        #     m.fs.solex_rougher_strip.aqueous_inlet.conc_mass_comp.fix()
-        #     m.fs.solex_rougher_strip.aqueous_inlet.temperature.fix()
-        #     m.fs.solex_rougher_strip.aqueous_inlet.pressure.fix()
-        #
-        #     m.fs.solex_rougher_strip.organic_inlet.flow_vol.fix()
-        #     m.fs.solex_rougher_strip.organic_inlet.conc_mass_comp.fix()
-        #     m.fs.solex_rougher_strip.organic_inlet.temperature.fix()
-        #     m.fs.solex_rougher_strip.organic_inlet.pressure.fix()
-        #
-        #     solver = get_solver()
-        #     # solver.options["nlp_scaling_method"] = "user-scaling"
-        #     solver.solve(m.fs.solex_rougher_strip, tee=True)
-        #
-        #     m.fs.solex_rougher_strip.aqueous_inlet.flow_vol.unfix()
-        #     m.fs.solex_rougher_strip.aqueous_inlet.conc_mass_comp.unfix()
-        #     m.fs.solex_rougher_strip.aqueous_inlet.temperature.unfix()
-        #     m.fs.solex_rougher_strip.aqueous_inlet.pressure.unfix()
-        #
-        #     m.fs.solex_rougher_strip.organic_inlet.flow_vol.unfix()
-        #     m.fs.solex_rougher_strip.organic_inlet.conc_mass_comp.unfix()
-        #     m.fs.solex_rougher_strip.organic_inlet.temperature.unfix()
-        #     m.fs.solex_rougher_strip.organic_inlet.pressure.unfix()
-
-        # elif unit == m.fs.solex_cleaner_strip:
-        #     _log.info(f"Manually initializing {unit}")
-        #     m.fs.solex_cleaner_strip.aqueous_inlet.flow_vol.fix()
-        #     m.fs.solex_cleaner_strip.aqueous_inlet.conc_mass_comp.fix()
-        #     m.fs.solex_cleaner_strip.aqueous_inlet.temperature.fix()
-        #     m.fs.solex_cleaner_strip.aqueous_inlet.pressure.fix()
-        #
-        #     m.fs.solex_cleaner_strip.organic_inlet.flow_vol.fix()
-        #     m.fs.solex_cleaner_strip.organic_inlet.conc_mass_comp.fix()
-        #     m.fs.solex_cleaner_strip.organic_inlet.temperature.fix()
-        #     m.fs.solex_cleaner_strip.organic_inlet.pressure.fix()
-        #
-        #     solver = get_solver()
-        #     # solver.options["nlp_scaling_method"] = "user-scaling"
-        #     solver.solve(m.fs.solex_cleaner_strip, tee=True)
-        #
-        #     m.fs.solex_cleaner_strip.aqueous_inlet.flow_vol.unfix()
-        #     m.fs.solex_cleaner_strip.aqueous_inlet.conc_mass_comp.unfix()
-        #     m.fs.solex_cleaner_strip.aqueous_inlet.temperature.unfix()
-        #     m.fs.solex_cleaner_strip.aqueous_inlet.pressure.unfix()
-        #
-        #     m.fs.solex_cleaner_strip.organic_inlet.flow_vol.unfix()
-        #     m.fs.solex_cleaner_strip.organic_inlet.conc_mass_comp.unfix()
-        #     m.fs.solex_cleaner_strip.organic_inlet.temperature.unfix()
-        #     m.fs.solex_cleaner_strip.organic_inlet.pressure.unfix()
-        #
-        # elif unit == m.fs.cleaner_HCl_leach_translator:
-        #     _log.info(f"Manually initializing {unit}")
-        #     m.fs.cleaner_HCl_leach_translator.inlet.flow_vol.fix()
-        #     m.fs.cleaner_HCl_leach_translator.inlet.conc_mass_comp.fix()
-        #     m.fs.cleaner_HCl_leach_translator.inlet.temperature.fix()
-        #     m.fs.cleaner_HCl_leach_translator.inlet.pressure.fix()
-        #
-        #     solver = get_solver()
-        #     solver.solve(m.fs.cleaner_HCl_leach_translator, tee=True)
-        #
-        #     m.fs.cleaner_HCl_leach_translator.inlet.flow_vol.unfix()
-        #     m.fs.cleaner_HCl_leach_translator.inlet.conc_mass_comp.unfix()
-        #     m.fs.cleaner_HCl_leach_translator.inlet.temperature.unfix()
-        #     m.fs.cleaner_HCl_leach_translator.inlet.pressure.unfix()
-        #
         elif unit == m.fs.precipitator:
             _log.info(f"Manually initializing {unit}")
             m.fs.precipitator.aqueous_inlet.flow_vol.fix()
@@ -1534,30 +1375,13 @@ def initialize_system(m):
             m.fs.precipitator.aqueous_inlet.temperature.fix()
             m.fs.precipitator.aqueous_inlet.pressure.fix()
 
-            # m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp["HC2O4_-"].unfix()
-            # m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp["C2O4_2-"].unfix()
-
             m.fs.precipitator.hydraulic_retention_time[0].fix()
             m.fs.precipitator.precipitate_outlet.temperature.fix()
 
             seed_unset_vars(m.fs.precipitator)  # crash-proofing first
             seed_leach_liquid_states(m.fs.precipitator)
 
-            print("Large Residuals - Precipitator")
-            none_count = 0
-            residuals = []
-            for c in large_residuals_set(m.fs.precipitator, tol=1.0):
-                v = value(c.body, exception=False)
-                if v is not None:
-                    residuals.append((c, v))
-                else:
-                    none_count += 1
-            for c, v in sorted(residuals, key=lambda x: abs(x[1]), reverse=True):
-                print(c.name, "=", v, "sf:", get_scaling_factor(c))
-            print("skipped:", none_count)
-
             solver = get_solver()
-            # solver.options["nlp_scaling_method"] = "user-scaling"
             solver.solve(m.fs.precipitator, tee=True)
 
             m.fs.precipitator.aqueous_inlet.flow_vol.unfix()
@@ -1567,31 +1391,6 @@ def initialize_system(m):
 
             m.fs.precipitator.hydraulic_retention_time[0].unfix()
             m.fs.precipitator.precipitate_outlet.temperature.unfix()
-
-            print("Post-Solve Diagnostics")
-            for c in large_residuals_set(m.fs.precipitator, tol=0.1):
-                print(c.name, "=", value(c.body, exception=False))
-        # elif unit == m.fs.sl_sep2:
-        #     _log.info(f"Manually initializing {unit}")
-        #     m.fs.sl_sep2.liquid_inlet.flow_vol.fix()
-        #     m.fs.sl_sep2.liquid_inlet.conc_mass_comp.fix()
-        #     m.fs.sl_sep2.liquid_inlet.temperature.fix()
-        #     m.fs.sl_sep2.liquid_inlet.pressure.fix()
-        #
-        #     m.fs.sl_sep2.solid_inlet.flow_mol_comp.fix()
-        #     m.fs.sl_sep2.solid_inlet.temperature.fix()
-        #
-        #     solver = get_solver()
-        #     solver.solve(m.fs.sl_sep2, tee=True)
-        #
-        #     m.fs.sl_sep2.liquid_inlet.flow_vol.unfix()
-        #     m.fs.sl_sep2.liquid_inlet.conc_mass_comp.unfix()
-        #     m.fs.sl_sep2.liquid_inlet.temperature.unfix()
-        #     m.fs.sl_sep2.liquid_inlet.pressure.unfix()
-        #
-        #     m.fs.sl_sep2.solid_inlet.flow_mol_comp.unfix()
-        #     m.fs.sl_sep2.solid_inlet.temperature.unfix()
-
         elif unit in product_units:
             _log.info(f"Initializing {unit}")
             initializer_product.initialize(unit)

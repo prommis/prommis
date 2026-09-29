@@ -71,7 +71,7 @@ Author: Carolina Tristan
 """
 
 from pyomo.common.config import ConfigBlock, ConfigValue
-from pyomo.environ import Param, Var, log, log10, units as pyunits
+from pyomo.environ import Param, Var, log10, units as pyunits
 
 from idaes.core import UnitModelBlockData, declare_process_block_class, useDefault
 from idaes.core.initialization import InitializerBase

@@ -104,9 +104,7 @@ def test_whims_separator_with_dobby_finch_example_data():
                 unit.nonmags_state[0].flow_mass_size_comp[size, mineral]
             )
             recovery = value(unit.recovery[0, size, mineral])
-            assert recovery == pytest.approx(
-                magnetics / feed if feed else 0.0
-            )
+            assert recovery == pytest.approx(magnetics / feed if feed else 0.0)
             assert magnetics + non_magnetics == pytest.approx(feed)
             assert magnetics == pytest.approx(
                 expected_magnetics_tph * 1000 / 3600,

@@ -216,9 +216,7 @@ class MineralSizePSDScaler(CustomScalerBase):
         for flow_var, default_factor in (
             (model.flow_mass_liquid, self.BASELINE_DEFAULT_LIQUID_FACTOR),
             (
-                model.flow_mass_vapor
-                if hasattr(model, "flow_mass_vapor")
-                else (),
+                model.flow_mass_vapor if hasattr(model, "flow_mass_vapor") else (),
                 self.BASELINE_DEFAULT_VAPOR_FACTOR,
             ),
         ):
@@ -325,8 +323,7 @@ class MineralSizePSDParameterData(PhysicalParameterBlock):
         "liquid_component_list",
         ConfigValue(
             default=None,
-            description="Component names in the liquid phase; defaults "
-            "to ['H2O'].",
+            description="Component names in the liquid phase; defaults " "to ['H2O'].",
         ),
     )
     CONFIG.declare(
@@ -412,12 +409,8 @@ class MineralSizePSDParameterData(PhysicalParameterBlock):
         if vapor_comps:
             self.Vap = VaporPhase()
         self.solid_component_set = Set(initialize=comps, ordered=True)
-        self.liquid_component_set = Set(
-            initialize=liquid_comps, ordered=True
-        )
-        self.vapor_component_set = Set(
-            initialize=vapor_comps, ordered=True
-        )
+        self.liquid_component_set = Set(initialize=liquid_comps, ordered=True)
+        self.vapor_component_set = Set(initialize=vapor_comps, ordered=True)
         all_components = dict.fromkeys(
             list(comps) + list(liquid_comps) + list(vapor_comps)
         )
@@ -463,7 +456,7 @@ class MineralSizePSDParameterData(PhysicalParameterBlock):
 
     def assert_same_mesh(self, other):
         """Raise unless ``other`` carries an identical size mesh.
-        
+
         ``other`` must be a MineralSizePSDParameterBlock or a MineralSizePSDStateBlock with a ``params`` attribute pointing to one.
 
         Raises ``ConfigurationError`` if the meshes differ in length or any edge value, rather than silently returning a boolean.  This is the same behavior as ``BulkPSDParameterBlock.assert_same_mesh`` and is intended to be used in translator/diagnostic code, not in a unit model's normal execution path.
@@ -612,9 +605,9 @@ class MineralSizePSDStateBlockData(StateBlockData):
             doc="Cumulative passing by interval and mineral.",
         )
         def cum_passing_mineral(b, k, j):
-            return sum(
-                b.flow_mass_size_comp[i, j] for i in sset if i <= k
-            ) / (b.flow_mass_comp[j] + b.params.flow_eps)
+            return sum(b.flow_mass_size_comp[i, j] for i in sset if i <= k) / (
+                b.flow_mass_comp[j] + b.params.flow_eps
+            )
 
         @self.Expression(doc="80% passing size (smooth interpolation, meters).")
         def P80(b):
@@ -657,10 +650,7 @@ class MineralSizePSDStateBlockData(StateBlockData):
         if j not in self.params.solid_component_set:
             raise KeyError(f"Unknown solid mineral {j!r}.")
         edges = [self.params.size_edges[i] for i in self.params.size_edge_index]
-        cum = [
-            self.cum_passing_mineral[k, j]
-            for k in self.params.size_interval_set
-        ]
+        cum = [self.cum_passing_mineral[k, j] for k in self.params.size_interval_set]
         return size_at_passing_smooth(edges, cum, target, eps=eps)
 
     def validate_feed(self):

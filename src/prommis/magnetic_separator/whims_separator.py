@@ -100,6 +100,7 @@ _EXP_LM = 0.8
 # initialization from a flat starting point.
 _EPS_LOG = 1e-12
 
+
 class WHIMSSeparatorScaler(CustomScalerBase):
     """Scaler for the WHIMS separator.
 

@@ -1346,7 +1346,7 @@ def initialize_system(m):
             m.fs.leach.solid_inlet.flow_mass.fix()
             m.fs.leach.solid_inlet.mass_frac_comp.fix()
 
-            seed_unset_vars(m.fs.leach)  # crash-proofing first
+            seed_unset_vars(m.fs.leach)
             for idx in m.fs.leach.mscontactor.liquid_inherent_reaction_extent:
                 m.fs.leach.mscontactor.liquid_inherent_reaction_extent[idx].set_value(0)
             for idx in m.fs.leach.mscontactor.heterogeneous_reaction_extent:
@@ -1354,8 +1354,6 @@ def initialize_system(m):
             seed_leach_liquid_states(m.fs.leach)
 
             solver = get_solver()
-            # halt error related to Al2O3 rxn rate, where the exponent value is A
-            # solver.options["halt_on_ampl_error"] = "yes"
             solver.options["bound_relax_factor"] = 0
             solver.options["max_iter"] = 500
             solver.solve(m.fs.leach, tee=True)
@@ -1378,7 +1376,7 @@ def initialize_system(m):
             m.fs.precipitator.hydraulic_retention_time[0].fix()
             m.fs.precipitator.precipitate_outlet.temperature.fix()
 
-            seed_unset_vars(m.fs.precipitator)  # crash-proofing first
+            seed_unset_vars(m.fs.precipitator)
             seed_leach_liquid_states(m.fs.precipitator)
 
             solver = get_solver()
@@ -3056,5 +3054,3 @@ if __name__ == "__main__":
     m, results = main()
     optimize_model(m)
     # data_reconciliation(m)
-
-    #TODO: Need to try to make the flowsheet more stable by adjusting scaling and/or tear guesses

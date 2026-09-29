@@ -34,7 +34,7 @@ keywords = [
 dynamic = ["version"]
 dependencies = ["idaes-pse>=2.13.0", "pyomo >=6.9.5"]
 [project.optional-dependencies]
-watertap = ["watertap[reaktoro] @ git+https://github.com/sufikaur/watertap.git@main"]
+watertap = ["watertap[reaktoro]>=1.8.0rc0"]
 
 flowsheet-processor = ["idaes-flowsheet-processor >=0.3"]
 

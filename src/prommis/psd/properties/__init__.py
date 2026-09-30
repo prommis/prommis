@@ -20,10 +20,6 @@ from prommis.psd.properties.mineral_size_psd import (
 )
 
 __all__ = [
-    "BulkPSDInitializer",
-    "BulkPSDParameterBlock",
-    "BulkPSDScaler",
-    "BulkPSDStateBlock",
     "MineralSizePSDInitializer",
     "MineralSizePSDParameterBlock",
     "MineralSizePSDScaler",

@@ -6,12 +6,6 @@
 #####################################################################################################
 """Standalone bulk particle-size-distribution (PSD) property package."""
 
-from prommis.psd.properties.bulk_psd import (
-    BulkPSDInitializer,
-    BulkPSDParameterBlock,
-    BulkPSDScaler,
-    BulkPSDStateBlock,
-)
 from prommis.psd.properties.mineral_size_psd import (
     MineralSizePSDInitializer,
     MineralSizePSDParameterBlock,

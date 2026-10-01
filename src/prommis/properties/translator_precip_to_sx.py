@@ -6,33 +6,34 @@
 #####################################################################################################
 
 r"""
-Translator block between sulfuric acid leaching and HCl stripping properties
+Translator block to convert from mixed acid properties with oxalates to
+mixed acid properties without oxalates
 
 ========================================================================
 
-Author: Douglas Allan
+Author: Marcus Holly
 
 Model description
 -----------------
 
-This block takes a stream using the HCl stripping properties to the H2SO4 leaching properties.
+This block takes a stream using the mixed acid properties with oxalates to mixed acid properties without oxalates.
 
 Parameter:
 ----------
-eps_conc_mass: Near-zero mass concentration (initialized at 1e-15 mg/L) to use for sulfate concentration.
+None
 
 
 Additional constraints
 ----------------------
 
 1. eq_flow_vol_rule: Inlet and outlet volumetric flow rates are equal
-2. conc_mass_comp_hcl_eqn: The concentrations of components in the HCl property package are equal
-3. conc_mass_sulfates_eqn: Sulfate components have near-zero concentration, defined by eps_conc_mass
+2. conc_mass_comp_shared_eqn: The concentrations of the shared components are equal
+3. conc_mass_comp_oxalate_eqn: Oxalate components have near-zero concentration, defined by eps_conc_mass
 
 """
 
 from pyomo.common.config import ConfigValue, In
-from pyomo.environ import Set, Param, units as pyunits
+from pyomo.environ import Set, Param, value, units as pyunits
 
 # Import IDAES cores
 from idaes.core import declare_process_block_class
@@ -41,14 +42,14 @@ from idaes.models.unit_models.translator import TranslatorData
 
 import idaes.logger as idaeslog
 
-__author__ = "Douglas Allan"
+__author__ = "Marcus Holly"
 
 
 # Set up logger
 _log = idaeslog.getLogger(__name__)
 
 
-class TranslatorHClLeachScaler(CustomScalerBase):
+class TranslatorPrecipSXScaler(CustomScalerBase):
     """
     Scaler for blocks with a single state (Feed, Product, StateJunction)
     """
@@ -90,13 +91,7 @@ class TranslatorHClLeachScaler(CustomScalerBase):
                 scheme=ConstraintScalingScheme.inverseMaximum,
                 overwrite=overwrite,
             )
-        for condata in model.conc_mass_comp_hcl_eqn.values():
-            self.scale_constraint_by_nominal_value(
-                condata,
-                scheme=ConstraintScalingScheme.inverseMaximum,
-                overwrite=overwrite,
-            )
-        for condata in model.conc_mass_sulfates_eqn.values():
+        for condata in model.conc_mass_comp_shared_eqn.values():
             self.scale_constraint_by_nominal_value(
                 condata,
                 scheme=ConstraintScalingScheme.inverseMaximum,
@@ -104,12 +99,12 @@ class TranslatorHClLeachScaler(CustomScalerBase):
             )
 
 
-@declare_process_block_class("TranslatorHClLeach")
-class TranslatorHClLeachData(TranslatorData):
+@declare_process_block_class("TranslatorPrecipSX")
+class TranslatorPrecipSXData(TranslatorData):
     """
-    Translator block to go from the HCl Stripping property package,
-    which does not contain sulfate species, to the full leaching
-    property package, which does contain sulfate species.
+    Translator block to go from the mixed acid property package
+    that does not contain oxalate species to a mixed acid
+    property package that contains oxalate species.
 
     """
 
@@ -133,7 +128,7 @@ class TranslatorHClLeachData(TranslatorData):
         ),
     )
 
-    default_scaler = TranslatorHClLeachScaler
+    default_scaler = TranslatorPrecipSXScaler
 
     def build(self):
         """
@@ -146,14 +141,6 @@ class TranslatorHClLeachData(TranslatorData):
         # Call UnitModel.build to setup dynamics
         super().build()
 
-        self.eps_conc_mass = Param(
-            initialize=1e-15,
-            mutable=True,
-            units=pyunits.mg / pyunits.L,
-            doc="Value to use for mass concentration of sulfate species "
-            "in outlet stream.",
-        )
-
         @self.Constraint(
             self.flowsheet().time,
             doc="Equality volumetric flow equation",
@@ -161,33 +148,31 @@ class TranslatorHClLeachData(TranslatorData):
         def flow_vol_eqn(blk, t):
             return blk.properties_out[t].flow_vol == blk.properties_in[t].flow_vol
 
-        self.HCl_components = Set(
+        self.shared_components = Set(
             initialize=[
-                "Al",
-                "Ca",
-                "Fe",
-                "Sc",
-                "Y",
-                "La",
-                "Ce",
-                "Pr",
-                "Nd",
-                "Sm",
-                "Gd",
-                "Dy",
+                "Al_3+",
+                "Ca_2+",
+                "Fe_3+",
+                "Sc_3+",
+                "Y_3+",
+                "La_3+",
+                "Ce_3+",
+                "Pr_3+",
+                "Nd_3+",
+                "Sm_3+",
+                "Gd_3+",
+                "Dy_3+",
                 "H2O",
-                "H",
-                "Cl",
+                "H_+",
+                "Cl_-",
             ]
         )
-        self.sulfate_components = Set(initialize=["HSO4", "SO4"])
-
         @self.Constraint(
             self.flowsheet().time,
-            self.HCl_components,
-            doc="Defines mass concentration of components from HCl properties",
+            self.shared_components,
+            doc="Defines mass concentration for the shared components",
         )
-        def conc_mass_comp_hcl_eqn(blk, t, i):
+        def conc_mass_comp_shared_eqn(blk, t, i):
             return (
                 blk.properties_out[t].conc_mass_comp[i]
                 == blk.properties_in[t].conc_mass_comp[i]
@@ -195,9 +180,14 @@ class TranslatorHClLeachData(TranslatorData):
 
         @self.Constraint(
             self.flowsheet().time,
-            self.sulfate_components,
-            doc="Defines mass concentration for sulfate species",
+            doc="Equality temperature equation",
         )
-        def conc_mass_sulfates_eqn(blk, t, i):
-            return blk.properties_out[t].conc_mass_comp[i] == blk.eps_conc_mass
+        def eq_temperature_rule(blk, t):
+            return blk.properties_out[t].temperature == blk.properties_in[t].temperature
 
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Equality pressure equation",
+        )
+        def eq_pressure_rule(blk, t):
+            return blk.properties_out[t].pressure == blk.properties_in[t].pressure

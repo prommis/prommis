@@ -12,15 +12,17 @@ Author: Molly Dougher
 
 from pyomo.environ import (
     ConcreteModel,
+    Constraint,
     SolverFactory,
     TransformationFactory,
     assert_optimal_termination,
+    units,
     value,
 )
 from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util.diagnostics_tools.diagnostics_toolbox import DiagnosticsToolbox
 from idaes.models.unit_models import Feed, Product
 
 import matplotlib.pyplot as plt
@@ -40,13 +42,9 @@ from prommis.nanofiltration.multi_component_diafiltration import (
 def main():
     """
     Builds and solves flowsheet with multi-component diafiltration unit model
-    for a two-salt (LiCl + CoCl2) solution.
+    for a two-salt (LiCl + CoCl2) solution. Generates plots for visualization.
     """
-    # build flowsheet
-    m = ConcreteModel()
-    m.fs = FlowsheetBlock(dynamic=False)
-
-    # specify the feed
+    # membrane model inputs
     cation_list = ["Li", "Co"]
     anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
@@ -54,43 +52,38 @@ def main():
         "feed": {"Li": 245, "Co": 288, "Cl": 821},
         "diafiltrate": {"Li": 14, "Co": 3, "Cl": 20},
     }
+    include_boundary_layer = True
+    NFE_module_length = 10
+    NFE_boundary_layer_thickness = 5
+    NFE_membrane_thickness = 5
+    non_Donnan_partition_dict = {
+        "Li": 0.7,
+        "Co": 0.3,
+        "Cl": 0.1,
+    }  # informed from data and sensitivity analysis
+    Dm_over_l_value = 40  # um/s, informed from data and sensitivity analysis
 
-    m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(
-        cation_list=cation_list,
-        anion_list=anion_list,
+    m = build_flowsheet_model(
+        cation_list,
+        anion_list,
+        inlet_flow_volume,
+        inlet_concentration,
+        include_boundary_layer,
+        NFE_module_length,
+        NFE_boundary_layer_thickness,
+        NFE_membrane_thickness,
+        non_Donnan_partition_dict,
+        Dm_over_l_value,
     )
-    m.fs.properties = MultiComponentDiafiltrationSoluteParameter(
-        cation_list=cation_list,
-        anion_list=anion_list,
-    )
-
-    # add feed blocks for feed and diafiltrate
-    m.fs.feed_block = Feed(property_package=m.fs.stream_properties)
-    m.fs.diafiltrate_block = Feed(property_package=m.fs.stream_properties)
-
-    # add the membrane unit model
-    m.fs.membrane = MultiComponentDiafiltration(
-        property_package=m.fs.properties,
-        cation_list=cation_list,
-        anion_list=anion_list,
-        include_boundary_layer=True,
-        NFE_module_length=10,
-        NFE_boundary_layer_thickness=5,
-        NFE_membrane_thickness=5,
-    )
-
-    # update parameter inputs if desired
-    update_membrane_parameters(m)
-
-    # add product blocks for retentate and permeate
-    m.fs.retentate_block = Product(property_package=m.fs.stream_properties)
-    m.fs.permeate_block = Product(property_package=m.fs.stream_properties)
 
     # fix the degrees of freedom
     fix_variables(m, inlet_flow_volume, inlet_concentration)
 
     # initialize membrane model
-    initialized_membrane_model = m.fs.membrane.default_initializer()
+    initialized_membrane_model = m.fs.membrane.default_initializer(
+        multiplier_H_feed=1.2,  # increase can help solver performance
+        multiplier_H_perm=1,
+    )
     initialized_membrane_model.initialize(m.fs.membrane)
 
     # add and connect flowsheet streams
@@ -102,6 +95,8 @@ def main():
 
     # solve model
     solve_model(m)
+    set_water_flux_target(m, flux_target=0.02)  # 20 LMH / bar
+    solve_model(m)
 
     # check numerical warnings
     dt.assert_no_numerical_warnings()
@@ -110,32 +105,85 @@ def main():
     overall_results_plot = plot_results_by_length(m)
     boundary_layer_results_plot = plot_results_by_thickness(m, phase="Boundary Layer")
     membrane_results_plot = plot_results_by_thickness(m, phase="Membrane")
-    rejection_plot = plot_rejection_versus_concentration(m)
+    plt.show()
 
     return (
         m,
         overall_results_plot,
         boundary_layer_results_plot,
         membrane_results_plot,
-        rejection_plot,
     )
 
 
-def update_membrane_parameters(m):
+def build_flowsheet_model(
+    cation_list,
+    anion_list,
+    inlet_flow_volume,
+    inlet_concentration,
+    include_boundary_layer,
+    NFE_module_length,
+    NFE_boundary_layer_thickness,
+    NFE_membrane_thickness,
+    non_Donnan_partition_dict,
+    Dm_over_l_value,
+):
     """
-    Updates parameters needed in multi-component diafiltration unit model if desired.
+    Builds flowsheet with multi-component diafiltration unit model.
+    """
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
 
-    Args:
-        m: Pyomo model
-    """
-    pass
+    # specify the feed
+    cation_list = cation_list
+    anion_list = anion_list
+    inlet_flow_volume = inlet_flow_volume
+    inlet_concentration = inlet_concentration
+
+    m.fs.stream_properties = MultiComponentDiafiltrationStreamParameter(
+        cation_list=cation_list,
+        anion_list=anion_list,
+    )
+    m.fs.properties = MultiComponentDiafiltrationSoluteParameter(
+        cation_list=cation_list,
+        anion_list=anion_list,
+        non_Donnan_partition_dict=non_Donnan_partition_dict,
+    )
+
+    # add feed blocks for feed and diafiltrate
+    m.fs.feed_block = Feed(property_package=m.fs.stream_properties)
+    m.fs.diafiltrate_block = Feed(property_package=m.fs.stream_properties)
+
+    Dm_Cl = units.convert(
+        m.fs.properties.membrane_diffusion_coefficient[anion_list[0]],
+        to_units=units.um**2 / units.s,
+    )
+    Dm_over_l_value = Dm_over_l_value
+    l_um = value(Dm_Cl) / Dm_over_l_value  # um
+    l_m = l_um / 1e6  # m
+
+    # add the membrane unit model
+    m.fs.membrane = MultiComponentDiafiltration(
+        property_package=m.fs.properties,
+        cation_list=cation_list,
+        anion_list=anion_list,
+        include_boundary_layer=include_boundary_layer,
+        total_membrane_thickness=l_m,
+        NFE_module_length=NFE_module_length,
+        NFE_boundary_layer_thickness=NFE_boundary_layer_thickness,
+        NFE_membrane_thickness=NFE_membrane_thickness,
+    )
+
+    # add product blocks for retentate and permeate
+    m.fs.retentate_block = Product(property_package=m.fs.stream_properties)
+    m.fs.permeate_block = Product(property_package=m.fs.stream_properties)
+
+    return m
 
 
 def fix_variables(m, inlet_flow_volume, inlet_concentration):
     # fix degrees of freedom in the membrane
     m.fs.membrane.total_module_length.fix()
     m.fs.membrane.total_membrane_length.fix()
-    m.fs.membrane.applied_pressure.fix()
 
     m.fs.membrane.feed_flow_volume.fix(inlet_flow_volume["feed"])
     m.fs.membrane.diafiltrate_flow_volume.fix(inlet_flow_volume["diafiltrate"])
@@ -146,6 +194,15 @@ def fix_variables(m, inlet_flow_volume, inlet_concentration):
             m.fs.membrane.diafiltrate_conc_mol_comp[t, j].fix(
                 inlet_concentration["diafiltrate"][j]
             )
+
+    feed_ionic_strength = value(m.fs.membrane.feed_ionic_strength[0])
+
+    if feed_ionic_strength < 199:
+        m.fs.membrane.applied_pressure.fix(5)
+    elif (feed_ionic_strength >= 199) and (feed_ionic_strength < 299):
+        m.fs.membrane.applied_pressure.fix(15)
+    elif feed_ionic_strength >= 299:
+        m.fs.membrane.applied_pressure.fix(20)
 
 
 def add_and_connect_streams(m):
@@ -167,6 +224,26 @@ def add_and_connect_streams(m):
     )
 
     TransformationFactory("network.expand_arcs").apply_to(m)
+
+
+def set_water_flux_target(m, flux_target):
+    """
+    Unfixes applied pressure and sets average water flux target.
+    """
+    m.fs.membrane.applied_pressure.unfix()
+
+    def _water_flux_constraint(m):
+        return (
+            sum(
+                m.fs.membrane.volume_flux_water[0, x]
+                for x in m.fs.membrane.dimensionless_module_length
+                if x != 0
+            )
+            / (len(m.fs.membrane.dimensionless_module_length) - 1)
+            == flux_target
+        )
+
+    m.water_flux_constraint = Constraint(rule=_water_flux_constraint)
 
 
 def solve_model(m):
@@ -255,52 +332,16 @@ def plot_results_by_length(m):
             Co_flux.append(value(m.fs.membrane.molar_ion_flux[0, x_val, "Co"]))
 
             Li_rejection_obs.append(
-                (
-                    1
-                    - (
-                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
-                    )
-                )
-                * 100
+                value(m.fs.membrane.observed_rejection_percent[0, x_val, "Li"])
             )
             Li_rejection_act.append(
-                (
-                    1
-                    - (
-                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-                        / value(
-                            m.fs.membrane.boundary_layer_conc_mol_comp[
-                                0, x_val, 1, "Li"
-                            ]
-                        )
-                    )
-                )
-                * 100
+                value(m.fs.membrane.actual_rejection_percent[0, x_val, "Li"])
             )
             Co_rejection_obs.append(
-                (
-                    1
-                    - (
-                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
-                    )
-                )
-                * 100
+                value(m.fs.membrane.observed_rejection_percent[0, x_val, "Co"])
             )
             Co_rejection_act.append(
-                (
-                    1
-                    - (
-                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-                        / value(
-                            m.fs.membrane.boundary_layer_conc_mol_comp[
-                                0, x_val, 1, "Co"
-                            ]
-                        )
-                    )
-                )
-                * 100
+                value(m.fs.membrane.actual_rejection_percent[0, x_val, "Co"])
             )
 
             percent_recovery.append(
@@ -371,8 +412,6 @@ def plot_results_by_length(m):
     ax6.set_xlabel("Module Length (m)", fontsize=10, fontweight="bold")
     ax6.set_ylabel("Percent Recovery (%)", fontsize=10, fontweight="bold")
     ax6.tick_params(direction="in", labelsize=10)
-
-    plt.show()
 
     return fig
 
@@ -509,136 +548,6 @@ def plot_results_by_thickness(m, phase):
     )
     ax3.tick_params(direction="in", labelsize=10)
     fig.colorbar(Cl_plot, ax=ax3)
-
-    plt.show()
-
-    return fig
-
-
-def plot_rejection_versus_concentration(m):
-    """
-    Plots rejection versus retentate-side concentration.
-
-    Args:
-        m: Pyomo model
-    """
-    # store values for concentration of Li in the retentate
-    conc_ret_lith = []
-    # store values for concentration of Li at interface of BL and M
-    conc_int_lith = []
-    # store values for concentration of Li in the permeate
-    conc_perm_lith = []
-    # store values for concentration of Co in the retentate
-    conc_ret_cob = []
-    # store values for concentration of Co at interface of BL and M
-    conc_int_cob = []
-    # store values for concentration of Co in the permeate
-    conc_perm_cob = []
-
-    # store values for Li rejection (observed)
-    Li_rejection_obs = []
-    # store values for Li rejection (actual)
-    Li_rejection_act = []
-    # store values for Co rejection (observed)
-    Co_rejection_obs = []
-    # store values for Co rejection (actual)
-    Co_rejection_act = []
-
-    for x_val in m.fs.membrane.dimensionless_module_length:
-        if x_val != 0:
-            conc_ret_lith.append(
-                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
-            )
-            conc_int_lith.append(
-                value(m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Li"])
-            )
-            conc_perm_lith.append(
-                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-            )
-            conc_ret_cob.append(
-                value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
-            )
-            conc_int_cob.append(
-                value(m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Co"])
-            )
-            conc_perm_cob.append(
-                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-            )
-
-            Li_rejection_obs.append(
-                (
-                    1
-                    - (
-                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Li"])
-                    )
-                )
-                * 100
-            )
-            Li_rejection_act.append(
-                (
-                    1
-                    - (
-                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
-                        / value(
-                            m.fs.membrane.boundary_layer_conc_mol_comp[
-                                0, x_val, 1, "Li"
-                            ]
-                        )
-                    )
-                )
-                * 100
-            )
-            Co_rejection_obs.append(
-                (
-                    1
-                    - (
-                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-                        / value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
-                    )
-                )
-                * 100
-            )
-            Co_rejection_act.append(
-                (
-                    1
-                    - (
-                        value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
-                        / value(
-                            m.fs.membrane.boundary_layer_conc_mol_comp[
-                                0, x_val, 1, "Co"
-                            ]
-                        )
-                    )
-                )
-                * 100
-            )
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, dpi=100, figsize=(10, 5))
-
-    ax1.plot(conc_ret_lith, Li_rejection_obs, linewidth=2, label="observed")
-    ax1.plot(conc_ret_lith, Li_rejection_act, linewidth=2, label="actual")
-    ax1.set_xlabel(
-        "Lithium Concentration (Feed-Side) (mol/m$^3$)",
-        fontsize=10,
-        fontweight="bold",
-    )
-    ax1.set_ylabel("Percent Rejection (%)", fontsize=10, fontweight="bold")
-    ax1.tick_params(direction="in", labelsize=10)
-    ax1.legend()
-
-    ax2.plot(conc_ret_cob, Co_rejection_obs, linewidth=2, label="observed")
-    ax2.plot(conc_ret_cob, Co_rejection_act, linewidth=2, label="actual")
-    ax2.set_xlabel(
-        "Cobalt Concentration (Feed-Side) (mol/m$^3$)",
-        fontsize=10,
-        fontweight="bold",
-    )
-    ax2.set_ylabel("Percent Rejection (%)", fontsize=10, fontweight="bold")
-    ax2.tick_params(direction="in", labelsize=10)
-    ax2.legend()
-
-    plt.show()
 
     return fig
 

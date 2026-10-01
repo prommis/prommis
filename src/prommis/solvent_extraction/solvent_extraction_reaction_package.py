@@ -17,7 +17,7 @@ solvent extraction.
 
 """
 
-from pyomo.common.config import ConfigValue
+from pyomo.common.config import ConfigDict, ConfigValue
 from pyomo.environ import Constraint, Param, Set, Var, units, log10
 
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
@@ -27,6 +27,9 @@ from idaes.core.scaling import CustomScalerBase
 
 __author__ = "Arkoprabho Dasgupta, Douglas Allan"
 
+_REE_list = ["La", "Y", "Pr", "Ce", "Nd", "Sm", "Gd", "Dy"]
+_impurity_list = ["Al", "Ca", "Fe", "Sc"]
+_element_list = _REE_list + _impurity_list
 
 class SolventExtractionReactionScaler(CustomScalerBase):
     """
@@ -115,37 +118,53 @@ class SolventExtractionReactionsData(
 
     """
 
+    CONFIG = ConfigDict()
+    CONFIG.declare(
+        "aqueous_aliases",
+        ConfigValue(
+            default={e: e for e in _element_list},
+            domain=dict,
+            description="Dictionary matching element names in the element "
+            "list to elements in the aqueous stream. Used when, e.g., cation "
+            "charges are included in the element name, as is done in the "
+            "MixedAcidProperties."
+        )
+    )
+    CONFIG.declare(
+        "organic_aliases",
+        ConfigValue(
+            default={e: e + "_o" for e in _element_list},
+            domain=dict,
+            description="Dictionary matching element names in the element "
+            "list to elements in the organic stream. "
+        )
+    )
+
     def build(self):
         super().build()
 
         self._reaction_block_class = SolventExtractionReactionsBlock
 
-        REE_list = ["La", "Y", "Pr", "Ce", "Nd", "Sm", "Gd", "Dy"]
-        Impurity_list = ["Al", "Ca", "Fe", "Sc"]
 
-        index_list = [f"{e}_mass_transfer" for e in (REE_list + Impurity_list)]
-        element_list = REE_list + Impurity_list
 
-        self.element_list = Set(initialize=element_list)
+        index_list = [f"{e}_mass_transfer" for e in _element_list]
+
+        self.element_list = Set(initialize=_element_list)
         self.reaction_idx = Set(initialize=index_list)
+        self.aqueous_aliases = self.config.aqueous_aliases
+        self.organic_aliases = self.config.organic_aliases
 
         reaction_stoichiometry = {}
 
-        for e in REE_list:
-            reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", e)] = -1
-            reaction_stoichiometry[(f"{e}_mass_transfer", "organic", f"{e}_o")] = 1
-            reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H")] = 3
-            reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -3
-
-        for e in Impurity_list:
+        for e in _element_list:
+            aq_idx = self.aqueous_aliases[e]
+            org_idx = self.organic_aliases[e]
+            reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", aq_idx)] = -1
+            reaction_stoichiometry[(f"{e}_mass_transfer", "organic", org_idx)] = 1
             if e == "Ca":
-                reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", e)] = -1
-                reaction_stoichiometry[(f"{e}_mass_transfer", "organic", f"{e}_o")] = 1
                 reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H")] = 2
                 reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -2
             else:
-                reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", e)] = -1
-                reaction_stoichiometry[(f"{e}_mass_transfer", "organic", f"{e}_o")] = 1
                 reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H")] = 3
                 reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -3
 

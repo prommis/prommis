@@ -410,12 +410,23 @@ class SolventExtractionData(UnitModelBlockData):
         )
 
         def distribution_ratio_rule(b, t, s, e):
+            rxns = b.config.heterogeneous_reaction_package
+            # TODO do we want to deprecate using a reaction package
+            # without defining alias dictionaries?
+            if hasattr(rxns, "aqueous_aliases"):
+                aq_species = rxns.aqueous_aliases[e]
+            else:
+                aq_species = e
+            if hasattr(rxns, "organic_aliases"):
+                org_species = rxns.organic_aliases[e]
+            else:
+                org_species = f"{e}_o"
             return (
-                b.mscontactor.organic[t, s].conc_mol_comp[f"{e}_o"]
+                b.mscontactor.organic[t, s].conc_mol_comp[org_species]
                 == b.mscontactor.heterogeneous_reactions[t, s].distribution_coefficient[
                     e
                 ]
-                * b.mscontactor.aqueous[t, s].conc_mol_comp[e]
+                * b.mscontactor.aqueous[t, s].conc_mol_comp[aq_species]
             )
 
         self.distribution_extent_constraint = Constraint(

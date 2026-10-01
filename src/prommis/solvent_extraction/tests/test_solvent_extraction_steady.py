@@ -42,18 +42,261 @@ def _validate_distribution_coefficients(unit, m_list, expr_dict):
         ) == pytest.approx(D_mean, rel=1e-12, abs=1e-12)
 
 
+_aq_components = [
+    "H2O", "H", "HSO4", "SO4", "Cl", "Sc", "Y", "La", 
+    "Ce", "Pr", "Nd", "Sm", "Gd", "Dy", "Al", "Ca", "Fe"
+]
+_org_components = [
+    "Kerosene", "DEHPA", "Al_o", "Ca_o", "Fe_o", "Sc_o", "Y_o",
+    "La_o", "Ce_o", "Pr_o", "Nd_o", "Sm_o", "Gd_o", "Dy_o"
+]
 metal_list = ["La", "Y", "Pr", "Ce", "Nd", "Sm", "Gd", "Dy", "Al", "Ca", "Fe", "Sc"]
+nan = float("NaN")
 
+_aq_inlet_expected = {
+    "flow_vol": 1.7225e-05,
+    "conc_mass_comp H2O": 1000,
+    "conc_mass_comp H": 0.01075,
+    "conc_mass_comp HSO4": 10,
+    "conc_mass_comp SO4": 0.1,
+    "conc_mass_comp Cl": 1e-10,
+    "conc_mass_comp Sc": 3.2e-05,
+    "conc_mass_comp Y": 0.000124,
+    "conc_mass_comp La": 0.000986,
+    "conc_mass_comp Ce": 0.002277,
+    "conc_mass_comp Pr": 0.000303,
+    "conc_mass_comp Nd": 0.000946,
+    "conc_mass_comp Sm": 9.7e-05,
+    "conc_mass_comp Gd": 0.0002584,
+    "conc_mass_comp Dy": 4.7e-05,
+    "conc_mass_comp Al": 0.422375,
+    "conc_mass_comp Ca": 0.109542,
+    "conc_mass_comp Fe": 0.688266,
+    "temperature": 305.15,
+    "pressure": 101300.0,
+}
+for j in _org_components:
+    _aq_inlet_expected[f"conc_mass_comp {j}"] = nan
 
+# Insertion order matters here because this dictionary
+# is going to be converted into a dataframe
+_org_inlet_expected = {
+    "flow_vol": 1.7225e-05,
+}
+for j in _aq_components:
+    _org_inlet_expected[f"conc_mass_comp {j}"] = nan
+
+_org_inlet_expected["temperature"] = 305.15
+_org_inlet_expected["pressure"] = 101300.0
+
+_org_inlet_expected["conc_mass_comp Kerosene"] = 820
+_org_inlet_expected["conc_mass_comp DEHPA"] = 48.79
+_org_inlet_expected["conc_mass_comp Al_o"] = 1.267e-8
+_org_inlet_expected["conc_mass_comp Ca_o"] = 2.684e-8
+_org_inlet_expected["conc_mass_comp Fe_o"] = 2.873e-9
+_org_inlet_expected["conc_mass_comp Sc_o"] = 1.734e-3
+_org_inlet_expected["conc_mass_comp Y_o"] = 2.179e-8
+_org_inlet_expected["conc_mass_comp La_o"] = 1.05e-7
+_org_inlet_expected["conc_mass_comp Ce_o"] = 3.1e-7
+_org_inlet_expected["conc_mass_comp Pr_o"] = 3.711e-8
+_org_inlet_expected["conc_mass_comp Nd_o"] = 1.65e-7
+_org_inlet_expected["conc_mass_comp Sm_o"] = 1.701e-8
+_org_inlet_expected["conc_mass_comp Gd_o"] = 3.357e-8
+_org_inlet_expected["conc_mass_comp Dy_o"] = 8.008e-9
+
+_expected_results = {
+    "aqueous_inlet.flow_vol": {(0,): (62.01, 1e-4, None)},
+    "aqueous_inlet.temperature": {(0,): (305.15, 1e-4, None)},
+    "aqueous_inlet.pressure": {(0,): (101300.0, 1e-4, None)},
+    "aqueous_inlet.conc_mass_comp": {
+        (0.0, "H2O"): (1e6, 1e-4, None),
+        (0.0, "H"): (10.75, 1e-4, None),
+        (0.0, "HSO4"): (1e4, 1e-4, None),
+        (0.0, "SO4"): (1e2, 1e-4, None),
+        (0.0, "Cl"): (1e-7, 1e-4, None),
+        (0.0, "Sc"): (3.2e-2, 1e-4, None),
+        (0.0, "Y"): (0.124, 1e-4, None),
+        (0.0, "La"): (0.986, 1e-4, None),
+        (0.0, "Ce"): (2.277, 1e-4, None),
+        (0.0, "Pr"): (0.303, 1e-4, None),
+        (0.0, "Nd"): (0.946, 1e-4, None),
+        (0.0, "Sm"): (9.7e-02, 1e-4, None),
+        (0.0, "Gd"): (0.2584, 1e-4, None),
+        (0.0, "Dy"): (4.7e-02, 1e-4, None),
+        (0.0, "Al"): (4.22375e2, 1e-4, None),
+        (0.0, "Ca"): (1.09542e2, 1e-4, None),
+        (0.0, "Fe"): (6.88266e2, 1e-4, None),
+    },
+    "organic_inlet.flow_vol": {(0,): (62.01, 1e-4, None)},
+    "organic_inlet.temperature": {(0,): (305.15, 1e-4, None)},
+    "organic_inlet.pressure": {(0,): (101300.0, 1e-4, None)},
+    "organic_inlet.conc_mass_comp": {
+        (0.0, "Kerosene"): (8.2e5, 1e-4, None),
+        (0.0, "DEHPA"): (4.879e4, 1e-4, None),
+        (0.0, "Al_o"): (1.267e-5, 1e-4, None),
+        (0.0, "Ca_o"): (2.684e-5, 1e-4, None),
+        (0.0, "Fe_o"): (2.873e-6, 1e-4, None),
+        (0.0, "Sc_o"): (1.734, 1e-4, None),
+        (0.0, "Y_o"): (2.179e-5, 1e-4, None),
+        (0.0, "La_o"): (1.05e-4, 1e-4, None),
+        (0.0, "Ce_o"): (3.1e-4, 1e-4, None),
+        (0.0, "Pr_o"): (3.711e-5, 1e-4, None),
+        (0.0, "Nd_o"): (1.65e-4, 1e-4, None),
+        (0.0, "Sm_o"): (1.701e-5, 1e-4, None),
+        (0.0, "Gd_o"): (3.357e-5, 1e-4, None),
+        (0.0, "Dy_o"): (8.008e-6, 1e-4, None),
+    },
+    "aqueous_outlet.flow_vol": {(0,): (62.01, 1e-4, None)},
+    "aqueous_outlet.temperature": {(0,): (305.15, 1e-4, None)},
+    "aqueous_outlet.pressure": {(0,): (101300.0, 1e-4, None)},
+    "aqueous_outlet.conc_mass_comp": {
+        (0.0, "H2O"): (1.000e06, 1e-4, None),
+        (0.0, "H"): (3.9513e01, 1e-4, None),
+        (0.0, "HSO4"): (8.0232e03, 1e-4, None),
+        (0.0, "SO4"): (2.0564e03, 1e-4, None),
+        (0.0, "Cl"): (1.0000e-07, 1e-4, None),
+        (0.0, "Sc"): (2.7415e-03, 1e-4, None),
+        (0.0, "Y"): (6.2927e-06, 1e-4, None),
+        (0.0, "La"): (9.1421e-01, 1e-4, None),
+        (0.0, "Ce"): (2.1095e00, 1e-4, None),
+        (0.0, "Pr"): (2.7631e-01, 1e-4, None),
+        (0.0, "Nd"): (8.8099e-01, 1e-4, None),
+        (0.0, "Sm"): (8.6579e-02, 1e-4, None),
+        (0.0, "Gd"): (1.9246e-01, 1e-4, None),
+        (0.0, "Dy"): (1.1699e-03, 1e-4, None),
+        (0.0, "Al"): (3.9995e02, 1e-4, None),
+        (0.0, "Ca"): (1.0234e02, 1e-4, None),
+        (0.0, "Fe"): (5.8559e02, 1e-4, None),
+    },
+    "organic_outlet.flow_vol": {(0,): (62.01, 1e-4, None)},
+    "organic_outlet.temperature": {(0,): (305.15, 1e-4, None)},
+    "organic_outlet.pressure": {(0,): (101300.0, 1e-4, None)},
+    "organic_outlet.conc_mass_comp": {
+        (0.0, "Kerosene"): (8.2000e05, 1e-4, None),
+        (0.0, "DEHPA"): (4.6087e04, 1e-4, None),
+        (0.0, "Al_o"): (2.2425e01, 1e-4, None),
+        (0.0, "Ca_o"): (7.2059e00, 1e-4, None),
+        (0.0, "Fe_o"): (1.0267e02, 1e-4, None),
+        (0.0, "Sc_o"): (1.7633e00, 1e-4, None),
+        (0.0, "Y_o"): (1.2402e-01, 1e-4, None),
+        (0.0, "La_o"): (7.1891e-02, 1e-4, None),
+        (0.0, "Ce_o"): (1.6778e-01, 1e-4, None),
+        (0.0, "Pr_o"): (2.6727e-02, 1e-4, None),
+        (0.0, "Nd_o"): (6.5178e-02, 1e-4, None),
+        (0.0, "Sm_o"): (1.0438e-02, 1e-4, None),
+        (0.0, "Gd_o"): (6.5974e-02, 1e-4, None),
+        (0.0, "Dy_o"): (4.5838e-02, 1e-4, None),
+    },
+}
+
+@pytest.mark.parametrize(
+    "has_holdup",
+    [False, True],
+    scope="class",
+)
 class Test_Solvent_Extraction_steady_model:
 
     @pytest.fixture(scope="class")
-    def SolEx_frame(self):
+    @classmethod
+    def SolEx_frame(cls, has_holdup):
         dosage = 5
         number_of_stages = 3
-        m = model_buildup_and_set_inputs(dosage, number_of_stages, has_holdup=False)
+        m = model_buildup_and_set_inputs(dosage, number_of_stages, has_holdup=has_holdup)
 
         return m
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def expected_results(cls, has_holdup):
+        out = {
+            "aqueous_inlet.flow_vol": {(0,): (62.01, 1e-4, None)},
+            "aqueous_inlet.temperature": {(0,): (305.15, 1e-4, None)},
+            "aqueous_inlet.pressure": {(0,): (101300.0, 1e-4, None)},
+            "aqueous_inlet.conc_mass_comp": {
+                (0.0, "H2O"): (1e6, 1e-4, None),
+                (0.0, "H"): (10.75, 1e-4, None),
+                (0.0, "HSO4"): (1e4, 1e-4, None),
+                (0.0, "SO4"): (1e2, 1e-4, None),
+                (0.0, "Cl"): (1e-7, 1e-4, None),
+                (0.0, "Sc"): (3.2e-2, 1e-4, None),
+                (0.0, "Y"): (0.124, 1e-4, None),
+                (0.0, "La"): (0.986, 1e-4, None),
+                (0.0, "Ce"): (2.277, 1e-4, None),
+                (0.0, "Pr"): (0.303, 1e-4, None),
+                (0.0, "Nd"): (0.946, 1e-4, None),
+                (0.0, "Sm"): (9.7e-02, 1e-4, None),
+                (0.0, "Gd"): (0.2584, 1e-4, None),
+                (0.0, "Dy"): (4.7e-02, 1e-4, None),
+                (0.0, "Al"): (4.22375e2, 1e-4, None),
+                (0.0, "Ca"): (1.09542e2, 1e-4, None),
+                (0.0, "Fe"): (6.88266e2, 1e-4, None),
+            },
+            "organic_inlet.flow_vol": {(0,): (62.01, 1e-4, None)},
+            "organic_inlet.temperature": {(0,): (305.15, 1e-4, None)},
+            "organic_inlet.pressure": {(0,): (101300.0, 1e-4, None)},
+            "organic_inlet.conc_mass_comp": {
+                (0.0, "Kerosene"): (8.2e5, 1e-4, None),
+                (0.0, "DEHPA"): (4.879e4, 1e-4, None),
+                (0.0, "Al_o"): (1.267e-5, 1e-4, None),
+                (0.0, "Ca_o"): (2.684e-5, 1e-4, None),
+                (0.0, "Fe_o"): (2.873e-6, 1e-4, None),
+                (0.0, "Sc_o"): (1.734, 1e-4, None),
+                (0.0, "Y_o"): (2.179e-5, 1e-4, None),
+                (0.0, "La_o"): (1.05e-4, 1e-4, None),
+                (0.0, "Ce_o"): (3.1e-4, 1e-4, None),
+                (0.0, "Pr_o"): (3.711e-5, 1e-4, None),
+                (0.0, "Nd_o"): (1.65e-4, 1e-4, None),
+                (0.0, "Sm_o"): (1.701e-5, 1e-4, None),
+                (0.0, "Gd_o"): (3.357e-5, 1e-4, None),
+                (0.0, "Dy_o"): (8.008e-6, 1e-4, None),
+            },
+            "aqueous_outlet.flow_vol": {(0,): (62.01, 1e-4, None)},
+            "aqueous_outlet.temperature": {(0,): (305.15, 1e-4, None)},
+            "aqueous_outlet.pressure": {(0,): (101300.0, 1e-4, None)},
+            "aqueous_outlet.conc_mass_comp": {
+                (0.0, "H2O"): (1.000e06, 1e-4, None),
+                (0.0, "H"): (3.9513e01, 1e-4, None),
+                (0.0, "HSO4"): (8.0232e03, 1e-4, None),
+                (0.0, "SO4"): (2.0564e03, 1e-4, None),
+                (0.0, "Cl"): (1.0000e-07, 1e-4, None),
+                (0.0, "Sc"): (2.7415e-03, 1e-4, None),
+                (0.0, "Y"): (6.2927e-06, 1e-4, None),
+                (0.0, "La"): (9.1421e-01, 1e-4, None),
+                (0.0, "Ce"): (2.1095e00, 1e-4, None),
+                (0.0, "Pr"): (2.7631e-01, 1e-4, None),
+                (0.0, "Nd"): (8.8099e-01, 1e-4, None),
+                (0.0, "Sm"): (8.6579e-02, 1e-4, None),
+                (0.0, "Gd"): (1.9246e-01, 1e-4, None),
+                (0.0, "Dy"): (1.1699e-03, 1e-4, None),
+                (0.0, "Al"): (3.9995e02, 1e-4, None),
+                (0.0, "Ca"): (1.0234e02, 1e-4, None),
+                (0.0, "Fe"): (5.8559e02, 1e-4, None),
+            },
+            "organic_outlet.flow_vol": {(0,): (62.01, 1e-4, None)},
+            "organic_outlet.temperature": {(0,): (305.15, 1e-4, None)},
+            "organic_outlet.pressure": {(0,): (101300.0, 1e-4, None)},
+            "organic_outlet.conc_mass_comp": {
+                (0.0, "Kerosene"): (8.2000e05, 1e-4, None),
+                (0.0, "DEHPA"): (4.6087e04, 1e-4, None),
+                (0.0, "Al_o"): (2.2425e01, 1e-4, None),
+                (0.0, "Ca_o"): (7.2059e00, 1e-4, None),
+                (0.0, "Fe_o"): (1.0267e02, 1e-4, None),
+                (0.0, "Sc_o"): (1.7633e00, 1e-4, None),
+                (0.0, "Y_o"): (1.2402e-01, 1e-4, None),
+                (0.0, "La_o"): (7.1891e-02, 1e-4, None),
+                (0.0, "Ce_o"): (1.6778e-01, 1e-4, None),
+                (0.0, "Pr_o"): (2.6727e-02, 1e-4, None),
+                (0.0, "Nd_o"): (6.5178e-02, 1e-4, None),
+                (0.0, "Sm_o"): (1.0438e-02, 1e-4, None),
+                (0.0, "Gd_o"): (6.5974e-02, 1e-4, None),
+                (0.0, "Dy_o"): (4.5838e-02, 1e-4, None),
+            },
+        }
+        if has_holdup:
+            out["aqueous_outlet.pressure"][(0,)] = (1.04895e+05, 1e-4, None)
+            out["organic_outlet.pressure"][(0,)] = (1.02933e+05, 1e-4, None)
+
+        return out
 
     @pytest.mark.component
     def test_structural_issues(self, SolEx_frame):
@@ -82,199 +325,105 @@ class Test_Solvent_Extraction_steady_model:
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_numerical_issues(self, SolEx_frame):
+    def test_numerical_issues(self, SolEx_frame, has_holdup):
         model = SolEx_frame
         dt = DiagnosticsToolbox(model)
         dt.assert_no_numerical_warnings()
 
-        assert jacobian_cond(model, scaled=False) == pytest.approx(2.46261e14, rel=1e-3)
-        assert jacobian_cond(model, scaled=True) == pytest.approx(1.1119e7, rel=1e-3)
+        # Why does adding holdup *reduce* the unscaled condition number?
+        if has_holdup:
+            assert jacobian_cond(model, scaled=False) == pytest.approx(
+                8.415018e12, rel=1e-3
+            )
+            assert jacobian_cond(model, scaled=True) == pytest.approx(1.2842e7, rel=1e-3)
+        else:
+            assert jacobian_cond(model, scaled=False) == pytest.approx(2.46261e14, rel=1e-3)
+            assert jacobian_cond(model, scaled=True) == pytest.approx(1.1119e7, rel=1e-3)
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_solution(self, SolEx_frame):
+    def test_solution(self, SolEx_frame, expected_results):
 
         model = SolEx_frame
-        expected_results = {
-            "organic_outlet.conc_mass_comp": {
-                (0.0, "Kerosene"): (8.2000e05, 1e-4, None),
-                (0.0, "DEHPA"): (4.6087e04, 1e-4, None),
-                (0.0, "Al_o"): (2.2425e01, 1e-4, None),
-                (0.0, "Ca_o"): (7.2059e00, 1e-4, None),
-                (0.0, "Fe_o"): (1.0267e02, 1e-4, None),
-                (0.0, "Sc_o"): (1.7633e00, 1e-4, None),
-                (0.0, "Y_o"): (1.2402e-01, 1e-4, None),
-                (0.0, "La_o"): (7.1891e-02, 1e-4, None),
-                (0.0, "Ce_o"): (1.6778e-01, 1e-4, None),
-                (0.0, "Pr_o"): (2.6727e-02, 1e-4, None),
-                (0.0, "Nd_o"): (6.5178e-02, 1e-4, None),
-                (0.0, "Sm_o"): (1.0438e-02, 1e-4, None),
-                (0.0, "Gd_o"): (6.5974e-02, 1e-4, None),
-                (0.0, "Dy_o"): (4.5838e-02, 1e-4, None),
-            },
-            "aqueous_outlet.conc_mass_comp": {
-                (0.0, "H2O"): (1.000e06, 1e-4, None),
-                (0.0, "H"): (3.9513e01, 1e-4, None),
-                (0.0, "HSO4"): (8.0232e03, 1e-4, None),
-                (0.0, "SO4"): (2.0564e03, 1e-4, None),
-                (0.0, "Cl"): (1.0000e-07, 1e-4, None),
-                (0.0, "Sc"): (2.7415e-03, 1e-4, None),
-                (0.0, "Y"): (6.2927e-06, 1e-4, None),
-                (0.0, "La"): (9.1421e-01, 1e-4, None),
-                (0.0, "Ce"): (2.1095e00, 1e-4, None),
-                (0.0, "Pr"): (2.7631e-01, 1e-4, None),
-                (0.0, "Nd"): (8.8099e-01, 1e-4, None),
-                (0.0, "Sm"): (8.6579e-02, 1e-4, None),
-                (0.0, "Gd"): (1.9246e-01, 1e-4, None),
-                (0.0, "Dy"): (1.1699e-03, 1e-4, None),
-                (0.0, "Al"): (3.9995e02, 1e-4, None),
-                (0.0, "Ca"): (1.0234e02, 1e-4, None),
-                (0.0, "Fe"): (5.8559e02, 1e-4, None),
-            },
-        }
+        # expected_results = {
+        #     "organic_outlet.conc_mass_comp": {
+        #         (0.0, "Kerosene"): (8.2000e05, 1e-4, None),
+        #         (0.0, "DEHPA"): (4.6087e04, 1e-4, None),
+        #         (0.0, "Al_o"): (2.2425e01, 1e-4, None),
+        #         (0.0, "Ca_o"): (7.2059e00, 1e-4, None),
+        #         (0.0, "Fe_o"): (1.0267e02, 1e-4, None),
+        #         (0.0, "Sc_o"): (1.7633e00, 1e-4, None),
+        #         (0.0, "Y_o"): (1.2402e-01, 1e-4, None),
+        #         (0.0, "La_o"): (7.1891e-02, 1e-4, None),
+        #         (0.0, "Ce_o"): (1.6778e-01, 1e-4, None),
+        #         (0.0, "Pr_o"): (2.6727e-02, 1e-4, None),
+        #         (0.0, "Nd_o"): (6.5178e-02, 1e-4, None),
+        #         (0.0, "Sm_o"): (1.0438e-02, 1e-4, None),
+        #         (0.0, "Gd_o"): (6.5974e-02, 1e-4, None),
+        #         (0.0, "Dy_o"): (4.5838e-02, 1e-4, None),
+        #     },
+        #     "aqueous_outlet.conc_mass_comp": {
+        #         (0.0, "H2O"): (1.000e06, 1e-4, None),
+        #         (0.0, "H"): (3.9513e01, 1e-4, None),
+        #         (0.0, "HSO4"): (8.0232e03, 1e-4, None),
+        #         (0.0, "SO4"): (2.0564e03, 1e-4, None),
+        #         (0.0, "Cl"): (1.0000e-07, 1e-4, None),
+        #         (0.0, "Sc"): (2.7415e-03, 1e-4, None),
+        #         (0.0, "Y"): (6.2927e-06, 1e-4, None),
+        #         (0.0, "La"): (9.1421e-01, 1e-4, None),
+        #         (0.0, "Ce"): (2.1095e00, 1e-4, None),
+        #         (0.0, "Pr"): (2.7631e-01, 1e-4, None),
+        #         (0.0, "Nd"): (8.8099e-01, 1e-4, None),
+        #         (0.0, "Sm"): (8.6579e-02, 1e-4, None),
+        #         (0.0, "Gd"): (1.9246e-01, 1e-4, None),
+        #         (0.0, "Dy"): (1.1699e-03, 1e-4, None),
+        #         (0.0, "Al"): (3.9995e02, 1e-4, None),
+        #         (0.0, "Ca"): (1.0234e02, 1e-4, None),
+        #         (0.0, "Fe"): (5.8559e02, 1e-4, None),
+        #     },
+        # }
         assert_solution_equivalent(model.fs.solex, expected_results)
 
+    @pytest.mark.component
+    @pytest.mark.solver
     def test_get_stream_table_contents(self, SolEx_frame):
         # TODO this is essentially the same data as in the previous test.
         # There should be a single data structure that can cover both tests.
         nan = float("NaN")
-        expected = {
-            "Units": {
+        aq_components = [
+            "H2O", "H", "HSO4", "SO4", "Cl", "Sc", "Y", "La", 
+            "Ce", "Pr", "Nd", "Sm", "Gd", "Dy", "Al", "Ca", "Fe"
+        ]
+        org_components = [
+            "Kerosene", "DEHPA", "Al_o", "Ca_o", "Fe_o", "Sc_o", "Y_o",
+            "La_o", "Ce_o", "Pr_o", "Nd_o", "Sm_o", "Gd_o", "Dy_o"
+        ]
+        # Dictionary insertion order matters when the dictionary
+        # is converted to a dataframe
+        expected_old = {
+            "Units":{
                 "flow_vol": getattr(pyunits.pint_registry, "meter ** 3 / second"),
-                "conc_mass_comp H2O": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp H": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp HSO4": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp SO4": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Cl": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Sc": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Y": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp La": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Ce": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Pr": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Nd": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Sm": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Gd": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Dy": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Al": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Ca": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Fe": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "temperature": getattr(pyunits.pint_registry, "kelvin"),
-                "pressure": getattr(pyunits.pint_registry, "pascal"),
-                "conc_mass_comp Kerosene": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp DEHPA": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Al_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Ca_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Fe_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Sc_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Y_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp La_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Ce_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Pr_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Nd_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Sm_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Gd_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-                "conc_mass_comp Dy_o": getattr(
-                    pyunits.pint_registry, "kilogram / meter ** 3"
-                ),
-            },
-            "aqueous Inlet": {
-                "flow_vol": 1.7225000000000005e-05,
-                "conc_mass_comp H2O": 999.9999999999998,
-                "conc_mass_comp H": 0.010749999999999997,
-                "conc_mass_comp HSO4": 9.999999999999998,
-                "conc_mass_comp SO4": 0.09999999999999998,
-                "conc_mass_comp Cl": 9.999999999999998e-11,
-                "conc_mass_comp Sc": 3.199999999999999e-05,
-                "conc_mass_comp Y": 0.00012399999999999998,
-                "conc_mass_comp La": 0.000986,
-                "conc_mass_comp Ce": 0.0022769999999999995,
-                "conc_mass_comp Pr": 0.00030299999999999994,
-                "conc_mass_comp Nd": 0.0009459999999999998,
-                "conc_mass_comp Sm": 9.699999999999999e-05,
-                "conc_mass_comp Gd": 0.0002584,
-                "conc_mass_comp Dy": 4.699999999999999e-05,
-                "conc_mass_comp Al": 0.42237499999999994,
-                "conc_mass_comp Ca": 0.10954199999999999,
-                "conc_mass_comp Fe": 0.6882659999999998,
-                "temperature": 305.15,
-                "pressure": 101300.0,
-                "conc_mass_comp Kerosene": nan,
-                "conc_mass_comp DEHPA": nan,
-                "conc_mass_comp Al_o": nan,
-                "conc_mass_comp Ca_o": nan,
-                "conc_mass_comp Fe_o": nan,
-                "conc_mass_comp Sc_o": nan,
-                "conc_mass_comp Y_o": nan,
-                "conc_mass_comp La_o": nan,
-                "conc_mass_comp Ce_o": nan,
-                "conc_mass_comp Pr_o": nan,
-                "conc_mass_comp Nd_o": nan,
-                "conc_mass_comp Sm_o": nan,
-                "conc_mass_comp Gd_o": nan,
-                "conc_mass_comp Dy_o": nan,
-            },
+            }
+        }
+        expected_old["Units"]["temperature"] = getattr(pyunits.pint_registry, "kelvin")
+        expected_old["Units"]["pressure"] = getattr(pyunits.pint_registry, "pascal")
+        for j in aq_components:
+            expected_old["Units"][f"conc_mass_comp {j}"] = getattr(
+                pyunits.pint_registry, "kilogram / meter ** 3"
+            )
+
+        for j in org_components:
+            expected_old["Units"][f"conc_mass_comp {j}"] = getattr(
+                pyunits.pint_registry, "kilogram / meter ** 3"
+            )            
+
+        expected = {
+            "Units": expected_old["Units"],
+            "aqueous Inlet": _aq_inlet_expected,
             "aqueous Outlet": {
                 "flow_vol": 1.7225000000000005e-05,
+                "temperature": 305.15,
+                "pressure": 101300.0,
                 "conc_mass_comp H2O": 999.9999999999998,
                 "conc_mass_comp H": 0.039513087794080776,
                 "conc_mass_comp HSO4": 8.023222048810739,
@@ -292,8 +441,6 @@ class Test_Solvent_Extraction_steady_model:
                 "conc_mass_comp Al": 0.39995007985144854,
                 "conc_mass_comp Ca": 0.1023360816022842,
                 "conc_mass_comp Fe": 0.5855947170037661,
-                "temperature": 305.15,
-                "pressure": 101300.0,
                 "conc_mass_comp Kerosene": nan,
                 "conc_mass_comp DEHPA": nan,
                 "conc_mass_comp Al_o": nan,
@@ -309,42 +456,7 @@ class Test_Solvent_Extraction_steady_model:
                 "conc_mass_comp Gd_o": nan,
                 "conc_mass_comp Dy_o": nan,
             },
-            "organic Inlet": {
-                "flow_vol": 1.7225000000000005e-05,
-                "conc_mass_comp H2O": nan,
-                "conc_mass_comp H": nan,
-                "conc_mass_comp HSO4": nan,
-                "conc_mass_comp SO4": nan,
-                "conc_mass_comp Cl": nan,
-                "conc_mass_comp Sc": nan,
-                "conc_mass_comp Y": nan,
-                "conc_mass_comp La": nan,
-                "conc_mass_comp Ce": nan,
-                "conc_mass_comp Pr": nan,
-                "conc_mass_comp Nd": nan,
-                "conc_mass_comp Sm": nan,
-                "conc_mass_comp Gd": nan,
-                "conc_mass_comp Dy": nan,
-                "conc_mass_comp Al": nan,
-                "conc_mass_comp Ca": nan,
-                "conc_mass_comp Fe": nan,
-                "temperature": 305.15,
-                "pressure": 101300.0,
-                "conc_mass_comp Kerosene": 819.9999999999999,
-                "conc_mass_comp DEHPA": 48.78999999999999,
-                "conc_mass_comp Al_o": 1.2669999999999999e-08,
-                "conc_mass_comp Ca_o": 2.6839999999999994e-08,
-                "conc_mass_comp Fe_o": 2.8729999999999995e-09,
-                "conc_mass_comp Sc_o": 0.0017339999999999996,
-                "conc_mass_comp Y_o": 2.1789999999999995e-08,
-                "conc_mass_comp La_o": 1.0499999999999999e-07,
-                "conc_mass_comp Ce_o": 3.0999999999999994e-07,
-                "conc_mass_comp Pr_o": 3.710999999999999e-08,
-                "conc_mass_comp Nd_o": 1.6499999999999996e-07,
-                "conc_mass_comp Sm_o": 1.7009999999999998e-08,
-                "conc_mass_comp Gd_o": 3.356999999999999e-08,
-                "conc_mass_comp Dy_o": 8.007999999999998e-09,
-            },
+            "organic Inlet": _org_inlet_expected,
             "organic Outlet": {
                 "flow_vol": 1.7225000000000002e-05,
                 "conc_mass_comp H2O": nan,
@@ -386,9 +498,16 @@ class Test_Solvent_Extraction_steady_model:
         out = SolEx_frame.fs.solex._get_stream_table_contents()
 
         pd.testing.assert_frame_equal(
-            pd.DataFrame(expected), out, rtol=1e-4, atol=1e-12
+            pd.DataFrame(expected),
+            out,
+            rtol=1e-4,
+            atol=1e-12,
+            # Ignore ordering since we're constructing the dataframe
+            # from a dictionary
+            check_like=True 
         )
-
+    @pytest.mark.component
+    @pytest.mark.solver
     def test_get_performance_contents(self, SolEx_frame):
         unit = SolEx_frame.fs.solex
 

@@ -120,7 +120,6 @@ class WHIMSSeparatorScaler(CustomScalerBase):
     ):
         for state_name in ("feed_state", "mags_state", "nonmags_state"):
             self.call_submodel_scaler_method(
-                model,
                 submodel=getattr(model, state_name),
                 method="variable_scaling_routine",
                 submodel_scalers=submodel_scalers,
@@ -143,6 +142,14 @@ class WHIMSSeparatorScaler(CustomScalerBase):
     def constraint_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
     ):
+        for state_name in ("feed_state", "mags_state", "nonmags_state"):
+            self.call_submodel_scaler_method(
+                submodel=getattr(model, state_name),
+                method="constraint_scaling_routine",
+                submodel_scalers=submodel_scalers,
+                overwrite=overwrite,
+            )
+
         tset = model.flowsheet().time
         pp = model.config.property_package
         for t in tset:

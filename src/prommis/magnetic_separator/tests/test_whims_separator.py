@@ -18,11 +18,15 @@ References:
 from pyomo.environ import ConcreteModel, value
 
 from idaes.core import FlowsheetBlock
+from idaes.core.util.scaling import get_scaling_factor
 
 import pytest
 from prommis.psd.properties.mineral_size_psd import MineralSizePSDParameterBlock
 
-from prommis.magnetic_separator.whims_separator import WHIMSSeparator
+from prommis.magnetic_separator.whims_separator import (
+    WHIMSSeparator,
+    WHIMSSeparatorScaler,
+)
 
 MINERALS = ("Ore1", "Ore2", "Ore3", "Ore4", "Ore5")
 FEED_TPH = (
@@ -48,6 +52,58 @@ PHYSICAL_RECOVERY = (0.01, 0.01, 0.02, 0.03, 0.04, 0.05)
 # Effective fit for this example using the reconstructed magnetic-force term
 # with G=1; it is not a vendor-calibrated parameter.
 FITTED_M50 = 5.086829e-10
+
+
+@pytest.mark.unit
+def test_whims_scaling_routines():
+    model = ConcreteModel()
+    model.fs = FlowsheetBlock(dynamic=False)
+    model.fs.properties = MineralSizePSDParameterBlock(
+        size_edges=[1e-3, 2e-3, 4e-3],
+        component_list=["Ore1", "Ore2"],
+    )
+    model.fs.unit = WHIMSSeparator(property_package=model.fs.properties)
+    unit = model.fs.unit
+    scaler = WHIMSSeparatorScaler()
+
+    scaler.variable_scaling_routine(unit)
+
+    feed_flow = unit.feed_state[0].flow_mass_size_comp[0, "Ore1"]
+    feed_factor = get_scaling_factor(feed_flow)
+    assert feed_factor is not None and feed_factor > 0
+    for size in model.fs.properties.size_interval_set:
+        for mineral in model.fs.properties.solid_component_set:
+            assert get_scaling_factor(unit.recovery[0, size, mineral]) == pytest.approx(
+                scaler.RECOVERY_SCALING_FACTOR
+            )
+            assert get_scaling_factor(
+                unit.recovery_M[0, size, mineral]
+            ) == pytest.approx(scaler.RECOVERY_SCALING_FACTOR)
+
+    scaler.constraint_scaling_routine(unit)
+
+    for size in model.fs.properties.size_interval_set:
+        for mineral in model.fs.properties.solid_component_set:
+            assert get_scaling_factor(
+                unit.mags_solid_balance[0, size, mineral]
+            ) == pytest.approx(
+                get_scaling_factor(
+                    unit.feed_state[0].flow_mass_size_comp[size, mineral]
+                )
+            )
+            assert get_scaling_factor(
+                unit.nonmags_solid_balance[0, size, mineral]
+            ) == pytest.approx(
+                get_scaling_factor(
+                    unit.feed_state[0].flow_mass_size_comp[size, mineral]
+                )
+            )
+            assert get_scaling_factor(
+                unit.recovery_M_eqn[0, size, mineral]
+            ) == pytest.approx(1.0 / scaler.RECOVERY_SCALING_FACTOR)
+            assert get_scaling_factor(
+                unit.recovery_eqn[0, size, mineral]
+            ) == pytest.approx(1.0 / scaler.RECOVERY_SCALING_FACTOR)
 
 
 def test_whims_separator_with_dobby_finch_example_data():

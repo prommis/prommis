@@ -4,7 +4,7 @@
 # University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
-"""Standalone bulk particle-size-distribution (PSD) property package."""
+"""Standalone mineral-by-size particle-size-distribution (PSD) property package."""
 
 from prommis.psd.properties.mineral_size_psd import (
     MineralSizePSDInitializer,

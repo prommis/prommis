@@ -186,6 +186,7 @@ class SolventExtractionScaler(CustomScalerBase):
         Returns:
             None
         """
+        rxns = model.config.heterogeneous_reaction_package
 
         self.call_submodel_scaler_method(
             submodel=model.mscontactor,
@@ -195,9 +196,13 @@ class SolventExtractionScaler(CustomScalerBase):
         )
         for idx, con in model.distribution_extent_constraint.items():
             t, e, j = idx
+            if hasattr(rxns, "organic_aliases"):
+                org_species = rxns.organic_aliases[j]
+            else:
+                org_species = f"{j}_o"
             self.scale_constraint_by_component(
                 con,
-                model.mscontactor.organic[t, e].conc_mol_comp[f"{j}_o"],
+                model.mscontactor.organic[t, e].conc_mol_comp[org_species],
                 overwrite=overwrite,
             )
 

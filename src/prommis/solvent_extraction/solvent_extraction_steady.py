@@ -22,6 +22,10 @@ from idaes.core.solvers import get_solver
 from prommis.properties.sulfuric_acid_leaching_properties import (
     SulfuricAcidLeachingParameters,
 )
+from prommis.properties.mixed_acid_properties import (
+    get_aliases,
+    MixedAcidParameterBlock,
+)
 from prommis.solvent_extraction.ree_og_distribution import (
     REESolExOgParameters,
     ree_list,
@@ -33,7 +37,7 @@ from prommis.solvent_extraction.solvent_extraction_reaction_package import (
 )
 
 
-def build_model(dosage, number_of_stages, has_holdup):
+def build_model(dosage, number_of_stages, has_holdup, use_mixed_acid=False):
     """
     Method to build a steady state model for solvent extraction
     Args:
@@ -41,6 +45,8 @@ def build_model(dosage, number_of_stages, has_holdup):
         number_of_stages: Number of stages in the model.
         has_holdup: Boolean flag about whether or not to create terms
             associated with material holdup and hydrostatic pressure
+        use_mixed_acid: Boolean flag to use mixed acid properties instead
+            of the old sulfuric acid properties.
     Returns:
         m: ConcreteModel object with the solvent extraction system.
     """
@@ -48,10 +54,15 @@ def build_model(dosage, number_of_stages, has_holdup):
     m = ConcreteModel()
 
     m.fs = FlowsheetBlock(dynamic=False)
-
     m.fs.prop_o = REESolExOgParameters()
-    m.fs.leach_soln = SulfuricAcidLeachingParameters()
-    m.fs.reaxn = SolventExtractionReactions()
+    if use_mixed_acid:
+        m.fs.leach_soln = MixedAcidParameterBlock(include_sulfates=True)
+        m.fs.reaxn = SolventExtractionReactions(
+            aqueous_aliases=get_aliases(include_sulfates=True)
+        )
+    else:
+        m.fs.leach_soln = SulfuricAcidLeachingParameters()
+        m.fs.reaxn = SolventExtractionReactions()
 
     m.fs.reaxn.extractant_dosage = dosage
 
@@ -77,7 +88,7 @@ def build_model(dosage, number_of_stages, has_holdup):
     return m
 
 
-def set_inputs(m, dosage, has_holdup):
+def set_inputs(m, dosage, has_holdup, use_mixed_acid=False):
     """
     Set inlet conditions to the solvent extraction model and fixing the parameters
     of the model.
@@ -86,6 +97,8 @@ def set_inputs(m, dosage, has_holdup):
         dosage: Percentage dosage of extractant to the system.
         has_holdup: Boolean flag about whether or not to fix the terms
             associated with material holdup and hydrostatic pressure
+        use_mixed_acid: Boolean flag to use the component names of the
+            mixed acid properties instead of the old sulfuric acid properties.
     Returns:
         None
 
@@ -96,25 +109,37 @@ def set_inputs(m, dosage, has_holdup):
         m.fs.solex.area_cross_stage[:] = 1
         m.fs.solex.elevation[:] = 0
 
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H2O"].fix(1e6)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["H"].fix(10.75)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["SO4"].fix(100)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["HSO4"].fix(1e4)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Al"].fix(422.375)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Ca"].fix(109.542)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Cl"].fix(1e-7)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Fe"].fix(688.266)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Sc"].fix(0.032)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Y"].fix(0.124)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["La"].fix(0.986)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Ce"].fix(2.277)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Pr"].fix(0.303)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Nd"].fix(0.946)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Sm"].fix(0.097)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Gd"].fix(0.2584)
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp["Dy"].fix(0.047)
+    aqueous_inlet_comp = {
+        "H2O": 1e6,
+        "H": 10.75,
+        "SO4": 100,
+        "HSO4": 1e4,
+        "Al": 422.375,
+        "Ca": 109.542,
+        "Cl": 1e-7,
+        "Fe": 688.266,
+        "Sc": 0.032,
+        "Y": 0.124,
+        "La": 0.986,
+        "Ce": 2.277,
+        "Pr": 0.303,
+        "Nd": 0.946,
+        "Sm": 0.097,
+        "Gd": 0.2584,
+        "Dy": 0.047,
+    }
+    if use_mixed_acid:
+        for j1, j2 in get_aliases(include_sulfates=True).items():
+            m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp[j2].fix(
+                aqueous_inlet_comp[j1]
+            )
+    else:
+        for idx, val in aqueous_inlet_comp.items():
+            m.fs.solex.mscontactor.aqueous_inlet_state[:].conc_mass_comp[idx].fix(val)
 
-    m.fs.solex.mscontactor.aqueous_inlet_state[:].flow_vol.fix(62.01)
+    m.fs.solex.mscontactor.aqueous_inlet_state[:].flow_vol.fix(
+        62.01 * units.L / units.h
+    )
     m.fs.solex.mscontactor.aqueous_inlet_state[:].pressure.fix(101300)
     m.fs.solex.mscontactor.aqueous[:, :].temperature.fix(305.15 * units.K)
     m.fs.solex.mscontactor.aqueous_inlet_state[:].temperature.fix(305.15 * units.K)
@@ -175,7 +200,9 @@ def scale_model(m):
     scaler_obj.scale_model(m.fs.solex, submodel_scalers=submodel_scalers)
 
 
-def model_buildup_and_set_inputs(dosage, number_of_stages, has_holdup):
+def model_buildup_and_set_inputs(
+    dosage, number_of_stages, has_holdup, use_mixed_acid=False
+):
     """
     A function to build up the solvent extraction model and set inlet streams
     to the model.
@@ -184,11 +211,15 @@ def model_buildup_and_set_inputs(dosage, number_of_stages, has_holdup):
         number_of_stages: Number of stages in the model.
         has_holdup: Boolean flag about whether or not to create terms
             associated with material holdup and hydrostatic pressure
+        use_mixed_acid: Boolean flag to use mixed acid properties instead
+            of the old sulfuric acid properties.
     Returns:
         m: ConcreteModel object with the solvent extraction system.
     """
-    m = build_model(dosage, number_of_stages, has_holdup=has_holdup)
-    set_inputs(m, dosage, has_holdup=has_holdup)
+    m = build_model(
+        dosage, number_of_stages, has_holdup=has_holdup, use_mixed_acid=use_mixed_acid
+    )
+    set_inputs(m, dosage, has_holdup=has_holdup, use_mixed_acid=use_mixed_acid)
     scale_model(m)
 
     return m
@@ -220,7 +251,7 @@ def solve_model(m):
     return results
 
 
-def main(dosage, number_of_stages, has_holdup):
+def main(dosage, number_of_stages, has_holdup, used_mixed_acid=False):
     """
     The main function used to build a solvent extraction model, set inlets to the model,
     initialize the model, solve the model and export the results to a json file.
@@ -232,7 +263,9 @@ def main(dosage, number_of_stages, has_holdup):
     Returns:
         m: ConcreteModel object with the solvent extraction system.
     """
-    m = model_buildup_and_set_inputs(dosage, number_of_stages, has_holdup)
+    m = model_buildup_and_set_inputs(
+        dosage, number_of_stages, has_holdup, used_mixed_acid
+    )
     initialize_steady_model(m)
     results = solve_model(m)
 
@@ -243,4 +276,4 @@ dosage = 5
 number_of_stages = 3
 
 if __name__ == "__main__":
-    m, results = main(dosage, number_of_stages, has_holdup=False)
+    m, results = main(dosage, number_of_stages, has_holdup=False, used_mixed_acid=True)

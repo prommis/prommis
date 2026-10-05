@@ -5,3 +5,9 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 """Solid PSD properties and their supporting core utilities."""
+
+from prommis.comminution.properties.solid_psd_properties import (
+    SolidPSDParameterBlock,
+)
+
+__all__ = ["SolidPSDParameterBlock"]

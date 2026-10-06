@@ -57,7 +57,7 @@ class Test_Solvent_Extraction_steady_model:
         if use_mixed_acid:
             # The sulfuric acid leaching properties use molecular weights
             # with fewer significant figures than the mixed acid properties,
-            # which then leads to a discrepency in the model solution.
+            # which then leads to a discrepancy in the model solution.
             # Use versions with fewer significant figures here to make sure
             # that the models are structurally equivalent.
             m.fs.leach_soln.mw["H2O"] = 18e-3

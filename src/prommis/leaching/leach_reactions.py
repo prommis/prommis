@@ -14,7 +14,7 @@ LeachTrain unit model.
 
 """
 
-from pyomo.common.config import ConfigValue
+from pyomo.common.config import ConfigDict, ConfigValue
 from pyomo.environ import Expression, Param, Set, units
 
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
@@ -23,6 +23,10 @@ from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.misc import add_object_reference
 
 _metal_list = ["La", "Y", "Pr", "Ce", "Nd", "Sm", "Gd", "Dy", "Al", "Ca", "Fe", "Sc"]
+
+_default_aqueous_aliases = {e: e for e in _metal_list}
+_default_aqueous_aliases["H"] = "H"
+_default_aqueous_aliases["H2O"] = "H2O"
 
 
 class LeachReactionScaler(CustomScalerBase):
@@ -78,6 +82,19 @@ class CoalRefuseLeachingReactionParameterData(
 
     """
 
+    CONFIG = ConfigDict()
+    CONFIG.declare(
+        "aqueous_aliases",
+        ConfigValue(
+            default=_default_aqueous_aliases,
+            domain=dict,
+            description="Dictionary matching element names in the element "
+            "list to elements in the aqueous stream. Used when, e.g., cation "
+            "charges are included in the element name, as is done in the "
+            "MixedAcidProperties.",
+        ),
+    )
+
     def build(self):
         super().build()
 
@@ -85,21 +102,26 @@ class CoalRefuseLeachingReactionParameterData(
 
         reaction_idx = []
         reaction_stoich = {}
+
+        H = self.config.aqueous_aliases["H"]
+        H2O = self.config.aqueous_aliases["H2O"]
+
         for j in _metal_list:
+            j_alias = self.config.aqueous_aliases[j]
             if j == "Ca":
                 # CaO + 2H_+ -> H2O + Ca_2+
                 oxide = "CaO"
-                reaction_stoich[("CaO", "liquid", "Ca")] = 1
-                reaction_stoich[("CaO", "liquid", "H2O")] = 1
+                reaction_stoich[("CaO", "liquid", j_alias)] = 1
+                reaction_stoich[("CaO", "liquid", H2O)] = 1
                 reaction_stoich[("CaO", "solid", "CaO")] = -1
-                reaction_stoich[("CaO", "liquid", "H")] = -2
+                reaction_stoich[("CaO", "liquid", H)] = -2
             else:
                 # Reaction of the form {j}2O3 + 6H_+ -> 2{j}_3+ + 3H2O
                 oxide = f"{j}2O3"
-                reaction_stoich[(oxide, "liquid", j)] = 2
-                reaction_stoich[(oxide, "liquid", "H2O")] = 3
+                reaction_stoich[(oxide, "liquid", j_alias)] = 2
+                reaction_stoich[(oxide, "liquid", H2O)] = 3
                 reaction_stoich[(oxide, "solid", oxide)] = -1
-                reaction_stoich[(oxide, "liquid", "H")] = -6
+                reaction_stoich[(oxide, "liquid", H)] = -6
 
             reaction_idx.append(oxide)
 

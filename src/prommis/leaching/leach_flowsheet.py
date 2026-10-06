@@ -35,6 +35,10 @@ from prommis.properties.coal_refuse_properties import CoalRefuseParameters
 from prommis.properties.sulfuric_acid_leaching_properties import (
     SulfuricAcidLeachingParameters,
 )
+from prommis.properties.mixed_acid_properties import (
+    MixedAcidParameterBlock,
+    get_aliases,
+)
 from prommis.util import scale_time_discretization_equations
 
 
@@ -126,6 +130,13 @@ class CocurrentSlurryLeachingFlowsheetData(FlowsheetBlockData):
             default="BACKWARD",
         ),
     )
+    CONFIG.declare(
+        "use_mixed_acid_properties",
+        ConfigValue(
+            domain=Bool,
+            default=False,
+        ),
+    )
 
     def build(self):
         super().build()
@@ -144,9 +155,15 @@ class CocurrentSlurryLeachingFlowsheetData(FlowsheetBlockData):
         self._set_inputs()
 
     def _add_parameter_blocks(self):
-        self.leach_soln = SulfuricAcidLeachingParameters()
         self.coal = CoalRefuseParameters()
-        self.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
+        if self.config.use_mixed_acid_properties:
+            self.leach_soln = MixedAcidParameterBlock(include_sulfates=True)
+            self.leach_rxns = CoalRefuseLeachingReactionParameterBlock(
+                aqueous_aliases=get_aliases(include_sulfates=True)
+            )
+        else:
+            self.leach_soln = SulfuricAcidLeachingParameters()
+            self.leach_rxns = CoalRefuseLeachingReactionParameterBlock()
 
     def _add_units(self):
         self.leach = LeachingTrain(

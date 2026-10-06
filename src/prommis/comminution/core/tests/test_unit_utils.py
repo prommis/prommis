@@ -49,7 +49,7 @@ def _two_time_model():
 
 
 @pytest.mark.unit
-def test_scale_constraints_at_time_is_time_local_and_skips_absent():
+def test_scale_constraints_at_time_scales_only_target_time():
     # Two times with different factors expose factors reused across time points.
     m = _two_time_model()
     scaler = _NoOpScaler()

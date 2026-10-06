@@ -25,7 +25,7 @@ def _finite_float(value, what):
     try:
         out = float(value)
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(f"{what} must be a finite-representable number") from exc
+        raise ValueError(f"{what} must be convertible to a float") from exc
     if not math.isfinite(out):
         raise ValueError(f"{what} must be finite")
     return out
@@ -66,9 +66,7 @@ def validate_mesh(edges, bottom_size=None):
     try:
         edges = [float(e) for e in raw]
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(
-            "size mesh edges must be finite-representable numbers"
-        ) from exc
+        raise ValueError("size mesh edges must be convertible to floats") from exc
     if len(edges) < 2:
         raise ValueError("size mesh must have at least 2 edges (>= 1 interval)")
     for e in edges:

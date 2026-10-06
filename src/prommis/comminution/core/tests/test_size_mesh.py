@@ -35,7 +35,7 @@ def test_validate_mesh_rejections():
     with pytest.raises(ValueError, match="must all be finite"):
         validate_mesh([1.0, float("inf")])
     # Unconvertible inputs must raise ValueError, not TypeError.
-    with pytest.raises(ValueError, match="finite-representable numbers"):
+    with pytest.raises(ValueError, match="convertible to floats"):
         validate_mesh([1.0, None])
     with pytest.raises(ValueError, match="must be a sequence of numbers"):
         validate_mesh(1.0)
@@ -47,7 +47,7 @@ def test_validate_mesh_rejections():
     ):
         validate_mesh([0.0, 1.3], True)
     with pytest.raises(
-        ValueError, match="^bottom_size must be a finite-representable number$"
+        ValueError, match="^bottom_size must be convertible to a float$"
     ):
         validate_mesh([0.0, 1.3], "x")
     with pytest.raises(ValueError, match="^bottom_size must be finite$"):

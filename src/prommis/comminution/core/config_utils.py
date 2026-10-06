@@ -48,9 +48,7 @@ def _cfg_float(val, what, lo=None, hi=None, positive=False):
     try:
         out = float(val)
     except OverflowError as exc:
-        raise ConfigurationError(
-            f"{what} is too large to represent as a finite float."
-        ) from exc
+        raise ConfigurationError(f"{what} must be convertible to a float.") from exc
     if not math.isfinite(out):
         raise ConfigurationError(f"{what} must be finite (got {val!r}).")
     if positive and out <= 0.0:

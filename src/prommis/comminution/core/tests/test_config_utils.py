@@ -32,7 +32,7 @@ def test_cfg_float_validation():
     for bad in (Decimal("1"), 1 + 0j, 0.4 * units.dimensionless):
         with pytest.raises(ConfigurationError, match="must be a real int or float"):
             check(bad)
-    with pytest.raises(ConfigurationError, match="too large to represent"):
+    with pytest.raises(ConfigurationError, match="must be convertible to a float"):
         check(10**400)
     with pytest.raises(ConfigurationError, match="must be finite"):
         check(float("nan"))
